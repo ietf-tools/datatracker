@@ -7,12 +7,12 @@
 {% block subtitle %}- Enter private key{% endblock %}
 
 {% block nomcom_content %}
-  {% origin %}
-  <h2>Enter private key</h2>
+    {% origin %}
+    <h2>Enter private key</h2>
 
-  <p>In order to access the {{ nomcom.group }} data you have to enter your private key. Please paste it in the text area below. The key must be in the following format:</p>
+    <p>In order to access the {{ nomcom.group }} data you have to enter your private key. Please paste it in the text area below. The key must be in the following format:</p>
 
-  <pre>
+    <pre>
   -----BEGIN PRIVATE KEY-----
   MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDC1WgGTQjX1BHC
   jecwXk05g/r3feSAcErTQwszpjg3tixqQ+tLXQ2HuQLFDgWT26jd4FR7UPMUC9lE
@@ -22,16 +22,16 @@
   -----END PRIVATE KEY-----
   </pre>
 
-  <p>If you don't have a private key, please contact the group chair. You can leave the key empty and continue navigation without access to the encrypted data.</p>
+    <p>If you don't have a private key, please contact the group chair. You can leave the key empty and continue navigation without access to the encrypted data.</p>
 
-  <form enctype="multipart/form-data" method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-    
+    <form enctype="multipart/form-data" method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
 
-      <input class="btn btn-primary" type="submit" value="Save" name="save" {% if submit_disabled %}disabled="disabled"{% endif %}>
-    
 
-  </form>
+        <input class="btn btn-primary" type="submit" value="Save" name="save" {% if submit_disabled %}disabled="disabled"{% endif %}>
+
+
+    </form>
 
 {% endblock %}

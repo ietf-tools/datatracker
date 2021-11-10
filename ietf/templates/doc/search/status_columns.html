@@ -2,82 +2,82 @@
 {% load ietf_filters ballot_icon person_filters %}
 
 <td class="status">
-  <div class="pull-right" id="ballot-icon-{{doc.name}}">
-    {% if doc.ballot %}{% ballot_icon doc %}{% endif %}
-  </div>
+    <div class="pull-right" id="ballot-icon-{{doc.name}}">
+        {% if doc.ballot %}{% ballot_icon doc %}{% endif %}
+    </div>
 
-  {% if not doc.get_state_slug == "rfc" %}
-    {% if '::' in doc.friendly_state %}
-      {{ doc.friendly_state|safe|split:"::"|join:"::<wbr>" }}
-    {% else %}
-      {{ doc.friendly_state|safe }}
-    {% endif %}
+    {% if not doc.get_state_slug == "rfc" %}
+        {% if '::' in doc.friendly_state %}
+            {{ doc.friendly_state|safe|split:"::"|join:"::<wbr>" }}
+        {% else %}
+            {{ doc.friendly_state|safe }}
+        {% endif %}
 
-    {% if doc|state:"draft-rfceditor" %}
-      <wbr>: <a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ doc|state:"draft-rfceditor" }}</a>
-    {% endif %}
+        {% if doc|state:"draft-rfceditor" %}
+            <wbr>: <a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ doc|state:"draft-rfceditor" }}</a>
+        {% endif %}
 
-    <wbr>{{ doc|auth48_alert_badge }}
+        <wbr>{{ doc|auth48_alert_badge }}
 
-    <wbr>{{ doc|state_age_colored }}
-    
-    {% if doc.telechat_date %}
-      <br>IESG telechat: {{ doc.telechat_date }}
-    {% endif %}
+        <wbr>{{ doc|state_age_colored }}
 
-    {% with doc.active_defer_event as defer %}
-      {% if defer %}
-        <br>Deferred by {{ defer.by }} on {{ defer.time|date:"Y-m-d" }})
-      {% endif %}
-    {% endwith %}
+        {% if doc.telechat_date %}
+            <br>IESG telechat: {{ doc.telechat_date }}
+        {% endif %}
 
-    {% if doc.stream %}
-      <br>
-      {% if doc|state:"stream" %}
-	{{ doc|state:"stream" }}{% if doc.intended_std_level %}:<wbr>{% endif %}
-      {% else %}
-	{{ doc.stream }} stream{% if doc.intended_std_level %}:<wbr>{% endif %}
-      {% endif %}
-    {% endif %}
+        {% with doc.active_defer_event as defer %}
+            {% if defer %}
+                <br>Deferred by {{ defer.by }} on {{ defer.time|date:"Y-m-d" }})
+            {% endif %}
+        {% endwith %}
 
-    {% if doc.intended_std_level %}
-      {{ doc.intended_std_level }}
-    {% endif %}
+        {% if doc.stream %}
+            <br>
+            {% if doc|state:"stream" %}
+                {{ doc|state:"stream" }}{% if doc.intended_std_level %}:<wbr>{% endif %}
+            {% else %}
+                {{ doc.stream }} stream{% if doc.intended_std_level %}:<wbr>{% endif %}
+            {% endif %}
+        {% endif %}
 
-    {% if doc.duedate %}
-      <br>
-      Due date: {{ doc.duedate }}
-    {%endif %}
+        {% if doc.intended_std_level %}
+            {{ doc.intended_std_level }}
+        {% endif %}
 
-    {% if doc.reviewed_by_teams %}
-      <br>Reviews:
-      {% for acronym in doc.reviewed_by_teams %}
-        {{ acronym }}{% if not forloop.last %}, {% endif %}
-      {% endfor %}
-    {% endif %}
+        {% if doc.duedate %}
+            <br>
+            Due date: {{ doc.duedate }}
+        {%endif %}
 
-    {% for m in doc.milestones %}
-      {% if forloop.first %}<br>{% endif %}
-      <span title="Part of {{ m.group.acronym }} milestone: {{ m.desc }}" class="milestone">{{ m.due|date:"M Y" }}</span>{% if not forloop.last %}, {% endif %}
-    {% endfor %}
+        {% if doc.reviewed_by_teams %}
+            <br>Reviews:
+            {% for acronym in doc.reviewed_by_teams %}
+                {{ acronym }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+        {% endif %}
 
-    {% if doc.action_holders_enabled and doc.action_holders.exists %}
-        <br>Action Holders:
-        {% for action_holder in doc.documentactionholder_set.all %}
-            <wbr>{% person_link action_holder.person title=action_holder.role_for_doc %}{{ action_holder|action_holder_badge }}{% if not forloop.last %}, {% endif %}
+        {% for m in doc.milestones %}
+            {% if forloop.first %}<br>{% endif %}
+            <span title="Part of {{ m.group.acronym }} milestone: {{ m.desc }}" class="milestone">{{ m.due|date:"M Y" }}</span>{% if not forloop.last %}, {% endif %}
         {% endfor %}
-    {% endif %}
-  {% else %}{# RFC #}
-    {{ doc.std_level|safe }} RFC
 
-    {% if doc.obsoleted_by_list %}
-      <br>Obsoleted by {{ doc.obsoleted_by_list|join:", "|urlize_ietf_docs }}
-    {% endif %}
+        {% if doc.action_holders_enabled and doc.action_holders.exists %}
+            <br>Action Holders:
+            {% for action_holder in doc.documentactionholder_set.all %}
+                <wbr>{% person_link action_holder.person title=action_holder.role_for_doc %}{{ action_holder|action_holder_badge }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% else %}{# RFC #}
+        {{ doc.std_level|safe }} RFC
 
-    {% if doc.updated_by_list %}
-      <br>Updated by {{ doc.updated_by_list|join:", "|urlize_ietf_docs }}
+        {% if doc.obsoleted_by_list %}
+            <br>Obsoleted by {{ doc.obsoleted_by_list|join:", "|urlize_ietf_docs }}
+        {% endif %}
+
+        {% if doc.updated_by_list %}
+            <br>Updated by {{ doc.updated_by_list|join:", "|urlize_ietf_docs }}
+        {% endif %}
     {% endif %}
-  {% endif %}
 
 
 

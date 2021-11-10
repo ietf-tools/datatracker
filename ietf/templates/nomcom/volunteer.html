@@ -6,28 +6,28 @@
 {% block title %}Volunteer for NomCom{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Volunteer for NomCom</h1>
+    {% origin %}
+    <h1>Volunteer for NomCom</h1>
 
     {% if can_volunteer.exists %}
-      <form method="post" >
-        {% csrf_token %}
+        <form method="post" >
+            {% csrf_token %}
 
-        {% bootstrap_form form %}
+            {% bootstrap_form form %}
 
-        
 
-          <button type="submit" class="btn btn-primary">Submit</button>
-        
 
-      </form>
+            <button type="submit" class="btn btn-primary">Submit</button>
+
+
+        </form>
     {% endif %}
 
     {% if already_volunteered.exists %}
-    <div class="alert alert-info" id="already-volunteered">
-      You have already volunteered for the {% for nc in already_volunteered %}{{nc.year}}/{{nc.year|add:1}}{% if not forloop.last %}, {% endif %}{% endfor %} Nominating Committee{{already_volunteered|pluralize}}.
-      To modify your volunteer status, contact the NomCom chair.
-    </div>
+        <div class="alert alert-info" id="already-volunteered">
+            You have already volunteered for the {% for nc in already_volunteered %}{{nc.year}}/{{nc.year|add:1}}{% if not forloop.last %}, {% endif %}{% endfor %} Nominating Committee{{already_volunteered|pluralize}}.
+            To modify your volunteer status, contact the NomCom chair.
+        </div>
 
     {% endif %}
 

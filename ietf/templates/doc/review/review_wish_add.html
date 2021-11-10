@@ -5,21 +5,21 @@
 {% block title %}Add {{ doc.name }} to your review wishes{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Add {{ doc.name }} to your review wishes
-  </h1>
+    {% origin %}
+    <h1>Add {{ doc.name }} to your review wishes
+    </h1>
 
-  <p>You are a reviewer for multiple teams, and need to select a team first.</p>
-  <form class="form-horizontal" method="post">
-    {% csrf_token %}
+    <p>You are a reviewer for multiple teams, and need to select a team first.</p>
+    <form class="form-horizontal" method="post">
+        {% csrf_token %}
 
-    {% bootstrap_form form layout="horizontal" %}
+        {% bootstrap_form form layout="horizontal" %}
 
-    
+
 
         <button type="submit" class="btn btn-primary">Add to review wishes</button>
-    
 
-  </form>
+
+    </form>
 
 {% endblock %}

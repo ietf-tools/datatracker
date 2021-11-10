@@ -7,44 +7,44 @@
 {% load nomcom_tags %}
 
 {% block pagehead %}
-  {{ form.media.css }}
+    {{ form.media.css }}
 {% endblock %}
 
 {% block subtitle %} - Nominate{% endblock %}
 
 {% block nomcom_content %}
-  {% origin %}
+    {% origin %}
 
-  <div class="row">
-    <div class="col-sm-9">
-    {% if form %}
-      <form id="nominate-form" method="post">
-        {% csrf_token %}
-        {% bootstrap_form form %}
-        
+    <div class="row">
+        <div class="col-sm-9">
+            {% if form %}
+                <form id="nominate-form" method="post">
+                    {% csrf_token %}
+                    {% bootstrap_form form %}
 
-          <button class="btn btn-primary" type="submit" name="save" value="Save">Save</button>
-        
 
-      </form>
-    {% endif %}
-    </div>
-    <div class="col-sm-3">
-      {% if nomcom.show_accepted_nominees %}
-        <h3>Nominees<br><small>who have accepted nomination</small></h3>
-        {% for p in positions %}
-            {% if p.nomineeposition_set.accepted.not_duplicated %}
-              <h4>{{ p.name }}</h4>
-              {% for np in p.nomineeposition_set.accepted.not_duplicated %}
-              <div class="col-sm-offset-1">{{ np.nominee.name }}</div>
-              {% endfor %}
+                    <button class="btn btn-primary" type="submit" name="save" value="Save">Save</button>
+
+
+                </form>
             {% endif %}
-        {% endfor %}
-      {% endif %}
+        </div>
+        <div class="col-sm-3">
+            {% if nomcom.show_accepted_nominees %}
+                <h3>Nominees<br><small>who have accepted nomination</small></h3>
+                {% for p in positions %}
+                    {% if p.nomineeposition_set.accepted.not_duplicated %}
+                        <h4>{{ p.name }}</h4>
+                        {% for np in p.nomineeposition_set.accepted.not_duplicated %}
+                            <div class="col-sm-offset-1">{{ np.nominee.name }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
     </div>
-  </div>  
 {% endblock %}
 
 {% block js %}
-  {{ form.media.js }}
+    {{ form.media.js }}
 {% endblock %}

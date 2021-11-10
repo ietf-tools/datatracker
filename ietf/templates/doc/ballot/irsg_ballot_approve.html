@@ -7,22 +7,22 @@
 {% block title %}Issue ballot for {{ doc }}?{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>{{ question }}</h1>
+    {% origin %}
+    <h1>{{ question }}</h1>
 
-  <form method="post">
-    {% csrf_token %}
-    {# curly percent bootstrap_form approval_text_form curly percent #}
+    <form method="post">
+        {% csrf_token %}
+        {# curly percent bootstrap_form approval_text_form curly percent #}
 
-    Due date for this ballot:
-    <input type="text" placeholder={{ fillerdate }} name="duedate">
+        Due date for this ballot:
+        <input type="text" placeholder={{ fillerdate }} name="duedate">
 
-    
 
-      <button type="submit" class="btn btn-primary" name="irsg_button" value="Yes">Yes</button>
-      <button type="submit" class="btn btn-primary" name="irsg_button" value="No">No</button>
-    
 
-  </form>
+        <button type="submit" class="btn btn-primary" name="irsg_button" value="Yes">Yes</button>
+        <button type="submit" class="btn btn-primary" name="irsg_button" value="No">No</button>
+
+
+    </form>
 
 {% endblock %}

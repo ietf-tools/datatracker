@@ -7,530 +7,530 @@
 {% load htmlfilters %}
 
 {% block title %}
-  IETF {{ schedule.meeting.number }} meeting agenda
-  {% if "-utc" in request.path %}
-    (UTC)
-  {% endif %}
+    IETF {{ schedule.meeting.number }} meeting agenda
+    {% if "-utc" in request.path %}
+        (UTC)
+    {% endif %}
 {% endblock %}
 
 {% block morecss %}
-  iframe#weekview { height: 600px; width: 100%; }
-  tr:not(:first-child) th.gap {
-  height: 3em !important;
-  background-color: inherit !important;
-  border: none !important;
-  }
-  tr:first-child th.gap {
-  height: 0 !important;
-  background-color: inherit !important;
-  border: none !important;
-  }
-  .session-materials .agenda-frame,.minutes-frame {
-  white-space: normal;
-  }
-  div.tz-display {
+    iframe#weekview { height: 600px; width: 100%; }
+    tr:not(:first-child) th.gap {
+    height: 3em !important;
+    background-color: inherit !important;
+    border: none !important;
+    }
+    tr:first-child th.gap {
+    height: 0 !important;
+    background-color: inherit !important;
+    border: none !important;
+    }
+    .session-materials .agenda-frame,.minutes-frame {
+    white-space: normal;
+    }
+    div.tz-display {
     margin-bottom: 0.5em;
     margin-top: 1em;
     text-align: right;
-  }
-  .tz-display a {
+    }
+    .tz-display a {
     cursor: pointer;
-  }
-  .tz-display label {
+    }
+    .tz-display label {
     font-weight: normal;
-  }
-  .tz-display select {
+    }
+    .tz-display select {
     min-width: 15em;
-  }
-  #affix .nav li.tz-display {
+    }
+    #affix .nav li.tz-display {
     padding: 4px 20px;
-  }
-  #affix .nav li.tz-display a {
+    }
+    #affix .nav li.tz-display a {
     display: inline;
     padding: 0;
-  }
+    }
 {% endblock %}
 
 {% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
 
 {% block content %}
-  {% origin %}
+    {% origin %}
 
-  <div class="row">
-    <div class="col-md-12">
-      {% if "-utc" in request.path %}
-        {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda-utc" title_extra="(UTC)" %}
-      {% else %}
-        {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda"     title_extra="" %}
-      {% endif %}
+    <div class="row">
+        <div class="col-md-12">
+            {% if "-utc" in request.path %}
+                {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda-utc" title_extra="(UTC)" %}
+            {% else %}
+                {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda"     title_extra="" %}
+            {% endif %}
 
-    </div>
-  </div>
-  <div class="row">
-     <div class="col-md-10">
-      {# cache this part -- it takes 3-6 seconds to generate #}
-      {% load cache %}
-      {% cache cache_time ietf_meeting_agenda_utc schedule.meeting.number request.path %}
-        <div class="row">
-            <div class="col-xs-6"><h1>Agenda</h1></div>
-            <div class="col-xs-6">
-                <div class="tz-display">
-                    <div><small>
-                        <label for="timezone-select">Time zone:</label>
-                        <a id="meeting-timezone" onclick="ietf_timezone.use('{{ timezone }}')">Meeting</a> |
-                        <a id="local-timezone" onclick="ietf_timezone.use('local')">Local</a> |
-                        <a id="utc-timezone" onclick="ietf_timezone.use('UTC')">UTC</a>
-                    </small></div>
-                    <select id="timezone-select" class="tz-select">
-                        {# Avoid blank while loading. JavaScript replaces the option list after init. #}
-                        <option selected>{{ timezone }}</option>
-                    </select>
-                </div>
-            </div>
         </div>
-      {% if is_current_meeting %}
-	<p class="alert alert-info">
-	  <b>Note:</b> IETF agendas are subject to change, up to and during a meeting.
-	</p>
-      {% endif %}
-
-  {% if schedule.meeting.agenda_info_note %}
-    <p class="alert alert-info">
-      {{ schedule.meeting.agenda_info_note|removetags:"h1"|safe }}
-    </p>
-  {% endif %}
-
-
-  {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Customize the agenda view..." %}
-
-        <h2>Download as .ics</h2>
-        <p class="buttonlist">
-            {% for fc in filter_categories %}
-                {% if not forloop.last %} {# skip the last group, it's the office hours/misc #}
-                    <div style="display:inline-block;margin-right:1em">
-                        {% for p in fc|dictsort:"label" %}
-                            <a class="btn btn-primary" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{p.keyword}}">{{p.label}}</a>
-                        {% endfor %}
+    </div>
+    <div class="row">
+        <div class="col-md-10">
+            {# cache this part -- it takes 3-6 seconds to generate #}
+            {% load cache %}
+            {% cache cache_time ietf_meeting_agenda_utc schedule.meeting.number request.path %}
+                <div class="row">
+                    <div class="col-xs-6"><h1>Agenda</h1></div>
+                    <div class="col-xs-6">
+                        <div class="tz-display">
+                            <div><small>
+                                <label for="timezone-select">Time zone:</label>
+                                <a id="meeting-timezone" onclick="ietf_timezone.use('{{ timezone }}')">Meeting</a> |
+                                <a id="local-timezone" onclick="ietf_timezone.use('local')">Local</a> |
+                                <a id="utc-timezone" onclick="ietf_timezone.use('UTC')">UTC</a>
+                            </small></div>
+                            <select id="timezone-select" class="tz-select">
+                                {# Avoid blank while loading. JavaScript replaces the option list after init. #}
+                                <option selected>{{ timezone }}</option>
+                            </select>
+                        </div>
                     </div>
+                </div>
+                {% if is_current_meeting %}
+                    <p class="alert alert-info">
+                        <b>Note:</b> IETF agendas are subject to change, up to and during a meeting.
+                    </p>
                 {% endif %}
-            {% endfor %}
-            <div style="display:inline-block">
-                <a class="btn btn-primary" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{ non_area_keywords|join:',' }}">Non-area events</a>
-                <a id="ical-link" class="hidden btn btn-primary agenda-link filterable" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}">Customized schedule</a>
-            </div>
-        </p>
 
-        <h2>
-          Schedule
-          {% if schedule.meeting.agenda_warning_note %}
-            <span class="label label-danger">{{ schedule.meeting.agenda_warning_note|removetags:"h1"|safe }}</span>
-          {% endif %}
-        </h2>
+                {% if schedule.meeting.agenda_info_note %}
+                    <p class="alert alert-info">
+                        {{ schedule.meeting.agenda_info_note|removetags:"h1"|safe }}
+                    </p>
+                {% endif %}
 
-        <iframe class="hidden" id="weekview"></iframe>
 
-        <table class="table table-sm table-striped">
-          {% for item in filtered_assignments %}
+                {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Customize the agenda view..." %}
 
-            {% ifchanged item.timeslot.time|date:"Y-m-d" %}
-              <tr><th class="gap" colspan="7"></th></tr>
-              <tr class="warning">
-                <th colspan="7">
-		   {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
-		   <div class="anchor-target" id="{{item.timeslot.time|slugify}}"></div>
-	          {{ item.timeslot.time|date:"l, F j, Y" }}
-	        </th>
-              </tr>
-            {% endifchanged %}
-
-            {% if item.timeslot.type_id == 'regular' %}
-              {% ifchanged %}
-                <tr class="info session-label-row"
-                    data-slot-start-ts="{{item.start_timestamp}}"
-                    data-slot-end-ts="{{item.end_timestamp}}">
-                  <td class="leftmarker"></td>
-	          <th class="text-nowrap text-right">
-                    <div class="hidden-xs">
-                       {% include "meeting/timeslot_start_end.html" %}
-                    </div>
-	          </th>
-	          <th colspan="4">
-                    <div class="hidden-sm hidden-md hidden-lg">
-                       {% include "meeting/timeslot_start_end.html" %}
-                    </div>
-	            {{ item.timeslot.time|date:"l"}}
-	            {{item.timeslot.name|capfirst_allcaps}}
-	          </th>
-                  <td class="rightmarker"></td>
-                </tr>
-              {% endifchanged %}
-            {% endif %}
-
-            {% if item.timeslot.type.slug == 'break' or item.timeslot.type.slug == 'reg' or item.timeslot.type.slug == 'other' %}
-                <tr id="row-{{ item.slug }}" data-filter-keywords="{{ item.filter_keywords|join:',' }}"
-                    data-slot-start-ts="{{item.start_timestamp}}"
-                    data-slot-end-ts="{{item.end_timestamp}}">
-                  <td class="leftmarker"></td>
-	          <td class="text-nowrap text-right">
-                    <div class="hidden-xs">
-                       {% include "meeting/timeslot_start_end.html" %}
-                    </div>
-	          </td>
-                  <td colspan="3">
-                    <div class="hidden-sm hidden-md hidden-lg">
-                       {% include "meeting/timeslot_start_end.html" %}
-                    </div>
-                    {% if item.timeslot.show_location and item.timeslot.get_html_location %}
-		      {% if schedule.meeting.number|add:"0" < 96 %}
-                      {% comment %}<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{% endcomment %}
-                        {{item.timeslot.get_html_location}}
-                      }
-                      {% comment %}</a>{% endcomment %}
-                      {% elif item.timeslot.location.floorplan %}
-		      <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
-		      {% else %}
-                      {{item.timeslot.get_html_location}}
-		      {% endif %}
-		      {% with item.timeslot.location.floorplan as floor %}
-		      {% if item.timeslot.location.floorplan %}
-                      <div class="hidden-xs">
-			<a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
-			  class="pull-right" title="{{floor.name}}"><span class="label label-blank label-wide">{{floor.short}}</span></a>
-                      </divn>
-		      {% endif %}
-		      {% endwith %}
-	            {% endif %}
-	          </td>
-                  <td>
-		    {% if item.session.agenda %}
-		      <a href="{{ item.session.agenda.get_href }}">
-			{{item.timeslot.name}}
-		      </a>
-		    {% else %}
-		      {{item.timeslot.name}}
-		    {% endif %}
-
-                    {% if item.session.current_status == 'canceled' %}
-		      <span class="label label-danger pull-right">CANCELLED</span>
-                    {% else %}
-                      <div class="pull-right padded-left">
-                        {% if item.timeslot.type.slug == 'other' %}
-                          {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
-                            {% include "meeting/session_buttons_include.html" with show_agenda=True item=item schedule=schedule %}
-                          {% else %}
-                            {% for slide in item.session.slides %}
-                              <a href="{{slide.get_href}}">{{ slide.title|clean_whitespace }}</a>
-                              <br>
-                            {% endfor %}
-                          {% endif %}
+                <h2>Download as .ics</h2>
+                <p class="buttonlist">
+                    {% for fc in filter_categories %}
+                        {% if not forloop.last %} {# skip the last group, it's the office hours/misc #}
+                            <div style="display:inline-block;margin-right:1em">
+                                {% for p in fc|dictsort:"label" %}
+                                    <a class="btn btn-primary" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{p.keyword}}">{{p.label}}</a>
+                                {% endfor %}
+                            </div>
                         {% endif %}
-                      </div>
-		    {% endif %}
-		  </td>
-                  <td class="rightmarker"></td>
-                </tr>
-            {% endif %}
+                    {% endfor %}
+                    <div style="display:inline-block">
+                        <a class="btn btn-primary" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{ non_area_keywords|join:',' }}">Non-area events</a>
+                        <a id="ical-link" class="hidden btn btn-primary agenda-link filterable" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}">Customized schedule</a>
+                    </div>
+                </p>
 
-            {% if item.timeslot.type_id == 'regular' or item.timeslot.type.slug == 'plenary' %}
-              {% if item.session.historic_group %}
-                <tr id="row-{{item.slug}}" 
-                    {% if item.timeslot.type.slug == 'plenary' %}class="{{item.timeslot.type.slug}}danger"{% endif %}
-                    data-filter-keywords="{{ item.filter_keywords|join:',' }}"
-                    data-slot-start-ts="{{item.start_timestamp}}"
-                    data-slot-end-ts="{{item.end_timestamp}}">
-                  <td class="leftmarker"></td>
-		  {% if item.timeslot.type.slug == 'plenary' %}
-	            <th class="text-nowrap text-right">
-                      <div class="hidden-xs">
-                         {% include "meeting/timeslot_start_end.html" %}
-                      </div>
-		    </th>
-		    <td colspan="3">
-                      <div class="hidden-sm hidden-md hidden-lg">
-                         {% include "meeting/timeslot_start_end.html" %}
-                      </div>
-		      {% if item.timeslot.show_location and item.timeslot.get_html_location %}
-			{% if schedule.meeting.number|add:"0" < 96 %}
-			{% comment %}<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{% endcomment %}
-      {{item.timeslot.get_html_location}}
-      {% comment %}</a>{% endcomment %}
-                        {% elif item.timeslot.location.floorplan %}
-			<a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
-			{% else %}
-                        {{item.timeslot.get_html_location}}
-			{% endif %}
-		      {% endif %}
-		    </td>
-
-		  {% else %}
-		    <td>
-		      {% with item.timeslot.location.floorplan as floor %}
-		      {% if item.timeslot.location.floorplan %}
-                      <div class="hidden-xs">
-			<a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
-			  class="pull-right" title="{{floor.name}}"><span class="label label-blank">{{floor.short}}</span></a>
-                      </div>
-		      {% endif %}
-		      {% endwith %}
-		    </td>
-                    <td>
-                      {% if item.timeslot.show_location and item.timeslot.get_html_location %}
-			{% if schedule.meeting.number|add:"0" < 96 %}
-			{% comment %}<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{% endcomment %}
-      {{item.timeslot.get_html_location}}
-      {% comment %}</a>{% endcomment %}
-                        {% elif item.timeslot.location.floorplan %}
-			<a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
-                        {% else %}
-                        {{item.timeslot.get_html_location}}
-			{% endif %}
-                      {% endif %}
-                    </td>
-
-		      <td><div class="hidden-xs">{{item.session.historic_group.historic_parent.acronym}}</div></td>
-
-                    <td>
-                      {% if item.session.historic_group %}
-                        <a href="{% url 'ietf.group.views.group_about' acronym=item.session.historic_group.acronym %}">{{item.session.historic_group.acronym}}</a>
-                      {% else %}
-                        {{item.session.historic_group.acronym}}
-                      {% endif %}
-                    </td>
-                  {% endif %}
-
-                  <td>
-                    {% if item.session.agenda %}
-		      <a href="{{ item.session.agenda.get_href }}">
+                <h2>
+                    Schedule
+                    {% if schedule.meeting.agenda_warning_note %}
+                        <span class="label label-danger">{{ schedule.meeting.agenda_warning_note|removetags:"h1"|safe }}</span>
                     {% endif %}
-                    {% if item.timeslot.type.slug == 'plenary' %}
-                      {{item.timeslot.name}}
-                    {% else %}
-                      {{item.session.historic_group.name}}
-                    {% endif %}
-                    {% if item.session.agenda %}
-                      </a>
-                    {% endif %}
+                </h2>
 
-                    {% if item.session.current_status == 'canceled' %}
-                      <span class="label label-danger pull-right">CANCELLED</span>
-                    {% else %}
-                      <div class="pull-right padded-left">
-                         {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
-                      </div>
-                    {% endif %}
+                <iframe class="hidden" id="weekview"></iframe>
 
-                    {% if item.session.historic_group.state_id == "bof" %}
-                      <span class="label label-success pull-right">BOF</span>
-                    {% endif %}
+                <table class="table table-sm table-striped">
+                    {% for item in filtered_assignments %}
 
-                    {% if item.session.current_status == 'resched' %}
-                      <div class="label label-danger pull-right">
-                        RESCHEDULED
-                        {% if item.session.rescheduled_to %}
-                          TO
-                          <div class="timetooltip reschedtimetooltip"><div class="time" data-start-time="{{item.session.rescheduled_to.utc_start_time|date:"U"}}" data-end-time="{{item.session.rescheduled_to.utc_end_time|date:"U"}}" {% if item.timeslot.time|date:"l" != item.session.rescheduled_to.time|date:"l" %} weekday="1"{% endif %}>
-		          {% if "-utc" in request.path %}
-                            {{ item.session.rescheduled_to.utc_start_time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.utc_end_time|date:"G:i" }}
-		          {% else %}
-                            {{ item.session.rescheduled_to.time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.end_time|date:"G:i" }}
-		          {% endif %}
-                          </div></div>
+                        {% ifchanged item.timeslot.time|date:"Y-m-d" %}
+                            <tr><th class="gap" colspan="7"></th></tr>
+                            <tr class="warning">
+                                <th colspan="7">
+                                    {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
+                                    <div class="anchor-target" id="{{item.timeslot.time|slugify}}"></div>
+                                    {{ item.timeslot.time|date:"l, F j, Y" }}
+                                </th>
+                            </tr>
+                        {% endifchanged %}
+
+                        {% if item.timeslot.type_id == 'regular' %}
+                            {% ifchanged %}
+                                <tr class="info session-label-row"
+                                    data-slot-start-ts="{{item.start_timestamp}}"
+                                    data-slot-end-ts="{{item.end_timestamp}}">
+                                    <td class="leftmarker"></td>
+                                    <th class="text-nowrap text-right">
+                                        <div class="hidden-xs">
+                                            {% include "meeting/timeslot_start_end.html" %}
+                                        </div>
+                                    </th>
+                                    <th colspan="4">
+                                        <div class="hidden-sm hidden-md hidden-lg">
+                                            {% include "meeting/timeslot_start_end.html" %}
+                                        </div>
+                                        {{ item.timeslot.time|date:"l"}}
+                                        {{item.timeslot.name|capfirst_allcaps}}
+                                    </th>
+                                    <td class="rightmarker"></td>
+                                </tr>
+                            {% endifchanged %}
                         {% endif %}
-                      </div>
-                    {% endif %}
 
-                    {% if item.session.agenda_note|first_url|conference_url %}
-                      <br><a href={{item.session.agenda_note|first_url}}>{{item.session.agenda_note|slice:":23"}}</a>
-                    {% elif item.session.agenda_note %}
-                      <br><span class="text-danger">{{item.session.agenda_note}}</span>
-                    {% endif %}
-		  </td>
-                  <td class="rightmarker"></td>
-		</tr>
-              {% endif %}
-            {% endif %}
-          {% endfor %}
-        </table>
+                        {% if item.timeslot.type.slug == 'break' or item.timeslot.type.slug == 'reg' or item.timeslot.type.slug == 'other' %}
+                            <tr id="row-{{ item.slug }}" data-filter-keywords="{{ item.filter_keywords|join:',' }}"
+                                data-slot-start-ts="{{item.start_timestamp}}"
+                                data-slot-end-ts="{{item.end_timestamp}}">
+                                <td class="leftmarker"></td>
+                                <td class="text-nowrap text-right">
+                                    <div class="hidden-xs">
+                                        {% include "meeting/timeslot_start_end.html" %}
+                                    </div>
+                                </td>
+                                <td colspan="3">
+                                    <div class="hidden-sm hidden-md hidden-lg">
+                                        {% include "meeting/timeslot_start_end.html" %}
+                                    </div>
+                                    {% if item.timeslot.show_location and item.timeslot.get_html_location %}
+                                        {% if schedule.meeting.number|add:"0" < 96 %}
+                                            {% comment %}<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{% endcomment %}
+                                            {{item.timeslot.get_html_location}}
+                                            }
+                                            {% comment %}</a>{% endcomment %}
+                                        {% elif item.timeslot.location.floorplan %}
+                                            <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
+                                        {% else %}
+                                            {{item.timeslot.get_html_location}}
+                                        {% endif %}
+                                        {% with item.timeslot.location.floorplan as floor %}
+                                            {% if item.timeslot.location.floorplan %}
+                                                <div class="hidden-xs">
+                                                    <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
+                                                        class="pull-right" title="{{floor.name}}"><span class="label label-blank label-wide">{{floor.short}}</span></a>
+                                                </divn>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.session.agenda %}
+                                        <a href="{{ item.session.agenda.get_href }}">
+                                            {{item.timeslot.name}}
+                                        </a>
+                                    {% else %}
+                                        {{item.timeslot.name}}
+                                    {% endif %}
 
-    </div>
-    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
-      <ul class="nav nav-pills nav-stacked small" data-spy="affix">
-          <li><a href="#now">Now</a></li>
-          {% for item in filtered_assignments %}
-              {% ifchanged item.timeslot.time|date:"Y-m-d" %}
-                  <li><a href="#{{item.timeslot.time|slugify}}">{{ item.timeslot.time|date:"l, F j, Y" }}</a></li>
-              {% endifchanged %}
-          {% endfor %}
-          <li><hr/></li>
-          <li class="tz-display">Showing <span class="current-tz">{{ timezone }}</span> time</li>
-          <li class="tz-display"><span> {# span avoids applying nav link styling to these shortcuts #}
-              <a onclick="ietf_timezone.use('{{ timezone }}')">Meeting time</a> |
-              <a onclick="ietf_timezone.use('local')">Local time</a> |
-              <a onclick="ietf_timezone.use('UTC')">UTC</a></span>
-          </li>
-          {% if settings.DEBUG and settings.DEBUG_AGENDA %}
-              <li><hr/></li>
-              <li><span id="current-time"></span></li>
-          {% endif %}
-      </ul>
-    </div>
-  </div>
+                                    {% if item.session.current_status == 'canceled' %}
+                                        <span class="label label-danger pull-right">CANCELLED</span>
+                                    {% else %}
+                                        <div class="pull-right padded-left">
+                                            {% if item.timeslot.type.slug == 'other' %}
+                                                {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
+                                                    {% include "meeting/session_buttons_include.html" with show_agenda=True item=item schedule=schedule %}
+                                                {% else %}
+                                                    {% for slide in item.session.slides %}
+                                                        <a href="{{slide.get_href}}">{{ slide.title|clean_whitespace }}</a>
+                                                        <br>
+                                                    {% endfor %}
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td class="rightmarker"></td>
+                            </tr>
+                        {% endif %}
 
-  {% endcache %}
+                        {% if item.timeslot.type_id == 'regular' or item.timeslot.type.slug == 'plenary' %}
+                            {% if item.session.historic_group %}
+                                <tr id="row-{{item.slug}}"
+                                    {% if item.timeslot.type.slug == 'plenary' %}class="{{item.timeslot.type.slug}}danger"{% endif %}
+                                    data-filter-keywords="{{ item.filter_keywords|join:',' }}"
+                                    data-slot-start-ts="{{item.start_timestamp}}"
+                                    data-slot-end-ts="{{item.end_timestamp}}">
+                                    <td class="leftmarker"></td>
+                                    {% if item.timeslot.type.slug == 'plenary' %}
+                                        <th class="text-nowrap text-right">
+                                            <div class="hidden-xs">
+                                                {% include "meeting/timeslot_start_end.html" %}
+                                            </div>
+                                        </th>
+                                        <td colspan="3">
+                                            <div class="hidden-sm hidden-md hidden-lg">
+                                                {% include "meeting/timeslot_start_end.html" %}
+                                            </div>
+                                            {% if item.timeslot.show_location and item.timeslot.get_html_location %}
+                                                {% if schedule.meeting.number|add:"0" < 96 %}
+                                                    {% comment %}<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{% endcomment %}
+                                                    {{item.timeslot.get_html_location}}
+                                                    {% comment %}</a>{% endcomment %}
+                                                {% elif item.timeslot.location.floorplan %}
+                                                    <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
+                                                {% else %}
+                                                    {{item.timeslot.get_html_location}}
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+
+                                    {% else %}
+                                        <td>
+                                            {% with item.timeslot.location.floorplan as floor %}
+                                                {% if item.timeslot.location.floorplan %}
+                                                    <div class="hidden-xs">
+                                                        <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
+                                                            class="pull-right" title="{{floor.name}}"><span class="label label-blank">{{floor.short}}</span></a>
+                                                    </div>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </td>
+                                        <td>
+                                            {% if item.timeslot.show_location and item.timeslot.get_html_location %}
+                                                {% if schedule.meeting.number|add:"0" < 96 %}
+                                                    {% comment %}<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{% endcomment %}
+                                                    {{item.timeslot.get_html_location}}
+                                                    {% comment %}</a>{% endcomment %}
+                                                {% elif item.timeslot.location.floorplan %}
+                                                    <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
+                                                {% else %}
+                                                    {{item.timeslot.get_html_location}}
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+
+                                        <td><div class="hidden-xs">{{item.session.historic_group.historic_parent.acronym}}</div></td>
+
+                                        <td>
+                                            {% if item.session.historic_group %}
+                                                <a href="{% url 'ietf.group.views.group_about' acronym=item.session.historic_group.acronym %}">{{item.session.historic_group.acronym}}</a>
+                                            {% else %}
+                                                {{item.session.historic_group.acronym}}
+                                            {% endif %}
+                                        </td>
+                                    {% endif %}
+
+                                    <td>
+                                        {% if item.session.agenda %}
+                                            <a href="{{ item.session.agenda.get_href }}">
+                                        {% endif %}
+                                        {% if item.timeslot.type.slug == 'plenary' %}
+                                            {{item.timeslot.name}}
+                                        {% else %}
+                                            {{item.session.historic_group.name}}
+                                        {% endif %}
+                                        {% if item.session.agenda %}
+                                            </a>
+                                        {% endif %}
+
+                                        {% if item.session.current_status == 'canceled' %}
+                                            <span class="label label-danger pull-right">CANCELLED</span>
+                                        {% else %}
+                                            <div class="pull-right padded-left">
+                                                {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
+                                            </div>
+                                        {% endif %}
+
+                                        {% if item.session.historic_group.state_id == "bof" %}
+                                            <span class="label label-success pull-right">BOF</span>
+                                        {% endif %}
+
+                                        {% if item.session.current_status == 'resched' %}
+                                            <div class="label label-danger pull-right">
+                                                RESCHEDULED
+                                                {% if item.session.rescheduled_to %}
+                                                    TO
+                                                    <div class="timetooltip reschedtimetooltip"><div class="time" data-start-time="{{item.session.rescheduled_to.utc_start_time|date:"U"}}" data-end-time="{{item.session.rescheduled_to.utc_end_time|date:"U"}}" {% if item.timeslot.time|date:"l" != item.session.rescheduled_to.time|date:"l" %} weekday="1"{% endif %}>
+                                                        {% if "-utc" in request.path %}
+                                                            {{ item.session.rescheduled_to.utc_start_time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.utc_end_time|date:"G:i" }}
+                                                        {% else %}
+                                                            {{ item.session.rescheduled_to.time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.end_time|date:"G:i" }}
+                                                        {% endif %}
+                                                    </div></div>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+
+                                        {% if item.session.agenda_note|first_url|conference_url %}
+                                            <br><a href={{item.session.agenda_note|first_url}}>{{item.session.agenda_note|slice:":23"}}</a>
+                                        {% elif item.session.agenda_note %}
+                                            <br><span class="text-danger">{{item.session.agenda_note}}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="rightmarker"></td>
+                                </tr>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </table>
+
+                </div>
+                <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
+                    <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+                        <li><a href="#now">Now</a></li>
+                        {% for item in filtered_assignments %}
+                            {% ifchanged item.timeslot.time|date:"Y-m-d" %}
+                                <li><a href="#{{item.timeslot.time|slugify}}">{{ item.timeslot.time|date:"l, F j, Y" }}</a></li>
+                            {% endifchanged %}
+                        {% endfor %}
+                        <li><hr/></li>
+                        <li class="tz-display">Showing <span class="current-tz">{{ timezone }}</span> time</li>
+                        <li class="tz-display"><span> {# span avoids applying nav link styling to these shortcuts #}
+                            <a onclick="ietf_timezone.use('{{ timezone }}')">Meeting time</a> |
+                            <a onclick="ietf_timezone.use('local')">Local time</a> |
+                            <a onclick="ietf_timezone.use('UTC')">UTC</a></span>
+                        </li>
+                        {% if settings.DEBUG and settings.DEBUG_AGENDA %}
+                            <li><hr/></li>
+                            <li><span id="current-time"></span></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                </div>
+
+            {% endcache %}
 {% endblock %}
 
 {% block js %}
 
-  <script src="{% static 'ietf/js/agenda/agenda_filter.js' %}"></script>
-  <script>
-  // Update the agenda display with specified filters
-   function update_agenda_display(filter_params) {
-       var agenda_rows=$('[id^="row-"]')
+    <script src="{% static 'ietf/js/agenda/agenda_filter.js' %}"></script>
+    <script>
+        // Update the agenda display with specified filters
+        function update_agenda_display(filter_params) {
+            var agenda_rows=$('[id^="row-"]')
 
-       if (!agenda_filter.filtering_is_enabled(filter_params)) {
-           // When filtering is not enabled, show all sessions
-           agenda_rows.show();
-           return;
-       }
+            if (!agenda_filter.filtering_is_enabled(filter_params)) {
+                // When filtering is not enabled, show all sessions
+                agenda_rows.show();
+                return;
+            }
 
-       // if groups were selected for filtering, hide all rows by default
-       agenda_rows.filter(function(index, row) {
-           return !!$(row).attr('data-filter-keywords');
-       }).hide();
+            // if groups were selected for filtering, hide all rows by default
+            agenda_rows.filter(function(index, row) {
+                return !!$(row).attr('data-filter-keywords');
+            }).hide();
 
-       // loop through the has items and change the UI element and row visibilities accordingly
-       $.each(filter_params.show, function (i, v) {
-           // this is a regular item by wg: when present, show these rows
-           agenda_filter.rows_matching_filter_keyword(agenda_rows, v).show();
-       });
-       $.each(filter_params.hide, function (i, v) {
-           // this is a "negative" item by wg: when present, hide these rows
-           agenda_filter.rows_matching_filter_keyword(agenda_rows, v).hide();
-       });
+            // loop through the has items and change the UI element and row visibilities accordingly
+            $.each(filter_params.show, function (i, v) {
+                // this is a regular item by wg: when present, show these rows
+                agenda_filter.rows_matching_filter_keyword(agenda_rows, v).show();
+            });
+            $.each(filter_params.hide, function (i, v) {
+                // this is a "negative" item by wg: when present, hide these rows
+                agenda_filter.rows_matching_filter_keyword(agenda_rows, v).hide();
+            });
 
-       // Now hide any session label rows with no visible sessions. Identify
-       // by matching on start/end timestamps.
-       $('tr.session-label-row').each(function(i, e) {
-           var start_ts = $(e).attr('data-slot-start-ts');
-           var end_ts = $(e).attr('data-slot-end-ts');
-           var visible_rows = agenda_rows.filter(
-             '[data-slot-start-ts="' + start_ts + '"]' +
-             '[data-slot-end-ts="' + end_ts + '"]' +
-             ':visible'
-           );
-           if (visible_rows.length > 0) {
-               $(e).show();
-           } else {
-               $(e).hide();
-           }
-       })
-   }
-
-   function update_ical_links(filter_params) {
-       var ical_link = $("#ical-link");
-       ical_link.toggleClass("hidden", !agenda_filter.filtering_is_enabled(filter_params));
-   }
-
-   function update_weekview(filter_params) {
-       var weekview = $("#weekview");
-       if (agenda_filter.filtering_is_enabled(filter_params)) {
-           weekview.removeClass("hidden");
-       } else {
-           weekview.addClass("hidden");
-       }
-       update_weekview_display();
-   }
-
-   function update_weekview_display() {
-       var weekview = $("#weekview");
-       if (!weekview.hasClass('hidden')) {
-           var queryparams = window.location.search;
-           if (queryparams) {
-               queryparams += '&tz=' + ietf_timezone.get_current_tz().toLowerCase();
-           } else {
-               queryparams = '?tz=' + ietf_timezone.get_current_tz().toLowerCase();
-           }
-           var new_url = 'week-view.html' + queryparams;
-           var wv_iframe = document.getElementById('weekview');
-           var wv_window = wv_iframe.contentWindow;
-           if (wv_iframe.src && wv_window.history && wv_window.history.replaceState) {
-               wv_window.history.replaceState({}, '', new_url);
-               wv_window.redraw_weekview();
-           } else {
-               // either have not yet loaded the iframe or we do not support history replacement
-               wv_iframe.src = new_url;
-           }
-       }       
-   }
-   
-   function update_view(filter_params) {
-       update_agenda_display(filter_params);
-       update_weekview(filter_params)
-       update_ical_links(filter_params)
-   }
-
-  </script>
-  <script src="{% static 'moment/min/moment.min.js' %}"></script>
-  <script src="{% static 'moment-timezone/builds/moment-timezone-with-data-10-year-range.min.js' %}"></script>
-  <script src="{% static 'ietf/js/agenda/timezone.js' %}"></script>
-  <script src="{% static 'ietf/js/agenda/agenda_materials.js' %}"></script>
-  <script src="{% static 'ietf/js/agenda/agenda_timezone.js' %}"></script>
-  <script>
-
-  {% if settings.DEBUG and settings.DEBUG_AGENDA %}
-  speedup = +$.urlParam('speedup');
-  if (speedup < 1) {
-      speedup = 1;
-  }
-  start_time = moment().utc();
-  if ($.urlParam('date')) {
-      offset_time = moment.tz(decodeURIComponent($.urlParam('date')), "UTC");
-  } else {
-      offset_time = start_time;
-  }
-  if (speedup > 1 || offset_time != start_time) {
-      moment.now = function () {
-          return (+new Date() - start_time) * speedup + offset_time;
-      }
-  }
-  {% else %}
-  speedup = 1;
-  {% endif %}
-
-
-  $(document).ready(function() {
-      // Methods/variables here that are not in ietf_timezone or agenda_filter are from agenda_timezone.js
-      meeting_timezone = '{{ timezone }}';
-
-      // First, initialize_moments(). This must be done before calling any of the update methods.
-      // It does not need timezone info, so safe to call before initializing ietf_timezone.
-      initialize_moments();  // fills in moments in the agenda data
-
-      // Now set up callbacks related to ietf_timezone. This must happen before calling initialize().
-      // In particular, set_current_tz_cb() must be called before the update methods are called.
-      set_current_tz_cb(ietf_timezone.get_current_tz);  // give agenda_timezone access to this method
-      ietf_timezone.set_tz_change_callback(function(newtz) {
-          update_times(newtz);
-          update_weekview_display();
+            // Now hide any session label rows with no visible sessions. Identify
+            // by matching on start/end timestamps.
+            $('tr.session-label-row').each(function(i, e) {
+                var start_ts = $(e).attr('data-slot-start-ts');
+                var end_ts = $(e).attr('data-slot-end-ts');
+                var visible_rows = agenda_rows.filter(
+                    '[data-slot-start-ts="' + start_ts + '"]' +
+                    '[data-slot-end-ts="' + end_ts + '"]' +
+                    ':visible'
+                );
+                if (visible_rows.length > 0) {
+                    $(e).show();
+                } else {
+                    $(e).hide();
+                }
+            })
         }
-      );
 
-      // With callbacks in place, call ietf_timezone.initialize(). This will call the tz_change callback
-      // after setting things up.
-      {% if "-utc" in request.path %}
-        ietf_timezone.initialize('UTC');
-      {% else %}
-        ietf_timezone.initialize(meeting_timezone);
-      {% endif %}
+        function update_ical_links(filter_params) {
+            var ical_link = $("#ical-link");
+            ical_link.toggleClass("hidden", !agenda_filter.filtering_is_enabled(filter_params));
+        }
 
-      // Now make other setup calls from agenda_timezone.js
-      add_tooltips();
-      init_timers();
+        function update_weekview(filter_params) {
+            var weekview = $("#weekview");
+            if (agenda_filter.filtering_is_enabled(filter_params)) {
+                weekview.removeClass("hidden");
+            } else {
+                weekview.addClass("hidden");
+            }
+            update_weekview_display();
+        }
 
-      // Finally, set up the agenda filter UI. This does not depend on the timezone.
-      agenda_filter.set_update_callback(update_view);
-      agenda_filter.enable();
-    }
-  );
-  </script>
+        function update_weekview_display() {
+            var weekview = $("#weekview");
+            if (!weekview.hasClass('hidden')) {
+                var queryparams = window.location.search;
+                if (queryparams) {
+                    queryparams += '&tz=' + ietf_timezone.get_current_tz().toLowerCase();
+                } else {
+                    queryparams = '?tz=' + ietf_timezone.get_current_tz().toLowerCase();
+                }
+                var new_url = 'week-view.html' + queryparams;
+                var wv_iframe = document.getElementById('weekview');
+                var wv_window = wv_iframe.contentWindow;
+                if (wv_iframe.src && wv_window.history && wv_window.history.replaceState) {
+                    wv_window.history.replaceState({}, '', new_url);
+                    wv_window.redraw_weekview();
+                } else {
+                    // either have not yet loaded the iframe or we do not support history replacement
+                    wv_iframe.src = new_url;
+                }
+            }
+        }
+
+        function update_view(filter_params) {
+            update_agenda_display(filter_params);
+            update_weekview(filter_params)
+            update_ical_links(filter_params)
+        }
+
+    </script>
+    <script src="{% static 'moment/min/moment.min.js' %}"></script>
+    <script src="{% static 'moment-timezone/builds/moment-timezone-with-data-10-year-range.min.js' %}"></script>
+    <script src="{% static 'ietf/js/agenda/timezone.js' %}"></script>
+    <script src="{% static 'ietf/js/agenda/agenda_materials.js' %}"></script>
+    <script src="{% static 'ietf/js/agenda/agenda_timezone.js' %}"></script>
+    <script>
+
+        {% if settings.DEBUG and settings.DEBUG_AGENDA %}
+            speedup = +$.urlParam('speedup');
+            if (speedup < 1) {
+                speedup = 1;
+            }
+            start_time = moment().utc();
+            if ($.urlParam('date')) {
+                offset_time = moment.tz(decodeURIComponent($.urlParam('date')), "UTC");
+            } else {
+                offset_time = start_time;
+            }
+            if (speedup > 1 || offset_time != start_time) {
+                moment.now = function () {
+                    return (+new Date() - start_time) * speedup + offset_time;
+                }
+            }
+        {% else %}
+            speedup = 1;
+        {% endif %}
+
+
+        $(document).ready(function() {
+            // Methods/variables here that are not in ietf_timezone or agenda_filter are from agenda_timezone.js
+            meeting_timezone = '{{ timezone }}';
+
+            // First, initialize_moments(). This must be done before calling any of the update methods.
+            // It does not need timezone info, so safe to call before initializing ietf_timezone.
+            initialize_moments();  // fills in moments in the agenda data
+
+            // Now set up callbacks related to ietf_timezone. This must happen before calling initialize().
+            // In particular, set_current_tz_cb() must be called before the update methods are called.
+            set_current_tz_cb(ietf_timezone.get_current_tz);  // give agenda_timezone access to this method
+            ietf_timezone.set_tz_change_callback(function(newtz) {
+                update_times(newtz);
+                update_weekview_display();
+            }
+            );
+
+            // With callbacks in place, call ietf_timezone.initialize(). This will call the tz_change callback
+            // after setting things up.
+            {% if "-utc" in request.path %}
+                ietf_timezone.initialize('UTC');
+            {% else %}
+                ietf_timezone.initialize(meeting_timezone);
+            {% endif %}
+
+            // Now make other setup calls from agenda_timezone.js
+            add_tooltips();
+            init_timers();
+
+            // Finally, set up the agenda filter UI. This does not depend on the timezone.
+            agenda_filter.set_update_callback(update_view);
+            agenda_filter.enable();
+        }
+        );
+    </script>
 {% endblock %}

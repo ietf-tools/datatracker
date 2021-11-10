@@ -5,18 +5,18 @@
 {% block title %}Account management{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Account management</h1>
+    {% origin %}
+    <h1>Account management</h1>
 
-  <div class="buttonlist">
-    {% if user.username %}
-      <a type="a" class="btn btn-primary" href="/accounts/profile/">View/edit profile</a>
-    {% else %}
-      <a type="a" class="btn btn-primary" href="/accounts/login/" rel="nofollow">Sign in</a>
-    {% endif %}
-    <a type="a" class="btn btn-info" href="/accounts/create/">New account</a>
-    <a type="a" class="btn btn-warning" href="/accounts/reset/">Reset password</a>
-    <a type="a" class="btn btn-primary" href="/accounts/settings/">Change browser preferences</a>
-  </div>
+    <div class="buttonlist">
+        {% if user.username %}
+            <a type="a" class="btn btn-primary" href="/accounts/profile/">View/edit profile</a>
+        {% else %}
+            <a type="a" class="btn btn-primary" href="/accounts/login/" rel="nofollow">Sign in</a>
+        {% endif %}
+        <a type="a" class="btn btn-info" href="/accounts/create/">New account</a>
+        <a type="a" class="btn btn-warning" href="/accounts/reset/">Reset password</a>
+        <a type="a" class="btn btn-primary" href="/accounts/settings/">Change browser preferences</a>
+    </div>
 
 {% endblock %}

@@ -5,21 +5,21 @@
 
 {% block title %}Review suggestions for documents that {{ doc }} replaces{% endblock %}
 
-{% block content %} 
-{% origin %}
-<h1>Review suggestions for documents that {{ doc }} replaces</h1>
+{% block content %}
+    {% origin %}
+    <h1>Review suggestions for documents that {{ doc }} replaces</h1>
 
-<form name="review-suggested-replaces" role="form" method="post">
-  {% csrf_token %}
+    <form name="review-suggested-replaces" role="form" method="post">
+        {% csrf_token %}
 
-  {% bootstrap_form form %}
+        {% bootstrap_form form %}
 
-  
 
-     <a class="btn btn-primary pull-right" href="{{ doc.get_absolute_url }}">Cancel</a>
-     <button type="submit" value="Save" class="btn btn-primary">Save</button>
-  
 
-</form>
+        <a class="btn btn-primary pull-right" href="{{ doc.get_absolute_url }}">Cancel</a>
+        <button type="submit" value="Save" class="btn btn-primary">Save</button>
+
+
+    </form>
 
 {% endblock %}

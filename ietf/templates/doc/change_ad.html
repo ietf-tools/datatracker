@@ -7,19 +7,19 @@
 {% block title %}Change shepherding AD for {{titletext}}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Change shepherding AD<br><small>{{titletext}}</small></h1>
+    {% origin %}
+    <h1>Change shepherding AD<br><small>{{titletext}}</small></h1>
 
-  <form enctype="multipart/form-data" method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
+    <form enctype="multipart/form-data" method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
 
-    
 
-      <button type="submit" class="btn btn-primary">Submit</button>
-      <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">Back</a>
-    
 
-  </form>
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">Back</a>
+
+
+    </form>
 
 {% endblock %}

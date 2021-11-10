@@ -8,33 +8,33 @@
 {% block title %}Complete account creation{% endblock %}
 
 {% block js %}
-      {{ block.super }}
-      <script type="text/javascript" src="{% static 'zxcvbn/zxcvbn.js' %}"></script>
-      <script type="text/javascript" src="{% static 'ietf/js/password_strength.js' %}"></script>
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'zxcvbn/zxcvbn.js' %}"></script>
+    <script type="text/javascript" src="{% static 'ietf/js/password_strength.js' %}"></script>
 {% endblock %}
 
 {% block content %}
-  {% origin %}
+    {% origin %}
 
-  {% if success %}
-    <h1>Account creation successful</h1>
+    {% if success %}
+        <h1>Account creation successful</h1>
 
-    <p>Your account with login {{ email }} has been created, using the password you have selected.</p>
-    <a type="a" class="btn btn-primary" href="{% url "ietf.ietfauth.views.login" %}" rel="nofollow">Sign in</a>
+        <p>Your account with login {{ email }} has been created, using the password you have selected.</p>
+        <a type="a" class="btn btn-primary" href="{% url "ietf.ietfauth.views.login" %}" rel="nofollow">Sign in</a>
 
-  {% else %}
-    <h1>Complete account creation</h1>
+    {% else %}
+        <h1>Complete account creation</h1>
 
-    <p>In order to complete the setup of your account with login {{ email }}, please choose a password:</p>
-    <form method="post">
-      {% csrf_token %}
-      {% bootstrap_form form %}
+        <p>In order to complete the setup of your account with login {{ email }}, please choose a password:</p>
+        <form method="post">
+            {% csrf_token %}
+            {% bootstrap_form form %}
 
-      
 
-        <button type="submit" class="btn btn-primary">Set name and password</button>
-      
 
-    </form>
-  {% endif %}
+            <button type="submit" class="btn btn-primary">Set name and password</button>
+
+
+        </form>
+    {% endif %}
 {% endblock %}

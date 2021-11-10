@@ -6,37 +6,37 @@
 {% load ietf_filters %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}IRSG ballot status{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>IRSG ballot status</h1>
+    {% origin %}
+    <h1>IRSG ballot status</h1>
 
-  <table class="table table-sm table-striped tablesorter">
-    <thead>
-      <tr>
-        <th>Document</th>
-        <th>Status</th>
-      </tr>
-    </thead>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th>Document</th>
+                <th>Status</th>
+            </tr>
+        </thead>
 
-    <tbody>
-      {% for doc in docs %}
-        <tr>
-          <td>
-	    {{ doc.displayname_with_link }}
-          </td>
-          {% include "doc/search/status_columns.html" %}
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+        <tbody>
+            {% for doc in docs %}
+                <tr>
+                    <td>
+                        {{ doc.displayname_with_link }}
+                    </td>
+                    {% include "doc/search/status_columns.html" %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
 
 {% block js %}
-  <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}
 

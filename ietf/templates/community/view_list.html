@@ -6,18 +6,18 @@
 {% block title %}{{ clist.long_name }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>{{ clist.long_name }}</h1>
+    {% origin %}
+    <h1>{{ clist.long_name }}</h1>
 
-  {% bootstrap_messages %}
+    {% bootstrap_messages %}
 
-  {% if can_manage_list %}
-    <a class="btn btn-primary" href="{% url "ietf.community.views.manage_list" username=clist.user.username %}">
-      <i class="bi bi-gear"></i>
-      Manage list
-    </a>
-  {% endif %}
+    {% if can_manage_list %}
+        <a class="btn btn-primary" href="{% url "ietf.community.views.manage_list" username=clist.user.username %}">
+            <i class="bi bi-gear"></i>
+            Manage list
+        </a>
+    {% endif %}
 
-  {% include "doc/search/search_results.html" with skip_no_matches_warning=True %}
-  {% include "community/list_menu.html" %}
+    {% include "doc/search/search_results.html" with skip_no_matches_warning=True %}
+    {% include "community/list_menu.html" %}
 {% endblock %}

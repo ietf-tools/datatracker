@@ -8,70 +8,70 @@
 {% block title %}{% if liaison %}Edit liaison: {{ liaison }}{% else %}Send Liaison Statement{% endif %}{% endblock %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
-  {{ form.media.css }} {# n.b., liaisons.js relies on select2 CSS being loaded by this #}
-  <link rel="stylesheet" href="{% static 'ietf/css/liaisons.css' %}">
+    <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+    {{ form.media.css }} {# n.b., liaisons.js relies on select2 CSS being loaded by this #}
+    <link rel="stylesheet" href="{% static 'ietf/css/liaisons.css' %}">
 {% endblock %}
 
 {% block morecss %}
-.widget { height: auto; min-height: 34px; }
+    .widget { height: auto; min-height: 34px; }
 {% endblock %}
 
 {% block content %}
-  {% origin %}
+    {% origin %}
 
-  <h1>{% if liaison %}Edit liaison: {{ liaison }}{% else %}Send Liaison Statement{% endif %}</h1>
+    <h1>{% if liaison %}Edit liaison: {{ liaison }}{% else %}Send Liaison Statement{% endif %}</h1>
 
-  {% if form.errors %}
-    <div class="alert alert-danger">
-      <p>There were errors in the submitted form -- see below. Please correct these and resubmit.</p>
-    </div>
-  {% endif %}
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            <p>There were errors in the submitted form -- see below. Please correct these and resubmit.</p>
+        </div>
+    {% endif %}
 
-  {% bootstrap_form_errors form %}
+    {% bootstrap_form_errors form %}
 
-  <noscript class="js-info">
-    This page depends on Javascript being enabled to work properly. Please enable Javascript and reload the page.
-  </noscript>
+    <noscript class="js-info">
+        This page depends on Javascript being enabled to work properly. Please enable Javascript and reload the page.
+    </noscript>
 
-  {% if not liaison %}
-    <p class="help-block">If you wish to submit your liaison statement by e-mail, then please send it to <a href="mailto:statements@ietf.org">statements@ietf.org</a></p>
+    {% if not liaison %}
+        <p class="help-block">If you wish to submit your liaison statement by e-mail, then please send it to <a href="mailto:statements@ietf.org">statements@ietf.org</a></p>
 
-    <p class="help-block">Fields marked with <label class="required"></label> are required. For detailed descriptions of the fields see the <a href="{% url 'liaison-help-fields'%}">field help</a>.</p>
-  {% endif %}
+        <p class="help-block">Fields marked with <label class="required"></label> are required. For detailed descriptions of the fields see the <a href="{% url 'liaison-help-fields'%}">field help</a>.</p>
+    {% endif %}
 
-  <form role="form" class="liaisons-form form-horizontal show-required" method="post" enctype="multipart/form-data" data-edit-form="{{ form.edit }}" data-ajax-info-url="{% url "ietf.liaisons.views.ajax_get_liaison_info" %}">{% csrf_token %}
+    <form role="form" class="liaisons-form form-horizontal show-required" method="post" enctype="multipart/form-data" data-edit-form="{{ form.edit }}" data-ajax-info-url="{% url "ietf.liaisons.views.ajax_get_liaison_info" %}">{% csrf_token %}
 
-    {% for fieldset in form.fieldsets %}
-      {% if forloop.first and user|has_role:"Secretariat" %}
-        <h2><div class="col-md-2">{{ fieldset.name }}</div><div class="col-md-10"></div></h2>
-      {% else %}
-        <h2>{{ fieldset.name }}</h2>
-      {% endif %}
-      
-      {% for field in fieldset %}
-        {% bootstrap_field field layout="horizontal" %}
-      {% endfor %}
-    {% endfor %}
+        {% for fieldset in form.fieldsets %}
+            {% if forloop.first and user|has_role:"Secretariat" %}
+                <h2><div class="col-md-2">{{ fieldset.name }}</div><div class="col-md-10"></div></h2>
+            {% else %}
+                <h2>{{ fieldset.name }}</h2>
+            {% endif %}
 
-    
+            {% for field in fieldset %}
+                {% bootstrap_field field layout="horizontal" %}
+            {% endfor %}
+        {% endfor %}
 
-      <a class="btn btn-danger pull-right" href="{% if liaison %}{% url "ietf.liaisons.views.liaison_detail" object_id=liaison.pk %}{% else %}{% url "ietf.liaisons.views.liaison_list" %}{% endif %}">Cancel</a>
 
-      {% if not liaison %}
-        <button name="send" type="submit" class="btn btn-primary">Send and post</button>
-        <button name="post_only" type="submit" class="btn btn-primary">Post only</button>
-      {% else %}
-        <button name="save" type="submit" class="btn btn-primary">Save</button>
-      {% endif %}
-    
 
-  </form>
+        <a class="btn btn-danger pull-right" href="{% if liaison %}{% url "ietf.liaisons.views.liaison_detail" object_id=liaison.pk %}{% else %}{% url "ietf.liaisons.views.liaison_list" %}{% endif %}">Cancel</a>
+
+        {% if not liaison %}
+            <button name="send" type="submit" class="btn btn-primary">Send and post</button>
+            <button name="post_only" type="submit" class="btn btn-primary">Post only</button>
+        {% else %}
+            <button name="save" type="submit" class="btn btn-primary">Save</button>
+        {% endif %}
+
+
+    </form>
 
 {% endblock %}
 
 {% block js %}
-  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
-  {{ form.media.js }} {# n.b., liaisons.js relies on select2.js being loaded by this #}
-  <script src="{% static 'ietf/js/liaisons.js' %}"></script>
+    <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+    {{ form.media.js }} {# n.b., liaisons.js relies on select2.js being loaded by this #}
+    <script src="{% static 'ietf/js/liaisons.js' %}"></script>
 {% endblock %}

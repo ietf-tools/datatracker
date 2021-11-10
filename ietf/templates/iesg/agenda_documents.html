@@ -6,84 +6,84 @@
 {% load ietf_filters %}
 
 {% block pagehead %}
-  <link rel="alternate" type="application/atom+xml" href="/feed/iesg-agenda/">
-  <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="alternate" type="application/atom+xml" href="/feed/iesg-agenda/">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}Documents on future IESG telechat agendas{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Documents on future IESG telechat agendas</h1>
+    {% origin %}
+    <h1>Documents on future IESG telechat agendas</h1>
 
-  <ul class="nav nav-tabs">
-    <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.agenda' %}">IESG Agenda</a></li>
-    <li class="nav-item"><a class="nav-link active" href="{% url 'ietf.iesg.views.agenda_documents' %}">Documents on future agendas</a></li>
-    <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.discusses' %}">DISCUSS positions</a></li>
-    <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.past_documents' %}">Documents on recent agendas</a></li>
-    <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.photos' %}">IESG Photos</a></li>
-  </ul>
+    <ul class="nav nav-tabs">
+        <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.agenda' %}">IESG Agenda</a></li>
+        <li class="nav-item"><a class="nav-link active" href="{% url 'ietf.iesg.views.agenda_documents' %}">Documents on future agendas</a></li>
+        <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.discusses' %}">DISCUSS positions</a></li>
+        <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.past_documents' %}">Documents on recent agendas</a></li>
+        <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.photos' %}">IESG Photos</a></li>
+    </ul>
 
 
 
-  {% if user|has_role:"Secretariat" %}
-    <form class="form-inline" method="post">
-      {% csrf_token %}
-  {% endif %}
+    {% if user|has_role:"Secretariat" %}
+        <form class="form-inline" method="post">
+            {% csrf_token %}
+    {% endif %}
 
-  {% for t in telechats %}
-    <h2>IESG telechat {{t.date}}
-    <small class="text-muted">{{t.pages}} page{{t.pages|pluralize}}</small>
-    </h2>
-    <p>
-      <a class="btn btn-primary" role="button" href="/iesg/agenda/">
-        <span class="bi bi-list"></span>
-        Full IESG agenda
-      </a>
+    {% for t in telechats %}
+        <h2>IESG telechat {{t.date}}
+            <small class="text-muted">{{t.pages}} page{{t.pages|pluralize}}</small>
+        </h2>
+        <p>
+            <a class="btn btn-primary" role="button" href="/iesg/agenda/">
+                <span class="bi bi-list"></span>
+                Full IESG agenda
+            </a>
 
-      <a class="btn btn-primary" role="button" href="/iesg/agenda/telechat-{{t.date|date:"Y"}}-{{t.date|date:"m"}}-{{t.date|date:"d"}}-docs.tgz">
-        <span class="bi bi-download"></span>
-        Download documents
-      </a>
-    </p>
+            <a class="btn btn-primary" role="button" href="/iesg/agenda/telechat-{{t.date|date:"Y"}}-{{t.date|date:"m"}}-{{t.date|date:"d"}}-docs.tgz">
+                <span class="bi bi-download"></span>
+                Download documents
+            </a>
+        </p>
 
-    {% for num, section in t.sections %}
-      {% if "docs" not in section or section.docs %}
-        {% if num|sectionlevel == 1 %}<h3>{{ num }}. {{ section.title|safe }}</h3>{% endif %}
-        {% if num|sectionlevel == 2 %}<h4>{{ num }} {{ section.title|safe }}</h4>{% endif %}
-        {% if num|sectionlevel == 3 %}<h5>{{ num }} {{ section.title|safe }}</h5>{% endif %}
-      {% endif %}
+        {% for num, section in t.sections %}
+            {% if "docs" not in section or section.docs %}
+                {% if num|sectionlevel == 1 %}<h3>{{ num }}. {{ section.title|safe }}</h3>{% endif %}
+                {% if num|sectionlevel == 2 %}<h4>{{ num }} {{ section.title|safe }}</h4>{% endif %}
+                {% if num|sectionlevel == 3 %}<h5>{{ num }} {{ section.title|safe }}</h5>{% endif %}
+            {% endif %}
 
-      {% if "docs" in section and section.docs %}
-        <table class="table table-sm table-striped tablesorter">
-          <thead>
-            <tr>
-	      <th data-orderable="false"></th>
-	      <th>Document</th>
-	      <th>Date</th>
-	      <th>Status</th>
-	      <th>IPR</th>
-	      <th>AD / Shepherd</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for doc in section.docs %}
-              {% include "doc/search/search_result_row.html" with color_row_positions=True %}
-            {% endfor %}
-          </tbody>
-        </table>
-      {% endif %}
+            {% if "docs" in section and section.docs %}
+                <table class="table table-sm table-striped tablesorter">
+                    <thead>
+                        <tr>
+                            <th data-orderable="false"></th>
+                            <th>Document</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>IPR</th>
+                            <th>AD / Shepherd</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doc in section.docs %}
+                            {% include "doc/search/search_result_row.html" with color_row_positions=True %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        {% endfor %}
+        <hr>
     {% endfor %}
-    <hr>
-  {% endfor %}
 
-  {% if user|has_role:"Secretariat" %}
-    <input title="Save reschedule changes done with the drop-down boxes below" type="submit" value="Save reschedules" class="btn btn-primary">
-    </form>
-  {% endif %}
+    {% if user|has_role:"Secretariat" %}
+        <input title="Save reschedule changes done with the drop-down boxes below" type="submit" value="Save reschedules" class="btn btn-primary">
+        </form>
+    {% endif %}
 
 {% endblock content %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

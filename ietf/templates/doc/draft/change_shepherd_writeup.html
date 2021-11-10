@@ -5,24 +5,24 @@
 {% load django_bootstrap5 %}
 
 {% block title %}
-  Edit shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}
+    Edit shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}
 {% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Edit shepherd writeup<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h1>
+    {% origin %}
+    <h1>Edit shepherd writeup<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h1>
 
-  <form enctype="multipart/form-data" method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
+    <form enctype="multipart/form-data" method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
 
-    
 
-      <button type="submit" class="btn btn-primary" name="submit_response" value="Submit">Submit</button>
-      <button type="submit" class="btn btn-warning" name="reset_text" value="Reset to Template Text">Reset to template text</button>
-      <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
-    
 
-  </form>
+        <button type="submit" class="btn btn-primary" name="submit_response" value="Submit">Submit</button>
+        <button type="submit" class="btn btn-warning" name="reset_text" value="Reset to Template Text">Reset to template text</button>
+        <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
+
+
+    </form>
 
 {% endblock %}

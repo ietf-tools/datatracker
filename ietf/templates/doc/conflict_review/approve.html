@@ -7,19 +7,19 @@
 {% block title %}Approve {{ review.canonical_name }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Approve {{ review.canonical_name }}</h1>
+    {% origin %}
+    <h1>Approve {{ review.canonical_name }}</h1>
 
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
+    <form method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
 
-    
 
-      <button type="submit" class="btn btn-primary">Send announcement & close ballot</button>
-      <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=review.name %}">Back</a>
-    
 
-  </form>
+        <button type="submit" class="btn btn-primary">Send announcement & close ballot</button>
+        <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=review.name %}">Back</a>
+
+
+    </form>
 
 {% endblock %}

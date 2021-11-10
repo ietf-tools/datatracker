@@ -1,9 +1,9 @@
 {% load ietf_filters session_filters %}
 {% if not session.past_cutoff_date %}
-{% with gt=session.group.type_id %}
-{%comment%}
+    {% with gt=session.group.type_id %}
+        {%comment%}
         <a class="button btn-primary btn-sm" href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}{% if gt == 'wg' or gt == 'rg' or gt == 'ag' %}{% else %}#session_{{session.pk}}{% endif %}">Edit</a>
-{%endcomment%}
+        {%endcomment%}
         <a class="" href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}{% if gt == 'wg' or gt == 'rg' or gt == 'ag' or gt == 'rag' %}{% else %}#session_{{session.pk}}{% endif %}">Edit materials</a>
-{% endwith %}
+    {% endwith %}
 {% endif %}

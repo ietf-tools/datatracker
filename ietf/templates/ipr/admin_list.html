@@ -7,21 +7,21 @@
 {% block title %}IPR Admin - {% for s in states %}{{ s.name }}{% if not forloop.last %}/{% endif %}{% endfor %} Disclosures{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>IPR Admin - {% for s in states %}{{ s.name }}{% if not forloop.last %}/{% endif %}{% endfor %} Disclosures</h1>
+    {% origin %}
+    <h1>IPR Admin - {% for s in states %}{{ s.name }}{% if not forloop.last %}/{% endif %}{% endfor %} Disclosures</h1>
 
-  <p class="buttonlist">
-    <a class="btn btn-primary" href="{% url "ietf.ipr.views.showlist" %}">Back to IPR Disclosure Page</a>
-  </p>
+    <p class="buttonlist">
+        <a class="btn btn-primary" href="{% url "ietf.ipr.views.showlist" %}">Back to IPR Disclosure Page</a>
+    </p>
 
-  <ul class="nav nav-tabs">
-    {% for name, link, selected in tabs %}
-      <li class="nav-item">
-        <a class="nav-link {% if selected %}active{% endif %}" href="{{ link }}">{{ name }}</a>
-    </li>
-    {% endfor %}
-  </ul>
+    <ul class="nav nav-tabs">
+        {% for name, link, selected in tabs %}
+            <li class="nav-item">
+                <a class="nav-link {% if selected %}active{% endif %}" href="{{ link }}">{{ name }}</a>
+            </li>
+        {% endfor %}
+    </ul>
 
-  {% include "ipr/ipr_table.html" %}
+    {% include "ipr/ipr_table.html" %}
 
 {% endblock %}

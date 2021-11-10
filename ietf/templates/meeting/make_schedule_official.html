@@ -8,24 +8,24 @@
 {% block title %}IETF {{ meeting.number }} : Make {{schedule.owner}} / {{ schedule.name }} Official{% endblock %}
 
 {% block content %}
-  {% origin %}
+    {% origin %}
 
-<h1>IETF {{meeting.number}}</h1>
-<h2>Make Schedule: {{schedule.owner}}/{{schedule.name}} Official
+    <h1>IETF {{meeting.number}}</h1>
+    <h2>Make Schedule: {{schedule.owner}}/{{schedule.name}} Official
 
-<div>
+        <div>
 
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {# Null Form #}
-    
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {# Null Form #}
 
-        <input class="btn btn-primary" type="submit" value="Make this schedule official" name="save">
-        <a href="{% url 'ietf.meeting.views.list_schedules' num=meeting.number %}" class="btn btn-primary">Cancel</a>
-    
 
-  </form>
+                <input class="btn btn-primary" type="submit" value="Make this schedule official" name="save">
+                <a href="{% url 'ietf.meeting.views.list_schedules' num=meeting.number %}" class="btn btn-primary">Cancel</a>
 
-</div>
+
+            </form>
+
+        </div>
 
 {% endblock %}

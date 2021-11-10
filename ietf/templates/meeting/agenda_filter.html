@@ -9,19 +9,19 @@ Optional parameters:
 {% load agenda_filter_tags %}
 <div class="panel-group" id="accordion">
     <div class="panel panel-default">
-      {% if not always_show %}
-      <div class="panel-heading">
-            <h4 class="panel-title">
-                <a data-toggle="collapse" data-parent="#accordion" href="#customize">
-                    <span class="bi bi-caret-down"></span> {% firstof customize_button_text "Customize..."%} 
-                </a>
-            </h4>
-        </div>
-      {% endif %}
+        {% if not always_show %}
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a data-toggle="collapse" data-parent="#accordion" href="#customize">
+                        <span class="bi bi-caret-down"></span> {% firstof customize_button_text "Customize..."%}
+                    </a>
+                </h4>
+            </div>
+        {% endif %}
         <div id="customize" class="{% if not always_show %}panel-collapse collapse{% endif %}">
             <span hidden {# options to pass to the JS - correspond to keys in opts object #}
-                  id="agenda-filter-options"
-                  data-always-show="{% firstof always_show False %}">
+                id="agenda-filter-options"
+                data-always-show="{% firstof always_show False %}">
             </span>
             <div class="panel-body">
 
@@ -38,49 +38,49 @@ Optional parameters:
                         {% with width_scale=filter_categories|agenda_width_scale:spacer_scale %}
                             <table class="table table-sm">
                                 <thead>
-                                <tr>
-                                    {% for fc in filter_categories %}
-                                        {% if not forloop.first %}
-                                            <th style="width:{% widthratio 1 width_scale 100 %}%"></th>
-                                        {% endif %}
-                                        {% for area in fc %}
-                                            <th style="width:{% widthratio spacer_scale width_scale 100 %}%">
-                                                {% if area.keyword %}
-                                                    <button class="btn btn-primary btn-block pickview {{ area.keyword }}"
+                                    <tr>
+                                        {% for fc in filter_categories %}
+                                            {% if not forloop.first %}
+                                                <th style="width:{% widthratio 1 width_scale 100 %}%"></th>
+                                            {% endif %}
+                                            {% for area in fc %}
+                                                <th style="width:{% widthratio spacer_scale width_scale 100 %}%">
+                                                    {% if area.keyword %}
+                                                        <button class="btn btn-primary btn-block pickview {{ area.keyword }}"
                                                             data-filter-item="{{ area.keyword }}">
-                                                        {% firstof area.label area.keyword %}
-                                                    </button>
-                                                {% endif %}
-                                            </th>
+                                                            {% firstof area.label area.keyword %}
+                                                        </button>
+                                                    {% endif %}
+                                                </th>
+                                            {% endfor %}
                                         {% endfor %}
-                                    {% endfor %}
-                                </tr>
+                                    </tr>
                                 </thead>
                                 <tbody>
-                                <tr>
-                                    {% for fc in filter_categories %}
-                                        {% if not forloop.first %} <td></td> {% endif %}
-                                        {% for p in fc %}
-                                            <td class="view {{ p.keyword }}">
-                                                <div class="btn-group-vertical btn-block">
-                                                    {% for button in p.children|dictsort:"label" %}
-                                                        <div class="btn-group btn-group-xs btn-group-justified">
-                                                            <button class="btn btn-primary pickview {{ button.keyword }}"
+                                    <tr>
+                                        {% for fc in filter_categories %}
+                                            {% if not forloop.first %} <td></td> {% endif %}
+                                            {% for p in fc %}
+                                                <td class="view {{ p.keyword }}">
+                                                    <div class="btn-group-vertical btn-block">
+                                                        {% for button in p.children|dictsort:"label" %}
+                                                            <div class="btn-group btn-group-xs btn-group-justified">
+                                                                <button class="btn btn-primary pickview {{ button.keyword }}"
                                                                     {% if p.keyword or button.is_bof %}data-filter-keywords="{% if p.keyword %}{{ p.keyword }}{% if button.is_bof %},{% endif %}{% endif %}{% if button.is_bof %}bof{% endif %}"{% endif %}
                                                                     data-filter-item="{{ button.keyword }}">
-                                                                {% if button.is_bof %}
-                                                                    <i>{{ button.label }}</i>
-                                                                {% else %}
-                                                                    {{ button.label }}
-                                                                {% endif %}
-                                                            </button>
-                                                        </div>
-                                                    {% endfor %}
-                                                </div>
-                                            </td>                                       
+                                                                    {% if button.is_bof %}
+                                                                        <i>{{ button.label }}</i>
+                                                                    {% else %}
+                                                                        {{ button.label }}
+                                                                    {% endif %}
+                                                                </button>
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </td>
+                                            {% endfor %}
                                         {% endfor %}
-                                    {% endfor %}
-                                </tr>
+                                    </tr>
                                 </tbody>
                             </table>
                         {% endwith %}

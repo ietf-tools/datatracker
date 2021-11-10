@@ -7,22 +7,22 @@
 {% block title %}Email summary of assigned review requests for {{ group.acronym }}{% endblock %}
 
 {% block content %}
-  {% origin %}
+    {% origin %}
 
-  <h1>Email summary of assigned review requests for {{ group.acronym }}</h1>
+    <h1>Email summary of assigned review requests for {{ group.acronym }}</h1>
 
-  {% if review_assignments %}
-    <form class="email-open-review-assignments" method="post">{% csrf_token %}
-      {% bootstrap_form form %}
+    {% if review_assignments %}
+        <form class="email-open-review-assignments" method="post">{% csrf_token %}
+            {% bootstrap_form form %}
 
-      
 
-        <a href="{{ back_url }}" class="btn btn-primary pull-right">Cancel</a>
-        <button class="btn btn-primary" type="submit" name="action" value="email">Send</button>
-      
 
-    </form>
-  {% else %}
-    <p>There are currently no open requests.</p>
-  {% endif %}
+            <a href="{{ back_url }}" class="btn btn-primary pull-right">Cancel</a>
+            <button class="btn btn-primary" type="submit" name="action" value="email">Send</button>
+
+
+        </form>
+    {% else %}
+        <p>There are currently no open requests.</p>
+    {% endif %}
 {% endblock %}

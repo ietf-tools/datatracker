@@ -3,37 +3,37 @@
 {% load origin static %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}Active administrative groups{% endblock %}
 
 
 {% block content %}
-  {% origin %}
-  {% regroup adm by parent as grouped_groups %}
-  {% for grouptype in grouped_groups %}
-  <h1>Active {% firstof grouptype.grouper.verbose_name grouptype.grouper.name 'Top-level Administration' %} Groups</h1>
-  <table class="table table-sm table-striped tablesorter">
-    <thead>
-      <tr>
-        <th>{{grouptype.grouper}}</th>
-        <th>Name</th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for group in grouptype.list %}
-        <tr>
-          <td><a href="{% url "ietf.group.views.group_home" acronym=group.acronym %}">{{ group.acronym }}</a></td>
-          <td>{{ group.name }}</td>
-        </tr>
+    {% origin %}
+    {% regroup adm by parent as grouped_groups %}
+    {% for grouptype in grouped_groups %}
+        <h1>Active {% firstof grouptype.grouper.verbose_name grouptype.grouper.name 'Top-level Administration' %} Groups</h1>
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th>{{grouptype.grouper}}</th>
+                    <th>Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for group in grouptype.list %}
+                    <tr>
+                        <td><a href="{% url "ietf.group.views.group_home" acronym=group.acronym %}">{{ group.acronym }}</a></td>
+                        <td>{{ group.name }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% endfor %}
-    </tbody>
-  </table>
-  {% endfor %}
 
 {% endblock %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

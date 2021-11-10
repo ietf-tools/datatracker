@@ -8,18 +8,18 @@
 {% block title %}Edit info for {{ doc }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Edit info<br><small>{{ doc }}</small></h1>
+    {% origin %}
+    <h1>Edit info<br><small>{{ doc }}</small></h1>
 
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
+    <form method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
 
-    
 
-      <button class="btn btn-primary" type="submit">Submit</button>
-      <a class="btn btn-primary pull-right" href="{{ doc.get_absolute_url }}">Back</a>
-    
 
-  </form>
+        <button class="btn btn-primary" type="submit">Submit</button>
+        <a class="btn btn-primary pull-right" href="{{ doc.get_absolute_url }}">Back</a>
+
+
+    </form>
 {% endblock %}

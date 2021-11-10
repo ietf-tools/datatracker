@@ -7,31 +7,31 @@
 {% load nomcom_tags %}
 
 {% block pagehead %}
-  {{ form.media.css }}
+    {{ form.media.css }}
 {% endblock %}
 
 {% block subtitle %} - Nominate{% endblock %}
 
 {% block nomcom_content %}
-  {% origin %}
-  <h2>Candidate nomination</h2>
+    {% origin %}
+    <h2>Candidate nomination</h2>
 
-  {% if form %}
+    {% if form %}
 
-    <form id="nominate-form" method="post">
-      {% csrf_token %}
-      {% bootstrap_form form %}
-      
+        <form id="nominate-form" method="post">
+            {% csrf_token %}
+            {% bootstrap_form form %}
 
-        <button class="btn btn-primary" type="submit" name="save" value="Save">Save</button>
-      
 
-    </form>
+            <button class="btn btn-primary" type="submit" name="save" value="Save">Save</button>
 
-  {% endif %}
+
+        </form>
+
+    {% endif %}
 
 {% endblock %}
 
 {% block js %}
-  {{ form.media.js }}
+    {{ form.media.js }}
 {% endblock %}

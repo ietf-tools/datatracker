@@ -7,30 +7,30 @@
 {% block subtitle %} - Eligible People{% endblock %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block nomcom_content %}
-  {% origin %}
-  <h2>Eligible People for {{ nomcom.group }}</h2>
+    {% origin %}
+    <h2>Eligible People for {{ nomcom.group }}</h2>
 
-  <table class="table table-sm table-striped tablesorter">
-    <thead>
-      <th>Last Name</th>
-      <th>First Name</th>
-      <th>Email Addresses</th>
-    </thead>
-     
-    {% for p in eligible_persons %}
-      <tr>
-        <td><a href="{% url 'ietf.person.views.profile' p.name %}">{{p.last_name}}</a></td>
-        <td>{{p.first_name}}</td>
-        <td>{% for e in p.email_set.all %}{{e.address}}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
-      </tr>
-  {% endfor %}
-  </table> 
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <th>Last Name</th>
+            <th>First Name</th>
+            <th>Email Addresses</th>
+        </thead>
+
+        {% for p in eligible_persons %}
+            <tr>
+                <td><a href="{% url 'ietf.person.views.profile' p.name %}">{{p.last_name}}</a></td>
+                <td>{{p.first_name}}</td>
+                <td>{% for e in p.email_set.all %}{{e.address}}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+            </tr>
+        {% endfor %}
+    </table>
 {% endblock nomcom_content %}
 
 {% block js %}
-  <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

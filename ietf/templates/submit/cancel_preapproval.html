@@ -7,24 +7,24 @@
 {% block title %}Cancel pre-approval{% endblock %}
 
 {% block submit_content %}
-  {% origin %}
-  <h2>Cancel pre-approval</h2>
+    {% origin %}
+    <h2>Cancel pre-approval</h2>
 
-  <p>
-    Pre-approval of <b>{{ preapproval.name }}</b> by <b>{{ preapproval.by }}</b>
-    on <b>{{ preapproval.time }}</b>.
-  </p>
+    <p>
+        Pre-approval of <b>{{ preapproval.name }}</b> by <b>{{ preapproval.by }}</b>
+        on <b>{{ preapproval.time }}</b>.
+    </p>
 
-  <form class="actions" method="post">
-    {% csrf_token %}
-    <input type="hidden" name="action" value="cancel">
+    <form class="actions" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="cancel">
 
-    
 
-      <button type="submit" class="btn btn-danger">Cancel pre-approval</button>
-      <a class="btn btn-primary pull-right" href="{% url "ietf.submit.views.approvals" %}#preapprovals">Back</a>
-    
 
-  </form>
+        <button type="submit" class="btn btn-danger">Cancel pre-approval</button>
+        <a class="btn btn-primary pull-right" href="{% url "ietf.submit.views.approvals" %}#preapprovals">Back</a>
+
+
+    </form>
 
 {% endblock %}

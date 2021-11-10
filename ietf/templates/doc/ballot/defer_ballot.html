@@ -7,22 +7,22 @@
 {% block title %}Defer ballot for {{ doc }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Defer ballot<br><small><a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
+    {% origin %}
+    <h1>Defer ballot<br><small><a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
 
-  <form method="post">
-    {% csrf_token %}
-    <p class="alert alert-danger">
-      <b>Defer the ballot for {{ doc }}?</b>
-      <br>
-      The ballot will then be put on the IESG agenda of {{ telechat_date }}.
-    </p>
+    <form method="post">
+        {% csrf_token %}
+        <p class="alert alert-danger">
+            <b>Defer the ballot for {{ doc }}?</b>
+            <br>
+            The ballot will then be put on the IESG agenda of {{ telechat_date }}.
+        </p>
 
-    
 
-      <button type="submit" class="btn btn-danger">Defer ballot</button>
-    
 
-  </form>
+        <button type="submit" class="btn btn-danger">Defer ballot</button>
+
+
+    </form>
 
 {% endblock %}

@@ -5,12 +5,12 @@
 {% block title %}IETF {{ meeting.number }} Meeting Agenda: {{ schedule.owner }} / {{ schedule.name }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <div id="read_only">
-    <p>You do not have access this agenda. It belongs to {{ schedule.owner }}.</p>
+    {% origin %}
+    <div id="read_only">
+        <p>You do not have access this agenda. It belongs to {{ schedule.owner }}.</p>
 
-    <p><a href="{% url "ietf.meeting.views.list_schedules" meeting.number %}">Other agendas for this meeting</a>.</p>
+        <p><a href="{% url "ietf.meeting.views.list_schedules" meeting.number %}">Other agendas for this meeting</a>.</p>
 
-    <div class="wrapper custom_text_stuff"></div>
-  </div>
+        <div class="wrapper custom_text_stuff"></div>
+    </div>
 {% endblock %}

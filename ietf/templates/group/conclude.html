@@ -7,27 +7,27 @@
 {% block title %}Request closing of {{ group.acronym }} {{ group.type.name }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Request closing of {{ group.acronym }} {{ group.type.name }}</h1>
+    {% origin %}
+    <h1>Request closing of {{ group.acronym }} {{ group.type.name }}</h1>
 
-  <p>
-    Please provide instructions regarding the disposition of each
-    active Internet-Draft (such as to withdraw the draft, move it to
-    another group, convert it to an individual submission, and so on),
-    wording for the closure announcement, and the status of the group
-    mailing list (will it remain open or should it be closed).
-  </p>
+    <p>
+        Please provide instructions regarding the disposition of each
+        active Internet-Draft (such as to withdraw the draft, move it to
+        another group, convert it to an individual submission, and so on),
+        wording for the closure announcement, and the status of the group
+        mailing list (will it remain open or should it be closed).
+    </p>
 
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-
-    
-
-      <button type="submit" class="btn btn-primary">Submit</button>
-      <a class="btn btn-primary pull-right" href="{{ group.about_url }}">Back</a>
-    
+    <form method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
 
 
-  </form>
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <a class="btn btn-primary pull-right" href="{{ group.about_url }}">Back</a>
+
+
+
+    </form>
 {% endblock %}

@@ -5,82 +5,82 @@
 {% load django_bootstrap5 %}
 
 {% block title %}
-  {% if action == "new" or action == "revise" %}
-    Upload
-  {% else %}
-    Edit
-  {% endif %}
-  {{ doc.type.name }} for
-  {% if group is not None %}group {{ group.name }} ({{ group.acronym }})
-  {% elif doc.meeting_related %}{{ doc.get_related_meeting }} {% endif %}
+    {% if action == "new" or action == "revise" %}
+        Upload
+    {% else %}
+        Edit
+    {% endif %}
+    {{ doc.type.name }} for
+    {% if group is not None %}group {{ group.name }} ({{ group.acronym }})
+    {% elif doc.meeting_related %}{{ doc.get_related_meeting }} {% endif %}
 {% endblock %}
 
 {% block content %}
-  {% origin %}
+    {% origin %}
 
-  <h1>
-    {% if action == "new" or action == "revise" %}
-      Upload
-    {% else %}
-      Edit
+    <h1>
+        {% if action == "new" or action == "revise" %}
+            Upload
+        {% else %}
+            Edit
+        {% endif %}
+        {{ doc.type.name }}
+        <br><small>
+            {% if group is not None %}{{ group.name }} ({{ group.acronym }})
+            {% elif doc.meeting_related %}{{ doc.get_related_meeting }}
+                {% if doc.get_related_proceedings_material %} {{ doc.get_related_proceedings_material }}{% endif %}
+            {% endif %}
+        </small></h1>
+
+    {% if action == "new" %}
+        <p class="help-block">
+            {% if group is not None %}
+                Below you can upload a document for the group {{ group.name }}
+                <a href="{% url "ietf.group.views.materials" acronym=group.acronym %}">({{ group.acronym }})</a>.
+                The document will appear under the materials tab in the group pages.
+            {% elif doc.meeting_related %}
+                Below you can upload a document for the {{ doc.get_related_meeting }} meeting.
+            {% endif %}
+        </p>
+
+        <h2>Upload</h2>
+    {% elif action == "revise" %}
+        <p>
+            {% if group is not None %}
+                Below you can upload a new revision of {{ doc_name }} for the group {{ group.name }}
+                <a href="{% url "ietf.group.views.materials" acronym=group.acronym %}">({{ group.acronym }})</a>.
+            {% elif doc.meeting_related %}
+                Below you can upload a new revision of {{ doc_name }} for the {{ doc.get_related_meeting }} meeting.
+            {% endif %}
+        </p>
+
+        <h2>Upload New Revision</h2>
     {% endif %}
-    {{ doc.type.name }}
-    <br><small>
-    {% if group is not None %}{{ group.name }} ({{ group.acronym }})
-    {% elif doc.meeting_related %}{{ doc.get_related_meeting }}
-      {% if doc.get_related_proceedings_material %} {{ doc.get_related_proceedings_material }}{% endif %}
-    {% endif %}
-  </small></h1>
 
-  {% if action == "new" %}
-    <p class="help-block">
-      {% if group is not None %}
-        Below you can upload a document for the group {{ group.name }}
-        <a href="{% url "ietf.group.views.materials" acronym=group.acronym %}">({{ group.acronym }})</a>.
-        The document will appear under the materials tab in the group pages.
-      {% elif doc.meeting_related %}
-        Below you can upload a document for the {{ doc.get_related_meeting }} meeting.
-      {% endif %}
-    </p>
+    <form class="upload-material" method="post" enctype="multipart/form-data" data-nameprefix="{{ document_type.slug }}-{{ group.acronym }}-">
+        {% csrf_token %}
 
-    <h2>Upload</h2>
-  {% elif action == "revise" %}
-    <p>
-      {% if group is not None %}
-        Below you can upload a new revision of {{ doc_name }} for the group {{ group.name }}
-        <a href="{% url "ietf.group.views.materials" acronym=group.acronym %}">({{ group.acronym }})</a>.
-      {% elif doc.meeting_related %}
-        Below you can upload a new revision of {{ doc_name }} for the {{ doc.get_related_meeting }} meeting.
-      {% endif %}
-    </p>
+        {% bootstrap_form form %}
 
-    <h2>Upload New Revision</h2>
-  {% endif %}
 
-  <form class="upload-material" method="post" enctype="multipart/form-data" data-nameprefix="{{ document_type.slug }}-{{ group.acronym }}-">
-    {% csrf_token %}
 
-    {% bootstrap_form form %}
+        <a class="btn btn-primary pull-right" href="{% if doc_name %}{% url "ietf.doc.views_doc.document_main" name=doc_name %}{% else %}{% url "ietf.group.views.materials" acronym=group.acronym %}{% endif %}">Back</a>
+        <button class="btn btn-primary" type="submit">{% if action == "new" or action == "revise" %}Upload{% else %}Save{% endif %}</button>
 
-    
 
-      <a class="btn btn-primary pull-right" href="{% if doc_name %}{% url "ietf.doc.views_doc.document_main" name=doc_name %}{% else %}{% url "ietf.group.views.materials" acronym=group.acronym %}{% endif %}">Back</a>
-      <button class="btn btn-primary" type="submit">{% if action == "new" or action == "revise" %}Upload{% else %}Save{% endif %}</button>
-    
-
-  </form>
+    </form>
 
 {% endblock content %}
 
 {% block js %}
-  <script>
-   $(document).ready(function () {
-       $("form.upload-material input#id_title").on("change keyup", function () {
-           var v = $(this).val();
-           var slug = $(this).parents("form").data("nameprefix");
-           slug += v.toLowerCase().replace(/ /g,'-').replace(/[-]+/g, '-').replace(/[^a-z-]+/g,'');
-           $(this).parents("form").find("input#id_name").val(slug);
-       });
-   });
-  </script>
+    <script>
+        $(document).ready(function () {
+            $("form.upload-material input#id_title").on("change keyup", function () {
+                var v = $(this).val();
+                var slug = $(this).parents("form").data("nameprefix");
+                slug += v.toLowerCase().replace(/ /g,'-').replace(/[-]+/g, '-').replace(/[^a-z-]+/g,'');
+                $(this).parents("form").find("input#id_name").val(slug);
+            });
+        });
+    </script>
 {% endblock %}

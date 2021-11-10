@@ -3,46 +3,46 @@
 {% load origin static %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %} Document state index{% endblock %}
 
 {% block content %}
-  {% origin %}
+    {% origin %}
 
-  <h1>Document state index</h1>
+    <h1>Document state index</h1>
 
-  <p>Document state information is available for the following document and document state groups:</p>
+    <p>Document state information is available for the following document and document state groups:</p>
 
-  <table class="table table-sm table-striped tablesorter">
-    <thead>
-      <tr>
-        <th>Document</th>
-        <th>State groups</th>
-      </tr>
-    </thead>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th>Document</th>
+                <th>State groups</th>
+            </tr>
+        </thead>
 
-    <tbody>
-      {% for type in types %}
-        {% if type.stategroups != None %}
-          <tr>
-            <td><a href="{% url 'ietf.help.views.state' doc=type.slug %}">{{type.slug}}</a></td>
-            <td>
-	      {% for group in type.stategroups %}
-	        <a href="{% url 'ietf.help.views.state' doc=type.slug type=group %}">{{ group }}</a>{% if not forloop.last %}, {% endif %}
-	      {% endfor %}
-            </td>
-          </tr>
-        {% endif %}
-      {% endfor %}
+        <tbody>
+            {% for type in types %}
+                {% if type.stategroups != None %}
+                    <tr>
+                        <td><a href="{% url 'ietf.help.views.state' doc=type.slug %}">{{type.slug}}</a></td>
+                        <td>
+                            {% for group in type.stategroups %}
+                                <a href="{% url 'ietf.help.views.state' doc=type.slug type=group %}">{{ group }}</a>{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
 
-    </tbody>
-  </table>
+        </tbody>
+    </table>
 
 
 {% endblock %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

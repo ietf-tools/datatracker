@@ -5,39 +5,39 @@
 {% load ietf_filters %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}Other RFC streams{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Other RFC streams</h1>
+    {% origin %}
+    <h1>Other RFC streams</h1>
 
-  <table class="table table-sm table-striped tablesorter">
-    <thead>
-      <th>Stream</th>
-      <th>Owner</th>
-      <th>Stream manager</th>
-    </thead>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <th>Stream</th>
+            <th>Owner</th>
+            <th>Stream manager</th>
+        </thead>
 
-    <tbody>
-      {% for stream in streams %}
-        <tr>
-          <td class="text-nowrap"><a href="/stream/{{stream.acronym}}/">{{ stream.acronym }}</a></td>
-          <td>{{ stream.name }}</td>
-          <td>
-	    {% with stream.get_chair as role %}
-	      <a href="mailto:{{role.person.email_address}}">{{role.person}}</a>
-	      ({{role.name}})
-	    {% endwith %}
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+        <tbody>
+            {% for stream in streams %}
+                <tr>
+                    <td class="text-nowrap"><a href="/stream/{{stream.acronym}}/">{{ stream.acronym }}</a></td>
+                    <td>{{ stream.name }}</td>
+                    <td>
+                        {% with stream.get_chair as role %}
+                            <a href="mailto:{{role.person.email_address}}">{{role.person}}</a>
+                            ({{role.name}})
+                        {% endwith %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

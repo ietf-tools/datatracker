@@ -5,64 +5,64 @@
 {% load textfilters person_filters %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>{{ title }}</h1>
+    {% origin %}
+    <h1>{{ title }}</h1>
 
-  <table class="table table-sm table-striped tablesorter">
-    <thead>
-      <tr>
-        <th class="text-nowrap">Area</th>
-        <th class="text-nowrap">{% if state.slug == "lc" %}Expires at{% else %}Date{% endif %}</th>
-        <th>Document</th>
-        <th>Intended level</th>
-        <th>AD</th>
-      </tr>
-    </thead>
-      {% for state, docs in grouped_docs %}
-    <tbody>
-        <tr class="info"><th colspan="5">{{ state.name }}</th></tr>
-    </tbody>
-    <tbody>
-        {% for doc in docs %}
-          <tr>
-            <td class="text-nowrap">{% if doc.area_acronym %}{{ doc.area_acronym }}{% endif %}</td>
-            <td class="text-nowrap">
-	      {% if state.slug == "lc" %}
-	        {% if doc.lc_expires %}{{ doc.lc_expires|date:"Y-m-d" }}{% endif %}
-	      {% else %}
-	        {{ doc.time|date:"Y-m-d" }}
-	      {% endif %}
-            </td>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th class="text-nowrap">Area</th>
+                <th class="text-nowrap">{% if state.slug == "lc" %}Expires at{% else %}Date{% endif %}</th>
+                <th>Document</th>
+                <th>Intended level</th>
+                <th>AD</th>
+            </tr>
+        </thead>
+        {% for state, docs in grouped_docs %}
+            <tbody>
+                <tr class="info"><th colspan="5">{{ state.name }}</th></tr>
+            </tbody>
+            <tbody>
+                {% for doc in docs %}
+                    <tr>
+                        <td class="text-nowrap">{% if doc.area_acronym %}{{ doc.area_acronym }}{% endif %}</td>
+                        <td class="text-nowrap">
+                            {% if state.slug == "lc" %}
+                                {% if doc.lc_expires %}{{ doc.lc_expires|date:"Y-m-d" }}{% endif %}
+                            {% else %}
+                                {{ doc.time|date:"Y-m-d" }}
+                            {% endif %}
+                        </td>
 
-            <td>
-	      <a href="{% url "ietf.doc.views_doc.document_main" doc.name %}">{{ doc.name }}</a>
-          <br><b>{{ doc.title }}</b>
-            {% if doc.action_holders_enabled and doc.action_holders.exists %}
-            <br>Action holders:
-                {% for action_holder in doc.documentactionholder_set.all %}
-                    {% person_link action_holder.person title=action_holder.role_for_doc %}{{ action_holder|action_holder_badge }}{% if not forloop.last %},{% endif %}
+                        <td>
+                            <a href="{% url "ietf.doc.views_doc.document_main" doc.name %}">{{ doc.name }}</a>
+                            <br><b>{{ doc.title }}</b>
+                            {% if doc.action_holders_enabled and doc.action_holders.exists %}
+                                <br>Action holders:
+                                {% for action_holder in doc.documentactionholder_set.all %}
+                                    {% person_link action_holder.person title=action_holder.role_for_doc %}{{ action_holder|action_holder_badge }}{% if not forloop.last %},{% endif %}
+                                {% endfor %}
+                            {% endif %}
+                            {% if doc.note %}
+                                <br><i>Note: {{ doc.note|linkify|linebreaksbr }}</i>
+                            {% endif %}
+                        </td>
+                        <td>{{ doc.intended_std_level.name }}</td>
+                        <td><a href="mailto:{{ doc.ad.email_address|urlencode }}">{{ doc.ad.plain_name }}</a></td>
+                    </tr>
                 {% endfor %}
-            {% endif %}
-	      {% if doc.note %}
-	        <br><i>Note: {{ doc.note|linkify|linebreaksbr }}</i>
-	      {% endif %}
-            </td>
-          <td>{{ doc.intended_std_level.name }}</td>
-          <td><a href="mailto:{{ doc.ad.email_address|urlencode }}">{{ doc.ad.plain_name }}</a></td>
-          </tr>
+            </tbody>
         {% endfor %}
-    </tbody>
-      {% endfor %}
-  </table>
+    </table>
 
 {% endblock %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

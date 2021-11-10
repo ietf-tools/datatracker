@@ -3,24 +3,24 @@
 {% load origin static %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}Internet-Drafts in IETF last call{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>
-    Internet-Drafts in IETF last call
-    {% if pages %}
-      <small class="padded-left">{{ pages }} pages</small>
-    {% endif %}
-  </h1>
+    {% origin %}
+    <h1>
+        Internet-Drafts in IETF last call
+        {% if pages %}
+            <small class="padded-left">{{ pages }} pages</small>
+        {% endif %}
+    </h1>
 
-  {% include "doc/search/search_results.html" %}
+    {% include "doc/search/search_results.html" %}
 
 {% endblock %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

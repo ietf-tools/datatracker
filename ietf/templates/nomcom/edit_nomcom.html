@@ -5,45 +5,45 @@
 {% load django_bootstrap5 %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+    <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
 {% endblock %}
 
 {% block subtitle %} - Settings{% endblock %}
 
 {% block nomcom_content %}
-  {% origin %}
-  <h2>Settings</h2>
+    {% origin %}
+    <h2>Settings</h2>
 
-  <form enctype="multipart/form-data" method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
+    <form enctype="multipart/form-data" method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
 
-    <h3>Reminder Dates</h3>
+        <h3>Reminder Dates</h3>
 
-    <p>If the "reminder interval" field of nomcom isn't filled, the following dates will be used to send reminders.</p>
+        <p>If the "reminder interval" field of nomcom isn't filled, the following dates will be used to send reminders.</p>
 
-    <p>The valid format: <strong>YYYY-MM-DD</strong></p>
+        <p>The valid format: <strong>YYYY-MM-DD</strong></p>
 
-    {% bootstrap_formset formset %}
+        {% bootstrap_formset formset %}
 
-    
 
-      <input class="btn btn-primary" type="submit" value="Save">
-    
 
-  </form>
+        <input class="btn btn-primary" type="submit" value="Save">
+
+
+    </form>
 
 {% endblock %}
 
 {% block js %}
-  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
-  <script>
-   $('input[id*="reminderdates"][type="text"]').datepicker({
-       format: "yyyy-mm-dd",
-       todayBtn: "linked",
-       todayHighlight: true
-   }).wrap('<div class="input-group"></div>').parent().prepend('<span class="input-group-addon"><span class="bi bi-calendar"></span></span>');
-  </script>
+    <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+    <script>
+        $('input[id*="reminderdates"][type="text"]').datepicker({
+            format: "yyyy-mm-dd",
+            todayBtn: "linked",
+            todayHighlight: true
+        }).wrap('<div class="input-group"></div>').parent().prepend('<span class="input-group-addon"><span class="bi bi-calendar"></span></span>');
+    </script>
 {% endblock %}
 
 

@@ -3,11 +3,11 @@
 {% load tz %}
 
 {% block intro %}
-  <p class="help-block">
-    {% if material.active %}
-      This item will be listed on the proceedings as "{{ material }}". To change this, set the title below.<br>
-    {% else %}
-      This item currently will not appear on the proceedings.<br>
-    {% endif %}
-  </p>
+    <p class="help-block">
+        {% if material.active %}
+            This item will be listed on the proceedings as "{{ material }}". To change this, set the title below.<br>
+        {% else %}
+            This item currently will not appear on the proceedings.<br>
+        {% endif %}
+    </p>
 {% endblock %}

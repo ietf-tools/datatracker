@@ -7,20 +7,20 @@
 {% block title %}Add IANA Experts Review State comment for {{ doc }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Add IANA Experts Review State comment<br><small>{{ doc }}</small></h1>
+    {% origin %}
+    <h1>Add IANA Experts Review State comment<br><small>{{ doc }}</small></h1>
 
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-    <p class="help-block">The comment will be added to the history trail.</p>
+    <form method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <p class="help-block">The comment will be added to the history trail.</p>
 
-    
 
-      <button type="submit" class="btn btn-primary">Submit</button>
-      <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
-    
 
-  </form>
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
+
+
+    </form>
 
 {% endblock %}

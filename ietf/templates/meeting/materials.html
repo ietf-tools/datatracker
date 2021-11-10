@@ -5,7 +5,7 @@
 {% load ietf_filters static managed_groups %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
@@ -13,277 +13,277 @@
 {% block title %}IETF {{ meeting.number }} preliminary &amp; interim materials{% endblock %}
 
 {% block content %}
-  {% origin %}
-  {% with user|matman_groups as user_groups %}
-  <div class="row">
-    <div class="col-md-10">
+    {% origin %}
+    {% with user|matman_groups as user_groups %}
+        <div class="row">
+            <div class="col-md-10">
 
-      <h1>IETF {{ meeting.number }} meeting materials</h1>
+                <h1>IETF {{ meeting.number }} meeting materials</h1>
 
-      {% if submission_started %}
-        <p class="alert alert-info">
-          <b>Submission cutoff date:</b> {{ cut_off_date|date:"F j, Y" }}<br>
-          <b>Corrections to submissions cutoff date:</b> {{ cor_cut_off_date|date:"F j, Y" }}
-        </p>
-      {% endif %}
-
-      <p>
-        {% if user|has_role:"Secretariat" %}
-          <a class="btn btn-primary" href="{% url 'ietf.meeting.views_proceedings.edit_meetinghosts' num=meeting.number %}">Edit meeting hosts</a>
-          <a class="btn btn-primary" href="{% url 'ietf.secr.proceedings.views.main' %}">Secretariat proceedings functions</a>
-          {% if meeting.end_date.today > meeting.end_date %}
-            <a class="btn btn-primary" href="{% url 'ietf.meeting.views.request_minutes' num=meeting.number %}">Send request for minutes</a>
-          {% endif %}
-        {% endif %}
-        <a class="btn btn-primary" href="/meeting/{{meeting.number}}/requests">Meeting requests/conflicts</a>
-      </p>
-
-      {% include 'meeting/proceedings/materials_table.html' with meeting=meeting proceedings_materials=proceedings_materials user=user only %}
-
-      {% with "True" as show_agenda %}
-	<!-- Plenaries -->
-	{% if plenaries %}
-	  <h2 class="anchor-target" id="plenaries">Plenaries</h2>
-	  <table class="table table-sm table-striped tablesorter">
-	    <thead>
-	      <tr>
-                {% if user|has_role:"Secretariat" or user_groups %}
-                  <th class="col-md-1">Group</th>
-                  <th class="col-md-1">Agenda</th>
-                  <th class="col-md-1">Minutes</th>
-                  <th class="col-md-3">Slides</th>
-                  <th class="col-md-4">Drafts</th>
-                  <th class="col-md-1">Updated</th>
-                  <th class="col-md-1">&nbsp;</th>
-                {% else %}
-                  <th class="col-md-1">Group</th>
-                  <th class="col-md-1">Agenda</th>
-                  <th class="col-md-1">Minutes</th>
-                  <th class="col-md-4">Slides</th>
-                  <th class="col-md-4">Drafts</th>
-                  <th class="col-md-1">Updated</th>
+                {% if submission_started %}
+                    <p class="alert alert-info">
+                        <b>Submission cutoff date:</b> {{ cut_off_date|date:"F j, Y" }}<br>
+                        <b>Corrections to submissions cutoff date:</b> {{ cor_cut_off_date|date:"F j, Y" }}
+                    </p>
                 {% endif %}
-	      </tr>
-	    </thead>
 
-	    <tbody>
-	      {% for session in plenaries %}
-		{% include "meeting/group_materials.html" %}
-	      {% endfor %}
-	    </tbody>
-	  </table>
-	{% endif %}
+                <p>
+                    {% if user|has_role:"Secretariat" %}
+                        <a class="btn btn-primary" href="{% url 'ietf.meeting.views_proceedings.edit_meetinghosts' num=meeting.number %}">Edit meeting hosts</a>
+                        <a class="btn btn-primary" href="{% url 'ietf.secr.proceedings.views.main' %}">Secretariat proceedings functions</a>
+                        {% if meeting.end_date.today > meeting.end_date %}
+                            <a class="btn btn-primary" href="{% url 'ietf.meeting.views.request_minutes' num=meeting.number %}">Send request for minutes</a>
+                        {% endif %}
+                    {% endif %}
+                    <a class="btn btn-primary" href="/meeting/{{meeting.number}}/requests">Meeting requests/conflicts</a>
+                </p>
 
-	<!-- Working groups -->
-	{% regroup ietf|dictsort:"group.parent.acronym" by group.parent.name as areas %}
-	{% for sessions in areas %}
-	  <h2 class="anchor-target" id="{{sessions.list.0.group.parent.acronym}}">{{sessions.list.0.group.parent.acronym|upper}} <small>{{ sessions.grouper }}</small></h2>
-	  <table class="table table-sm table-striped tablesorter">
-	    <thead>
-	      <tr>
-                {% if user|has_role:"Secretariat" or user_groups %}
-                  <th class="col-md-1">Group</th>
-                  <th class="col-md-1">Agenda</th>
-                  <th class="col-md-1">Minutes</th>
-                  <th class="col-md-3">Slides</th>
-                  <th class="col-md-4">Drafts</th>
-                  <th class="col-md-1">Updated</th>
-                  <th class="col-md-1">&nbsp;</th>
-                {% else %}
-                  <th class="col-md-1">Group</th>
-                  <th class="col-md-1">Agenda</th>
-                  <th class="col-md-1">Minutes</th>
-                  <th class="col-md-4">Slides</th>
-                  <th class="col-md-4">Drafts</th>
-                  <th class="col-md-1">Updated</th>
-                {% endif %}
-	      </tr>
-	    </thead>
+                {% include 'meeting/proceedings/materials_table.html' with meeting=meeting proceedings_materials=proceedings_materials user=user only %}
 
-	    <tbody>
-	      {% for session in sessions.list|dictsort:"group.acronym" %}
-		{% ifchanged session.group.acronym %}
-		  {% include "meeting/group_materials.html" %}
-		{% endifchanged %}
-	      {% endfor %}
-	    </tbody>
-	  </table>
-	{% endfor %}
+                {% with "True" as show_agenda %}
+                    <!-- Plenaries -->
+                    {% if plenaries %}
+                        <h2 class="anchor-target" id="plenaries">Plenaries</h2>
+                        <table class="table table-sm table-striped tablesorter">
+                            <thead>
+                                <tr>
+                                    {% if user|has_role:"Secretariat" or user_groups %}
+                                        <th class="col-md-1">Group</th>
+                                        <th class="col-md-1">Agenda</th>
+                                        <th class="col-md-1">Minutes</th>
+                                        <th class="col-md-3">Slides</th>
+                                        <th class="col-md-4">Drafts</th>
+                                        <th class="col-md-1">Updated</th>
+                                        <th class="col-md-1">&nbsp;</th>
+                                    {% else %}
+                                        <th class="col-md-1">Group</th>
+                                        <th class="col-md-1">Agenda</th>
+                                        <th class="col-md-1">Minutes</th>
+                                        <th class="col-md-4">Slides</th>
+                                        <th class="col-md-4">Drafts</th>
+                                        <th class="col-md-1">Updated</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
 
-	<!-- Training Sessions -->
-	{% if training %}
-	  {% with "False" as show_agenda %}
-	    <h2 class="anchor-target" id="training">Training</h2>
-	    <table class="table table-sm table-striped tablesorter">
-	      <thead>
-                <tr>
-                  {% if user|has_role:"Secretariat" or user_groups %}
-                    <th class="col-md-1">Group</th>
-                    <th class="col-md-1">Agenda</th>
-                    <th class="col-md-1">Minutes</th>
-                    <th class="col-md-3">Slides</th>
-                    <th class="col-md-4">Drafts</th>
-                    <th class="col-md-1">Updated</th>
-                    <th class="col-md-1">&nbsp;</th>
-                  {% else %}
-                    <th class="col-md-1">Group</th>
-                    <th class="col-md-1">Agenda</th>
-                    <th class="col-md-1">Minutes</th>
-                    <th class="col-md-4">Slides</th>
-                    <th class="col-md-4">Drafts</th>
-                    <th class="col-md-1">Updated</th>
-                  {% endif %}
-		</tr>
-	      </thead>
+                            <tbody>
+                                {% for session in plenaries %}
+                                    {% include "meeting/group_materials.html" %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
 
-	      <tbody>
-		{% for session in training %} 
-		  {% ifchanged %} {# TODO: Find a better way to represent purposed sessions in both materials and proceedings #}
-		    {% include "meeting/group_materials.html" %}
-		  {% endifchanged %}
-		{% endfor %}
-	      </tbody>
-	    </table>
-	  {% endwith %}
-	{% endif %}
+                    <!-- Working groups -->
+                    {% regroup ietf|dictsort:"group.parent.acronym" by group.parent.name as areas %}
+                    {% for sessions in areas %}
+                        <h2 class="anchor-target" id="{{sessions.list.0.group.parent.acronym}}">{{sessions.list.0.group.parent.acronym|upper}} <small>{{ sessions.grouper }}</small></h2>
+                        <table class="table table-sm table-striped tablesorter">
+                            <thead>
+                                <tr>
+                                    {% if user|has_role:"Secretariat" or user_groups %}
+                                        <th class="col-md-1">Group</th>
+                                        <th class="col-md-1">Agenda</th>
+                                        <th class="col-md-1">Minutes</th>
+                                        <th class="col-md-3">Slides</th>
+                                        <th class="col-md-4">Drafts</th>
+                                        <th class="col-md-1">Updated</th>
+                                        <th class="col-md-1">&nbsp;</th>
+                                    {% else %}
+                                        <th class="col-md-1">Group</th>
+                                        <th class="col-md-1">Agenda</th>
+                                        <th class="col-md-1">Minutes</th>
+                                        <th class="col-md-4">Slides</th>
+                                        <th class="col-md-4">Drafts</th>
+                                        <th class="col-md-1">Updated</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
 
-	<!-- IAB Sessions -->
-	{% if iab %}
-	  <h2 class="anchor-target" id="iab">IAB <small>Internet Architecture Board</small></h2>
-	  <table class="table table-sm table-striped tablesorter">
-	    <thead>
-	      <tr>
-                {% if user|has_role:"Secretariat" or user_groups %}
-                  <th class="col-md-1">Group</th>
-                  <th class="col-md-1">Agenda</th>
-                  <th class="col-md-1">Minutes</th>
-                  <th class="col-md-3">Slides</th>
-                  <th class="col-md-4">Drafts</th>
-                  <th class="col-md-1">Updated</th>
-                  <th class="col-md-1">&nbsp;</th>
-                {% else %}
-                  <th class="col-md-1">Group</th>
-                  <th class="col-md-1">Agenda</th>
-                  <th class="col-md-1">Minutes</th>
-                  <th class="col-md-4">Slides</th>
-                  <th class="col-md-4">Drafts</th>
-                  <th class="col-md-1">Updated</th>
-                {% endif %}
-	      </tr>
-	    </thead>
+                            <tbody>
+                                {% for session in sessions.list|dictsort:"group.acronym" %}
+                                    {% ifchanged session.group.acronym %}
+                                        {% include "meeting/group_materials.html" %}
+                                    {% endifchanged %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endfor %}
 
-	    <tbody>
-	      {% for session in iab %}
-		{% ifchanged session.group.acronym %}
-		  {% include "meeting/group_materials.html" %}
-		{% endifchanged %}
-	      {% endfor %}
-	    </tbody>
-	  </table>
-	{% endif %}
+                    <!-- Training Sessions -->
+                    {% if training %}
+                        {% with "False" as show_agenda %}
+                            <h2 class="anchor-target" id="training">Training</h2>
+                            <table class="table table-sm table-striped tablesorter">
+                                <thead>
+                                    <tr>
+                                        {% if user|has_role:"Secretariat" or user_groups %}
+                                            <th class="col-md-1">Group</th>
+                                            <th class="col-md-1">Agenda</th>
+                                            <th class="col-md-1">Minutes</th>
+                                            <th class="col-md-3">Slides</th>
+                                            <th class="col-md-4">Drafts</th>
+                                            <th class="col-md-1">Updated</th>
+                                            <th class="col-md-1">&nbsp;</th>
+                                        {% else %}
+                                            <th class="col-md-1">Group</th>
+                                            <th class="col-md-1">Agenda</th>
+                                            <th class="col-md-1">Minutes</th>
+                                            <th class="col-md-4">Slides</th>
+                                            <th class="col-md-4">Drafts</th>
+                                            <th class="col-md-1">Updated</th>
+                                        {% endif %}
+                                    </tr>
+                                </thead>
 
-	<!-- IRTF Sessions -->
-	{% if irtf %}
-	  <h2 class="anchor-target" id="irtf">IRTF <small>Internet Research Task Force</small></h2>
-	  <table class="table table-sm table-striped tablesorter">
-	    <thead>
-	      <tr>
-                {% if user|has_role:"Secretariat" or user_groups %}
-                  <th class="col-md-1">Group</th>
-                  <th class="col-md-1">Agenda</th>
-                  <th class="col-md-1">Minutes</th>
-                  <th class="col-md-3">Slides</th>
-                  <th class="col-md-4">Drafts</th>
-                  <th class="col-md-1">Updated</th>
-                  <th class="col-md-1">&nbsp;</th>
-                {% else %}
-                  <th class="col-md-1">Group</th>
-                  <th class="col-md-1">Agenda</th>
-                  <th class="col-md-1">Minutes</th>
-                  <th class="col-md-4">Slides</th>
-                  <th class="col-md-4">Drafts</th>
-                  <th class="col-md-1">Updated</th>
-                {% endif %}
-	      </tr>
-	    </thead>
+                                <tbody>
+                                    {% for session in training %}
+                                        {% ifchanged %} {# TODO: Find a better way to represent purposed sessions in both materials and proceedings #}
+                                            {% include "meeting/group_materials.html" %}
+                                        {% endifchanged %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endwith %}
+                    {% endif %}
 
-	    <tbody>
-	      {% for session in irtf|dictsort:"group.acronym" %}
-		{% ifchanged session.group.acronym %}
-		  {% include "meeting/group_materials.html" %}
-		{% endifchanged %}
-	      {% endfor %}
-	    </tbody>
-	  </table>
-	{% endif %}
+                    <!-- IAB Sessions -->
+                    {% if iab %}
+                        <h2 class="anchor-target" id="iab">IAB <small>Internet Architecture Board</small></h2>
+                        <table class="table table-sm table-striped tablesorter">
+                            <thead>
+                                <tr>
+                                    {% if user|has_role:"Secretariat" or user_groups %}
+                                        <th class="col-md-1">Group</th>
+                                        <th class="col-md-1">Agenda</th>
+                                        <th class="col-md-1">Minutes</th>
+                                        <th class="col-md-3">Slides</th>
+                                        <th class="col-md-4">Drafts</th>
+                                        <th class="col-md-1">Updated</th>
+                                        <th class="col-md-1">&nbsp;</th>
+                                    {% else %}
+                                        <th class="col-md-1">Group</th>
+                                        <th class="col-md-1">Agenda</th>
+                                        <th class="col-md-1">Minutes</th>
+                                        <th class="col-md-4">Slides</th>
+                                        <th class="col-md-4">Drafts</th>
+                                        <th class="col-md-1">Updated</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
 
-	{% if other %}
-	  <h2 class="anchor-target" id="other">Other <small>Miscellaneous other sessions</small></h2>
-	  <table class="table table-sm table-striped tablesorter">
-	    <thead>
-	      <tr>
-                {% if user|has_role:"Secretariat" or user_groups %}
-                  <th class="col-md-1">Group</th>
-                  <th class="col-md-1">Agenda</th>
-                  <th class="col-md-1">Minutes</th>
-                  <th class="col-md-3">Slides</th>
-                  <th class="col-md-4">Drafts</th>
-                  <th class="col-md-1">Updated</th>
-                  <th class="col-md-1">&nbsp;</th>
-                {% else %}
-                  <th class="col-md-1">Group</th>
-                  <th class="col-md-1">Agenda</th>
-                  <th class="col-md-1">Minutes</th>
-                  <th class="col-md-4">Slides</th>
-                  <th class="col-md-4">Drafts</th>
-                  <th class="col-md-1">Updated</th>
-                {% endif %}
-	      </tr>
-	    </thead>
+                            <tbody>
+                                {% for session in iab %}
+                                    {% ifchanged session.group.acronym %}
+                                        {% include "meeting/group_materials.html" %}
+                                    {% endifchanged %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
 
-	    <tbody>
-	      {% for session in other|dictsort:"group.acronym" %}
-		{% ifchanged session.group.acronym %}
-		  {% include "meeting/group_materials.html" %}
-		{% endifchanged %}
-	      {% endfor %}
-	    </tbody>
-	  </table>
-	{% endif %}
+                    <!-- IRTF Sessions -->
+                    {% if irtf %}
+                        <h2 class="anchor-target" id="irtf">IRTF <small>Internet Research Task Force</small></h2>
+                        <table class="table table-sm table-striped tablesorter">
+                            <thead>
+                                <tr>
+                                    {% if user|has_role:"Secretariat" or user_groups %}
+                                        <th class="col-md-1">Group</th>
+                                        <th class="col-md-1">Agenda</th>
+                                        <th class="col-md-1">Minutes</th>
+                                        <th class="col-md-3">Slides</th>
+                                        <th class="col-md-4">Drafts</th>
+                                        <th class="col-md-1">Updated</th>
+                                        <th class="col-md-1">&nbsp;</th>
+                                    {% else %}
+                                        <th class="col-md-1">Group</th>
+                                        <th class="col-md-1">Agenda</th>
+                                        <th class="col-md-1">Minutes</th>
+                                        <th class="col-md-4">Slides</th>
+                                        <th class="col-md-4">Drafts</th>
+                                        <th class="col-md-1">Updated</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
 
-      {% endwith %}
-    </div>
+                            <tbody>
+                                {% for session in irtf|dictsort:"group.acronym" %}
+                                    {% ifchanged session.group.acronym %}
+                                        {% include "meeting/group_materials.html" %}
+                                    {% endifchanged %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
 
-    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
-      <ul class="nav nav-pills nav-stacked small" data-spy="affix">
-        {% if plenaries %}
-          <li><a href="#plenaries">Plenaries</a></li>
-        {% endif %}
-        {% if ietf %}
-          {% regroup ietf|dictsort:"group.parent.acronym" by group.parent as areas %}
-          {% for area in areas %}
-            <li><a href="#{{area.grouper.acronym}}">{{ area.grouper.acronym|upper }}</a></li>
-          {% endfor %}
-        {% endif %}
-        {% if training %}
-          <li><a href="#training">Training</a></li>
-        {% endif %}
-        {% if iab %}
-          <li><a href="#iab">IAB</a></li>
-        {% endif %}
-        {% if irtf %}
-          <li><a href="#irtf">IRTF</a></li>
-        {% endif %}
-        {% if other %}
-          <li><a href="#other">Other</a></li>
-        {% endif %}
+                    {% if other %}
+                        <h2 class="anchor-target" id="other">Other <small>Miscellaneous other sessions</small></h2>
+                        <table class="table table-sm table-striped tablesorter">
+                            <thead>
+                                <tr>
+                                    {% if user|has_role:"Secretariat" or user_groups %}
+                                        <th class="col-md-1">Group</th>
+                                        <th class="col-md-1">Agenda</th>
+                                        <th class="col-md-1">Minutes</th>
+                                        <th class="col-md-3">Slides</th>
+                                        <th class="col-md-4">Drafts</th>
+                                        <th class="col-md-1">Updated</th>
+                                        <th class="col-md-1">&nbsp;</th>
+                                    {% else %}
+                                        <th class="col-md-1">Group</th>
+                                        <th class="col-md-1">Agenda</th>
+                                        <th class="col-md-1">Minutes</th>
+                                        <th class="col-md-4">Slides</th>
+                                        <th class="col-md-4">Drafts</th>
+                                        <th class="col-md-1">Updated</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
 
-      </ul>
-    </div>
-  </div>
-  {% endwith %}
+                            <tbody>
+                                {% for session in other|dictsort:"group.acronym" %}
+                                    {% ifchanged session.group.acronym %}
+                                        {% include "meeting/group_materials.html" %}
+                                    {% endifchanged %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+
+                {% endwith %}
+            </div>
+
+            <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
+                <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+                    {% if plenaries %}
+                        <li><a href="#plenaries">Plenaries</a></li>
+                    {% endif %}
+                    {% if ietf %}
+                        {% regroup ietf|dictsort:"group.parent.acronym" by group.parent as areas %}
+                        {% for area in areas %}
+                            <li><a href="#{{area.grouper.acronym}}">{{ area.grouper.acronym|upper }}</a></li>
+                        {% endfor %}
+                    {% endif %}
+                    {% if training %}
+                        <li><a href="#training">Training</a></li>
+                    {% endif %}
+                    {% if iab %}
+                        <li><a href="#iab">IAB</a></li>
+                    {% endif %}
+                    {% if irtf %}
+                        <li><a href="#irtf">IRTF</a></li>
+                    {% endif %}
+                    {% if other %}
+                        <li><a href="#other">Other</a></li>
+                    {% endif %}
+
+                </ul>
+            </div>
+        </div>
+    {% endwith %}
 {% endblock %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

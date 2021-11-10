@@ -5,24 +5,24 @@
 {% block title %}Close review request for {{ review_req.doc.name }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Close review request<br><small>{{ review_req.doc.name }}</small></h1>
+    {% origin %}
+    <h1>Close review request<br><small>{{ review_req.doc.name }}</small></h1>
 
-  {% include "doc/review/request_info.html" %}
+    {% include "doc/review/request_info.html" %}
 
-  <p>Do you want to close the review request?</p>
+    <p>Do you want to close the review request?</p>
 
-  <form method="post">
-    {% csrf_token %}
+    <form method="post">
+        {% csrf_token %}
 
-    {% bootstrap_form form %}
+        {% bootstrap_form form %}
 
-    
 
-    <a class="btn btn-primary" href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=review_req.pk %}">Cancel</a>
-    <button type="submit" class="btn btn-primary">Close request</button>
-    
 
-  </form>
+        <a class="btn btn-primary" href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=review_req.pk %}">Cancel</a>
+        <button type="submit" class="btn btn-primary">Close request</button>
+
+
+    </form>
 
 {% endblock %}

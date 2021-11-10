@@ -3,34 +3,34 @@
 {% load origin static %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}Active groups{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Active groups</h1>
-  <table class="table table-sm table-striped tablesorter">
-    <thead>
-      <tr>
-        <th class="col-md-2">Type</th>
-        <th class="col-md-1">Count</th>
-        <th class="col-md-9">Description</th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for typename in grouptypes %}
-        <tr>
-          <td><a href="{% url "ietf.group.views.active_groups" group_type=typename.slug%}">{{ typename.name }}</a></td>
-          <td>{{ typename.group_count }}</td>
-          <td>{{ typename.desc }}</td>
-        </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+    {% origin %}
+    <h1>Active groups</h1>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th class="col-md-2">Type</th>
+                <th class="col-md-1">Count</th>
+                <th class="col-md-9">Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for typename in grouptypes %}
+                <tr>
+                    <td><a href="{% url "ietf.group.views.active_groups" group_type=typename.slug%}">{{ typename.name }}</a></td>
+                    <td>{{ typename.group_count }}</td>
+                    <td>{{ typename.desc }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

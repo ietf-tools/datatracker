@@ -3,32 +3,32 @@
 {% load origin %}
 
 {% block pagehead %}
-  {{ block.super }}
+    {{ block.super }}
 {% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Internet-Draft submission </h1>
+    {% origin %}
+    <h1>Internet-Draft submission </h1>
 
-  <ul class="nav nav-tabs">
-    <li class="nav-item">
-      <a class="nav-link {% if selected == "index" %}active{% endif %}" href="{% url "ietf.submit.views.upload_submission" %}">Upload</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if selected == "status" %}active{% endif %}" href="{% url "ietf.submit.views.search_submission" %}">Status</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if selected == "instructions" %}active{% endif %}" href="{% url "ietf.submit.views.tool_instructions" %}">Instructions</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if selected == "approvals" %}active{% endif %}" href="{% url "ietf.submit.views.approvals" %}">Approvals</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if selected == "manual_posts" %}active{% endif %}" href="{% url "ietf.submit.views.manualpost" %}">Manual Post Requests</a>
-    </li>
-  </ul>
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link {% if selected == "index" %}active{% endif %}" href="{% url "ietf.submit.views.upload_submission" %}">Upload</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if selected == "status" %}active{% endif %}" href="{% url "ietf.submit.views.search_submission" %}">Status</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if selected == "instructions" %}active{% endif %}" href="{% url "ietf.submit.views.tool_instructions" %}">Instructions</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if selected == "approvals" %}active{% endif %}" href="{% url "ietf.submit.views.approvals" %}">Approvals</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if selected == "manual_posts" %}active{% endif %}" href="{% url "ietf.submit.views.manualpost" %}">Manual Post Requests</a>
+        </li>
+    </ul>
 
-  {% block submit_content %}
-  {% endblock %}
+    {% block submit_content %}
+    {% endblock %}
 
 {% endblock %}

@@ -5,49 +5,49 @@
 {% load ietf_filters static %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}{{ group.name }} ({{ group.acronym }}) - {% block group_subtitle %}{% endblock %}{% endblock %}
 
 {% block content %}
-  {% origin %}
+    {% origin %}
 
-  <h1>{{ group.name}} ({{ group.acronym }})
-    {% if group.state_id == "dormant" or group.state_id == "conclude" %}
-      <span class="label label-warning">Concluded {{ group.type.name }}</span>
-    {% endif %}
-    {% if group.state_id == "replaced" %}
-      <span class="label label-warning">Replaced {{ group.type.name }}</span>
-    {% endif %}
-    {% if group.state_id == "proposed" %}
-      <span class="label label-info">Proposed {{ group.type.name }}</span>
-    {% endif %}
-  </h1>
+    <h1>{{ group.name}} ({{ group.acronym }})
+        {% if group.state_id == "dormant" or group.state_id == "conclude" %}
+            <span class="label label-warning">Concluded {{ group.type.name }}</span>
+        {% endif %}
+        {% if group.state_id == "replaced" %}
+            <span class="label label-warning">Replaced {{ group.type.name }}</span>
+        {% endif %}
+        {% if group.state_id == "proposed" %}
+            <span class="label label-info">Proposed {{ group.type.name }}</span>
+        {% endif %}
+    </h1>
 
-  <ul class="nav nav-tabs">
-    {% for name, url in menu_entries %}
-      <li class="nav-item">
-        <a class="nav-link {% if selected_menu_entry == name.lower %}active{% endif %}" href="{{ url }}">{{ name }}</a>
-      </li>
-    {% endfor %}
-  </ul>
+    <ul class="nav nav-tabs">
+        {% for name, url in menu_entries %}
+            <li class="nav-item">
+                <a class="nav-link {% if selected_menu_entry == name.lower %}active{% endif %}" href="{{ url }}">{{ name }}</a>
+            </li>
+        {% endfor %}
+    </ul>
 
-  <div class="buttonlist">
-    {% block buttonlist %}
-      {% if menu_actions %}
-	{% for name, url in menu_actions %}
-	  <a class="btn {% if name == "Request closing group" %}btn-warning{% else %}btn-primary{% endif %}" href="{{ url }}">{{ name }}</a>
-	{% endfor %}
-      {% endif %}
-    {% endblock buttonlist %}
-  </div>
+    <div class="buttonlist">
+        {% block buttonlist %}
+            {% if menu_actions %}
+                {% for name, url in menu_actions %}
+                    <a class="btn {% if name == "Request closing group" %}btn-warning{% else %}btn-primary{% endif %}" href="{{ url }}">{{ name }}</a>
+                {% endfor %}
+            {% endif %}
+        {% endblock buttonlist %}
+    </div>
 
-  {% block group_content %}
-  {% endblock group_content %}
+    {% block group_content %}
+    {% endblock group_content %}
 
 {% endblock content %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

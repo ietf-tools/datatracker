@@ -3,36 +3,36 @@
 {% load origin static %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}Document relationships{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Document relationships</h1>
+    {% origin %}
+    <h1>Document relationships</h1>
 
-  <table class="table table-sm table-striped tablesorter">
-    <thead>
-      <tr>
-        <th>Relationship</th>
-        <th>Description</th>
-        <th>Inverse relationship</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for rel in relations %}
-        <tr class="anchor-target" id="{{ rel.slug }}">
-          <th class="name">{{ rel.name }}</th>
-          <td class="desc">{{ rel.desc|linebreaksbr }}</td>
-          <td class="revname">{{ rel.revname }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th>Relationship</th>
+                <th>Description</th>
+                <th>Inverse relationship</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rel in relations %}
+                <tr class="anchor-target" id="{{ rel.slug }}">
+                    <th class="name">{{ rel.name }}</th>
+                    <td class="desc">{{ rel.desc|linebreaksbr }}</td>
+                    <td class="revname">{{ rel.revname }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
 {% endblock %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

@@ -5,18 +5,18 @@
 {% load ietf_filters static django_bootstrap5 %}
 
 {% block content %}
-<h2>Set next reviewer in queue for {{ group.acronym }}</h2>
-<form id="dbtemplate-edit" role="form" method="post">
-  {% csrf_token %}
+    <h2>Set next reviewer in queue for {{ group.acronym }}</h2>
+    <form id="dbtemplate-edit" role="form" method="post">
+        {% csrf_token %}
 
-  {% bootstrap_form form %}
-
-  
-
-    <button class="btn btn-primary" type="submit">Save</button>
-    <a class="btn btn-primary" href="{% url 'ietf.group.views.reviewer_overview' acronym=group.acronym %}">Cancel</a>
-  
+        {% bootstrap_form form %}
 
 
-</form>
+
+        <button class="btn btn-primary" type="submit">Save</button>
+        <a class="btn btn-primary" href="{% url 'ietf.group.views.reviewer_overview' acronym=group.acronym %}">Cancel</a>
+
+
+
+    </form>
 {% endblock %}

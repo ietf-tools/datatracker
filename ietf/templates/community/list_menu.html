@@ -1,22 +1,22 @@
 <ul class="list-inline pull-right">
-  <li>
-    <label id="list-feeds">Atom feed:</label>
-    <div class="btn-group" role="group" aria-labelledby="list-feeds">
-      <a class="btn btn-primary" title="Feed of all changes" href="{% if clist.group %}{% url "ietf.community.views.feed" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.feed" username=clist.user.username %}{% endif %}">All changes</a>
-      <a class="btn btn-primary" title="Feed of only significant state changes" href="{% if clist.group %}{% url "ietf.community.views.feed" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.feed" username=clist.user.username %}{% endif %}?significant=1">Significant</a>
-    </div>
-  </li>
+    <li>
+        <label id="list-feeds">Atom feed:</label>
+        <div class="btn-group" role="group" aria-labelledby="list-feeds">
+            <a class="btn btn-primary" title="Feed of all changes" href="{% if clist.group %}{% url "ietf.community.views.feed" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.feed" username=clist.user.username %}{% endif %}">All changes</a>
+            <a class="btn btn-primary" title="Feed of only significant state changes" href="{% if clist.group %}{% url "ietf.community.views.feed" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.feed" username=clist.user.username %}{% endif %}?significant=1">Significant</a>
+        </div>
+    </li>
 
-  {% if clist.pk != None %}
-    <li><a class="btn btn-primary" href="{% if clist.group %}{% url "ietf.community.views.subscription" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.subscription" username=clist.user.username %}{% endif %}">
-      <i class="bi bi-envelope"></i>
-      {% if subscribed %}
-        Change subscription
-      {% else %}
-        Subscribe to changes
-      {% endif %}
-    </a></li>
-  {% endif %}
+    {% if clist.pk != None %}
+        <li><a class="btn btn-primary" href="{% if clist.group %}{% url "ietf.community.views.subscription" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.subscription" username=clist.user.username %}{% endif %}">
+            <i class="bi bi-envelope"></i>
+            {% if subscribed %}
+                Change subscription
+            {% else %}
+                Subscribe to changes
+            {% endif %}
+        </a></li>
+    {% endif %}
 
-  <li><a class="btn btn-primary" href="{% if clist.group %}{% url "ietf.community.views.export_to_csv" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.export_to_csv" username=clist.user.username %}{% endif %}"><i class="bi bi-file-ruled"></i> Export as CSV</a></li>
+    <li><a class="btn btn-primary" href="{% if clist.group %}{% url "ietf.community.views.export_to_csv" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.export_to_csv" username=clist.user.username %}{% endif %}"><i class="bi bi-file-ruled"></i> Export as CSV</a></li>
 </ul>

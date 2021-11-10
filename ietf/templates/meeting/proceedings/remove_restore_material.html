@@ -7,19 +7,19 @@
 {% block title %}{{ action|capfirst }} {{material.type.name}} for {{ material.meeting }} proceedings{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>{{ action|capfirst }} material</h1>
+    {% origin %}
+    <h1>{{ action|capfirst }} material</h1>
 
-  <p>{{ action|capfirst }} <strong>{{material}}</strong> for the {{ material.meeting }} proceedings?</p>
+    <p>{{ action|capfirst }} <strong>{{material}}</strong> for the {{ material.meeting }} proceedings?</p>
 
-  <form method="post">
-    {% csrf_token %}
-    
+    <form method="post">
+        {% csrf_token %}
 
-      <button type="submit" class="btn btn-primary">{{ action|capfirst }} material</button>
-      <a class="btn btn-primary" href="{% url 'ietf.meeting.views_proceedings.material_details' num=material.meeting.number %}">Cancel</a>
-    
 
-  </form>
+        <button type="submit" class="btn btn-primary">{{ action|capfirst }} material</button>
+        <a class="btn btn-primary" href="{% url 'ietf.meeting.views_proceedings.material_details' num=material.meeting.number %}">Cancel</a>
+
+
+    </form>
 
 {% endblock %}

@@ -3,9 +3,9 @@
 <h2>{{ doc.title }}<br><small>{{ name }}</small></h2>
 
 <ul class="nav nav-tabs">
-  {% for name, t, url, active, tooltip in tabs %}
-    <li {% if tooltip %}title="{{tooltip}}"{% endif %} class="nav-item">
-      <a class="nav-link {% if t == selected %}active {% endif %}{% if not active %}disabled {% endif %}" {% if active %}href="{{ url }}"{% endif %}>{{ name|capfirst_allcaps }}</a>
-    </li>
-  {% endfor %}
+    {% for name, t, url, active, tooltip in tabs %}
+        <li {% if tooltip %}title="{{tooltip}}"{% endif %} class="nav-item">
+            <a class="nav-link {% if t == selected %}active {% endif %}{% if not active %}disabled {% endif %}" {% if active %}href="{{ url }}"{% endif %}>{{ name|capfirst_allcaps }}</a>
+        </li>
+    {% endfor %}
 </ul>

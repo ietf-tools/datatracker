@@ -8,51 +8,51 @@
 {% block title %}NomCom {{ year }}{% block subtitle %}{% endblock %}{% endblock %}
 
 {% block content %}
-  {% origin %}
+    {% origin %}
 
-  <h1>NomCom {{ year }} {% if nomcom.group.state_id == 'conclude' %}(Concluded){% endif %}</h1>
+    <h1>NomCom {{ year }} {% if nomcom.group.state_id == 'conclude' %}(Concluded){% endif %}</h1>
 
-  <ul class="nav nav-tabs">
-    <li class="nav-item">
-        <a class="nav-link {% if selected == "index" %}active{% endif %}" href="{% url 'ietf.nomcom.views.year_index' year %}">Home</a></li>
-    {% if nomcom|has_publickey %}
-      <li class="nav-item">
-        <a class="nav-link {% if selected == "nominate" %}active{% endif %}" href="{% url 'ietf.nomcom.views.public_nominate' year %}">Nominate</a></li>
-      <li class="nav-item">
-        <a class="nav-link {% if selected == "feedback" %}active{% endif %}" href="{% url 'ietf.nomcom.views.public_feedback' year %}">Provide feedback</a></li>
-    {% endif %}
-    <li class="nav-item">
-        <a class="nav-link {% if selected == "requirements" %}active{% endif %}" href="{% url 'ietf.nomcom.views.requirements' year %}">Desired expertise</a></li>
-    <li class="nav-item">
-        <a class="nav-link {% if selected == "questionnaires" %}active{% endif %}" href="{% url 'ietf.nomcom.views.questionnaires' year %}">Questionnaires</a></li>
-    {% if user|is_chair_or_advisor:year or user|has_role:"Secretariat" %}
-      <li class="dropdown">
-        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Volunteers<span class="caret"></span></a>
-        <ul class="dropdown-menu" role="menu">
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link {% if selected == "index" %}active{% endif %}" href="{% url 'ietf.nomcom.views.year_index' year %}">Home</a></li>
+        {% if nomcom|has_publickey %}
             <li class="nav-item">
-                <a class="nav-link {% if selected == "view_eligible" %}active{% endif %}" href="{% url 'ietf.nomcom.views.public_eligible' year %}">View Eligible</a></li>
+                <a class="nav-link {% if selected == "nominate" %}active{% endif %}" href="{% url 'ietf.nomcom.views.public_nominate' year %}">Nominate</a></li>
             <li class="nav-item">
-                <a class="nav-link {% if selected == "view_volunteers" %}active{% endif %}" href="{% url 'ietf.nomcom.views.public_volunteers' year %}">View Volunteers</a></li>
-        </ul>
-      </li>
-    {% endif %}
-  </ul>
+                <a class="nav-link {% if selected == "feedback" %}active{% endif %}" href="{% url 'ietf.nomcom.views.public_feedback' year %}">Provide feedback</a></li>
+        {% endif %}
+        <li class="nav-item">
+            <a class="nav-link {% if selected == "requirements" %}active{% endif %}" href="{% url 'ietf.nomcom.views.requirements' year %}">Desired expertise</a></li>
+        <li class="nav-item">
+            <a class="nav-link {% if selected == "questionnaires" %}active{% endif %}" href="{% url 'ietf.nomcom.views.questionnaires' year %}">Questionnaires</a></li>
+        {% if user|is_chair_or_advisor:year or user|has_role:"Secretariat" %}
+            <li class="dropdown">
+                <a class="dropdown-toggle" data-toggle="dropdown" href="#">Volunteers<span class="caret"></span></a>
+                <ul class="dropdown-menu" role="menu">
+                    <li class="nav-item">
+                        <a class="nav-link {% if selected == "view_eligible" %}active{% endif %}" href="{% url 'ietf.nomcom.views.public_eligible' year %}">View Eligible</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if selected == "view_volunteers" %}active{% endif %}" href="{% url 'ietf.nomcom.views.public_volunteers' year %}">View Volunteers</a></li>
+                </ul>
+            </li>
+        {% endif %}
+    </ul>
 
-  {% block nomcom_content %}
-  {% endblock %}
+    {% block nomcom_content %}
+    {% endblock %}
 
 {% endblock %}
 
 {% block js %}
-  <script>
-    // Javascript to enable link to tab
-    var url = document.location.toString();
-    if (url.match('#')) {
-	$('.nav-tabs a[href="#' + url.split('#')[1] + '"]').tab('show');
-    } 
-    // Change hash for page-reload
-    $('.nav-tabs a').on('shown.bs.tab', function (e) {
-	window.location.hash = e.target.hash;
-    })
-  </script>
+    <script>
+        // Javascript to enable link to tab
+        var url = document.location.toString();
+        if (url.match('#')) {
+            $('.nav-tabs a[href="#' + url.split('#')[1] + '"]').tab('show');
+        }
+        // Change hash for page-reload
+        $('.nav-tabs a').on('shown.bs.tab', function (e) {
+            window.location.hash = e.target.hash;
+        })
+    </script>
 {% endblock %}

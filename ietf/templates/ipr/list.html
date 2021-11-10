@@ -9,54 +9,54 @@
 {% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block content %}
-  {% origin %}
-  <div class="row">
-    <div class="col-md-10">
+    {% origin %}
+    <div class="row">
+        <div class="col-md-10">
 
-      <h1>Intellectual property rights disclosures</h1>
+            <h1>Intellectual property rights disclosures</h1>
 
-      <div class="alert alert-info">
+            <div class="alert alert-info">
 
-      {% include "ipr/ipr_intro.html" %}
+                {% include "ipr/ipr_intro.html" %}
 
-      </div>
+            </div>
 
-      <p class="buttonlist">
-        <a class="btn btn-primary" href="{% url "ietf.ipr.views.about" %}">Submit an IPR disclosure</a>
-        <a class="btn btn-primary" href="{% url "ietf.ipr.views.search" %}">Search IPR disclosures</a>
-        {% if user|has_role:"Secretariat" %}
-          <a class="btn btn-primary" href="{% url 'ietf.ipr.views.admin' state='pending' %}">Administrative View</a>
-        {% endif %}
-      </p>
+            <p class="buttonlist">
+                <a class="btn btn-primary" href="{% url "ietf.ipr.views.about" %}">Submit an IPR disclosure</a>
+                <a class="btn btn-primary" href="{% url "ietf.ipr.views.search" %}">Search IPR disclosures</a>
+                {% if user|has_role:"Secretariat" %}
+                    <a class="btn btn-primary" href="{% url 'ietf.ipr.views.admin' state='pending' %}">Administrative View</a>
+                {% endif %}
+            </p>
 
-      <h2 class="anchor-target" id="generic">General IPR disclosures</h2>
+            <h2 class="anchor-target" id="generic">General IPR disclosures</h2>
 
-      {% include "ipr/ipr_table.html" with iprs=generic_disclosures %}
+            {% include "ipr/ipr_table.html" with iprs=generic_disclosures %}
 
-      <h2 class="anchor-target" id="specific">Specific IPR disclosures</h2>
+            <h2 class="anchor-target" id="specific">Specific IPR disclosures</h2>
 
-      {% include "ipr/ipr_table.html" with iprs=specific_disclosures %}
+            {% include "ipr/ipr_table.html" with iprs=specific_disclosures %}
 
-      <h2 class="anchor-target" id="notify">Specific third-party IPR disclosures</h2>
+            <h2 class="anchor-target" id="notify">Specific third-party IPR disclosures</h2>
 
-      {% include "ipr/ipr_table.html" with iprs=thirdpty_disclosures %}
+            {% include "ipr/ipr_table.html" with iprs=thirdpty_disclosures %}
 
+        </div>
+
+        <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
+            <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+                <li><a href="#generic">General IPR disclosures</a></li>
+                <li><a href="#specific">Specific IPR disclosures</a></li>
+                <li><a href="#notify">Specific third-party IPR disclosures</a></li>
+            </ul>
+        </div>
     </div>
-
-    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
-      <ul class="nav nav-pills nav-stacked small" data-spy="affix">
-        <li><a href="#generic">General IPR disclosures</a></li>
-        <li><a href="#specific">Specific IPR disclosures</a></li>
-        <li><a href="#notify">Specific third-party IPR disclosures</a></li>
-      </ul>
-    </div>
-  </div>
 {% endblock %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

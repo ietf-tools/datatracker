@@ -5,303 +5,303 @@
 {% load ietf_filters %}
 
 {% block morecss %}
-  {# set the group colors with CSS here #}
-  {% for parent in session_parents %}
-    .parent-{{ parent.acronym }} { background-image: linear-gradient(to right, {{ parent.scheduling_color }} 0.4em, transparent 0.5em); }
-    .parent-{{ parent.acronym }}.hidden-parent { filter: blur(3px); }{# blur masks contents but keeps the parent color visible #}
-    .parent-{{ parent.acronym }}.selected { background-color: {{ parent.light_scheduling_color }}; }
-    .parent-{{ parent.acronym }}.other-session-selected { background-color: {{ parent.light_scheduling_color }}; }
-  {% endfor %}
-  {# style past sessions to indicate they are not editable #}
-  .edit-meeting-schedule .edit-grid .timeslot.past-hint { filter: brightness(0.9); }
-  .edit-meeting-schedule .past-flag { visibility: hidden; font-size: smaller; }
-  .edit-meeting-schedule .edit-grid .timeslot.past .past-flag { visibility: visible; color: #aaaaaa; }
+    {# set the group colors with CSS here #}
+    {% for parent in session_parents %}
+        .parent-{{ parent.acronym }} { background-image: linear-gradient(to right, {{ parent.scheduling_color }} 0.4em, transparent 0.5em); }
+        .parent-{{ parent.acronym }}.hidden-parent { filter: blur(3px); }{# blur masks contents but keeps the parent color visible #}
+        .parent-{{ parent.acronym }}.selected { background-color: {{ parent.light_scheduling_color }}; }
+        .parent-{{ parent.acronym }}.other-session-selected { background-color: {{ parent.light_scheduling_color }}; }
+    {% endfor %}
+    {# style past sessions to indicate they are not editable #}
+    .edit-meeting-schedule .edit-grid .timeslot.past-hint { filter: brightness(0.9); }
+    .edit-meeting-schedule .past-flag { visibility: hidden; font-size: smaller; }
+    .edit-meeting-schedule .edit-grid .timeslot.past .past-flag { visibility: visible; color: #aaaaaa; }
 {% endblock morecss %}
 
 {% block title %}{{ schedule.name }}: IETF {{ meeting.number }} meeting agenda{% endblock %}
 
 {% block js %}
-  <script type="text/javascript" src="{% static 'moment/min/moment.min.js' %}"></script>
-  <script type="text/javascript" src="{% static 'moment-timezone/builds/moment-timezone-with-data-10-year-range.min.js' %}"></script>
-  <script type="text/javascript" src="{% static 'ietf/js/edit-meeting-schedule.js' %}"></script>
+    <script type="text/javascript" src="{% static 'moment/min/moment.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'moment-timezone/builds/moment-timezone-with-data-10-year-range.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'ietf/js/edit-meeting-schedule.js' %}"></script>
 {% endblock js %}
 
 
 {% block content %}
-  {% origin %}
-  <div class="edit-meeting-schedule {% if schedule.is_official %}official-schedule{% endif %}"
-       data-timezone="{{ meeting.time_zone }}"
-       data-lock-seconds="{{ lock_time.total_seconds }}">
+    {% origin %}
+    <div class="edit-meeting-schedule {% if schedule.is_official %}official-schedule{% endif %}"
+        data-timezone="{{ meeting.time_zone }}"
+        data-lock-seconds="{{ lock_time.total_seconds }}">
 
-    <p class="pull-right">
-      {% if can_edit_properties %}
-        <a href="{% url "ietf.meeting.views.edit_schedule_properties" schedule.meeting.number schedule.owner_email schedule.name %}">Edit properties</a>
-        
-        &middot;
-      {% endif %}
+        <p class="pull-right">
+            {% if can_edit_properties %}
+                <a href="{% url "ietf.meeting.views.edit_schedule_properties" schedule.meeting.number schedule.owner_email schedule.name %}">Edit properties</a>
 
-      <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">New agenda</a>
-      &middot;
+                &middot;
+            {% endif %}
 
-      <a href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">Other Agendas</a>
-    </p>
+            <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">New agenda</a>
+            &middot;
 
-    <p>
-      Agenda name: {{ schedule.name }}
+            <a href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">Other Agendas</a>
+        </p>
 
-      &middot;
+        <p>
+            Agenda name: {{ schedule.name }}
 
-      Owner: {{ schedule.owner }}
+            &middot;
 
-      {% if not can_edit %}
-        &middot;
+            Owner: {{ schedule.owner }}
 
-      <strong>
-        <em>
-          You can't edit this schedule.
-          {% if schedule.is_official_record %}This is the official schedule for a meeting in the past.{% endif %}
-          Make a <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">new agenda from this</a>.
-        </em>
-      </strong>
-      {% endif %}
-    </p>
+            {% if not can_edit %}
+                &middot;
 
-    <div class="edit-grid {% if not can_edit %}read-only{% endif %}">
+                <strong>
+                    <em>
+                        You can't edit this schedule.
+                        {% if schedule.is_official_record %}This is the official schedule for a meeting in the past.{% endif %}
+                        Make a <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">new agenda from this</a>.
+                    </em>
+                </strong>
+            {% endif %}
+        </p>
 
-      {# using the same markup in both room labels and the actual days ensures they are aligned #}
-      <div class="room-label-column">
-        {% for day_data in days.values %}
-          <div class="day">
-            <div class="day-label">
-              <strong>&nbsp;</strong><br>
-              &nbsp;
-            </div>
+        <div class="edit-grid {% if not can_edit %}read-only{% endif %}">
 
-            {% for rgroup in day_data %}
-              <div class="room-group">
-                <div class="time-header"><div class="time-label"></div></div>
-                {% for room_data in rgroup %}{% with room_data.room as room %}
-                  <div class="timeslots">
-                    <div class="room-name">
-                      <strong>{{ room.name }}</strong><br>
-                      {% if room.capacity %}{{ room.capacity }} <i class="bi bi-person"></i>{% endif %}
-                    </div>
-                  </div>
-                {% endwith %}{% endfor %}
-              </div>
-            {% endfor %}
-          </div>
-        {% endfor %}
-      </div>
-
-      <div class="day-flow">
-        {% for day, day_data in days.items %}
-          <div class="day">
-            <div class="day-label">
-              <strong>{{ day|date:"l" }}</strong>
-              <i class="bi bi-arrow-left-right swap-days"
-                 data-dayid="{{ day.isoformat }}"
-                 data-start="{{ day.isoformat }}"></i>
-              <br>
-              {{ day|date:"N j, Y" }}
-            </div>
-
-            {% for rgroup in day_data %}
-              <div class="room-group"
-                   data-index="{{ forloop.counter0 }}"
-                   data-rooms="{% for r in rgroup %}{{ r.room.pk }}{% if not forloop.last %},{% endif %}{% endfor %}">
-                <div class="time-header">
-                  {# All rooms in a group have same timeslots; grab the first for the labels #}
-                  {% for t in rgroup.0.timeslots %}
-                    <div class="time-label" style="width: {{ t.layout_width }}rem">
-                      <span>
-                        {{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}
-                        <i class="bi bi-arrow-left-right swap-timeslot-col"
-                           data-origin-label="{{ day|date:"l, N j" }}, {{ t.time|date:"G:i" }}-{{ t.end_time|date:"G:i" }}"
-                           data-start="{{ t.utc_start_time.isoformat }}"
-                           data-timeslot-pk="{{ t.pk }}"></i>
-                      </span>
-                    </div>
-                  {% endfor %}
-                </div>
-                {% for room_data in rgroup %}{% with room_data.room as room %}
-                  <div class="timeslots" data-roomcapacity="{{ room.capacity }}">
-                    {% for t in room_data.timeslots %}
-                      <div id="timeslot{{ t.pk }}"
-                           class="timeslot {{ t.start_end_group }}"
-                           data-start="{{ t.utc_start_time.isoformat }}"
-                           data-end="{{ t.utc_end_time.isoformat }}"
-                           data-duration="{{ t.duration.total_seconds }}"
-                           data-scheduledatlabel="{{ t.time|date:"l G:i" }}-{{ t.end_time|date:"G:i" }}"
-                           style="width: {{ t.layout_width }}rem;">
-                        <div class="time-label">
-                          <div class="past-flag">&nbsp;{# blank div keeps time centered vertically #}</div>
-                          <div>{{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}</div>
-                          <div class="past-flag">Past</div>
+            {# using the same markup in both room labels and the actual days ensures they are aligned #}
+            <div class="room-label-column">
+                {% for day_data in days.values %}
+                    <div class="day">
+                        <div class="day-label">
+                            <strong>&nbsp;</strong><br>
+                            &nbsp;
                         </div>
 
-                        <div class="drop-target">
-                          {% for assignment, session in t.session_assignments %}
-                            {% include "meeting/edit_meeting_schedule_session.html" %}
-                          {% endfor %}
-                        </div>
-                      </div>
-                    {% endfor %}
-                  </div>
-                {% endwith %}{% endfor %}
-              </div>
-            {% endfor %}
-          </div>
-        {% endfor %}
-      </div>
-    </div>
-
-    <div class="scheduling-panel">
-      <div class="unassigned-container">
-        <div class="unassigned-sessions">
-          <div class="drop-target">
-            {% for session in unassigned_sessions %}
-              {% include "meeting/edit_meeting_schedule_session.html" %}
-            {% endfor %}
-          </div>
-        </div>
-
-        <div class="preferences">
-          <span class="sort-unassigned">
-            Sort unassigned:
-            <select name="sort_unassigned" class="form-control">
-              <option value="name" selected="selected">By name</option>
-              <option value="parent">By area</option>
-              <option value="duration">By duration</option>
-              <option value="comments">Special requests</option>
-            </select>
-          </span>
-
-          <span class="session-parent-toggles">
-            Show:
-            {% for p in session_parents %}
-              <label class="parent-{{ p.acronym }}"><input type="checkbox" checked value="{{ p.acronym }}"> {{ p.acronym }}</label>
-            {% endfor %}
-          </span>
-
-          <span class="timeslot-group-toggles">
-            <button class="btn btn-primary" data-toggle="modal" data-target="#timeslot-group-toggles-modal"><input type="checkbox" checked="checked" disabled> Timeslots</button>
-          </span>
-        </div>
-      </div>
-
-      <div class="session-info-container"></div>
-    </div>
-
-    <div id="timeslot-group-toggles-modal" class="modal" role="dialog" aria-labelledby="timeslot-group-toggles-modal-title">
-      <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">
-              <span aria-hidden="true">&times;</span>
-              <span class="sr-only">Close</span>
-            </button>
-            <h4 class="modal-title" id="timeslot-group-toggles-modal-title">Displayed timeslots</h4>
-          </div>
-
-          <div class="modal-body">
-            {% for day, t_groups in timeslot_groups %}
-              <div>
-                <div><strong>{{ day|date:"M. d" }}</strong></div>
-                {% for start, end, key in t_groups %}
-                  <label><input type="checkbox" name="timeslot-group" value="{{ key }}" checked="checked"> {{ start|date:"H:i" }} - {{ end|date:"H:i" }}</label>
+                        {% for rgroup in day_data %}
+                            <div class="room-group">
+                                <div class="time-header"><div class="time-label"></div></div>
+                                {% for room_data in rgroup %}{% with room_data.room as room %}
+                                    <div class="timeslots">
+                                        <div class="room-name">
+                                            <strong>{{ room.name }}</strong><br>
+                                            {% if room.capacity %}{{ room.capacity }} <i class="bi bi-person"></i>{% endif %}
+                                        </div>
+                                    </div>
+                                {% endwith %}{% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
                 {% endfor %}
-              </div>
-            {% endfor %}
-          </div>
+            </div>
 
-          <div class="modal-footer">
-            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
-          </div>
+            <div class="day-flow">
+                {% for day, day_data in days.items %}
+                    <div class="day">
+                        <div class="day-label">
+                            <strong>{{ day|date:"l" }}</strong>
+                            <i class="bi bi-arrow-left-right swap-days"
+                                data-dayid="{{ day.isoformat }}"
+                                data-start="{{ day.isoformat }}"></i>
+                            <br>
+                            {{ day|date:"N j, Y" }}
+                        </div>
+
+                        {% for rgroup in day_data %}
+                            <div class="room-group"
+                                data-index="{{ forloop.counter0 }}"
+                                data-rooms="{% for r in rgroup %}{{ r.room.pk }}{% if not forloop.last %},{% endif %}{% endfor %}">
+                                <div class="time-header">
+                                    {# All rooms in a group have same timeslots; grab the first for the labels #}
+                                    {% for t in rgroup.0.timeslots %}
+                                        <div class="time-label" style="width: {{ t.layout_width }}rem">
+                                            <span>
+                                                {{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}
+                                                <i class="bi bi-arrow-left-right swap-timeslot-col"
+                                                    data-origin-label="{{ day|date:"l, N j" }}, {{ t.time|date:"G:i" }}-{{ t.end_time|date:"G:i" }}"
+                                                    data-start="{{ t.utc_start_time.isoformat }}"
+                                                    data-timeslot-pk="{{ t.pk }}"></i>
+                                            </span>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {% for room_data in rgroup %}{% with room_data.room as room %}
+                                    <div class="timeslots" data-roomcapacity="{{ room.capacity }}">
+                                        {% for t in room_data.timeslots %}
+                                            <div id="timeslot{{ t.pk }}"
+                                                class="timeslot {{ t.start_end_group }}"
+                                                data-start="{{ t.utc_start_time.isoformat }}"
+                                                data-end="{{ t.utc_end_time.isoformat }}"
+                                                data-duration="{{ t.duration.total_seconds }}"
+                                                data-scheduledatlabel="{{ t.time|date:"l G:i" }}-{{ t.end_time|date:"G:i" }}"
+                                                style="width: {{ t.layout_width }}rem;">
+                                                <div class="time-label">
+                                                    <div class="past-flag">&nbsp;{# blank div keeps time centered vertically #}</div>
+                                                    <div>{{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}</div>
+                                                    <div class="past-flag">Past</div>
+                                                </div>
+
+                                                <div class="drop-target">
+                                                    {% for assignment, session in t.session_assignments %}
+                                                        {% include "meeting/edit_meeting_schedule_session.html" %}
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endwith %}{% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
         </div>
-      </div>
+
+        <div class="scheduling-panel">
+            <div class="unassigned-container">
+                <div class="unassigned-sessions">
+                    <div class="drop-target">
+                        {% for session in unassigned_sessions %}
+                            {% include "meeting/edit_meeting_schedule_session.html" %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="preferences">
+                    <span class="sort-unassigned">
+                        Sort unassigned:
+                        <select name="sort_unassigned" class="form-control">
+                            <option value="name" selected="selected">By name</option>
+                            <option value="parent">By area</option>
+                            <option value="duration">By duration</option>
+                            <option value="comments">Special requests</option>
+                        </select>
+                    </span>
+
+                    <span class="session-parent-toggles">
+                        Show:
+                        {% for p in session_parents %}
+                            <label class="parent-{{ p.acronym }}"><input type="checkbox" checked value="{{ p.acronym }}"> {{ p.acronym }}</label>
+                        {% endfor %}
+                    </span>
+
+                    <span class="timeslot-group-toggles">
+                        <button class="btn btn-primary" data-toggle="modal" data-target="#timeslot-group-toggles-modal"><input type="checkbox" checked="checked" disabled> Timeslots</button>
+                    </span>
+                </div>
+            </div>
+
+            <div class="session-info-container"></div>
+        </div>
+
+        <div id="timeslot-group-toggles-modal" class="modal" role="dialog" aria-labelledby="timeslot-group-toggles-modal-title">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">
+                            <span aria-hidden="true">&times;</span>
+                            <span class="sr-only">Close</span>
+                        </button>
+                        <h4 class="modal-title" id="timeslot-group-toggles-modal-title">Displayed timeslots</h4>
+                    </div>
+
+                    <div class="modal-body">
+                        {% for day, t_groups in timeslot_groups %}
+                            <div>
+                                <div><strong>{{ day|date:"M. d" }}</strong></div>
+                                {% for start, end, key in t_groups %}
+                                    <label><input type="checkbox" name="timeslot-group" value="{{ key }}" checked="checked"> {{ start|date:"H:i" }} - {{ end|date:"H:i" }}</label>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="swap-days-modal" class="modal" role="dialog" aria-labelledby="swap-days-modal-title">
+            <div class="modal-dialog modal-lg" role="document">
+                <form class="modal-content" method="post">{% csrf_token %}
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">
+                            <span aria-hidden="true">&times;</span>
+                            <span class="sr-only">Close</span>
+                        </button>
+                        <h4 class="modal-title" id="swap-days-modal-title">Swap <span class="day"></span> with</h4>
+                    </div>
+
+                    <input type="hidden" name="source_day" value="">
+
+                    <div class="modal-body">
+                        {% for day in days %}
+                            <label>
+                                <input type="radio"
+                                    name="target_day"
+                                    data-start="{{ day.isoformat }}"
+                                    value="{{ day.isoformat }}">
+                                {{ day|date:"l, N j, Y" }}
+                            </label>
+                        {% endfor %}
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                        <button type="submit" name="action" value="swapdays" class="btn btn-primary">Swap days</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="swap-timeslot-col-modal" class="modal" role="dialog" aria-labelledby="swap-timeslot-col-modal-title">
+            <div class="modal-dialog modal-lg" role="document">
+                <form class="modal-content" method="post">{% csrf_token %}
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">
+                            <span aria-hidden="true">&times;</span>
+                            <span class="sr-only">Close</span>
+                        </button>
+                        <h4 class="modal-title" id="swap-timeslot-col-modal-title">
+                            Swap <span class="origin-label"></span> with</h4>
+                    </div>
+
+                    <input type="hidden" name="origin_timeslot" value="">
+                    <input type="hidden" name="rooms" value="">
+
+                    <div class="modal-body">
+                        <div class="day-options">
+                            {% for day, day_data in days.items %}
+                                {% for rgroup in day_data %}
+                                    <div class="room-group room-group-{{ forloop.counter0 }}">
+                                        {% if rgroup.0.timeslots|length > 0 %}
+                                            {{ day|date:"l, N j" }}
+                                            <div class="timeslot-options">
+                                                {% for t in rgroup.0.timeslots %}
+                                                    <label>
+                                                        <input type="radio"
+                                                            name="target_timeslot"
+                                                            value="{{ t.pk }}"
+                                                            data-start="{{ t.utc_start_time.isoformat }}">
+                                                        {{ t.time|date:"G:i" }}-{{ t.end_time|date:"G:i" }}
+                                                    </label>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                        <button type="submit" name="action" value="swaptimeslots" class="btn btn-primary">Swap timeslots</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
     </div>
-
-    <div id="swap-days-modal" class="modal" role="dialog" aria-labelledby="swap-days-modal-title">
-      <div class="modal-dialog modal-lg" role="document">
-        <form class="modal-content" method="post">{% csrf_token %}
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">
-              <span aria-hidden="true">&times;</span>
-              <span class="sr-only">Close</span>
-            </button>
-            <h4 class="modal-title" id="swap-days-modal-title">Swap <span class="day"></span> with</h4>
-          </div>
-
-          <input type="hidden" name="source_day" value="">
-
-          <div class="modal-body">
-            {% for day in days %}
-              <label>
-                <input type="radio"
-                       name="target_day"
-                       data-start="{{ day.isoformat }}"
-                       value="{{ day.isoformat }}">
-                {{ day|date:"l, N j, Y" }}
-              </label>
-            {% endfor %}
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
-            <button type="submit" name="action" value="swapdays" class="btn btn-primary">Swap days</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div id="swap-timeslot-col-modal" class="modal" role="dialog" aria-labelledby="swap-timeslot-col-modal-title">
-      <div class="modal-dialog modal-lg" role="document">
-        <form class="modal-content" method="post">{% csrf_token %}
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">
-              <span aria-hidden="true">&times;</span>
-              <span class="sr-only">Close</span>
-            </button>
-            <h4 class="modal-title" id="swap-timeslot-col-modal-title">
-              Swap <span class="origin-label"></span> with</h4>
-          </div>
-
-          <input type="hidden" name="origin_timeslot" value="">
-          <input type="hidden" name="rooms" value="">
-
-          <div class="modal-body">
-              <div class="day-options">
-            {% for day, day_data in days.items %}
-              {% for rgroup in day_data %}
-              <div class="room-group room-group-{{ forloop.counter0 }}">
-                {% if rgroup.0.timeslots|length > 0 %}
-                  {{ day|date:"l, N j" }}
-                  <div class="timeslot-options">
-                    {% for t in rgroup.0.timeslots %}
-                      <label>
-                        <input type="radio"
-                               name="target_timeslot"
-                               value="{{ t.pk }}"
-                               data-start="{{ t.utc_start_time.isoformat }}">
-                        {{ t.time|date:"G:i" }}-{{ t.end_time|date:"G:i" }}
-                      </label>
-                    {% endfor %}
-                  </div>
-                {% endif %}
-              </div>
-              {% endfor %}
-            {% endfor %}
-              </div>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
-            <button type="submit" name="action" value="swaptimeslots" class="btn btn-primary">Swap timeslots</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-  </div>
 {% endblock %}

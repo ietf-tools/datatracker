@@ -3,7 +3,7 @@
 {% load origin %}
 {% load static %}
 {% block pagehead %}
-  {{ form.media.css }}
+    {{ form.media.css }}
 {% endblock %}
 
 {% load django_bootstrap5 %}
@@ -11,22 +11,22 @@
 {% block subtitle %} - {% if topic %}Edit{% else %}Add{% endif %} topics{% endblock %}
 
 {% block nomcom_content %}
-  {% origin %}
-  <h2>{% if topic %}Edit{% else %}Add{% endif %} topic</h2>
+    {% origin %}
+    <h2>{% if topic %}Edit{% else %}Add{% endif %} topic</h2>
 
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
+    <form method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
 
-    
 
-      <input class="btn btn-primary" type="submit" value="{% if topic %}Save{% else %}Add{% endif %}">
-      <a class="btn btn-primary pull-right" href="../">Back</a>
-    
 
-  </form>
+        <input class="btn btn-primary" type="submit" value="{% if topic %}Save{% else %}Add{% endif %}">
+        <a class="btn btn-primary pull-right" href="../">Back</a>
+
+
+    </form>
 {% endblock %}
 
 {% block content_end %}
-  {{ form.media.js }}
+    {{ form.media.js }}
 {% endblock %}

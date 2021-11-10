@@ -4,49 +4,49 @@
 {% load ietf_filters static %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}NomComs{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>NomComs</h1>
+    {% origin %}
+    <h1>NomComs</h1>
 
-  <table class="table table-sm table-striped tablesorter">
-    <thead>
-      <tr>
-        <th>Year</th>
-        <th>Chair</th>
-        <th>Announcements</th>
-        <th>Pages</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for nomcom in nomcom_list|dictsortreversed:"label" %}
-        <tr>
-          <td><a href="{% url 'ietf.group.views.group_home' acronym=nomcom.acronym  %}">{{ nomcom.label }}</a></td>
-          <td >
-	    {% with nomcom.get_chair as role %}
-	      <a href="mailto:{{role.person.email_address}}">{{role.person}}</a>
-	    {% endwith %}
-          </td>
-          <td>
-	    {% if nomcom.ann_url %}
-	      <a href="{{ nomcom.ann_url }}">Announcements</a>
-	    {% endif %}
-          </td>
-          <td>
-	    {% if nomcom.url %}
-	      <a href="{{ nomcom.url }}">Pages</a>
-	    {% endif %}
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th>Year</th>
+                <th>Chair</th>
+                <th>Announcements</th>
+                <th>Pages</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for nomcom in nomcom_list|dictsortreversed:"label" %}
+                <tr>
+                    <td><a href="{% url 'ietf.group.views.group_home' acronym=nomcom.acronym  %}">{{ nomcom.label }}</a></td>
+                    <td >
+                        {% with nomcom.get_chair as role %}
+                            <a href="mailto:{{role.person.email_address}}">{{role.person}}</a>
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% if nomcom.ann_url %}
+                            <a href="{{ nomcom.ann_url }}">Announcements</a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if nomcom.url %}
+                            <a href="{{ nomcom.url }}">Pages</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

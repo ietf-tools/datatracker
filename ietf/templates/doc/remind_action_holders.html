@@ -12,19 +12,19 @@
 {% block content %}
     {% origin %}
     <h1>Send reminder to action holders<br><small>{{ titletext }}</small></h1>
-    
+
     <form enctype="multipart/form-data" method="post">
         {% csrf_token %}
         {% bootstrap_form form %}
-    
-        <p>This reminder will be sent to 
+
+        <p>This reminder will be sent to
             {% for person in doc.action_holders.all %}
                 {% if forloop.last and not forloop.first %} and {% endif %}{%  person_link person %}{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
-        
 
-            <button type="submit" class="btn btn-primary" name="submit" value="Send reminder">Send</button>
-            <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">Cancel</a>
-        
+
+        <button type="submit" class="btn btn-primary" name="submit" value="Send reminder">Send</button>
+        <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">Cancel</a>
+
 
     </form>
 {% endblock %}

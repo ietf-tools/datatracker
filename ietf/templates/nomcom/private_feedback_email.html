@@ -7,18 +7,18 @@
 {% block subtitle %} - Provide feedback email{% endblock %}
 
 {% block nomcom_content %}
-  {% origin %}
+    {% origin %}
 
-  {% if form %}
-    <form id="paste-email-feedback-form" method="post">
-      {% csrf_token %}
-      {% bootstrap_form form %}
-      
+    {% if form %}
+        <form id="paste-email-feedback-form" method="post">
+            {% csrf_token %}
+            {% bootstrap_form form %}
 
-        <input class="btn btn-primary" type="submit" value="Save" name="save" {% if submit_disabled %}disabled="disabled"{% endif %}>
-      
 
-    </form>
-  {% endif %}
+            <input class="btn btn-primary" type="submit" value="Save" name="save" {% if submit_disabled %}disabled="disabled"{% endif %}>
+
+
+        </form>
+    {% endif %}
 
 {% endblock %}

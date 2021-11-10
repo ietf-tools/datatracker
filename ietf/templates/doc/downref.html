@@ -6,49 +6,49 @@
 {% load ietf_filters static %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>{{ title }}</h1>
+    {% origin %}
+    <h1>{{ title }}</h1>
 
-  {% if add_button %}
-    
+    {% if add_button %}
 
-    <p>
-      <a class="btn btn-warning" href="{% url "ietf.doc.views_downref.downref_registry_add" %}">Add downref</a>
-    </p>
-    
 
-  {% endif %}
+        <p>
+            <a class="btn btn-warning" href="{% url "ietf.doc.views_downref.downref_registry_add" %}">Add downref</a>
+        </p>
 
-  <table class="table table-sm table-striped tablesorter">
-    <thead>
-      <tr>
-        <th>Referenced RFC</th>
-        <th>Internet-Draft making the reference</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for target_doc, source_doc in doc_pairs %}
-      <tr>
-        <td>
-	      <a href="{% url "ietf.doc.views_doc.document_main" target_doc.name %}">RFC {{ target_doc.rfc_number }}</a>
-          <br><b>{{ target_doc.title }}</b>
-        </td>
-        <td>
-	      <a href="{% url "ietf.doc.views_doc.document_main" source_doc.name %}">{{ source_doc.name }}</a>
-          <br><b>{{ source_doc.title }}</b>
-        </td>
-      </tr>
-        {% endfor %}
-    </tbody>
-  </table>
+
+    {% endif %}
+
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th>Referenced RFC</th>
+                <th>Internet-Draft making the reference</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for target_doc, source_doc in doc_pairs %}
+                <tr>
+                    <td>
+                        <a href="{% url "ietf.doc.views_doc.document_main" target_doc.name %}">RFC {{ target_doc.rfc_number }}</a>
+                        <br><b>{{ target_doc.title }}</b>
+                    </td>
+                    <td>
+                        <a href="{% url "ietf.doc.views_doc.document_main" source_doc.name %}">{{ source_doc.name }}</a>
+                        <br><b>{{ source_doc.title }}</b>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

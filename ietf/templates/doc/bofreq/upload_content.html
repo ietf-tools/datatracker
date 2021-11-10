@@ -5,26 +5,26 @@
 {% block title %}Upload new revision: {{doc.name}}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Upload New Revision<br>
-    <small>{{ doc.name }}</small>
-  </h1>
+    {% origin %}
+    <h1>Upload New Revision<br>
+        <small>{{ doc.name }}</small>
+    </h1>
 
-  <form class="upload-content form-horizontal" method="post" enctype="multipart/form-data">
-    {% csrf_token %}
+    <form class="upload-content form-horizontal" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
 
-    {% bootstrap_form form layout="horizontal" %}
+        {% bootstrap_form form layout="horizontal" %}
 
-    
 
-      <a class="btn btn-primary" href="{{ doc.get_absolute_url }}">Cancel</a>
-      <button type="submit" class="btn btn-primary">Submit</button>
-    
 
-  </form>
+        <a class="btn btn-primary" href="{{ doc.get_absolute_url }}">Cancel</a>
+        <button type="submit" class="btn btn-primary">Submit</button>
+
+
+    </form>
 {% endblock %}
 
 {% block js %}
-  <script src="{% static 'ietf/js/upload_bofreq.js' %}"></script>
+    <script src="{% static 'ietf/js/upload_bofreq.js' %}"></script>
 {% endblock %}
 

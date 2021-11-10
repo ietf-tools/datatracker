@@ -7,93 +7,93 @@
 {% load misc_filters %}
 
 {% block pagehead %}
-  {{ block.super }}
-  {{ all_forms|merge_media:'css' }}
+    {{ block.super }}
+    {{ all_forms|merge_media:'css' }}
 {% endblock %}
 
 {% block title %}Adjust meta-data of submitted {{ submission.name }}{% endblock %}
 
 {% block submit_content %}
-  {% origin %}
-  <div class="modal fade" id="twopages" tabindex="-1" role="dialog" aria-labelledby="twopageslabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-	  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-	  <h4 class="modal-title" id="twopageslabel">First two pages of {{ submission.name }}-{{ submission.rev }}</h4>
+    {% origin %}
+    <div class="modal fade" id="twopages" tabindex="-1" role="dialog" aria-labelledby="twopageslabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="twopageslabel">First two pages of {{ submission.name }}-{{ submission.rev }}</h4>
+                </div>
+                <div class="modal-body">
+                    {{ submission|two_pages_decorated_with_errors:errors }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
         </div>
-        <div class="modal-body">
-	  {{ submission|two_pages_decorated_with_errors:errors }}
-        </div>
-        <div class="modal-footer">
-	  <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
-        </div>
-      </div>
     </div>
-  </div>
 
 
-  <h2>Adjust meta-data of submitted {{ submission.name }}</h2>
+    <h2>Adjust meta-data of submitted {{ submission.name }}</h2>
 
-  <table class="table table-sm table-striped">
-    <tr>
-      <th>Document</th>
-      <td>
-        {{ submission.name }}
-        <button class="btn btn-primary btn-xs pull-right" data-toggle="modal" data-target="#twopages">View first two pages</button>
-        {% show_submission_files submission %}
-      </td>
-    </tr>
+    <table class="table table-sm table-striped">
+        <tr>
+            <th>Document</th>
+            <td>
+                {{ submission.name }}
+                <button class="btn btn-primary btn-xs pull-right" data-toggle="modal" data-target="#twopages">View first two pages</button>
+                {% show_submission_files submission %}
+            </td>
+        </tr>
 
-    <tr><th>Submission date</th><td>{{ submission.submission_date }}</td></tr>
+        <tr><th>Submission date</th><td>{{ submission.submission_date }}</td></tr>
 
-    <tr>
-      <th>Group</th>
-      <td>{{ submission.group|default:"Individual Submission" }}
-        {% if errors.group %}<p class="text-danger"><b>{{ errors.group }}</b> (Note: the Secretariat will be notified of this)</p>{% endif %}
-      </td>
-    </tr>
+        <tr>
+            <th>Group</th>
+            <td>{{ submission.group|default:"Individual Submission" }}
+                {% if errors.group %}<p class="text-danger"><b>{{ errors.group }}</b> (Note: the Secretariat will be notified of this)</p>{% endif %}
+            </td>
+        </tr>
 
-    <tr><th>File size</th><td>{{ submission.file_size|filesizeformat }}</td></tr>
-  </table>
+        <tr><th>File size</th><td>{{ submission.file_size|filesizeformat }}</td></tr>
+    </table>
 
-  <h3>Adjust meta-data</h3>
+    <h3>Adjust meta-data</h3>
 
-  {% if form_errors %}
-    <div class="alert alert-danger">
-      Please fix the errors in the form below.
-    </div>
-  {% endif %}
+    {% if form_errors %}
+        <div class="alert alert-danger">
+            Please fix the errors in the form below.
+        </div>
+    {% endif %}
 
-  <form class="idsubmit" method="post">
-    {% csrf_token %}
+    <form class="idsubmit" method="post">
+        {% csrf_token %}
 
-    {% bootstrap_form edit_form %}
+        {% bootstrap_form edit_form %}
 
-    {% include "submit/submitter_form.html" %}
-    {% include "submit/replaces_form.html" %}
+        {% include "submit/submitter_form.html" %}
+        {% include "submit/replaces_form.html" %}
 
-    {% for form in author_forms %}
-      <div {% if forloop.last %}id="cloner"{% endif %}>
-        <h3>Author {{ forloop.counter }}</h3>
-        {% bootstrap_form form %}
-        <input type="hidden" name="authors-prefix" value="{{ form.prefix  }}">
-      </div>
-    {% endfor %}
+        {% for form in author_forms %}
+            <div {% if forloop.last %}id="cloner"{% endif %}>
+                <h3>Author {{ forloop.counter }}</h3>
+                {% bootstrap_form form %}
+                <input type="hidden" name="authors-prefix" value="{{ form.prefix  }}">
+            </div>
+        {% endfor %}
 
-    
 
-      <input class="btn btn-primary" type="button" value="Add another author" id="add-author">
-      <input class="btn btn-primary" type="submit" value="Submit for manual posting">
-    
 
-  </form>
+        <input class="btn btn-primary" type="button" value="Add another author" id="add-author">
+        <input class="btn btn-primary" type="submit" value="Submit for manual posting">
 
-  <p>
-    {% include "submit/problem-reports-footer.html" %}
-  </p>
+
+    </form>
+
+    <p>
+        {% include "submit/problem-reports-footer.html" %}
+    </p>
 {% endblock %}
 
 {% block js %}
-  {{ all_forms|merge_media:'js' }}
+    {{ all_forms|merge_media:'js' }}
 {% endblock %}

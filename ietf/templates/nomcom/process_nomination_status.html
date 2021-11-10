@@ -7,20 +7,20 @@
 {% block subtitle %} - Change Nomination {% endblock %}
 
 {% block nomcom_content %}
-  {% origin %}
+    {% origin %}
 
-  {% if need_confirmation %}
-    <form method="post">
-      {% csrf_token %}
+    {% if need_confirmation %}
+        <form method="post">
+            {% csrf_token %}
 
-      {% bootstrap_form form %}
+            {% bootstrap_form form %}
 
-      
 
-        <button class="btn btn-primary" type="submit">Save</button>
-      
 
-    </form>
-  {% endif %}
+            <button class="btn btn-primary" type="submit">Save</button>
+
+
+        </form>
+    {% endif %}
 
 {% endblock %}

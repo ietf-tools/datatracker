@@ -5,12 +5,12 @@
 {% block title %}Ballot for {{ doc.name }} issued{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Ballot for {{ doc.name }} issued</h1>
+    {% origin %}
+    <h1>Ballot for {{ doc.name }} issued</h1>
 
-  <p>Ballot has been sent out.</p>
+    <p>Ballot has been sent out.</p>
 
-  <div class="buttonlist">
-    <a class="btn btn-primary" href="{% url 'ietf.doc.views_doc.document_writeup' name=doc.name %}">Back</a>
-  </div>
+    <div class="buttonlist">
+        <a class="btn btn-primary" href="{% url 'ietf.doc.views_doc.document_writeup' name=doc.name %}">Back</a>
+    </div>
 {% endblock %}

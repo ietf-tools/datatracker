@@ -7,19 +7,19 @@
 {% block title %}Approve {{ charter.canonical_name }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Approve {{ charter.canonical_name }}-{{ charter.rev }}</h1>
+    {% origin %}
+    <h1>Approve {{ charter.canonical_name }}-{{ charter.rev }}</h1>
 
-  <form method="post">
-    {% csrf_token %}
-    <pre>{{ announcement }}</pre>
+    <form method="post">
+        {% csrf_token %}
+        <pre>{{ announcement }}</pre>
 
-    
 
-      <button type="submit" class="btn btn-primary">Send announcement, close ballot & update revision</button>
-      <a class="btn btn-warning" href="{% url "ietf.doc.views_charter.action_announcement_text" name=charter.canonical_name %}?next=approve">Edit/regenerate announcement</a>
-      <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=charter.name %}">Back</a>
-    
 
-  </form>
+        <button type="submit" class="btn btn-primary">Send announcement, close ballot & update revision</button>
+        <a class="btn btn-warning" href="{% url "ietf.doc.views_charter.action_announcement_text" name=charter.canonical_name %}?next=approve">Edit/regenerate announcement</a>
+        <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=charter.name %}">Back</a>
+
+
+    </form>
 {% endblock %}

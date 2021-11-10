@@ -4,42 +4,42 @@
 {% block subtitle %} - Desired Expertise {% endblock %}
 
 {% block nomcom_content %}
-  {% origin %}
-  <h2>Desired expertise</h2>
+    {% origin %}
+    <h2>Desired expertise</h2>
 
-  <p>
-    These pages contain the current summaries of desired expertise for open
-    positions, provided to the Nomcom by the IESG, IAB, and IAOC. As the Nomcom
-    proceeds, per BCP 10, we receive input from the community on the
-    qualifications required for the positions. The Nomcom bases selections on
-    all of this information. These pages may be updated periodically.
-  </p>
+    <p>
+        These pages contain the current summaries of desired expertise for open
+        positions, provided to the Nomcom by the IESG, IAB, and IAOC. As the Nomcom
+        proceeds, per BCP 10, we receive input from the community on the
+        qualifications required for the positions. The Nomcom bases selections on
+        all of this information. These pages may be updated periodically.
+    </p>
 
-  <ul class="nav nav-tabs">
-    {% for position in positions %}
-      <li class="nav-item">
-        <a class="nav-link {% if forloop.first %}active{% endif %}" data-toggle="tab" role="tab" href="#pos-{{ position.name|slugify }}">{{ position.name }}</a>
-      </li>
-    {% endfor %}
-  </ul>
+    <ul class="nav nav-tabs">
+        {% for position in positions %}
+            <li class="nav-item">
+                <a class="nav-link {% if forloop.first %}active{% endif %}" data-toggle="tab" role="tab" href="#pos-{{ position.name|slugify }}">{{ position.name }}</a>
+            </li>
+        {% endfor %}
+    </ul>
 
-  <div class="tab-content">
-    {% for position in positions %}
-      <div class="tab-pane {% if forloop.first %}active{% endif %}" id="pos-{{ position.name|slugify }}">
-        {{ position.get_requirement|safe }}
-      </div>
-    {% endfor %}
-  </div>
+    <div class="tab-content">
+        {% for position in positions %}
+            <div class="tab-pane {% if forloop.first %}active{% endif %}" id="pos-{{ position.name|slugify }}">
+                {{ position.get_requirement|safe }}
+            </div>
+        {% endfor %}
+    </div>
 
 {% endblock %}
 
 {% block js %}
-<script>
-  $('.collapse').collapse()
-  $('.generic_iesg_reqs_header').addClass('bi')
-  $('.generic_iesg_reqs_header').addClass('bi-caret-right')
-  $('.generic_iesg_reqs_header').each(function(){
-      this.text = ' '+this.text+' (click to expand)'
-  })
-</script>
+    <script>
+        $('.collapse').collapse()
+        $('.generic_iesg_reqs_header').addClass('bi')
+        $('.generic_iesg_reqs_header').addClass('bi-caret-right')
+        $('.generic_iesg_reqs_header').each(function(){
+            this.text = ' '+this.text+' (click to expand)'
+        })
+    </script>
 {% endblock %}

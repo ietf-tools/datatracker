@@ -6,88 +6,88 @@
 {% load ietf_filters %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}IESG discuss positions{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>IESG discuss positions</h1>
+    {% origin %}
+    <h1>IESG discuss positions</h1>
 
-  <ul class="nav nav-tabs">
-    <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.agenda' %}">IESG Agenda</a></li>
-    <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.agenda_documents' %}">Documents on future agendas</a></li>
-    <li class="nav-item"><a class="nav-link active" href="{% url 'ietf.iesg.views.discusses' %}">DISCUSS positions</a></li>
-    <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.past_documents' %}">Documents on recent agendas</a></li>
-    <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.photos' %}">IESG Photos</a></li>
-  </ul>
+    <ul class="nav nav-tabs">
+        <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.agenda' %}">IESG Agenda</a></li>
+        <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.agenda_documents' %}">Documents on future agendas</a></li>
+        <li class="nav-item"><a class="nav-link active" href="{% url 'ietf.iesg.views.discusses' %}">DISCUSS positions</a></li>
+        <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.past_documents' %}">Documents on recent agendas</a></li>
+        <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.photos' %}">IESG Photos</a></li>
+    </ul>
 
 
 
-  {% if user|has_role:"Area Director" %}
-    <p class="btn-group" data-toggle="buttons">
-      <label class="btn btn-primary active discuss">
-        <input type="radio" value="all">All
-      </label>
-      <label class="btn btn-primary discuss">
-        <input type="radio" value="byme">By me
-      </label>
-      <label class="btn btn-primary discuss">
-        <input type="radio" value="forme">For me
-      </label>
-    </p>
-  {% endif %}
+    {% if user|has_role:"Area Director" %}
+        <p class="btn-group" data-toggle="buttons">
+            <label class="btn btn-primary active discuss">
+                <input type="radio" value="all">All
+            </label>
+            <label class="btn btn-primary discuss">
+                <input type="radio" value="byme">By me
+            </label>
+            <label class="btn btn-primary discuss">
+                <input type="radio" value="forme">For me
+            </label>
+        </p>
+    {% endif %}
 
-  <table class="table table-sm table-striped tablesorter">
-    <thead>
-      <tr>
-        <th>Document</th>
-        <th>Status</th>
-        <th>Responsible AD</th>
-        <th>Discusses</th>
-      </tr>
-    </thead>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th>Document</th>
+                <th>Status</th>
+                <th>Responsible AD</th>
+                <th>Discusses</th>
+            </tr>
+        </thead>
 
-    <tbody id="doclist">
-      {% for doc in docs %}
-        <tr class="{% if doc.by_me %}byme{% endif %} {% if doc.for_me %}forme{% endif %}">
-          <td>
-	    {{ doc.displayname_with_link }}
-          </td>
-          {% include "doc/search/status_columns.html" %}
-          <td>{{ doc.ad|default:"" }}</td>
-          <td>
-	    {% for p in doc.blocking_positions %}
-	      {% if p.is_old_pos %}
-	        <span class="text-muted">
-	      {% endif %}
-	      {{ p.balloter }}
-	      ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }}{% endif %}
-	      days ago{% if doc.get_state_url != "rfc" and p.rev != doc.rev %}
-	        for -{{ p.rev }}{% endif %})<br>
-	      {% if p.is_old_pos %}
-	        </span>
-	      {% endif %}
-	    {% endfor %}
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+        <tbody id="doclist">
+            {% for doc in docs %}
+                <tr class="{% if doc.by_me %}byme{% endif %} {% if doc.for_me %}forme{% endif %}">
+                    <td>
+                        {{ doc.displayname_with_link }}
+                    </td>
+                    {% include "doc/search/status_columns.html" %}
+                    <td>{{ doc.ad|default:"" }}</td>
+                    <td>
+                        {% for p in doc.blocking_positions %}
+                            {% if p.is_old_pos %}
+                                <span class="text-muted">
+                            {% endif %}
+                            {{ p.balloter }}
+                            ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }}{% endif %}
+                            days ago{% if doc.get_state_url != "rfc" and p.rev != doc.rev %}
+                                for -{{ p.rev }}{% endif %})<br>
+                            {% if p.is_old_pos %}
+                                </span>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
 
 {% block js %}
-  <script src="{% static "ietf/js/datatables.js" %}"></script>
-  <script>
-    $(".discuss").click(function () {
-        var x = $(this).find("input").val();
-        if (x === "all") {
-            $("#doclist>tr").removeClass("hidden");
-        } else {
-            $("#doclist>tr." + x).removeClass("hidden");
-            $("#doclist>tr:not(." + x + ")").addClass("hidden");
-        }
-    });
-  </script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script>
+        $(".discuss").click(function () {
+            var x = $(this).find("input").val();
+            if (x === "all") {
+                $("#doclist>tr").removeClass("hidden");
+            } else {
+                $("#doclist>tr." + x).removeClass("hidden");
+                $("#doclist>tr:not(." + x + ")").addClass("hidden");
+            }
+        });
+    </script>
 {% endblock %}

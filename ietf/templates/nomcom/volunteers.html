@@ -7,45 +7,45 @@
 {% block subtitle %} - Volunteers{% endblock %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block nomcom_content %}
-  {% origin %}
-  <h2>Volunteers for {{ nomcom.group }}</h2>
+    {% origin %}
+    <h2>Volunteers for {{ nomcom.group }}</h2>
 
-  {% regroup volunteers by eligible as volunteers_by_eligibility %}
+    {% regroup volunteers by eligible as volunteers_by_eligibility %}
 
-  {% for eligibility_group in volunteers_by_eligibility %}
-  <div class="panel panel-default">
-    <div class="panel-heading">{{ eligibility_group.grouper|yesno:"Eligible, Not Eligible"}}</div>
-    <div class="panel-body">
-      <table class="table table-sm table-striped tablesorter">
-        <thead>
-          <th></th>
-          <th>Last Name</th>
-          <th>First Name</th>
-          <th>Affiliation</th>
-          <th>Primary Email Address</th>
-          <th>Qualifications</th>
-        </thead>
-         
-        {% for v in eligibility_group.list %}
-          <tr>
-            <td>{{ forloop.counter }}</td>
-            <td><a href="{% url 'ietf.person.views.profile' v.person.name %}">{{v.person.last_name}}</a></td>
-            <td>{{v.person.first_name}}</td>
-            <td>{{v.affiliation}}</td>
-            <td>{{v.person.email}}</td>
-            <td>{{v.qualifications}}</td>
-          </tr>
-      {% endfor %}
-      </table> 
-    </div>
-  </div>
-  {% endfor %}
+    {% for eligibility_group in volunteers_by_eligibility %}
+        <div class="panel panel-default">
+            <div class="panel-heading">{{ eligibility_group.grouper|yesno:"Eligible, Not Eligible"}}</div>
+            <div class="panel-body">
+                <table class="table table-sm table-striped tablesorter">
+                    <thead>
+                        <th></th>
+                        <th>Last Name</th>
+                        <th>First Name</th>
+                        <th>Affiliation</th>
+                        <th>Primary Email Address</th>
+                        <th>Qualifications</th>
+                    </thead>
+
+                    {% for v in eligibility_group.list %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><a href="{% url 'ietf.person.views.profile' v.person.name %}">{{v.person.last_name}}</a></td>
+                            <td>{{v.person.first_name}}</td>
+                            <td>{{v.affiliation}}</td>
+                            <td>{{v.person.email}}</td>
+                            <td>{{v.qualifications}}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    {% endfor %}
 {% endblock nomcom_content %}
 
 {% block js %}
-  <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

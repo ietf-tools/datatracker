@@ -5,32 +5,32 @@
 {% load ietf_filters static django_bootstrap5 %}
 
 {% block morecss %}
-#id_body {height:700px;}
+    #id_body {height:700px;}
 {% endblock %}
 
 {% block title %}IETF {{ meeting.number }}: Request Minutes{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <div class="row">
-    <div class="col-md-10">
+    {% origin %}
+    <div class="row">
+        <div class="col-md-10">
 
-      <h1 class="title">IETF {{ meeting.number }}: Request Minutes <br>
-        <small>{{meeting.city}}, {{meeting.country}} -- {{meeting.venue_name}}</small>
-      </h1>
+            <h1 class="title">IETF {{ meeting.number }}: Request Minutes <br>
+                <small>{{meeting.city}}, {{meeting.country}} -- {{meeting.venue_name}}</small>
+            </h1>
+        </div>
     </div>
-  </div>
-  <div class="row">
-    <form method="post">
-      {% csrf_token %}
-      {% bootstrap_form form %}
-      
+    <div class="row">
+        <form method="post">
+            {% csrf_token %}
+            {% bootstrap_form form %}
 
-        <button type="submit" class="btn btn-danger">Send</button>
-      
 
-    </form>
-  </div>
+            <button type="submit" class="btn btn-danger">Send</button>
+
+
+        </form>
+    </div>
 
 {% endblock %}
 

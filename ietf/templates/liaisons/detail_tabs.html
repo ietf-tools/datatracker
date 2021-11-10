@@ -1,7 +1,7 @@
 <ul class="nav nav-tabs">
-  {% for name, link, selected in tabs %}
-    <li class="nav-item">
-        <a class="nav-link {% if selected %}active{% endif %}" href="{{ link }}">{{ name }}</a>
-    </li>
-  {% endfor %}
+    {% for name, link, selected in tabs %}
+        <li class="nav-item">
+            <a class="nav-link {% if selected %}active{% endif %}" href="{{ link }}">{{ name }}</a>
+        </li>
+    {% endfor %}
 </ul>

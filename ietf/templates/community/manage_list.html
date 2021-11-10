@@ -6,139 +6,139 @@
 {% load misc_filters %}
 
 {% block pagehead %}
-  {{ all_forms|merge_media:'css' }}
+    {{ all_forms|merge_media:'css' }}
 {% endblock %}
 
 {% block title %}Manage {{ clist.long_name }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Manage {{ clist.long_name }}</h1>
+    {% origin %}
+    <h1>Manage {{ clist.long_name }}</h1>
 
-  <noscript>This page depends on Javascript being enabled to work properly.</noscript>
+    <noscript>This page depends on Javascript being enabled to work properly.</noscript>
 
-  {% bootstrap_messages %}
+    {% bootstrap_messages %}
 
-  <p>The list currently tracks <a href="{{ clist.get_absolute_url }}">{{ total_count }} document{{ total_count|pluralize }}</a>.</p>
+    <p>The list currently tracks <a href="{{ clist.get_absolute_url }}">{{ total_count }} document{{ total_count|pluralize }}</a>.</p>
 
-  <p><a class="btn btn-primary" href="{{ clist.get_absolute_url }}">Back to list</a></p>
+    <p><a class="btn btn-primary" href="{{ clist.get_absolute_url }}">Back to list</a></p>
 
-  <h2>Individual documents</h2>
+    <h2>Individual documents</h2>
 
-  {% if individually_added %}
-    <p>The list tracks {{ individually_added|length }} individually added document{{ individually_added|length|pluralize }}:</p>
-    <table class="table table-sm table-striped">
-      <tbody>
-        {% for d in individually_added %}
-          <tr>
-            <td>{{ d.name }}</td>
-            <td>
-              <form method="post" id="remove_document_{{d.pk}}">
-                {% csrf_token %}
-                <input type="hidden" name="document" value="{{ d.pk }}">
-                <button class="btn btn-danger btn-xs" name="action" value="remove_document">Remove</button>
-              </form>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <p>The list does not track any individually added documents yet.</p>
-  {% endif %}
+    {% if individually_added %}
+        <p>The list tracks {{ individually_added|length }} individually added document{{ individually_added|length|pluralize }}:</p>
+        <table class="table table-sm table-striped">
+            <tbody>
+                {% for d in individually_added %}
+                    <tr>
+                        <td>{{ d.name }}</td>
+                        <td>
+                            <form method="post" id="remove_document_{{d.pk}}">
+                                {% csrf_token %}
+                                <input type="hidden" name="document" value="{{ d.pk }}">
+                                <button class="btn btn-danger btn-xs" name="action" value="remove_document">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>The list does not track any individually added documents yet.</p>
+    {% endif %}
 
-  {% if clist.group %}
-    <p>Add individual documents here:</p>
-  {% else %}
-    <p>Conveniently track individual documents in your personal list with the track icon <span class="bi bi-bookmark"></span> in <a href="/doc/search/">search results</a>.</p>
+    {% if clist.group %}
+        <p>Add individual documents here:</p>
+    {% else %}
+        <p>Conveniently track individual documents in your personal list with the track icon <span class="bi bi-bookmark"></span> in <a href="/doc/search/">search results</a>.</p>
 
-    <p>You can also add documents here:</p>
-  {% endif %}
+        <p>You can also add documents here:</p>
+    {% endif %}
 
-  <form class="form add-document" method="post" id="add_document">
-    {% csrf_token %}
-    {% bootstrap_field add_doc_form.documents show_label=False %}
-    <button class="btn btn-primary" name="action" value="add_documents">Add documents</button>
-  </form>
-
-
-  <h2>Search rules</h2>
-
-  <p>You can track documents with a search rule. When a document fulfills the search criteria, it will automatically show up in the list.</p>
-
-  {% if rules %}
-  <table class="table table-sm table-striped">
-    <thead>
-      <tr><th>Rule</th><th>Value</th><th>Documents</th><th></th></tr>
-    </thead>
-    <tbody>
-      {% for rule in rules %}
-        <tr id="r{{ rule.pk }}">
-          <td>{{ rule.get_rule_type_display }}</td>
-          <td>
-            {% if "group" in rule.rule_type or "area" in rule.rule_type %}
-              {{ rule.group.acronym }}
-            {% elif "state_" in rule.rule_type %}
-              {{ rule.state }}
-            {% elif "author" in rule.rule_type or rule.rule_type == "ad" or "shepherd" in rule.rule_type %}
-              {{ rule.person }}
-            {% elif "name_contains" in rule.rule_type %}
-              {{ rule.text }}
-            {% endif %}
-          </td>
-          <td>{{ rule.matching_documents_count }} match{{ rule.matching_documents_count|pluralize:"es" }}</td>
-          <td>
-            <form method="post">
-              {% csrf_token %}
-              <input type="hidden" name="rule" value="{{ rule.pk }}">
-              <button class="btn btn-danger btn-xs" name="action" value="remove_rule">Remove</button>
-            </form>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  {% else %}
-
-  <p>No rules defined.</p>
-
-  {% endif %}
-
-  <div><a class="btn btn-primary" data-toggle="collapse" data-target="#add-new-rule">Add a new rule</a></div>
-
-  <div id="add-new-rule" {% if not rule_type_form.errors and not rule_form %}class="collapse"{% endif %}>
-    <h3>Add a new rule</h3>
-
-    <form method="post">
-      {% csrf_token %}
-      {% bootstrap_form rule_type_form %}
-
-      <div class="form-content-placeholder">
-        {% if rule_form %}
-          {% bootstrap_form rule_form %}
-        {% endif %}
-      </div>
-
-      
-
-        <button type="submit" class="btn btn-primary" name="action" value="add_rule">Add rule</button>
-      
-
+    <form class="form add-document" method="post" id="add_document">
+        {% csrf_token %}
+        {% bootstrap_field add_doc_form.documents show_label=False %}
+        <button class="btn btn-primary" name="action" value="add_documents">Add documents</button>
     </form>
 
-    <div class="empty-forms hide">
-      {% for rule_type, f in empty_rule_forms.items %}
-        <div class="rule-type {{ rule_type }}">
-          {% bootstrap_form f %}
+
+    <h2>Search rules</h2>
+
+    <p>You can track documents with a search rule. When a document fulfills the search criteria, it will automatically show up in the list.</p>
+
+    {% if rules %}
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr><th>Rule</th><th>Value</th><th>Documents</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for rule in rules %}
+                    <tr id="r{{ rule.pk }}">
+                        <td>{{ rule.get_rule_type_display }}</td>
+                        <td>
+                            {% if "group" in rule.rule_type or "area" in rule.rule_type %}
+                                {{ rule.group.acronym }}
+                            {% elif "state_" in rule.rule_type %}
+                                {{ rule.state }}
+                            {% elif "author" in rule.rule_type or rule.rule_type == "ad" or "shepherd" in rule.rule_type %}
+                                {{ rule.person }}
+                            {% elif "name_contains" in rule.rule_type %}
+                                {{ rule.text }}
+                            {% endif %}
+                        </td>
+                        <td>{{ rule.matching_documents_count }} match{{ rule.matching_documents_count|pluralize:"es" }}</td>
+                        <td>
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="rule" value="{{ rule.pk }}">
+                                <button class="btn btn-danger btn-xs" name="action" value="remove_rule">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    {% else %}
+
+        <p>No rules defined.</p>
+
+    {% endif %}
+
+    <div><a class="btn btn-primary" data-toggle="collapse" data-target="#add-new-rule">Add a new rule</a></div>
+
+    <div id="add-new-rule" {% if not rule_type_form.errors and not rule_form %}class="collapse"{% endif %}>
+        <h3>Add a new rule</h3>
+
+        <form method="post">
+            {% csrf_token %}
+            {% bootstrap_form rule_type_form %}
+
+            <div class="form-content-placeholder">
+                {% if rule_form %}
+                    {% bootstrap_form rule_form %}
+                {% endif %}
+            </div>
+
+
+
+            <button type="submit" class="btn btn-primary" name="action" value="add_rule">Add rule</button>
+
+
+        </form>
+
+        <div class="empty-forms hide">
+            {% for rule_type, f in empty_rule_forms.items %}
+                <div class="rule-type {{ rule_type }}">
+                    {% bootstrap_form f %}
+                </div>
+            {% endfor %}
         </div>
-      {% endfor %}
     </div>
-  </div>
 
 {% endblock %}
 
 {% block js %}
-  {{ all_forms|merge_media:'js' }}
-  <script src="{% static 'ietf/js/manage-community-list.js' %}"></script>
+    {{ all_forms|merge_media:'js' }}
+    <script src="{% static 'ietf/js/manage-community-list.js' %}"></script>
 {% endblock %}

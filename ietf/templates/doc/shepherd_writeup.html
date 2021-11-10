@@ -5,18 +5,18 @@
 {% load textfilters %}
 
 {% block title %}
-  Shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}
+    Shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}
 {% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Shepherd writeup<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h1>
+    {% origin %}
+    <h1>Shepherd writeup<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h1>
 
-  <pre class="pasted">{{writeup|linkify}}</pre>
+    <pre class="pasted">{{writeup|linkify}}</pre>
 
-  {% if can_edit %}
-    <a class="btn btn-primary" href="{% url 'ietf.doc.views_draft.edit_shepherd_writeup' name=doc.name %}">Edit</a>
-  {% endif %}
-  <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
+    {% if can_edit %}
+        <a class="btn btn-primary" href="{% url 'ietf.doc.views_draft.edit_shepherd_writeup' name=doc.name %}">Edit</a>
+    {% endif %}
+    <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
 
 {% endblock %}

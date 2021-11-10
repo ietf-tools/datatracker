@@ -7,35 +7,35 @@
 {% block subtitle %} - View unrelated feedback{% endblock %}
 
 {% block nomcom_content %}
-  {% origin %}
-  <h2>Feedback not related to nominees</h2>
+    {% origin %}
+    <h2>Feedback not related to nominees</h2>
 
-  <ul class="nav nav-tabs">
-    {% for ft in feedback_types %}
-      <li class="nav-item">
-        <a class="nav-link {% if forloop.first %}active{% endif %}" href="#{{ ft.ft.slug }}" role="tab" data-toggle="tab">{{ ft.ft.name }}</a></li>
-    {% endfor %}
-  </ul>
-
-  <div class="tab-content">
-    {% for ft in feedback_types %}
-      <div class="tab-pane {% if forloop.first %}active{% endif %}" id="{{ ft.ft.slug }}">
-        {% for feedback in ft.feedback %}
-          {% if forloop.first %}<p></p>{% else %}<hr>{% endif %}
-          <dl class="dl-horizontal">
-            <dt>From</dt>
-            <dd>{{ feedback.author|formatted_email|default:"Anonymous" }}</dd>
-            <dt>Date</dt>
-            <dd>{{ feedback.time|date:"Y-m-d" }}</dd>
-            <dt>Body</dt>
-            <dd class="pasted">{% decrypt feedback.comments request year 1 %}</dd>
-          </dl>
+    <ul class="nav nav-tabs">
+        {% for ft in feedback_types %}
+            <li class="nav-item">
+                <a class="nav-link {% if forloop.first %}active{% endif %}" href="#{{ ft.ft.slug }}" role="tab" data-toggle="tab">{{ ft.ft.name }}</a></li>
         {% endfor %}
-      </div>
-    {% endfor %}
-  </div>
+    </ul>
 
-  <p>
-    <a class="btn btn-primary" href="{% url 'ietf.nomcom.views.view_feedback' year %}">Back</a>
-  </p>
+    <div class="tab-content">
+        {% for ft in feedback_types %}
+            <div class="tab-pane {% if forloop.first %}active{% endif %}" id="{{ ft.ft.slug }}">
+                {% for feedback in ft.feedback %}
+                    {% if forloop.first %}<p></p>{% else %}<hr>{% endif %}
+                    <dl class="dl-horizontal">
+                        <dt>From</dt>
+                        <dd>{{ feedback.author|formatted_email|default:"Anonymous" }}</dd>
+                        <dt>Date</dt>
+                        <dd>{{ feedback.time|date:"Y-m-d" }}</dd>
+                        <dt>Body</dt>
+                        <dd class="pasted">{% decrypt feedback.comments request year 1 %}</dd>
+                    </dl>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <p>
+        <a class="btn btn-primary" href="{% url 'ietf.nomcom.views.view_feedback' year %}">Back</a>
+    </p>
 {% endblock %}

@@ -5,23 +5,23 @@
 {% load django_bootstrap5 %}
 
 {% block title %}
-  Change responsible AD for {{ charter.canonical_name }}-{{ charter.rev }}
+    Change responsible AD for {{ charter.canonical_name }}-{{ charter.rev }}
 {% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Change responsible AD<br><small>{{ charter.canonical_name }}-{{ charter.rev }}</small></h1>
+    {% origin %}
+    <h1>Change responsible AD<br><small>{{ charter.canonical_name }}-{{ charter.rev }}</small></h1>
 
-  <form enctype="multipart/form-data" method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
+    <form enctype="multipart/form-data" method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
 
-    
 
-      <button type="submit" class="btn btn-primary">Submit</button>
-      <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=charter.canonical_name %}">Back</a>
-    
 
-  </form>
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=charter.canonical_name %}">Back</a>
+
+
+    </form>
 
 {% endblock %}

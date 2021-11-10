@@ -3,56 +3,56 @@
 {% load origin static %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}Active review directorates{% endblock %}
 
 
 {% block content %}
-  {% origin %}
-  <h1>Active Review Directorates</h1>
-  <table class="table table-sm table-striped tablesorter">
-    <thead>
-      <tr>
-        <th>Team</th>
-        <th>Name</th>
-        <th>Area</th>
-        <th>AD</th>
-        <th>Secretaries</th>
-        <th>Chairs</th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for group in dirs %}
-        <tr>
-          <td><a href="{% url "ietf.group.views.group_home" acronym=group.acronym %}">{{ group.acronym }}</a></td>
-          <td>{{ group.name }}</td>
-          <td><a href="{% url "ietf.group.views.group_home" acronym=group.parent.acronym %}">{{ group.parent.acronym }}</a></td>
-          <td>
-            {% for ad in group.ads %}
-              <a href="{% url 'ietf.person.views.profile' email_or_name=ad.person.name %}">{{ ad.person.plain_name }}
-	      </a><a href="mailto:{{ ad.email.address }}"><span class="bi bi-envelope tiny"></span></a>{% if not forloop.last %}, {% endif %}
+    {% origin %}
+    <h1>Active Review Directorates</h1>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th>Team</th>
+                <th>Name</th>
+                <th>Area</th>
+                <th>AD</th>
+                <th>Secretaries</th>
+                <th>Chairs</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for group in dirs %}
+                <tr>
+                    <td><a href="{% url "ietf.group.views.group_home" acronym=group.acronym %}">{{ group.acronym }}</a></td>
+                    <td>{{ group.name }}</td>
+                    <td><a href="{% url "ietf.group.views.group_home" acronym=group.parent.acronym %}">{{ group.parent.acronym }}</a></td>
+                    <td>
+                        {% for ad in group.ads %}
+                            <a href="{% url 'ietf.person.views.profile' email_or_name=ad.person.name %}">{{ ad.person.plain_name }}
+                            </a><a href="mailto:{{ ad.email.address }}"><span class="bi bi-envelope tiny"></span></a>{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for secretary in group.secretaries %}
+                            <a href="{% url 'ietf.person.views.profile' email_or_name=secretary.person.name %}">{{ secretary.person.plain_name }}</a>
+                            <a href="mailto:{{ secretary.email.address }}"><span class="bi bi-envelope tiny"></span></a> {% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for chair in group.chairs %}
+                            <a href="{% url 'ietf.person.views.profile' email_or_name=chair.person.name %}">{{ chair.person.plain_name }}</a>
+                            <a href="mailto:{{ chair.email.address }}"><span class="bi bi-envelope tiny"></span></a>{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
             {% endfor %}
-          </td>
-          <td>
-            {% for secretary in group.secretaries %}
-              <a href="{% url 'ietf.person.views.profile' email_or_name=secretary.person.name %}">{{ secretary.person.plain_name }}</a>
-	      <a href="mailto:{{ secretary.email.address }}"><span class="bi bi-envelope tiny"></span></a> {% if not forloop.last %}, {% endif %}
-            {% endfor %}
-          </td>
-          <td>
-            {% for chair in group.chairs %}
-              <a href="{% url 'ietf.person.views.profile' email_or_name=chair.person.name %}">{{ chair.person.plain_name }}</a>
-	      <a href="mailto:{{ chair.email.address }}"><span class="bi bi-envelope tiny"></span></a>{% if not forloop.last %}, {% endif %}
-            {% endfor %}
-          </td>
-        </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+        </tbody>
+    </table>
 {% endblock %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

@@ -6,30 +6,30 @@
 {% load static %}
 
 {% block pagehead %}
-  {{ form.media.css }}
+    {{ form.media.css }}
 {% endblock %}
 
 {% block subtitle %} - Edit members{% endblock %}
 
 {% block nomcom_content %}
-  {% origin %}
-  <h2>
-     Edit members
-  </h2>
+    {% origin %}
+    <h2>
+        Edit members
+    </h2>
 
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-    
+    <form method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
 
-      <button class="btn btn-primary" type="submit">Save</button>
-      <a class="btn btn-primary" href="{% url 'ietf.nomcom.views.private_index' year %}">Cancel</a>
-    
 
-  </form>
+        <button class="btn btn-primary" type="submit">Save</button>
+        <a class="btn btn-primary" href="{% url 'ietf.nomcom.views.private_index' year %}">Cancel</a>
+
+
+    </form>
 
 {% endblock %}
 
 {% block js %}
-  {{ form.media.js }}
+    {{ form.media.js }}
 {% endblock %}

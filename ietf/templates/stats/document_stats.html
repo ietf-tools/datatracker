@@ -7,74 +7,74 @@
 {% block title %}{{ stats_title }}{% endblock %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
-  <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block content %}
-  {% origin %}
+    {% origin %}
 
-  <h1>Draft/RFC statistics</h1>
+    <h1>Draft/RFC statistics</h1>
 
-  <div class="stats-options well">
-    <div>
-      Documents:
-      
-      <div class="btn-group">
-        {% for slug, label, url in possible_document_stats_types %}
-          <a class="btn btn-primary {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
-        {% endfor %}
-      </div>
+    <div class="stats-options well">
+        <div>
+            Documents:
+
+            <div class="btn-group">
+                {% for slug, label, url in possible_document_stats_types %}
+                    <a class="btn btn-primary {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div>
+            Authors:
+
+            <div class="btn-group">
+                {% for slug, label, url in possible_author_stats_types %}
+                    <a class="btn btn-primary {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div>
+            Yearly:
+
+            <div class="btn-group">
+                {% for slug, label, url in possible_yearly_stats_types %}
+                    <a class="btn btn-primary {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <h5>Options</h5>
+
+        <div>
+            Document type:
+            <div style="margin-right:3em;" class="btn-group">
+                {% for slug, label, url in possible_document_types %}
+                    <a class="btn btn-primary {% if slug == document_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+                {% endfor %}
+            </div>
+
+            Time:
+            <div class="btn-group">
+                {% for slug, label, url in possible_time_choices %}
+                    <a class="btn btn-primary {% if slug == time_choice %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 
-    <div>
-      Authors:
-      
-      <div class="btn-group">
-        {% for slug, label, url in possible_author_stats_types %}
-          <a class="btn btn-primary {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
-        {% endfor %}
-      </div>
-    </div>
+    <div class="alert alert-info ">
 
-    <div>
-      Yearly:
-      
-      <div class="btn-group">
-        {% for slug, label, url in possible_yearly_stats_types %}
-          <a class="btn btn-primary {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
-        {% endfor %}
-      </div>
-    </div>
+        <b>Please Note:</b> The author information in the datatracker about RFCs
+        with numbers lower than about 1300 and drafts from before 2001 is
+        unreliable and in many cases absent.  For this reason, statistics on these
+        pages does not show correct author stats for corpus selections that involve such
+        documents.
 
-    <h5>Options</h5>
-
-    <div>
-      Document type:
-      <div style="margin-right:3em;" class="btn-group">
-        {% for slug, label, url in possible_document_types %}
-          <a class="btn btn-primary {% if slug == document_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
-        {% endfor %}
-      </div>
-
-      Time:
-      <div class="btn-group">
-        {% for slug, label, url in possible_time_choices %}
-          <a class="btn btn-primary {% if slug == time_choice %}active{% endif %}" href="{{ url }}">{{ label }}</a>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-
-  <div class="alert alert-info ">
-
-    <b>Please Note:</b> The author information in the datatracker about RFCs
-    with numbers lower than about 1300 and drafts from before 2001 is
-    unreliable and in many cases absent.  For this reason, statistics on these
-    pages does not show correct author stats for corpus selections that involve such
-    documents.
-
-    <!--
+        <!--
     <br/>
     <br/>
 
@@ -88,18 +88,18 @@
 
     -->
 
-  </div>
+    </div>
 
-  
-  <div class="document-stats">
-    {% include content_template %}
-  </div>
+
+    <div class="document-stats">
+        {% include content_template %}
+    </div>
 {% endblock %}
 
 {% block js %}
-  <script src="{% static 'highcharts/highcharts.js' %}"></script>
-  <script src="{% static 'highcharts/modules/exporting.js' %}"></script>
-  <script src="{% static 'highcharts/modules/offline-exporting.js' %}"></script>
-  <script src="{% static 'ietf/js/stats.js' %}"></script>
-  <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static 'highcharts/highcharts.js' %}"></script>
+    <script src="{% static 'highcharts/modules/exporting.js' %}"></script>
+    <script src="{% static 'highcharts/modules/offline-exporting.js' %}"></script>
+    <script src="{% static 'ietf/js/stats.js' %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

@@ -5,24 +5,24 @@
 {% load ietf_filters static %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}{{ stream }} stream documents{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>{{ stream }} stream documents</h1>
+    {% origin %}
+    <h1>{{ stream }} stream documents</h1>
 
-  {% if editable %}
-    <p>
-      <a class="btn btn-primary" href="{% url "ietf.group.views.stream_edit" stream.slug %}">Assign delegates</a>
-    </p>
-  {% endif %}
+    {% if editable %}
+        <p>
+            <a class="btn btn-primary" href="{% url "ietf.group.views.stream_edit" stream.slug %}">Assign delegates</a>
+        </p>
+    {% endif %}
 
-  {% include "doc/search/search_results.html" %}
+    {% include "doc/search/search_results.html" %}
 {% endblock %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

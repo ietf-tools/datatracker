@@ -6,22 +6,22 @@
 {% block title %}Clear ballot for {{ doc }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Clear ballot<br><small><a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
+    {% origin %}
+    <h1>Clear ballot<br><small><a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
 
-  <form method="post">
-    {% csrf_token %}
-    <p class="alert alert-danger">
-      <b>Clear the ballot for {{ doc }}?</b>
-      <br>
-      This will clear all ballot positions and discuss entries.
-    </p>
+    <form method="post">
+        {% csrf_token %}
+        <p class="alert alert-danger">
+            <b>Clear the ballot for {{ doc }}?</b>
+            <br>
+            This will clear all ballot positions and discuss entries.
+        </p>
 
-    
 
-      <button type="submit" class="btn btn-danger">Clear</button>
-    
 
-  </form>
+        <button type="submit" class="btn btn-danger">Clear</button>
+
+
+    </form>
 
 {% endblock %}

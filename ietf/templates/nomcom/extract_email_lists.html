@@ -6,27 +6,27 @@
 {% block subtitle %} - Email Lists{% endblock %}
 
 {% block nomcom_content %}
-  {% origin %}
-  <h2>Email lists for {{ nomcom.group }}</h2>
+    {% origin %}
+    <h2>Email lists for {{ nomcom.group }}</h2>
 
-  {% with title='Nominees Pending Acceptance' list=pending %}
-    {% include 'nomcom/email_list_panel.html' %}
-  {% endwith %}
-  {% with title='Accepted Nominees' list=accepted %}
-    {% include 'nomcom/email_list_panel.html' %}
-  {% endwith %}
-  {% with title='Accepted Nominees Without a Questionnaire Response' list=noresp %}
-    {% include 'nomcom/email_list_panel.html' %}
-  {% endwith %}
-  <div class="panel panel-default">
-    <div class="panel-heading"><h3>Accepted Nominees by Position</h3></div>
-    <div class="panel-body">
-      {% for pos, accepts in bypos.items %}
-        {% with title=pos.name list=accepts %}
-          {% include 'nomcom/email_list_panel.html' %}
-        {% endwith %}
-      {% endfor %}
+    {% with title='Nominees Pending Acceptance' list=pending %}
+        {% include 'nomcom/email_list_panel.html' %}
+    {% endwith %}
+    {% with title='Accepted Nominees' list=accepted %}
+        {% include 'nomcom/email_list_panel.html' %}
+    {% endwith %}
+    {% with title='Accepted Nominees Without a Questionnaire Response' list=noresp %}
+        {% include 'nomcom/email_list_panel.html' %}
+    {% endwith %}
+    <div class="panel panel-default">
+        <div class="panel-heading"><h3>Accepted Nominees by Position</h3></div>
+        <div class="panel-body">
+            {% for pos, accepts in bypos.items %}
+                {% with title=pos.name list=accepts %}
+                    {% include 'nomcom/email_list_panel.html' %}
+                {% endwith %}
+            {% endfor %}
+        </div>
     </div>
-  </div>
 
 {% endblock nomcom_content %}

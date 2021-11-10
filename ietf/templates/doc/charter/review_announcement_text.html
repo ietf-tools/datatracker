@@ -8,27 +8,27 @@
 {% block title %}WG Review announcement }} announcement writeup for {{ charter.chartered_group.acronym }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>WG Review announcement writeup<br><small>{{ charter.chartered_group.acronym }}</small></h1>
+    {% origin %}
+    <h1>WG Review announcement writeup<br><small>{{ charter.chartered_group.acronym }}</small></h1>
 
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form announcement_text_form %}
+    <form method="post">
+        {% csrf_token %}
+        {% bootstrap_form announcement_text_form %}
 
-    
 
-      <button type="submit" class="btn btn-primary" name="save_text" value="Save">Submit</button>
-      <button type="submit" class="btn btn-warning" name="regenerate_text" value="Regenerate"">Regenerate</button>
 
-      {% if user|has_role:"Secretariat" %}
-          <input type="submit" type="submit" class="btn btn-primary" name="send_annc_only" value="Send only to IETF-Announce" />
-          <input type="submit" type="submit" class="btn btn-primary" name="send_nw_only" value="Send only to New-Work" />
-          <input type="submit" type="submit" class="btn btn-primary" name="send_both" value="Send to both" />
-      {% endif %}
+        <button type="submit" class="btn btn-primary" name="save_text" value="Save">Submit</button>
+        <button type="submit" class="btn btn-warning" name="regenerate_text" value="Regenerate"">Regenerate</button>
 
-      <a class="btn btn-primary pull-right" href="{{ back_url }}">Back</a>
-    
+        {% if user|has_role:"Secretariat" %}
+            <input type="submit" type="submit" class="btn btn-primary" name="send_annc_only" value="Send only to IETF-Announce" />
+            <input type="submit" type="submit" class="btn btn-primary" name="send_nw_only" value="Send only to New-Work" />
+            <input type="submit" type="submit" class="btn btn-primary" name="send_both" value="Send to both" />
+        {% endif %}
 
-  </form>
+        <a class="btn btn-primary pull-right" href="{{ back_url }}">Back</a>
+
+
+    </form>
 
 {% endblock%}

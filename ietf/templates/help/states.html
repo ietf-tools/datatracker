@@ -3,41 +3,41 @@
 {% load origin static %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %} {{type.label|cut:"state"|cut:"state"}} states{% endblock %}
 
 {% block content %}
-  {% origin %}
+    {% origin %}
 
-  <h1>{{type.label|cut:"state"|cut:"State"}} states</h1>
+    <h1>{{type.label|cut:"state"|cut:"State"}} states</h1>
 
 
-  <table class="table table-sm table-striped tablesorter">
-    <thead>
-      <tr>
-        <th>State</th>
-        <th>Description</th>
-        <th>Next states</th>
-      </tr>
-    </thead>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th>State</th>
+                <th>Description</th>
+                <th>Next states</th>
+            </tr>
+        </thead>
 
-    <tbody>
-      {% for state in states %}
-        <tr>
-          <th>{{ state.name }}</th>
-          <td>{{ state.desc|safe }}</td>
-          <td><ul>{% for s in state.next_states.all %}<li>{{ s.name }}</li>{%endfor%}</ul></td>
-        </tr>
-      {% endfor %}
+        <tbody>
+            {% for state in states %}
+                <tr>
+                    <th>{{ state.name }}</th>
+                    <td>{{ state.desc|safe }}</td>
+                    <td><ul>{% for s in state.next_states.all %}<li>{{ s.name }}</li>{%endfor%}</ul></td>
+                </tr>
+            {% endfor %}
 
-    </tbody>
-  </table>
+        </tbody>
+    </table>
 
 
 {% endblock %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

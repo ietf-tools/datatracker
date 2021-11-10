@@ -3,7 +3,7 @@
 {% load django_bootstrap5 %}
 
 <div class="form-horizontal">
-  <input type="hidden" name="prefix" value="{{ form.prefix|default:"" }}"/>
+    <input type="hidden" name="prefix" value="{{ form.prefix|default:"" }}"/>
 
-  {% bootstrap_form form layout='horizontal' %}
+    {% bootstrap_form form layout='horizontal' %}
 </div>

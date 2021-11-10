@@ -5,15 +5,15 @@
 <div class="pull-right">{% ballot_icon doc %}</div>
 
 <dl class="dl-horizontal">
-  <dt>{{ doc.group.type }} name</dt>
-  <dd><b>{{ doc.group.name }} ({{doc.group.acronym}})</b></dd>
+    <dt>{{ doc.group.type }} name</dt>
+    <dd><b>{{ doc.group.name }} ({{doc.group.acronym}})</b></dd>
 
-  <dt>Charter</dt>
-  <dd>
-    <a href="{{ doc.get_href }}"><span class="bi bi-file"></span></a>
-    <a href="{{ doc.get_absolute_url }}">{{ doc.name}}-({{doc.rev}})</a>
-  </dd>
+    <dt>Charter</dt>
+    <dd>
+        <a href="{{ doc.get_href }}"><span class="bi bi-file"></span></a>
+        <a href="{{ doc.get_absolute_url }}">{{ doc.name}}-({{doc.rev}})</a>
+    </dd>
 
-  <dt>Area</dt>
-  <dd>{{ doc.group.parent.acronym|upper }}  ({{ doc.ad|default:"(None)" }})</dd>
+    <dt>Area</dt>
+    <dd>{{ doc.group.parent.acronym|upper }}  ({{ doc.ad|default:"(None)" }})</dd>
 </dl>

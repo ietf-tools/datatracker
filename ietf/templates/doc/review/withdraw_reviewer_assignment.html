@@ -5,20 +5,20 @@
 {% block title %}Withdraw review assignment for {{ assignment.review_request.doc.name }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Withdraw review assignment<br><small>{{ assignment.review_request.doc.name }}</small></h1>
+    {% origin %}
+    <h1>Withdraw review assignment<br><small>{{ assignment.review_request.doc.name }}</small></h1>
 
-  <p>Withdraw review assignment for {{ assignment.reviewer.person }}</p>
+    <p>Withdraw review assignment for {{ assignment.reviewer.person }}</p>
 
-  <form method="post">
-    {% csrf_token %}
+    <form method="post">
+        {% csrf_token %}
 
-    
 
-    <a class="btn btn-primary" href="{% url "ietf.doc.views_review.review_request" name=assignment.review_request.doc.canonical_name request_id=assignment.review_request.pk %}">Cancel</a>
-    <button type="submit" class="btn btn-primary" name="action" value="withdraw">Withdraw assignment</button>
-    
 
-  </form>
+        <a class="btn btn-primary" href="{% url "ietf.doc.views_review.review_request" name=assignment.review_request.doc.canonical_name request_id=assignment.review_request.pk %}">Cancel</a>
+        <button type="submit" class="btn btn-primary" name="action" value="withdraw">Withdraw assignment</button>
+
+
+    </form>
 
 {% endblock %}

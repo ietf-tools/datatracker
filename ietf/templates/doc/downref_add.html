@@ -7,38 +7,38 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block pagehead %}
-  {{ add_downref_form.media.css }}
+    {{ add_downref_form.media.css }}
 {% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>{{ title }}</h1>
+    {% origin %}
+    <h1>{{ title }}</h1>
 
-  {% bootstrap_messages %}
+    {% bootstrap_messages %}
 
-  <div class="alert alert-info">This form will add entries to the downref registry.</div>
+    <div class="alert alert-info">This form will add entries to the downref registry.</div>
 
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form add_downref_form %}
-
-    
-
-      <p> 
-      <button type="submit" class="btn btn-primary" name="save_downref" value="Save downref">Save downref</button>
-      {% for error in add_downref_form.non_field_errors %}
-        {% if 'There does not seem to be a normative reference' in error %}
-        <button type="submit" class="btn btn-warning" name="save_downref_anyway" value="Save downref anyway">Save downref anyway</button>
-        {% endif %}
-      {% endfor %}
-      <a class="btn btn-warning" href="{% url "ietf.doc.views_downref.downref_registry" %}">Cancel</a>
-      </p>
-    
+    <form method="post">
+        {% csrf_token %}
+        {% bootstrap_form add_downref_form %}
 
 
-  </form>
+
+        <p>
+            <button type="submit" class="btn btn-primary" name="save_downref" value="Save downref">Save downref</button>
+            {% for error in add_downref_form.non_field_errors %}
+                {% if 'There does not seem to be a normative reference' in error %}
+                    <button type="submit" class="btn btn-warning" name="save_downref_anyway" value="Save downref anyway">Save downref anyway</button>
+                {% endif %}
+            {% endfor %}
+            <a class="btn btn-warning" href="{% url "ietf.doc.views_downref.downref_registry" %}">Cancel</a>
+        </p>
+
+
+
+    </form>
 {% endblock %}
 
 {% block js %}
-  {{ add_downref_form.media.js }}
+    {{ add_downref_form.media.js }}
 {% endblock %}

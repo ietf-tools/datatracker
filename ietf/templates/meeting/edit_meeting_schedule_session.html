@@ -1,88 +1,88 @@
 <div id="session{{ session.pk }}" class="session {% if not session.group.parent.scheduling_color %}untoggleable{% endif %} {% if session.parent_acronym %}parent-{{ session.parent_acronym }}{% endif %} {% if session.readonly %}readonly{% endif %}" style="width:{{ session.layout_width }}em;" data-duration="{{ session.requested_duration.total_seconds }}" {% if session.attendees != None %}data-attendees="{{ session.attendees }}"{% endif %}>
-  <div class="session-label {% if session.group and session.group.is_bof %}bof-session{% endif %}">
-    {{ session.scheduling_label }}
-    {% if session.group and session.group.is_bof %}<span class="bof-tag">BOF</span>{% endif %}
-  </div>
-
-  <div>
-    <span class="requested-duration">{{ session.requested_duration_in_hours|floatformat }}h</span>
-
-    {% if session.attendees != None %}
-      <span class="attendees">&middot; {{ session.attendees }}</span>
-    {% endif %}
-
-    {% if session.comments %}
-      <span class="comments"><i class="bi bi-chat-o"></i></span>
-    {% endif %}
-
-    {% if session.constrained_sessions %}
-      <span class="constraints">
-        {% for label, sessions in session.constrained_sessions %}
-          <span data-sessions="{{ sessions|join:"," }}">{{ label }}</span>
-        {% endfor %}
-      </span>
-    {% endif %}
-    <div class="past-flag">Past</div>
-  </div>
-
-  {# the JS uses this to display session information in the bottom panel #}
-  <div class="session-info">
-    <div class="title">
-      <strong>
-        <span class="time pull-right"></span>
+    <div class="session-label {% if session.group and session.group.is_bof %}bof-session{% endif %}">
         {{ session.scheduling_label }}
-        &middot; {{ session.requested_duration_in_hours }}h
-        {% if session.group %}
-          &middot; {% if session.group.is_bof %}BOF{% else %}{{ session.group.type.name }}{% endif %}
-        {% endif %}
-        {% if session.attendees != None %}
-          &middot; {{ session.attendees }} <i class="bi bi-person"></i>
-        {% endif %}
-      </strong>
+        {% if session.group and session.group.is_bof %}<span class="bof-tag">BOF</span>{% endif %}
     </div>
 
-    {% if session.group %}
-      <div>
-        {{ session.group.name }}
-        {% if session.group.parent %}
-          &middot; <span class="session-parent">{{ session.group.parent.acronym }}</span>
+    <div>
+        <span class="requested-duration">{{ session.requested_duration_in_hours|floatformat }}h</span>
+
+        {% if session.attendees != None %}
+            <span class="attendees">&middot; {{ session.attendees }}</span>
         {% endif %}
-      </div>
-    {% endif %}
 
-    {% if session.requested_by_person %}
-      <div>
-        <i title="Requested by" class="bi bi-person-circle"></i> {{ session.requested_by_person.plain_name }} {% if session.requested_time %}({{ session.requested_time|date:"Y-m-d" }}){% endif %}
-      </div>
-    {% endif %}
+        {% if session.comments %}
+            <span class="comments"><i class="bi bi-chat-o"></i></span>
+        {% endif %}
 
-    {% if session.resources.all %}
-      <div>
-        Resources:
-        {% for r in session.resources.all %}
-          {{ r.name }}{% if not forloop.last %},{% endif %}
+        {% if session.constrained_sessions %}
+            <span class="constraints">
+                {% for label, sessions in session.constrained_sessions %}
+                    <span data-sessions="{{ sessions|join:"," }}">{{ label }}</span>
+                {% endfor %}
+            </span>
+        {% endif %}
+        <div class="past-flag">Past</div>
+    </div>
+
+    {# the JS uses this to display session information in the bottom panel #}
+    <div class="session-info">
+        <div class="title">
+            <strong>
+                <span class="time pull-right"></span>
+                {{ session.scheduling_label }}
+                &middot; {{ session.requested_duration_in_hours }}h
+                {% if session.group %}
+                    &middot; {% if session.group.is_bof %}BOF{% else %}{{ session.group.type.name }}{% endif %}
+                {% endif %}
+                {% if session.attendees != None %}
+                    &middot; {{ session.attendees }} <i class="bi bi-person"></i>
+                {% endif %}
+            </strong>
+        </div>
+
+        {% if session.group %}
+            <div>
+                {{ session.group.name }}
+                {% if session.group.parent %}
+                    &middot; <span class="session-parent">{{ session.group.parent.acronym }}</span>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {% if session.requested_by_person %}
+            <div>
+                <i title="Requested by" class="bi bi-person-circle"></i> {{ session.requested_by_person.plain_name }} {% if session.requested_time %}({{ session.requested_time|date:"Y-m-d" }}){% endif %}
+            </div>
+        {% endif %}
+
+        {% if session.resources.all %}
+            <div>
+                Resources:
+                {% for r in session.resources.all %}
+                    {{ r.name }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if session.comments %}
+            <div class="comments">
+                {{ session.comments|linebreaksbr }}
+            </div>
+        {% endif %}
+
+        {% if session.formatted_constraints %}
+            <div class="formatted-constraints">
+                {% for constraint_name, values in session.formatted_constraints.items %}
+                    <div>
+                        <span title="{{ constraint_name.name }}">{{ constraint_name.countless_formatted_editor_label }}</span>: {{ values|join:", " }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% for s in session.other_sessions %}
+            <div class="other-session" data-othersessionid="{{ s.pk }}"><i class="bi bi-calendar"></i> Other session <span class="time" data-scheduled="scheduled: {time}" data-notscheduled="not yet scheduled"></span></div>
         {% endfor %}
-      </div>
-    {% endif %}
-
-    {% if session.comments %}
-      <div class="comments">
-        {{ session.comments|linebreaksbr }}
-      </div>
-    {% endif %}
-
-    {% if session.formatted_constraints %}
-      <div class="formatted-constraints">
-        {% for constraint_name, values in session.formatted_constraints.items %}
-          <div>
-            <span title="{{ constraint_name.name }}">{{ constraint_name.countless_formatted_editor_label }}</span>: {{ values|join:", " }}
-          </div>
-        {% endfor %}
-      </div>
-    {% endif %}
-
-    {% for s in session.other_sessions %}
-      <div class="other-session" data-othersessionid="{{ s.pk }}"><i class="bi bi-calendar"></i> Other session <span class="time" data-scheduled="scheduled: {time}" data-notscheduled="not yet scheduled"></span></div>
-    {% endfor %}
-  </div>
+    </div>
 </div>

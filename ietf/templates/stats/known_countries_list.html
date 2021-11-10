@@ -5,43 +5,43 @@
 {% load ietf_filters static django_bootstrap5 %}
 
 {% block content %}
-  {% origin %}
+    {% origin %}
 
-  <h1>{% block title %}Countries known to the Datatracker{% endblock %}</h1>
+    <h1>{% block title %}Countries known to the Datatracker{% endblock %}</h1>
 
-  <p>In case you think a country or an alias is missing from the list, you can <a href="mailto:{{ settings.SECRETARIAT_ACTION_EMAIL }}">file a ticket</a>.</p>
+    <p>In case you think a country or an alias is missing from the list, you can <a href="mailto:{{ settings.SECRETARIAT_ACTION_EMAIL }}">file a ticket</a>.</p>
 
-  {% if request.user.is_staff %}
-    <p>Note: since you're an admin, the country names are linked to their corresponding admin page.</p>
-  {% endif %}
-  
-  <table class="table table-sm table-striped">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Aliases (lowercase aliases are matched case-insensitive)</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for c in countries %}
-        <tr>
-          <td>
-            {% if request.user.is_staff %}
-              <a href="{% url "admin:name_countryname_change" c.pk %}">
-            {% endif %}
-            {{ c.name }}
-            {% if request.user.is_staff %}
-              </a>
-            {% endif %}
-          </td>
-          <td>
-            {% for a in c.aliases %}
-              {{ a.alias }}{% if not forloop.last %},{% endif %}
+    {% if request.user.is_staff %}
+        <p>Note: since you're an admin, the country names are linked to their corresponding admin page.</p>
+    {% endif %}
+
+    <table class="table table-sm table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Aliases (lowercase aliases are matched case-insensitive)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in countries %}
+                <tr>
+                    <td>
+                        {% if request.user.is_staff %}
+                            <a href="{% url "admin:name_countryname_change" c.pk %}">
+                        {% endif %}
+                        {{ c.name }}
+                        {% if request.user.is_staff %}
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% for a in c.aliases %}
+                            {{ a.alias }}{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
             {% endfor %}
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+        </tbody>
+    </table>
 
 {% endblock %}

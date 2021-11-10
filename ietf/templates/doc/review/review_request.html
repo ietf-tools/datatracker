@@ -5,16 +5,16 @@
 {% block title %}Review request for {{ review_req.doc.name }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Review request<br><small>{{ review_req.doc.name }}</small></h1>
+    {% origin %}
+    <h1>Review request<br><small>{{ review_req.doc.name }}</small></h1>
 
-  {% include "doc/review/request_info.html" %}
+    {% include "doc/review/request_info.html" %}
 
-  <div>
-    {% if can_close_request %}
-      <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.close_request" name=doc.name request_id=review_req.pk %}"><span class="bi bi-slash-circle"></span> Close request</a>
-    {% endif %}
-  </div>
+    <div>
+        {% if can_close_request %}
+            <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.close_request" name=doc.name request_id=review_req.pk %}"><span class="bi bi-slash-circle"></span> Close request</a>
+        {% endif %}
+    </div>
 
 
     <h3>History</h3>

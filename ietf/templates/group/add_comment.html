@@ -7,20 +7,20 @@
 {% block title %}Add comment for {{ group }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Add comment<br><small>{{ group }} ({{ group.acronym }})</small></h1>
+    {% origin %}
+    <h1>Add comment<br><small>{{ group }} ({{ group.acronym }})</small></h1>
 
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-    <p class="help-block">The comment will be added to the history trail for the group.</p>
+    <form method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <p class="help-block">The comment will be added to the history trail for the group.</p>
 
-    
 
-      <button type="submit" class="btn btn-primary">Submit</button>
-      <a class="btn btn-primary pull-right" href="{% url "ietf.group.views.history" acronym=group.acronym %}">Back</a>
-    
 
-  </form>
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <a class="btn btn-primary pull-right" href="{% url "ietf.group.views.history" acronym=group.acronym %}">Back</a>
+
+
+    </form>
 
 {% endblock %}

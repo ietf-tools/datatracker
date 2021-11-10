@@ -2,19 +2,19 @@
 
 {% block title %}Console{% endblock %}
 
-{% block breadcrumbs %}{{ block.super }} 
-  &raquo; Console
+{% block breadcrumbs %}{{ block.super }}
+    &raquo; Console
 {% endblock %}
 
 {% block content %}
 
-<div class="module">
-    <h2>Console</h2>
-    
-    <table class="full-width amstable" id="announce-table">
-        <tr><th>Latest DocEvent</th><td>{{ latest_docevent }}</td></tr>
-    </table>
+    <div class="module">
+        <h2>Console</h2>
 
-</div> <!-- module -->
+        <table class="full-width amstable" id="announce-table">
+            <tr><th>Latest DocEvent</th><td>{{ latest_docevent }}</td></tr>
+        </table>
+
+    </div> <!-- module -->
 
 {% endblock %}

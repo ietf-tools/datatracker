@@ -1,112 +1,112 @@
-         <span class="required">*</span> Required Field
-         <form id="session-request-form" action="." method="post" name="form_post">{% csrf_token %}
-         {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
-         <table id="sessions-new-table" cellspacing="1" cellpadding="1" border="0">
-           <col width="150">
-           <tr class="bg1"><td>Working Group Name:</td><td>{{ group.name }} ({{ group.acronym }})</td></tr>
-           <tr class="bg2"><td>Area Name:</td><td>{% if group.parent %}{{ group.parent.name }} ({{ group.parent.acronym }}){% endif %}</td></tr>
-           <tr class="bg1"><td>Number of Sessions:<span class="required">*</span></td><td>{{ form.num_session.errors }}{{ form.num_session }}</td></tr>
-           <tr class="bg2"><td>Length of Session 1:<span class="required">*</span></td><td>{{ form.length_session1.errors }}{{ form.length_session1 }}</td></tr>
-           <tr class="bg2"><td>Length of Session 2:<span class="required">*</span></td><td>{{ form.length_session2.errors }}{{ form.length_session2 }}</td></tr>
-           {% if not is_virtual %}
+<span class="required">*</span> Required Field
+<form id="session-request-form" action="." method="post" name="form_post">{% csrf_token %}
+    {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+    <table id="sessions-new-table" cellspacing="1" cellpadding="1" border="0">
+        <col width="150">
+        <tr class="bg1"><td>Working Group Name:</td><td>{{ group.name }} ({{ group.acronym }})</td></tr>
+        <tr class="bg2"><td>Area Name:</td><td>{% if group.parent %}{{ group.parent.name }} ({{ group.parent.acronym }}){% endif %}</td></tr>
+        <tr class="bg1"><td>Number of Sessions:<span class="required">*</span></td><td>{{ form.num_session.errors }}{{ form.num_session }}</td></tr>
+        <tr class="bg2"><td>Length of Session 1:<span class="required">*</span></td><td>{{ form.length_session1.errors }}{{ form.length_session1 }}</td></tr>
+        <tr class="bg2"><td>Length of Session 2:<span class="required">*</span></td><td>{{ form.length_session2.errors }}{{ form.length_session2 }}</td></tr>
+        {% if not is_virtual %}
             <tr class="bg2"><td>Time between two sessions:</td><td>{{ form.session_time_relation.errors }}{{ form.session_time_relation }}</td></tr>
-           {% endif %}
-           {% if group.type.slug == "wg" %}
-             <tr class="bg2"><td>Additional Session Request:</td><td>{{ form.third_session }} Check this box to request an additional session.<br>
-             Additional slot may be available after agenda scheduling has closed and with the approval of an Area Director.<br>
-             Length of Third Session: {{ form.length_session3.errors }}{{ form.length_session3 }}</td></tr>
-           {% endif %}
-           <tr class="bg1"><td>Number of Attendees:{% if not is_virtual %}<span class="required">*</span>{% endif %}</td><td>{{ form.attendees.errors }}{{ form.attendees }}</td></tr>
-           <tr class="bg2"><td>People who must be present:</td><td>{{ form.bethere.errors }}{{ form.bethere }}</td></tr>
-           <tr class="bg1"><td>Conflicts to Avoid:</td>
-           <td>
-             <table>
-               <tr>
-                 <td colspan="2">Other WGs that included {{ group.name }} in their conflict lists:</td>
-                 <td>{{ session_conflicts.inbound|default:"None" }}</td>
-               </tr>
-               {% for cname, cfield, cselector  in form.wg_constraint_fields %}
-                 <tr class="bg1">
-                   {% if forloop.first %}<td rowspan="{{ form.wg_constraint_count }}" valign="top" width="220">WG Sessions:<br>You may select multiple WGs within each category</td>{% endif %}
-                   <td width="320">{{ cname|title }}</td>
-                   <td>{{ cselector }}
-                     <input type="button" id="wg_delete_{{ cname.slug }}" value="Delete the last entry" onClick="ietf_sessions.delete_wg_constraint_clicked('{{ cname.slug }}')"><br>
-                     {{ cfield.errors }}{{ cfield }}
-                   </td>
-                 </tr>
-               {% empty %}{# shown if there are no constraint fields #}
-                 <tr class="bg1"><td width="220"></td><td colspan="2">No constraints are enabled for this meeting.</td></tr>
-               {% endfor %}
-               {% if form.inactive_wg_constraints %}
-                 {% for cname, value, field in form.inactive_wg_constraints %}
-                 <tr class="bg1">
-                   {% if forloop.first %}
-                     <td rowspan="{{ form.inactive_wg_constraint_count }}" valign="top" width="220">
-                       Disabled for this meeting
-                     </td>
-                   {% endif %}
-                   <td width="320">{{ cname|title }}</td>
-                   <td><input type="text" value="{{ value }}" maxlength="255" class="wg_constraint" disabled><br>{{ field }} {{ field.label }}</td>
-                 {% endfor %}
-                 </tr>
-               {% endif %}
-               <tr>
-                 <td colspan="2">BOF Sessions:</td>
-                 <td>If the sessions can not be found in the fields above, please enter free form requests in the Special Requests field below.</td>
-               </tr>
-             </table>
-           </td>
-           </tr>
-
-           {% if not is_virtual %}
-
-           <tr class="bg2"><td>Resources requested:</td>
+        {% endif %}
+        {% if group.type.slug == "wg" %}
+            <tr class="bg2"><td>Additional Session Request:</td><td>{{ form.third_session }} Check this box to request an additional session.<br>
+                Additional slot may be available after agenda scheduling has closed and with the approval of an Area Director.<br>
+                Length of Third Session: {{ form.length_session3.errors }}{{ form.length_session3 }}</td></tr>
+        {% endif %}
+        <tr class="bg1"><td>Number of Attendees:{% if not is_virtual %}<span class="required">*</span>{% endif %}</td><td>{{ form.attendees.errors }}{{ form.attendees }}</td></tr>
+        <tr class="bg2"><td>People who must be present:</td><td>{{ form.bethere.errors }}{{ form.bethere }}</td></tr>
+        <tr class="bg1"><td>Conflicts to Avoid:</td>
             <td>
-             {{ form.resources.errors }} {{ form.resources }}
+                <table>
+                    <tr>
+                        <td colspan="2">Other WGs that included {{ group.name }} in their conflict lists:</td>
+                        <td>{{ session_conflicts.inbound|default:"None" }}</td>
+                    </tr>
+                    {% for cname, cfield, cselector  in form.wg_constraint_fields %}
+                        <tr class="bg1">
+                            {% if forloop.first %}<td rowspan="{{ form.wg_constraint_count }}" valign="top" width="220">WG Sessions:<br>You may select multiple WGs within each category</td>{% endif %}
+                            <td width="320">{{ cname|title }}</td>
+                            <td>{{ cselector }}
+                                <input type="button" id="wg_delete_{{ cname.slug }}" value="Delete the last entry" onClick="ietf_sessions.delete_wg_constraint_clicked('{{ cname.slug }}')"><br>
+                                {{ cfield.errors }}{{ cfield }}
+                            </td>
+                        </tr>
+                    {% empty %}{# shown if there are no constraint fields #}
+                        <tr class="bg1"><td width="220"></td><td colspan="2">No constraints are enabled for this meeting.</td></tr>
+                    {% endfor %}
+                    {% if form.inactive_wg_constraints %}
+                        {% for cname, value, field in form.inactive_wg_constraints %}
+                            <tr class="bg1">
+                                {% if forloop.first %}
+                                    <td rowspan="{{ form.inactive_wg_constraint_count }}" valign="top" width="220">
+                                        Disabled for this meeting
+                                    </td>
+                                {% endif %}
+                                <td width="320">{{ cname|title }}</td>
+                                <td><input type="text" value="{{ value }}" maxlength="255" class="wg_constraint" disabled><br>{{ field }} {{ field.label }}</td>
+                        {% endfor %}
+                        </tr>
+                    {% endif %}
+                    <tr>
+                        <td colspan="2">BOF Sessions:</td>
+                        <td>If the sessions can not be found in the fields above, please enter free form requests in the Special Requests field below.</td>
+                    </tr>
+                </table>
             </td>
-           </tr>
-           <tr class="bg1">
-             <td valign="top">Times during which this WG can <strong>not</strong> meet:</td>
-             <td>{{ form.timeranges.errors }}{{ form.timeranges }}</td>
-           </tr>
-           <tr class="bg2">
-             <td valign="top">
-                 Plan session adjacent with another WG:<br />
-                 (Immediately before or after another WG, no break in between, in the same room.)
-             </td>
-             <td>{{ form.adjacent_with_wg.errors }}{{ form.adjacent_with_wg }}</td>
-           </tr>
-           <tr class="bg1">
-             <td>
-                 Joint session with:<br />
-                 (To request one session for multiple WGs together.)
-             </td>
-             <td>{{ form.joint_with_groups_selector }}
-                 <input type="button" value="Delete the last entry" onClick="ietf_sessions.delete_last_joint_with_groups(); return 1;"><br>
-                 {{ form.joint_with_groups.errors }}{{ form.joint_with_groups }}
-             </td>
-           </tr>
-           <tr class="bg1">
-             <td>
-                 Of the sessions requested by this WG, the joint session, if applicable, is:
-             </td>
-             <td>{{ form.joint_for_session.errors }}{{ form.joint_for_session }}</td>
-           </tr>
+        </tr>
 
-           {% endif %}
+        {% if not is_virtual %}
 
-           <tr class="bg2">
-             <td valign="top">Special Requests:<br />&nbsp;<br />i.e. restrictions on meeting times / days, etc.<br />  (limit 200 characters)</td>
-             <td>{{ form.comments.errors }}{{ form.comments }}</td>
-           </tr>
-         </table>
+            <tr class="bg2"><td>Resources requested:</td>
+                <td>
+                    {{ form.resources.errors }} {{ form.resources }}
+                </td>
+            </tr>
+            <tr class="bg1">
+                <td valign="top">Times during which this WG can <strong>not</strong> meet:</td>
+                <td>{{ form.timeranges.errors }}{{ form.timeranges }}</td>
+            </tr>
+            <tr class="bg2">
+                <td valign="top">
+                    Plan session adjacent with another WG:<br />
+                    (Immediately before or after another WG, no break in between, in the same room.)
+                </td>
+                <td>{{ form.adjacent_with_wg.errors }}{{ form.adjacent_with_wg }}</td>
+            </tr>
+            <tr class="bg1">
+                <td>
+                    Joint session with:<br />
+                    (To request one session for multiple WGs together.)
+                </td>
+                <td>{{ form.joint_with_groups_selector }}
+                    <input type="button" value="Delete the last entry" onClick="ietf_sessions.delete_last_joint_with_groups(); return 1;"><br>
+                    {{ form.joint_with_groups.errors }}{{ form.joint_with_groups }}
+                </td>
+            </tr>
+            <tr class="bg1">
+                <td>
+                    Of the sessions requested by this WG, the joint session, if applicable, is:
+                </td>
+                <td>{{ form.joint_for_session.errors }}{{ form.joint_for_session }}</td>
+            </tr>
 
-         <div class="button-group">
-           <ul>
-             <li><button type="submit" name="submit" value="Save"{% if is_locked %} disabled{% endif %}>Save</button></li>
-             <li><button type="submit" name="submit" value="Cancel">Cancel</button></li>
-           </ul>
-         </div> <!-- button-group -->
+        {% endif %}
+
+        <tr class="bg2">
+            <td valign="top">Special Requests:<br />&nbsp;<br />i.e. restrictions on meeting times / days, etc.<br />  (limit 200 characters)</td>
+            <td>{{ form.comments.errors }}{{ form.comments }}</td>
+        </tr>
+    </table>
+
+    <div class="button-group">
+        <ul>
+            <li><button type="submit" name="submit" value="Save"{% if is_locked %} disabled{% endif %}>Save</button></li>
+            <li><button type="submit" name="submit" value="Cancel">Cancel</button></li>
+        </ul>
+    </div> <!-- button-group -->
 
 
-         </form>
+</form>

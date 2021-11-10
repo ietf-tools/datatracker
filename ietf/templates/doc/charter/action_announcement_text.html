@@ -8,25 +8,25 @@
 {% block title %}{{ charter.chartered_group.type.name }} action announcement writeup for {{ charter.chartered_group.acronym }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>{{ charter.chartered_group.type.name }} action announcement writeup<br><small>{{ charter.chartered_group.acronym }}</small></h1>
+    {% origin %}
+    <h1>{{ charter.chartered_group.type.name }} action announcement writeup<br><small>{{ charter.chartered_group.acronym }}</small></h1>
 
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form announcement_text_form %}
+    <form method="post">
+        {% csrf_token %}
+        {% bootstrap_form announcement_text_form %}
 
-    
 
-      <button type="submit" class="btn btn-primary" name="save_text" value="Save">Submit</button>
-      <button type="submit" class="btn btn-warning" name="regenerate_text" value="Reenerate"">Regenerate</button>
 
-      {% if user|has_role:"Secretariat" %}
-          <a type="submit" class="btn btn-primary" href="{% url 'ietf.doc.views_charter.approve' name=charter.canonical_name %}">Charter approval page</a>
-      {% endif %}
+        <button type="submit" class="btn btn-primary" name="save_text" value="Save">Submit</button>
+        <button type="submit" class="btn btn-warning" name="regenerate_text" value="Reenerate"">Regenerate</button>
 
-      <a class="btn btn-primary pull-right" href="{{ back_url }}">Back</a>
-    
+        {% if user|has_role:"Secretariat" %}
+            <a type="submit" class="btn btn-primary" href="{% url 'ietf.doc.views_charter.approve' name=charter.canonical_name %}">Charter approval page</a>
+        {% endif %}
 
-  </form>
+        <a class="btn btn-primary pull-right" href="{{ back_url }}">Back</a>
+
+
+    </form>
 
 {% endblock%}

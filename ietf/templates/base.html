@@ -7,85 +7,85 @@
 
 <html lang="en">
 
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>{% block title %}No title{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>{% block title %}No title{% endblock %}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    {% comment Halloween %}
+        {% comment Halloween %}
     <link href='https://fonts.googleapis.com/css?family=IM+Fell+English+SC|IM+Fell+DW+Pica:400,400italic|Nova+Mono|IM+Fell+English:400,400italic&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
     {% endcomment %}
 
-    <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}">
-    <style>
-        {% block morecss %}{% endblock %}
-    </style>
+        <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}">
+        <style>
+            {% block morecss %}{% endblock %}
+        </style>
 
-    {% block pagehead %}{% endblock %}
+        {% block pagehead %}{% endblock %}
 
-    {% if server_mode and server_mode == "production" %}
-    <link rel="shortcut icon" href="{% static 'ietf/images/ietf-icon-blue3.png' %}">
-    {% else %}
-    <link rel="shortcut icon" href="{% static 'ietf/images/ietf-icon-red3.png' %}">
-    {% endif %}
-    <link rel="apple-touch-icon" href="{% static 'ietf/images/apple-touch-icon.png' %}">
-</head>
+        {% if server_mode and server_mode == "production" %}
+            <link rel="shortcut icon" href="{% static 'ietf/images/ietf-icon-blue3.png' %}">
+        {% else %}
+            <link rel="shortcut icon" href="{% static 'ietf/images/ietf-icon-red3.png' %}">
+        {% endif %}
+        <link rel="apple-touch-icon" href="{% static 'ietf/images/apple-touch-icon.png' %}">
+    </head>
 
-<body {% block bodyAttrs %}{%endblock%} data-group-menu-data-url="{% url 'ietf.group.views.group_menu_data' %}">
-    <nav class="navbar navbar-expand-lg {% if server_mode and server_mode != " production" %}navbar-light bg-warning{% else %}navbar-dark bg-secondary{% endif %} {% if navbar_mode %}{{ navbar_mode }}{% else %}fixed-top{% endif %}">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">
-                <img alt="IETF Logo" src="{% static 'ietf/images/ietflogo-small-transparent.png' %}">
-                Datatracker
-                {% if server_mode and server_mode != "production" %}
-                Dev Mode
-                {% endif %}
-            </a>
-            <div class="collapse navbar-collapse" id="navbar-collapse">
-                <ul class="nav navbar-nav">
-                    {% include "base/menu.html" with flavor="top" %}
-                </ul>
-            </div>
-            {% if not user.is_authenticated %}
-            <a class="d-none d-sm-block mx-5 btn {% if server_mode and server_mode == " production" %}btn-warning{% else %}btn-info{% endif %}" rel="nofollow" href="/accounts/login/?next={{request.get_full_path|urlencode}}">Sign
-                in</a>
-            {% endif %}
-            <form class="d-flex d-none d-lg-block" action="/doc/search/">
-                <input class="form-control" type="text" name="name" placeholder="Document search" required>
-                <input type="hidden" name="activedrafts" value="on">
-                <input type="hidden" name="rfcs" value="on">
-            </form>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-        </div>
-    </nav>
-
-    <div class="pt-3 container-fluid">
-        {% comment %} {% bootstrap_messages %} {% endcomment %}
-        {% for message in messages %}
-        <div class="alert{% if message.level_tag %} alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag }}{% endif %}{% endif %}{% if message.extra_tags %} {{message.extra_tags}}{% endif %} alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&#215;</button>{{ message }}</div>
-        {% endfor %}
-        {% if request.COOKIES.left_menu == "on" and not hide_menu %}
-        {# ugly hack for the more or less unported meeting agenda edit pages #}
-        <div class="row">
-            <div class="d-none d-md-block border-end lh-sm leftmenu small" style="width: 13em;">
-                <ul class="nav nav-pills flex-column">
-                    {% include "base/menu.html" with flavor="left" %}
-                </ul>
-            </div>
-            <div class="col" id="content">
-                {% else %}
-                <div class="col" id="content">
+    <body {% block bodyAttrs %}{%endblock%} data-group-menu-data-url="{% url 'ietf.group.views.group_menu_data' %}">
+        <nav class="navbar navbar-expand-lg {% if server_mode and server_mode != " production" %}navbar-light bg-warning{% else %}navbar-dark bg-secondary{% endif %} {% if navbar_mode %}{{ navbar_mode }}{% else %}fixed-top{% endif %}">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">
+                    <img alt="IETF Logo" src="{% static 'ietf/images/ietflogo-small-transparent.png' %}">
+                    Datatracker
+                    {% if server_mode and server_mode != "production" %}
+                        Dev Mode
                     {% endif %}
-                    {% block content %}{{ content|safe }}{% endblock %}
-                    {% block content_end %}{% endblock %}
-                    {% if request.COOKIES.left_menu == "on" and not hide_menu %}
+                </a>
+                <div class="collapse navbar-collapse" id="navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        {% include "base/menu.html" with flavor="top" %}
+                    </ul>
                 </div>
+                {% if not user.is_authenticated %}
+                    <a class="d-none d-sm-block mx-5 btn {% if server_mode and server_mode == " production" %}btn-warning{% else %}btn-info{% endif %}" rel="nofollow" href="/accounts/login/?next={{request.get_full_path|urlencode}}">Sign
+                        in</a>
                 {% endif %}
+                <form class="d-flex d-none d-lg-block" action="/doc/search/">
+                    <input class="form-control" type="text" name="name" placeholder="Document search" required>
+                    <input type="hidden" name="activedrafts" value="on">
+                    <input type="hidden" name="rfcs" value="on">
+                </form>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
             </div>
-            {% block footer %}
+        </nav>
+
+        <div class="pt-3 container-fluid">
+            {% comment %} {% bootstrap_messages %} {% endcomment %}
+            {% for message in messages %}
+                <div class="alert{% if message.level_tag %} alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag }}{% endif %}{% endif %}{% if message.extra_tags %} {{message.extra_tags}}{% endif %} alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&#215;</button>{{ message }}</div>
+            {% endfor %}
+            {% if request.COOKIES.left_menu == "on" and not hide_menu %}
+                {# ugly hack for the more or less unported meeting agenda edit pages #}
+                <div class="row">
+                    <div class="d-none d-md-block border-end lh-sm leftmenu small" style="width: 13em;">
+                        <ul class="nav nav-pills flex-column">
+                            {% include "base/menu.html" with flavor="left" %}
+                        </ul>
+                    </div>
+                    <div class="col" id="content">
+            {% else %}
+                <div class="col" id="content">
+            {% endif %}
+            {% block content %}{{ content|safe }}{% endblock %}
+            {% block content_end %}{% endblock %}
+            {% if request.COOKIES.left_menu == "on" and not hide_menu %}
+                </div>
+            {% endif %}
+        </div>
+        {% block footer %}
             <hr>
             <div class="col-md-12 col-sm-12">
                 <div class="text-center padded">
@@ -105,16 +105,16 @@
                     <div class="text-center">
                         <p class="small text-muted">
                             {% if version_num %}
-                            <a href="/release/about">About</a> |
-                            IETF Datatracker |
-                            <a href="/release/{{version_num}}/">Version {{ version_num }}</a>
-                            |
-                            {{revision_date}} |
+                                <a href="/release/about">About</a> |
+                                IETF Datatracker |
+                                <a href="/release/{{version_num}}/">Version {{ version_num }}</a>
+                                |
+                                {{revision_date}} |
                             {% endif %}
                             Report a bug:
                             <a href="https://trac.ietf.org/trac/ietfdb/newticket">Tracker:<span class="bi bi-bug"></span></a>
                             {% if bugreport_email %}
-                            <a href="mailto:{{ bugreport_email }}">Email:<span class="bi bi-envelope"></span></a>
+                                <a href="mailto:{{ bugreport_email }}">Email:<span class="bi bi-envelope"></span></a>
                             {% endif %}
                             <br>
                             {% if python_version %}Python {{ python_version }}{% endif %} |
@@ -123,16 +123,16 @@
                     </div>
                 </div>
             </footer>
-            {% endblock %}
-        </div>
+        {% endblock %}
+    </div>
 
-        {% include "debug.html" %}
+    {% include "debug.html" %}
 
-        <script src="{% static 'ietf/js/ietf.js' %}"></script>
-        {% block js %}{% endblock %}
-        {% if debug %}
+    <script src="{% static 'ietf/js/ietf.js' %}"></script>
+    {% block js %}{% endblock %}
+    {% if debug %}
         <script src="{% static 'ietf/js/datatables.js' %}"></script>
-        {% endif %}
+    {% endif %}
 </body>
 
 </html>

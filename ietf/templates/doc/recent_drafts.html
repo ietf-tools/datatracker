@@ -4,25 +4,25 @@
 {% load cache %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}Internet-Drafts submitted during the last {{days|default:7}} days{% endblock %}
 
 {% block content %}
-{% cache 1800 recentdrafts days using="slowpages" %} 
-  {% origin %}
-  <h1>
-    Internet-Drafts submitted during the last {{days|default:7}} days
-    {% if pages %}
-      <small class="padded-left">{{ pages }} pages</small>
-    {% endif %}
-  </h1>
+    {% cache 1800 recentdrafts days using="slowpages" %}
+        {% origin %}
+        <h1>
+            Internet-Drafts submitted during the last {{days|default:7}} days
+            {% if pages %}
+                <small class="padded-left">{{ pages }} pages</small>
+            {% endif %}
+        </h1>
 
-  {% include "doc/search/search_results.html" %}
-{% endcache %}
+        {% include "doc/search/search_results.html" %}
+    {% endcache %}
 {% endblock %}
 
 {% block js %}
-<script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

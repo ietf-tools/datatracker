@@ -5,22 +5,22 @@
 {% block subtitle %} - Questionnaires {% endblock %}
 
 {% block nomcom_content %}
-  {% origin %}
-  <h2>Questionnaires</h2>
+    {% origin %}
+    <h2>Questionnaires</h2>
 
-  <ul class="nav nav-tabs">
-    {% for position in positions %}
-      <li class="nav-item">
-        <a class="nav-link {% if forloop.first %}active{% endif %}" data-toggle="tab" role="tab" href="#{{ position.name|slugify }}">{{ position.name }}</a>
-      </li>
-    {% endfor %}
-  </ul>
+    <ul class="nav nav-tabs">
+        {% for position in positions %}
+            <li class="nav-item">
+                <a class="nav-link {% if forloop.first %}active{% endif %}" data-toggle="tab" role="tab" href="#{{ position.name|slugify }}">{{ position.name }}</a>
+            </li>
+        {% endfor %}
+    </ul>
 
-  <div class="tab-content">
-    {% for position in positions %}
-      <div class="tab-pane {% if forloop.first %}active{% endif %}" id="{{ position.name|slugify }}">
-        {{ position.get_questionnaire|linebreaks}}
-      </div>
-    {% endfor %}
-  </div>
+    <div class="tab-content">
+        {% for position in positions %}
+            <div class="tab-pane {% if forloop.first %}active{% endif %}" id="{{ position.name|slugify }}">
+                {{ position.get_questionnaire|linebreaks}}
+            </div>
+        {% endfor %}
+    </div>
 {% endblock %}

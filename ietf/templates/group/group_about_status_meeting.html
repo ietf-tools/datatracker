@@ -11,13 +11,13 @@
 {% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>
-    Status update for {{ group.type.name }} {{ group.acronym }} at {{meeting}}
-  </h1>
+    {% origin %}
+    <h1>
+        Status update for {{ group.type.name }} {{ group.acronym }} at {{meeting}}
+    </h1>
 
-  <pre class="pasted">{{ status_update.desc|default:"(none)"|linkify }}</pre>
+    <pre class="pasted">{{ status_update.desc|default:"(none)"|linkify }}</pre>
 
-  <a class="btn btn-primary pull-right" href="{% url "ietf.meeting.views.proceedings" num=meeting.number %}">Back</a>
+    <a class="btn btn-primary pull-right" href="{% url "ietf.meeting.views.proceedings" num=meeting.number %}">Back</a>
 
 {% endblock %}
