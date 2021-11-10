@@ -1,3 +1,5 @@
+@use "sass:map";
+
 // Enable negative margin classes.
 $enable-negative-margins: true;
 
@@ -86,6 +88,11 @@ body {
     max-width: 300px;
 }
 
+// Add some padding when there are multiple buttons in a line than can wrap
+.buttonlist .btn {
+    margin-top: map.get($spacers, 2);
+}
+
 // Styles for d3.js graphical SVG timelines
 #timeline {
     font-size: small;
@@ -111,7 +118,6 @@ body {
     dominant-baseline: central;
     pointer-events: none;
 }
-
 
 $timeline-odd-color: $primary;
 $timeline-odd-hover-color: shift-color($timeline-odd-color, $link-shade-percentage) !default;
