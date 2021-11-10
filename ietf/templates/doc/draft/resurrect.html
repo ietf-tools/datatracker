@@ -20,10 +20,12 @@
   <form method="post">
     {% csrf_token %}
 
-    {% buttons %}
+    
+
       <button class="btn btn-primary" type="submit">Resurrect</button>
       <a class="btn btn-primary pull-right" href="{{ back_url }}">Back</a>
-    {% endbuttons %}
+    
+
   </form>
 
 {% endblock %}

@@ -20,10 +20,12 @@
   <form class="change-reviewer-settings" method="post">{% csrf_token %}
     {% bootstrap_form settings_form %}
     
-    {% buttons %}
+    
+
       <a href="{{ back_url }}" class="btn btn-primary pull-right">Cancel</a>
       <button class="btn btn-primary" type="submit" name="action" value="change_settings">Save</button>
-    {% endbuttons %}
+    
+
   </form>
 
   <h3>Unavailable periods</h3>
@@ -77,9 +79,11 @@
       {% csrf_token %}
       {% bootstrap_form period_form %}
 
-      {% buttons %}
+      
+
         <button type="submit" class="btn btn-primary" name="action" value="add_period">Add period</button>
-      {% endbuttons %}
+      
+
     </form>
   </div>
 

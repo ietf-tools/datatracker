@@ -20,9 +20,11 @@
         <p>This reminder will be sent to 
             {% for person in doc.action_holders.all %}
                 {% if forloop.last and not forloop.first %} and {% endif %}{%  person_link person %}{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
-        {% buttons %}
+        
+
             <button type="submit" class="btn btn-primary" name="submit" value="Send reminder">Send</button>
             <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">Cancel</a>
-        {% endbuttons %}
+        
+
     </form>
 {% endblock %}

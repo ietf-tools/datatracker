@@ -15,10 +15,12 @@
     {% bootstrap_form form %}
     <p class="help-block">The comment will be added to the history trail for the group.</p>
 
-    {% buttons %}
+    
+
       <button type="submit" class="btn btn-primary">Submit</button>
       <a class="btn btn-primary pull-right" href="{% url "ietf.group.views.history" acronym=group.acronym %}">Back</a>
-    {% endbuttons %}
+    
+
   </form>
 
 {% endblock %}

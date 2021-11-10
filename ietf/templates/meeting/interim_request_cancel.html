@@ -21,11 +21,13 @@
     {% bootstrap_form form layout='horizontal' %}
 
     <div class="form-group">
-    {% buttons %}
+    
+
       <button type="submit" class="btn btn-primary">Submit</button>
         {% if meeting %}<a class="btn btn-primary pull-right" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">Back</a>
         {% else %}<a class="btn btn-primary pull-right" href="{% url 'ietf.meeting.views.interim_request_details' number=session.meeting.number %}">Back</a>{% endif %}
-    {% endbuttons %}
+    
+
     </div>
     
   </form>

@@ -109,9 +109,11 @@
           <form id="feedbackform" method="post">
             {% csrf_token %}
             {% bootstrap_form form %}
-            {% buttons %}
+            
+
               <input class="btn btn-primary" type="submit" value="Save" name="save">
-            {% endbuttons %}
+            
+
           </form>
           {% if form.topic %}
           <div class="panel panel-default">

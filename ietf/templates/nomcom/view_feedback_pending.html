@@ -57,10 +57,12 @@
           {% if not forloop.last %}<hr>{% endif %}
         {% endfor %}
 
-        {% buttons %}
+        
+
         <input class="btn btn-primary" type="submit" value="Save feedback" name="end">
         <a class="btn btn-primary" href="{% url 'ietf.nomcom.views.view_feedback_pending' year %}">Cancel & leave unclassified</a>
-        {% endbuttons %}
+        
+
 
       {% else %}
 
@@ -166,9 +168,11 @@
 	</div>
 
 
-        {% buttons %}
+        
+
           <input class="btn btn-primary" type="submit" value="Classify">
-        {% endbuttons %}
+        
+
       {% endif %}
     </form>
 

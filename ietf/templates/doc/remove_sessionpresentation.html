@@ -22,10 +22,12 @@
 
   <form method="post">
     {% csrf_token %}
-    {% buttons %}
+    
+
       <button type="submit" class="btn btn-{% if sp.session.is_material_submission_cutoff %}warning{% else %}primary{% endif %}" name="remove_session">Remove document from session</button>
       <a class="btn btn-primary href="{% url 'ietf.doc.views_doc.all_presentations' name=sp.document.name %}">Cancel</a>
-    {% endbuttons %}
+    
+
   </form>
 
 {% endblock %}

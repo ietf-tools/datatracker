@@ -19,11 +19,13 @@
       Working group summary, personnel, IAB note, IESG note, IANA note.
     </div>
 
-    {% buttons %}
+    
+
       <button type="submit" class="btn btn-primary" name="save_ballot_writeup" value="Save Ballot Writeup">Save</button>
       <button type="submit" class="btn btn-warning" name="send_ballot" value="Save and Re-Issue Ballot">Save & {% if ballot_issued %}re-{% endif %}issue ballot</button>
       <a class="btn btn-primary pull-right" href="{% url 'ietf.doc.views_doc.document_writeup' name=charter.name %}">Back</a>
-    {% endbuttons %}
+    
+
   </form>
 
 {% endblock%}

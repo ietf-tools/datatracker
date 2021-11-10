@@ -28,10 +28,12 @@
 
         {% bootstrap_form form %}
     
-        {% buttons %}
+        
+
             <button type="submit" class="btn btn-primary">Add Email</button>
             <a class="btn btn-primary pull-right" href="{% url "ietf.submit.views.manualpost" %}">Back</a>
-        {% endbuttons %}
+        
+
     </form>
 
 {% endblock %}

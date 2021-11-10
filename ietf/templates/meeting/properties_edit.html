@@ -23,10 +23,12 @@
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {% bootstrap_form form %}
-    {% buttons %}
+    
+
         <input class="btn btn-primary" type="submit" value="Save" name="save">
         <a href="{% url 'ietf.meeting.views.list_schedules' num=meeting.number %}" class="btn btn-primary">Cancel</a>
-    {% endbuttons %}
+    
+
   </form>
 
 </div>

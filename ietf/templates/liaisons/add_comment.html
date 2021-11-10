@@ -17,9 +17,11 @@
 
     {% bootstrap_form form %}
     
-    {% buttons %}
+    
+
       <button type="submit" class="btn btn-primary">Add Comment</button>
       <a class="btn btn-primary pull-right" href="{% url "ietf.liaisons.views.liaison_history" object_id=liaison.id %}">Back</a>
-    {% endbuttons %}
+    
+
   </form>
 {% endblock %}

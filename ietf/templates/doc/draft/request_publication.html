@@ -51,11 +51,13 @@ href="https://www.rfc-editor.org/indsubs.html">guidelines</a>.
 
     {% bootstrap_form form %}
 
-    {% buttons %}
+    
+
       <button type="submit" class="btn btn-danger">Email RFC Editor</button>
       <button type="reset" class="btn btn-warning">Reset</button>
       <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
-    {% endbuttons %}
+    
+
   </form>
 
 {% endblock %}

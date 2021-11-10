@@ -24,11 +24,13 @@
     {% csrf_token %}
     {% bootstrap_form form %}
 
-    {% buttons %}
+    
+
       <button type="submit" class="btn btn-primary">Submit</button>
       <button type="reset" class="btn btn-warning">Reset</button>
       <a class="btn btn-primary pull-right" href="{{ doc.get_absolute_url }}">Back</a>
-    {% endbuttons %}
+    
+
   </form>
 {% endblock %}
 

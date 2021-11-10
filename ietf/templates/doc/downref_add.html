@@ -22,7 +22,8 @@
     {% csrf_token %}
     {% bootstrap_form add_downref_form %}
 
-    {% buttons %}
+    
+
       <p> 
       <button type="submit" class="btn btn-primary" name="save_downref" value="Save downref">Save downref</button>
       {% for error in add_downref_form.non_field_errors %}
@@ -32,7 +33,8 @@
       {% endfor %}
       <a class="btn btn-warning" href="{% url "ietf.doc.views_downref.downref_registry" %}">Cancel</a>
       </p>
-    {% endbuttons %}
+    
+
 
   </form>
 {% endblock %}

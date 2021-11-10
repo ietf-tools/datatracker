@@ -15,7 +15,8 @@
     {% csrf_token %}
     {% bootstrap_form last_call_form %}
 
-    {% buttons %}
+    
+
       <button type="submit" class="btn btn-primary" name="save_last_call_text" value="Save Last Call Text">Save text</button>
       <button type="submit" class="btn btn-primary" name="send_last_call_request" value="Save and Request Last Call">Save text & request last call</button>
       <button type="submit" class="btn btn-warning" name="regenerate_last_call_text" value="Regenerate Last Call Text">Reset to template text</button>
@@ -23,6 +24,7 @@
         <a class="btn btn-primary" href="{% url 'ietf.doc.views_ballot.make_last_call' name=doc.name %}">Issue last call</a>
       {% endif %}
       <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
-    {% endbuttons %}
+    
+
   </form>
 {% endblock%}

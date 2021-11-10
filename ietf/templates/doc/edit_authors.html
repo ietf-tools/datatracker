@@ -28,9 +28,11 @@
         {% csrf_token %}
         {% bootstrap_form change_basis_form %}
 
-        {% buttons %}
+        
+
             <button id="add-author-button" type="button" class="btn btn-primary" onclick="local_js.add_author()">Add new author</button>
-        {% endbuttons %}
+        
+
 
         {% bootstrap_form formset.management_form %}
         <div id="authors-list" class="well">
@@ -56,11 +58,13 @@
             </div>
         </div>
     
-        {% buttons %}
+        
+
             <button type="submit" class="btn btn-primary">Submit</button>
             <a class="btn btn-primary pull-right"
                href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">Back</a>
-        {% endbuttons %}
+        
+
     </form>
 
 {% endblock %}

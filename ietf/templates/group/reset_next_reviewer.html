@@ -11,10 +11,12 @@
 
   {% bootstrap_form form %}
 
-  {% buttons %}
+  
+
     <button class="btn btn-primary" type="submit">Save</button>
     <a class="btn btn-primary" href="{% url 'ietf.group.views.reviewer_overview' acronym=group.acronym %}">Cancel</a>
-  {% endbuttons %}
+  
+
 
 </form>
 {% endblock %}

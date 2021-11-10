@@ -33,10 +33,12 @@
     {% csrf_token %}
     {% bootstrap_form form %}
 
-    {% buttons %}
+    
+
       <button type="submit" class="btn btn-primary">Save</button>
       <a class="btn btn-primary pull-right" href="{% url "ietf.group.views.streams" %}{{ group.acronym }}">Back</a>
-    {% endbuttons %}
+    
+
 
   </form>
 {% endblock %}

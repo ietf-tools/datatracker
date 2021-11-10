@@ -15,10 +15,12 @@
     <form class="email-open-review-assignments" method="post">{% csrf_token %}
       {% bootstrap_form form %}
 
-      {% buttons %}
+      
+
         <a href="{{ back_url }}" class="btn btn-primary pull-right">Cancel</a>
         <button class="btn btn-primary" type="submit" name="action" value="email">Send</button>
-      {% endbuttons %}
+      
+
     </form>
   {% else %}
     <p>There are currently no open requests.</p>

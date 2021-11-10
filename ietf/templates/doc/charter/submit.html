@@ -87,14 +87,16 @@
     {% csrf_token %}
     {% bootstrap_form form %}
 
-    {% buttons %}
+    
+
       <button type="submit" class="btn btn-primary">Submit</button>
       {% if group.charter %}
         <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=name %}">Back</a>
       {% else %}
         <a class="btn btn-primary pull-right" href="{% url "ietf.group.views.group_about" group_type=group.type_id acronym=group.acronym %}">Back</a>
       {% endif %}
-    {% endbuttons %}
+    
+
   </form>
 
 {% endblock %}

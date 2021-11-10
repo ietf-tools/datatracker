@@ -15,9 +15,11 @@
 
     {% bootstrap_form form %}
 
-    {% buttons %}
+    
+
       <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
       <button type="submit" class="btn btn-primary">Save</button>
-    {% endbuttons %}
+    
+
   </form>
 {% endblock %}

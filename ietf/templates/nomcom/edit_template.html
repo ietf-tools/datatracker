@@ -38,9 +38,11 @@
     {% csrf_token %}
     {% bootstrap_form form %}
 
-    {% buttons %}
+    
+
       <input class="btn btn-primary" type="submit" value="Save template">
       <a class="btn btn-primary pull-right" href="{% if return_url %}{{ return_url }}{% else %}../{% endif %}">Back</a>
-    {% endbuttons %}
+    
+
   </form>
 {% endblock nomcom_content %}

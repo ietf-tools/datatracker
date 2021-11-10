@@ -27,9 +27,11 @@
 
       <form method="post">
         {% csrf_token %}
-        {% buttons %}
+        
+
         <button type="submit" class="btn btn-warning" name="action" value="confirm">Confirm email address</button>
-          {% endbuttons %}
+          
+
       </form>
   {% endif %}
 {% endblock %}

@@ -174,12 +174,14 @@
         </div>
       {% endfor %}
 
-      {% buttons %}
+      
+
       <a href="{% url "ietf.group.views.review_requests" group_type=group.type_id acronym=group.acronym %}" class="btn btn-primary pull-right">Cancel</a>
       <button class="btn btn-primary" type="submit" name="action" value="save">Save changes</button>
       <button class="btn btn-primary" type="submit" name="action" value="save-continue">Save and continue editing</button>
       <button class="btn btn-primary" type="submit" name="action" value="refresh">Refresh (keeping changes)</button>
-      {% endbuttons %}
+      
+
     </form>
   {% else %}
     <p>There are currently no {{ assignment_status }} open requests.</p>

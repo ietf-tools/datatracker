@@ -16,10 +16,12 @@
     {% bootstrap_form session_form %}
     {% bootstrap_form version_form %}
 
-    {% buttons %}
+    
+
       <button class="btn btn-primary" type="submit" name="save">Save</button>
       <a class="btn btn-primary" href="{% url 'ietf.doc.views_doc.all_presentations' name=doc.name %}">Cancel</a>
-    {% endbuttons %}
+    
+
 
   </form>
 {% endblock content %}

@@ -23,9 +23,11 @@
 
     {% bootstrap_form form %}
 
-    {% buttons %}
+    
+
       <button type="submit" name="{{button|slugify}}" class="btn btn-primary">{{ button }}</button>
-    {% endbuttons %}
+    
+
   </form>
 {% endblock %}
 

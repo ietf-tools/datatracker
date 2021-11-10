@@ -22,10 +22,12 @@
     {% csrf_token %}
     {% bootstrap_form form %}
 
-    {% buttons %}
+    
+
       <button type="submit" class="btn btn-primary">Submit</button>
       <a class="btn btn-primary pull-right" href="{{ group.about_url }}">Back</a>
-    {% endbuttons %}
+    
+
 
   </form>
 {% endblock %}

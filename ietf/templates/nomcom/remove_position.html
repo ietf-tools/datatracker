@@ -31,10 +31,12 @@
 
     <input type="hidden" name="remove" value="1">
 
-    {% buttons %}
+    
+
       <button class="btn btn-primary btn-warning" type="submit">Delete</button>
       <a class="btn btn-primary" href="{% url 'ietf.nomcom.views.list_positions' year %}">Cancel</a>
-    {% endbuttons %}
+    
+
   </form>
 
 {% endblock nomcom_content %}

@@ -24,9 +24,11 @@
     <form method="post">
       {% csrf_token %}
       {% bootstrap_form form %}
-      {% buttons %}
+      
+
         <button type="submit" class="btn btn-danger">Send</button>
-      {% endbuttons %}
+      
+
     </form>
   </div>
 

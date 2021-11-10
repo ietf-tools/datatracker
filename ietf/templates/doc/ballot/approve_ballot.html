@@ -14,7 +14,8 @@
     {% csrf_token %}
     <pre>{{ announcement }}</pre>
 
-    {% buttons %}
+    
+
       {% if action == "to_announcement_list" %}
         <button class="btn btn-primary" type="submit">Notify RFC Editor, send announcement & close ballot</button>
       {% elif action == "to_rfc_editor" %}
@@ -22,6 +23,7 @@
       {% elif action == "do_not_publish" %}
         <button class="btn btn-primary" type="submit">Email RFC Editor (DNP) & close ballot"/>
       {% endif %}
-      {% endbuttons %}
+      
+
   </form>
 {% endblock %}

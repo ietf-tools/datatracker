@@ -16,11 +16,13 @@
   <h1>{{ title }}</h1>
 
   {% if add_button %}
-    {% buttons %}
+    
+
     <p>
       <a class="btn btn-warning" href="{% url "ietf.doc.views_downref.downref_registry_add" %}">Add downref</a>
     </p>
-    {% endbuttons %}
+    
+
   {% endif %}
 
   <table class="table table-sm table-striped tablesorter">

@@ -54,7 +54,8 @@
       {% endfor %}
     {% endfor %}
 
-    {% buttons %}
+    
+
       <a class="btn btn-danger pull-right" href="{% if liaison %}{% url "ietf.liaisons.views.liaison_detail" object_id=liaison.pk %}{% else %}{% url "ietf.liaisons.views.liaison_list" %}{% endif %}">Cancel</a>
 
       {% if not liaison %}
@@ -63,7 +64,8 @@
       {% else %}
         <button name="save" type="submit" class="btn btn-primary">Save</button>
       {% endif %}
-    {% endbuttons %}
+    
+
   </form>
 
 {% endblock %}

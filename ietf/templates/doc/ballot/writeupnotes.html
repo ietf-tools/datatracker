@@ -23,10 +23,12 @@
       {% endif %}
     </div>
 
-    {% buttons %}
+    
+
       <button type="submit" class="btn btn-primary" name="save_ballot_writeup" value="Save Ballot Writeup">Save</button>
       <button type="submit" class={% if ballot_issue_danger %}"btn btn-danger"{% else %}"btn btn-warning"{% endif %} name="issue_ballot" value="Save and Issue Ballot">Save & {% if ballot_issued %}re-{% endif %}issue ballot</button>
-    {% endbuttons %}
+    
+
   </form>
 
 {% endblock%}

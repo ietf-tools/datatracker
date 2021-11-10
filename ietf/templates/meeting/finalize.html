@@ -18,10 +18,12 @@
       <div class="pull-right">
         <form method="post">
           {% csrf_token %}
-          {% buttons %}
+          
+
             <button type="submit" class="btn btn-primary " name="finalize" value="Finalize">Finalize</button>
             <a class="btn btn-primary " href="{% url 'ietf.meeting.views.proceedings' num=meeting.number %}">Cancel</a>
-          {% endbuttons %}
+          
+
         </form>
       </div>
     </div 

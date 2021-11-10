@@ -51,9 +51,11 @@
         </tr>
     {% endfor %}
     </table>
-    {% buttons %}
+    
+
       <a class="btn btn-primary pull-right" href="{% url 'ietf.meeting.views.materials' num=meeting.number %}">Back</a>
       <button class="btn btn-primary" type="submit">Save</button>
-    {% endbuttons %}
+    
+
   </form>
 {% endblock content %}

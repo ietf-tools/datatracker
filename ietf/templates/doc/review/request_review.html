@@ -36,10 +36,12 @@
     {% bootstrap_field form.requested_rev layout="horizontal" %}
     {% bootstrap_field form.comment layout="horizontal" %}
 
-    {% buttons %}
+    
+
       <button type="submit" class="btn btn-primary">Request review</button>
       <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">Back</a>
-    {% endbuttons %}
+    
+
   </form>
 {% endblock %}
 

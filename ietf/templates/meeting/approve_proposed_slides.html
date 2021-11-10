@@ -19,10 +19,12 @@
   <form enctype="multipart/form-data" method="post">
     {% csrf_token %}
     {% bootstrap_form form %}
-    {% buttons %}
+    
+
       <button type="submit" class="btn btn-primary" name="approve" value="approve">Approve</button>
       <button type="submit" class="btn btn-warning" name="disapprove" value="disapprove">Disapprove and Delete</button>
-    {% endbuttons %}
+    
+
   </form>
 
 

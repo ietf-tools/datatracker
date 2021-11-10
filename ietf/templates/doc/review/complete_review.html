@@ -47,14 +47,16 @@
 
     {% bootstrap_form form layout="horizontal" %}
 
-    {% buttons %}
+    
+
     {% if assignment %}
       <a class="btn btn-primary" href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=assignment.review_request.pk %}">Cancel</a>
     {% else %}
       <a class="btn btn-primary" href="{{ doc.get_absolute_url }}">Cancel</a>
     {% endif %}
     <button type="submit" class="btn btn-primary">{% if revising_review %}Revise{% else %}Complete{% endif %} review</button>
-    {% endbuttons %}
+    
+
 
     <div class="template" style="display:none">
       {% if mail_archive_query_urls %}

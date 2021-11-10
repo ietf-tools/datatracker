@@ -17,10 +17,12 @@
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {# Null Form #}
-    {% buttons %}
+    
+
         <input class="btn btn-primary" type="submit" value="Delete schedule" name="save">
         <a href="{% url 'ietf.meeting.views.list_schedules' num=meeting.number %}" class="btn btn-primary">Cancel</a>
-    {% endbuttons %}
+    
+
   </form>
 
 </div>

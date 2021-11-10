@@ -41,7 +41,6 @@
     {% csrf_token %}
     {% bootstrap_form form layout='horizontal' %}
 
-    {% buttons layout='horizontal' %}
       {% if action == "edit" %}
         <button class="btn btn-primary" type="submit">Submit</button>
         <a class="btn btn-primary pull-right" href="{{ group.about_url }}">Back</a>
@@ -50,7 +49,8 @@
       {% else %}
         <button class="btn btn-primary" type="submit">Create group or BOF</button>
       {% endif %}
-    {% endbuttons %}
+    
+
   </form>
 {% endblock %}
 

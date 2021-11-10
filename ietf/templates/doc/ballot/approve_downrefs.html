@@ -22,12 +22,14 @@
     <form action="" method="post">
     {% csrf_token %}
     {% bootstrap_form approve_downrefs_form %}
-    {% buttons %}
+    
+
     <p>
       <a class="btn btn-primary" href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">Add no downref entries</a>
       <button type="submit" class="btn btn-warning" value="Save checked downrefs">Add checked downref entries</button>
     </p>
-    {% endbuttons %}
+    
+
     </form>
   {% endif %}
 

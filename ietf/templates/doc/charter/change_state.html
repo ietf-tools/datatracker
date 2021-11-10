@@ -33,7 +33,8 @@
       <p class="alert alert-warning"><b>Warning:</b> Announced initial review time hasn't elapsed yet. It does so at {{ initial_review.expires }}.</p>
     {% endif %}
 
-    {% buttons %}
+    
+
       {% if option == "initcharter" or option == "recharter" %}
         <button class="btn btn-primary" type="submit">Initiate chartering</button>
       {% endif %}
@@ -41,7 +42,8 @@
         <button class="btn btn-primary" type="submit">Save & notify secretariat</button>
         <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
       {% endif %}
-    {% endbuttons %}
+    
+
   </form>
 
   {% if prev_state %}

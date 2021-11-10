@@ -27,9 +27,11 @@
   <form enctype="multipart/form-data" method="post">
     {% csrf_token %}
     {% bootstrap_form form %}
-    {% buttons %}
+    
+
       <input class="btn btn-primary" type="submit" value="Save" name="save" {% if submit_disabled %}disabled="disabled"{% endif %}>
-    {% endbuttons %}
+    
+
   </form>
 
 {% endblock %}

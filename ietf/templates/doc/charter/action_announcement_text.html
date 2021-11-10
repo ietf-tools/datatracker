@@ -15,7 +15,8 @@
     {% csrf_token %}
     {% bootstrap_form announcement_text_form %}
 
-    {% buttons %}
+    
+
       <button type="submit" class="btn btn-primary" name="save_text" value="Save">Submit</button>
       <button type="submit" class="btn btn-warning" name="regenerate_text" value="Reenerate"">Regenerate</button>
 
@@ -24,7 +25,8 @@
       {% endif %}
 
       <a class="btn btn-primary pull-right" href="{{ back_url }}">Back</a>
-    {% endbuttons %}
+    
+
   </form>
 
 {% endblock%}

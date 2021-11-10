@@ -20,10 +20,12 @@
     {% csrf_token %}
     {% bootstrap_form form %}
 
-    {% buttons %}
+    
+
       <button type="submit" class="btn btn-primary">Submit</button>
       <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc_to_review.name %}">Back</a>
-    {% endbuttons %}
+    
+
   </form>
 
 {% endblock %}

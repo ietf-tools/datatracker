@@ -44,11 +44,13 @@
       {% csrf_token %}
       {% bootstrap_form form %}
 
-      {% buttons %}
+      
+
       <a class="btn btn-primary" href="{{ clist.get_absolute_url }}">Back to list</a>
 
       <button type="submit" name="action" value="subscribe" class="btn btn-primary">Subscribe</button>
-      {% endbuttons %}
+      
+
     </form>
   {% else %}
     <div class="alert alert-danger">You do not have any active email addresses registered with your account. Go to <a href="{% url "ietf.ietfauth.views.profile" %}">your profile and add or activate one</a>.</div>

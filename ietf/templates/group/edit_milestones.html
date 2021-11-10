@@ -103,12 +103,14 @@
       </div>
     </div>
 
-    {% buttons %}
+    
+
       <a class="btn btn-primary pull-right" href="{% if milestone_set == "charter" %}{% url "ietf.doc.views_doc.document_main" name=group.charter.canonical_name %}{% else %}{{ group.about_url }}{% endif %}">Cancel</a>
 
       <button style="display:none" class="btn btn-primary" type="submit" data-labelsave="Save" data-labelreview="Review changes">Save</button>
       <input type="hidden" name="action" value="save">
-    {% endbuttons %}
+    
+
 
   </form>
 

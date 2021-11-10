@@ -20,10 +20,12 @@
   <form method="post">
     {% csrf_token %}
     {% bootstrap_form form %}
-    {% buttons %}
+    
+
       <button class="btn btn-primary" type="submit">Save</button>
       <a class="btn btn-primary" href="{% url 'ietf.nomcom.views.private_index' year %}">Cancel</a>
-    {% endbuttons %}
+    
+
   </form>
 
 {% endblock %}
