@@ -385,7 +385,7 @@
 
   {% if user|has_role:"Secretariat" %}
     <p></p>
-    <a id="send{{ submission.pk }}" class="btn btn-primary" href="{% url "ietf.submit.views.send_submission_email" submission_id=submission.pk %}" title="Email submitter"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span> Send Email</a>
+    <a id="send{{ submission.pk }}" class="btn btn-primary" href="{% url "ietf.submit.views.send_submission_email" submission_id=submission.pk %}" title="Email submitter"><span class="bi bi-envelope" aria-hidden="true"></span> Send Email</a>
   {% endif %}
 
   {% if show_send_full_url %}
@@ -426,7 +426,7 @@
               {% if user.is_authenticated %}
                 <td> 
                   {% if  e.desc|startswith:"Received message" and user|has_role:"Secretariat" %}
-                    <a id="reply{{ submission.pk }}" class="btn btn-primary btn-xs" href="{% url "ietf.submit.views.send_submission_email" submission_id=submission.pk message_id=e.submissionemailevent.pk %}" title="Reply"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span> Reply</a>
+                    <a id="reply{{ submission.pk }}" class="btn btn-primary btn-xs" href="{% url "ietf.submit.views.send_submission_email" submission_id=submission.pk message_id=e.submissionemailevent.pk %}" title="Reply"><span class="bi bi-envelope" aria-hidden="true"></span> Reply</a>
                   {% endif %}
                   Email: <a id="aw{{ submission.pk }}-{{ m.pk }}" href="{% url "ietf.submit.views.show_submission_email_message" submission_id=submission.pk message_id=e.submissionemailevent.pk access_token=submission.access_token %}">{{ e.desc }}</a></td>
               {% else %}

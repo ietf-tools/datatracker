@@ -9,7 +9,7 @@
 
   {% if clist.pk != None %}
     <li><a class="btn btn-primary" href="{% if clist.group %}{% url "ietf.community.views.subscription" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.subscription" username=clist.user.username %}{% endif %}">
-      <i class="glyphicon glyphicon-envelope"></i>
+      <i class="bi bi-envelope"></i>
       {% if subscribed %}
         Change subscription
       {% else %}
@@ -18,5 +18,5 @@
     </a></li>
   {% endif %}
 
-  <li><a class="btn btn-primary" href="{% if clist.group %}{% url "ietf.community.views.export_to_csv" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.export_to_csv" username=clist.user.username %}{% endif %}"><i class="glyphicon glyphicon-list"></i> Export as CSV</a></li>
+  <li><a class="btn btn-primary" href="{% if clist.group %}{% url "ietf.community.views.export_to_csv" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.export_to_csv" username=clist.user.username %}{% endif %}"><i class="bi bi-file-ruled"></i> Export as CSV</a></li>
 </ul>

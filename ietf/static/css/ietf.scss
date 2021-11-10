@@ -53,13 +53,9 @@ $enable-negative-margins: true;
 @import "~/node_modules/bootstrap/scss/utilities/api";
 
 // Make the bootstrap icons available.
-// FIXME: This requires cp -r node_modules/bootstrap-icons/font/fonts static/src/css/
-// to be run manually due to parcel limitations.
-// @import "../../../node_modules/bootstrap-icons/font/bootstrap-icons";
-
-// For now, let's stick with font-awesome v4:
-$fa-font-path: "~/node_modules/font-awesome/fonts";
-@import "~/node_modules/font-awesome/scss/font-awesome";
+$bootstrap-icons-font-src: url("~node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2?a97b3594ad416896e15824f6787370e0") format("woff2"),
+url("~node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff?a97b3594ad416896e15824f6787370e0") format("woff") !default;
+@import "../../../node_modules/bootstrap-icons/font/bootstrap-icons";
 
 // Install the datatables.net bootstrap5 styles.
 // FIXME: Including this with ~ fails for some odd reason?

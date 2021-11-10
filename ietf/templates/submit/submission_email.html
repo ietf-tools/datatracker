@@ -49,7 +49,7 @@
 
       {% if user|has_role:"Secretariat" %}
         <tr>
-          <td><a id="reply{{ submission.pk }}" class="btn btn-primary" href="{% url "ietf.submit.views.send_submission_email" submission_id=submission.pk message_id=message.pk %}" title="Reply"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span> Reply</a></td>
+          <td><a id="reply{{ submission.pk }}" class="btn btn-primary" href="{% url "ietf.submit.views.send_submission_email" submission_id=submission.pk message_id=message.pk %}" title="Reply"><span class="bi bi-envelope" aria-hidden="true"></span> Reply</a></td>
         </tr>
       {% endif %}
     </table>

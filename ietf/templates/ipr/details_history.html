@@ -39,7 +39,7 @@
           <td class="text-nowrap">{{ e.time|date:"Y-m-d" }}</td>
           <td>{{ e.type }}
             {% if e.response_due and e.response_past_due %}
-              <span class="glyphicon glyphicon-exclamation-sign" title="Response overdue"></span>
+              <span class="bi bi-exclamation-circle" title="Response overdue"></span>
             {% endif %}
           </td>
           <td>{{ e.by }}</td>

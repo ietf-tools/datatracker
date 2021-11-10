@@ -47,7 +47,7 @@
               {% if latest_msgout and latest_msgout.response_due %}
                 {{ latest_msgout.response_due|date:"Y-m-d" }}
                 {% if latest_msgout.response_past_due %}
-                  <span class="glyphicon glyphicon-exclamation-sign" title="Response overdue"></span>
+                  <span class="bi bi-exclamation-circle" title="Response overdue"></span>
                 {% endif %}
               {% endif %}
             </td>
