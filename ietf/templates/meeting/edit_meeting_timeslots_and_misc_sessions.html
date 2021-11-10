@@ -16,7 +16,7 @@
     {% origin %}
     <div class="edit-meeting-timeslots-and-misc-sessions {% if not can_edit %}read-only{% endif %}" {% if scroll %}data-scroll="{{ scroll }}"{% endif %}>
 
-        <p class="pull-right">
+        <p class="float-end">
             <a href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">Other Agendas</a>
         </p>
 
@@ -77,7 +77,7 @@
         </div>
 
         <div class="scheduling-panel" style="{% if not edit_timeslot_form and not add_timeslot_form %}display:none{% endif %}">
-            <i class="close bi bi-x pull-right"></i>
+            <i class="close bi bi-x float-end"></i>
 
             <div class="panel-content">
                 {% if edit_timeslot_form %}

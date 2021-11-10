@@ -196,7 +196,7 @@
                 <th>Formats</th>
                 <td class="edit"></td>
                 <td>
-                    {% if doc.get_state_slug != "active" and doc.get_state_slug != "rfc" %}<div class="pull-right label label-warning">Expired & archived</div>{% endif %}
+                    {% if doc.get_state_slug != "active" and doc.get_state_slug != "rfc" %}<div class="float-end label label-warning">Expired & archived</div>{% endif %}
                     {% if file_urls %}
                         {% for label, url in file_urls %}
                             <a class="btn btn-primary btn-xs" href="{{ url }}">

@@ -14,7 +14,7 @@
     {% endblock %}
 
     {% if can_access_stats %}
-        <h1 class="pull-right"><a href="{% url "ietf.stats.views.review_stats" stats_type="completion" acronym=group.acronym %}" class="icon-link">&nbsp;<span class="small bi bi-bar-chart-line">&nbsp;</span></a></h1>
+        <h1 class="float-end"><a href="{% url "ietf.stats.views.review_stats" stats_type="completion" acronym=group.acronym %}" class="icon-link">&nbsp;<span class="small bi bi-bar-chart-line">&nbsp;</span></a></h1>
     {% endif %}
 
     <h2>Reviewers</h2>

@@ -56,7 +56,7 @@
 
 
 
-        <a class="btn btn-danger pull-right" href="{% if liaison %}{% url "ietf.liaisons.views.liaison_detail" object_id=liaison.pk %}{% else %}{% url "ietf.liaisons.views.liaison_list" %}{% endif %}">Cancel</a>
+        <a class="btn btn-danger float-end" href="{% if liaison %}{% url "ietf.liaisons.views.liaison_detail" object_id=liaison.pk %}{% else %}{% url "ietf.liaisons.views.liaison_list" %}{% endif %}">Cancel</a>
 
         {% if not liaison %}
             <button name="send" type="submit" class="btn btn-primary">Send and post</button>

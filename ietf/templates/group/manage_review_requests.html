@@ -36,7 +36,7 @@
                     <div class="panel-heading">
 
                         <h3 class="panel-title">
-                            <span class="pull-right">
+                            <span class="float-end">
                                 {% if r.in_lc_and_telechat %}Last Call and telechat{% else %}{{ r.type.name }}{% endif %}
                                 - deadline {{ r.deadline|date:"Y-m-d" }}
                                 {% if r.due %}<span class="label label-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
@@ -176,7 +176,7 @@
 
 
 
-            <a href="{% url "ietf.group.views.review_requests" group_type=group.type_id acronym=group.acronym %}" class="btn btn-primary pull-right">Cancel</a>
+            <a href="{% url "ietf.group.views.review_requests" group_type=group.type_id acronym=group.acronym %}" class="btn btn-primary float-end">Cancel</a>
             <button class="btn btn-primary" type="submit" name="action" value="save">Save changes</button>
             <button class="btn btn-primary" type="submit" name="action" value="save-continue">Save and continue editing</button>
             <button class="btn btn-primary" type="submit" name="action" value="refresh">Refresh (keeping changes)</button>

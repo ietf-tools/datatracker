@@ -33,7 +33,7 @@
         data-timezone="{{ meeting.time_zone }}"
         data-lock-seconds="{{ lock_time.total_seconds }}">
 
-        <p class="pull-right">
+        <p class="float-end">
             {% if can_edit_properties %}
                 <a href="{% url "ietf.meeting.views.edit_schedule_properties" schedule.meeting.number schedule.owner_email schedule.name %}">Edit properties</a>
 

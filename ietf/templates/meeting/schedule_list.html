@@ -15,7 +15,7 @@
                 <div class="panel-heading">
                     {{ label }}
                     {% if own %}
-                        <div class="pull-right" >
+                        <div class="float-end" >
                             <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number %}"><i class="bi bi-plus"></i> New Agenda</a>
                         </div>
                     {% endif %}

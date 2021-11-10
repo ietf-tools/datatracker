@@ -74,7 +74,7 @@
             {% for p in positions %}
                 {% if not p.is_old_pos %}
                     <h4 class="anchor-target" id="{{ doc.name|slugify }}_{{ p.balloter.plain_name|slugify }}">{{ p.balloter.plain_name }}
-                        <span class="pull-right">
+                        <span class="float-end">
                             {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
                             <span class="label label-{{ p.pos|pos_to_label }}">{{p.pos}}</span>
                             {% if user|has_role:"Secretariat" %}
@@ -87,13 +87,13 @@
                             <div class="panel-heading">
                                 <h5 class="panel-title"><b>{{ p.pos.name }}</b> ({{ p.discuss_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev }}{% endif %})
                                     {% if p.send_email %}
-                                        <span class="bi bi-envelope pull-right" title="Email requested to be sent for this discuss"></span>
+                                        <span class="bi bi-envelope float-end" title="Email requested to be sent for this discuss"></span>
                                     {% elif p.any_email_sent == True %}
-                                        <span class="bi bi-envelope pull-right" title="Email requested to be sent for earlier discuss"></span>
+                                        <span class="bi bi-envelope float-end" title="Email requested to be sent for earlier discuss"></span>
                                     {% elif p.any_email_sent == False %}
-                                        <span class="bi bi-chat-o pull-right" title="No email send requests for this discuss"></span>
+                                        <span class="bi bi-chat-o float-end" title="No email send requests for this discuss"></span>
                                     {% else %}
-                                        <span class="bi bi-chat-o pull-right" title="No email send requests for this discuss"></span>
+                                        <span class="bi bi-chat-o float-end" title="No email send requests for this discuss"></span>
                                     {% endif %}
                                 </h5>
                             </div>
@@ -106,13 +106,13 @@
                             <div class="panel-heading">
                                 <h5 class="panel-title"><b>Comment</b> ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev }}{% endif %})
                                     {% if p.send_email %}
-                                        <span class="bi bi-envelope pull-right" title="Email requested to be sent for this comment"></span>
+                                        <span class="bi bi-envelope float-end" title="Email requested to be sent for this comment"></span>
                                     {% elif p.any_email_sent == True %}
-                                        <span class="bi bi-envelope pull-right" title="Email requested to be sent for earlier comment"></span>
+                                        <span class="bi bi-envelope float-end" title="Email requested to be sent for earlier comment"></span>
                                     {% elif p.any_email_sent == False %}
-                                        <span class="bi bi-chat-o pull-right" title="No email send requests for this comment"></span>
+                                        <span class="bi bi-chat-o float-end" title="No email send requests for this comment"></span>
                                     {% else %}
-                                        <div class="pull-right small italic" style="margin-top: -0.3em;" title="No ballot position send log available">No email<br/>send info</div>
+                                        <div class="float-end small italic" style="margin-top: -0.3em;" title="No ballot position send log available">No email<br/>send info</div>
                                     {% endif %}
                                 </h5>
                             </div>
@@ -128,7 +128,7 @@
                 {% if p.is_old_pos %}
                     <h4 class="anchor-target" id="{{ doc.name|slugify }}_{{ p.balloter.plain_name|slugify }}">
                         <span class="text-muted">({{ p.balloter.plain_name }}; former steering group member)</span>
-                        <span class="pull-right">
+                        <span class="float-end">
                             {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
                             <span class="label label-{{ p.pos|pos_to_label }}">{{p.pos}}</span>
                             {% if user|has_role:"Secretariat" %}
@@ -145,13 +145,13 @@
                                     ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev }}{% endif %})
                                 {% endif %}
                                 {% if p.send_email %}
-                                    <span class="bi bi-envelope pull-right" title="Email requested to be sent for this ballot position"></span>
+                                    <span class="bi bi-envelope float-end" title="Email requested to be sent for this ballot position"></span>
                                 {% elif p.any_email_sent == True %}
-                                    <span class="bi bi-envelope pull-right" title="Email requested to be sent for earlier ballot position"></span>
+                                    <span class="bi bi-envelope float-end" title="Email requested to be sent for earlier ballot position"></span>
                                 {% elif p.any_email_sent == False %}
-                                    <span class="bi bi-chat-o pull-right" title="No email send requests for this ballot position"></span>
+                                    <span class="bi bi-chat-o float-end" title="No email send requests for this ballot position"></span>
                                 {% else %}
-                                    <div class="pull-right small italic" style="margin-top: -0.3em;" title="No ballot position send log available">No email<br/>send info</div>
+                                    <div class="float-end small italic" style="margin-top: -0.3em;" title="No ballot position send log available">No email<br/>send info</div>
                                 {% endif %}
                             </h5>
                         </div>

@@ -146,7 +146,7 @@
                     {{ submission.name }}
                 {% endif %}
 
-                <button class="btn btn-primary btn-xs pull-right" data-toggle="modal" data-target="#twopages">View first two pages</button>
+                <button class="btn btn-primary btn-xs float-end" data-toggle="modal" data-target="#twopages">View first two pages</button>
 
                 {% show_submission_files submission %}
 
@@ -162,7 +162,7 @@
                 {{ submission.rev }}
 
                 {% if errors.rev %}
-                    <button class="btn btn-primary btn-xs pull-right" data-toggle="modal" data-target="#twopages">View errors in document</button>
+                    <button class="btn btn-primary btn-xs float-end" data-toggle="modal" data-target="#twopages">View errors in document</button>
                     <p class="text-danger bg-danger"><b>{{ errors.rev }}</b></p>
                 {% endif %}
             </td>

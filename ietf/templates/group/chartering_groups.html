@@ -57,7 +57,7 @@
                             <td class="text-nowrap">{{ g.charter.time|date:"Y-m-d" }}</td>
 
                             <td>
-                                <div class="pull-right">{% ballot_icon g.charter %}</div>
+                                <div class="float-end">{% ballot_icon g.charter %}</div>
 
                                 {{ g.charter.get_state.name }}
                                 {% if g.chartering_type == "initial" %}(Initial Chartering){% endif %}

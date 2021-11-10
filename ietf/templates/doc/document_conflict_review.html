@@ -59,7 +59,7 @@
                 <th><a href="{% url 'ietf.doc.views_help.state_help' type='conflict-review' %}">State</a></th>
                 <td class="edit">
                     {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
-                        <a title="{{ doc.get_state.desc }}" class="btn btn-primary btn-xs pull-right" href="{% url 'ietf.doc.views_conflict_review.change_state' name=doc.name %}">Edit</a>
+                        <a title="{{ doc.get_state.desc }}" class="btn btn-primary btn-xs float-end" href="{% url 'ietf.doc.views_conflict_review.change_state' name=doc.name %}">Edit</a>
                     {% endif %}
                 </td>
                 <td>
@@ -74,7 +74,7 @@
                 <th>Shepherding AD</th>
                 <td class="edit">
                     {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-                        <a class="btn btn-primary btn-xs pull-right" href="{% url 'ietf.doc.views_conflict_review.edit_ad' name=doc.name %}">Edit</a>
+                        <a class="btn btn-primary btn-xs float-end" href="{% url 'ietf.doc.views_conflict_review.edit_ad' name=doc.name %}">Edit</a>
                     {% endif %}
                 </td>
                 <td>
@@ -88,7 +88,7 @@
                     <th>Telechat date</th>
                     <td class="edit">
                         {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-                            <a class="btn btn-primary btn-xs pull-right" href="{% url 'ietf.doc.views_doc.telechat_date;conflict-review' name=doc.name %}">Edit</a>
+                            <a class="btn btn-primary btn-xs float-end" href="{% url 'ietf.doc.views_doc.telechat_date;conflict-review' name=doc.name %}">Edit</a>
                         {% endif %}
                     </td>
                     <td>
@@ -111,7 +111,7 @@
                 <th>Send notices to</th>
                 <td class="edit">
                     {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-                        <a class="btn btn-primary btn-xs pull-right" href="{% url 'ietf.doc.views_doc.edit_notify;conflict-review' name=doc.name %}">Edit</a>
+                        <a class="btn btn-primary btn-xs float-end" href="{% url 'ietf.doc.views_doc.edit_notify;conflict-review' name=doc.name %}">Edit</a>
                     {% endif %}
                 </td>
                 <td>

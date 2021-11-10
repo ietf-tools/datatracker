@@ -195,7 +195,7 @@
                                             {% if item.timeslot.location.floorplan %}
                                                 <div class="hidden-xs">
                                                     <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
-                                                        class="pull-right" title="{{floor.name}}"><span class="label label-blank label-wide">{{floor.short}}</span></a>
+                                                        class="float-end" title="{{floor.name}}"><span class="label label-blank label-wide">{{floor.short}}</span></a>
                                                 </divn>
                                             {% endif %}
                                         {% endwith %}
@@ -211,9 +211,9 @@
                                     {% endif %}
 
                                     {% if item.session.current_status == 'canceled' %}
-                                        <span class="label label-danger pull-right">CANCELLED</span>
+                                        <span class="label label-danger float-end">CANCELLED</span>
                                     {% else %}
-                                        <div class="pull-right padded-left">
+                                        <div class="float-end padded-left">
                                             {% if item.timeslot.type.slug == 'other' %}
                                                 {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
                                                     {% include "meeting/session_buttons_include.html" with show_agenda=True item=item schedule=schedule %}
@@ -268,7 +268,7 @@
                                                 {% if item.timeslot.location.floorplan %}
                                                     <div class="hidden-xs">
                                                         <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
-                                                            class="pull-right" title="{{floor.name}}"><span class="label label-blank">{{floor.short}}</span></a>
+                                                            class="float-end" title="{{floor.name}}"><span class="label label-blank">{{floor.short}}</span></a>
                                                     </div>
                                                 {% endif %}
                                             {% endwith %}
@@ -312,19 +312,19 @@
                                         {% endif %}
 
                                         {% if item.session.current_status == 'canceled' %}
-                                            <span class="label label-danger pull-right">CANCELLED</span>
+                                            <span class="label label-danger float-end">CANCELLED</span>
                                         {% else %}
-                                            <div class="pull-right padded-left">
+                                            <div class="float-end padded-left">
                                                 {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
                                             </div>
                                         {% endif %}
 
                                         {% if item.session.historic_group.state_id == "bof" %}
-                                            <span class="label label-success pull-right">BOF</span>
+                                            <span class="label label-success float-end">BOF</span>
                                         {% endif %}
 
                                         {% if item.session.current_status == 'resched' %}
-                                            <div class="label label-danger pull-right">
+                                            <div class="label label-danger float-end">
                                                 RESCHEDULED
                                                 {% if item.session.rescheduled_to %}
                                                     TO

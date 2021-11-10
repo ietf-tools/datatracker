@@ -50,9 +50,9 @@
             <br>
             <b>{{ doc.title }}</b>
             {% if doc.has_verified_errata %}
-                <a class="label label-danger pull-right" href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">Errata</a>
+                <a class="label label-danger float-end" href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">Errata</a>
             {% elif doc.has_errata %}
-                <a class="label label-warning pull-right" href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">Errata</a>
+                <a class="label label-warning float-end" href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">Errata</a>
             {% endif %}
         </div>
 
@@ -88,9 +88,9 @@
     {% for check in doc.submission.latest_checks %}
       {% if check.passed != None and check.symbol.strip %}
 	{% if check.errors or check.warnings %}
-	   <span class="checker-warning pull-right" data-toggle="modal" data-target="#check-{{check.pk}}" title="{{check.checker|title}} returned warnings or errors." >{{ check.symbol|safe }}</span>
+	   <span class="checker-warning float-end" data-toggle="modal" data-target="#check-{{check.pk}}" title="{{check.checker|title}} returned warnings or errors." >{{ check.symbol|safe }}</span>
 	{% else %}
-	   <span class="checker-success pull-right" data-toggle="modal" data-target="#check-{{check.pk}}" title="{{check.checker|title}} passed">{{ check.symbol|safe }}</span>
+	   <span class="checker-success float-end" data-toggle="modal" data-target="#check-{{check.pk}}" title="{{check.checker|title}} passed">{{ check.symbol|safe }}</span>
 	{% endif %}
 	{% include "doc/yang-check-modal-overlay.html" %}
       {% endif %}
@@ -102,7 +102,7 @@
         {% endif %}
 
         {% if doc.latest_revision_date|timesince_days|new_enough:request %}
-            <wbr><div class="pull-right"><span class="label label-success">New</span></div>
+            <wbr><div class="float-end"><span class="label label-success">New</span></div>
         {% endif %}
 
         {% if doc.get_state_slug == "active" and doc.expirable and doc.expires|timesince_days|expires_soon:request %}

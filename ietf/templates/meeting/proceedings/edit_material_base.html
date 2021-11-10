@@ -50,7 +50,7 @@
             {% block form_buttons %}
 
 
-                <a class="btn btn-primary pull-right"
+                <a class="btn btn-primary float-end"
                     href="{% url 'ietf.meeting.views_proceedings.material_details' num=meeting.number %}">Back</a>
                 <button class="btn btn-primary" type="submit">{% firstof submit_button_label 'Save' %}</button>
 
