@@ -123,7 +123,7 @@
                             {% if r.reviewer %}
                                 <button type="button" class="btn btn-primary btn-success" title="Click to reassign reviewer">
                                     {{ r.reviewer.person }}
-                                    {% if r.state_id == "accepted" %} <span class="badge bg-default">accepted</span>{% endif %}
+                                    {% if r.state_id == "accepted" %} <span class="badge bg-secondary">accepted</span>{% endif %}
                                     {% if r.reviewer_unavailable %}<span class="badge bg-danger">unavailable</span>{% endif %}
                                 </button>
                             {% else %}

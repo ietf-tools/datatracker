@@ -60,7 +60,7 @@
                                     <div class="checkbox {% if not s.used %}inactive{% endif %}">
                                         <label>
                                             <input type="checkbox" name="next_states" value="{{ s.pk }}"{% if checked %} checked="checked"{% endif %} />
-                                            {{ s.name }} {% if default %}<span class="badge bg-default">default</span>{% endif %}
+                                            {{ s.name }} {% if default %}<span class="badge bg-secondary">default</span>{% endif %}
                                         </label>
                                     </div>
                                 {% endfor %}

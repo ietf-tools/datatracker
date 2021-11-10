@@ -50,7 +50,7 @@
                         {% if r.reviewer %}
                             <td>
                                 {{ r.reviewer.person }}
-                                {% if r.state_id == "accepted" %}<span class="badge bg-default">Accepted</span>{% endif %}
+                                {% if r.state_id == "accepted" %}<span class="badge bg-secondary">Accepted</span>{% endif %}
                                 {% if r.reviewer_unavailable %}<span class="badge bg-danger">Unavailable</span>{% endif %}
                             </td>
                         {% endif %}
@@ -96,7 +96,7 @@
                         </td>
                         <td>
                             {{ a.reviewer.person }}
-                            {% if a.state_id == "accepted" %}<span class="badge bg-default">Accepted</span>{% endif %}
+                            {% if a.state_id == "accepted" %}<span class="badge bg-secondary">Accepted</span>{% endif %}
                             {% if a.reviewer_unavailable %}<span class="badge bg-danger">Unavailable</span>{% endif %}
                         </td>
                         <td>

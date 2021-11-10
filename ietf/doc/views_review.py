@@ -577,11 +577,11 @@ class CompleteReviewForm(forms.Form):
                 kwargs["initial"]["reviewed_rev"] = last_version
 
             self.fields["reviewed_rev"].help_text = mark_safe(
-                " ".join("<a class=\"rev badge bg-default {0}\" title=\"{2:%Y-%m-%d}\">{1}</a>".format(reviewed_rev_class[i], *r)
+                " ".join("<a class=\"rev badge bg-secondary {0}\" title=\"{2:%Y-%m-%d}\">{1}</a>".format(reviewed_rev_class[i], *r)
                          for i, r in enumerate(known_revisions)))
         else:
             self.fields["reviewed_rev"].help_text = mark_safe(
-                " ".join("<a class=\"rev badge bg-default {0}\" title=\"{2:%Y-%m-%d}\">{1}</a>".format('', *r)
+                " ".join("<a class=\"rev badge bg-secondary {0}\" title=\"{2:%Y-%m-%d}\">{1}</a>".format('', *r)
                          for i, r in enumerate(known_revisions)))
 
         self.fields["result"].queryset = self.fields["result"].queryset.filter(reviewteamsettings_review_results_set__group=team)
