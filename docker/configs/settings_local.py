@@ -1,14 +1,14 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import six
-if six.PY3:
-    from typing import Collection, Dict, List, Tuple      # pyflakes:ignore
+from ietf.settings import *                                          # pyflakes:ignore
 
-SECRET_KEY = 'jzv$o93h_lzw4a0%0oz-5t5lk+ai=3f8x@uo*9ahu8w4i300o6'
+ALLOWED_HOSTS = ['*']
 
 DATABASES = {
     'default': {
+        'HOST': 'db',
+        'PORT': 3306,
         'NAME': 'ietf_utf8',
         'ENGINE': 'django.db.backends.mysql',
         'USER': 'django',
@@ -18,11 +18,11 @@ DATABASES = {
             'init_command': 'SET storage_engine=InnoDB; SET names "utf8"',
         },
     },
-}                                       # type: Dict[str, Dict[str, Collection[str]]]
+}
 
 DATABASE_TEST_OPTIONS = {
     'init_command': 'SET storage_engine=InnoDB',
-    }
+}
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 IDSUBMIT_REPOSITORY_PATH = "test/id/"
@@ -57,5 +57,3 @@ SUBMIT_YANG_DRAFT_MODEL_DIR = 'data/developers/ietf-ftp/yang/draftmod/'
 SUBMIT_YANG_INVAL_MODEL_DIR = 'data/developers/ietf-ftp/yang/invalmod/'
 SUBMIT_YANG_IANA_MODEL_DIR = 'data/developers/ietf-ftp/yang/ianamod/'
 SUBMIT_YANG_RFC_MODEL_DIR   = 'data/developers/ietf-ftp/yang/rfcmod/'
-
-

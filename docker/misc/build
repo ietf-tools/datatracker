@@ -13,7 +13,7 @@ if [[ $(uname) =~ CYGWIN.* ]]; then parent=$(echo "$parent" | sed -e 's/^\/cygdr
 function usage() {
     cat <<EOF
 NAME
-	$program - Build a datatracker docker image
+	$program - Build the datatracker docker images
 
 SYNOPSIS
 	$program [OPTIONS]
@@ -21,8 +21,8 @@ SYNOPSIS
 DESCRIPTION
 	This script builds a Ubuntu-based docker image that has been
 	set up with the dependencies needed to easily run the IETF
-	datatracker in development mode.  It uses docker/Dockerfile;
-	i.e., the Dockerfile in the same directory as this script.
+	datatracker in development mode.  It uses docker/app.Dockerfile and
+    db.Dockerfile; i.e., the Dockerfiles in the same directory as this script.
 
 OPTIONS
 EOF
@@ -84,9 +84,13 @@ done
 
 # The program itself
 docker rmi -f $IMAGE:trunk 2>/dev/null || true
-docker build --progress plain -t "$IMAGE:$TAG" docker/
-docker tag "$(docker images -q $IMAGE | head -n 1)" $IMAGE:latest
+docker build --progress plain -t "$IMAGE-app:$TAG" -f docker/app.Dockerfile .
+docker build --progress plain -t "$IMAGE-db:$TAG" -f docker/db.Dockerfile .
+docker tag "$(docker images -q $IMAGE-app | head -n 1)" $IMAGE-app:latest
+docker tag "$(docker images -q $IMAGE-db | head -n 1)" $IMAGE-db:latest
 if [ -z "$LOCAL" ]; then
-    docker push $IMAGE:latest
-    docker push "$IMAGE:$TAG"
+    docker push $IMAGE-app:latest
+    docker push "$IMAGE-app:$TAG"
+    docker push $IMAGE-db:latest
+    docker push "$IMAGE-db:$TAG"
 fi
