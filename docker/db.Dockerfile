@@ -24,6 +24,10 @@ ENV LC_ALL en_US.UTF-8
 # Turn on mariadb performance_schema
 RUN sed -i 's/\[mysqld\]/\[mysqld\]\nperformance_schema=ON/' /etc/mysql/mariadb.conf.d/50-server.cnf
 
+# Set mariadb default charset to utf8 instead of utf8mb4 to match production
+RUN sed -i 's/utf8mb4/utf8/' /etc/mysql/mariadb.conf.d/50-server.cnf 
+RUN sed -i 's/unicode_ci/general_ci/' /etc/mysql/mariadb.conf.d/50-server.cnf 
+
 # Make the mariadb sys schema available for possible installation
 # We would normally use the next line, but that has a bug:
 # ADD https://github.com/FromDual/mariadb-sys/archive/master.zip /

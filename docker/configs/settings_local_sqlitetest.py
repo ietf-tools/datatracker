@@ -11,7 +11,7 @@
 
 import os 
 from ietf.settings import *                                          # pyflakes:ignore
-from ietf.settings import TEST_CODE_COVERAGE_CHECKER, BASE_DIR, PHOTOS_DIRNAME
+from ietf.settings import TEST_CODE_COVERAGE_CHECKER
 import debug                            # pyflakes:ignore
 debug.debug = True
 
@@ -65,8 +65,6 @@ EMAIL_PORT=2025
 
 TRAC_WIKI_DIR_PATTERN = "test/wiki/%s"
 TRAC_SVN_DIR_PATTERN = "test/svn/%s"
-TRAC_CREATE_ADHOC_WIKIS = [
-]                                       # type: List[Tuple[str, str, str]]
 
 MEDIA_BASE_DIR = 'test'
 MEDIA_ROOT = MEDIA_BASE_DIR + '/media/'
