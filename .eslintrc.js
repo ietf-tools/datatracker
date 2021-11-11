@@ -14,5 +14,9 @@ module.exports = {
     },
     globals: {
         d3: true
+    },
+    parserOptions: {
+        sourceType: "module",
+        ecmaVersion: 2015
     }
 };

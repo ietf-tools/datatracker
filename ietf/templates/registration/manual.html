@@ -1,10 +1,10 @@
-{% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
+
+{% extends "base.html" %}
+
 {% load origin %}
 
-{% load django_bootstrap5 %}
-
-{% block title %}Complete account creation{% endblock %}
+{% block title %}Complete account creation{% endblock title %}
 
 {% block content %}
     {% origin %}
@@ -13,9 +13,7 @@
 
     <p>
         Our apologies, it looks like there was an issue creating your Datatracker account.
-        Please send an email to support@ietf.org and we'll get you set up promptly.
-
-        Best, IETF Secretariat
+        Please send an email to the <a href="mailto:{{ settings.SECRETARIAT_SUPPORT_EMAIL }}">IETF secretariat</a> and we'll get you set up promptly.
     </p>
 
-{% endblock %}
+{% endblock content %}

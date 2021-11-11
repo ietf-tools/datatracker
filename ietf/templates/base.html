@@ -20,6 +20,7 @@
         <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}"/>
         <style>
             {% block morecss %}{% endblock morecss %}
+            .leftmenu { width: 13em; }
         </style>
 
         {% block pagehead %}{% endblock pagehead %}
@@ -64,29 +65,29 @@
         </nav>
 
         <div class="pt-3 container-fluid">
-            {% comment %} {% bootstrap_messages %} {% endcomment %}
-            {% for message in messages %}
-                <div class="alert{% if message.level_tag %} alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag }}{% endif %}{% endif %}{% if message.extra_tags %} {{ message.extra_tags }}{% endif %} alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&#215;</button>{{ message }}</div>
-            {% endfor %}
-            {% if request.COOKIES.left_menu == "on" and not hide_menu %}
-                {# ugly hack for the more or less unported meeting agenda edit pages #}
-                <div class="row">
-                    <div class="d-none d-md-block border-end lh-sm leftmenu small" style="width: 13em;">
+            <div class="row">
+                {% if request.COOKIES.left_menu == "on" and not hide_menu %}
+                    <div class="col-1 d-none d-md-block border-end lh-sm leftmenu small">
                         <ul class="nav nav-pills flex-column">
                             {% include "base/menu.html" with flavor="left" %}
                         </ul>
                     </div>
-            {% endif %}
-            <div class="col" id="content">
-                {% block content %}{{ content|safe }}{% endblock content %}
-                {% block content_end %}{% endblock content_end %}
-            </div>
-            {% if request.COOKIES.left_menu == "on" and not hide_menu %}
+                {% endif %}
+                <div class="col" id="content">
+                    {% comment %} {% bootstrap_messages %} {% endcomment %}
+                    {% for message in messages %}
+                        <div class="alert{% if message.level_tag %} alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag }}{% endif %}{% endif %}{% if message.extra_tags %} {{ message.extra_tags }}{% endif %} alert-dismissable fade show">
+                            <button type="button" class="btn-close float-end" data-bs-dismiss="alert" aria-label="Close"></button>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                    {% block content %}{{ content|safe }}{% endblock content %}
+                    {% block content_end %}{% endblock content_end %}
                 </div>
-            {% endif %}
+            </div>
+            <hr/>
             {% block footer %}
                 <footer class="col-md-12 col-sm-12 text-center">
-                    <hr/>
                     <a href="https://www.ietf.org/" class="p-3">IETF</a>
                     <a href="https://www.ietf.org/iesg/" class="p-3">IESG</a>
                     <a href="https://www.iab.org/" class="p-3">IAB</a>

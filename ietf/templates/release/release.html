@@ -1,88 +1,80 @@
-{% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}{% load cache %}
 
-{% block title %}Release information{% endblock %}
+{% extends "base.html" %}
+{% load origin %}
+{% load cache %}
 
-{% block morecss %}
-    .year-row	{ background-color: white; }
-    .version-row	{ vertical-align: top; }
-    .version	{ text-align: right; padding: 0.1em 0.5em; min-width: 4em; }
-    .date		{ text-align: right; padding: 0.1em 0.5em; min-width: 8em; }
-    .release-title	{ padding: 0.1em 0.5em; }
-{% endblock %}
+{% block title %}Release information{% endblock title %}
 
 {% block content %}
     {% origin %}
-    <div class="col-sm-12">
-        <h1>
-            <a href="https://trac.ietf.org/trac/ietfdb/browser/tags/{{entry.version}}">
+    <div class="row">
+        <h1 class="col-11">
+            <a href="https://trac.ietf.org/trac/ietfdb/browser/tags/{{ entry.version }}">
                 Version {{ entry.version }}</a>
-            <br><small>Released {{ entry.date }}</small>
-            <div class="float-end"><a href="{% url "ietf.release.views.stats" %}" class="icon-link">&nbsp;<span class="small bi bi-bar-chart-line">&nbsp;</span></a></div>
+            <br/><small>Released {{ entry.date }}</small>
         </h1>
-
-        <ul class="pager">
-            <li class="previous {% if not entry.prev %}disabled{% endif %}">
-                <a href="{% if entry.prev %}/release/{{entry.prev.version}}/{% else %}#{% endif %}"><span class="bi bi-arrow-left"></span> Previous release</a>
-            </li>
-            <li class="next {% if not entry.next %}disabled{% endif %}">
-                <a href="{% if entry.next %}/release/{{entry.next.version}}/{% else %}#{% endif %}">Next release <span class="bi bi-arrow-right"></span></a>
-            </li>
-        </ul>
-
-        <p>
-            {% if coverage %}
-                Tested:
-                <b>Code</b>: {{coverage.code.percentage|stringformat:".2f"}}%, &nbsp;
-                <b>Templates</b>: {{coverage.template.percentage|stringformat:".2f"}}%, &nbsp;
-                <b>URLs</b>: {{coverage.url.percentage|stringformat:".2f"}}% &nbsp;
-            {% endif %}
-            {% if code_coverage_url %}
-                <br/>
-                (A <a href="{{code_coverage_url}}">code test coverage report</a> dated {{code_coverage_time}} is available.)
-            {% endif %}
-        </p>
-
-        <h2>{{ entry.version }} release notes</h2>
-        <pre>{% if entry.title %}  <b>{{entry.title}}</b>
-
-{% endif %}{{entry.html|safe}}
-
- -- {{entry.author}} &lt;{{entry.email}}&gt;  {{entry.date}}
-  </pre>
-        {% cache 3600 ietf_release_list %}
-            <div id="release-list"></div>
-            <h2>Release list:</h2>
-
-            <table style="margin-left: 3em" class="table-striped">
-                <tbody>
-                    {% for item in releases %}
-                        {% ifchanged %}
-                            </tbody>
-                            <tbody>
-                                <tr><td colspan="3"></td></tr>
-                                <tr class="year-row">
-                                    <th class="h3">{{ item.date|slice:"7:11" }}</th>
-                                    <th></th>
-                                    <th></th>
-                                </tr>
-                        {% endifchanged %}
-                        <tr class="version-row">
-                            <td class="version"><a href="/release/{{item.version}}/">{{ item.version }}</a></td>
-                            <td class="date">{{ item.date|slice:":11" }}</td>
-                            <td class="release-title">{{ item.title }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% endcache %}
+        <div class="col-1 text-end">
+            <a href="{% url "ietf.release.views.stats" %}" class="icon-link">
+                <span class="bi bi-bar-chart-line"></span>
+            </a>
+        </div>
     </div>
-{% endblock %}
+
+    <ul class="pagination d-flex py-2">
+        <li class="me-auto page-item {% if not entry.prev %}disabled{% endif %}">
+            <a class="page-link" href="{% if entry.prev %}/release/{{ entry.prev.version }}/{% else %}#{% endif %}"><span class="bi bi-arrow-left"></span> Previous release</a>
+        </li>
+        <li class="page-item {% if not entry.next %}disabled{% endif %}">
+            <a class="page-link" href="{% if entry.next %}/release/{{ entry.next.version }}/{% else %}#{% endif %}">Next release <span class="bi bi-arrow-right"></span></a>
+        </li>
+    </ul>
+
+    <p>
+        {% if coverage %}
+            Tested:
+            <b>Code</b>: {{ coverage.code.percentage|stringformat:".2f" }}%,
+            <b>Templates</b>: {{ coverage.template.percentage|stringformat:".2f" }}%,
+            <b>URLs</b>: {{ coverage.url.percentage|stringformat:".2f" }}%
+        {% endif %}
+        {% if code_coverage_url %}
+            <br/>
+            (A <a href="{{ code_coverage_url }}">code test coverage report</a> dated {{ code_coverage_time }} is available.)
+        {% endif %}
+    </p>
+
+    <h2>{{ entry.version }} release notes</h2>
+    {% if entry.title %}<h4>{{ entry.title }}</h4>{% endif %}
+    <pre>{{ entry.html|safe }}
+
+  &mdash; {{ entry.author }} &lt;{{ entry.email }}&gt;  {{ entry.date }}
+    </pre>
+
+    {% cache 3600 ietf_release_list %}
+        <div id="release-list"></div>
+        <h2>Release list:</h2>
+
+        <table class="table table-striped table-sm">
+            {% for item in releases %}
+                {% ifchanged %}
+                    <tr class="table-info">
+                        <th colspan="3" class="h4">{{ item.date|slice:"7:11" }}</th>
+                    </tr>
+                {% endifchanged %}
+                <tr>
+                    <td class="text-end"><a href="/release/{{ item.version }}/">{{ item.version }}</a></td>
+                    <td class="text-end pe-3">{{ item.date|slice:":11" }}</td>
+                    <td>{{ item.title }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endcache %}
+
+{% endblock content %}
 
 {% block footer %}
-    <div class="col-md-12 text-center padded-top">
-        <a href="https://trac.ietf.org/trac/ietfdb/wiki/ContractorInstructions"><i>Contractor instructions</i></a>
-    </div>
+    <p class="text-center">
+        <a href="https://trac.ietf.org/trac/ietfdb/wiki/ContractorInstructions">Contractor instructions</a>
+    </p>
     {{ block.super }}
-{% endblock %}
+{% endblock footer %}

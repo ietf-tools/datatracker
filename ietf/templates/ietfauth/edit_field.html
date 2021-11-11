@@ -1,35 +1,30 @@
-{% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
+
+{% extends "base.html" %}
+
 {% load origin %}
 
 {% load django_bootstrap5 %}
 
 {% block title %}
     {{ title }} {{ person.plain_name }}
-{% endblock %}
+{% endblock title %}
 
 {% block content %}
     {% origin %}
-    <h1>{{ title }}<br><small>{{ person.plain_name }}</small></h1>
 
-    <p>
-        <b>
-            {{ info|safe }}
-        </b>
+    <h1>{{ title }}</h1>
+    <h2>{{ person.plain_name }}</h2>
+    <p class="fw-bold">
+        {{ info|striptags }}
     </p>
-
 
     <form enctype="multipart/form-data" method="post">
         {% csrf_token %}
         {% bootstrap_form form %}
 
-
-
-        <!-- Regarding placement of buttons: https://www.lukew.com/ff/entry.asp?571 -->
-        <button type="submit" class="btn btn-primary" name="submit" value="Save">Submit</button>
-        <a class="btn btn-primary float-end" href="{% url "ietf.ietfauth.views.profile" %}">Back</a>
-
-
+        {% bootstrap_button button_type="submit" content="Submit" %}
+        <a class="btn btn-secondary float-end" href="{% url "ietf.ietfauth.views.profile" %}">Back</a>
     </form>
 
-{% endblock %}
+{% endblock content %}

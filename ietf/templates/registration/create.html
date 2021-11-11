@@ -1,10 +1,12 @@
-{% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
+
+{% extends "base.html" %}
+
 {% load origin %}
 
 {% load django_bootstrap5 %}
 
-{% block title %}Account creation{% endblock %}
+{% block title %}Account creation{% endblock title %}
 
 {% block content %}
     {% origin %}
@@ -17,41 +19,34 @@
         <p>We have sent an email to {{ to_email }} with instructions on how to complete the process.</p>
 
     {% else %}
-        <div class="row">
-            <div class="col-md-2 col-sm-0"></div>
-            <div class="col-md-8 col-sm-12">
-                <h1>Account creation</h1>
-                <p>
-                    <b>If you already have an account and want to use a new email address,</b>
-                    please go to your account profile page and
-                </p>
-                <p>
-                    <a class="btn btn-primary" href="{% url "ietf.ietfauth.views.profile" %}"> Add a new email address</a>
-                </p>
-                <p>&nbsp;</p>
-                <p>
-                    <b>If you already have an account but forgot your password,</b>
-                    please simply
-                </p>
-                <p>
-                    <a class="btn btn-warning" href="{% url "ietf.ietfauth.views.password_reset" %}">Reset your password</a>
-                </p>
 
-                <hr>
+        <h1>Account creation</h1>
 
-                <p>Please enter your email address in order to create your datatracker account.</p>
-                <form method="post">
-                    {% csrf_token %}
-                    {% bootstrap_form form %}
+        <p>
+            <b>If you already have an account and want to use a new email address,</b>
+            please go to your account profile page and
+        </p>
 
+        <p>
+            <a class="btn btn-primary" href="{% url "ietf.ietfauth.views.profile" %}"> Add a new email address</a>
+        </p>
 
+        <p>
+            <b>If you already have an account but forgot your password,</b>
+            please simply
+        </p>
 
-                    <button type="submit" class="btn btn-primary">Create account</button>
+        <p>
+            <a class="btn btn-warning" href="{% url "ietf.ietfauth.views.password_reset" %}">Reset your password</a>
+        </p>
 
+        <hr/>
 
-                </form>
-            </div>
-            <div class="col-md-2 col-sm-0"></div>
-        </div>
+        <p>Please enter your email address in order to create your datatracker account.</p>
+        <form method="post">
+            {% csrf_token %}
+            {% bootstrap_form form %}
+            {% bootstrap_button button_type="submit" content="Create account" %}
+        </form>
     {% endif %}
-{% endblock %}
+{% endblock content %}

@@ -1,8 +1,10 @@
-{% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
+
+{% extends "base.html" %}
+
 {% load origin %}
 
-{% block title %}Profile update successful{% endblock %}
+{% block title %}Profile update successful{% endblock title%}
 
 {% block content %}
     {% origin %}
@@ -16,4 +18,4 @@
     {% endfor %}
 
     <a class="btn btn-primary" href="{% url "ietf.ietfauth.views.profile" %}">Edit profile</a>
-{% endblock %}
+{% endblock content %}
