@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@parcel/transformer-sass": "^2.0.1",
+    "eslint": "^8.2.0",
     "jquery-migrate": "^3.3.2",
     "parcel": "^2.0.0"
   },

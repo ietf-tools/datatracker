@@ -1,19 +1,18 @@
 module.exports = {
+    extends: ["eslint:recommended"],
     rules: {
-        indent: [2, 4],
-        camelcase: 0,
-        "require-jsdoc": 0,
-        quotes: [2, "double"],
-        "no-multiple-empty-lines": [2, {max: 2}],
-        "quote-props": [2, "as-needed"],
-        "brace-style": [2, "1tbs", {allowSingleLine: true}]
+        indent: ["error", 4],
+        quotes: ["error", "double", { avoidEscape: true, allowTemplateLiterals: true }],
+        "no-multiple-empty-lines": ["error", { max: 2, maxEOF: 0 }],
+        "quote-props": ["error", "as-needed"],
+        "brace-style": ["error", "1tbs", { allowSingleLine: true }],
     },
     env: {
         browser: true,
-        jquery: true
+        jquery: true,
+        node: true
     },
     globals: {
         d3: true
-    },
-    extends: "google"
+    }
 };
