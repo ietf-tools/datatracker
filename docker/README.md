@@ -121,7 +121,7 @@ docker-compose down
 
 to terminate the containers.
 
-### Clean / Rebuild / Fetch Latest DB Image
+### Clean and Rebuild DB from latest image
 
 To delete the active DB container, its volume and get the latest image / DB dump, simply run the following command:
 
@@ -138,6 +138,24 @@ cd docker
 docker-compose down -v
 docker-compose pull db
 docker-compose build --no-cache db
+```
+
+### Clean all
+
+To delete all containers for this project, its associated images and purge any remaining dangling images, simply run the following command:
+
+On Linux / macOS:
+
+```sh
+cd docker
+cleanall
+```
+
+On Windows:
+```sh
+cd docker
+docker-compose down -v --rmi all
+docker image prune 
 ```
 
 ### Accessing MariaDB Port
