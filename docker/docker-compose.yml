@@ -12,8 +12,6 @@ services:
                 VARIANT: 3.6-bullseye
                 NODE_VERSION: '16'
                 
-        volumes:
-            - ..:/root/src:cached  
         init: true
         
         # Overrides default command so things don't shut down after the process ends.
