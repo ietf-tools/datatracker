@@ -39,7 +39,7 @@ jQuery(document).ready(function () {
         content.find(".selected").removeClass("selected");
 
         schedulingPanel.hide();
-        schedulingPanel.find(".panel-content").children().remove();
+        schedulingPanel.find(".card-content").children().remove();
         // if we came from a failed POST, that's no longer relevant so overwrite history
         history.replaceState(null, document.title, window.location.pathname + window.location.search);
     }
@@ -67,7 +67,7 @@ jQuery(document).ready(function () {
 
             jQuery(this).find(".timeline").addClass("selected");
 
-            schedulingPanel.find(".panel-content").append(content.find(".add-timeslot-template").html());
+            schedulingPanel.find(".card-content").append(content.find(".add-timeslot-template").html());
             schedulingPanel.find("[name=day]").val(this.dataset.day);
             schedulingPanel.find("[name=location]").val(this.dataset.room);
             schedulingPanel.find("[name=type]").trigger("change");
@@ -100,7 +100,7 @@ jQuery(document).ready(function () {
             cancelCurrentActivity();
             element.addClass("selected");
 
-            schedulingPanel.find(".panel-content").append(response.form);
+            schedulingPanel.find(".card-content").append(response.form);
             schedulingPanel.find(".timeslot-form [name=type]").trigger("change");
             schedulingPanel.find(".timeslot-form").show();
             schedulingPanel.show();

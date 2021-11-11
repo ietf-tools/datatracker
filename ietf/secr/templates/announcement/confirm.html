@@ -4,21 +4,21 @@
 {% block title %}Announcement{% endblock %}
 
 {% block extrahead %}{{ block.super }}
-  <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
+    <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }}
-  &raquo; Announcement
+    &raquo; Announcement
 {% endblock %}
 
 {% block content %}
 
-<div class="module">
-    <h2>Confirm Announcement</h2>
+    <div class="module">
+        <h2>Confirm Announcement</h2>
 
-    <form action="{% url "ietf.secr.announcement.views.confirm" %}" method="post">{% csrf_token %}
+        <form action="{% url "ietf.secr.announcement.views.confirm" %}" method="post">{% csrf_token %}
 
-<pre id="announce-confirm">
+            <pre id="announce-confirm">
 To: {{ to }}
 From: {{ message.frm }}
 Cc: {{ message.cc }}
@@ -27,18 +27,18 @@ Reply To: {{ message.reply_to }}
 Subject: {{ message.subject }}
 
 {{ message.body }}
-</pre>
+            </pre>
 
-    {{ form }}
-    <div class="button-group">
-      <ul id="announcement-button-list">
-        <li><button type="submit" name="submit" value="Send">Send</button></li>
-        <li><button onclick="history.go(-1);return false">Back</button></li>
-        <li><button type="submit" name="submit" value="Cancel">Cancel</button></li>
-      </ul>
-    </div> <!-- button-group -->
+            {{ form }}
+            <div class="button-group">
+                <ul id="announcement-button-list">
+                    <li><button type="submit" name="submit" value="Send">Send</button></li>
+                    <li><button onclick="history.go(-1);return false">Back</button></li>
+                    <li><button type="submit" name="submit" value="Cancel">Cancel</button></li>
+                </ul>
+            </div> <!-- button-group -->
 
-    </form>
-</div> <!-- module -->
+        </form>
+    </div> <!-- module -->
 
 {% endblock %}

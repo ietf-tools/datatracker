@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
-import bootstrap3.renderers
+import django_bootstrap5.renderers
 
-class SeparateErrorsFromHelpTextFieldRenderer(bootstrap3.renderers.FieldRenderer):
+class SeparateErrorsFromHelpTextFieldRenderer(django_bootstrap5.renderers.FieldRenderer):
     def append_to_field(self, html):
         if self.field_help:
             html += '<div class="help-block">{}</div>'.format(self.field_help)

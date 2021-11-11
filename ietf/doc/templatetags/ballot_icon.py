@@ -204,9 +204,9 @@ def state_age_colored(doc):
             goal1 = 14
             goal2 = 28
         if days > goal2:
-            class_name = "label label-danger"
+            class_name = "badge bg-danger"
         elif days > goal1:
-            class_name = "label label-warning"
+            class_name = "badge bg-warning"
         else:
             class_name = "ietf-small"
         if days > goal1:
@@ -231,6 +231,6 @@ def auth48_alert_badge(doc):
 
     rfced_state = doc.get_state_slug('draft-rfceditor')
     if rfced_state == 'auth48':
-        return mark_safe('<span class="label label-info" title="AUTH48">AUTH48</span>')
+        return mark_safe('<span class="badge bg-info" title="AUTH48">AUTH48</span>')
 
     return ''

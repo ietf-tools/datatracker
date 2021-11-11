@@ -2,22 +2,24 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 
-{% load bootstrap3 %}
+{% load django_bootstrap5 %}
 {% load ietf_filters %}
 
 {% block title %}Edit info for {{ doc }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Edit info<br><small>{{ doc }}</small></h1>
+    {% origin %}
+    <h1>Edit info<br><small>{{ doc }}</small></h1>
 
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
+    <form method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
 
-    {% buttons %}
-      <button class="btn btn-primary" type="submit">Submit</button>
-      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
-    {% endbuttons %}
-  </form>
+
+
+        <button class="btn btn-primary" type="submit">Submit</button>
+        <a class="btn btn-primary float-end" href="{{ doc.get_absolute_url }}">Back</a>
+
+
+    </form>
 {% endblock %}

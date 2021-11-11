@@ -5,13 +5,13 @@
 {% block title %}IPR disclosures - select Internet-Draft{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>IPR disclosures - select Internet-Draft</h1>
+    {% origin %}
+    <h1>IPR disclosures - select Internet-Draft</h1>
 
-  <p>Please select one of following I-Ds:</p>
-  <ul>
-    {% for docalias in docs %}
-      <li><a href="?submit=draft&id={{ docalias.name }}">{{ docalias.name }}</a></li>
-    {% endfor %}
-  </ul>
+    <p>Please select one of following I-Ds:</p>
+    <ul>
+        {% for docalias in docs %}
+            <li><a href="?submit=draft&id={{ docalias.name }}">{{ docalias.name }}</a></li>
+        {% endfor %}
+    </ul>
 {% endblock %}

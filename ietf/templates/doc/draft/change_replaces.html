@@ -2,35 +2,37 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load static %}
-{% load bootstrap3 %}
+{% load django_bootstrap5 %}
 
 {% block title %}Change documents replaced by {{ doc }}{% endblock %}
 
 {% block pagehead %}
-  {{ form.media.css }}
+    {{ form.media.css }}
 {% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Change documents replaced by<br><small>{{ doc }}</small></h1>
+    {% origin %}
+    <h1>Change documents replaced by<br><small>{{ doc }}</small></h1>
 
-<h3>Instructions</h3>
+    <h3>Instructions</h3>
 
-<p class="alert alert-warning">Do not include <code>-00</code> and do not include a file extension like <code>.txt</code> in the document name.</p>
+    <p class="alert alert-warning">Do not include <code>-00</code> and do not include a file extension like <code>.txt</code> in the document name.</p>
 
-  <form method="post">
-    {% csrf_token %}
+    <form method="post">
+        {% csrf_token %}
 
-    {% bootstrap_form form %}
+        {% bootstrap_form form %}
 
-    {% buttons %}
-      <button type="submit" class="btn btn-primary">Save</button>
-      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
-    {% endbuttons %}
 
-  </form>
+
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a class="btn btn-primary float-end" href="{{ doc.get_absolute_url }}">Back</a>
+
+
+
+    </form>
 {% endblock %}
 
 {% block js %}
-  {{ form.media.js }}
+    {{ form.media.js }}
 {% endblock %}

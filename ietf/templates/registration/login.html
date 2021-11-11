@@ -2,37 +2,39 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 
-{% load bootstrap3 %}
+{% load django_bootstrap5 %}
 
 {% block title %}Sign in{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <div class="col-md-2 col-sm-0"></div>
-  <div class="col-md-8 col-sm-12">
-    <h1>Sign in</h1>
-    <script type="text/javascript">window.scrollTo(0, 0)</script>
+    {% origin %}
+    <div class="col-md-2 col-sm-0"></div>
+    <div class="col-md-8 col-sm-12">
+        <h1>Sign in</h1>
+        <script type="text/javascript">window.scrollTo(0, 0)</script>
 
-    <form method="post">
-      {% csrf_token %}
-      {% bootstrap_form form %}
+        <form method="post">
+            {% csrf_token %}
+            {% bootstrap_form form %}
 
-      {% if alert %}
-	<p class="alert alert-danger">
-	   {{ alert }}
-	</p>
-      {% endif %}
+            {% if alert %}
+                <p class="alert alert-danger">
+                    {{ alert }}
+                </p>
+            {% endif %}
 
-      {% buttons %}
-	 <button type="submit" class="btn btn-primary">Sign in</button>
 
-	 <div class="pull-right">
-        Forgot your password?
-        <a href="{% url 'ietf.ietfauth.views.password_reset' %}">Request a reset</a>.
+
+            <button type="submit" class="btn btn-primary">Sign in</button>
+
+            <div class="float-end">
+                Forgot your password?
+                <a href="{% url 'ietf.ietfauth.views.password_reset' %}">Request a reset</a>.
+            </div>
+
+
+
+        </form>
     </div>
-      {% endbuttons %}
-
-    </form>
-  </div>
-  <div class="col-md-2 col-sm-0"></div>
+    <div class="col-md-2 col-sm-0"></div>
 {% endblock %}

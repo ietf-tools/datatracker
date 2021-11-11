@@ -4,22 +4,22 @@
 {% block title %}Groups - Charter{% endblock %}
 
 {% block extrahead %}{{ block.super }}
-  <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
+    <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
 {% endblock %}
 
-{% block breadcrumbs %}{{ block.super }} 
-  &raquo; <a href="../../">Groups</a>
-  &raquo; <a href="../">{{ group.acronym }}</a>
-  &raquo; Charter
+{% block breadcrumbs %}{{ block.super }}
+    &raquo; <a href="../../">Groups</a>
+    &raquo; <a href="../">{{ group.acronym }}</a>
+    &raquo; Charter
 {% endblock %}
 
 {% block content %}
 
-<div class="module group-container">
-    <h2>Groups - Charter</h2>
-    <pre>
+    <div class="module group-container">
+        <h2>Groups - Charter</h2>
+        <pre>
     {% if charter_txt %}{{ charter_text }}{% else %}Charter not found.{% endif %}
     </pre>
-</div> <!-- module -->
+    </div> <!-- module -->
 
 {% endblock %}

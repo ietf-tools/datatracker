@@ -2,24 +2,26 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 
-{% load bootstrap3 %}
+{% load django_bootstrap5 %}
 
 {% block title %}Add document to session{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Add document to session<br><small>{{doc.name}}<br>{{doc.title}}</small></h1>
+    {% origin %}
+    <h1>Add document to session<br><small>{{doc.name}}<br>{{doc.title}}</small></h1>
 
-  <form method="post">
-    {% csrf_token %}
+    <form method="post">
+        {% csrf_token %}
 
-    {% bootstrap_form session_form %}
-    {% bootstrap_form version_form %}
+        {% bootstrap_form session_form %}
+        {% bootstrap_form version_form %}
 
-    {% buttons %}
-      <button class="btn btn-primary" type="submit" name="save">Save</button>
-      <a class="btn btn-default" href="{% url 'ietf.doc.views_doc.all_presentations' name=doc.name %}">Cancel</a>
-    {% endbuttons %}
 
-  </form>
+
+        <button class="btn btn-primary" type="submit" name="save">Save</button>
+        <a class="btn btn-primary" href="{% url 'ietf.doc.views_doc.all_presentations' name=doc.name %}">Cancel</a>
+
+
+
+    </form>
 {% endblock content %}
