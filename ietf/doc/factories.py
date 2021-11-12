@@ -231,6 +231,33 @@ class CharterFactory(BaseDocumentFactory):
         obj.group.charter = extracted or obj
         obj.group.save()
 
+class StatusChangeFactory(BaseDocumentFactory):
+    type_id='statchg'
+
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',acronym='iesg',type_id='ietf')
+    name = factory.Sequence(lambda n: f'status-change-{n}-factoried')
+
+    @factory.post_generation
+    def changes_status_of(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (rel, target) in extracted:
+                obj.relateddocument_set.create(relationship_id=rel,target=extracted)
+        else:
+            obj.relateddocument_set.create(relationship_id='tobcp', target=WgRfcFactory().docalias.first())
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for state in extracted:
+                obj.set_state(state)
+        else:
+            obj.set_state(State.objects.get(type_id='statchg',slug='appr-sent'))
+
+
 class ConflictReviewFactory(BaseDocumentFactory):
     type_id='conflrev'
     
