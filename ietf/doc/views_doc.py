@@ -64,7 +64,7 @@ from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_wit
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content, build_doc_meta_block,
     augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event,
-    build_doc_supermeta_block, build_file_urls, update_documentauthors)
+    build_doc_supermeta_block, build_file_urls, update_documentauthors, fuzzy_find_documents)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_all_groups_of_type, can_manage_materials, group_features_role_filter
@@ -721,40 +721,26 @@ def document_main(request, name, rev=None):
 
 
 def document_html(request, name, rev=None):
-    if name.startswith('rfc0'):
-        name = "rfc" + name[3:].lstrip('0')
-    if name.startswith('review-') and re.search(r'-\d\d\d\d-\d\d$', name):
-        name = "%s-%s" % (name, rev)
-    if rev and not name.startswith('charter-') and re.search('[0-9]{1,2}-[0-9]{2}', rev):
-        name = "%s-%s" % (name, rev[:-3])
-        rev = rev[-2:]
-    if re.match("^[0-9]+$", name):
-        return redirect('ietf.doc.views_doc.document_html',name=f'rfc{name}')
-    if re.match("^[Rr][Ff][Cc] [0-9]+$",name):
-        return redirect('ietf.doc.views_doc.document_html',name=f'rfc{name[4:]}')
-    docs = Document.objects.filter(docalias__name=name)
-    if rev and not docs.exists():
-        # handle some special cases, like draft-ietf-tsvwg-ieee-802-11
-        name = '%s-%s' % (name, rev)
-        rev=None
-        docs = Document.objects.filter(docalias__name=name)
-    if not docs.exists():
+    found = fuzzy_find_documents(name, rev)
+    num_found = found.documents.count()
+    if num_found == 0:
         raise Http404("Document not found: %s" % name)
-    if docs.count() > 1:
+    if num_found > 1:
         raise Http404("Multiple documents matched: %s" % name)
 
-    doc = docs.get()
+    if found.matched_name.startswith('rfc') and name != found.matched_name:
+         return redirect('ietf.doc.views_doc.document_html', name=found.matched_name)
+
+    doc = found.documents.get()
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
-    if not rev and not name.startswith('rfc'):
+    if found.matched_rev or found.matched_name.startswith('rfc'):
+        rev = found.matched_rev
+    else:
         rev = doc.rev
     if rev:
-        docs = DocHistory.objects.filter(doc=doc, rev=rev)
-        if docs.exists():
-            doc = docs.first()
-        else:
-            doc = doc.fake_history_obj(rev)
+        doc = doc.history_set.filter(rev=rev).first() or doc.fake_history_obj(rev)
     if doc.type_id in ['draft',]:
         doc.supermeta = build_doc_supermeta_block(doc)
         doc.meta = build_doc_meta_block(doc, settings.HTMLIZER_URL_PREFIX)
@@ -1794,44 +1780,30 @@ def idnits2_state(request, name, rev=None):
     return render(request, 'doc/idnits2-state.txt', context={'doc':doc}, content_type='text/plain;charset=utf-8')    
 
 def find_doc_for_rfcdiff(name, rev):
-    if name.startswith('rfc0'):
-        name = "rfc" + name[3:].lstrip('0')
-    if name.startswith('review-') and re.search(r'-\d\d\d\d-\d\d$', name):
-        name = "%s-%s" % (name, rev)
-    if rev and not name.startswith('charter-') and re.search('[0-9]{1,2}-[0-9]{2}', rev):
-        name = "%s-%s" % (name, rev[:-3])
-        rev = rev[-2:]
-    if re.match("^[0-9]+$", name):
-        name = f'rfc{name}'
-    if re.match("^[Rr][Ff][Cc] [0-9]+$",name):
-        name = f'rfc{name[4:]}'
-        
-    docs = Document.objects.filter(docalias__name=name, type_id='draft')
-    if rev and not docs.exists():
-        # handle some special cases, like draft-ietf-tsvwg-ieee-802-11
-        name = '%s-%s' % (name, rev)
-        rev=None
-        docs = Document.objects.filter(docalias__name=name, type_id='draft')
+    """rfcdiff lookup heuristics
 
+    Returns a tuple with:
+      [0] - condition string
+      [1] - document found (or None)
+      [2] - historic version
+      [3] - revision actually found (may differ from :rev: input)
+    """
+    found = fuzzy_find_documents(name, rev)
     condition = 'no such document'
-    if not docs.exists() or docs.count() > 1:
-        return (condition, None, None)
-    doc = docs.get()
-    if not rev or (rev and doc.rev==rev):
+    if found.documents.count() != 1:
+        return (condition, None, None, rev)
+    doc = found.documents.get()
+    if found.matched_rev is None or doc.rev == found.matched_rev:
         condition = 'current version'
-        return condition, doc, None
+        return (condition, doc, None, found.matched_rev)
     else:
-        candidate = None
-        for h in doc.history_set.order_by("-time"):
-            if rev == h.rev:
-                candidate = h
-                break
+        candidate = doc.history_set.filter(rev=found.matched_rev).order_by("-time").first()
         if candidate:
             condition = 'historic version'
-            return condition, doc, candidate
+            return (condition, doc, candidate, found.matched_rev)
         else:
             condition = 'version dochistory not found'
-            return condition, doc, None
+            return (condition, doc, None, found.matched_rev)
             
 # This is a proof of concept of a service that would redirect to the current revision           
 # def rfcdiff_latest(request, name, rev=None):
@@ -1886,17 +1858,20 @@ HAS_TOMBSTONE = [
 
 def rfcdiff_latest_json(request, name, rev=None):
     response = dict()
-    condition, document, history = find_doc_for_rfcdiff(name, rev)
+    condition, document, history, found_rev = find_doc_for_rfcdiff(name, rev)
 
     if condition == 'no such document':
         raise Http404
     elif condition in ('historic version', 'current version'):
         doc = history if history else document
-        if not rev and doc.is_rfc():
+        if not found_rev and doc.is_rfc():
             response['content_url'] = doc.get_href()
             response['name']=doc.canonical_name()
             if doc.name != doc.canonical_name():
                 prev_rev = doc.rev
+                # not sure what to do if non-numeric values come back, so at least log it
+                log.assertion('doc.rfc_number().isdigit()')
+                log.assertion('doc.rev.isdigit()')
                 if int(doc.rfc_number()) in HAS_TOMBSTONE and prev_rev != '00':
                     prev_rev = f'{(int(doc.rev)-1):02d}'
                 response['previous'] = f'{doc.name}-{prev_rev}'
@@ -1915,16 +1890,20 @@ def rfcdiff_latest_json(request, name, rev=None):
                     if match and match.group(2):
                         response['previous'] = f'rfc{match.group(2)}'
             else:
+                # not sure what to do if non-numeric values come back, so at least log it
+                log.assertion('doc.rev.isdigit()')
                 response['previous'] = f'{doc.name}-{(int(doc.rev)-1):02d}'
     elif condition == 'version dochistory not found':
         response['warning'] = 'History for this version not found - these results are speculation'
         response['name'] = document.name
-        response['rev'] = rev
-        document.rev = rev
+        response['rev'] = found_rev
+        document.rev = found_rev
         document.is_rfc = lambda: False
         response['content_url'] = document.get_href()
-        if int(rev)>0:
-            response['previous'] = f'{document.name}-{(int(rev)-1):02d}'
+        # not sure what to do if non-numeric values come back, so at least log it
+        log.assertion('found_rev.isdigit()')
+        if int(found_rev) > 0:
+            response['previous'] = f'{document.name}-{(int(found_rev)-1):02d}'
         else:
             match = re.search("-(rfc)?([0-9][0-9][0-9]+)bis(-.*)?$", name)
             if match and match.group(2):
