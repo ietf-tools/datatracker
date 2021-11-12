@@ -646,8 +646,11 @@ def is_regular_agenda_item(assignment):
 
     >>> any(is_regular_agenda_item(factory(t)) for t in ['plenary', 'break', 'reg', 'other', 'officehours'])
     False
+
+    >>> is_regular_agenda_item(None)
+    False
     """
-    return assignment.slot_type().slug == 'regular'
+    return assignment is not None and assignment.slot_type().slug == 'regular'
 
 @register.filter
 def is_plenary_agenda_item(assignment):
@@ -664,8 +667,11 @@ def is_plenary_agenda_item(assignment):
 
     >>> any(is_plenary_agenda_item(factory(t)) for t in ['regular', 'break', 'reg', 'other', 'officehours'])
     False
+
+    >>> is_plenary_agenda_item(None)
+    False
     """
-    return assignment.slot_type().slug == 'plenary'
+    return assignment is not None and assignment.slot_type().slug == 'plenary'
 
 @register.filter
 def is_special_agenda_item(assignment):
@@ -682,8 +688,11 @@ def is_special_agenda_item(assignment):
 
     >>> any(is_special_agenda_item(factory(t)) for t in ['regular', 'plenary'])
     False
+
+    >>> is_special_agenda_item(None)
+    False
     """
-    return assignment.slot_type().slug in [
+    return assignment is not None and assignment.slot_type().slug in [
         'break',
         'reg',
         'other',
@@ -711,7 +720,11 @@ def should_show_agenda_session_buttons(assignment):
     >>> test_cases.extend([('113', 'acme office hours'), ('150', 'acme office hours')])
     >>> all(should_show_agenda_session_buttons(factory(*tc)) for tc in test_cases)
     True
+    >>> should_show_agenda_session_buttons(None)
+    False
     """
+    if assignment is None:
+        return False
     num = assignment.meeting().number
     if num.isdigit() and int(num) <= settings.MEETING_LEGACY_OFFICE_HOURS_END:
         return not assignment.session.name.lower().endswith(' office hours')
