@@ -34,7 +34,8 @@ from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDo
 from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactory, 
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
-    BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory)
+    BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
+    StatusChangeFactory)
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
 from ietf.group.models import Group
@@ -1440,6 +1441,13 @@ Man                    Expires September 22, 2015               [Page 3]
 
 
 class DocTestCase(TestCase):
+    def test_status_change(self):
+        statchg = StatusChangeFactory()
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=statchg.name)))
+        self.assertEqual(r.status_code, 200)
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=statchg.relateddocument_set.first().target.document.canonical_name())))
+        self.assertEqual(r.status_code, 200)
+
     def test_document_charter(self):
         CharterFactory(name='charter-ietf-mars')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name="charter-ietf-mars")))
