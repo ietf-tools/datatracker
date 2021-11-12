@@ -426,7 +426,7 @@ def format_snippet(text, trunc_words=25):
     full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_fragment(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
-        return mark_safe('<div class="snippet">%s<button class="btn btn-xs btn-default show-all"><span class="fa fa-caret-down"></span></button></div><div class="hidden full">%s</div>' % (snippet, full))
+        return mark_safe('<div class="snippet">%s<button class="btn btn-xs btn-default show-all"><span class="bi bi-caret-down"></span></button></div><div class="hidden full">%s</div>' % (snippet, full))
     return full
 
 @register.simple_tag
@@ -494,17 +494,17 @@ def consensus(doc):
 
 @register.filter
 def pos_to_label(text):
-    """Return a valid Bootstrap3 label type for a ballot position."""
+    """Return a valid Bootstrap label type for a ballot position."""
     return {
         'Yes':          'success',
-        'No Objection': 'pass',
+        'No Objection': 'info',
         'Abstain':      'warning',
         'Discuss':      'danger',
         'Block':        'danger',
         'Recuse':       'primary',
         'Not Ready':    'danger',
         'Need More Time': 'danger',
-    }.get(str(text), 'blank')
+    }.get(str(text), 'secondary')
 
 @register.filter
 def capfirst_allcaps(text):
@@ -614,17 +614,17 @@ def action_holder_badge(action_holder):
     ''
 
     >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=16)))
-    '<span class="label label-danger" title="Goal is &lt;15 days">for 16 days</span>'
+    '<span class="badge bg-danger" title="Goal is &lt;15 days">for 16 days</span>'
 
     >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=30)))
-    '<span class="label label-danger" title="Goal is &lt;15 days">for 30 days</span>'
+    '<span class="badge bg-danger" title="Goal is &lt;15 days">for 30 days</span>'
 
     >>> settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS = old_limit
     """
     age_limit = settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS
     age = (datetime.datetime.now() - action_holder.time_added).days
     if age > age_limit:
-        return mark_safe('<span class="label label-danger" title="Goal is &lt;%d days">for %d day%s</span>' % (
+        return mark_safe('<span class="badge bg-danger" title="Goal is &lt;%d days">for %d day%s</span>' % (
             age_limit,
             age,
             's' if age != 1 else ''))

@@ -2429,7 +2429,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(q('#materials-content .panel-body a').attr['href'],'https://unusual.example')
+        self.assertEqual(q('#materials-content .card-body a').attr['href'],'https://unusual.example')
 
 class Idnits2SupportTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['DERIVED_DIR']
@@ -2602,5 +2602,3 @@ class RfcdiffSupportTests(TestCase):
         # Some old rfcs had tombstones that shouldn't be used for comparisons
         received = self.getJson(dict(name=rfc.canonical_name()))
         self.assertTrue(received['previous'].endswith('00'))
-
-

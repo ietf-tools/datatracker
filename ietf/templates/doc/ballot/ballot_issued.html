@@ -5,15 +5,15 @@
 {% block title %}Ballot issued for {{ doc }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Ballot issued<br><small><a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
+    {% origin %}
+    <h1>Ballot issued<br><small><a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
 
-  <p>Ballot has been sent out.</p>
+    <p>Ballot has been sent out.</p>
 
-  {% if doc.telechat_date %}
-    <p>The document is currently on the {{ doc.telechat_date }} telechat agenda.</p>
-  {% else %}
-    <p>The document is not on any telechat agenda.</p>
-  {% endif %}
+    {% if doc.telechat_date %}
+        <p>The document is currently on the {{ doc.telechat_date }} telechat agenda.</p>
+    {% else %}
+        <p>The document is not on any telechat agenda.</p>
+    {% endif %}
 
 {% endblock %}

@@ -2,33 +2,35 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load static %}
-{% load bootstrap3 %}
+{% load django_bootstrap5 %}
 
 {% block title %}{{ title|striptags }}{% endblock %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+    <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
 {% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>{{ title|safe }}</h1>
+    {% origin %}
+    <h1>{{ title|safe }}</h1>
 
-  <p>
-    {{ description|safe }}
-  </p>
+    <p>
+        {{ description|safe }}
+    </p>
 
-  <form method="post" class="show-required">
-    {% csrf_token %}
+    <form method="post" class="show-required">
+        {% csrf_token %}
 
-    {% bootstrap_form form %}
+        {% bootstrap_form form %}
 
-    {% buttons %}
-      <button type="submit" name="{{button|slugify}}" class="btn btn-primary">{{ button }}</button>
-    {% endbuttons %}
-  </form>
+
+
+        <button type="submit" name="{{button|slugify}}" class="btn btn-primary">{{ button }}</button>
+
+
+    </form>
 {% endblock %}
 
 {% block js %}
-  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+    <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
 {% endblock %}

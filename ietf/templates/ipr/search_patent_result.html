@@ -3,11 +3,11 @@
 {% load origin %}{% origin %}
 
 {% block search_header %}
-  {% if not iprs %}
-    Search result on {{ q }}
-  {% else %}
-    Patent information search result
-  {% endif %}
+    {% if not iprs %}
+        Search result on {{ q }}
+    {% else %}
+        Patent information search result
+    {% endif %}
 {% endblock %}
 
 {% block search_failed %}No IPR disclosures with the word(s) "<i>{{ q }}</i>" in the Patent Information have been submitted.{% endblock %}

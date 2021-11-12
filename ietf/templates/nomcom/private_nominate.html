@@ -3,33 +3,35 @@
 {% load origin %}
 {% load static %}
 
-{% load bootstrap3 %}
+{% load django_bootstrap5 %}
 {% load nomcom_tags %}
 
 {% block pagehead %}
-  {{ form.media.css }}
+    {{ form.media.css }}
 {% endblock %}
 
 {% block subtitle %} - Nominate{% endblock %}
 
 {% block nomcom_content %}
-  {% origin %}
-  <h2>Candidate nomination</h2>
+    {% origin %}
+    <h2>Candidate nomination</h2>
 
-  {% if form %}
+    {% if form %}
 
-    <form id="nominate-form" method="post">
-      {% csrf_token %}
-      {% bootstrap_form form %}
-      {% buttons %}
-        <button class="btn btn-primary" type="submit" name="save" value="Save">Save</button>
-      {% endbuttons %}
-    </form>
+        <form id="nominate-form" method="post">
+            {% csrf_token %}
+            {% bootstrap_form form %}
 
-  {% endif %}
+
+            <button class="btn btn-primary" type="submit" name="save" value="Save">Save</button>
+
+
+        </form>
+
+    {% endif %}
 
 {% endblock %}
 
 {% block js %}
-  {{ form.media.js }}
+    {{ form.media.js }}
 {% endblock %}

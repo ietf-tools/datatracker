@@ -32,60 +32,60 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->{% endcomment %}{% comment %}
 Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
-{% endcomment %}<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+    {% endcomment %}<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <!-- Please don't change the doctype.  It messes up things for the scribe. -->
 <html>
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>IESG Agenda - Scribe Template</title>
-  </head>
-  <body>
-    {% load ietf_filters %}{% filter compress_empty_lines %}
-    <h1>Scribe template for IESG Narrative Minutes, {{ date }}</h1>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>IESG Agenda - Scribe Template</title>
+    </head>
+    <body>
+        {% load ietf_filters %}{% filter compress_empty_lines %}
+            <h1>Scribe template for IESG Narrative Minutes, {{ date }}</h1>
 
-    {% for num, section in sections %}
-      <p><b>{{ num }}{% if num|sectionlevel == 1 %}.{% endif %} {{ section.title|safe }}</b></p>
+            {% for num, section in sections %}
+                <p><b>{{ num }}{% if num|sectionlevel == 1 %}.{% endif %} {{ section.title|safe }}</b></p>
 
-      {% if "docs" in section %}
-        <ul>{% for doc in section.docs %}
-          {% if doc.type_id == "draft" or doc.type_id == "statchg" %}{% include "iesg/scribe_doc.html" %}{% endif %}
-          {% if doc.type_id == "conflrev" %}{% include "iesg/scribe_conflict_doc.html" %}{% endif %}
-        {% empty %}
-          <li>(none)</li>{% endfor %}
-        </ul>
-      {% endif %}
-    {% endfor %}
+                {% if "docs" in section %}
+                    <ul>{% for doc in section.docs %}
+                        {% if doc.type_id == "draft" or doc.type_id == "statchg" %}{% include "iesg/scribe_doc.html" %}{% endif %}
+                        {% if doc.type_id == "conflrev" %}{% include "iesg/scribe_conflict_doc.html" %}{% endif %}
+                    {% empty %}
+                        <li>(none)</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            {% endfor %}
 
-    <hr>
-    <h2>Appendix: Snapshot of discusses/comments</h2>
+            <hr>
+            <h2>Appendix: Snapshot of discusses/comments</h2>
 
-    <p>(at {% now "Y-m-d H:i:s T" %})</p>
+            <p>(at {% now "Y-m-d H:i:s T" %})</p>
 
-    {% for doc in appendix_docs %}
-      <!-- ============================================================ -->
-      <p><b>{{ doc.name }}</b></p>
+            {% for doc in appendix_docs %}
+                <!-- ============================================================ -->
+                <p><b>{{ doc.name }}</b></p>
 
-      {% with doc.active_ballot as ballot %}
-        {% if ballot %}
-          <ul>{% for p in ballot.active_balloter_positions.values %}
-            {% if p.pos and p.discuss %}
-              <li>
-                <a name="{{ doc.name }}+{{ p.balloter.plain_name|slugify }}+discuss">{{ p.balloter.plain_name }}: Discuss [{{ p.discuss_time }}]</a>:
-                <br><pre>{{ p.discuss|wordwrap:80 }}</pre>
-              </li>
-            {% endif %}
-            {% if p.pos and p.comment %}
-              <li>
-                <a name="{{ doc.name }}+{{ p.balloter.plain_name|slugify }}+comment">{{ p.balloter.plain_name }}: Comment [{{ p.comment_time }}]</a>:
-                <br><pre>{{ p.comment|wordwrap:80 }}</pre>
-              </li>
-            {% endif %}{% endfor %}
-          </ul>
-        {% endif %}
-      {% endwith %}
+                {% with doc.active_ballot as ballot %}
+                    {% if ballot %}
+                        <ul>{% for p in ballot.active_balloter_positions.values %}
+                            {% if p.pos and p.discuss %}
+                                <li>
+                                    <a name="{{ doc.name }}+{{ p.balloter.plain_name|slugify }}+discuss">{{ p.balloter.plain_name }}: Discuss [{{ p.discuss_time }}]</a>:
+                                    <br><pre>{{ p.discuss|wordwrap:80 }}</pre>
+                                </li>
+                            {% endif %}
+                            {% if p.pos and p.comment %}
+                                <li>
+                                    <a name="{{ doc.name }}+{{ p.balloter.plain_name|slugify }}+comment">{{ p.balloter.plain_name }}: Comment [{{ p.comment_time }}]</a>:
+                                    <br><pre>{{ p.comment|wordwrap:80 }}</pre>
+                                </li>
+                            {% endif %}{% endfor %}
+                        </ul>
+                    {% endif %}
+                {% endwith %}
 
-    {% endfor %}
+            {% endfor %}
 
-    {% endfilter %}
-  </body>
+        {% endfilter %}
+    </body>
 </html>

@@ -3178,7 +3178,7 @@ class EditTests(TestCase):
             s_other = s2 if s == s1 else s1
             self.assertEqual(len(constraints), 3)
             self.assertEqual(constraints.eq(0).attr("data-sessions"), str(s_other.pk))
-            self.assertEqual(constraints.eq(0).find(".fa-user-o").parent().text(), "1") # 1 person in the constraint
+            self.assertEqual(constraints.eq(0).find(".bi-person").parent().text(), "1") # 1 person in the constraint
             self.assertEqual(constraints.eq(1).attr("data-sessions"), str(s_other.pk))
             self.assertEqual(constraints.eq(1).find(".encircled").text(), "1" if s_other == s2 else "-1")
             self.assertEqual(constraints.eq(2).attr("data-sessions"), str(s_other.pk))
@@ -3514,7 +3514,7 @@ class EditTests(TestCase):
 
         # Now enable the 'chair_conflict' constraint only
         chair_conflict = ConstraintName.objects.get(slug='chair_conflict')
-        chair_conf_label = b'<i class="fa fa-gavel"/>'  # result of etree.tostring(etree.fromstring(editor_label))
+        chair_conf_label = b'<i class="bi bi-person-plus"/>'  # result of etree.tostring(etree.fromstring(editor_label))
         meeting.group_conflict_types.add(chair_conflict)
         r = self.client.get(url)
         q = PyQuery(r.content)
@@ -3799,7 +3799,7 @@ class SessionDetailsTests(TestCase):
         q = PyQuery(r.content)
         self.assertTrue(q('h2#session_%s div#session-buttons-%s' % (session.id, session.id)),
                                'Session detail page does not contain session tool buttons') 
-        self.assertFalse(q('h2#session_%s div#session-buttons-%s span.fa-arrows-alt' % (session.id, session.id)), 
+        self.assertFalse(q('h2#session_%s div#session-buttons-%s span.bi-arrows-fullscreen' % (session.id, session.id)),
                          'The session detail page is incorrectly showing the "Show meeting materials" button')
 
     def test_session_details_past_interim(self):
@@ -6164,12 +6164,12 @@ class AgendaFilterTests(TestCase):
         # Test with/without custom button text
         context = Context({'customize_button_text': None, 'filter_categories': []})
         q = PyQuery(template.render(context))
-        self.assertIn('Customize...', q('h4.panel-title').text())
+        self.assertIn('Customize...', q('h4.card-title').text())
         self.assertEqual(q('table'), [])  # no filter_categories, so no button table
 
         context['customize_button_text'] = 'My custom text...'
         q = PyQuery(template.render(context))
-        self.assertIn(context['customize_button_text'], q('h4.panel-title').text())
+        self.assertIn(context['customize_button_text'], q('h4.card-title').text())
         self.assertEqual(q('table'), [])  # no filter_categories, so no button table
         
         # Now add a non-trivial set of filters
@@ -6251,7 +6251,7 @@ class AgendaFilterTests(TestCase):
         ]
 
         q = PyQuery(template.render(context))
-        self.assertIn(context['customize_button_text'], q('h4.panel-title').text())
+        self.assertIn(context['customize_button_text'], q('h4.card-title').text())
         self.assertNotEqual(q('table'), [])  # should now have table
         
         # Check that buttons are present for the expected things

@@ -2,19 +2,21 @@
 {# Copyright The IETF Trust 2015-2020, All Rights Reserved #}
 {% load origin %}{% origin %}
 
-{% load ietf_filters static bootstrap3 %}
+{% load ietf_filters static django_bootstrap5 %}
 
 {% block content %}
-<h2>Set next reviewer in queue for {{ group.acronym }}</h2>
-<form id="dbtemplate-edit" role="form" method="post">
-  {% csrf_token %}
+    <h2>Set next reviewer in queue for {{ group.acronym }}</h2>
+    <form id="dbtemplate-edit" role="form" method="post">
+        {% csrf_token %}
 
-  {% bootstrap_form form %}
+        {% bootstrap_form form %}
 
-  {% buttons %}
-    <button class="btn btn-default" type="submit">Save</button>
-    <a class="btn btn-default" href="{% url 'ietf.group.views.reviewer_overview' acronym=group.acronym %}">Cancel</a>
-  {% endbuttons %}
 
-</form>
+
+        <button class="btn btn-primary" type="submit">Save</button>
+        <a class="btn btn-primary" href="{% url 'ietf.group.views.reviewer_overview' acronym=group.acronym %}">Cancel</a>
+
+
+
+    </form>
 {% endblock %}

@@ -1,20 +1,22 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2016, All Rights Reserved #}
-{% load origin bootstrap3 static %}
+{% load origin django_bootstrap5 static %}
 
 {% block title %}Remove {{ doc.name }} from your review wishes{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Remove {{ doc.name }} from your review wishes
-  </h1>
+    {% origin %}
+    <h1>Remove {{ doc.name }} from your review wishes
+    </h1>
 
-  <form class="form-horizontal" method="post">
-    {% csrf_token %}
-  
-    {% buttons %}
+    <form class="form-horizontal" method="post">
+        {% csrf_token %}
+
+
+
         <button type="submit" class="btn btn-primary">Remove from review wishes</button>
-    {% endbuttons %}
-  </form>
+
+
+    </form>
 
 {% endblock %}

@@ -2,11 +2,11 @@
 {{ obj.body|truncatewords:"30"|wordwrap:"80"|linebreaksbr }}
 <h3>Attached Document{{ attachments|pluralize }}</h3>
 {% if attachments %}
-  <ul>
-    {% for doc in attachments %}
-      <li><a href="{{ doc.get_href }}">{{ doc.title }}</a><br>
-    {% endfor %}
-  </ul>
+    <ul>
+        {% for doc in attachments %}
+            <li><a href="{{ doc.get_href }}">{{ doc.title }}</a><br>
+        {% endfor %}
+    </ul>
 {% else %}
-  <p>NONE</p>
+    <p>NONE</p>
 {% endif %}
