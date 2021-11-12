@@ -7,48 +7,14 @@
 {% load htmlfilters agenda_custom_tags%}
 
 {% block title %}
-    IETF {{ schedule.meeting.number }} meeting agenda
+    IETF {{ schedule.meeting.number }} Meeting Agenda
     {% if "-utc" in request.path %}
         (UTC)
     {% endif %}
 {% endblock %}
 
 {% block morecss %}
-    iframe#weekview { height: 600px; width: 100%; }
-    tr:not(:first-child) th.gap {
-    height: 3em !important;
-    background-color: inherit !important;
-    border: none !important;
-    }
-    tr:first-child th.gap {
-    height: 0 !important;
-    background-color: inherit !important;
-    border: none !important;
-    }
-    .session-materials .agenda-frame,.minutes-frame {
-    white-space: normal;
-    }
-    div.tz-display {
-    margin-bottom: 0.5em;
-    margin-top: 1em;
-    text-align: right;
-    }
-    .tz-display a {
-    cursor: pointer;
-    }
-    .tz-display label {
-    font-weight: normal;
-    }
-    .tz-display select {
-    min-width: 15em;
-    }
-    #affix .nav li.tz-display {
-    padding: 4px 20px;
-    }
-    #affix .nav li.tz-display a {
-    display: inline;
-    padding: 0;
-    }
+    iframe#weekview { height: 25em; }
 {% endblock %}
 
 {% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
@@ -57,14 +23,12 @@
     {% origin %}
 
     <div class="row">
-        <div class="col-md-12">
-            {% if "-utc" in request.path %}
-                {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda-utc" title_extra="(UTC)" %}
-            {% else %}
-                {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda"     title_extra="" %}
-            {% endif %}
+        {% if "-utc" in request.path %}
+            {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda-utc" title_extra="(UTC)" %}
+        {% else %}
+            {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda"     title_extra="" %}
+        {% endif %}
 
-        </div>
     </div>
     <div class="row">
         <div class="col-md-10">
@@ -72,22 +36,25 @@
             {% load cache %}
             {% cache cache_time ietf_meeting_agenda_utc schedule.meeting.number request.path %}
                 <div class="row">
-                    <div class="col-xs-6"><h1>Agenda</h1></div>
-                    <div class="col-xs-6">
-                        <div class="tz-display">
-                            <div><small>
-                                <label for="timezone-select">Time zone:</label>
-                                <a id="meeting-timezone" onclick="ietf_timezone.use('{{ timezone }}')">Meeting</a> |
-                                <a id="local-timezone" onclick="ietf_timezone.use('local')">Local</a> |
-                                <a id="utc-timezone" onclick="ietf_timezone.use('UTC')">UTC</a>
-                            </small></div>
-                            <select id="timezone-select" class="tz-select">
+                    <div class="col-5">
+                        <h2>Agenda</h2>
+                    </div>
+                    <div class="col float-end">
+                        <div class="input-group input-group-sm">
+                            <label class="input-group-text border-secondary">Time zone:</label>
+                            <button class="btn btn-outline-secondary" type="button" id="meeting-timezone" onclick="ietf_timezone.use('{{ timezone }}')">Meeting</button>
+                            <button class="btn btn-outline-secondary" type="button" id="local-timezone" onclick="ietf_timezone.use('local')">Local</button>
+                            <button class="btn btn-outline-secondary" type="button" id="utc-timezone" onclick="ietf_timezone.use('UTC')">UTC</button>
+                            <select id="timezone-select" class="tz-select form-select border-secondary">
                                 {# Avoid blank while loading. JavaScript replaces the option list after init. #}
                                 <option selected>{{ timezone }}</option>
                             </select>
                         </div>
+
+
                     </div>
                 </div>
+
                 {% if is_current_meeting %}
                     <p class="alert alert-info">
                         <b>Note:</b> IETF agendas are subject to change, up to and during a meeting.
@@ -100,23 +67,22 @@
                     </p>
                 {% endif %}
 
-                {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Customize the agenda view..." %}
-
+                <p>
+                    {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Customize the agenda view..." %}
+                </p>
                 <h2>Download as .ics</h2>
-                <p class="buttonlist">
+                <p>
                     {% for fc in filter_categories %}
                         {% if not forloop.last %} {# skip the last group, it's the office hours/misc #}
-                            <div style="display:inline-block;margin-right:1em">
-                                {% for p in fc|dictsort:"label" %}
-                                    <a class="btn btn-default" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{p.keyword}}">{{p.label}}</a>
-                                {% endfor %}
-                            </div>
+                            {% for p in fc|dictsort:"label" %}
+                                <a class="btn btn-primary btn-sm mb-3" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{p.keyword}}">{{p.label}}</a>
+                            {% endfor %}
                         {% endif %}
                     {% endfor %}
-                    <div style="display:inline-block">
-                        <a class="btn btn-default" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{ non_area_keywords|join:',' }}">Non-area events</a>
-                        <a id="ical-link" class="hidden btn btn-primary agenda-link filterable" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}">Customized schedule</a>
-                    </div>
+
+                    <a class="btn btn-primary btn-sm mb-3" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{ non_area_keywords|join:',' }}">Non-area events</a>
+
+                    <a id="ical-link" class="hidden btn btn-primary btn-sm mb-3 agenda-link filterable" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}">Customized schedule</a>
                 </p>
 
                 <h2>
@@ -127,18 +93,19 @@
                     {% endif %}
                 </h2>
 
-                <iframe class="hidden" id="weekview"></iframe>
+                <iframe class="hidden w-100" scrolling="no" id="weekview"></iframe>
+
+                <h2>Detailed Agenda</h2>
 
                 <table class="table table-sm table-striped">
                     {% for item in filtered_assignments %}
 
                         {% ifchanged item.timeslot.time|date:"Y-m-d" %}
-                            <tr><th class="gap" colspan="7"></th></tr>
                             <tr class="table-warning">
                                 <th colspan="7">
                                     {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
                                     <div class="anchor-target" id="{{item.timeslot.time|slugify}}"></div>
-                                    {{ item.timeslot.time|date:"l, F j, Y" }}
+                                    <h6 class="mt-2">{{ item.timeslot.time|date:"l, F j, Y" }}</h6>
                                 </th>
                             </tr>
                         {% endifchanged %}
@@ -165,7 +132,7 @@
                                 {% if item.timeslot.location.floorplan %}
                                     <div class="hidden-xs">
                                         <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
-                                            class="float-end" title="{{floor.name}}"><span class="badge bg-blank label-wide">{{floor.short}}</span></a>
+                                            class="float-end" title="{{floor.name}}"><span class="badge bg-secondary label-wide">{{floor.short}}</span></a>
                                     </div>
                                 {% endif %}
                             {% endwith %}
@@ -179,7 +146,7 @@
                     {% if item.session.current_status == 'canceled' %}
                         <span class="badge bg-danger float-end">CANCELLED</span>
                     {% else %}
-                        <div class="float-end padded-left">
+                        <div class="float-end ps-3">
                             {% if item.slot_type.slug == 'other' %}
                                 {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
                                     {% include "meeting/session_buttons_include.html" with show_agenda=True item=item schedule=schedule %}
@@ -249,7 +216,7 @@
                             {% if item.timeslot.location.floorplan %}
                                 <div class="hidden-xs">
                                     <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
-                                        class="float-end" title="{{floor.name}}"><span class="badge bg-blank">{{floor.short}}</span></a>
+                                        class="float-end" title="{{floor.name}}"><span class="badge bg-secondary">{{floor.short}}</span></a>
                                 </div>
                             {% endif %}
                         {% endwith %}
@@ -285,7 +252,7 @@
 {% endif %}
 
 {% if item.session.historic_group.state_id == "bof" %}
-    <span class="badge bg-success float-end">BOF</span>
+    <span class="badge bg-success float-end me-2">BOF</span>
 {% endif %}
 
 {% if item.session.current_status == 'resched' %}

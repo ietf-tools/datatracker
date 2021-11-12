@@ -10,85 +10,64 @@ Optional parameters:
 
 <div class="accordion" id="accordion">
     <div class="accordion-item">
+
         <h2 class="accordion-header" id="heading">
-            <button class="accordion-button {% if not always_show %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse" aria-expanded="{% if not always_show %}false{% else %}true{% endif %}" aria-controls="collapse">
+            <button class="accordion-button {% if not always_show %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#customize" aria-expanded="{% if not always_show %}false{% else %}true{% endif %}" aria-controls="customize">
                 {% firstof customize_button_text "Customize..."%}
             </button>
         </h2>
-        <div id="customize" class="{% if not always_show %}panel-collapse collapse{% endif %}">
-            <span hidden {# options to pass to the JS - correspond to keys in opts object #}
-                id="agenda-filter-options"
-                data-always-show="{% firstof always_show False %}">
-            </span>
 
-            <div id="collapse" class="accordion-collapse collapse" aria-labelledby="heading" data-bs-parent="#accordion">
-                <div class="accordion-body">
+        <div id="customize" class="accordion-collapse collapse{% if always_show %} show{% endif %}" aria-labelledby="heading" data-bs-parent="#accordion">
+            <div class="accordion-body">
+                <span hidden {# options to pass to the JS - correspond to keys in opts object #}
+                    id="agenda-filter-options"
+                    data-always-show="{% firstof always_show False %}">
+                </span>
 
-                    <p>
-                        You can customize the agenda view to show only selected sessions,
-                        by clicking on groups and areas in the table below.
-                        To be able to return to the customized view later, bookmark the resulting URL.
-                    </p>
+                <p>
+                    You can customize the agenda view to show only selected sessions,
+                    by clicking on groups and areas in the table below.
+                    To be able to return to the customized view later, bookmark the resulting URL.
+                </p>
 
-                    {% if filter_categories|length %}
-                        <p>Groups displayed in <b><i>italics</i></b> are BOFs.</p>
+                {% if filter_categories|length %}
+                    <p>Groups displayed in <b><i>italics</i></b> are BOFs.</p>
 
-                        {% with spacer_scale=5 %}
-                            {% with width_scale=filter_categories|agenda_width_scale:spacer_scale %}
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            {% for fc in filter_categories %}
-                                                {% if not forloop.first %}
-                                                    <th style="width:{% widthratio 1 width_scale 100 %}%"></th>
-                                                {% endif %}
-                                                {% for area in fc %}
-                                                    <th style="width:{% widthratio spacer_scale width_scale 100 %}%">
-                                                        {% if area.keyword %}
-                                                            <button class="btn btn-primary btn-block pickview {{ area.keyword }}"
-                                                                data-filter-item="{{ area.keyword }}">
-                                                                {% firstof area.label area.keyword %}
-                                                            </button>
+                    <div class="row">
+                        {% for fc in filter_categories %}
+                            {% for area in fc %}
+                                <div class="col-1 ms-1">
+                                    <div class="row">
+                                        {% if area.label or area.keyword %}
+                                            <button type="button" class="btn btn-sm btn-outline-primary pickview {{ area.keyword }}" data-filter-item="{{ area.keyword }}">
+                                                {% firstof area.label area.keyword %}
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                    <div class="row view{% if p.keyword %} {{ p.keyword }}{% endif %}">
+                                        <div class="m-0 p-0 btn-group-vertical btn-group-sm " role="group" aria-label="{% firstof area.label area.keyword %}">
+                                            {% for group in area.children %}
+                                                <button type="button" class="overflow-hidden btn btn-outline-secondary pickview {{ group.keyword }}" {% if group.toggled_by %}data-filter-keywords="{{ group.toggled_by|join:"," }}"{% endif %} data-filter-item="{{ group.keyword }}">
+                                                    <small>
+                                                        {% if group.is_bof %}
+                                                            <i>{{ group.label }}</i>
+                                                        {% else %}
+                                                            {{ group.label }}
                                                         {% endif %}
-                                                    </th>
-                                                {% endfor %}
+                                                    </small>
+                                                </button>
                                             {% endfor %}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            {% for fc in filter_categories %}
-                                                {% if not forloop.first %} <td></td> {% endif %}
-                                                {% for p in fc %}
-                                                    <td class="view{% if p.keyword %} {{ p.keyword }}{% endif %}">
-                                                        <div class="btn-group-vertical btn-block">
-                                                            {% for button in p.children %}
-                                                                <div class="btn-group btn-group-xs btn-group-justified">
-                                                                    <button class="btn btn-primary pickview {{ button.keyword }}"
-                                                                        {% if button.toggled_by %}data-filter-keywords="{{ button.toggled_by|join:"," }}"{% endif %}
-                                                                        data-filter-item="{{ button.keyword }}">
-                                                                        {% if button.is_bof %}
-                                                                            <i>{{ button.label }}</i>
-                                                                        {% else %}
-                                                                            {{ button.label }}
-                                                                        {% endif %}
-                                                                    </button>
-                                                                </div>
-                                                            {% endfor %}
-                                                        </div>
-                                                    </td>
-                                                {% endfor %}
-                                            {% endfor %}
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            {% endwith %}
-                        {% endwith %}
-                    {% else %}
-                        <blockquote><i>No WG / RG data available -- no WG / RG sessions have been scheduled yet.</i>
-                        </blockquote>
-                    {% endif %}
-                </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endfor %}
+
+                    </div>
+                {% else %}
+                    <blockquote><i>No WG / RG data available -- no WG / RG sessions have been scheduled yet.</i>
+                    </blockquote>
+                {% endif %}
             </div>
         </div>
     </div>
