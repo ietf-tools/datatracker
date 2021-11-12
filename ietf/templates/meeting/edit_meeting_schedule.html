@@ -30,8 +30,8 @@
 {% block title %}{{ schedule.name }}: IETF {{ meeting.number }} meeting agenda{% endblock %}
 
 {% block js %}
-    <script type="text/javascript" src="{% static 'moment/min/moment.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'moment-timezone/builds/moment-timezone-with-data-10-year-range.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'ietf/js/moment.js' %}"></script>
+    <script type="text/javascript" src="{% static 'ietf/js/moment-timezone-with-data-10-year-range.js' %}"></script>
     <script type="text/javascript" src="{% static 'ietf/js/edit-meeting-schedule.js' %}"></script>
 {% endblock js %}
 

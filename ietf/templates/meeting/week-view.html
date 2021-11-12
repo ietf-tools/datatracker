@@ -2,9 +2,9 @@
 {% load origin %}{% origin %}
 {% load static %}
 <html> <head>
-    <script src="{% static 'ietf/js/agenda/agenda_filter.js' %}"></script>
-    <script src="{% static 'moment/min/moment.min.js' %}"></script>
-    <script src="{% static 'moment-timezone/builds/moment-timezone-with-data-10-year-range.min.js' %}"></script>
+    <script src="{% static 'ietf/js/agenda_filter.js' %}"></script>
+    <script src="{% static 'ietf/js/moment.js' %}"></script>
+    <script src="{% static 'ietf/js/moment-timezone-with-data-10-year-range.js' %}"></script>
     <script type="text/javascript">
 
         var all_items = {{ items|safe }};

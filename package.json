@@ -7,7 +7,9 @@
     "datatables.net": "^1.11.3",
     "datatables.net-bs5": "^1.11.3",
     "jquery": "^3.6.0",
-    "js-cookie": "^3.0.1"
+    "js-cookie": "^3.0.1",
+    "moment": "^2.29.1",
+    "moment-timezone": "^0.5.34"
   },
   "devDependencies": {
     "@parcel/transformer-sass": "^2.0.1",
@@ -20,6 +22,12 @@
     "ietf/static/js/datatables.js",
     "ietf/static/js/document_timeline.js",
     "ietf/static/js/d3.js",
+    "ietf/static/js/moment.js",
+    "ietf/static/js/agenda_filter.js",
+    "ietf/static/js/agenda_materials.js",
+    "ietf/static/js/agenda_timezone.js",
+    "ietf/static/js/timezone.js",
+    "ietf/static/js/moment-timezone-with-data-10-year-range.js",
     "ietf/static/css/ietf.scss",
     "ietf/static/css/datatables.scss",
     "ietf/static/images/ietflogo-small-transparent.png",
