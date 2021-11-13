@@ -11,7 +11,7 @@ import os
 import re
 import textwrap
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from urllib.parse import quote
 
 from django.conf import settings
@@ -1286,3 +1286,39 @@ def generate_idnits2_rfcs_obsoleted():
         obsdict[k] = sorted(obsdict[k])
     return render_to_string('doc/idnits2-rfcs-obsoleted.txt', context={'obsitems':sorted(obsdict.items())})
 
+
+def fuzzy_find_documents(name, rev=None):
+    """Find a document based on name/rev
+
+    Applies heuristics, assuming the inputs were joined by a '-' that may have been misplaced.
+    If returned documents queryset is empty, matched_rev and and matched_name are meaningless.
+    The rev input is not validated - it is used to find possible names if the name input does
+    not match anything, but matched_rev may not correspond to an actual version of the found
+    document.
+    """
+    # Handle special case name formats
+    if name.startswith('rfc0'):
+        name = "rfc" + name[3:].lstrip('0')
+    if name.startswith('review-') and re.search(r'-\d\d\d\d-\d\d$', name):
+        name = "%s-%s" % (name, rev)
+        rev = None
+    if rev and not name.startswith('charter-') and re.search('[0-9]{1,2}-[0-9]{2}', rev):
+        name = "%s-%s" % (name, rev[:-3])
+        rev = rev[-2:]
+    if re.match("^[0-9]+$", name):
+        name = f'rfc{name}'
+    if re.match("^[Rr][Ff][Cc] [0-9]+$",name):
+        name = f'rfc{name[4:]}'
+
+    # see if we can find a document using this name
+    docs = Document.objects.filter(docalias__name=name, type_id='draft')
+    if rev and not docs.exists():
+        # No document found, see if the name/rev split has been misidentified.
+        # Handles some special cases, like draft-ietf-tsvwg-ieee-802-11.
+        name = '%s-%s' % (name, rev)
+        docs = Document.objects.filter(docalias__name=name, type_id='draft')
+        if docs.exists():
+            rev = None  # found a doc by name with rev = None, so update that
+
+    FoundDocuments = namedtuple('FoundDocuments', 'documents matched_name matched_rev')
+    return FoundDocuments(docs, name, rev)

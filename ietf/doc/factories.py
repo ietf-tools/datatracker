@@ -87,6 +87,19 @@ class BaseDocumentFactory(factory.django.DjangoModelFactory):
                     continue
                 obj.relateddocument_set.create(relationship_id=rel_id, target=docalias)
 
+    @factory.post_generation
+    def create_revisions(obj, create, extracted, **kwargs):  # pylint: disable=no-self-argument
+        """Create additional revisions of the document
+
+        Argument should be an iterable of revisions. Remember that range() is exclusive on the end
+        index, so range(1, 10) stops at 9.
+        """
+        if create and extracted:
+            for rev in extracted:
+                e = NewRevisionDocEventFactory(doc=obj, rev=f'{rev:02d}')
+                obj.rev = f'{rev:02d}'
+                obj.save_with_history([e])
+
     @classmethod
     def _after_postgeneration(cls, obj, create, results=None):
         """Save again the instance if creating and at least one hook ran."""

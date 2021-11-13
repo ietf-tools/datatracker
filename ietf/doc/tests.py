@@ -2494,6 +2494,7 @@ class RfcdiffSupportTests(TestCase):
     def setUp(self):
         super().setUp()
         self.target_view = 'ietf.doc.views_doc.rfcdiff_latest_json'
+        self._last_rfc_num = 8000
 
     def getJson(self, view_args):
         url = urlreverse(self.target_view, kwargs=view_args)
@@ -2501,79 +2502,85 @@ class RfcdiffSupportTests(TestCase):
         self.assertEqual(r.status_code, 200)
         return r.json()
 
-    def test_draft(self):
-        draft = IndividualDraftFactory(name='draft-somebody-did-something',rev='00')
-        for r in range(0,13):
-            e = NewRevisionDocEventFactory(doc=draft,rev=f'{r:02d}')
-            draft.rev = f'{r:02d}'
-            draft.save_with_history([e])
+    def next_rfc_number(self):
+        self._last_rfc_num += 1
+        return self._last_rfc_num
+
+    def do_draft_test(self, name):
+        draft = IndividualDraftFactory(name=name, rev='00', create_revisions=range(0,13))
         draft = reload_db_objects(draft)
 
         received = self.getJson(dict(name=draft.name))
-        self.assertEqual(received, dict(
-            name=draft.name,
-            rev=draft.rev,
-            content_url=draft.get_href(),
-            previous=f'{draft.name}-{(int(draft.rev)-1):02d}'
-        ))
+        self.assertEqual(
+            received,
+            dict(
+                name=draft.name,
+                rev=draft.rev,
+                content_url=draft.get_href(),
+                previous=f'{draft.name}-{(int(draft.rev)-1):02d}'
+            ),
+            'Incorrect JSON when draft revision not specified',
+        )
 
         received = self.getJson(dict(name=draft.name, rev=draft.rev))
-        self.assertEqual(received, dict(
-            name=draft.name,
-            rev=draft.rev,
-            content_url=draft.get_href(),
-            previous=f'{draft.name}-{(int(draft.rev)-1):02d}'
-        ))
+        self.assertEqual(
+            received,
+            dict(
+                name=draft.name,
+                rev=draft.rev,
+                content_url=draft.get_href(),
+                previous=f'{draft.name}-{(int(draft.rev)-1):02d}'
+            ),
+            'Incorrect JSON when latest revision specified',
+        )
 
         received = self.getJson(dict(name=draft.name, rev='10'))
-        self.assertEqual(received, dict(
-            name=draft.name,
-            rev='10',
-            content_url=draft.history_set.get(rev='10').get_href(),
-            previous=f'{draft.name}-09'
-        ))
+        self.assertEqual(
+            received,
+            dict(
+                name=draft.name,
+                rev='10',
+                content_url=draft.history_set.get(rev='10').get_href(),
+                previous=f'{draft.name}-09'
+            ),
+            'Incorrect JSON when historical revision specified',
+        )
 
         received = self.getJson(dict(name=draft.name, rev='00'))
-        self.assertNotIn('previous', received)
+        self.assertNotIn('previous', received, 'Rev 00 has no previous name when not replacing a draft')
 
         replaced = IndividualDraftFactory()
         RelatedDocument.objects.create(relationship_id='replaces',source=draft,target=replaced.docalias.first())
         received = self.getJson(dict(name=draft.name, rev='00'))
-        self.assertEqual(received['previous'], f'{replaced.name}-{replaced.rev}')
+        self.assertEqual(received['previous'], f'{replaced.name}-{replaced.rev}',
+                         'Rev 00 has a previous name when replacing a draft')
 
+    def test_draft(self):
+        # test with typical, straightforward names
+        self.do_draft_test(name='draft-somebody-did-a-thing')
+        # try with different potentially problematic names
+        self.do_draft_test(name='draft-someone-did-something-01-02')
+        self.do_draft_test(name='draft-someone-did-something-else-02')
+        self.do_draft_test(name='draft-someone-did-something-02-weird-01')
 
-    def test_draft_with_broken_history(self):
-        draft = IndividualDraftFactory(rev='10')
+    def do_draft_with_broken_history_test(self, name):
+        draft = IndividualDraftFactory(name=name, rev='10')
         received = self.getJson(dict(name=draft.name,rev='09'))
         self.assertEqual(received['rev'],'09')
         self.assertEqual(received['previous'], f'{draft.name}-08')
         self.assertTrue('warning' in received)
 
+    def test_draft_with_broken_history(self):
+        # test with typical, straightforward names
+        self.do_draft_with_broken_history_test(name='draft-somebody-did-something')
+        # try with different potentially problematic names
+        self.do_draft_with_broken_history_test(name='draft-someone-did-something-01-02')
+        self.do_draft_with_broken_history_test(name='draft-someone-did-something-else-02')
+        self.do_draft_with_broken_history_test(name='draft-someone-did-something-02-weird-03')
 
-    def test_draftname_with_numeric_suffix(self):
-        draft = IndividualDraftFactory(name='draft-someone-did-something-01-02',rev='00')
-        for r in range(0,4):
-            e = NewRevisionDocEventFactory(doc=draft,rev=f'{r:02d}')
-            draft.rev = f'{r:02d}'
-            draft.save_with_history([e])
-
-        received = self.getJson(dict(name=draft.name))
-        self.assertEqual(received['rev'],'03')
-        self.assertIn('01-02-03',received['content_url'])
-        self.assertIn('01-02-02',received['previous'])
-
-        received = self.getJson(dict(name=draft.name,rev='02'))
-        self.assertEqual(received['rev'],'02')
-        self.assertIn('01-02-02',received['content_url'])
-
-    def test_rfc(self):
-        draft = WgDraftFactory()
-        for r in range(0,2):
-            e = NewRevisionDocEventFactory(doc=draft,rev=f'{r:02d}')
-            draft.rev = f'{r:02d}'
-            draft.save_with_history([e])
-
-        draft.docalias.create(name='rfc8000')
+    def do_rfc_test(self, draft_name):
+        draft = WgDraftFactory(name=draft_name, create_revisions=range(0,2))
+        draft.docalias.create(name=f'rfc{self.next_rfc_number():04}')
         draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
         draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
         draft = reload_db_objects(draft)
@@ -2581,26 +2588,47 @@ class RfcdiffSupportTests(TestCase):
         
         number = rfc.rfc_number()
         received = self.getJson(dict(name=number))
-        self.assertEqual(received, dict(
-            content_url=rfc.get_href(),
-            name=rfc.canonical_name(),
-            previous=f'{draft.name}-{draft.rev}',
-        ))
+        self.assertEqual(
+            received,
+            dict(
+                content_url=rfc.get_href(),
+                name=rfc.canonical_name(),
+                previous=f'{draft.name}-{draft.rev}',
+            ),
+            'Can look up an RFC by number',
+        )
 
         num_received = received
         received = self.getJson(dict(name=rfc.canonical_name()))
-        self.assertEqual(num_received, received)
+        self.assertEqual(num_received, received, 'RFC by canonical name gives same result as by number')
 
         received = self.getJson(dict(name=f'RfC {number}'))
-        self.assertEqual(num_received, received)
+        self.assertEqual(num_received, received, 'RFC with unusual spacing/caps gives same result as by number')
+
+        received = self.getJson(dict(name=draft.name))
+        self.assertEqual(num_received, received, 'RFC by draft name and no rev gives same result as by number')
+
+        received = self.getJson(dict(name=draft.name, rev='01'))
+        self.assertEqual(
+            received,
+            dict(
+                content_url=draft.history_set.get(rev='01').get_href(),
+                name=draft.name,
+                rev='01',
+                previous=f'{draft.name}-00',
+            ),
+            'RFC by draft name with rev should give draft name, not canonical name'
+        )
+
+    def test_rfc(self):
+        # simple draft name
+        self.do_rfc_test(draft_name='draft-test-ar-ef-see')
+        # tricky draft names
+        self.do_rfc_test(draft_name='draft-whatever-02')
+        self.do_rfc_test(draft_name='draft-test-me-03-04')
 
     def test_rfc_with_tombstone(self):
-        draft = WgDraftFactory()
-        for r in range(0,2):
-            e = NewRevisionDocEventFactory(doc=draft,rev=f'{r:02d}')
-            draft.rev = f'{r:02d}'
-            draft.save_with_history([e])
-
+        draft = WgDraftFactory(create_revisions=range(0,2))
         draft.docalias.create(name='rfc3261') # See views_doc.HAS_TOMBSTONE
         draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
         draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
@@ -2611,4 +2639,46 @@ class RfcdiffSupportTests(TestCase):
         received = self.getJson(dict(name=rfc.canonical_name()))
         self.assertTrue(received['previous'].endswith('00'))
 
+    def do_rfc_with_broken_history_test(self, draft_name):
+        draft = WgDraftFactory(rev='10', name=draft_name)
+        draft.docalias.create(name=f'rfc{self.next_rfc_number():04}')
+        draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
+        draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
+        draft = reload_db_objects(draft)
+        rfc = draft
 
+        received = self.getJson(dict(name=draft.name))
+        self.assertEqual(
+            received,
+            dict(
+                content_url=rfc.get_href(),
+                name=rfc.canonical_name(),
+                previous=f'{draft.name}-10',
+            ),
+            'RFC by draft name without rev should return canonical RFC name and no rev',
+        )
+
+        received = self.getJson(dict(name=draft.name, rev='10'))
+        self.assertEqual(received['name'], draft.name, 'RFC by draft name with rev should return draft name')
+        self.assertEqual(received['rev'], '10', 'Requested rev should be returned')
+        self.assertEqual(received['previous'], f'{draft.name}-09', 'Previous rev is one less than requested')
+        self.assertIn(f'{draft.name}-10', received['content_url'], 'Returned URL should include requested rev')
+        self.assertNotIn('warning', received, 'No warning when we have the rev requested')
+
+        received = self.getJson(dict(name=f'{draft.name}-09'))
+        self.assertEqual(received['name'], draft.name, 'RFC by draft name with rev should return draft name')
+        self.assertEqual(received['rev'], '09', 'Requested rev should be returned')
+        self.assertEqual(received['previous'], f'{draft.name}-08', 'Previous rev is one less than requested')
+        self.assertIn(f'{draft.name}-09', received['content_url'], 'Returned URL should include requested rev')
+        self.assertEqual(
+            received['warning'],
+            'History for this version not found - these results are speculation',
+            'Warning should be issued when requested rev is not found'
+        )
+
+    def test_rfc_with_broken_history(self):
+        # simple draft name
+        self.do_rfc_with_broken_history_test(draft_name='draft-some-draft')
+        # tricky draft names
+        self.do_rfc_with_broken_history_test(draft_name='draft-gizmo-01')
+        self.do_rfc_with_broken_history_test(draft_name='draft-oh-boy-what-a-draft-02-03')

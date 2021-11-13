@@ -8,9 +8,9 @@ from ietf.name.models import DocTagName
 from ietf.person.factories import PersonFactory
 from ietf.utils.test_utils import TestCase
 from ietf.person.models import Person
-from ietf.doc.factories import DocumentFactory
-from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor
-from ietf.doc.utils import update_action_holders, add_state_change_event, update_documentauthors
+from ietf.doc.factories import DocumentFactory, WgRfcFactory
+from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor, Document
+from ietf.doc.utils import update_action_holders, add_state_change_event, update_documentauthors, fuzzy_find_documents
 
 
 class ActionHoldersTests(TestCase):
@@ -240,3 +240,48 @@ class MiscTests(TestCase):
         docauth = doc.documentauthor_set.first()
         self.assertEqual(docauth.affiliation, '')
         self.assertEqual(docauth.country, '')
+
+    def do_fuzzy_find_documents_rfc_test(self, name):
+        rfc = WgRfcFactory(name=name, create_revisions=(0, 1, 2))
+        rfc = Document.objects.get(pk=rfc.pk)  # clear out any cached values
+
+        # by canonical name
+        found = fuzzy_find_documents(rfc.canonical_name(), None)
+        self.assertCountEqual(found.documents, [rfc])
+        self.assertEqual(found.matched_rev, None)
+        self.assertEqual(found.matched_name, rfc.canonical_name())
+
+        # by draft name, no rev
+        found = fuzzy_find_documents(rfc.name, None)
+        self.assertCountEqual(found.documents, [rfc])
+        self.assertEqual(found.matched_rev, None)
+        self.assertEqual(found.matched_name, rfc.name)
+
+        # by draft name, latest rev
+        found = fuzzy_find_documents(rfc.name, '02')
+        self.assertCountEqual(found.documents, [rfc])
+        self.assertEqual(found.matched_rev, '02')
+        self.assertEqual(found.matched_name, rfc.name)
+
+        # by draft name, earlier rev
+        found = fuzzy_find_documents(rfc.name, '01')
+        self.assertCountEqual(found.documents, [rfc])
+        self.assertEqual(found.matched_rev, '01')
+        self.assertEqual(found.matched_name, rfc.name)
+
+        # wrong name or revision
+        found = fuzzy_find_documents(rfc.name + '-incorrect')
+        self.assertCountEqual(found.documents, [], 'Should not find document that does not match')
+        found = fuzzy_find_documents(rfc.name + '-incorrect', '02')
+        self.assertCountEqual(found.documents, [], 'Still should not find document, even with a version')
+        found = fuzzy_find_documents(rfc.name, '22')
+        self.assertCountEqual(found.documents, [rfc],
+                              'Should find document even if rev does not exist')
+
+
+    def test_fuzzy_find_documents(self):
+        # Should add additional tests/test cases for other document types/name formats
+        self.do_fuzzy_find_documents_rfc_test('draft-normal-name')
+        self.do_fuzzy_find_documents_rfc_test('draft-name-with-number-01')
+        self.do_fuzzy_find_documents_rfc_test('draft-name-that-has-two-02-04')
+        self.do_fuzzy_find_documents_rfc_test('draft-wild-01-numbers-0312')
