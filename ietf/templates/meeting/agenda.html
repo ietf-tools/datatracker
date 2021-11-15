@@ -102,7 +102,7 @@
 
                         {% ifchanged item.timeslot.time|date:"Y-m-d" %}
                             <tr class="table-warning">
-                                <th colspan="7">
+                                <th colspan="5">
                                     {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
                                     <div class="anchor-target" id="{{item.timeslot.time|slugify}}"></div>
                                     <h6 class="mt-2">{{ item.timeslot.time|date:"l, F j, Y" }}</h6>
@@ -114,7 +114,6 @@
                             <tr id="row-{{ item.slug }}" data-filter-keywords="{{ item.filter_keywords|join:',' }}"
                                 data-slot-start-ts="{{item.start_timestamp}}"
                                 data-slot-end-ts="{{item.end_timestamp}}">
-                                <td class="leftmarker"></td>
                                 <td class="text-nowrap text-right">
                                     <div class="hidden-xs">
                                         {% include "meeting/timeslot_start_end.html" %}
@@ -160,7 +159,6 @@
                         </div>
                     {% endif %}
                 </td>
-                <td class="rightmarker"></td>
                 </tr>
 
             {% elif item|is_regular_agenda_item or item|is_plenary_agenda_item %}
@@ -170,7 +168,6 @@
                         <tr class="info session-label-row"
                             data-slot-start-ts="{{item.start_timestamp}}"
                             data-slot-end-ts="{{item.end_timestamp}}">
-                            <td class="leftmarker"></td>
                             <th class="text-nowrap text-right">
                                 <div class="hidden-xs">
                                     {% include "meeting/timeslot_start_end.html" %}
@@ -183,7 +180,6 @@
                                 {{ item.timeslot.time|date:"l"}}
                                 {{item.timeslot.name|capfirst_allcaps}}
                             </th>
-                            <td class="rightmarker"></td>
                         </tr>
                     {% endifchanged %}
                 {% endif %}
@@ -194,7 +190,6 @@
                         data-filter-keywords="{{ item.filter_keywords|join:',' }}"
                         data-slot-start-ts="{{item.start_timestamp}}"
                         data-slot-end-ts="{{item.end_timestamp}}">
-                        <td class="leftmarker"></td>
                         {% if item.slot_type.slug == 'plenary' %}
                             <th class="text-nowrap text-right">
                                 <div class="hidden-xs">
@@ -246,7 +241,7 @@
 {% if item.session.current_status == 'canceled' %}
     <span class="badge bg-danger float-end">CANCELLED</span>
 {% else %}
-    <div class="float-end padded-left">
+    <div class="float-end ps-3">
         {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
     </div>
 {% endif %}
@@ -277,7 +272,6 @@
     <br><span class="text-danger">{{item.session.agenda_note}}</span>
 {% endif %}
 </td>
-<td class="rightmarker"></td>
 </tr>
 {% endif %}
 {% endif %}
