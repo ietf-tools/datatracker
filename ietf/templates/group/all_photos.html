@@ -6,7 +6,7 @@
     .well { max-width: 150px;}
 {% endblock %}
 
-{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+{% block bodyAttrs %}data-bs-spy="scroll" data-bs-target="#affix"{% endblock %}
 
 {% block title %}Chair Photos{% endblock %}
 
@@ -55,8 +55,8 @@
         {% endfor %}
     </div>
 
-    <div class="col-md-1 hidden-print bs-docs-sidebar" id="affix">
-        <ul class="nav nav-pills nav-stacked small fixed" data-spy="affix">
+    <div class="col-md-1 d-print-none bs-docs-sidebar" id="affix">
+        <ul class="nav nav-pills nav-stacked small fixed" data-bs-spy="affix">
             {% for letter in alphabet_blocks %}
                 <li><a href="#{{letter.grouper}}">{{letter.grouper}}</a></li>
             {% endfor %}

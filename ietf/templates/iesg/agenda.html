@@ -16,7 +16,7 @@
 
 {% block title %}IESG agenda: {{ date }}{% endblock %}
 
-{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+{% block bodyAttrs %}data-bs-spy="scroll" data-bs-target="#affix"{% endblock %}
 
 {% block content %}
     {% origin %}
@@ -124,8 +124,8 @@
             {% endfor %}
         </div>
 
-        <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
-            <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+        <div class="col-md-2 d-print-none bs-docs-sidebar" id="affix">
+            <ul class="nav nav-pills nav-stacked small" data-bs-spy="affix">
                 {% for num, section in sections %}
                     {% if num|sectionlevel <= 1 %}
                         <li><a href="#{{num}}">{{ section.title|safe }}</a></li>

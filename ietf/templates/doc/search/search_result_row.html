@@ -88,9 +88,9 @@
     {% for check in doc.submission.latest_checks %}
       {% if check.passed != None and check.symbol.strip %}
 	{% if check.errors or check.warnings %}
-	   <span class="checker-warning float-end" data-toggle="modal" data-target="#check-{{check.pk}}" title="{{check.checker|title}} returned warnings or errors." >{{ check.symbol|safe }}</span>
+	   <span class="checker-warning float-end" data-bs-toggle="modal" data-bs-target="#check-{{check.pk}}" title="{{check.checker|title}} returned warnings or errors." >{{ check.symbol|safe }}</span>
 	{% else %}
-	   <span class="checker-success float-end" data-toggle="modal" data-target="#check-{{check.pk}}" title="{{check.checker|title}} passed">{{ check.symbol|safe }}</span>
+	   <span class="checker-success float-end" data-bs-toggle="modal" data-bs-target="#check-{{check.pk}}" title="{{check.checker|title}} passed">{{ check.symbol|safe }}</span>
 	{% endif %}
 	{% include "doc/yang-check-modal-overlay.html" %}
       {% endif %}

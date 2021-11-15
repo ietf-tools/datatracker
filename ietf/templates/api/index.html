@@ -2,7 +2,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}API Notes{% endblock %}
-{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+{% block bodyAttrs %}data-bs-spy="scroll" data-bs-target="#affix"{% endblock %}
 {% block content %}
 
     <h2>Datatracker API Notes</h2>
@@ -362,8 +362,8 @@ payload = jwstoken.payload
 
     </div>
 
-    <div class="col-md-1 hidden-print bs-docs-sidebar" id="affix">
-        <ul class="nav nav-pills nav-stacked small fixed" data-spy="affix">
+    <div class="col-md-1 d-print-none bs-docs-sidebar" id="affix">
+        <ul class="nav nav-pills nav-stacked small fixed" data-bs-spy="affix">
 
             <li><a href="#framework">Framework API</a></li>
             <li><a href="#framework-documents">&nbsp; Framework API: Documents</a></li>

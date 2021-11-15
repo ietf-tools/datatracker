@@ -109,7 +109,7 @@ def ballot_icon(context, doc):
     else:
         typename = "IESG"
 
-    res = ['<a %s href="%s" data-toggle="modal" data-target="#modal-%d" title="%s positions (click to show more)" class="ballot-icon"><table' % (
+    res = ['<a %s href="%s" data-bs-toggle="modal" data-bs-target="#modal-%d" title="%s positions (click to show more)" class="ballot-icon"><table' % (
             right_click_string,
             urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)),
             ballot.pk,

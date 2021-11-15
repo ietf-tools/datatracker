@@ -5,15 +5,15 @@
 {% load django_bootstrap5 %}
 {% load ietf_filters %}
 
-{% block bodyAttrs %}data-spy="scroll" data-target="#nav-instructions"{% endblock %}
+{% block bodyAttrs %}data-bs-spy="scroll" data-bs-target="#nav-instructions"{% endblock %}
 
 {% block subtitle %} - Configuration Help {% endblock %}
 
 {% block nomcom_content %}
     {% origin %}
 
-    <div class="col-sm-2 col-sm-offset-10 hidden-xs hidden-print bs-docs-sidebar" id="nav-instructions">
-        <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+    <div class="col-sm-2 col-sm-offset-10 d-none d-sm-block d-print-none bs-docs-sidebar" id="nav-instructions">
+        <ul class="nav nav-pills nav-stacked small" data-bs-spy="affix">
             <li><a href="#keys">Keypair</a></li>
             <li><a href="#configure">Configuration</a></li>
             <li><a href="#positions">Positions</a></li>

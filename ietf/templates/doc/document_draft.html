@@ -217,11 +217,11 @@
                         <td class="edit"></td>
                         <td>
                             {% if check.errors or check.warnings %}
-                                <span class="checker-warning" data-toggle="modal" data-target="#check-{{check.pk}}" title="{{check.checker|title}} returned warnings or errors." >{{ check.symbol|safe }}</span>
+                                <span class="checker-warning" data-bs-toggle="modal" data-bs-target="#check-{{check.pk}}" title="{{check.checker|title}} returned warnings or errors." >{{ check.symbol|safe }}</span>
                             {% else %}
-                                <span class="checker-success" data-toggle="modal" data-target="#check-{{check.pk}}" title="{{check.checker|title}} passed">{{ check.symbol|safe }}</span>
+                                <span class="checker-success" data-bs-toggle="modal" data-bs-target="#check-{{check.pk}}" title="{{check.checker|title}} passed">{{ check.symbol|safe }}</span>
                             {% endif %}
-                            <a href="#" data-toggle="modal" data-target="#check-{{check.pk}}">
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#check-{{check.pk}}">
                                 {{ check.errors }} errors, {{ check.warnings }} warnings.
                             </a>
                             {% include "doc/yang-check-modal-overlay.html" %}
@@ -683,7 +683,7 @@
         <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.canonical_name %}" rel="nofollow"><span class="bi bi-arrow-right"></span> Referenced by</a>
         <a class="btn btn-primary btn-xs" href="{{settings.IDNITS_BASE_URL}}?url=https://www.ietf.org/archive/id/{{ doc.filename_with_rev }}" rel="nofollow" target="_blank"><span class="bi bi-exclamation"></span> Nits</a>
         <div class="dropdown inline">
-            <button class="btn btn-primary btn-xs dropdown-toggle" type="button" id="ddSearchMenu" data-toggle="dropdown" aria-expanded="true">
+            <button class="btn btn-primary btn-xs dropdown-toggle" type="button" id="ddSearchMenu" data-bs-toggle="dropdown" aria-expanded="true">
                 <span class="bi bi-search"></span> Search lists <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" role="menu">

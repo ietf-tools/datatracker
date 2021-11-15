@@ -69,20 +69,20 @@
 
     {% for check in submission.latest_checks %}
         {% if check.passed != None %}
-            <button class="btn btn-{% if check.passed %}{% if check.warnings %}warning{% elif check.errors %}warning{% else %}success{% endif %}{% else %}danger{% endif %}" data-toggle="modal" data-target="#check-{{check.pk}}">View {{ check.checker }}</button>
+            <button class="btn btn-{% if check.passed %}{% if check.warnings %}warning{% elif check.errors %}warning{% else %}success{% endif %}{% else %}danger{% endif %}" data-bs-toggle="modal" data-bs-target="#check-{{check.pk}}">View {{ check.checker }}</button>
 
             <div class="modal fade" id="check-{{check.pk}}" tabindex="-1" role="dialog" aria-labelledby="check-{{check.pk}}" aria-hidden="true">
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">&times;</button>
                             <h4 class="modal-title" id="{{check.checker|slugify}}-label">{{ check.checker|title }} for {{ submission.name }}-{{ submission.rev }}</h4>
                         </div>
                         <div class="modal-body" id="{{check.checker|slugify}}-message">
                             <pre>{{ check.message }}</pre>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
                         </div>
                     </div>
                 </div>
@@ -94,14 +94,14 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">&times;</button>
                     <h4 class="modal-title" id="twopageslabel">First two pages of {{ submission.name }}-{{ submission.rev }}</h4>
                 </div>
                 <div class="modal-body">
                     {{ submission|two_pages_decorated_with_errors:errors }}
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -146,7 +146,7 @@
                     {{ submission.name }}
                 {% endif %}
 
-                <button class="btn btn-primary btn-xs float-end" data-toggle="modal" data-target="#twopages">View first two pages</button>
+                <button class="btn btn-primary btn-xs float-end" data-bs-toggle="modal" data-bs-target="#twopages">View first two pages</button>
 
                 {% show_submission_files submission %}
 
@@ -162,7 +162,7 @@
                 {{ submission.rev }}
 
                 {% if errors.rev %}
-                    <button class="btn btn-primary btn-xs float-end" data-toggle="modal" data-target="#twopages">View errors in document</button>
+                    <button class="btn btn-primary btn-xs float-end" data-bs-toggle="modal" data-bs-target="#twopages">View errors in document</button>
                     <p class="text-danger bg-danger"><b>{{ errors.rev }}</b></p>
                 {% endif %}
             </td>
@@ -361,7 +361,7 @@
         <form id="cancel-submission" method="post">
             {% csrf_token %}
             <input type="hidden" name="action" value="cancel">
-            <button class="btn btn-danger" type="submit" data-toggle="tooltip" title="Deletes the uploaded file{{ submission.file_types|split:","|pluralize }} permanently.">Cancel submission</button>
+            <button class="btn btn-danger" type="submit" data-bs-toggle="tooltip" title="Deletes the uploaded file{{ submission.file_types|split:","|pluralize }} permanently.">Cancel submission</button>
         </form>
     {% endif %}
 

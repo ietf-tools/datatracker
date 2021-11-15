@@ -44,7 +44,7 @@
     }
 {% endblock %}
 
-{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+{% block bodyAttrs %}data-bs-spy="scroll" data-bs-target="#affix"{% endblock %}
 
 {% block content %}
     {% origin %}
@@ -116,12 +116,12 @@
                                     data-slot-end-ts="{{ item.end_timestamp }}">
                                     <td class="leftmarker"></td>
                                     <th class="text-nowrap text-right">
-                                        <span class="hidden-xs">
+                                        <span class="d-none d-sm-block">
                                             {% include "meeting/timeslot_start_end.html" %}
                                         </span>
                                     </th>
                                     <th colspan="4">
-                                        <span class="hidden-sm hidden-md hidden-lg">
+                                        <span class="d-none d-md-block d-lg-block d-xl-block d-xxl-block">
                                             {% include "meeting/timeslot_start_end.html" %}
                                         </span>
                                         {{ item.timeslot.time|date:"l" }}
@@ -150,12 +150,12 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-nowrap text-right">
-                                    <span class="hidden-xs">
+                                    <span class="d-none d-sm-block">
                                         {% include "meeting/timeslot_start_end.html" %}
                                     </span>
                                 </td>
                                 <td colspan="3">
-                                    <span class="hidden-sm hidden-md hidden-lg">
+                                    <span class="d-none d-md-block d-lg-block d-xl-block d-xxl-block">
                                         {% include "meeting/timeslot_start_end.html" %}
                                     </span>
                                     {% if item.timeslot.show_location and item.timeslot.get_html_location %}
@@ -171,7 +171,7 @@
                                         {% endif %}
                                         {% with item.timeslot.location.floorplan as floor %}
                                             {% if item.timeslot.location.floorplan %}
-                                                <span class="hidden-xs">
+                                                <span class="d-none d-sm-block">
                                                     <a
                                                         href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{ floor.name|xslugify }}"
                                                         class="float-end" title="{{ floor.name }}"><span
@@ -218,12 +218,12 @@
                                     </td>
                                     {% if item.timeslot.type.slug == 'plenary' %}
                                         <th class="text-nowrap text-right">
-                                            <span class="hidden-xs">
+                                            <span class="d-none d-sm-block">
                                                 {% include "meeting/timeslot_start_end.html" %}
                                             </span>
                                         </th>
                                         <td colspan="3">
-                                            <span class="hidden-sm hidden-md hidden-lg">
+                                            <span class="d-none d-md-block d-lg-block d-xl-block d-xxl-block">
                                                 {% include "meeting/timeslot_start_end.html" %}
                                             </span>
                                             {% if item.timeslot.show_location and item.timeslot.get_html_location %}
@@ -244,7 +244,7 @@
                                         <td>
                                             {% with item.timeslot.location.floorplan as floor %}
                                                 {% if item.timeslot.location.floorplan %}
-                                                    <span class="hidden-xs">
+                                                    <span class="d-none d-sm-block">
                                                         <a
                                                             href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{ floor.name|xslugify }}"
                                                             class="float-end" title="{{ floor.name }}"><span
@@ -268,7 +268,7 @@
                                             {% endif %}
                                         </td>
 
-                                        <td><span class="hidden-xs">{{ item.session.historic_group.historic_parent.acronym }}</span></td>
+                                        <td><span class="d-none d-sm-block">{{ item.session.historic_group.historic_parent.acronym }}</span></td>
 
                                         <td>
                                             {% if item.session.historic_group %}
@@ -340,8 +340,8 @@
                 {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting only %}
 
                 </div>
-                <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
-                    <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+                <div class="col-md-2 d-print-none bs-docs-sidebar" id="affix">
+                    <ul class="nav nav-pills nav-stacked small" data-bs-spy="affix">
                         <li><a href="#now">Now</a></li>
                         {% for item in filtered_assignments %}
                             {% ifchanged item.timeslot.time|date:"Y-m-d" %}

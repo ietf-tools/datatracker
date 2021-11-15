@@ -74,7 +74,7 @@
                                     {% csrf_token %}
                                     <input type="hidden" name="submission_id" value="{{ s.pk }}">
                                     <input type="hidden" name="access_token" value="{{ s.access_token }}">
-                                    <button class="btn btn-danger btn-xs" type="submit" data-toggle="tooltip" title="Cancels the submission permanently.">Cancel submission</button>
+                                    <button class="btn btn-danger btn-xs" type="submit" data-bs-toggle="tooltip" title="Cancels the submission permanently.">Cancel submission</button>
                                 </form>
                             </td>
                         {% endif %}

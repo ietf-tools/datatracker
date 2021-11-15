@@ -11,7 +11,7 @@
     <ul class="nav nav-tabs">
         {% for position in positions %}
             <li class="nav-item">
-                <a class="nav-link {% if forloop.first %}active{% endif %}" data-toggle="tab" role="tab" href="#{{ position.name|slugify }}">{{ position.name }}</a>
+                <a class="nav-link {% if forloop.first %}active{% endif %}" data-bs-toggle="tab" role="tab" href="#{{ position.name|slugify }}">{{ position.name }}</a>
             </li>
         {% endfor %}
     </ul>

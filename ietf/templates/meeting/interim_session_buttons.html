@@ -8,7 +8,7 @@
         {# Note: if called with show_agenda=True, calling template must load agenda_materials.js, needed by session_agenda_include.html #}
         {% include "meeting/session_agenda_include.html" with slug=item.slug session=session timeslot=item.timeslot only %}
         <!-- agenda pop-up button -->
-        <a data-toggle="modal" data-target="#modal-{{item.slug}}" title="Show meeting materials"><span class="bi bi-arrows-fullscreen"></span></a>
+        <a data-bs-toggle="modal" data-bs-target="#modal-{{item.slug}}" title="Show meeting materials"><span class="bi bi-arrows-fullscreen"></span></a>
         <!-- materials tar file -->
         <a href="/meeting/{{meeting.number}}/agenda/{{acronym}}-drafts.tgz" title="Download meeting materials as .tar archive"><span class="bi bi-file-zip"></span></a>
         <!-- materials PDF file -->

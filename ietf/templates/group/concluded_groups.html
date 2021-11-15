@@ -18,7 +18,7 @@
 
 {% endblock %}
 
-{% block bodyAttrs %}data-spy="scroll" data-target="#navscroller"{% endblock %}
+{% block bodyAttrs %}data-bs-spy="scroll" data-bs-target="#navscroller"{% endblock %}
 
 {% block title %}Concluded groups{% endblock %}
 
@@ -92,7 +92,7 @@
         {% endfor %}
     </div>
 
-    <div class="col-md-2 hidden-print bs-docs-sidebar" id="navscroller">
+    <div class="col-md-2 d-print-none bs-docs-sidebar" id="navscroller">
         <ul class="nav nav-pills nav-stacked small fixed" >
             {% for label, groups in sections.items %}
                 <li>

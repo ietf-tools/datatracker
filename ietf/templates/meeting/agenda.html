@@ -17,7 +17,7 @@
     iframe#weekview { height: 25em; }
 {% endblock %}
 
-{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+{% block bodyAttrs %}data-bs-spy="scroll" data-bs-target="#affix" data-bs-offset="0" tabindex="0"{% endblock %}
 
 {% block content %}
     {% origin %}
@@ -115,12 +115,12 @@
                                 data-slot-start-ts="{{item.start_timestamp}}"
                                 data-slot-end-ts="{{item.end_timestamp}}">
                                 <td class="text-nowrap text-right">
-                                    <div class="hidden-xs">
+                                    <div class="d-none d-sm-block">
                                         {% include "meeting/timeslot_start_end.html" %}
                                     </div>
                                 </td>
                                 <td colspan="3">
-                                    <div class="hidden-sm hidden-md hidden-lg">
+                                    <div class="d-none d-md-block d-lg-block d-xl-block d-xxl-block">
                                         {% include "meeting/timeslot_start_end.html" %}
                                     </div>
                                     {% location_anchor item.timeslot %}
@@ -129,7 +129,7 @@
                         {% if item.timeslot.show_location and item.timeslot.get_html_location %}
                             {% with item.timeslot.location.floorplan as floor %}
                                 {% if item.timeslot.location.floorplan %}
-                                    <div class="hidden-xs">
+                                    <div class="d-none d-sm-block">
                                         <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
                                             class="float-end" title="{{floor.name}}"><span class="badge bg-secondary label-wide">{{floor.short}}</span></a>
                                     </div>
@@ -169,12 +169,12 @@
                             data-slot-start-ts="{{item.start_timestamp}}"
                             data-slot-end-ts="{{item.end_timestamp}}">
                             <th class="text-nowrap text-right">
-                                <div class="hidden-xs">
+                                <div class="d-none d-sm-block">
                                     {% include "meeting/timeslot_start_end.html" %}
                                 </div>
                             </th>
                             <th colspan="4">
-                                <div class="hidden-sm hidden-md hidden-lg">
+                                <div class="d-none d-md-block d-lg-block d-xl-block d-xxl-block">
                                     {% include "meeting/timeslot_start_end.html" %}
                                 </div>
                                 {{ item.timeslot.time|date:"l"}}
@@ -192,12 +192,12 @@
                         data-slot-end-ts="{{item.end_timestamp}}">
                         {% if item.slot_type.slug == 'plenary' %}
                             <th class="text-nowrap text-right">
-                                <div class="hidden-xs">
+                                <div class="d-none d-sm-block">
                                     {% include "meeting/timeslot_start_end.html" %}
                                 </div>
                             </th>
                             <td colspan="3">
-                                <div class="hidden-sm hidden-md hidden-lg">
+                                <div class="d-none d-md-block d-lg-block d-xl-block d-xxl-block">
                                     {% include "meeting/timeslot_start_end.html" %}
                                 </div>
                                 {% location_anchor item.timeslot %}
@@ -209,7 +209,7 @@
                     <td>
                         {% with item.timeslot.location.floorplan as floor %}
                             {% if item.timeslot.location.floorplan %}
-                                <div class="hidden-xs">
+                                <div class="d-none d-sm-block">
                                     <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
                                         class="float-end" title="{{floor.name}}"><span class="badge bg-secondary">{{floor.short}}</span></a>
                                 </div>
@@ -222,7 +222,7 @@
                 {% end_location_anchor %}
                 </td>
 
-                <td><div class="hidden-xs">{{item.session.historic_group.historic_parent.acronym}}</div></td>
+                <td><div class="d-none d-sm-block">{{item.session.historic_group.historic_parent.acronym}}</div></td>
 
                 <td>
                     {% if item.session.historic_group %}
@@ -277,27 +277,20 @@
 {% endif %}
 {% endfor %}
 </table>
-
 </div>
-<div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
-    <ul class="nav nav-pills nav-stacked small" data-spy="affix">
-        <li><a href="#now">Now</a></li>
+
+<div class="col-md-2 d-print-none bs-docs-sidebar" id="affix">
+    <ul class="nav nav-pills flex-column small" data-bs-spy="affix">
+        <li class="nav-item">
+            <a class="nav-link" href="#now">Now</a>
+        </li>
         {% for item in filtered_assignments %}
             {% ifchanged item.timeslot.time|date:"Y-m-d" %}
-                <li><a href="#{{item.timeslot.time|slugify}}">{{ item.timeslot.time|date:"l, F j, Y" }}</a></li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#{{item.timeslot.time|slugify}}">{{ item.timeslot.time|date:"l, F j, Y" }}</a>
+                </li>
             {% endifchanged %}
         {% endfor %}
-        <li><hr/></li>
-        <li class="tz-display">Showing <span class="current-tz">{{ timezone }}</span> time</li>
-        <li class="tz-display"><span> {# span avoids applying nav link styling to these shortcuts #}
-            <a onclick="ietf_timezone.use('{{ timezone }}')">Meeting time</a> |
-            <a onclick="ietf_timezone.use('local')">Local time</a> |
-            <a onclick="ietf_timezone.use('UTC')">UTC</a></span>
-        </li>
-        {% if settings.DEBUG and settings.DEBUG_AGENDA %}
-            <li><hr/></li>
-            <li><span id="current-time"></span></li>
-        {% endif %}
     </ul>
 </div>
 </div>

@@ -6,7 +6,7 @@
 
 {% block subtitle %} - View feedback {% endblock %}
 
-{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+{% block bodyAttrs %}data-bs-spy="scroll" data-bs-target="#affix"{% endblock %}
 
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
@@ -52,7 +52,7 @@
                                         <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">{{ fb_dict.nominee.person.last_name }}</a>
                                     </td>
                                     <td>
-                                        <span class="hidden-xs">&lt;<a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">{{ fb_dict.nominee.email.address }}</a>&gt;</span>
+                                        <span class="d-none d-sm-block">&lt;<a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">{{ fb_dict.nominee.email.address }}</a>&gt;</span>
                                     </td>
                                     {% for fbtype_name, fbtype_count, fbtype_newflag in fb_dict.feedback %}
                                         <td class="text-right">
@@ -126,8 +126,8 @@
         {% endif %}
 
     </div>
-    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
-        <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+    <div class="col-md-2 d-print-none bs-docs-sidebar" id="affix">
+        <ul class="nav nav-pills nav-stacked small" data-bs-spy="affix">
             <li><a href="#accepted">Accepted</a></li>
             <li><a href="#pending">Pending</a></li>
             <li><a href="#declined">Declined</a></li>

@@ -48,9 +48,9 @@ window.format_time = function (t, tz, fmt) {
 
     switch (fmt) {
         case 0:
-            out = t.tz(tz).format('dddd, ') + '<span class="hidden-xs">' +
+            out = t.tz(tz).format('dddd, ') + '<span class="d-none d-sm-block">' +
                 t.tz(tz).format('MMMM Do YYYY, ') + '</span>' +
-                t.tz(tz).format('HH:mm') + '<span class="hidden-xs">' +
+                t.tz(tz).format('HH:mm') + '<span class="d-none d-sm-block">' +
                 t.tz(tz).format(' Z z') + '</span>';
             break;
         case 1:

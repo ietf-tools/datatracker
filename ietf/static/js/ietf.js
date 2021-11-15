@@ -9,7 +9,7 @@ import "bootstrap/js/dist/dropdown";
 import "bootstrap/js/dist/modal";
 // import "bootstrap/js/dist/offcanvas";
 // import "bootstrap/js/dist/popover";
-// import "bootstrap/js/dist/scrollspy";
+import "bootstrap/js/dist/scrollspy";
 import "bootstrap/js/dist/tab";
 // import "bootstrap/js/dist/toast";
 import "bootstrap/js/dist/tooltip";
@@ -38,6 +38,15 @@ jQuery.ajaxSetup({
         }
     }
 });
+
+// Use the Bootstrap tooltip plugin for all elements with a title attribute
+$(document)
+    .ready(function () {
+        $('[title][title!=""]')
+            .not("th")
+            .attr("data-bs-toggle", "tooltip")
+            .tooltip();
+    });
 
 $(document)
     .ready(function () {

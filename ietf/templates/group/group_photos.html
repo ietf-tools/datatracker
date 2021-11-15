@@ -8,7 +8,7 @@
 
 {% block title %}{{ group }} ({{group.acronym}}) Photos{% endblock %}
 
-{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+{% block bodyAttrs %}data-bs-spy="scroll" data-bs-target="#affix"{% endblock %}
 
 {% block group_content %}
     {% origin %}
@@ -52,8 +52,8 @@
         {% endfor %}
     </div>
 
-    <div class="col-md-1 hidden-print bs-docs-sidebar" id="affix">
-        <ul class="nav nav-pills nav-stacked small fixed" data-spy="affix">
+    <div class="col-md-1 d-print-none bs-docs-sidebar" id="affix">
+        <ul class="nav nav-pills nav-stacked small fixed" data-bs-spy="affix">
             {% for role_name in role_groups %}
                 <li><a href="#{{role_name.grouper|urlencode}}">{{role_name.grouper}}</a></li>
             {% endfor %}

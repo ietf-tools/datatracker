@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
-{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+{% block bodyAttrs %}data-bs-spy="scroll" data-bs-target="#affix"{% endblock %}
 
 {% block title %}IETF {{ meeting.number }} preliminary &amp; interim materials{% endblock %}
 
@@ -254,8 +254,8 @@
                 {% endwith %}
             </div>
 
-            <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
-                <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+            <div class="col-md-2 d-print-none bs-docs-sidebar" id="affix">
+                <ul class="nav nav-pills nav-stacked small" data-bs-spy="affix">
                     {% if plenaries %}
                         <li><a href="#plenaries">Plenaries</a></li>
                     {% endif %}

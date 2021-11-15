@@ -4,7 +4,7 @@
 {% origin %}
 
 {% for p in parents %}
-    <li class="hidden-nojs dropend group-menu group-parent-{{ p.id }}">
+    <li class="dropend group-menu group-parent-{{ p.id }}">
         <a class="dropdown-item dropdown-toggle {% if flavor != 'top' %}text-wrap link-primary{% endif %}" href="{{ p.menu_url }}">
             {{ p.short_name }}
         </a>

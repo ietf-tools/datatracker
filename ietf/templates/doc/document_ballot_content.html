@@ -3,7 +3,7 @@
 {% load textfilters %}
 
 <div class="row">
-    <div class="col-md-2 hidden-sm hidden-xs">
+    <div class="col-md-2 d-none d-md-block d-sm-block d-lg-block d-xl-block d-xxl-block">
 
         {% for n, positions in position_groups %}
             <h4><span class="badge bg-{{ n|pos_to_label }}"> {{ n.name }}</span></h4>

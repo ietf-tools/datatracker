@@ -194,9 +194,9 @@
                     </span>
 
                     {% if session_purposes|length > 1 %}
-                        <button id="session-toggle-modal-open" class="btn btn-default" data-toggle="modal" data-target="#session-toggles-modal"><input type="checkbox" checked="checked" disabled> Sessions</button>
+                        <button id="session-toggle-modal-open" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#session-toggles-modal"><input type="checkbox" checked="checked" disabled> Sessions</button>
                     {% endif %}
-                    <button id="timeslot-toggle-modal-open" class="btn btn-default" data-toggle="modal" data-target="#timeslot-group-toggles-modal"><input type="checkbox" checked="checked" disabled> Timeslots</button>
+                    <button id="timeslot-toggle-modal-open" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#timeslot-group-toggles-modal"><input type="checkbox" checked="checked" disabled> Timeslots</button>
                 </div>
             </div>
 
@@ -207,7 +207,7 @@
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal">
+                        <button type="button" class="close" data-bs-dismiss="modal">
                             <span aria-hidden="true">&times;</span>
                             <span class="sr-only">Close</span>
                         </button>
@@ -241,7 +241,7 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
@@ -251,7 +251,7 @@
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal">
+                        <button type="button" class="close" data-bs-dismiss="modal">
                             <span aria-hidden="true">&times;</span>
                             <span class="sr-only">Close</span>
                         </button>
@@ -271,7 +271,7 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
@@ -281,7 +281,7 @@
             <div class="modal-dialog modal-lg" role="document">
                 <form class="modal-content" method="post">{% csrf_token %}
                     <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal">
+                        <button type="button" class="close" data-bs-dismiss="modal">
                             <span aria-hidden="true">&times;</span>
                             <span class="sr-only">Close</span>
                         </button>
@@ -303,7 +303,7 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
                         <button type="submit" name="action" value="swapdays" class="btn btn-primary">Swap days</button>
                     </div>
                 </form>
@@ -314,7 +314,7 @@
             <div class="modal-dialog modal-lg" role="document">
                 <form class="modal-content" method="post">{% csrf_token %}
                     <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal">
+                        <button type="button" class="close" data-bs-dismiss="modal">
                             <span aria-hidden="true">&times;</span>
                             <span class="sr-only">Close</span>
                         </button>
@@ -351,7 +351,7 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
                         <button type="submit" name="action" value="swaptimeslots" class="btn btn-primary">Swap timeslots</button>
                     </div>
                 </form>

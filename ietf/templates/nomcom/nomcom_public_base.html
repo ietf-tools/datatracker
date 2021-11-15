@@ -27,7 +27,7 @@
             <a class="nav-link {% if selected == "questionnaires" %}active{% endif %}" href="{% url 'ietf.nomcom.views.questionnaires' year %}">Questionnaires</a></li>
         {% if user|is_chair_or_advisor:year or user|has_role:"Secretariat" %}
             <li class="dropdown">
-                <a class="dropdown-toggle" data-toggle="dropdown" href="#">Volunteers<span class="caret"></span></a>
+                <a class="dropdown-toggle" data-bs-toggle="dropdown" href="#">Volunteers<span class="caret"></span></a>
                 <ul class="dropdown-menu" role="menu">
                     <li class="nav-item">
                         <a class="nav-link {% if selected == "view_eligible" %}active{% endif %}" href="{% url 'ietf.nomcom.views.public_eligible' year %}">View Eligible</a></li>

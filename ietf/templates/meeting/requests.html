@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
-{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+{% block bodyAttrs %}data-bs-spy="scroll" data-bs-target="#affix"{% endblock %}
 
 {% block title %}IETF {{ meeting.number }} timeslot requests{% endblock %}
 
@@ -129,8 +129,8 @@
                 </table>
             {% endfor %}
         </div>
-        <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
-            <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+        <div class="col-md-2 d-print-none bs-docs-sidebar" id="affix">
+            <ul class="nav nav-pills nav-stacked small" data-bs-spy="affix">
                 {% for area in area_sessions %}
                     <li><a href="#{{area.grouper.acronym}}">{{ area.grouper.acronym|upper }}</a></li>
                 {% endfor %}

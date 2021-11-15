@@ -19,14 +19,14 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">&times;</button>
                     <h4 class="modal-title" id="twopageslabel">First two pages of {{ submission.name }}-{{ submission.rev }}</h4>
                 </div>
                 <div class="modal-body">
                     {{ submission|two_pages_decorated_with_errors:errors }}
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -40,7 +40,7 @@
             <th>Document</th>
             <td>
                 {{ submission.name }}
-                <button class="btn btn-primary btn-xs float-end" data-toggle="modal" data-target="#twopages">View first two pages</button>
+                <button class="btn btn-primary btn-xs float-end" data-bs-toggle="modal" data-bs-target="#twopages">View first two pages</button>
                 {% show_submission_files submission %}
             </td>
         </tr>
