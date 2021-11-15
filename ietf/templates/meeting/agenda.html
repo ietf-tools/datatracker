@@ -157,9 +157,9 @@
                         <div class="hidden-sm hidden-md hidden-lg">
                            {% include "meeting/timeslot_start_end.html" %}
                         </div>
-                        {% location_anchor item.timeslot %}
+                        {% if item.timeslot.show_location and item.timeslot.location %}{% location_anchor item.timeslot %}
                           {{ item.timeslot.get_html_location }}
-                        {% end_location_anchor %}
+                        {% end_location_anchor %}{% endif %}
                         {% if item.timeslot.show_location and item.timeslot.get_html_location %}
                           {% with item.timeslot.location.floorplan as floor %}
                             {% if item.timeslot.location.floorplan %}
@@ -238,9 +238,9 @@
                       <div class="hidden-sm hidden-md hidden-lg">
                          {% include "meeting/timeslot_start_end.html" %}
                       </div>
-          {% location_anchor item.timeslot %}
+          {% if item.timeslot.show_location and item.timeslot.location %}{% location_anchor item.timeslot %}
             {{ item.timeslot.get_html_location }}
-          {% end_location_anchor %}
+          {% end_location_anchor %}{% endif %}
         </td>
 
 		  {% else %}
@@ -255,9 +255,9 @@
 		      {% endwith %}
 		    </td>
                     <td>
-                      {% location_anchor item.timeslot %}
+                      {% if item.timeslot.show_location and item.timeslot.location %}{% location_anchor item.timeslot %}
                         {{ item.timeslot.get_html_location }}
-                      {% end_location_anchor %}
+                      {% end_location_anchor %}{% endif %}
                     </td>
 
 		      <td><div class="hidden-xs">{{item.session.historic_group.historic_parent.acronym}}</div></td>

@@ -179,7 +179,8 @@ class TimeSlotFactory(factory.django.DjangoModelFactory):
     def location(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         if create:
             if extracted:
-                obj.location = extracted
+                # accept the string "none" to set location to null
+                obj.location = None if extracted == 'none' else extracted
             else:
                 obj.location = RoomFactory(meeting=obj.meeting)
             obj.save()
