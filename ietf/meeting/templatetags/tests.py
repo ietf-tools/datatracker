@@ -3,7 +3,7 @@
 
 from django.template import Context, Template
 
-from ietf.meeting.factories import TimeSlotFactory
+from ietf.meeting.factories import FloorPlanFactory, RoomFactory, TimeSlotFactory
 from ietf.meeting.templatetags.agenda_custom_tags import AnchorNode
 from ietf.utils.test_utils import TestCase
 
@@ -23,10 +23,12 @@ class AgendaCustomTagsTests(TestCase):
                 pass  # any other failure ok since we used garbage inputs
 
     def test_location_anchor_node(self):
+        floorplan = FloorPlanFactory(meeting__type_id='ietf')
+        room = RoomFactory(meeting=floorplan.meeting, floorplan=floorplan)
         context = Context({
-            'no_location': TimeSlotFactory(location='none'),
-            'no_show_location': TimeSlotFactory(show_location=False),
-            'show_location': TimeSlotFactory(location__name='My Location'),
+            'no_location': TimeSlotFactory(meeting=room.meeting, location='none'),
+            'no_show_location': TimeSlotFactory(meeting=room.meeting, show_location=False),
+            'show_location': TimeSlotFactory(meeting=room.meeting, location=room),
         })
         template = Template("""
             {% load agenda_custom_tags %}
