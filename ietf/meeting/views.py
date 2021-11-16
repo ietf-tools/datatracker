@@ -1488,6 +1488,8 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         ".txt": "text/plain; charset=%s"%settings.DEFAULT_CHARSET,
         ".csv": "text/csv; charset=%s"%settings.DEFAULT_CHARSET,
     }
+    if ext not in mimetype:
+        raise Http404('Extension not allowed')
 
     # We do not have the appropriate data in the datatracker for IETF 64 and earlier.
     # So that we're not producing misleading pages...
