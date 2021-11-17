@@ -54,7 +54,7 @@ window.ietf_timezone; // public interface
                 }))
             }
         })
-        select.on("change", function () {use_timezone(this.value)});
+        select.on("change", function () { use_timezone(this.value)});
         /* When navigating back/forward, the browser may change the select input's
          * value after the window load event. It does not fire the change event on
          * the input when it does this. The pageshow event occurs after such an update,
