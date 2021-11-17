@@ -452,7 +452,7 @@ def edit(request, acronym, num=None):
                 form.session_forms.save()
                 for n, subform in enumerate(form.session_forms):
                     session = subform.instance
-                    if session in form.session_forms.created_instances:
+                    if session in form.session_forms.new_objects:
                         SchedulingEvent.objects.create(
                             session=session,
                             status_id=status_slug_for_new_session(session, n),

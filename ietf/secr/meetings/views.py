@@ -431,6 +431,7 @@ def misc_sessions(request, meeting_id, schedule_name):
                                              group=group,
                                              type=type,
                                              purpose=purpose,
+                                             on_agenda=purpose.on_agenda,
                                              remote_instructions=remote_instructions)
 
             SchedulingEvent.objects.create(
@@ -558,6 +559,8 @@ def misc_session_edit(request, meeting_id, schedule_name, slot_id):
             session.name = name
             session.short = short
             session.remote_instructions = remote_instructions
+            if session.purpose != session_purpose:  # only change if purpose is changing
+                session.on_agenda = session_purpose.on_agenda
             session.purpose = session_purpose
             session.type = slot_type
             session.save()
