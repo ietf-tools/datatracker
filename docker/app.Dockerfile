@@ -35,6 +35,15 @@ RUN apt-get install -qy \
 	graphviz \
 	jq \
 	less \
+    libgtk2.0-0 \
+    libgtk-3-0 \
+    libnotify-dev \
+    libgconf-2-4 \
+    libgbm-dev \
+    libnss3 \
+    libxss1 \
+    libasound2 \
+    libxtst6 \
 	libmagic-dev \
 	libmariadb-dev \
 	locales \
@@ -50,7 +59,9 @@ RUN apt-get install -qy \
 	subversion \
 	unzip \
 	wget \
-    yang-tools && \
+    xauth \
+    xvfb \
+    yang-tools \
 	zsh
 
 # Install chromedriver
@@ -67,6 +78,15 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key
 
 # Get rid of installation files we don't need in the image, to reduce size
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# "fake" dbus address to prevent errors
+# https://github.com/SeleniumHQ/docker-selenium/issues/87
+ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
+
+# avoid million NPM install messages
+ENV npm_config_loglevel warn
+# allow installing when the main user is root
+ENV npm_config_unsafe_perm true
 
 # Set locale to en_US.UTF-8
 RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \

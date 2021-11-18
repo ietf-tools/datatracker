@@ -1,0 +1,10 @@
+{
+  "devDependencies": {
+    "browserlist": "latest",
+    "cypress": "^9.0.0",
+    "cypress-real-events": "^1.5.1"
+  },
+  "dependencies": {
+    "caniuse-lite": "^1.0.30001282"
+  }
+}

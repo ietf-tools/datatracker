@@ -52,3 +52,4 @@
 /unix.tag
 *.pyc
 __pycache__
+node_modules

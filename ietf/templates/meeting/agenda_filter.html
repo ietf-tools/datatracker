@@ -12,7 +12,7 @@ Optional parameters:
       {% if not always_show %}
       <div class="panel-heading">
             <h4 class="panel-title">
-                <a data-toggle="collapse" data-parent="#accordion" href="#customize">
+                <a data-toggle="collapse" data-parent="#accordion" href="#customize" id="agenda-filter-customize">
                     <span class="fa fa-caret-down"></span> {% firstof customize_button_text "Customize..."%} 
                 </a>
             </h4>
@@ -46,7 +46,7 @@ Optional parameters:
                                         {% for area in fc %}
                                             <th style="width:{% widthratio spacer_scale width_scale 100 %}%">
                                                 {% if area.keyword %}
-                                                    <button class="btn btn-default btn-block pickview {{ area.keyword }}"
+                                                    <button class="agenda-filter-areaselectbtn btn btn-default btn-block pickview {{ area.keyword }}"
                                                             data-filter-item="{{ area.keyword }}">
                                                         {% firstof area.label area.keyword %}
                                                     </button>
@@ -65,7 +65,7 @@ Optional parameters:
                                                 <div class="btn-group-vertical btn-block">
                                                     {% for button in p.children %}
                                                         <div class="btn-group btn-group-xs btn-group-justified">
-                                                            <button class="btn btn-default pickview {{ button.keyword }}"
+                                                            <button class="agenda-filter-groupselectbtn btn btn-default pickview {{ button.keyword }}"
                                                                     {% if button.toggled_by %}data-filter-keywords="{{ button.toggled_by|join:"," }}"{% endif %}
                                                                     data-filter-item="{{ button.keyword }}">
                                                                 {% if button.is_bof %}

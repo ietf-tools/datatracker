@@ -417,7 +417,7 @@
            var new_url = 'week-view.html' + queryparams;
            var wv_iframe = document.getElementById('weekview');
            var wv_window = wv_iframe.contentWindow;
-           if (wv_iframe.src && wv_window.history && wv_window.history.replaceState) {
+           if (wv_iframe.src && wv_window.location.hostname && wv_window.history && wv_window.history.replaceState) {
                wv_window.history.replaceState({}, '', new_url);
                wv_window.redraw_weekview();
            } else {
