@@ -1530,6 +1530,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
     rendered_page = render(request, "meeting/"+base+ext, {
+        "personalize": False,
         "schedule": schedule,
         "filtered_assignments": filtered_assignments,
         "updated": updated,
@@ -1701,8 +1702,9 @@ def agenda_personalize(request, num):
 
     return render(
         request,
-        "meeting/agenda_personalize.html",
+        "meeting/agenda.html",
         {
+            'personalize': True,
             'schedule': meeting.schedule,
             'updated': meeting.updated(),
             'filtered_assignments': filtered_assignments,

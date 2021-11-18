@@ -26,6 +26,7 @@
     "ietf/static/js/agenda_filter.js",
     "ietf/static/js/agenda_materials.js",
     "ietf/static/js/agenda_timezone.js",
+    "ietf/static/js/agenda_personalize.js",
     "ietf/static/js/timezone.js",
     "ietf/static/js/room_params.js",
     "ietf/static/js/week-view.js",

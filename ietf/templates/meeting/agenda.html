@@ -4,12 +4,15 @@
 {% load static %}
 {% load ietf_filters %}
 {% load textfilters %}
-{% load htmlfilters agenda_custom_tags%}
+{% load htmlfilters agenda_custom_tags %}
 
 {% block title %}
     IETF {{ schedule.meeting.number }} Meeting Agenda
     {% if "-utc" in request.path %}
         (UTC)
+    {% endif %}
+    {% if personalize %}
+        Personalization
     {% endif %}
 {% endblock %}
 
@@ -24,9 +27,10 @@
 
     <div class="row">
         <div class="col-md-10">
-
             {% if "-utc" in request.path %}
                 {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda-utc" title_extra="(UTC)" %}
+            {% elif personalize %}
+                {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="select-sessions" title_extra="" %}
             {% else %}
                 {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda" title_extra="" %}
             {% endif %}
@@ -34,9 +38,16 @@
             {# cache this part -- it takes 3-6 seconds to generate #}
             {% load cache %}
             {% cache cache_time ietf_meeting_agenda_utc schedule.meeting.number request.path %}
+
                 <div class="row">
                     <div class="col-5">
-                        <h2>Agenda</h2>
+                        <h2>
+                            {% if personalize %}
+                                Session Selection
+                            {% else %}
+                                Agenda
+                            {% endif %}
+                        </h2>
                     </div>
                     <div class="col float-end tz-display">
                         <div class="input-group input-group-sm">
@@ -68,28 +79,22 @@
                 {% endif %}
 
                 <p>
-                    {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Customize the agenda view..." %}
+                    {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Personalize the agenda view..." always_show=personalize%}
                 </p>
 
-                <p>
-                    <div class="d-inline mb-3">Download agenda as .ics:</div>
+                {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting only %}
 
-                    <div class="d-inline">
-                        <a id="ical-link" class="visually-hidden btn btn-sm btn-primary agenda-link filterable" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}">Customized schedule above</a>
-                    </div>
-
-                    <div class="input-group input-group-sm mb-3 d-inline">
-                        <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">By area</button><ul class="dropdown-menu">
-                            {% for fc in filter_categories %}
-                                {% if not forloop.last %} {# skip the last group, it's the office hours/misc #}
-                                    {% for p in fc|dictsort:"label" %}
-                                        <li><a class="dropdown-item" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{p.keyword}}">{{p.label}}</a></li>
-                                    {% endfor %}
-                                {% endif %}
-                            {% endfor %}
-                        </ul><a class="btn btn-outline-primary" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{ non_area_keywords|join:',' }}">Non-area events</a>
-                    </div>
-                </p>
+                <div class="input-group input-group-sm mb-3">
+                    <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Download area agenda</button><ul class="dropdown-menu">
+                        {% for fc in filter_categories %}
+                            {% if not forloop.last %} {# skip the last group, it's the office hours/misc #}
+                                {% for p in fc|dictsort:"label" %}
+                                    <li><a class="dropdown-item" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{p.keyword}}">{{p.label}}</a></li>
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                    </ul><a class="btn btn-outline-primary" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{ non_area_keywords|join:',' }}">Download non-area events</a>
+                </div>
 
                 <div id="weekview" class="visually-hidden mt-3">
                     <h2>
@@ -103,14 +108,22 @@
                     <iframe class="w-100 overflow-hidden border border-dark" scrolling="no"></iframe>
                 </div>
 
-                <h2>Detailed Agenda</h2>
+                <h2 class="mt-3">
+                    {% if personalize %}
+                        Personalize
+                    {% endif %}
+                    Detailed Agenda
+                </h2>
+                {% if personalize %}
+                    <p>Check boxes below to select individual sessions.</p>
+                {% endif %}
 
-                <table class="table table-sm">
+                <table id="agenda-table" class="table table-sm">
                     {% for item in filtered_assignments %}
 
                         {% ifchanged item.timeslot.time|date:"Y-m-d" %}
                             <tr class="table-primary">
-                                <th colspan="5">
+                                <th colspan="6">
                                     {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
                                     <div class="anchor-target" id="slot-{{item.timeslot.time|slugify}}"></div>
                                     <div class="h6 mt-2">{{ item.timeslot.time|date:"l, F j, Y" }}</div>
@@ -122,7 +135,20 @@
                             <tr id="row-{{ item.slug }}" data-filter-keywords="{{ item.filter_keywords|join:',' }}"
                                 data-slot-start-ts="{{item.start_timestamp}}"
                                 data-slot-end-ts="{{item.end_timestamp}}">
-                                <td class="text-nowrap text-right">
+                                <td class="text-center">
+                                    {% if item.session_keyword %}
+                                        <input
+                                            type="checkbox"
+                                            class="pickview form-check-input"
+                                            title="Select session"
+                                            name="selected-sessions"
+                                            value="{{ item.session_keyword }}"
+                                            data-filter-keywords="{{ item.filter_keywords|join:',' }}"
+                                            data-filter-item="{{ item.session_keyword }}">
+                                    {% endif %}
+                                </td>
+
+                                <td class="text-nowrap text-end">
                                     {% include "meeting/timeslot_start_end.html" %}
                                 </td>
                                 <td colspan="3">
@@ -171,7 +197,10 @@
                         <tr class="table-secondary session-label-row"
                             data-slot-start-ts="{{item.start_timestamp}}"
                             data-slot-end-ts="{{item.end_timestamp}}">
-                            <th class="text-nowrap text-right">
+                            <td class="text-center">
+                            </td>
+
+                            <th class="text-nowrap text-end">
                                 {% include "meeting/timeslot_start_end.html" %}
                             </th>
                             <th colspan="4">
@@ -188,8 +217,22 @@
                         data-filter-keywords="{{ item.filter_keywords|join:',' }}"
                         data-slot-start-ts="{{item.start_timestamp}}"
                         data-slot-end-ts="{{item.end_timestamp}}">
+
+                        <td class="text-center">
+                            {% if item.session_keyword %}
+                                <input
+                                    type="checkbox"
+                                    class="pickview form-check-input"
+                                    title="Select session"
+                                    name="selected-sessions"
+                                    value="{{ item.session_keyword }}"
+                                    data-filter-keywords="{{ item.filter_keywords|join:',' }}"
+                                    data-filter-item="{{ item.session_keyword }}">
+                            {% endif %}
+                        </td>
+
                         {% if item.slot_type.slug == 'plenary' %}
-                            <th class="text-nowrap text-right">
+                            <th class="text-nowrap text-end">
                                 {% include "meeting/timeslot_start_end.html" %}
                             </th>
                             <td colspan="3">
@@ -270,6 +313,8 @@
 {% endif %}
 {% endfor %}
 </table>
+{% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting only %}
+
 </div>
 
 <div class="col-md-2 d-print-none" id="affix">
@@ -341,8 +386,7 @@
         }
 
         function update_ical_links(filter_params) {
-            var ical_link = $("#ical-link");
-            ical_link.toggleClass("visually-hidden", !agenda_filter.filtering_is_enabled(filter_params));
+            $(".ical-link").toggleClass("visually-hidden", !agenda_filter.filtering_is_enabled(filter_params));
         }
 
         function update_weekview(filter_params) {
@@ -389,6 +433,10 @@
     <script src="{% static 'ietf/js/timezone.js' %}"></script>
     <script src="{% static 'ietf/js/agenda_materials.js' %}"></script>
     <script src="{% static 'ietf/js/agenda_timezone.js' %}"></script>
+    {% if personalize %}
+        <script src="{% static 'ietf/js/agenda_personalize.js' %}"></script>
+    {% endif %}
+
     <script>
         {% if settings.DEBUG and settings.DEBUG_AGENDA %}
             speedup = +$.urlParam('speedup');
@@ -441,7 +489,18 @@
             init_timers();
 
             // Finally, set up the agenda filter UI. This does not depend on the timezone.
-            agenda_filter.set_update_callback(update_view);
+            {% if personalize %}
+                agenda_filter.set_update_callback(function (e) {
+                    handleFilterParamUpdate(e);
+                    update_view(e);
+                });
+
+                document.getElementById('agenda-table')
+                .addEventListener('click', handleTableClick);
+            {% else %}
+                agenda_filter.set_update_callback(update_view);
+            {% endif %}
+
             agenda_filter.enable();
         }
         );

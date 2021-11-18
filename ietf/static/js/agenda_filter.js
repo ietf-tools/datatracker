@@ -3,7 +3,7 @@ window.agenda_filter_for_testing; // methods to be accessed for automated testin
 
 // closure to create private scope
 (function () {
-    'use strict'
+    'use strict';
 
     /* n.b., const refers to the opts object itself, not its contents.
      * Use camelCase for easy translation into element.dataset keys,
@@ -15,10 +15,10 @@ window.agenda_filter_for_testing; // methods to be accessed for automated testin
     };
 
     /* Remove from list, if present */
-    function remove_list_item (list, item) {
+    function remove_list_item(list, item) {
         var item_index = list.indexOf(item);
         if (item_index !== -1) {
-            list.splice(item_index, 1)
+            list.splice(item_index, 1);
         }
     }
 
@@ -26,63 +26,68 @@ window.agenda_filter_for_testing; // methods to be accessed for automated testin
      * 
      * Returns true if added to the list, otherwise false.
      */
-    function toggle_list_item (list, item) {
+    function toggle_list_item(list, item) {
         var item_index = list.indexOf(item);
         if (item_index === -1) {
-            list.push(item)
+            list.push(item);
             return true;
         } else {
-            list.splice(item_index, 1)
+            list.splice(item_index, 1);
             return false;
         }
     }
 
-    function parse_query_params (qs) {
-        var params = {}
-        qs = decodeURI(qs).replace(/^\?/, '').toLowerCase()
+    function parse_query_params(qs) {
+        var params = {};
+        qs = decodeURI(qs)
+            .replace(/^\?/, '')
+            .toLowerCase();
         if (qs) {
-            var param_strs = qs.split('&')
+            var param_strs = qs.split('&');
             for (var ii = 0; ii < param_strs.length; ii++) {
-                var toks = param_strs[ii].split('=', 2)
-                params[toks[0]] = toks[1] || true
+                var toks = param_strs[ii].split('=', 2);
+                params[toks[0]] = toks[1] || true;
             }
         }
-        return params
+        return params;
     }
 
     /* filt = 'show' or 'hide' */
-    function get_filter_from_qparams (qparams, filt) {
+    function get_filter_from_qparams(qparams, filt) {
         if (!qparams[filt] || (qparams[filt] === true)) {
             return [];
         }
         var result = [];
         var qp = qparams[filt].split(',');
-        
+
         for (var ii = 0; ii < qp.length; ii++) {
             result.push(qp[ii].trim());
         }
         return result;
     }
 
-    function get_filter_params (qparams) {
+    function get_filter_params(qparams) {
         var enabled = opts.alwaysShow || qparams.show || qparams.hide;
         return {
             enabled: enabled,
             show: get_filter_from_qparams(qparams, 'show'),
             hide: get_filter_from_qparams(qparams, 'hide')
-        }
+        };
     }
 
     function get_keywords(elt) {
-        var keywords = $(elt).attr('data-filter-keywords');
+        var keywords = $(elt)
+            .attr('data-filter-keywords');
         if (keywords) {
-            return keywords.toLowerCase().split(',');
+            return keywords.toLowerCase()
+                .split(',');
         }
         return [];
     }
 
     function get_item(elt) {
-        return $(elt).attr('data-filter-item');
+        return $(elt)
+            .attr('data-filter-item');
     }
 
     // utility method - is there a match between two lists of keywords?
@@ -94,25 +99,27 @@ window.agenda_filter_for_testing; // methods to be accessed for automated testin
         }
         return false;
     }
-    
+
     // Find the items corresponding to a keyword
-    function get_items_with_keyword (keyword) {
+    function get_items_with_keyword(keyword) {
         var items = [];
 
-        $('.view button.pickview').filter(function(index, elt) {
-            return keyword_match(get_keywords(elt), [keyword]);
-        }).each(function (index, elt) {
-            items.push(get_item($(elt)));
-        });
+        $('.view button.pickview')
+            .filter(function (index, elt) {
+                return keyword_match(get_keywords(elt), [keyword]);
+            })
+            .each(function (index, elt) {
+                items.push(get_item($(elt)));
+            });
         return items;
     }
 
-    function filtering_is_enabled (filter_params) {
+    function filtering_is_enabled(filter_params) {
         return filter_params.enabled;
     }
 
     // Update the filter / customization UI to match the current filter parameters
-    function update_filter_ui (filter_params) {
+    function update_filter_ui(filter_params) {
         var buttons = $('.pickview');
 
         if (!filtering_is_enabled(filter_params)) {
@@ -121,12 +128,12 @@ window.agenda_filter_for_testing; // methods to be accessed for automated testin
             return;
         }
 
-        update_href_querystrings(filter_params_as_querystring(filter_params))
+        update_href_querystrings(filter_params_as_querystring(filter_params));
 
         // show the customizer - it will stay visible even if filtering is disabled
         const customizer = $('#customize');
         if (customizer.hasClass('collapse')) {
-            customizer.collapse('show')
+            customizer.collapse('show');
         }
 
         // Update button state to match visibility
@@ -135,7 +142,7 @@ window.agenda_filter_for_testing; // methods to be accessed for automated testin
             var keywords = get_keywords(elt);
             keywords.push(get_item(elt)); // treat item as one of its keywords
             var hidden = keyword_match(filter_params.hide, keywords);
-            var shown = keyword_match(filter_params.show, keywords); 
+            var shown = keyword_match(filter_params.show, keywords);
             if (shown && !hidden) {
                 elt.addClass('active');
             } else {
@@ -149,11 +156,11 @@ window.agenda_filter_for_testing; // methods to be accessed for automated testin
      * Calling the individual update_* functions outside of this method will likely cause
      * various parts of the page to get out of sync.
      */
-    function update_view () {
-        var filter_params = get_filter_params(parse_query_params(window.location.search))
-        update_filter_ui(filter_params)
+    function update_view() {
+        var filter_params = get_filter_params(parse_query_params(window.location.search));
+        update_filter_ui(filter_params);
         if (opts.updateCallback) {
-            opts.updateCallback(filter_params)
+            opts.updateCallback(filter_params);
         }
     }
 
@@ -162,19 +169,19 @@ window.agenda_filter_for_testing; // methods to be accessed for automated testin
      * Updates the URL to match filter_params, then updates the history / display to match
      * (if supported) or loads the new URL.
      */
-    function update_filters (filter_params) {
+    function update_filters(filter_params) {
         var new_url = replace_querystring(
-          window.location.href,
-          filter_params_as_querystring(filter_params)
-        )
-        update_href_querystrings(filter_params_as_querystring(filter_params))
+            window.location.href,
+            filter_params_as_querystring(filter_params)
+        );
+        update_href_querystrings(filter_params_as_querystring(filter_params));
         if (window.history && window.history.replaceState) {
             // Keep current origin, replace search string, no page reload
-            history.replaceState({}, document.title, new_url)
-            update_view()
+            history.replaceState({}, document.title, new_url);
+            update_view();
         } else {
             // No window.history.replaceState support, page reload required
-            window.location = new_url
+            window.location = new_url;
         }
     }
 
@@ -183,34 +190,35 @@ window.agenda_filter_for_testing; // methods to be accessed for automated testin
      */
     function update_href_querystrings(querystring) {
         Array.from(
-          document.getElementsByClassName('agenda-link filterable')
-        ).forEach(
-          (elt) => elt.href = replace_querystring(elt.href, querystring)
-        )
+                document.getElementsByClassName('agenda-link filterable')
+            )
+            .forEach(
+                (elt) => elt.href = replace_querystring(elt.href, querystring)
+            );
     }
 
     function filter_params_as_querystring(filter_params) {
-        var qparams = []
+        var qparams = [];
         if (filter_params.show.length > 0) {
-            qparams.push('show=' + filter_params.show.join())
+            qparams.push('show=' + filter_params.show.join());
         }
         if (filter_params.hide.length > 0) {
-            qparams.push('hide=' + filter_params.hide.join())
+            qparams.push('hide=' + filter_params.hide.join());
         }
         if (qparams.length > 0) {
-            return '?' + qparams.join('&')
+            return '?' + qparams.join('&');
         }
-        return ''
+        return '';
     }
 
     function replace_querystring(url, new_querystring) {
-        return url.replace(/(\?.*)?(#.*)?$/, new_querystring + window.location.hash)
+        return url.replace(/(\?.*)?(#.*)?$/, new_querystring + window.location.hash);
     }
 
     /* Helper for pick group/type button handlers - toggles the appropriate parameter entry
      *    elt - the jquery element that was clicked
      */
-    function handle_pick_button (elt) {
+    function handle_pick_button(elt) {
         var fp = get_filter_params(parse_query_params(window.location.search));
         var item = get_item(elt);
 
@@ -232,17 +240,17 @@ window.agenda_filter_for_testing; // methods to be accessed for automated testin
          * an area will enable all items in the row as one would expect. */
         if (just_showed_item) {
             var children = get_items_with_keyword(item);
-            $.each(children, function(index, child) {
+            $.each(children, function (index, child) {
                 remove_list_item(fp.show, child);
                 remove_list_item(fp.hide, child);
             });
         }
-        
+
         // If the show list is empty, clear the hide list because there is nothing to hide
         if (fp.show.length === 0) {
             fp.hide = [];
         }
-        
+
         return fp;
     }
 
@@ -251,23 +259,13 @@ window.agenda_filter_for_testing; // methods to be accessed for automated testin
     }
 
     function register_handlers() {
-        $('.pickview').on("click", function () {
-            if (is_disabled($(this))) { return; }
-            var fp = handle_pick_button($(this));
-            update_filters(fp);
-        });
-    }
-
-    /**
-     * Read options from the template
-     */
-    function read_template_options() {
-        const opts_elt = document.getElementById('agenda-filter-options');
-        opts.keys().forEach((opt) => {
-            if (opt in opts_elt.dataset) {
-                opts[opt] = opts_elt.dataset[opt];
-            }
-        });
+        $('.pickview')
+            .on("click", function () {
+                console.log("pickview");
+                if (is_disabled($(this))) { return; }
+                var fp = handle_pick_button($(this));
+                update_filters(fp);
+            });
     }
 
     /* Entry point to filtering code when page loads
@@ -275,17 +273,18 @@ window.agenda_filter_for_testing; // methods to be accessed for automated testin
      * This must be called if you are using the HTML template to provide a customization
      * button UI. Do not call if you only want to use the parameter parsing routines.
      */
-    function enable () {
+    function enable() {
         // ready handler fires immediately if document is already "ready"
-        $(document).ready(function () {
-            register_handlers();
-            update_view();
-        })
+        $(document)
+            .ready(function () {
+                register_handlers();
+                update_view();
+            })
     }
 
     // utility method - filter a jquery set to those matching a keyword
     function rows_matching_filter_keyword(rows, kw) {
-        return rows.filter(function(index, element) {
+        return rows.filter(function (index, element) {
             var row_kws = get_keywords(element);
             return keyword_match(row_kws, [kw.toLowerCase()]);
         });
@@ -305,6 +304,6 @@ window.agenda_filter_for_testing; // methods to be accessed for automated testin
         keyword_match: keyword_match,
         parse_query_params: parse_query_params,
         rows_matching_filter_keyword: rows_matching_filter_keyword,
-        set_update_callback: function (cb) {opts.updateCallback = cb}
+        set_update_callback: function (cb) { opts.updateCallback = cb }
     };
 })();

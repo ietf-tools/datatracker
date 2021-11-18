@@ -13,12 +13,12 @@ var local_timezone = moment.tz.guess();
 
 // get_current_tz_cb must be overwritten using set_current_tz_cb
 function get_current_tz_cb() {
-    throw new Error('Tried to get current timezone before callback registered. Use set_current_tz_cb().')
+    throw new Error('Tried to get current timezone before callback registered. Use set_current_tz_cb().');
 };
 
 // Initialize moments
 window.initialize_moments = function () {
-    var times = $('div.time')
+    var times = $('div.time');
     $.each(times, function (i, item) {
         item.start_ts = moment.unix(this.getAttribute("data-start-time"))
             .utc();
@@ -33,7 +33,7 @@ window.initialize_moments = function () {
             item.format = +this.getAttribute("format");
         }
     });
-    var times = $('[data-slot-start-ts]')
+    times = $('[data-slot-start-ts]');
     $.each(times, function (i, item) {
         item.slot_start_ts = moment.unix(this.getAttribute("data-slot-start-ts"))
             .utc();
@@ -205,7 +205,7 @@ window.update_times = function (newtz) {
         });
     update_tooltips_all();
     update_clock();
-}
+};
 
 // Highlight ongoing based on the current time
 window.highlight_ongoing = function () {
@@ -213,7 +213,7 @@ window.highlight_ongoing = function () {
         .remove("#now");
     $('.table-warning')
         .removeClass("table-warning");
-    var agenda_rows = $('[data-slot-start-ts]')
+    var agenda_rows = $('[data-slot-start-ts]');
     agenda_rows = agenda_rows.filter(function () {
         return moment()
             .isBetween(this.slot_start_ts, this.slot_end_ts);
@@ -245,13 +245,13 @@ window.update_tooltips_all = function () {
         $(this)
             .html(format_tooltip_table(this.start_ts, this.end_ts));
     });
-}
+};
 
 // Update clock
 window.update_clock = function () {
     $('#current-time')
         .html(format_time(moment(), get_current_tz_cb(), 0));
-}
+};
 
 $.urlParam = function (name) {
     var results = new RegExp('[\?&]' + name + '=([^&#]*)')
@@ -261,7 +261,7 @@ $.urlParam = function (name) {
     } else {
         return results[1] || 0;
     }
-}
+};
 
 window.init_timers = function () {
     var fast_timer = 60000 / (speedup > 600 ? 600 : speedup);
@@ -271,9 +271,9 @@ window.init_timers = function () {
     setInterval(function () { highlight_ongoing(); }, fast_timer);
     setInterval(function () { update_tooltips(); }, fast_timer);
     setInterval(function () { update_tooltips_all(); }, 3600000 / speedup);
-}
+};
 
 // set method used to find current time zone
 window.set_current_tz_cb = function (fn) {
     get_current_tz_cb = fn;
-}
+};

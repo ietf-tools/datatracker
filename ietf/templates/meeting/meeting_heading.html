@@ -13,6 +13,9 @@
 
 <h1>
     IETF {{ meeting.number }} Meeting Agenda {{ title_extra }}
+    {% if personalize %}
+        Personalization
+    {% endif %}
 </h1>
 <h4>
     {{ meeting.city|default:"Location TBD" }}, {{ meeting.date|date:"F j" }} -
@@ -40,6 +43,12 @@
             <a class="nav-link agenda-link filterable {% if selected == "agenda-utc" %}active{% endif %}" href="{% url 'ietf.meeting.views.agenda' num=meeting.number utc='-utc' %}"
                 >
                 UTC Agenda
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link agenda-link filterable {% if selected == "select-sessions" %}active{% endif %}" href="{% url 'ietf.meeting.views.agenda_personalize' num=meeting.number %}"
+                >
+                Personalize Agenda
             </a>
         </li>
         {% if user|has_role:"Secretariat,Area Director,IAB" %}
@@ -70,12 +79,6 @@
         <li class="nav-item">
             <a class="nav-link"agenda-link filterable  href="{% url 'ietf.meeting.views.agenda' num=meeting.number ext='.txt' %}">
                 Plaintext
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link agenda-link filterable {% if selected == "select-sessions" %}active{% endif %}" href="{% url 'ietf.meeting.views.agenda_personalize' num=meeting.number %}"
-                >
-                Select Sessions
             </a>
         </li>
     </ul>
