@@ -1,3 +1,268 @@
+ietfdb (7.40.0) ietf; urgency=medium
+
+  ** Codesprint, session purposes, new docker dev env, performance improvements **
+
+  * Merged in [19401] from mark@painless-security.com:
+    Add a new Django field, IETFJSONField.
+    This field is needed because the plain JSONField does not permit empty
+    arrays - [] - or empty objects - {} - when the field is marked as
+    required.  Those values explicitly evaluate to a null value, and
+    are rejected.
+    Instead, the IETFJSONField accepts two new arguments to control this:
+      - empty_values: An array of values that should evaluate to null/empty,
+        and be rejected.
+      - accepted_empty_values: An array of values that should *not* evaluate
+        to null/empty, and be accepted.
+    This allows the programmer to specify either a positive or negative
+    statement of what values to accept.
+    Fixes issue #3331.
+
+  * Merged in [19411] from rjsparks@nostrum.com:
+    Handle general IESG requirements display correctly. Fixes #3418.
+
+  * Merged in [19412] from rjsparks@nostrum.com:
+    Only show roles in active groups in the oidc roles claim. Fixes #3424.
+
+  * Merged in [19422] from rjsparks@nostrum.com:
+    Update internal references to trac.tools.ietf.org to point to
+    trac.ietf.org. Remove several links into tools.ietf.org.
+
+  * Merged in [19429] from rcross@amsl.com:
+    Fix slow fetch_meeting_attendance command. Fixes #3304.
+
+  * Merged in [19437] from rjsparks@nostrum.com:
+    Provide a dots oidc claim for online badges.
+
+  * Pin factory-boy and Faker until they recoordinate.
+
+  * Merged in [19452] from rjsparks@nostrum.com:
+    Remove submissioncheck results from search_result_row until performance
+    issues are addressed.
+
+  * Merged in [19453] from rjsparks@nostrum.com:
+    Align code, tests, and url templates around the person ajax json views.
+    Fix a dangling pyflake nit.
+
+  * Merged in [19454] from rjsparks@nostrum.com:
+    Adjust the IPR declaration submission form to remove the line about
+    limiting the declaration solely to standards-track IETF documents.
+
+  * Merged in [19455] from rjsparks@nostrum.com:
+    Update notes links, reflect the removal of etherpad.
+
+  * Merged in [19464] from rjsparks@nostrum.com:
+    Use friendlier language when requiring manual assistance with account
+    creation. Fixes #3445.
+
+  * Merged in [19432] from lars@eggert.org:
+    Fix things that selenium deprecated in version 4.
+
+  * Merged branch ^/personal/lars/7.39.1.dev0@19465 from lars@eggert.org:
+    Rework the docker container.
+
+  * Merged in [19466] from lars@eggert.org:
+    Fix HTML by closing some <li> tags.
+
+  * Merged in [19467] from lars@eggert.org:
+    Add a 'sign in' button to the menu bar when the user is not signed in.
+    This will hopefully make it more noticeable when one got logged out.
+
+  * Merged in [19468] from lars@eggert.org:
+    Insert a missing </button>.
+
+  * Merged in [19469] from lars@eggert.org:
+    <span> can't have <div> in it. Fix that.
+
+  * Merged in [19470] from lars@eggert.org:
+    Change some popup texts and icons for session buttons.
+
+  * Merged in [19471] from lars@eggert.org:
+    More conformant HTML for the 'sign in' button.
+
+  * Merged in [19472] from lars@eggert.org:
+    Move letter icons consistently after the name.
+    Use the correct attribute for an extresource value.
+
+  * Merged in [19473] from lars@eggert.org:
+    Fix search layout.
+
+  * Merged in [19476] from lars@eggert.org:
+    Add svn to image. Grab idnits from GitHub. Try to speed up database
+    import.
+
+  * Merged in [19480] from rjsparks@nostrum.com:
+    Simple entity caching for the recent drafts view.
+
+  * Merged in [19482] from lars@eggert.org:
+    No need to load d3 or jquery for these templates.
+
+  * Merged in [19483] from lars@eggert.org:
+    Restructure the I-D submission page.
+    While there is no change in functionality, we now by default only show
+    an option to submit XML, with other formats hidden behind a 'Submit
+    other formats' checkbox. I also simplified the text on the page.
+
+  * Merged in [19484] from lars@eggert.org:
+    Remove the Note Well from the datatracker and point to the IETF web
+    site. One less thing to keep in sync if the Note Well changes.
+
+  * Merged in [19485] from lars@eggert.org:
+    Revamp the menu structure some, and remove a bunch of unneeded files.
+
+  * Merged in [19486] from lars@eggert.org:
+    Remove the ability to submit Postscript I-Ds.
+    Fixes #3448.
+
+  * Merged in [19487] from lars@eggert.org:
+    Remove workarounds for ancient IE versions.
+
+  * Merged in [19488] from rcross@amsl.com:
+    Change view /ipr/by-draft-recursive to use static content
+
+  * Merged in [19489] from rjsparks@nostrum.com:
+    Caching of the latest document view work. May add database stress to
+    other views.
+
+  * Merged in [19490] from jennifer@painless-security.com:
+    Refactor expirable_drafts() and its usage to speed up
+    doc.views_search.recent_drafts view (and discourage inefficient use
+    of the method).
+
+  * Merged in [19493] from jennifer@painless-security.com:
+    Create management command base class that sends emails on exceptions.
+    Fixes #3356 and #3357.
+
+  * Merged in [19494] from lars@eggert.org:
+    URL-encode the link to a person's public profile, fixing validation
+    errors.
+
+  * Merged in [19497] from rjsparks@nostrum.com:
+    Change email copy settings.
+
+  * Merged in [19505] from lars@eggert.org:
+    Bump selenium requirement. Forgotten in r19432.
+
+  * Merged in [19506] from rjsparks@nostrum.com:
+    Remove duplicate words in shepherds writeup template. Fixes #3453.
+
+  * Merged in ^/personal/nick/7.39.1.dev0@19535 from nick@staff.ietf.org:
+    Provide a docker environment that is friendly to vs code.
+
+  * Tweak guard on settings lookup.
+
+  * Merged in ^/personal/nick/7.39.1.dev1@19547 from nick@staff.ietf.org:
+    Downgrade to Python 3.6 to match production. Downgrade to selenium
+    3.141.0 as a consequence.
+
+  * Merged in [19541] from lars@eggert.org:
+    Print a line than can actually be copied & pasted to start the
+    datatracker.
+
+  * Merged in [19552] from rjsparks@nostrum.com:
+    Adjust when we truncate search results.
+
+  * Merged in [19555] from jennifer@painless-security.com:
+    Use temporary directories instead of 'real' filesystem for tests.
+    Fixes #3414.
+
+  * Merged in [19544] from rjsparks@nostrum.com:
+    Adjust dots claim based on 112 Plenary feedback.
+
+  * Merged in [19553] from rjsparks@nostrum.com:
+    Gather related document information a little more efficiently for the
+    draft main view.
+
+  * Merged in ^/personal/jennifer/7.39.1.dev2 from
+    jennifer@painless-security.com:
+    Create dev branch for session purpose work ([19414])
+    Snapshot of dev work to add session purpose annotation ([19415])
+    Allow non-WG-like groups to request additional sessions/durations and
+    bypass approval ([19424])
+    Add 'closed' session purpose, assign purposes for nomcom groups, and
+    update schedule editor to enforce timeslot type and allow blurring
+    sessions by purpose ([19427])
+    Add management command to set up timeslots/sessions for testing/demoing
+    'purpose' field ([19430])
+    Update session purposes and group type -> purpose map to match notes
+    page, change 'session' purpose to 'regular' ([19433])
+    Redirect edit_schedule urls to edit_meeting_schedule view ([19434])
+    Allow hiding/blurring sessions and timeslots based on TimeSlotType in
+    the schedule editor ([19438])
+    Disable session purpose/timeslot type hiding on schedule editor when
+    only 0 or 1 options ([19439])
+    Improvements to the timeslot and schedule editors (move new toggles to
+    modals, handle overflowing session names, fix timeslot editor scrolling,
+    add buttons to quickly create single timeslot, accept trailing slash on
+    edit URL) ([19449])
+    Update purpose/types after discussions, add on_agenda Session field,
+    prevent session requests for groups with no allowed purpose, handle
+    addition fields in session request, fix editing session requests, add
+    session edit form/access from schedule editor, eliminate
+    TimeSlotTypeName 'private' field, add server-side timeslot type
+    filtering to schedule editor ([19549])
+    Eliminate the officehours timeslot type, update/renumber migrations,
+    mark offagenda/reserved TimeSlotTypeNames as not used, add a 'none'
+    SessionPurposeName and disallow null, update agenda filter
+    keywords/filter helpers, fix broken tests and general debugging
+    ([19550])
+    Tear out old meeting schedule editor and related code ([19551])
+    Fix merge errors in preceding commits ([19556])
+    Add missing ifSeleniumEnabled guard for
+    meeting.tests_js.EditTimeslotsTests ([19592])
+    Remove 'before' version of migrations that were renumbered before merge.
+    ([19595])
+
+  * Merged in [19579] from rjsparks@nostrum.com:
+    Update docker/README.md to reflect the merge of Lars' branch.
+
+  * Merged in [19581] from nick@staff.ietf.org:
+    fix: docker build - cannot change locale warnings
+
+  * Merged in ^/personal/nick/7.39.1.dev3@19629 from nick@staff.ietf.org:
+    feat: Single docker configuration for VS Code and generic dev [19604]
+    fix: remove deprecated files from single docker setup changes [19605]
+    fix: finalize docker setup consolidation [19622]
+    misc: add cleandb script for docker + fix utf8 db charset params [19628]
+
+  * Docker related changes: Mark cleandb executable. Clean settings_local
+    and settings_local_sqlitetest of flakes and types issues.
+
+  * Adjust docker volume mounting strategy.
+
+  * Merged in [19621] from rjsparks@nostrum.com:
+    Use rfc8989 for 2022 nomcom eligibility. Fixes #3442.
+
+  * Merged in [19636] from jennifer@painless-security.com:
+    Update groupfeatures_session_purposes field migration to match change
+    to model.
+
+  * Add a command to clean all datatracker related docker resources (from
+    nick@staff.ietf.org).
+
+  * Merged in [19647] from jennifer@painless-security.com:
+    Guard against None in agenda session buttons template / template tags.
+
+  * Merged in [19654] from rjsparks@nostrum.com:
+    Repair document_main when there are status change relationships.
+
+  * Merged in [19658] from jennifer@painless-security.com:
+    Return rev used to find doc when heuristics modify the input. Share
+    heuristics between rfcdiff and html views. Fixes #3437.
+
+  * Merged in [19665] from jennifer@painless-security.com:
+    Guard against null timeslot location in agenda.html and add test of
+    location_anchor tag.
+
+  * Merged in [19665] and [19666] from jennifer@painless-security.com:
+    Fix error in assignment_display_name() and fix broken test from
+    previous commit.
+
+  * Merged in [19670] from rjsparks@nostrum.com:
+    Escape . in agenda url patterns. Guard against unrecognized extensions.
+
+ -- Robert Sparks <rjsparks@nostrum.com>  17 Nov 2021 22:17:02 +0000
+
+
 ietfdb (7.39.0) ietf; urgency=medium
 
   **Improved pre-AD abilities, ical content, rfcdiff support, bugfixes**
