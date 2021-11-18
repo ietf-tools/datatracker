@@ -28,6 +28,8 @@
     "ietf/static/js/agenda_timezone.js",
     "ietf/static/js/timezone.js",
     "ietf/static/js/room_params.js",
+    "ietf/static/js/week-view.js",
+    "ietf/static/js/doc-search.js",
     "ietf/static/js/moment-timezone-with-data-10-year-range.js",
     "ietf/static/css/ietf.scss",
     "ietf/static/css/datatables.scss",

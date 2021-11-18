@@ -14,7 +14,7 @@
 {% endblock %}
 
 {% block morecss %}
-    iframe#weekview { height: 25em; }
+    #weekview iframe { height: 25em; }
 {% endblock %}
 
 {% block bodyAttrs %}data-bs-spy="scroll" data-bs-target="#affix" data-bs-offset="0" tabindex="0"{% endblock %}
@@ -23,15 +23,13 @@
     {% origin %}
 
     <div class="row">
-        {% if "-utc" in request.path %}
-            {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda-utc" title_extra="(UTC)" %}
-        {% else %}
-            {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda"     title_extra="" %}
-        {% endif %}
-
-    </div>
-    <div class="row">
         <div class="col-md-10">
+
+            {% if "-utc" in request.path %}
+                {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda-utc" title_extra="(UTC)" %}
+            {% else %}
+                {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda" title_extra="" %}
+            {% endif %}
 
             {# cache this part -- it takes 3-6 seconds to generate #}
             {% load cache %}
@@ -43,11 +41,11 @@
                     <div class="col float-end tz-display">
                         <div class="input-group input-group-sm">
                             <label class="input-group-text border-primary">Time zone:</label>
-                            <input type="radio" name="tzradio" class="btn-check" autocomplete="off" id="meeting-timezone" onclick="ietf_timezone.use('{{ timezone }}')"/>
+                            <input type="radio" name="tzradio" class="btn-check" id="meeting-timezone" onclick="ietf_timezone.use('{{ timezone }}')"/>
                             <label class="btn btn-outline-primary" for="meeting-timezone">Meeting</label>
-                            <input type="radio" name="tzradio" class="btn-check" autocomplete="off" id="local-timezone" onclick="ietf_timezone.use('local')"/>
+                            <input type="radio" name="tzradio" class="btn-check" id="local-timezone" onclick="ietf_timezone.use('local')"/>
                             <label class="btn btn-outline-primary" for="local-timezone">Local</label>
-                            <input type="radio" name="tzradio" class="btn-check" autocomplete="off" id="utc-timezone" onclick="ietf_timezone.use('UTC')"/>
+                            <input type="radio" name="tzradio" class="btn-check" id="utc-timezone" onclick="ietf_timezone.use('UTC')"/>
                             <label class="btn btn-outline-primary" for="utc-timezone">UTC</label>
                             <select id="timezone-select" class="tz-select form-select border-primary">
                                 {# Avoid blank while loading. JavaScript replaces the option list after init. #}
@@ -102,7 +100,7 @@
                         {% endif %}
                     </h2>
 
-                    <iframe class="w-100 overflow-hidden"></iframe>
+                    <iframe class="w-100 overflow-hidden border border-dark" scrolling="no"></iframe>
                 </div>
 
                 <h2>Detailed Agenda</h2>
@@ -275,7 +273,7 @@
 </div>
 
 <div class="col-md-2 d-print-none" id="affix">
-    <ul class="nav nav-pills flex-column small position-fixed" data-bs-spy="scroll">
+    <ul class="nav nav-pills flex-column small position-fixed">
         <li class="nav-item">
             <a class="nav-link" href="#now">Now</a>
         </li>
@@ -288,6 +286,8 @@
         {% endfor %}
     </ul>
 </div>
+
+
 </div>
 
 {% endcache %}
@@ -372,7 +372,7 @@
                     wv_window.redraw_weekview();
                 } else {
                     // either have not yet loaded the iframe or we do not support history replacement
-                    wv_iframe.src = new_url;
+                    $(wv_iframe).attr("src", new_url);
                 }
             }
         }
