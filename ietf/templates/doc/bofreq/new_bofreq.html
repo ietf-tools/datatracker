@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2021, All Rights Reserved #}
-{% load origin bootstrap3 static %}
+{% load origin bootstrap3 static textfilters %}
 
 {% block title %}Start a new BOF Request{% endblock %}
 
@@ -9,7 +9,7 @@
   <h1>Start a new BOF Request</h1>
 
 <p>Choose a short descriptive title for your request. Take time to choose a good initial title - it will be used to make the filename for your request's content. The title can be changed later, but the filename will not change.</p>
-<p>For example, a request with a title of "A new important bit" will be saved as "bofreq-a-new-important-bit-00.md".</p> 
+<p>For example, a request with a title of "A new important bit" will be saved as "bofreq-{{ user.person.last_name|xslugify|slice:"64" }}-a-new-important-bit-00.md".</p>
   <form class="upload-content form-horizontal" method="post" enctype="multipart/form-data">
     {% csrf_token %}
 

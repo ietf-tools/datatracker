@@ -113,14 +113,20 @@ class NewBofreqForm(BofreqUploadForm):
     title = forms.CharField(max_length=255)
     field_order = ['title','bofreq_submission','bofreq_file','bofreq_content']
 
-    def name_from_title(self,title):
-        name =  'bofreq-' + xslugify(title).replace('_', '-')[:128]
-        return name
+    def __init__(self, requester, *args, **kwargs):
+        self._requester = requester
+        super().__init__(*args, **kwargs)
+
+    def name_from_title(self, title):
+        requester_slug = xslugify(self._requester.last_name())
+        title_slug = xslugify(title)
+        name = f'bofreq-{requester_slug[:64]}-{title_slug[:128]}'
+        return name.replace('_', '-')
 
     def clean_title(self):
         title = self.cleaned_data['title']
         name = self.name_from_title(title)
-        if name == 'bofreq-':
+        if name == self.name_from_title(''):
             raise forms.ValidationError('The filename derived from this title is empty. Please include a few descriptive words using ascii or numeric characters') 
         if Document.objects.filter(name=name).exists():
             raise forms.ValidationError('This title produces a filename already used by an existing BOF request')
@@ -130,7 +136,7 @@ class NewBofreqForm(BofreqUploadForm):
 def new_bof_request(request):
 
     if request.method == 'POST':
-        form = NewBofreqForm(request.POST, request.FILES)
+        form = NewBofreqForm(request.user.person, request.POST, request.FILES)
         if form.is_valid():
             title = form.cleaned_data['title']
             name = form.name_from_title(title)
@@ -175,7 +181,7 @@ def new_bof_request(request):
         init = {'bofreq_content':render_to_string('doc/bofreq/bofreq_template.md',{}),
                 'bofreq_submission':'enter',
                }
-        form = NewBofreqForm(initial=init)
+        form = NewBofreqForm(request.user.person, initial=init)
     return render(request, 'doc/bofreq/new_bofreq.html',
                             {'form':form})  
 
