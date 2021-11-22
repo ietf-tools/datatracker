@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-describe('nomcom', () => {
+describe('expertise', () => {
     before(() => {
       cy.visit('/nomcom/2021/expertise/')
     })
