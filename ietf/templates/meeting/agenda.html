@@ -118,96 +118,106 @@
                     <p>Check boxes below to select individual sessions.</p>
                 {% endif %}
 
-                <table id="agenda-table" class="table table-sm">
-                    {% for item in filtered_assignments %}
-
-                        {% ifchanged item.timeslot.time|date:"Y-m-d" %}
-                            <tr class="table-primary">
-                                <th colspan="6">
-                                    {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
-                                    <div class="anchor-target" id="slot-{{item.timeslot.time|slugify}}"></div>
-                                    <div class="h6 mt-2">{{ item.timeslot.time|date:"l, F j, Y" }}</div>
-                                </th>
+                    <table id="agenda-table" class="table table-sm tablesorter">
+                        <thead>
+                            <tr>
+                                <th data-field=""></th>
+                                <th data-field=""></th>
+                                <th data-field="loc"></th>
+                                <th data-field="group"></th>
+                                <th data-field="area"></th>
+                                <th data-field="desc"></th>
                             </tr>
-                        {% endifchanged %}
+                        </thead>
+                        <tbody class="list">
+                            {% for item in filtered_assignments %}
+                                {% ifchanged item.timeslot.time|date:"Y-m-d" %}
+                                    <tr class="table-primary show-with-children">
+                                        <td colspan="6">
+                                            {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
+                                            <div class="anchor-target" id="slot-{{item.timeslot.time|slugify}}"></div>
+                                            <div class="fw-bold">{{ item.timeslot.time|date:"l, F j, Y" }}</div>
+                                        </td>
+                                    </tr>
+                                {% endifchanged %}
+                                {% if item|is_special_agenda_item %}
+                                    <tr id="row-{{ item.slug }}" data-filter-keywords="{{ item.filter_keywords|join:',' }}"
+                                        data-slot-start-ts="{{item.start_timestamp}}"
+                                        data-slot-end-ts="{{item.end_timestamp}}">
+                                        <td class="text-center">
+                                            {% if item.session_keyword %}
+                                                <input
+                                                    type="checkbox"
+                                                    class="pickview form-check-input"
+                                                    title="Select session"
+                                                    name="selected-sessions"
+                                                    value="{{ item.session_keyword }}"
+                                                    data-filter-keywords="{{ item.filter_keywords|join:',' }}"
+                                                    data-filter-item="{{ item.session_keyword }}">
+                                            {% endif %}
+                                        </td>
 
-                        {% if item|is_special_agenda_item %}
-                            <tr id="row-{{ item.slug }}" data-filter-keywords="{{ item.filter_keywords|join:',' }}"
-                                data-slot-start-ts="{{item.start_timestamp}}"
-                                data-slot-end-ts="{{item.end_timestamp}}">
-                                <td class="text-center">
-                                    {% if item.session_keyword %}
-                                        <input
-                                            type="checkbox"
-                                            class="pickview form-check-input"
-                                            title="Select session"
-                                            name="selected-sessions"
-                                            value="{{ item.session_keyword }}"
-                                            data-filter-keywords="{{ item.filter_keywords|join:',' }}"
-                                            data-filter-item="{{ item.session_keyword }}">
+                                        <td class="text-nowrap text-end">
+                                            {% include "meeting/timeslot_start_end.html" %}
+                                        </td>
+                                        <td colspan="3" class="loc">
+                                            {% location_anchor item.timeslot %}
+                                            {{ item.timeslot.get_html_location }}
+                                {% end_location_anchor %}
+                                {% if item.timeslot.show_location and item.timeslot.get_html_location %}
+                                    {% with item.timeslot.location.floorplan as floor %}
+                                        {% if item.timeslot.location.floorplan %}
+                                            <div class="d-none d-sm-block">
+                                                <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
+                                                    class="float-end" title="{{floor.name}}"><span class="badge bg-secondary label-wide">{{floor.short}}</span></a>
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endif %}
+                                </td>
+                                <td class="desc">
+                                    {% agenda_anchor item.session %}
+                                    {% assignment_display_name item %}
+                            {% end_agenda_anchor %}
+
+                            {% if item.session.current_status == 'canceled' %}
+                                <span class="badge bg-danger float-end">CANCELLED</span>
+                            {% else %}
+                                <div class="float-end ps-3">
+                                    {% if item.slot_type.slug == 'other' %}
+                                        {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
+                                            {% include "meeting/session_buttons_include.html" with show_agenda=True item=item schedule=schedule %}
+                                        {% else %}
+                                            {% for slide in item.session.slides %}
+                                                <a href="{{slide.get_href}}">{{ slide.title|clean_whitespace }}</a>
+                                                <br>
+                                            {% endfor %}
+                                        {% endif %}
                                     {% endif %}
-                                </td>
-
-                                <td class="text-nowrap text-end">
-                                    {% include "meeting/timeslot_start_end.html" %}
-                                </td>
-                                <td colspan="3">
-                                    {% location_anchor item.timeslot %}
-                                    {{ item.timeslot.get_html_location }}
-                        {% end_location_anchor %}
-                        {% if item.timeslot.show_location and item.timeslot.get_html_location %}
-                            {% with item.timeslot.location.floorplan as floor %}
-                                {% if item.timeslot.location.floorplan %}
-                                    <div class="d-none d-sm-block">
-                                        <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
-                                            class="float-end" title="{{floor.name}}"><span class="badge bg-secondary label-wide">{{floor.short}}</span></a>
-                                    </div>
-                                {% endif %}
-                            {% endwith %}
-                        {% endif %}
-                        </td>
-                        <td>
-                            {% agenda_anchor item.session %}
-                            {% assignment_display_name item %}
-                    {% end_agenda_anchor %}
-
-                    {% if item.session.current_status == 'canceled' %}
-                        <span class="badge bg-danger float-end">CANCELLED</span>
-                    {% else %}
-                        <div class="float-end ps-3">
-                            {% if item.slot_type.slug == 'other' %}
-                                {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
-                                    {% include "meeting/session_buttons_include.html" with show_agenda=True item=item schedule=schedule %}
-                                {% else %}
-                                    {% for slide in item.session.slides %}
-                                        <a href="{{slide.get_href}}">{{ slide.title|clean_whitespace }}</a>
-                                        <br>
-                                    {% endfor %}
-                                {% endif %}
+                                </div>
                             {% endif %}
-                        </div>
-                    {% endif %}
-                </td>
-                </tr>
+                        </td>
+                    </tr>
 
             {% elif item|is_regular_agenda_item or item|is_plenary_agenda_item %}
 
                 {% if item|is_regular_agenda_item %}
                     {% ifchanged %}
-                        <tr class="table-secondary session-label-row"
+                        <tr class="table-secondary session-label-row show-with-children"
                             data-slot-start-ts="{{item.start_timestamp}}"
                             data-slot-end-ts="{{item.end_timestamp}}">
                             <td class="text-center">
                             </td>
 
-                            <th class="text-nowrap text-end">
+                            <td class="text-nowrap text-end fw-bold">
                                 {% include "meeting/timeslot_start_end.html" %}
-                            </th>
-                            <th colspan="4">
+                            </td>
+                            <td colspan="4" class="fw-bold desc">
                                 {{ item.timeslot.time|date:"l"}}
                                 {{item.timeslot.name|capfirst_allcaps}}
-                            </th>
+                            </td>
                         </tr>
+
                     {% endifchanged %}
                 {% endif %}
 
@@ -232,10 +242,10 @@
                         </td>
 
                         {% if item.slot_type.slug == 'plenary' %}
-                            <th class="text-nowrap text-end">
+                            <td class="text-nowrap text-end">
                                 {% include "meeting/timeslot_start_end.html" %}
-                            </th>
-                            <td colspan="3">
+                            </td>
+                            <td colspan="3" class="loc">
                                 {% location_anchor item.timeslot %}
                                 {{item.timeslot.get_html_location}}
                         {% end_location_anchor %}
@@ -252,15 +262,15 @@
                             {% endif %}
                         {% endwith %}
                     </td>
-                    <td>
+                    <td class="loc">
                         {% location_anchor item.timeslot %}
                         {{item.timeslot.get_html_location}}
                 {% end_location_anchor %}
                 </td>
 
-                <td><div class="d-none d-sm-block">{{item.session.historic_group.historic_parent.acronym}}</div></td>
+                <td class="area"><div class="d-none d-sm-block">{{item.session.historic_group.historic_parent.acronym}}</div></td>
 
-                <td>
+                <td class="group">
                     {% if item.session.historic_group %}
                         <a href="{% url 'ietf.group.views.group_about' acronym=item.session.historic_group.acronym %}">{{item.session.historic_group.acronym}}</a>
                     {% else %}
@@ -269,7 +279,7 @@
                 </td>
             {% endif %}
 
-            <td>
+            <td class="desc">
                 {% agenda_anchor item.session %}
                 {% assignment_display_name item %}
 {% end_agenda_anchor %}
@@ -291,7 +301,7 @@
         RESCHEDULED
         {% if item.session.rescheduled_to %}
             TO
-            <div class="timetooltip reschedtimetooltip"><div class="time" data-start-time="{{item.session.rescheduled_to.utc_start_time|date:"U"}}" data-end-time="{{item.session.rescheduled_to.utc_end_time|date:"U"}}" {% if item.timeslot.time|date:"l" != item.session.rescheduled_to.time|date:"l" %} weekday="1"{% endif %}>
+            <div class="timetooltip reschedtimetooltip"><div data-start-time="{{item.session.rescheduled_to.utc_start_time|date:"U"}}" data-end-time="{{item.session.rescheduled_to.utc_end_time|date:"U"}}" {% if item.timeslot.time|date:"l" != item.session.rescheduled_to.time|date:"l" %} weekday="1"{% endif %}>
                 {% if "-utc" in request.path %}
                     {{ item.session.rescheduled_to.utc_start_time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.utc_end_time|date:"G:i" }}
                 {% else %}
@@ -309,9 +319,11 @@
 {% endif %}
 </td>
 </tr>
+
 {% endif %}
 {% endif %}
 {% endfor %}
+</tbody>
 </table>
 {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting only %}
 
@@ -428,6 +440,7 @@
         }
 
     </script>
+    <script src="{% static 'ietf/js/list.js' %}"></script>
     <script src="{% static 'ietf/js/moment.js' %}"></script>
     <script src="{% static 'ietf/js/moment-timezone-with-data-10-year-range.js' %}"></script>
     <script src="{% static 'ietf/js/timezone.js' %}"></script>
@@ -496,7 +509,7 @@
                 });
 
                 document.getElementById('agenda-table')
-                .addEventListener('click', handleTableClick);
+                    .addEventListener('click', handleTableClick);
             {% else %}
                 agenda_filter.set_update_callback(update_view);
             {% endif %}

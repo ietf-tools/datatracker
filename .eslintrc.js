@@ -6,7 +6,8 @@ module.exports = {
         "no-multiple-empty-lines": ["error", { max: 2, maxEOF: 0 }],
         "quote-props": ["error", "as-needed"],
         "brace-style": ["error", "1tbs", { allowSingleLine: true }],
-        "semi": ["error", "always"],
+        semi: ["error", "always"],
+        "newline-per-chained-call": ["error"]
     },
     env: {
         browser: true,

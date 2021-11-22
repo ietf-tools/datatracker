@@ -61,10 +61,6 @@ $bootstrap-icons-font-src: url("~node_modules/bootstrap-icons/font/fonts/bootstr
 url("~node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff?a97b3594ad416896e15824f6787370e0") format("woff") !default;
 @import "../../../node_modules/bootstrap-icons/font/bootstrap-icons";
 
-// Install the datatables.net bootstrap5 styles.
-// FIXME: Including this with ~ fails for some odd reason?
-@import "../../../node_modules/datatables.net-bs5/css/dataTables.bootstrap5";
-
 // Leave room for fixed-top navbar.
 body {
     padding-top: 60px;

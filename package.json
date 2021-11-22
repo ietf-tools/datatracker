@@ -4,10 +4,9 @@
     "bootstrap": "^5.1.3",
     "bootstrap-icons": "^1.7.0",
     "d3": "^3.5.17",
-    "datatables.net": "^1.11.3",
-    "datatables.net-bs5": "^1.11.3",
     "jquery": "^3.6.0",
     "js-cookie": "^3.0.1",
+    "list.js": "^2.3.1",
     "moment": "^2.29.1",
     "moment-timezone": "^0.5.34"
   },
@@ -19,7 +18,7 @@
   },
   "source": [
     "ietf/static/js/ietf.js",
-    "ietf/static/js/datatables.js",
+    "ietf/static/js/list.js",
     "ietf/static/js/document_timeline.js",
     "ietf/static/js/d3.js",
     "ietf/static/js/moment.js",
@@ -33,7 +32,6 @@
     "ietf/static/js/doc-search.js",
     "ietf/static/js/moment-timezone-with-data-10-year-range.js",
     "ietf/static/css/ietf.scss",
-    "ietf/static/css/datatables.scss",
     "ietf/static/images/ietflogo-small-transparent.png",
     "ietf/static/images/ietflogo.png",
     "ietf/static/images/apple-touch-icon.png",
