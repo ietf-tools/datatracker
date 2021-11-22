@@ -118,32 +118,35 @@
                     <p>Check boxes below to select individual sessions.</p>
                 {% endif %}
 
-                    <table id="agenda-table" class="table table-sm tablesorter">
-                        <thead>
-                            <tr>
-                                <th data-field=""></th>
-                                <th data-field=""></th>
-                                <th data-field="loc"></th>
-                                <th data-field="group"></th>
-                                <th data-field="area"></th>
-                                <th data-field="desc"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="list">
-                            {% for item in filtered_assignments %}
-                                {% ifchanged item.timeslot.time|date:"Y-m-d" %}
-                                    <tr class="table-primary show-with-children">
-                                        <td colspan="6">
-                                            {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
-                                            <div class="anchor-target" id="slot-{{item.timeslot.time|slugify}}"></div>
-                                            <div class="fw-bold">{{ item.timeslot.time|date:"l, F j, Y" }}</div>
-                                        </td>
-                                    </tr>
-                                {% endifchanged %}
-                                {% if item|is_special_agenda_item %}
-                                    <tr id="row-{{ item.slug }}" data-filter-keywords="{{ item.filter_keywords|join:',' }}"
-                                        data-slot-start-ts="{{item.start_timestamp}}"
-                                        data-slot-end-ts="{{item.end_timestamp}}">
+                <table id="agenda-table" class="table table-sm tablesorter">
+                    <thead>
+                        <tr>
+                            {% if personalize %}
+                                <th data-sort=""></th>
+                            {% endif %}
+                            <th data-sort=""></th>
+                            <th data-sort="loc"></th>
+                            <th data-sort="group"></th>
+                            <th data-sort="area"></th>
+                            <th data-sort="desc"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in filtered_assignments %}
+                            {% ifchanged item.timeslot.time|date:"Y-m-d" %}
+                                <tr class="table-primary show-with-children">
+                                    <td colspan="{% if personalize %}6{% else %}5{% endif %}">
+                                        {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
+                                        <div class="anchor-target" id="slot-{{item.timeslot.time|slugify}}"></div>
+                                        <div class="fw-bold">{{ item.timeslot.time|date:"l, F j, Y" }}</div>
+                                    </td>
+                                </tr>
+                            {% endifchanged %}
+                            {% if item|is_special_agenda_item %}
+                                <tr id="row-{{ item.slug }}" data-filter-keywords="{{ item.filter_keywords|join:',' }}"
+                                    data-slot-start-ts="{{item.start_timestamp}}"
+                                    data-slot-end-ts="{{item.end_timestamp}}">
+                                    {% if personalize %}
                                         <td class="text-center">
                                             {% if item.session_keyword %}
                                                 <input
@@ -156,48 +159,49 @@
                                                     data-filter-item="{{ item.session_keyword }}">
                                             {% endif %}
                                         </td>
-
-                                        <td class="text-nowrap text-end">
-                                            {% include "meeting/timeslot_start_end.html" %}
-                                        </td>
-                                        <td colspan="3" class="loc">
-                                            {% location_anchor item.timeslot %}
-                                            {{ item.timeslot.get_html_location }}
-                                {% end_location_anchor %}
-                                {% if item.timeslot.show_location and item.timeslot.get_html_location %}
-                                    {% with item.timeslot.location.floorplan as floor %}
-                                        {% if item.timeslot.location.floorplan %}
-                                            <div class="d-none d-sm-block">
-                                                <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
-                                                    class="float-end" title="{{floor.name}}"><span class="badge bg-secondary label-wide">{{floor.short}}</span></a>
-                                            </div>
-                                        {% endif %}
-                                    {% endwith %}
-                                {% endif %}
-                                </td>
-                                <td class="desc">
-                                    {% agenda_anchor item.session %}
-                                    {% assignment_display_name item %}
-                            {% end_agenda_anchor %}
-
-                            {% if item.session.current_status == 'canceled' %}
-                                <span class="badge bg-danger float-end">CANCELLED</span>
-                            {% else %}
-                                <div class="float-end ps-3">
-                                    {% if item.slot_type.slug == 'other' %}
-                                        {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
-                                            {% include "meeting/session_buttons_include.html" with show_agenda=True item=item schedule=schedule %}
-                                        {% else %}
-                                            {% for slide in item.session.slides %}
-                                                <a href="{{slide.get_href}}">{{ slide.title|clean_whitespace }}</a>
-                                                <br>
-                                            {% endfor %}
-                                        {% endif %}
                                     {% endif %}
-                                </div>
+
+                                    <td class="text-nowrap text-end">
+                                        {% include "meeting/timeslot_start_end.html" %}
+                                    </td>
+                                    <td colspan="3" class="loc">
+                                        {% location_anchor item.timeslot %}
+                                        {{ item.timeslot.get_html_location }}
+                            {% end_location_anchor %}
+                            {% if item.timeslot.show_location and item.timeslot.get_html_location %}
+                                {% with item.timeslot.location.floorplan as floor %}
+                                    {% if item.timeslot.location.floorplan %}
+                                        <div class="d-none d-sm-block">
+                                            <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
+                                                class="float-end" title="{{floor.name}}"><span class="badge bg-secondary label-wide">{{floor.short}}</span></a>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
                             {% endif %}
-                        </td>
-                    </tr>
+                            </td>
+                            <td class="desc">
+                                {% agenda_anchor item.session %}
+                                {% assignment_display_name item %}
+                        {% end_agenda_anchor %}
+
+                        {% if item.session.current_status == 'canceled' %}
+                            <span class="badge bg-danger float-end">CANCELLED</span>
+                        {% else %}
+                            <div class="float-end ps-3">
+                                {% if item.slot_type.slug == 'other' %}
+                                    {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
+                                        {% include "meeting/session_buttons_include.html" with show_agenda=True item=item schedule=schedule %}
+                                    {% else %}
+                                        {% for slide in item.session.slides %}
+                                            <a href="{{slide.get_href}}">{{ slide.title|clean_whitespace }}</a>
+                                            <br>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </td>
+                </tr>
 
             {% elif item|is_regular_agenda_item or item|is_plenary_agenda_item %}
 
@@ -206,8 +210,9 @@
                         <tr class="table-secondary session-label-row show-with-children"
                             data-slot-start-ts="{{item.start_timestamp}}"
                             data-slot-end-ts="{{item.end_timestamp}}">
-                            <td class="text-center">
-                            </td>
+                            {% if personalize %}
+                                <td class="text-center"></td>
+                            {% endif %}
 
                             <td class="text-nowrap text-end fw-bold">
                                 {% include "meeting/timeslot_start_end.html" %}
@@ -228,18 +233,20 @@
                         data-slot-start-ts="{{item.start_timestamp}}"
                         data-slot-end-ts="{{item.end_timestamp}}">
 
-                        <td class="text-center">
-                            {% if item.session_keyword %}
-                                <input
-                                    type="checkbox"
-                                    class="pickview form-check-input"
-                                    title="Select session"
-                                    name="selected-sessions"
-                                    value="{{ item.session_keyword }}"
-                                    data-filter-keywords="{{ item.filter_keywords|join:',' }}"
-                                    data-filter-item="{{ item.session_keyword }}">
-                            {% endif %}
-                        </td>
+                        {% if personalize %}
+                            <td class="text-center">
+                                {% if item.session_keyword %}
+                                    <input
+                                        type="checkbox"
+                                        class="pickview form-check-input"
+                                        title="Select session"
+                                        name="selected-sessions"
+                                        value="{{ item.session_keyword }}"
+                                        data-filter-keywords="{{ item.filter_keywords|join:',' }}"
+                                        data-filter-item="{{ item.session_keyword }}">
+                                {% endif %}
+                            </td>
+                        {% endif %}
 
                         {% if item.slot_type.slug == 'plenary' %}
                             <td class="text-nowrap text-end">
@@ -262,6 +269,7 @@
                             {% endif %}
                         {% endwith %}
                     </td>
+
                     <td class="loc">
                         {% location_anchor item.timeslot %}
                         {{item.timeslot.get_html_location}}

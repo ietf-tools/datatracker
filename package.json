@@ -32,6 +32,7 @@
     "ietf/static/js/doc-search.js",
     "ietf/static/js/moment-timezone-with-data-10-year-range.js",
     "ietf/static/css/ietf.scss",
+    "ietf/static/css/list.scss",
     "ietf/static/images/ietflogo-small-transparent.png",
     "ietf/static/images/ietflogo.png",
     "ietf/static/images/apple-touch-icon.png",

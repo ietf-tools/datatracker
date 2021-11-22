@@ -1,0 +1,17 @@
+table .sort {
+    background-image: url(../../../node_modules/bootstrap-icons/icons/arrow-down-up.svg);
+    background-repeat: no-repeat;
+    background-position: right center;
+    padding-left: 14px;
+    padding-right: 14px;
+    cursor: pointer;
+    cursor: hand;
+}
+
+table .sort.asc {
+    background-image: url(../../../node_modules/bootstrap-icons/icons/arrow-down.svg);
+}
+
+table .sort.desc {
+    background-image: url(../../../node_modules/bootstrap-icons/icons/arrow-up.svg);
+}

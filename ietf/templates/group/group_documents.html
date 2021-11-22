@@ -7,11 +7,11 @@
 {% block group_content %}
     {% origin %}
     {% if docs_related %}
-        {% include "doc/search/search_results.html" with skip_no_matches_warning=True %}
+        {% include "doc/search/search_results.html" with skip_no_matches_warning=True start_table=True end_table=False %}
     {% else %}
-        {% include "doc/search/search_results.html" %}
+        {% include "doc/search/search_results.html" with start_table=True end_table=False %}
     {% endif %}
-    {% include "doc/search/search_results.html" with docs=docs_related meta=meta_related skip_no_matches_warning=True %}
+    {% include "doc/search/search_results.html" with docs=docs_related meta=meta_related skip_no_matches_warning=True start_table=False end_table=True %}
     {% include "community/list_menu.html" %}
 
 {% endblock group_content %}

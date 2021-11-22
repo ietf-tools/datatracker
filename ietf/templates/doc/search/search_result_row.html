@@ -40,7 +40,7 @@
         {% endfor %}
     </td>
 
-    <td class="doc">
+    <td class="document">
         <div>
             <a href="{{ doc.get_absolute_url }}">{% if doc.get_state_slug == "rfc" %}RFC {{ doc.rfc_number }}{% else %}{{ doc.name }}-{{ doc.rev }}{% endif %}</a>
 
@@ -69,7 +69,7 @@
         {% endif %}
     </td>
 
-    <td>
+    <td class="date">
         <span class="text-nowrap">
 
             {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}
@@ -122,7 +122,7 @@
     </td>
 
     {% if ad_name == None or ad_name != doc.ad.plain_name %}
-        <td class="area-director">
+        <td class="ad">
             {% if doc.ad %}
                 {% person_link doc.ad title="Area Director" %}<br>
             {% endif %}
