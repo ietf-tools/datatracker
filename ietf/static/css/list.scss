@@ -1,17 +1,29 @@
+// Import bootstrap helpers
+@import "~/node_modules/bootstrap/scss/functions";
+@import "~/node_modules/bootstrap/scss/variables";
+// @import "~/node_modules/bootstrap/scss/mixins";
+// @import "~/node_modules/bootstrap/scss/utilities";
+
 table .sort {
-    background-image: url(../../../node_modules/bootstrap-icons/icons/arrow-down-up.svg);
-    background-repeat: no-repeat;
-    background-position: right center;
-    padding-left: 14px;
-    padding-right: 14px;
+    white-space: nowrap;
+    padding-right: .5em;
     cursor: pointer;
-    cursor: hand;
 }
 
-table .sort.asc {
-    background-image: url(../../../node_modules/bootstrap-icons/icons/arrow-down.svg);
+table .sort:hover {
+    --#{$variable-prefix}table-accent-bg: var(--#{$variable-prefix}table-hover-bg);
+    color: var(--#{$variable-prefix}table-hover-color);
 }
 
-table .sort.desc {
-    background-image: url(../../../node_modules/bootstrap-icons/icons/arrow-up.svg);
+table .sort:before {
+    font-family: 'bootstrap-icons';
+    content: '\f127';
+}
+
+table .sort.asc:before {
+    content: '\f128';
+}
+
+table .sort.desc:before {
+    content: '\f148';
 }

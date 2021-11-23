@@ -135,11 +135,11 @@
                         {% for item in filtered_assignments %}
                             {% ifchanged item.timeslot.time|date:"Y-m-d" %}
                                 <tr class="table-primary show-with-children">
-                                    <td colspan="{% if personalize %}6{% else %}5{% endif %}">
+                                    <th colspan="{% if personalize %}6{% else %}5{% endif %}">
                                         {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
                                         <div class="anchor-target" id="slot-{{item.timeslot.time|slugify}}"></div>
-                                        <div class="fw-bold">{{ item.timeslot.time|date:"l, F j, Y" }}</div>
-                                    </td>
+                                        <div>{{ item.timeslot.time|date:"l, F j, Y" }}</div>
+                                    </th>
                                 </tr>
                             {% endifchanged %}
                             {% if item|is_special_agenda_item %}
@@ -211,16 +211,16 @@
                             data-slot-start-ts="{{item.start_timestamp}}"
                             data-slot-end-ts="{{item.end_timestamp}}">
                             {% if personalize %}
-                                <td class="text-center"></td>
+                                <th class="text-center"></th>
                             {% endif %}
 
-                            <td class="text-nowrap text-end fw-bold">
+                            <th class="text-nowrap text-end">
                                 {% include "meeting/timeslot_start_end.html" %}
-                            </td>
-                            <td colspan="4" class="fw-bold desc">
+                            </th>
+                            <th colspan="4" class="desc">
                                 {{ item.timeslot.time|date:"l"}}
                                 {{item.timeslot.name|capfirst_allcaps}}
-                            </td>
+                            </th>
                         </tr>
 
                     {% endifchanged %}

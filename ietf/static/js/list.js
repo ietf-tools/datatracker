@@ -1,34 +1,24 @@
 import * as List from "list.js";
 
-// function set_width() {
-//     w = $(this)
-//         .children("tr:first")
-//         .children("th, td")
-//         .map(function () {
-//             return $(this)
-//                 .css("width");
-//         });
-//     console.log(w);
+var dummy = new List();
 
-//     $(tbody)
-//         .children("tr:first")
-//         .children("th, td")
-//         .each(function (i) {
-//             console.log(i, w[i]);
-//             $(this)
-//                 .css("width", w[i]);
-//         });
-// }
-
-// FIXME sort only works on first table
-
-var table_cnt = 0;
+function text_sort(a, b, options) {
+    return dummy.utils.naturalSort.caseInsensitive($($.parseHTML(a.values()[options.valueName]))
+        .text()
+        .trim()
+        .replaceAll(/\w+/g, ' '), $($.parseHTML(b.values()[options.valueName]))
+        .text()
+        .trim()
+        .replaceAll(/\w+/g, ' '));
+}
 
 $(document)
     .ready(function () {
         $("table.tablesorter")
             .each(function () {
-                var header_row = $(this)
+                var table = $(this);
+
+                var header_row = $(table)
                     .find("thead > tr:first");
 
                 var fields = $(header_row)
@@ -63,7 +53,7 @@ $(document)
                         </button>
                     </div>`);
 
-                    $(this)
+                    $(table)
                         .before(searcher);
 
                     var search_field = $(searcher)
@@ -72,49 +62,35 @@ $(document)
                     var reset_search = $(searcher)
                         .children("button.search-reset");
 
-                    var instance = [];
+                    var list_instance = [];
+                    var internal_table = [];
 
-                    var first_table;
-                    var last_table;
-                    $(this)
+                    $(table)
                         .children("tbody")
                         .addClass("list")
                         .each(function () {
-                            var parent;
-                            if (first_table === undefined) {
-                                first_table = $(this)
-                                    .parent();
-                                last_table = first_table;
-                                parent = first_table[0];
-                            } else {
-                                var new_table = $(first_table)
-                                    .clone()
-                                    .empty()
-                                    .removeClass("tablesorter");
-                                $(last_table)
-                                    .after(new_table);
-                                var thead = $(this)
-                                    .prev("thead")
-                                    .detach();
-                                var tbody = $(this)
-                                    .detach();
-                                new_table.append(thead, tbody);
-                                parent = $(new_table)[0];
-                                last_table = new_table;
-                            }
+                            var thead = $(this)
+                                .siblings("thead:first")
+                                .clone();
 
-                            $(parent)
-                                .addClass("tablesorter-table-" + table_cnt);
+                            var tbody = $(this)
+                                .clone();
 
-                            instance.push(
-                                new List(parent, { valueNames: fields }));
+                            var parent = $(table)
+                                .clone()
+                                .empty()
+                                .removeClass("tablesorter")
+                                .append(thead, tbody);
+
+                            internal_table.push(parent);
+
+                            list_instance.push(
+                                new List(parent[0], { valueNames: fields }));
                         });
-
-                    table_cnt++;
 
                     reset_search.on("click", function () {
                         search_field.val("");
-                        $.each(instance, (i, e) => {
+                        $.each(list_instance, (i, e) => {
                             e.search();
                         });
                     });
@@ -123,14 +99,49 @@ $(document)
                         if (event.key == "Escape") {
                             reset_search.trigger("click");
                         } else {
-                            $.each(instance, (i, e) => {
+                            $.each(list_instance, (i, e) => {
                                 e.search($(this)
                                     .val());
                             });
                         }
                     });
 
-                    $.each(instance, (i, e) => {
+                    $(table)
+                        .find(".sort")
+                        .on("click", function () {
+                            var order = $(this)
+                                .hasClass("asc") ? "desc" : "asc";
+                            $.each(list_instance, (i, e) => {
+                                e.sort($(this)
+                                    .attr("data-sort"), { order: order, sortFunction: text_sort });
+                            });
+                        });
+
+                    $.each(list_instance, (i, e) => {
+                        e.on("sortComplete", function () {
+                            $(table)
+                                .children("tbody")
+                                .eq(i)
+                                .replaceWith(internal_table[i]
+                                    .children("tbody")
+                                    .clone());
+
+                            if (i == list_instance.length - 1) {
+                                $(table)
+                                    .find("thead:first tr")
+                                    .children("th, td")
+                                    .each((idx, el) => {
+                                        var cl = internal_table[i].find("thead:first tr")
+                                            .children("th, td")
+                                            .eq(idx)
+                                            .attr("class");
+                                        $(el)
+                                            .attr("class", cl);
+
+                                    });
+                            }
+                        });
+
                         e.on("searchComplete", function () {
                             var last_show_with_children = {};
                             e.items.forEach((item) => {
@@ -158,7 +169,14 @@ $(document)
                                     item.show();
                                 }
                             });
+
                             e.update();
+                            $(table)
+                                .children("tbody")
+                                .eq(i)
+                                .replaceWith(internal_table[i]
+                                    .children("tbody")
+                                    .clone());
                         });
                     });
                 }
