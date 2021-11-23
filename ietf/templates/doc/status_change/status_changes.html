@@ -4,7 +4,7 @@
 {% load ietf_filters static %}
 
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 
 {% block title %}RFC status changes{% endblock %}
@@ -21,21 +21,21 @@
     <table class="table table-striped table-sm tablesorter">
         <thead>
             <tr>
-                <th>Document</th>
-                <th>Title</th>
+                <th data-sort="document">Document</th>
+                <th data-sort="title">Title</th>
             </tr>
         </thead>
 
         {% for state in state_groups %}
-            <tbody>
+            <thead>
                 <tr class="table-info"><th colspan="2">{{state.grouper}}</th></tr>
-            </tbody>
+            </thead>
 
             <tbody>
                 {% for doc in state.list %}
                     <tr>
-                        <td>{{ doc.displayname_with_link|safe }}</td>
-                        <td><b>{{ doc.title }}</b></td>
+                        <td class="document">{{ doc.displayname_with_link|safe }}</td>
+                        <td class="title"><b>{{ doc.title }}</b></td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -44,5 +44,5 @@
 {% endblock content %}
 
 {% block js %}
-    <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

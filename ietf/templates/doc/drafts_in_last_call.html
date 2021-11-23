@@ -3,7 +3,7 @@
 {% load origin static %}
 
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 
 {% block title %}Internet-Drafts in IETF last call{% endblock %}
@@ -13,14 +13,15 @@
     <h1>
         Internet-Drafts in IETF last call
         {% if pages %}
-            <small class="padded-left">{{ pages }} pages</small>
+            <br>
+            <small class="text-muted">{{ pages }} pages</small>
         {% endif %}
     </h1>
 
-    {% include "doc/search/search_results.html" %}
+    {% include "doc/search/search_results.html" with start_table=True end_table=True%}
 
 {% endblock %}
 
 {% block js %}
-    <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

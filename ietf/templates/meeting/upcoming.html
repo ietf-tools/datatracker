@@ -5,7 +5,7 @@
 {% load ietf_filters static classname %}
 
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
     <link rel="stylesheet" href="{% static "fullcalendar/core/main.css" %}">
     <link rel="stylesheet" href="{% static "fullcalendar/daygrid/main.css" %}">
 
@@ -175,7 +175,7 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
     <script src="{% static 'fullcalendar/core/main.js' %}"></script>
     <script src="{% static 'fullcalendar/daygrid/main.js' %}"></script>
     <script src="{% static 'ietf/js/moment.js' %}"></script>

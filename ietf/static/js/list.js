@@ -6,10 +6,10 @@ function text_sort(a, b, options) {
     return dummy.utils.naturalSort.caseInsensitive($($.parseHTML(a.values()[options.valueName]))
         .text()
         .trim()
-        .replaceAll(/\w+/g, ' '), $($.parseHTML(b.values()[options.valueName]))
+        .replaceAll(/\s+/g, ' '), $($.parseHTML(b.values()[options.valueName]))
         .text()
         .trim()
-        .replaceAll(/\w+/g, ' '));
+        .replaceAll(/\s+/g, ' '));
 }
 
 $(document)

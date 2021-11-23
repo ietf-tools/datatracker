@@ -3,7 +3,7 @@
 {% load origin static ietf_filters %}
 
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 
 {% block title %}
@@ -24,32 +24,32 @@
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th>Document</th>
-                <th>Title</th>
-                <th>Status</th>
-                <th>Type</th>
-                <th>Downref</th>
+                <th data-sort="document">Document</th>
+                <th data-sort="title">Title</th>
+                <th data-sort="status">Status</th>
+                <th data-sort="type">Type</th>
+                <th data-sort="downref">Downref</th>
             </tr>
         </thead>
         <tbody>
             {% for ref in refs %}
                 {% with ref.target.name as name %}
                     <tr>
-                        <td><a href="{% url 'ietf.doc.views_doc.document_main' name=name %}">{{ name|prettystdname }}</a></td>
-                        <td>
+                        <td class="document"><a href="{% url 'ietf.doc.views_doc.document_main' name=name %}">{{ name|prettystdname }}</a></td>
+                        <td class="title">
                             <b>{{ref.target.document.title}}</b><br>
-                            <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.document_references' name %}" rel="nofollow"><span class="bi bi-arrow-left"></span> References</a>
-                            <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.document_referenced_by' name %}" rel="nofollow"><span class="bi bi-arrow-right"></span> Referenced by</a>
+                            <a class="btn btn-primary btn-sm" href="{% url 'ietf.doc.views_doc.document_references' name %}" rel="nofollow"><span class="bi bi-arrow-left"></span> References</a>
+                            <a class="btn btn-primary btn-sm" href="{% url 'ietf.doc.views_doc.document_referenced_by' name %}" rel="nofollow"><span class="bi bi-arrow-right"></span> Referenced by</a>
                         </td>
-                        <td>
+                        <td class="status">
                             {% ifequal ref.target.document.get_state.slug 'rfc' %}
                                 {% with ref.target.document.std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
                             {% else %}
                                 {% with ref.target.document.intended_std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
                             {% endifequal %}
                         </td>
-                        <td>{{ref.relationship.name}}</td>
-                        <td>{{ref.is_downref|default:''}}</td>
+                        <td class="type">{{ref.relationship.name}}</td>
+                        <td class="downref">{{ref.is_downref|default:''}}</td>
                     </tr>
                 {% endwith %}
             {% endfor %}
@@ -58,5 +58,5 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

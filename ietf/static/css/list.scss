@@ -6,7 +6,6 @@
 
 table .sort {
     white-space: nowrap;
-    padding-right: .5em;
     cursor: pointer;
 }
 
@@ -18,6 +17,7 @@ table .sort:hover {
 table .sort:before {
     font-family: 'bootstrap-icons';
     content: '\f127';
+    padding-right: .25em;
 }
 
 table .sort.asc:before {

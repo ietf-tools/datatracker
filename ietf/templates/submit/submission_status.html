@@ -146,7 +146,7 @@
                     {{ submission.name }}
                 {% endif %}
 
-                <button class="btn btn-primary btn-xs float-end" data-bs-toggle="modal" data-bs-target="#twopages">View first two pages</button>
+                <button class="btn btn-primary btn-sm float-end" data-bs-toggle="modal" data-bs-target="#twopages">View first two pages</button>
 
                 {% show_submission_files submission %}
 
@@ -162,7 +162,7 @@
                 {{ submission.rev }}
 
                 {% if errors.rev %}
-                    <button class="btn btn-primary btn-xs float-end" data-bs-toggle="modal" data-bs-target="#twopages">View errors in document</button>
+                    <button class="btn btn-primary btn-sm float-end" data-bs-toggle="modal" data-bs-target="#twopages">View errors in document</button>
                     <p class="text-danger bg-danger"><b>{{ errors.rev }}</b></p>
                 {% endif %}
             </td>
@@ -426,7 +426,7 @@
                             {% if user.is_authenticated %}
                                 <td>
                                     {% if  e.desc|startswith:"Received message" and user|has_role:"Secretariat" %}
-                                        <a id="reply{{ submission.pk }}" class="btn btn-primary btn-xs" href="{% url "ietf.submit.views.send_submission_email" submission_id=submission.pk message_id=e.submissionemailevent.pk %}" title="Reply"><span class="bi bi-envelope" aria-hidden="true"></span> Reply</a>
+                                        <a id="reply{{ submission.pk }}" class="btn btn-primary btn-sm" href="{% url "ietf.submit.views.send_submission_email" submission_id=submission.pk message_id=e.submissionemailevent.pk %}" title="Reply"><span class="bi bi-envelope" aria-hidden="true"></span> Reply</a>
                                     {% endif %}
                                     Email: <a id="aw{{ submission.pk }}-{{ m.pk }}" href="{% url "ietf.submit.views.show_submission_email_message" submission_id=submission.pk message_id=e.submissionemailevent.pk access_token=submission.access_token %}">{{ e.desc }}</a></td>
                             {% else %}

@@ -3,7 +3,7 @@
 {% load ietf_filters static %}
 
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 
 {% block title %}History for Liaison Statement - {{ liaison.title }}{% endblock %}
@@ -47,5 +47,5 @@
 {% endblock content %}
 
 {% block js %}
-    <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

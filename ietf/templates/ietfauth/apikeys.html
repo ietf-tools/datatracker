@@ -33,7 +33,7 @@
                             <td style="border-top: 0" colspan="4"><code>{{ key.hash }}</code></td>
                             <td style="border-top: 0">
                                 {% if key.valid %}
-                                    <a href="{%url 'ietf.ietfauth.views.apikey_disable' %}?hash={{key.hash}}" class="btn btn-warning btn-xs del-apikey">Disable</a>
+                                    <a href="{%url 'ietf.ietfauth.views.apikey_disable' %}?hash={{key.hash}}" class="btn btn-warning btn-sm del-apikey">Disable</a>
                                 {% endif %}
                             </td>
                         </tr>

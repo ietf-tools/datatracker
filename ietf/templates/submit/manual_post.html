@@ -3,7 +3,7 @@
 {% load origin static %}
 
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 
 {% block title %}Draft submissions awaiting manual posting{% endblock %}
@@ -74,12 +74,12 @@
                                     {% csrf_token %}
                                     <input type="hidden" name="submission_id" value="{{ s.pk }}">
                                     <input type="hidden" name="access_token" value="{{ s.access_token }}">
-                                    <button class="btn btn-danger btn-xs" type="submit" data-bs-toggle="tooltip" title="Cancels the submission permanently.">Cancel submission</button>
+                                    <button class="btn btn-danger btn-sm" type="submit" data-bs-toggle="tooltip" title="Cancels the submission permanently.">Cancel submission</button>
                                 </form>
                             </td>
                         {% endif %}
                         {% if user|has_role:"Secretariat" %}
-                            <td><a id="add-submission-email{{ s.pk }}" class="btn btn-primary btn-xs" href="{% url "ietf.submit.views.add_manualpost_email" submission_id=s.pk access_token=s.access_token %}">Add email</a></td>
+                            <td><a id="add-submission-email{{ s.pk }}" class="btn btn-primary btn-sm" href="{% url "ietf.submit.views.add_manualpost_email" submission_id=s.pk access_token=s.access_token %}">Add email</a></td>
                         {% endif %}
                     </tr>
                 {% endfor %}
@@ -94,5 +94,5 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

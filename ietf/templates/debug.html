@@ -9,7 +9,7 @@
             <p>
                 {{ sql_queries|length }} queries ({{ sql_queries|timesum }}s)
                 {% if sql_queries|length != 0 %}
-                    <a class="btn btn-primary btn-xs"
+                    <a class="btn btn-primary btn-sm"
                         onclick="$('#debug-query-table').toggleClass('hide');">Show</a>
                 {% endif %}
             </p>
@@ -36,7 +36,7 @@
                                 <td>
                                     {{ query.loc }}
                                     {% if query.origin %}
-                                        <button type="button" class="btn btn-primary btn-xs" data-bs-toggle="modal" data-bs-target="#modal-{{forloop.counter}}" >Origin</button>
+                                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-{{forloop.counter}}" >Origin</button>
                                     {% endif %}
                                     <div class="modal fade" id="modal-{{forloop.counter}}" tabindex="-1" role="dialog" aria-labelledby="modal-title-{{forloop.counter}}">
                                         <div class="modal-dialog modal-max" role="document">

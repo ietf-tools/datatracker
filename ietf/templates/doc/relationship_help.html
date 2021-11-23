@@ -3,7 +3,7 @@
 {% load origin static %}
 
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 
 {% block title %}Document relationships{% endblock %}
@@ -15,9 +15,9 @@
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th>Relationship</th>
-                <th>Description</th>
-                <th>Inverse relationship</th>
+                <th data-sort="name">Relationship</th>
+                <th data-sort="desc">Description</th>
+                <th data-sort="revname">Inverse relationship</th>
             </tr>
         </thead>
         <tbody>
@@ -34,5 +34,5 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

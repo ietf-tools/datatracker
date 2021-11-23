@@ -117,7 +117,7 @@
                         <th>Additional Resources</th>
                         <td class="edit">
                             {% if editor_can_manage or can_manage %}
-                                <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.edit_doc_extresources' name=doc.name %}">Edit</a>
+                                <a class="btn btn-primary btn-sm" href="{% url 'ietf.doc.views_draft.edit_doc_extresources' name=doc.name %}">Edit</a>
                             {% endif %}
                         </td>
                         <td>

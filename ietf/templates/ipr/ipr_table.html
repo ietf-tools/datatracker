@@ -1,24 +1,24 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}{% origin %}
 {% load ietf_filters %}
-<table class="table table-sm table-striped ipr-table tablesorter">
+<table class="table table-sm table-striped tablesorter">
     <thead>
         <tr>
-            <th>Date</th>
-            <th>ID</th>
-            <th>Title</th>
+            <th data-sort="date">Date</th>
+            <th data-sort="id">ID</th>
+            <th data-sort="title">Title</th>
             {% if administrative_list == 'pending' %}
-                <th>Query</th>
-                <th>Response Due</th>
+                <th data-sort="query">Query</th>
+                <th data-sort="due">Response Due</th>
             {% endif %}
         </tr>
     </thead>
     <tbody>
         {% for ipr in iprs %}
             <tr>
-                <td class="text-nowrap">{{ ipr.time|date:"Y-m-d" }}</td>
-                <td>{{ ipr.id }}</td>
-                <td>
+                <td class="date text-nowrap text-end">{{ ipr.time|date:"Y-m-d" }}</td>
+                <td class="id text-end">{{ ipr.id }}</td>
+                <td class="title">
                     {% if ipr.state_id == 'posted' or administrative_list %}
                         <div><a href="{% url "ietf.ipr.views.show" ipr.id %}">{{ ipr.title }}</a></div>
 
@@ -42,8 +42,8 @@
 
                 {% if administrative_list == 'pending' %}
                     {% with ipr.get_latest_event_msgout as latest_msgout %}
-                        <td class="column-four">{% if latest_msgout %}{{ latest_msgout.time|date:"Y-m-d" }}{% endif %}</td>
-                        <td class="text-nowrap">
+                        <td class="query">{% if latest_msgout %}{{ latest_msgout.time|date:"Y-m-d" }}{% endif %}</td>
+                        <td class="due text-nowrap">
                             {% if latest_msgout and latest_msgout.response_due %}
                                 {{ latest_msgout.response_due|date:"Y-m-d" }}
                                 {% if latest_msgout.response_past_due %}

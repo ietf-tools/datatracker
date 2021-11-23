@@ -6,7 +6,7 @@
 {% load ietf_filters static %}
 
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -16,30 +16,25 @@
     <h1>{{ title }}</h1>
 
     {% if add_button %}
-
-
-        <p>
-            <a class="btn btn-warning" href="{% url "ietf.doc.views_downref.downref_registry_add" %}">Add downref</a>
-        </p>
-
+            <a class="btn btn-warning my-3" href="{% url "ietf.doc.views_downref.downref_registry_add" %}">Add downref</a>
 
     {% endif %}
 
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th>Referenced RFC</th>
-                <th>Internet-Draft making the reference</th>
+                <th data-sort="ref">Referenced RFC</th>
+                <th data-sort="id">Internet-Draft making the reference</th>
             </tr>
         </thead>
         <tbody>
             {% for target_doc, source_doc in doc_pairs %}
                 <tr>
-                    <td>
+                    <td class="ref">
                         <a href="{% url "ietf.doc.views_doc.document_main" target_doc.name %}">RFC {{ target_doc.rfc_number }}</a>
                         <br><b>{{ target_doc.title }}</b>
                     </td>
-                    <td>
+                    <td class="id">
                         <a href="{% url "ietf.doc.views_doc.document_main" source_doc.name %}">{{ source_doc.name }}</a>
                         <br><b>{{ source_doc.title }}</b>
                     </td>
@@ -50,5 +45,5 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

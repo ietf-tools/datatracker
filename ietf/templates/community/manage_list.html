@@ -36,7 +36,7 @@
                             <form method="post" id="remove_document_{{d.pk}}">
                                 {% csrf_token %}
                                 <input type="hidden" name="document" value="{{ d.pk }}">
-                                <button class="btn btn-danger btn-xs" name="action" value="remove_document">Remove</button>
+                                <button class="btn btn-danger btn-sm" name="action" value="remove_document">Remove</button>
                             </form>
                         </td>
                     </tr>
@@ -91,7 +91,7 @@
                             <form method="post">
                                 {% csrf_token %}
                                 <input type="hidden" name="rule" value="{{ rule.pk }}">
-                                <button class="btn btn-danger btn-xs" name="action" value="remove_rule">Remove</button>
+                                <button class="btn btn-danger btn-sm" name="action" value="remove_rule">Remove</button>
                             </form>
                         </td>
                     </tr>

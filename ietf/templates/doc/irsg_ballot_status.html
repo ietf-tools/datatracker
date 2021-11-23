@@ -6,7 +6,7 @@
 {% load ietf_filters %}
 
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 
 {% block title %}IRSG ballot status{% endblock %}
@@ -18,15 +18,15 @@
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th>Document</th>
-                <th>Status</th>
+                <th data-sort="doc">Document</th>
+                <th data-sort="status">Status</th>
             </tr>
         </thead>
 
         <tbody>
             {% for doc in docs %}
                 <tr>
-                    <td>
+                    <td class="doc">
                         {{ doc.displayname_with_link }}
                     </td>
                     {% include "doc/search/status_columns.html" %}
@@ -37,6 +37,5 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}
-

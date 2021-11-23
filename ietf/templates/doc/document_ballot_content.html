@@ -78,7 +78,7 @@
                             {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
                             <span class="badge bg-{{ p.pos|pos_to_label }}">{{p.pos}}</span>
                             {% if user|has_role:"Secretariat" %}
-                                <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}" title="Click to edit the position of {{ p.balloter.plain_name }}" class="btn btn-primary btn-xs">Edit</a>
+                                <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}" title="Click to edit the position of {{ p.balloter.plain_name }}" class="btn btn-primary btn-sm">Edit</a>
                             {% endif %}
                         </span>
                     </h4>
@@ -132,7 +132,7 @@
                             {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
                             <span class="badge bg-{{ p.pos|pos_to_label }}">{{p.pos}}</span>
                             {% if user|has_role:"Secretariat" %}
-                                <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}" title="Click to edit the position of {{ p.balloter.plain_name }}" class="btn btn-primary btn-xs">Edit</a>
+                                <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}" title="Click to edit the position of {{ p.balloter.plain_name }}" class="btn btn-primary btn-sm">Edit</a>
                             {% endif %}
                         </span>
                     </h4>

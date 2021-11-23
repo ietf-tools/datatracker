@@ -16,6 +16,10 @@
     {% endif %}
 {% endblock %}
 
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
+
 {% block morecss %}
     #weekview iframe { height: 25em; }
 {% endblock %}

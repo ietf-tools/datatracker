@@ -3,7 +3,7 @@
 {% load origin static %}
 
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 
 {% block title %} {{type.label|cut:"state"|cut:"state"}} states{% endblock %}
@@ -13,31 +13,28 @@
 
     <h1>{{type.label|cut:"state"|cut:"State"}} states</h1>
 
-
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th>State</th>
-                <th>Description</th>
-                <th>Next states</th>
+                <th data-sort="state">State</th>
+                <th data-sort="desc">Description</th>
+                <th data-sort="next">Next states</th>
             </tr>
         </thead>
 
         <tbody>
             {% for state in states %}
                 <tr>
-                    <th>{{ state.name }}</th>
-                    <td>{{ state.desc|safe }}</td>
-                    <td><ul>{% for s in state.next_states.all %}<li>{{ s.name }}</li>{%endfor%}</ul></td>
+                    <th class="state">{{ state.name }}</th>
+                    <td class="desc">{{ state.desc|safe }}</td>
+                    <td class="next"><ul>{% for s in state.next_states.all %}<li>{{ s.name }}</li>{%endfor%}</ul></td>
                 </tr>
             {% endfor %}
 
         </tbody>
     </table>
-
-
 {% endblock %}
 
 {% block js %}
-    <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

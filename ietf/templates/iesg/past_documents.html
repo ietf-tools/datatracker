@@ -6,7 +6,7 @@
 {% load ietf_filters %}
 
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 
 {% block title %}Documents on recent agendas{% endblock %}
@@ -85,7 +85,7 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
     <script>
         $(".discuss").click(function () {
             var x = $(this).find("input").val();

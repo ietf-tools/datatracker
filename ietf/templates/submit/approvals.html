@@ -3,7 +3,7 @@
 {% load origin static %}
 
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 
 {% block title %}Draft submission approvals{% endblock %}
@@ -60,7 +60,7 @@
                             <td>{{ p.name }}</td>
                             <td>{{ p.time|date:"Y-m-d" }}</td>
                             <td>{{ p.by }}</td>
-                            <td><a class="btn btn-danger btn-xs" href="{% url "ietf.submit.views.cancel_preapproval" preapproval_id=p.id %}">Cancel</a></td>
+                            <td><a class="btn btn-danger btn-sm" href="{% url "ietf.submit.views.cancel_preapproval" preapproval_id=p.id %}">Cancel</a></td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -103,5 +103,5 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

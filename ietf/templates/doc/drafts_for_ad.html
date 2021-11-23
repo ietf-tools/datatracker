@@ -4,7 +4,7 @@
 {% load ietf_filters %}
 
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 
 {% block title %}Documents for {{ ad_name }}{% endblock %}
@@ -16,20 +16,20 @@
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th>Document</th>
-                    <th>Status</th>
-                    <th>Responsible AD</th>
-                    <th>Discusses</th>
+                    <th data-sort="document">Document</th>
+                    <th data-sort="status">Status</th>
+                    <th data-sort="responsible">Responsible AD</th>
+                    <th data-sort="discusses">Discusses</th>
                 </tr>
             </thead>
 
             <tbody>
                 {% for doc in blocked_docs %}
                     <tr>
-                        <td>{{ doc.displayname_with_link }}</td>
+                        <td class="document">{{ doc.displayname_with_link }}</td>
                         {% include "doc/search/status_columns.html" %}
-                        <td>{{ doc.ad|default:"" }}</td>
-                        <td>
+                        <td class="responsible">{{ doc.ad|default:"" }}</td>
+                        <td class="discusses">
                             {% for p in doc.blocking_positions %}
                                 {{ p.balloter }}
                                 ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }}{% endif %}
@@ -47,7 +47,7 @@
     {% endif %}
 
     <h1>Documents for {{ ad_name }}</h1>
-    {% include "doc/search/search_results.html" %}
+    {% include "doc/search/search_results.html" with start_table=True end_table=True %}
 {% endblock %}
 
 {% block morecss %}
@@ -55,5 +55,5 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static "ietf/js/datatables.js" %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}
