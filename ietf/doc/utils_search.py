@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
+import re
 import datetime
 import debug                            # pyflakes:ignore
 
@@ -134,14 +134,14 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
 
     xed_by = RelatedDocument.objects.filter(target__name__in=list(rfc_aliases.values()),
                                             relationship__in=("obs", "updates")).select_related('target')
-    rel_rfc_aliases = dict([ (a.document.id, a.name) for a in DocAlias.objects.filter(name__startswith="rfc", docs__id__in=[rel.source_id for rel in xed_by]) ])
+    rel_rfc_aliases = dict([ (a.document.id, re.sub(r"rfc(\d+)", r"RFC \1", a.name, flags=re.IGNORECASE)) for a in DocAlias.objects.filter(name__startswith="rfc", docs__id__in=[rel.source_id for rel in xed_by]) ])
     for rel in xed_by:
         d = doc_dict[rel.target.document.id]
         if rel.relationship_id == "obs":
             l = d.obsoleted_by_list
         elif rel.relationship_id == "updates":
             l = d.updated_by_list
-        l.append(rel_rfc_aliases[rel.source_id].upper())
+        l.append(rel_rfc_aliases[rel.source_id])
         l.sort()
 
 
@@ -245,5 +245,3 @@ def prepare_document_table(request, docs, query=None, max_results=200):
                 d["sort"] = h["key"]
 
     return (docs, meta)
-
-
