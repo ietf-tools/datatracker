@@ -168,7 +168,7 @@
                                     <td class="text-nowrap text-end">
                                         {% include "meeting/timeslot_start_end.html" %}
                                     </td>
-                                    <td colspan="3" class="loc">
+                                    <td colspan="3">
                                         {% if item.timeslot.show_location and item.timeslot.location %}
                                             {% location_anchor item.timeslot %}
                                                 {{ item.timeslot.get_html_location }}
@@ -185,7 +185,7 @@
                                 {% endwith %}
                             {% endif %}
                             </td>
-                            <td class="desc">
+                            <td>
                                 {% agenda_anchor item.session %}
                                 {% assignment_display_name item %}
                         {% end_agenda_anchor %}
@@ -223,7 +223,7 @@
                             <th class="text-nowrap text-end">
                                 {% include "meeting/timeslot_start_end.html" %}
                             </th>
-                            <th colspan="4" class="desc">
+                            <th colspan="4">
                                 {{ item.timeslot.time|date:"l"}}
                                 {{item.timeslot.name|capfirst_allcaps}}
                             </th>
@@ -258,7 +258,7 @@
                             <td class="text-nowrap text-end">
                                 {% include "meeting/timeslot_start_end.html" %}
                             </td>
-                            <td colspan="3" class="loc">
+                            <td colspan="3">
                                 {% if item.timeslot.show_location and item.timeslot.location %}
                                     {% location_anchor item.timeslot %}
                                         {{item.timeslot.get_html_location}}
@@ -278,7 +278,7 @@
                         {% endwith %}
                     </td>
 
-                    <td class="loc">
+                    <td>
                         {% if item.timeslot.show_location and item.timeslot.location %}
                             {% location_anchor item.timeslot %}
                                 {{item.timeslot.get_html_location}}
@@ -286,9 +286,9 @@
                         {% endif %}
                 </td>
 
-                <td class="area"><div class="d-none d-sm-block">{{item.session.historic_group.historic_parent.acronym}}</div></td>
+                <td><div class="d-none d-sm-block">{{item.session.historic_group.historic_parent.acronym}}</div></td>
 
-                <td class="group">
+                <td>
                     {% if item.session.historic_group %}
                         <a href="{% url 'ietf.group.views.group_about' acronym=item.session.historic_group.acronym %}">{{item.session.historic_group.acronym}}</a>
                     {% else %}
@@ -297,7 +297,7 @@
                 </td>
             {% endif %}
 
-            <td class="desc">
+            <td>
                 {% agenda_anchor item.session %}
                 {% assignment_display_name item %}
 {% end_agenda_anchor %}

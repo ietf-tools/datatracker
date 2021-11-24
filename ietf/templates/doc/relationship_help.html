@@ -23,9 +23,9 @@
         <tbody>
             {% for rel in relations %}
                 <tr class="anchor-target" id="{{ rel.slug }}">
-                    <th class="name">{{ rel.name }}</th>
-                    <td class="desc">{{ rel.desc|linebreaksbr }}</td>
-                    <td class="revname">{{ rel.revname }}</td>
+                    <th>{{ rel.name }}</th>
+                    <td>{{ rel.desc|linebreaksbr }}</td>
+                    <td>{{ rel.revname }}</td>
                 </tr>
             {% endfor %}
         </tbody>

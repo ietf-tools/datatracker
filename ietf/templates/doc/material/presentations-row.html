@@ -16,9 +16,9 @@
     <tbody>
         {% for s in sessions %}
             <tr>
-                <td class="revision">{{s|presented_versions:doc}}</td>
-                <td class="meeting">{% ifchanged s.meeting %}{% if s.meeting.type.slug == 'ietf' %}IETF{% endif %}{{s.meeting.number}}{% endifchanged %}</td>
-                <td class="session">
+                <td>{{s|presented_versions:doc}}</td>
+                <td>{% ifchanged s.meeting %}{% if s.meeting.type.slug == 'ietf' %}IETF{% endif %}{{s.meeting.number}}{% endifchanged %}</td>
+                <td>
                     {% if s.name %}{{ s.name }}<br>{% else %}{{ s.group.acronym }} - {% endif %}
                     {% if s.current_status == "sched" %}
                         {% if s.meeting.type.slug == 'ietf' %}{{s.time|date:"D M d, Y Hi"}}{% else %}{{s.time|date:"D M d, Y"}}{% endif %}

@@ -36,61 +36,51 @@
             fix them.
         </p>
 
-        <div class="panel ">
+        <div class="card">
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
 
-                    <div class="form-group">
-                        {% bootstrap_field form.xml label='<i class="bi bi-file-code" aria-hidden="true"></i> XML source of the I-D' %}
+                    {% bootstrap_label '<i class="bi bi-file-code"></i> XML source of the I-D' label_class="fw-bold" %}
+                    {% bootstrap_field form.xml show_label=False %}
+                    <p class="help-block">
+                        Preferably, submit a standalone
+                        <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc7991' %}">xml2rfc version 3</a>
+                        source file. You can use this online
+                        <a href="https://author-tools.ietf.org/">conversion service</a>
+                        to convert your I-D to this format.
+                        (You may submit an older
+                        <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc7749' %}">xml2rfc version 2</a>
+                        file if you must.)
+                    </p>
+
+                    <div class="form-check mb-3">
+                        <label class="form-check-label" data-bs-toggle="collapse" data-bs-target="#other-formats" aria-expanded="false" aria-controls="other-formats">
+                            <input class="form-check-input" id="checkbox" type="checkbox" type="checkbox" /> Submit other formats
+                        </label>
+                    </div>
+
+                    <div class="collapse" id="other-formats">
+                        {% bootstrap_label '<i class="bi bi-file-text"></i> Plaintext rendering of the I-D' label_class="fw-bold" %}
+                        {% bootstrap_field form.txt show_label=False %}
                         <p class="help-block">
-                            Preferably, submit a standalone
-                            <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc7991' %}">xml2rfc version 3</a>
-                            source file. You can use this online
-                            <a href="https://author-tools.ietf.org/">conversion service</a>
-                            to convert your I-D to this format.
-                            (You may submit an older
-                            <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc7749' %}">xml2rfc version 2</a>
-                            file if you must.)
+                            Optional to submit, will be auto-generated based
+                            on the submitted XML.
+                            However, if you cannot for some reason submit XML, you must
+                            submit a plaintext rendering of your I-D.
+                        </p>
+
+                        {% bootstrap_label '<i class="bi bi-file-pdf"></i> PDF rendering of the I-D' label_class="fw-bold" %}
+                        {% bootstrap_field form.pdf show_label=False %}
+                        <p class="help-block">
+                            Optional to submit, will be auto-generated based
+                            on the submitted XML.
                         </p>
                     </div>
 
-                    <div class="form-group">
-                        <div class="checkbox">
-                            <label data-bs-toggle="collapse" data-bs-target="#other-formats" aria-expanded="false" aria-controls="other-formats">
-                                <input id="checkbox" type="checkbox" /> Submit other formats
-                            </label>
-                        </div>
-                    </div>
-                    <div class="collapse" id="other-formats">
-                        <div class="form-group">
-                            {% bootstrap_field form.txt label='<i class="bi bi-file-text" aria-hidden="true"></i> Plaintext rendering of the I-D'%}
-                            <p class="help-block">
-                                Optional to submit, will be auto-generated based
-                                on the submitted XML.
-                                However, if you cannot for some reason submit XML, you must
-                                submit a plaintext rendering of your I-D.
-                            </p>
-                        </div>
-
-                        <div class="form-group">
-                            {% bootstrap_field form.pdf label='<i class="bi bi-file-pdf" aria-hidden="true"></i> PDF rendering of the I-D'%}
-                            <p class="help-block">
-                                Optional to submit, will be auto-generated based
-                                on the submitted XML.
-                            </p>
-                        </div>
-                    </div>
-
                     {% bootstrap_form_errors form %}
+                    {% bootstrap_button button_type="submit" name="upload" content="Upload" %}
 
-                    <div class="form-group">
-
-
-                        <input class="btn btn-primary" type="submit" value="Upload" name="upload">
-
-
-                    </div>
                 </form>
             </div>
         </div>

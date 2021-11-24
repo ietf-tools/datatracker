@@ -4,6 +4,7 @@
 
 {% load ballot_icon %}
 {% load ietf_filters %}
+{% load django_bootstrap5 %}
 
 {% block pagehead %}
     <link rel="alternate" type="application/atom+xml" href="/feed/iesg-agenda/">
@@ -16,15 +17,13 @@
     {% origin %}
     <h1>Documents on future IESG telechat agendas</h1>
 
-    <ul class="nav nav-tabs">
+    <ul class="nav nav-tabs mb-3">
         <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.agenda' %}">IESG Agenda</a></li>
         <li class="nav-item"><a class="nav-link active" href="{% url 'ietf.iesg.views.agenda_documents' %}">Documents on future agendas</a></li>
         <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.discusses' %}">DISCUSS positions</a></li>
         <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.past_documents' %}">Documents on recent agendas</a></li>
         <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.photos' %}">IESG Photos</a></li>
     </ul>
-
-
 
     {% if user|has_role:"Secretariat" %}
         <form class="form-inline" method="post">
@@ -33,9 +32,9 @@
 
     {% for t in telechats %}
         <h2>IESG telechat {{t.date}}
-            <small class="text-muted">{{t.pages}} page{{t.pages|pluralize}}</small>
+            <br><small class="text-muted">{{t.pages}} page{{t.pages|pluralize}}</small>
         </h2>
-        <p>
+        <div class="buttonlist">
             <a class="btn btn-primary" role="button" href="/iesg/agenda/">
                 <span class="bi bi-list"></span>
                 Full IESG agenda
@@ -45,25 +44,25 @@
                 <span class="bi bi-download"></span>
                 Download documents
             </a>
-        </p>
+        </div>
 
         {% for num, section in t.sections %}
             {% if "docs" not in section or section.docs %}
-                {% if num|sectionlevel == 1 %}<h3>{{ num }}. {{ section.title|safe }}</h3>{% endif %}
-                {% if num|sectionlevel == 2 %}<h4>{{ num }} {{ section.title|safe }}</h4>{% endif %}
-                {% if num|sectionlevel == 3 %}<h5>{{ num }} {{ section.title|safe }}</h5>{% endif %}
+                {% if num|sectionlevel == 1 %}<h3 class="mt-3">{{ num }}. {{ section.title|safe }}</h3>{% endif %}
+                {% if num|sectionlevel == 2 %}<h4 class="mt-3">{{ num }} {{ section.title|safe }}</h4>{% endif %}
+                {% if num|sectionlevel == 3 %}<h5 class="mt-3">{{ num }} {{ section.title|safe }}</h5>{% endif %}
             {% endif %}
 
             {% if "docs" in section and section.docs %}
                 <table class="table table-sm table-striped tablesorter">
                     <thead>
                         <tr>
-                            <th data-orderable="false"></th>
-                            <th>Document</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                            <th>IPR</th>
-                            <th>AD / Shepherd</th>
+                            <th></th>
+                            <th data-sort="document">Document</th>
+                            <th data-sort="date">Date</th>
+                            <th data-sort="status">Status</th>
+                            <th data-sort="ipr">IPR</th>
+                            <th data-sort="ad">AD/Shepherd</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -78,7 +77,7 @@
     {% endfor %}
 
     {% if user|has_role:"Secretariat" %}
-        <input title="Save reschedule changes done with the drop-down boxes below" type="submit" value="Save reschedules" class="btn btn-primary">
+        {% bootstrap_button button_type="submit" content="Save reschedules" title="Save reschedule changes done with the drop-down boxes below" %}
         </form>
     {% endif %}
 

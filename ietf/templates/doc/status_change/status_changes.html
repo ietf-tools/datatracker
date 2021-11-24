@@ -34,8 +34,8 @@
             <tbody>
                 {% for doc in state.list %}
                     <tr>
-                        <td class="document">{{ doc.displayname_with_link|safe }}</td>
-                        <td class="title"><b>{{ doc.title }}</b></td>
+                        <td>{{ doc.displayname_with_link|safe }}</td>
+                        <td><b>{{ doc.title }}</b></td>
                     </tr>
                 {% endfor %}
             </tbody>

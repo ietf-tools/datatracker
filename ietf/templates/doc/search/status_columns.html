@@ -1,7 +1,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
 {% load ietf_filters ballot_icon person_filters %}
 
-<td class="status">
+<td>
     <div class="float-end" id="ballot-icon-{{doc.name}}">
         {% if doc.ballot %}{% ballot_icon doc %}{% endif %}
     </div>
@@ -51,9 +51,11 @@
 
         {% if doc.reviewed_by_teams %}
             <br>Reviews:
+            {% spaceless %}
             {% for acronym in doc.reviewed_by_teams %}
-                {{ acronym }}{% if not forloop.last %}, {% endif %}
+                <a href="{% url "ietf.group.views.group_home" acronym=acronym %}">{{ acronym }}</a>{% if not forloop.last %}, {% endif %}
             {% endfor %}
+            {% endspaceless %}
         {% endif %}
 
         {% for m in doc.milestones %}

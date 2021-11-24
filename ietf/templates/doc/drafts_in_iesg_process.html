@@ -31,8 +31,8 @@
             <tbody>
                 {% for doc in docs %}
                     <tr>
-                        <td class="area text-nowrap">{% if doc.area_acronym %}{{ doc.area_acronym }}{% endif %}</td>
-                        <td class="date text-nowrap">
+                        <td class="text-nowrap">{% if doc.area_acronym %}{{ doc.area_acronym }}{% endif %}</td>
+                        <td class="text-nowrap">
                             {% if state.slug == "lc" %}
                                 {% if doc.lc_expires %}{{ doc.lc_expires|date:"Y-m-d" }}{% endif %}
                             {% else %}
@@ -40,7 +40,7 @@
                             {% endif %}
                         </td>
 
-                        <td class="doc">
+                        <td>
                             <a href="{% url "ietf.doc.views_doc.document_main" doc.name %}">{{ doc.name }}</a>
                             <br><b>{{ doc.title }}</b>
                             {% if doc.action_holders_enabled and doc.action_holders.exists %}
@@ -53,8 +53,8 @@
                                 <br><i>Note: {{ doc.note|linkify|linebreaksbr }}</i>
                             {% endif %}
                         </td>
-                        <td class="level">{{ doc.intended_std_level.name }}</td>
-                        <td class="ad">{% person_link doc.ad %}</td>
+                        <td>{{ doc.intended_std_level.name }}</td>
+                        <td>{% person_link doc.ad %}</td>
                     </tr>
                 {% endfor %}
             </tbody>

@@ -3,6 +3,7 @@
 {% load ietf_filters %}
 {% load ballot_icon %}
 {% load person_filters %}
+{% load django_bootstrap5 %}
 
 <tr {% spaceless %}
     {% if color_row_positions %}
@@ -40,12 +41,16 @@
         {% endfor %}
     </td>
 
-    <td class="document">
+    <td>
+        {% if doc.pages %}
+            <small class="float-end text-muted">{{doc.pages}} page{{ doc.pages|pluralize }}</small>
+        {% endif %}
+
         <div>
             <a href="{{ doc.get_absolute_url }}">{% if doc.get_state_slug == "rfc" %}RFC {{ doc.rfc_number }}{% else %}{{ doc.name }}-{{ doc.rev }}{% endif %}</a>
 
             {% if doc.get_state_slug == "rfc" and "draft" in doc.name %}
-                <i>(was {{ doc.name }})</i>
+                <i class="text-muted">(was {{ doc.name }})</i>
             {% endif %}
             <br>
             <b>{{ doc.title }}</b>
@@ -57,19 +62,16 @@
         </div>
 
         {% if user|has_role:"Secretariat" and doc.reschedule_form %}
-            <div class="form-group">
-                <label for="{{ doc.reschedule_form.telechat_date.auto_id}}">Reschedule:</label>
-                {{ doc.reschedule_form.telechat_date|add_class:"form-control input-sm" }}
+            <div class="mt-3">
+                {% bootstrap_form doc.reschedule_form layout="floating" %}
+                {% if doc.reschedule_form.show_clear %}
+                    {% bootstrap_field doc.reschedule_form.clear_returning_item %}
+                {% endif %}
             </div>
-            {% if doc.reschedule_form.show_clear %}
-                <div class="checkbox">
-                    <label>{{ doc.reschedule_form.clear_returning_item }} <b>Clear "returning item"</b></label>
-                </div>
-            {% endif %}
         {% endif %}
     </td>
 
-    <td class="date">
+    <td>
         <span class="text-nowrap">
 
             {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}
@@ -97,10 +99,6 @@
     {% endfor %}
         {% endcomment %}
 
-        {% if doc.pages %}
-            <br><small class="text-muted">{{doc.pages}} page{{ doc.pages|pluralize }}</small>
-        {% endif %}
-
         {% if doc.latest_revision_date|timesince_days|new_enough:request %}
             <wbr><div class="float-end"><span class="badge bg-success">New</span></div>
         {% endif %}
@@ -113,7 +111,7 @@
 
     {% include "doc/search/status_columns.html" %}
 
-    <td class="ipr text-center">
+    <td class="text-center">
         {% if doc.related_ipr %}
             <a href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}">
                 <span class="badge bg-secondary">{{ doc.related_ipr|length }}</span>
@@ -122,7 +120,7 @@
     </td>
 
     {% if ad_name == None or ad_name != doc.ad.plain_name %}
-        <td class="ad">
+        <td>
             {% if doc.ad %}
                 {% person_link doc.ad title="Area Director" %}<br>
             {% endif %}

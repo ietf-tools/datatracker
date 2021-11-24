@@ -98,10 +98,10 @@
         <tbody>
             {% for e in events %}
                 <tr class="anchor-target" id="history-{{ e.pk }}">
-                    <td class="text-nowrap date"><div title="{{ e.time|date:'Y-m-d H:i:s O' }}">{{ e.time|date:"Y-m-d" }}</div></td>
-                    <td class="text-end rev">{{ e.rev }}</td>
-                    <td class="by">{{ e.by|escape }}</td>
-                    <td class="action">{{ e.desc|format_history_text|safe }}</td>
+                    <td class="text-nowrap"><div title="{{ e.time|date:'Y-m-d H:i:s O' }}">{{ e.time|date:"Y-m-d" }}</div></td>
+                    <td class="text-end">{{ e.rev }}</td>
+                    <td>{{ e.by|escape }}</td>
+                    <td>{{ e.desc|format_history_text|safe }}</td>
                 </tr>
             {% endfor %}
         </tbody>

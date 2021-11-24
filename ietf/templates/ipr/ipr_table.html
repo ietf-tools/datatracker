@@ -16,9 +16,9 @@
     <tbody>
         {% for ipr in iprs %}
             <tr>
-                <td class="date text-nowrap text-end">{{ ipr.time|date:"Y-m-d" }}</td>
-                <td class="id text-end">{{ ipr.id }}</td>
-                <td class="title">
+                <td class="text-nowrap text-end">{{ ipr.time|date:"Y-m-d" }}</td>
+                <td class="text-end">{{ ipr.id }}</td>
+                <td>
                     {% if ipr.state_id == 'posted' or administrative_list %}
                         <div><a href="{% url "ietf.ipr.views.show" ipr.id %}">{{ ipr.title }}</a></div>
 
@@ -42,8 +42,8 @@
 
                 {% if administrative_list == 'pending' %}
                     {% with ipr.get_latest_event_msgout as latest_msgout %}
-                        <td class="query">{% if latest_msgout %}{{ latest_msgout.time|date:"Y-m-d" }}{% endif %}</td>
-                        <td class="due text-nowrap">
+                        <td>{% if latest_msgout %}{{ latest_msgout.time|date:"Y-m-d" }}{% endif %}</td>
+                        <td class="text-nowrap">
                             {% if latest_msgout and latest_msgout.response_due %}
                                 {{ latest_msgout.response_due|date:"Y-m-d" }}
                                 {% if latest_msgout.response_past_due %}

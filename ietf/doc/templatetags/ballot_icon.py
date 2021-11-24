@@ -208,7 +208,7 @@ def state_age_colored(doc):
         elif days > goal1:
             class_name = "badge bg-warning"
         else:
-            class_name = "ietf-small"
+            class_name = "badge bg-success"
         if days > goal1:
             title = ' title="Goal is &lt;%d days"' % (goal1,)
         else:

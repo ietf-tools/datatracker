@@ -30,11 +30,11 @@
         <tbody>
             {% for target_doc, source_doc in doc_pairs %}
                 <tr>
-                    <td class="ref">
+                    <td>
                         <a href="{% url "ietf.doc.views_doc.document_main" target_doc.name %}">RFC {{ target_doc.rfc_number }}</a>
                         <br><b>{{ target_doc.title }}</b>
                     </td>
-                    <td class="id">
+                    <td>
                         <a href="{% url "ietf.doc.views_doc.document_main" source_doc.name %}">{{ source_doc.name }}</a>
                         <br><b>{{ source_doc.title }}</b>
                     </td>

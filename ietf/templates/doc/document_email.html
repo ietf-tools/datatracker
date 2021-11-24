@@ -27,10 +27,10 @@
             <tbody>
                 {% for alias in aliases %}
                     <tr>
-                        <td class="alias">
+                        <td>
                             <a href="mailto:{{ doc.name }}{{ alias.alias_type|default:''}}@{{ietf_domain}}">
                                 {{ doc.name }}{{ alias.alias_type|default:''}}@{{ietf_domain}}</a></td>
-                        <td class="expansion">{{ alias.expansion }}</td>
+                        <td>{{ alias.expansion }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -50,10 +50,10 @@
         <tbody>
             {% for trigger,desc,to,cc in expansions %}
                 <tr>
-                    <td class="trigger"><a href="{% url 'ietf.mailtrigger.views.show_triggers' trigger %}"
+                    <td><a href="{% url 'ietf.mailtrigger.views.show_triggers' trigger %}"
                         title="{{desc}}">{{trigger}}</a></td>
-                    <td class="to"> {{to|join:', '}}</td>
-                    <td class="cc"> {{cc|join:', '}}</td>
+                    <td> {{to|join:', '}}</td>
+                    <td> {{cc|join:', '}}</td>
                 </tr>
             {% endfor %}
         </tbody>

@@ -43,26 +43,26 @@
             {% for ref in refs %}
                 {% with ref.source.canonical_name as name %}
                     <tr>
-                        <td class="document">
+                        <td>
                             <a href="{% url 'ietf.doc.views_doc.document_main' name=name %}">{{ name|prettystdname }}</a>
                             {% if ref.target.name != alias_name %}
                                 <br><span class="badge bg-info">As {{ref.target.name}}</span>
                             {% endif %}
                         </td>
-                        <td class="title">
+                        <td>
                             <b>{{ref.source.title}}</b><br>
                             <a class="btn btn-primary btn-sm" href="{% url 'ietf.doc.views_doc.document_references' name %}" rel="nofollow"><span class="bi bi-arrow-left"></span> References</a>
                             <a class="btn btn-primary btn-sm" href="{% url 'ietf.doc.views_doc.document_referenced_by' name %}" rel="nofollow"><span class="bi bi-arrow-right"></span> Referenced by</a>
                         </td>
-                        <td class="status">
+                        <td>
                             {% ifequal ref.source.get_state.slug 'rfc' %}
                                 {% with ref.source.std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
                             {% else %}
                                 {% with ref.source.intended_std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
                             {% endifequal %}
                         </td>
-                        <td class="type">{{ref.relationship.name}}</td>
-                        <td class="downref">{{ref.is_downref|default:''}}</td>
+                        <td>{{ref.relationship.name}}</td>
+                        <td>{{ref.is_downref|default:''}}</td>
                     </tr>
                 {% endwith %}
             {% endfor %}
