@@ -86,9 +86,23 @@ class MultiplePositionNomineeField(forms.MultipleChoiceField, PositionNomineeFie
         return result
 
 
-class NewEditMembersForm(forms.Form):
+class EditMembersForm(forms.Form):
+    members = SearchableEmailsField(only_users=True, all_emails=True, required=False)
+    liaisons = SearchableEmailsField(only_users=True, all_emails=True, required=False)
 
-    members = SearchableEmailsField(only_users=True,all_emails=True)
+    def __init__(self, nomcom, *args, **kwargs):
+        initial = kwargs.setdefault('initial', {})
+        roles = nomcom.group.role_set.filter(
+            name__slug__in=('member', 'liaison')
+        ).order_by('email__person__name').select_related('email')
+        initial['members'] = [
+            r.email for r in roles if r.name.slug == 'member'
+        ]
+        initial['liaisons'] = [
+                r.email for r in roles if r.name.slug =='liaison'
+        ]
+        super().__init__(*args, **kwargs)
+
 
 class EditNomcomForm(forms.ModelForm):
 
