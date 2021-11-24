@@ -1,0 +1,29 @@
+// Import bootstrap helpers
+@import "~/node_modules/bootstrap/scss/functions";
+@import "~/node_modules/bootstrap/scss/variables";
+// @import "~/node_modules/bootstrap/scss/mixins";
+// @import "~/node_modules/bootstrap/scss/utilities";
+
+table .sort {
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+table .sort:hover {
+    --#{$variable-prefix}table-accent-bg: var(--#{$variable-prefix}table-hover-bg);
+    color: var(--#{$variable-prefix}table-hover-color);
+}
+
+table .sort:before {
+    font-family: 'bootstrap-icons';
+    content: '\f127';
+    padding-right: .25em;
+}
+
+table .sort.asc:before {
+    content: '\f128';
+}
+
+table .sort.desc:before {
+    content: '\f148';
+}

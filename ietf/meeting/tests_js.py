@@ -267,7 +267,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.driver.find_element(By.CSS_SELECTOR, "#timeslot-toggle-modal-open").click()
         self.assertTrue(self.driver.find_element(By.CSS_SELECTOR, "#timeslot-group-toggles-modal").is_displayed())
         self.driver.find_element(By.CSS_SELECTOR, "#timeslot-group-toggles-modal [value=\"{}\"]".format("ts-group-{}-{}".format(slot2.time.strftime("%Y%m%d-%H%M"), int(slot2.duration.total_seconds() / 60)))).click()
-        self.driver.find_element(By.CSS_SELECTOR, "#timeslot-group-toggles-modal [data-dismiss=\"modal\"]").click()
+        self.driver.find_element(By.CSS_SELECTOR, "#timeslot-group-toggles-modal [data-bs-dismiss=\"modal\"]").click()
         self.assertTrue(not self.driver.find_element(By.CSS_SELECTOR, "#timeslot-group-toggles-modal").is_displayed())
 
         # swap days
@@ -1215,7 +1215,7 @@ class AgendaTests(IetfSeleniumTestCase):
         """Click the 'customize' anchor to reveal the group buttons"""
         customize_anchor = wait.until(
             expected_conditions.element_to_be_clickable(
-                (By.CSS_SELECTOR, '#accordion a[data-toggle="collapse"]')
+                (By.CSS_SELECTOR, '#accordion a[data-bs-toggle="collapse"]')
             )
         )
         customize_anchor.click()
@@ -1390,7 +1390,7 @@ class AgendaTests(IetfSeleniumTestCase):
         # Click the 'customize' anchor to reveal the group buttons
         customize_anchor = WebDriverWait(self.driver, 2).until(
             expected_conditions.element_to_be_clickable(
-                (By.CSS_SELECTOR, '#accordion a[data-toggle="collapse"]')
+                (By.CSS_SELECTOR, '#accordion a[data-bs-toggle="collapse"]')
             )
         )
         customize_anchor.click()
@@ -1511,7 +1511,7 @@ class AgendaTests(IetfSeleniumTestCase):
         # Click the 'materials' button
         open_modal_button = WebDriverWait(self.driver, 2).until(
             expected_conditions.element_to_be_clickable(
-                (By.CSS_SELECTOR, '[data-target="#modal-%s"]' % slug)
+                (By.CSS_SELECTOR, '[data-bs-target="#modal-%s"]' % slug)
             ),
             'Modal open button not found or not clickable',
         )
@@ -1544,7 +1544,7 @@ class AgendaTests(IetfSeleniumTestCase):
         # Now close the modal
         close_modal_button = WebDriverWait(self.driver, 2).until(
             expected_conditions.element_to_be_clickable(
-                (By.CSS_SELECTOR, '.modal-footer button[data-dismiss="modal"]')
+                (By.CSS_SELECTOR, '.modal-footer button[data-bs-dismiss="modal"]')
             ),
             'Modal close button not found or not clickable',
         )
@@ -1564,7 +1564,7 @@ class AgendaTests(IetfSeleniumTestCase):
         # Click the 'materials' button
         open_modal_button = WebDriverWait(self.driver, 2).until(
             expected_conditions.element_to_be_clickable(
-                (By.CSS_SELECTOR, '[data-target="#modal-%s"]' % slug)
+                (By.CSS_SELECTOR, '[data-bs-target="#modal-%s"]' % slug)
             ),
             'Modal open button not found or not clickable for refresh test',
         )
@@ -2468,7 +2468,7 @@ class InterimTests(IetfSeleniumTestCase):
         # Click the 'materials' button
         open_modal_button = self.wait.until(
             expected_conditions.element_to_be_clickable(
-                (By.CSS_SELECTOR, '[data-target="#modal-%s"]' % slug)
+                (By.CSS_SELECTOR, '[data-bs-target="#modal-%s"]' % slug)
             ),
             'Modal open button not found or not clickable',
         )
@@ -2482,7 +2482,7 @@ class InterimTests(IetfSeleniumTestCase):
         close_modal_button = self.wait.until(
             presence_of_element_child_by_css_selector(
                 modal_div,
-                '.modal-footer button[data-dismiss="modal"]',
+                '.modal-footer button[data-bs-dismiss="modal"]',
             ),
             'Modal close button not found or not clickable',
         )
@@ -2621,7 +2621,7 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
         if cancel:
             cancel_button = self.wait.until(
                 expected_conditions.element_to_be_clickable(
-                    (By.CSS_SELECTOR, '#delete-modal button[data-dismiss="modal"]')
+                    (By.CSS_SELECTOR, '#delete-modal button[data-bs-dismiss="modal"]')
                 ))
             cancel_button.click()
         else:

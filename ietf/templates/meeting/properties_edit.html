@@ -3,32 +3,34 @@
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
-{% load bootstrap3 %}
+{% load django_bootstrap5 %}
 
 {% block title %}IETF {{ meeting.number }} Meeting Agenda: {{schedule.owner}} / {{ schedule.name }}{% endblock %}
 
 {% block content %}
-  {% origin %}
+    {% origin %}
 
-<h1>IETF {{meeting.number}}</h1>
-<h2>Schedule: {{schedule.owner}}/{{schedule.name}} ({{schedule.official_token }})
-    {% if not schedule.is_official %}
-      <a class="btn btn-default btn-sm" href="{% url 'ietf.meeting.views.make_schedule_official' num=meeting.number owner=schedule.owner.email_address name=schedule.name %}">Make this the official schedule</a>
-      <a class="btn btn-warning btn-sm" href="{% url 'ietf.meeting.views.delete_schedule' num=meeting.number owner=schedule.owner.email_address name=schedule.name %}">Delete this schedule</a>
-    {% endif %}
-</h2>
+    <h1>IETF {{meeting.number}}</h1>
+    <h2>Schedule: {{schedule.owner}}/{{schedule.name}} ({{schedule.official_token }})
+        {% if not schedule.is_official %}
+            <a class="btn btn-primary btn-sm" href="{% url 'ietf.meeting.views.make_schedule_official' num=meeting.number owner=schedule.owner.email_address name=schedule.name %}">Make this the official schedule</a>
+            <a class="btn btn-warning btn-sm" href="{% url 'ietf.meeting.views.delete_schedule' num=meeting.number owner=schedule.owner.email_address name=schedule.name %}">Delete this schedule</a>
+        {% endif %}
+    </h2>
 
-<div>
+    <div>
 
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-    {% buttons %}
-        <input class="btn btn-primary" type="submit" value="Save" name="save">
-        <a href="{% url 'ietf.meeting.views.list_schedules' num=meeting.number %}" class="btn btn-default">Cancel</a>
-    {% endbuttons %}
-  </form>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% bootstrap_form form %}
 
-</div>
+
+            <input class="btn btn-primary" type="submit" value="Save" name="save">
+            <a href="{% url 'ietf.meeting.views.list_schedules' num=meeting.number %}" class="btn btn-primary">Cancel</a>
+
+
+        </form>
+
+    </div>
 
 {% endblock %}

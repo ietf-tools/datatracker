@@ -589,7 +589,7 @@
   <div id="daycontainer" role="tabpanel">
     <ul id="daytabs" class="nav nav-tabs" role="tablist">
     {% for day in days %}
-      <li {% if forloop.first %}class="active"{% endif %} role="presentation"><a href="#day{{forloop.counter0}}" id="day{{forloop.counter0}}-tab" role="tab" data-toggle="tab" area-controls="day{{forloop.counter0}}">{{day|date:"D M d"}}</a></li>
+      <li {% if forloop.first %}class="active"{% endif %} role="presentation"><a href="#day{{forloop.counter0}}" id="day{{forloop.counter0}}-tab" role="tab" data-bs-toggle="tab" area-controls="day{{forloop.counter0}}">{{day|date:"D M d"}}</a></li>
     {% endfor %}
     </ul>
     <div class="tab-content">

@@ -3,12 +3,12 @@
 {% load origin %}
 
 {% block content %}
-  {% origin %}
-  <h1>Missing person info</h1>
+    {% origin %}
+    <h1>Missing person info</h1>
 
-  <p>
-    There is no person record associated with your login.  Please
-    contact the secretariat at <a href="mailto:{{settings.SECRETARIAT_INFO_EMAIL}}">{{settings.SECRETARIAT_INFO_EMAIL}}</a>
-    and explain the situation.
-  </p>
+    <p>
+        There is no person record associated with your login.  Please
+        contact the secretariat at <a href="mailto:{{settings.SECRETARIAT_INFO_EMAIL}}">{{settings.SECRETARIAT_INFO_EMAIL}}</a>
+        and explain the situation.
+    </p>
 {% endblock %}

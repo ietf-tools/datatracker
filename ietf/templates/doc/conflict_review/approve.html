@@ -2,22 +2,24 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 
-{% load bootstrap3 %}
+{% load django_bootstrap5 %}
 
 {% block title %}Approve {{ review.canonical_name }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Approve {{ review.canonical_name }}</h1>
+    {% origin %}
+    <h1>Approve {{ review.canonical_name }}</h1>
 
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
+    <form method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
 
-    {% buttons %}
-      <button type="submit" class="btn btn-primary">Send announcement & close ballot</button>
-      <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=review.name %}">Back</a>
-    {% endbuttons %}
-  </form>
+
+
+        <button type="submit" class="btn btn-primary">Send announcement & close ballot</button>
+        <a class="btn btn-primary float-end" href="{% url "ietf.doc.views_doc.document_main" name=review.name %}">Back</a>
+
+
+    </form>
 
 {% endblock %}

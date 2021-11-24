@@ -37,7 +37,6 @@ from ietf.group.factories import GroupFactory
 from ietf.group.models import Group
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
-from ietf.utils.bower_storage import BowerStorageFinder
 from ietf.utils.draft import Draft, getmeta
 from ietf.utils.log import unreachable, assertion
 from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox, get_payload_text
@@ -389,39 +388,6 @@ class AdminTestCase(TestCase):
                 else:
                     self.assertContains(r, model._meta.model_name,
                         msg_prefix="There doesn't seem to be any admin API for model %s.models.%s"%(app.__name__,model.__name__,))
-
-## One might think that the code below would work, but it doesn't ...
-
-# def list_static_files(path):
-#     r = Path(settings.STATIC_ROOT)
-#     p = r / path
-#     files =  list(p.glob('**/*'))
-#     relfn = [ str(file.relative_to(r)) for file in files ] 
-#     return relfn
-# 
-# class TestBowerStaticFiles(TestCase):
-# 
-#     def test_bower_static_file_finder(self):
-#         from django.templatetags.static import static
-#         bower_json = os.path.join(settings.BASE_DIR, 'bower.json')
-#         with open(bower_json) as file:
-#             bower_info = json.load(file)
-#         for asset in bower_info["dependencies"]:
-#             files = list_static_files(asset)
-#             self.assertGreater(len(files), 0)
-#             for file in files:
-#                 url = static(file)
-#                 debug.show('url')
-#                 r = self.client.get(url)
-#                 self.assertEqual(r.status_code, 200)
-
-class TestBowerStaticFiles(TestCase):
-
-    def test_bower_storage_finder(self):
-        bfs = BowerStorageFinder()
-        files = bfs.find('.')
-        self.assertNotEqual(files,[])
-
 
 class DraftTests(TestCase):
 

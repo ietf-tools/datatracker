@@ -4,15 +4,15 @@
 {% block title %}404 Not Found{% endblock %}
 {% block content %}
 
-  <img class="ietflogo" src="{% static 'ietf/images/ietflogo.png' %}" alt="IETF" style="width: 10em">
-  <div class='alert'>
+    <img class="ietflogo" src="{% static 'ietf/images/ietflogo.png' %}" alt="IETF" style="width: 10em">
+    <div class='alert'>
 
-    <h2>Restricted Access.</h2>
+        <h2>Restricted Access.</h2>
 
-    <p>{{ exception }}</p>
+        <p>{{ exception }}</p>
 
-    <p>If you think this is a server error, please contact <a href="mailto:{{ bugreport_email }}">{{ bugreport_email }}</a>.</p>
+        <p>If you think this is a server error, please contact <a href="mailto:{{ bugreport_email }}">{{ bugreport_email }}</a>.</p>
 
-  </div>
+    </div>
 {% endblock %}
 

@@ -448,13 +448,13 @@ class GroupPagesTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(q('.label-warning').text(),"Concluded WG")
+        self.assertEqual(q('.bg-warning').text(),"Concluded WG")
         replaced_group = GroupFactory(state_id='replaced')
         url = urlreverse("ietf.group.views.history",kwargs={'acronym':replaced_group.acronym})
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(q('.label-warning').text(),"Replaced WG")
+        self.assertEqual(q('.bg-warning').text(),"Replaced WG")
 
 
 class GroupEditTests(TestCase):
@@ -1848,4 +1848,3 @@ class AcronymValidationTests(TestCase):
         wg = GroupFactory(acronym='bad-idea', type_id='wg') 
         form = GroupForm({'acronym':wg.acronym,'name':wg.name,'state':wg.state_id},group=wg, group_type=wg.type_id)
         self.assertTrue(form.is_valid())
-

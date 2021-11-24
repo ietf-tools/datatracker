@@ -2,21 +2,23 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 
-{% load bootstrap3 %}
+{% load django_bootstrap5 %}
 
 {% block title %}Send Notification{{ formset|pluralize }}{% endblock %}
 
 {% block content %}
-  {% origin %}
-  <h1>Send Notification{{ formset|pluralize }}<br><small>{{ ipr }}</small></h1>
+    {% origin %}
+    <h1>Send Notification{{ formset|pluralize }}<br><small>{{ ipr }}</small></h1>
 
-  <form class="send-notification" method="post">
-    {% csrf_token %}
+    <form class="send-notification" method="post">
+        {% csrf_token %}
 
-    {% bootstrap_formset formset %}
+        {% bootstrap_formset formset %}
 
-    {% buttons %}
-      <button type="submit" class="btn btn-primary">Send Notification{{ formset|pluralize }}</button>
-    {% endbuttons %}
-  </form>
+
+
+        <button type="submit" class="btn btn-primary">Send Notification{{ formset|pluralize }}</button>
+
+
+    </form>
 {% endblock %}

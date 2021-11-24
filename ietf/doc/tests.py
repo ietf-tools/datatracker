@@ -2111,9 +2111,9 @@ class DocumentMeetingTests(TestCase):
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
         self.assertTrue(q('#addsessionsbutton'))
-        self.assertEqual(1,len(q("#inprogressmeets a.btn-default:contains('Remove document')")))
-        self.assertEqual(1,len(q("#futuremeets a.btn-default:contains('Remove document')")))
-        self.assertEqual(1,len(q("#pastmeets a.btn-default:contains('Remove document')")))
+        self.assertEqual(1,len(q("#inprogressmeets a.btn-primary:contains('Remove document')")))
+        self.assertEqual(1,len(q("#futuremeets a.btn-primary:contains('Remove document')")))
+        self.assertEqual(1,len(q("#pastmeets a.btn-primary:contains('Remove document')")))
         self.assertEqual(1,len(q("#pastmeets a.btn-warning:contains('Remove document')")))
 
         self.client.login(username=self.group_chair.user.username,password='%s+password'%self.group_chair.user.username)
@@ -2121,9 +2121,9 @@ class DocumentMeetingTests(TestCase):
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
         self.assertTrue(q('#addsessionsbutton'))
-        self.assertEqual(1,len(q("#inprogressmeets a.btn-default:contains('Remove document')")))
-        self.assertEqual(1,len(q("#futuremeets a.btn-default:contains('Remove document')")))
-        self.assertEqual(1,len(q("#pastmeets a.btn-default:contains('Remove document')")))
+        self.assertEqual(1,len(q("#inprogressmeets a.btn-primary:contains('Remove document')")))
+        self.assertEqual(1,len(q("#futuremeets a.btn-primary:contains('Remove document')")))
+        self.assertEqual(1,len(q("#pastmeets a.btn-primary:contains('Remove document')")))
         self.assertTrue(q('#pastmeets'))
         self.assertFalse(q("#pastmeets a.btn-warning:contains('Remove document')"))
 
@@ -2437,7 +2437,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(q('#materials-content .panel-body a').attr['href'],'https://unusual.example')
+        self.assertEqual(q('#materials-content .card-body a').attr['href'],'https://unusual.example')
 
 class Idnits2SupportTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['DERIVED_DIR']

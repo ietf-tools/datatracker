@@ -52,7 +52,7 @@ class DraftIdnitsChecker(object):
 
     # start using this when we provide more in the way of warnings during
     # submission checking:
-    # symbol = '<span class="fa fa-check-square"></span>'
+    # symbol = '<span class="bi bi-check-square"></span>'
     # symbol = u'<span class="large">\ua17d</span>' # Yi syllable 'nit'
     # symbol = u'<span class="large">\ub2e1</span>' # Hangul syllable 'nit'
 

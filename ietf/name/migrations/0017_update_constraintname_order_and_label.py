@@ -12,13 +12,13 @@ class Migration(migrations.Migration):
         ConstraintName = apps.get_model('name', 'ConstraintName')
         for cn in ConstraintName.objects.all():
             cn.editor_label = {
-                'bethere': "<i class=\"fa fa-user-o\"></i>{count}",
-                'wg_adjacent': "<i class=\"fa fa-step-forward\"></i>",
+                'bethere': "<i class=\"bi bi-person\"></i>{count}",
+                'wg_adjacent': "<i class=\"bi bi-skip-end\"></i>",
                 'conflict': "<span class=\"encircled\">1</span>",
                 'conflic2': "<span class=\"encircled\">2</span>",
                 'conflic3': "<span class=\"encircled\">3</span>",
                 'time_relation': "&Delta;",
-                'timerange': "<i class=\"fa fa-calendar-o\"></i>",
+                'timerange': "<i class=\"bi bi-calendar\"></i>",
             }.get(cn.slug, cn.editor_label)
 
             cn.order = {

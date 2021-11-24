@@ -9,19 +9,19 @@
             <h4>Agenda</h4>
             <div class="agenda-frame" data-src="{{ agenda.get_href }}"></div>
         {% else %}
-            <span class="label label-info">Agenda submitted as {{ agenda.file_extension|upper }}</span>
+            <span class="badge bg-info">Agenda submitted as {{ agenda.file_extension|upper }}</span>
         {% endif %}
     {% else %}
-        <span class="label label-warning">No agenda submitted</span>
+        <span class="badge bg-warning">No agenda submitted</span>
     {% endif %}
 {% endwith %}
 
 {% if item.session.slides %}
     <h4>Slides</h4>
-    <ul class="fa-ul list-unstyled">
+    <ul class="list-unstyled">
         {% for slide in item.session.slides %}
             <li>
-                <span class="fa-li fa fa-file-{{ slide.file_extension|lower }}-o"></span>
+                <span class="bi bi-file-{{ slide.file_extension|lower }}-o"></span>
                 <a href="{{ slide.get_versionless_href }}">{{ slide.title|clean_whitespace }}</a>
             </li>
         {% endfor %}
@@ -34,9 +34,9 @@
             <h4>Minutes</h4>
             <div class="minutes-frame" data-src="{{ minutes.get_href }}"></div>
         {% else %}
-            <span class="label label-info">Minutes submitted as {{ minutes.file_extension|upper }}</span>
+            <span class="badge bg-info">Minutes submitted as {{ minutes.file_extension|upper }}</span>
         {% endif %}
     {% else %}
-        <span class="label label-warning">No minutes submitted</span>
+        <span class="badge bg-warning">No minutes submitted</span>
     {% endif %}
 {% endwith %}
