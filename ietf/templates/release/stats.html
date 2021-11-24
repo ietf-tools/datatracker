@@ -121,9 +121,9 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static 'highcharts/highcharts.js' %}"></script>
-    <script src="{% static 'highcharts/modules/exporting.js' %}"></script>
-    <script src="{% static 'highcharts/modules/offline-exporting.js' %}"></script>
+    <script src="{% static 'ietf/js/highcharts-highcharts.js' %}"></script>
+    <script src="{% static 'ietf/js/highcharts-exporting.js' %}"></script>
+    <script src="{% static 'ietf/js/highcharts-offline-exporting.js' %}"></script>
     <script>
         $(document).ready(function () {
             Highcharts.chart('coverage-chart', window.coverageChartConf);

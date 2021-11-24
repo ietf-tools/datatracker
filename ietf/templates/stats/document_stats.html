@@ -7,7 +7,7 @@
 {% block title %}{{ stats_title }}{% endblock %}
 
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+    <link rel="stylesheet" href="{% static 'ietf/css/datepicker.css' %}">
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 
@@ -20,9 +20,9 @@
         <div>
             Documents:
 
-            <div class="btn-group">
+            <div class="btn-group buttonlist">
                 {% for slug, label, url in possible_document_stats_types %}
-                    <a class="btn btn-primary {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+                    <a class="btn btn-outline-primary {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
                 {% endfor %}
             </div>
         </div>
@@ -30,9 +30,9 @@
         <div>
             Authors:
 
-            <div class="btn-group">
+            <div class="btn-group buttonlist">
                 {% for slug, label, url in possible_author_stats_types %}
-                    <a class="btn btn-primary {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+                    <a class="btn btn-outline-primary {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
                 {% endfor %}
             </div>
         </div>
@@ -40,27 +40,27 @@
         <div>
             Yearly:
 
-            <div class="btn-group">
+            <div class="btn-group buttonlist">
                 {% for slug, label, url in possible_yearly_stats_types %}
-                    <a class="btn btn-primary {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+                    <a class="btn btn-outline-primary {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
                 {% endfor %}
             </div>
         </div>
 
-        <h5>Options</h5>
+        <h2>Options</h2>
 
         <div>
             Document type:
-            <div style="margin-right:3em;" class="btn-group">
+            <div class="btn-group buttonlist">
                 {% for slug, label, url in possible_document_types %}
-                    <a class="btn btn-primary {% if slug == document_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+                    <a class="btn btn-outline-primary {% if slug == document_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
                 {% endfor %}
             </div>
 
             Time:
-            <div class="btn-group">
+            <div class="btn-group buttonlist">
                 {% for slug, label, url in possible_time_choices %}
-                    <a class="btn btn-primary {% if slug == time_choice %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+                    <a class="btn btn-outline-primary {% if slug == time_choice %}active{% endif %}" href="{{ url }}">{{ label }}</a>
                 {% endfor %}
             </div>
         </div>
@@ -97,9 +97,9 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static 'highcharts/highcharts.js' %}"></script>
-    <script src="{% static 'highcharts/modules/exporting.js' %}"></script>
-    <script src="{% static 'highcharts/modules/offline-exporting.js' %}"></script>
+    <script src="{% static 'ietf/js/highcharts-highcharts.js' %}"></script>
+    <script src="{% static 'ietf/js/highcharts-exporting.js' %}"></script>
+    <script src="{% static 'ietf/js/highcharts-offline-exporting.js' %}"></script>
     <script src="{% static 'ietf/js/stats.js' %}"></script>
     <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

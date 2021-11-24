@@ -68,8 +68,8 @@ def yyyymmdd_to_strftime_format(fmt):
 
 class DatepickerMedia:
     """Media definitions needed for Datepicker widgets"""
-    css = dict(all=('bootstrap-datepicker/css/bootstrap-datepicker3.min.css',))
-    js = ('bootstrap-datepicker/js/bootstrap-datepicker.min.js',)
+    css = dict(all=('ietf/css/datepicker.css',))
+    js = ('ietf/js/datepicker.js',)
 
 
 class DatepickerDateInput(forms.DateInput):

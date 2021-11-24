@@ -6,7 +6,7 @@
 
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
-    <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+    <link rel="stylesheet" href="{% static 'ietf/css/datepicker.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -253,7 +253,7 @@
 
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
-    <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+    <script src="{% static 'ietf/js/datepicker.js' %}"></script>
     {% if stats_type == "time" %}
         <script src="{% static 'flot/jquery.flot.min.js' %}"></script>
         <script src="{% static 'flot/jquery.flot.time.min.js' %}"></script>

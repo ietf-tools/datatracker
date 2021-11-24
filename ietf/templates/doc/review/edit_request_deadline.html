@@ -3,7 +3,7 @@
 {% load origin django_bootstrap5 static %}
 
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+    <link rel="stylesheet" href="{% static 'ietf/css/datepicker.css' %}">
 {% endblock %}
 
 {% block title %}Edit review request deadline for {{ review_req.doc.name }}{% endblock %}
@@ -28,5 +28,5 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+    <script src="{% static 'ietf/js/datepicker.js' %}"></script>
 {% endblock %}

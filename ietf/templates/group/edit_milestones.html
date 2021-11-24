@@ -7,7 +7,7 @@
 
 {% block pagehead %}
     {{ all_forms|merge_media:'css' }}
-    <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+    <link rel="stylesheet" href="{% static 'ietf/css/datepicker.css' %}">
 {% endblock %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -122,7 +122,7 @@
 
 {% block js %}
     {{ all_forms|merge_media:'js' }}
-    <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+    <script src="{% static 'ietf/js/datepicker.js' %}"></script>
     {% if not group.uses_milestone_dates %}
         <script src="{% static 'Sortable/Sortable.min.js' %}"></script>
     {% endif %}

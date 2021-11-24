@@ -1,0 +1,1 @@
+import "~/node_modules/highcharts/modules/offline-exporting";

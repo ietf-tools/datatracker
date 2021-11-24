@@ -7,7 +7,7 @@
 {% block title %}{{ stats_title }}{% endblock %}
 
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+    <link rel="stylesheet" href="{% static 'ietf/css/datepicker.css' %}">
     <link rel="stylesheet" href="{% static 'ietf/css/list.css' %}">
 {% endblock %}
 
@@ -40,10 +40,10 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static 'highcharts/highcharts.js' %}"></script>
-    <script src="{% static 'highcharts/modules/exporting.js' %}"></script>
+    <script src="{% static 'ietf/js/highcharts-highcharts.js' %}"></script>
+    <script src="{% static 'ietf/js/highcharts-exporting.js' %}"></script>
     <script src="{% static 'highcharts/modules/export-data.js' %}"></script>
-    <script src="{% static 'highcharts/modules/offline-exporting.js' %}"></script>
+    <script src="{% static 'ietf/js/highcharts-offline-exporting.js' %}"></script>
     <script src="{% static 'ietf/js/stats.js' %}"></script>
     <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}
