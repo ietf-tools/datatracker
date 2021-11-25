@@ -357,6 +357,7 @@ PERSON_API_KEY_VALUES = [
     ("/api/notify/meeting/registration", "/api/notify/meeting/registration", "Robot"), 
     ("/api/notify/meeting/bluesheet", "/api/notify/meeting/bluesheet", "Recording Manager"), 
     ("/api/appauth/authortools", "/api/appauth/authortools", None),
+    ("/api/appauth/bibxml", "/api/appauth/bibxml", None),
 ]
 PERSON_API_KEY_ENDPOINTS = sorted(list(set([ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES ])))
 
