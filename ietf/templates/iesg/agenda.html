@@ -11,23 +11,7 @@
 {% block content %}
     {% origin %}
     <h1>IESG agenda: {{ date }}</h1>
-    <ul class="nav nav-tabs mb-3">
-        <li class="nav-item">
-            <a class="nav-link active" href="{% url 'ietf.iesg.views.agenda' %}">IESG Agenda</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'ietf.iesg.views.agenda_documents' %}">Documents on future agendas</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'ietf.iesg.views.discusses' %}">DISCUSS positions</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'ietf.iesg.views.past_documents' %}">Documents on recent agendas</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'ietf.iesg.views.photos' %}">IESG Photos</a>
-        </li>
-    </ul>
+    {% include "iesg/nav.html" with active="agenda" %}
     {% for num, section in sections %}
         {% if num|sectionlevel == 1 %}
             <h2 class="anchor-target" id="sec-{{ num|slugify }}">{{ num }}. {{ section.title|safe }}</h2>

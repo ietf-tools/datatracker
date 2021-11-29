@@ -47,7 +47,8 @@
     "ietf/static/images/ietflogo-small-transparent.png",
     "ietf/static/images/ietflogo.png",
     "ietf/static/images/apple-touch-icon.png",
-    "ietf/static/images/ietf-icon-red3.png"
+    "ietf/static/images/ietf-icon-red3.png",
+    "ietf/static/images/nopictureavailable.jpg"
   ],
   "targets": {
     "default": {

@@ -1,86 +1,86 @@
-{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% origin %}
 {% load ietf_filters ballot_icon person_filters %}
-
 <td>
-    <div class="float-end" id="ballot-icon-{{doc.name}}">
-        {% if doc.ballot %}{% ballot_icon doc %}{% endif %}
+    <div class="float-end mx-3 mb-3" id="ballot-icon-{{ doc.name }}">
+        {% if doc.ballot %}
+            {% ballot_icon doc %}
+        {% endif %}
     </div>
-
     {% if not doc.get_state_slug == "rfc" %}
         {% if '::' in doc.friendly_state %}
             {{ doc.friendly_state|safe|split:"::"|join:"::<wbr>" }}
         {% else %}
             {{ doc.friendly_state|safe }}
         {% endif %}
-
         {% if doc|state:"draft-rfceditor" %}
             <wbr>: <a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ doc|state:"draft-rfceditor" }}</a>
         {% endif %}
-
-        <wbr>{{ doc|auth48_alert_badge }}
-
-        <wbr>{{ doc|state_age_colored }}
-
+        {{ doc|auth48_alert_badge }}
+        {{ doc|state_age_colored }}
         {% if doc.telechat_date %}
-            <br>IESG telechat: {{ doc.telechat_date }}
+            <br>
+            IESG telechat: {{ doc.telechat_date }}
         {% endif %}
-
         {% with doc.active_defer_event as defer %}
             {% if defer %}
-                <br>Deferred by {{ defer.by }} on {{ defer.time|date:"Y-m-d" }})
+                <br>
+                Deferred by {{ defer.by }} on {{ defer.time|date:"Y-m-d" }})
             {% endif %}
         {% endwith %}
-
         {% if doc.stream %}
             <br>
             {% if doc|state:"stream" %}
-                {{ doc|state:"stream" }}{% if doc.intended_std_level %}:<wbr>{% endif %}
+                {{ doc|state:"stream" }}
+                {% if doc.intended_std_level %}
+                    :<wbr>
+                {% endif %}
             {% else %}
-                {{ doc.stream }} stream{% if doc.intended_std_level %}:<wbr>{% endif %}
+                {{ doc.stream }} stream
+                {% if doc.intended_std_level %}
+                    :<wbr>
+                {% endif %}
             {% endif %}
         {% endif %}
-
-        {% if doc.intended_std_level %}
-            {{ doc.intended_std_level }}
-        {% endif %}
-
+        {% if doc.intended_std_level %}{{ doc.intended_std_level }}{% endif %}
         {% if doc.duedate %}
             <br>
             Due date: {{ doc.duedate }}
-        {%endif %}
-
+        {% endif %}
         {% if doc.reviewed_by_teams %}
-            <br>Reviews:
+            <br>
+            Reviews:
             {% spaceless %}
-            {% for acronym in doc.reviewed_by_teams %}
-                <a href="{% url "ietf.group.views.group_home" acronym=acronym %}">{{ acronym }}</a>{% if not forloop.last %}, {% endif %}
-            {% endfor %}
+                {% for acronym in doc.reviewed_by_teams %}
+                    <a href="{% url "ietf.group.views.group_home" acronym=acronym %}">{{ acronym }}</a>
+                    {% if not forloop.last %},{% endif %}
+                {% endfor %}
             {% endspaceless %}
         {% endif %}
-
         {% for m in doc.milestones %}
             {% if forloop.first %}<br>{% endif %}
-            <span title="Part of {{ m.group.acronym }} milestone: {{ m.desc }}" class="milestone">{{ m.due|date:"M Y" }}</span>{% if not forloop.last %}, {% endif %}
+            <span title="Part of {{ m.group.acronym }} milestone: {{ m.desc }}"
+                  class="milestone">{{ m.due|date:"M Y" }}</span>
+            {% if not forloop.last %},{% endif %}
         {% endfor %}
-
         {% if doc.action_holders_enabled and doc.action_holders.exists %}
-            <br>Action Holders:
+            <br>
+            Action Holders:
             {% for action_holder in doc.documentactionholder_set.all %}
-                <wbr>{% person_link action_holder.person title=action_holder.role_for_doc %}{{ action_holder|action_holder_badge }}{% if not forloop.last %}, {% endif %}
+                {% person_link action_holder.person title=action_holder.role_for_doc %} {{ action_holder|action_holder_badge }}{% if not forloop.last %},{% endif %}
             {% endfor %}
         {% endif %}
-    {% else %}{# RFC #}
+    {% else %}
+        {# RFC #}
         {{ doc.std_level|safe }} RFC
-
         {% if doc.obsoleted_by_list %}
-            <br>Obsoleted by {{ doc.obsoleted_by_list|join:", "|urlize_ietf_docs }}
+            <br>
+            Obsoleted by {{ doc.obsoleted_by_list|join:", "|urlize_ietf_docs }}
         {% endif %}
-
         {% if doc.updated_by_list %}
-            <br>Updated by {{ doc.updated_by_list|join:", "|urlize_ietf_docs }}
+            <br>
+            Updated by {{ doc.updated_by_list|join:", "|urlize_ietf_docs }}
         {% endif %}
     {% endif %}
-
-
-
 </td>
