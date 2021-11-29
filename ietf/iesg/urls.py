@@ -47,7 +47,6 @@ urlpatterns = [
     url(r'^agenda/(?:%(date)s/)?$' % settings.URL_REGEXPS, views.agenda),
     url(r'^agenda/(?:%(date)s/)?agenda.txt$' % settings.URL_REGEXPS, views.agenda_txt),
     url(r'^agenda/(?:%(date)s/)?agenda.json$' % settings.URL_REGEXPS, views.agenda_json),
-    url(r'^agenda/(?:%(date)s/)?scribe_template.html$' % settings.URL_REGEXPS, views.agenda_scribe_template),
     url(r'^agenda/(?:%(date)s/)?moderator_package.html$' % settings.URL_REGEXPS, views.agenda_moderator_package),
     url(r'^agenda/(?:%(date)s/)?agenda_package.txt$' % settings.URL_REGEXPS, views.agenda_package),
 
