@@ -105,3 +105,81 @@ $(document)
                 .on("mouseenter mouseleave", dropdown_hover);
         }
     });
+
+// Automatically add a navigation pane to long pages
+$(document)
+    .ready(function () {
+
+        var headings = $("#content")
+            .find("h1, h2, h3, h4, h5, h6");
+
+        if ($(headings)
+            .length > 0 && $(headings)
+            .last()
+            .offset()
+            .top > $(window)
+            .height()) {
+            console.log("Enabling nav.");
+            var n = 0;
+            var last_level;
+            var nav;
+
+            $("#content")
+                .attr("data-bs-offset", 0)
+                .attr("tabindex", 0)
+                .after($(`
+                 <div class="col-md-2 small">
+                     <nav id="righthand-nav" class="position-fixed navbar navbar-light bg-light overflow-auto" style="height: 70vh;">
+                     <!--<a class="navbar-brand" href="#">Navbar</a>-->
+                     </nav>
+                 </div>
+                 `))
+                .find("h1, h2, h3, h4, h5, h6")
+                .each(function () {
+                    var id = $(this)
+                        .attr("id");
+
+                    if (id === undefined) {
+                        id = `autoid-${++n}`;
+                        $(this)
+                            .attr("id", id);
+                    }
+
+                    var text = $(this)
+                        .text();
+
+                    if (nav === undefined) {
+                        nav = $("#righthand-nav");
+                        nav = $(nav)
+                            .append(`<nav class="nav nav-pills flex-column align-self-start">`)
+                            .children()
+                            .last();
+                    }
+
+                    var level = parseInt(this.nodeName.substring(1)) - 1;
+                    if (last_level == undefined) {
+                        last_level = level;
+                    }
+
+                    if (level > last_level) {
+                        last_level = level;
+                    } else
+                        while (level < last_level) {
+                            last_level--;
+                        }
+
+                    $(nav)
+                        .append(`<a class="nav-link" href="#${id}">${text}</a>`);
+                });
+
+            $(window)
+                .on("scroll", function () {
+                    var item = $('#righthand-nav')
+                        .find(".active")
+                        .last();
+                    if (item.length) {
+                        item[0].scrollIntoView({ block: "center" });
+                    }
+                });
+        }
+    });

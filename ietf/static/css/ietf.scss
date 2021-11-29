@@ -140,3 +140,54 @@ $timeline-even-hover-color: shift-color($timeline-even-color, $link-shade-percen
 #timeline .bar:nth-child(even) rect:focus {
     fill: $timeline-even-hover-color;
 }
+
+
+// Styles needed for the ballot table
+
+.ballot-icon table td {
+    border: $table-border-width solid $table-border-color;
+    height: 10px;
+    width: 8px;
+}
+
+.ballot-icon table .my {
+    border: 2 * $table-border-width solid #000;
+}
+
+.ballot-icon table {
+    // margin: 0 0 10px 10px;
+}
+
+.is-blocking {
+    box-shadow: 0 0 8px 8px #dc0d12;
+    padding: 3px 0px 3px 3px;
+    margin: 5px 1px 3px 0px;
+    border: 1px solid #dc0d12;
+}
+
+.position-moretime,
+.position-notready,
+.position-discuss,
+.position-block {
+    background-color: $danger;
+}
+
+.position-yes {
+    background-color: $success;
+}
+
+.position-noobj {
+    background-color: $info;
+}
+
+.position-abstain {
+    background-color: hsl(hue($warning), 80%, 70%);
+}
+
+.position-recuse {
+    background-color: hsl(hue($primary), 80%, 70%);
+}
+
+.position-norecord {
+    // background-color: $secondary;
+}

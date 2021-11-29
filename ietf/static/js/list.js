@@ -32,7 +32,7 @@ $(document)
                     })
                     .toArray();
 
-                if (fields.length == 0) {
+                if (fields.length && fields.filter(field => field != "")) {
                     console.log("No table fields defined, disabling search/sort.");
 
                 } else {

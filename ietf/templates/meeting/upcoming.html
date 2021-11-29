@@ -6,16 +6,13 @@
 
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
-    <link rel="stylesheet" href="{% static "fullcalendar/core/main.css" %}">
-    <link rel="stylesheet" href="{% static "fullcalendar/daygrid/main.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/fullcalendar.css" %}">
 
 {% endblock %}
 
-{% block bodyAttrs %}data-bs-spy="scroll" data-bs-target="#affix"{% endblock %}
-
 {% block title %}Upcoming Meetings{% endblock %}
 
-{% block morecss %}
+{% block morecssXXX %}
     div.title-buttons {
     margin-bottom: 0.5em;
     margin-top: 1em;
@@ -176,8 +173,7 @@
 
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
-    <script src="{% static 'fullcalendar/core/main.js' %}"></script>
-    <script src="{% static 'fullcalendar/daygrid/main.js' %}"></script>
+    <script src="{% static 'ietf/js/fullcalendar.js' %}"></script>
     <script src="{% static 'ietf/js/moment.js' %}"></script>
     <script src="{% static 'ietf/js/moment-timezone-with-data-10-year-range.js' %}"></script>
     <script src="{% static 'ietf/js/agenda_filter.js' %}"></script>
@@ -282,14 +278,15 @@
                * filtered events.
                */
                 var calendarEl = document.getElementById('calendar')
-                event_calendar = new FullCalendar.Calendar(calendarEl, {
-                    plugins: ['dayGrid'],
-                    displayEventTime: false,
-                    events: function (fInfo, success) {success(display_events)},
-                    eventRender: function (info) {
-                        $(info.el).tooltip({ title: info.event.title })
-                    },
-                    timeFormat: 'H:mm',
+                event_calendar = new FullCalendar(calendarEl, {
+                    plugins: ['dayGridPlugin'],
+                    initialView: 'dayGridMonth',
+                    // displayEventTime: false,
+                    // events: function (fInfo, success) {success(display_events)},
+                    // eventRender: function (info) {
+                    //     $(info.el).tooltip({ title: info.event.title })
+                    // },
+                    // timeFormat: 'H:mm',
                 })
                 event_calendar.render()
             }
