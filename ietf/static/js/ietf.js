@@ -43,7 +43,6 @@ jQuery.ajaxSetup({
 $(document)
     .ready(function () {
         $('[title][title!=""]')
-            .not("th")
             .attr("data-bs-toggle", "tooltip")
             .tooltip();
     });
@@ -128,7 +127,7 @@ $(document)
                 .attr("data-bs-offset", 0)
                 .attr("tabindex", 0)
                 .after($(`
-                 <div class="col-md-2 small">
+                 <div class="col-xl-2 small">
                      <nav id="righthand-nav" class="position-fixed navbar navbar-light bg-light overflow-auto" style="height: 70vh;">
                      <!--<a class="navbar-brand" href="#">Navbar</a>-->
                      </nav>

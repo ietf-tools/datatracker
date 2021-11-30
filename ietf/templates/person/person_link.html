@@ -1,17 +1,22 @@
-{# Copyright The IETF Trust 2020, All Rights Reserved #}{% spaceless %}
+{# bs5ok #}
+{# Copyright The IETF Trust 2020, All Rights Reserved #}
+{% spaceless %}
     <span class="text-nowrap">
         {% if email %}
-            <a {% if title %}title="{{ title }}"{% endif %} href="{% url 'ietf.person.views.profile' email_or_name=email %}">
-                <span class="{{class}}">{{ plain_name }}</span>
-            </a>&nbsp;<a href="mailto:{{ email|urlencode }}">
-                <span class="bi bi-envelope tiny"></span>
+            <a {% if title %}title="{{ title }}"{% endif %}
+                                    href="{% url 'ietf.person.views.profile' email_or_name=email %}">
+                <span class="{{ class }}">{{ name }}</span>
+            </a>&nbsp;
+            <a href="mailto:{{ email|urlencode }}">
+                <span class="bi bi-envelope"></span>
             </a>
         {% elif name %}
-            <a {% if title %}title="{{ title }}"{% endif %} href="{% url 'ietf.person.views.profile' email_or_name=name %}">
-                <span class="{{class}}">{{ plain_name }}</span>
+            <a {% if title %}title="{{ title }}"{% endif %}
+                                    href="{% url 'ietf.person.views.profile' email_or_name=name %}">
+                <span class="{{ class }}">{{ name }}</span>
             </a>
         {% else %}
-            <span class="{{class}}">{{ plain_name }}</span>
+            <span class="{{ class }}">{{ name }}</span>
         {% endif %}
     </span>
 {% endspaceless %}

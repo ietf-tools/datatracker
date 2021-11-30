@@ -39,7 +39,14 @@ $(document)
 
                     $(header_row)
                         .children("[data-sort]")
-                        .addClass("sort");
+                        .addClass("sort")
+                        .each((i, e) => {
+                            if (fields[i] == "date" || fields[i] == "num") {
+                                // magic
+                                $(e)
+                                    .addClass("text-end");
+                            }
+                        });
 
                     if ($(header_row)
                         .text()
@@ -77,15 +84,15 @@ $(document)
                     var list_instance = [];
                     var internal_table = [];
 
-                    var pagination = $(table)
-                        .children("tbody")
-                        .length == 1;
+                    // var pagination = $(table)
+                    //     .children("tbody")
+                    //     .length == 1;
 
                     // list.js cannot deal with tables with multiple tbodys,
                     // so maintain separate internal "tables" for
                     // sorting/searching and update the DOM based on them
                     $(table)
-                        .children("tbody")
+                        .children("tbody, tfoot")
                         .addClass("list")
                         .each(function () {
                             // add the required classes to the cells
@@ -97,7 +104,7 @@ $(document)
                                         .each((i, e) => {
                                             $(e)
                                                 .addClass(fields[i]);
-                                            if (fields[i] == "date") {
+                                            if (fields[i] == "date" || fields[i] == "num") {
                                                 // magic
                                                 $(e)
                                                     .addClass("text-end");
@@ -112,6 +119,13 @@ $(document)
 
                             var tbody = $(this)
                                 .clone();
+
+                            if ($(tbody)
+                                .find("tr")
+                                .length == 0) {
+                                console.log("Skipping empty tbody");
+                                return;
+                            }
 
                             var parent = $(table)
                                 .clone()

@@ -1,23 +1,14 @@
+{# bs5ok #}
 {# Copyright The IETF Trust 2017, All Rights Reserved #}
 {% extends "base.html" %}
-
 {% load origin %}
-
 {% load ietf_filters static django_bootstrap5 %}
-
 {% block title %}Release Statistics{% endblock %}
-
-{% block pagehead %}
-{% endblock %}
-
+{% block pagehead %}{% endblock %}
 {% block content %}
     {% origin %}
-
     <h1>Release Statistics</h1>
-
-    <div id="coverage-chart">
-    </div>
-
+    <div id="coverage-chart"></div>
     <script id="coverage-data">
         var coverageChartConf = {
             chart: {
@@ -72,10 +63,7 @@
             series: {{ coverage_chart_data }}
         };
     </script>
-
-    <div id="frequency-chart">
-    </div>
-
+    <div id="frequency-chart"></div>
     <script id="frequency-data">
         var frequencyChartConf = {
             chart: {
@@ -116,10 +104,7 @@
             series: {{ frequency_chart_data }}
         };
     </script>
-
-
 {% endblock %}
-
 {% block js %}
     <script src="{% static 'ietf/js/highcharts-highcharts.js' %}"></script>
     <script src="{% static 'ietf/js/highcharts-exporting.js' %}"></script>

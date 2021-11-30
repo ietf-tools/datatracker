@@ -1,6 +1,7 @@
-{% load origin %}{% origin %}
+{# bs5ok #}
+{% load origin %}
+{% origin %}
 <div id="chart"></div>
-
 <script>
     var chartConf = {
         chart: {
@@ -30,7 +31,7 @@
                 var s = '<b>' + this.points[0].key + '</b>';
 
                 $.each(this.points, function () {
-                    s += '<br/>' + chartConf.yAxis.title.text + ': ' + this.y;
+                    s += '<br />' + chartConf.yAxis.title.text + ': ' + this.y;
                 });
 
                 return s;
@@ -40,9 +41,7 @@
         series: {{ chart_data }}
     };
 </script>
-
 <div id="pie-chart"></div>
-
 <script>
     var pieChartConf = {
         chart: {
@@ -70,9 +69,7 @@
         }]
     };
 </script>
-
-<h3>Data</h3>
-
+<h2>Data</h2>
 <table class="table table-sm stats-data tablesorter">
     <thead>
         <tr>
@@ -91,8 +88,12 @@
         {% endfor %}
     </tbody>
 </table>
-
-<p>EU (European Union) is not a country, but has been added for reference, as the sum of
+<p>
+    EU (European Union) is not a country, but has been added for reference, as the sum of
     all current EU member countries:
-    {% for c in eu_countries %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}.
+    {% for c in eu_countries %}
+        {{ c.name }}
+        {% if not forloop.last %},{% endif %}
+    {% endfor %}
+    .
 </p>

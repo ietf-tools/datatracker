@@ -1,6 +1,7 @@
-{% load origin %}{% origin %}
+{# bs5ok #}
+{% load origin %}
+{% origin %}
 <div id="chart"></div>
-
 <script>
     var chartConf = {
         chart: {
@@ -36,7 +37,7 @@
                 var s = '<b>' + this.x + ' ' + (this.x == 1 ? "{{ doc_label }}" : '{{ doc_label }}s') + '</b>';
 
                 $.each(this.points, function () {
-                    s += '<br/>' + chartConf.yAxis.title.text + ': ' + this.y.toFixed(1) + '%';
+                    s += '<br />' + chartConf.yAxis.title.text + ': ' + this.y.toFixed(1) + '%';
                 });
 
                 return s;
@@ -46,15 +47,13 @@
         series: {{ chart_data }}
     };
 </script>
-
-<h3>Data</h3>
-
-<table class="table table-sm stats-data">
+<h2>Data</h2>
+<table class="table table-sm table-striped tablesorter stats-data">
     <thead>
         <tr>
-            <th>Documents</th>
-            <th>Percentage of authors</th>
-            <th>Authors</th>
+            <th data-sort="num">Documents</th>
+            <th data-sort="num">Percentage of authors</th>
+            <th data-sort="num">Authors</th>
         </tr>
     </thead>
     <tbody>

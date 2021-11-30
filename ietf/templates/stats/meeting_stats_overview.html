@@ -1,6 +1,7 @@
-{% load origin %}{% origin %}
+{# bs5ok #}
+{% load origin %}
+{% origin %}
 <div id="chart" class="chart-{{ stats_type }}"></div>
-
 <script>
     var chartConf = {
 
@@ -32,8 +33,8 @@
             tooltip: {
                 formatter: function () {
                     var s = '<b>' + this.point.name + '</b>';
-                    s += '<br/>' + this.point.date;
-                    s += '<br/>' + this.series.name + '<br/> Attendees: ' + this.y;
+                    s += '<br />' + this.point.date;
+                    s += '<br />' + this.series.name + '<br /> Attendees: ' + this.y;
                     return s;
                 },
                 shared: false
@@ -68,7 +69,7 @@
                     var s = '<b>' + "IETF " + this.x + '</b>';
 
                     $.each(this.points, function () {
-                        s += '<br/>' + this.series.name + ': ' + this.y;
+                        s += '<br />' + this.series.name + ': ' + this.y;
                     });
 
                     return s;
@@ -118,34 +119,36 @@
         series: {{ chart_data }}
     };
 </script>
-
 {% if table_data %}
-    <h3>Data</h3>
-
-    <table class="table table-sm stats-data tablesorter">
+    <h2>Data</h2>
+    <table class="table table-sm table-striped stats-data tablesorter">
         <thead>
             <tr>
-                <th>Meeting</th>
-                <th>Date</th>
-                <th>City</th>
-                <th>Country</th>
-                <th>Continent</th>
-                <th>Attendees</th>
+                <th data-sort="num">Meeting</th>
+                <th data-sort="date">Date</th>
+                <th data-sort="city">City</th>
+                <th data-sort="country">Country</th>
+                <th data-sort="continent">Continent</th>
+                <th data-sort="num">Attendees</th>
             </tr>
         </thead>
         <tbody>
             {% for meeting, url, count, country in table_data %}
                 <tr>
                     {% if meeting.get_number > 71 %}
-                        <td><a href="{{ url }}">{{ meeting.number }}</a></td>
-                        <td>{{ meeting.date }} </td>
-                        <td><a href="{{ url }}">{{ meeting.city }}</a></td>
+                        <td>
+                            <a href="{{ url }}">{{ meeting.number }}</a>
+                        </td>
+                        <td>{{ meeting.date }}</td>
+                        <td>
+                            <a href="{{ url }}">{{ meeting.city }}</a>
+                        </td>
                         <td>{{ country.name }}</td>
                         <td>{{ country.continent }}</td>
                         <td>{% include "stats/includes/number_with_details_cell.html" %}</td>
                     {% else %}
                         <td>{{ meeting.number }}</td>
-                        <td>{{ meeting.date }} </td>
+                        <td>{{ meeting.date }}</td>
                         <td>{{ meeting.city }}</td>
                         <td>{{ country.name }}</td>
                         <td>{{ country.continent }}</td>
@@ -155,5 +158,4 @@
             {% endfor %}
         </tbody>
     </table>
-
 {% endif %}

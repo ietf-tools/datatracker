@@ -1,6 +1,7 @@
-{% load origin %}{% origin %}
+{# bs5ok #}
+{% load origin %}
+{% origin %}
 <div id="chart"></div>
-
 <script>
     var chartConf = {
         chart: {
@@ -40,7 +41,7 @@
                 var s = '<b>' + this.x + '</b>';
 
                 $.each(this.points, function () {
-                    s += '<br/>' + this.series.name + ': ' + this.y;
+                    s += '<br />' + this.series.name + ': ' + this.y;
                 });
 
                 return s;

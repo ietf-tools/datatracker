@@ -1,3 +1,4 @@
+{# bs5ok #}
 {% load origin %}{% origin %}
 <div id="chart"></div>
 
@@ -46,14 +47,14 @@
     };
 </script>
 
-<h3>Data</h3>
+<h2>Data</h2>
 
-<table class="table table-sm stats-data">
+<table class="table table-sm table-striped tablesorter stats-data">
     <thead>
         <tr>
-            <th>Citations</th>
-            <th>Percentage of authors</th>
-            <th>Authors</th>
+            <th data-sort="num">Citations</th>
+            <th data-sort="num">Percentage of authors</th>
+            <th data-sort="authors">Authors</th>
         </tr>
     </thead>
     <tbody>
