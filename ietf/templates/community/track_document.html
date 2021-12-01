@@ -1,18 +1,15 @@
+{# bs5ok #}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}{% origin %}
-{% load django_bootstrap5 %}
-
+{% extends "base.html" %}
+{% load origin %}
+{% origin %}
 {% block title %}Track document {{ name }}{% endblock %}
-
-{% bootstrap_messages %}
-
-<form method="post">
-    {% csrf_token %}
-    <p>Add {{ name }} to the list?</p>
-
-
-
-    <input type="submit" class="btn btn-primary" value="Track document">
-
-
-</form>
+{% block content %}
+    <form method="post">
+        {% csrf_token %}
+        <p>
+            Add {{ name }} to the list?
+        </p>
+        <input type="submit" class="btn btn-primary" value="Track document">
+    </form>
+{% endblock %}

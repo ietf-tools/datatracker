@@ -108,7 +108,6 @@ $(document)
 // Automatically add a navigation pane to long pages
 $(document)
     .ready(function () {
-
         var headings = $("#content")
             .find("h1, h2, h3, h4, h5, h6");
 
@@ -122,11 +121,6 @@ $(document)
             var n = 0;
             var last_level;
             var nav;
-
-            $("body")
-                .attr("data-bs-spy", "scroll")
-                .attr("data-bs-target", "#righthand-nav")
-                .scrollspy("refresh");
 
             $("#content")
                 .attr("data-bs-offset", 0)
@@ -185,5 +179,52 @@ $(document)
                         item[0].scrollIntoView({ block: "center" });
                     }
                 });
+
+            $("body")
+                .attr("data-bs-spy", "scroll")
+                .attr("data-bs-target", "#righthand-nav")
+                .scrollspy("refresh");
+
+            $(window)
+                .on("activate.bs.scrollspy", function () {
+                    console.log("X");
+                });
         }
+    });
+
+// Replace track/untrack functionality with js.
+$(document)
+    .ready(function () {
+        $('.review-wish-add-remove-doc.ajax, .track-untrack-doc')
+            .click(function (e) {
+                e.preventDefault();
+                var trigger = $(this);
+                $.ajax({
+                    url: trigger.attr('href'),
+                    type: 'POST',
+                    cache: false,
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success) {
+                            trigger.parent()
+                                .find(".track-untrack-doc")
+                                .tooltip("hide");
+                            trigger.addClass("visually-hidden");
+
+                            var target_unhide = null;
+                            if (trigger.hasClass('review-wish-add-remove-doc')) {
+                                target_unhide = '.review-wish-add-remove-doc';
+                            } else if (trigger.hasClass('track-untrack-doc')) {
+                                target_unhide = '.track-untrack-doc';
+                            }
+                            if (target_unhide) {
+                                trigger.parent()
+                                    .find(target_unhide)
+                                    .not(trigger)
+                                    .removeClass("visually-hidden");
+                            }
+                        }
+                    }
+                });
+            });
     });

@@ -1,39 +1,43 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load django_bootstrap5 %}
 {% load static %}
 {% load misc_filters %}
-
 {% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
     {{ all_forms|merge_media:'css' }}
 {% endblock %}
-
 {% block title %}Manage {{ clist.long_name }}{% endblock %}
-
 {% block content %}
     {% origin %}
     <h1>Manage {{ clist.long_name }}</h1>
-
-    <noscript>This page depends on Javascript being enabled to work properly.</noscript>
-
     {% bootstrap_messages %}
-
-    <p>The list currently tracks <a href="{{ clist.get_absolute_url }}">{{ total_count }} document{{ total_count|pluralize }}</a>.</p>
-
-    <p><a class="btn btn-primary" href="{{ clist.get_absolute_url }}">Back to list</a></p>
-
+    <p>
+        The list currently tracks
+        <a href="{{ clist.get_absolute_url }}">{{ total_count }} document{{ total_count|pluralize }}</a>
+        .
+    </p>
+    <p>
+        <a class="btn btn-primary" href="{{ clist.get_absolute_url }}">Back to list</a>
+    </p>
     <h2>Individual documents</h2>
-
     {% if individually_added %}
-        <p>The list tracks {{ individually_added|length }} individually added document{{ individually_added|length|pluralize }}:</p>
-        <table class="table table-sm table-striped">
+        <p>
+            The list tracks {{ individually_added|length }} individually added document{{ individually_added|length|pluralize }}:
+        </p>
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <th data-sort="doc">Document</th>
+                <th>Manage</th>
+            </thead>
             <tbody>
                 {% for d in individually_added %}
                     <tr>
                         <td>{{ d.name }}</td>
                         <td>
-                            <form method="post" id="remove_document_{{d.pk}}">
+                            <form method="post" id="remove_document_{{ d.pk }}">
                                 {% csrf_token %}
                                 <input type="hidden" name="document" value="{{ d.pk }}">
                                 <button class="btn btn-danger btn-sm" name="action" value="remove_document">Remove</button>
@@ -44,32 +48,44 @@
             </tbody>
         </table>
     {% else %}
-        <p>The list does not track any individually added documents yet.</p>
+        <p>
+            The list does not track any individually added documents yet.
+        </p>
     {% endif %}
-
     {% if clist.group %}
-        <p>Add individual documents here:</p>
+        <p>
+            Add individual documents here:
+        </p>
     {% else %}
-        <p>Conveniently track individual documents in your personal list with the track icon <span class="bi bi-bookmark"></span> in <a href="/doc/search/">search results</a>.</p>
-
-        <p>You can also add documents here:</p>
+        <p>
+            Conveniently track individual documents in your personal list with the track icon
+            <span class="bi bi-bookmark"></span>
+            in
+            <a href="/doc/search/">search results</a>
+            .
+        </p>
+        <p>
+            You can also add documents here:
+        </p>
     {% endif %}
-
     <form class="form add-document" method="post" id="add_document">
         {% csrf_token %}
-        {% bootstrap_field add_doc_form.documents show_label=False %}
-        <button class="btn btn-primary" name="action" value="add_documents">Add documents</button>
+        {% bootstrap_form add_doc_form show_label=False %}
+        {% bootstrap_button button_type="submit" name="action" value="add_documents" content="Add documents" %}
     </form>
-
-
     <h2>Search rules</h2>
-
-    <p>You can track documents with a search rule. When a document fulfills the search criteria, it will automatically show up in the list.</p>
-
+    <p>
+        You can track documents with a search rule. When a document fulfills the search criteria, it will automatically show up in the list.
+    </p>
     {% if rules %}
-        <table class="table table-sm table-striped">
+        <table class="table table-sm table-striped tablesorter">
             <thead>
-                <tr><th>Rule</th><th>Value</th><th>Documents</th><th></th></tr>
+                <tr>
+                    <th data-sort="rule">Rule</th>
+                    <th data-sort="value">Value</th>
+                    <th data-sort="num">Matching Documents</th>
+                    <th>Manage</th>
+                </tr>
             </thead>
             <tbody>
                 {% for rule in rules %}
@@ -86,7 +102,7 @@
                                 {{ rule.text }}
                             {% endif %}
                         </td>
-                        <td>{{ rule.matching_documents_count }} match{{ rule.matching_documents_count|pluralize:"es" }}</td>
+                        <td>{{ rule.matching_documents_count }}</td>
                         <td>
                             <form method="post">
                                 {% csrf_token %}
@@ -98,47 +114,37 @@
                 {% endfor %}
             </tbody>
         </table>
-
     {% else %}
-
-        <p>No rules defined.</p>
-
+        <p>
+            No rules defined.
+        </p>
     {% endif %}
-
-    <div><a class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#add-new-rule">Add a new rule</a></div>
-
-    <div id="add-new-rule" {% if not rule_type_form.errors and not rule_form %}class="collapse"{% endif %}>
-        <h3>Add a new rule</h3>
-
+    <div>
+        <a class="btn btn-primary"
+           data-bs-toggle="collapse"
+           data-bs-target="#add-new-rule">Add a new rule</a>
+    </div>
+    <div id="add-new-rule"
+         {% if not rule_type_form.errors and not rule_form %}class="collapse"{% endif %}>
         <form method="post">
             {% csrf_token %}
-            {% bootstrap_form rule_type_form %}
-
+            {% bootstrap_form rule_type_form layout="horizontal" %}
             <div class="form-content-placeholder">
                 {% if rule_form %}
-                    {% bootstrap_form rule_form %}
+                    {% bootstrap_form rule_form layout="horizontal" %}
                 {% endif %}
             </div>
-
-
-
             <button type="submit" class="btn btn-primary" name="action" value="add_rule">Add rule</button>
-
-
         </form>
-
-        <div class="empty-forms hide">
+        <div class="empty-forms visually-hidden">
             {% for rule_type, f in empty_rule_forms.items %}
-                <div class="rule-type {{ rule_type }}">
-                    {% bootstrap_form f %}
-                </div>
+                <div class="rule-type {{ rule_type }}">{% bootstrap_form f layout="horizontal" %}</div>
             {% endfor %}
         </div>
     </div>
-
 {% endblock %}
-
 {% block js %}
     {{ all_forms|merge_media:'js' }}
+    <script src="{% static "ietf/js/list.js" %}"></script>
     <script src="{% static 'ietf/js/manage-community-list.js' %}"></script>
 {% endblock %}

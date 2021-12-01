@@ -49,6 +49,7 @@
     "ietf/static/js/ietf.js",
     "ietf/static/js/liaisons.js",
     "ietf/static/js/list.js",
+    "ietf/static/js/manage-community-list.js",
     "ietf/static/js/moment-timezone-with-data-10-year-range.js",
     "ietf/static/js/moment.js",
     "ietf/static/js/review-stats.js",
