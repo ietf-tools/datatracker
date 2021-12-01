@@ -15,7 +15,7 @@
     all of this information. These pages may be updated periodically.
   </p>
 
-  <ul class="nav nav-tabs" role="tablist">
+  <ul class="nomcom-req-positions-tabs nav nav-tabs" role="tablist">
     {% for position in positions %}
       <li {% if forloop.first %}class="active"{% endif %}>
         <a data-toggle="tab" role="tab" href="#pos-{{ position.name|slugify }}">{{ position.name }}</a>
@@ -23,7 +23,7 @@
     {% endfor %}
   </ul>
 
-  <div class="tab-content">
+  <div class="nomcom-req-positions-content tab-content">
     {% for position in positions %}
       <div class="tab-pane {% if forloop.first %}active{% endif %}" id="pos-{{ position.name|slugify }}">
         {{ position.get_requirement|safe }}

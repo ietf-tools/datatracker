@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-describe.skip('meeting agenda', () => {
+describe('meeting agenda', () => {
     before(() => {
       cy.visit('/meeting/agenda/')
     })
