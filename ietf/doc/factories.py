@@ -464,10 +464,13 @@ class BofreqResponsibleDocEventFactory(DocEventFactory):
 class BofreqFactory(BaseDocumentFactory):
     type_id = 'bofreq'
     title = factory.Faker('sentence')
-    name = factory.LazyAttribute(lambda o: 'bofreq-%s'%(xslugify(o.title)))
+    name = factory.LazyAttribute(lambda o: 'bofreq-%s-%s'%(xslugify(o.requester_lastname), xslugify(o.title)))
 
     bofreqeditordocevent = factory.RelatedFactory('ietf.doc.factories.BofreqEditorDocEventFactory','doc')
     bofreqresponsibledocevent = factory.RelatedFactory('ietf.doc.factories.BofreqResponsibleDocEventFactory','doc')
+
+    class Params:
+        requester_lastname = factory.Faker('last_name')
 
     @factory.post_generation
     def states(obj, create, extracted, **kwargs):
