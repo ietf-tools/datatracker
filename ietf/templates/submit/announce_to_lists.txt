@@ -24,6 +24,5 @@ A diff from the previous version is available at:
 {{settings.RFCDIFF_BASE_URL}}?url2={{ submission.name }}-{{ submission.rev }}
 {% endif %}
 
-Internet-Drafts are also available by anonymous FTP at:
-ftp://ftp.ietf.org/internet-drafts/
+Internet-Drafts are also available by rsync at rsync.ietf.org::internet-drafts
 {% endautoescape %}
