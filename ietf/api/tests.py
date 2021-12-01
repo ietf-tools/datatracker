@@ -354,8 +354,8 @@ class CustomApiTests(TestCase):
         self.assertEqual(data['version'], ietf.__version__+ietf.__patch__)
         self.assertIn(data['date'], ietf.__date__)
 
-    def test_api_appauth_authortools(self):
-        url = urlreverse('ietf.api.views.author_tools')
+    def test_api_appauth(self):
+        url = urlreverse('ietf.api.views.app_auth')
         person = PersonFactory()
         apikey = PersonalApiKey.objects.create(endpoint=url, person=person)
 

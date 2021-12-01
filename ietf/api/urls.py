@@ -40,8 +40,8 @@ urlpatterns = [
     url(r'^submit/?$', submit_views.api_submit),
     # Datatracker version
     url(r'^version/?$', api_views.version),
-    # Authtools API key
-    url(r'^appauth/authortools', api_views.author_tools),
+    # Application authentication API key
+    url(r'^appauth/[authortools|bibxml]', api_views.app_auth),
 ]
 
 # Additional (standard) Tastypie endpoints
