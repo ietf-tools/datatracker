@@ -82,7 +82,7 @@ class Command(BaseCommand):
                         if e.rev == h.rev:
                             doc = h
                             break
-                ref_text = '%s' % render_to_string('doc/bibxml.xml', {'doc': doc, 'doc_bibtype':'I-D'})
+                ref_text = '%s' % render_to_string('doc/bibxml.xml', {'name':doc.name, 'doc': doc, 'doc_bibtype':'I-D'})
                 if e.rev == e.doc.rev:
                     ref_file_name = os.path.join(bibxmldir, 'reference.I-D.%s.xml' % (doc.name[6:], ))
                     self.write(ref_file_name, ref_text)
