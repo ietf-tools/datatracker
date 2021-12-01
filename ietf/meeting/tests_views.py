@@ -5237,6 +5237,45 @@ class InterimTests(TestCase):
         d["minutes"], d["seconds"] = divmod(rem, 60)
         return fmt.format(**d)
 
+    def test_interim_request_edit_agenda_updates_doc(self):
+        """Updating the agenda through the request edit form should update the doc correctly"""
+        make_interim_test_data()
+        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='sched').first().meeting
+        group = meeting.session_set.first().group
+        url = urlreverse('ietf.meeting.views.interim_request_edit', kwargs={'number': meeting.number})
+        session = meeting.session_set.first()
+        agenda_doc = session.agenda()
+        rev_before = agenda_doc.rev
+        uploaded_filename_before = agenda_doc.uploaded_filename
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.get(url)
+        form_initial = r.context['form'].initial
+        formset_initial = r.context['formset'].forms[0].initial
+        data = {
+            'group': group.pk,
+            'meeting_type': 'single',
+            'session_set-0-id': session.id,
+            'session_set-0-date': formset_initial['date'].strftime('%Y-%m-%d'),
+            'session_set-0-time': formset_initial['time'].strftime('%H:%M'),
+            'session_set-0-requested_duration': '00:30',
+            'session_set-0-remote_instructions': formset_initial['remote_instructions'],
+            'session_set-0-agenda': 'modified agenda contents',
+            'session_set-0-agenda_note': formset_initial['agenda_note'],
+            'session_set-TOTAL_FORMS': 1,
+            'session_set-INITIAL_FORMS': 1,
+        }
+        data.update(form_initial)
+        r = self.client.post(url, data)
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number}))
+
+        session = Session.objects.get(pk=session.pk)  # refresh
+        agenda_doc = session.agenda()
+        self.assertEqual(agenda_doc.rev, f'{int(rev_before) + 1:02}', 'Revision of agenda should increase')
+        self.assertNotEqual(agenda_doc.uploaded_filename, uploaded_filename_before, 'Uploaded filename should be updated')
+        with (Path(agenda_doc.get_file_path()) / agenda_doc.uploaded_filename).open() as f:
+            self.assertEqual(f.read(), 'modified agenda contents', 'New agenda contents should be saved')
+
     def test_interim_request_details_permissions(self):
         make_interim_test_data()
         meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting

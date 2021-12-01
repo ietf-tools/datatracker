@@ -263,6 +263,7 @@ class InterimSessionModelForm(forms.ModelForm):
         if self.instance.agenda():
             doc = self.instance.agenda()
             doc.rev = str(int(doc.rev) + 1).zfill(2)
+            doc.uploaded_filename = doc.filename_with_rev()
             e = NewRevisionDocEvent.objects.create(
                 type='new_revision',
                 by=self.user.person,
