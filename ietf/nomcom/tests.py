@@ -408,9 +408,14 @@ class NomcomViewsTest(TestCase):
 
         self.client.logout()
 
-    def change_members(self, members):
-        members_emails = ','.join(['%s%s' % (member, EMAIL_DOMAIN) for member in members])
-        test_data = {'members': members_emails,}
+    def change_members(self, members=None, liaisons=None):
+        test_data = {}
+        if members is not None:
+            members_emails = ','.join(['%s%s' % (member, EMAIL_DOMAIN) for member in members])
+            test_data['members'] = members_emails
+        if liaisons is not None:
+            liaisons_emails = ','.join(['%s%s' % (liaison, EMAIL_DOMAIN) for liaison in liaisons])
+            test_data['liaisons'] = liaisons_emails
         self.client.post(self.edit_members_url, test_data)
 
     def test_edit_members_view(self):
@@ -431,6 +436,54 @@ class NomcomViewsTest(TestCase):
         self.client.login(username=COMMUNITY_USER,password=COMMUNITY_USER+"+password")
         self.check_url_status(self.private_index_url, 403)
         self.client.logout()
+
+    def test_edit_members_only_removes_member_roles(self):
+        """Removing a member or liaison should not affect other roles"""
+        # log in and set up members/liaisons lists
+        self.access_chair_url(self.edit_members_url)
+        self.change_members(
+            members=[CHAIR_USER, COMMUNITY_USER],
+            liaisons=[CHAIR_USER, COMMUNITY_USER],
+        )
+        nomcom_group = Group.objects.get(acronym=f'nomcom{self.year}')
+        self.assertCountEqual(
+            nomcom_group.role_set.filter(name='member').values_list('email__address', flat=True),
+            [CHAIR_USER + EMAIL_DOMAIN, COMMUNITY_USER + EMAIL_DOMAIN],
+        )
+        self.assertCountEqual(
+            nomcom_group.role_set.filter(name='liaison').values_list('email__address', flat=True),
+            [CHAIR_USER + EMAIL_DOMAIN, COMMUNITY_USER + EMAIL_DOMAIN],
+        )
+
+        # remove a member who is also a liaison and check that the liaisons list is unchanged
+        self.change_members(
+            members=[COMMUNITY_USER],
+            liaisons=[CHAIR_USER, COMMUNITY_USER],
+        )
+        nomcom_group = Group.objects.get(pk=nomcom_group.pk)  # refresh from db
+        self.assertCountEqual(
+            nomcom_group.role_set.filter(name='member').values_list('email__address', flat=True),
+            [COMMUNITY_USER + EMAIL_DOMAIN],
+        )
+        self.assertCountEqual(
+            nomcom_group.role_set.filter(name='liaison').values_list('email__address', flat=True),
+            [CHAIR_USER + EMAIL_DOMAIN, COMMUNITY_USER + EMAIL_DOMAIN],
+        )
+
+        # remove a liaison who is also a member and check that the members list is unchanged
+        self.change_members(
+            members=[COMMUNITY_USER],
+            liaisons=[CHAIR_USER],
+        )
+        nomcom_group = Group.objects.get(pk=nomcom_group.pk)  # refresh from db
+        self.assertCountEqual(
+            nomcom_group.role_set.filter(name='member').values_list('email__address', flat=True),
+            [COMMUNITY_USER + EMAIL_DOMAIN],
+        )
+        self.assertCountEqual(
+            nomcom_group.role_set.filter(name='liaison').values_list('email__address', flat=True),
+            [CHAIR_USER + EMAIL_DOMAIN],
+        )
 
     def test_edit_nomcom_view(self):
         r = self.access_chair_url(self.edit_nomcom_url)
