@@ -9,7 +9,7 @@
 {% block content %}
     {% origin %}
 
-    <h1>Ballot writeup and notes<br><small>{{ charter.chartered_group }}</small></h1>
+    <h1>Ballot writeup and notes<br><small class="text-muted">{{ charter.chartered_group }}</small></h1>
 
     <form method="post">
         {% csrf_token %}

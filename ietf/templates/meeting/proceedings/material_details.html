@@ -46,7 +46,7 @@
                                 </td>
                                 <td>
                                     {% with timestamp=mat.document.time|utc %}
-                                        {{ timestamp|date:"Y-m-d" }}<br><small>{{ timestamp|date:"H:i:s" }}&nbsp;UTC</small>
+                                        {{ timestamp|date:"Y-m-d" }}<br><small class="text-muted">{{ timestamp|date:"H:i:s" }}&nbsp;UTC</small>
                                     {% endwith %}
                                 </td>
                             {% else %}

@@ -12,7 +12,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>Email submitter<br><small>{{ ipr.title }}</small></h1>
+    <h1>Email submitter<br><small class="text-muted">{{ ipr.title }}</small></h1>
 
     <form method="post" class="show-required">
         {% csrf_token %}

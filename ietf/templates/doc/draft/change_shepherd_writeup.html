@@ -10,7 +10,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>Edit shepherd writeup<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h1>
+    <h1>Edit shepherd writeup<br><small class="text-muted">{{ doc.canonical_name }}-{{ doc.rev }}</small></h1>
 
     <form enctype="multipart/form-data" method="post">
         {% csrf_token %}

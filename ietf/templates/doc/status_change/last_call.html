@@ -9,7 +9,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>Last call text<br><small>{{ doc }}</small></h1>
+    <h1>Last call text<br><small class="text-muted">{{ doc }}</small></h1>
 
     <form class="edit-last-call-text" method="post">
         {% csrf_token %}

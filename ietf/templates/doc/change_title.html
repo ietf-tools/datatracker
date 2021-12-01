@@ -8,7 +8,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>Change title<br><small>{{ titletext }}</small></h1>
+    <h1>Change title<br><small class="text-muted">{{ titletext }}</small></h1>
 
     <form method="post">
         {% csrf_token %}

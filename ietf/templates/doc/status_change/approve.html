@@ -8,7 +8,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>Approve<br><small>{{ doc.canonical_name }}</small></h1>
+    <h1>Approve<br><small class="text-muted">{{ doc.canonical_name }}</small></h1>
 
     <form method="post">
         {% csrf_token %}

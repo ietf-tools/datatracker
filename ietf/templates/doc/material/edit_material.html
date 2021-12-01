@@ -25,7 +25,7 @@
             Edit
         {% endif %}
         {{ doc.type.name }}
-        <br><small>
+        <br><small class="text-muted">
             {% if group is not None %}{{ group.name }} ({{ group.acronym }})
             {% elif doc.meeting_related %}{{ doc.get_related_meeting }}
                 {% if doc.get_related_proceedings_material %} {{ doc.get_related_proceedings_material }}{% endif %}

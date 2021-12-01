@@ -8,7 +8,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>Send Notification{{ formset|pluralize }}<br><small>{{ ipr }}</small></h1>
+    <h1>Send Notification{{ formset|pluralize }}<br><small class="text-muted">{{ ipr }}</small></h1>
 
     <form class="send-notification" method="post">
         {% csrf_token %}

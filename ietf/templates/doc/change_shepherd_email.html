@@ -8,7 +8,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>Change the document shepherd email<br><small>{{ doc.name }}-{{ doc.rev }}</small></h1>
+    <h1>Change the document shepherd email<br><small class="text-muted">{{ doc.name }}-{{ doc.rev }}</small></h1>
 
     <form method="post">
         {% csrf_token %}

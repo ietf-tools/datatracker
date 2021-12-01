@@ -1,1 +1,1 @@
-import "~/node_modules/highcharts/modules/offline-exporting";
+import "highcharts/modules/offline-exporting";

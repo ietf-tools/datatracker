@@ -8,7 +8,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>Change State<br><small>{{ ipr }}</small></h1>
+    <h1>Change State<br><small class="text-muted">{{ ipr }}</small></h1>
 
     <form class="add-comment" method="post">
         {% csrf_token %}

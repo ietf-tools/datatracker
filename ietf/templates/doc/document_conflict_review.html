@@ -121,7 +121,7 @@
         </tbody>
     </table>
 
-    <h2>Conflict review<br><small>{{ conflictdoc.name }}-{{ conflictdoc.rev }}</small></h2>
+    <h2>Conflict review<br><small class="text-muted">{{ conflictdoc.name }}-{{ conflictdoc.rev }}</small></h2>
     {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug != 'apprsent' %}
         <a class="btn btn-primary" href="{% url 'ietf.doc.views_conflict_review.submit' name=doc.name %}">Change conflict review text</a>
     {% endif %}

@@ -210,7 +210,7 @@
         {% endif %}
     </p>
 
-    <h2>Charter<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h2>
+    <h2>Charter<br><small class="text-muted">{{ doc.canonical_name }}-{{ doc.rev }}</small></h2>
 
     {% if not snapshot and can_manage and chartering and group.state_id != "conclude" %}
         <p><a class="btn btn-primary" href="{% url 'ietf.doc.views_charter.submit' name=doc.name %}">Change charter text</a></p>

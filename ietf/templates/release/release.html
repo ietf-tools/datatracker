@@ -12,7 +12,7 @@
         <h1 class="col-11">
             <a href="https://trac.ietf.org/trac/ietfdb/browser/tags/{{ entry.version }}">
                 Version {{ entry.version }}</a>
-            <br/><small>Released {{ entry.date }}</small>
+            <br><small class="text-muted">Released {{ entry.date }}</small>
         </h1>
         <div class="col-1 text-end">
             <a href="{% url "ietf.release.views.stats" %}" class="icon-link">

@@ -31,7 +31,7 @@
         </div>
         <div class="col-sm-3">
             {% if nomcom.show_accepted_nominees %}
-                <h3>Nominees<br><small>who have accepted nomination</small></h3>
+                <h3>Nominees<br><small class="text-muted">who have accepted nomination</small></h3>
                 {% for p in positions %}
                     {% if p.nomineeposition_set.accepted.not_duplicated %}
                         <h4>{{ p.name }}</h4>

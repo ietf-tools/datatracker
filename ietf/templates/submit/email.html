@@ -12,7 +12,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>Email related to<br><small>{{ submission.name }}</small></h1>
+    <h1>Email related to<br><small class="text-muted">{{ submission.name }}</small></h1>
 
     <form method="post" class="show-required">
         {% csrf_token %}

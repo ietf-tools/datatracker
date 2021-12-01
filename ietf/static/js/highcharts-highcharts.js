@@ -1,3 +1,3 @@
-import * as Highcharts from "~/node_modules/highcharts";
+import * as Highcharts from "highcharts";
 
 window.Highcharts = Highcharts;

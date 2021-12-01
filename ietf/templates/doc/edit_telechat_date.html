@@ -8,7 +8,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>Set telechat date<br><small>{{ doc.name }} ({{ doc.pages }} page{{ doc.pages|pluralize }})</small></h1>
+    <h1>Set telechat date<br><small class="text-muted">{{ doc.name }} ({{ doc.pages }} page{{ doc.pages|pluralize }})</small></h1>
 
     {% for warning in warnings %}
         <div class="alert alert-warning">{{ warning }}</div>

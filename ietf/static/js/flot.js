@@ -1,1 +1,1 @@
-import "~/node_modules/flot";
+import "flot";

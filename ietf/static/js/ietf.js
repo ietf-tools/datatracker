@@ -123,6 +123,11 @@ $(document)
             var last_level;
             var nav;
 
+            $("body")
+                .attr("data-bs-spy", "scroll")
+                .attr("data-bs-target", "#righthand-nav")
+                .scrollspy("refresh");
+
             $("#content")
                 .attr("data-bs-offset", 0)
                 .attr("tabindex", 0)

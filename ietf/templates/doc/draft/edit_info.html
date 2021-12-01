@@ -9,7 +9,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>Edit info<br><small>{{ doc }}</small></h1>
+    <h1>Edit info<br><small class="text-muted">{{ doc }}</small></h1>
 
     <form method="post">
         {% csrf_token %}

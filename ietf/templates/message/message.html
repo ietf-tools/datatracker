@@ -7,7 +7,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>Announcement<br>{{ message.subject }}<br><small>{{ message.time|date:"F j, Y" }}</small></h1>
+    <h1>Announcement<br>{{ message.subject }}<br><small class="text-muted">{{ message.time|date:"F j, Y" }}</small></h1>
 
     <p>
         <b>From:</b> {{ message.frm }}<br/>

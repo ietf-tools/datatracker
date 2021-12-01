@@ -8,7 +8,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>Edit IESG note<br><small>{{ doc.name }}</small></h1>
+    <h1>Edit IESG note<br><small class="text-muted">{{ doc.name }}</small></h1>
 
     <form method="post">
         {% csrf_token %}

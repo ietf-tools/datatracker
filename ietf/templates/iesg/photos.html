@@ -22,18 +22,16 @@
                         <div class="card text-center">
                             {% if person_with_groups.grouper.photo_thumb %}
                                 <img class="card-img-top"
-                                     src="{{ person_with_groups.grouper.photo_thumb.url }}"
-                                     alt="Photo of {{ person_with_groups.grouper.name }}"/>
+                                    src="{{ person_with_groups.grouper.photo_thumb.url }}"
+                                    alt="Photo of {{ person_with_groups.grouper.name }}"/>
                             {% else %}
-                                <img class="card-img-top"
-                                     src="{% static "ietf/images/nopictureavailable.jpg" %}"
-                                     alt="No photo available"/>
+                                <i class="bi bi-person-square text-muted" style="font-size: 6rem;"></i>
                             {% endif %}
                             <div class="card-body">
                                 <p class="card-title fs-5">
                                     {% if person_with_groups.grouper.photo %}
                                         <a class="stretched-link"
-                                           href="{% url 'ietf.person.views.profile' email_or_name=person_with_groups.grouper.name %}">
+                                            href="{% url 'ietf.person.views.profile' email_or_name=person_with_groups.grouper.name %}">
                                     {% endif %}
                                     {{ person_with_groups.grouper.plain_name }}
                                     {% if person_with_groups.grouper.photo %}</a>{% endif %}

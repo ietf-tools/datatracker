@@ -35,8 +35,7 @@
               href="{% static 'ietf/images/apple-touch-icon.png' %}"/>
         <script src="{% static 'ietf/js/ietf.js' %}"/></script>
     </head>
-    <body class="position-relative" data-bs-spy="scroll" data-bs-target="#righthand-nav" {% block bodyAttrs %}
-          {% endblock bodyAttrs %}
+    <body class="position-relative"
           data-group-menu-data-url="{% url 'ietf.group.views.group_menu_data' %}">
         <nav class="navbar navbar-expand-lg
                     {% if server_mode and server_mode != "production" %}
@@ -108,15 +107,8 @@
                     {% for message in messages %}
                         <div class="alert
                                     {% if message.level_tag %}
-                                        alert-
-                                        {% if message.level_tag == 'error' %}
-                                            danger
-                                        {% else %}
-                                            {{ message.level_tag }}
-                                        {% endif %}
-
+                                        alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag }}{% endif %}
                                     {% endif %}
-
                                     {% if message.extra_tags %}
                                         {{ message.extra_tags }}
                                     {% endif %} alert-dismissable fade show">

@@ -10,7 +10,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>Change responsible AD<br><small>{{ charter.canonical_name }}-{{ charter.rev }}</small></h1>
+    <h1>Change responsible AD<br><small class="text-muted">{{ charter.canonical_name }}-{{ charter.rev }}</small></h1>
 
     <form enctype="multipart/form-data" method="post">
         {% csrf_token %}

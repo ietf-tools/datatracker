@@ -1,1 +1,1 @@
-import "~/node_modules/highcharts/modules/export-data";
+import "highcharts/modules/export-data";

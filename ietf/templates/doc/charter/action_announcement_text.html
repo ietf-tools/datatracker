@@ -9,7 +9,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>{{ charter.chartered_group.type.name }} action announcement writeup<br><small>{{ charter.chartered_group.acronym }}</small></h1>
+    <h1>{{ charter.chartered_group.type.name }} action announcement writeup<br><small class="text-muted">{{ charter.chartered_group.acronym }}</small></h1>
 
     <form method="post">
         {% csrf_token %}

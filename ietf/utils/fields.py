@@ -174,13 +174,11 @@ class SearchableTextInput(forms.TextInput):
     class Media:
         css = {
             'all': (
-                'select2/select2.css', 
-                'select2-bootstrap-css/select2-bootstrap.min.css',
+                'ietf/css/select2.css',
             )
         }
         js = (
-            'select2/select2.min.js', 
-            'ietf/js/select2-field.js',
+            'ietf/js/select2.js',
         )
 
 # FIXME: select2 version 4 uses a standard select for the AJAX case -
@@ -338,5 +336,3 @@ class MissingOkImageField(models.ImageField):
             super().update_dimension_fields(*args, **kwargs)
         except FileNotFoundError:
             pass  # don't do anything if the file has gone missing
-
-

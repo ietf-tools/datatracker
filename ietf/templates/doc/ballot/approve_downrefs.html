@@ -8,7 +8,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>Approve downward references<br><small>The ballot for <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a> was just approved</small></h1>
+    <h1>Approve downward references<br><small class="text-muted">The ballot for <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a> was just approved</small></h1>
 
     {% if not downrefs_to_rfc %}
         <p>No downward references for <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></p>

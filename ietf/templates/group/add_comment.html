@@ -8,7 +8,7 @@
 
 {% block content %}
     {% origin %}
-    <h1>Add comment<br><small>{{ group }} ({{ group.acronym }})</small></h1>
+    <h1>Add comment<br><small class="text-muted">{{ group }} ({{ group.acronym }})</small></h1>
 
     <form method="post">
         {% csrf_token %}

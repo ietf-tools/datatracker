@@ -13,8 +13,26 @@ function text_sort(a, b, options) {
         .replaceAll(/\s+/g, ' '));
 }
 
+function replace_with_internal(table, internal_table, i) {
+    $(table)
+        .children("tbody")
+        .eq(i)
+        .replaceWith(internal_table[i]
+            .children("table")
+            .children("tbody")
+            .clone());}
+
+function field_magic(i, e, fields) {
+    if (fields[i] == "date" || fields[i] == "num") {
+        $(e)
+            .addClass("text-end");
+    }
+}
+
 $(document)
     .ready(function () {
+        var n = 1;
+        var items_per_page = 10;
         $("table.tablesorter")
             .each(function () {
                 var table = $(this);
@@ -37,16 +55,13 @@ $(document)
 
                 } else {
 
+                    $(table)
+                        .wrap(`<div id='tablewrapper-${n}'></div`);
+
                     $(header_row)
                         .children("[data-sort]")
                         .addClass("sort")
-                        .each((i, e) => {
-                            if (fields[i] == "date" || fields[i] == "num") {
-                                // magic
-                                $(e)
-                                    .addClass("text-end");
-                            }
-                        });
+                        .each((i, e) => field_magic(i, e, fields));
 
                     if ($(header_row)
                         .text()
@@ -73,23 +88,25 @@ $(document)
                     var reset_search = $(searcher)
                         .children("button.search-reset");
 
-                    // var pager = $.parseHTML(`
-                    // <nav aria-label="Pagination control" class="visually-hidden">
-                    //     <ul class="pagination"></ul>
-                    // </nav>`);
+                    var pager = $.parseHTML(`
+                    <nav aria-label="Pagination control" class="visually-hidden">
+                        <ul class="pagination d-flex flex-wrap text-center"></ul>
+                    </nav>`);
 
-                    // $(table)
-                    //     .after(pager);
+                    $(table)
+                        .before(pager);
 
                     var list_instance = [];
                     var internal_table = [];
 
-                    // var pagination = $(table)
-                    //     .children("tbody")
-                    //     .length == 1;
+                    var pagination = $(table)
+                        .children("tbody")
+                        .length == 1;
+
+                    pagination = false; // FIXME: pagination not working yet.
 
                     // list.js cannot deal with tables with multiple tbodys,
-                    // so maintain separate internal "tables" for
+                    // so maintain separate internal "table" copies for
                     // sorting/searching and update the DOM based on them
                     $(table)
                         .children("tbody, tfoot")
@@ -104,11 +121,7 @@ $(document)
                                         .each((i, e) => {
                                             $(e)
                                                 .addClass(fields[i]);
-                                            if (fields[i] == "date" || fields[i] == "num") {
-                                                // magic
-                                                $(e)
-                                                    .addClass("text-end");
-                                            }
+                                            field_magic(i, e, fields);
                                         });
                                 });
 
@@ -120,36 +133,49 @@ $(document)
                             var tbody = $(this)
                                 .clone();
 
-                            if ($(tbody)
+                            var tbody_rows = $(tbody)
                                 .find("tr")
-                                .length == 0) {
+                                .length;
+
+                            if (tbody_rows == 0) {
                                 console.log("Skipping empty tbody");
                                 return;
+                            } else if (tbody_rows <= items_per_page) {
+                                pagination = false;
                             }
 
                             var parent = $(table)
-                                .clone()
+                                .parent()
+                                .clone();
+
+                            $(parent)
+                                .children("table")
                                 .empty()
                                 .removeClass("tablesorter")
-                                .wrap("<div id='abc'></div")
                                 .append(thead, tbody);
 
                             internal_table.push(parent);
 
-                            // if (pagination) {
-                            //     console.log("Enabling pager.");
-                            //     $(pager)
-                            //         .removeClass("visually-hidden");
-                            //     pagination = {
-                            //         item: '<li class="page-item"><a class="page-link" href="#"></a></li>'
-                            //     };
-                            // }
+                            var hook = `tablewrapper-${n}`;
+                            if (pagination) {
+                                console.log("Enabling pager.");
+                                $(pager)
+                                    .removeClass("visually-hidden");
+                                pagination = {
+                                    innerWindow: 5,
+                                    left: 1,
+                                    right: 1,
+                                    item: '<li class="page-item flex-fill"><a class="page page-link" href="#"></a></li>'
+                                };
+                            } else {
+                                hook = parent[0];
+                            }
 
                             list_instance.push(
-                                new List(parent[0], {
+                                new List(hook, {
                                     valueNames: fields,
-                                    // pagination: pagination,
-                                    // page: 10
+                                    pagination: pagination,
+                                    page: items_per_page
                                 }));
                         });
 
@@ -184,13 +210,7 @@ $(document)
 
                     $.each(list_instance, (i, e) => {
                         e.on("sortComplete", function () {
-                            $(table)
-                                .children("tbody")
-                                .eq(i)
-                                .replaceWith(internal_table[i]
-                                    .children("tbody")
-                                    .clone());
-
+                            replace_with_internal(table, internal_table, i);
                             if (i == list_instance.length - 1) {
                                 $(table)
                                     .find("thead:first tr")
@@ -236,14 +256,10 @@ $(document)
                             });
 
                             e.update();
-                            $(table)
-                                .children("tbody")
-                                .eq(i)
-                                .replaceWith(internal_table[i]
-                                    .children("tbody")
-                                    .clone());
+                            replace_with_internal(table, internal_table, i);
                         });
                     });
                 }
             });
+        n++;
     });

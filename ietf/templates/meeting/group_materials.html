@@ -98,7 +98,7 @@
         </td>
         <td>
             {% if session.last_update %}
-                {{ session.last_update|utc|date:"Y-m-d" }}<br><small>{{ session.last_update|utc|date:"H:i:s" }}&nbsp;UTC</small>
+                {{ session.last_update|utc|date:"Y-m-d" }}<br><small class="text-muted">{{ session.last_update|utc|date:"H:i:s" }}&nbsp;UTC</small>
             {% endif %}
         </td>
         <td>

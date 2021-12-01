@@ -128,7 +128,7 @@
         {% endif %}
     </p>
 
-    <h2>{% if doc.meeting_related %}Meeting{% endif %} {{ doc.type.name }}<br><small>{{ doc.name }}</small></h2>
+    <h2>{% if doc.meeting_related %}Meeting{% endif %} {{ doc.type.name }}<br><small class="text-muted">{{ doc.name }}</small></h2>
 
     <div id='materials-content'>
         {% if doc.rev and content != None %}
