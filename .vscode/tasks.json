@@ -43,7 +43,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Run JS Tests",
+            "label": "Run JS Tests (python)",
             "type": "shell",
             "command": "/usr/local/bin/python",
             "args": [
@@ -117,8 +117,26 @@
             "type": "shell",
             "command": "/bin/bash",
             "args": [
-                "${workspaceFolder}/docker/app-win32-timezone-fix.sh"
+                "${workspaceFolder}/docker/scripts/app-win32-timezone-fix.sh"
             ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new",
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run JS Tests (cypress)",
+            "type": "shell",
+            "command": "/bin/bash",
+            "args": [
+                "${workspaceFolder}/docker/scripts/app-cypress.sh"
+            ],
+            "group": "test",
             "presentation": {
                 "echo": true,
                 "reveal": "always",

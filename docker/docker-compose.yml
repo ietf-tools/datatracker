@@ -23,6 +23,8 @@ services:
         depends_on:
             - db
 
+        ipc: host
+
         # environment:
             # USER: django
             # UID: 1001
