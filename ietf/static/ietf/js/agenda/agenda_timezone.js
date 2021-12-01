@@ -19,7 +19,7 @@ var get_current_tz_cb = function () {
 
 // Initialize moments
 function initialize_moments() {
-    var times=$('span.time')
+    var times=$('.time')
     $.each(times, function(i, item) {
         item.start_ts = moment.unix(this.getAttribute("data-start-time")).utc();
         item.end_ts = moment.unix(this.getAttribute("data-end-time")).utc();
@@ -134,7 +134,7 @@ function format_tooltip(start, end) {
 
 // Add tooltips
 function add_tooltips() {
-    $('span.time').each(function () {
+    $('.time').each(function () {
         var tooltip = $(format_tooltip(this.start_ts, this.end_ts));
         tooltip[0].start_ts = this.start_ts;
         tooltip[0].end_ts = this.end_ts;
@@ -146,8 +146,8 @@ function add_tooltips() {
 
 // Update times on the agenda based on the selected timezone
 function update_times(newtz) {
-    $('span.current-tz').html(newtz);
-    $('span.time').each(function () {
+    $('.current-tz').html(newtz);
+    $('.time').each(function () {
         if (this.format == 4) {
             var tz = this.start_ts.tz(newtz).format(" z");
             if (this.start_ts.tz(newtz).dayOfYear() ==
