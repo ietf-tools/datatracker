@@ -104,9 +104,9 @@ def reload_db_objects(*objects):
         return t
 
 @contextmanager
-def name_of_file_containing(contents):
+def name_of_file_containing(contents, mode='w'):
     """Get a context with the name of an email file"""
-    f = NamedTemporaryFile('w', delete=False)
+    f = NamedTemporaryFile(mode, delete=False)
     f.write(contents)
     f.close()
     yield f.name  # hand the filename to the context

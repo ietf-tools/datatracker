@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Tests of nomcom management commands"""
 import mock
+import sys
 
 from collections import namedtuple
 
@@ -83,3 +84,30 @@ class FeedbackEmailTests(TestCase):
             (self.nomcom, b'feedback message'),
             'feedback_email should process the correct email for the correct nomcom'
         )
+
+    @mock.patch('ietf.utils.management.base.send_smtp')
+    def test_invalid_character_encodings(self, send_smtp_mock):
+        """The feedback_email command should send a message when file input has invalid encoding"""
+        # mock an exception in create_feedback_email()
+        invalid_characters = b'\xfe\xff'
+        with name_of_file_containing(invalid_characters, mode='wb') as filename:
+            call_command('feedback_email', nomcom_year=self.year, email_file=filename)
+
+        self.assertTrue(send_smtp_mock.called)
+        (msg,) = send_smtp_mock.call_args.args  # get the message to be sent
+        parts = msg.get_payload()
+        self.assertEqual(len(parts), 2, 'Error email should contain message and original message')
+
+    @mock.patch.object(sys.stdin.buffer, 'read')
+    @mock.patch('ietf.utils.management.base.send_smtp')
+    def test_invalid_character_encodings_via_stdin(self, send_smtp_mock, stdin_read_mock):
+        """The feedback_email command should send a message when stdin input has invalid encoding"""
+        # mock an exception in create_feedback_email()
+        invalid_characters = b'\xfe\xff'
+        stdin_read_mock.return_value = invalid_characters
+        call_command('feedback_email', nomcom_year=self.year)
+
+        self.assertTrue(send_smtp_mock.called)
+        (msg,) = send_smtp_mock.call_args.args  # get the message to be sent
+        parts = msg.get_payload()
+        self.assertEqual(len(parts), 2, 'Error email should contain message and original message')

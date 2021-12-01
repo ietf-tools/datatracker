@@ -42,10 +42,8 @@ class Command(EmailOnFailureCommand):
         except NomCom.DoesNotExist:
             raise CommandError("NomCom %s does not exist or it isn't active" % year)
 
-        if not email:
-            self.msg = io.open(sys.stdin.fileno(), 'rb').read()
-        else:
-            self.msg = io.open(email, "rb").read()
+        binary_input = io.open(email, 'rb') if email else sys.stdin.buffer
+        self.msg = binary_input.read()
 
         try:
             feedback = create_feedback_email(self.nomcom, self.msg)
