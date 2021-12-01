@@ -212,21 +212,6 @@ def agenda_txt(request, date=None):
             "domain": Site.objects.get_current().domain,
             }, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
-def agenda_scribe_template(request, date=None):
-    data = agenda_data(date)
-    sections = sorted((num, section) for num, section in data["sections"].items() if "2" <= num < "4")
-    appendix_docs = []
-    for num, section in sections:
-        if "docs" in section:
-            # why are we here including documents that have no discuss/comment?
-            appendix_docs.extend(section["docs"])
-    return render(request, "iesg/scribe_template.html", {
-            "date": data["date"],
-            "sections": sections,
-            "appendix_docs": appendix_docs,
-            "domain": Site.objects.get_current().domain,
-            } )
-
 @role_required('Area Director', 'Secretariat')
 def agenda_moderator_package(request, date=None):
     """Output telechat agenda with one page per section, with each

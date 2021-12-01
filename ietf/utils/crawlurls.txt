@@ -9,7 +9,6 @@
 /iesg/decisions/
 /iesg/agenda/documents.txt
 /iesg/agenda/agenda.json
-/iesg/agenda/scribe_template.html
 /wg/1wg-summary.txt
 /wg/1wg-summary-by-acronym.txt
 /wg/1wg-charters.txt

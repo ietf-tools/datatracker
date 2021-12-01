@@ -369,17 +369,6 @@ class IESGAgendaTests(TestCase):
         # Make sure the sort places 6.9 before 6.10
         self.assertLess(r.content.find(b"6.9"), r.content.find(b"6.10"))
 
-    def test_agenda_scribe_template(self):
-        r = self.client.get(urlreverse("ietf.iesg.views.agenda_scribe_template"))
-        self.assertEqual(r.status_code, 200)
-
-        for k, d in self.telechat_docs.items():
-            if d.type_id == "charter":
-                continue # scribe template doesn't contain chartering info
-
-            self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
-            self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))
-
     def test_agenda_moderator_package(self):
         url = urlreverse("ietf.iesg.views.agenda_moderator_package")
         login_testing_unauthorized(self, "secretary", url)
