@@ -15,7 +15,8 @@
     "moment": "^2.29.1",
     "moment-timezone": "^0.5.34",
     "select2": "^4.1.0-rc.0",
-    "select2-bootstrap-5-theme": "^1.2.0"
+    "select2-bootstrap-5-theme": "^1.2.0",
+    "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
     "@parcel/transformer-sass": "^2.0.1",
@@ -39,6 +40,7 @@
     "ietf/static/js/datepicker.js",
     "ietf/static/js/doc-search.js",
     "ietf/static/js/document_timeline.js",
+    "ietf/static/js/edit-meeting-schedule.js",
     "ietf/static/js/flot.js",
     "ietf/static/js/fullcalendar.js",
     "ietf/static/js/highcharts-export-data.js",
@@ -52,12 +54,14 @@
     "ietf/static/js/manage-community-list.js",
     "ietf/static/js/moment-timezone-with-data-10-year-range.js",
     "ietf/static/js/moment.js",
+    "ietf/static/js/password_strength.js",
     "ietf/static/js/review-stats.js",
     "ietf/static/js/room_params.js",
     "ietf/static/js/select2.js",
     "ietf/static/js/stats.js",
     "ietf/static/js/timezone.js",
-    "ietf/static/js/week-view.js"
+    "ietf/static/js/week-view.js",
+    "ietf/static/js/zxcvbn.js"
   ],
   "targets": {
     "default": {
