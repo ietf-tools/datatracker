@@ -6,6 +6,9 @@ import io
 import os
 import datetime
 import json
+import re
+
+from pathlib import Path
 
 from django import forms
 from django.conf import settings
@@ -326,14 +329,19 @@ class InterimCancelForm(forms.Form):
         self.fields['date'].widget.attrs['disabled'] = True
 
 class FileUploadForm(forms.Form):
+    """Base class for FileUploadForms
+
+    Abstract base class - subclasses must fill in the doc_type value with
+    the type of document they handle.
+    """
     file = forms.FileField(label='File to upload')
 
+    doc_type = ''  # subclasses must set this
+
     def __init__(self, *args, **kwargs):
-        doc_type = kwargs.pop('doc_type')
-        assert doc_type in settings.MEETING_VALID_UPLOAD_EXTENSIONS
-        self.doc_type = doc_type
-        self.extensions = settings.MEETING_VALID_UPLOAD_EXTENSIONS[doc_type]
-        self.mime_types = settings.MEETING_VALID_UPLOAD_MIME_TYPES[doc_type]
+        assert self.doc_type in settings.MEETING_VALID_UPLOAD_EXTENSIONS
+        self.extensions = settings.MEETING_VALID_UPLOAD_EXTENSIONS[self.doc_type]
+        self.mime_types = settings.MEETING_VALID_UPLOAD_MIME_TYPES[self.doc_type]
         super(FileUploadForm, self).__init__(*args, **kwargs)
         label = '%s file to upload.  ' % (self.doc_type.capitalize(), )
         if self.doc_type == "slides":
@@ -346,6 +354,15 @@ class FileUploadForm(forms.Form):
         file = self.cleaned_data['file']
         validate_file_size(file)
         ext = validate_file_extension(file, self.extensions)
+
+        # override the Content-Type if needed
+        if file.content_type in 'application/octet-stream':
+            content_type_map = settings.MEETING_APPLICATION_OCTET_STREAM_OVERRIDES
+            filename = Path(file.name)
+            if filename.suffix in content_type_map:
+                file.content_type = content_type_map[filename.suffix]
+                self.cleaned_data['file'] = file
+
         mime_type, encoding = validate_mime_type(file, self.mime_types)
         if not hasattr(self, 'file_encoding'):
             self.file_encoding = {}
@@ -353,14 +370,71 @@ class FileUploadForm(forms.Form):
         if self.mime_types:
             if not file.content_type in settings.MEETING_VALID_UPLOAD_MIME_FOR_OBSERVED_MIME[mime_type]:
                 raise ValidationError('Upload Content-Type (%s) is different from the observed mime-type (%s)' % (file.content_type, mime_type))
-            if mime_type in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS:
-                if not ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS[mime_type]:
+            # We just validated that file.content_type is safe to accept despite being identified
+            # as a different MIME type by the validator. Check extension based on file.content_type
+            # because that better reflects the intention of the upload client.
+            if file.content_type in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS:
+                if not ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS[file.content_type]:
                     raise ValidationError('Upload Content-Type (%s) does not match the extension (%s)' % (file.content_type, ext))
-        if mime_type in ['text/html', ] or ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS['text/html']:
+        if (file.content_type in ['text/html', ]
+                or ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS.get('text/html', [])):
             # We'll do html sanitization later, but for frames, we fail here,
             # as the sanitized version will most likely be useless.
             validate_no_html_frame(file)
         return file
+
+
+class UploadBlueSheetForm(FileUploadForm):
+    doc_type = 'bluesheets'
+
+
+class ApplyToAllFileUploadForm(FileUploadForm):
+    """FileUploadField that adds an apply_to_all checkbox
+
+    Checkbox can be disabled by passing show_apply_to_all_checkbox=False to the constructor.
+    This entirely removes the field from the form.
+    """
+    # Note: subclasses must set doc_type for FileUploadForm
+    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=True,required=False)
+
+    def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not show_apply_to_all_checkbox:
+            self.fields.pop('apply_to_all')
+        else:
+            self.order_fields(
+                sorted(
+                    self.fields.keys(),
+                    key=lambda f: 'zzzzzz' if f == 'apply_to_all' else f
+                )
+            )
+
+class UploadMinutesForm(ApplyToAllFileUploadForm):
+    doc_type = 'minutes'
+
+
+class UploadAgendaForm(ApplyToAllFileUploadForm):
+    doc_type = 'agenda'
+
+
+class UploadSlidesForm(ApplyToAllFileUploadForm):
+    doc_type = 'slides'
+    title = forms.CharField(max_length=255)
+
+    def __init__(self, session, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.session = session
+
+    def clean_title(self):
+        title = self.cleaned_data['title']
+        # The current tables only handles Unicode BMP:
+        if ord(max(title)) > 0xffff:
+            raise forms.ValidationError("The title contains characters outside the Unicode BMP, which is not currently supported")
+        if self.session.meeting.type_id=='interim':
+            if re.search(r'-\d{2}$', title):
+                raise forms.ValidationError("Interim slides currently may not have a title that ends with something that looks like a revision number (-nn)")
+        return title
+
 
 class RequestMinutesForm(forms.Form):
     to = MultiEmailField()

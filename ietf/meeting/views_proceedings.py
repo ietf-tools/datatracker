@@ -18,6 +18,8 @@ from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.utils.text import xslugify
 
 class UploadProceedingsMaterialForm(FileUploadForm):
+    doc_type = 'procmaterials'
+
     use_url = forms.BooleanField(
         required=False,
         label='Use an external URL instead of uploading a document',
@@ -34,7 +36,7 @@ class UploadProceedingsMaterialForm(FileUploadForm):
         )
 
     def __init__(self, *args, **kwargs):
-        super().__init__(doc_type='procmaterials', *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['file'].label = 'Select a file to upload. Allowed format{}: {}'.format(
             '' if len(self.mime_types) == 1 else 's',
             ', '.join(self.mime_types),

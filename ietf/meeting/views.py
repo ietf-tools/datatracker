@@ -99,7 +99,8 @@ from ietf.utils.response import permission_denied
 from ietf.utils.text import xslugify
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
-    InterimCancelForm, InterimSessionInlineFormSet, FileUploadForm, RequestMinutesForm,)
+    InterimCancelForm, InterimSessionInlineFormSet, RequestMinutesForm,
+    UploadAgendaForm, UploadBlueSheetForm, UploadMinutesForm, UploadSlidesForm)
 
 
 def get_interim_menu_entries(request):
@@ -2341,13 +2342,6 @@ def add_session_drafts(request, session_id, num):
                   })
 
 
-class UploadBlueSheetForm(FileUploadForm):
-
-    def __init__(self, *args, **kwargs):
-        kwargs['doc_type'] = 'bluesheets'
-        super(UploadBlueSheetForm, self).__init__(*args, **kwargs )
-
-
 def upload_session_bluesheets(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session,pk=session_id)
@@ -2434,15 +2428,6 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
     if not save_error:
         doc.save_with_history([e])
     return save_error
-
-class UploadMinutesForm(FileUploadForm):
-    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=True,required=False)
-
-    def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
-        kwargs['doc_type'] = 'minutes'
-        super(UploadMinutesForm, self).__init__(*args, **kwargs )
-        if not show_apply_to_all_checkbox:
-            self.fields.pop('apply_to_all')
 
 
 def upload_session_minutes(request, session_id, num):
@@ -2535,15 +2520,6 @@ def upload_session_minutes(request, session_id, num):
                    'form': form,
                   })
 
-
-class UploadAgendaForm(FileUploadForm):
-    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=True,required=False)
-
-    def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
-        kwargs['doc_type'] = 'agenda'
-        super(UploadAgendaForm, self).__init__(*args, **kwargs )
-        if not show_apply_to_all_checkbox:
-            self.fields.pop('apply_to_all')
 
 def upload_session_agenda(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
@@ -2638,27 +2614,6 @@ def upload_session_agenda(request, session_id, num):
                    'form': form,
                   })
 
-
-class UploadSlidesForm(FileUploadForm):
-    title = forms.CharField(max_length=255)
-    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=False,required=False)
-
-    def __init__(self, session, show_apply_to_all_checkbox, *args, **kwargs):
-        self.session = session
-        kwargs['doc_type'] = 'slides'
-        super(UploadSlidesForm, self).__init__(*args, **kwargs )
-        if not show_apply_to_all_checkbox:
-            self.fields.pop('apply_to_all')
-
-    def clean_title(self):
-        title = self.cleaned_data['title']
-        # The current tables only handles Unicode BMP:
-        if ord(max(title)) > 0xffff:
-            raise forms.ValidationError("The title contains characters outside the Unicode BMP, which is not currently supported")
-        if self.session.meeting.type_id=='interim':
-            if re.search(r'-\d{2}$', title):
-                raise forms.ValidationError("Interim slides currently may not have a title that ends with something that looks like a revision number (-nn)")
-        return title
 
 def upload_session_slides(request, session_id, num, name):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
