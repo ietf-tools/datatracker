@@ -949,6 +949,12 @@ MEETING_VALID_MIME_TYPE_EXTENSIONS = {
     'application/pdf': ['.pdf'],
 }
 
+# Files uploaded with Content-Type application/octet-stream and an extension in this map will
+# be treated as if they had been uploaded with the mapped Content-Type value.
+MEETING_APPLICATION_OCTET_STREAM_OVERRIDES = {
+    '.md': 'text/markdown',
+}
+
 MEETING_VALID_UPLOAD_MIME_FOR_OBSERVED_MIME = {
     'text/plain':   ['text/plain', 'text/markdown', 'text/x-markdown', ],
     'text/html':    ['text/html', ],
