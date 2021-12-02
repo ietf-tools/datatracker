@@ -30,6 +30,7 @@ RUN apt-get install -qy \
 	fish \
 	gawk \
 	gcc \
+	ghostscript \
 	git \
 	gnupg \
 	graphviz \
