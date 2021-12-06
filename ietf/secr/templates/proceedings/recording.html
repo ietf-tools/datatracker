@@ -5,12 +5,12 @@
 
 {% block extrastyle %}{{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'secr/css/jquery-ui-1.11.4.custom.css' %}" />
-    <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+    <link rel="stylesheet" href="{% static 'ietf/css/select2.css' %}">
 {% endblock %}
 
 {% block extrahead %}{{ block.super }}
     <script type="text/javascript" src="{% static 'secr/js/jquery-ui-1.11.4.custom.min.js' %}"></script>
-    <script src="{% static 'select2/select2.min.js' %}"></script>
+    <script src="{% static 'ietf/js/select2.js' %}"></script>
     <script type="text/javascript" src="{% static 'secr/js/proceedings-recording.js' %}"></script>
 {% endblock %}
 
