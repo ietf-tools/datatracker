@@ -719,6 +719,43 @@ def document_main(request, name, rev=None):
 
     raise Http404("Document not found: %s" % (name + ("-%s"%rev if rev else "")))
 
+def document_raw_id(request, name, rev=None, ext=None):
+    if not name.startswith('draft-'):
+        raise Http404
+    found = fuzzy_find_documents(name, rev)
+    num_found = found.documents.count()
+    if num_found == 0:
+        raise Http404("Document not found: %s" % name)
+    if num_found > 1:
+        raise Http404("Multiple documents matched: %s" % name)
+
+    doc = found.documents.get()
+
+    if found.matched_rev or found.matched_name.startswith('rfc'):
+        rev = found.matched_rev
+    else:
+        rev = doc.rev
+    if rev:
+        doc = doc.history_set.filter(rev=rev).first() or doc.fake_history_obj(rev)
+
+    base_path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".")
+    possible_types = settings.IDSUBMIT_FILE_TYPES
+    found_types=dict()
+    for t in possible_types:
+        if os.path.exists(base_path + t):
+            found_types[t]=base_path+t
+    if ext == None:
+        ext = 'txt'
+    if not ext in found_types:
+        raise Http404('dont have the file for that extension')
+    mimetypes = {'txt':'text/plain','html':'text/html','xml':'application/xml'}
+    try:    
+        with open(found_types[ext],'rb') as f:
+            blob = f.read()
+            return HttpResponse(blob,content_type=f'{mimetypes[ext]};charset=utf-8')
+    except:
+        raise Http404
+
 
 def document_html(request, name, rev=None):
     found = fuzzy_find_documents(name, rev)

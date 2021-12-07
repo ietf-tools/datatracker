@@ -2682,3 +2682,55 @@ class RfcdiffSupportTests(TestCase):
         # tricky draft names
         self.do_rfc_with_broken_history_test(draft_name='draft-gizmo-01')
         self.do_rfc_with_broken_history_test(draft_name='draft-oh-boy-what-a-draft-02-03')
+
+class RawIdTests(TestCase):
+
+    def __init__(self, *args, **kwargs):
+        self.view = "ietf.doc.views_doc.document_raw_id"
+        self.mimetypes = {'txt':'text/plain','html':'text/html','xml':'application/xml'}
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+    def should_succeed(self, argdict):
+        url = urlreverse(self.view, kwargs=argdict)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        self.assertEqual(r.get('Content-Type'),f"{self.mimetypes[argdict.get('ext','txt')]};charset=utf-8")
+
+    def should_404(self, argdict):
+        url = urlreverse(self.view, kwargs=argdict)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+    def test_raw_id(self):
+        draft = WgDraftFactory(create_revisions=range(0,2))
+
+        dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
+        for r in range(0,2):
+            rev = f'{r:02d}'
+            (Path(dir) / f'{draft.name}-{rev}.txt').touch()
+            if r == 1:
+                (Path(dir) / f'{draft.name}-{rev}.html').touch()
+                (Path(dir) / f'{draft.name}-{rev}.xml').touch()
+
+        self.should_succeed(dict(name=draft.name))
+        for ext in ('txt', 'html', 'xml'):
+            self.should_succeed(dict(name=draft.name, ext=ext))
+            self.should_succeed(dict(name=draft.name, rev='01', ext=ext))
+        self.should_404(dict(name=draft.name, ext='pdf'))
+
+        self.should_succeed(dict(name=draft.name, rev='00'))
+        self.should_succeed(dict(name=draft.name, rev='00',ext='txt'))
+        self.should_404(dict(name=draft.name, rev='00',ext='html'))
+
+    def test_raw_id_rfc(self):
+        rfc = WgRfcFactory()
+        dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
+        (Path(dir) / f'{rfc.name}-{rfc.rev}.txt').touch()
+        self.should_succeed(dict(name=rfc.name))
+        self.should_404(dict(name=rfc.canonical_name()))
+
+    def test_non_draft(self):
+        charter = CharterFactory()
+        self.should_404(dict(name=charter.name))
+
+
