@@ -72,6 +72,7 @@ urlpatterns = [
     url(r'^html/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, views_doc.document_html),
 
     url(r'^id/%(name)s(?:-%(rev)s)?(?:\.(?P<ext>(txt|html|xml)))?/?$' % settings.URL_REGEXPS, views_doc.document_raw_id),
+    url(r'^pdf/%(name)s(?:-%(rev)s)?(?:\.(?P<ext>[a-z]+))?/?$' % settings.URL_REGEXPS, views_doc.document_pdfized),
 
 # End of block that should be an idealized docs.ietf.org service instead
 
