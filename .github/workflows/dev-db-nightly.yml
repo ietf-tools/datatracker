@@ -1,0 +1,43 @@
+# GITHUB ACTIONS - WORKFLOW
+
+# Build the database dev docker image with the latest database dump every night
+# so that developers don't have to manually build it themselves.
+
+name: Nightly Dev DB Image
+
+# Controls when the workflow will run
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: datatracker-db
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+          
+      - name: Get Current Date as Tag
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y%m%d')"
+          
+      - name: Docker Build & Push Action
+        uses: mr-smithers-excellent/docker-build-push@v5.6
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: nightly-${{ steps.date.outputs.date }}, latest
+          registry: ${{ env.REGISTRY }}
+          dockerfile: docker/db.Dockerfile
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
