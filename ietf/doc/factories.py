@@ -147,6 +147,12 @@ class IndividualRfcFactory(IndividualDraftFactory):
         else:
             obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
 
+    @factory.post_generation
+    def reset_canonical_name(obj, create, extracted, **kwargs): 
+        if hasattr(obj, '_canonical_name'):
+            del obj._canonical_name
+        return None
+
 class WgDraftFactory(BaseDocumentFactory):
 
     type_id = 'draft'
@@ -186,6 +192,11 @@ class WgRfcFactory(WgDraftFactory):
             obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
             obj.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
 
+    @factory.post_generation
+    def reset_canonical_name(obj, create, extracted, **kwargs): 
+        if hasattr(obj, '_canonical_name'):
+            del obj._canonical_name
+        return None
 
 class RgDraftFactory(BaseDocumentFactory):
 
@@ -229,6 +240,12 @@ class RgRfcFactory(RgDraftFactory):
             obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
             obj.set_state(State.objects.get(type_id='draft-stream-irtf', slug='pub'))
             obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+
+    @factory.post_generation
+    def reset_canonical_name(obj, create, extracted, **kwargs): 
+        if hasattr(obj, '_canonical_name'):
+            del obj._canonical_name
+        return None          
 
 
 class CharterFactory(BaseDocumentFactory):

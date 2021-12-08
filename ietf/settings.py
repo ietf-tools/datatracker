@@ -743,6 +743,13 @@ CACHES = {
             'MAX_ENTRIES': 100000,      # 100,000
         },
     },
+    'pdfized': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/a/cache/datatracker/pdfized',
+        'OPTIONS': {
+            'MAX_ENTRIES': 100000,      # 100,000
+        },
+    },
     'slowpages': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
         'LOCATION': '/a/cache/datatracker/slowpages',
@@ -755,6 +762,8 @@ CACHES = {
 HTMLIZER_VERSION = 1
 HTMLIZER_URL_PREFIX = "/doc/html"
 HTMLIZER_CACHE_TIME = 60*60*24*14       # 14 days
+PDFIZER_CACHE_TIME = HTMLIZER_CACHE_TIME
+PDFIZER_URL_PREFIX = IDTRACKER_BASE_URL+"/doc/pdf"
 
 # Email settings
 IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
@@ -1269,6 +1278,14 @@ if SERVER_MODE != 'production':
             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
             #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
             'LOCATION': '/var/cache/datatracker/htmlized',
+            'OPTIONS': {
+                'MAX_ENTRIES': 1000,
+            },
+        },
+        'pdfized': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+            #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            'LOCATION': '/var/cache/datatracker/pdfized',
             'OPTIONS': {
                 'MAX_ENTRIES': 1000,
             },

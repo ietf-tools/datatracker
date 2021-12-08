@@ -2733,4 +2733,38 @@ class RawIdTests(TestCase):
         charter = CharterFactory()
         self.should_404(dict(name=charter.name))
 
+class PdfizedTests(TestCase):
 
+    def __init__(self, *args, **kwargs):
+        self.view = "ietf.doc.views_doc.document_pdfized"
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+    def should_succeed(self, argdict):
+        url = urlreverse(self.view, kwargs=argdict)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        self.assertEqual(r.get('Content-Type'),'application/pdf;charset=utf-8')
+
+    def should_404(self, argdict):
+        url = urlreverse(self.view, kwargs=argdict)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+    def test_pdfized(self):
+        rfc = WgRfcFactory(create_revisions=range(0,2))
+
+        dir = settings.RFC_PATH
+        with (Path(dir) / f'{rfc.canonical_name()}.txt').open('w') as f:
+            f.write('text content')
+        dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
+        for r in range(0,2):
+            with (Path(dir) / f'{rfc.name}-{r:02d}.txt').open('w') as f:
+                f.write('text content')
+
+        self.should_succeed(dict(name=rfc.canonical_name()))
+        self.should_succeed(dict(name=rfc.name))
+        for r in range(0,2):
+            self.should_succeed(dict(name=rfc.name,rev=f'{r:02d}'))
+            for ext in ('pdf','txt','html','anythingatall'):
+                self.should_succeed(dict(name=rfc.name,rev=f'{r:02d}',ext=ext))
+        self.should_404(dict(name=rfc.name,rev='02'))
