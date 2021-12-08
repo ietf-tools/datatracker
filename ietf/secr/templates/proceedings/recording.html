@@ -4,12 +4,12 @@
 {% block title %}Proceedings{% endblock %}
 
 {% block extrastyle %}{{ block.super }}
-    <link rel="stylesheet" type="text/css" href="{% static 'secr/css/jquery-ui-1.11.4.custom.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'ietf/css/jquery-ui.css' %}" />
     <link rel="stylesheet" href="{% static 'ietf/css/select2.css' %}">
 {% endblock %}
 
 {% block extrahead %}{{ block.super }}
-    <script type="text/javascript" src="{% static 'secr/js/jquery-ui-1.11.4.custom.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'ietf/js/jquery-ui.js' %}"></script>
     <script src="{% static 'ietf/js/select2.js' %}"></script>
     <script type="text/javascript" src="{% static 'secr/js/proceedings-recording.js' %}"></script>
 {% endblock %}

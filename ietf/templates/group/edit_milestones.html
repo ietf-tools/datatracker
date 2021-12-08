@@ -124,7 +124,7 @@
     {{ all_forms|merge_media:'js' }}
     <script src="{% static 'ietf/js/datepicker.js' %}"></script>
     {% if not group.uses_milestone_dates %}
-        <script src="{% static 'Sortable/Sortable.min.js' %}"></script>
+        <script src="{% static 'ietf/js/sortable.js' %}"></script>
     {% endif %}
     <script src="{% static 'ietf/js/edit-milestones.js' %}"></script>
 {% endblock %}

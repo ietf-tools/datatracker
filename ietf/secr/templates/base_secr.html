@@ -1,7 +1,10 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!doctype html>
 {% load staticfiles %}
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<html lang="en">
     <head>
+        <meta charset="utf-8"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
         <title>{% block title %}{% endblock %}</title>
         <link rel="stylesheet" type="text/css" href="{% block stylesheet %}{% static 'secr/css/base.css' %}{% endblock %}" />
         <link rel="stylesheet" type="text/css" href="{% static 'secr/css/forms.css' %}" />
@@ -12,11 +15,10 @@
         {% block extrastyle %}{% endblock %}
 
         {% block extrahead %}
-            <script type="text/javascript" src="{% static 'jquery/jquery.min.js' %}"></script>
+            <script type="text/javascript" src="{% static 'ietf/js/ietf.js' %}"></script>
         {% endblock %}
 
         {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}
-        <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
     </head>
 
     <body class="{% if is_popup %}popup {% endif %}{% block bodyclass %}{% endblock %}">

@@ -415,7 +415,7 @@ ROOT_URLCONF = 'ietf.urls'
 # Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static/dist'),
-    # os.path.join(BASE_DIR, 'secr/static'),
+    os.path.join(BASE_DIR, 'secr/static/dist'),
 )
 
 INSTALLED_APPS = [

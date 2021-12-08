@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2021, All Rights Reserved #}
 {% load origin static %}
-{% load bootstrap3 %}
+{% load django_bootstrap5 %}
 
 {% block pagehead %}
   {{ form.media.css }}
@@ -15,14 +15,12 @@
   <form id="timeslot-form" method="post">
     {% csrf_token %}
     {% bootstrap_form form %}
-    {% buttons %}
       <button type="submit" class="btn btn-primary">Save</button>
       <a class="btn btn-primary" href="{% url 'ietf.meeting.views.edit_timeslots' num=meeting.number %}">Cancel</a>
-    {% endbuttons %}
   </form>
 {% endblock %}
 
 {% block js %}
-  <script src="{% static 'ietf/js/meeting/create_timeslot.js' %}"></script>
+  <script src="{% static 'ietf/js/create_timeslot.js' %}"></script>
   {{ form.media.js }}
 {% endblock %}

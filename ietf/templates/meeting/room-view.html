@@ -1,11 +1,14 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}{% origin %}
 {% load static %}
-<html> <head>
-  <link rel="stylesheet" href="{% static 'ietf/bootstrap/css/bootstrap.min.css' %}"> {% comment %} This sets box-sizing: border-box {% endcomment %}
-  <link rel="stylesheet" href="{% static 'ietf/bootstrap/css/bootstrap-theme.min.css' %}">
-  <script src="{% static 'jquery/jquery.min.js' %}"></script>
-  <script src="{% static 'ietf/bootstrap/js/bootstrap.min.js' %}"></script>
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}"> {% comment %} This sets box-sizing: border-box {% endcomment %}
+  <script src="{% static 'ietf/js/ietf.js' %}"></script>
   <script type="text/javascript">
 
   {% autoescape off %}
@@ -483,8 +486,7 @@
        e.insertBefore(document.createElement("br"),e.firstChild);
 
        var minimize_func = function (e) { return function(){minimize(e);} }
-       var img = document.createElement("img");
-       img.src = "{% static 'ietf/images/agenda-weekview/close.png' %}";
+       var img = $('<i class="bi bi-x-circle-fill"></i>');
        img.style.cssFloat="right";
        img.onclick = minimize_func(e);
        img.style.cursor="pointer";

@@ -6,7 +6,6 @@
 
 {% block pagehead %}
     <link rel="stylesheet" href="{% static 'ietf/css/select2.css' %}">
-    <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
 {% endblock %}
 
 {% block morecss %}
@@ -70,9 +69,8 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static 'Sortable/Sortable.min.js' %}"></script>
+    <script src="{% static 'ietf/js/sortable.js' %}"></script>
     <script src="{% static 'ietf/js/select2.js' %}"></script>
-    <script src="{% static 'ietf/js/select2-field.js' %}"></script>
 
     <script type="text/javascript">
         const local_js = (
