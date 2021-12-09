@@ -70,7 +70,7 @@
     {% endif %}
     <form class="form add-document" method="post" id="add_document">
         {% csrf_token %}
-        {% bootstrap_form add_doc_form show_label=False %}
+        {% bootstrap_field add_doc_form.documents show_label=False %}
         {% bootstrap_button button_type="submit" name="action" value="add_documents" content="Add documents" %}
     </form>
     <h2>Search rules</h2>

@@ -103,7 +103,7 @@ $(document)
                         .children("tbody")
                         .length == 1;
 
-                    pagination = false; // FIXME: pagination not working yet.
+                    pagination = false; // FIXME-LARS: pagination not working yet.
 
                     // list.js cannot deal with tables with multiple tbodys,
                     // so maintain separate internal "table" copies for

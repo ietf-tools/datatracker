@@ -614,8 +614,8 @@ class ReviewTests(TestCase):
         })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(q("[name=reviewed_rev]").closest(".form-group").filter(".is-invalid"))
-        self.assertTrue(q("[name=review_file]").closest(".form-group").filter(".is-invalid"))
+        self.assertTrue(q("[name=reviewed_rev]").closest(".row").filter(".is-invalid"))
+        self.assertTrue(q("[name=review_file]").closest(".row").filter(".is-invalid"))
 
         # complete by uploading file
         empty_outbox()

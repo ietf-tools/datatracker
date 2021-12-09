@@ -170,7 +170,7 @@ class DurationField(forms.DurationField):
         return value
 
 
-class SearchableTextInput(forms.TextInput):
+class Select2Multiple(forms.SelectMultiple):
     class Media:
         css = {
             'all': (
@@ -179,18 +179,9 @@ class SearchableTextInput(forms.TextInput):
         }
         js = (
             'ietf/js/select2.js',
-            'ietf/js/select2-field.js',
         )
 
-# FIXME: select2 version 4 uses a standard select for the AJAX case -
-# switching to that would allow us to derive from the standard
-# multi-select machinery in Django instead of the manual CharField
-# stuff below
-#
-# we are now using select2 version 4, so this should be done, because
-# select v4 no longer works on text input fields, requiring ugly js hacking.
-
-class SearchableField(forms.CharField):
+class SearchableField(forms.MultipleChoiceField):
     """Base class for searchable fields
 
     The field uses a comma-separated list of primary keys in a CharField element as its
@@ -205,17 +196,14 @@ class SearchableField(forms.CharField):
     the make_select2_data() and ajax_url() methods. You likely want to provide a more
     specific default_hint_text as well.
     """
-    widget = SearchableTextInput
-#    model = None  # must be filled in by subclass
+    widget = Select2Multiple
     model = None  # type:Optional[Type[models.Model]]
-#    max_entries = None  # may be overridden in __init__
     max_entries = None # type: Optional[int] 
     default_hint_text = 'Type a value to search'
     
     def __init__(self, hint_text=None, *args, **kwargs):
         assert self.model is not None
         self.hint_text = hint_text if hint_text is not None else self.default_hint_text
-        kwargs["max_length"] = 10000
         # Pop max_entries out of kwargs - this distinguishes passing 'None' from
         # not setting the parameter at all.
         if 'max_entries' in kwargs:
@@ -228,35 +216,12 @@ class SearchableField(forms.CharField):
         if self.max_entries is not None:
             self.widget.attrs["data-max-entries"] = self.max_entries
 
-    def make_select2_data(self, model_instances):
-        """Get select2 data items
-        
-        Should return an array of dicts, each with at least 'id' and 'text' keys.
-        """
-        raise NotImplementedError('Must implement make_select2_data')
-
-    def ajax_url(self):
-        """Get the URL for AJAX searches
-        
-        Doing this in the constructor is difficult because the URL patterns may not have been
-        fully constructed there yet.
-        """
-        raise NotImplementedError('Must implement ajax_url')
-
     def get_model_instances(self, item_ids):
         """Get model instances corresponding to item identifiers in select2 field value
         
         Default implementation expects identifiers to be model pks. Return value is an iterable.
         """
         return self.model.objects.filter(pk__in=item_ids)
-
-    def validate_pks(self, pks):
-        """Validate format of PKs
-        
-        Base implementation does nothing, but subclasses may override if desired.
-        Should raise a forms.ValidationError in case of a failed validation.
-        """
-        pass
 
     def describe_failed_pks(self, failed_pks):
         """Format error message to display when non-existent PKs are referenced"""
@@ -266,21 +231,7 @@ class SearchableField(forms.CharField):
             model_name=self.model.__name__.lower())
         )
 
-    def parse_select2_value(self, value):
-        """Parse select2 field value into individual item identifiers"""
-        return [x.strip() for x in value.split(",") if x.strip()]
-
     def prepare_value(self, value):
-        if not value:
-            value = ""
-        if isinstance(value, int):
-            value = str(value)
-        if isinstance(value, str):
-            item_ids = self.parse_select2_value(value)
-            value = self.get_model_instances(item_ids)
-        if isinstance(value, self.model):
-            value = [value]
-
         self.widget.attrs["data-pre"] = json.dumps({
             d['id']: d for d in self.make_select2_data(value)
         })
@@ -289,20 +240,17 @@ class SearchableField(forms.CharField):
         # patterns may not have been fully constructed there yet
         self.widget.attrs["data-ajax--url"] = self.ajax_url()
 
-        return ",".join(str(o.pk) for o in value)
+        return super(SearchableField, self).prepare_value(value)
 
     def clean(self, value):
-        print(value)
-        value = super(SearchableField, self).clean(value)
-        pks = self.parse_select2_value(value)
-        self.validate_pks(pks)
         try:
-            objs = self.model.objects.filter(pk__in=pks)
+            objs = self.model.objects.filter(pk__in=value)
         except ValueError as e:
             raise forms.ValidationError('Unexpected field value; {}'.format(e))
 
-        found_pks = [ str(o.pk) for o in objs ]
-        failed_pks = [ x for x in pks if x not in found_pks ]
+        found_pks = [ o.pk for o in objs ]
+        failed_pks = [ x for x in value if x not in found_pks ]
+
         if failed_pks:
             raise forms.ValidationError(self.describe_failed_pks(failed_pks))
 
@@ -311,8 +259,7 @@ class SearchableField(forms.CharField):
                 self.max_entries,
                 'entry' if self.max_entries == 1 else 'entries',
             ))
-
-        return objs.first() if self.max_entries == 1 else objs
+        return objs
 
 
 class IETFJSONField(jsonfield.fields.forms.JSONField):

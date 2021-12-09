@@ -13,21 +13,31 @@ from ietf.utils.fields import SearchableField
 
 
 def select2_id_liaison(objs):
-    return [{
-        "id": o.pk,
-        "text":"[{}] {}".format(o.pk, escape(o.title)),
-    } for o in objs]
+    return [
+        {
+            "id": o.pk,
+            "text": "[{}] {}".format(o.pk, escape(o.title)),
+        }
+        for o in objs
+    ]
+
+
+def select2_id_name(objs):
+    return [(o.pk, "[{}] {}".format(o.pk, escape(o.title))) for o in objs]
+
 
 def select2_id_liaison_json(objs):
     return json.dumps(select2_id_liaison(objs))
 
+
 def select2_id_group_json(objs):
-    return json.dumps([{ "id": o.pk, "text": escape(o.acronym) } for o in objs])
+    return json.dumps([{"id": o.pk, "text": escape(o.acronym)} for o in objs])
 
 
 class SearchableLiaisonStatementsField(SearchableField):
     """Server-based multi-select field for choosing liaison statements using
     select2.js."""
+
     model = LiaisonStatement
     default_hint_text = "Type in title to search for document"
 
@@ -37,10 +47,17 @@ class SearchableLiaisonStatementsField(SearchableField):
                 raise forms.ValidationError("Unexpected value: %s" % pk)
 
     def make_select2_data(self, model_instances):
+        self.choices = select2_id_name(set(model_instances))
+        # FIXME-LARS: this only works with one selection, not multiple
+        self.initial = [tup[0] for tup in self.choices]
         return select2_id_liaison(model_instances)
 
     def ajax_url(self):
-        return urlreverse("ietf.liaisons.views.ajax_select2_search_liaison_statements")
+        return urlreverse(
+            "ietf.liaisons.views.ajax_select2_search_liaison_statements"
+        )
 
     def describe_failed_pks(self, failed_pks):
-        return "Could not recognize the following groups: {pks}.".format(pks=", ".join(failed_pks))
+        return "Could not recognize the following groups: {pks}.".format(
+            pks=", ".join(failed_pks)
+        )

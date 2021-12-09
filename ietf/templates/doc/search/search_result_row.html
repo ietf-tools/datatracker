@@ -77,7 +77,7 @@
         </div>
         {% if user|has_role:"Secretariat" and doc.reschedule_form %}
             <div class="mt-3">
-                {% bootstrap_form doc.reschedule_form layout="floating" %}
+                {% bootstrap_form doc.reschedule_form layout="floating" exclude="clear_returning_item, show_clear" %}
                 {% if doc.reschedule_form.show_clear %}
                     {% bootstrap_field doc.reschedule_form.clear_returning_item %}
                 {% endif %}

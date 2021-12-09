@@ -19,7 +19,7 @@
                 {% regroup letter.list by person as person_groups %}
                 {% for person_with_groups in person_groups %}
                     <div class="col">
-                        <div class="card text-center">
+                        <div class="card text-center photo-thumbnail">
                             {% if person_with_groups.grouper.photo_thumb %}
                                 <img class="card-img-top"
                                     src="{{ person_with_groups.grouper.photo_thumb.url }}"
