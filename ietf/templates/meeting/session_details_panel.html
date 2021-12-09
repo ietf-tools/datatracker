@@ -74,6 +74,9 @@
                     {% endif %}
                     {% if pres.document.type.slug != 'bluesheets' or user|has_role:"Secretariat" or meeting.type.slug == 'interim' and can_manage_materials %}
                       <a class="btn btn-default btn-sm pull-right" href="{{upload_url}}">Upload Revision</a>
+                      {% if pres.document.type.slug == 'minutes' %}
+                        <a class="btn btn-default btn-sm pull-right" href="{% url 'ietf.meeting.views.import_session_minutes' num=session.meeting.number session_id=session.pk %}">Import from notes.ietf.org</a>
+                      {% endif %}
                     {% endif %}
                   </td> 
                 {% endif %}

@@ -16,11 +16,7 @@
     {% endif %}
       <!-- etherpad -->
     {% if use_codimd %}
-      {% if item.slot_type.slug == 'plenary' %}
-        <a class="" href="https://notes.ietf.org/notes-ietf-{{ meeting.number }}-plenary" title="Notepad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
-      {% else %}
-        <a class="" href="https://notes.ietf.org/notes-ietf-{{ meeting.number }}-{{acronym}}" title="Notepad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
-      {% endif %}
+      <a class="" href="{{ session.notes_url }}" title="Notepad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
     {% endif %}
 
   {# show stream buttons up till end of session, then show archive buttons #}

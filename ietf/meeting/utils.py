@@ -1,17 +1,19 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
-
-
 import datetime
 import itertools
 import re
 import requests
+import subprocess
 
 from collections import defaultdict
+from pathlib import Path
 from urllib.error import HTTPError
 
 from django.conf import settings
+from django.contrib import messages
 from django.template.loader import render_to_string
+from django.utils.encoding import smart_text
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
@@ -19,11 +21,14 @@ import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.meeting.models import Session, SchedulingEvent, TimeSlot, Constraint, SchedTimeSessAssignment
+from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import SessionStatusName, ConstraintName
 from ietf.person.models import Person
 from ietf.secr.proceedings.proc_utils import import_audio_files
+from ietf.utils.html import sanitize_document
+
 
 def session_time_for_sorting(session, use_meeting_date):
     official_timeslot = TimeSlot.objects.filter(sessionassignments__session=session, sessionassignments__schedule__in=[session.meeting.schedule, session.meeting.schedule.base if session.meeting.schedule else None]).first()
@@ -544,3 +549,179 @@ def preprocess_meeting_important_dates(meetings):
         for d in m.important_dates:
             d.midnight_cutoff = "UTC 23:59" in d.name.name
     
+
+def get_meeting_sessions(num, acronym):
+    types = ['regular','plenary','other']
+    sessions = Session.objects.filter(
+        meeting__number=num,
+        group__acronym=acronym,
+        type__in=types,
+    )
+    if not sessions:
+        sessions = Session.objects.filter(
+            meeting__number=num,
+            short=acronym,
+            type__in=types,
+        )
+    return sessions
+
+
+class SessionNotScheduledError(Exception):
+    """Indicates failure because operation requires a scheduled session"""
+    pass
+
+
+class SaveMaterialsError(Exception):
+    """Indicates failure saving session materials"""
+    pass
+
+
+def save_session_minutes_revision(session, file, ext, request, encoding=None, apply_to_all=False):
+    """Creates or updates session minutes records
+
+    This updates the database models to reflect a new version. It does not handle
+    storing the new file contents, that should be handled via handle_upload_file()
+    or similar.
+
+    If the session does not already have minutes, it must be a scheduled
+    session. If not, SessionNotScheduledError will be raised.
+
+    Returns (Document, [DocEvents]), which should be passed to doc.save_with_history()
+    if the file contents are stored successfully.
+    """
+    minutes_sp = session.sessionpresentation_set.filter(document__type='minutes').first()
+    if minutes_sp:
+        doc = minutes_sp.document
+        doc.rev = '%02d' % (int(doc.rev)+1)
+        minutes_sp.rev = doc.rev
+        minutes_sp.save()
+    else:
+        ota = session.official_timeslotassignment()
+        sess_time = ota and ota.timeslot.time
+        if not sess_time:
+            raise SessionNotScheduledError
+        if session.meeting.type_id=='ietf':
+            name = 'minutes-%s-%s' % (session.meeting.number,
+                                      session.group.acronym)
+            title = 'Minutes IETF%s: %s' % (session.meeting.number,
+                                            session.group.acronym)
+            if not apply_to_all:
+                name += '-%s' % (sess_time.strftime("%Y%m%d%H%M"),)
+                title += ': %s' % (sess_time.strftime("%a %H:%M"),)
+        else:
+            name = 'minutes-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
+            title = 'Minutes %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
+        if Document.objects.filter(name=name).exists():
+            doc = Document.objects.get(name=name)
+            doc.rev = '%02d' % (int(doc.rev)+1)
+        else:
+            doc = Document.objects.create(
+                name = name,
+                type_id = 'minutes',
+                title = title,
+                group = session.group,
+                rev = '00',
+            )
+            DocAlias.objects.create(name=doc.name).docs.add(doc)
+        doc.states.add(State.objects.get(type_id='minutes',slug='active'))
+        if session.sessionpresentation_set.filter(document=doc).exists():
+            sp = session.sessionpresentation_set.get(document=doc)
+            sp.rev = doc.rev
+            sp.save()
+        else:
+            session.sessionpresentation_set.create(document=doc,rev=doc.rev)
+    if apply_to_all:
+        for other_session in get_meeting_sessions(session.meeting.number, session.group.acronym):
+            if other_session != session:
+                other_session.sessionpresentation_set.filter(document__type='minutes').delete()
+                other_session.sessionpresentation_set.create(document=doc,rev=doc.rev)
+    filename = f'{doc.name}-{doc.rev}{ext}'
+    doc.uploaded_filename = filename
+    e = NewRevisionDocEvent.objects.create(
+        doc=doc,
+        by=request.user.person,
+        type='new_revision',
+        desc=f'New revision available: {doc.rev}',
+        rev=doc.rev,
+    )
+
+    # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
+    save_error = handle_upload_file(
+        file=file,
+        filename=doc.uploaded_filename,
+        meeting=session.meeting,
+        subdir='minutes',
+        request=request,
+        encoding=encoding,
+    )
+    if save_error:
+        raise SaveMaterialsError(save_error)
+    else:
+        doc.save_with_history([e])
+
+
+def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=None):
+    """Accept an uploaded materials file
+
+    This function takes a file object, a filename and a meeting object and subdir as string.
+    It saves the file to the appropriate directory, get_materials_path() + subdir.
+    If the file is a zip file, it creates a new directory in 'slides', which is the basename of the
+    zip file and unzips the file in the new directory.
+    """
+    filename = Path(filename)
+    is_zipfile = filename.suffix == '.zip'
+
+    path = Path(meeting.get_materials_path()) / subdir
+    if is_zipfile:
+        path = path / filename.stem
+    path.mkdir(parents=True, exist_ok=True)
+
+    # agendas and minutes can only have one file instance so delete file if it already exists
+    if subdir in ('agenda', 'minutes'):
+        for f in path.glob(f'{filename.stem}.*'):
+            try:
+                f.unlink()
+            except FileNotFoundError:
+                pass  # if the file is already gone, so be it
+
+    with (path / filename).open('wb+') as destination:
+        if filename.suffix in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS['text/html']:
+            file.open()
+            text = file.read()
+            if encoding:
+                try:
+                    text = text.decode(encoding)
+                except LookupError as e:
+                    return (
+                        f"Failure trying to save '{filename}': "
+                        f"Could not identify the file encoding, got '{str(e)[:120]}'. "
+                        f"Hint: Try to upload as UTF-8."
+                    )
+            else:
+                try:
+                    text = smart_text(text)
+                except UnicodeDecodeError as e:
+                    return "Failure trying to save '%s'. Hint: Try to upload as UTF-8: %s..." % (filename, str(e)[:120])
+            # Whole file sanitization; add back what's missing from a complete
+            # document (sanitize will remove these).
+            clean = sanitize_document(text)
+            destination.write(clean.encode('utf8'))
+            if request and clean != text:
+                messages.warning(request,
+                                 (
+                                     f"Uploaded html content is sanitized to prevent unsafe content. "
+                                     f"Your upload {filename} was changed by the sanitization; "
+                                     f"please check the resulting content.  "
+                                 ))
+        else:
+            if hasattr(file, 'chunks'):
+                for chunk in file.chunks():
+                    destination.write(chunk)
+            else:
+                destination.write(file.read())
+
+    # unzip zipfile
+    if is_zipfile:
+        subprocess.call(['unzip', filename], cwd=path)
+
+    return None

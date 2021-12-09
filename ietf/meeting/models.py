@@ -14,6 +14,7 @@ import string
 
 from collections import namedtuple
 from pathlib import Path
+from urllib.parse import urljoin
 
 import debug                            # pyflakes:ignore
 
@@ -1259,6 +1260,13 @@ class Session(models.Model):
             return self.historic_group.acronym
         else:
             return self.group.acronym
+
+    def notes_id(self):
+        note_id_fragment = 'plenary' if self.type.slug == 'plenary' else self.group.acronym
+        return f'notes-ietf-{self.meeting.number}-{note_id_fragment}'
+
+    def notes_url(self):
+        return urljoin(settings.IETF_NOTES_URL, self.notes_id())
 
 class SchedulingEvent(models.Model):
     session = ForeignKey(Session)

@@ -38,6 +38,7 @@ import os
 import re
 import email
 import html5lib
+import requests_mock
 import shutil
 import sys
 
@@ -151,6 +152,7 @@ class ReverseLazyTest(django.test.TestCase):
         response = self.client.get('/ipr/update/')
         self.assertRedirects(response, "/ipr/", status_code=301)
 
+
 class TestCase(django.test.TestCase):
     """IETF TestCase class
 
@@ -158,6 +160,7 @@ class TestCase(django.test.TestCase):
       * asserts for html5 validation.
       * tempdir() convenience method
       * setUp() and tearDown() that override settings paths with temp directories
+      * mocking the requests library to prevent dependencies on the outside network
 
     The setUp() and tearDown() methods create / remove temporary paths and override
     Django's settings with the temp dir names. Subclasses of this class must
@@ -165,6 +168,12 @@ class TestCase(django.test.TestCase):
     anew for each test to avoid risk of cross-talk between test cases. Overriding
     the settings_temp_path_overrides class value will modify which path settings are
     replaced with temp test dirs.
+
+    Uses requests-mock to prevent the requests library from making requests to outside
+    resources. The requests-mock library allows nested mocks, so individual tests can
+    ignore this. Note that the mock set up by this class will intercept any requests
+    not handled by a test's inner mock - even if the latter is created with
+    real_http=True.
     """
     # These settings will be overridden with empty temporary directories
     settings_temp_path_overrides = [
@@ -257,10 +266,14 @@ class TestCase(django.test.TestCase):
     def __str__(self):
         return u"%s (%s.%s)" % (self._testMethodName, strclass(self.__class__),self._testMethodName)
 
-
     def setUp(self):
-        # Replace settings paths with temporary directories.
         super().setUp()
+
+        # Prevent the requests library from making live requests during tests
+        self.requests_mock = requests_mock.Mocker()
+        self.requests_mock.start()
+
+        # Replace settings paths with temporary directories.
         self._ietf_temp_dirs = {}  # trashed during tearDown, DO NOT put paths you care about in this
         for setting in self.settings_temp_path_overrides:
             self._ietf_temp_dirs[setting] = self.tempdir(slugify(setting))
@@ -271,4 +284,5 @@ class TestCase(django.test.TestCase):
         self._ietf_saved_context.disable()
         for dir in self._ietf_temp_dirs.values():
             shutil.rmtree(dir)
+        self.requests_mock.stop()
         super().tearDown()
