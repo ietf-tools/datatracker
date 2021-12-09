@@ -592,8 +592,7 @@ I would like to revoke this declaration.
         self.assertEqual(len(outbox),2)
         self.assertIn('Secretariat on '+ipr.get_latest_event_submitted().time.strftime("%Y-%m-%d"), get_payload_text(outbox[1]).replace('\n',' '))
 
-    def test_process_response_email(self):
-        # first send a mail
+    def send_ipr_email_helper(self):
         ipr = HolderIprDisclosureFactory()
         url = urlreverse('ietf.ipr.views.email',kwargs={ "id": ipr.id })
         self.client.login(username="secretary", password="secretary+password")
@@ -607,7 +606,6 @@ I would like to revoke this declaration.
             response_due=yesterday.isoformat())
         empty_outbox()
         r = self.client.post(url,data,follow=True)
-        #print r.content
         self.assertEqual(r.status_code,200)
         q = Message.objects.filter(reply_to=data['reply_to'])
         self.assertEqual(q.count(),1)
@@ -615,19 +613,25 @@ I would like to revoke this declaration.
         self.assertTrue(event.response_past_due())
         self.assertEqual(len(outbox), 1)
         self.assertTrue('joe@test.com' in outbox[0]['To'])
-        
+        return data['reply_to'], event
+
+    uninteresting_ipr_message_strings = [
+        ("To: {to}\nCc: {cc}\nFrom: joe@test.com\nDate: {date}\nSubject: test\n"),
+        ("Cc: {cc}\nFrom: joe@test.com\nDate: {date}\nSubject: test\n"),  # no To
+        ("To: {to}\nFrom: joe@test.com\nDate: {date}\nSubject: test\n"),  # no Cc
+        ("From: joe@test.com\nDate: {date}\nSubject: test\n"),  # no To or Cc
+        ("Cc: {cc}\nDate: {date}\nSubject: test\n"),  # no To
+        ("To: {to}\nDate: {date}\nSubject: test\n"),  # no Cc
+        ("Date: {date}\nSubject: test\n"),  # no To or Cc
+    ]
+
+    def test_process_response_email(self):
+        # first send a mail
+        reply_to, event = self.send_ipr_email_helper()
+
         # test process response uninteresting messages
         addrs = gather_address_lists('ipr_disclosure_submitted').as_strings()
-        uninteresting_message_strings = [
-            ("To: {to}\nCc: {cc}\nFrom: joe@test.com\nDate: {date}\nSubject: test\n"),
-            ("Cc: {cc}\nFrom: joe@test.com\nDate: {date}\nSubject: test\n"),  # no To
-            ("To: {to}\nFrom: joe@test.com\nDate: {date}\nSubject: test\n"),  # no Cc
-            ("From: joe@test.com\nDate: {date}\nSubject: test\n"),  # no To or Cc
-            ("Cc: {cc}\nDate: {date}\nSubject: test\n"),  # no To
-            ("To: {to}\nDate: {date}\nSubject: test\n"),  # no Cc
-            ("Date: {date}\nSubject: test\n"),  # no To or Cc
-        ]
-        for message_string in uninteresting_message_strings:
+        for message_string in self.uninteresting_ipr_message_strings:
             result = process_response_email(
                 message_string.format(
                     to=addrs.to,
@@ -642,11 +646,40 @@ I would like to revoke this declaration.
 From: joe@test.com
 Date: {}
 Subject: test
-""".format(data['reply_to'],datetime.datetime.now().ctime())
+""".format(reply_to, datetime.datetime.now().ctime())
         result = process_response_email(message_string)
 
-        self.assertIsInstance(result,Message)
+        self.assertIsInstance(result, Message)
         self.assertFalse(event.response_past_due())
+
+    def test_process_response_email_with_invalid_encoding(self):
+        """Interesting emails with invalid encoding should be handled"""
+        reply_to, _ = self.send_ipr_email_helper()
+        # test process response
+        message_string = """To: {}
+From: joe@test.com
+Date: {}
+Subject: test
+""".format(reply_to, datetime.datetime.now().ctime())
+        message_bytes = message_string.encode('utf8') + b'\nInvalid stuff: \xfe\xff\n'
+        result = process_response_email(message_bytes)
+        self.assertIsInstance(result, Message)
+        # \ufffd is a rhombus character with an inverse ?, used to replace invalid characters
+        self.assertEqual(result.body, 'Invalid stuff: \ufffd\ufffd\n\n',  # not sure where the extra \n is from
+                         'Invalid characters should be replaced with \ufffd characters')
+
+    def test_process_response_email_uninteresting_with_invalid_encoding(self):
+        """Uninteresting emails with invalid encoding should be quietly dropped"""
+        self.send_ipr_email_helper()
+        addrs = gather_address_lists('ipr_disclosure_submitted').as_strings()
+        for message_string in self.uninteresting_ipr_message_strings:
+            message_bytes = message_string.format(
+                                to=addrs.to,
+                                cc=addrs.cc,
+                                date=datetime.datetime.now().ctime(),
+            ).encode('utf8') + b'\nInvalid stuff: \xfe\xff\n'
+            result = process_response_email(message_bytes)
+            self.assertIsNone(result)
 
     def test_ajax_search(self):
         url = urlreverse('ietf.ipr.views.ajax_search')

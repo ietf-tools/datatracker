@@ -18,9 +18,10 @@ class ProcessEmailTests(TestCase):
         with name_of_file_containing('contents') as filename:
             call_command('process_email', email_file=filename)
         self.assertEqual(process_mock.call_count, 1, 'process_response_email should be called once')
+        (msg,) = process_mock.call_args.args
         self.assertEqual(
-            process_mock.call_args.args,
-            ('contents',),
+            msg.decode(),
+            'contents',
             'process_response_email should receive the correct contents'
         )
 
@@ -52,16 +53,15 @@ class ProcessEmailTests(TestCase):
     @mock.patch('ietf.utils.management.base.send_smtp')
     @mock.patch('ietf.ipr.management.commands.process_email.process_response_email')
     def test_invalid_character_encodings(self, process_mock, send_smtp_mock):
-        """The process_email command should attach messages with invalid encoding when using a file input"""
+        """The process_email command should accept messages with invalid encoding when using a file input"""
         invalid_characters = b'\xfe\xff'
         with name_of_file_containing(invalid_characters, mode='wb') as filename:
             call_command('process_email', email_file=filename)
 
-        self.assertFalse(process_mock.called)  # should not even try to process illegally encoded messages
-        self.assertTrue(send_smtp_mock.called)
-        (msg,) = send_smtp_mock.call_args.args
-        parts = msg.get_payload()
-        self.assertEqual(len(parts), 3, 'Error email should contain message, traceback, and original message')
+        self.assertFalse(send_smtp_mock.called)  # should not send an error email
+        self.assertTrue(process_mock.called)
+        (msg,) = process_mock.call_args.args
+        self.assertEqual(msg, invalid_characters, 'Invalid unicode should be passed to process_email()')
 
     @mock.patch.object(sys.stdin.buffer, 'read')
     @mock.patch('ietf.utils.management.base.send_smtp')
@@ -72,8 +72,7 @@ class ProcessEmailTests(TestCase):
         stdin_read_mock.return_value = invalid_characters
         call_command('process_email')
 
-        self.assertFalse(process_mock.called)  # should not even try to process illegally encoded messages
-        self.assertTrue(send_smtp_mock.called)
-        (msg,) = send_smtp_mock.call_args.args
-        parts = msg.get_payload()
-        self.assertEqual(len(parts), 3, 'Error email should contain message, traceback, and original message')
+        self.assertFalse(send_smtp_mock.called)  # should not send an error email
+        self.assertTrue(process_mock.called)
+        (msg,) = process_mock.call_args.args
+        self.assertEqual(msg, invalid_characters, 'Invalid unicode should be passed to process_email()')
