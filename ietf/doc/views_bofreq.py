@@ -3,7 +3,6 @@
 import debug    # pyflakes:ignore
 
 import io 
-import markdown
 
 from django import forms
 from django.contrib.auth.decorators import login_required
@@ -20,6 +19,7 @@ from ietf.doc.utils import add_state_change_event
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.person.fields import SearchablePersonsField
+from ietf.utils import markdown
 from ietf.utils.response import permission_denied
 from ietf.utils.text import xslugify
 from ietf.utils.textupload import get_cleaned_text_file_content
@@ -64,7 +64,7 @@ class BofreqUploadForm(forms.Form):
             if require_field("bofreq_file"):
                 content = get_cleaned_text_file_content(self.cleaned_data["bofreq_file"])
         try:
-            _ = markdown.markdown(content, extensions=['extra'])
+            _ = markdown.markdown(content)
         except Exception as e:
            raise forms.ValidationError(f'Markdown processing failed: {e}')
 

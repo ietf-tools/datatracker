@@ -436,6 +436,10 @@ class UploadSlidesForm(ApplyToAllFileUploadForm):
         return title
 
 
+class ImportMinutesForm(forms.Form):
+    markdown_text = forms.CharField(strip=False, widget=forms.HiddenInput)
+
+
 class RequestMinutesForm(forms.Form):
     to = MultiEmailField()
     cc = MultiEmailField(required=False)

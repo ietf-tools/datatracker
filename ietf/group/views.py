@@ -38,7 +38,6 @@ import copy
 import datetime
 import itertools
 import io
-import markdown
 import math
 import os
 import re
@@ -121,7 +120,7 @@ from ietf.settings import MAILING_LIST_INFO_URL
 from ietf.utils.pipe import pipe
 from ietf.utils.response import permission_denied
 from ietf.utils.text import strip_suffix
-
+from ietf.utils import markdown
 
 
 # --- Helpers ----------------------------------------------------------
@@ -581,7 +580,7 @@ def group_about_rendertest(request, acronym, group_type=None):
     if group.charter:
         charter = get_charter_text(group)
     try:
-        rendered = markdown.markdown(charter, extensions=['extra'])
+        rendered = markdown.markdown(charter)
     except Exception as e:
         rendered = f'Markdown rendering failed: {e}'
     return render(request, 'group/group_about_rendertest.html', {'group':group, 'charter':charter, 'rendered':rendered})

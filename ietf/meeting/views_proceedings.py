@@ -14,7 +14,7 @@ from ietf.meeting.forms import FileUploadForm
 from ietf.meeting.models import Meeting, MeetingHost
 from ietf.meeting.helpers import get_meeting
 from ietf.name.models import ProceedingsMaterialTypeName
-from ietf.secr.proceedings.utils import handle_upload_file
+from ietf.meeting.utils import handle_upload_file
 from ietf.utils.text import xslugify
 
 class UploadProceedingsMaterialForm(FileUploadForm):

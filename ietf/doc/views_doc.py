@@ -40,7 +40,6 @@ import io
 import json
 import os
 import re
-import markdown
 
 from urllib.parse import quote
 
@@ -80,7 +79,7 @@ from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions,
 from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
-from ietf.utils import markup_txt, log
+from ietf.utils import markup_txt, log, markdown
 from ietf.utils.draft import Draft
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
@@ -550,7 +549,7 @@ def document_main(request, name, rev=None):
                                        ))
 
     if doc.type_id == "bofreq":
-        content = markdown.markdown(doc.text_or_error(),extensions=['extra'])
+        content = markdown.markdown(doc.text_or_error())
         editors = bofreq_editors(doc)
         responsible = bofreq_responsible(doc)
         can_manage = has_role(request.user,['Secretariat', 'Area Director', 'IAB'])
@@ -661,7 +660,7 @@ def document_main(request, name, rev=None):
                 content = doc.text_or_error()
                 t = "plain text"
             elif extension == ".md":
-                content = markdown.markdown(doc.text_or_error(), extensions=['extra'])
+                content = markdown.markdown(doc.text_or_error())
                 content_is_html = True
                 t = "markdown"
             other_types.append((t, url))

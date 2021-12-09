@@ -148,6 +148,7 @@ IETF_ID_URL = IETF_HOST_URL + 'id/' # currently unused
 IETF_ID_ARCHIVE_URL = IETF_HOST_URL + 'archive/id/'
 IETF_AUDIO_URL = IETF_HOST_URL + 'audio/'
 
+IETF_NOTES_URL = 'https://notes.ietf.org/'  # HedgeDoc base URL
 
 # Absolute path to the directory static files should be collected to.
 # Example: "/var/www/example.com/static/"
@@ -996,6 +997,7 @@ DOT_BINARY = '/usr/bin/dot'
 UNFLATTEN_BINARY= '/usr/bin/unflatten'
 RSYNC_BINARY = '/usr/bin/rsync'
 YANGLINT_BINARY = '/usr/bin/yanglint'
+DE_GFM_BINARY = '/usr/bin/de-gfm.ruby2.5'
 
 # Account settings
 DAYS_TO_EXPIRE_REGISTRATION_LINK = 3
