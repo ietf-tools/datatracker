@@ -47,25 +47,25 @@ class StatusChangeTests(TestCase):
         r = self.client.post(url,dict(document_name="bogus",title="Bogus Title",ad="",create_in_state=state_strpk,notify='ipu@ietf.org'))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         ## Must set a name
         r = self.client.post(url,dict(document_name="",title="Bogus Title",ad=ad_strpk,create_in_state=state_strpk,notify='ipu@ietf.org'))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         ## Must not choose a document name that already exists
         r = self.client.post(url,dict(document_name="imaginary-mid-review",title="Bogus Title",ad=ad_strpk,create_in_state=state_strpk,notify='ipu@ietf.org'))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         ## Must set a title
         r = self.client.post(url,dict(document_name="bogus",title="",ad=ad_strpk,create_in_state=state_strpk,notify='ipu@ietf.org'))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # successful status change start
         r = self.client.post(url,dict(document_name="imaginary-new",title="A new imaginary status change",ad=ad_strpk,
@@ -96,7 +96,7 @@ class StatusChangeTests(TestCase):
         r = self.client.post(url,dict(new_state=""))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # successful change to AD Review
         adrev_pk = str(State.objects.get(slug='adrev',type__slug='statchg').pk)

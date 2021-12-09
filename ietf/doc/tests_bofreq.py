@@ -260,7 +260,7 @@ This test section has some text.
         r = self.client.post(url,postdict)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        error_text = q('.has-error .alert').text()
+        error_text = q('.is-invalid .alert').text()
         for p in good_batch:
             self.assertNotIn(p.plain_name(), error_text)
         for p in bad_batch:
@@ -353,7 +353,7 @@ This test section has some text.
             r = self.client.post(url,postdict)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue(q('form div.has-error'))
+            self.assertTrue(q('form div.is-invalid'))
 
     def test_post_proposed_restrictions(self):
         states = State.objects.filter(type_id='bofreq').exclude(slug='proposed')

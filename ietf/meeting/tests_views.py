@@ -5547,21 +5547,21 @@ class MaterialsTests(TestCase):
             r = self.client.post(url,dict(file=test_file))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue(q('form .has-error'))
+            self.assertTrue(q('form .is-invalid'))
     
             test_file = BytesIO(b'this is some text for a test'*1510000)
             test_file.name = "not_really.pdf"
             r = self.client.post(url,dict(file=test_file))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue(q('form .has-error'))
+            self.assertTrue(q('form .is-invalid'))
     
             test_file = BytesIO(b'<html><frameset><frame src="foo.html"></frame><frame src="bar.html"></frame></frameset></html>')
             test_file.name = "not_really.html"
             r = self.client.post(url,dict(file=test_file))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue(q('form .has-error'))
+            self.assertTrue(q('form .is-invalid'))
 
             # Test html sanitization
             test_file = BytesIO(b'<html><head><title>Title</title></head><body><h1>Title</h1><section>Some text</section></body></html>')
@@ -5719,8 +5719,8 @@ class MaterialsTests(TestCase):
         r = self.client.post(url,dict(file=test_file,title='title with bad character \U0001fabc '))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(q('form .has-error'))
-        self.assertIn("Unicode BMP", q('form .has-error div').text())
+        self.assertTrue(q('form .is-invalid'))
+        self.assertIn("Unicode BMP", q('form .is-invalid div').text())
 
     def test_remove_sessionpresentation(self):
         session = SessionFactory(meeting__type_id='ietf')

@@ -154,7 +154,7 @@ class EditCharterTests(TestCase):
         r = self.client.post(url, dict(charter_state="-12345"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         self.assertEqual(charter.get_state(), first_state)
         
         # change state

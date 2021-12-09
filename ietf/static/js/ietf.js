@@ -196,7 +196,7 @@ $(document)
 $(document)
     .ready(function () {
         $('.review-wish-add-remove-doc.ajax, .track-untrack-doc')
-            .click(function (e) {
+            .on("click", function (e) {
                 e.preventDefault();
                 var trigger = $(this);
                 $.ajax({

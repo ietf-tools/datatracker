@@ -19,30 +19,30 @@
         <div class="fieldset" >
 
             <div class="form-group">
-                <label for="id_to" class="col-md-2 control-label">To</label>
+                <label for="id_to" class="col-md-2 col-form-label">To</label>
                 <div class="col-md-10">{% render_field form.to class="form-control" readonly="readonly" %}</div>
             </div>
             <div class="form-group">
-                <label for="id_cc" class="col-md-2 control-label">Cc</label>
+                <label for="id_cc" class="col-md-2 col-form-label">Cc</label>
                 <div class="col-md-10">{% render_field form.cc class="form-control" %}</div>
             </div>
             <div class="form-group">
-                <label for="id_from" class="col-md-2 control-label">From</label>
+                <label for="id_from" class="col-md-2 col-form-label">From</label>
                 <div class="col-md-10">{% render_field form.frm class="form-control" readonly="readonly" %}</div>
             </div>
             <div class="form-group">
-                <label for="id_subject" class="col-md-2 control-label">Subject</label>
+                <label for="id_subject" class="col-md-2 col-form-label">Subject</label>
                 <div class="col-md-10">{% render_field form.subject class="form-control" readonly="readonly" %}</div>
             </div>
             <div class="form-group">
-                <label for="id_body" class="col-md-2 control-label">Body</label>
+                <label for="id_body" class="col-md-2 col-form-label">Body</label>
                 <div class="col-md-10">{% render_field form.body class="form-control" %}</div>
             </div>
 
         </div> <!-- fieldset -->
 
         <input class="btn btn-primary" type="submit" value="Send" name='send' />
-        <a class="btn btn-primary float-end" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">Back</a>
+        <a class="btn btn-secondary float-end" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">Back</a>
 
     </form>
 

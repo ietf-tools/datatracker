@@ -179,12 +179,16 @@ class SearchableTextInput(forms.TextInput):
         }
         js = (
             'ietf/js/select2.js',
+            'ietf/js/select2-field.js',
         )
 
 # FIXME: select2 version 4 uses a standard select for the AJAX case -
 # switching to that would allow us to derive from the standard
 # multi-select machinery in Django instead of the manual CharField
 # stuff below
+#
+# we are now using select2 version 4, so this should be done, because
+# select v4 no longer works on text input fields, requiring ugly js hacking.
 
 class SearchableField(forms.CharField):
     """Base class for searchable fields
@@ -219,7 +223,7 @@ class SearchableField(forms.CharField):
 
         super(SearchableField, self).__init__(*args, **kwargs)
 
-        self.widget.attrs["class"] = "select2-field form-control"
+        self.widget.attrs["class"] = "select2-field"
         self.widget.attrs["data-placeholder"] = self.hint_text
         if self.max_entries is not None:
             self.widget.attrs["data-max-entries"] = self.max_entries
@@ -283,15 +287,15 @@ class SearchableField(forms.CharField):
 
         # doing this in the constructor is difficult because the URL
         # patterns may not have been fully constructed there yet
-        self.widget.attrs["data-ajax-url"] = self.ajax_url()
+        self.widget.attrs["data-ajax--url"] = self.ajax_url()
 
         return ",".join(str(o.pk) for o in value)
 
     def clean(self, value):
+        print(value)
         value = super(SearchableField, self).clean(value)
         pks = self.parse_select2_value(value)
         self.validate_pks(pks)
-
         try:
             objs = self.model.objects.filter(pk__in=pks)
         except ValueError as e:
@@ -305,7 +309,7 @@ class SearchableField(forms.CharField):
         if self.max_entries != None and len(objs) > self.max_entries:
             raise forms.ValidationError('You can select at most {} {}.'.format(
                 self.max_entries,
-                'entry' if self.max_entries == 1 else 'entries', 
+                'entry' if self.max_entries == 1 else 'entries',
             ))
 
         return objs.first() if self.max_entries == 1 else objs

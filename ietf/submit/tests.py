@@ -166,9 +166,9 @@ class SubmitTests(BaseSubmitTestCase):
         r = self.client.post(url, files)
         if r.status_code != 302:
             q = PyQuery(r.content)
-            print(q('div.has-error div.alert').text())
+            print(q('div.is-invalid div.alert').text())
 
-        self.assertNoFormPostErrors(r, ".has-error,.alert-danger")
+        self.assertNoFormPostErrors(r, ".is-invalid,.alert-danger")
 
         for format in formats:
             self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, format))))
@@ -1346,7 +1346,7 @@ class SubmitTests(BaseSubmitTestCase):
             "authors-2-email": "person3@example.com",
             "authors-prefix": ["authors-", "authors-0", "authors-1", "authors-2"],
         })
-        self.assertNoFormPostErrors(r, ".has-error,.alert-danger")
+        self.assertNoFormPostErrors(r, ".is-invalid,.alert-danger")
 
         submission = Submission.objects.get(name=name)
         self.assertEqual(submission.title, "some title")
@@ -1599,8 +1599,8 @@ class SubmitTests(BaseSubmitTestCase):
 
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .has-error")) > 0)
-        m = q('div.has-error div.alert').text()
+        self.assertTrue(len(q("form .is-invalid")) > 0)
+        m = q('div.is-invalid div.alert').text()
 
         return r, q, m
         
@@ -1619,8 +1619,8 @@ class SubmitTests(BaseSubmitTestCase):
 
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .has-error")) > 0)
-        m = q('div.has-error div.alert').text()
+        self.assertTrue(len(q("form .is-invalid")) > 0)
+        m = q('div.is-invalid div.alert').text()
 
         return r, q, m
         
@@ -2225,7 +2225,7 @@ class ApprovalsTestCase(BaseSubmitTestCase):
         r = self.client.post(url, dict(name="draft-test-nonexistingwg-something"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .has-error")) > 0)
+        self.assertTrue(len(q("form .is-invalid")) > 0)
 
         # add
         name = "draft-ietf-mars-foo"
@@ -2659,7 +2659,7 @@ Subject: test
         r = self.client.post(url, files)
         if r.status_code != 302:
             q = PyQuery(r.content)
-            print(q('div.has-error span.help-block div').text())
+            print(q('div.is-invalid span.help-block div').text())
 
         self.assertEqual(r.status_code, 302)
 

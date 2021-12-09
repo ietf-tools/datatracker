@@ -299,7 +299,7 @@ class BallotWriteupsTests(TestCase):
                 save_last_call_text="1"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # save
         r = self.client.post(url, dict(
@@ -418,7 +418,7 @@ class BallotWriteupsTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=rfc_editor_note]')), 1)
         self.assertTrue(q('[type=submit]:contains("Save")'))
-        self.assertContains(r, "<label class=\"control-label\">RFC Editor Note</label>")
+        self.assertContains(r, "<label class=\"form-label\">RFC Editor Note</label>")
         self.assertContains(r, "This is a note for the RFC Editor")
 
         # save with a note

@@ -326,35 +326,35 @@ class NomcomViewsTest(TestCase):
         response = self.client.post(self.private_merge_nominee_url, test_data)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertTrue(q("form .has-error"))
+        self.assertTrue(q("form .is-invalid"))
 
         test_data = {"primary_email": nominees[0],
                      "secondary_emails": ""}
         response = self.client.post(self.private_merge_nominee_url, test_data)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertTrue(q("form .has-error"))
+        self.assertTrue(q("form .is-invalid"))
 
         test_data = {"primary_email": "",
                      "secondary_emails": nominees[0]}
         response = self.client.post(self.private_merge_nominee_url, test_data)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertTrue(q("form .has-error"))
+        self.assertTrue(q("form .is-invalid"))
 
         test_data = {"primary_email": "unknown@example.com",
                      "secondary_emails": nominees[0]}
         response = self.client.post(self.private_merge_nominee_url, test_data)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertTrue(q("form .has-error"))
+        self.assertTrue(q("form .is-invalid"))
 
         test_data = {"primary_email": nominees[0],
                      "secondary_emails": "unknown@example.com"}
         response = self.client.post(self.private_merge_nominee_url, test_data)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertTrue(q("form .has-error"))
+        self.assertTrue(q("form .is-invalid"))
 
         test_data = {"secondary_emails": """%s,
                                             %s,
@@ -925,7 +925,7 @@ class NomcomViewsTest(TestCase):
             response = self.client.post(feedback_url, test_data)
             self.assertEqual(response.status_code, 200)
             q = PyQuery(response.content)
-            self.assertTrue(q("form .has-error"))
+            self.assertTrue(q("form .is-invalid"))
             # accept nomination
             nominee_position.state = NomineePositionStateName.objects.get(slug='accepted')
             nominee_position.save()
@@ -2524,10 +2524,10 @@ class VolunteerTests(TestCase):
         r=self.client.post(url, dict(nomcoms=[nomcom.pk], affiliation=''))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(q('form div.has-error #id_affiliation'))
+        self.assertTrue(q('form div.is-invalid #id_affiliation'))
         r=self.client.post(url, dict(nomcoms=[], affiliation='something'))
         q = PyQuery(r.content)
-        self.assertTrue(q('form div.has-error #id_nomcoms'))
+        self.assertTrue(q('form div.is-invalid #id_nomcoms'))
         r=self.client.post(url, dict(nomcoms=[nomcom.pk], affiliation='something'))
         self.assertRedirects(r, reverse('ietf.ietfauth.views.profile'))
         self.assertEqual(person.volunteer_set.get(nomcom=nomcom).affiliation, 'something')

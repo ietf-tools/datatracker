@@ -138,7 +138,7 @@
             {% for draft_form in draft_formset %}
                 <div class="form-group draft-row {% if forloop.last %}template{% endif %}">
 
-                    <label class="col-md-2 control-label" for="{{ draft_form.document.id_for_label }}">
+                    <label class="col-md-2 col-form-label" for="{{ draft_form.document.id_for_label }}">
                         {{ draft_form.document.label }}
                     </label>
 
@@ -160,7 +160,7 @@
             {% endfor %}
 
             <div class="form-group">
-                <label class="col-md-2 control-label"></label>
+                <label class="col-md-2 col-form-label"></label>
                 <div class="col-md-10"><a class="draft-add-row btn btn-primary"><span class="bi bi-plus" aria-hidden="true"></span> Add more</a></div>
             </div>
 

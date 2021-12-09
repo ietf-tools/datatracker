@@ -495,6 +495,9 @@ BOOTSTRAP5 = {
     # Set placeholder attributes to label if no placeholder is provided
     'set_placeholder': False,
 
+    'error_css_class': 'is-invalid',
+    'success_css_class': 'is-valid',
+
     'field_renderers': {
         'default': 'ietf.utils.bootstrap.SeparateErrorsFromHelpTextFieldRenderer',
         'inline': 'bootstrap5.renderers.InlineFieldRenderer',

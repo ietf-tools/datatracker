@@ -75,7 +75,7 @@
         </div>
 
         <div class="form-group">
-            <label for="id_session_set-{{ forloop.counter0 }}-city" class="col-md-2 control-label">Location</label>
+            <label for="id_session_set-{{ forloop.counter0 }}-city" class="col-md-2 col-form-label">Location</label>
             <div class="col-md-10 form-inline">
                 {% render_field form.city class="form-control location" placeholder="City" %}
                 {% render_field form.country class="form-control location" style="width: 30%" %}
@@ -97,22 +97,22 @@
             <div class="fieldset{% if forloop.last %} template{% endif %}" >
 
                 <div class="form-group {% if form.date.errors %}alert alert-danger{% endif %}">
-                    <label for="id_session_set-{{ forloop.counter0 }}-date" class="col-md-2 control-label required">Date</label>
+                    <label for="id_session_set-{{ forloop.counter0 }}-date" class="col-md-2 col-form-label required">Date</label>
                     <div class="col-md-2">{% render_field form.date class="form-control" %}</div>
                     {% if form.date.errors %}<span class="help-inline">{{ form.date.errors }}</span>{% endif %}
                 </div>
 
                 <div class="form-group {% if form.time.errors or form.requested_duration.errors %}alert alert-danger{% endif %}">
-                    <label for="id_session_set-{{ forloop.counter0 }}-time" class="col-md-2 control-label required">Start Time</label>
+                    <label for="id_session_set-{{ forloop.counter0 }}-time" class="col-md-2 col-form-label required">Start Time</label>
                     <div class="col-md-3 form-inline">
                         {% render_field form.time class="form-control time-field" placeholder="HH:MM" %}
                         <div id="id_session_set-{{ forloop.counter0 }}-time_utc" class="utc-time"></div>
                         <span class="help-block">Local Time</span>
                         {% if form.time.errors %}<span class="help-inline">{{ form.time.errors }}</span>{% endif %}
                     </div>
-                    <label for="id_session_set-{{ forloop.counter0 }}-requested_duration" class="col-md-1 control-label required">Duration</label>
+                    <label for="id_session_set-{{ forloop.counter0 }}-requested_duration" class="col-md-1 col-form-label required">Duration</label>
                     <div class="col-md-1">{% render_field form.requested_duration class="form-control time-field" placeholder="HH:MM" %}{% if form.requested_duration.errors %}<span class="help-inline">{{ form.requested_duration.errors }}</span>{% endif %}</div>
-                    <label for="id_session_set-{{ forloop.counter0 }}-end_time" class="col-md-2 control-label">End Time</label>
+                    <label for="id_session_set-{{ forloop.counter0 }}-end_time" class="col-md-2 col-form-label">End Time</label>
                     <div class="col-md-3 form-inline">
                         {% render_field form.end_time class="form-control time-field computed" placeholder="HH:MM" disabled="disabled" %}
                         <div id="id_session_set-{{ forloop.counter0 }}-end_time_utc" class="utc-time"></div>
@@ -121,7 +121,7 @@
                 </div>
 
                 <div class="form-group{% if form.remote_instructions.errors %} alert alert-danger{% endif %}">
-                    <label for="id_session_set-{{ forloop.counter0 }}-remote_instructions" class="col-md-2 control-label required">Remote Instructions</label>
+                    <label for="id_session_set-{{ forloop.counter0 }}-remote_instructions" class="col-md-2 col-form-label required">Remote Instructions</label>
                     <div class="col-md-10">{% render_field form.remote_instructions class="form-control" placeholder="Webex (or other) URL or descriptive information (see below)" %}
                         <p class="help-block">
                             For virtual interims, a conference link <b>should be provided in the original request</b> in all but the most unusual circumstances.
@@ -133,12 +133,12 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="id_session_set-{{ forloop.counter0 }}-agenda" class="col-md-2 control-label">Agenda</label>
+                    <label for="id_session_set-{{ forloop.counter0 }}-agenda" class="col-md-2 col-form-label">Agenda</label>
                     <div class="col-md-10">{% render_field form.agenda class="form-control" rows="6" placeholder="Paste agenda here" %}</div>
                 </div>
 
                 <div class="form-group">
-                    <label for="id_session_set-{{ forloop.counter0 }}-agenda_note" class="col-md-2 control-label">Additional Information</label>
+                    <label for="id_session_set-{{ forloop.counter0 }}-agenda_note" class="col-md-2 col-form-label">Additional Information</label>
                     <div class="col-md-10">{% render_field form.agenda_note class="form-control" %}</div>
                 </div>
                 <button name="id_session_set-{{ forloop.counter0 }}-delete-button" type="button" class="btn btn-primary hidden btn-delete">Delete</button>
@@ -155,7 +155,7 @@
 
         <div class="col-md-12">
             <button type="submit" class="btn btn-primary">Submit</button>
-            <a class="btn btn-primary float-end" href="{% url 'ietf.meeting.views.upcoming' %}">Back</a>
+            <a class="btn btn-secondary float-end" href="{% url 'ietf.meeting.views.upcoming' %}">Back</a>
         </div>
 
 

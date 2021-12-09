@@ -156,7 +156,7 @@ $(document).ready(function () {
     milestonesForm.find(".edit-milestone [name$=delete]").each(setDeleteState);
     milestonesForm.on("change", ".edit-milestone input[name$=delete]", setDeleteState);
 
-    milestonesForm.find('.edit-milestone .has-error').each(function () {
+    milestonesForm.find('.edit-milestone .is-invalid').each(function () {
         $(this).closest(".edit-milestone").prev().click();
     });
 

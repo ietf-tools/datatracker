@@ -2,7 +2,7 @@
 {% load origin %}
 {% origin %}
 {% load ietf_filters ballot_icon person_filters %}
-<td>
+<td class="status">
     <div class="float-end mx-3 mb-3" id="ballot-icon-{{ doc.name }}">
         {% if doc.ballot %}
             {% ballot_icon doc %}

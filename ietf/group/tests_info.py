@@ -486,33 +486,33 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(acronym="foobarbaz")) # No name
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         self.assertEqual(len(Group.objects.filter(type="wg")), num_wgs)
 
         # acronym contains non-alphanumeric
         r = self.client.post(url, dict(acronym="test...", name="Testing WG", state=bof_state.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # acronym contains hyphen
         r = self.client.post(url, dict(acronym="test-wg", name="Testing WG", state=bof_state.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # acronym too short
         r = self.client.post(url, dict(acronym="t", name="Testing WG", state=bof_state.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # acronym doesn't start with an alpha character
         r = self.client.post(url, dict(acronym="1startwithalpha", name="Testing WG", state=bof_state.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # no parent group given
         r = self.client.post(url, dict(acronym="testwg", name="Testing WG", state=bof_state.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # Ok creation
         r = self.client.post(url, dict(acronym="testwg", name="Testing WG", state=bof_state.pk, parent=area.pk))
@@ -559,7 +559,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(name="Test", acronym=group.parent.acronym))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # try elevating BOF to WG
         group.state_id = "bof"
@@ -568,7 +568,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(name="Test", acronym=group.acronym))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         self.assertEqual(Group.objects.get(acronym=group.acronym).state_id, "bof")
 
@@ -602,7 +602,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(acronym="collide"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # create old acronym
         group.acronym = "oldmars"
@@ -615,7 +615,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(acronym="oldmars"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         
         # edit info
         with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
@@ -860,7 +860,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(instructions="")) # No instructions
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # request conclusion
         mailbox_before = len(outbox)
@@ -1115,7 +1115,7 @@ class MilestoneTests(TestCase):
                                     })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         self.assertEqual(GroupMilestone.objects.count(), milestones_before)
 
         # add
@@ -1263,7 +1263,7 @@ class MilestoneTests(TestCase):
                                     })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         m = GroupMilestone.objects.get(pk=m1.pk)
         self.assertEqual(GroupMilestone.objects.count(), milestones_before)
         self.assertEqual(m.due, m1.due)

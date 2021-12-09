@@ -10,7 +10,7 @@
             <h2>State Filter</h2>
 
             <div class="form-group">
-                {% bootstrap_label form.state.label label_for=form.state.id_for_label label_class="control-label" %}
+                {% bootstrap_label form.state.label label_for=form.state.id_for_label label_class="col-form-label" %}
 
                 {% render_field form.state %}
             </div>
@@ -21,7 +21,7 @@
         <h2>Document search</h2>
 
         <div class="form-group">
-            {% bootstrap_label form.draft.label label_for=form.draft.id_for_label label_class="control-label" %}
+            {% bootstrap_label form.draft.label label_for=form.draft.id_for_label label_class="col-form-label" %}
             <div class="input-group">
                 {% render_field form.draft class="form-control" placeholder="draft-..." %}
                 <span class="input-group-btn">
@@ -31,7 +31,7 @@
         </div>
 
         <div class="form-group">
-            {% bootstrap_label form.rfc.label label_for=form.rfc.id_for_label label_class="control-label" %}
+            {% bootstrap_label form.rfc.label label_for=form.rfc.id_for_label label_class="col-form-label" %}
             <div class="input-group">
                 {% render_field form.rfc class="form-control" placeholder="123..." %}
                 <span class="input-group-btn">
@@ -112,5 +112,5 @@
 
     </div>
 
-    <a class="btn btn-primary float-end" href="{% url "ietf.ipr.views.showlist" %}">Back</a>
+    <a class="btn btn-secondary float-end" href="{% url "ietf.ipr.views.showlist" %}">Back</a>
 </form>

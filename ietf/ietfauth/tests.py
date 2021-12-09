@@ -251,7 +251,7 @@ class IetfAuthTests(TestCase):
         r = self.client.post(url, faulty_ascii)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .has-error")) == 1)
+        self.assertTrue(len(q("form .is-invalid")) == 1)
 
         # edit details - blank ASCII
         blank_ascii = base_data.copy()
@@ -259,7 +259,7 @@ class IetfAuthTests(TestCase):
         r = self.client.post(url, blank_ascii)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form div.has-error ")) == 1) # we get a warning about reconstructed name
+        self.assertTrue(len(q("form div.is-invalid ")) == 1) # we get a warning about reconstructed name
         self.assertEqual(q("input[name=ascii]").val(), base_data["ascii"])
 
         # edit details
@@ -380,7 +380,7 @@ class IetfAuthTests(TestCase):
         r = self.client.post(url, { 'username': "nobody@example.com" })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .has-error")) > 0)
+        self.assertTrue(len(q("form .is-invalid")) > 0)
 
         # ask for reset
         empty_outbox()
@@ -397,13 +397,13 @@ class IetfAuthTests(TestCase):
         r = self.client.post(confirm_url, { 'password': 'secret', 'password_confirmation': 'nosecret' })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .has-error")) > 0)
+        self.assertTrue(len(q("form .is-invalid")) > 0)
 
         # confirm
         r = self.client.post(confirm_url, { 'password': 'secret', 'password_confirmation': 'secret' })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q("form .has-error")), 0)
+        self.assertEqual(len(q("form .is-invalid")), 0)
         self.assertTrue(self.username_in_htpasswd_file(user.username))
 
     def test_review_overview(self):

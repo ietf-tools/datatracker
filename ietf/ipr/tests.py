@@ -210,7 +210,7 @@ class IprTests(TestCase):
             })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .has-error")) > 0)
+        self.assertTrue(len(q("form .is-invalid")) > 0)
 
         # successful post
         empty_outbox()
@@ -455,7 +455,7 @@ class IprTests(TestCase):
             })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(q("#id_updates").parents(".form-group").hasClass("has-error"))
+        self.assertTrue(q("#id_updates").parents(".form-group").hasClass("is-invalid"))
 
     def test_addcomment(self):
         ipr = HolderIprDisclosureFactory()

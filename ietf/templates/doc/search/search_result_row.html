@@ -50,7 +50,7 @@
             </a>
         {% endfor %}
     </td>
-    <td>
+    <td class="doc">
         {% if doc.pages %}<small class="float-end text-muted">{{ doc.pages }} page{{ doc.pages|pluralize }}</small>{% endif %}
         <div>
             <a href="{{ doc.get_absolute_url }}">

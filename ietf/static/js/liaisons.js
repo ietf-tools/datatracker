@@ -183,7 +183,7 @@ var liaisonForm = {
             liaisonForm.approval.prop('checked', true);
             liaisonForm.approval.hide();
             //$("label[for='id_approved']").text("Approval not required");
-            var nodes = $("label[for='id_approved']:not(.control-label)")[0].childNodes;
+            var nodes = $("label[for='id_approved']:not(.col-form-label)")[0].childNodes;
             nodes[nodes.length - 1].nodeValue = 'Approval not required';
             return;
         }
@@ -192,7 +192,7 @@ var liaisonForm = {
             liaisonForm.approval.prop('checked', false);
             liaisonForm.approval.show();
             //$("label[for='id_approved']").text(initial_approval_label);
-            nodes = $("label[for='id_approved']:not(.control-label)")[0].childNodes;
+            nodes = $("label[for='id_approved']:not(.col-form-label)")[0].childNodes;
             nodes[nodes.length - 1].nodeValue = liaisonForm.initial_approval_label;
             return;
         }

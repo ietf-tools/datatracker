@@ -113,7 +113,7 @@ class ChangeStateTests(TestCase):
         r = self.client.post(url, dict(state=State.objects.get(used=True, type="draft", slug="active").pk))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state("draft-iesg"), first_state)
         self.assertCountEqual(draft.action_holders.all(), [ad])
@@ -208,7 +208,7 @@ class ChangeStateTests(TestCase):
         r = self.client.post(url, dict(state="foobarbaz"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state("draft-iana-review"), first_state)
 
@@ -325,7 +325,7 @@ class EditInfoTests(TestCase):
         r = self.client.post(url, dict(ad="123456789"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.ad, prev_ad)
 
@@ -959,7 +959,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.post(url,dict(intended_std_level=""))
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         
         # change intended status level
         messages_before = len(outbox)
@@ -1043,7 +1043,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.post(url,dict())
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertTrue(q('.has-error'))
+        self.assertTrue(q('.is-invalid'))
 
         doc.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
         r = self.client.post(url,dict())
@@ -1126,7 +1126,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.post(url, dict(shepherd=two_answers))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
     def test_doc_change_shepherd_email(self):
         doc = Document.objects.get(name=self.docname)
@@ -1783,7 +1783,7 @@ class ChangeStreamStateTests(TestCase):
                                   ))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
 class ChangeReplacesTests(TestCase):
     def setUp(self):
