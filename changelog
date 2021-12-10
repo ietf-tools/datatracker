@@ -1,3 +1,112 @@
+ietfdb (7.41.0) ietf; urgency=medium
+
+  * Merged in [19672] from jennifer@painless-security.com:
+    Add tests of meeting forms for the new session purpose work and a few 
+    other untested parts. Fix a few bugs uncovered.  
+
+  * Merged in [19675] from jennifer@painless-security.com:
+    Update uploaded_filename when modifying agenda through the interim 
+    meeting request edit view. Fixes #3395.  
+
+  * Merged in [19679] from jennifer@painless-security.com:
+    Include requester's last name as part of a bofreq document's name. 
+    Fixes #3377.  
+
+  * Merged in [19683] from jennifer@painless-security.com:
+    Guard against absent 'form_class' kwarg in IETFJSONField.formfield().  
+
+  * Merged in [19694] from jennifer@painless-security.com:
+    Better handle invalid character encodings in process_email and 
+    feedback_email commands. Add tests of this using stdin.  
+
+  * Merged in [19700] from lars@eggert.org:
+    Add space between RFC and number. 
+
+  * Merged in [19710] from jennifer@painless-security.com:
+    Allow nomcom chair to edit liaisons as well as members and generate 
+    GroupEvents when changed. Share code between group and nomcom for this 
+    purpose. Fixes #3376.  
+
+  * Merged in [19711] from krathnayake@ietf.org:
+    Adds private app authentication API for bibxml. Fixes #3480.  
+
+  * Merged in [19713] from lars@eggert.org:
+    Remove ietf/templates/iesg/scribe_template.html and related, 
+    which is not used anymore according to the secretariat.
+    (On merge, rjsparks@nostrum.com also removed the three other
+     templates that only that one included, and removed the test
+     that covered the view tht was removed).
+
+  * Merged in [19716] from jennifer@painless-security.com:
+    Update CSS selectors to update times/timezones for any elements with 
+    .time/.current-tz classes, not just span. Fixes #3485.  
+
+  * Merged in [19718] from rjsparks@nostrum.com:
+    Update the utility that generates batches of bibxml3 files to match the 
+    way the view uses the templates.  
+
+  * Merged in [19719] from rjsparks@nostrum.com:
+    Change the I-D announce text to mention rsync instead of ftp per 
+    RFC9141 and its associated transition plan.  
+
+  * Merged in [19693] from nick@staff.ietf.org:
+    feat: cypress JS testing for agenda meetings + weekview swimlane (WIP) 
+
+  * Merged in [19696] from nick@staff.ietf.org:
+    feat: add nomcom expand panel test 
+
+  * Merged in [19697] from nick@staff.ietf.org:
+    feat: add nomcom expand panel test (with missing file) 
+
+  * Merged in [19698] from nick@staff.ietf.org:
+    feat: add nomcom questionnaires tabs tests 
+
+  * Update coverage to reflect removal of scribe templates
+
+  * Merged in [19741] from lars@eggert.org:
+    Add ghostscript to app image, which is used by some tests. 
+
+  * Merged in [19744] from jennifer@painless-security.com:
+    Treat application/octet-stream as text/markdown for '.md' materials 
+    uploads. Refactor FileUploadForm hierarchy to reduce boilerplate. Fixes 
+    #3163.  
+
+  * Merged in [19747] from rjsparks@nostrum.com:
+    Provide a more direct replacement for tools.ietf.org/id at doc/id.  
+
+  * Merged in [19748] from nick@staff.ietf.org:
+    docs: add CONTRIBUTING.md (with associated assets) and 
+    CODE_OF_CONDUCT.md 
+
+  * Merged in [19750] from nick@staff.ietf.org:
+    build: Add GitHub Actions workflow for automatic nightly datatracker DB 
+    image build 
+
+  * Merged in [19751] from nick@staff.ietf.org:
+    misc: add .gitignore + fix cypress files to match JS style guide 
+
+  * Merged in [19753] from rjsparks@nostrum.com:
+    Provide pdfs of htmlized (pdfized) documents to replace 
+    tools.ietf.org/pdf/ at /doc/pdf.  
+
+  * Merged in [19761] from nick@staff.ietf.org:
+    fix: skip chromedriver install if arch is not supported in docker build 
+
+  * Merged in [19763] from jennifer@painless-security.com:
+    Add ability to import session minutes from notes.ietf.org. Mock out 
+    calls to the requests library in tests. Call markdown library through a 
+    util method. Fixes #3489.  
+
+  * Merged in [19766] from jennifer@painless-security.com:
+    Accept/replace invalid Unicode bytes when processing ipr response 
+    emails. Fixes #3489.  
+
+  * Pin weasyprint to an earlier version because of packaging trouble with 
+    dependencies.
+
+ -- Robert Sparks <rjsparks@nostrum.com>  10 Dec 2021 15:58:04 +0000
+
+
 ietfdb (7.40.0) ietf; urgency=medium
 
   ** Codesprint, session purposes, new docker dev env, performance improvements **
