@@ -104,7 +104,7 @@ ietfdb (7.41.0) ietf; urgency=medium
   * Pin weasyprint to an earlier version because of packaging trouble with 
     dependencies.
 
- -- Robert Sparks <rjsparks@nostrum.com>  10 Dec 2021 15:58:04 +0000
+ -- Robert Sparks <rjsparks@nostrum.com>  10 Dec 2021 16:30:21 +0000
 
 
 ietfdb (7.40.0) ietf; urgency=medium
