@@ -14,12 +14,20 @@ $.fn.select2.defaults.set("escapeMarkup", function (m) {
 
 // Copyright The IETF Trust 2015-2021, All Rights Reserved
 // JS for ietf.utils.fields.SearchableField subclasses
-function setupSelect2Field(e) {
-    var url = e.data("ajax--url");
-    if (!url)
+window.setupSelect2Field = function (e) {
+    var url = e.data("ajax-url");
+    if (!url) {
+        console.log("data-ajax-url missing, not enabling select2 on field", e);
         return;
+    }
 
     var maxEntries = e.data("max-entries");
+    var options = e.data("pre");
+    for (var id in options) {
+        e.append(new Option(options[id].text, options[id].id, true, true));
+    }
+    // e.trigger("change");
+
     e.select2({
         multiple: maxEntries !== 1,
         maximumSelectionSize: maxEntries,
@@ -43,7 +51,7 @@ function setupSelect2Field(e) {
             }
         }
     });
-}
+};
 
 $(document)
     .ready(function () {

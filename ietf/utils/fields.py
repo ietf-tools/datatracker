@@ -197,7 +197,9 @@ class SearchableField(forms.MultipleChoiceField):
     specific default_hint_text as well.
     """
     widget = Select2Multiple
+#    model = None  # must be filled in by subclass
     model = None  # type:Optional[Type[models.Model]]
+#    max_entries = None  # may be overridden in __init__
     max_entries = None # type: Optional[int] 
     default_hint_text = 'Type a value to search'
     
@@ -216,12 +218,35 @@ class SearchableField(forms.MultipleChoiceField):
         if self.max_entries is not None:
             self.widget.attrs["data-max-entries"] = self.max_entries
 
+    def make_select2_data(self, model_instances):
+        """Get select2 data items
+        
+        Should return an array of dicts, each with at least 'id' and 'text' keys.
+        """
+        raise NotImplementedError('Must implement make_select2_data')
+
+    def ajax_url(self):
+        """Get the URL for AJAX searches
+        
+        Doing this in the constructor is difficult because the URL patterns may not have been
+        fully constructed there yet.
+        """
+        raise NotImplementedError('Must implement ajax_url')
+
     def get_model_instances(self, item_ids):
         """Get model instances corresponding to item identifiers in select2 field value
         
         Default implementation expects identifiers to be model pks. Return value is an iterable.
         """
         return self.model.objects.filter(pk__in=item_ids)
+
+    def validate_pks(self, pks):
+        """Validate format of PKs
+        
+        Base implementation does nothing, but subclasses may override if desired.
+        Should raise a forms.ValidationError in case of a failed validation.
+        """
+        pass
 
     def describe_failed_pks(self, failed_pks):
         """Format error message to display when non-existent PKs are referenced"""
@@ -232,34 +257,45 @@ class SearchableField(forms.MultipleChoiceField):
         )
 
     def prepare_value(self, value):
-        self.widget.attrs["data-pre"] = json.dumps({
-            d['id']: d for d in self.make_select2_data(value)
-        })
+        result = super(SearchableField, self).prepare_value(value)
+
+        if not value:
+            value = ""
+        if isinstance(value, int):
+            value = str(value)
+        if type(value) in (str, list):
+            value = self.get_model_instances(value)
+        if isinstance(value, self.model):
+            value = [value]
+        if value.count() > 0:
+            self.widget.attrs["data-pre"] = json.dumps({
+                d['id']: d for d in self.make_select2_data(value)
+            })
 
         # doing this in the constructor is difficult because the URL
         # patterns may not have been fully constructed there yet
-        self.widget.attrs["data-ajax--url"] = self.ajax_url()
+        self.widget.attrs["data-ajax-url"] = self.ajax_url()
 
-        return super(SearchableField, self).prepare_value(value)
+        return result
 
-    def clean(self, value):
+    def clean(self, pks):
         try:
-            objs = self.model.objects.filter(pk__in=value)
+            objs = self.model.objects.filter(pk__in=pks)
         except ValueError as e:
             raise forms.ValidationError('Unexpected field value; {}'.format(e))
 
-        found_pks = [ o.pk for o in objs ]
-        failed_pks = [ x for x in value if x not in found_pks ]
-
+        found_pks = [ str(o.pk) for o in objs ]
+        failed_pks = [ x for x in pks if x not in found_pks ]
         if failed_pks:
             raise forms.ValidationError(self.describe_failed_pks(failed_pks))
 
         if self.max_entries != None and len(objs) > self.max_entries:
             raise forms.ValidationError('You can select at most {} {}.'.format(
                 self.max_entries,
-                'entry' if self.max_entries == 1 else 'entries',
+                'entry' if self.max_entries == 1 else 'entries', 
             ))
-        return objs
+
+        return objs.first() if self.max_entries == 1 else objs
 
 
 class IETFJSONField(jsonfield.fields.forms.JSONField):

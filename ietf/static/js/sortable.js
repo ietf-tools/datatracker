@@ -1,1 +1,3 @@
-import "sortablejs";
+import { Sortable } from "sortablejs";
+
+window.Sortable = Sortable;

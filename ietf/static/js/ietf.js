@@ -185,10 +185,10 @@ $(document)
                 .attr("data-bs-target", "#righthand-nav")
                 .scrollspy("refresh");
 
-            $(window)
-                .on("activate.bs.scrollspy", function () {
-                    console.log("X");
-                });
+            // $(window)
+            //     .on("activate.bs.scrollspy", function () {
+            //         console.log("X");
+            //     });
         }
     });
 

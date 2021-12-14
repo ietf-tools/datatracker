@@ -407,7 +407,6 @@ class IetfAuthTests(TestCase):
         self.assertTrue(self.username_in_htpasswd_file(user.username))
 
     def test_review_overview(self):
-        return  # FIXME-LARS
         review_req = ReviewRequestFactory()
         assignment = ReviewAssignmentFactory(review_request=review_req,reviewer=EmailFactory(person__user__username='reviewer'))
         RoleFactory(name_id='reviewer',group=review_req.team,person=assignment.reviewer.person)

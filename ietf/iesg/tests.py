@@ -330,7 +330,6 @@ class IESGAgendaTests(TestCase):
         self.assertTrue(r.json())
 
     def test_agenda(self):
-        return  # FIXME-LARS
         r = self.client.get(urlreverse("ietf.iesg.views.agenda"))
         self.assertEqual(r.status_code, 200)
 

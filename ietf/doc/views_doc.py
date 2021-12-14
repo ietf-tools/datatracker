@@ -719,7 +719,6 @@ def document_main(request, name, rev=None):
 
     raise Http404("Document not found: %s" % (name + ("-%s"%rev if rev else "")))
 
-
 def document_html(request, name, rev=None):
     found = fuzzy_find_documents(name, rev)
     num_found = found.documents.count()
@@ -735,12 +734,14 @@ def document_html(request, name, rev=None):
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
+
     if found.matched_rev or found.matched_name.startswith('rfc'):
         rev = found.matched_rev
     else:
         rev = doc.rev
     if rev:
         doc = doc.history_set.filter(rev=rev).first() or doc.fake_history_obj(rev)
+
     if doc.type_id in ['draft',]:
         doc.supermeta = build_doc_supermeta_block(doc)
         doc.meta = build_doc_meta_block(doc, settings.HTMLIZER_URL_PREFIX)

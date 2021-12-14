@@ -370,6 +370,7 @@ class IprTests(TestCase):
             "updates": "",
         }
         r = self.client.post(url, post_data, follow=True)
+        print(r)
         self.assertContains(r, "Disclosure modified")
 
         iprs = IprDisclosureBase.objects.filter(title__icontains=draft.name)
@@ -455,7 +456,8 @@ class IprTests(TestCase):
             })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(q("#id_updates").parents(".form-group").hasClass("is-invalid"))
+        # print(r.content)
+        self.assertTrue(q("#id_updates").parents(".row").hasClass("is-invalid"))
 
     def test_addcomment(self):
         ipr = HolderIprDisclosureFactory()

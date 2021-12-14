@@ -984,4 +984,3 @@ class ResetNextReviewerInTeamTests(TestCase):
             self.assertEqual(NextReviewerInTeam.objects.get(team=group).next_reviewer, reviewers[target_index].person)
             self.client.logout()
             target_index += 2
-

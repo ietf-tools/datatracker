@@ -145,7 +145,6 @@ class CustomApiTests(TestCase):
         self.assertEqual(event.by, recman)
 
     def test_api_upload_bluesheet(self):
-        return  # FIXME-LARS
         url = urlreverse('ietf.meeting.views.api_upload_bluesheet')
         recmanrole = RoleFactory(group__type_id='ietf', name_id='recman')
         recman = recmanrole.person

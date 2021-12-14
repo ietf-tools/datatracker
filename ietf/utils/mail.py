@@ -376,7 +376,8 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
             if save:
                 message.sent = datetime.datetime.now()
                 message.save()
-            show_that_mail_was_sent(request,'Email was sent',msg,bcc)
+            if settings.SERVER_MODE != 'development':
+                show_that_mail_was_sent(request,'Email was sent',msg,bcc)
         except smtplib.SMTPException as e:
             log_smtp_exception(e)
             build_warning_message(request, e)
