@@ -17,6 +17,7 @@ from django.core.validators import validate_email
 from django.db import transaction
 from django.http import HttpRequest     # pyflakes:ignore
 from django.utils.module_loading import import_string
+from django.template.loader import render_to_string
 
 import debug                            # pyflakes:ignore
 
@@ -449,6 +450,13 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     submission.save()
 
     create_submission_event(request, submission, approved_subm_desc)
+
+    # Create bibxml-ids entry
+    ref_text = '%s' % render_to_string('doc/bibxml.xml', {'name':draft.name, 'doc': draft, 'doc_bibtype':'I-D'})
+    ref_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s.xml' % (draft.name[6:], ))
+    with io.open(ref_file_name, "w", encoding='utf-8') as f:
+                f.write(ref_text)
+
     log.log(f"{submission.name}: done")
     
 

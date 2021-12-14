@@ -39,7 +39,7 @@ from ietf.submit.mail import add_submission_email, process_response_email
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.models import VersionInfo
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 from ietf.utils.draft import Draft
 
 
@@ -256,6 +256,12 @@ class SubmitTests(BaseSubmitTestCase):
 
         return confirmation_url
 
+    def verify_bibxml_ids_creation(self, draft):
+        url = urlreverse('ietf.doc.views_doc.document_bibxml', kwargs=dict(name=draft.name, rev=draft.rev))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertIn(draft.name, unicontent(r))
+
     def submit_new_wg(self, formats):
         # submit new -> supply submitter info -> approve
         GroupFactory(type_id='wg',acronym='ames')
@@ -373,6 +379,8 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertContains(r, 'mars WG')
         self.assertContains(r, 'Yang Validation')
         self.assertContains(r, 'WG Document')
+
+        self.verify_bibxml_ids_creation(draft)
 
     def test_submit_new_wg_txt(self):
         self.submit_new_wg(["txt"])
@@ -685,6 +693,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertContains(r, draft.title)
         # Check submission settings
         self.assertEqual(draft.submission().xml_version, "3" if 'xml' in formats else None)
+        self.verify_bibxml_ids_creation(draft)
 
     def test_submit_existing_txt(self):
         self.submit_existing(["txt"])
@@ -839,6 +848,7 @@ class SubmitTests(BaseSubmitTestCase):
         new_revision = draft.latest_event()
         self.assertEqual(new_revision.type, "new_revision")
         self.assertEqual(new_revision.by.name, "Submitter Name")
+        self.verify_bibxml_ids_creation(draft)
 
     def test_submit_new_individual_txt(self):
         self.submit_new_individual(["txt"])
@@ -879,6 +889,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(docauth.person, author)
         self.assertEqual(docauth.affiliation, '')
         self.assertEqual(docauth.country, '')
+        self.verify_bibxml_ids_creation(doc)
 
     def test_submit_new_draft_no_org_or_address_txt(self):
         self.submit_new_draft_no_org_or_address(['txt'])
@@ -1015,6 +1026,7 @@ class SubmitTests(BaseSubmitTestCase):
 
         # Check submission settings
         self.assertEqual(draft.submission().xml_version, "3" if 'xml' in formats else None)
+        self.verify_bibxml_ids_creation(draft)
 
     def test_submit_new_logged_in_txt(self):
         self.submit_new_individual_logged_in(["txt"])
@@ -1058,6 +1070,7 @@ class SubmitTests(BaseSubmitTestCase):
             [str(r) for r in resources],
         )
         self._assert_extresource_change_event(draft, is_present=True)
+        self.verify_bibxml_ids_creation(draft)
 
     def test_submit_update_individual(self):
         IndividualDraftFactory(name='draft-ietf-random-thing', states=[('draft','rfc')], other_aliases=['rfc9999',], pages=5)
@@ -1115,6 +1128,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertContains(r, draft.name)
         self.assertContains(r, draft.title)
         self._assert_extresource_change_event(draft, is_present=False)
+        self.verify_bibxml_ids_creation(draft)
 
     def submit_existing_with_extresources(self, group_type, stream_type='ietf'):
         """Submit a draft with external resources
@@ -1390,6 +1404,7 @@ class SubmitTests(BaseSubmitTestCase):
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, rev)
         self.assertEqual(draft.docextresource_set.count(), 0)
+        self.verify_bibxml_ids_creation(draft)
 
     def test_search_for_submission_and_edit_as_secretariat(self):
         # submit -> edit

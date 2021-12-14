@@ -61,7 +61,7 @@ class Command(BaseCommand):
         process_all = options.get("all")
         days = options.get("days")
         #
-        bibxmldir = os.path.join(settings.BIBXML_BASE_PATH, 'bibxml3')
+        bibxmldir = os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids')
         if not os.path.exists(bibxmldir):
             os.makedirs(bibxmldir)
         #
