@@ -456,6 +456,9 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     ref_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s.xml' % (draft.name[6:], ))
     with io.open(ref_file_name, "w", encoding='utf-8') as f:
                 f.write(ref_text)
+    ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (draft.name[6:], draft.rev ))
+    with io.open(ref_rev_file_name, "w", encoding='utf-8') as f:
+                f.write(ref_text)
 
     log.log(f"{submission.name}: done")
     
