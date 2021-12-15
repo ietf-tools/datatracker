@@ -1167,7 +1167,6 @@ class MilestoneTests(TestCase):
                                     'm-1-desc': "Test 3",
                                     'm-1-due': due.strftime("%B %Y"),
                                     'm-1-resolved': "",
-                                    'm-1-docs': "",
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)
@@ -1404,7 +1403,6 @@ class DatelessMilestoneTests(TestCase):
                                     'm-1-desc': "Test 3",
                                     'm-1-order': 1,
                                     'm-1-resolved': "",
-                                    'm-1-docs': "",
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)

@@ -20,7 +20,8 @@ function replace_with_internal(table, internal_table, i) {
         .replaceWith(internal_table[i]
             .children("table")
             .children("tbody")
-            .clone());}
+            .clone());
+}
 
 function field_magic(i, e, fields) {
     if (fields[i] == "date" || fields[i] == "num") {
@@ -172,10 +173,12 @@ $(document)
                             }
 
                             list_instance.push(
-                                new List(hook, {
+                                new List(hook, pagination ? {
                                     valueNames: fields,
                                     pagination: pagination,
                                     page: items_per_page
+                                } : {
+                                    valueNames: fields
                                 }));
                         });
 

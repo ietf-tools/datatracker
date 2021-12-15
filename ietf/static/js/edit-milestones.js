@@ -142,12 +142,12 @@ $(document)
                 .closest(".edit-milestone")
                 .find("[name$=resolved]");
             if (resolved) {
-                reason.closest(".form-group")
+                reason.closest(".row")
                     .removeClass("visually-hidden");
                 if (!reason.val())
                     reason.val(reason.data("default"));
             } else {
-                reason.closest(".form-group")
+                reason.closest(".row")
                     .addClass("visually-hidden");
                 reason.val("");
             }
