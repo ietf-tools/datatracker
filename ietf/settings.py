@@ -1016,8 +1016,8 @@ HTPASSWD_FILE = "/www/htpasswd"
 # Generation of pdf files
 GHOSTSCRIPT_COMMAND = "/usr/bin/gs"
 
-# Generation of bibxml files for xml2rfc
-BIBXML_BASE_PATH = '/a/www/ietf-ftp/xml2rfc'
+# Generation of bibxml files (currently only for internet drafts)
+BIBXML_BASE_PATH = '/a/ietfdata/derived/bibxml'
 
 # Timezone files for iCalendar
 TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
