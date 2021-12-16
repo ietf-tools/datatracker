@@ -39,7 +39,7 @@ from ietf.submit.mail import add_submission_email, process_response_email
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.models import VersionInfo
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.draft import Draft
 
 
@@ -50,6 +50,7 @@ class BaseSubmitTestCase(TestCase):
         'SUBMIT_YANG_DRAFT_MODEL_DIR',
         'SUBMIT_YANG_IANA_MODEL_DIR',
         'SUBMIT_YANG_CATALOG_DIR',
+        'BIBXML_BASE_PATH',
     ]
 
     def setUp(self):
@@ -59,6 +60,7 @@ class BaseSubmitTestCase(TestCase):
         # old drafts may not be moved out of the way properly.
         self.saved_repository_path = settings.IDSUBMIT_REPOSITORY_PATH
         settings.IDSUBMIT_REPOSITORY_PATH = settings.INTERNET_DRAFT_PATH
+        os.mkdir(os.path.join(settings.BIBXML_BASE_PATH,'bibxml-ids'))
 
     def tearDown(self):
         settings.IDSUBMIT_REPOSITORY_PATH = self.saved_repository_path
@@ -257,10 +259,14 @@ class SubmitTests(BaseSubmitTestCase):
         return confirmation_url
 
     def verify_bibxml_ids_creation(self, draft):
-        url = urlreverse('ietf.doc.views_doc.document_bibxml', kwargs=dict(name=draft.name, rev=draft.rev))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertIn(draft.name, unicontent(r))
+        # for name in (draft.name, draft.name[6:]):
+        #     ref_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s.xml' % (name, ))
+        #     self.assertTrue(os.path.exists(ref_file_name))
+        #     ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (name, draft.rev ))
+        #     self.assertTrue(os.path.exists(ref_rev_file_name))
+        ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (draft.name, draft.rev ))
+        self.assertTrue(os.path.exists(ref_rev_file_name))
+
 
     def submit_new_wg(self, formats):
         # submit new -> supply submitter info -> approve

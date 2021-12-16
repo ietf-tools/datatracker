@@ -453,12 +453,16 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
 
     # Create bibxml-ids entry
     ref_text = '%s' % render_to_string('doc/bibxml.xml', {'name':draft.name, 'doc': draft, 'doc_bibtype':'I-D'})
-    ref_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s.xml' % (draft.name[6:], ))
-    with io.open(ref_file_name, "w", encoding='utf-8') as f:
-                f.write(ref_text)
-    ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (draft.name[6:], draft.rev ))
+    # for name in (draft.name, draft.name[6:]):
+    #     ref_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s.xml' % (name, ))
+    #     with io.open(ref_file_name, "w", encoding='utf-8') as f:
+    #         f.write(ref_text)
+    #     ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (name, draft.rev ))
+    #     with io.open(ref_rev_file_name, "w", encoding='utf-8') as f:
+    #         f.write(ref_text)
+    ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (draft.name, draft.rev ))
     with io.open(ref_rev_file_name, "w", encoding='utf-8') as f:
-                f.write(ref_text)
+        f.write(ref_text)
 
     log.log(f"{submission.name}: done")
     
