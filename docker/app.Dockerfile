@@ -36,6 +36,7 @@ RUN apt-get install -qy \
 	graphviz \
 	jq \
 	less \
+    libcairo2-dev \
     libgtk2.0-0 \
     libgtk-3-0 \
     libnotify-dev \
@@ -57,6 +58,7 @@ RUN apt-get install -qy \
 	ripgrep \
 	rsync \
 	rsyslog \
+    ruby \
 	subversion \
 	unzip \
 	wget \
@@ -64,6 +66,10 @@ RUN apt-get install -qy \
     xvfb \
     yang-tools \
 	zsh
+
+# Install Kramdown (ruby)
+RUN gem install kramdown && \
+    gem install kramdown-parser-gfm
 
 # Install chromedriver if supported
 COPY docker/scripts/app-install-chromedriver.sh /tmp/app-install-chromedriver.sh
