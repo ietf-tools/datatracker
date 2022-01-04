@@ -1704,6 +1704,20 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, e.desc)
 
+    def test_document_feed_with_control_character(self):
+        doc = IndividualDraftFactory()
+
+        DocEvent.objects.create(
+            doc=doc,
+            rev=doc.rev,
+            desc="Something happened involving the \x0b character.",
+            type="added_comment",
+            by=Person.objects.get(name="(System)"))
+
+        r = self.client.get("/feed/document-changes/%s/" % doc.name)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Something happened involving the')
+
     def test_last_call_feed(self):
         doc = IndividualDraftFactory()
 
@@ -1712,7 +1726,7 @@ class DocTestCase(TestCase):
         LastCallDocEvent.objects.create(
             doc=doc,
             rev=doc.rev,
-            desc="Last call",
+            desc="Last call\x0b",  # include a control character to be sure it does not break anything
             type="sent_last_call",
             by=Person.objects.get(user__username="secretary"),
             expires=datetime.date.today() + datetime.timedelta(days=7))
