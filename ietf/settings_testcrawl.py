@@ -39,6 +39,14 @@ CACHES = {
             'MAX_ENTRIES': 100000,
         },
     },
+    'pdfized': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/var/cache/datatracker/pdfized',
+        'OPTIONS': {
+            'MAX_ENTRIES': 100000,
+        },
+    },
     'slowpages': {
         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
         #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
