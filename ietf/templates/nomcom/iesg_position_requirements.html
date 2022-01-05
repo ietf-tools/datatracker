@@ -1,10 +1,10 @@
-<div class="panel ">
+<div class="card ">
     <div class="card-header"><a data-bs-toggle="collapse" href="#generic_iesg_reqs_{{position.name|slugify}}" class="generic_iesg_reqs_header">General IESG Requirements</a></div>
     <div id="generic_iesg_reqs_{{position.name|slugify}}" class="card-body collapse in">
         {{generic_iesg_reqs|safe}}
     </div>
 </div>
-<div class="panel ">
+<div class="card ">
     <div class="card-header">{{position.name}} Specific Requirements</div>
     <div class="card-body">
         {{specific_reqs|safe}}

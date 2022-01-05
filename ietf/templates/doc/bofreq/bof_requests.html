@@ -20,7 +20,7 @@
     {% else %}
         {% regroup reqs by get_state_slug as grouped_reqs %}
         {% for req_group in grouped_reqs %}
-            <div class="panel ">
+            <div class="card ">
                 <div class="card-header">{{req_group.grouper|capfirst}} BOF Requests</div>
                 <div class="card-body">
                     <table id="bofreqs-{{req_group.grouper}}" class="table table-sm table-striped tablesorter">

@@ -8,7 +8,7 @@ function getCookie(name) {
     if (document.cookie && document.cookie != '') {
         var cookies = document.cookie.split(';');
         for (var i = 0; i < cookies.length; i++) {
-            var cookie = jQuery.trim(cookies[i]);
+            var cookie = cookies[i].trim();
             // Does this cookie string begin with the name we want?
             if (cookie.substring(0, name.length + 1) == (name + '=')) {
                 cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
@@ -104,7 +104,7 @@ function change_material_type(obj) {
 
 function init_proceedings_upload() {
   // dynamic help message
-  $('#id_material_type').change(function() {
+  $('#id_material_type').on("change", function() {
     if(this.value == "slides") {
       //alert('Presentation handler called');
       $('div#id_file_help').html("Note 1: You can only upload a presentation file in txt, pdf, doc, or ppt/pptx. System will not accept presentation files in any other format.<br><br>Note 2: All uploaded files will be available to the public immediately on the Preliminary Page. However, for the Proceedings, ppt/pptx files will be converted to html format and doc files will be converted to pdf format manually by the Secretariat staff.");
@@ -168,21 +168,21 @@ function init_proceedings_table() {
 $(document).ready(function() {
   // set focus --------------------------------
   if ( $("form[id^=group-role-assignment-form]").length > 0) {
-      $("#id_role_type").focus();
+      $("#id_role_type").trigger("focus");
   } else if ( $("form[id=draft-search-form]").length > 0) {
-      $("#id_filename").focus();
+      $("#id_filename").trigger("focus");
   } else if ( $("form[id=drafts-add-form]").length > 0) {
-      $("#id_title").focus();
+      $("#id_title").trigger("focus");
   } else if ( $("form[id=proceedings-add-form]").length > 0) {
-      $("#id_start_date").focus();
+      $("#id_start_date").trigger("focus");
   } else if ( $("form[id=proceedings-upload-form]").length > 0) {
-      $("#id_group_name").focus();
+      $("#id_group_name").trigger("focus");
   } else if ( $("form[id=session-request-form]").length > 0) {
-      $("#id_num_session").focus();
+      $("#id_num_session").trigger("focus");
   } else if ( $(".rooms-times-nav").length > 0){
-      $("li.selected a").focus();
+      $("li.selected a").trigger("focus");
   } else {
-      $("input:text:visible:enabled:first").focus();
+      $("input:text:visible:enabled:first").trigger("focus");
   }
 
 
@@ -221,7 +221,7 @@ $(document).ready(function() {
   }
 
   // auto populate Area Director List when primary area selected (add form)
-  $('#id_primary_area').change(function(){
+  $('#id_primary_area').on("change", function(){
       $.getJSON('/secr/groups/get_ads/',{"area":$(this).val()},function(data) {
           $('#id_primary_area_director option').remove();
           $.each(data,function(i,item) {
@@ -231,7 +231,7 @@ $(document).ready(function() {
   });
 
   // auto populate Area Director List when area selected (edit form)
-  $('#id_ietfwg-0-primary_area').change(function(){
+  $('#id_ietfwg-0-primary_area').on("change", function(){
       $.getJSON('/secr/groups/get_ads/',{"area":$(this).val()},function(data) {
           $('#id_ietfwg-0-area_director option').remove();
           $.each(data,function(i,item) {

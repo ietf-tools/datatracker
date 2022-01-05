@@ -166,9 +166,8 @@ class SubmitTests(BaseSubmitTestCase):
         r = self.client.post(url, files)
         if r.status_code != 302:
             q = PyQuery(r.content)
-            print(q('div.is-invalid div.alert').text())
-
-        self.assertNoFormPostErrors(r, ".is-invalid,.alert-danger")
+            print(q('div.invalid-feedback').text())
+        self.assertNoFormPostErrors(r, ".invalid-feedback,.alert-danger")
 
         for format in formats:
             self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, format))))
@@ -232,12 +231,8 @@ class SubmitTests(BaseSubmitTestCase):
         if r.status_code == 302:
             submission = Submission.objects.get(name=name)
             self.assertEqual(submission.submitter, email.utils.formataddr((submitter_name, submitter_email)))
-            self.assertEqual(submission.replaces, 
-                             ",".join(
-                                 d.name for d in DocAlias.objects.filter(
-                                     pk__in=replaces.split(",") if replaces else []
-                                 )
-                             ))
+            self.assertEqual([] if submission.replaces == "" else submission.replaces.split(','),
+                             [ d.name for d in DocAlias.objects.filter(pk__in=replaces) ])
             self.assertCountEqual(
                 [str(r) for r in submission.external_resources.all()],
                 [str(r) for r in extresources] if extresources else [],
@@ -296,7 +291,7 @@ class SubmitTests(BaseSubmitTestCase):
         mailbox_before = len(outbox)
         replaced_alias = draft.docalias.first()
         r = self.supply_extra_metadata(name, status_url, author.ascii, author.email().address.lower(),
-                                       replaces=str(replaced_alias.pk) + "," + str(sug_replaced_alias.pk))
+                                       replaces=[str(replaced_alias.pk), str(sug_replaced_alias.pk)])
 
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
@@ -400,7 +395,7 @@ class SubmitTests(BaseSubmitTestCase):
         # supply submitter info, then draft should be in and ready for approval
         mailbox_before = len(outbox)
         self.client.login(username=username, password=username+'+password')  # log in as the author
-        r = self.supply_extra_metadata(name, status_url, author.ascii, author.email().address.lower(), replaces='')
+        r = self.supply_extra_metadata(name, status_url, author.ascii, author.email().address.lower(), replaces=[])
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
 
@@ -446,7 +441,7 @@ class SubmitTests(BaseSubmitTestCase):
                              {'submitter-name': author.name, 
                               'submitter-email': username, 
                               'action': 'autopost', 
-                              'replaces': ''})
+                              'replaces': []})
         # Attempt should fail and draft should remain in the uploaded state
         self.assertEqual(r.status_code, 403)
         submission = Submission.objects.get(name=name, rev=rev)
@@ -554,7 +549,7 @@ class SubmitTests(BaseSubmitTestCase):
 
         # supply submitter info, then previous authors get a confirmation email
         mailbox_before = len(outbox)
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "submitter@example.com", replaces="")
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "submitter@example.com", replaces=[])
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
@@ -752,7 +747,7 @@ class SubmitTests(BaseSubmitTestCase):
                              {'submitter-name': author.name,
                               'submitter-email': 'submitter@example.com',
                               'action': 'autopost',
-                              'replaces': ''})
+                              'replaces': []})
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
 
@@ -803,7 +798,7 @@ class SubmitTests(BaseSubmitTestCase):
 
         # supply submitter info, then draft should be be ready for email auth
         mailbox_before = len(outbox)
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "submitter@example.com", replaces="")
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "submitter@example.com", replaces=[])
 
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
@@ -862,7 +857,7 @@ class SubmitTests(BaseSubmitTestCase):
             name, '00', author, formats=formats, base_filename='test_submission_no_org_or_address'
         )
         status_url = r['Location']
-        r = self.supply_extra_metadata(name, status_url, 'Submitter name', 'submitter@example.com', replaces='')
+        r = self.supply_extra_metadata(name, status_url, 'Submitter name', 'submitter@example.com', replaces=[])
         self.assertEqual(r.status_code, 302)
 
         # force post of submission
@@ -957,7 +952,7 @@ class SubmitTests(BaseSubmitTestCase):
             SubmissionExtResource(name_id='faq', value='https://faq.example.com/'),
             SubmissionExtResource(name_id='wiki', value='https://wiki.example.com', display_name='Test Wiki'),
         ]
-        r = self.supply_extra_metadata(name, status_url, 'Submitter name', 'submitter@example.com', replaces='',
+        r = self.supply_extra_metadata(name, status_url, 'Submitter name', 'submitter@example.com', replaces=[],
                                        extresources=resources)
         self.assertEqual(r.status_code, 302)
         status_url = r['Location']
@@ -985,7 +980,7 @@ class SubmitTests(BaseSubmitTestCase):
 
         # supply submitter info, then draft should be be ready for email auth
         mailbox_before = len(outbox)
-        r = self.supply_extra_metadata(name, status_url, author.name, username, replaces="")
+        r = self.supply_extra_metadata(name, status_url, author.name, username, replaces=[])
 
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
@@ -1041,7 +1036,7 @@ class SubmitTests(BaseSubmitTestCase):
             SubmissionExtResource(name_id='faq', value='https://faq.example.com/'),
             SubmissionExtResource(name_id='wiki', value='https://wiki.example.com', display_name='Test Wiki'),
         ]
-        r = self.supply_extra_metadata(name, status_url, author.name, username, replaces='',
+        r = self.supply_extra_metadata(name, status_url, author.name, username, replaces=[],
                                        extresources=resources)
         self.assertEqual(r.status_code, 302)
         status_url = r['Location']
@@ -1071,14 +1066,14 @@ class SubmitTests(BaseSubmitTestCase):
         mailbox_before = len(outbox)
 
         replaced_alias = draft.docalias.first()
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=[str(replaced_alias.pk)])
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'cannot replace itself')
         self._assert_extresources_in_table(r, [])
         self._assert_extresources_form(r, [])
 
         replaced_alias = DocAlias.objects.get(name='draft-ietf-random-thing')
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=[str(replaced_alias.pk)])
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'cannot replace an RFC')
         self._assert_extresources_in_table(r, [])
@@ -1086,13 +1081,13 @@ class SubmitTests(BaseSubmitTestCase):
 
         replaced_alias.document.set_state(State.objects.get(type='draft-iesg',slug='approved'))
         replaced_alias.document.set_state(State.objects.get(type='draft',slug='active'))
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=[str(replaced_alias.pk)])
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'approved by the IESG and cannot')
         self._assert_extresources_in_table(r, [])
         self._assert_extresources_form(r, [])
 
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces='')
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=[])
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
@@ -1145,7 +1140,7 @@ class SubmitTests(BaseSubmitTestCase):
 
         # Update with an empty set of resources
         r = self.supply_extra_metadata(orig_draft.name, status_url, author.name, author.user.email,
-                                       replaces='', extresources=[])
+                                       replaces=[], extresources=[])
         self.assertEqual(r.status_code, 302)
         status_url = r['Location']
 
@@ -1179,7 +1174,7 @@ class SubmitTests(BaseSubmitTestCase):
             status_url,
             "Submitter Name",
             "submitter@example.com",
-            replaces=str(replaced_draft.docalias.first().pk),
+            replaces=[str(replaced_draft.docalias.first().pk)],
         )
         
         submission = Submission.objects.get(name=name, rev=rev)
@@ -1213,7 +1208,7 @@ class SubmitTests(BaseSubmitTestCase):
         rev = '%02d'%(int(draft.rev)+1)
         status_url, author = self.do_submission(name, rev)
         mailbox_before = len(outbox)
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces='')
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=[])
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
@@ -1336,7 +1331,7 @@ class SubmitTests(BaseSubmitTestCase):
             "edit-pages": "123",
             "submitter-name": "Some Random Test Person",
             "submitter-email": "random@example.com",
-            "replaces": str(draft.docalias.first().pk),
+            "replaces": [str(draft.docalias.first().pk)],
             "edit-note": "no comments",
             "authors-0-name": "Person 1",
             "authors-0-email": "person1@example.com",
@@ -1346,7 +1341,7 @@ class SubmitTests(BaseSubmitTestCase):
             "authors-2-email": "person3@example.com",
             "authors-prefix": ["authors-", "authors-0", "authors-1", "authors-2"],
         })
-        self.assertNoFormPostErrors(r, ".is-invalid,.alert-danger")
+        self.assertNoFormPostErrors(r, ".invalid-feedback,.alert-danger")
 
         submission = Submission.objects.get(name=name)
         self.assertEqual(submission.title, "some title")
@@ -1599,8 +1594,8 @@ class SubmitTests(BaseSubmitTestCase):
 
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .is-invalid")) > 0)
-        m = q('div.is-invalid div.alert').text()
+        self.assertTrue(len(q("form .invalid-feedback")) > 0)
+        m = q('div.invalid-feedback').text()
 
         return r, q, m
         
@@ -1619,8 +1614,8 @@ class SubmitTests(BaseSubmitTestCase):
 
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .is-invalid")) > 0)
-        m = q('div.is-invalid div.alert').text()
+        self.assertTrue(len(q("form .invalid-feedback")) > 0)
+        m = q('div.invalid-feedback').text()
 
         return r, q, m
         
@@ -1672,12 +1667,11 @@ class SubmitTests(BaseSubmitTestCase):
                 with io.open(fn, 'w') as f:
                     f.write("a" * 2000)
                 files[format], author = submission_file(name, rev, group, format, "test_submission.%s" % format)
-
             r = self.client.post(url, files)
 
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            m = q('div.alert-danger').text()
+            m = q('.text-danger').text()
 
             self.assertIn('Unexpected files already in the archive', m)
 
@@ -2064,24 +2058,23 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(r.status_code, 200)
         
         q = PyQuery(r.content)
-        
         # The removed resource should appear once (for the doc current value), tagged as removed
         removed_div = q('td>div:contains("Resource to be removed")')
         self.assertEqual(len(removed_div), 1)
-        self.assertEqual(len(removed_div('span.label:contains("Removed")')), 1)
-        self.assertEqual(len(removed_div('span.label:contains("New")')), 0)
+        self.assertEqual(len(removed_div('span.badge:contains("Removed")')), 1)
+        self.assertEqual(len(removed_div('span.badge:contains("New")')), 0)
 
         # The added resource should appear once (for the submission), tagged as new
         added_div = q('td>div:contains("Resource to be added")')
         self.assertEqual(len(added_div), 1)
-        self.assertEqual(len(added_div('span.label:contains("Removed")')), 0)
-        self.assertEqual(len(added_div('span.label:contains("New")')), 1)
+        self.assertEqual(len(added_div('span.badge:contains("Removed")')), 0)
+        self.assertEqual(len(added_div('span.badge:contains("New")')), 1)
 
         # The kept resource should appear twice (once for the doc, once for the submission), with no tag
         kept_div = q('td>div:contains("Resource to be kept")')
         self.assertEqual(len(kept_div), 2)
-        self.assertEqual(len(kept_div('span.label:contains("Removed")')), 0)
-        self.assertEqual(len(kept_div('span.label:contains("New")')), 0)
+        self.assertEqual(len(kept_div('span.badge:contains("Removed")')), 0)
+        self.assertEqual(len(kept_div('span.badge:contains("New")')), 0)
         
 class ApprovalsTestCase(BaseSubmitTestCase):
     def test_approvals(self):
@@ -2225,7 +2218,7 @@ class ApprovalsTestCase(BaseSubmitTestCase):
         r = self.client.post(url, dict(name="draft-test-nonexistingwg-something"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .is-invalid")) > 0)
+        self.assertTrue(len(q("form .invalid-feedback")) > 0)
 
         # add
         name = "draft-ietf-mars-foo"
@@ -2659,7 +2652,7 @@ Subject: test
         r = self.client.post(url, files)
         if r.status_code != 302:
             q = PyQuery(r.content)
-            print(q('div.is-invalid span.help-block div').text())
+            print(q('div.invalid-feedback span.help-block div').text())
 
         self.assertEqual(r.status_code, 302)
 

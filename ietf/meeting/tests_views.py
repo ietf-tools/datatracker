@@ -406,7 +406,7 @@ class MeetingTests(BaseMeetingTestCase):
         url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "?show=farfut"
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
-        self.assertTrue(all([x in unicontent(r) for x in ['var all_items', 'maximize', 'draw_calendar', ]]))
+        self.assertTrue(all([x in unicontent(r) for x in ['redraw_weekview', 'draw_calendar', ]]))
 
         # Specifying a time zone should not change the output (time zones are handled by the JS)
         url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "?show=farfut&tz=Asia/Bangkok"
@@ -456,11 +456,11 @@ class MeetingTests(BaseMeetingTestCase):
         nav_tab_anchors = q('ul.nav.nav-tabs > li > a')
         for anchor in nav_tab_anchors.items():
             text = anchor.text().strip()
-            if text in ['Agenda', 'UTC Agenda', 'Select Sessions']:
+            if text in ['Agenda', 'UTC Agenda', 'Personalize Agenda']:
                 expected_elements.append(anchor)
         for btn in q('.buttonlist a.btn').items():
             text = btn.text().strip()
-            if text in ['View customized agenda', 'Download as .ics', 'Subscribe with webcal']:
+            if text in ['View personal agenda', 'Download .ics of personal agenda', 'Subscribe to personal agenda']:
                 expected_elements.append(btn)
 
         # Check that all the expected elements have the correct classes
@@ -718,7 +718,7 @@ class MeetingTests(BaseMeetingTestCase):
                 self.assertIn('%s?show=%s' % (ical_url, g.parent.acronym.lower()), content)
 
         # The 'non-area events' are those whose keywords are in the last column of buttons
-        na_col = q('#customize td.view:last-child')  # find the column
+        na_col = q('#customize .col-1:last')  # find the column
         non_area_labels = [e.attrib['data-filter-item']
                            for e in na_col.find('button.pickview')]
         assert len(non_area_labels) > 0  # test setup must produce at least one label for this test
@@ -3084,24 +3084,24 @@ class EditTests(TestCase):
         r, q = _set_date_offset_and_retrieve_page(meeting,
                                                   0 - 2 - meeting.days, # Meeting ended 2 days ago
                                                   self.client)
-        self.assertTrue(q("""em:contains("You can't edit this schedule")"""))
-        self.assertTrue(q("""em:contains("This is the official schedule for a meeting in the past")"""))
+        self.assertTrue(q(""".alert:contains("You can't edit this schedule")"""))
+        self.assertTrue(q(""".alert:contains("This is the official schedule for a meeting in the past")"""))
 
         # 2) An ongoing meeting
         #######################################################
         r, q = _set_date_offset_and_retrieve_page(meeting,
                                                   0, # Meeting starts today
                                                   self.client)
-        self.assertFalse(q("""em:contains("You can't edit this schedule")"""))
-        self.assertFalse(q("""em:contains("This is the official schedule for a meeting in the past")"""))
+        self.assertFalse(q(""".alert:contains("You can't edit this schedule")"""))
+        self.assertFalse(q(""".alert:contains("This is the official schedule for a meeting in the past")"""))
 
         # 3) A meeting in the future
         #######################################################
         r, q = _set_date_offset_and_retrieve_page(meeting,
                                                   7, # Meeting starts next week
                                                   self.client)
-        self.assertFalse(q("""em:contains("You can't edit this schedule")"""))
-        self.assertFalse(q("""em:contains("This is the official schedule for a meeting in the past")"""))
+        self.assertFalse(q(""".alert:contains("You can't edit this schedule")"""))
+        self.assertFalse(q(""".alert:contains("This is the official schedule for a meeting in the past")"""))
 
     def test_edit_meeting_schedule(self):
         meeting = make_meeting_test_data()
@@ -3203,7 +3203,7 @@ class EditTests(TestCase):
 
         self.assertEqual(len(q("#session{}.readonly".format(base_session.pk))), 1)
 
-        self.assertTrue(q("em:contains(\"You can't edit this schedule\")"))
+        self.assertTrue(q(".alert:contains(\"You can't edit this schedule\")"))
 
         # can't change anything
         r = self.client.post(url, {
@@ -3845,7 +3845,7 @@ class SessionDetailsTests(TestCase):
         r = self.client.post(url,dict(drafts=[new_draft.pk, old_draft.pk]))
         self.assertTrue(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn("Already linked:", q('form .alert-danger').text())
+        self.assertIn("Already linked:", q('form .text-danger').text())
 
         self.assertEqual(1,session.sessionpresentation_set.count())
         r = self.client.post(url,dict(drafts=[new_draft.pk,]))
@@ -6164,12 +6164,12 @@ class AgendaFilterTests(TestCase):
         # Test with/without custom button text
         context = Context({'customize_button_text': None, 'filter_categories': []})
         q = PyQuery(template.render(context))
-        self.assertIn('Customize...', q('h4.card-title').text())
+        self.assertIn('Customize...', q('h2.accordion-header').text())
         self.assertEqual(q('table'), [])  # no filter_categories, so no button table
 
         context['customize_button_text'] = 'My custom text...'
         q = PyQuery(template.render(context))
-        self.assertIn(context['customize_button_text'], q('h4.card-title').text())
+        self.assertIn(context['customize_button_text'], q('h2.accordion-header').text())
         self.assertEqual(q('table'), [])  # no filter_categories, so no button table
         
         # Now add a non-trivial set of filters
@@ -6251,24 +6251,24 @@ class AgendaFilterTests(TestCase):
         ]
 
         q = PyQuery(template.render(context))
-        self.assertIn(context['customize_button_text'], q('h4.card-title').text())
-        self.assertNotEqual(q('table'), [])  # should now have table
+        self.assertIn(context['customize_button_text'], q('h2.accordion-header').text())
+        self.assertNotEqual(q('button.pickview'), [])  # should now have group buttons
         
         # Check that buttons are present for the expected things
-        header_row = q('thead tr')
-        self.assertEqual(len(header_row), 1)
-        button_row = q('tbody tr')
-        self.assertEqual(len(button_row), 1)
+        header_row = q('.col-1 .row:first')
+        self.assertEqual(len(header_row), 4)
+        button_row = q('.row.view')
+        self.assertEqual(len(button_row), 4)
 
         # verify correct headers
-        header_cells = header_row('th')
-        self.assertEqual(len(header_cells), 6)  # 4 columns and 2 spacers
+        header_cells = header_row('.row')
+        self.assertEqual(len(header_cells), 4)
         header_buttons = header_cells('button.pickview')
         self.assertEqual(len(header_buttons), 3)  # last column has blank header, so only 3
         
         # verify buttons
-        button_cells = button_row('td')
-    
+        button_cells = button_row('.btn-group-vertical')
+
         # area0
         _assert_button_ok(header_cells.eq(0)('button.keyword0'),
                           expected_label='area0',
@@ -6301,12 +6301,11 @@ class AgendaFilterTests(TestCase):
                           expected_filter_keywords='keyword1,bof')
         
         # area2
-        # Skip column index 2, which is a spacer column
-        _assert_button_ok(header_cells.eq(3)('button.keyword2'),
+        _assert_button_ok(header_cells.eq(2)('button.keyword2'),
                           expected_label='area2',
                           expected_filter_item='keyword2')
 
-        buttons = button_cells.eq(3)('button.pickview')
+        buttons = button_cells.eq(2)('button.pickview')
         self.assertEqual(len(buttons), 2)  # two children
         _assert_button_ok(buttons('.keyword20'),
                           expected_label='child20',
@@ -6318,9 +6317,8 @@ class AgendaFilterTests(TestCase):
                           expected_filter_keywords='keyword2')
 
         # area3 (no label for this one)
-        # Skip column index 4, which is a spacer column
-        self.assertEqual([], header_cells.eq(5)('button'))  # no header button
-        buttons = button_cells.eq(5)('button.pickview')
+        self.assertEqual([], header_cells.eq(3)('button'))  # no header button
+        buttons = button_cells.eq(3)('button.pickview')
         self.assertEqual(len(buttons), 2)  # two children
         _assert_button_ok(buttons('.keyword30'),
                           expected_label='child30',

@@ -66,7 +66,7 @@
                                     <th class="day-label"
                                         colspan="{{date_slices|colWidth:day}}">
                                         {{day|date:'D'}}&nbsp;({{day}})
-                                        <span class="fa fa-trash delete-button"
+                                        <span class="bi bi-trash delete-button"
                                             title="Delete all on this day"
                                             data-delete-scope="day"
                                             data-date-id="{{ day.isoformat }}">
@@ -85,7 +85,7 @@
                                     {% for slot in slot_slices|lookup:day %}
                                         <th class="time-label">
                                             {{slot.time|date:'H:i'}}-{{slot.end_time|date:'H:i'}}
-                                            <span class="fa fa-trash delete-button"
+                                            <span class="bi bi-trash delete-button"
                                                 data-delete-scope="column"
                                                 data-date-id="{{ day.isoformat }}"
                                                 data-col-id="{{ day.isoformat }}T{{slot.time|date:'H:i'}}-{{slot.end_time|date:'H:i'}}"
@@ -118,7 +118,7 @@
                                                 {% endif %}
                                                 <a class="new-timeslot-link {% if cell_ts %}hidden{% endif %}"
                                                     href="{% url "ietf.meeting.views.create_timeslot" num=meeting.number %}?day={{ day.toordinal }}&date={{ day|date:"Y-m-d" }}&location={{ room.pk }}&time={{ slot.time|date:'H:i' }}&duration={{ slot.duration }}">
-                                                    <span class="fa fa-plus-square"></span>
+                                                    <span class="bi bi-plus-square"></span>
                                                 </a>
                                         {% endwith %}{% endfor %}
                                         </td>

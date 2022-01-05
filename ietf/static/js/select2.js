@@ -24,9 +24,8 @@ window.setupSelect2Field = function (e) {
     var maxEntries = e.data("max-entries");
     var options = e.data("pre");
     for (var id in options) {
-        e.append(new Option(options[id].text, options[id].id, true, true));
+        e.append(new Option(options[id].text, options[id].id, false, options[id].selected));
     }
-    // e.trigger("change");
 
     e.select2({
         multiple: maxEntries !== 1,

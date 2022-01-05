@@ -109,7 +109,7 @@ $(document)
 $(document)
     .ready(function () {
         var headings = $("#content")
-            .find("h1, h2, h3, h4, h5, h6");
+            .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible");
 
         if ($(headings)
             .length > 0 && $(headings)
@@ -132,7 +132,7 @@ $(document)
                      </nav>
                  </div>
                  `))
-                .find("h1, h2, h3, h4, h5, h6")
+                .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible")
                 .each(function () {
                     var id = $(this)
                         .attr("id");

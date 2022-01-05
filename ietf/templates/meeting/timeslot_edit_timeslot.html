@@ -18,9 +18,9 @@
   </div>
   <div class="timeslot-buttons">
     <a href="{% url 'ietf.meeting.views.edit_timeslot' num=ts.meeting.number slot_id=ts.id %}">
-      <span class="fa fa-pencil-square-o"></span>
+      <span class="bi bi-pencil"></span>
     </a>
-    <span class="fa fa-trash delete-button" data-delete-scope="timeslot" title="Delete this timeslot"></span>
+    <span class="bi bi-trash delete-button" data-delete-scope="timeslot" title="Delete this timeslot"></span>
   </div>
   <div class="ts-type">{{ ts.type }}</div>
 </div>

@@ -1479,7 +1479,7 @@ def edit_action_holders(request, name):
     
     if request.method == 'POST':
         form = ActionHoldersForm(request.POST)
-        if form.is_valid() and 'action_holders' in request.POST:
+        if form.is_valid():
             new_action_holders = form.cleaned_data['action_holders']  # Person queryset
             prev_action_holders = list(doc.action_holders.all())
             

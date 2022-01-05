@@ -492,6 +492,9 @@ BOOTSTRAP5 = {
     # Field class to use in horiozntal forms
     'horizontal_field_class': 'col-md-10',
 
+    # Field class used for horizontal fields withut a label.
+    'horizontal_field_offset_class': 'offset-md-2',
+
     # Set placeholder attributes to label if no placeholder is provided
     'set_placeholder': False,
 
@@ -500,7 +503,6 @@ BOOTSTRAP5 = {
 
     'field_renderers': {
         'default': 'ietf.utils.bootstrap.SeparateErrorsFromHelpTextFieldRenderer',
-        'inline': 'bootstrap5.renderers.InlineFieldRenderer',
     },
 }
 

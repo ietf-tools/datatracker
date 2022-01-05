@@ -54,7 +54,7 @@
                             {% endif %}
                         </td>
                         <td>{{ doc.intended_std_level.name }}</td>
-                        <td>{% person_link doc.ad %}</td>
+                        <td><a href="mailto:{{ doc.ad.email_address|urlencode }}">{{ doc.ad.plain_name }}</a><</td>
                     </tr>
                 {% endfor %}
             </tbody>

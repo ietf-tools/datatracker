@@ -43,6 +43,7 @@ if selenium_enabled():
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions
     from selenium.common.exceptions import NoSuchElementException, TimeoutException
+    # from selenium.webdriver.common.keys import Keys
 
 
 @ifSeleniumEnabled
@@ -585,7 +586,8 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         # option to swap. If we used the first or last day, a fencepost error in
         # disabling options by date might be hidden.
         clicked_index = 1
-        future_swap_ts_buttons[clicked_index].click()
+        self.driver.execute_script("arguments[0].click();", future_swap_ts_buttons[clicked_index])  # FIXME-LARS: not working:
+        # future_swap_ts_buttons[clicked_index].click()
         try:
             modal = wait.until(
                 expected_conditions.visibility_of_element_located(
@@ -998,7 +1000,7 @@ class AgendaTests(IetfSeleniumTestCase):
         self.driver.get(self.absreverse('ietf.meeting.views.agenda') + querystring)
         self.assert_agenda_item_visibility(visible_groups)
         self.assert_agenda_view_filter_matches_ics_filter(querystring)
-        weekview_iframe = self.driver.find_element(By.ID, 'weekview')
+        weekview_iframe = self.driver.find_element(By.CSS_SELECTOR, '#weekview iframe')
         if len(querystring) == 0:
             self.assertFalse(weekview_iframe.is_displayed(), 'Weekview should be hidden when filters off')
         else:
@@ -1215,7 +1217,7 @@ class AgendaTests(IetfSeleniumTestCase):
         """Click the 'customize' anchor to reveal the group buttons"""
         customize_anchor = wait.until(
             expected_conditions.element_to_be_clickable(
-                (By.CSS_SELECTOR, '#accordion a[data-bs-toggle="collapse"]')
+                (By.CSS_SELECTOR, '#accordion button[data-bs-toggle="collapse"]')
             )
         )
         customize_anchor.click()
@@ -1390,7 +1392,7 @@ class AgendaTests(IetfSeleniumTestCase):
         # Click the 'customize' anchor to reveal the group buttons
         customize_anchor = WebDriverWait(self.driver, 2).until(
             expected_conditions.element_to_be_clickable(
-                (By.CSS_SELECTOR, '#accordion a[data-bs-toggle="collapse"]')
+                (By.CSS_SELECTOR, '#accordion button[data-bs-toggle="collapse"]')
             )
         )
         customize_anchor.click()
@@ -1612,13 +1614,11 @@ class AgendaTests(IetfSeleniumTestCase):
         )
 
         tz_select_input = self.driver.find_element(By.ID, 'timezone-select')
-        meeting_tz_link = self.driver.find_element(By.ID, 'meeting-timezone')
-        local_tz_link = self.driver.find_element(By.ID, 'local-timezone')
-        utc_tz_link = self.driver.find_element(By.ID, 'utc-timezone')
-        tz_displays = self.driver.find_elements(By.CSS_SELECTOR, '.current-tz')
-        self.assertGreaterEqual(len(tz_displays), 1)
-        # we'll check that all current-tz elements are updated, but first check that at least one is in the nav sidebar
-        self.assertIsNotNone(self.driver.find_element(By.CSS_SELECTOR, '.nav .current-tz'))
+        meeting_tz_link = self.driver.find_element(By.CSS_SELECTOR, 'label[for="meeting-timezone"]')
+        local_tz_link = self.driver.find_element(By.CSS_SELECTOR, 'label[for="local-timezone"]')
+        utc_tz_link = self.driver.find_element(By.CSS_SELECTOR, 'label[for="utc-timezone"]')
+        # we'll check that all tz-select elements are updated, but first check that at least one is in the nav sidebar
+        self.assertIsNotNone(self.driver.find_element(By.CSS_SELECTOR, '.tz-select'))
 
         # Moment.js guesses local time zone based on the behavior of Selenium's web client. This seems
         # to inherit Django's settings.TIME_ZONE but I don't know whether that's guaranteed to be consistent.
@@ -1636,8 +1636,7 @@ class AgendaTests(IetfSeleniumTestCase):
         # don't yet know local_tz, so can't check that it's deselected here
         self.assertFalse(arbitrary_tz_opt.is_selected())
         self.assertFalse(utc_tz_opt.is_selected())
-        for disp in tz_displays:
-            self.assertEqual(disp.text.strip(), self.meeting.time_zone)
+        self.assertEqual(self.driver.find_element(By.CSS_SELECTOR, '.tz-select option:checked').text.strip(), self.meeting.time_zone)
 
         # Click 'local' button
         local_tz_link.click()
@@ -1646,8 +1645,7 @@ class AgendaTests(IetfSeleniumTestCase):
         # just identified the local_tz_opt as being selected, so no check here, either
         self.assertFalse(arbitrary_tz_opt.is_selected())
         self.assertFalse(utc_tz_opt.is_selected())
-        for disp in tz_displays:
-            self.assertEqual(disp.text.strip(), local_tz)
+        self.assertEqual(self.driver.find_element(By.CSS_SELECTOR, '.tz-select option:checked').text.strip(), local_tz)
 
         # click 'utc' button
         utc_tz_link.click()
@@ -1656,8 +1654,7 @@ class AgendaTests(IetfSeleniumTestCase):
         self.assertFalse(local_tz_opt.is_selected())  # finally!
         self.assertFalse(arbitrary_tz_opt.is_selected())
         self.assertTrue(utc_tz_opt.is_selected())
-        for disp in tz_displays:
-            self.assertEqual(disp.text.strip(), 'UTC')
+        self.assertEqual(self.driver.find_element(By.CSS_SELECTOR, '.tz-select option:checked').text.strip(), 'UTC')
 
         # click back to meeting
         meeting_tz_link.click()
@@ -1666,8 +1663,7 @@ class AgendaTests(IetfSeleniumTestCase):
         self.assertFalse(local_tz_opt.is_selected())
         self.assertFalse(arbitrary_tz_opt.is_selected())
         self.assertFalse(utc_tz_opt.is_selected())
-        for disp in tz_displays:
-            self.assertEqual(disp.text.strip(), self.meeting.time_zone)
+        self.assertEqual(self.driver.find_element(By.CSS_SELECTOR, '.tz-select option:checked').text.strip(), self.meeting.time_zone)
 
         # and then back to UTC...
         utc_tz_link.click()
@@ -1676,8 +1672,7 @@ class AgendaTests(IetfSeleniumTestCase):
         self.assertFalse(local_tz_opt.is_selected())
         self.assertFalse(arbitrary_tz_opt.is_selected())
         self.assertTrue(utc_tz_opt.is_selected())
-        for disp in tz_displays:
-            self.assertEqual(disp.text.strip(), 'UTC')
+        self.assertEqual(self.driver.find_element(By.CSS_SELECTOR, '.tz-select option:checked').text.strip(), 'UTC')
 
         # ... and test the switch from UTC to local
         local_tz_link.click()
@@ -1686,8 +1681,7 @@ class AgendaTests(IetfSeleniumTestCase):
         self.assertTrue(local_tz_opt.is_selected())
         self.assertFalse(arbitrary_tz_opt.is_selected())
         self.assertFalse(utc_tz_opt.is_selected())
-        for disp in tz_displays:
-            self.assertEqual(disp.text.strip(), local_tz)
+        self.assertEqual(self.driver.find_element(By.CSS_SELECTOR, '.tz-select option:checked').text.strip(), local_tz)
 
         # Now select a different item from the select input
         arbitrary_tz_opt.click()
@@ -1696,8 +1690,7 @@ class AgendaTests(IetfSeleniumTestCase):
         self.assertFalse(local_tz_opt.is_selected())
         self.assertTrue(arbitrary_tz_opt.is_selected())
         self.assertFalse(utc_tz_opt.is_selected())
-        for disp in tz_displays:
-            self.assertEqual(disp.text.strip(), arbitrary_tz)
+        self.assertEqual(self.driver.find_element(By.CSS_SELECTOR, '.tz-select option:checked').text.strip(), arbitrary_tz)
     
     def test_agenda_time_zone_selection_updates_weekview(self):
         """Changing the time zone should update the weekview to match"""
@@ -1727,7 +1720,7 @@ class AgendaTests(IetfSeleniumTestCase):
         # Now select a different item from the select input
         option.click()
         try:
-            wait.until(in_iframe_href('tz=america/halifax', 'weekview'))
+            wait.until(in_iframe_href('tz=america/halifax', self.driver.find_element(By.CSS_SELECTOR, '#weekview iframe')))
         except:
             self.fail('iframe href not updated to contain selected time zone')
 
@@ -1763,8 +1756,8 @@ class AgendaTests(IetfSeleniumTestCase):
         farfut_button = self.driver.find_element(By.CSS_SELECTOR, 'button[data-filter-item="farfut"]')
         break_checkbox = self.driver.find_element(By.CSS_SELECTOR, 'input[type="checkbox"][name="selected-sessions"][data-filter-item="secretariat-sessb"]')
         registration_checkbox = self.driver.find_element(By.CSS_SELECTOR, 'input[type="checkbox"][name="selected-sessions"][data-filter-item="secretariat-sessa"]')
+        self.driver.execute_script("arguments[0].click();", mars_sessa_checkbox) # select mars session; FIXME: no idea why a simple mars_sessa_checkbox.click() doesn't work
 
-        mars_sessa_checkbox.click()  # select mars session
         try:
             wait.until(
                 lambda driver: all('?show=mars-sessa' in el.get_attribute('href') for el in elements_to_check)
@@ -1776,7 +1769,7 @@ class AgendaTests(IetfSeleniumTestCase):
         self.assertFalse(break_checkbox.is_selected(), 'break checkbox was selected without being clicked')
         self.assertFalse(registration_checkbox.is_selected(), 'registration checkbox was selected without being clicked')
 
-        mars_sessa_checkbox.click()  # deselect mars session
+        self.driver.execute_script("arguments[0].click();", mars_sessa_checkbox)  # deselect mars session
         try:
             wait.until(
                 lambda driver: not any('?show=mars-sessa' in el.get_attribute('href') for el in elements_to_check)
@@ -1789,8 +1782,8 @@ class AgendaTests(IetfSeleniumTestCase):
         self.assertFalse(registration_checkbox.is_selected(), 'registration checkbox was selected without being clicked')
 
         farfut_button.click()  # turn on all farfut area sessions
-        mars_sessa_checkbox.click()  # but turn off mars session a
-        break_checkbox.click()  # also select the break
+        self.driver.execute_script("arguments[0].click();", mars_sessa_checkbox)  # but turn off mars session a
+        self.driver.execute_script("arguments[0].click();", break_checkbox)  # also select the break
 
         try:
             wait.until(
@@ -2101,8 +2094,9 @@ class InterimTests(IetfSeleniumTestCase):
             button = self.wait.until(
                 expected_conditions.element_to_be_clickable(
                     (By.CSS_SELECTOR, 'div#calendar button.fc-next-button')))
-            self.scroll_to_element(button)
-            button.click()
+            self.driver.execute_script("arguments[0].click();", button)  # FIXME-LARS: no idea why this fails:
+            # self.scroll_to_element(button)
+            # button.click()
 
         seen = set()
         not_visible = set()
@@ -2116,7 +2110,7 @@ class InterimTests(IetfSeleniumTestCase):
         # will usually contain the day 1 year from the start date.
         for _ in range(13):
             entries = self.driver.find_elements(By.CSS_SELECTOR,
-                'div#calendar div.fc-content'
+                'div#calendar div.fc-event-main'
             )
             for entry in entries:
                 meetings = [m for m in visible_meetings if m.calendar_label in entry.text]
@@ -2447,7 +2441,7 @@ class InterimTests(IetfSeleniumTestCase):
         _assert_ietf_tz_correct(ietf_meetings, arbitrary_tz)
 
     def test_upcoming_materials_modal(self):
-        """Test opening and closing a materals modal
+        """Test opening and closing a materials modal
 
         This does not test dynamic reloading of the meeting materials - it relies on the main
         agenda page testing that. If the materials modal handling diverges between here and

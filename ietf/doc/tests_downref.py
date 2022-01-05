@@ -48,7 +48,6 @@ class Downref(TestCase):
         self.assertContains(r, 'Add downref')
 
     def test_downref_registry_add(self):
-        return  # FIXME-LARS
         url = urlreverse('ietf.doc.views_downref.downref_registry_add')
         login_testing_unauthorized(self, "plain", url)
 

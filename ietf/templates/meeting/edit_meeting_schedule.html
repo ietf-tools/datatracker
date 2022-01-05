@@ -25,7 +25,7 @@
     .edit-meeting-schedule .edit-grid .timeslot.hidden-timeslot-type .time-label { color: transparent; ); }
     .edit-meeting-schedule .session.hidden-purpose,
     .edit-meeting-schedule .session.hidden-timeslot-type { filter: blur(3px); }
-{% endblock morecss %}
+{% endblock %}
 
 {% block title %}{{ schedule.name }}: IETF {{ meeting.number }} meeting agenda{% endblock %}
 
@@ -44,35 +44,29 @@
 
         <p class="float-end">
             {% if can_edit_properties %}
-                <a href="{% url "ietf.meeting.views.edit_schedule_properties" schedule.meeting.number schedule.owner_email schedule.name %}">Edit properties</a>
-                &middot;
+                <a class="btn btn-primary" href="{% url "ietf.meeting.views.edit_schedule_properties" schedule.meeting.number schedule.owner_email schedule.name %}">Edit properties</a>
+
             {% endif %}
 
-            <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">Copy agenda</a>
-            &middot;
+            <a class="btn btn-primary" href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">Copy agenda</a>
 
-            <a href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">Other Agendas</a>
+
+            <a class="btn btn-primary" href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">Other Agendas</a>
         </p>
 
-        <p>
+        <h1>
             Agenda name: {{ schedule.name }}
-
-            &middot;
-
-            Owner: {{ schedule.owner }}
-
+            <br>
+            <small class="text-muted">
+            Owner: {{ schedule.owner }}</small>
+        </h1>
             {% if not can_edit %}
-                &middot;
-
-                <strong>
-                    <em>
+                <div class="alert alert-info">
                         You can't edit this schedule.
                         {% if schedule.is_official_record %}This is the official schedule for a meeting in the past.{% endif %}
                         Make a <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">new agenda from this</a>.
-                    </em>
-                </strong>
+                </div>
             {% endif %}
-        </p>
 
         <div class="edit-grid {% if not can_edit %}read-only{% endif %}">
 

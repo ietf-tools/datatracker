@@ -33,7 +33,7 @@
         {% endif %}
         <link rel="apple-touch-icon"
               href="{% static 'ietf/images/apple-touch-icon.png' %}"/>
-        <script src="{% static 'ietf/js/ietf.js' %}"/></script>
+        <script src="{% static 'ietf/js/ietf.js' %}"></script>
     </head>
     <body class="position-relative"
           data-group-menu-data-url="{% url 'ietf.group.views.group_menu_data' %}">
@@ -74,7 +74,7 @@
                         in
                     </a>
                 {% endif %}
-                <form class="d-flex d-none d-lg-block" action="/doc/search/">
+                <form class="navbar-form d-flex d-none d-lg-block" action="/doc/search/">
                     <input class="form-control"
                            type="text"
                            name="name"
@@ -116,7 +116,7 @@
                                     class="btn-close float-end"
                                     data-bs-dismiss="alert"
                                     aria-label="Close"></button>
-                            {{ message }}
+                            {{ message.message }}
                         </div>
                     {% endfor %}
                     {% block content %}

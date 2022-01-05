@@ -16,7 +16,7 @@
             {% with acronym=session.historic_group.acronym %}
                 {% if session.agenda and show_agenda %}
                     <!-- agenda pop-up button -->
-                    <a class="btn btn-outline-primary" role="button" data-bs-toggle="modal" data-bs-target="#modal-{{slug}}" title="Show meeting materials"><span class="bi bi-arrows-fullscreen"></span></a>
+                    <button class="btn btn-outline-primary" role="button" data-bs-toggle="modal" data-bs-target="#modal-{{slug}}"><span title="Show meeting materials" class="bi bi-arrows-fullscreen"></span></button>
                     <!-- materials tar file -->
                     <a class="btn btn-outline-primary" role="button" href="/meeting/{{meeting.number}}/agenda/{{acronym}}-drafts.tgz" title="Download meeting materials as .tar archive"><span class="bi bi-file-zip"></span></a>
                     <!-- materials PDF file -->

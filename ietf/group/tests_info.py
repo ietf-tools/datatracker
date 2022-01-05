@@ -346,7 +346,7 @@ class GroupPagesTests(TestCase):
         for url in [group.about_url(),] + group_urlreverse_list(group, 'ietf.group.views.group_about'):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            
+
             for role in group.role_set.all():
                 self.assertContains(r, escape(role.person.plain_name()))
 
@@ -595,7 +595,7 @@ class GroupEditTests(TestCase):
         self.assertEqual(len(q('form select[name=parent]')), 1)
         self.assertEqual(len(q('form input[name=acronym]')), 1)
         for role_slug in group.used_roles or group.features.default_used_roles:
-            self.assertEqual(len(q('form input[name=%s_roles]'%role_slug)),1)
+            self.assertEqual(len(q('form select[name=%s_roles]'%role_slug)),1)
 
         # faulty post
         Group.objects.create(name="Collision Test Group", acronym="collide")
@@ -631,12 +631,12 @@ class GroupEditTests(TestCase):
                                   ad=ad.pk,
                                   state=state.pk,
                                   ad_roles=ad.email().address,
-                                  chair_roles="aread@example.org, ad1@example.org",
-                                  secr_roles="aread@example.org, ad1@example.org, ad2@example.org",
-                                  liaison_contact_roles="ad1@example.org",
-                                  liaison_cc_contact_roles="aread@example.org, ad2@example.org",
-                                  techadv_roles="aread@example.org",
-                                  delegate_roles="ad2@example.org",
+                                  chair_roles=["aread@example.org", "ad1@example.org"],
+                                  secr_roles=["aread@example.org", "ad1@example.org", "ad2@example.org"],
+                                  liaison_contact_roles=["ad1@example.org"],
+                                  liaison_cc_contact_roles=["aread@example.org", "ad2@example.org"],
+                                  techadv_roles=["aread@example.org"],
+                                  delegate_roles=["ad2@example.org"],
                                   list_email="mars@mail",
                                   list_subscribe="subscribe.mars",
                                   list_archive="archive.mars",
@@ -728,9 +728,9 @@ class GroupEditTests(TestCase):
             self.assertEqual(r.status_code, 200)
 
             q = PyQuery(r.content)
-            self.assertEqual(len(q('div#content > form input[name=%s]' % field_name)), 1)
+            self.assertEqual(len(q('div#content > form input[name=%s], div#content > form select[name=%s]' % (field_name, field_name))), 1)
             for prohibited_name in prohibited_form_names:
-                self.assertEqual(len(q('div#content > form input[name=%s]' % prohibited_name)), 0)
+                self.assertEqual(len(q('div#content > form input[name=%s], div#content > form select[name=%s]' % (prohibited_name, prohibited_name))), 0)
 
             # edit info
             r = self.client.post(url, {field_name: field_content})
@@ -741,7 +741,7 @@ class GroupEditTests(TestCase):
             if field_name.endswith('_roles'):
                 role_name = field_name[:-len('_roles')]
                 self.assertSetEqual(
-                    {fc.strip() for fc in field_content.split(',')},
+                    {fc.strip() for fc in field_content},
                     set(group.role_set.filter(name=role_name).values_list('email', flat=True))
                 )
             else:
@@ -755,8 +755,8 @@ class GroupEditTests(TestCase):
         # Test various fields
         _test_field(group, 'name', 'Mars Not Special Interest Group', ['acronym'])
         _test_field(group, 'list_email', 'mars@mail', ['name'])
-        _test_field(group, 'liaison_contact_roles', 'user@example.com, other_user@example.com', ['list_email'])
-        _test_field(group, 'liaison_cc_contact_roles', 'user@example.com, other_user@example.com', ['liaison_contact'])
+        _test_field(group, 'liaison_contact_roles', ['user@example.com', 'other_user@example.com'], ['list_email'])
+        _test_field(group, 'liaison_cc_contact_roles', ['user@example.com', 'other_user@example.com'], ['liaison_contact'])
 
     def test_edit_reviewers(self):
         group=GroupFactory(type_id='review',parent=GroupFactory(type_id='area'))
@@ -779,7 +779,7 @@ class GroupEditTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=reviewer_roles]')), 1)
+        self.assertEqual(len(q('form select[name=reviewer_roles]')), 1)
 
         # set reviewers
         empty_outbox()
@@ -935,16 +935,15 @@ class GroupFormTests(TestCase):
         )
         # fill in original values
         for rslug in group.get_used_roles():
-            data['{}_roles'.format(rslug)] = ','.join(
-                group.role_set.filter(name_id=rslug).values_list('email__address', flat=True),
-            )
+            data['{}_roles'.format(rslug)] = list(group.role_set.filter(name_id=rslug).values_list('email__address', flat=True).all())
+
         return data
 
     def _assert_cleaned_data_equal(self, cleaned_data, post_data):
         for attr, expected in post_data.items():
             value = cleaned_data[attr]
             if attr.endswith('_roles'):
-                actual = ','.join(value.values_list('address', flat=True))
+                actual = list(value.values_list('address', flat=True).all())
             elif attr == 'resources':
                 # must handle resources specially
                 actual = '\n'.join(self._format_resource(r) for r in value)
@@ -966,7 +965,7 @@ class GroupFormTests(TestCase):
         for rslug in group.get_used_roles():
             data = orig_data.copy()
             edit_field = '{}_roles'.format(rslug)
-            data[edit_field] = new_email.address  # comma-separated list of addresses with only one
+            data[edit_field] = [new_email.address]
 
             form = GroupForm(data, group=group, group_type=group.type_id, field=None)
 
@@ -1061,7 +1060,6 @@ class MilestoneTests(TestCase):
                                            resolved="",
                                            state_id="charter")
         m2.docs.set([draft])
-
         return (m1, m2, group)
 
     def last_day_of_month(self, d):
@@ -1110,7 +1108,7 @@ class MilestoneTests(TestCase):
                                     'm-1-desc': "", # no description
                                     'm-1-due': due.strftime("%B %Y"),
                                     'm-1-resolved': "",
-                                    'm-1-docs': ",".join(doc_pks),
+                                    'm-1-docs': doc_pks,
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 200)
@@ -1125,7 +1123,7 @@ class MilestoneTests(TestCase):
                                     'm-1-desc': "Test 3",
                                     'm-1-due': due.strftime("%B %Y"),
                                     'm-1-resolved': "",
-                                    'm-1-docs': ",".join(doc_pks),
+                                    'm-1-docs': doc_pks,
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)
@@ -1201,7 +1199,7 @@ class MilestoneTests(TestCase):
                                     'm1-desc': m1.desc,
                                     'm1-due': m1.due.strftime("%B %Y"),
                                     'm1-resolved': m1.resolved,
-                                    'm1-docs': ",".join(pklist(m1.docs)),
+                                    'm1-docs': pklist(m1.docs),
                                     'm1-review': "accept",
                                     'action': "save",
                                     })
@@ -1227,7 +1225,7 @@ class MilestoneTests(TestCase):
                                     'm1-desc': m1.desc,
                                     'm1-due': m1.due.strftime("%B %Y"),
                                     'm1-resolved': "",
-                                    'm1-docs': ",".join(pklist(m1.docs)),
+                                    'm1-docs': pklist(m1.docs),
                                     'm1-delete': "checked",
                                     'action': "save",
                                     })
@@ -1257,7 +1255,7 @@ class MilestoneTests(TestCase):
                                     'm1-desc': "", # no description
                                     'm1-due': due.strftime("%B %Y"),
                                     'm1-resolved': "",
-                                    'm1-docs': ",".join(doc_pks),
+                                    'm1-docs': doc_pks,
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 200)
@@ -1275,7 +1273,7 @@ class MilestoneTests(TestCase):
                                     'm1-due': due.strftime("%B %Y"),
                                     'm1-resolved': "Done",
                                     'm1-resolved_checkbox': "checked",
-                                    'm1-docs': ",".join(doc_pks),
+                                    'm1-docs': doc_pks,
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)
@@ -1343,7 +1341,7 @@ class DatelessMilestoneTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('#switch-date-use-form')),0)
+        self.assertEqual(len(q('button[value="switch"]:submit')),0)
 
         r = self.client.post(url, dict(action="switch"))
         self.assertEqual(r.status_code, 403)
@@ -1447,7 +1445,7 @@ class DatelessMilestoneTests(TestCase):
             post_data['%s-id' % prefix] = ms.id
             post_data['%s-desc' % prefix] = ms.desc
             post_data['%s-order' % prefix] = ms.order
-            post_data['%s-docs' % prefix] = ""
+            post_data['%s-docs' % prefix] = []
 
         post_data['prefix'] = prefixes
         post_data['action'] = 'review'
@@ -1461,7 +1459,7 @@ class DatelessMilestoneTests(TestCase):
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('.label:contains("Changed")')), 2)
+        self.assertEqual(len(q('span.badge:contains("Changed")')), 2)
 
         post_data['action'] = 'save'
         r = self.client.post(url, post_data)

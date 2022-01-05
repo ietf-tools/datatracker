@@ -1076,7 +1076,6 @@ class IndividualInfoFormsTests(TestCase):
         self.assertEqual(doc.ad, pre_ad, 'Pre-AD was not actually assigned')
 
     def test_doc_change_shepherd(self):
-        return  # FIXME-LARS
         doc = Document.objects.get(name=self.docname)
         doc.shepherd = None
         doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
@@ -1094,7 +1093,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[id=id_shepherd]')),1)
+        self.assertEqual(len(q('form select[id=id_shepherd]')),1)
 
         # change the shepherd
         plain_email = Email.objects.get(person__name="Plain Man")
@@ -1116,7 +1115,7 @@ class IndividualInfoFormsTests(TestCase):
         self.assertTrue(any(['no changes have been made' in m.message for m in r.context['messages']]))
 
         # Remove the shepherd
-        r = self.client.post(url, dict(shepherd=''))
+        r = self.client.post(url, dict(shepherd=[]))
         self.assertEqual(r.status_code, 302)
         doc = Document.objects.get(name=self.docname)
         self.assertTrue(any(['Document shepherd changed to (None)' in x.desc for x in doc.docevent_set.filter(time=doc.time,type='added_comment')]))
@@ -1294,10 +1293,9 @@ class IndividualInfoFormsTests(TestCase):
                              'Expected "Remove %s" button for' % role_name)
 
         def _test_changing_ah(action_holders, reason):
-            return  # FIXME-LARS
             r = self.client.post(url, dict(
                 reason=reason,
-                action_holders=','.join([str(p.pk) for p in action_holders]),
+                action_holders=[str(p.pk) for p in action_holders],
             ))
             self.assertEqual(r.status_code, 302)
             doc = Document.objects.get(name=self.docname)
@@ -1322,7 +1320,6 @@ class IndividualInfoFormsTests(TestCase):
         self.do_doc_change_action_holders_test('ad')
 
     def do_doc_remind_action_holders_test(self, username):
-        return  # FIXME-LARS
         doc = Document.objects.get(name=self.docname)
         doc.action_holders.set(PersonFactory.create_batch(3))
         
@@ -1840,7 +1837,6 @@ class ChangeReplacesTests(TestCase):
 
 
     def test_change_replaces(self):
-        return  # FIXME-LARS
         url = urlreverse('ietf.doc.views_draft.replaces', kwargs=dict(name=self.replacea.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -1869,7 +1865,7 @@ class ChangeReplacesTests(TestCase):
         # Post that says replaceboth replaces both base a and base b
         url = urlreverse('ietf.doc.views_draft.replaces', kwargs=dict(name=self.replaceboth.name))
         self.assertEqual(self.baseb.get_state().slug,'expired')
-        r = self.client.post(url, dict(replaces='%s,%s' % (self.basea.pk, self.baseb.pk)))
+        r = self.client.post(url, dict(replaces=[self.basea.pk, self.baseb.pk]))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
         self.assertEqual(Document.objects.get(name='draft-test-base-b').get_state().slug,'repl')
@@ -1880,7 +1876,7 @@ class ChangeReplacesTests(TestCase):
 
         # Post that undoes replaceboth
         empty_outbox()
-        r = self.client.post(url, dict(replaces=""))
+        r = self.client.post(url, dict(replaces=[]))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl') # Because A is still also replaced by replacea
         self.assertEqual(Document.objects.get(name='draft-test-base-b').get_state().slug,'expired')
@@ -1892,7 +1888,7 @@ class ChangeReplacesTests(TestCase):
         # Post that undoes replacea
         empty_outbox()
         url = urlreverse('ietf.doc.views_draft.replaces', kwargs=dict(name=self.replacea.name))
-        r = self.client.post(url, dict(replaces=""))
+        r = self.client.post(url, dict(replaces=[]))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'active')
         self.assertTrue('basea_author@' in outbox[-1]['To'])
@@ -1921,7 +1917,6 @@ class ChangeReplacesTests(TestCase):
 class MoreReplacesTests(TestCase):
 
     def test_stream_state_changes_when_replaced(self):
-        return  # FIXME-LARS
         self.client.login(username='secretary',password='secretary+password')
         for stream in ('iab','irtf','ise'):
             old_doc = IndividualDraftFactory(stream_id=stream)

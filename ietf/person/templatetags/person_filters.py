@@ -35,10 +35,13 @@ def person_by_name(name):
 def person_link(person, **kwargs):
     title = kwargs.get('title', '')
     cls = kwargs.get('class', '')
-    name = person.name if person.alias_set.filter(name=person.name).exists() else ''
-    plain_name = person.plain_name()
-    email = person.email_address()
-    return {'name': name, 'plain_name': plain_name, 'email': email, 'title': title, 'class': cls}
+    if person:
+        name = person.name if person.alias_set.filter(name=person.name).exists() else ''
+        plain_name = person.plain_name()
+        email = person.email_address()
+        return {'name': name, 'plain_name': plain_name, 'email': email, 'title': title, 'class': cls}
+    else:
+        return {}
 
 
 @register.inclusion_tag('person/person_link.html')

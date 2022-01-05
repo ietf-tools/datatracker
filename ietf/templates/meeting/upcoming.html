@@ -6,8 +6,7 @@
 
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
-    <link rel="stylesheet" href="{% static "ietf/css/fullcalendar.css" %}">
-
+    <link rel="stylesheet" href="{% static "ietf/js/fullcalendar.css" %}">
 {% endblock %}
 
 {% block title %}Upcoming Meetings{% endblock %}
@@ -35,12 +34,7 @@
 {% block content %}
     {% origin %}
     <div class="row">
-        <div class="col-md-10">
-            <div class="row">
-                <div class="col-xs-6">
                     <h1>Upcoming Meetings</h1>
-                </div>
-                <div class="title-buttons col-xs-6">
                     <div>
                         <a title="iCalendar subscription for upcoming meetings" href="webcal://{{request.get_host}}{% url 'ietf.meeting.views.upcoming_ical' %}">
                             <i class="bi bi-share"></i>
@@ -62,8 +56,6 @@
                         </select>
 
                     </div>
-                </div>
-            </div>
             <p>For more on regular IETF meetings see <a href="https://www.ietf.org/meeting/upcoming.html">here</a></p>
             <p>Meeting important dates are not included in upcoming meeting calendars. They have <a href="{% url 'ietf.meeting.views.important_dates' %}">their own calendar</a></p>
 
@@ -150,10 +142,8 @@
                     <h3>No upcoming meetings</h3>
                 {% endif %}
             {% endcache %}
-        </div>
-    </div>
+
     <div class="row">
-        <div class="col-md-10">
             <div class="tz-display text-right">
                 <label for="timezone-select-bottom">Time zone: </label>
                 <small>
@@ -162,13 +152,10 @@
                 </small>
                 <select class="tz-select" id="timezone-select-bottom"></select>
             </div>
-        </div>
     </div>
     <div class="row">
-        <div class="col-md-10">
             <div id="calendar"></div>
         </div>
-    </div>
 {% endblock %}
 
 {% block js %}
@@ -279,14 +266,14 @@
                */
                 var calendarEl = document.getElementById('calendar')
                 event_calendar = new FullCalendar(calendarEl, {
-                    plugins: ['dayGridPlugin'],
+                    plugins: [ dayGridPlugin ],
                     initialView: 'dayGridMonth',
-                    // displayEventTime: false,
-                    // events: function (fInfo, success) {success(display_events)},
-                    // eventRender: function (info) {
-                    //     $(info.el).tooltip({ title: info.event.title })
-                    // },
-                    // timeFormat: 'H:mm',
+                    displayEventTime: false,
+                    events: function (fInfo, success) {success(display_events)},
+                    eventDidMount: function (info) {
+                        $(info.el).tooltip({ title: info.event.title })
+                    },
+                    eventDisplay: 'block'
                 })
                 event_calendar.render()
             }

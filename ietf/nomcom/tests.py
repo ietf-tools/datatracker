@@ -356,9 +356,7 @@ class NomcomViewsTest(TestCase):
         q = PyQuery(response.content)
         self.assertTrue(q("form .is-invalid"))
 
-        test_data = {"secondary_emails": """%s,
-                                            %s,
-                                            %s""" % (nominees[1], nominees[2], nominees[3]),
+        test_data = {"secondary_emails": [nominees[1], nominees[2], nominees[3]],
                      "primary_email": nominees[0]}
 
         response = self.client.post(self.private_merge_nominee_url, test_data)
@@ -409,7 +407,7 @@ class NomcomViewsTest(TestCase):
         self.client.logout()
 
     def change_members(self, members):
-        members_emails = ','.join(['%s%s' % (member, EMAIL_DOMAIN) for member in members])
+        members_emails = ['%s%s' % (member, EMAIL_DOMAIN) for member in members]
         test_data = {'members': members_emails,}
         self.client.post(self.edit_members_url, test_data)
 
@@ -2539,7 +2537,7 @@ class VolunteerTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('#id_nomcoms div.checkbox')), 2)
+        self.assertEqual(len(q('#id_nomcoms input[type="checkbox"]')), 2)
         r = self.client.post(url, dict(nomcoms=[nomcom.pk, nomcom2.pk], affiliation='something'))
         self.assertRedirects(r, reverse('ietf.ietfauth.views.profile'))
         self.assertEqual(person.volunteer_set.count(), 2)
@@ -2558,7 +2556,7 @@ class VolunteerTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('#id_nomcoms div.checkbox')), 1)
+        self.assertEqual(len(q('#id_nomcoms input[type="checkbox"]')), 1)
         self.assertNotIn(f'{nomcom.year()}/', q('#already-volunteered').text())
         self.assertIn(f'{nomcom2.year()}/', q('#already-volunteered').text())
 

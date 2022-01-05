@@ -24,8 +24,6 @@
     #weekview iframe { height: 25em; }
 {% endblock %}
 
-{% block bodyAttrs %}data-bs-spy="scroll" data-bs-target="#affix" data-bs-offset="0" tabindex="0"{% endblock %}
-
 {% block content %}
     {% origin %}
 
@@ -523,7 +521,6 @@
             {% if personalize %}
                 agenda_filter.set_update_callback(function (e) {
                     handleFilterParamUpdate(e);
-                    update_view(e);
                 });
 
                 document.getElementById('agenda-table')

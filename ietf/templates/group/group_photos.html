@@ -20,7 +20,7 @@
     <div class="col-md-10">
         {% for role_name in role_groups %}
             <div class="row anchor-target" id="{{role_name.grouper|urlencode}}">
-                <div class="panel ">
+                <div class="card ">
                     <div class="card-header">{{role_name.grouper}}{{role_name.list|pluralize}}</div>
                     <div class="card-body">
                         <ul class="list-inline">

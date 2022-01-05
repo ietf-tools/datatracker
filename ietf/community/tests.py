@@ -101,7 +101,6 @@ class CommunityListTests(WebTest):
         self.assertContains(r, draft.name)
 
     def test_manage_personal_list(self):
-        return  # FIXME-LARS
 
         PersonFactory(user__username='plain')
         ad = Person.objects.get(user__username='ad')
@@ -116,7 +115,7 @@ class CommunityListTests(WebTest):
         # add document
         self.assertIn('add_document', page.forms)
         form = page.forms['add_document']
-        form['documents']=draft.pk
+        form['documents'].options=[(draft.pk, True, draft.name)]
         page = form.submit('action',value='add_documents')
         self.assertEqual(page.status_int, 302)
         clist = CommunityList.objects.get(user__username="plain")
@@ -173,7 +172,6 @@ class CommunityListTests(WebTest):
         self.assertTrue(not clist.searchrule_set.filter(rule_type="author_rfc"))
 
     def test_manage_group_list(self):
-        return  # FIXME-LARS
         draft = WgDraftFactory(group__acronym='mars')
         RoleFactory(group__acronym='mars',name_id='chair',person=PersonFactory(user__username='marschairman'))
 

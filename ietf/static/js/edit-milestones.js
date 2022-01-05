@@ -34,8 +34,11 @@ $(document)
 
         function setSubmitButtonState() {
             var action;
-            if (milestonesForm.find("input[name$=delete]:visible")
-                .length > 0 || milestone_order_has_changed)
+            var milestone_cnt = milestonesForm.find(".milestonerow").length;
+            var milestone_hidden_cnt = milestonesForm.find(".edit-milestone.visually-hidden").length;
+            var milestone_change_cnt = milestonesForm.find(".edit-milestone.changed").length;
+            var milestone_delete_cnt = milestonesForm.find(".edit-milestone.delete").length;
+            if (milestone_cnt != milestone_hidden_cnt || milestone_order_has_changed)
                 action = "review";
             else
                 action = "save";
@@ -45,11 +48,11 @@ $(document)
 
             var submit = milestonesForm.find("[type=submit]");
             submit.text(submit.data("label" + action));
-            if (milestonesForm.find(".edit-milestone.changed,.edit-milestone.delete")
-                .length > 0 || action == "review")
+            if (milestone_change_cnt + milestone_delete_cnt > 0 || action == "review") {
                 submit.removeClass("visually-hidden");
-            else
+            } else {
                 submit.addClass("visually-hidden");
+            }
         }
 
         milestonesForm.find(".milestone")
@@ -130,6 +133,7 @@ $(document)
                 if (!group_uses_milestone_dates) {
                     setOrderControlValue();
                 }
+                setSubmitButtonState();
             });
 
         function setResolvedState() {

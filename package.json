@@ -10,7 +10,7 @@
     "flot": "^4.2.2",
     "highcharts": "^9.3.1",
     "jquery": "^3.6.0",
-    "jquery-ui": "^1.13.0",
+    "jquery-ui-dist": "^1.13.0",
     "js-cookie": "^3.0.1",
     "list.js": "^2.3.1",
     "moment": "^2.29.1",
@@ -30,6 +30,7 @@
     "ietf": {
       "distDir": "ietf/static/dist/ietf",
       "source": [
+        "ietf/static/css/datepicker.scss",
         "ietf/static/css/ietf.scss",
         "ietf/static/css/jquery-ui.scss",
         "ietf/static/css/liaisons.css",
@@ -57,6 +58,8 @@
         "ietf/static/js/edit-meeting-schedule.js",
         "ietf/static/js/edit-meeting-timeslots-and-misc-sessions.js",
         "ietf/static/js/edit-milestones.js",
+        "ietf/static/js/edit_action_holders.js",
+        "ietf/static/js/edit_authors.js",
         "ietf/static/js/flot.js",
         "ietf/static/js/fullcalendar.js",
         "ietf/static/js/highcharts-export-data.js",
@@ -85,6 +88,7 @@
         "ietf/static/js/stats.js",
         "ietf/static/js/status-change-edit-relations.js",
         "ietf/static/js/timezone.js",
+        "ietf/static/js/upload-material.js",
         "ietf/static/js/upload_bofreq.js",
         "ietf/static/js/week-view.js",
         "ietf/static/js/zxcvbn.js"
