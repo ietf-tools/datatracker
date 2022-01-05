@@ -68,9 +68,6 @@ ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", "12
 
 # Server name of the tools server
 TOOLS_SERVER = 'tools.' + IETF_DOMAIN
-TOOLS_SERVER_URL = 'https://' + TOOLS_SERVER
-TOOLS_ID_PDF_URL = TOOLS_SERVER_URL + '/pdf/'
-TOOLS_ID_HTML_URL = TOOLS_SERVER_URL + '/html/'
 
 # Override this in the settings_local.py file:
 SERVER_EMAIL = 'Django Server <django-project@' + IETF_DOMAIN + '>'

@@ -1040,7 +1040,7 @@ def build_file_urls(doc):
             file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=name))))
             if doc.tags.filter(slug="verified-errata").exists():
                 file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
-        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=name))+"bibtex"))
+        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=name))))
     else:
         base_path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".")
         possible_types = settings.IDSUBMIT_FILE_TYPES
@@ -1051,10 +1051,9 @@ def build_file_urls(doc):
             label = "plain text" if t == "txt" else t
             file_urls.append((label, base + doc.name + "-" + doc.rev + "." + t))
 
-        if "pdf" not in found_types:
-            file_urls.append(("pdf", settings.TOOLS_ID_PDF_URL + doc.name + "-" + doc.rev + ".pdf"))
         file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev))))
-        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=doc.name,rev=doc.rev))+"bibtex"))
+        file_urls.append(("pdfized", urlreverse('ietf.doc.views_doc.document_pdfized', kwargs=dict(name=doc.name, rev=doc.rev))))
+        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name,rev=doc.rev))))
 
     return file_urls, found_types
 
