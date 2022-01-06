@@ -1,27 +1,29 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load django_bootstrap5 %}
-
 {% block title %}Clear ballot for {{ doc }}{% endblock %}
-
 {% block content %}
     {% origin %}
-    <h1>Clear ballot<br><small class="text-muted"><a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
-
+    <h1>
+        Clear ballot
+        <br>
+        <small class="text-muted">{{ doc }}</small>
+    </h1>
     <form method="post">
         {% csrf_token %}
         <p class="alert alert-danger">
-            <b>Clear the ballot for {{ doc }}?</b>
+            <b>Clear the ballot for
+                <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a>?
+            </b>
             <br>
             This will clear all ballot positions and discuss entries.
         </p>
-
-
-
         <button type="submit" class="btn btn-danger">Clear</button>
-
-
+        <a class="btn btn-secondary float-end"
+           href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">
+            Back
+        </a>
     </form>
-
 {% endblock %}

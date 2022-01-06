@@ -501,7 +501,7 @@ class BallotWriteupsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=ballot_writeup]')), 1)
-        self.assertFalse(q('[class=help-block]:contains("not completed IETF Last Call")'))
+        self.assertFalse(q('[class=form-text]:contains("not completed IETF Last Call")'))
         self.assertTrue(q('[type=submit]:contains("Save")'))
         self.assertCountEqual(draft.action_holders.all(), [])
 
@@ -525,7 +525,7 @@ class BallotWriteupsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=ballot_writeup]')), 1)
-        self.assertTrue(q('[class=help-block]:contains("not completed IETF Last Call")'))
+        self.assertTrue(q('[class=text-danger]:contains("not completed IETF Last Call")'))
         self.assertTrue(q('[type=submit]:contains("Save")'))
 
     def test_edit_approval_text(self):

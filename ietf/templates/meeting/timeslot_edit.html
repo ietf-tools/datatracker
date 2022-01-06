@@ -33,7 +33,7 @@
 {% block content %}
     {% origin %}
 
-    <p class="pull-right">
+    <p class="float-end">
         <a href="{% url "ietf.meeting.views.create_timeslot" num=meeting.number %}">New timeslot</a>
         &middot;
         {% if meeting.schedule %}

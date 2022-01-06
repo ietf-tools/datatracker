@@ -2652,7 +2652,7 @@ Subject: test
         r = self.client.post(url, files)
         if r.status_code != 302:
             q = PyQuery(r.content)
-            print(q('div.invalid-feedback span.help-block div').text())
+            print(q('div.invalid-feedback span.form-text div').text())
 
         self.assertEqual(r.status_code, 302)
 

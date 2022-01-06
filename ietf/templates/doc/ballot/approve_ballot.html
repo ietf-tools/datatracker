@@ -1,29 +1,29 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
 {% load django_bootstrap5 %}
-
 {% block title %}Approve ballot for {{ doc }}{% endblock %}
-
 {% block content %}
     {% origin %}
-    <h1>Approve ballot<br><small class="text-muted"><a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
-
+    <h1>
+        Approve ballot
+        <br>
+        <small class="text-muted">{{ doc }}</small>
+    </h1>
     <form method="post">
         {% csrf_token %}
-        <pre>{{ announcement }}</pre>
-
-
-
+        <pre class="border p-3">{{ announcement }}</pre>
         {% if action == "to_announcement_list" %}
             <button class="btn btn-primary" type="submit">Notify RFC Editor, send announcement & close ballot</button>
         {% elif action == "to_rfc_editor" %}
             <button class="btn btn-primary" type="submit">Email RFC Editor & close ballot</button>
         {% elif action == "do_not_publish" %}
-            <button class="btn btn-primary" type="submit">Email RFC Editor (DNP) & close ballot"/>
+            <button class="btn btn-primary" type="submit">Email RFC Editor (DNP) & close ballot"</button>
         {% endif %}
-
-
+        <a class="btn btn-secondary float-end"
+           href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">
+            Back
+        </a>
     </form>
 {% endblock %}

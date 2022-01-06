@@ -11,7 +11,7 @@ $(function () {
     form.on("keydown", ".new-relation-row input[type=text]", function () {
         var top = $(this).closest(".new-relation-row");
         top.removeClass("new-relation-row");
-        top.find(".help-block").remove();
+        top.find(".form-text").remove();
         top.find(".delete").show();
         top.find("input,select").each(function () {
             this.name += counter;

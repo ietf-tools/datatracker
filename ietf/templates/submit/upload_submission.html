@@ -43,7 +43,7 @@
 
                     {% bootstrap_label '<i class="bi bi-file-code"></i> XML source of the I-D' label_class="fw-bold" %}
                     {% bootstrap_field form.xml show_label=False %}
-                    <p class="help-block">
+                    <p class="form-text">
                         Preferably, submit a standalone
                         <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc7991' %}">xml2rfc version 3</a>
                         source file. You can use this online
@@ -63,7 +63,7 @@
                     <div class="collapse" id="other-formats">
                         {% bootstrap_label '<i class="bi bi-file-text"></i> Plaintext rendering of the I-D' label_class="fw-bold" %}
                         {% bootstrap_field form.txt show_label=False %}
-                        <p class="help-block">
+                        <p class="form-text">
                             Optional to submit, will be auto-generated based
                             on the submitted XML.
                             However, if you cannot for some reason submit XML, you must
@@ -72,7 +72,7 @@
 
                         {% bootstrap_label '<i class="bi bi-file-pdf"></i> PDF rendering of the I-D' label_class="fw-bold" %}
                         {% bootstrap_field form.pdf show_label=False %}
-                        <p class="help-block">
+                        <p class="form-text">
                             Optional to submit, will be auto-generated based
                             on the submitted XML.
                         </p>

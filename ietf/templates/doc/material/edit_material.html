@@ -33,7 +33,7 @@
         </small></h1>
 
     {% if action == "new" %}
-        <p class="help-block">
+        <p class="form-text">
             {% if group is not None %}
                 Below you can upload a document for the group {{ group.name }}
                 <a href="{% url "ietf.group.views.materials" acronym=group.acronym %}">({{ group.acronym }})</a>.

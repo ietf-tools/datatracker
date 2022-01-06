@@ -34,7 +34,7 @@
     <div class="session-info">
         <div class="title">
             <strong>
-                <span class="time pull-right"></span>
+                <span class="time float-end"></span>
                 {{ session.scheduling_label }} &middot; {{ session.requested_duration_in_hours }}h
                 {% if session.purpose_label  %} &middot; {{ session.purpose_label }} {% endif %}
                 {% if session.attendees != None %} &middot; {{ session.attendees }} <i class="bi bi-person"></i> {% endif %}

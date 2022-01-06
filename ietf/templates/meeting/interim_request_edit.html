@@ -40,7 +40,7 @@
                 {% render_field form.country class="form-control location" style="width: 30%" %}
                 <div id="timezone-field">
                     {% render_field form.time_zone class="form-control" %}
-                    <span class="help-block">Local Timezone</span></div>
+                    <span class="form-text">Local Timezone</span></div>
             </div>
         </div>
 
@@ -61,7 +61,7 @@
                     <div class="col-md-3 form-inline">
                         {% render_field form.time class="form-control time-field" placeholder="HH:MM" %}
                         <div id="id_session_set-{{ forloop.counter0 }}-time_utc" class="utc-time"></div>
-                        <span class="help-block">Local Time</span>
+                        <span class="form-text">Local Time</span>
                         {% if form.time.errors %}<span class="help-inline">{{ form.time.errors }}</span>{% endif %}
                     </div>
                     <label for="id_session_set-{{ forloop.counter0 }}-requested_duration" class="col-md-1 col-form-label required">Duration</label>

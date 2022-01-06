@@ -53,7 +53,7 @@
         <div class="form-group meeting-type-help mth-multi" style="display: none;">
             <div class="col-md-offset-2">
                 <div class="col-md-10">
-                    <p class="help-block">
+                    <p class="form-text">
                         Use Multi-Day for a single meeting that spans more than one contiguous
                         workday. Do not use Multi-Day for a series of separate meetings (such as
                         periodic interim calls). Use Series instead.
@@ -65,7 +65,7 @@
         <div class="form-group meeting-type-help mth-series" style="display: none;">
             <div class="col-md-offset-2">
                 <div class="col-md-10">
-                    <p class="help-block">
+                    <p class="form-text">
                         Use Series for a series of separate meetings, such as periodic interim calls.
                         Use Multi-Day for a single meeting that spans more than one contiguous
                         workday.
@@ -81,7 +81,7 @@
                 {% render_field form.country class="form-control location" style="width: 30%" %}
                 <div id="timezone-field">
                     {% render_field form.time_zone class="form-control" %}
-                    <span class="help-block">Local Timezone</span></div>
+                    <span class="form-text">Local Timezone</span></div>
             </div>
         </div>
 
@@ -107,7 +107,7 @@
                     <div class="col-md-3 form-inline">
                         {% render_field form.time class="form-control time-field" placeholder="HH:MM" %}
                         <div id="id_session_set-{{ forloop.counter0 }}-time_utc" class="utc-time"></div>
-                        <span class="help-block">Local Time</span>
+                        <span class="form-text">Local Time</span>
                         {% if form.time.errors %}<span class="help-inline">{{ form.time.errors }}</span>{% endif %}
                     </div>
                     <label for="id_session_set-{{ forloop.counter0 }}-requested_duration" class="col-md-1 col-form-label required">Duration</label>
@@ -116,14 +116,14 @@
                     <div class="col-md-3 form-inline">
                         {% render_field form.end_time class="form-control time-field computed" placeholder="HH:MM" disabled="disabled" %}
                         <div id="id_session_set-{{ forloop.counter0 }}-end_time_utc" class="utc-time"></div>
-                        <span class="help-block">Local Time</span>
+                        <span class="form-text">Local Time</span>
                     </div>
                 </div>
 
                 <div class="form-group{% if form.remote_instructions.errors %} alert alert-danger{% endif %}">
                     <label for="id_session_set-{{ forloop.counter0 }}-remote_instructions" class="col-md-2 col-form-label required">Remote Instructions</label>
                     <div class="col-md-10">{% render_field form.remote_instructions class="form-control" placeholder="Webex (or other) URL or descriptive information (see below)" %}
-                        <p class="help-block">
+                        <p class="form-text">
                             For virtual interims, a conference link <b>should be provided in the original request</b> in all but the most unusual circumstances.
                             Otherwise, "Remote participation is not supported" or "Remote participation information will be obtained at the time of approval" are acceptable values.
                             See <a href="https://www.ietf.org/forms/wg-webex-account-request/">here</a> for more on remote participation support.
