@@ -27,6 +27,15 @@ ietfdb (7.42.0) ietf; urgency=medium
     Correct the url for the bibtex button. Provide a pdfized button. Fixes
     #3501.
 
+  * Merged in [19811] from lars@eggert.org:
+    When using Docker, the runserver isn't being accessed over loopback,
+    so we need to initialize INTERNAL_IPS based on the current interface 
+    configuration.
+
+  * Merged in [19813] from rjsparks@nostrum.com:
+    Improve robustness of pdfization. Tune the test crawler. Don't show
+    htmlized and pdfized buttons when that genration will fail.
+
  -- Robert Sparks <rjsparks@nostrum.com>  05 Jan 2022 19:40:16 +0000
 
 
