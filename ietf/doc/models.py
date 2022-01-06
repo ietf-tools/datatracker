@@ -577,7 +577,11 @@ class DocumentInfo(models.Model):
             pdf = None
         if not pdf:
             html = rfc2html.markup(text, path=settings.PDFIZER_URL_PREFIX)
-            pdf = wpHTML(string=html).write_pdf(stylesheets=[io.BytesIO(b'html { font-size: 94%;}')])
+            try:
+                pdf = wpHTML(string=html.replace('\xad','')).write_pdf(stylesheets=[io.BytesIO(b'html { font-size: 94%;}')])
+            except AssertionError:
+                log.log(f'weasyprint failed with an assert on {self.name}')
+                pdf = None
             if pdf:
                 cache.set(cache_key, pdf, settings.PDFIZER_CACHE_TIME)
         return pdf
