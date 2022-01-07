@@ -1,0 +1,103 @@
+<?xml version='1.0'?>
+<?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
+<rfc category="exp" submissionType="independent" ipr="trust200902" docName="draft-test-references-00">
+    <front>
+        <title>Test Draft with References</title>
+        <author fullname="Alfred Person" initials="A." surname="Person" role="editor">
+            <address>
+                <email>aperson@example.com</email>
+            </address>
+        </author>
+    </front>
+    <middle>
+        <section title="First Section">
+            <t>
+                Text here.
+                <xref target="RFC0001">RFC0001</xref>
+                <xref target="RFC0255">RFC0255</xref>
+                <xref target="bcp6">BCP6</xref>
+                <xref target="RFC1207">FYI7</xref>
+            </t>
+        </section>
+    </middle>
+    <back>
+        <references title="Normative References">
+            <reference anchor="RFC0001" target="https://www.rfc-editor.org/info/rfc1">
+                <front>
+                    <title>Host Software</title>
+                    <author initials="S." surname="Crocker" fullname="S. Crocker">
+                        <organization/>
+                    </author>
+                    <date year="1969" month="April"/>
+                </front>
+                <seriesInfo name="RFC" value="1"/>
+                <seriesInfo name="DOI" value="10.17487/RFC0001"/>
+            </reference>
+        </references>
+        <references title="Informative References">
+            <reference anchor='RFC0255' target='https://www.rfc-editor.org/info/rfc255'>
+                <front>
+                    <title>Status of network hosts</title>
+                    <author initials='E.' surname='Westheimer' fullname='E. Westheimer'>
+                        <organization/>
+                    </author>
+                    <date year='1971' month='October'/>
+                </front>
+                <seriesInfo name='RFC' value='255'/>
+                <seriesInfo name='DOI' value='10.17487/RFC0255'/>
+            </reference>
+            <reference anchor='bcp6' target='https://www.rfc-editor.org/info/rfc1930'>
+                <front>
+                    <title>Guidelines for creation, selection, and registration of an Autonomous System (AS)</title>
+                    <author initials='J.' surname='Hawkinson' fullname='J. Hawkinson'>
+                        <organization/>
+                    </author>
+                    <author initials='T.' surname='Bates' fullname='T. Bates'>
+                        <organization/>
+                    </author>
+                    <date year='1996' month='March'/>
+                    <abstract>
+                        <t>This memo discusses when it is appropriate to register and utilize an Autonomous System
+                            (AS), and lists criteria for such. This document specifies an Internet Best Current
+                            Practices for the Internet Community, and requests discussion and suggestions for
+                            improvements.
+                        </t>
+                    </abstract>
+                </front>
+                <seriesInfo name='BCP' value='6'/>
+                <seriesInfo name='RFC' value='1930'/>
+                <seriesInfo name='DOI' value='10.17487/RFC1930'/>
+            </reference>
+        </references>
+        <references title="Mysterious References">
+            <!-- Unrecognized references section name -->
+            <reference anchor='RFC1207' target='https://www.rfc-editor.org/info/rfc1207'>
+                <front>
+                    <title>FYI on Questions and Answers: Answers to commonly asked &quot;experienced Internet user&quot;
+                        questions
+                    </title>
+                    <author initials='G.S.' surname='Malkin' fullname='G.S. Malkin'>
+                        <organization/>
+                    </author>
+                    <author initials='A.N.' surname='Marine' fullname='A.N. Marine'>
+                        <organization/>
+                    </author>
+                    <author initials='J.K.' surname='Reynolds' fullname='J.K. Reynolds'>
+                        <organization/>
+                    </author>
+                    <date year='1991' month='February'/>
+                    <abstract>
+                        <t>This FYI RFC is one of two FYI's called, &quot;Questions and Answers&quot; (Q/A), produced by
+                            the User Services Working Group of the Internet Engineering Task Force (IETF). The goal is
+                            to document the most commonly asked questions and answers in the Internet. This memo
+                            provides information for the Internet community. It does not specify any standard.
+                        </t>
+                    </abstract>
+                </front>
+                <seriesInfo name='FYI' value='7'/>
+                <seriesInfo name='RFC' value='1207'/>
+                <seriesInfo name='DOI' value='10.17487/RFC1207'/>
+            </reference>
+        </references>
+    </back>
+</rfc>
