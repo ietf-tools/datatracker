@@ -33,7 +33,10 @@ def display_duration(value):
            3600: '1 Hour',
            5400: '1.5 Hours',
            7200: '2 Hours',
-           9000: '2.5 Hours'}
+           9000: '2.5 Hours',
+           10800: '3 Hours',
+           12600: '3.5 Hours',
+           14400: '4 Hours'}
     if value in map:
         return map[value]
     else:

@@ -141,10 +141,11 @@ def save_conflicts(group, meeting, conflicts, name):
                                 name=constraint_name)
         constraint.save()
 
-def send_notification(group,meeting,login,session,action):
+def send_notification(group, meeting, login, sreq_data, session_data, action):
     '''
     This function generates email notifications for various session request activities.
-    session argument is a dictionary of fields from the session request form
+    sreq_data argument is a dictionary of fields from the session request form
+    session_data is an array of data from individual session subforms
     action argument is a string [new|update].
     '''
     (to_email, cc_list) = gather_address_lists('session_requested',group=group,person=login)
@@ -154,7 +155,7 @@ def send_notification(group,meeting,login,session,action):
 
     # send email
     context = {}
-    context['session'] = session
+    context['session'] = sreq_data
     context['group'] = group
     context['meeting'] = meeting
     context['login'] = login
@@ -168,12 +169,14 @@ def send_notification(group,meeting,login,session,action):
 
     # if third session requested approval is required
     # change headers TO=ADs, CC=session-request, submitter and cochairs
-    if session.get('length_session3',None):
-        context['session']['num_session'] = 3
+    if len(session_data) > 2:
         (to_email, cc_list) = gather_address_lists('session_requested_long',group=group,person=login)
         subject = '%s - Request for meeting session approval for IETF %s' % (group.acronym, meeting.number)
         template = 'sreq/session_approval_notification.txt'
         #status_text = 'the %s Directors for approval' % group.parent
+
+    context['session_lengths'] = [sd['requested_duration'] for sd in session_data]
+
     send_mail(None,
               to_email,
               from_email,
@@ -368,7 +371,14 @@ def confirm(request, acronym):
 
         # send notification
         session_data['outbound_conflicts'] = [f"{d['name']}: {d['groups']}" for d in outbound_conflicts]
-        send_notification(group,meeting,login,session_data,'new')
+        send_notification(
+            group,
+            meeting,
+            login,
+            session_data,
+            [sf.cleaned_data for sf in form.session_forms[:num_sessions]],
+            'new',
+        )
 
         status_text = 'IETF Agenda to be scheduled'
         messages.success(request, 'Your request has been sent to %s' % status_text)
@@ -537,7 +547,14 @@ def edit(request, acronym, num=None):
                 #add_session_activity(group,'Session Request was updated',meeting,user)
 
                 # send notification
-                send_notification(group,meeting,login,form.cleaned_data,'update')
+                send_notification(
+                    group,
+                    meeting,
+                    login,
+                    form.cleaned_data,
+                    [sf.cleaned_data for sf in form.session_forms.forms_to_keep],
+                    'update',
+                )
 
             messages.success(request, 'Session Request updated')
             return redirect('ietf.secr.sreq.views.view', acronym=acronym)
