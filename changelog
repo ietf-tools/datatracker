@@ -36,7 +36,7 @@ ietfdb (7.42.0) ietf; urgency=medium
     Improve robustness of pdfization. Tune the test crawler. Don't show
     htmlized and pdfized buttons when that genration will fail.
 
- -- Robert Sparks <rjsparks@nostrum.com>  05 Jan 2022 19:40:16 +0000
+ -- Robert Sparks <rjsparks@nostrum.com>  07 Jan 2022 15:23:26 +0000
 
 
 ietfdb (7.41.0) ietf; urgency=medium
