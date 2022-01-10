@@ -43,7 +43,6 @@ jQuery.ajaxSetup({
 $(document)
     .ready(function () {
         $('[title][title!=""]')
-            .attr("data-bs-toggle", "tooltip")
             .tooltip();
     });
 
@@ -226,5 +225,19 @@ $(document)
                         }
                     }
                 });
+            });
+    });
+
+// Bootstrap doesn't load modals via href anymore, so let's do it ourselves.
+// See https://stackoverflow.com/a/48934494/2240756
+$(document)
+    .ready(function () {
+        $('.modal')
+            .on('show.bs.modal', function (e) {
+                var button = $(e.relatedTarget);
+                // load content from value of button href
+                $(this)
+                    .find('.modal-content')
+                    .load(button.attr("href"));
             });
     });

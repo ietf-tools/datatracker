@@ -3,8 +3,9 @@
 {% origin %}
 {% load ietf_filters ballot_icon person_filters %}
 <div class="card mb-3">
+    {# FIXME-LARS: just using float-end here messes up the spacing between row columns? #}
+    <div class="position-absolute top-0 end-0 m-3">{% ballot_icon doc %}</div>
     <div class="card-body">
-        <div class="float-end">{% ballot_icon doc %}</div>
         <div class="row">
             <div class="col-sm-3 text-end fw-bold">{{ doc.intended_std_level }}</div>
             <div class="col">
@@ -60,13 +61,13 @@
         {% if doc.iana_review_state %}
             <div class="row">
                 <div class="col-sm-3 text-end fw-bold">IANA review</div>
-                <div class="col">{{ doc.iana_review_state }}</div>
+                <div class="col {% if doc.iana_review_state|slice:7 != "IANA OK" %}text-danger{% else %}text-success{% endif %}">{{ doc.iana_review_state }}</div>
             </div>
         {% endif %}
         {% if doc.consensus %}
             <div class="row">
                 <div class="col-sm-3 text-end fw-bold">Consensus</div>
-                <div class="col {% if doc.consensus != "Yes" %}text-danger{% endif %}">{{ doc.consensus }}</div>
+                <div class="col {% if doc.consensus != "Yes" %}text-danger{% else %}text-success{% endif %}">{{ doc.consensus }}</div>
             </div>
         {% endif %}
         {% if doc.review_assignments %}

@@ -4,7 +4,7 @@
 
 {% load origin %}
 
-{% block title %}Profile update successful{% endblock title%}
+{% block title %}Profile update successful{% endblock%}
 
 {% block content %}
     {% origin %}
@@ -18,4 +18,4 @@
     {% endfor %}
 
     <a class="btn btn-primary" href="{% url "ietf.ietfauth.views.profile" %}">Edit profile</a>
-{% endblock content %}
+{% endblock %}

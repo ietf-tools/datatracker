@@ -8,7 +8,7 @@
 
 {% load person_filters %}
 
-{% block title %}Profile for {{ user }}{% endblock title %}
+{% block title %}Profile for {{ user }}{% endblock %}
 
 {% block content %}
     {% origin %}
@@ -193,7 +193,7 @@
             that requires Consent.
         </p>
     </div>
-{% endblock content %}
+{% endblock %}
 
 {% block js %}
     <script>
@@ -240,4 +240,4 @@
         });
 
     </script>
-{% endblock js %}
+{% endblock %}

@@ -8,7 +8,7 @@
 
 {% block title %}
     {{ title }} {{ person.plain_name }}
-{% endblock title %}
+{% endblock %}
 
 {% block content %}
     {% origin %}
@@ -27,4 +27,4 @@
         <a class="btn btn-secondary float-end" href="{% url "ietf.ietfauth.views.profile" %}">Back</a>
     </form>
 
-{% endblock content %}
+{% endblock %}

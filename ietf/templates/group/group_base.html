@@ -40,13 +40,13 @@
                     <a class="btn {% if name == "Request closing group" %}btn-warning{% else %}btn-primary{% endif %}" href="{{ url }}">{{ name }}</a>
                 {% endfor %}
             {% endif %}
-        {% endblock buttonlist %}
+        {% endblock %}
     </div>
 
     {% block group_content %}
-    {% endblock group_content %}
+    {% endblock %}
 
-{% endblock content %}
+{% endblock %}
 
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>

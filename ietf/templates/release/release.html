@@ -4,7 +4,7 @@
 {% load origin %}
 {% load cache %}
 
-{% block title %}Release information{% endblock title %}
+{% block title %}Release information{% endblock %}
 
 {% block content %}
     {% origin %}
@@ -70,11 +70,11 @@
         </table>
     {% endcache %}
 
-{% endblock content %}
+{% endblock %}
 
 {% block footer %}
     <p class="text-center">
         <a href="https://trac.ietf.org/trac/ietfdb/wiki/ContractorInstructions">Contractor instructions</a>
     </p>
     {{ block.super }}
-{% endblock footer %}
+{% endblock %}

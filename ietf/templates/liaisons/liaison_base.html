@@ -37,11 +37,11 @@
         {% else %}
             {% include "liaisons/liaison_table.html" %}
         {% endif %}
-    {% endblock group_content %}
+    {% endblock %}
     <p>
         Total Statements: {{ liaisons|length }}
     </p>
-{% endblock content %}
+{% endblock %}
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
     <script src="{% static 'ietf/js/datepicker.js' %}"></script>

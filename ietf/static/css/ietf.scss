@@ -66,6 +66,12 @@ body {
     padding-top: 60px;
 }
 
+// Make textareas use monospace font
+textarea {
+  font-family: var(--bs-font-monospace);
+}
+
+
 // Make the font size choice cascade down into group menu dropdowns.
 .leftmenu li>ul {
     font-size: inherit;
@@ -146,8 +152,8 @@ $timeline-even-hover-color: shift-color($timeline-even-color, $link-shade-percen
 
 .ballot-icon table td {
     border: $table-border-width solid $table-border-color;
-    height: 10px;
-    width: 8px;
+    height: 1em;
+    width: .8em;
 }
 
 .ballot-icon table .my {

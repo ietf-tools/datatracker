@@ -1,6 +1,12 @@
 {# bs5ok #}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
+{% load static %}
+{% block pagehead %}
+    {% if debug %}
+        <link rel="stylesheet" href="{% static 'ietf/css/list.css' %}"/>
+    {% endif %}
+{% endblock %}
 {% origin %}
 {% if debug %}
     {% if sql_debug %}
@@ -108,3 +114,8 @@
         </div>
     {% endif %}
 {% endif %}
+{% block js %}
+    {% if debug %}
+        <script src="{% static 'ietf/js/list.js' %}"></script>
+    {% endif %}
+{% endblock %}

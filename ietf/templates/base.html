@@ -10,9 +10,7 @@
         <meta charset="utf-8"/>
         <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
         <title>
-            {% block title %}
-                No title
-            {% endblock title %}
+            {% block title %}No title{% endblock %}
         </title>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
         {% comment Halloween %}
@@ -20,11 +18,10 @@
         {% endcomment %}
         <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}"/>
         <style>
-            {% block morecss %}{% endblock morecss %}
+            {% block morecss %}{% endblock %}
             .leftmenu { width: 13em; }
         </style>
-        {% block pagehead %}
-        {% endblock pagehead %}
+        {% block pagehead %}{% endblock %}
         {% if server_mode and server_mode == "production" %}
             <link rel="shortcut icon"
                   href="{% static 'ietf/images/ietf-icon-blue3.png' %}"/>
@@ -98,11 +95,8 @@
                             {{ message.message }}
                         </div>
                     {% endfor %}
-                    {% block content %}
-                        {{ content|safe }}
-                    {% endblock content %}
-                    {% block content_end %}
-                    {% endblock content_end %}
+                    {% block content %}{{ content|safe }}{% endblock %}
+                    {% block content_end %}{% endblock %}
                 </div>
             </div>
             <hr />
@@ -142,12 +136,8 @@
                         {% include "debug.html" %}
                     </p>
                 </footer>
-            {% endblock footer %}
+            {% endblock %}
         </div>
-        {% block js %}
-        {% endblock js %}
-        {% if debug %}
-            <script src="{% static 'ietf/js/list.js' %}"></script>
-        {% endif %}
+        {% block js %}{% endblock %}
     </body>
 </html>

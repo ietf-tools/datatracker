@@ -6,7 +6,7 @@
 
 {% load django_bootstrap5 %}
 
-{% block title %}Sign in{% endblock title %}
+{% block title %}Sign in{% endblock %}
 
 {% block content %}
     {% origin %}
@@ -23,4 +23,4 @@
             <a href="{% url 'ietf.ietfauth.views.password_reset' %}">Request a reset</a>.
         </div>
     </form>
-{% endblock content %}
+{% endblock %}
