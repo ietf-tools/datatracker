@@ -137,9 +137,10 @@ $(document)
                     var text = $(this)
                         .html()
                         .split("<")
-                        .shift();
+                        .shift()
+                        .trim();
 
-                    if (text === "") {
+                    if (text === undefined || text === "") {
                         // Nothing to do for empty headings.
                         return;
                     }

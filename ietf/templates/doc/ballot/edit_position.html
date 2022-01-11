@@ -11,9 +11,11 @@
         <br>
         <small class="text-muted">{{ doc }}</small>
     </h1>
-    <div class="alert alert-warning my-3">
-        <b>{{ ballot.ballot_type.question }}</b>
-    </div>
+    {% if ballot.ballot_type.question %}
+        <div class="alert alert-warning my-3">
+            <b>{{ ballot.ballot_type.question }}</b>
+        </div>
+    {% endif %}
     {% if ballot_deferred %}
         <p class="alert alert-info my-3">
             Ballot deferred by {{ ballot_deferred.by }} on {{ ballot_deferred.time|date:"Y-m-d" }}.

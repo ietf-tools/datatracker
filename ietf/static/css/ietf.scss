@@ -170,14 +170,6 @@ $timeline-even-hover-color: shift-color($timeline-even-color, $link-shade-percen
     border: 2 * $table-border-width solid #000;
 }
 
-.is-blocking {
-    box-shadow: 0 0 8px 8px #dc0d12;
-    padding: 3px 0px 3px 3px;
-    margin: 5px 1px 3px 0px;
-    border: 1px solid #dc0d12;
-}
-
-
 // See https://getbootstrap.com/docs/5.0/customize/color/#all-colors
 $color-discuss: $red-500;
 $color-yes: $green-500;
@@ -185,6 +177,11 @@ $color-noobj: $green-100;
 $color-abstain: $orange-400;
 $color-recuse: $purple-400;
 $color-norecord: $gray-300;
+
+.is-blocking {
+    box-shadow: 0 0 map.get($spacers, 2) map.get($spacers, 2) $color-discuss;
+    margin: map.get($spacers, 2);
+}
 
 .color-discuss {
     color: $color-discuss;
@@ -805,7 +802,7 @@ td.position-empty {
     align-items: baseline;
 }
 
-.edit-meeting-timeslots-and-misc-sessions .scheduling-panel .flowing-form .form-group {
+.edit-meeting-timeslots-and-misc-sessions .scheduling-panel .flowing-form .mb-3 {
     margin-right: 1em;
     margin-bottom: 0.5em;
 }

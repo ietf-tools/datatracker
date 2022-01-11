@@ -15,7 +15,7 @@
     {% if doc.rev != latest_rev %}
         <div class="alert alert-warning">The information below is for an old version of the document</div>
     {% endif %}
-    <table class="table table-sm table-borderless">
+    <table class="table table-sm table-borderless mb-3">
         <tbody class="meta border-top">
             <tr>
                 <th>Document</th>
@@ -117,11 +117,6 @@
             </tr>
         </tbody>
     </table>
-    <h2 class="mt-3">
-        Conflict review
-        <br>
-        <small class="text-muted">{{ conflictdoc.name }}-{{ conflictdoc.rev }}</small>
-    </h2>
     {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug != 'apprsent' %}
         <a class="btn btn-primary"
            href="{% url 'ietf.doc.views_conflict_review.submit' name=doc.name %}">
@@ -138,7 +133,16 @@
             {% endif %}
         {% endif %}
     {% endif %}
-    {% if doc.rev %}<pre>   {{ content|sanitize|maybewordwrap|safe }}</pre>{% endif %}
+    {% if doc.rev %}
+        <div class="card mt-5">
+            <div class="card-header">
+                {{ doc.name }}-{{ doc.rev }}
+            </div>
+            <div class="card-body">
+                <pre>   {{ content|sanitize|maybewordwrap|safe }}</pre>
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}
 {% block js %}
     <script src="{% static 'ietf/js/d3.js' %}">

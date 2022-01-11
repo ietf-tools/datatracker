@@ -2,7 +2,7 @@ $(document).ready(function () {
     var form = $("form.complete-review");
 
     var reviewedRev = form.find("[name=reviewed_rev]");
-    reviewedRev.closest(".form-group").find("a.rev").on("click", function (e) {
+    reviewedRev.closest(".mb-3").find("a.rev").on("click", function (e) {
         e.preventDefault();
         reviewedRev.val($(this).text());
     });
@@ -11,7 +11,7 @@ $(document).ready(function () {
     var mailArchiveSearchTemplate = form.find(".template .mail-archive-search").parent().html();
     var mailArchiveSearchResultTemplate = form.find(".template .mail-archive-search-result").parent().html();
 
-    form.find("[name=review_url]").closest(".form-group").before(mailArchiveSearchTemplate);
+    form.find("[name=review_url]").closest(".mb-3").before(mailArchiveSearchTemplate);
 
     var mailArchiveSearch = form.find(".mail-archive-search");
 
@@ -130,8 +130,8 @@ $(document).ready(function () {
             for (var i in shouldBeVisible[v]) {
                 var selector = shouldBeVisible[v][i];
                 var row = form.find(selector);
-                if (!row.is(".form-group"))
-                    row = row.closest(".form-group");
+                if (!row.is(".mb-3"))
+                    row = row.closest(".mb-3");
 
                 if ($.inArray(selector, shouldBeVisible[val]) != -1)
                     row.show();

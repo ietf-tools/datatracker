@@ -213,11 +213,6 @@
             {% endif %}
         {% endif %}
     </p>
-    <h2 class="my-3">
-        Charter
-        <br>
-        <small class="text-muted">{{ doc.canonical_name }}-{{ doc.rev }}</small>
-    </h2>
     {% if not snapshot and can_manage and chartering and group.state_id != "conclude" %}
         <p>
             <a class="btn btn-primary"
@@ -227,8 +222,15 @@
         </p>
     {% endif %}
     {% if doc.rev != "" %}
-        {# this content is already wrapped in 'pre' #}
-        {{ content|sanitize|maybewordwrap|safe }}
+        <div class="card mt-5">
+            <div class="card-header">
+                {{ doc.canonical_name }}-{{ doc.rev }}
+            </div>
+            <div class="card-body">
+                {# this content is already wrapped in 'pre' #}
+                {{ content|sanitize|maybewordwrap|safe }}
+            </div>
+        </div>
     {% endif %}
     {% if not snapshot and chartering %}
         <h2 class="my-3">

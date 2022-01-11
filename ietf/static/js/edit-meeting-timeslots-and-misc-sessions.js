@@ -112,26 +112,26 @@ jQuery(document).ready(function () {
 
         let hide = {};
 
-        form.find("[name=group],[name=short],[name=\"agenda_note\"]").prop('disabled', false).closest(".form-group").show();
+        form.find("[name=group],[name=short],[name=\"agenda_note\"]").prop('disabled', false).closest(".mb-3").show();
 
         if (this.value == "break") {
-            form.find("[name=short]").closest(".form-group").hide();
+            form.find("[name=short]").closest(".mb-3").hide();
         }
         else if (this.value == "plenary") {
             let group = form.find("[name=group]");
             group.val(group.data('ietf'));
         }
         else if (this.value == "regular") {
-            form.find("[name=short]").closest(".form-group").hide();
+            form.find("[name=short]").closest(".mb-3").hide();
         }
 
         if (this.value != "regular")
-            form.find("[name=\"agenda_note\"]").closest(".form-group").hide();
+            form.find("[name=\"agenda_note\"]").closest(".mb-3").hide();
 
         if (['break', 'reg', 'reserved', 'unavail', 'regular'].indexOf(this.value) != -1) {
             let group = form.find("[name=group]");
             group.prop('disabled', true);
-            group.closest(".form-group").hide();
+            group.closest(".mb-3").hide();
         }
     });
 

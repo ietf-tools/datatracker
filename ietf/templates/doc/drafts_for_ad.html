@@ -1,14 +1,13 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin static %}
 {% load ietf_filters %}
-
+{% load person_filters %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-
 {% block title %}Documents for {{ ad_name }}{% endblock %}
-
 {% block content %}
     {% origin %}
     {% if blocked_docs %}
@@ -22,22 +21,33 @@
                     <th data-sort="discusses">Discusses</th>
                 </tr>
             </thead>
-
             <tbody>
                 {% for doc in blocked_docs %}
                     <tr>
                         <td>{{ doc.displayname_with_link }}</td>
                         {% include "doc/search/status_columns.html" %}
-                        <td>{{ doc.ad|default:"" }}</td>
+                        <td>
+                            {% if doc.ad %}
+                                {% person_link doc.ad %}
+                            {% else %}
+                                <span class="text-muted">(None)</span>
+                            {% endif %}
+                        </td>
                         <td>
                             {% for p in doc.blocking_positions %}
-                                {{ p.balloter }}
-                                ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }}{% endif %}
-                                days ago{% if doc.get_state_url != "rfc" and p.rev != doc.rev %}
-                                    for -{{ p.rev }}{% endif %})<br>
-                                {% if p.is_old_pos %}
-                                    </span>
-                                {% endif %}
+                                <span {% if p.is_old_pos %}class="text-muted"{% endif %}>
+                                    {% if p.is_old_pos %}
+                                        {% person_link p.balloter class="text-reset" %}
+                                    {% else %}
+                                        {% person_link p.balloter %}
+                                    {% endif %}
+                                    (
+                                    {% if p.discuss_time %}{{ p.discuss_time|timesince_days }}{% endif %}
+                                    days ago
+                                    {% if doc.get_state_url != "rfc" and p.rev != doc.rev %}for -{{ p.rev }}{% endif %}
+                                    )
+                                    <br>
+                                </span>
                             {% endfor %}
                         </td>
                     </tr>
@@ -45,15 +55,9 @@
             </tbody>
         </table>
     {% endif %}
-
-    <h1>Documents for {{ ad_name }}</h1>
+    <h1 class="mt-3">Documents for {{ ad_name }}</h1>
     {% include "doc/search/search_results.html" with start_table=True end_table=True %}
 {% endblock %}
-
-{% block morecss %}
-    .is-blocking {box-shadow: 0 0 0 0 #000000;}
-{% endblock %}
-
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

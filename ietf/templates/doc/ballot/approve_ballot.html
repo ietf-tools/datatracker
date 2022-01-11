@@ -13,7 +13,7 @@
     </h1>
     <form method="post">
         {% csrf_token %}
-        <pre class="border p-3">{{ announcement }}</pre>
+        <pre class="border p-3 mb-3">{{ announcement }}</pre>
         {% if action == "to_announcement_list" %}
             <button class="btn btn-primary" type="submit">Notify RFC Editor, send announcement & close ballot</button>
         {% elif action == "to_rfc_editor" %}

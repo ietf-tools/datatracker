@@ -278,7 +278,7 @@ class SearchTests(TestCase):
         r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_last_call'))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-        self.assertContains(r, escape(draft.action_holders.first().plain_name()))
+        self.assertContains(r, escape(draft.action_holders.first().name))
 
     def test_in_iesg_process(self):
         doc_in_process = IndividualDraftFactory()
@@ -350,7 +350,7 @@ class SearchTests(TestCase):
         self.assertEqual(q('td.status span.badge.bg-warning').text(),"for 15 days")
         self.assertEqual(q('td.status span.badge.bg-danger').text(),"for 29 days")
         for ah in [draft.action_holders.first() for draft in drafts]:
-            self.assertContains(r, escape(ah.plain_name()))
+            self.assertContains(r, escape(ah.name))
 
 class DocDraftTestCase(TestCase):
     draft_text = """
@@ -1278,7 +1278,7 @@ Man                    Expires September 22, 2015               [Page 3]
         q = PyQuery(r.content)
         self.assertEqual(len(self._pyquery_select_action_holder_string(q, '(None)')), 0)
         for person in draft.action_holders.all():
-            self.assertEqual(len(self._pyquery_select_action_holder_string(q, person.plain_name())), 1)
+            self.assertEqual(len(self._pyquery_select_action_holder_string(q, person.name)), 1)
         # check that one action holder was marked as old
         self.assertEqual(len(self._pyquery_select_action_holder_string(q, 'for 30 days')), 1)
 
@@ -2431,7 +2431,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertTrue(q('#materials-content > pre'))
+        self.assertTrue(q('#materials-content pre'))
 
         url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=self.doc.name,rev='01'))
         r = self.client.get(url)

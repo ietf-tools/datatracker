@@ -136,7 +136,7 @@
             {{ draft_formset.management_form }}
 
             {% for draft_form in draft_formset %}
-                <div class="form-group row draft-row {% if forloop.last %}template visually-hidden{% endif %}">
+                <div class="mb-3 row draft-row {% if forloop.last %}template visually-hidden{% endif %}">
 
                     <label class="col-md-2 fw-bold" for="{{ draft_form.document.id_for_label }}">
                         {{ draft_form.document.label }}
@@ -161,7 +161,7 @@
 
             {% comment %}
             {% for draft_form in draft_formset %}
-                <div class="form-group row draft-row {% if forloop.last %}template{% endif %}">
+                <div class="mb-3 row draft-row {% if forloop.last %}template{% endif %}">
                     <div class="col-md-2 fw-bold">
                         {% bootstrap_label draft_form.document.label %}
                     </div>
@@ -178,7 +178,7 @@
             {% endfor %}
             {% endcomment %}
 
-            <div class="form-group mb-3">
+            <div class="mb-3 mb-3">
                 <label class="col-md-2 col-form-label"></label>
                 <div class="col-md-10"><a class="draft-add-row btn btn-primary"><span class="bi bi-plus" aria-hidden="true"></span> Add more</a></div>
             </div>

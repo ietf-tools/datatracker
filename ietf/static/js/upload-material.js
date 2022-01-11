@@ -4,7 +4,7 @@
         'use strict';
 
         /**
-         * Hide the inactive input form-group
+         * Hide the inactive input mb-3
          * @param form form to process
          */
         function showUrlOrFile(form) {

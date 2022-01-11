@@ -65,7 +65,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, group.parent.name)
         self.assertContains(r, group.acronym)
         self.assertContains(r, group.name)
-        self.assertContains(r, escape(group.ad_role().person.plain_name()))
+        self.assertContains(r, escape(group.ad_role().person.name))
 
         for t in ('rg','area','ag', 'rag', 'dir','review','team','program','iabasg','adm'):
             g = GroupFactory.create(type_id=t,state_id='active') 
@@ -348,7 +348,7 @@ class GroupPagesTests(TestCase):
             self.assertEqual(r.status_code, 200)
 
             for role in group.role_set.all():
-                self.assertContains(r, escape(role.person.plain_name()))
+                self.assertContains(r, escape(role.person.name))
 
     def test_materials(self):
         group = GroupFactory(type_id="team", acronym="testteam", name="Test Team", state_id="active")

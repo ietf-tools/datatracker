@@ -16,7 +16,7 @@ $(document).ready(function() {
 
     // make enter presses submit through the nearby button
     $("form.ipr-search input,select").keyup(function (e) {
-        var submitButton = $(this).closest(".form-group").find('button[type=submit]');
+        var submitButton = $(this).closest(".mb-3").find('button[type=submit]');
         if (e.which == 13 && submitButton.length > 0) {
             submitButton.click();
             return false;

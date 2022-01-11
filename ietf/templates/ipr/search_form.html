@@ -9,7 +9,7 @@
         <div class="col-md-12">
             <h2>State Filter</h2>
 
-            <div class="form-group">
+            <div class="mb-3">
                 {% bootstrap_label form.state.label label_for=form.state.id_for_label label_class="col-form-label" %}
 
                 {% render_field form.state %}
@@ -20,7 +20,7 @@
     <div class="col-md-6">
         <h2>Document search</h2>
 
-        <div class="form-group">
+        <div class="mb-3">
             {% bootstrap_label form.draft.label label_for=form.draft.id_for_label label_class="col-form-label" %}
             <div class="input-group">
                 {% render_field form.draft class="form-control" placeholder="draft-..." %}
@@ -30,7 +30,7 @@
             </div>
         </div>
 
-        <div class="form-group">
+        <div class="mb-3">
             {% bootstrap_label form.rfc.label label_for=form.rfc.id_for_label label_class="col-form-label" %}
             <div class="input-group">
                 {% render_field form.rfc class="form-control" placeholder="123..." %}
@@ -40,7 +40,7 @@
             </div>
         </div>
 
-        <div class="form-group">
+        <div class="mb-3">
             {{ form.doctitle.label_tag }}
             <div class="input-group">
                 {% render_field form.doctitle class="form-control" placeholder="protocol..." %}
@@ -50,7 +50,7 @@
             </div>
         </div>
 
-        <div class="form-group">
+        <div class="mb-3">
             {{ form.group.label_tag }}
             <div class="row">
                 <div class="col-sm-8">
@@ -67,7 +67,7 @@
 
         <h2>IPR search</h2>
 
-        <div class="form-group">
+        <div class="mb-3">
             {{ form.holder.label_tag }}
             <div class="input-group">
                 {% render_field form.holder class="form-control" placeholder="John Doe..." %}
@@ -77,7 +77,7 @@
             </div>
         </div>
 
-        <div class="form-group">
+        <div class="mb-3">
             {{ form.iprtitle.label_tag }}
             <div class="input-group">
                 {% render_field form.iprtitle class="form-control" placeholder="protocol..." %}
@@ -87,7 +87,7 @@
             </div>
         </div>
 
-        <div class="form-group">
+        <div class="mb-3">
             {{ form.patent.label_tag }}
             <div class="input-group">
                 {% render_field form.patent class="form-control" %}

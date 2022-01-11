@@ -4,7 +4,7 @@ var attachmentWidget = {
     count: 0,
 
     readConfig: function () {
-        var buttonFormGroup = attachmentWidget.button.parents('.form-group');
+        var buttonFormGroup = attachmentWidget.button.parents('.mb-3');
         var disabledLabel = buttonFormGroup.find('.attachDisabledLabel');
 
         if (disabledLabel.length) {
@@ -57,7 +57,7 @@ var attachmentWidget = {
         attachmentWidget.config.fields.each(function () {
             var field = $(this);
             var container = $(this)
-                .parents('.form-group');
+                .parents('.mb-3');
             if (container.find(':file')
                 .length) {
                 html += ' (' + field.val() + ')';
@@ -109,7 +109,7 @@ var attachmentWidget = {
         attachmentWidget.config.basefields.each(function () {
             var field = $(this);
             var oldcontainer = $(this)
-                .parents('.form-group');
+                .parents('.mb-3');
             var newcontainer = oldcontainer.clone();
             var newfield = newcontainer.find('#' + field.attr('id'));
             newfield.attr('name', newfield.attr('name') + '_' + attachmentWidget.count);
@@ -248,7 +248,7 @@ var liaisonForm = {
     },
 
     updatePurpose: function () {
-        var deadlinecontainer = liaisonForm.deadline.closest('.form-group');
+        var deadlinecontainer = liaisonForm.deadline.closest('.mb-3');
         var value = liaisonForm.purpose.val();
 
         if (value == 'action' || value == 'comment') {

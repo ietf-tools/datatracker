@@ -11,7 +11,7 @@
     <p>This tool will merge two Person records into one.  If both records have logins and you want to retain the one on the left, use the Swap button to swap source and target records.</p>
     <form action="" method="{{ method }}">{% if method == 'post' %}{% csrf_token %}{% endif %}
         <div class="row">
-            <div class="form-group">
+            <div class="mb-3">
                 <div class="col-md-6">
                     {% bootstrap_field form.source %}
                     {% if source %}

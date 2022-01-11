@@ -12,12 +12,7 @@
           title="Document changes"
           href="/feed/document-changes/{{ name }}/">
     <meta name="description"
-          content="{{ doc.title }} {% if doc.get_state_slug == "rfc" and not snapshot %}(RFC {{ rfc_number }}{% if published %}, {{ published.time|date:"F Y" }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:"
-          {% endif %}
-          {% else %}
-          Internet-Draft
-          {{ doc.time|date:"Y" }}
-          {% endif %}>
+          content="{{ doc.title }} {% if doc.get_state_slug == 'rfc' and not snapshot %}(RFC {{ rfc_number }}{% if published %}, {{ published.time|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:', ' }}{% endif %}){% else %}(Internet-Draft, {{ doc.time|date:'Y' }}){% endif %}">
 {% endblock %}
 {% block morecss %}.inline { display: inline; }{% endblock %}
 {% block title %}
@@ -104,12 +99,6 @@
                         {% person_link author %}
                         {% if not forloop.last %},{% endif %}
                     {% endfor %}
-                    {% comment %}
-                              {# Alternative implementation that uses the submission email (which might have turned invalid #}
-          {% for author in doc.documentauthor_set.all %}
-             {% email_person_link author.email %}{% if not forloop.last %},{% endif %}
-          {% endfor %}
-          {% endcomment %}
                 </td>
             </tr>
             <tr>
@@ -133,7 +122,13 @@
                                href="{% url 'ietf.doc.views_draft.replaces' name=doc.name %}">Edit</a>
                         {% endif %}
                     </td>
-                    <td>{{ replaces|urlize_related_target_list|join:", "|default:"(None)" }}</td>
+                    <td>
+                        {% if replaces %}
+                            {{ replaces|urlize_related_target_list|join:", " }}
+                        {% else %}
+                            <span class="text-muted">(None)</span>
+                        {% endif %}
+                    </td>
                 </tr>
             {% endif %}
             {% if replaced_by %}
@@ -203,8 +198,7 @@
                         </a>
                     {% endif %}
                 </td>
-                <td>
-                    {# {{ doc.stream|default:"(None)" }} #}
+                <td {% if stream_desc == "(None)" %}class="text-muted"{%endif%} >
                     {{ stream_desc }}
                 </td>
             </tr>
@@ -224,7 +218,13 @@
                         {% endif %}
                     </td>
                     <td>
-                        {{ doc.intended_std_level|default:"(None)" }}
+                        {% if doc.intended_std_level %}
+                            {{ doc.intended_std_level }}
+                        {% else %}
+                            <span class="text-muted">
+                                (None)
+                            </span>
+                        {% endif %}
                     </td>
                 </tr>
             {% endif %}
@@ -281,7 +281,9 @@
                                     {{ check.symbol|safe }}
                                 </span>
                             {% endif %}
-                            <a href="#" data-bs-toggle="modal" data-bs-target="#check-{{ check.pk }}">
+                            <a href="#"
+                               data-bs-toggle="modal"
+                               data-bs-target="#check-{{ check.pk }}">
                                 {{ check.errors }} errors, {{ check.warnings }} warnings.
                             </a>
                             {% include "doc/yang-check-modal-overlay.html" %}
@@ -310,24 +312,24 @@
                             will not review this version
                         {% endif %}
                         {% if can_request_review %}
-                            <div>
+                            <div class="mt-3">
                                 <a class="btn btn-primary btn-sm"
                                    href="{% url "ietf.doc.views_review.request_review" doc.name %}">
-                                    <span class="bi bi-check-circle-o">
+                                    <span class="bi bi-check-circle">
                                     </span>
                                     Request review
                                 </a>
                                 {% if can_submit_unsolicited_review_for_teams|length == 1 %}
                                     <a class="btn btn-primary btn-sm"
                                        href="{% url "ietf.doc.views_review.complete_review" doc.name can_submit_unsolicited_review_for_teams.0.acronym %}">
-                                        <span class="bi bi-pencil-square-o">
+                                        <span class="bi bi-pencil-square">
                                         </span>
                                         Submit unsolicited review
                                     </a>
                                 {% elif can_submit_unsolicited_review_for_teams %}
                                     <a class="btn btn-primary btn-sm"
                                        href="{% url "ietf.doc.views_review.submit_unsolicited_review_choose_team" doc.name %}">
-                                        <span class="bi bi-pencil-square-o">
+                                        <span class="bi bi-pencil-square">
                                         </span>
                                         Submit unsolicited review
                                     </a>
@@ -424,7 +426,13 @@
                         {% endif %}
                     </td>
                     <td>
-                        {{ stream_state|default:"(None)" }}
+                        {% if stream_state %}
+                            {{ stream_state }}
+                        {% else %}
+                            <span class="text-muted">
+                                (None)
+                            </span>
+                        {% endif %}
                         {% if milestones %}
                             (
                             <span class="milestone">
@@ -466,7 +474,7 @@
                     <th>
                     </th>
                     <th>
-                        Consensus Boilerplate
+                        Consensus boilerplate
                     </th>
                     <td class="edit">
                         {% if can_edit_stream_info and not snapshot %}
@@ -477,7 +485,8 @@
                         {% endif %}
                     </td>
                     <td>
-                        <span title="Whether the document is the result of a community consensus process as defined in RFC 5741">
+                        <span class="{% if consensus != "Yes" %}text-danger{% else %}text-success{% endif %}"
+                              title="Whether the document is the result of a community consensus process as defined in RFC 5741">
                             {{ consensus }}
                         </span>
                     </td>
@@ -509,7 +518,9 @@
                                 {% if not forloop.last %},{% endif %}
                             {% endfor %}
                         {% else %}
-                            None
+                            <span class="text-muted">
+                                (None)
+                            </span>
                         {% endif %}
                     </td>
                 </tr>
@@ -538,7 +549,9 @@
                         {% if doc.shepherd %}
                             {% person_link doc.shepherd.person %}
                         {% else %}
-                            No shepherd assigned
+                            <span class="text-muted">
+                                    (None)
+                                </span>
                         {% endif %}
                     </td>
                 </tr>
@@ -565,9 +578,11 @@
                                    href="{% url 'ietf.doc.views_doc.document_shepherd_writeup' name=doc.name %}">
                                     Show
                                 </a>
-                                (last changed {{ shepherd_writeup.time|date:"Y-m-d" }})
+                                <small class="text-muted">(last changed {{ shepherd_writeup.time|date:"Y-m-d" }})</small>
                             {% else %}
-                                (None)
+                                <span class="text-muted">
+                                    (None)
+                                </span>
                             {% endif %}
                         </td>
                     </tr>
@@ -591,7 +606,9 @@
                         {% if doc.has_rfc_editor_note %}
                             (last changed {{ doc.has_rfc_editor_note|date:"Y-m-d" }})
                         {% else %}
-                            (None)
+                            <span class="text-muted">
+                                (None)
+                            </span>
                         {% endif %}
                     </td>
                 </tr>
@@ -653,7 +670,7 @@
                                         </div>
                                     {% endfor %}
                                     {% if can_edit %}
-                                        <a class="btn btn-primary btn-sm"
+                                        <a class="btn btn-primary btn-sm mt-3"
                                            href="{% url "ietf.doc.views_doc.remind_action_holders" name=doc.name %}">
                                             <span class="bi bi-envelope">
                                             </span>
@@ -661,7 +678,9 @@
                                         </a>
                                     {% endif %}
                                 {% else %}
-                                    (None)
+                                    <span class="text-muted">
+                                        (None)
+                                    </span>
                                 {% endif %}
                             </div>
                         </td>
@@ -708,7 +727,11 @@
                                 On agenda of {{ telechat.telechat_date }} IESG telechat
                                 {% if telechat.returning_item %}(returning item){% endif %}
                             {% else %}
-                                {% if can_edit %}(None){% endif %}
+                                {% if can_edit %}
+                                    <span class="text-muted">
+                                        (None)
+                                    </span>
+                                {% endif %}
                             {% endif %}
                             {% if iesg_ballot_summary %}
                                 <br>
@@ -731,7 +754,13 @@
                             {% endif %}
                         </td>
                         <td>
-                            {{ doc.ad|default:"(None)" }}
+                            {% if doc.ad %}
+                                {% person_link doc.ad %}
+                            {% else %}
+                                <span class="text-muted">
+                                    (None)
+                                </span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% if iesg_state.slug != 'idexists' %}
@@ -751,7 +780,13 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {{ doc.note|default:"(None)"|linebreaksbr }}
+                                    {% if doc.note %}
+                                        {{ doc.note|linebreaksbr }}
+                                    {% else %}
+                                        <span class="text-muted">
+                                            (None)
+                                        </span>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endif %}
@@ -771,7 +806,13 @@
                             {% endif %}
                         </td>
                         <td>
-                            {{ doc.notify|linkify|default:"(None)" }}
+                            {% if doc.notify %}
+                                {{ doc.notify|linkify }}
+                            {% else %}
+                                <span class="text-muted">
+                                    (None)
+                                </span>
+                            {% endif %}
                         </td>
                     </tr>
                 </tbody>
@@ -796,8 +837,14 @@
                                     </a>
                                 {% endif %}
                             </td>
-                            <td class="{% if iana_review_state|truncatechars:7 != "IANA O…" %}text-danger{% else %}text-success{% endif %}">
-                                {{ iana_review_state }}
+                            <td class="{% if iana_review_state|slugify|slice:7 != "iana-ok" %}text-danger{% else %}text-success{% endif %}">
+                                {% if not iana_review_state %}
+                                    <span class="text-muted">
+                                        (None)
+                                    </span>
+                                {% else %}
+                                    {{ iana_review_state }}
+                                {% endif %}
                             </td>
                         </tr>
                     {% endif %}
@@ -820,7 +867,13 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {{ iana_action_state }}
+                                {% if not iana_action_state %}
+                                    <span class="text-muted">
+                                        (None)
+                                    </span>
+                                {% else %}
+                                    {{ iana_action_state }}
+                                {% endif %}
                             </td>
                         </tr>
                     {% endif %}
@@ -842,8 +895,14 @@
                                     </a>
                                 {% endif %}
                             </td>
-                            <td>
-                                {{ iana_experts_state }}
+                            <td class="{% if iana_experts_state|slugify|slice:"-2:" != "ok" %}text-danger{% else %}text-success{% endif %}">
+                                {% if not iana_experts_state %}
+                                    <span class="text-muted">
+                                        (None)
+                                    </span>
+                                {% else %}
+                                    {{ iana_experts_state }}
+                                {% endif %}
                             </td>
                         </tr>
                     {% endif %}
@@ -866,7 +925,13 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {{ iana_experts_comment }}
+                                {% if not iana_experts_comment %}
+                                    <span class="text-muted">
+                                        (None)
+                                    </span>
+                                {% else %}
+                                    {{ iana_experts_comment }}
+                                {% endif %}
                             </td>
                         </tr>
                     {% endif %}
@@ -1034,7 +1099,7 @@
                 <a class="btn btn-primary btn-sm review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %}{% if doc.has_review_wish %}hide{% endif %}"
                    href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
                    title="Add to your review wishes">
-                    <span class="bi bi-chats-o">
+                    <span class="bi bi-chats">
                     </span>
                     Add review wish
                 </a>
@@ -1062,21 +1127,30 @@
             {% endif %}
         </div>
         {% if doc.get_state_slug == "active" or doc.get_state_slug == "rfc" %}
-            {{ content|safe }}
+            <div class="card mt-5">
+                <div class="card-header">
+                    {% if doc.get_state_slug == "rfc" and not snapshot %}
+                        RFC {{ rfc_number }}
+                    {% else %}
+                        {{ name }}-{{ doc.rev }}
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {{ content|sanitize|safe }}
+                </div>
+            </div>
             {% if split_content %}
-                <a class="btn btn-primary btn-block" href="?include_text=1">
+                <a class="btn btn-primary my-3" href="?include_text=1">
                     <span class="bi bi-caret-down">
                     </span>
                     Show full document text
                 </a>
             {% endif %}
         {% else %}
-            <p>
-            </p>
-            <div class="card border-warning">
+            <div class="card border-warning mt-5">
                 <div class="card-header bg-warning">
-                    This Internet-Draft is no longer active. A copy of
-                    the expired Internet-Draft can be found at
+                    <b>This Internet-Draft is no longer active. A copy of
+                    the expired Internet-Draft can be found at:</b>
                     <br />
                     <a href="{{ doc.get_href }}">
                         {{ doc.get_href }}
@@ -1094,20 +1168,11 @@
                     </h5>
                     <p class="card-text">
                         {% for author in doc.documentauthor_set.all %}
-                            {% if author.email %}
-                                <span class="bi bi-envelope">
-                                </span>
-                                <a href="mailto:{{ author.email.address }}">
-                                {% endif %}
-                                {{ author.person }}
-                                {% if author.email %}
-                                    ({{ author.email.address }})
-                                </a>
-                            {% endif %}
+                            {% person_link author.person %}
                             {% if not forloop.last %}<br>{% endif %}
                         {% endfor %}
                     </p>
-                    <p class="card-text">
+                    <p class="text-muted card-text">
                         (Note: The e-mail addresses provided for the authors of this Internet-Draft may no longer be valid.)
                     </p>
                 </div>
