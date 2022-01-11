@@ -104,7 +104,7 @@
 
             <tr>
                 <th></th>
-                <th>Shepherding AD</th>
+                <th>Responsible AD</th>
                 <td class="edit">
                     {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
                         <a class="btn btn-primary btn-sm float-end" href="{% url 'ietf.doc.views_status_change.edit_ad' name=doc.name %}">Edit</a>

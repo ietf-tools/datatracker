@@ -21,7 +21,7 @@
 
             {% regroup sessions by group.parent as area_sessions %}
             {% for area in area_sessions %}
-                <h2 class="anchor-target" id="{{area.grouper.acronym}}">
+                <h2 id="{{area.grouper.acronym}}">
                     {{area.grouper.acronym|upper}} <small>{{area.grouper.name}}</small>
                 </h2>
                 <p class="alert alert-info">

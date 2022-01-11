@@ -14,11 +14,11 @@
     {% include "iesg/nav.html" with active="agenda" %}
     {% for num, section in sections %}
         {% if num|sectionlevel == 1 %}
-            <h2 class="anchor-target" id="sec-{{ num|slugify }}">{{ num }}. {{ section.title|safe }}</h2>
+            <h2 id="sec-{{ num|slugify }}">{{ num }}. {{ section.title|safe }}</h2>
         {% elif num|sectionlevel == 2 %}
-            <h3 class="anchor-target" id="sec-{{ num|slugify }}">{{ num }} {{ section.title|safe }}</h3>
+            <h3 id="sec-{{ num|slugify }}">{{ num }} {{ section.title|safe }}</h3>
         {% elif num|sectionlevel == 3 %}
-            <h4 class="anchor-target" id="sec-{{ num|slugify }}">{{ num }} {{ section.title|safe }}</h4>
+            <h4 id="sec-{{ num|slugify }}">{{ num }} {{ section.title|safe }}</h4>
         {% endif %}
         {% if num == "1.4" %}<pre>{{ section.text }}</pre>{% endif %}
         {% if num >= "2" and num < "5" %}

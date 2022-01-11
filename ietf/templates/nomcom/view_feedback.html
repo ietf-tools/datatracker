@@ -23,11 +23,11 @@
             <div class="card ">
                 <div class="card-header">
                     {% if staterank.grouper == 0 %}
-                        <h6 class="anchor-target" id="accepted">Accepted nomination for at least one position</h6>
+                        <h6 id="accepted">Accepted nomination for at least one position</h6>
                     {% elif staterank.grouper == 1 %}
-                        <h6 class="anchor-target" id="pending">Pending for at least one position and has not accepted any nomination</h6>
+                        <h6 id="pending">Pending for at least one position and has not accepted any nomination</h6>
                     {% else %}
-                        <h6 class="anchor-target" id="declined">Declined each nominated position</h6>
+                        <h6 id="declined">Declined each nominated position</h6>
                     {% endif %}
                 </div>
                 <div class="card-body">
@@ -68,7 +68,7 @@
             </div>
         {% endfor %}
 
-        <h2 class="anchor-target" id="topics">Feedback related to topics</h2>
+        <h2 id="topics">Feedback related to topics</h2>
 
         <div class="card ">
             <div class="card-body">
@@ -101,7 +101,7 @@
         </div>
 
         {% if independent_feedback_types %}
-            <h2 class="anchor-target" id="misc">Feedback not related to Nominees</h2>
+            <h2 id="misc">Feedback not related to Nominees</h2>
 
             <table class="table table-sm table-striped">
                 <thead>

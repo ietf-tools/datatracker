@@ -1531,7 +1531,7 @@ class DocTestCase(TestCase):
         doc.save_with_history([e])
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r,  '(%s for -%s)' % (pos.comment_time.strftime('%Y-%m-%d'), oldrev))
+        self.assertRegex(r.content.decode(), r'\(\s*%s\s+for\s+-%s\s*\)' % (pos.comment_time.strftime('%Y-%m-%d'), oldrev))
 
         # Now simulate a new ballot against the new revision and make sure the "was" position is included
         pos2 = BallotPositionDocEvent.objects.create(
@@ -1579,7 +1579,7 @@ class DocTestCase(TestCase):
             href = q(f'div.balloter-name a[href$="{author_slug}"]').attr('href')
             ids = [
                 target.attr('id')
-                for target in q(f'h4.anchor-target[id$="{author_slug}"]').items()
+                for target in q(f'h5[id$="{author_slug}"]').items()
             ]
             self.assertEqual(len(ids), 1, 'Should be exactly one link for the balloter')
             self.assertEqual(href, f'#{ids[0]}', 'Anchor href should match ID')

@@ -49,7 +49,7 @@
     <div class="row">
         <div class="col-md-12">
             {% for floor in floors %}
-                <div class="anchor-target" id="{{floor.name|xslugify}}"></div>
+                <div id="{{floor.name|xslugify}}"></div>
                 <h3>{{ floor.name }}</h3>
                 <div class="floor-plan">
                     {% if floor.image %}

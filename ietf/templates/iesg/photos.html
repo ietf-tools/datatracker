@@ -11,7 +11,7 @@
     {% include "iesg/nav.html" with active="photos" %}
     {% regroup roles by group.acronym as alphabet_blocks %}
     {% for letter in alphabet_blocks %}
-        <div class="anchor-target mb-3">
+        <div class="mb-3">
             <h2 class="mt-5">
                 <a href="{% url 'ietf.group.views.group_home' acronym=letter.grouper %}">{{ letter.list.0.group.name }}</a>
             </h2>

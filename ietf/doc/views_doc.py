@@ -867,7 +867,6 @@ def document_history(request, name):
                 person__user=request.user)))
     else:
         can_add_comment = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair"))
-
     return render(request, "doc/document_history.html",
                               dict(doc=doc,
                                    top=top,

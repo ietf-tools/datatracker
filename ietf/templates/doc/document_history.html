@@ -1,51 +1,58 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load ietf_filters %}
 {% load static %}
-
-{% block title %}History for {{ doc.name }}{% if doc.rev %}-{{ doc.rev }}{% endif %}{% endblock %}
-
+{% block title %}
+    History for {{ doc.name }}
+    {% if doc.rev %}-{{ doc.rev }}{% endif %}
+{% endblock %}
 {% block pagehead %}
-    <link rel="alternate" type="application/atom+xml" href="/feed/document-changes/{{ doc.name }}/" />
+    <link rel="alternate"
+          type="application/atom+xml"
+          href="/feed/document-changes/{{ doc.name }}/"/>
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-
 {% block content %}
     {% origin %}
     {{ top|safe }}
-
     {% if diff_revisions and diff_revisions|length > 1 or doc.name|rfcbis %}
-        <h2>Revision differences</h2>
-
-        <form class="form-horizontal diff-form" action="{{rfcdiff_base_url}}" method="get" target="_blank">
-
+        <h2 class="my-3">Revision differences</h2>
+        <form class="form-horizontal diff-form"
+              action="{{ rfcdiff_base_url }}"
+              method="get"
+              target="_blank">
             <div class="row mb-3">
-                <label for="url1" class="col-form-label col-sm-2">From revision</label>
+                <label for="url1" class="col-form-label col-sm-2 fw-bold">From revision</label>
                 <div class="col-sm-10">
-                    <select class="form-control" id="url1" name="url1">
+                    <select class="form-select" id="url1" name="url1">
                         {% for name, rev, time, url in diff_revisions %}
-                            <option value="{{ url }}" {% if diff_revisions|length > 1 and forloop.counter == 2 %} selected="selected" {% endif %}>
-                                {{ name }}{% if rev %}-{{ rev }}{% endif %}
+                            <option value="{{ url }}"
+                                    {% if diff_revisions|length > 1 and forloop.counter == 2 %} selected="selected"{% endif %}>
+                                {{ name }}
+                                {% if rev %}-{{ rev }}{% endif %}
                                 ({{ time|date:"Y-m-d" }})
                             </option>
                         {% endfor %}
                         {% if doc.name|rfcbis %}
-                            <option value="{{ doc.name|rfcbis }}"{% if diff_revisions and diff_revisions|length == 1 %} selected="selected"{% endif %}>
+                            <option value="{{ doc.name|rfcbis }}"
+                                    {% if diff_revisions and diff_revisions|length == 1 %} selected="selected"{% endif %}>
                                 {{ doc.name|rfcbis }}
                             </option>
                         {% endif %}
                     </select>
                 </div>
             </div>
-
             <div class="row mb-3">
-                <label for="url2" class="col-form-label col-sm-2">To revision</label>
+                <label for="url2" class="col-form-label col-sm-2 fw-bold">To revision</label>
                 <div class="col-sm-10">
-                    <select class="form-control" id="url2" name="url2">
+                    <select class="form-select" id="url2" name="url2">
                         {% for name, rev, time, url in diff_revisions %}
-                            <option value="{{ url }}" {% if forloop.counter == 1 %} selected="selected" {% endif %}>
-                                {{ name }}{% if rev %}-{{ rev }}{% endif %}
+                            <option value="{{ url }}"
+                                    {% if forloop.counter == 1 %} selected="selected"{% endif %}>
+                                {{ name }}
+                                {% if rev %}-{{ rev }}{% endif %}
                                 ({{ time|date:"Y-m-d" }})
                             </option>
                         {% endfor %}
@@ -57,34 +64,51 @@
                     </select>
                 </div>
             </div>
-
             <div class="row mb-3">
-                <label class="col-form-label col-sm-2">Diff format</label>
+                <label class="col-form-label col-sm-2 fw-bold">Diff format</label>
                 <div class="col-sm-10">
                     <div class="btn-group" data-bs-toggle="buttons">
-                        <input type="radio" class="btn-check" checked name="difftype" value="--html" id="html">
+                        <input type="radio"
+                               class="btn-check"
+                               checked
+                               name="difftype"
+                               value="--html"
+                               id="html">
                         <label for="html"class="btn btn-outline-primary">Side-by-side</label>
-                        <input type="radio" class="btn-check" name="difftype" value="--abdiff" id="abdiff">
+                        <input type="radio"
+                               class="btn-check"
+                               name="difftype"
+                               value="--abdiff"
+                               id="abdiff">
                         <label for="abdiff"class="btn btn-outline-primary">Before-after</label>
-                        <input type="radio" class="btn-check" name="difftype" value="--chbars" id="chbars">
+                        <input type="radio"
+                               class="btn-check"
+                               name="difftype"
+                               value="--chbars"
+                               id="chbars">
                         <label for="chbars"class="btn btn-outline-primary">Change bars</label>
-                        <input type="radio" class="btn-check" name="difftype" value="--hwdiff" id="hwdiff">
+                        <input type="radio"
+                               class="btn-check"
+                               name="difftype"
+                               value="--hwdiff"
+                               id="hwdiff">
                         <label for="hwdiff"class="btn btn-outline-primary">Wdiff</label>
                     </div>
                 </div>
             </div>
-
-                <button type="submit" class="btn btn-primary mb-3">Submit</button>
+            <button type="submit" class="btn btn-primary mb-3">Submit</button>
         </form>
     {% endif %}
-
-    <h2>Document history</h2>
+    <h2 class="my-3">Document history</h2>
     {% if can_add_comment %}
         <div class="buttonlist">
-            <a class="btn btn-primary" href="{% url 'ietf.doc.views_doc.add_comment' name=doc.name %}"><span class="bi bi-plus"></span> Add comment</a>
+            <a class="btn btn-primary"
+               href="{% url 'ietf.doc.views_doc.add_comment' name=doc.name %}">
+                <span class="bi bi-plus"></span>
+                Add comment
+            </a>
         </div>
     {% endif %}
-
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
@@ -94,11 +118,12 @@
                 <th data-sort="action">Action</th>
             </tr>
         </thead>
-
         <tbody>
             {% for e in events %}
-                <tr class="anchor-target" id="history-{{ e.pk }}">
-                    <td class="text-nowrap"><div title="{{ e.time|date:'Y-m-d H:i:s O' }}">{{ e.time|date:"Y-m-d" }}</div></td>
+                <tr id="history-{{ e.pk }}">
+                    <td class="text-nowrap">
+                        <div title="{{ e.time|date:'Y-m-d H:i:s O' }}">{{ e.time|date:"Y-m-d" }}</div>
+                    </td>
                     <td class="text-end">{{ e.rev }}</td>
                     <td>{{ e.by|escape }}</td>
                     <td>{{ e.desc|format_history_text|safe }}</td>
@@ -107,7 +132,11 @@
         </tbody>
     </table>
 {% endblock %}
-
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
+    <script>
+        $(".snippet .show-all").on("click", function () {
+            $(this).parents(".snippet").addClass("visually-hidden").siblings(".full").removeClass("visually-hidden");
+    });
+    </script>
 {% endblock %}

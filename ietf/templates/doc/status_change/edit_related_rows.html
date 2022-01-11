@@ -1,43 +1,42 @@
-{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+{# bs5ok #}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% origin %}
 {% for rfc,choice_slug in form.relations.items %}
-    <div class="form-group">
-        <div class="row">
-            <div class="col-md-5">
-                <input class="form-control" name="new_relation_row_{{rfc}}" type="text"	value="{{rfc}}">
-            </div>
-            <div class="col-md-5">
-                <select class="form-control" name="statchg_relation_row_{{rfc}}">
-                    <option value="" {% if choice_slug == "" %}selected{% endif %}>(None)</option>
-                    {% for rel in relation_slugs %}
-                        <option value="{{rel.slug}}" {% if choice_slug == rel.slug %}selected{%endif%}>{{rel.name}}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button class="btn btn-danger delete">Delete</button>
-            </div>
-        </div>
+    <div class="input-group mb-3">
+        <input class="form-control"
+               name="new_relation_row_{{ rfc }}"
+               type="text"
+               value="{{ rfc }}">
+        <select class="form-select" name="statchg_relation_row_{{ rfc }}">
+            <option value="" {% if choice_slug == "" %}selected{% endif %}>
+                (None)
+            </option>
+            {% for rel in relation_slugs %}
+                <option value="{{ rel.slug }}"
+                        {% if choice_slug == rel.slug %}selected{% endif %}>
+                    {{ rel.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-danger delete">Delete</button>
     </div>
 {% endfor %}
-
-<div class="form-group new-relation-row">
-    <div class="row">
-        <div class="col-md-5">
-            <input name="new_relation_row_" type="text" class="form-control" placeholder="rfc...">
-            <p class="form-text">Enter new affected RFC.</p>
-        </div>
-
-        <div class="col-md-5">
-            <select class="form-control" name="statchg_relation_row_">
-                <option value="" {% if choice_slug == "" %}selected{% endif %}>(None)</option>
-                {% for rel in relation_slugs %}
-                    <option value="{{rel.slug}}" {% if choice_slug == rel.slug %}selected{%endif%}>{{rel.name}}</option>
-                {% endfor %}
-            </select>
-            <p class="form-text">Select proposed new status.</p>
-        </div>
-        <div class="col-md-2">
-            <button class="btn btn-danger delete" style="display:none">Delete</button>
-        </div>
-    </div>
+<div class="input-group mb-3 new-relation-row">
+    <input name="new_relation_row_"
+           type="text"
+           class="form-control"
+           placeholder="Enter new affected RFC.">
+    <select class="form-select" name="statchg_relation_row_">
+        <option value="" {% if choice_slug == "" %}selected{% endif %}>
+            (Select proposed new status.)
+        </option>
+        {% for rel in relation_slugs %}
+            <option value="{{ rel.slug }}"
+                    {% if choice_slug == rel.slug %}selected{% endif %}>
+                {{ rel.name }}
+            </option>
+        {% endfor %}
+    </select>
+    <button class="btn btn-outline-danger delete" disabled>Delete</button>
 </div>

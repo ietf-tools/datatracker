@@ -2,7 +2,7 @@
 
 {% for session in sessions %}
     {% with item=session.official_timeslotassignment %}
-        <h2 class="anchor-target" id="session_{{session.pk}}">{% if sessions|length > 1 %}Session {{ forloop.counter }} : {% endif %}
+        <h2 id="session_{{session.pk}}">{% if sessions|length > 1 %}Session {{ forloop.counter }} : {% endif %}
             {% for time in session.times %}{% if not forloop.first %}, {% endif %} {{time|dateformat:"l Y-m-d H:i T"}} {% if time.tzinfo.zone != "UTC" %}<span class="small">({{time|utc|dateformat:"H:i T"}})</span>{% endif %}{% endfor %}
             {% if session.cancelled %}<small class="badge bg-warning">CANCELLED</small>{% else %}{{ session.status }}{% endif %}
             {% if session.name %} : {{ session.name }}{% endif %}
@@ -38,13 +38,11 @@
             <div>
                 <b>Remote instructions:</b>
                 {% if session.agenda_note|first_url|conference_url %}
-                    <a class=""
-                        href="{{ session.agenda_note|first_url }}"
+                    <a  href="{{ session.agenda_note|first_url }}"
                         title="Online conference"><span class="bi bi-beople"></span>
                     </a>
                 {% elif session.remote_instructions|first_url|conference_url %}
-                    <a class=""
-                        href="{{ session.remote_instructions|first_url }}"
+                    <a  href="{{ session.remote_instructions|first_url }}"
                         title="Online conference"><span class="bi bi-people"></span>
                     </a>
                 {% endif %}
@@ -72,7 +70,7 @@
                                     {% else %}
                                         {% url 'ietf.meeting.views.upload_session_bluesheets' session_id=session.pk num=session.meeting.number as upload_url %}
                                     {% endif %}
-                                    {% if pres.document.type.slug != 'bluesheets' or user|has_role:"Secretariat" or meeting.type.slug == 'interim' and can_manage_materials %}
+                                    {% if ag.document.type.slug != 'bluesheets' or user|has_role:"Secretariat" or meeting.type.slug == 'interim' and can_manage_materials %}
                                         <a class="btn btn-primary btn-sm float-end" href="{{upload_url}}">Upload Revision</a>
                                     {% endif %}
                                 </td>

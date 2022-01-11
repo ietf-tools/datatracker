@@ -1,16 +1,20 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
 {% block title %}Ballot for {{ doc.name }} issued{% endblock %}
-
 {% block content %}
     {% origin %}
-    <h1>Ballot for {{ doc.name }} issued</h1>
-
-    <p>Ballot has been sent out.</p>
-
+    <h1>
+        Ballot issued
+        <br>
+        <small class="text-muted">{{ doc.name }}</small>
+    </h1>
+    <p>
+        Ballot has been sent out.
+    </p>
     <div class="buttonlist">
-        <a class="btn btn-primary" href="{% url 'ietf.doc.views_doc.document_writeup' name=doc.name %}">Back</a>
+        <a class="btn btn-secondary"
+           href="{% url 'ietf.doc.views_doc.document_writeup' name=doc.name %}">Back</a>
     </div>
 {% endblock %}

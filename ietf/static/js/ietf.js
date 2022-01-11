@@ -133,6 +133,16 @@ $(document)
                  `))
                 .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible")
                 .each(function () {
+                    // Some headings have complex HTML in them - only use first part in that case.
+                    var text = $(this)
+                        .html()
+                        .split("<")
+                        .shift();
+
+                    if (text === "") {
+                        // Nothing to do for empty headings.
+                        return;
+                    }
                     var id = $(this)
                         .attr("id");
 
@@ -141,9 +151,6 @@ $(document)
                         $(this)
                             .attr("id", id);
                     }
-
-                    var text = $(this)
-                        .text();
 
                     if (nav === undefined) {
                         nav = $("#righthand-nav");
@@ -184,10 +191,6 @@ $(document)
                 .attr("data-bs-target", "#righthand-nav")
                 .scrollspy("refresh");
 
-            // $(window)
-            //     .on("activate.bs.scrollspy", function () {
-            //         console.log("X");
-            //     });
         }
     });
 

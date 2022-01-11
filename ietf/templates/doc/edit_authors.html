@@ -71,7 +71,7 @@
 {% block js %}
     <script src="{% static 'ietf/js/sortable.js' %}"></script>
     <script src="{% static 'ietf/js/select2.js' %}"></script>
-    <script type="text/javascript">
+    <script>
         var ajax_url = '{% url "ietf.person.ajax.person_email_json" personid="123454321" %}';
     </script>
     <script src="{% static 'ietf/js/edit_authors.js' %}"></script>

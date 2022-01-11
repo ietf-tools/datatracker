@@ -61,16 +61,26 @@ $bootstrap-icons-font-src: url("~node_modules/bootstrap-icons/font/fonts/bootstr
 url("~node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff?a97b3594ad416896e15824f6787370e0") format("woff") !default;
 @import "../../../node_modules/bootstrap-icons/font/bootstrap-icons";
 
-// Leave room for fixed-top navbar.
+// Leave room for fixed-top navbar...
 body {
     padding-top: 60px;
 }
 
-// Make textareas use monospace font
-textarea {
-  font-family: var(--bs-font-monospace);
+// ...and make sure it doesn't overlap when we scroll to anchors.
+html {
+    scroll-padding-top: 60px;
 }
 
+// Make textareas use a monospace font
+textarea {
+    font-family: var(--bs-font-monospace);
+}
+
+// Wrap long lines in preformatted text.
+pre {
+    white-space: pre-wrap;
+    margin-bottom: 0;
+}
 
 // Make the font size choice cascade down into group menu dropdowns.
 .leftmenu li>ul {
@@ -160,10 +170,6 @@ $timeline-even-hover-color: shift-color($timeline-even-color, $link-shade-percen
     border: 2 * $table-border-width solid #000;
 }
 
-.ballot-icon table {
-    // margin: 0 0 10px 10px;
-}
-
 .is-blocking {
     box-shadow: 0 0 8px 8px #dc0d12;
     padding: 3px 0px 3px 3px;
@@ -171,32 +177,118 @@ $timeline-even-hover-color: shift-color($timeline-even-color, $link-shade-percen
     border: 1px solid #dc0d12;
 }
 
-.position-moretime,
-.position-notready,
-.position-discuss,
-.position-block {
-    background-color: $danger;
+
+// See https://getbootstrap.com/docs/5.0/customize/color/#all-colors
+$color-discuss: $red-500;
+$color-yes: $green-500;
+$color-noobj: $green-100;
+$color-abstain: $orange-400;
+$color-recuse: $purple-400;
+$color-norecord: $gray-300;
+
+.color-discuss {
+    color: $color-discuss;
 }
 
-.position-yes {
-    background-color: $success;
+.color-yes {
+    color: $color-yes;
 }
 
-.position-noobj {
-    background-color: $info;
+.color-noobj {
+    color: $color-noobj;
 }
 
-.position-abstain {
-    background-color: hsl(hue($warning), 80%, 70%);
+.color-abstain {
+    color: $color-abstain;
 }
 
-.position-recuse {
-    background-color: hsl(hue($primary), 80%, 70%);
+.color-recuse {
+    color: $color-recuse;
 }
 
-.position-norecord {
-    // background-color: $secondary;
+.color-norecord {
+    color: $color-norecord;
 }
+
+.bg-discuss {
+    background-color: $color-discuss;
+}
+
+.bg-yes {
+    background-color: $color-yes;
+}
+
+.bg-noobj {
+    background-color: $color-noobj;
+}
+
+.bg-abstain {
+    background-color: $color-abstain;
+}
+
+.bg-recuse {
+    background-color: $color-recuse;
+}
+
+.bg-norecord {
+    background-color: $color-norecord;
+}
+
+.border-discuss {
+    border-color: $color-discuss;
+}
+
+.border-yes {
+    border-color: $color-yes;
+}
+
+.border-noobj {
+    border-color: $color-noobj;
+}
+
+.border-abstain {
+    border-color: $color-abstain;
+}
+
+.border-recuse {
+    border-color: $color-recuse;
+}
+
+.border-norecord {
+    border-color: $color-norecord;
+}
+
+td.position-moretime,
+td.position-notready,
+td.position-discuss,
+td.position-block {
+    background-color: $color-discuss;
+}
+
+td.position-yes {
+    background-color: $color-yes;
+}
+
+td.position-noobj {
+    background-color: $color-noobj;
+}
+
+td.position-abstain {
+    background-color: $color-abstain;
+}
+
+td.position-recuse {
+    background-color: $color-recuse;
+}
+
+td.position-norecord {
+    background-color: $white; // $color-norecord;
+}
+
+td.position-empty {
+    border: none !important;
+}
+
 
 /* === Edit Meeting Schedule ====================================== */
 

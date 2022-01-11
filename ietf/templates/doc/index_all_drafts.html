@@ -36,7 +36,7 @@
     </ul>
 
     {% for state, heading, count, links in categories %}
-        <h2 class="anchor-target" id="{{ state.slug }}">{{ heading }} ({{ count }})</h2>
+        <h2 id="{{ state.slug }}">{{ heading }} ({{ count }})</h2>
         <p class="links">{{ links|safe }}</p>
     {% endfor %}
 

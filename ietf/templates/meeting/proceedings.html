@@ -68,7 +68,7 @@
     {% with "True" as show_agenda %}
         <!-- Plenaries -->
         {% if plenaries %}
-            <h2 class="anchor-target" id="plenaries">Plenaries</h2>
+            <h2 id="plenaries">Plenaries</h2>
             <table class="table table-sm table-striped tablesorter">
                 <thead>
                     <tr>
@@ -88,7 +88,7 @@
         {% endif %}
         <!-- Working groups -->
         {% for area, meeting_sessions, not_meeting_sessions in ietf_areas %}
-            <h2 class="anchor-target" id="{{ area.acronym }}">
+            <h2 id="{{ area.acronym }}">
                 {{ area.acronym|upper }} <small class="text-muted">{{ area.name }}</small>
             </h2>
             {% if meeting_sessions %}
@@ -146,7 +146,7 @@
         <!-- Training Sessions -->
         {% if training %}
             {% with "False" as show_agenda %}
-                <h2 class="anchor-target" id="training">Training</h2>
+                <h2 id="training">Training</h2>
                 <table class="table table-sm table-striped tablesorter">
                     <thead>
                         <tr>
@@ -169,7 +169,7 @@
         {% endif %}
         <!-- IAB Sessions -->
         {% if iab %}
-            <h2 class="anchor-target" id="iab">
+            <h2 id="iab">
                 IAB <small class="text-muted">Internet Architecture Board</small>
             </h2>
             <table class="table table-sm table-striped tablesorter">
@@ -203,7 +203,7 @@
         {% endif %}
         <!-- IRTF Sessions -->
         {% if irtf %}
-            <h2 class="anchor-target" id="irtf">
+            <h2 id="irtf">
                 IRTF <small class="text-muted">Internet Research Task Force</small>
             </h2>
             <table class="table table-sm table-striped tablesorter">

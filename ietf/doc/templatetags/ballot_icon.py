@@ -133,7 +133,7 @@ def ballot_icon(context, doc):
 
     # add sufficient table calls to last row to avoid HTML validation warning
     while (i + 1) % 5 != 0:
-        res.append('<td class="empty"></td>')
+        res.append('<td class="position-empty"></td>')
         i = i + 1
 
     res.append("</tr></table></a>")

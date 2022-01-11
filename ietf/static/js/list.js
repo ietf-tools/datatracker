@@ -38,6 +38,12 @@ $(document)
             .each(function () {
                 var table = $(this);
 
+                if ($(table)
+                    .hasClass("tablesorter-done")) {
+                    console.log("tablesorter already initialized; list.js probably loaded twice.");
+                    return;
+                }
+
                 var header_row = $(table)
                     .find("thead > tr:first");
 
@@ -53,26 +59,25 @@ $(document)
 
                 if (fields.length == 0 || !fields.filter(field => field != "")) {
                     console.log("No table fields defined, disabling search/sort.");
+                    return;
+                }
 
-                } else {
+                $(table)
+                    .wrap(`<div id='tablewrapper-${n}'></div`);
+                $(header_row)
+                    .children("[data-sort]")
+                    .addClass("sort")
+                    .each((i, e) => field_magic(i, e, fields));
 
-                    $(table)
-                        .wrap(`<div id='tablewrapper-${n}'></div`);
+                if ($(header_row)
+                    .text()
+                    .trim() == "") {
+                    console.log("No headers fields visible, hiding header row.");
+                    header_row.addClass("visually-hidden");
+                }
 
-                    $(header_row)
-                        .children("[data-sort]")
-                        .addClass("sort")
-                        .each((i, e) => field_magic(i, e, fields));
-
-                    if ($(header_row)
-                        .text()
-                        .trim() == "") {
-                        console.log("No headers fields visible, hiding header row.");
-                        header_row.addClass("visually-hidden");
-                    }
-
-                    // HTML for the search widget
-                    var searcher = $.parseHTML(`
+                // HTML for the search widget
+                var searcher = $.parseHTML(`
                     <div class="input-group my-3">
                         <input type="search" class="search form-control" placeholder="Search"/>
                         <button class="btn btn-outline-secondary search-reset" type="button">
@@ -80,189 +85,189 @@ $(document)
                         </button>
                     </div>`);
 
-                    $(table)
-                        .before(searcher);
+                $(table)
+                    .before(searcher);
 
-                    var search_field = $(searcher)
-                        .children("input.search");
+                var search_field = $(searcher)
+                    .children("input.search");
 
-                    var reset_search = $(searcher)
-                        .children("button.search-reset");
+                var reset_search = $(searcher)
+                    .children("button.search-reset");
 
-                    var pager = $.parseHTML(`
+                var pager = $.parseHTML(`
                     <nav aria-label="Pagination control" class="visually-hidden">
                         <ul class="pagination d-flex flex-wrap text-center"></ul>
                     </nav>`);
 
-                    $(table)
-                        .before(pager);
+                $(table)
+                    .before(pager);
 
-                    var list_instance = [];
-                    var internal_table = [];
+                var list_instance = [];
+                var internal_table = [];
 
-                    var pagination = $(table)
-                        .children("tbody")
-                        .length == 1;
+                var pagination = $(table)
+                    .children("tbody")
+                    .length == 1;
 
-                    pagination = false; // FIXME-LARS: pagination not working yet.
+                pagination = false; // FIXME-LARS: pagination not working yet.
 
-                    // list.js cannot deal with tables with multiple tbodys,
-                    // so maintain separate internal "table" copies for
-                    // sorting/searching and update the DOM based on them
-                    $(table)
-                        .children("tbody, tfoot")
-                        .addClass("list")
-                        .each(function () {
-                            // add the required classes to the cells
-                            $(this)
-                                .children("tr")
-                                .each(function () {
-                                    $(this)
-                                        .children("th, td")
-                                        .each((i, e) => {
-                                            $(e)
-                                                .addClass(fields[i]);
-                                            field_magic(i, e, fields);
-                                        });
-                                });
+                // list.js cannot deal with tables with multiple tbodys,
+                // so maintain separate internal "table" copies for
+                // sorting/searching and update the DOM based on them
+                $(table)
+                    .children("tbody, tfoot")
+                    .addClass("list")
+                    .each(function () {
+                        // add the required classes to the cells
+                        $(this)
+                            .children("tr")
+                            .each(function () {
+                                $(this)
+                                    .children("th, td")
+                                    .each((i, e) => {
+                                        $(e)
+                                            .addClass(fields[i]);
+                                        field_magic(i, e, fields);
+                                    });
+                            });
 
-                            // create the internal table and add list.js to them
-                            var thead = $(this)
-                                .siblings("thead:first")
-                                .clone();
+                        // create the internal table and add list.js to them
+                        var thead = $(this)
+                            .siblings("thead:first")
+                            .clone();
 
-                            var tbody = $(this)
-                                .clone();
+                        var tbody = $(this)
+                            .clone();
 
-                            var tbody_rows = $(tbody)
-                                .find("tr")
-                                .length;
+                        var tbody_rows = $(tbody)
+                            .find("tr")
+                            .length;
 
-                            if (tbody_rows == 0) {
-                                console.log("Skipping empty tbody");
-                                return;
-                            } else if (tbody_rows <= items_per_page) {
-                                pagination = false;
-                            }
+                        if (tbody_rows == 0) {
+                            console.log("Skipping empty tbody");
+                            return;
+                        } else if (tbody_rows <= items_per_page) {
+                            pagination = false;
+                        }
 
-                            var parent = $(table)
-                                .parent()
-                                .clone();
+                        var parent = $(table)
+                            .parent()
+                            .clone();
 
-                            $(parent)
-                                .children("table")
-                                .empty()
-                                .removeClass("tablesorter")
-                                .append(thead, tbody);
+                        $(parent)
+                            .children("table")
+                            .empty()
+                            .removeClass("tablesorter")
+                            .append(thead, tbody);
 
-                            internal_table.push(parent);
+                        internal_table.push(parent);
 
-                            var hook = `tablewrapper-${n}`;
-                            if (pagination) {
-                                console.log("Enabling pager.");
-                                $(pager)
-                                    .removeClass("visually-hidden");
-                                pagination = {
-                                    innerWindow: 5,
-                                    left: 1,
-                                    right: 1,
-                                    item: '<li class="page-item flex-fill"><a class="page page-link" href="#"></a></li>'
-                                };
-                            } else {
-                                hook = parent[0];
-                            }
+                        var hook = `tablewrapper-${n}`;
+                        if (pagination) {
+                            console.log("Enabling pager.");
+                            $(pager)
+                                .removeClass("visually-hidden");
+                            pagination = {
+                                innerWindow: 5,
+                                left: 1,
+                                right: 1,
+                                item: '<li class="page-item flex-fill"><a class="page page-link" href="#"></a></li>'
+                            };
+                        } else {
+                            hook = parent[0];
+                        }
 
-                            list_instance.push(
-                                new List(hook, pagination ? {
-                                    valueNames: fields,
-                                    pagination: pagination,
-                                    page: items_per_page
-                                } : {
-                                    valueNames: fields
-                                }));
-                        });
+                        list_instance.push(
+                            new List(hook, pagination ? {
+                                valueNames: fields,
+                                pagination: pagination,
+                                page: items_per_page
+                            } : {
+                                valueNames: fields
+                            }));
+                    });
 
-                    reset_search.on("click", function () {
-                        search_field.val("");
+                reset_search.on("click", function () {
+                    search_field.val("");
+                    $.each(list_instance, (i, e) => {
+                        e.search();
+                    });
+                });
+
+                search_field.on("keyup", function (event) {
+                    if (event.key == "Escape") {
+                        reset_search.trigger("click");
+                    } else {
                         $.each(list_instance, (i, e) => {
-                            e.search();
+                            e.search($(this)
+                                .val());
+                        });
+                    }
+                });
+
+                $(table)
+                    .find(".sort")
+                    .on("click", function () {
+                        var order = $(this)
+                            .hasClass("asc") ? "desc" : "asc";
+                        $.each(list_instance, (i, e) => {
+                            e.sort($(this)
+                                .attr("data-sort"), { order: order, sortFunction: text_sort });
                         });
                     });
 
-                    search_field.on("keyup", function (event) {
-                        if (event.key == "Escape") {
-                            reset_search.trigger("click");
-                        } else {
-                            $.each(list_instance, (i, e) => {
-                                e.search($(this)
-                                    .val());
-                            });
+                $.each(list_instance, (i, e) => {
+                    e.on("sortComplete", function () {
+                        replace_with_internal(table, internal_table, i);
+                        if (i == list_instance.length - 1) {
+                            $(table)
+                                .find("thead:first tr")
+                                .children("th, td")
+                                .each((idx, el) => {
+                                    var cl = internal_table[i].find("thead:first tr")
+                                        .children("th, td")
+                                        .eq(idx)
+                                        .attr("class");
+                                    $(el)
+                                        .attr("class", cl);
+
+                                });
                         }
                     });
 
-                    $(table)
-                        .find(".sort")
-                        .on("click", function () {
-                            var order = $(this)
-                                .hasClass("asc") ? "desc" : "asc";
-                            $.each(list_instance, (i, e) => {
-                                e.sort($(this)
-                                    .attr("data-sort"), { order: order, sortFunction: text_sort });
-                            });
-                        });
+                    e.on("searchComplete", function () {
+                        var last_show_with_children = {};
+                        e.items.forEach((item) => {
+                            if ($(item.elm)
+                                .hasClass("show-with-children")) {
+                                var kind = $(item.elm)
+                                    .attr("class")
+                                    .split(/\s+/)
+                                    .join();
+                                last_show_with_children[kind] = item;
+                            }
 
-                    $.each(list_instance, (i, e) => {
-                        e.on("sortComplete", function () {
-                            replace_with_internal(table, internal_table, i);
-                            if (i == list_instance.length - 1) {
-                                $(table)
-                                    .find("thead:first tr")
-                                    .children("th, td")
-                                    .each((idx, el) => {
-                                        var cl = internal_table[i].find("thead:first tr")
-                                            .children("th, td")
-                                            .eq(idx)
-                                            .attr("class");
-                                        $(el)
-                                            .attr("class", cl);
-
+                            if (item.found) {
+                                Object.entries(last_show_with_children)
+                                    .forEach(([key, val]) => {
+                                        val.found = true;
+                                        val.show();
+                                        delete last_show_with_children[key];
                                     });
+                            }
+
+                            if ($(item.elm)
+                                .hasClass("show-always")) {
+                                item.found = true;
+                                item.show();
                             }
                         });
 
-                        e.on("searchComplete", function () {
-                            var last_show_with_children = {};
-                            e.items.forEach((item) => {
-                                if ($(item.elm)
-                                    .hasClass("show-with-children")) {
-                                    var kind = $(item.elm)
-                                        .attr("class")
-                                        .split(/\s+/)
-                                        .join();
-                                    last_show_with_children[kind] = item;
-                                }
-
-                                if (item.found) {
-                                    Object.entries(last_show_with_children)
-                                        .forEach(([key, val]) => {
-                                            val.found = true;
-                                            val.show();
-                                            delete last_show_with_children[key];
-                                        });
-                                }
-
-                                if ($(item.elm)
-                                    .hasClass("show-always")) {
-                                    item.found = true;
-                                    item.show();
-                                }
-                            });
-
-                            e.update();
-                            replace_with_internal(table, internal_table, i);
-                        });
+                        e.update();
+                        replace_with_internal(table, internal_table, i);
                     });
-                }
+                });
+                $(table.addClass("tablesorter-done"));
+                n++;
             });
-        n++;
     });

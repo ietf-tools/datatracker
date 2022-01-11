@@ -30,7 +30,7 @@
         <p class="alert alert-info">Note that the information on historical groups may be inaccurate.</p>
 
         {% for label, groups in sections.items %}
-            <div class="anchor-target" id="{{label}}">
+            <div id="{{label}}">
                 <div class="card ">
                     <div class="card-header">{{label}}</div>
                     <div class="card-body">
@@ -55,7 +55,7 @@
                         {% else %}
                             {% regroup groups by parent as grouped_by_areas %}
                             {% for area_grouping in grouped_by_areas %}
-                                <div class="anchor-target" id="{{label}}-{{area_grouping.grouper.name|default:'unknown'|slugify}}">
+                                <div id="{{label}}-{{area_grouping.grouper.name|default:'unknown'|slugify}}">
                                     <div class="card ">
                                         <div class="card-header">{{area_grouping.grouper.name|default:'Unknown area'}}</div>
                                         <div class="card-body">

@@ -1,20 +1,32 @@
-{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+{# bs5ok #}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% origin %}
 {# assumes group and milestones is in context #}
 {% regroup milestones by resolved as milestonegroups %}
-
 {% for milestoneset in milestonegroups %}
-    <h2>
+    <h2 class="my-3">
         {% if milestoneset.grouper %}
-            {{milestoneset.grouper}} milestones
+            {{ milestoneset.grouper }} milestones
         {% else %}
-            {% if group.state_id == "proposed" %}Proposed milestones{% else %}Milestones{% endif %}
+            {% if group.state_id == "proposed" %}
+                Proposed milestones
+            {% else %}
+                Milestones
+            {% endif %}
         {% endif %}
     </h2>
     <table class="table table-sm table-striped{% if group.uses_milestone_dates %} tablesorter{% endif %}">
         <thead>
             <tr>
-                <th>{% if group.uses_milestone_dates %}Date{% else %}Order{% endif %}</th>
-                <th>Milestone</th>
+                <th data-sort="num">
+                    {% if group.uses_milestone_dates %}
+                        Date
+                    {% else %}
+                        Order
+                    {% endif %}
+                </th>
+                <th data-sort="milestone">Milestone</th>
             </tr>
         </thead>
         <tbody>
@@ -35,7 +47,8 @@
                     <td>
                         {{ milestone.desc }}
                         {% for d in milestone.docs.all %}
-                            <br><a href="{% url "ietf.doc.views_doc.document_main" name=d.name %}">{{ d.name }}</a>
+                            <br>
+                            <a href="{% url "ietf.doc.views_doc.document_main" name=d.name %}">{{ d.name }}</a>
                         {% endfor %}
                     </td>
                 </tr>

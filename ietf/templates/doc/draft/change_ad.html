@@ -4,11 +4,11 @@
 
 {% load django_bootstrap5 %}
 
-{% block title %}Change shepherding AD for {{ doc.name }}-{{ doc.rev }}{% endblock %}
+{% block title %}Change responsible AD for {{ doc.name }}-{{ doc.rev }}{% endblock %}
 
 {% block content %}
     {% origin %}
-    <h1>Change shepherding AD<br><small class="text-muted">{{ doc.name }}-{{ doc.rev }}</small></h1>
+    <h1>Change responsible AD<br><small class="text-muted">{{ doc.name }}-{{ doc.rev }}</small></h1>
 
     <form enctype="multipart/form-data" method="post">
         {% csrf_token %}

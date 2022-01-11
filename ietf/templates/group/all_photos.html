@@ -19,7 +19,7 @@
     {% regroup roles by last_initial as alphabet_blocks %}
     <div class="col-md-11">
         {% for letter in alphabet_blocks %}
-            <div class="row anchor-target" id="{{letter.grouper}}">
+            <div class="row" id="{{letter.grouper}}">
                 <div class="card ">
                     <div class="card-header">{{letter.grouper}}</div>
                     <div class="card-body">

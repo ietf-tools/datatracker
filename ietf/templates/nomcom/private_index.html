@@ -82,7 +82,7 @@
     <form class="form-inline" method="get">
         <div class="form-group">
             <label>State: </label>
-            <select class="form-control input-sm" name="state">
+            <select class="form-select input-sm" name="state">
                 <option value="">All</option>
                 {% for state in states %}
                     <option value="{{ state.slug }}"
@@ -95,7 +95,7 @@
 
         <div class="form-group">
             <label>Position:</label>
-            <select class="form-control input-sm" name="position">
+            <select class="form-select input-sm" name="position">
                 <option value="">All</option>
                 {% for position in positions %}
                     <option value="{{ position.id }}"
@@ -154,7 +154,7 @@
             {% if nomcom.group.state_id == 'active' %}
                 <div class="form-group">
                     <label>Action:</label>
-                    <select class="form-control" name="action">
+                    <select class="form-select" name="action">
                         <option value="" selected="selected">---------</option>
                         <option value="set_as_accepted">Set as accepted</option>
                         <option value="set_as_pending">Set as pending</option>

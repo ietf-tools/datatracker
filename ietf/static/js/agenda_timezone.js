@@ -51,11 +51,11 @@ function format_time(t, tz, fmt) {
     switch (fmt) {
         case 0:
             out = t.tz(tz)
-                .format('dddd, ') + '<span class="">' +
+                .format('dddd, ') + '<span>' +
                 t.tz(tz)
                 .format('MMMM Do YYYY, ') + '</span>' +
                 t.tz(tz)
-                .format('HH:mm') + '<span class="">' +
+                .format('HH:mm') + '<span>' +
                 t.tz(tz)
                 .format(' Z z') + '</span>';
             break;
@@ -222,7 +222,7 @@ window.highlight_ongoing = function () {
     agenda_rows.first()
         .children("th, td")
         .
-    prepend($('<div id="now" class="anchor-target"></div>'));
+    prepend($('<div id="now"></div>'));
 }
 
 // Update tooltips

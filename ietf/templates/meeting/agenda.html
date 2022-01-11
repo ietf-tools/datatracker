@@ -137,10 +137,8 @@
                         {% for item in filtered_assignments %}
                             {% ifchanged item.timeslot.time|date:"Y-m-d" %}
                                 <tr class="table-primary show-with-children">
-                                    <th colspan="{% if personalize %}6{% else %}5{% endif %}">
-                                        {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
-                                        <div class="anchor-target" id="slot-{{item.timeslot.time|slugify}}"></div>
-                                        <div>{{ item.timeslot.time|date:"l, F j, Y" }}</div>
+                                    <th colspan="{% if personalize %}6{% else %}5{% endif %}" id="slot-{{item.timeslot.time|slugify}}">
+                                        {{ item.timeslot.time|date:"l, F j, Y" }}
                                     </th>
                                 </tr>
                             {% endifchanged %}

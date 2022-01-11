@@ -27,7 +27,7 @@
 
 
 
-        <h3 class="anchor-target" id="keys">Generate a keypair for the nomcom</h3>
+        <h3 id="keys">Generate a keypair for the nomcom</h3>
 
         <p> The Datatracker uses a public/private keypair to encrypt any feedback entered by the community
             before storing it in the database. Only persons with the private key can view this feedback.
@@ -70,7 +70,7 @@ extendedKeyUsage= emailProtection
             <p>Securely distribute privateKey-nomcom{{year}} to your NomCom advisor(s), liaisons, and members, as they become known.</p>
 
 
-            <h3 class="anchor-target" id="configure">Configure the Datatracker NomCom</h3>
+            <h3 id="configure">Configure the Datatracker NomCom</h3>
 
             <p>Sign into the datatracker and go to the <a href="{% url 'ietf.nomcom.views.edit_nomcom' year %}">NomCom Settings Page</a>.</p>
             <p>Use the Browse button to select the public nomcom{{year}}.cert file created above.</p>
@@ -79,7 +79,7 @@ extendedKeyUsage= emailProtection
             <p>Press the save button.</p>
             <p>You can return to this page and change your mind on any of the settings, even towards the end of your nomcom cycle. However, be wary of uploading a new public key once one feedback has been received. That step should only be taken in the case of a compromised keypair. Old feedback will remain encrypted with the old key, and will not be accessible through the datatracker.</p>
 
-            <h3 class="anchor-target" id="positions">Configure the Positions to be filled</h3>
+            <h3 id="positions">Configure the Positions to be filled</h3>
             <p>Add the positions this nomcom needs to fill.</p>
             <p>Only create one Position for those roles having multiple seats to fill,
                 such as the IAB, or the IESG areas where multiple ADs in that area are at the end of their term. </p>
@@ -88,11 +88,11 @@ extendedKeyUsage= emailProtection
             <p>When you create a new position, you will typically set "Is Open" to True immediately. After you edit the templates for the position and are ready for the community to provide nominations and feedback, set the "Accepting nominations" and "Accepting feedback" values to True.</p>
             <p>You might need to close some positions and open others as your nomcom progresses. For example, the 2014 Nomcom was called back after it had finished work on its usual selections to fill a IAOC position that had been vacated mid-term. The 2016 Nomcom had a second ART AD position to fill after deciding to move an incumbent to the IETF chair position. In both cases, the best path to follow was to create a new Position. Before making the call for nominations and feedback for this additional position, ensure the already filled positions are marked as not open. Then, only the new positions would be available on the Nomination and Feedback pages. </p>
 
-            <h3 class="anchor-target" id="templates">Customize the web-form and email templates</h3>
+            <h3 id="templates">Customize the web-form and email templates</h3>
 
             <p>Edit each of the templates at {% url 'ietf.nomcom.views.list_templates' year %}. The "Home page of group" template is where to put information about the current nomcom members and policies. It is also a good place to list incumbents in positions, and information about whether the incumbents will stand again. See the home page of past nomcoms for examples.</p>
 
-            <h3 class="anchor-target" id="test">Test the results</h3>
+            <h3 id="test">Test the results</h3>
             <p> Before advertising that your nomcom pages are ready for the community to use, test your configuration. Create a dummy nominee for at least one position, and give it some feedback. You will be able to move this out of the way later. Once you've marked positions as open, ask your nomcom members to look over the expertise and questionnaires tab (which show rendered view of each of the templates for each position) to ensure they contain what you want the community to see. Please don't assume that everything is all right without looking. It's a good idea to give the secretariat and the tools team a heads up a few (preferably 3 to 5) days notice before announcing that your pages are ready for community use.
             </div>
 {% endblock %}

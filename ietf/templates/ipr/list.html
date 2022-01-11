@@ -33,15 +33,15 @@
                 {% endif %}
             </p>
 
-            <h2 class="anchor-target" id="generic">General IPR disclosures</h2>
+            <h2 id="generic">General IPR disclosures</h2>
 
             {% include "ipr/ipr_table.html" with iprs=generic_disclosures %}
 
-            <h2 class="anchor-target" id="specific">Specific IPR disclosures</h2>
+            <h2 id="specific">Specific IPR disclosures</h2>
 
             {% include "ipr/ipr_table.html" with iprs=specific_disclosures %}
 
-            <h2 class="anchor-target" id="notify">Specific third-party IPR disclosures</h2>
+            <h2 id="notify">Specific third-party IPR disclosures</h2>
 
             {% include "ipr/ipr_table.html" with iprs=thirdpty_disclosures %}
 

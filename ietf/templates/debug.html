@@ -109,9 +109,9 @@
             </small>
         </div>
     {% else %}
-        <div class='text-center text-muted'>
-            Add 'ietf.context_processors.sql_debug' to settings.TEMPLATE_CONTECT_PROCESSORS to turn on the SQL statement table
-        </div>
+        <small class='text-center text-muted'>
+            Add <samp>ietf.context_processors.sql_debug</samp> to <samp>settings.DEV_TEMPLATE_CONTEXT_PROCESSORS</samp> to turn on the SQL statement table.
+        </small>
     {% endif %}
 {% endif %}
 {% block js %}

@@ -9,7 +9,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}"> {% comment %} This sets box-sizing: border-box {% endcomment %}
   <script src="{% static 'ietf/js/ietf.js' %}"></script>
-  <script type="text/javascript">
+  <script>
 
   {% autoescape off %}
    var room_names = [{% for room in rooms %}"{{room.name}}"{% if not forloop.last %},{% endif %}{% endfor %}];

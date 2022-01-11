@@ -419,14 +419,11 @@ def format_history_text(text, trunc_words=25):
 def format_snippet(text, trunc_words=25): 
     # urlize if there aren't already links present
     if not 'href=' in text:
-        # django's urlize() cannot handle adjacent parentheszised
-        # expressions, for instance [REF](http://example.com/foo)
-        # Use bleach.linkify instead
-        text = bleach.linkify(text)
+        text = bleach.linkify(text, parse_email=True)
     full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_fragment(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
-        return mark_safe('<div class="snippet">%s<button class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="hidden full">%s</div>' % (snippet, full))
+        return mark_safe('<div class="snippet">%s<button class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="visually-hidden full">%s</div>' % (snippet, full))
     return full
 
 @register.simple_tag
@@ -493,18 +490,32 @@ def consensus(doc):
         return "Unknown"
 
 @register.filter
-def pos_to_label(text):
-    """Return a valid Bootstrap label type for a ballot position."""
+def pos_to_label_format(text):
+    """Returns valid Bootstrap classes to label a ballot position."""
     return {
-        'Yes':          'success',
-        'No Objection': 'info',
-        'Abstain':      'warning',
-        'Discuss':      'danger',
-        'Block':        'danger',
-        'Recuse':       'primary',
-        'Not Ready':    'danger',
-        'Need More Time': 'danger',
-    }.get(str(text), 'secondary')
+        'Yes':          'bg-yes text-light',
+        'No Objection': 'bg-noobj text-dark',
+        'Abstain':      'bg-abstain text-light',
+        'Discuss':      'bg-discuss text-light',
+        'Block':        'bg-discuss text-light',
+        'Recuse':       'bg-recuse text-light',
+        'Not Ready':    'bg-discuss text-light',
+        'Need More Time': 'bg-discuss text-light',
+    }.get(str(text), 'bg-norecord text-dark')
+
+@register.filter
+def pos_to_border_format(text):
+    """Returns valid Bootstrap classes to label a ballot position border."""
+    return {
+        'Yes':          'border-yes',
+        'No Objection': 'border-noobj',
+        'Abstain':      'border-abstain',
+        'Discuss':      'border-discuss',
+        'Block':        'border-discuss',
+        'Recuse':       'border-recuse',
+        'Not Ready':    'border-discuss',
+        'Need More Time': 'border-discuss',
+    }.get(str(text), 'border-norecord')
 
 @register.filter
 def capfirst_allcaps(text):

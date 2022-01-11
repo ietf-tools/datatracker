@@ -1,14 +1,18 @@
-<!DOCTYPE html> {% load ietf_filters static %}
+{# bs5ok #}
+<!doctype html>
+{% load ietf_filters static %}
 {# Copyright The IETF Trust 2021, All Rights Reserved #}
-{% load origin %}{% origin %}
+{% load origin %}
+{% origin %}
 <html lang="en">
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>{% block title %}No title{% endblock %}</title>
+        <title>
+            {% block title %}No title{% endblock %}
+        </title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
-
             @media only screen
             and (min-width: 992px)
             and (max-width: 1199px) {
@@ -33,13 +37,13 @@
                 div.content { width: 96ex; margin: 0 auto; }
             }
             @media only screen
-            and (min-device-width : 375px)
-            and (max-device-width : 667px) {
+            and (min-width : 375px)
+            and (max-width : 667px) {
                 body { font-size: 9.5pt; }
                 div.content { width: 96ex; margin: 0; }
             }
             @media only screen
-            and (min-device-width: 1200px) {
+            and (min-width: 1200px) {
                 body { font-size: 10pt; margin: 0 4em; }
                 div.content { width: 96ex; margin: 0; }
             }
@@ -95,6 +99,7 @@
                 }
                 .meta-info {
                     background-color: #EEE;
+                    width: 96ex;
                 }
                 .top {
                     border-top: 7px solid #EEE;
@@ -121,30 +126,24 @@
 
             {% block morecss %}{% endblock %}
         </style>
-
         {% block pagehead %}{% endblock %}
-
         {% if server_mode and server_mode == "production" %}
-            <link rel="shortcut icon" href="{% static 'ietf/images/ietf-icon-blue3.png' %}">
+            <link rel="shortcut icon"
+                  href="{% static 'ietf/images/ietf-icon-blue3.png' %}">
         {% else %}
-            <link rel="shortcut icon" href="{% static 'ietf/images/ietf-icon-red3.png' %}">
+            <link rel="shortcut icon"
+                  href="{% static 'ietf/images/ietf-icon-red3.png' %}">
         {% endif %}
-        <link rel="apple-touch-icon" href="{% static 'ietf/images/apple-touch-icon.png' %}">
+        <link rel="apple-touch-icon"
+              href="{% static 'ietf/images/apple-touch-icon.png' %}">
     </head>
-
-    <body {% block bodyAttrs %}{%endblock%}>
-
+    <body {% block bodyAttrs %}{% endblock %}>
         <div class="content" id="content">
             {% block content %}{{ content|safe }}{% endblock %}
             {% block content_end %}{% endblock %}
         </div>
-
-        {% block footer %}
-
-        {% endblock %}
-
+        {% block footer %}{% endblock %}
     </div>
-
     {% block js %}{% endblock %}
 </body>
 </html>

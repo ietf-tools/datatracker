@@ -9,9 +9,9 @@
     <a name="session.group-{{ session.group.acronym }}"></a>
     {% endcomment %}
         {% if session.name %}
-            <div class="anchor-target" id="{{ session.name|slugify }}">{{ session.name }}</div>
+            <div id="{{ session.name|slugify }}">{{ session.name }}</div>
         {% else %}
-            <div class="anchor-target" id="{{session.group.acronym}}"><a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{session.group.acronym}}</a></div>
+            <div id="{{session.group.acronym}}"><a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{session.group.acronym}}</a></div>
             {% if session.group.state_id == "bof" %}
                 <span class="badge bg-success">BOF</span>
             {% endif %}
@@ -100,4 +100,3 @@
         </td>
     {% endif %}
 </tr>
-

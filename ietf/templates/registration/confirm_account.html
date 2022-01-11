@@ -9,8 +9,8 @@
 
 {% block js %}
     {{ block.super }}
-    <script type="text/javascript" src="{% static 'ietf/js/zxcvbn.js' %}"></script>
-    <script type="text/javascript" src="{% static 'ietf/js/password_strength.js' %}"></script>
+    <script src="{% static 'ietf/js/zxcvbn.js' %}"></script>
+    <script src="{% static 'ietf/js/password_strength.js' %}"></script>
 {% endblock %}
 
 {% block content %}

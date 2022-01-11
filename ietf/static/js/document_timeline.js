@@ -13,22 +13,21 @@ function expiration_date(d) {
     return new Date(d.published.getTime() + 1000 * 60 * 60 * 24 * 185);
 }
 
-
 function max(arr) {
-    return Math.max.apply(null, Object.keys(arr).map(function(e) {
-        return arr[e];
-    }));
+    return Math.max.apply(null, Object.keys(arr)
+        .map(function (e) {
+            return arr[e];
+        }));
 }
-
 
 function offset(d) {
     if (bar_y[d.name] === undefined) {
-        var m = Object.keys(bar_y).length === 0 ? -bar_height : max(bar_y);
+        var m = Object.keys(bar_y)
+            .length === 0 ? -bar_height : max(bar_y);
         bar_y[d.name] = m + bar_height;
     }
     return "translate(" + x_scale(d.published) + ", " + bar_y[d.name] + ")";
 }
-
 
 function bar_width(d, i) {
     // check for next rev of this name, or published RFC
@@ -48,16 +47,17 @@ function bar_width(d, i) {
     return x_scale(w) - x_scale(d.published);
 }
 
-
 function scale_x() {
-    width = $("#timeline").width();
+    width = $("#timeline")
+        .width();
 
     // scale data to width of container minus y label width
-    x_scale = d3.time.scale().domain([
-        d3.min(data, function(d) { return d.published; }),
-        d3.max(data, function(d) { return d.published; })
-    ]).range([y_label_width, width]);
-
+    x_scale = d3.time.scale()
+        .domain([
+            d3.min(data, function (d) { return d.published; }),
+            d3.max(data, function (d) { return d.published; })
+        ])
+        .range([y_label_width, width]);
 
     // if the end of the timeline is past the current date, show it
     var tv = data.slice(0, -1);
@@ -70,53 +70,59 @@ function scale_x() {
     // resort data by publication time to suppress some ticks if they are closer
     // than 12px and have a different label from the one before; and don't add a
     // tick for the final pseudo entry
-    tv = tv.sort(function(a, b) { return a.published - b.published; })
-        .map(function(d, i, arr) {
+    tv = tv.sort(function (a, b) { return a.published - b.published; })
+        .map(function (d, i, arr) {
             if (i === 0 ||
                 x_scale(d.published) > x_scale(arr[i - 1].published) + 12 &&
                 format(d.published) !== format(arr[i - 1].published)) {
                 return d.published;
             }
-        }).filter(function(d) { return d !== undefined; });
+        })
+        .filter(function (d) { return d !== undefined; });
 
     x_axis = d3.svg.axis()
         .scale(x_scale)
         .tickValues(tv)
-        .tickFormat(function(d) {
+        .tickFormat(function (d) {
             if (d.getTime() < now) { return format(d); }
             return "Now";
         })
         .orient("bottom");
 }
 
-
 function update_x_axis() {
-    d3.select("#timeline svg .x.axis").call(x_axis)
+    d3.select("#timeline svg .x.axis")
+        .call(x_axis)
         .selectAll("text")
         .style("text-anchor", "end")
         .attr("transform", "translate(-14, 2) rotate(-60)");
 }
 
-
 function update_timeline() {
     bar_y = {};
     scale_x();
-    var chart = d3.select("#timeline svg").attr("width", width);
+    var chart = d3.select("#timeline svg")
+        .attr("width", width);
     // enter data (skip the last pseudo entry)
-    var bar = chart.selectAll("g").data(data.slice(0, -1));
-    bar.attr("transform", offset).select("rect").attr("width", bar_width);
+    var bar = chart.selectAll("g")
+        .data(data.slice(0, -1));
+    bar.attr("transform", offset)
+        .select("rect")
+        .attr("width", bar_width);
     update_x_axis();
 }
 
-
 function draw_timeline() {
-    bar_height = parseFloat($("body").css("line-height"));
+    bar_height = parseFloat($("body")
+        .css("line-height"));
 
     var div = $("#timeline");
+    div.addClass("my-3");
     if (div.is(":empty")) {
         div.append("<svg xmlns:xlink='http://www.w3.org/1999/xlink'></svg>");
     }
-    var chart = d3.select("#timeline svg").attr("width", width);
+    var chart = d3.select("#timeline svg")
+        .attr("width", width);
 
     var defs = chart.append("defs");
     var fade = defs.append("linearGradient")
@@ -140,19 +146,19 @@ function draw_timeline() {
             maskContentUnits: "objectBoundingBox"
         })
         .append("rect")
-            .attr({
-                height: 1,
-                width: 1,
-                fill: "url(#maskGradient)"
-            });
+        .attr({
+            height: 1,
+            width: 1,
+            fill: "url(#maskGradient)"
+        });
 
     var y_labels = data
-        .map(function(d) { return d.name; })
-        .filter(function(val, i, self) { return self.indexOf(val) === i; });
+        .map(function (d) { return d.name; })
+        .filter(function (val, i, self) { return self.indexOf(val) === i; });
 
     // calculate the width of the widest y axis label by drawing them off-screen
     // and measuring the bounding boxes
-    y_label_width = 10 + d3.max(y_labels, function(l) {
+    y_label_width = 10 + d3.max(y_labels, function (l) {
         var lw;
         chart.append("text")
             .attr({
@@ -160,10 +166,12 @@ function draw_timeline() {
                 transform: "translate(0, " + -bar_height + ")"
             })
             .text(l)
-            .each(function() {
-                lw = this.getBBox().width;
+            .each(function () {
+                lw = this.getBBox()
+                    .width;
             })
-            .remove().remove();
+            .remove()
+            .remove();
         return lw;
     });
 
@@ -172,43 +180,44 @@ function draw_timeline() {
 
     // re-order data by document name, for CSS background color alternation
     var ndata = [];
-    y_labels.forEach(function(l) {
-        ndata = ndata.concat(data.filter(function(d) { return d.name === l; }));
+    y_labels.forEach(function (l) {
+        ndata = ndata.concat(data.filter(function (d) { return d.name === l; }));
     });
     data = ndata;
 
     // enter data (skip the last pseudo entry)
-    var bar = chart.selectAll("g").data(data.slice(0, -1));
+    var bar = chart.selectAll("g")
+        .data(data.slice(0, -1));
     var g = bar.enter()
         .append("g")
-            .attr({
-                class: "bar",
-                transform: offset
-            });
+        .attr({
+            class: "bar",
+            transform: offset
+        });
     g.append("a")
-        .attr("xlink:href", function(d) { return d.url; })
+        .attr("xlink:href", function (d) { return d.url; })
         .append("rect")
-            .attr({
-                height: bar_height,
-                width: bar_width,
-                class: "btn",
-                type: "button",
-                mask: function(d, i) {
-                    // apply gradient if the document is a draft and expired
-                    if (d.name.match(/^draft-/) &&
-                        bar_width(d, i) >= x_scale(expiration_date(d)) -
-                                           x_scale(d.published)) {
-                        return "url(#fade)";
-                    }
+        .attr({
+            height: bar_height,
+            width: bar_width,
+            class: "btn",
+            type: "button",
+            mask: function (d, i) {
+                // apply gradient if the document is a draft and expired
+                if (d.name.match(/^draft-/) &&
+                    bar_width(d, i) >= x_scale(expiration_date(d)) -
+                    x_scale(d.published)) {
+                    return "url(#fade)";
                 }
-            });
+            }
+        });
 
     g.append("text")
         .attr({
             x: 3,
             y: bar_height / 2
         })
-        .text(function(d) { return d.rev; });
+        .text(function (d) { return d.rev; });
 
     var y_scale = d3.scale.ordinal()
         .domain(y_labels)
@@ -219,10 +228,11 @@ function draw_timeline() {
         .tickValues(y_labels)
         .orient("left");
 
-    chart.append("g").attr({
-        class: "x axis",
-        transform: "translate(0, " + (max(bar_y) + bar_height) + ")"
-    });
+    chart.append("g")
+        .attr({
+            class: "x axis",
+            transform: "translate(0, " + (max(bar_y) + bar_height) + ")"
+        });
     update_x_axis();
 
     chart.append("g")
@@ -236,20 +246,21 @@ function draw_timeline() {
 
     // set height of timeline
     var x_label_height;
-    d3.select(".x.axis").each(function() {
-        x_label_height = this.getBBox().height;
-    });
+    d3.select(".x.axis")
+        .each(function () {
+            x_label_height = this.getBBox()
+                .height;
+        });
     chart.attr("height", max(bar_y) + bar_height + x_label_height);
 }
 
-
-d3.json("doc.json", function(error, json) {
+d3.json("doc.json", function (error, json) {
     if (error) { return; }
     data = json.rev_history;
 
     if (data.length) {
         // make js dates out of publication dates
-        data.forEach(function(d) { d.published = new Date(d.published); });
+        data.forEach(function (d) { d.published = new Date(d.published); });
 
         // add pseudo entry when the ID will expire
         data.push({
@@ -261,9 +272,9 @@ d3.json("doc.json", function(error, json) {
     }
 });
 
-
-$(window).on({
-    resize: function() {
-        update_timeline();
-    }
-});
+$(window)
+    .on({
+        resize: function () {
+            update_timeline();
+        }
+    });

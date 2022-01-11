@@ -83,10 +83,10 @@
 
 {% comment %}{% block js %}
   {% if can_manage_materials %}
-    <script type="text/javascript" src="{% static 'ietf/js/js-cookie.js' %}"></script>
-    <script type="text/javascript" src={% static 'ietf/js/sortable.js' %}></script>
+    <script src="{% static 'ietf/js/js-cookie.js' %}"></script>
+    <script src={% static 'ietf/js/sortable.js' %}></script>
 
-    <script type="text/javascript">
+    <script>
 
 
       $.ajaxSetup({

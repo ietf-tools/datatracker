@@ -1,22 +1,18 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load ietf_filters %}
 {% load static %}
-
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-
 {% block title %}Email expansions for {{ doc.name }}-{{ doc.rev }}{% endblock %}
-
 {% block content %}
     {% origin %}
     {{ top|safe }}
-
     {% if aliases %}
-        <h2>Email aliases</h2>
-
+        <h2 class="my-3">Email aliases</h2>
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
@@ -28,17 +24,17 @@
                 {% for alias in aliases %}
                     <tr>
                         <td>
-                            <a href="mailto:{{ doc.name }}{{ alias.alias_type|default:''}}@{{ietf_domain}}">
-                                {{ doc.name }}{{ alias.alias_type|default:''}}@{{ietf_domain}}</a></td>
+                            <a href="mailto:{{ doc.name }}{{ alias.alias_type|default:'' }}@{{ ietf_domain }}">
+                                {{ doc.name }}{{ alias.alias_type|default:'' }}@{{ ietf_domain }}
+                            </a>
+                        </td>
                         <td>{{ alias.expansion }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     {% endif %}
-
-    <h2>Recipient expansions</h2>
-
+    <h2 class="my-3">Recipient expansions</h2>
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
@@ -50,16 +46,17 @@
         <tbody>
             {% for trigger,desc,to,cc in expansions %}
                 <tr>
-                    <td><a href="{% url 'ietf.mailtrigger.views.show_triggers' trigger %}"
-                        title="{{desc}}">{{trigger}}</a></td>
-                    <td> {{to|join:', '}}</td>
-                    <td> {{cc|join:', '}}</td>
+                    <td>
+                        <a href="{% url 'ietf.mailtrigger.views.show_triggers' trigger %}"
+                           title="{{ desc }}">{{ trigger }}</a>
+                    </td>
+                    <td>{{ to|join:', ' }}</td>
+                    <td>{{ cc|join:', ' }}</td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 {% endblock %}
-
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

@@ -41,7 +41,7 @@
                 {% with "True" as show_agenda %}
                     <!-- Plenaries -->
                     {% if plenaries %}
-                        <h2 class="anchor-target" id="plenaries">Plenaries</h2>
+                        <h2 id="plenaries">Plenaries</h2>
                         <table class="table table-sm table-striped tablesorter">
                             <thead>
                                 <tr>
@@ -75,7 +75,7 @@
                     <!-- Working groups -->
                     {% regroup ietf|dictsort:"group.parent.acronym" by group.parent.name as areas %}
                     {% for sessions in areas %}
-                        <h2 class="anchor-target" id="{{sessions.list.0.group.parent.acronym}}">{{sessions.list.0.group.parent.acronym|upper}} <small>{{ sessions.grouper }}</small></h2>
+                        <h2 id="{{sessions.list.0.group.parent.acronym}}">{{sessions.list.0.group.parent.acronym|upper}} <small>{{ sessions.grouper }}</small></h2>
                         <table class="table table-sm table-striped tablesorter">
                             <thead>
                                 <tr>
@@ -111,7 +111,7 @@
                     <!-- Training Sessions -->
                     {% if training %}
                         {% with "False" as show_agenda %}
-                            <h2 class="anchor-target" id="training">Training</h2>
+                            <h2 id="training">Training</h2>
                             <table class="table table-sm table-striped tablesorter">
                                 <thead>
                                     <tr>
@@ -147,7 +147,7 @@
 
                     <!-- IAB Sessions -->
                     {% if iab %}
-                        <h2 class="anchor-target" id="iab">IAB <small>Internet Architecture Board</small></h2>
+                        <h2 id="iab">IAB <small>Internet Architecture Board</small></h2>
                         <table class="table table-sm table-striped tablesorter">
                             <thead>
                                 <tr>
@@ -182,7 +182,7 @@
 
                     <!-- IRTF Sessions -->
                     {% if irtf %}
-                        <h2 class="anchor-target" id="irtf">IRTF <small>Internet Research Task Force</small></h2>
+                        <h2 id="irtf">IRTF <small>Internet Research Task Force</small></h2>
                         <table class="table table-sm table-striped tablesorter">
                             <thead>
                                 <tr>
@@ -216,7 +216,7 @@
                     {% endif %}
 
                     {% if other %}
-                        <h2 class="anchor-target" id="other">Other <small>Miscellaneous other sessions</small></h2>
+                        <h2 id="other">Other <small>Miscellaneous other sessions</small></h2>
                         <table class="table table-sm table-striped tablesorter">
                             <thead>
                                 <tr>
