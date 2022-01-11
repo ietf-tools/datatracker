@@ -678,17 +678,24 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, "Versions:")
         self.assertContains(r, "Deimos street")
         q = PyQuery(r.content)
+        self.assertEqual(q('title').text(), 'draft-ietf-mars-test-01')
         self.assertEqual(len(q('.rfcmarkup pre')), 4)
         self.assertEqual(len(q('.rfcmarkup span.h1')), 2)
         self.assertEqual(len(q('.rfcmarkup a[href]')), 41)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name, rev=draft.rev)))
         self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(q('title').text(), 'draft-ietf-mars-test-01')
 
         rfc = WgRfcFactory()
         (Path(settings.RFC_PATH) / rfc.get_base_name()).touch()
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
         self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(q('title').text(), f'RFC {rfc.rfc_number()} - {rfc.title}')
+
+        # synonyms for the rfc should be redirected to its canonical view
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.rfc_number())))
         self.assertRedirects(r, urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=f'RFC {rfc.rfc_number()}')))

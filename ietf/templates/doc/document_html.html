@@ -28,7 +28,7 @@
 
 {% block title %}
   {% if doc.get_state_slug == "rfc" %}
-    {{ doc.canonical_name }}
+    RFC {{ doc.rfc_number }} - {{ doc.title }}
   {% else %}
     {{ doc.name }}-{{ doc.rev }}
   {% endif %}
