@@ -225,7 +225,7 @@ class GroupPagesTests(TestCase):
             self.assertContains(r, draft2.name)
             self.assertContains(r, draft3.name)
             for ah in draft3.action_holders.all():
-                self.assertContains(r, escape(ah.plain_name()))
+                self.assertContains(r, escape(ah.name))
             self.assertContains(r, 'for 173 days', count=1)  # the old_dah should be tagged
 
         # Make sure that a logged in user is presented with an opportunity to add results to their community list

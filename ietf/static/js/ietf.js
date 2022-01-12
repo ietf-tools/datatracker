@@ -110,7 +110,13 @@ $(document)
         var headings = $("#content")
             .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible");
 
-        if ($(headings)
+        var contents = $(headings)
+            .html()
+            .split("<")
+            .shift()
+            .trim();
+
+        if ($(contents)
             .length > 0 && $(headings)
             .last()
             .offset()

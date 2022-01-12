@@ -121,7 +121,8 @@ def ballot_icon(context, doc):
     res.append("<tr>")
 
     for i, (ad, pos) in enumerate(positions):
-        if i > 0 and i % 5 == 0:
+        # The IRSG has many more members than the IESG, so make the table wider
+        if i > 0 and i % (5 if len(positions) <= 15 else 10) == 0:
             res.append("</tr><tr>")
 
         c = "position-%s" % (pos.pos.slug if pos else "norecord")

@@ -10,11 +10,8 @@
     {% origin %}
     <h1>
         Sessions linked to
-        <a href="{% url 'ietf.doc.views_doc.document_main' name=doc.name %}">{{ doc.name }}</a>
-        {% if doc.title %}
-            <br>
-            <small class="text-muted">{{ doc.title }}</small>
-        {% endif %}
+        <br>
+        <small class="text-muted">{{ doc.name }}</small>
     </h1>
     {% if user|has_role:"Secretariat,Area Director,WG Chair,WG Secretary,RG Chair,RG Secretary,IRTF Chair,Team Chair" %}
         <div class="buttonlist">

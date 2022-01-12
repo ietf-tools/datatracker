@@ -8,6 +8,7 @@ from pathlib import Path
 from pyquery import PyQuery
 from random import randint
 from tempfile import NamedTemporaryFile
+from html import escape
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
@@ -77,7 +78,7 @@ This test section has some text.
         self.assertEqual([],q('#change-request'))
         editor_row = q('#editors').html()
         for editor in editors:
-            self.assertInHTML(editor.plain_name(),editor_row)
+            self.assertInHTML(editor.name, editor_row)
         responsible_row = q('#responsible').html()
         for leader in responsible:
             self.assertInHTML(leader.plain_name(),responsible_row)
@@ -232,7 +233,7 @@ This test section has some text.
             self.assertEqual(r.status_code,200)
             unescaped = unicontent(r).encode('utf-8').decode('unicode-escape')
             for responsible in previous_responsible: 
-                self.assertIn(responsible.name,unescaped)
+                self.assertIn(escape(responsible.name), unescaped)
             new_responsible = set(previous_responsible)
             new_responsible.add(RoleFactory(group__type_id='area',name_id='ad').person)
             postdict = dict(responsible=[str(p.pk) for p in new_responsible])

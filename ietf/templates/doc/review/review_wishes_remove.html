@@ -1,22 +1,17 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2016, All Rights Reserved #}
 {% load origin django_bootstrap5 static %}
-
 {% block title %}Remove {{ doc.name }} from your review wishes{% endblock %}
-
 {% block content %}
     {% origin %}
-    <h1>Remove {{ doc.name }} from your review wishes
+    <h1>
+        Remove review wish
+        <br>
+        <small class="text-muted">{{ doc.name }}</small>
     </h1>
-
-    <form class="form-horizontal" method="post">
+    <form class="my-3" method="post">
         {% csrf_token %}
-
-
-
         <button type="submit" class="btn btn-primary">Remove from review wishes</button>
-
-
     </form>
-
 {% endblock %}

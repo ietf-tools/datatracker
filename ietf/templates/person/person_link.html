@@ -4,7 +4,7 @@
     <span class="text-nowrap {{ class }}">
         {% if email or name %}
             <a {% if class %}class="text-reset"{% endif %}
-               {% if title %}title="{{ title }}"{% endif %}
+               title="{% if title %}{{ title }}{% else %}Datatracker profile of {{ name }}.{% endif %}"
                {% if email %} href="{% url 'ietf.person.views.profile' email_or_name=email %}" {% else %} href="{% url 'ietf.person.views.profile' email_or_name=name %}" {% endif %}>
                 {{ name }}
             </a>
@@ -12,7 +12,7 @@
                 &nbsp;
                 <a {% if class %}class="text-reset"{% endif %}
                    href="mailto:{{ email|urlencode }}"
-                   title="Click to compose email.">
+                   title="Compose email to {{ email }}.">
                     <span class="bi bi-envelope"></span>
                 </a>
             {% endif %}

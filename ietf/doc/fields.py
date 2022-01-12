@@ -21,7 +21,7 @@ def select2_id_doc_name(objs):
     return [{
         "id": o.pk,
         "text": escape(uppercase_std_abbreviated_name(o.name)),
-    } for o in objs]
+    } for o in objs] if objs else []
 
 
 def select2_id_doc_name_json(objs):

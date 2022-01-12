@@ -3,7 +3,7 @@
 {% load origin django_bootstrap5 %}
 {% origin %}
 {% load person_filters %}
-<table class="table table-sm table-borderless">
+<table class="my-3 table table-sm table-borderless">
     <tbody class="meta border-top">
         <tr>
             <th>Request</th>
@@ -76,7 +76,7 @@
             <tr>
                 <th></th>
                 <th>Requested by</th>
-                <td>{{ review_req.requested_by }}</td>
+                <td>{% person_link review_req.requested_by %}</td>
             </tr>
         {% endif %}
         {% if review_req.doc.authors %}
@@ -96,7 +96,10 @@
                 <th></th>
                 <th>WG chairs</th>
                 <td>
-                    {{ wg_chairs|join:", " }}
+                    {% for chair in wg_chairs %}
+                        {% person_link chair %}
+                        {% if not forloop.last %},{% endif %}
+                    {% endfor %}
                 </td>
             </tr>
         {% endif %}
@@ -186,33 +189,36 @@
                     {% if assignment.can_reject_reviewer_assignment or assignment.can_accept_reviewer_assignment %}
                         <div class="reviewer-assignment-not-accepted">
                             {% if assignment.state_id == "assigned" %}
-                                <em>Assignment not accepted yet:</em>
+                                Assignment not accepted yet
                             {% else %}
-                                <em>Assignment accepted:</em>
+                                Assignment accepted
                             {% endif %}
-                            {% if assignment.can_reject_reviewer_assignment %}
-                                <a class="btn btn-danger btn-sm"
-                                   href="{% url "ietf.doc.views_review.reject_reviewer_assignment" name=doc.name assignment_id=assignment.pk %}">
-                                    <span class="bi bi-slash-circle">
-                                    </span>
-                                    Reject
-                                </a>
-                            {% endif %}
-                            {% if assignment.can_accept_reviewer_assignment %}
-                                <form style="display:inline"
-                                      method="post"
-                                      action="{% url "ietf.doc.views_review.review_request" name=doc.name request_id=review_req.pk %}">
-                                    {% csrf_token %}
-                                    <button class="btn btn-success btn-sm"
-                                            type="submit"
-                                            name="action"
-                                            value="accept">
-                                        <span class="bi bi-check">
+                            <br>
+                            <div class="mt-2">
+                                {% if assignment.can_reject_reviewer_assignment %}
+                                    <a class="btn btn-danger btn-sm"
+                                       href="{% url "ietf.doc.views_review.reject_reviewer_assignment" name=doc.name assignment_id=assignment.pk %}">
+                                        <span class="bi bi-x-circle">
                                         </span>
-                                        Accept
-                                    </button>
-                                </form>
-                            {% endif %}
+                                        Reject
+                                    </a>
+                                {% endif %}
+                                {% if assignment.can_accept_reviewer_assignment %}
+                                    <form style="display:inline"
+                                          method="post"
+                                          action="{% url "ietf.doc.views_review.review_request" name=doc.name request_id=review_req.pk %}">
+                                        {% csrf_token %}
+                                        <button class="btn btn-success btn-sm"
+                                                type="submit"
+                                                name="action"
+                                                value="accept">
+                                            <span class="bi bi-check">
+                                            </span>
+                                            Accept
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
                         </div>
                     {% endif %}
                 </td>
@@ -249,34 +255,37 @@
                         {% else %}
                             Not available
                         {% endif %}
-                        {% if assignment.can_complete_review %}
-                            <a class="btn btn-primary btn-sm"
-                               href="{% url "ietf.doc.views_review.complete_review" name=doc.name assignment_id=assignment.pk %}">
-                                <span class="bi bi-pencil-square-o">
-                                </span>
-                                {% if assignment.state_id == "assigned" or assignment.state_id == "accepted" %}
-                                    Complete review
-                                {% else %}
-                                    Correct review
-                                {% endif %}
-                            </a>
-                        {% endif %}
-                        {% if assignment.state_id == "assigned" or assignment.state_id == "accepted" %}
-                            {% if can_assign_reviewer %}
-                                <a class="btn btn-danger btn-sm"
-                                   href="{% url "ietf.doc.views_review.mark_reviewer_assignment_no_response" name=doc.name assignment_id=assignment.pk %}">
-                                    <span class="bi bi-slash-circle">
+                        <br>
+                        <div class="mt-2">
+                            {% if assignment.can_complete_review %}
+                                <a class="btn btn-primary btn-sm"
+                                   href="{% url "ietf.doc.views_review.complete_review" name=doc.name assignment_id=assignment.pk %}">
+                                    <span class="bi bi-pencil">
                                     </span>
-                                    No response
-                                </a>
-                                <a class="btn btn-danger btn-sm"
-                                   href="{% url "ietf.doc.views_review.withdraw_reviewer_assignment" name=doc.name assignment_id=assignment.pk %}">
-                                    <span class="bi bi-slash-circle">
-                                    </span>
-                                    Withdraw
+                                    {% if assignment.state_id == "assigned" or assignment.state_id == "accepted" %}
+                                        Complete review
+                                    {% else %}
+                                        Correct review
+                                    {% endif %}
                                 </a>
                             {% endif %}
-                        {% endif %}
+                            {% if assignment.state_id == "assigned" or assignment.state_id == "accepted" %}
+                                {% if can_assign_reviewer %}
+                                    <a class="btn btn-danger btn-sm"
+                                       href="{% url "ietf.doc.views_review.mark_reviewer_assignment_no_response" name=doc.name assignment_id=assignment.pk %}">
+                                        <span class="bi bi-question-circle">
+                                        </span>
+                                        No response
+                                    </a>
+                                    <a class="btn btn-danger btn-sm"
+                                       href="{% url "ietf.doc.views_review.withdraw_reviewer_assignment" name=doc.name assignment_id=assignment.pk %}">
+                                        <span class="bi bi-x-circle">
+                                        </span>
+                                        Withdraw
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
             {% endif %}
@@ -337,12 +346,10 @@
     {% endfor %}
 </table>
 {% if can_assign_reviewer %}
-    <p>
-        <a class="btn btn-primary btn-sm"
-           href="{% url "ietf.doc.views_review.assign_reviewer" name=doc.name request_id=review_req.pk %}">
-            <span class="bi bi-person">
-            </span>
-            Assign reviewer
-        </a>
-    </p>
+    <a class="btn btn-primary"
+       href="{% url "ietf.doc.views_review.assign_reviewer" name=doc.name request_id=review_req.pk %}">
+        <span class="bi bi-forward">
+        </span>
+        Assign reviewer
+    </a>
 {% endif %}

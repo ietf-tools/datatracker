@@ -288,7 +288,7 @@ class SearchTests(TestCase):
         r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_iesg_process'))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, doc_in_process.title)
-        self.assertContains(r, escape(doc_in_process.action_holders.first().plain_name()))
+        self.assertContains(r, escape(doc_in_process.action_holders.first().name))
         self.assertNotContains(r, doc_not_in_process.title)
         
     def test_indexes(self):

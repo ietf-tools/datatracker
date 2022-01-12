@@ -1,90 +1,135 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2016, All Rights Reserved #}
-{% load origin django_bootstrap5 static %}
-
-{% block title %}{% if revising_review %}Revise{% elif assignment %}Complete{% else %}Submit unsolicited{% endif %} review of {{ doc.name }}{% endblock %}
-
+{% load origin django_bootstrap5 static person_filters textfilters %}
+{% block title %}
+    {% if revising_review %}
+        Revise
+    {% elif assignment %}
+        Complete
+    {% else %}
+        Submit unsolicited
+    {% endif %}
+    review of {{ doc.name }}
+{% endblock %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static 'ietf/css/datepicker.css' %}">
 {% endblock %}
-
 {% block content %}
     {% origin %}
-    <h1>{% if revising_review %}Revise{% elif assignment %}Complete{% else %}Submit unsolicited{% endif %} review<br>
-        <small>{{ doc.name }}</small>
+    <h1>
+        {% if revising_review %}
+            Revise
+        {% elif assignment %}
+            Complete
+        {% else %}
+            Submit unsolicited
+        {% endif %}
+        review
+        <br>
+        <small class="text-muted">{{ doc.name }}</small>
     </h1>
-
     {% if assignment %}
-        <p>
-            <div><strong>Review type:</strong> {{ assignment.review_request.team.acronym }} - {{ assignment.review_request.type }} review </div>
-            <div><strong>Requested version for review:</strong> {{ assignment.review_request.requested_rev|default:"Current" }} </div>
-            <div><strong>Requested:</strong> {{ assignment.review_request.time|date:"Y-m-d" }} </div>
-            <div><strong>Reviewer:</strong> {{ assignment.reviewer.person.name }}</div>
-        </p>
+        <table class="my-3 table table-sm table-borderless">
+            <tbody>
+                <tr>
+                    <th>Review type:</th>
+                    <td>{{ assignment.review_request.team.acronym }} - {{ assignment.review_request.type }} review</td>
+                </tr>
+                <tr>
+                    <th>Requested version for review:</th>
+                    <td>{{ assignment.review_request.requested_rev|default:"Current" }}</td>
+                </tr>
+                <tr>
+                    <th>Requested:</th>
+                    <td>{{ assignment.review_request.time|date:"Y-m-d" }}</td>
+                </tr>
+                <tr>
+                    <th>Reviewer:</th>
+                    <td>{% person_link assignment.reviewer.person %}</td>
+                </tr>
+            </tbody>
+        </table>
     {% else %}
-        <p>
+        <p class="alert alert-info">
             You are submitting an <strong>unsolicited</strong> review for this document for the {{ team }}.
             <strong>This process should only be used for unsolicited reviews.</strong>
             A review request and assignment will be created automatically upon submitting this review.
         </p>
     {% endif %}
-
     {% if assignment and not revising_review %}
-        <p>The review findings should be made available here and the review
+        <p>
+            The review findings should be made available here and the review
             posted to the mailing list. If you enter the findings below, the
             system will post the review for you. If you already have posted
             the review, you can try to let the system find the link to the
-            archive and retrieve the email body.</p>
-        <p>If you enter the review below, the review will be sent
-            to <em>{{ review_to|join:", " }}</em>
-            {% if review_cc %}, with a Cc to <em>{{ review_cc|join:", " }}</em>{% endif %}.</p>
+            archive and retrieve the email body.
+        </p>
+        <p>
+            If you enter the review below, the review will be sent
+            to {{ review_to|join:", "|linkify }}
+            {% if review_cc %}, with a CC to {{ review_cc|join:", "|linkify }}{% endif %}
+            .
+        </p>
     {% elif assignment %}
-        <p>You can revise this review by entering the results below.</p>
+        <p>
+            You can revise this review by entering the results below.
+        </p>
     {% endif %}
-
-    <form class="complete-review form-horizontal" method="post" enctype="multipart/form-data">
+    <form class="complete-review " method="post" enctype="multipart/form-data">
         {% csrf_token %}
-
         {% bootstrap_form form layout="horizontal" %}
-
-
-
+        <button type="submit" class="btn btn-primary">
+            {% if revising_review %}
+                Revise
+            {% else %}
+                Complete
+            {% endif %}
+            review
+        </button>
         {% if assignment %}
-            <a class="btn btn-primary" href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=assignment.review_request.pk %}">Cancel</a>
+            <a class="btn btn-secondary float-end"
+               href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=assignment.review_request.pk %}">
+                Back
+            </a>
         {% else %}
-            <a class="btn btn-primary" href="{{ doc.get_absolute_url }}">Cancel</a>
+            <a class="btn btn-secondary float-end" href="{{ doc.get_absolute_url }}">Back</a>
         {% endif %}
-        <button type="submit" class="btn btn-primary">{% if revising_review %}Revise{% else %}Complete{% endif %} review</button>
-
-
-
         <div class="template" style="display:none">
             {% if mail_archive_query_urls %}
-                <div class="mail-archive-search mb-3">
-                    <div class="col-md-offset-2 col-md-10">
-                        <p class="form-inline">
-                            Search mail archive subjects for:
-                            <input class="query-input form-control input-sm" value="{{ mail_archive_query_urls.query }}">
-                            <button type="button" class="search btn btn-primary btn-sm">Search</button>
-                        </p>
-
-                        <div class="retrieving hidden">
+                <div class="mail-archive-search">
+                    <div class="offset-md-2 col-md-10">
+                        <label class="form-label">Search mail archive subjects for:</label>
+                        <div class="input-group mb-3">
+                            <input type="text"
+                                   class="query-input form-control"
+                                   value="{{ mail_archive_query_urls.query }}">
+                            <button type="button" class="search btn btn-primary">Search</button>
+                        </div>
+                        <div class="retrieving visually-hidden my-3">
                             <div class="spinner-border spinner-border-sm" role="status"></div>
                             Searching...
                         </div>
-
-                        <div class="results hidden">
-                            <p>Select one of the following messages to automatically pre-fill link and content:</p>
-                            <div class="list-group">
-                            </div>
-                        </div>
-
-                        <div class="error alert alert-warning hidden">
+                        <div class="results visually-hidden my-3">
                             <p>
-                                <span class="content"></span>
-                                <span class="hidden try-yourself">(searched for <a class="query-url" href="">"<span class="query"></span>"</a>, corresponding <a class="query-data-url" href="">export</a>).</span>
-                                You have to fill in link and content yourself.
+                                Select one of the following messages to automatically pre-fill link and content:
                             </p>
+                            <div class="list-group"></div>
+                        </div>
+                        <div class="error alert alert-warning visually-hidden my-3">
+                            <span class="content"></span>
+                            <span class="visually-hidden try-yourself">
+                                (searched for
+                                <a class="query-url" href="">
+                                    "
+                                    <span class="query"></span>
+                                    "
+                                </a>
+                                , corresponding
+                                <a class="query-data-url" href="">export</a>
+                                ).
+                            </span>
+                            You have to fill in link and content yourself.
                         </div>
                     </div>
                 </div>
@@ -94,7 +139,6 @@
                 </div>
             {% endif %}
         </div>
-
         {% spaceless %}
             <div class="template" style="display:none">
                 <button type="button" class="mail-archive-search-result list-group-item">
@@ -104,11 +148,8 @@
                 </button>
             </div>
         {% endspaceless %}
-
     </form>
-
 {% endblock %}
-
 {% block js %}
     <script src="{% static 'ietf/js/datepicker.js' %}"></script>
     <script>

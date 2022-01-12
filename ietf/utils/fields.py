@@ -257,13 +257,6 @@ class SearchableField(forms.MultipleChoiceField):
         )
 
     def prepare_value(self, value):
-        # print("prepare_value", 1, value)
-        # result = super(SearchableField, self).prepare_value(value)
-
-        # if not value:
-        #     value = ""
-        # print("prepare_value", 2, value)
-
         if isinstance(value, list):
             if len(value) == 0:
                 value = None
@@ -275,50 +268,36 @@ class SearchableField(forms.MultipleChoiceField):
                     for val in value[1:]:
                         qs = qs.union(self.get_model_instances(val))
                     value = qs
-        # print("prepare_value", 3, value)
         if isinstance(value, int):
             value = str(value)
-        # print("prepare_value", 4, value)
         if isinstance(value, str):
             if value == "":
                 value = self.model.objects.none()
             else:
                 value = self.get_model_instances([value])
-        # print("prepare_value", 5, value)
         if isinstance(value, self.model):
             value = [value]
-        # print("prepare_value", 6, value)
 
-        if value:
-            pre = self.make_select2_data(value)
-            # print("value", value)
-            # print("pre", pre)
-            for d in pre:
-                # print("d", d)
-                if isinstance(value, list):
-                    # print(dir(value[0]))
-                    # if hasattr(value[0], "id"):
-                    d["selected"] = any([v.pk == d["id"] for v in value])
-                else:
-                    d["selected"] = value.exists() and value.filter(pk__in=[d["id"]]).exists()
-            self.widget.attrs["data-pre"] = json.dumps({
-                d['id']: d for d in pre
-            })
-            # print(self.widget.attrs["data-pre"])
-        # print("prepare_value", 7, value)
+        pre = self.make_select2_data(value)
+        for d in pre:
+            if isinstance(value, list):
+                d["selected"] = any([v.pk == d["id"] for v in value])
+            else:
+                d["selected"] = value.exists() and value.filter(pk__in=[d["id"]]).exists()
+        self.widget.attrs["data-pre"] = json.dumps({
+            d['id']: d for d in pre
+        })
 
         # doing this in the constructor is difficult because the URL
         # patterns may not have been fully constructed there yet
         self.widget.attrs["data-ajax-url"] = self.ajax_url()
 
         result = value
-        # print("prepare_value", 99, result)
         return result
 
     def clean(self, pks):
         if pks is None:
             return None
-        # print("clean", 1, pks)
 
         try:
             objs = self.model.objects.filter(pk__in=pks)
@@ -336,7 +315,6 @@ class SearchableField(forms.MultipleChoiceField):
                 'entry' if self.max_entries == 1 else 'entries', 
             ))
 
-        # print("clean", 99, self.max_entries, objs)
 
         return objs.first() if self.max_entries == 1 else objs
 
