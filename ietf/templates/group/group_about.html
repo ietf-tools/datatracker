@@ -246,7 +246,12 @@
     {# the linebreaks filter adds <p/>, no surrounding <p/> necessary: #}
     {{ group.charter_text|linebreaks }}
   {% else %}
-    <h2>About</h2>
+    <h2>
+      About
+      {% if can_edit_group %}
+        <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='description' %}">Edit</a>&nbsp;
+      {% endif %}
+    </h2>
     {% comment %}{{ group.description|default:"No description yet."|linebreaks }}{% endcomment %}
     {{ group.description|default:"No description yet."| apply_markup:"restructuredtext" }}
   {% endif %}
