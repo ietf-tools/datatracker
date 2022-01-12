@@ -284,7 +284,7 @@
                             <a href="#"
                                data-bs-toggle="modal"
                                data-bs-target="#check-{{ check.pk }}">
-                                {{ check.errors }} errors, {{ check.warnings }} warnings.
+                                {{ check.errors }} errors, {{ check.warnings }} warnings
                             </a>
                             {% include "doc/yang-check-modal-overlay.html" %}
                         </td>
@@ -653,7 +653,7 @@
                         <th>
                         </th>
                         <th>
-                            Action Holders
+                            Action Holder{{ doc.documentactionholder_set.all|pluralize }}
                         </th>
                         <td class="edit">
                             {% if can_edit %}

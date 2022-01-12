@@ -2,11 +2,6 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load static %}
-{% block pagehead %}
-    {% if debug %}
-        <link rel="stylesheet" href="{% static 'ietf/css/list.css' %}"/>
-    {% endif %}
-{% endblock %}
 {% origin %}
 {% if debug %}
     {% if sql_debug %}
@@ -17,7 +12,7 @@
                onclick="$('#debug-query-table').toggleClass('visually-hidden');">Show</a>
         {% endif %}
         <div id="debug-query-table" class="visually-hidden">
-            <small class="text-start">
+            <div class="text-start">
                 <table class="table table-sm tablesorter">
                     <thead>
                         <tr>
@@ -106,7 +101,7 @@
                         {% endwith %}
                     </tbody>
                 </table>
-            </small>
+            </div>
         </div>
     {% else %}
         <small class='text-center text-muted'>
@@ -114,8 +109,3 @@
         </small>
     {% endif %}
 {% endif %}
-{% block js %}
-    {% if debug %}
-        <script src="{% static 'ietf/js/list.js' %}"></script>
-    {% endif %}
-{% endblock %}

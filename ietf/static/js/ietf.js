@@ -116,7 +116,7 @@ $(document)
             .shift()
             .trim();
 
-        if ($(contents)
+        if (contents
             .length > 0 && $(headings)
             .last()
             .offset()
@@ -245,9 +245,18 @@ $(document)
         $('.modal')
             .on('show.bs.modal', function (e) {
                 var button = $(e.relatedTarget);
+                if (!$(button)
+                    .attr("href")) {
+                    return;
+                }
+                var loc = $(button)
+                    .attr("href")
+                    .trim();
                 // load content from value of button href
-                $(this)
-                    .find('.modal-content')
-                    .load(button.attr("href"));
+                if (loc !== undefined && loc !== "#") {
+                    $(this)
+                        .find('.modal-content')
+                        .load(loc);
+                }
             });
     });

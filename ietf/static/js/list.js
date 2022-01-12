@@ -49,7 +49,7 @@ $(document)
 
                 // get field classes from first thead row
                 var fields = $(header_row)
-                    .find("*")
+                    .find("th, td")
                     .map(function () {
                         return $(this)
                             .attr("data-sort") ? $(this)

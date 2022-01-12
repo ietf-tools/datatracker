@@ -161,7 +161,7 @@ $timeline-even-hover-color: shift-color($timeline-even-color, $link-shade-percen
 // Styles needed for the ballot table
 
 .ballot-icon table td {
-    border: $table-border-width solid $table-border-color;
+    border: $table-border-width solid $gray-500;
     height: 1em;
     width: .8em;
 }

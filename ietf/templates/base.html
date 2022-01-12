@@ -111,7 +111,7 @@
                     <a href="https://www.rfc-editor.org/" class="p-3">RFC&nbsp;Editor</a>
                     <a href="https://www.iana.org/" class="p-3">IANA</a>
                     <a href="https://www.ietf.org/privacy-statement/" class="p-3">Privacy&nbsp;Statement</a>
-                    <p class="small text-muted p-3">
+                    <div class="small text-muted p-3">
                         {% if version_num %}
                             <a href="/release/about">About</a>
                             IETF Datatracker
@@ -134,7 +134,7 @@
                         {% if django_version %}Django {{ django_version }}{% endif %}
                         <br>
                         {% include "debug.html" %}
-                    </p>
+                    </div>
                 </footer>
             {% endblock %}
         </div>

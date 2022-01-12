@@ -1,40 +1,32 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load static %}
 {% load django_bootstrap5 %}
-
 {% block pagehead %}
     <link rel="stylesheet" href="{% static 'ietf/css/datepicker.css' %}">
 {% endblock %}
-
 {% block title %}Make last call for {{ doc.name }}{% endblock %}
-
 {% block content %}
     {% origin %}
-
-    <h1>Make last call<br><small class="text-muted">{{doc.name}}</small></h1>
-
-    <div class="mb-3">
+    <h1>
+        Make last call
+        <br>
+        <small class="text-muted">{{ doc.name }}</small>
+    </h1>
+    <div class="my-3">
         <label>Last call text</label>
-        <pre>{{ announcement }}</pre>
+        <pre class="border p-3">{{ announcement }}</pre>
     </div>
-
     <form enctype="multipart/form-data" method="post">
         {% csrf_token %}
         {% bootstrap_form form %}
-
-
-
         <button type="submit" class="btn btn-primary">Submit</button>
         <button type="reset" class="btn btn-warning">Reset</button>
         <a class="btn btn-secondary float-end" href="{{ doc.get_absolute_url }}">Back</a>
-
-
     </form>
 {% endblock %}
-
-
 {% block js %}
     <script src="{% static 'ietf/js/datepicker.js' %}"></script>
     <script>
@@ -42,8 +34,6 @@
             format: "yyyy-mm-dd",
             todayBtn: "linked",
             todayHighlight: true
-        }).wrap('<div class="input-group"></div>').parent().prepend('<span class="input-group-addon"><span class="bi bi-calendar"></span></span>');
+        }).wrap('<div class="input-group mb-3"></div>').parent().prepend('<span class="input-group-text"><span class="bi bi-calendar"></span></span>');
     </script>
 {% endblock %}
-
-

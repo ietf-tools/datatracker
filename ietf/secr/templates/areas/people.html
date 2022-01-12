@@ -23,7 +23,7 @@
                 <form action="modify/" method="post">{% csrf_token %}
                     <input type="hidden" name="tag" value="{{ director.person.id }}" />
                     <tr>
-                        <td id="id-ad-name"><a href="">{{ director.person.name }}</a></td>
+                        <td id="id-ad-name"><a href="#">{{ director.person.name }}</a></td>
                         <td>{% if director.name.slug == "ad" %}
                             Voting Enabled
                         {% else %}

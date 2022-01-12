@@ -5,11 +5,11 @@
 {% load static %}
 {% load django_bootstrap5 %}
 {% load person_filters %}
-{% block title %}Send reminder to action holders for {{ titletext }}{% endblock %}
+{% block title %}Send reminder to action holder{{ doc.action_holders.all|pluralize }} for {{ titletext }}{% endblock %}
 {% block content %}
     {% origin %}
     <h1>
-        Send reminder to action holders
+        Send reminder to action holder{{ doc.action_holders.all|pluralize }}
         <br>
         <small class="text-muted">{{ titletext }}</small>
     </h1>

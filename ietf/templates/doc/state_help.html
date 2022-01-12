@@ -1,27 +1,27 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load static %}
 {% block title %}{{ title }}{% endblock %}
-
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-
 {% block content %}
     {% origin %}
     <h1>{{ title }}</h1>
-
     {% if state_type.slug == "draft-iesg" %}
-        <p><a class="btn btn-primary" href="{% static 'ietf/images/iesg-draft-state-diagram.png' %}">View diagram</a></p>
+        <p>
+            <a class="btn btn-primary"
+               href="{% static 'ietf/images/iesg-draft-state-diagram.png' %}">View diagram</a>
+        </p>
     {% endif %}
-
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th>State</th>
-                <th>Description</th>
-                {% if has_next_states %}<th>Next State</th>{% endif %}
+                <th data-sort="state">State</th>
+                <th data-sort="description">Description</th>
+                {% if has_next_states %}<th data-sort="next">Next State</th>{% endif %}
             </tr>
         </thead>
         <tbody>
@@ -32,7 +32,8 @@
                     {% if has_next_states %}
                         <td>
                             {% for s in state.next_states.all %}
-                                {{ s.name }}<br/>
+                                {{ s.name }}
+                                <br />
                             {% endfor %}
                         </td>
                     {% endif %}
@@ -40,18 +41,15 @@
             {% endfor %}
         </tbody>
     </table>
-
     {% if tags %}
         <h2>Tags</h2>
-
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th>Tag</th>
-                    <th>Description</th>
+                    <th data-sort="tag">Tag</th>
+                    <th data-sort="description">Description</th>
                 </tr>
             </thead>
-
             <tbody>
                 {% for tag in tags %}
                     <tr id="{{ tag.slug }}">
@@ -62,9 +60,7 @@
             </tbody>
         </table>
     {% endif %}
-
 {% endblock %}
-
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

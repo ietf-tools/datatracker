@@ -1,32 +1,30 @@
-{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
-{% load ietf_filters %}
-
+{# bs5ok #}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% origin %}
+{% load ietf_filters static %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
 {% if not docs %}
-    {% if not skip_no_matches_warning %}
-        <div class="alert alert-info">No documents match your query.</div>
-    {% endif %}
+    {% if not skip_no_matches_warning %}<div class="alert alert-info">No documents match your query.</div>{% endif %}
 {% else %}
-
     {% if meta.max %}
-        <div class="alert alert-warning">
-            Too many documents match your query! Returning only a partial result.
+        <div class="alert alert-warning my-3">
+            Too many documents match your query! Returning only a partial result ({{ meta.max }} matches).
         </div>
     {% endif %}
-
-    {% comment %}
-    Disable the js tablesort stuff for a truncate result, per Henrik.
-    {% endcomment %}
     {% if start_table %}
-        <table class="table table-sm table-striped {% if not meta.max %}tablesorter{% endif %}">
+        <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
                     <th></th>
-
                     {% for h in meta.headers %}
                         {% if h.title != "Title" %}
                             <th data-sort="{{ h.key }}">
                                 {% if "sort_url" in h %}
-                                    <a href="{{ h.sort_url }}">{{ h.title|cut:" " }}
+                                    <a href="{{ h.sort_url }}">
+                                        {{ h.title|cut:" " }}
                                         {% if h.sorted and meta.max %}
                                             {% if h.direction == "asc" %}
                                                 <span class="bi bi-caret-up"></span>
@@ -41,37 +39,32 @@
                             </th>
                         {% endif %}
                     {% endfor %}
-
-                    {% if color_row_positions %}
-                        <th></th>
-                    {% endif %}
+                    {% if color_row_positions %}<th></th>{% endif %}
                 </tr>
             </thead>
     {% endif %}
-
     {% regroup docs by search_heading as grouped_docs %}
-
     {% for doc_group in grouped_docs %}
         <thead>
             <tr class="table-info">
                 <th></th>
                 {% if color_row_positions %}
                     <th colspan="{{ meta.headers|length }}">
-                {% else %}
-                    <th colspan="{{ meta.headers|length|add:"-1" }}">
-                {% endif %}
-                {{ doc_group.grouper|plural:doc_group.list }} ({{doc_group.list|length}} {{"hit"|plural:doc_group.list}})
-            </th>
-        </tr>
+                    {% else %}
+                        <th colspan="{{ meta.headers|length|add:"-1" }}">
+                        {% endif %}
+                        {{ doc_group.grouper|plural:doc_group.list }} ({{ doc_group.list|length }} {{"hit"|plural:doc_group.list }})
+                    </th>
+            </tr>
         </thead>
-
         <tbody>
             {% for doc in doc_group.list %}
                 {% include "doc/search/search_result_row.html" %}
             {% endfor %}
+        </tbody>
     {% endfor %}
-    </tbody>
-    {% if end_table %}
-        </table>
-    {% endif %}
+    {% if end_table %}</table>{% endif %}
 {% endif %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
+{% endblock %}

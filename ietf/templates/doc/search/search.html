@@ -12,9 +12,10 @@
     <h1>Document Search</h1>
     {% include "doc/search/search_form.html" %}
     {% if meta.searching %}
-        {% include "doc/search/search_results.html" %}
+        {% include "doc/search/search_results.html" with start_table=True end_table=True %}
     {% endif %}
 {% endblock %}
 {% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
     <script src="{% static "ietf/js/doc-search.js" %}"></script>
 {% endblock %}

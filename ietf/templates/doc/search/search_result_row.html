@@ -15,28 +15,24 @@
     <td>
         {% if user.is_authenticated %}
             <a href="{% url "ietf.community.views.untrack_document" username=request.user.username name=doc.name %}"
-               class="track-untrack-doc
-               {% if not doc.tracked_in_personal_community_list %}visually-hidden{% endif %}"
+               class="track-untrack-doc {% if not doc.tracked_in_personal_community_list %}visually-hidden{% endif %}"
                title="Remove from your personal ID list">
                 <span class="bi bi-bookmark-check-fill"></span>
             </a>
             <a href="{% url "ietf.community.views.track_document" username=request.user.username name=doc.name %}"
-               class="track-untrack-doc
-               {% if doc.tracked_in_personal_community_list %}visually-hidden{% endif %}"
+               class="track-untrack-doc {% if doc.tracked_in_personal_community_list %}visually-hidden{% endif %}"
                title="Add to your personal ID list">
                 <span class="bi bi-bookmark"></span>
             </a>
             <br>
         {% endif %}
         {% if user.review_teams %}
-            <a class="review-wish-add-remove-doc ajax
-               {% if not doc.has_review_wish %}visually-hidden{% endif %}"
+            <a class="review-wish-add-remove-doc ajax {% if not doc.has_review_wish %}visually-hidden{% endif %}"
                href="{% url "ietf.doc.views_review.review_wishes_remove" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
                title="Remove from your review wishes for all teams">
                 <span class="bi bi-chats"></span>
             </a>
-            <a class="review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %}
-               {% if doc.has_review_wish %}visually-hidden{% endif %}"
+            <a class="review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %} {% if doc.has_review_wish %}visually-hidden{% endif %}"
                href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
                title="Add to your review wishes">
                 <span class="bi bi-chats-o"></span>
@@ -62,7 +58,33 @@
             </a>
             {% if doc.get_state_slug == "rfc" and "draft" in doc.name %}<i class="text-muted">(was {{ doc.name }})</i>{% endif %}
             <br>
-            <b>{{ doc.title }}</b>
+            {% comment %}
+            <div class="float-end">
+                {% for check in doc.submission.latest_checks %}
+                    {% if check.passed != None and check.symbol.strip %}
+                        {% if check.errors or check.warnings %}
+                            <a href="#"
+                               class="text-decoration-none checker-warning"
+                               data-bs-toggle="modal"
+                               data-bs-target="#check-{{ check.pk }}"
+                               title="{{ check.checker|title }} returned warnings or errors.">
+                                {{ check.symbol|safe }}
+                            </a>
+                        {% else %}
+                            <a href="#"
+                               class="text-decoration-none checker-success"
+                               data-bs-toggle="modal"
+                               data-bs-target="#check-{{ check.pk }}"
+                               title="{{ check.checker|title }} passed">
+                                {{ check.symbol|safe }}
+                            </a>
+                        {% endif %}
+                        {% include "doc/yang-check-modal-overlay.html" %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endcomment %}
+            <b>{{ doc.title|wordwrap:60|linebreaksbr }}</b>
             {% if doc.has_verified_errata %}
                 <a class="badge bg-danger float-end"
                    href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">
@@ -102,18 +124,6 @@
                         {% if doc.rev != "00" or doc.replaces %}</a>{% endif %}
                     {% endif %}
                 </span>
-                {% comment %}
-    {% for check in doc.submission.latest_checks %}
-      {% if check.passed != None and check.symbol.strip %}
-	{% if check.errors or check.warnings %}
-	   <span class="checker-warning float-end" data-bs-toggle="modal" data-bs-target="#check-{{ check.pk }}" title="{{ check.checker|title }} returned warnings or errors.">{{ check.symbol|safe }}</span>
-	{% else %}
-	   <span class="checker-success float-end" data-bs-toggle="modal" data-bs-target="#check-{{ check.pk }}" title="{{ check.checker|title }} passed">{{ check.symbol|safe }}</span>
-	{% endif %}
-	{% include "doc/yang-check-modal-overlay.html" %}
-      {% endif %}
-    {% endfor %}
-{% endcomment %}
                 {% if doc.latest_revision_date|timesince_days|new_enough:request %}
                     <wbr>
                     <div class="float-end">

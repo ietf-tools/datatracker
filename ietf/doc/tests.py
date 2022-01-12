@@ -250,7 +250,7 @@ class SearchTests(TestCase):
         r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad', kwargs=dict(name=ad.full_name_as_key())))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
-        self.assertContains(r, escape(draft.action_holders.first().plain_name()))
+        self.assertContains(r, escape(draft.action_holders.first().name))
         self.assertContains(r, rfc.canonical_name())
         self.assertContains(r, conflrev.name)
         self.assertContains(r, statchg.name)
@@ -1237,7 +1237,7 @@ Man                    Expires September 22, 2015               [Page 3]
     def _pyquery_select_action_holder_string(q, s):
         """Helper to use PyQuery to find an action holder in the draft HTML"""
         # selector grabs the action holders heading and finds siblings with a div containing the search string
-        return q('th:contains("Action Holders") ~ td>div:contains("%s")' % s)
+        return q('th:contains("Action Holder") ~ td>div:contains("%s")' % s)
 
     @mock.patch.object(Document, 'action_holders_enabled', return_value=False, new_callable=mock.PropertyMock)
     def test_document_draft_hides_action_holders(self, mock_method):
@@ -1245,11 +1245,11 @@ Man                    Expires September 22, 2015               [Page 3]
         draft = WgDraftFactory()
         url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name))
         r = self.client.get(url)
-        self.assertNotContains(r, 'Action Holders')  # should not show action holders...
+        self.assertNotContains(r, 'Action Holder')  # should not show action holders...
 
         draft.action_holders.set([PersonFactory()])
         r = self.client.get(url)
-        self.assertNotContains(r, 'Action Holders')  # ...even if they are assigned
+        self.assertNotContains(r, 'Action Holder')  # ...even if they are assigned
 
     @mock.patch.object(Document, 'action_holders_enabled', return_value=True, new_callable=mock.PropertyMock)
     def test_document_draft_shows_action_holders(self, mock_method):
@@ -1259,7 +1259,7 @@ Man                    Expires September 22, 2015               [Page 3]
 
         # No action holders case should be shown properly
         r = self.client.get(url)
-        self.assertContains(r, 'Action Holders')  # should show action holders
+        self.assertContains(r, 'Action Holder')  # should show action holders
         q = PyQuery(r.content)
         self.assertEqual(len(self._pyquery_select_action_holder_string(q, '(None)')), 1)
         
@@ -1274,7 +1274,7 @@ Man                    Expires September 22, 2015               [Page 3]
         with self.settings(DOC_ACTION_HOLDER_AGE_LIMIT_DAYS=20):
             r = self.client.get(url)
 
-        self.assertContains(r, 'Action Holders')  # should still be shown
+        self.assertContains(r, 'Action Holder')  # should still be shown
         q = PyQuery(r.content)
         self.assertEqual(len(self._pyquery_select_action_holder_string(q, '(None)')), 0)
         for person in draft.action_holders.all():
@@ -1299,7 +1299,7 @@ Man                    Expires September 22, 2015               [Page 3]
             q = PyQuery(r.content)
 
             self.assertEqual(
-                len(q('th:contains("Action Holders") ~ td a[href="%s"]' % edit_ah_url)),
+                len(q('th:contains("Action Holder") ~ td a[href="%s"]' % edit_ah_url)),
                 1 if expect_buttons else 0,
                 '%s should%s see the edit action holders button but %s' % (
                     username if username else 'unauthenticated user',
@@ -1308,7 +1308,7 @@ Man                    Expires September 22, 2015               [Page 3]
                 )
             )
             self.assertEqual(
-                len(q('th:contains("Action Holders") ~ td a[href="%s"]' % remind_ah_url)),
+                len(q('th:contains("Action Holder") ~ td a[href="%s"]' % remind_ah_url)),
                 1 if expect_buttons else 0,
                 '%s should%s see the remind action holders button but %s' % (
                     username if username else 'unauthenticated user',

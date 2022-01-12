@@ -120,7 +120,7 @@ class DraftIdnitsChecker(object):
 class DraftYangChecker(object):
 
     name = "yang validation"
-    symbol = '<span class="large">\u262f</span>'
+    symbol = '<i class="bi bi-yin-yang"></i>'
 
     def check_file_txt(self, path):
         name = os.path.basename(path)
@@ -294,4 +294,3 @@ class DraftYangChecker(object):
         info['items'] = items
         info['code']['yang'] = model_list
         return passed, message, errors, warnings, info
-
