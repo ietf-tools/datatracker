@@ -411,12 +411,8 @@ class BallotPositionDocEventFactory(DocEventFactory):
         model = BallotPositionDocEvent
 
     type = 'changed_ballot_position'
-
-    # This isn't right - it needs to build a ballot for the same doc as this position
-    # For now, deal with this in test code by building BallotDocEvent and BallotPositionDocEvent
-    # separately and passing the same doc into thier factories.
-    ballot = factory.SubFactory(BallotDocEventFactory) 
-
+    ballot = factory.SubFactory(BallotDocEventFactory)
+    doc = factory.SelfAttribute('ballot.doc')  # point to same doc as the ballot
     balloter = factory.SubFactory('ietf.person.factories.PersonFactory')
     pos_id = 'discuss'
 

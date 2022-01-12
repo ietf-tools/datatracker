@@ -1353,7 +1353,11 @@ class BallotPositionDocEvent(DocEvent):
     def any_email_sent(self):
         # When the send_email field is introduced, old positions will have it
         # set to None.  We still essentially return True, False, or don't know:
-        sent_list = BallotPositionDocEvent.objects.filter(ballot=self.ballot, time__lte=self.time, ad=self.ad).values_list('send_email', flat=True)
+        sent_list = BallotPositionDocEvent.objects.filter(
+            ballot=self.ballot,
+            time__lte=self.time,
+            balloter=self.balloter,
+        ).values_list('send_email', flat=True)
         false = any( s==False for s in sent_list )
         true  = any( s==True for s in sent_list )
         return True if true else False if false else None

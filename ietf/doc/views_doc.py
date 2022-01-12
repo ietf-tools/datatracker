@@ -1177,6 +1177,10 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
     positions = ballot.all_positions()
 
     # put into position groups
+    #
+    # Each position group is a tuple (BallotPositionName, [BallotPositionDocEvent, ...])
+    # THe list contains the latest entry for each AD, possibly with a fake 'no record' entry
+    # for any ADs without an event. Blocking positions are earlier in the list than non-blocking.
     position_groups = []
     for n in BallotPositionName.objects.filter(slug__in=[p.pos_id for p in positions]).order_by('order'):
         g = (n, [p for p in positions if p.pos_id == n.slug])
