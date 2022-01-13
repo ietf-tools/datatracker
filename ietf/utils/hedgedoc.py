@@ -39,9 +39,13 @@ class Note:
         """
         if self._source is None:
             try:
-                r = requests.get(urljoin(self.base_url, f'{self.id}/download'), allow_redirects=True)
-            except requests.RequestException:
-                raise ServerNoteError
+                r = requests.get(
+                    urljoin(self.base_url, f'{self.id}/download'),
+                    allow_redirects=True,
+                    timeout=settings.DEFAULT_REQUESTS_TIMEOUT,
+                )
+            except requests.RequestException as exc:
+                raise ServerNoteError from exc
             if r.status_code != 200:
                 raise NoteNotFound
             self._source = self.preprocess_source(r.text)
@@ -69,9 +73,13 @@ class Note:
     def _retrieve_metadata(self):
         if self._metadata is None:
             try:
-                r = requests.get(urljoin(self.base_url, f'{self.id}/info'), allow_redirects=True)
-            except requests.RequestException:
-                raise ServerNoteError
+                r = requests.get(
+                    urljoin(self.base_url, f'{self.id}/info'),
+                    allow_redirects=True,
+                    timeout=settings.DEFAULT_REQUESTS_TIMEOUT,
+                )
+            except requests.RequestException as exc:
+                raise ServerNoteError from exc
             if r.status_code != 200:
                 raise NoteNotFound
             try:
@@ -108,6 +116,7 @@ class NoteError(Exception):
 
 class ServerNoteError(NoteError):
     default_message = 'Could not reach the notes server'
+
 
 class NoteNotFound(NoteError):
     default_message = 'Note did not exist or could not be loaded'

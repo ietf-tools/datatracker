@@ -28,6 +28,7 @@ from ietf.name.models import SessionStatusName, ConstraintName
 from ietf.person.models import Person
 from ietf.secr.proceedings.proc_utils import import_audio_files
 from ietf.utils.html import sanitize_document
+from ietf.utils.log import log
 
 
 def session_time_for_sorting(session, use_meeting_date):
@@ -123,9 +124,10 @@ def create_proceedings_templates(meeting):
     # Get meeting attendees from registration system
     url = settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number)
     try:
-        attendees = requests.get(url).json()
-    except (ValueError, HTTPError):
+        attendees = requests.get(url, timeout=settings.DEFAULT_REQUESTS_TIMEOUT).json()
+    except (ValueError, HTTPError, requests.Timeout) as exc:
         attendees = []
+        log(f'Failed to retrieve meeting attendees from [{url}]: {exc}')
 
     if attendees:
         attendees = sorted(attendees, key = lambda a: a['LastName'])

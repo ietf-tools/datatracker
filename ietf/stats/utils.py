@@ -15,6 +15,7 @@ from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, Countr
 from ietf.name.models import CountryName
 from ietf.person.models import Person, Email, Alias
 from ietf.person.name import unidecode_name
+from ietf.utils.log import log
 
 
 def compile_affiliation_ending_stripping_regexp():
@@ -230,7 +231,14 @@ def get_meeting_registration_data(meeting):
     """
     num_created = 0
     num_processed = 0
-    response = requests.get(settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number))
+    try:
+        response = requests.get(
+            settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number),
+            timeout=settings.DEFAULT_REQUESTS_TIMEOUT,
+        )
+    except requests.Timeout as exc:
+        log(f'GET request timed out for [{settings.STATS_REGISTRATION_ATTENDEES_JSON_URL}]: {exc}')
+        raise RuntimeError("Timeout retrieving data from registrations API") from exc
     if response.status_code == 200:
         decoded = []
         try:

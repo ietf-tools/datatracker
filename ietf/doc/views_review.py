@@ -44,6 +44,7 @@ from ietf.review.utils import (active_review_teams, assign_review_request_to_rev
                                close_review_request_states,
                                close_review_request)
 from ietf.review import mailarch
+from ietf.utils import log
 from ietf.utils.fields import DatepickerDateField
 from ietf.utils.text import strip_prefix, xslugify
 from ietf.utils.textupload import get_cleaned_text_file_content
@@ -621,9 +622,13 @@ class CompleteReviewForm(forms.Form):
         url = self.cleaned_data['review_url']
         #scheme, netloc, path, parameters, query, fragment = urlparse(url)
         if url:
-            r = requests.get(url)
+            try:
+                r = requests.get(url, timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
+            except requests.Timeout as exc:
+                log.log(f'GET request timed out for [{url}]: {exc}')
+                raise forms.ValidationError("Trying to retrieve the URL resulted in a request timeout. Please provide a URL that can be retrieved.") from exc
             if r.status_code != 200:
-                raise forms.ValidationError("Trying to retrieve the URL resulted in status code %s: %s.  Please provide an URL that can be retrieved." % (r.status_code, r.reason))
+                raise forms.ValidationError("Trying to retrieve the URL resulted in status code %s: %s.  Please provide a URL that can be retrieved." % (r.status_code, r.reason))
         return url
 
     def clean(self):
