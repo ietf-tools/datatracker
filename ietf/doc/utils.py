@@ -39,6 +39,8 @@ from ietf.utils import draft, text
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils import log
+from ietf.utils.xmldraft import XMLDraft
+
 
 def save_document_in_history(doc):
     """Save a snapshot of document and related objects in the database."""
@@ -742,21 +744,25 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
 
     return e
 
-def rebuild_reference_relations(doc,filename=None):
+def rebuild_reference_relations(doc, filenames):
+    """Rebuild reference relations for a document
+
+    filenames should be a dict mapping file ext (i.e., type) to the full path of each file.
+    """
     if doc.type.slug != 'draft':
         return None
 
-    if not filename:
-        if doc.get_state_slug() == 'rfc':
-            filename=os.path.join(settings.RFC_PATH,doc.canonical_name()+".txt")
-        else:
-            filename=os.path.join(settings.INTERNET_DRAFT_PATH,doc.filename_with_rev())
-
-    try:
-        with io.open(filename, 'rb') as file:
-            refs = draft.Draft(file.read().decode('utf8'), filename).get_refs()
-    except IOError as e:
-        return { 'errors': ["%s :%s" %  (e.strerror, filename)] }
+    # try XML first
+    if 'xml' in filenames:
+        refs = XMLDraft(filenames['xml']).get_refs()
+    elif 'txt' in filenames:
+        filename = filenames['txt']
+        try:
+            refs = draft.PlaintextDraft.from_file(filename).get_refs()
+        except IOError as e:
+            return { 'errors': ["%s :%s" %  (e.strerror, filename)] }
+    else:
+        return {'errors': ['No draft text available for rebuilding reference relations. Need XML or plaintext.']}
 
     doc.relateddocument_set.filter(relationship__slug__in=['refnorm','refinfo','refold','refunk']).delete()
 
@@ -764,6 +770,7 @@ def rebuild_reference_relations(doc,filename=None):
     errors = []
     unfound = set()
     for ( ref, refType ) in refs.items():
+        # As of Dec 2021, DocAlias has a unique constraint on the name field, so count > 1 should not occur
         refdoc = DocAlias.objects.filter( name=ref )
         count = refdoc.count()
         if count == 0:

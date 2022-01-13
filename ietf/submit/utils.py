@@ -40,7 +40,7 @@ from ietf.submit.models import ( Submission, SubmissionEvent, Preapproval, Draft
     SubmissionCheck, SubmissionExtResource )
 from ietf.utils import log
 from ietf.utils.accesstoken import generate_random_key
-from ietf.utils.draft import Draft
+from ietf.utils.draft import PlaintextDraft
 from ietf.utils.mail import is_valid_email
 from ietf.utils.text import parse_unicode
 from ietf.person.name import unidecode_name
@@ -262,6 +262,18 @@ def post_rev00_submission_events(draft, submission, submitter):
     return events
 
 
+def find_submission_filenames(draft):
+    """Find uploaded files corresponding to the draft
+
+    Returns a dict mapping file extension to the corresponding filename (including the full path).
+    """
+    path = pathlib.Path(settings.IDSUBMIT_STAGING_PATH)
+    stem = f'{draft.name}-{draft.rev}'
+    allowed_types = settings.RFC_FILE_TYPES if draft.get_state_slug() == 'rfc' else settings.IDSUBMIT_FILE_TYPES
+    candidates = {ext: path / f'{stem}.{ext}' for ext in allowed_types}
+    return {ext: str(filename) for ext, filename in candidates.items() if filename.exists()}
+
+
 @transaction.atomic
 def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     log.log(f"{submission.name}: start")
@@ -352,7 +364,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
 
     log.log(f"{submission.name}: updated state and info")
 
-    trouble = rebuild_reference_relations(draft, filename=os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (submission.name, submission.rev)))
+    trouble = rebuild_reference_relations(draft, find_submission_filenames(draft))
     if trouble:
         log.log('Rebuild_reference_relations trouble: %s'%trouble)
     log.log(f"{submission.name}: rebuilt reference relations")
@@ -723,8 +735,7 @@ def save_files(form):
 def get_draft_meta(form, saved_files):
     authors = []
     file_name = saved_files
-    abstract = None
-    file_size = None
+
     if form.cleaned_data['xml']:
         # Some meta-information, such as the page-count, can only
         # be retrieved from the generated text file.  Provide a
@@ -732,7 +743,7 @@ def get_draft_meta(form, saved_files):
         file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (form.filename, form.revision))
         file_size = os.stat(file_name['txt']).st_size
         with io.open(file_name['txt']) as txt_file:
-            form.parsed_draft = Draft(txt_file.read(), txt_file.name)
+            form.parsed_draft = PlaintextDraft(txt_file.read(), txt_file.name)
     else:
         file_size = form.cleaned_data['txt'].size
 

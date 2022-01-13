@@ -13,14 +13,19 @@ import mock
 from io import StringIO
 from pyquery import PyQuery
 
+from pathlib import Path
+
 from django.conf import settings
+from django.test import override_settings
+from django.test.client import RequestFactory
 from django.urls import reverse as urlreverse
 from django.utils.encoding import force_str, force_text
 
 import debug                            # pyflakes:ignore
 
-from ietf.submit.utils import expirable_submissions, expire_submission
-from ietf.doc.factories import DocumentFactory, WgDraftFactory, IndividualDraftFactory
+from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
+                               post_submission)
+from ietf.doc.factories import DocumentFactory, WgDraftFactory, IndividualDraftFactory, IndividualRfcFactory
 from ietf.doc.models import ( Document, DocAlias, DocEvent, State,
     BallotPositionDocEvent, DocumentAuthor, SubmissionDocEvent )
 from ietf.doc.utils import create_ballot_if_not_open, can_edit_docextresources, update_action_holders
@@ -40,7 +45,7 @@ from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.models import VersionInfo
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
-from ietf.utils.draft import Draft
+from ietf.utils.draft import PlaintextDraft
 
 
 class BaseSubmitTestCase(TestCase):
@@ -2860,10 +2865,62 @@ class RefsTests(BaseSubmitTestCase):
 
         group = None
         file, __ = submission_file('draft-some-subject', '00', group, 'txt', "test_submission.txt", )
-        draft = Draft(file.read(), file.name)
+        draft = PlaintextDraft(file.read(), file.name)
         refs = draft.get_refs()
         self.assertEqual(refs['rfc2119'], 'norm')
         self.assertEqual(refs['rfc8174'], 'norm')
         self.assertEqual(refs['rfc8126'], 'info')
         self.assertEqual(refs['rfc8175'], 'info')
-        
+
+
+class PostSubmissionTests(BaseSubmitTestCase):
+    @override_settings(RFC_FILE_TYPES=('txt', 'xml'), IDSUBMIT_FILE_TYPES=('pdf', 'md'))
+    def test_find_submission_filenames_rfc(self):
+        """Posting an RFC submission should use RFC_FILE_TYPES"""
+        rfc = IndividualRfcFactory()
+        path = Path(self.staging_dir)
+        for ext in ['txt', 'xml', 'pdf', 'md']:
+            (path / f'{rfc.name}-{rfc.rev}.{ext}').touch()
+        files = find_submission_filenames(rfc)
+        self.assertCountEqual(
+            files,
+            {
+                'txt': f'{path}/{rfc.name}-{rfc.rev}.txt',
+                'xml': f'{path}/{rfc.name}-{rfc.rev}.xml',
+                # should NOT find the pdf or md
+            }
+        )
+
+    @override_settings(RFC_FILE_TYPES=('txt', 'xml'), IDSUBMIT_FILE_TYPES=('pdf', 'md'))
+    def test_find_submission_filenames_draft(self):
+        """Posting an I-D submission should use IDSUBMIT_FILE_TYPES"""
+        draft = WgDraftFactory()
+        path = Path(self.staging_dir)
+        for ext in ['txt', 'xml', 'pdf', 'md']:
+            (path / f'{draft.name}-{draft.rev}.{ext}').touch()
+        files = find_submission_filenames(draft)
+        self.assertCountEqual(
+            files,
+            {
+                'pdf': f'{path}/{draft.name}-{draft.rev}.pdf',
+                'md': f'{path}/{draft.name}-{draft.rev}.md',
+                # should NOT find the txt or xml
+            }
+        )
+
+    @mock.patch('ietf.submit.utils.rebuild_reference_relations')
+    @mock.patch('ietf.submit.utils.find_submission_filenames')
+    def test_post_submission_rebuilds_ref_relations(self, mock_find_filenames, mock_rebuild_reference_relations):
+        """The post_submission method should rebuild reference relations from correct files
+
+        This tests that the post_submission() utility function gets the list of files to handle from the
+        find_submission_filenames() method and passes them along to rebuild_reference_relations().
+        """
+        submission = SubmissionFactory()
+        mock_find_filenames.return_value = {'xml': f'{self.staging_dir}/{submission.name}.xml'}
+        request = RequestFactory()
+        request.user = PersonFactory().user
+        post_submission(request, submission, 'doc_desc', 'subm_desc')
+        args, kwargs = mock_rebuild_reference_relations.call_args
+        self.assertEqual(args[1], mock_find_filenames.return_value)
+

@@ -1,16 +1,22 @@
 # Copyright The IETF Trust 2020, All Rights Reserved
 import datetime
+import debug  # pyflakes:ignore
+
+from unittest.mock import patch
 
 from django.db import IntegrityError
 
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.name.models import DocTagName
 from ietf.person.factories import PersonFactory
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, name_of_file_containing
 from ietf.person.models import Person
-from ietf.doc.factories import DocumentFactory, WgRfcFactory
+from ietf.doc.factories import DocumentFactory, WgRfcFactory, WgDraftFactory
 from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor, Document
-from ietf.doc.utils import update_action_holders, add_state_change_event, update_documentauthors, fuzzy_find_documents
+from ietf.doc.utils import (update_action_holders, add_state_change_event, update_documentauthors,
+                            fuzzy_find_documents, rebuild_reference_relations)
+from ietf.utils.draft import Draft, PlaintextDraft
+from ietf.utils.xmldraft import XMLDraft
 
 
 class ActionHoldersTests(TestCase):
@@ -285,3 +291,140 @@ class MiscTests(TestCase):
         self.do_fuzzy_find_documents_rfc_test('draft-name-with-number-01')
         self.do_fuzzy_find_documents_rfc_test('draft-name-that-has-two-02-04')
         self.do_fuzzy_find_documents_rfc_test('draft-wild-01-numbers-0312')
+
+
+class RebuildReferenceRelationsTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.doc = WgDraftFactory()  # document under test
+        # Other documents that should be found by rebuild_reference_relations
+        self.normative, self.informative, self.unknown = WgRfcFactory.create_batch(3)
+        for relationship in ['refnorm', 'refinfo', 'refunk', 'refold']:
+            self.doc.relateddocument_set.create(
+                target=WgRfcFactory().docalias.first(),
+                relationship_id=relationship,
+            )
+        self.updated = WgRfcFactory()  # related document that should be left alone
+        self.doc.relateddocument_set.create(target=self.updated.docalias.first(), relationship_id='updates')
+        self.assertCountEqual(self.doc.relateddocument_set.values_list('relationship__slug', flat=True),
+                              ['refnorm', 'refinfo', 'refold', 'refunk', 'updates'],
+                              'Test conditions set up incorrectly: wrong prior document relationships')
+        for other_doc in [self.normative, self.informative, self.unknown]:
+            self.assertEqual(
+                self.doc.relateddocument_set.filter(target__name=other_doc.canonical_name()).count(),
+                0,
+                'Test conditions set up incorrectly: new documents already related',
+            )
+
+    def _get_refs_return_value(self):
+        return {
+            self.normative.canonical_name(): Draft.REF_TYPE_NORMATIVE,
+            self.informative.canonical_name(): Draft.REF_TYPE_INFORMATIVE,
+            self.unknown.canonical_name(): Draft.REF_TYPE_UNKNOWN,
+            'draft-not-found': Draft.REF_TYPE_NORMATIVE,
+        }
+
+    def test_requires_txt_or_xml(self):
+        result = rebuild_reference_relations(self.doc, {})
+        self.assertCountEqual(result.keys(), ['errors'])
+        self.assertEqual(len(result['errors']), 1)
+        self.assertIn('No draft text available', result['errors'][0],
+                      'Error should be reported if no draft file is given')
+
+        result = rebuild_reference_relations(self.doc, {'md': 'cant-do-this.md'})
+        self.assertCountEqual(result.keys(), ['errors'])
+        self.assertEqual(len(result['errors']), 1)
+        self.assertIn('No draft text available', result['errors'][0],
+                      'Error should be reported if no XML or plaintext file is given')
+
+    @patch.object(XMLDraft, 'get_refs')
+    @patch.object(XMLDraft, '__init__', return_value=None)
+    def test_xml(self, mock_init, mock_get_refs):
+        """Should build reference relations with only XML"""
+        mock_get_refs.return_value = self._get_refs_return_value()
+
+        result = rebuild_reference_relations(self.doc, {'xml': 'file.xml'})
+
+        # if the method of calling the XMLDraft() constructor changes, this will need to be updated
+        xmldraft_init_args, _ = mock_init.call_args
+        self.assertEqual(xmldraft_init_args, ('file.xml',), 'XMLDraft initialized with unexpected arguments')
+        self.assertEqual(
+            result,
+            {
+                'warnings': ['There were 1 references with no matching DocAlias'],
+                'unfound': ['draft-not-found'],
+            }
+        )
+
+        self.assertCountEqual(
+            self.doc.relateddocument_set.values_list('target__name', 'relationship__slug'),
+            [
+                (self.normative.canonical_name(), 'refnorm'),
+                (self.informative.canonical_name(), 'refinfo'),
+                (self.unknown.canonical_name(), 'refunk'),
+                (self.updated.docalias.first().name, 'updates'),
+            ]
+        )
+
+    @patch.object(PlaintextDraft, 'get_refs')
+    @patch.object(PlaintextDraft, '__init__', return_value=None)
+    def test_plaintext(self, mock_init, mock_get_refs):
+        """Should build reference relations with only plaintext"""
+        mock_get_refs.return_value = self._get_refs_return_value()
+
+        with name_of_file_containing('contents') as temp_file_name:
+            result = rebuild_reference_relations(self.doc, {'txt': temp_file_name})
+
+        # if the method of calling the PlaintextDraft() constructor changes, this test will need to be updated
+        _, mock_init_kwargs = mock_init.call_args
+        self.assertEqual(mock_init_kwargs, {'text': 'contents', 'source': temp_file_name},
+                         'PlaintextDraft initialized with unexpected arguments')
+        self.assertEqual(
+            result,
+            {
+                'warnings': ['There were 1 references with no matching DocAlias'],
+                'unfound': ['draft-not-found'],
+            }
+        )
+
+        self.assertCountEqual(
+            self.doc.relateddocument_set.values_list('target__name', 'relationship__slug'),
+            [
+                (self.normative.canonical_name(), 'refnorm'),
+                (self.informative.canonical_name(), 'refinfo'),
+                (self.unknown.canonical_name(), 'refunk'),
+                (self.updated.docalias.first().name, 'updates'),
+            ]
+        )
+
+    @patch.object(PlaintextDraft, '__init__')
+    @patch.object(XMLDraft, 'get_refs')
+    @patch.object(XMLDraft, '__init__', return_value=None)
+    def test_xml_and_plaintext(self, mock_init, mock_get_refs, mock_plaintext_init):
+        """Should build reference relations with XML when plaintext also available"""
+        mock_get_refs.return_value = self._get_refs_return_value()
+
+        result = rebuild_reference_relations(self.doc, {'txt': 'file.txt', 'xml': 'file.xml'})
+
+        self.assertFalse(mock_plaintext_init.called, 'PlaintextDraft should not be used when XML is available')
+
+        # if the method of calling the XMLDraft() constructor changes, this will need to be updated
+        xmldraft_init_args, _ = mock_init.call_args
+        self.assertEqual(xmldraft_init_args, ('file.xml',), 'XMLDraft initialized with unexpected arguments')
+        self.assertEqual(
+            result,
+            {
+                'warnings': ['There were 1 references with no matching DocAlias'],
+                'unfound': ['draft-not-found'],
+            }
+        )
+
+        self.assertCountEqual(
+            self.doc.relateddocument_set.values_list('target__name', 'relationship__slug'),
+            [
+                (self.normative.canonical_name(), 'refnorm'),
+                (self.informative.canonical_name(), 'refinfo'),
+                (self.unknown.canonical_name(), 'refunk'),
+                (self.updated.docalias.first().name, 'updates'),
+            ]
+        )

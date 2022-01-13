@@ -38,12 +38,14 @@ from ietf.group.models import Group
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.bower_storage import BowerStorageFinder
-from ietf.utils.draft import Draft, getmeta
+from ietf.utils.draft import PlaintextDraft, getmeta
 from ietf.utils.log import unreachable, assertion
 from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox, get_payload_text
 from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import parse_unicode
+from ietf.utils.xmldraft import XMLDraft
+
 
 skip_wiki_glue_testing = False
 skip_message_svn = ""
@@ -423,12 +425,12 @@ class TestBowerStaticFiles(TestCase):
         self.assertNotEqual(files,[])
 
 
-class DraftTests(TestCase):
+class PlaintextDraftTests(TestCase):
 
     def setUp(self):
         super().setUp()
         file,_ = submission_file(name='draft-test-draft-class',rev='00',format='txt',templatename='test_submission.txt',group=None)
-        self.draft = Draft(text=file.getvalue(),source='draft-test-draft-class-00.txt',name_from_source=False)
+        self.draft = PlaintextDraft(text=file.getvalue(), source='draft-test-draft-class-00.txt', name_from_source=False)
 
     def test_get_status(self):
         self.assertEqual(self.draft.get_status(),'Informational')
@@ -449,6 +451,32 @@ class DraftTests(TestCase):
             file.write(self.draft.text)
         self.assertEqual(getmeta(filename)['docdeststatus'],'Informational')
         shutil.rmtree(tempdir)
+
+
+class XMLDraftTests(TestCase):
+    def test_get_refs_v3(self):
+        draft = XMLDraft('ietf/utils/test_draft_with_references_v3.xml')
+        self.assertEqual(
+            draft.get_refs(),
+            {
+                'rfc1': XMLDraft.REF_TYPE_NORMATIVE,
+                'rfc255': XMLDraft.REF_TYPE_INFORMATIVE,
+                'bcp6': XMLDraft.REF_TYPE_INFORMATIVE,
+                'rfc1207': XMLDraft.REF_TYPE_UNKNOWN,
+            }
+        )
+
+    def test_get_refs_v2(self):
+        draft = XMLDraft('ietf/utils/test_draft_with_references_v2.xml')
+        self.assertEqual(
+            draft.get_refs(),
+            {
+                'rfc1': XMLDraft.REF_TYPE_NORMATIVE,
+                'rfc255': XMLDraft.REF_TYPE_INFORMATIVE,
+                'bcp6': XMLDraft.REF_TYPE_INFORMATIVE,
+                'rfc1207': XMLDraft.REF_TYPE_UNKNOWN,
+            }
+        )
 
 
 class NameTests(TestCase):
