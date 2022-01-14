@@ -9,12 +9,16 @@ from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
 
+from django.test import RequestFactory
+from django.utils.text import slugify
 from django.urls import reverse as urlreverse
 
-from ietf.doc.models import ( Document, State, DocEvent,
-    BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, TelechatDocEvent )
-from ietf.doc.factories import DocumentFactory, IndividualDraftFactory, IndividualRfcFactory, WgDraftFactory
+from ietf.doc.models import (Document, State, DocEvent,
+                             BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, TelechatDocEvent)
+from ietf.doc.factories import (DocumentFactory, IndividualDraftFactory, IndividualRfcFactory, WgDraftFactory,
+                                BallotPositionDocEventFactory, BallotDocEventFactory)
 from ietf.doc.utils import create_ballot_if_not_open
+from ietf.doc.views_doc import document_ballot_content
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory, ReviewTeamFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
@@ -22,6 +26,7 @@ from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person, PersonalApiKey
 from ietf.person.factories import PersonFactory
+from ietf.person.utils import get_active_ads
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.text import unwrap
@@ -1100,7 +1105,7 @@ class RegenerateLastCallTestCase(TestCase):
         self.assertTrue("rfc6666" in lc_text)
         self.assertTrue("Independent Submission" in lc_text)
 
-        draft.relateddocument_set.create(target=rfc.docalias.get(name='rfc6666'),relationship_id='downref-approval')
+        draft.relateddocument_set.create(target=rfc.docalias.get(name='rfc6666'), relationship_id='downref-approval')
 
         r = self.client.post(url, dict(regenerate_last_call_text="1"))
         self.assertEqual(r.status_code, 200)
@@ -1108,3 +1113,270 @@ class RegenerateLastCallTestCase(TestCase):
         lc_text = draft.latest_event(WriteupDocEvent, type="changed_last_call_text").text
         self.assertFalse("contains these normative down" in lc_text)
         self.assertFalse("rfc6666" in lc_text)
+
+
+class BallotContentTests(TestCase):
+    def test_ballotpositiondocevent_any_email_sent(self):
+        now = datetime.datetime.now()  # be sure event timestamps are at distinct times
+        bpde_with_null_send_email = BallotPositionDocEventFactory(
+            time=now - datetime.timedelta(minutes=30),
+            send_email=None,
+        )
+        ballot = bpde_with_null_send_email.ballot
+        balloter = bpde_with_null_send_email.balloter
+        self.assertIsNone(
+            bpde_with_null_send_email.any_email_sent(),
+            'Result is None when only send_email is None',
+        )
+
+        self.assertIsNone(
+            BallotPositionDocEventFactory(
+                ballot=ballot,
+                balloter=balloter,
+                time=now - datetime.timedelta(minutes=29),
+                send_email=None,
+            ).any_email_sent(),
+            'Result is None when all send_email values are None',
+        )
+
+        # test with assertIs instead of assertFalse to distinguish None from False
+        self.assertIs(
+            BallotPositionDocEventFactory(
+                ballot=ballot,
+                balloter=balloter,
+                time=now - datetime.timedelta(minutes=28),
+                send_email=False,
+            ).any_email_sent(),
+            False,
+            'Result is False when current send_email is False'
+        )
+
+        self.assertIs(
+            BallotPositionDocEventFactory(
+                ballot=ballot,
+                balloter=balloter,
+                time=now - datetime.timedelta(minutes=27),
+                send_email=None,
+            ).any_email_sent(),
+            False,
+            'Result is False when earlier send_email is False'
+        )
+
+        self.assertIs(
+            BallotPositionDocEventFactory(
+                ballot=ballot,
+                balloter=balloter,
+                time=now - datetime.timedelta(minutes=26),
+                send_email=True,
+            ).any_email_sent(),
+            True,
+            'Result is True when current send_email is True'
+        )
+
+        self.assertIs(
+            BallotPositionDocEventFactory(
+                ballot=ballot,
+                balloter=balloter,
+                time=now - datetime.timedelta(minutes=25),
+                send_email=None,
+            ).any_email_sent(),
+            True,
+            'Result is True when earlier send_email is True and current is None'
+        )
+
+        self.assertIs(
+            BallotPositionDocEventFactory(
+                ballot=ballot,
+                balloter=balloter,
+                time=now - datetime.timedelta(minutes=24),
+                send_email=False,
+            ).any_email_sent(),
+            True,
+            'Result is True when earlier send_email is True and current is False'
+        )
+
+    def _assertBallotMessage(self, q, balloter, expected):
+        heading = q(f'h4[id$="_{slugify(balloter.plain_name())}"]')
+        self.assertEqual(len(heading), 1)
+        # <h4/> is followed by a panel with the message of interest, so use next()
+        self.assertEqual(
+            len(heading.next().find(
+                f'*[title="{expected}"]'
+            )),
+            1,
+        )
+
+    def test_document_ballot_content_email_sent(self):
+        """Ballot content correctly describes whether email is requested for each position"""
+        ballot = BallotDocEventFactory()
+        balloters = get_active_ads()
+        self.assertGreaterEqual(len(balloters), 6,
+                                'Oops! Need to create additional active balloters for test')
+
+        # send_email is True
+        BallotPositionDocEventFactory(
+            ballot=ballot,
+            balloter=balloters[0],
+            pos_id='discuss',
+            discuss='Discussion text',
+            discuss_time=datetime.datetime.now(),
+            send_email=True,
+        )
+        BallotPositionDocEventFactory(
+            ballot=ballot,
+            balloter=balloters[1],
+            pos_id='noobj',
+            comment='Commentary',
+            comment_time=datetime.datetime.now(),
+            send_email=True,
+        )
+
+        # send_email False
+        BallotPositionDocEventFactory(
+            ballot=ballot,
+            balloter=balloters[2],
+            pos_id='discuss',
+            discuss='Discussion text',
+            discuss_time=datetime.datetime.now(),
+            send_email=False,
+        )
+        BallotPositionDocEventFactory(
+            ballot=ballot,
+            balloter=balloters[3],
+            pos_id='noobj',
+            comment='Commentary',
+            comment_time=datetime.datetime.now(),
+            send_email=False,
+        )
+
+        # send_email False but earlier position had send_email True
+        BallotPositionDocEventFactory(
+            ballot=ballot,
+            balloter=balloters[4],
+            pos_id='discuss',
+            discuss='Discussion text',
+            discuss_time=datetime.datetime.now() - datetime.timedelta(days=1),
+            send_email=True,
+        )
+        BallotPositionDocEventFactory(
+            ballot=ballot,
+            balloter=balloters[4],
+            pos_id='discuss',
+            discuss='Discussion text',
+            discuss_time=datetime.datetime.now(),
+            send_email=False,
+        )
+        BallotPositionDocEventFactory(
+            ballot=ballot,
+            balloter=balloters[5],
+            pos_id='noobj',
+            comment='Commentary',
+            comment_time=datetime.datetime.now() - datetime.timedelta(days=1),
+            send_email=True,
+        )
+        BallotPositionDocEventFactory(
+            ballot=ballot,
+            balloter=balloters[5],
+            pos_id='noobj',
+            comment='Commentary',
+            comment_time=datetime.datetime.now(),
+            send_email=False,
+        )
+
+        # Create a few positions with non-active-ad people. These will be treated
+        # as "old" ballot positions because the people are not in the list returned
+        # by get_active_ads()
+        #
+        # Some faked non-ASCII names wind up with plain names that cannot be slugified.
+        # This causes test failure because that slug is used in an HTML element ID.
+        # Until that's fixed, set the plain names to something guaranteed unique so
+        # the test does not randomly fail.
+        no_email_balloter = BallotPositionDocEventFactory(
+            ballot=ballot,
+            balloter__plain='plain name1',
+            pos_id='discuss',
+            discuss='Discussion text',
+            discuss_time=datetime.datetime.now(),
+            send_email=False,
+        ).balloter
+        send_email_balloter = BallotPositionDocEventFactory(
+            ballot=ballot,
+            balloter__plain='plain name2',
+            pos_id='discuss',
+            discuss='Discussion text',
+            discuss_time=datetime.datetime.now(),
+            send_email=True,
+        ).balloter
+        prev_send_email_balloter = BallotPositionDocEventFactory(
+            ballot=ballot,
+            balloter__plain='plain name3',
+            pos_id='discuss',
+            discuss='Discussion text',
+            discuss_time=datetime.datetime.now() - datetime.timedelta(days=1),
+            send_email=True,
+        ).balloter
+        BallotPositionDocEventFactory(
+            ballot=ballot,
+            balloter=prev_send_email_balloter,
+            pos_id='discuss',
+            discuss='Discussion text',
+            discuss_time=datetime.datetime.now(),
+            send_email=False,
+        )
+
+        content = document_ballot_content(
+            request=RequestFactory(),
+            doc=ballot.doc,
+            ballot_id=ballot.pk,
+        )
+        q = PyQuery(content)
+        self._assertBallotMessage(q, balloters[0], 'Email requested to be sent for this discuss')
+        self._assertBallotMessage(q, balloters[1], 'Email requested to be sent for this comment')
+        self._assertBallotMessage(q, balloters[2], 'No email send requests for this discuss')
+        self._assertBallotMessage(q, balloters[3], 'No email send requests for this comment')
+        self._assertBallotMessage(q, balloters[4], 'Email requested to be sent for earlier discuss')
+        self._assertBallotMessage(q, balloters[5], 'Email requested to be sent for earlier comment')
+        self._assertBallotMessage(q, no_email_balloter, 'No email send requests for this ballot position')
+        self._assertBallotMessage(q, send_email_balloter, 'Email requested to be sent for this ballot position')
+        self._assertBallotMessage(q, prev_send_email_balloter, 'Email requested to be sent for earlier ballot position')
+
+    def test_document_ballot_content_without_send_email_values(self):
+        """Ballot content correctly indicates lack of send_email field in records"""
+        ballot = BallotDocEventFactory()
+        balloters = get_active_ads()
+        self.assertGreaterEqual(len(balloters), 2,
+                                'Oops! Need to create additional active balloters for test')
+        BallotPositionDocEventFactory(
+            ballot=ballot,
+            balloter=balloters[0],
+            pos_id='discuss',
+            discuss='Discussion text',
+            discuss_time=datetime.datetime.now(),
+            send_email=None,
+        )
+        BallotPositionDocEventFactory(
+            ballot=ballot,
+            balloter=balloters[1],
+            pos_id='noobj',
+            comment='Commentary',
+            comment_time=datetime.datetime.now(),
+            send_email=None,
+        )
+        old_balloter = BallotPositionDocEventFactory(
+            ballot=ballot,
+            balloter__plain='plain name',  # ensure plain name is slugifiable
+            pos_id='discuss',
+            discuss='Discussion text',
+            discuss_time=datetime.datetime.now(),
+            send_email=None,
+        ).balloter
+
+        content = document_ballot_content(
+            request=RequestFactory(),
+            doc=ballot.doc,
+            ballot_id=ballot.pk,
+        )
+        q = PyQuery(content)
+        self._assertBallotMessage(q, balloters[0], 'No email send requests for this discuss')
+        self._assertBallotMessage(q, balloters[1], 'No ballot position send log available')
+        self._assertBallotMessage(q, old_balloter, 'No ballot position send log available')
