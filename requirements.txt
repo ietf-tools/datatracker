@@ -25,6 +25,7 @@ django-stubs==1.6.0		# The django-stubs version used determines the the mypy ver
 django-tastypie==0.14.3         # Django 2.1 will require 0.14.2; Django 3.0 will require 0.14.3
 django-webtest>=1.9.7
 django-widget-tweaks>=1.4.2
+djhtml>=1.4.11  # To auto-indent templates via "djlint --profile django --reformat"
 docutils>=0.12,!=0.15
 #factory-boy>=3
 #Faker>=0.8.11   # from factory-boy # Faker 0.8.9,0.8.10 sometimes return string names instead of unicode.
