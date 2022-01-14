@@ -8,6 +8,7 @@ import datetime
 import io
 import bleach
 
+from unittest.mock import patch
 from pathlib import Path
 from pyquery import PyQuery
 from tempfile import NamedTemporaryFile
@@ -515,12 +516,16 @@ class GroupEditTests(TestCase):
         self.assertTrue(len(q('form .has-error')) > 0)
 
         # Ok creation
-        r = self.client.post(url, dict(acronym="testwg", name="Testing WG", state=bof_state.pk, parent=area.pk))
+        r = self.client.post(
+            url,
+            dict(acronym="testwg", name="Testing WG", state=bof_state.pk, parent=area.pk, description="ignored"),
+        )
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(Group.objects.filter(type="wg")), num_wgs + 1)
         group = Group.objects.get(acronym="testwg")
         self.assertEqual(group.name, "Testing WG")
         self.assertEqual(charter_name_for_group(group), "charter-ietf-testwg")
+        self.assertEqual(group.description, '', 'Description should be ignored for a WG')
 
     def test_create_rg(self):
 
@@ -578,6 +583,28 @@ class GroupEditTests(TestCase):
 #         self.assertEqual(r.status_code, 302)
 #         self.assertEqual(Group.objects.get(acronym=group.acronym).state_id, "proposed")
 #         self.assertEqual(Group.objects.get(acronym=group.acronym).name, "Test")
+
+
+    def test_create_non_chartered_includes_description(self):
+        parent = GroupFactory(type_id='area')
+        group_type = GroupTypeName.objects.filter(used=True, features__has_chartering_process=False).first()
+        self.assertIsNotNone(group_type)
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group_type.slug, action="create"))
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.post(
+            url,
+            {
+                'acronym': "testgrp",
+                'name': "Testing",
+                'state': GroupStateName.objects.get(slug='active').pk,
+                'parent': parent.pk,
+                'description': "not ignored",
+            },
+        )
+        self.assertEqual(r.status_code, 302)
+        group = Group.objects.get(acronym="testgrp")
+        self.assertEqual(group.name, "Testing")
+        self.assertEqual(group.description, 'not ignored', 'Description should not be ignored')
 
     def test_edit_info(self):
         group = GroupFactory(acronym='mars',parent=GroupFactory(type_id='area'))
@@ -640,6 +667,7 @@ class GroupEditTests(TestCase):
                                   list_email="mars@mail",
                                   list_subscribe="subscribe.mars",
                                   list_archive="archive.mars",
+                                  description='ignored'
                                   ))
         self.assertEqual(r.status_code, 302)
 
@@ -658,6 +686,7 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.list_email, "mars@mail")
         self.assertEqual(group.list_subscribe, "subscribe.mars")
         self.assertEqual(group.list_archive, "archive.mars")
+        self.assertEqual(group.description, '')
 
         self.assertTrue((Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).exists())
         self.assertEqual(len(outbox), 2)
@@ -843,6 +872,60 @@ class GroupEditTests(TestCase):
         self.assertEqual(review_assignment.state_id, 'accepted')
         self.assertEqual(other_review_assignment.state_id, 'assigned')
 
+    def test_edit_info_non_chartered_includes_description(self):
+        group_type = GroupTypeName.objects.filter(used=True, features__has_chartering_process=False).first()
+        self.assertIsNotNone(group_type)
+        group = GroupFactory(type_id=group_type.pk, description='Original description')
+        url = urlreverse('ietf.group.views.edit', kwargs={'acronym': group.acronym, 'action': 'edit'})
+        PersonFactory(user__username='plain')
+        self.client.login(username='plain', password='plain+password')
+
+        # mock the auth check so we don't have to delve into details of GroupFeatures for testing
+        with patch('ietf.group.views.can_manage_group', return_value=True):
+            r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('textarea[name="description"]'))
+
+        with patch('ietf.group.views.can_manage_group', return_value=True):
+            r = self.client.post(url, {
+                'name': group.name,
+                'acronym': group.acronym,
+                'state': group.state.pk,
+                'description': 'Updated description',
+            })
+        self.assertEqual(r.status_code, 302)
+        group = Group.objects.get(pk=group.pk)  # refresh
+        self.assertEqual(group.description, 'Updated description')
+
+    def test_edit_description_field(self):
+        group_type = GroupTypeName.objects.filter(used=True, features__has_chartering_process=False).first()
+        self.assertIsNotNone(group_type)
+        group = GroupFactory(type_id=group_type.pk, description='Original description')
+        url = urlreverse('ietf.group.views.edit',
+                         kwargs={'acronym': group.acronym, 'action': 'edit', 'field': 'description'})
+        PersonFactory(user__username='plain')
+        self.client.login(username='plain', password='plain+password')
+
+        # mock the auth check so we don't have to delve into details of GroupFeatures for testing
+        with patch('ietf.group.views.can_manage_group', return_value=True):
+            r = self.client.post(url, {
+                'description': 'Updated description',
+            })
+        self.assertEqual(r.status_code, 302)
+        group = Group.objects.get(pk=group.pk)  # refresh
+        self.assertEqual(group.description, 'Updated description')
+
+        # Convert the group to a chartered type and repeat - should no longer be able to edit the desc
+        group.type = GroupTypeName.objects.filter(used=True, features__has_chartering_process=True).first()
+        group.save()
+        with patch('ietf.group.views.can_manage_group', return_value=True):
+            r = self.client.post(url, {
+                'description': 'Ignored description',
+            })
+        self.assertEqual(r.status_code, 302)
+        group = Group.objects.get(pk=group.pk)  # refresh
+        self.assertEqual(group.description, 'Updated description')
 
     def test_conclude(self):
         group = GroupFactory(acronym="mars")
@@ -1036,6 +1119,32 @@ class GroupFormTests(TestCase):
         form = GroupForm(data, group=group, group_type=group.type_id, field=None)
         self.assertTrue(form.is_valid())
         self._assert_cleaned_data_equal(form.cleaned_data, data)
+
+    def test_no_description_field_for_chartered_groups(self):
+        group = GroupFactory()
+        self.assertTrue(
+            group.features.has_chartering_process,
+            'Group type must have has_chartering_process=True for this test',
+        )
+        self.assertNotIn('description', GroupForm(group=group).fields)
+        self.assertNotIn('description', GroupForm(group_type=group.type).fields)
+        self.assertNotIn('description', GroupForm(group=group, group_type=group.type).fields)
+        self.assertNotIn('description', GroupForm(data={'description': 'blah'}, group=group).fields)
+        self.assertNotIn('description', GroupForm(data={'description': 'blah'}, group_type=group.type).fields)
+        self.assertNotIn('description', GroupForm(data={'description': 'blah'}, group=group, group_type=group.type).fields)
+
+    def test_have_description_field_for_non_chartered_groups(self):
+        group = GroupFactory(type_id='dir')
+        self.assertFalse(
+            group.features.has_chartering_process,
+            'Group type must have has_chartering_process=False for this test',
+        )
+        self.assertIn('description', GroupForm(group=group).fields)
+        self.assertIn('description', GroupForm(group_type=group.type).fields)
+        self.assertIn('description', GroupForm(group=group, group_type=group.type).fields)
+        self.assertIn('description', GroupForm(data={'description': 'blah'}, group=group).fields)
+        self.assertIn('description', GroupForm(data={'description': 'blah'}, group_type=group.type).fields)
+        self.assertIn('description', GroupForm(data={'description': 'blah'}, group=group, group_type=group.type).fields)
 
 
 class MilestoneTests(TestCase):

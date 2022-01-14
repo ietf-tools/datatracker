@@ -884,7 +884,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
         return fs.join(res)
 
     def diff(attr, name):
-        if field and attr != field:
+        if attr not in clean or (field and attr != field):
             return
         v = getattr(group, attr)
         if clean[attr] != v:
@@ -951,6 +951,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
             diff('name', "Name")
             diff('acronym', "Acronym")
             diff('state', "State")
+            diff('description', "Description")
             diff('parent', "IETF Area" if group.type=="wg" else "Group parent")
             diff('list_email', "Mailing list email")
             diff('list_subscribe', "Mailing list subscribe address")
@@ -1067,6 +1068,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
             init = dict(name=group.name,
                         acronym=group.acronym,
                         state=group.state,
+                        description = group.description,
                         parent=group.parent.id if group.parent else None,
                         list_email=group.list_email if group.list_email else None,
                         list_subscribe=group.list_subscribe if group.list_subscribe else None,
