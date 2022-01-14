@@ -702,7 +702,7 @@ def get_default_filter_re(person):
         return '^draft-(%s|%s)-.*$' % ( person.last_name().lower(), '|'.join(['ietf-%s' % g.acronym for g in groups_to_avoid]))
 
 
-def send_unavaibility_period_ending_reminder(remind_date):
+def send_unavailability_period_ending_reminder(remind_date):
     reminder_days = 3
     end_date = remind_date + datetime.timedelta(days=reminder_days)
     min_start_date = end_date - datetime.timedelta(days=30)
@@ -771,6 +771,7 @@ def send_reminder_all_open_reviews(remind_date):
         assignments = ReviewAssignment.objects.filter(
             state__in=("assigned", "accepted"),
             reviewer__person=reviewer_settings.person,
+            review_request__team=reviewer_settings.team,
         )
         if not assignments:
             continue
@@ -800,14 +801,10 @@ def send_reminder_unconfirmed_assignments(remind_date):
     accepted or rejected, if enabled in ReviewTeamSettings.
     """
     log = []
-    days_since_origin = (remind_date - ORIGIN_DATE_PERIODIC_REMINDERS).days
     relevant_review_team_settings = ReviewTeamSettings.objects.filter(
         remind_days_unconfirmed_assignments__isnull=False)
 
     for review_team_settings in relevant_review_team_settings:
-        if days_since_origin % review_team_settings.remind_days_unconfirmed_assignments != 0:
-            continue
-
         assignments = ReviewAssignment.objects.filter(
             state='assigned',
             review_request__team=review_team_settings.group,
@@ -816,6 +813,9 @@ def send_reminder_unconfirmed_assignments(remind_date):
             continue
 
         for assignment in assignments:
+            days_old = (remind_date - assignment.assigned_on.date()).days
+            if days_old == 0 or (days_old % review_team_settings.remind_days_unconfirmed_assignments) != 0:
+                continue  # skip those created today or not due for a reminder today
             to = assignment.reviewer.formatted_email()
             subject = "Reminder: you have not responded to a review assignment"
             domain = Site.objects.get_current().domain
@@ -823,19 +823,33 @@ def send_reminder_unconfirmed_assignments(remind_date):
                 "name": assignment.review_request.doc.name,
                 "request_id": assignment.review_request.pk
             })
+            cc = [secr_role.formatted_email()
+                  for secr_role in assignment.review_request.team.role_set.filter(name__slug='secr')]
 
-            send_mail(None, to, None, subject, "review/reviewer_reminder_unconfirmed_assignments.txt", {
-                "review_request_url": "https://{}{}".format(domain, review_request_url),
-                "assignment": assignment,
-                "team": assignment.review_request.team,
-                "remind_days": review_team_settings.remind_days_unconfirmed_assignments,
-            })
+            send_mail(
+                request=None,
+                to=to,
+                cc=cc,
+                frm=None,
+                subject=subject,
+                template="review/reviewer_reminder_unconfirmed_assignments.txt",
+                context={
+                    "review_request_url": "https://{}{}".format(domain, review_request_url),
+                    "assignment": assignment,
+                    "team": assignment.review_request.team,
+                    "remind_days": review_team_settings.remind_days_unconfirmed_assignments,
+                },
+            )
             log.append("Emailed reminder to {} about not accepted/rejected review assignment {}".format(to, assignment.pk))
 
     return log
 
 
 def review_assignments_needing_reviewer_reminder(remind_date):
+    """Get review assignments needing reviewer reminders
+
+    Returns a queryset of ReviewAssignments whose reviewers should be notified.
+    """
     assignment_qs = ReviewAssignment.objects.filter(
         state__in=("assigned", "accepted"),
         reviewer__person__reviewersettings__remind_days_before_deadline__isnull=False,
@@ -876,23 +890,44 @@ def email_reviewer_reminder(assignment):
     })
 
 def review_assignments_needing_secretary_reminder(remind_date):
+    """Find ReviewAssignments whose secretary should be sent a reminder today"""
+    # Get ReviewAssignments for teams whose secretaries have a non-null remind_days_before_deadline
+    # setting.
     assignment_qs = ReviewAssignment.objects.filter(
         state__in=("assigned", "accepted"),
+        review_request__team__role__name__slug='secr',
         review_request__team__role__person__reviewsecretarysettings__remind_days_before_deadline__isnull=False,
         review_request__team__role__person__reviewsecretarysettings__team=F("review_request__team"),
     ).exclude(
         reviewer=None
     ).values_list("pk", "review_request__deadline", "review_request__team__role", "review_request__team__role__person__reviewsecretarysettings__remind_days_before_deadline").distinct()
 
-    assignment_pks = {}
+    # For each assignment, find all secretaries who should be reminded today
+    assignment_pks = set()
+    secretary_pks = set()
+    notifications = []
     for a_pk, deadline, secretary_role_pk, remind_days in assignment_qs:
         if (deadline - remind_date).days == remind_days:
-            assignment_pks[a_pk] = secretary_role_pk
+            notifications.append((a_pk, secretary_role_pk))
+            assignment_pks.add(a_pk)
+            secretary_pks.add(secretary_role_pk)
 
-    review_assignments = { a.pk: a for a in ReviewAssignment.objects.filter(pk__in=list(assignment_pks.keys())).select_related("reviewer", "reviewer__person", "state", "review_request__team") }
-    secretary_roles = { r.pk: r for r in Role.objects.filter(pk__in=list(assignment_pks.values())).select_related("email", "person") }
+    review_assignments = {
+        a.pk: a
+        for a in ReviewAssignment.objects.filter(pk__in=assignment_pks).select_related(
+            "reviewer", "reviewer__person", "state", "review_request__team"
+        )
+    }
+    secretary_roles = {
+        r.pk: r
+        for r in Role.objects.filter(pk__in=secretary_pks).select_related("email", "person")
+    }
 
-    return [ (review_assignments[a_pk], secretary_roles[secretary_role_pk]) for a_pk, secretary_role_pk in assignment_pks.items() ]
+    return [
+        (review_assignments[a_pk], secretary_roles[secretary_role_pk])
+        for a_pk, secretary_role_pk in notifications
+    ]
+
 
 def email_secretary_reminder(assignment, secretary_role):
     review_request = assignment.review_request
@@ -912,7 +947,7 @@ def email_secretary_reminder(assignment, secretary_role):
     settings = ReviewSecretarySettings.objects.filter(person=secretary_role.person_id, team=team).first()
     remind_days = settings.remind_days_before_deadline if settings else 0
 
-    send_mail(None, [assignment.reviewer.formatted_email()], None, subject, "review/secretary_reminder.txt", {
+    send_mail(None, [secretary_role.email.formatted_email()], None, subject, "review/secretary_reminder.txt", {
         "review_request_url": "https://{}{}".format(domain, request_url),
         "settings_url": "https://{}{}".format(domain, settings_url),
         "review_request": review_request,
