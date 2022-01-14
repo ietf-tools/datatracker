@@ -22,6 +22,7 @@ from django.urls import reverse as urlreverse
 from django.conf import settings
 from django.forms import Form
 from django.utils.html import escape
+from django.test import override_settings
 from django.utils.text import slugify
 
 from tastypie.test import ResourceTestCaseMixin
@@ -1773,6 +1774,12 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertNotContains(r, "Request publication")
 
+    def _parse_bibtex_response(self, response) -> dict:
+        parser = bibtexparser.bparser.BibTexParser()
+        parser.homogenise_fields = False  # do not modify field names (e.g., turns "url" into "link" by default)
+        return bibtexparser.loads(response.content.decode(), parser=parser).get_entry_dict()
+
+    @override_settings(RFC_EDITOR_INFO_BASE_URL='https://www.rfc-editor.ietf.org/info/')
     def test_document_bibtex(self):
         rfc = WgRfcFactory.create(
                   #other_aliases = ['rfc6020',],
@@ -1785,12 +1792,13 @@ class DocTestCase(TestCase):
         #
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=rfc.name))
         r = self.client.get(url)
-        entry = bibtexparser.loads(unicontent(r)).get_entry_dict()["rfc%s"%num]
+        entry = self._parse_bibtex_response(r)["rfc%s"%num]
         self.assertEqual(entry['series'],   'Request for Comments')
         self.assertEqual(entry['number'],   num)
         self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     '2010')
         self.assertEqual(entry['month'],    'oct')
+        self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
         #
         self.assertNotIn('day', entry)
 
@@ -1806,25 +1814,27 @@ class DocTestCase(TestCase):
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=april1.name))
         r = self.client.get(url)
         self.assertEqual(r.get('Content-Type'), 'text/plain; charset=utf-8')
-        entry = bibtexparser.loads(unicontent(r)).get_entry_dict()['rfc%s'%num]
+        entry = self._parse_bibtex_response(r)["rfc%s"%num]
         self.assertEqual(entry['series'],   'Request for Comments')
         self.assertEqual(entry['number'],   num)
         self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     '1990')
         self.assertEqual(entry['month'],    'apr')
         self.assertEqual(entry['day'],      '1')
+        self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
 
         draft = IndividualDraftFactory.create()
         docname = '%s-%s' % (draft.name, draft.rev)
         bibname = docname[6:]           # drop the 'draft-' prefix
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=draft.name))
         r = self.client.get(url)
-        entry = bibtexparser.loads(unicontent(r)).get_entry_dict()[bibname]
+        entry = self._parse_bibtex_response(r)[bibname]
         self.assertEqual(entry['note'],     'Work in Progress')
         self.assertEqual(entry['number'],   docname)
         self.assertEqual(entry['year'],     str(draft.pub_date().year))
         self.assertEqual(entry['month'],    draft.pub_date().strftime('%b').lower())
         self.assertEqual(entry['day'],      str(draft.pub_date().day))
+        self.assertEqual(entry['url'],      f'https://datatracker.ietf.org/doc/html/{docname}')
         #
         self.assertNotIn('doi', entry)
 

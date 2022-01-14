@@ -219,6 +219,11 @@ def rfclink(string):
     string = str(string);
     return "https://datatracker.ietf.org/doc/html/rfc" + string;
 
+@register.filter
+def rfceditor_info_url(rfcnum : str):
+    """Link to the RFC editor info page for an RFC"""
+    return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f'rfc{rfcnum}')
+
 @register.filter(name='urlize_ietf_docs', is_safe=True, needs_autoescape=True)
 def urlize_ietf_docs(string, autoescape=None):
     """
