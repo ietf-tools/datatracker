@@ -506,8 +506,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         min_duration = min(t.duration for t in timeslots_qs)
         max_duration = max(t.duration for t in timeslots_qs)
     else:
-        min_duration = 1
-        max_duration = 2
+        min_duration = datetime.timedelta(minutes=30)
+        max_duration = datetime.timedelta(minutes=120)
 
     def timedelta_to_css_ems(timedelta):
         # we scale the session and slots a bit according to their

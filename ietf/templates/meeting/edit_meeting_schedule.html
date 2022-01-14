@@ -75,96 +75,106 @@
       {% endif %}
     </p>
 
-    <div class="edit-grid {% if not can_edit %}read-only{% endif %}">
-
-      {# using the same markup in both room labels and the actual days ensures they are aligned #}
-      <div class="room-label-column">
-        {% for day_data in days.values %}
-          <div class="day">
-            <div class="day-label">
-              <strong>&nbsp;</strong><br>
-              &nbsp;
-            </div>
-
-            {% for rgroup in day_data %}
-              <div class="room-group">
-                <div class="time-header"><div class="time-label"></div></div>
-                {% for room_data in rgroup %}{% with room_data.room as room %}
-                  <div class="timeslots">
-                    <div class="room-name">
-                      <strong>{{ room.name }}</strong><br>
-                      {% if room.capacity %}{{ room.capacity }} <i class="fa fa-user-o"></i>{% endif %}
-                    </div>
-                  </div>
-                {% endwith %}{% endfor %}
+    {% if timeslot_groups|length == 0 %}
+      <p>
+        No timeslots exist for this meeting yet.
+      </p>
+      <p>
+        <a href="{% url "ietf.meeting.views.edit_timeslots" num=meeting.number %}">
+          Edit timeslots.
+        </a>
+      </p>
+    {% else %}
+      <div class="edit-grid {% if not can_edit %}read-only{% endif %}">
+        {# using the same markup in both room labels and the actual days ensures they are aligned #}
+        <div class="room-label-column">
+          {% for day_data in days.values %}
+            <div class="day">
+              <div class="day-label">
+                <strong>&nbsp;</strong><br>
+                &nbsp;
               </div>
-            {% endfor %}
-          </div>
-        {% endfor %}
-      </div>
 
-      <div class="day-flow">
-        {% for day, day_data in days.items %}
-          <div class="day">
-            <div class="day-label">
-              <strong>{{ day|date:"l" }}</strong>
-              <i class="fa fa-exchange swap-days"
-                 data-dayid="{{ day.isoformat }}"
-                 data-start="{{ day.isoformat }}"></i>
-              <br>
-              {{ day|date:"N j, Y" }}
-            </div>
-
-            {% for rgroup in day_data %}
-              <div class="room-group"
-                   data-index="{{ forloop.counter0 }}"
-                   data-rooms="{% for r in rgroup %}{{ r.room.pk }}{% if not forloop.last %},{% endif %}{% endfor %}">
-                <div class="time-header">
-                  {# All rooms in a group have same timeslots; grab the first for the labels #}
-                  {% for t in rgroup.0.timeslots %}
-                    <div class="time-label" style="width: {{ t.layout_width }}rem">
-                      <span>
-                        {{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}
-                        <i class="fa fa-exchange swap-timeslot-col"
-                           data-origin-label="{{ day|date:"l, N j" }}, {{ t.time|date:"G:i" }}-{{ t.end_time|date:"G:i" }}"
-                           data-start="{{ t.utc_start_time.isoformat }}"
-                           data-timeslot-pk="{{ t.pk }}"></i>
-                      </span>
+              {% for rgroup in day_data %}
+                <div class="room-group">
+                  <div class="time-header"><div class="time-label"></div></div>
+                  {% for room_data in rgroup %}{% with room_data.room as room %}
+                    <div class="timeslots">
+                      <div class="room-name">
+                        <strong>{{ room.name }}</strong><br>
+                        {% if room.capacity %}{{ room.capacity }} <i class="fa fa-user-o"></i>{% endif %}
+                      </div>
                     </div>
-                  {% endfor %}
+                  {% endwith %}{% endfor %}
                 </div>
-                {% for room_data in rgroup %}{% with room_data.room as room %}
-                  <div class="timeslots" data-roomcapacity="{{ room.capacity }}">
-                    {% for t in room_data.timeslots %}
-                      <div id="timeslot{{ t.pk }}"
-                           class="timeslot {{ t.start_end_group }}"
-                           data-start="{{ t.utc_start_time.isoformat }}"
-                           data-end="{{ t.utc_end_time.isoformat }}"
-                           data-duration="{{ t.duration.total_seconds }}"
-                           data-scheduledatlabel="{{ t.time|date:"l G:i" }}-{{ t.end_time|date:"G:i" }}"
-                           data-type="{{ t.type.slug }}"
-                           style="width: {{ t.layout_width }}rem;">
-                        <div class="time-label">
-                          <div class="past-flag">&nbsp;{# blank div keeps time centered vertically #}</div>
-                          <div>{{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}</div>
-                          <div class="past-flag">Past</div>
-                        </div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </div>
 
-                        <div class="drop-target">
-                          {% for assignment, session in t.session_assignments %}
-                            {% include "meeting/edit_meeting_schedule_session.html" %}
-                          {% endfor %}
-                        </div>
+        <div class="day-flow">
+          {% for day, day_data in days.items %}
+            <div class="day">
+              <div class="day-label">
+                <strong>{{ day|date:"l" }}</strong>
+                <i class="fa fa-exchange swap-days"
+                   data-dayid="{{ day.isoformat }}"
+                   data-start="{{ day.isoformat }}"></i>
+                <br>
+                {{ day|date:"N j, Y" }}
+              </div>
+
+              {% for rgroup in day_data %}
+                <div class="room-group"
+                     data-index="{{ forloop.counter0 }}"
+                     data-rooms="{% for r in rgroup %}{{ r.room.pk }}{% if not forloop.last %},{% endif %}{% endfor %}">
+                  <div class="time-header">
+                    {# All rooms in a group have same timeslots; grab the first for the labels #}
+                    {% for t in rgroup.0.timeslots %}
+                      <div class="time-label" style="width: {{ t.layout_width }}rem">
+                        <span>
+                          {{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}
+                          <i class="fa fa-exchange swap-timeslot-col"
+                             data-origin-label="{{ day|date:"l, N j" }}, {{ t.time|date:"G:i" }}-{{ t.end_time|date:"G:i" }}"
+                             data-start="{{ t.utc_start_time.isoformat }}"
+                             data-timeslot-pk="{{ t.pk }}"></i>
+                        </span>
                       </div>
                     {% endfor %}
                   </div>
-                {% endwith %}{% endfor %}
-              </div>
-            {% endfor %}
-          </div>
-        {% endfor %}
+                  {% for room_data in rgroup %}{% with room_data.room as room %}
+                    <div class="timeslots" data-roomcapacity="{{ room.capacity }}">
+                      {% for t in room_data.timeslots %}
+                        <div id="timeslot{{ t.pk }}"
+                             class="timeslot {{ t.start_end_group }}"
+                             data-start="{{ t.utc_start_time.isoformat }}"
+                             data-end="{{ t.utc_end_time.isoformat }}"
+                             data-duration="{{ t.duration.total_seconds }}"
+                             data-scheduledatlabel="{{ t.time|date:"l G:i" }}-{{ t.end_time|date:"G:i" }}"
+                             data-type="{{ t.type.slug }}"
+                             style="width: {{ t.layout_width }}rem;">
+                          <div class="time-label">
+                            <div class="past-flag">&nbsp;{# blank div keeps time centered vertically #}</div>
+                            <div>{{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}</div>
+                            <div class="past-flag">Past</div>
+                          </div>
+
+                          <div class="drop-target">
+                            {% for assignment, session in t.session_assignments %}
+                              {% include "meeting/edit_meeting_schedule_session.html" %}
+                            {% endfor %}
+                          </div>
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% endwith %}{% endfor %}
+                </div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </div>
       </div>
-    </div>
+    {% endif %}
 
     <div class="scheduling-panel">
       <div class="unassigned-container">

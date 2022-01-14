@@ -1677,6 +1677,23 @@ class EditMeetingScheduleTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(self._decode_json_response(r)['success'])
 
+    def test_editor_with_no_timeslots(self):
+        """Schedule editor should not crash when there are no timeslots"""
+        meeting = MeetingFactory(
+            type_id='ietf',
+            date=datetime.date.today() + datetime.timedelta(days=7),
+            populate_schedule=False,
+        )
+        meeting.schedule = ScheduleFactory(meeting=meeting)
+        meeting.save()
+        SessionFactory(meeting=meeting, add_to_schedule=False)
+        self.assertEqual(meeting.timeslot_set.count(), 0, 'Test problem - meeting should not have any timeslots')
+        url = urlreverse('ietf.meeting.views.edit_meeting_schedule', kwargs={'num': meeting.number})
+        self.assertTrue(self.client.login(username='secretary', password='secretary+password'))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'No timeslots exist')
+        self.assertContains(r, urlreverse('ietf.meeting.views.edit_timeslots', kwargs={'num': meeting.number}))
 
 
 class EditTimeslotsTests(TestCase):
