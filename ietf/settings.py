@@ -1232,6 +1232,10 @@ qvNU+qRWi+YXrITsgn92/gVxX5AoK0n+s5Lx7fpjxkARVi66SF6zTJnX
 -----END PRIVATE KEY-----
 """
 
+
+# Default timeout for HTTP requests via the requests library
+DEFAULT_REQUESTS_TIMEOUT = 20  # seconds
+
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from ietf.settings_local import *            # pyflakes:ignore pylint: disable=wildcard-import
