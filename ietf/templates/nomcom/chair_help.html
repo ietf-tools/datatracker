@@ -5,8 +5,6 @@
 {% load django_bootstrap5 %}
 {% load ietf_filters %}
 
-{% block bodyAttrs %}data-bs-spy="scroll" data-bs-target="#nav-instructions"{% endblock %}
-
 {% block subtitle %} - Configuration Help {% endblock %}
 
 {% block nomcom_content %}
@@ -96,4 +94,3 @@ extendedKeyUsage= emailProtection
             <p> Before advertising that your nomcom pages are ready for the community to use, test your configuration. Create a dummy nominee for at least one position, and give it some feedback. You will be able to move this out of the way later. Once you've marked positions as open, ask your nomcom members to look over the expertise and questionnaires tab (which show rendered view of each of the templates for each position) to ensure they contain what you want the community to see. Please don't assume that everything is all right without looking. It's a good idea to give the secretariat and the tools team a heads up a few (preferably 3 to 5) days notice before announcing that your pages are ready for community use.
             </div>
 {% endblock %}
-

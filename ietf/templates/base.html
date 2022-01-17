@@ -33,7 +33,7 @@
               href="{% static 'ietf/images/apple-touch-icon.png' %}"/>
         <script src="{% static 'ietf/js/ietf.js' %}"></script>
     </head>
-    <body class="position-relative"
+    <body {% block bodyAttrs %}{% endblock %} class="position-relative"
           data-group-menu-data-url="{% url 'ietf.group.views.group_menu_data' %}">
         <nav class="navbar navbar-expand-lg {% if server_mode and server_mode != "production" %} navbar-light bg-warning {% else %} navbar-dark bg-secondary {% endif %}  {% if navbar_mode %} {{ navbar_mode }} {% else %} fixed-top {% endif %}">
             <div class="container-fluid">

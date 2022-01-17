@@ -1,50 +1,49 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin static %}
-
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-
 {% block title %}BOFs{% endblock %}
-
 {% block content %}
     {% origin %}
     {% load ietf_filters %}
-
     <h1>Birds-of-a-feather (BOF) groups</h1>
-
-    <p>Groups in the <i>BOF</i> state.</p>
-
     {% if user|has_role:"Area Director,Secretariat" %}
-        <p><a class="btn btn-primary" role="button" href="{% url 'ietf.group.views.edit' group_type='wg' action='create' %}">Create new BOF</a></p>
+        <a class="btn btn-primary"
+           role="button"
+           href="{% url 'ietf.group.views.edit' group_type='wg' action='create' %}">
+            Create new BOF
+        </a>
     {% endif %}
-
     {% if not groups %}
-        <p>No BOFs found.</p>
+        <p>
+            No BOFs found.
+        </p>
     {% else %}
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th>BOF</th>
-                    <th>Name</th>
-                    <th>Date</th>
+                    <th data-sort="bof">BOF</th>
+                    <th data-sort="name">Name</th>
+                    <th data-sort="date">Date</th>
                 </tr>
             </thead>
             <tbody>
                 {% for g in groups %}
                     <tr>
-                        <td><a href="{{ g.about_url }}">{{ g.acronym }}</a></td>
+                        <td>
+                            <a href="{{ g.about_url }}">{{ g.acronym }}</a>
+                        </td>
                         <td>{{ g.name }}</td>
-                        <td class="text-nowrap">{{ g.time|date:"Y-m-d" }}</td>
+                        <td>{{ g.time|date:"Y-m-d" }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     {% endif %}
-
 {% endblock %}
-
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

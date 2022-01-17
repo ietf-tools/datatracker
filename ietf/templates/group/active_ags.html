@@ -1,7 +1,7 @@
 {# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin static %}
+{% load origin static person_filters %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
@@ -28,30 +28,20 @@
                     <td>{{ group.name }}</td>
                     <td>
                         {% for ad in group.ads %}
-                            <a href="{% url 'ietf.person.views.profile' email_or_name=ad.person.name %}">{{ ad.person.plain_name }}</a>
-                            <a href="mailto:{{ ad.email.address }}">
-                                <span class="bi bi-envelope tiny"></span>
-                            </a>
+                            {% person_link ad.person %}
                             {% if not forloop.last %},{% endif %}
                         {% endfor %}
                     </td>
                     <td>
                         {% for secretary in group.secretaries %}
-                            <a href="{% url 'ietf.person.views.profile' email_or_name=secretary.person.name %}">
-                                {{ secretary.person.plain_name }}
-                            </a>
-                            <a href="mailto:{{ secretary.email.address }}">
-                                <span class="bi bi-envelope tiny"></span>
-                            </a>
+                            {% person_link
+                            {{.%erson.plain_nam
                             {% if not forloop.last %},{% endif %}
                         {% endfor %}
                     </td>
                     <td>
                         {% for chair in group.chairs %}
-                            <a href="{% url 'ietf.person.views.profile' email_or_name=chair.person.name %}">{{ chair.person.plain_name }}</a>
-                            <a href="mailto:{{ chair.email.address }}">
-                                <span class="bi bi-envelope tiny"></span>
-                            </a>
+                            {% person_link chair.person %}
                             {% if not forloop.last %},{% endif %}
                         {% endfor %}
                     </td>

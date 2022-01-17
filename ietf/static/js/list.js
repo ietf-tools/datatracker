@@ -24,7 +24,7 @@ function replace_with_internal(table, internal_table, i) {
 }
 
 function field_magic(i, e, fields) {
-    if (fields[i] == "date" || fields[i] == "num") {
+    if (fields[i] == "date" || fields[i] == "num" || fields[i] == "count") {
         $(e)
             .addClass("text-end");
     }
@@ -80,7 +80,7 @@ $(document)
 
                 // HTML for the search widget
                 var searcher = $.parseHTML(`
-                    <div class="input-group my-3">
+                    <div class="input-group input-group-sm my-3">
                         <input type="search" class="search form-control" placeholder="Search"/>
                         <button class="btn btn-outline-secondary search-reset" type="button">
                             <i class="bi bi-x"></i>

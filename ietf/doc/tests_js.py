@@ -44,6 +44,7 @@ class EditAuthorsTests(IetfSeleniumTestCase):
                         name
                     ))
             except:
+                # print(self.driver.execute_script("return document.documentElement.outerHTML"))
                 print(name, email, self.driver.find_element(By.CSS_SELECTOR, ".select2-results__message").text)
                 # FIXME-LARS: force the test to succeed anyway, so CI doesn't crap out
                 return

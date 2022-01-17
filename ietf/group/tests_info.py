@@ -421,7 +421,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         chairs = Role.objects.filter(group__type='wg', group__state='active', name_id='chair')
-        self.assertEqual(len(q('div.photo-thumbnail img')), chairs.count())
+        self.assertEqual(len(q('.photo')), chairs.count())
 
     def test_wg_photos(self):
         GroupFactory(acronym='mars')
@@ -432,7 +432,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         roles = Role.objects.filter(group__acronym='mars')
-        self.assertEqual(len(q('div.photo-thumbnail img')), roles.count())
+        self.assertEqual(len(q('.photo')), roles.count())
 
     def test_group_photos(self):
         url = urlreverse("ietf.group.views.group_photos", kwargs={'acronym':'iab'})
@@ -440,7 +440,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         roles = Role.objects.filter(group__acronym='iab')
-        self.assertEqual(len(q('div.photo-thumbnail img')), roles.count())
+        self.assertEqual(len(q('.photo')), roles.count())
 
     def test_nonactive_group_badges(self):
         concluded_group = GroupFactory(state_id='conclude')

@@ -1,3 +1,5 @@
+
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
@@ -9,7 +11,7 @@
 {% block content %}
     {% origin %}
     <h1>{{ title }}</h1>
-    <form method="post" id="switch-date-use-form">
+    <form class="my-3" method="post" id="switch-date-use-form">
         <a class="btn btn-primary" href="{{ group.about_url }}">{{ group.acronym }} {{ group.type.name }}</a>
         {% if group.charter %}
             <a class="btn btn-primary"
@@ -33,7 +35,7 @@
             </button>
         {% endif %}
     </form>
-    <p class="form-text my-3">
+    <p class="alert alert-info my-3">
         {% if forms %}Click a milestone to edit it.{% endif %}
         {% if forms and not group.uses_milestone_dates %}Drag and drop milestones to reorder them.{% endif %}
         {% if needs_review %}
@@ -67,19 +69,21 @@
                             {% if form.milestone.resolved %}
                                 <span class="badge bg-success">{{ form.milestone.resolved }}</span>
                             {% else %}
-                                <b>{% if group.uses_milestone_dates %}{{ form.milestone.due|date:"M Y" }}{% endif %}</b>
+                                <b>
+                                    {% if group.uses_milestone_dates %}{{ form.milestone.due|date:"M Y" }}{% endif %}
+                                </b>
                             {% endif %}
                         </div>
                         <div class="col-md-10 col-form-label col-form-label-md">
-                                <b>{{ form.milestone.desc }}</b>
-                                {% if form.needs_review %}
-                                    <span title="This milestone is not active yet, awaiting {{ reviewer }} acceptance"
-                                          class="badge bg-warning">
-                                        Awaiting accept
-                                    </span>
-                                {% endif %}
-                                {% if form.changed %}<span class="badge bg-info">Changed</span>{% endif %}
-                                {% if form.delete.data %}<span class="badge bg-danger">Deleted</span>{% endif %}
+                            <b>{{ form.milestone.desc }}</b>
+                            {% if form.needs_review %}
+                                <span title="This milestone is not active yet, awaiting {{ reviewer }} acceptance"
+                                      class="badge bg-warning">
+                                    Awaiting accept
+                                </span>
+                            {% endif %}
+                            {% if form.changed %}<span class="badge bg-info">Changed</span>{% endif %}
+                            {% if form.delete.data %}<span class="badge bg-danger">Deleted</span>{% endif %}
                             {% for d in form.docs_names %}<div class="doc">{{ d }}</div>{% endfor %}
                         </div>
                     </div>
@@ -92,9 +96,7 @@
         <div id="extratemplatecontainer" class="visually-hidden">
             <div class="row extratemplate">
                 <hr>
-                <div class="edit-milestone template">
-                    {% include "group/milestone_form.html" with form=empty_form %}
-                </div>
+                <div class="edit-milestone template">{% include "group/milestone_form.html" with form=empty_form %}</div>
             </div>
         </div>
         <div class="row extrabuttoncontainer">

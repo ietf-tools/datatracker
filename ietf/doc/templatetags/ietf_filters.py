@@ -226,10 +226,10 @@ def urlize_ietf_docs(string, autoescape=None):
     """
     if autoescape and not isinstance(string, SafeData):
         string = escape(string)
-    string = re.sub(r"(?<!>)(RFC ?)0{0,3}(\d+)", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string)
-    string = re.sub(r"(?<!>)(BCP ?)0{0,3}(\d+)", "<a href=\"/doc/bcp\\2/\">\\1\\2</a>", string)
-    string = re.sub(r"(?<!>)(STD ?)0{0,3}(\d+)", "<a href=\"/doc/std\\2/\">\\1\\2</a>", string)
-    string = re.sub(r"(?<!>)(FYI ?)0{0,3}(\d+)", "<a href=\"/doc/fyi\\2/\">\\1\\2</a>", string)
+    string = re.sub(r"(?<!>)(RFC\s*?)0{0,3}(\d+)", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string)
+    string = re.sub(r"(?<!>)(BCP\s*?)0{0,3}(\d+)", "<a href=\"/doc/bcp\\2/\">\\1\\2</a>", string)
+    string = re.sub(r"(?<!>)(STD\s*?)0{0,3}(\d+)", "<a href=\"/doc/std\\2/\">\\1\\2</a>", string)
+    string = re.sub(r"(?<!>)(FYI\s*?)0{0,3}(\d+)", "<a href=\"/doc/fyi\\2/\">\\1\\2</a>", string)
     string = re.sub(r"(?<!>)(draft-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
     string = re.sub(r"(?<!>)(conflict-review-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
     string = re.sub(r"(?<!>)(status-change-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
@@ -424,7 +424,7 @@ def format_snippet(text, trunc_words=25):
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
         return mark_safe('<div class="snippet">%s<button class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="visually-hidden full">%s</div>' % (snippet, full))
-    return full
+    return mark_safe(full)
 
 @register.simple_tag
 def doc_edit_button(url_name, *args, **kwargs):

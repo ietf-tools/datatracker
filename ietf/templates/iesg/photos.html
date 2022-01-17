@@ -1,10 +1,9 @@
-{% extends "base.html" %}
 {# bs5ok #}
+{% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin static %}
 {% load ietf_filters %}
 {% block title %}{{ group_type | upper }} {{ role }} Photos{% endblock %}
-{% block bodyAttrs %}data-bs-spy="scroll" data-bs-target="#affix"{% endblock %}
 {% block content %}
     {% origin %}
     <h1>{{ group_type | upper }} {{ role }} Photos</h1>
@@ -15,29 +14,11 @@
             <h2 class="mt-5">
                 <a href="{% url 'ietf.group.views.group_home' acronym=letter.grouper %}">{{ letter.list.0.group.name }}</a>
             </h2>
-            <div class="row row-cols-1 row-cols-sm-3 g-5">
+            <div class="mt-0 row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-2 row-cols-xl-3 row-cols-xxl-3 g-">
                 {% regroup letter.list by person as person_groups %}
                 {% for person_with_groups in person_groups %}
                     <div class="col">
-                        <div class="card text-center photo-thumbnail">
-                            {% if person_with_groups.grouper.photo_thumb %}
-                                <img class="card-img-top"
-                                    src="{{ person_with_groups.grouper.photo_thumb.url }}"
-                                    alt="Photo of {{ person_with_groups.grouper.name }}"/>
-                            {% else %}
-                                <i class="bi bi-person-square text-muted" style="font-size: 6rem;"></i>
-                            {% endif %}
-                            <div class="card-body">
-                                <p class="card-title fs-5">
-                                    {% if person_with_groups.grouper.photo %}
-                                        <a class="stretched-link"
-                                            href="{% url 'ietf.person.views.profile' email_or_name=person_with_groups.grouper.name %}">
-                                    {% endif %}
-                                    {{ person_with_groups.grouper.plain_name }}
-                                    {% if person_with_groups.grouper.photo %}</a>{% endif %}
-                                </p>
-                            </div>
-                        </div>
+                        {% include "person/photo.html" with person=person_with_groups.grouper groups=person_with_groups.list %}
                     </div>
                 {% endfor %}
             </div>

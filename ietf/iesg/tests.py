@@ -93,7 +93,7 @@ class IESGTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         ads = Role.objects.filter(group__type='area', group__state='active', name_id='ad')
-        self.assertEqual(len(q('div.photo-thumbnail')), ads.count())
+        self.assertEqual(len(q('.photo')), ads.count())
         
 class IESGAgendaTests(TestCase):
     def setUp(self):

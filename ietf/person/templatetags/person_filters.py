@@ -35,11 +35,13 @@ def person_by_name(name):
 def person_link(person, **kwargs):
     title = kwargs.get('title', '')
     cls = kwargs.get('class', '')
+    with_email = kwargs.get('with_email', True)
+    nowrap = kwargs.get('nowrap', True)
     if person:
         name = person.name if person.alias_set.filter(name=person.name).exists() else ''
         plain_name = person.plain_name()
         email = person.email_address()
-        return {'name': name, 'plain_name': plain_name, 'email': email, 'title': title, 'class': cls}
+        return {'name': name, 'plain_name': plain_name, 'email': email, 'title': title, 'class': cls, 'with_email': with_email, 'nowrap': nowrap}
     else:
         return {}
 
@@ -48,7 +50,9 @@ def person_link(person, **kwargs):
 def email_person_link(email, **kwargs):
     title = kwargs.get('title', '')
     cls = kwargs.get('class', '')
+    with_email = kwargs.get('with_email', True)
+    nowrap = kwargs.get('nowrap', True)
     name = email.person.name if email.person.alias_set.filter(name=email.person.name).exists() else ''
     plain_name = email.person.plain_name()
     email = email.address
-    return {'name': name, 'plain_name': plain_name, 'email': email, 'title': title, 'class': cls}
+    return {'name': name, 'plain_name': plain_name, 'email': email, 'title': title, 'class': cls, 'with_email': with_email, 'nowrap': nowrap}

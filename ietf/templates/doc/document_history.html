@@ -134,9 +134,4 @@
 {% endblock %}
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
-    <script>
-        $(".snippet .show-all").on("click", function () {
-            $(this).parents(".snippet").addClass("visually-hidden").siblings(".full").removeClass("visually-hidden");
-    });
-    </script>
 {% endblock %}

@@ -1,14 +1,11 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin static %}
-
+{% load origin static person_filters %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-
 {% block title %}Active teams{% endblock %}
-
-
 {% block content %}
     {% origin %}
     <h1>Active teams</h1>
@@ -23,21 +20,21 @@
         <tbody>
             {% for group in teams %}
                 <tr>
-                    <td><a href="{% url "ietf.group.views.group_home" acronym=group.acronym %}">{{ group.acronym }}</a></td>
-                    <th>{{ group.name }}</th>
+                    <td>
+                        <a href="{% url "ietf.group.views.group_home" acronym=group.acronym %}">{{ group.acronym }}</a>
+                    </td>
+                    <td>{{ group.name }}</td>
                     <td>
                         {% for chair in group.chairs %}
-                            <a href="{% url 'ietf.person.views.profile' email_or_name=chair.person.name %}">{{ chair.person.plain_name }}</a>
-                            <a href="mailto:{{ chair.email.address }}"><span class="bi bi-envelope tiny"></span></a>{% if not forloop.last %} , {% endif %}
+                            {% person_link chair.person %}
+                            {% if not forloop.last %},{% endif %}
                         {% endfor %}
                     </td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
-
 {% endblock %}
-
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

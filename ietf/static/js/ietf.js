@@ -108,7 +108,8 @@ $(document)
 $(document)
     .ready(function () {
         var headings = $("#content")
-            .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible");
+            .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible")
+            .not(".navskip");
 
         var contents = $(headings)
             .html()
@@ -132,12 +133,12 @@ $(document)
                 .attr("tabindex", 0)
                 .after($(`
                  <div class="col-xl-2 small">
-                     <nav id="righthand-nav" class="position-fixed navbar navbar-light bg-light overflow-auto" style="height: 70vh;">
-                     <!--<a class="navbar-brand" href="#">Navbar</a>-->
+                     <nav id="righthand-nav" class="position-fixed navbar navbar-light bg-light overflow-auto flex-fill" style="height: 70vh; width: inherit;">
                      </nav>
                  </div>
                  `))
                 .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible")
+                .not(".navskip")
                 .each(function () {
                     // Some headings have complex HTML in them - only use first part in that case.
                     var text = $(this)
@@ -162,7 +163,7 @@ $(document)
                     if (nav === undefined) {
                         nav = $("#righthand-nav");
                         nav = $(nav)
-                            .append(`<nav class="nav nav-pills flex-column align-self-start">`)
+                            .append(`<nav class="nav nav-pills flex-column align-self-start flex-fill px-2">`)
                             .children()
                             .last();
                     }
@@ -258,5 +259,18 @@ $(document)
                         .find('.modal-content')
                         .load(loc);
                 }
+            });
+    });
+
+// Handle history snippet expansion.
+$(document)
+    .ready(function () {
+        $(".snippet .show-all")
+            .on("click", function () {
+                $(this)
+                    .parents(".snippet")
+                    .addClass("visually-hidden")
+                    .siblings(".full")
+                    .removeClass("visually-hidden");
             });
     });
