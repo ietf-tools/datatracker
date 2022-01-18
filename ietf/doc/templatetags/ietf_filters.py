@@ -409,17 +409,14 @@ def ad_area(user):
 def format_history_text(text, trunc_words=25):
     """Run history text through some cleaning and add ellipsis if it's too long."""
     full = mark_safe(text)
-
-    if text.startswith("This was part of a ballot set with:"):
-        full = urlize_ietf_docs(full)
+    full = urlize_ietf_docs(full)
 
     return format_snippet(full, trunc_words)
 
 @register.filter
 def format_snippet(text, trunc_words=25): 
     # urlize if there aren't already links present
-    if not 'href=' in text:
-        text = bleach.linkify(text, parse_email=True)
+    text = bleach.linkify(text, parse_email=True)
     full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_fragment(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:

@@ -1,15 +1,17 @@
+{# bs5ok #}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}{% origin %}
+{% load origin %}
+{% origin %}
 {% load ietf_filters %}
 <table class="table table-sm table-striped tablesorter ipr-table">
     <thead>
         <tr>
             <th data-sort="date">Date</th>
-            <th data-sort="id">ID</th>
+            <th data-sort="num">ID</th>
             <th data-sort="title">Title</th>
             {% if administrative_list == 'pending' %}
                 <th data-sort="query">Query</th>
-                <th data-sort="due">Response Due</th>
+                <th data-sort="due">Response due</th>
             {% endif %}
         </tr>
     </thead>
@@ -20,30 +22,34 @@
                 <td class="text-end">{{ ipr.id }}</td>
                 <td>
                     {% if ipr.state_id == 'posted' or administrative_list %}
-                        <div><a href="{% url "ietf.ipr.views.show" ipr.id %}">{{ ipr.title }}</a></div>
-
+                        <div>
+                            <a href="{% url "ietf.ipr.views.show" ipr.id %}">{{ ipr.title }}</a>
+                        </div>
                         {% for item in ipr.relatedipr_source_set.all %}
                             {% if item.target.state_id == 'posted' %}
-                                <div>Updates ID <a href="{% url "ietf.ipr.views.show" item.target.id %}">#{{ item.target.id }}</a>.</div>
+                                <small>Updates ID
+                                    <a href="{% url "ietf.ipr.views.show" item.target.id %}">#{{ item.target.id }}</a>.
+                                </small>
                             {% endif %}
                         {% endfor %}
-
                         {% for item in ipr.relatedipr_target_set.all %}
                             {% if item.source.state_id == "posted" %}
-                                <div>Updated by ID <a href="{% url "ietf.ipr.views.show" item.source.id %}">#{{ item.source.id }}</a>.</div>
+                                <small>Updated by ID
+                                    <a href="{% url "ietf.ipr.views.show" item.source.id %}">#{{ item.source.id }}</a>.
+                                </small>
                             {% endif %}
                         {% endfor %}
-
                     {% else %}
                         <div>{{ ipr.title }}</div>
-                        <div><i>This IPR disclosure was removed at the request of the submitter.</i></div>
+                        <small><i>This IPR disclosure was removed at the request of the submitter.</i></small>
                     {% endif %}
                 </td>
-
                 {% if administrative_list == 'pending' %}
                     {% with ipr.get_latest_event_msgout as latest_msgout %}
-                        <td>{% if latest_msgout %}{{ latest_msgout.time|date:"Y-m-d" }}{% endif %}</td>
-                        <td class="text-nowrap">
+                        <td>
+                            {% if latest_msgout %}{{ latest_msgout.time|date:"Y-m-d" }}{% endif %}
+                        </td>
+                        <td>
                             {% if latest_msgout and latest_msgout.response_due %}
                                 {{ latest_msgout.response_due|date:"Y-m-d" }}
                                 {% if latest_msgout.response_past_due %}

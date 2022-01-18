@@ -570,7 +570,7 @@ class IetfAuthTests(TestCase):
 
         # Check api key list content
         r = self.client.get(url)
-        self.assertContains(r, 'Personal API keys')
+        self.assertContains(r, 'API keys')
         self.assertContains(r, 'Get a new personal API key')
 
         # Check the add key form content
@@ -591,7 +591,7 @@ class IetfAuthTests(TestCase):
         for endpoint, display in endpoints:
             self.assertContains(r, endpoint)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('td code')), len(endpoints)) # hash
+        self.assertEqual(len(q('td code')), len(endpoints) * 2) # hash and endpoint
         self.assertEqual(len(q('td a:contains("Disable")')), len(endpoints))
 
         # Get one of the keys
@@ -612,7 +612,7 @@ class IetfAuthTests(TestCase):
         url = urlreverse('ietf.ietfauth.views.apikey_index')
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('td code')), len(endpoints)) # key hash
+        self.assertEqual(len(q('td code')), len(endpoints) * 2) # key hash and endpoint
         self.assertEqual(len(q('td a:contains("Disable")')), len(endpoints)-1)
 
     def test_apikey_errors(self):

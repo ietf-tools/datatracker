@@ -1,9 +1,11 @@
+{# bs5ok #}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}{% origin %}
-<ul class="nav nav-tabs">
+{% load origin %}
+{% origin %}
+<ul class="nav nav-tabs my-3">
     {% for name, link, selected in tabs %}
         <li class="nav-item">
-            <a class=nav-item {% if selected %}active{% endif %}" href="{{ link }}">{{ name }}</a>
+            <a class="nav-link {% if selected %}active{% endif %}" href="{{ link }}">{{ name }}</a>
         </li>
     {% endfor %}
 </ul>

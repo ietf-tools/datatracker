@@ -5,17 +5,19 @@
 {# assumes group and milestones is in context #}
 {% regroup milestones by resolved as milestonegroups %}
 {% for milestoneset in milestonegroups %}
-    <h2 class="my-3">
-        {% if milestoneset.grouper %}
-            {{ milestoneset.grouper }} milestones
-        {% else %}
-            {% if group.state_id == "proposed" %}
-                Proposed milestones
+    {% if heading %}
+        <h2 class="my-3">
+            {% if milestoneset.grouper %}
+                {{ milestoneset.grouper }} milestones
             {% else %}
-                Milestones
+                {% if group.state_id == "proposed" %}
+                    Proposed milestones
+                {% else %}
+                    Milestones
+                {% endif %}
             {% endif %}
-        {% endif %}
-    </h2>
+        </h2>
+    {% endif %}
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
@@ -27,12 +29,13 @@
                     {% endif %}
                 </th>
                 <th data-sort="milestone">Milestone</th>
+                <th data-sort="docs">Associated documents</th>
             </tr>
         </thead>
         <tbody>
             {% for milestone in milestoneset.list reversed %}
                 <tr>
-                    <td class="text-nowrap">
+                    <td>
                         {% if milestone.resolved %}
                             <span class="badge bg-success">{{ milestone.resolved }}</span>
                         {% else %}
@@ -44,11 +47,11 @@
                             {% endif %}
                         {% endif %}
                     </td>
+                    <td>{{ milestone.desc }}</td>
                     <td>
-                        {{ milestone.desc }}
                         {% for d in milestone.docs.all %}
-                            <br>
                             <a href="{% url "ietf.doc.views_doc.document_main" name=d.name %}">{{ d.name }}</a>
+                            <br>
                         {% endfor %}
                     </td>
                 </tr>

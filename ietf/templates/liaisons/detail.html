@@ -2,7 +2,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load ietf_filters person_filters %}
+{% load ietf_filters person_filters textfilters %}
 {% block title %}
     Liaison statement:
     {% include 'liaisons/liaison_title.html' %}
@@ -200,7 +200,7 @@
                     Body
                 </th>
                 <td>
-                    <pre>{{ liaison.body|maybewordwrap:"80" }}</pre>
+                    <pre>{{ liaison.body|maybewordwrap:"80"|linkify|urlize_ietf_docs }}</pre>
                 </td>
             </tr>
         {% endif %}

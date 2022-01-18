@@ -325,7 +325,7 @@
         {{ group.description|default:"No description yet."| apply_markup:"restructuredtext" }}
     {% endif %}
     {% if group.features.has_milestones %}
-        {% include "group/milestones.html" with milestones=group.milestones %}
+        {% include "group/milestones.html" with milestones=group.milestones heading=True %}
         {% if milestones_in_review %}
             <p>
                 {{ milestones_in_review|length }} new milestone{{ milestones_in_review|pluralize }}

@@ -1,116 +1,94 @@
+{# bs5ok #}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load ietf_filters widget_tweaks django_bootstrap5 %}
-{% load origin %}{% origin %}
-
+{% load origin %}
+{% origin %}
 <h1>IPR Search</h1>
-
-<form class="ipr-search clearfix">
+<form class="ipr-search">
     {% if user|has_role:"Secretariat" %}
-        <div class="col-md-12">
-            <h2>State Filter</h2>
-
-            <div class="mb-3">
-                {% bootstrap_label form.state.label label_for=form.state.id_for_label label_class="col-form-label" %}
-
-                {% render_field form.state %}
-            </div>
-        </div>
+        <h2 class="mt-4">State Filter</h2>
+        {% bootstrap_field form.state %}
     {% endif %}
-
-    <div class="col-md-6">
-        <h2>Document search</h2>
-
-        <div class="mb-3">
-            {% bootstrap_label form.draft.label label_for=form.draft.id_for_label label_class="col-form-label" %}
-            <div class="input-group">
-                {% render_field form.draft class="form-control" placeholder="draft-..." %}
-                <span class="input-group-btn">
-                    <button class="btn btn-primary" type="submit" name="submit" value="draft"><span class="bi bi-search"></span> Search</button>
-                </span>
-            </div>
-        </div>
-
-        <div class="mb-3">
-            {% bootstrap_label form.rfc.label label_for=form.rfc.id_for_label label_class="col-form-label" %}
-            <div class="input-group">
-                {% render_field form.rfc class="form-control" placeholder="123..." %}
-                <span class="input-group-btn">
-                    <button class="btn btn-primary" type="submit" name="submit" value="rfc"><span class="bi bi-search"></span> Search</button>
-                </span>
-            </div>
-        </div>
-
-        <div class="mb-3">
-            {{ form.doctitle.label_tag }}
-            <div class="input-group">
-                {% render_field form.doctitle class="form-control" placeholder="protocol..." %}
-                <span class="input-group-btn">
-                    <button class="btn btn-primary" type="submit" name="submit" value="doctitle"><span class="bi bi-search"></span> Search</button>
-                </span>
-            </div>
-        </div>
-
-        <div class="mb-3">
-            {{ form.group.label_tag }}
-            <div class="row">
-                <div class="col-sm-8">
-                    {% render_field form.group class="form-control" %}
-                </div>
-                <div class="col-sm-4">
-                    <button class="btn btn-primary btn-block" type="submit" name="submit" value="group"><span class="bi bi-search"></span> Search</button>
-                </div>
-            </div>
+    <h2 class="mt-4">Document search</h2>
+    <div class="mb-3">
+        {% bootstrap_label form.draft.label label_for=form.draft.id_for_label label_class="form-label" %}
+        <div class="input-group">
+            {% render_field form.draft class="form-control" placeholder="draft-..." %}
+            <button class="btn btn-primary" type="submit" name="submit" value="draft">
+                <span class="bi bi-search"></span> Search
+            </button>
         </div>
     </div>
-
-    <div class="col-md-6">
-
-        <h2>IPR search</h2>
-
-        <div class="mb-3">
-            {{ form.holder.label_tag }}
-            <div class="input-group">
-                {% render_field form.holder class="form-control" placeholder="John Doe..." %}
-                <span class="input-group-btn">
-                    <button class="btn btn-primary" type="submit" name="submit" value="holder"><span class="bi bi-search"></span> Search</button>
-                </span>
-            </div>
-        </div>
-
-        <div class="mb-3">
-            {{ form.iprtitle.label_tag }}
-            <div class="input-group">
-                {% render_field form.iprtitle class="form-control" placeholder="protocol..." %}
-                <span class="input-group-btn">
-                    <button class="btn btn-primary" type="submit" name="submit" value="iprtitle"><span class="bi bi-search"></span> Search</button>
-                </span>
-            </div>
-        </div>
-
-        <div class="mb-3">
-            {{ form.patent.label_tag }}
-            <div class="input-group">
-                {% render_field form.patent class="form-control" %}
-                <span class="input-group-btn">
-                    <button class="btn btn-primary" type="submit" name="submit" value="patent"><span class="bi bi-search"></span> Search</button>
-                </span>
-            </div>
-            <div class="form-text">
-                This search string must contain at least three characters, including
-                at least one digit, and include punctuation marks. For best results,
-                please enter the entire string, or as much of it as possible.
-            </div>
+    <div class="mb-3">
+        {% bootstrap_label form.rfc.label label_for=form.rfc.id_for_label label_class="form-label" %}
+        <div class="input-group">
+            {% render_field form.rfc class="form-control" placeholder="123..." %}
+            <button class="btn btn-primary" type="submit" name="submit" value="rfc">
+                <span class="bi bi-search"></span> Search
+            </button>
         </div>
     </div>
-    <div class="p col-lg-12 col-md-12 col-sm-12 col-xs-12">
-
-        The material posted as IPR disclosures should be viewed as originating
-        from the source of that information, and any issue or question related
-        to the material should be directed to the source rather than the
-        IETF. There is no implied endorsement or agreement by the IETF, the
-        IESG or any other IETF entities with any of the material.
-
+    <div class="mb-3">
+        {% bootstrap_label form.doctitle.label|cut:":" label_for=form.doctitle.id_for_label label_class="form-label" %}
+        <div class="input-group">
+            {% render_field form.doctitle class="form-control" placeholder="protocol..." %}
+            <button class="btn btn-primary" type="submit" name="submit" value="doctitle">
+                <span class="bi bi-search"></span> Search
+            </button>
+        </div>
     </div>
-
-    <a class="btn btn-secondary float-end" href="{% url "ietf.ipr.views.showlist" %}">Back</a>
+    <div class="mb-3">
+        {% bootstrap_label form.group.label|cut:":" label_for=form.group.id_for_label label_class="form-label" %}
+        <div class="input-group">
+            {% render_field form.group class="form-select" %}
+            <button class="btn btn-primary btn-block"
+                    type="submit"
+                    name="submit"
+                    value="group">
+                <span class="bi bi-search"></span> Search
+            </button>
+        </div>
+    </div>
+    <h2 class="mt-4">IPR search</h2>
+    <div class="mb-3">
+        {% bootstrap_label form.holder.label|cut:":" label_for=form.holder.id_for_label label_class="form-label" %}
+        <div class="input-group">
+            {% render_field form.holder class="form-control" placeholder="John Doe..." %}
+            <button class="btn btn-primary" type="submit" name="submit" value="holder">
+                <span class="bi bi-search"></span> Search
+            </button>
+        </div>
+    </div>
+    <div class="mb-3">
+        {% bootstrap_label form.iprtitle.label|cut:":" label_for=form.iprtitle.id_for_label label_class="form-label" %}
+        <div class="input-group">
+            {% render_field form.iprtitle class="form-control" placeholder="protocol..." %}
+            <button class="btn btn-primary" type="submit" name="submit" value="iprtitle">
+                <span class="bi bi-search"></span> Search
+            </button>
+        </div>
+    </div>
+    <div class="mb-3">
+        {% bootstrap_label form.patent.label|cut:":" label_for=form.patent.id_for_label label_class="form-label" %}
+        <div class="input-group">
+            {% render_field form.patent class="form-control" %}
+            <button class="btn btn-primary" type="submit" name="submit" value="patent">
+                <span class="bi bi-search"></span> Search
+            </button>
+        </div>
+        <div class="form-text">
+            This search string must contain at least three characters, including
+            at least one digit, and include punctuation marks. For best results,
+            please enter the entire string, or as much of it as possible.
+        </div>
+    </div>
 </form>
+<p class="alert alert-info">
+    The material posted as IPR disclosures should be viewed as originating
+    from the source of that information, and any issue or question related
+    to the material should be directed to the source rather than the
+    IETF. There is no implied endorsement or agreement by the IETF, the
+    IESG or any other IETF entities with any of the material.
+</p>
+<a class="btn btn-secondary float-end"
+   href="{% url "ietf.ipr.views.showlist" %}">Back</a>

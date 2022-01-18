@@ -87,6 +87,20 @@ pre {
     font-size: inherit;
 }
 
+// Highlight required form field labels with bi-asterisk
+.required>label:after {
+    display: inline-block;
+    width: .75rem;
+    height: .75rem;
+    margin-left: .1rem;
+    content: "";
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='text-danger' viewBox='0 0 16 16'%3E%3Cpath d='M8 0a1 1 0 0 1 1 1v5.268l4.562-2.634a1 1 0 1 1 1 1.732L10 8l4.562 2.634a1 1 0 1 1-1 1.732L9 9.732V15a1 1 0 1 1-2 0V9.732l-4.562 2.634a1 1 0 1 1-1-1.732L6 8 1.438 5.366a1 1 0 0 1 1-1.732L7 6.268V1a1 1 0 0 1 1-1z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    // Recolor black to $red, see https://codepen.io/sosuke/pen/Pjoqqp
+    filter: invert(35%) sepia(9%) saturate(5669%) hue-rotate(312deg) brightness(102%) contrast(117%);
+    font-weight: bold;
+}
+
 // Make the long dropdowns in the group menu scrollable.
 .group-menu .dropdown-menu {
     height: auto;

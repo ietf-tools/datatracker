@@ -148,9 +148,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
             {% endif %}
             {% if num == "7" %}
                 {% filter linebreaks_crlf %}
-                    {% for ad in section.ads %}
-                        <pre>[ ] {{ ad.plain_name }}</pre>
-                    {% endfor %}
+                    {% for ad in section.ads %}<pre>[ ] {{ ad.plain_name }}</pre>{% endfor %}
                 {% endfilter %}
             {% endif %}
         {% endfor %}

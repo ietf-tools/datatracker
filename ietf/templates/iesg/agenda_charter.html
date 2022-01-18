@@ -1,15 +1,19 @@
+{# bs5ok #}
 {% load ietf_filters ballot_icon %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% origin %}
 {% load ietf_filters ballot_icon person_filters %}
 <div class="card mb-3">
+    {# FIXME-LARS: just using float-end here messes up the spacing between row columns? #}
+    <div class="position-absolute top-0 end-0 m-3">{% ballot_icon doc %}</div>
     <div class="card-body">
-        <div class="float-end">{% ballot_icon doc %}</div>
         <div class="row">
             <div class="col-sm-3 text-end fw-bold">{{ doc.group.type }} name</div>
             <div class="col">
-                <b>{{ doc.group.name }} <a href="{{ doc.group.about_url }}">({{ doc.group.acronym|upper }})</a></b>
+                <b>{{ doc.group.name }}
+                    <a href="{{ doc.group.about_url }}">({{ doc.group.acronym|upper }})</a>
+                </b>
             </div>
         </div>
         <div class="row">

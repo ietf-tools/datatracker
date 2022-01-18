@@ -245,7 +245,7 @@
             </p>
         {% endif %}
         {% if milestones %}
-            {% include "group/milestones.html" %}
+            {% include "group/milestones.html" with heading=True %}
         {% else %}
             <p>
                 No milestones for charter found.

@@ -1492,7 +1492,7 @@ class AgendaTests(IetfSeleniumTestCase):
                                       expected_event_count=len(sessions))
 
     def test_session_materials_modal(self):
-        """Test opening and re-opening a session materals modal
+        """Test opening and re-opening a session materials modal
 
         This currently only tests the slides to ensure that changes to these are picked up
         without reloading the main agenda page. This should also test that the agenda and
@@ -1517,8 +1517,10 @@ class AgendaTests(IetfSeleniumTestCase):
             ),
             'Modal open button not found or not clickable',
         )
-        self.scroll_to_element(open_modal_button)
-        open_modal_button.click()
+        # FIXME-LARS: no idea why we need js instead of the following:
+        # self.scroll_to_element(open_modal_button)
+        # open_modal_button.click()
+        self.driver.execute_script("arguments[0].click();", open_modal_button)
         WebDriverWait(self.driver, 2).until(
             expected_conditions.visibility_of(modal_div),
             'Modal did not become visible after clicking open button',

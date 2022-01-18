@@ -1,3 +1,4 @@
+{# bs5ok #}
 {# Copyright The IETF Trust 2016, All Rights Reserved #}
 {% load origin %}
 {% origin %}
@@ -18,16 +19,11 @@
             </div>
             <div class="col">
                 {% with doc.rfc_number as rfc_number %}
-                    <a href="{% if rfc_number %}
-                                 https://www.rfc-editor.org/rfc/rfc{{ rfc_number }}/
-                             {% else %}
-                                 {{ doc.get_href }}
-                             {% endif %}">
-                    <i class="bi bi-file-earmark-fill"></i>
-                </a>
+                    <a href="{% if rfc_number %} https://www.rfc-editor.org/rfc/rfc{{ rfc_number }}/ {% else %} {{ doc.get_href }} {% endif %}">
+                        <i class="bi bi-file-earmark-fill"></i>
+                    </a>
                 {% endwith %}
-                <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">
-                {{ doc.canonical_name }}</a>
+                <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
                 {% if doc.has_rfc_editor_note %}
                     <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}writeup/">
                         <em>(Has RFC Editor Note)</em>
@@ -61,7 +57,9 @@
         {% if doc.iana_review_state %}
             <div class="row">
                 <div class="col-sm-3 text-end fw-bold">IANA review</div>
-                <div class="col {% if doc.iana_review_state|slice:7 != "IANA OK" %}text-danger{% else %}text-success{% endif %}">{{ doc.iana_review_state }}</div>
+                <div class="col {% if doc.iana_review_state|slice:7 != "IANA OK" %}text-danger{% else %}text-success{% endif %}">
+                    {{ doc.iana_review_state }}
+                </div>
             </div>
         {% endif %}
         {% if doc.consensus %}

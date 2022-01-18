@@ -498,6 +498,7 @@ BOOTSTRAP5 = {
     # Set placeholder attributes to label if no placeholder is provided
     'set_placeholder': False,
 
+    'required_css_class': 'required',
     'error_css_class': 'is-invalid',
     'success_css_class': 'is-valid',
 
