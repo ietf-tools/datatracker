@@ -59,6 +59,7 @@ RUN apt-get install -qy \
 	rsync \
 	rsyslog \
     ruby \
+    ruby-rubygems \
 	subversion \
 	unzip \
 	wget \
@@ -67,9 +68,8 @@ RUN apt-get install -qy \
     yang-tools \
 	zsh
 
-# Install Kramdown (ruby)
-RUN gem install kramdown && \
-    gem install kramdown-parser-gfm
+# Install kramdown-rfc2629 (ruby)
+RUN gem install kramdown-rfc2629
 
 # Install chromedriver if supported
 COPY docker/scripts/app-install-chromedriver.sh /tmp/app-install-chromedriver.sh
