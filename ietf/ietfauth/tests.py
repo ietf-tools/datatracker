@@ -27,6 +27,7 @@ from urllib.parse import urlsplit
 from django.urls import reverse as urlreverse
 from django.contrib.auth.models import User
 from django.conf import settings
+from django.template.loader import render_to_string 
 
 import debug                            # pyflakes:ignore
 
@@ -138,20 +139,26 @@ class IetfAuthTests(TestCase):
 
         return False
 
-    def test_create_account_failure(self):
+# For the lowered barrier to account creation period, we are disabling this kind of failure
+    # def test_create_account_failure(self):
 
-        url = urlreverse(ietf.ietfauth.views.create_account)
+    #     url = urlreverse(ietf.ietfauth.views.create_account)
 
-        # get
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+    #     # get
+    #     r = self.client.get(url)
+    #     self.assertEqual(r.status_code, 200)
 
-        # register email and verify failure
-        email = 'new-account@example.com'
-        empty_outbox()
-        r = self.client.post(url, { 'email': email })
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Additional Assistance Required")
+    #     # register email and verify failure
+    #     email = 'new-account@example.com'
+    #     empty_outbox()
+    #     r = self.client.post(url, { 'email': email })
+    #     self.assertEqual(r.status_code, 200)
+    #     self.assertContains(r, "Additional Assistance Required")
+
+# Rather than delete the failure template just yet, here's a test to make sure it still renders should we need to revert to it.
+    def test_create_account_failure_template(self):
+        r = render_to_string('registration/manual.html', { 'account_request_email': settings.ACCOUNT_REQUEST_EMAIL })
+        self.assertTrue("Additional Assistance Required" in r)
 
     def register_and_verify(self, email):
         url = urlreverse(ietf.ietfauth.views.create_account)

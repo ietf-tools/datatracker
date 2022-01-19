@@ -36,7 +36,9 @@
 
 import importlib
 
-from datetime import datetime as DateTime, timedelta as TimeDelta, date as Date
+from datetime import date as Date
+# needed if we revert to higher barrier for account creation
+#from datetime import datetime as DateTime, timedelta as TimeDelta, date as Date
 from collections import defaultdict
 
 import django.core.signing
@@ -65,7 +67,9 @@ from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordF
                                 NewEmailForm, ChangeUsernameForm, PersonPasswordForm)
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.ietfauth.utils import role_required, has_role
-from ietf.mailinglists.models import Subscribed, Whitelisted
+from ietf.mailinglists.models import Whitelisted
+# needed if we revert to higher barrier for account creation
+#from ietf.mailinglists.models import Subscribed, Whitelisted
 from ietf.name.models import ExtResourceName
 from ietf.nomcom.models import NomCom
 from ietf.person.models import Person, Email, Alias, PersonalApiKey, PERSON_API_KEY_VALUES
@@ -75,6 +79,9 @@ from ietf.doc.fields import SearchableDocumentField
 from ietf.utils.decorators import person_required
 from ietf.utils.mail import send_mail
 from ietf.utils.validators import validate_external_resource_value
+
+# These are needed if we revert to the higher bar for account creation
+
 
 
 def index(request):
@@ -114,13 +121,19 @@ def create_account(request):
         form = RegistrationForm(request.POST)
         if form.is_valid():
             to_email = form.cleaned_data['email'] # This will be lowercase if form.is_valid()
-            existing = Subscribed.objects.filter(email=to_email).first()
-            ok_to_create = ( Whitelisted.objects.filter(email=to_email).exists()
-                or existing and (existing.time + TimeDelta(seconds=settings.LIST_ACCOUNT_DELAY)) < DateTime.now() )
-            if ok_to_create:
-                send_account_creation_email(request, to_email)
-            else:
-                return render(request, 'registration/manual.html', { 'account_request_email': settings.ACCOUNT_REQUEST_EMAIL })
+
+            # For the IETF 113 Registration period (at least) we are lowering the barriers for account creation
+            # to the simple email round-trip check
+            send_account_creation_email(request, to_email)
+
+            # The following is what to revert to should that lowered barrier prove problematic
+            # existing = Subscribed.objects.filter(email=to_email).first()
+            # ok_to_create = ( Whitelisted.objects.filter(email=to_email).exists()
+            #     or existing and (existing.time + TimeDelta(seconds=settings.LIST_ACCOUNT_DELAY)) < DateTime.now() )
+            # if ok_to_create:
+            #     send_account_creation_email(request, to_email)
+            # else:
+            #     return render(request, 'registration/manual.html', { 'account_request_email': settings.ACCOUNT_REQUEST_EMAIL })
     else:
         form = RegistrationForm()
 
