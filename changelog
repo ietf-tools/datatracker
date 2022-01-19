@@ -45,6 +45,12 @@ ietfdb (7.43.0) ietf; urgency=medium
     Correctly separate open review reminders by review team.
     Fixes #3482. Fixes #3324.  
 
+  * Merged in [19857] from rjsparks@nostrum.com:
+    Add a link to account creation in the login page body.
+
+  * Merged in [19858] from rjsparks@nostrum.com:
+    Remove the manual intervention step for account creation.
+
  -- Robert Sparks <rjsparks@nostrum.com>  14 Jan 2022 20:54:12 +0000
 
 
