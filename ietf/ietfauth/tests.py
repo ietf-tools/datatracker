@@ -95,6 +95,7 @@ class IetfAuthTests(TestCase):
         # try logging out
         r = self.client.get(urlreverse('django.contrib.auth.views.logout'))
         self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, "accounts/logout")
 
         r = self.client.get(urlreverse(ietf.ietfauth.views.profile))
         self.assertEqual(r.status_code, 302)
