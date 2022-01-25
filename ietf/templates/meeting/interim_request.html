@@ -1,169 +1,62 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load static django_bootstrap5 widget_tweaks ietf_filters %}
-
 {% block title %}Interim Request{% endblock %}
-
 {% block pagehead %}
     <link rel="stylesheet" href="{% static 'ietf/css/select2.css' %}">
     <link rel="stylesheet" href="{% static 'ietf/css/datepicker.css' %}">
 {% endblock %}
-
 {% block content %}
     {% origin %}
     <h1>Interim Meeting Request</h1>
-
-    <form id="interim-request-form" role="form" method="post" class="form-horizontal">
+    {% if form.non_field_errors %}<div class="my-3 alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+    <form id="interim-request-form" role="form" method="post" class="my-3">
         {% csrf_token %}
-
-        {% if form.non_field_errors %}
-            <div class="mb-3 alert alert-danger">
-                {{ form.non_field_errors }}
-            </div>
-        {% endif %}
-
         {% bootstrap_field form.group layout='horizontal' %}
-
-        <div class="mb-3 form-inline">
-            <div class="col-md-offset-2">
-                <div class="col-md-2">
-                    <label class="checkbox-inline">{% render_field form.in_person %}<strong>In Person</strong></label>
+        {% bootstrap_field form.in_person layout='horizontal' %}
+        {% if user|has_role:"Secretariat,Area Director,IRTF Chair" %}
+            <div class="row mb-3">
+                <div class="offset-md-2 col-md-10">
+                    {% render_field form.approved class="form-check-input" %}
+                    {% bootstrap_label "Preapproved by AD" label_for=form.approved.id %}
                 </div>
-
-                {% if user|has_role:"Secretariat,Area Director,IRTF Chair" %}
-                    <div class="col-md-2">
-                        <label class="checkbox-inline">{% render_field form.approved %}<strong>Preapproved by AD</strong></label>
-                    </div>
-                {% endif %}
-
-                <div class="col-md-2 radio-inline"><strong>Meeting Type:</strong></div>
-
-                {% for radio in form.meeting_type %}
-                    <label class="radio-inline" for="{{ radio.id_for_label }}">
-                        {{ radio.tag }}
-                        {{ radio.choice_label }}
-                    </label>
-                {% endfor %}
-
-            </div> <!-- col-md-offset-2 -->
-        </div> <!-- mb-3 form-inline -->
-
-
-        <div class="mb-3 meeting-type-help mth-multi" style="display: none;">
-            <div class="col-md-offset-2">
-                <div class="col-md-10">
-                    <p class="form-text">
-                        Use Multi-Day for a single meeting that spans more than one contiguous
-                        workday. Do not use Multi-Day for a series of separate meetings (such as
-                        periodic interim calls). Use Series instead.
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="mb-3 meeting-type-help mth-series" style="display: none;">
-            <div class="col-md-offset-2">
-                <div class="col-md-10">
-                    <p class="form-text">
-                        Use Series for a series of separate meetings, such as periodic interim calls.
-                        Use Multi-Day for a single meeting that spans more than one contiguous
-                        workday.
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="mb-3">
-            <label for="id_session_set-{{ forloop.counter0 }}-city" class="col-md-2 col-form-label">Location</label>
-            <div class="col-md-10 form-inline">
-                {% render_field form.city class="form-control location" placeholder="City" %}
-                {% render_field form.country class="form-control location" style="width: 30%" %}
-                <div id="timezone-field">
-                    {% render_field form.time_zone class="form-control" %}
-                    <span class="form-text">Local Timezone</span></div>
-            </div>
-        </div>
-
-        {{ formset.management_form }}
-
-        {% if formset.non_form_errors %}
-            <div class="mb-3 alert alert-danger">
-                {{ formset.non_form_errors }}
             </div>
         {% endif %}
-
+        {% bootstrap_field form.meeting_type layout='horizontal' %}
+        {% bootstrap_field form.city layout='horizontal' %}
+        {% bootstrap_field form.country layout='horizontal' %}
+        {% bootstrap_field form.time_zone layout='horizontal' %}
+        {{ formset.management_form }}
+        {% if formset.non_form_errors %}<div class="my-3 alert alert-danger">{{ formset.non_form_errors }}</div>{% endif %}
         {% for form in formset %}
-            <div class="fieldset{% if forloop.last %} template{% endif %}" >
-
-                <div class="mb-3 {% if form.date.errors %}alert alert-danger{% endif %}">
-                    <label for="id_session_set-{{ forloop.counter0 }}-date" class="col-md-2 col-form-label required">Date</label>
-                    <div class="col-md-2">{% render_field form.date class="form-control" %}</div>
-                    {% if form.date.errors %}<span class="help-inline">{{ form.date.errors }}</span>{% endif %}
-                </div>
-
-                <div class="mb-3 {% if form.time.errors or form.requested_duration.errors %}alert alert-danger{% endif %}">
-                    <label for="id_session_set-{{ forloop.counter0 }}-time" class="col-md-2 col-form-label required">Start Time</label>
-                    <div class="col-md-3 form-inline">
-                        {% render_field form.time class="form-control time-field" placeholder="HH:MM" %}
-                        <div id="id_session_set-{{ forloop.counter0 }}-time_utc" class="utc-time"></div>
-                        <span class="form-text">Local Time</span>
-                        {% if form.time.errors %}<span class="help-inline">{{ form.time.errors }}</span>{% endif %}
-                    </div>
-                    <label for="id_session_set-{{ forloop.counter0 }}-requested_duration" class="col-md-1 col-form-label required">Duration</label>
-                    <div class="col-md-1">{% render_field form.requested_duration class="form-control time-field" placeholder="HH:MM" %}{% if form.requested_duration.errors %}<span class="help-inline">{{ form.requested_duration.errors }}</span>{% endif %}</div>
-                    <label for="id_session_set-{{ forloop.counter0 }}-end_time" class="col-md-2 col-form-label">End Time</label>
-                    <div class="col-md-3 form-inline">
-                        {% render_field form.end_time class="form-control time-field computed" placeholder="HH:MM" disabled="disabled" %}
-                        <div id="id_session_set-{{ forloop.counter0 }}-end_time_utc" class="utc-time"></div>
-                        <span class="form-text">Local Time</span>
-                    </div>
-                </div>
-
-                <div class="mb-3{% if form.remote_instructions.errors %} alert alert-danger{% endif %}">
-                    <label for="id_session_set-{{ forloop.counter0 }}-remote_instructions" class="col-md-2 col-form-label required">Remote Instructions</label>
-                    <div class="col-md-10">{% render_field form.remote_instructions class="form-control" placeholder="Webex (or other) URL or descriptive information (see below)" %}
-                        <p class="form-text">
-                            For virtual interims, a conference link <b>should be provided in the original request</b> in all but the most unusual circumstances.
-                            Otherwise, "Remote participation is not supported" or "Remote participation information will be obtained at the time of approval" are acceptable values.
-                            See <a href="https://www.ietf.org/forms/wg-webex-account-request/">here</a> for more on remote participation support.
-                        </p>
-                    </div>
-                    {% if form.remote_instructions.errors %}<span class="help-inline">{{ form.remote_instructions.errors }}</span>{% endif %}
-                </div>
-
-                <div class="mb-3">
-                    <label for="id_session_set-{{ forloop.counter0 }}-agenda" class="col-md-2 col-form-label">Agenda</label>
-                    <div class="col-md-10">{% render_field form.agenda class="form-control" rows="6" placeholder="Paste agenda here" %}</div>
-                </div>
-
-                <div class="mb-3">
-                    <label for="id_session_set-{{ forloop.counter0 }}-agenda_note" class="col-md-2 col-form-label">Additional Information</label>
-                    <div class="col-md-10">{% render_field form.agenda_note class="form-control" %}</div>
-                </div>
-                <button name="id_session_set-{{ forloop.counter0 }}-delete-button" type="button" class="btn btn-primary hidden btn-delete">Delete</button>
-            </div>  <!-- fieldset -->
-        {% endfor %}
-
-        <div class="mb-3">
-            <div class="col-md-12">
-                <button id="add_session" type="button" class="btn btn-primary" style="display: none;"><span class="bi bi-plus" aria-hidden="true"></span>Add Session</button>
+            <div class="fieldset{% if forloop.last %} template visually-hidden{% endif %}">
+                <hr class="my-4">
+                <input id="id_session_set-{{ forloop.counter0 }}-id"
+                       name="session_set-{{ forloop.counter0 }}-id"
+                       type="hidden"
+                       value="{{ form.instance.pk|default_if_none:"" }}">
+                {% bootstrap_form form layout='horizontal' %}
+                <button name="id_session_set-{{ forloop.counter0 }}-delete-button"
+                        type="button"
+                        class="btn btn-danger offset-md-2 visually-hidden btn-delete">
+                    Delete session
+                </button>
             </div>
+        {% endfor %}
+        <div class="my-3">
+            <button id="add_session" type="button" class="btn btn-primary offset-md-2">
+                <span class="bi bi-plus" aria-hidden="true"></span>Add session
+            </button>
         </div>
-
-
-
-        <div class="col-md-12">
+        <div class="my-3">
             <button type="submit" class="btn btn-primary">Submit</button>
-            <a class="btn btn-secondary float-end" href="{% url 'ietf.meeting.views.upcoming' %}">Back</a>
+            <a class="btn btn-secondary float-end"
+               href="{% url 'ietf.meeting.views.upcoming' %}">Back</a>
         </div>
-
-
-
     </form>
-
 {% endblock %}
-
 {% block js %}
     <script src="{% static 'ietf/js/datepicker.js' %}"></script>
     <script src="{% static 'ietf/js/select2.js' %}"></script>

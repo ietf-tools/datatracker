@@ -75,6 +75,8 @@ class EditAuthorsTests(IetfSeleniumTestCase):
             email_select = form_elt.find_element(By.CSS_SELECTOR, 'select[name$="email"]')
             affil_input = form_elt.find_element(By.CSS_SELECTOR, 'input[name$="affiliation"]')
             country_input = form_elt.find_element(By.CSS_SELECTOR, 'input[name$="country"]')
+            print("hidden_person_input.get_attribute('value')", hidden_person_input.get_attribute('value'))
+            print("hidden_person_input.get_attribute('outerHTML')", hidden_person_input.get_attribute('outerHTML'))
             return (
                 Person.objects.get(pk=hidden_person_input.get_attribute('value')),
                 email_select.get_attribute('value'),

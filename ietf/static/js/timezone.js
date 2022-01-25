@@ -1,4 +1,4 @@
-// Copyright The IETF Trust 2021, All Rights Reserved
+        // Copyright The IETF Trust 2021, All Rights Reserved
 
 /*
  Timezone selection handling. Relies on the moment.js library.
@@ -45,20 +45,15 @@ window.ietf_timezone; // public interface
 
         select.empty();
         $.each(tz_names, function (i, item) {
-            if (current === item) {
-                select.append($('<option/>', {
-                    selected: 'selected',
-                    html: item,
-                    value: item
-                }));
-            } else {
-                select.append($('<option/>', {
-                    html: item,
-                    value: item
-                }));
-            }
+            select.append($('<option/>', {
+                selected: current === item,
+                html: item,
+                value: item
+            }));
         });
-        select.on("change", function () { use_timezone(this.value); });
+        select.on("change", function () {
+            use_timezone(this.value);
+        });
         /* When navigating back/forward, the browser may change the select input's
          * value after the window load event. It does not fire the change event on
          * the input when it does this. The pageshow event occurs after such an update,
@@ -70,7 +65,7 @@ window.ietf_timezone; // public interface
 
     // Expose public interface
     ietf_timezone = {
-        get_current_tz: function () { return current_timezone },
+        get_current_tz: function () { return current_timezone; },
         initialize: timezone_init,
         set_tz_change_callback: function (cb) { timezone_change_callback = cb; },
         use: use_timezone

@@ -1,40 +1,55 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
-
-{% block title %}Mail Recipients{% endblock %}
-
-
+{% load origin textfilters static %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
+{% block title %}Mail recipients{% endblock %}
 {% block content %}
     {% origin %}
-    <h1>Mail Recipients</h1>
-
-    <table class="table table-sm table-striped">
+    <h1>Mail recipients</h1>
+    <table class="my-3 table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th>Recipient</th>
-                <th>Triggers</th>
-                <th>Template</th>
-                <th>Code</th>
+                <th data-sort="recipient">Recipient</th>
+                <th data-sort="triggers">Triggers</th>
+                <th data-sort="template">Template</th>
+                <th data-sort="code">Code</th>
             </tr>
         </thead>
         <tbody>
             {% for recipient in recipients %}
                 <tr>
-                    <td><span title="{{recipient.desc}}">{{recipient.slug}}</span></td>
+                    <td>
+                        <span title="{{ recipient.desc }}">{{ recipient.slug }}</span>
+                    </td>
                     <td>
                         {% for mailtrigger in recipient.used_in_to.all %}
-                            <a href="{% url 'ietf.mailtrigger.views.show_triggers' mailtrigger.slug %}" title="{{mailtrigger.desc}}">{{mailtrigger.slug}}</a>{% if not forloop.last %}, {%endif%}
-                        {% endfor %}{% if recipient.used_in_to.exists and recipient.used_in_cc.exists %},{% endif %}
+                            <a href="{% url 'ietf.mailtrigger.views.show_triggers' mailtrigger.slug %}"
+                               title="{{ mailtrigger.desc }}">
+                                {{ mailtrigger.slug }}
+                            </a>
+                            {% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                        {% if recipient.used_in_to.exists and recipient.used_in_cc.exists %},{% endif %}
                         {% for mailtrigger in recipient.used_in_cc.all %}
-                            <a href="{% url 'ietf.mailtrigger.views.show_triggers' mailtrigger.slug %}" title="{{mailtrigger.desc}}">{{mailtrigger.slug}}</a>{% if not forloop.last %}, {%endif%}
+                            <a href="{% url 'ietf.mailtrigger.views.show_triggers' mailtrigger.slug %}"
+                               title="{{ mailtrigger.desc }}">
+                                {{ mailtrigger.slug }}
+                            </a>
+                            {% if not forloop.last %},{% endif %}
                         {% endfor %}
                     </td>
-                    <td>{{recipient.template}}</td>
-                    <td>{% if recipient.code %}<pre>{{recipient.code}}</pre>{% endif %}</td>
+                    <td>{{ recipient.template|linkify }}</td>
+                    <td>
+                        {% if recipient.code %}<code>{{ recipient.code }}</code>{% endif %}
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
-
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

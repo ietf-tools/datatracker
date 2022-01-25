@@ -55,7 +55,7 @@
                                         <span class="d-none d-sm-block">&lt;<a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">{{ fb_dict.nominee.email.address }}</a>&gt;</span>
                                     </td>
                                     {% for fbtype_name, fbtype_count, fbtype_newflag in fb_dict.feedback %}
-                                        <td class="text-right">
+                                        <td class="text-end">
                                             {% if fbtype_newflag %}<span class="badge bg-success">New</span>{% endif %}
                                             {{ fbtype_count }}
                                         </td>
@@ -88,7 +88,7 @@
                                     <a href="{% url 'ietf.nomcom.views.view_feedback_topic' year=year topic_id=fb_dict.topic.id %}">{{ fb_dict.topic.subject }}</a>
                                 </td>
                                 {% for fbtype_name, fbtype_count, fbtype_newflag in fb_dict.feedback %}
-                                    <td class="text-right">
+                                    <td class="text-end">
                                         {% if fbtype_newflag %}<span class="badge bg-success">New</span>{% endif %}
                                         {{ fbtype_count }}
                                     </td>

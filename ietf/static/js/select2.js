@@ -17,7 +17,9 @@ $.fn.select2.defaults.set("escapeMarkup", function (m) {
 window.setupSelect2Field = function (e) {
     var url = e.data("ajax-url");
     if (!url) {
-        console.log("data-ajax-url missing, not enabling select2 on field", e);
+        if (!e.attr("disabled")) {
+            console.log("data-ajax-url missing, not enabling select2 on field", e);
+        }
         return;
     }
 

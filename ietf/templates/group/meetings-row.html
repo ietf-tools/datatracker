@@ -43,7 +43,7 @@
                 {% endif %}
             {% endif %}
             <a class="btn btn-sm {% if not s.agenda %}btn-secondary disabled{% else %}btn-primary{% endif %}"
-               {% if s.agenda %}bhref="{{ s.agenda.get_absolute_url }}"{% endif %}>
+               {% if s.agenda %}href="{{ s.agenda.get_absolute_url }}"{% endif %}>
                 Agenda
             </a>
             <a class="btn btn-sm {% if not s.minutes %}btn-secondary disabled{% else %}btn-primary{% endif %}"

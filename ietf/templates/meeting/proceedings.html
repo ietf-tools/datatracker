@@ -1,49 +1,8 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load ietf_filters static %}
-{% block morecssXX %}
-    .proceedings-title {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 2rem;
-    font-size: 1.8rem;
-    }
-    .proceedings-title > h1 {font-size: xx-large; margin-bottom: 0;}
-    .proceedings-date {font-size: x-large;}
-    .proceedings-intro {
-    font-size: large;
-    display: flex;
-    justify-content:
-    space-around;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    }
-    .proceedings-intro.with-divider {border-bottom-style: solid; border-width: 1px;}
-    .proceedings-intro > .proceedings-column {display: flex; flex-direction: column;}
-    .proceedings-intro > .proceedings-column > .proceedings-row {display: flex;}
-    .finalize-button {position: absolute; top: 0; right: 0;}
-    .proceedings-intro .host-logo {
-    max-height: {{ meetinghost_logo.max_height }}px;
-    max-width: {{ meetinghost_logo.max_width }}px;
-    overflow: hidden;
-    margin: 0 0 0 1rem;
-    }
-    {# Resize logo so longest edge matches the display size, maintaining aspect ratio. #}
-    {% widthratio meetinghost_logo.max_width meetinghost_logo.max_height 1 as displayed_aspect %}
-    {% for host in meeting.meetinghosts.all %}
-        {% widthratio host.logo.width host.logo.height 1 as logo_aspect %}
-        .host-logo img.host{{ forloop.counter }}  {
-        {% if logo_aspect > displayed_aspect %}
-            width: 100%; height: auto;
-        {% else %}
-            width: auto; height: 100%;
-        {% endif %}
-        }
-    {% endfor %}
-{% endblock %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
@@ -54,29 +13,29 @@
 {% endblock %}
 {% block content %}
     {% origin %}
-    {% if user|has_role:"Secretariat" and not meeting.proceedings_final %}
-        <a class="btn btn-primary finalize-button"
+    {% include 'meeting/proceedings/title.html' with meeting=meeting attendance=attendance only %}
+    {% if user|has_role:"Secretariat" and meeting.proceedings_final %}
+        <a class="btn btn-warning finalize-button"
            href="{% url 'ietf.meeting.views.finalize_proceedings' num=meeting.number %}">
-            Finalize Proceedings
+            Finalize proceedings
         </a>
     {% endif %}
     {# cache for 15 minutes, as long as there's no proceedings activity. takes 4-8 seconds to generate. #}
     {% load cache %}
     {% cache 900 ietf_meeting_proceedings meeting.number cache_version %}
-    {% include 'meeting/proceedings/title.html' with meeting=meeting attendance=attendance only %}
     {% include 'meeting/proceedings/introduction.html' with meeting=meeting only %}
     {% with "True" as show_agenda %}
         <!-- Plenaries -->
         {% if plenaries %}
-            <h2 id="plenaries">Plenaries</h2>
+            <h2 class="mt-5" id="plenaries">Plenaries</h2>
             <table class="table table-sm table-striped tablesorter">
                 <thead>
                     <tr>
-                        <th class="col-1" data-sort="group">Group</th>
-                        <th class="col-1" data-sort="artifacts">Artifacts</th>
-                        <th class="col-2" data-sort="recordings">Recordings</th>
-                        <th class="col-4" data-sort="slides">Slides</th>
-                        <th class="col-3" data-sort="drafts">Drafts</th>
+                        <th data-sort="group">Group</th>
+                        <th data-sort="artifacts">Artifacts</th>
+                        <th data-sort="recordings">Recordings</th>
+                        <th data-sort="slides">Slides</th>
+                        <th data-sort="drafts">Drafts</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -88,18 +47,18 @@
         {% endif %}
         <!-- Working groups -->
         {% for area, meeting_sessions, not_meeting_sessions in ietf_areas %}
-            <h2 id="{{ area.acronym }}">
+            <h2 class="mt-5" id="{{ area.acronym }}">
                 {{ area.acronym|upper }} <small class="text-muted">{{ area.name }}</small>
             </h2>
             {% if meeting_sessions %}
                 <table class="table table-sm table-striped tablesorter">
                     <thead>
                         <tr>
-                            <th class="col-1" data-sort="group">Group</th>
-                            <th class="col-1" data-sort="artifacts">Artifacts</th>
-                            <th class="col-2" data-sort="recordings">Recordings</th>
-                            <th class="col-4" data-sort="slides">Slides</th>
-                            <th class="col-3" data-sort="drafts">Drafts</th>
+                            <th data-sort="group">Group</th>
+                            <th data-sort="artifacts">Artifacts</th>
+                            <th data-sort="recordings">Recordings</th>
+                            <th data-sort="slides">Slides</th>
+                            <th data-sort="drafts">Drafts</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -124,11 +83,11 @@
                 <table class="table table-sm table-striped">
                     <thead>
                         <tr>
-                            <th class="col-1">data-sort="nbsp"&nbsp;</th>
-                            <th class="col-1">data-sort="nbsp"&nbsp;</th>
-                            <th class="col-2">data-sort="nbsp"&nbsp;</th>
-                            <th class="col-4">data-sort="nbsp"&nbsp;</th>
-                            <th class="col-3">data-sort="nbsp"&nbsp;</th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -146,15 +105,15 @@
         <!-- Training Sessions -->
         {% if training %}
             {% with "False" as show_agenda %}
-                <h2 id="training">Training</h2>
+                <h2 class="mt-5" id="training">Training</h2>
                 <table class="table table-sm table-striped tablesorter">
                     <thead>
                         <tr>
-                            <th class="col-1" data-sort="group">Group</th>
-                            <th class="col-1" data-sort="artifacts">Artifacts</th>
-                            <th class="col-2" data-sort="recordings">Recordings</th>
-                            <th class="col-4" data-sort="slides">Slides</th>
-                            <th class="col-3" data-sort="drafts">Drafts</th>
+                            <th data-sort="group">Group</th>
+                            <th data-sort="artifacts">Artifacts</th>
+                            <th data-sort="recordings">Recordings</th>
+                            <th data-sort="slides">Slides</th>
+                            <th data-sort="drafts">Drafts</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -169,25 +128,25 @@
         {% endif %}
         <!-- IAB Sessions -->
         {% if iab %}
-            <h2 id="iab">
+            <h2 class="mt-5" id="iab">
                 IAB <small class="text-muted">Internet Architecture Board</small>
             </h2>
             <table class="table table-sm table-striped tablesorter">
                 <thead>
                     <tr>
-                        <th class="col-1" data-sort="group">
+                        <th data-sort="group">
                             Group
                         </th>
-                        <th class="col-1" data-sort="artifacts">
+                        <th data-sort="artifacts">
                             Artifacts
                         </th>
-                        <th class="col-2" data-sort="recordings">
+                        <th data-sort="recordings">
                             Recordings
                         </th>
-                        <th class="col-4" data-sort="slides">
+                        <th data-sort="slides">
                             Slides
                         </th>
-                        <th class="col-3" data-sort="drafts">
+                        <th data-sort="drafts">
                             Drafts
                         </th>
                     </tr>
@@ -203,25 +162,25 @@
         {% endif %}
         <!-- IRTF Sessions -->
         {% if irtf %}
-            <h2 id="irtf">
+            <h2 class="mt-5" id="irtf">
                 IRTF <small class="text-muted">Internet Research Task Force</small>
             </h2>
             <table class="table table-sm table-striped tablesorter">
                 <thead>
                     <tr>
-                        <th class="col-1" data-sort="group">
+                        <th data-sort="group">
                             Group
                         </th>
-                        <th class="col-1" data-sort="artifacts">
+                        <th data-sort="artifacts">
                             Artifacts
                         </th>
-                        <th class="col-2" data-sort="recordings">
+                        <th data-sort="recordings">
                             Recordings
                         </th>
-                        <th class="col-4" data-sort="slides">
+                        <th data-sort="slides">
                             Slides
                         </th>
-                        <th class="col-3" data-sort="drafts">
+                        <th data-sort="drafts">
                             Drafts
                         </th>
                     </tr>

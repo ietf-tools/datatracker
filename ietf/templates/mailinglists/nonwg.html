@@ -1,6 +1,7 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin static %}
+{% load origin static ietf_filters %}
 {% load cache %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
@@ -15,17 +16,15 @@
             <tr>
                 <th data-sort="name">Name</th>
                 <th data-sort="description">Description</th>
-                <th data-sort="list">List Info</th>
             </tr>
         </thead>
         <tbody>
             {% for list in lists %}
                 <tr>
-                    <td>{{ list.name.lower }}</td>
-                    <td>{{ list.description }}</td>
-                    <td>
-                        <a href="{{ list.info_url }}">{{ list.info_url.lower }}</a>
+                    <td class="text-nowrap">
+                        <a href="{{ list.info_url }}">{{ list.name.lower }}</a>
                     </td>
+                    <td>{{ list.description|urlize_ietf_docs }}</td>
                 </tr>
             {% endfor %}
         </tbody>

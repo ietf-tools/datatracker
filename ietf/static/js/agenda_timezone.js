@@ -14,7 +14,7 @@ var local_timezone = moment.tz.guess();
 // get_current_tz_cb must be overwritten using set_current_tz_cb
 function get_current_tz_cb() {
     throw new Error('Tried to get current timezone before callback registered. Use set_current_tz_cb().');
-};
+}
 
 // Initialize moments
 window.initialize_moments = function () {
@@ -40,7 +40,7 @@ window.initialize_moments = function () {
         item.slot_end_ts = moment.unix(this.getAttribute("data-slot-end-ts"))
             .utc();
     });
-}
+};
 
 function format_time(t, tz, fmt) {
     var out;
@@ -49,59 +49,59 @@ function format_time(t, tz, fmt) {
         mtz = "UTC";
     }
     switch (fmt) {
-        case 0:
-            out = t.tz(tz)
-                .format('dddd, ') + '<span>' +
-                t.tz(tz)
-                .format('MMMM Do YYYY, ') + '</span>' +
-                t.tz(tz)
-                .format('HH:mm') + '<span>' +
-                t.tz(tz)
-                .format(' Z z') + '</span>';
-            break;
-        case 1:
-            // Note, this code does not work if the meeting crosses the
-            // year boundary.
-            out = t.tz(tz)
-                .format("HH:mm");
-            if (+t.tz(tz)
-                .dayOfYear() < +t.tz(mtz)
-                .dayOfYear()) {
-                out = out + " (-1)";
-            } else if (+t.tz(tz)
-                .dayOfYear() > +t.tz(mtz)
-                .dayOfYear()) {
-                out = out + " (+1)";
-            }
-            break;
-        case 2:
-            out = t.tz(mtz)
-                .format("dddd, ")
-                .toUpperCase() +
-                t.tz(tz)
-                .format("HH:mm");
-            if (+t.tz(tz)
-                .dayOfYear() < +t.tz(mtz)
-                .dayOfYear()) {
-                out = out + " (-1)";
-            } else if (+t.tz(tz)
-                .dayOfYear() > +t.tz(mtz)
-                .dayOfYear()) {
-                out = out + " (+1)";
-            }
-            break;
-        case 3:
-            out = t.utc()
-                .format("YYYY-MM-DD");
-            break;
-        case 4:
-            out = t.tz(tz)
-                .format("YYYY-MM-DD HH:mm");
-            break;
-        case 5:
-            out = t.tz(tz)
-                .format("HH:mm");
-            break;
+    case 0:
+        out = t.tz(tz)
+            .format('dddd, ') + '<span>' +
+            t.tz(tz)
+            .format('MMMM Do YYYY, ') + '</span>' +
+            t.tz(tz)
+            .format('HH:mm') + '<span>' +
+            t.tz(tz)
+            .format(' Z z') + '</span>';
+        break;
+    case 1:
+        // Note, this code does not work if the meeting crosses the
+        // year boundary.
+        out = t.tz(tz)
+            .format("HH:mm");
+        if (+t.tz(tz)
+            .dayOfYear() < +t.tz(mtz)
+            .dayOfYear()) {
+            out = out + " (-1)";
+        } else if (+t.tz(tz)
+            .dayOfYear() > +t.tz(mtz)
+            .dayOfYear()) {
+            out = out + " (+1)";
+        }
+        break;
+    case 2:
+        out = t.tz(mtz)
+            .format("dddd, ")
+            .toUpperCase() +
+            t.tz(tz)
+            .format("HH:mm");
+        if (+t.tz(tz)
+            .dayOfYear() < +t.tz(mtz)
+            .dayOfYear()) {
+            out = out + " (-1)";
+        } else if (+t.tz(tz)
+            .dayOfYear() > +t.tz(mtz)
+            .dayOfYear()) {
+            out = out + " (+1)";
+        }
+        break;
+    case 3:
+        out = t.utc()
+            .format("YYYY-MM-DD");
+        break;
+    case 4:
+        out = t.tz(tz)
+            .format("YYYY-MM-DD HH:mm");
+        break;
+    case 5:
+        out = t.tz(tz)
+            .format("HH:mm");
+        break;
     }
     return out;
 }
@@ -124,22 +124,22 @@ function format_tooltip_notice(start, end) {
 // Format tooltip table
 function format_tooltip_table(start, end) {
     var current_timezone = get_current_tz_cb();
-    var out = '<div class="text-start"><table class="table text-light table-sm"><tr><th></th><th>Session start</th><th>Session end</th></tr>';
+    var out = '<div class="text-start"><table class="table table-sm"><tr><th></th><th>Session start</th><th>Session end</th></tr>';
     if (window.meeting_timezone !== "") {
-        out += '<tr><th class="timehead">Meeting timezone</th><td>' +
-            format_time(start, window.meeting_timezone, 0) + '</td><td>' +
+        out += '<tr><th class="timehead">Meeting timezone</th><td class="text-nowrap">' +
+            format_time(start, window.meeting_timezone, 0) + '</td><td class="text-nowrap">' +
             format_time(end, window.meeting_timezone, 0) + '</td></tr>';
     }
-    out += '<tr><th class="timehead">Local timezone</th><td>' +
-        format_time(start, local_timezone, 0) + '</td><td>' +
+    out += '<tr><th class="timehead">Local timezone</th><td class="text-nowrap">' +
+        format_time(start, local_timezone, 0) + '</td><td class="text-nowrap">' +
         format_time(end, local_timezone, 0) + '</td></tr>';
     if (current_timezone !== 'UTC') {
-        out += '<tr><th class="timehead">Selected Timezone</th><td>' +
-            format_time(start, current_timezone, 0) + '</td><td>' +
+        out += '<tr><th class="timehead">Selected Timezone</th><td class="text-nowrap">' +
+            format_time(start, current_timezone, 0) + '</td><td class="text-nowrap">' +
             format_time(end, current_timezone, 0) + '</td></tr>';
     }
-    out += '<tr><th class="timehead">UTC</th><td>' +
-        format_time(start, 'UTC', 0) + '</td><td>' +
+    out += '<tr><th class="timehead">UTC</th><td class="text-nowrap">' +
+        format_time(start, 'UTC', 0) + '</td><td class="text-nowrap">' +
         format_time(end, 'UTC', 0) + '</td></tr>';
     out += '</table>' + format_tooltip_notice(start, end) + '</div>';
     return out;
@@ -165,15 +165,16 @@ window.add_tooltips = function () {
                 .add(2, 'hours');
             $(this)
                 .closest("th, td")
-                .attr("data-bs-toggle", "tooltip")
-                .attr("title", $(tooltip)
+                .attr("data-bs-toggle", "popover")
+                .attr("data-bs-content", $(tooltip)
                     .html())
-                .tooltip({
+                .popover({
                     html: true,
-                    sanitize: false
+                    sanitize: false,
+                    trigger: "hover"
                 });
         });
-}
+};
 
 // Update times on the agenda based on the selected timezone
 window.update_times = function (newtz) {
@@ -221,9 +222,8 @@ window.highlight_ongoing = function () {
     agenda_rows.addClass("table-warning");
     agenda_rows.first()
         .children("th, td")
-        .
-    prepend($('<div id="now"></div>'));
-}
+        .prepend($('<div id="now"></div>'));
+};
 
 // Update tooltips
 window.update_tooltips = function () {
@@ -236,7 +236,7 @@ window.update_tooltips = function () {
             $(this)
                 .html(format_tooltip_table(this.start_ts, this.end_ts));
         });
-}
+};
 
 // Update all tooltips
 window.update_tooltips_all = function () {

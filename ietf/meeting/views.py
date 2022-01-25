@@ -310,8 +310,8 @@ def edit_timeslots(request, num=None):
 
     # Labels here differ from those in the build_timeslices() method. The labels here are
     # relative to the table: time_slices are the row headings (ie, days), date_slices are
-    # the column headings (i.e., time intervals), and slots are the per-day list of time slots
-    # (with only one time slot per unique time/duration)
+    # the column headings (i.e., time intervals), and slots are the per-day list of timeslots
+    # (with only one timeslot per unique time/duration)
     time_slices, date_slices, slots = meeting.build_timeslices()
 
     ts_list = deque()
@@ -1047,12 +1047,12 @@ class TimeSlotForm(forms.Form):
                     self.cleaned_data['group'] = self.fields['group'].queryset.get(acronym='secretariat')
             else:
                 if not group:
-                    self.add_error('group', 'When scheduling this type of time slot, a group must be associated')
+                    self.add_error('group', 'When scheduling this type of timeslot, a group must be associated')
                 if not short:
-                    self.add_error('short', 'When scheduling this type of time slot, a short name is required')
+                    self.add_error('short', 'When scheduling this type of timeslot, a short name is required')
 
             if self.timeslot and self.timeslot.type.slug == 'regular' and self.active_assignment and ts_type.slug != self.timeslot.type.slug:
-                self.add_error('type', "Can't change type on time slots for regular sessions when a session has been assigned")
+                self.add_error('type', "Can't change type on timeslots for regular sessions when a session has been assigned")
 
             # find an allowed session purpose (guaranteed by TimeSlotForm)
             for purpose in SessionPurposeName.objects.filter(used=True):
@@ -1277,7 +1277,7 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
             ts = []
             for t in timeslots_by_day_and_room.get((d, r.pk), []):
                 # FIXME: the database (as of 2020) contains spurious
-                # regular time slots in rooms not intended for regular
+                # regular timeslots in rooms not intended for regular
                 # sessions - once those are gone, this filter can go
                 # away
                 if t.type_id == 'regular' and not any(t.slug == 'regular' for t in r.session_types.all()):

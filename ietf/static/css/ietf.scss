@@ -6,7 +6,7 @@ $enable-negative-margins: true;
 // Don't add carets to dropdowns by default.
 // $enable-caret: false;
 
-// $tooltip-max-width: 100%;
+$popover-max-width: 100%;
 
 // Only import what we need:
 // https://getbootstrap.com/docs/5.1/customize/optimize/
@@ -44,7 +44,7 @@ $enable-negative-margins: true;
 // @import "~/node_modules/bootstrap/scss/toasts";
 @import "~/node_modules/bootstrap/scss/modal";
 @import "~/node_modules/bootstrap/scss/tooltip";
-// @import "~/node_modules/bootstrap/scss/popover";
+@import "~/node_modules/bootstrap/scss/popover";
 // @import "~/node_modules/bootstrap/scss/carousel";
 @import "~/node_modules/bootstrap/scss/spinners";
 // @import "~/node_modules/bootstrap/scss/offcanvas";
@@ -92,13 +92,14 @@ pre {
     display: inline-block;
     width: .75rem;
     height: .75rem;
-    margin-left: .1rem;
+    margin-left: .125rem;
+    margin-right: .125rem;
     content: "";
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='text-danger' viewBox='0 0 16 16'%3E%3Cpath d='M8 0a1 1 0 0 1 1 1v5.268l4.562-2.634a1 1 0 1 1 1 1.732L10 8l4.562 2.634a1 1 0 1 1-1 1.732L9 9.732V15a1 1 0 1 1-2 0V9.732l-4.562 2.634a1 1 0 1 1-1-1.732L6 8 1.438 5.366a1 1 0 0 1 1-1.732L7 6.268V1a1 1 0 0 1 1-1z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 0a1 1 0 0 1 1 1v5.268l4.562-2.634a1 1 0 1 1 1 1.732L10 8l4.562 2.634a1 1 0 1 1-1 1.732L9 9.732V15a1 1 0 1 1-2 0V9.732l-4.562 2.634a1 1 0 1 1-1-1.732L6 8 1.438 5.366a1 1 0 0 1 1-1.732L7 6.268V1a1 1 0 0 1 1-1z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     // Recolor black to $red, see https://codepen.io/sosuke/pen/Pjoqqp
     filter: invert(35%) sepia(9%) saturate(5669%) hue-rotate(312deg) brightness(102%) contrast(117%);
-    font-weight: bold;
+    // font-weight: bold;
 }
 
 // Make the long dropdowns in the group menu scrollable.
@@ -309,7 +310,7 @@ td.position-empty {
 }
 
 .edit-meeting-schedule .edit-grid .room-label-column {
-    /* make sure we cut this column off - the time slots will determine
+    /* make sure we cut this column off - the timeslots will determine
    how much of it is shown */
     position: absolute;
     top: 0;
@@ -732,7 +733,7 @@ td.position-empty {
 
 .edit-meeting-timeslots-and-misc-sessions .room-row {
     border-bottom: 1px solid #ccc;
-    height: 20px;
+    // height: 20px;
     display: flex;
     cursor: pointer;
 }
@@ -766,7 +767,7 @@ td.position-empty {
     overflow: hidden;
     background-color: #f0f0f0;
     opacity: 0.8;
-    height: 19px;
+    // height: 19px;
     top: 0px;
     font-size: 13px;
     text-overflow: ellipsis;

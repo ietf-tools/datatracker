@@ -173,7 +173,7 @@ class ReviewTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, review_req.team.acronym)
         self.assertContains(r, review_req.team.name)
-        self.assertContains(r, str(author))
+        self.assertContains(r, author.name)
 
         url = urlreverse('ietf.doc.views_review.review_request_forced_login', kwargs={ "name": doc.name, "request_id": review_req.pk })
         r = self.client.get(url)
@@ -435,7 +435,7 @@ class ReviewTests(TestCase):
         
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, str(assignment.reviewer.person))
+        self.assertContains(r, assignment.reviewer.person.name)
         self.assertContains(r, 'can not be rejected')
         self.assertNotContains(r, '<button type="submit"')
 
