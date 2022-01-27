@@ -536,15 +536,17 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         for s in sessions:
             s.requested_by_person = requested_by_lookup.get(s.requested_by)
 
-            s.scheduling_label = "???"
             s.purpose_label = None
-            if (s.purpose.slug in ('none', 'regular')) and s.group:
-                s.scheduling_label = s.group.acronym
-                s.purpose_label = 'BoF' if s.group.is_bof() else s.group.type.name
+            if s.group:
+                if (s.purpose.slug in ('none', 'regular')):
+                    s.scheduling_label = s.group.acronym
+                    s.purpose_label = 'BoF' if s.group.is_bof() else s.group.type.name
+                else:
+                    s.scheduling_label = s.name if s.name else f'??? [{s.group.acronym}]'
+                    s.purpose_label = s.purpose.name
             else:
-                s.purpose_label = s.purpose.name
-                if s.name:
-                    s.scheduling_label = s.name
+                s.scheduling_label = s.name if s.name else '???'
+                s.purpose_label = s.purpose.name    
 
             s.requested_duration_in_hours = round(s.requested_duration.seconds / 60.0 / 60.0, 1)
 

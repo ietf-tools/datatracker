@@ -1,5 +1,7 @@
 /* globals alert, jQuery, moment */
 jQuery(document).ready(function () {
+    'use strict';
+    
     let content = jQuery(".edit-meeting-schedule");
     /* Drag data stored via the drag event dataTransfer interface is only accessible on
      * dragstart and dragend events. Other drag events can see only the MIME types that have
@@ -12,8 +14,9 @@ jQuery(document).ready(function () {
 
     function reportServerError(xhr, textStatus, error) {
         let errorText = error || textStatus;
-        if (xhr && xhr.responseText)
-            errorText += "\n\n" + xhr.responseText;
+        if (xhr && xhr.responseText) {
+            errorText += '\n\n' + xhr.responseText;
+        }
         alert("Error: " + errorText);
     }
 
@@ -33,9 +36,14 @@ jQuery(document).ready(function () {
     let swapTimeslotButtons = content.find('.swap-timeslot-col');
     let days = content.find(".day-flow .day");
     let officialSchedule = content.hasClass('official-schedule');
+    let timeSlotTypeInputs = content.find('.timeslot-type-toggles input');
+    let sessionPurposeInputs = content.find('.session-purpose-toggles input');
+    let timeSlotGroupInputs = content.find("#timeslot-group-toggles-modal .modal-body .individual-timeslots input");
+    let sessionParentInputs = content.find(".session-parent-toggles input");
+    const classes_to_hide = '.hidden-timeslot-group,.hidden-timeslot-type';
 
     // hack to work around lack of position sticky support in old browsers, see https://caniuse.com/#feat=css-sticky
-    if (content.find(".scheduling-panel").css("position") != "sticky") {
+    if (content.find(".scheduling-panel").css("position") !== "sticky") {
         content.find(".scheduling-panel").css("position", "fixed");
         content.css("padding-bottom", "14em");
     }
@@ -59,7 +67,7 @@ jQuery(document).ready(function () {
         let res = [];
 
         timeslots.each(function () {
-            var timeslot = jQuery(this);
+            const timeslot = jQuery(this);
             let start = startMoment(timeslot);
             let end = endMoment(timeslot);
 
@@ -97,10 +105,11 @@ jQuery(document).ready(function () {
                 let timeElement = jQuery(this).find(".time");
 
                 otherSessionElement.addClass("other-session-selected");
-                if (scheduledAt)
-                    timeElement.text(timeElement.data("scheduled").replace("{time}", scheduledAt));
-                else
-                    timeElement.text(timeElement.data("notscheduled"));
+                if (scheduledAt) {
+                    timeElement.text(timeElement.data('scheduled').replace('{time}', scheduledAt));
+                } else {
+                    timeElement.text(timeElement.data('notscheduled'));
+                }
             });
         }
         else {
@@ -256,10 +265,10 @@ jQuery(document).ready(function () {
         // hide swap day/timeslot column buttons
         if (officialSchedule) {
             swapDaysButtons.filter(
-              (_, elt) => parseISOTimestamp(elt.dataset.start).isSameOrBefore(now, 'day')
+              (_, elt) => parseISOTimestamp(elt.closest('*[data-start]').dataset.start).isSameOrBefore(now, 'day')
             ).hide();
             swapTimeslotButtons.filter(
-              (_, elt) => parseISOTimestamp(elt.dataset.start).isSameOrBefore(now, 'minute')
+              (_, elt) => parseISOTimestamp(elt.closest('*[data-start]').dataset.start).isSameOrBefore(now, 'minute')
             ).hide();
         }
     }
@@ -278,9 +287,12 @@ jQuery(document).ready(function () {
     }
 
     content.on("click", function (event) {
-        if (jQuery(event.target).is(".session-info-container") || jQuery(event.target).closest(".session-info-container").length > 0)
-            return;
-        selectSessionElement(null);
+        if (!(
+            jQuery(event.target).is('.session-info-container') || 
+            jQuery(event.target).closest('.session-info-container').length > 0
+        )) { 
+            selectSessionElement(null); 
+        }
     });
 
     sessions.on("click", function (event) {
@@ -418,12 +430,14 @@ jQuery(document).ready(function () {
                 }
 
                 dropElement.append(sessionElement); // move element
-                if (response.tombstone)
+                if (response.tombstone) {
                     dragParent.append(response.tombstone);
+                }
 
                 updateCurrentSchedulingHints();
-                if (dropParent.hasClass("unassigned-sessions"))
+                if (dropParent.hasClass("unassigned-sessions")) {
                     sortUnassigned();
+                }
             }
 
             if (dropParent.hasClass("unassigned-sessions")) {
@@ -436,8 +450,7 @@ jQuery(document).ready(function () {
                         session: sessionElement.id.slice("session".length)
                     }
                 }).fail(failHandler).done(done);
-            }
-            else {
+            } else {
                 jQuery.ajax({
                     url: window.location.href,
                     method: "post",
@@ -476,7 +489,7 @@ jQuery(document).ready(function () {
                 // disable any that have passed
                 const now=effectiveNow();
                 const past_radios = radios.filter(
-                  (_, radio) => parseISOTimestamp(radio.dataset.start).isSameOrBefore(now, datePrecision)
+                  (_, radio) => parseISOTimestamp(radio.closest('*[data-start]').dataset.start).isSameOrBefore(now, datePrecision)
                 );
                 past_radios.parent().addClass('text-muted');
                 past_radios.prop('disabled', true);
@@ -489,7 +502,7 @@ jQuery(document).ready(function () {
         let swapDaysLabels = swapDaysModal.find(".modal-body label");
         let swapDaysRadios = swapDaysLabels.find('input[name=target_day]');
         let updateSwapDaysSubmitButton = function () {
-            updateSwapSubmitButton(swapDaysModal, 'target_day')
+            updateSwapSubmitButton(swapDaysModal, 'target_day');
         };
         // handler to prep and open the modal
         content.find(".swap-days").on("click", function () {
@@ -505,7 +518,7 @@ jQuery(document).ready(function () {
             updateSwapDaysSubmitButton();
             swapDaysModal.modal('show'); // show via JS so it won't open until it is initialized
         });
-        swapDaysRadios.on("change", function () {updateSwapDaysSubmitButton()});
+        swapDaysRadios.on("change", function () {updateSwapDaysSubmitButton();});
 
         // swap timeslot columns
         let swapTimeslotsModal = content.find('#swap-timeslot-col-modal');
@@ -534,7 +547,7 @@ jQuery(document).ready(function () {
             updateSwapTimeslotsSubmitButton();
             swapTimeslotsModal.modal('show');
         });
-        swapTimeslotsRadios.on("change", function () {updateSwapTimeslotsSubmitButton()});
+        swapTimeslotsRadios.on("change", function () {updateSwapTimeslotsSubmitButton();});
     }
 
     // hints for the current schedule
@@ -557,22 +570,44 @@ jQuery(document).ready(function () {
         });
 
         scheduledSessions.sort(function (a, b) {
-            if (a.start < b.start)
+            if (a.start < b.start) {
                 return -1;
-            if (a.start > b.start)
+            }
+            if (a.start > b.start) {
                 return 1;
+            }
             return 0;
         });
 
         let currentlyOpen = {};
         let openedIndex = 0;
+        let markSessionConstraintViolations = function (sess, currentlyOpen) {
+            sess.element.find(".constraints > span").each(function() {
+                let sessionIds = this.dataset.sessions;
+
+                let violated = sessionIds && sessionIds.split(",").filter(function (v) {
+                    return (
+                      v !== sess.id &&
+                      v in currentlyOpen &&
+                      // ignore errors within the same timeslot
+                      // under the assumption that the sessions
+                      // in the timeslot happen sequentially
+                      sess.timeslot !== currentlyOpen[v].timeslot
+                    );
+                }).length > 0;
+
+                jQuery(this).toggleClass("violated-hint", violated);
+            });
+        };
+
         for (let i = 0; i < scheduledSessions.length; ++i) {
             let s = scheduledSessions[i];
 
             // prune
             for (let sessionIdStr in currentlyOpen) {
-                if (currentlyOpen[sessionIdStr].end <= s.start)
+                if (currentlyOpen[sessionIdStr].end <= s.start) {
                     delete currentlyOpen[sessionIdStr];
+                }
             }
 
             // expand
@@ -583,20 +618,7 @@ jQuery(document).ready(function () {
             }
 
             // check for violated constraints
-            s.element.find(".constraints > span").each(function () {
-                let sessionIds = this.dataset.sessions;
-
-                let violated = sessionIds && sessionIds.split(",").filter(function (v) {
-                    return (v != s.id
-                            && v in currentlyOpen
-                            // ignore errors within the same timeslot
-                            // under the assumption that the sessions
-                            // in the timeslot happen sequentially
-                            && s.timeslot != currentlyOpen[v].timeslot);
-                }).length > 0;
-
-                jQuery(this).toggleClass("violated-hint", violated);
-            });
+            markSessionConstraintViolations(s, currentlyOpen);
         }
     }
 
@@ -614,8 +636,9 @@ jQuery(document).ready(function () {
     function updateAttendeesViolations() {
         sessions.each(function () {
             let roomCapacity = jQuery(this).closest(".timeslots").data("roomcapacity");
-            if (roomCapacity && this.dataset.attendees)
+            if (roomCapacity && this.dataset.attendees) {
                 jQuery(this).toggleClass("too-many-attendees", +this.dataset.attendees > +roomCapacity);
+            }
         });
     }
 
@@ -634,10 +657,12 @@ jQuery(document).ready(function () {
                 let ai = a[i];
                 let bi = b[i];
 
-                if (ai > bi)
+                if (ai > bi) {
                     return 1;
-                else if (ai < bi)
+                }
+                else if (ai < bi) {
                     return -1;
+                }
             }
 
             return 0;
@@ -645,8 +670,9 @@ jQuery(document).ready(function () {
 
         let arrayWithSortKeys = array.map(function (a) {
             let res = [a];
-            for (let i = 0; i < keyFunctions.length; ++i)
+            for (let i = 0; i < keyFunctions.length; ++i) {
                 res.push(keyFunctions[i](a));
+            }
             return res;
         });
 
@@ -693,8 +719,9 @@ jQuery(document).ready(function () {
         let unassignedSessionsContainer = content.find(".unassigned-sessions .drop-target");
 
         let sortedSessions = sortArrayWithKeyFunctions(unassignedSessionsContainer.children(".session").toArray(), keyFunctions);
-        for (let i = 0; i < sortedSessions.length; ++i)
+        for (let i = 0; i < sortedSessions.length; ++i) {
             unassignedSessionsContainer.append(sortedSessions[i]);
+        }
     }
 
     content.find("select[name=sort_unassigned]").on("change click", function () {
@@ -704,7 +731,6 @@ jQuery(document).ready(function () {
     sortUnassigned();
 
     // toggling visible sessions by session parents
-    let sessionParentInputs = content.find(".session-parent-toggles input");
 
     function setSessionHiddenParent(sess, hide) {
         sess.toggleClass('hidden-parent', hide);
@@ -725,7 +751,6 @@ jQuery(document).ready(function () {
     updateSessionParentToggling();
 
     // Toggling timeslot types
-    let timeSlotTypeInputs = content.find('.timeslot-type-toggles input');
     function updateTimeSlotTypeToggling() {
         let checked = [];
         timeSlotTypeInputs.filter(":checked").each(function () {
@@ -736,27 +761,12 @@ jQuery(document).ready(function () {
         sessions.not(checked.join(",")).addClass('hidden-timeslot-type');
         timeslots.filter(checked.join(",")).removeClass('hidden-timeslot-type');
         timeslots.not(checked.join(",")).addClass('hidden-timeslot-type');
-    }
-    if (timeSlotTypeInputs.length > 0) {
-        timeSlotTypeInputs.on("change", updateTimeSlotTypeToggling);
-        updateTimeSlotTypeToggling();
-        content.find('#timeslot-group-toggles-modal .timeslot-type-toggles .select-all').get(0).addEventListener(
-          'click',
-          function() {
-              timeSlotTypeInputs.prop('checked', true);
-              updateTimeSlotTypeToggling();
-          });
-        content.find('#timeslot-group-toggles-modal .timeslot-type-toggles .clear-all').get(0).addEventListener(
-          'click',
-          function() {
-              timeSlotTypeInputs.prop('checked', false);
-              updateTimeSlotTypeToggling();
-          });
+        updateGridVisibility();
     }
 
+    
     // Toggling session purposes
-    let sessionPurposeInputs = content.find('.session-purpose-toggles input');
-    function updateSessionPurposeToggling(evt) {
+    function updateSessionPurposeToggling() {
         let checked = [];
         sessionPurposeInputs.filter(":checked").each(function () {
             checked.push(".purpose-" + this.value);
@@ -765,50 +775,193 @@ jQuery(document).ready(function () {
         sessions.filter(checked.join(",")).removeClass('hidden-purpose');
         sessions.not(checked.join(",")).addClass('hidden-purpose');
     }
+
+    if (timeSlotTypeInputs.length > 0) {
+        timeSlotTypeInputs.on("change", updateTimeSlotTypeToggling);
+        updateTimeSlotTypeToggling();
+        content.find('#timeslot-type-toggles-modal .timeslot-type-toggles .select-all').get(0).addEventListener(
+          'click',
+          function() {
+              timeSlotTypeInputs.prop('checked', true);
+              updateTimeSlotTypeToggling();
+          });
+        content.find('#timeslot-type-toggles-modal .timeslot-type-toggles .clear-all').get(0).addEventListener(
+          'click',
+          function() {
+              timeSlotTypeInputs.prop('checked', false);
+              updateTimeSlotTypeToggling();
+          });
+    }
+
     if (sessionPurposeInputs.length > 0) {
         sessionPurposeInputs.on("change", updateSessionPurposeToggling);
         updateSessionPurposeToggling();
         content.find('#session-toggles-modal .select-all').get(0).addEventListener(
           'click',
           function() {
-              sessionPurposeInputs.prop('checked', true);
+              sessionPurposeInputs.not(':disabled').prop('checked', true);
               updateSessionPurposeToggling();
           });
         content.find('#session-toggles-modal .clear-all').get(0).addEventListener(
           'click',
           function() {
-              sessionPurposeInputs.prop('checked', false);
+              sessionPurposeInputs.not(':disabled').prop('checked', false);
               updateSessionPurposeToggling();
           });
     }
 
     // toggling visible timeslots
-    let timeSlotGroupInputs = content.find("#timeslot-group-toggles-modal .modal-body .individual-timeslots input");
     function updateTimeSlotGroupToggling() {
         let checked = [];
         timeSlotGroupInputs.filter(":checked").each(function () {
             checked.push("." + this.value);
         });
 
-        timeslots.filter(checked.join(",")).removeClass("hidden");
-        timeslots.not(checked.join(",")).addClass("hidden");
+        timeslots.filter(checked.join(",")).removeClass("hidden-timeslot-group");
+        timeslots.not(checked.join(",")).addClass("hidden-timeslot-group");
+        updateGridVisibility();
+    }
 
-        days.each(function () {
-            jQuery(this).toggle(jQuery(this).find(".timeslot:not(.hidden)").length > 0);
+    function updateSessionPurposeOptions() {
+        sessionPurposeInputs.each((_, purpose_input) => {
+            if (sessions
+                .filter('.purpose-' + purpose_input.value)
+                .not('.hidden')
+                .length === 0) {
+                purpose_input.setAttribute('disabled', 'disabled');
+                purpose_input.closest('.session-purpose-toggle').classList.add('text-muted');
+            } else {
+                purpose_input.removeAttribute('disabled');
+                purpose_input.closest('.session-purpose-toggle').classList.remove('text-muted');
+            }
+        });
+    }
+    
+    /**
+     * Hide timeslot toggles for hidden timeslots
+     */
+    function updateTimeSlotOptions() {
+        timeSlotGroupInputs.each((_, timeslot_input) => {
+            if (timeslots
+                .filter('.' + timeslot_input.value)
+                .not('.hidden-timeslot-type')
+                .length === 0) {
+                timeslot_input.setAttribute('disabled', 'disabled');
+            } else {
+                timeslot_input.removeAttribute('disabled');
+            }
         });
     }
 
+    /**
+     * Make timeslots visible/invisible/hidden
+     * 
+     * Responsible for final determination of whether a timeslot is visible, invisible, or hidden.
+     */
+    function updateTimeSlotVisibility() {
+        timeslots.not(classes_to_hide).removeClass('hidden');
+        timeslots.filter(classes_to_hide).addClass('hidden');
+    }
+
+    /**
+     * Make sessions visible/invisible/hidden
+     * 
+     * Responsible for final determination of whether a session is visible or hidden.
+     */
+    function updateSessionVisibility() {
+        sessions.not(classes_to_hide).removeClass('hidden');
+        sessions.filter(classes_to_hide).addClass('hidden');
+    }
+
+    /**
+     * Make day / time headers visible / hidden to match visible grid contents
+     */
+    function updateHeaderVisibility() {
+        days.each(function () {
+            jQuery(this).toggle(jQuery(this).find(".timeslot").not(".hidden").length > 0);
+        });
+        
+        const rgs = content.find('.day-flow .room-group');
+        rgs.each(function (index, roomGroup) {
+            const headerLabels = jQuery(roomGroup).find('.time-header .time-label');
+            const rgTimeslots = jQuery(roomGroup).find('.timeslot');
+            headerLabels.each(function(index, label) {
+                jQuery(label).toggle(
+                    rgTimeslots
+                        .filter('[data-start="' + label.dataset.start + '"][data-end="' + label.dataset.end + '"]')
+                        .not('.hidden')
+                        .length > 0
+                );
+            });
+        });
+    }
+
+    /**
+     * Update visibility of room rows
+     */
+    function updateRoomVisibility() {
+        const tsContainers = { toShow: [], toHide: [] };
+        const roomGroups = { toShow: [], toHide: [] };
+        // roomsWithVisibleSlots is an array of room IDs that have at least one visible timeslot
+        let roomsWithVisibleSlots = content.find('.day-flow .timeslots')
+            .has('.timeslot:not(.hidden)')
+            .map((_, e) => e.dataset.roomId).get();
+        roomsWithVisibleSlots = [...new Set(roomsWithVisibleSlots)]; // unique-ify by converting to Set and back
+        
+        /* The "timeslots" class identifies elements (now and probably always <div>s) that are containers (i.e., 
+         * parents) of timeslots (elements with the "timeslot" class). Sort these containers based on whether
+         * their room has at least one timeslot visible - if so, we will show it, if not it will be hidden. 
+         * This will hide containers both in the day-flow and room label sections, so it will hide the room
+         * labels for rooms with no visible timeslots. */
+        content.find('.timeslots').each((_, e) => {
+            if (roomsWithVisibleSlots.indexOf(e.dataset.roomId) === -1) {
+                tsContainers.toHide.push(e);
+            } else {
+                tsContainers.toShow.push(e);
+            }
+        });
+        
+        /* Now check whether each room group has any rooms not being hidden. If not, entirely hide the
+         * room group so that all its headers, etc, do not take up space. */
+        content.find('.room-group').each((_, e) => {
+            if (jQuery(e).has(tsContainers.toShow).length > 0) {
+                roomGroups.toShow.push(e);
+            } else {
+                roomGroups.toHide.push(e);
+            }
+        });
+        jQuery(roomGroups.toShow).show();
+        jQuery(roomGroups.toHide).hide();
+        jQuery(tsContainers.toShow).show();
+        jQuery(tsContainers.toHide).hide();
+    }
+    
+    /**
+     * Update visibility of UI elements
+     * 
+     * Call this after changing 'hidden-*' classes on timeslots
+     */
+    function updateGridVisibility() {
+        updateTimeSlotVisibility();
+        updateSessionVisibility();
+        updateHeaderVisibility();
+        updateRoomVisibility();
+        updateTimeSlotOptions();
+        updateSessionPurposeOptions();
+        content.find('div.edit-grid').removeClass('hidden');
+    }
+    
     timeSlotGroupInputs.on("click change", updateTimeSlotGroupToggling);
     content.find('#timeslot-group-toggles-modal .timeslot-group-buttons .select-all').get(0).addEventListener(
       'click',
       function() {
-          timeSlotGroupInputs.prop('checked', true);
+          timeSlotGroupInputs.not(':disabled').prop('checked', true);
           updateTimeSlotGroupToggling();
       });
     content.find('#timeslot-group-toggles-modal .timeslot-group-buttons .clear-all').get(0).addEventListener(
       'click',
       function() {
-          timeSlotGroupInputs.prop('checked', false);
+          timeSlotGroupInputs.not(':disabled').prop('checked', false);
           updateTimeSlotGroupToggling();
       });
 
@@ -817,9 +970,9 @@ jQuery(document).ready(function () {
     setInterval(updatePastTimeslots, 10 * 1000 /* ms */);
 
     // session info
-    content.find(".session-info-container").on("mouseover", ".other-session", function (event) {
+    content.find(".session-info-container").on("mouseover", ".other-session", function () {
         sessions.filter("#session" + this.dataset.othersessionid).addClass("highlight");
-    }).on("mouseleave", ".other-session", function (event) {
+    }).on("mouseleave", ".other-session", function () {
         sessions.filter("#session" + this.dataset.othersessionid).removeClass("highlight");
     });
 });

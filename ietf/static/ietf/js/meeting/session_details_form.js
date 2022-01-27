@@ -1,4 +1,4 @@
-/* Copyright The IETF Trust 2021, All Rights Reserved
+/* Copyright The IETF Trust 2021-2022, All Rights Reserved
  *
  * JS support for the SessionDetailsForm
  * */
@@ -37,30 +37,27 @@
   }
 
   /* Update visibility of 'type' select so it is only shown when multiple options are available */
-  function update_widget_visibility(elt, purpose, allowed_types) {
+  function update_type_field_visibility(elt, purpose, allowed_types) {
     const valid_types = allowed_types[purpose] || [];
     if (valid_types.length > 1) {
-      elt.removeAttribute('hidden'); // make visible
+      elt.classList.remove('hidden'); // make visible
     } else {
-      elt.setAttribute('hidden', 'hidden'); // make invisible
+      elt.classList.add('hidden'); // make invisible
     }
   }
 
   /* Update the 'type' select to reflect a change in the selected purpose */
   function update_type_element(type_elt, purpose, type_options, allowed_types) {
-    update_widget_visibility(type_elt, purpose, allowed_types);
+    update_type_field_visibility(type_elt.closest('.form-group'), purpose, allowed_types);
     update_type_option_visibility(type_options, purpose, allowed_types);
     set_valid_type(type_elt, purpose, allowed_types);
   }
 
-  function update_name_field_visibility(name_elt, purpose) {
-    const row = name_elt.closest('tr');
-    if (row) {
-      if (purpose === 'regular') {
-        row.setAttribute('hidden', 'hidden');
-      } else {
-        row.removeAttribute('hidden');
-      }
+  function update_name_field_visibility(name_elts, purpose) {
+    if (!purpose || purpose === 'regular') {
+        name_elts.forEach(e => e.closest('.form-group').classList.add('hidden'));
+    } else {
+        name_elts.forEach(e => e.closest('.form-group').classList.remove('hidden'));
     }
   }
 
@@ -79,7 +76,10 @@
     if (purpose_elt.type === 'hidden') {
       return; // element is hidden, so nothing to do
     }
-    const name_elt = document.getElementById(id_prefix + 'name');
+    const name_elts = [ 
+        document.getElementById(id_prefix + 'name'),
+        document.getElementById(id_prefix + 'short'),
+    ];
     const type_elt = document.getElementById(id_prefix + 'type');
     const type_options = type_elt.getElementsByTagName('option');
     const allowed_types = (type_elt.dataset.allowedOptions) ?
@@ -88,17 +88,17 @@
     // update on future changes
     purpose_elt.addEventListener(
       'change',
-      purpose_change_handler(name_elt, type_elt, type_options, allowed_types)
+      purpose_change_handler(name_elts, type_elt, type_options, allowed_types)
     );
 
     // update immediately
     update_type_element(type_elt, purpose_elt.value, type_options, allowed_types);
-    update_name_field_visibility(name_elt, purpose_elt.value);
+    update_name_field_visibility(name_elts, purpose_elt.value);
 
     // hide the purpose selector if only one option
     const purpose_options = purpose_elt.querySelectorAll('option:not([value=""])');
     if (purpose_options.length < 2) {
-      purpose_elt.closest('tr').setAttribute('hidden', 'hidden');
+      purpose_elt.closest('.form-group').classList.add('hidden');
     }
   }
 

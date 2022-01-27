@@ -662,11 +662,15 @@ class SessionDetailsForm(forms.ModelForm):
 
     def __init__(self, group, *args, **kwargs):
         session_purposes = group.features.session_purposes
-        kwargs.setdefault('initial', {})
-        kwargs['initial'].setdefault(
-            'purpose',
-            session_purposes[0] if len(session_purposes) > 0 else None,
-        )
+        # Default to the first allowed session_purposes. Do not do this if we have an instance,
+        # though, because ModelForm will override instance data with initial data if it gets both.
+        # When we have an instance we want to keep its value.
+        if 'instance' not in kwargs:
+            kwargs.setdefault('initial', {})
+            kwargs['initial'].setdefault(
+                'purpose',
+                session_purposes[0] if len(session_purposes) > 0 else None,
+            )
         super().__init__(*args, **kwargs)
 
         self.fields['type'].widget.attrs.update({
@@ -678,11 +682,11 @@ class SessionDetailsForm(forms.ModelForm):
         self.fields['purpose'].queryset = SessionPurposeName.objects.filter(pk__in=session_purposes)
         if not group.features.acts_like_wg:
             self.fields['requested_duration'].durations = [datetime.timedelta(minutes=m) for m in range(30, 241, 30)]
-
+        
     class Meta:
         model = Session
         fields = (
-            'name', 'short', 'purpose', 'type', 'requested_duration',
+            'purpose', 'name', 'short', 'type', 'requested_duration',
             'on_agenda', 'remote_instructions', 'attendees', 'comments',
         )
         labels = {'requested_duration': 'Length'}
