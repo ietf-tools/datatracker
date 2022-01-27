@@ -541,21 +541,21 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
 
         past_swap_ts_buttons = self.driver.find_elements(By.CSS_SELECTOR,
             ','.join(
-                '.swap-timeslot-col[data-start="{}"]'.format(ts.utc_start_time().isoformat()) for ts in past_timeslots
+                '*[data-start="{}"] .swap-timeslot-col'.format(ts.utc_start_time().isoformat()) for ts in past_timeslots
             )
         )
         self.assertEqual(len(past_swap_ts_buttons), len(past_timeslots), 'Missing past swap timeslot col buttons')
 
         future_swap_ts_buttons = self.driver.find_elements(By.CSS_SELECTOR,
             ','.join(
-                '.swap-timeslot-col[data-start="{}"]'.format(ts.utc_start_time().isoformat()) for ts in future_timeslots
+                '*[data-start="{}"] .swap-timeslot-col'.format(ts.utc_start_time().isoformat()) for ts in future_timeslots
             )
         )
         self.assertEqual(len(future_swap_ts_buttons), len(future_timeslots), 'Missing future swap timeslot col buttons')
 
         now_swap_ts_buttons = self.driver.find_elements(By.CSS_SELECTOR,
             ','.join(
-                '.swap-timeslot-col[data-start="{}"]'.format(ts.utc_start_time().isoformat()) for ts in now_timeslots
+                '[data-start="{}"] .swap-timeslot-col'.format(ts.utc_start_time().isoformat()) for ts in now_timeslots
             )
         )
         self.assertEqual(len(now_swap_ts_buttons), len(now_timeslots), 'Missing "now" swap timeslot col buttons')

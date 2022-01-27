@@ -41,6 +41,8 @@
     {% else %} {# secr app room view requires a schedule - show something for now (should try to avoid this possibility) #}
       <span title="Must create meeting schedule to edit rooms">Edit rooms</span>
     {% endif %}
+    &middot;
+    <a href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">Agenda list</a>
   </p>
 
   <p> IETF {{ meeting.number }} Meeting Agenda: Timeslots and Room Availability</p>
