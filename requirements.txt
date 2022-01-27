@@ -32,6 +32,7 @@ docutils>=0.12,!=0.15
 factory-boy==3.2.0
 Faker==9.2.0
 github3.py>=1.2
+gunicorn>=20.1.0
 hashids>=1.1.0
 html2text>=2019.8.11
 html5lib>=1.0.1
