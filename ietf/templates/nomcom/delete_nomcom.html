@@ -1,13 +1,13 @@
+{# bs5ok #}
 {% extends "nomcom/nomcom_private_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
 {% block subtitle %}- Delete NomCom{% endblock %}
-
 {% block nomcom_content %}
     {% origin %}
-    <p class="alert alert-warning">Are you sure you want to delete all data about {{ nomcom.group.name }}?</p>
-
+    <p class="alert alert-warning my-3">
+        Are you sure you want to delete all data about {{ nomcom.group.name }}?
+    </p>
     <form method="post">
         {% csrf_token %}
         <input type="hidden" name="post" value="yes">

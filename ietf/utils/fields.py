@@ -287,11 +287,10 @@ class SearchableField(forms.MultipleChoiceField):
         self.widget.attrs["data-pre"] = json.dumps({
             d['id']: d for d in pre
         })
-        print("value", value, "pre", pre, "data-pre", self.widget.attrs["data-pre"])
 
         # doing this in the constructor is difficult because the URL
         # patterns may not have been fully constructed there yet
-        self.widget.attrs["data-ajax-url"] = self.ajax_url()
+        self.widget.attrs["data-ajax--url"] = self.ajax_url()
 
         result = value
         return result

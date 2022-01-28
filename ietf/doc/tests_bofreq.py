@@ -81,7 +81,7 @@ This test section has some text.
             self.assertInHTML(editor.name, editor_row)
         responsible_row = q('#responsible').html()
         for leader in responsible:
-            self.assertInHTML(leader.plain_name(),responsible_row)
+            self.assertInHTML(leader.name,responsible_row)
         for user in ('secretary','ad','iab-member'): 
             self.client.login(username=user,password=user+"+password")
             r = self.client.get(url)
@@ -193,7 +193,6 @@ This test section has some text.
             self.assertEqual(r.status_code,200)
             unescaped = unicontent(r).encode('utf-8').decode('unicode-escape')
             for editor in previous_editors:
-                print(r.content, "test_change_editors")
                 self.assertIn(editor.name,unescaped)
             new_editors = set(previous_editors)
             new_editors.discard(acting_editor)

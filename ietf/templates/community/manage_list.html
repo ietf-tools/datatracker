@@ -4,7 +4,7 @@
 {% load origin %}
 {% load django_bootstrap5 %}
 {% load static %}
-{% load misc_filters %}
+{% load misc_filters person_filters %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
     {{ all_forms|merge_media:'css' }}
@@ -97,7 +97,7 @@
                             {% elif "state_" in rule.rule_type %}
                                 {{ rule.state }}
                             {% elif "author" in rule.rule_type or rule.rule_type == "ad" or "shepherd" in rule.rule_type %}
-                                {{ rule.person }}
+                                {% person_link rule.person %}
                             {% elif "name_contains" in rule.rule_type %}
                                 {{ rule.text }}
                             {% endif %}

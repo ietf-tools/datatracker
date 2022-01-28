@@ -1,7 +1,7 @@
 {# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin textfilters %}
+{% load origin textfilters ietf_filters%}
 {% block title %}Active areas{% endblock %}
 {% block content %}
     {% origin %}
@@ -50,7 +50,7 @@
             <a href="{% url 'ietf.group.views.active_groups' group_type='wg' %}#{{ area.acronym }}">({{ area.acronym|upper }})</a>
         </h2>
         <p>
-            {{ area.description|linkify|safe }}
+            {{ area.description|linkify|urlize_ietf_docs|safe }}
         </p>
     {% endfor %}
 {% endblock %}

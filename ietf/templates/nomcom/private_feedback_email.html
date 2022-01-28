@@ -1,24 +1,21 @@
+{# bs5ok #}
 {% extends "nomcom/nomcom_private_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load django_bootstrap5 %}
 {% load nomcom_tags %}
-
-{% block subtitle %} - Provide feedback email{% endblock %}
-
+{% block subtitle %}- Provide feedback email{% endblock %}
 {% block nomcom_content %}
     {% origin %}
-
     {% if form %}
         <form id="paste-email-feedback-form" method="post">
             {% csrf_token %}
             {% bootstrap_form form %}
-
-
-            <input class="btn btn-primary" type="submit" value="Save" name="save" {% if submit_disabled %}disabled="disabled"{% endif %}>
-
-
+            <input class="btn btn-primary"
+                   type="submit"
+                   value="Save"
+                   name="save"
+                   {% if submit_disabled %}disabled="disabled"{% endif %}>
         </form>
     {% endif %}
-
 {% endblock %}

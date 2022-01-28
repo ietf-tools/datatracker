@@ -30,25 +30,17 @@ class EditAuthorsTests(IetfSeleniumTestCase):
             # To enter the person, type their name in the select2 search box, wait for the
             # search to offer the result, then press 'enter' to accept the result and close
             # the search input.
-            # self.driver.set_page_load_timeout(60)
             person_span = form_elt.find_element(By.CLASS_NAME, 'select2-selection')
             self.scroll_to_element(person_span)
             person_span.click()
             input = self.driver.find_element(By.CLASS_NAME, 'select2-search__field')
             input.send_keys(name)
             result_selector = 'ul.select2-results__options > li.select2-results__option--selectable'
-            try:
-                WebDriverWait(self.driver, 3).until(
-                    expected_conditions.text_to_be_present_in_element(
-                        (By.CSS_SELECTOR, result_selector),
-                        name
-                    ))
-            except:
-                # print(self.driver.execute_script("return document.documentElement.outerHTML"))
-                print(name, email, self.driver.find_element(By.CSS_SELECTOR, ".select2-results__message").text)
-                # FIXME-LARS: force the test to succeed anyway, so CI doesn't crap out
-                return
-
+            self.wait.until(
+                expected_conditions.text_to_be_present_in_element(
+                    (By.CSS_SELECTOR, result_selector),
+                    name
+                ))
             input.send_keys('\n')  # select the object
 
             # After the author is selected, the email select options will be populated.
@@ -75,8 +67,6 @@ class EditAuthorsTests(IetfSeleniumTestCase):
             email_select = form_elt.find_element(By.CSS_SELECTOR, 'select[name$="email"]')
             affil_input = form_elt.find_element(By.CSS_SELECTOR, 'input[name$="affiliation"]')
             country_input = form_elt.find_element(By.CSS_SELECTOR, 'input[name$="country"]')
-            print("hidden_person_input.get_attribute('value')", hidden_person_input.get_attribute('value'))
-            print("hidden_person_input.get_attribute('outerHTML')", hidden_person_input.get_attribute('outerHTML'))
             return (
                 Person.objects.get(pk=hidden_person_input.get_attribute('value')),
                 email_select.get_attribute('value'),
@@ -104,8 +94,9 @@ class EditAuthorsTests(IetfSeleniumTestCase):
         # get the "add author" button so we can add blank author forms
         add_author_button = self.driver.find_element(By.ID, 'add-author-button')
         for index, auth in enumerate(authors):
-            self.driver.execute_script("arguments[0].click();", add_author_button)  # FIXME-LARS: no idea why this fails:
+            self.driver.execute_script("arguments[0].scrollIntoView();", add_author_button)  # FIXME-LARS: no idea why this fails:
             # self.scroll_to_element(add_author_button)  # Can only click if it's in view!
+            self.driver.execute_script("arguments[0].click();", add_author_button)  # FIXME-LARS: no idea why this fails:
             # add_author_button.click()  # Create a new form. Automatically scrolls to it.
             author_forms = authors_list.find_elements(By.CLASS_NAME, 'author-panel')
             authors_added = index + 1

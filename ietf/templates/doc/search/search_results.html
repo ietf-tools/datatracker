@@ -8,63 +8,61 @@
 {% endblock %}
 {% if not docs %}
     {% if not skip_no_matches_warning %}<div class="alert alert-info">No documents match your query.</div>{% endif %}
-{% else %}
-    {% if meta.max %}
-        <div class="alert alert-warning my-3">
-            Too many documents match your query! Returning only a partial result ({{ meta.max }} matches).
-        </div>
-    {% endif %}
-    {% if start_table %}
-        <table class="table table-sm table-striped tablesorter">
-            <thead>
-                <tr>
-                    <th></th>
-                    {% for h in meta.headers %}
-                        {% if h.title != "Title" %}
-                            <th data-sort="{{ h.key }}">
-                                {% if "sort_url" in h %}
-                                    <a href="{{ h.sort_url }}">
-                                        {{ h.title|cut:" " }}
-                                        {% if h.sorted and meta.max %}
-                                            {% if h.direction == "asc" %}
-                                                <span class="bi bi-caret-up"></span>
-                                            {% else %}
-                                                <span class="bi bi-caret-down"></span>
-                                            {% endif %}
-                                        {% endif %}
-                                    </a>
-                                {% else %}
-                                    {{ h.title|cut:" " }}
-                                {% endif %}
-                            </th>
-                        {% endif %}
-                    {% endfor %}
-                    {% if color_row_positions %}<th></th>{% endif %}
-                </tr>
-            </thead>
-    {% endif %}
-    {% regroup docs by search_heading as grouped_docs %}
-    {% for doc_group in grouped_docs %}
+{% endif %}
+{% if meta.max %}
+    <div class="alert alert-warning my-3">
+        Too many documents match your query! Returning only a partial result ({{ meta.max }} matches).
+    </div>
+{% endif %}
+{% if start_table %}
+    <table class="table table-sm table-striped tablesorter">
         <thead>
-            <tr class="table-info">
+            <tr>
                 <th></th>
-                {% if color_row_positions %}
-                    <th colspan="{{ meta.headers|length }}">
-                    {% else %}
-                        <th colspan="{{ meta.headers|length|add:"-1" }}">
-                        {% endif %}
-                        {{ doc_group.grouper|plural:doc_group.list }} ({{ doc_group.list|length }} {{"hit"|plural:doc_group.list }})
-                    </th>
+                {% for h in meta.headers %}
+                    {% if h.title != "Title" %}
+                        <th data-sort="{{ h.key }}">
+                            {% if "sort_url" in h %}
+                                <a href="{{ h.sort_url }}">
+                                    {{ h.title|cut:" " }}
+                                    {% if h.sorted and meta.max %}
+                                        {% if h.direction == "asc" %}
+                                            <span class="bi bi-caret-up"></span>
+                                        {% else %}
+                                            <span class="bi bi-caret-down"></span>
+                                        {% endif %}
+                                    {% endif %}
+                                </a>
+                            {% else %}
+                                {{ h.title|cut:" " }}
+                            {% endif %}
+                        </th>
+                    {% endif %}
+                {% endfor %}
             </tr>
         </thead>
-        <tbody>
-            {% for doc in doc_group.list %}
-                {% include "doc/search/search_result_row.html" %}
-            {% endfor %}
-        </tbody>
-    {% endfor %}
-    {% if end_table %}</table>{% endif %}
 {% endif %}
+{% regroup docs by search_heading as grouped_docs %}
+{% for doc_group in grouped_docs %}
+    <thead>
+        <tr class="table-info">
+            <th></th>
+            {% if color_ad_position %}
+                <th colspan="{{ meta.headers|length }}">
+            {% else %}
+                <th colspan="{{ meta.headers|length|add:"-1" }}">
+            {% endif %}
+            {{ doc_group.grouper|plural:doc_group.list }} ({{ doc_group.list|length }} {{"hit"|plural:doc_group.list }})
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for doc in doc_group.list %}
+            {% include "doc/search/search_result_row.html" %}
+        {% endfor %}
+    </tbody>
+{% endfor %}
+{% if end_table %}</table>{% endif %}
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

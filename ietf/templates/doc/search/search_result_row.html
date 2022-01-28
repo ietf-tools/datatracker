@@ -8,7 +8,7 @@
 {% load person_filters %}
 {% load django_bootstrap5 %}
 <tr {% spaceless %}
-    {% if color_row_positions %} {% with doc|ballotposition:user as pos %} {% if pos %}class="position-{{ pos.slug }}-row"{% endif %}
+    {% if color_ad_position %} {% with doc|ballotposition:user as pos %} {% if pos %}class="position-{{ pos.slug }}-row"{% endif %}
     {% endwith %}
     {% endif %}
     {% endspaceless %}>
@@ -154,7 +154,7 @@
                     {% endif %}
                 </td>
             {% endif %}
-            {% if color_row_positions %}
+            {% if color_ad_position %}
                 {% with doc|ballotposition:user as pos %}
                     <td {% if pos %}class="changebar position-{{ pos.slug }}"{% endif %}></td>
                 {% endwith %}

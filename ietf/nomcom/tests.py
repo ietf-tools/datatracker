@@ -900,9 +900,9 @@ class NomcomViewsTest(TestCase):
         self.assertContains(response, "feedbackform")
         # Test for a link to the nominee's profile page
         q = PyQuery(response.content)
-        person_url = reverse('ietf.person.views.profile', kwargs={'email_or_name': nominee.name()})
+        person_url = reverse('ietf.person.views.profile', kwargs={'email_or_name': nominee.email})
         self.assertTrue(q('a[href="%s"]' % (person_url)), 
-                        'Nominee feedback page does not link to profile page')                            
+                        'Nominee feedback page does not link to profile page')
         
         comments = 'Test feedback view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
 
@@ -1145,7 +1145,7 @@ class InactiveNomcomTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             q = PyQuery(response.content)
-            self.assertIn( '(Concluded)', q('h1').text())
+            self.assertIn( 'Concluded', q('h1').text())
             self.assertIn( 'closed', q('#instructions').text())
             self.assertTrue( q('#nominees a') )
             self.assertFalse( q('#nominees a[href]') )
@@ -1176,7 +1176,7 @@ class InactiveNomcomTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             q = PyQuery(response.content)
-            self.assertIn( '(Concluded)', q('h1').text())
+            self.assertIn( 'Concluded', q('h1').text())
             self.assertIn( 'closed', q('.alert-warning').text())
 
     def test_acceptance_closed(self):
@@ -1862,6 +1862,7 @@ Junk body for testing
         year = self.nc.year()
         def first_meeting_of_year(year):
             assert isinstance(year, int)
+            # FIXME: year is sometimes < 1990?
             assert year >= 1990
             return (year-1985)*3+2       
         people = PersonFactory.create_batch(10)
@@ -2051,7 +2052,7 @@ class ShowNomineeTests(TestCase):
         login_testing_unauthorized(self,self.plain_person.user.username,url)
         response = self.client.get(url)
         q = PyQuery(response.content)
-        self.assertTrue(q('h3'))
+        self.assertTrue(q('h2'))
         self.nc.show_accepted_nominees=False;
         self.nc.save()
         response = self.client.get(url)

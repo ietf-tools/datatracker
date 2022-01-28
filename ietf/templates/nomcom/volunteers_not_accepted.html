@@ -1,10 +1,11 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2021, All Rights Reserved #}
 {% load origin %}
-
 {% block title %}Not Accepting Volunteers{% endblock %}
-
 {% block content %}
     {% origin %}
-    <h1> NomCom is not accepting volunteers at this time</h1>
+    <p class="alert alert-info my-3">
+        NomCom is not accepting volunteers at this time.
+    </p>
 {% endblock %}

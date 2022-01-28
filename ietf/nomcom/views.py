@@ -1305,6 +1305,7 @@ def eligible(request, year, public=False):
     return render(request, 'nomcom/eligible.html',
                              {'nomcom':nomcom,
                               'year':year,
+                              'public':public,
                               'eligible_persons':eligible_persons,
                              })
 

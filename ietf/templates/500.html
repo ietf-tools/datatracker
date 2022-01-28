@@ -4,23 +4,24 @@
 {% load static %}
 {% block title %}500 Internal Server Error{% endblock %}
 {% block content %}
-    <img class="ietflogo"
+    <img class="col-2 mb-5"
          src="{% static 'ietf/images/ietflogo.png' %}"
-         alt="IETF"
-         style="width: 10em">
-    <h2>Internal Server Error.</h2>
-    <p class="error-text">
-        The server encountered an internal error and was unable to complete
-        your request. Either the server is overloaded or there was an
-        error in a script used to generate the requested page.  In case this
-        was an overload problem or other temporary error, you may want to
-        try again in a little while.
-    </p>
-    <p class="error-text">
-        A failure report with details about what happened has been sent to the
-        server administrators.  It would be helpful if you would file a bug
-        report with additional information at the
-        <a href="https://trac.ietf.org/trac/ietfdb/newticket">IETF database issue tracker</a>
-        , too.
-    </p>
+         alt="IETF">
+    <div class='alert alert-warning'>
+        <h2>Internal Server Error</h2>
+        <hr>
+        <p>
+            The server encountered an internal error and was unable to complete
+            your request. Either the server is overloaded or there was an
+            error in a script used to generate the requested page.  In case this
+            was an overload problem or other temporary error, you may want to
+            try again in a little while.
+        </p>
+        <p class="mb-0">
+            A failure report with details about what happened has been sent to the
+            server administrators.  It would be helpful if you would file a bug
+            report with additional information at the
+            <a href="https://trac.ietf.org/trac/ietfdb/newticket">IETF database issue tracker</a>, too.
+        </p>
+    </div>
 {% endblock %}

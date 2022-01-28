@@ -2,7 +2,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2017, All Rights Reserved #}
 {% load origin %}
-{% load ietf_filters static textfilters %}
+{% load ietf_filters static textfilters ietf_filters %}
 {% block title %}IETF {{ meetings.0.number }}: Important Dates{% endblock %}
 {% block content %}
     {% origin %}
@@ -43,7 +43,7 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {{ d.name.desc|linkify }}
+                                    {{ d.name.desc|linkify|urlize_ietf_docs }}
                                     {% if first and d.name.slug == 'openreg' or first and d.name.slug == 'earlybird' %}
                                         <a href="https://www.ietf.org/how/meetings/register/">Register here</a>
                                         .

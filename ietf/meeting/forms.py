@@ -630,7 +630,7 @@ class SessionDetailsForm(forms.ModelForm):
         return self.cleaned_data
 
     class Media:
-        js = ('ietf/js/meeting/session_details_form.js',)
+        js = ('ietf/js/session_details_form.js',)
 
 
 class SessionEditForm(SessionDetailsForm):

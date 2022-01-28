@@ -3,7 +3,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin static %}
 {% load ballot_icon %}
-{% load ietf_filters %}
+{% load ietf_filters person_filters %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
@@ -46,16 +46,13 @@
                     </td>
                     <td>{{ doc.telechat }}</td>
                     {% include "doc/search/status_columns.html" %}
-                    <td>{{ doc.ad|default:"" }}</td>
+                    <td>{% person_link doc.ad nowrap=False %}</td>
                     <td>
                         {% for p in doc.blocking_positions %}
                             {% if p.is_old_pos %}<span class="text-muted">{% endif %}
-                            {{ p.balloter }}
-                            (
-                            {% if p.discuss_time %}{{ p.discuss_time|timesince_days }}{% endif %}
-                            days ago
-                            {% if doc.get_state_url != "rfc" and p.rev != doc.rev %}for -{{ p.rev }}{% endif %}
-                            )
+                            {% person_link p.balloter nowrap=False %}
+                            ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }} days ago{% endif %}
+                            {% if doc.get_state_url != "rfc" and p.rev != doc.rev %}for -{{ p.rev }}{% endif %})
                             <br>
                             {% if p.is_old_pos %}</span>{% endif %}
                         {% endfor %}

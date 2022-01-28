@@ -1,7 +1,7 @@
 {# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2019, All Rights Reserved #}
-{% load origin django_bootstrap5 static %}
+{% load origin django_bootstrap5 static person_filters %}
 {% block title %}Mark review assignment for {{ assignment.review_request.doc.name }} as No Response{% endblock %}
 {% block content %}
     {% origin %}
@@ -11,7 +11,7 @@
         <small class="text-muted">{{ assignment.review_request.doc.name }}</small>
     </h1>
     <p class="my-3">
-        Mark review assignment for {{ assignment.reviewer.person }} as <strong>No Response</strong>
+        Mark review assignment for {% person_link assignment.reviewer.person %} as <strong>No Response</strong>.
     </p>
     <form method="post">
         {% csrf_token %}

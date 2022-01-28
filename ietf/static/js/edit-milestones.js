@@ -34,10 +34,14 @@ $(document)
 
         function setSubmitButtonState() {
             var action;
-            var milestone_cnt = milestonesForm.find(".milestonerow").length;
-            var milestone_hidden_cnt = milestonesForm.find(".edit-milestone.visually-hidden").length;
-            var milestone_change_cnt = milestonesForm.find(".edit-milestone.changed").length;
-            var milestone_delete_cnt = milestonesForm.find(".edit-milestone.delete").length;
+            var milestone_cnt = milestonesForm.find(".milestonerow")
+                .length;
+            var milestone_hidden_cnt = milestonesForm.find(".edit-milestone.visually-hidden")
+                .length;
+            var milestone_change_cnt = milestonesForm.find(".edit-milestone.changed")
+                .length;
+            var milestone_delete_cnt = milestonesForm.find(".edit-milestone.delete")
+                .length;
             if (milestone_cnt != milestone_hidden_cnt || milestone_order_has_changed)
                 action = "review";
             else
@@ -63,7 +67,7 @@ $(document)
                 editRow.removeClass("visually-hidden");
 
                 editRow.find('input[name$="desc"]')
-                    .focus();
+                    .trigger("focus");
 
                 setSubmitButtonState();
 

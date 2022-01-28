@@ -200,7 +200,6 @@ class SubmitTests(BaseSubmitTestCase):
             sys.stderr.write(force_str("Author name used in test: %s\n"%author))
             sys.stderr.write("Author ascii name: %s\n" % author.ascii)
             sys.stderr.write("Author initials: %s\n" % author.initials())
-            print(r.content, "do_submission")
         self.assertEqual(len(submission.authors), 1)
         a = submission.authors[0]
         self.assertEqual(a["name"], author.ascii)

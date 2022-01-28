@@ -1,12 +1,10 @@
+{# bs5ok #}
 {% extends "nomcom/nomcom_private_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
 {% load django_bootstrap5 %}
 {% load nomcom_tags %}
-
-{% block subtitle %} - Quesionnaire Response{% endblock %}
-
+{% block subtitle %}- Quesionnaire Response{% endblock %}
 {% block nomcom_content %}
     {% origin %}
     {% if form %}
@@ -14,16 +12,14 @@
             <h2>Questionnaire response</h2>
             {{ questionnaire_response }}
         {% endif %}
-
         <form id="questionnnaireform" method="post">
             {% csrf_token %}
             {% bootstrap_form form %}
-
-
-            <input class="btn btn-primary" type="submit" value="Save" name="save" {% if submit_disabled %}disabled="disabled"{% endif %}>
-
-
+            <input class="btn btn-primary"
+                   type="submit"
+                   value="Save"
+                   name="save"
+                   {% if submit_disabled %}disabled="disabled"{% endif %}>
         </form>
     {% endif %}
-
 {% endblock %}

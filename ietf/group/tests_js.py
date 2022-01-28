@@ -29,16 +29,11 @@ class MilestoneTests(IetfSeleniumTestCase):
         draft_input.send_keys(search_string)
 
         result_selector = 'ul.select2-results__options > li.select2-results__option--selectable'
-        try:
-            WebDriverWait(self.driver, 3).until(
-                expected_conditions.text_to_be_present_in_element(
-                    (By.CSS_SELECTOR, result_selector),
-                    draft.name
-                ))
-        except:
-            print(draft.name, self.driver.find_element(By.CSS_SELECTOR, ".select2-results__message").text)
-            # FIXME-LARS: force the test to succeed anyway, so CI doesn't crap out
-            return
+        self.wait.until(
+            expected_conditions.text_to_be_present_in_element(
+                (By.CSS_SELECTOR, result_selector),
+                draft.name
+            ))
 
         results = self.driver.find_elements(By.CSS_SELECTOR, result_selector)
         matching_results = [r for r in results if draft.name in r.text]
@@ -158,7 +153,10 @@ class MilestoneTests(IetfSeleniumTestCase):
 
         due_field = self.driver.find_element(By.ID, prefix + 'due')
         hidden_drafts_field = self.driver.find_element(By.ID, prefix + 'docs')
-        draft_input = self.driver.find_element(By.CSS_SELECTOR, 'textarea[aria-describedby*="%sdocs"]' % prefix)
+        draft_input = self.wait.until(
+            expected_conditions.visibility_of_element_located(
+                (By.CSS_SELECTOR, '.select2-container textarea[aria-describedby*="%sdocs"]' % prefix)
+            ))
         self.assertEqual(due_field.get_attribute('value'), milestone.due.strftime('%B %Y'))
         self.assertEqual(hidden_drafts_field.get_attribute('value'),
                          ','.join([str(doc.pk) for doc in milestone.docs.all()]))

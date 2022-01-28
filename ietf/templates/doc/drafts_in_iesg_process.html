@@ -62,7 +62,7 @@
                             {% endif %}
                             {% if doc.note %}
                                 <br>
-                                <i>Note: {{ doc.note|linkify|linebreaksbr }}</i>
+                                <i>Note: {{ doc.note|linkify|urlize_ietf_docs|linebreaksbr }}</i>
                             {% endif %}
                         </td>
                         <td>

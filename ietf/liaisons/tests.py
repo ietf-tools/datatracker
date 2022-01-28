@@ -4,6 +4,7 @@
 
 import datetime
 import io
+import json
 
 import debug    # pyflakes:ignore
 
@@ -1012,8 +1013,8 @@ class LiaisonManagementTests(TestCase):
         reply_from_group_id = str(liaison.to_groups.first().pk)
         self.assertEqual(q('#id_from_groups').find('option:selected').val(),reply_from_group_id)
         self.assertEqual(q('#id_to_groups').find('option:selected').val(),reply_to_group_id)
-        # FIXME-LARS need to check inside "data-pre" attribute
-        # self.assertEqual(q('#id_related_to').val(),str(liaison.pk))
+        pre = json.loads(q('#id_related_to').attr("data-pre"))
+        self.assertEqual(pre[str(liaison.pk)]['id'], liaison.pk)
 
     def test_search(self):
         # Statement 1

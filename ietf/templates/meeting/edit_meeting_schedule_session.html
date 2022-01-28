@@ -38,7 +38,11 @@
                 <a href="{{ session.group.about_url }}">{{ session.group.name }}</a>
                 {% if session.group.parent %}
                     &middot;
-                    <a class="session-parent" href="{{ session.group.parent.about_url }}">{{ session.group.parent.acronym }}</a>
+                        {% comment %}
+                        FIXME-LARS: this breaks the test:
+                        <a class="session-parent" href="{{ session.group.parent.about_url }}">{{ session.group.parent.acronym }}</a>
+                        {% endcomment %}
+                        <span class="session-parent">{{ session.group.parent.acronym }}</span>
                 {% endif %}
                 {% if not session.on_agenda %}&middot; <i>off agenda</i>{% endif %}
             </div>

@@ -1,159 +1,168 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load markup_tags %}
 {% load static %}
-{% load ietf_filters %}
+{% load ietf_filters textfilters %}
 {% load group_filters %}
-
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-
 {% block title %}Profile for {{ persons.0 }}{% endblock %}
-
 {% block content %}
     {% origin %}
     {% if persons|length > 1 %}
-        <div class="col-md-12">
-            <h4>More than one person with this name has been found.  Showing all:</h4>
-            <hr>
-        </div>
+        <p class="alert alert-warning my-3">
+            More than one person with this name has been found.  Showing all:
+        </p>
     {% endif %}
     {% for person in persons %}
-            {% if not forloop.first %}<hr>{% endif %}
-
-            <h1>{{ person.name }} {% if person.ascii != person.name %}<br><small class="text-muted">({{person.ascii}})</small>{% endif %}</h1>
-
-            <div class="bio-text">
-                {% if person.photo %}
-                    <a href="{{person.photo.url}}">
-                        <img class="bio-photo" src="{{ person.photo.url }}" alt="Photo of {{ person }}" />
-                    </a>
-                {% endif %}
-                {{ person.biography | apply_markup:"restructuredtext" }}
-            </div>
-
+        {% if not forloop.first %}<hr>{% endif %}
+        <h1>
+            {{ person.name }}
+            {% if person.ascii != person.name %}
+                <br>
+                <small class="text-muted">({{ person.ascii }})</small>
+            {% endif %}
+        </h1>
+        <div class="bio-text">
+            {% if person.photo %}
+                <div class="float-end ms-3 mb-3">{% include "person/photo.html" with person=person %}</div>
+            {% endif %}
+            {{ person.biography|linkify|urlize_ietf_docs|apply_markup:"restructuredtext" }}
+        </div>
         {% if person.role_set.exists %}
-                <h2 class="mt-3" id="roles">Roles</h2>
-                <table class="table table-sm table-striped tablesorter">
-                    <thead>
-                        <th data-sort="role">Role</th>
-                        <th data-sort="group">Group</th>
-                        <th data-sort="email">Email</th>
-                    </thead>
-                    <tbody>
+            <h2 class="mt-5" id="roles">Roles</h2>
+            <table class="table table-sm table-striped tablesorter">
+                <thead>
+                    <th data-sort="role">Role</th>
+                    <th data-sort="group">Group</th>
+                    <th data-sort="email">Email</th>
+                </thead>
+                <tbody>
                     {% for role in person.role_set.all|active_roles %}
                         <tr>
-                            <td>
-                                {{ role.name.name }}
-                            </td>
+                            <td>{{ role.name.name }}</td>
                             <td>
                                 <a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.name }}</a>
-                                (<a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.acronym }}</a>)
+                                (
+                                <a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.acronym }}</a>
+                                )
                             </td>
                             <td>
-                                <a href="mailto:{{role.email.address}}">{{ role.email.address }}</a>
+                                <a href="mailto:{{ role.email.address }}">{{ role.email.address }}</a>
                             </td>
                         </tr>
                     {% empty %}
                         {{ person.first_name }} has no active roles as of {{ today }}.
                     {% endfor %}
-                    </tbody>
-                </table>
+                </tbody>
+            </table>
         {% endif %}
-
         {% if person.personextresource_set.exists %}
-                <h2 class="mt-3" id="extresources">External Resources</h2>
-                <table class="table table-sm table-striped tablesorter">
-                    <thead>
-                        <th data-sort="name">Name</th>
-                        <th data-sort="value">Value</th>
-                    </thead>
-                    <tbody>
+            <h2 class="mt-5" id="extresources">External Resources</h2>
+            <table class="table table-sm table-striped tablesorter">
+                <thead>
+                    <th data-sort="name">Name</th>
+                    <th data-sort="value">Value</th>
+                </thead>
+                <tbody>
                     {% for extres in person.personextresource_set.all %}
                         <tr>
-                            <td><span title="{{ extres.name.name }}">{% firstof extres.display_name extres.name.name %}</span></td>
-                            <td>{{extres.value}}</td>
+                            <td>
+                                <span title="{{ extres.name.name }}">{% firstof extres.display_name extres.name.name %}</span>
+                            </td>
+                            <td>{{ extres.value }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
-                </table>
+            </table>
         {% endif %}
-
-        <div class="row">
-        <div class="col-md-7">
-            <h2 class="mt-3" id="rfcs">RFCs <small class="text-muted">({{person.rfcs|length}})</small></h2>
-            {% if person.rfcs %}
-                <table class="table table-sm table-striped tablesorter">
-                    <thead>
-                        <th data-sort="rfc">RFC</th>
-                        <th data-sort="date">Date</th>
-                        <th data-sort="title">Title</th>
-                        <th data-sort="title">Cited by</th>
-                    </thead>
-                    <tbody>
+        <h2 class="mt-5" id="rfcs">
+            RFCs <small class="text-muted">({{ person.rfcs|length }})</small>
+        </h2>
+        {% if person.rfcs %}
+            <table class="table table-sm table-striped tablesorter">
+                <thead>
+                    <th data-sort="rfc">RFC</th>
+                    <th data-sort="date">Date</th>
+                    <th data-sort="title">Title</th>
+                    <th data-sort="title">Cited by</th>
+                </thead>
+                <tbody>
                     {% for doc in person.rfcs  %}
                         <tr>
-                            <td class="text-nowrap"><a href="{{ doc.get_absolute_url }}">RFC {{ doc.rfc_number }}</a></td>
+                            <td class="text-nowrap">
+                                <a href="{{ doc.get_absolute_url }}">RFC {{ doc.rfc_number }}</a>
+                            </td>
                             <td>{{ doc.pub_date|date:"b Y"|title|nbsp }}</td>
-                            <td>{{ doc.title }}</td>
+                            <td>{{ doc.title|urlize_ietf_docs }}</td>
                             <td class="text-end">
                                 {% with doc.referenced_by_rfcs.count as refbycount %}
                                     {% if refbycount %}
-                                        <a class="text-nowrap text-end" href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.canonical_name %}" rel="nofollow">{{ refbycount }} RFC{{ refbycount|pluralize}}</a>
+                                        <a class="text-nowrap text-end"
+                                           href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.canonical_name %}"
+                                           rel="nofollow">
+                                            {{ refbycount }} RFC{{ refbycount|pluralize }}
+                                        </a>
                                     {% endif %}
                                 {% endwith %}
                             </td>
                         </tr>
                     {% endfor %}
                 </tbody>
-                </table>
-            {% else %}
-                {{ person.first_name }} has no RFCs as of {{ today }}.
-            {% endif %}
-        </div>
-        <div class="col-md-5">
-            <h2 class="mt-3" id="drafts">Active Drafts <small class="text-muted">({{person.active_drafts|length}})</small></h2>
-            {% if person.active_drafts.exists %}
-                <ul>
-                    {% for doc in person.active_drafts %}
+            </table>
+        {% else %}
+            {{ person.first_name }} has no RFCs as of {{ today }}.
+        {% endif %}
+        <h2 class="mt-5" id="drafts">
+            Active Drafts <small class="text-muted">({{ person.active_drafts|length }})</small>
+        </h2>
+        {% if person.active_drafts.exists %}
+            <ul>
+                {% for doc in person.active_drafts %}
+                    <li>
+                        <a href="{{ doc.get_absolute_url }}">{{ doc.canonical_name }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            {{ person.first_name }} has no active drafts as of {{ today }}.
+        {% endif %}
+        <h2 class="mt-5">
+            Expired Drafts <small class="text-muted">({{ person.expired_drafts|length }})</small>
+        </h2>
+        {% if person.expired_drafts.exists %}
+            <ul>
+                {% for doc in person.expired_drafts %}
+                    {% if not doc.replaced_by %}
                         <li>
-                            <a href="{{ doc.get_absolute_url }}">{{ doc.canonical_name }}</a>
+                            <a href="{{ doc.get_absolute_url }}">
+                                {{ doc.canonical_name }}
+                            </a>
                         </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                {{ person.first_name }} has no active drafts as of {{ today }}.
-            {% endif %}
-
-            <h2 class="mt-3">Expired Drafts <small class="text-muted">({{person.expired_drafts|length}})</small></h2>
-            {% if person.expired_drafts.exists %}
-                <ul>
-                    {% for doc in person.expired_drafts %}
-                        {% if not doc.replaced_by %}
-                            <li><a href="{{ doc.get_absolute_url }}">{{ doc.canonical_name }}</a></li>
-                        {% endif %}
-                    {% endfor %}
-                </ul>
-                (Excluding replaced drafts.)
-            {% else %}
-                {{ person.first_name }} has no expired drafts as of {{ today }}.
-            {% endif %}
-        </div>
-        </div>
-
-        <div id="chart" class="mt-3"></div>
-
+                    {% endif %}
+                {% endfor %}
+            </ul>
+            (Excluding replaced drafts.)
+        {% else %}
+            {{ person.first_name }} has no expired drafts as of {{ today }}.
+        {% endif %}
+        {% if persons|length == 1 and person.has_drafts %}
+            <h2 class="mt-5">
+                Draft Activity
+            </h2>
+            <div id="chart">
+            </div>
+        {% endif %}
     {% endfor %}
 {% endblock %}
-
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
-    {% if persons|length == 1 and person.has_drafts %}
-        <script src="{% static 'ietf/js/highcharts-highstock.js' %}"></script>
-        <script src="{% static 'ietf/js/highcharts-exporting.js' %}"></script>
-        <script>
+    <script src="{% static 'ietf/js/highcharts-highstock.js' %}"></script>
+    <script src="{% static 'ietf/js/highcharts-exporting.js' %}"></script>
+    <script>
             $(function () {
                 $.getJSON('{% url "ietf.doc.views_stats.chart_conf_person_drafts" id=persons.0.id %}', function (conf) {
                     // Create the chart
@@ -165,6 +174,5 @@
                     });
                 });
             });
-        </script>
-    {% endif %}
+    </script>
 {% endblock %}

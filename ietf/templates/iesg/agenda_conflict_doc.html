@@ -4,7 +4,6 @@
 {% origin %}
 {% load ietf_filters ballot_icon person_filters %}
 <div class="card mb-3">
-    {# FIXME-LARS: just using float-end here messes up the spacing between row columns? #}
     <div class="position-absolute top-0 end-0 m-3">{% ballot_icon doc %}</div>
     <div class="card-body">
         {% with doc.conflictdoc as conflictdoc %}

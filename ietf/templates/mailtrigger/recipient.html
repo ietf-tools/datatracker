@@ -1,7 +1,7 @@
 {# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin textfilters static %}
+{% load origin textfilters static ietf_filters %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
@@ -41,7 +41,7 @@
                             {% if not forloop.last %},{% endif %}
                         {% endfor %}
                     </td>
-                    <td>{{ recipient.template|linkify }}</td>
+                    <td>{{ recipient.template|linkify|urlize_ietf_docs }}</td>
                     <td>
                         {% if recipient.code %}<code>{{ recipient.code }}</code>{% endif %}
                     </td>

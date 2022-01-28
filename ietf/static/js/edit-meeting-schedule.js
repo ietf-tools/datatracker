@@ -823,4 +823,3 @@ jQuery(document).ready(function () {
         sessions.filter("#session" + this.dataset.othersessionid).removeClass("highlight");
     });
 });
-

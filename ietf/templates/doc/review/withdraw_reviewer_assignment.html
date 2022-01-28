@@ -1,7 +1,7 @@
 {# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2019, All Rights Reserved #}
-{% load origin django_bootstrap5 static %}
+{% load origin django_bootstrap5 static person_filters %}
 {% block title %}Withdraw review assignment for {{ assignment.review_request.doc.name }}{% endblock %}
 {% block content %}
     {% origin %}
@@ -11,7 +11,7 @@
         <small class="text-muted">{{ assignment.review_request.doc.name }}</small>
     </h1>
     <p class="my-3 alert alert-info">
-        Withdraw review assignment for {{ assignment.reviewer.person }}
+        Withdraw review assignment for {% person_link assignment.reviewer.person %}.
     </p>
     <form method="post">
         {% csrf_token %}

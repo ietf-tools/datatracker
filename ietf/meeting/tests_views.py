@@ -4281,7 +4281,6 @@ class InterimTests(TestCase):
         q = PyQuery(r.content)
         #id="-%s" % interim.group.acronym
         #self.assertIn('CANCELLED', q('[id*="'+id+'"]').text())
-        print(r.content, "test_past")
         self.assertIn('CANCELLED', q('tr>td>a>span').text())
 
     def do_upcoming_test(self, querystring=None, create_meeting=True):

@@ -14,7 +14,7 @@
 {% block content %}
     {% origin %}
     {% include 'meeting/proceedings/title.html' with meeting=meeting attendance=attendance only %}
-    {% if user|has_role:"Secretariat" and meeting.proceedings_final %}
+    {% if user|has_role:"Secretariat" and not meeting.proceedings_final %}
         <a class="btn btn-warning finalize-button"
            href="{% url 'ietf.meeting.views.finalize_proceedings' num=meeting.number %}">
             Finalize proceedings

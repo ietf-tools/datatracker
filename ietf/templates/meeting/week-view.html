@@ -1,19 +1,19 @@
+{# bs5ok #}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}{% origin %}
+{% load origin %}
+{% origin %}
 {% load static %}
-{# FIXME: the weekview only renders correctly in quirks mode, i.e., not in HTML5 #}
+{# FIXME: the weekview only renders correctly in quirks mode, i.e., not in HTML5 with "<!doctype html>" in the next line #}
 <html>
-<head>
-    <meta charset="utf-8"/>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-
-    <script src="{% static 'ietf/js/agenda_filter.js' %}"></script>
-    <script src="{% static 'ietf/js/moment.js' %}"></script>
-    <script src="{% static 'ietf/js/moment-timezone-with-data-10-year-range.js' %}"></script>
-    <script src="{% static 'ietf/js/week-view.js' %}"></script>
-    <script>
-
+    <head>
+        <meta charset="utf-8"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <script src="{% static 'ietf/js/agenda_filter.js' %}"></script>
+        <script src="{% static 'ietf/js/moment.js' %}"></script>
+        <script src="{% static 'ietf/js/moment-timezone-with-data-10-year-range.js' %}"></script>
+        <script src="{% static 'ietf/js/week-view.js' %}"></script>
+        <script>
         var all_items = {{ items | safe }};
 
         //===========================================================================
@@ -30,10 +30,11 @@
         window.addEventListener("load", redraw_weekview, false);
         window.addEventListener("hashchange", redraw_weekview, false);
 
-    </script>
-</head>
-
-<body>
-    <p>Error loading calendar</p>
-</body>
+        </script>
+    </head>
+    <body>
+        <p>
+            Error loading calendar.
+        </p>
+    </body>
 </html>

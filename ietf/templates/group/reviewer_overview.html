@@ -3,7 +3,7 @@
 {# Copyright The IETF Trust 2015-2020, All Rights Reserved #}
 {% load origin %}
 {% origin %}
-{% load ietf_filters static django_bootstrap5 %}
+{% load ietf_filters static django_bootstrap5 person_filters %}
 {% block group_subtitle %}Reviewers{% endblock %}
 {% block group_content %}
     {% origin %}
@@ -59,46 +59,49 @@
                     <tr {% if person.completely_unavailable %}class="table-danger" title="Is not available to do reviews at this time." {% elif person.busy %}class="table-secondary" title="Has already been assigned a document within the given interval." {% elif person.settings.skip_next %}class="table-warning" title="Will be skipped the next time at the top of rotation." {% endif %}>
                         <td>{{ forloop.counter }}</td>
                         <td>
-                            {% if person.settings_url %}<a href="{{ person.settings_url }}"
-   title="{{ person.settings.expertise }}">{% endif %}
-                            {{ person }}
-                            {% if person.settings_url %}</a>{% endif %}
+                            {% person_link person %}
+                            {% if person.settings_url %}
+                                <a href="{{ person.settings_url }}" class="btn btn-primary btn-small float-end"
+                                    }
+                                    title="{{ person.settings.expertise }}">Edit
+                                </a>
+                            {% endif %}
                         </td>
                         <td>
                             {% if person.latest_reqs %}
-                            <table class="table table-sm table-borderless">
-                                <thead>
-                                    <tr>
-                                        <th>Assigned</th>
-                                        <th>Deadline</th>
-                                        <th>State</th>
-                                        <th>Review time</th>
-                                        <th>Document</th>
-                                    </tr>
-                                </thead>
-                                {% for assn_pk, req_pk, doc_name, reviewed_rev, assigned_time, deadline, state, assignment_to_closure_days in person.latest_reqs %}
-                                    <tr>
-                                        <td>
-                                            <span style="display:none">X</span>{{ assigned_time|date }}
-                                        </td>
-                                        <td>
-                                            <a href="{% url "ietf.doc.views_review.review_request" name=doc_name request_id=req_pk %}">{{ deadline|date }}</a>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-{% if state.slug == "completed" or state.slug == "part-completed" %}success{% elif state.slug == "no-response" %}danger{% elif state.slug == "overtaken" %}warning{% elif state.slug == "requested" or state.slug == "accepted" %}primary{% else %}secondary{% endif %}">{{ state.name }}</span>
-                                        </td>
-                                        <td>
-                                            {% if assignment_to_closure_days != None %}
-                                                {{ assignment_to_closure_days }}&nbsp;day{{ assignment_to_closure_days|pluralize }}
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {{ doc_name }}
-                                            {% if reviewed_rev %}-{{ reviewed_rev }}{% endif %}
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </table>
+                                <table class="table table-sm table-borderless">
+                                    <thead>
+                                        <tr>
+                                            <th>Assigned</th>
+                                            <th>Deadline</th>
+                                            <th>State</th>
+                                            <th>Review time</th>
+                                            <th>Document</th>
+                                        </tr>
+                                    </thead>
+                                    {% for assn_pk, req_pk, doc_name, reviewed_rev, assigned_time, deadline, state, assignment_to_closure_days in person.latest_reqs %}
+                                        <tr>
+                                            <td>
+                                                <span style="display:none">X</span>{{ assigned_time|date }}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'ietf.doc.views_review.review_request' name=doc_name request_id=req_pk %}">{{ deadline|date }}</a>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{% if state.slug == 'completed' or state.slug == 'part-completed' %}success{% elif state.slug == 'no-response' %}danger{% elif state.slug == 'overtaken' %}warning{% elif state.slug == 'requested' or state.slug == 'accepted' %}primary{% else %}secondary{% endif %}">{{ state.name }}</span>
+                                            </td>
+                                            <td>
+                                                {% if assignment_to_closure_days != None %}
+                                                    {{ assignment_to_closure_days }}&nbsp;day{{ assignment_to_closure_days|pluralize }}
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {{ doc_name }}
+                                                {% if reviewed_rev %}-{{ reviewed_rev }}{% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </table>
                             {% endif %}
                         </td>
                         <td>
