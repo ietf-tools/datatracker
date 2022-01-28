@@ -1,4 +1,26 @@
+ietfdb (7.44.0) ietf; urgency=medium
+
+  ** Schedule editor improvements, bugfixes **
+
+  * Merged in [19874] from rjsparks@nostrum.com:
+    Rollback menu caching. More work is required to allow left menu to 
+    function correctly.  
+
+  * Merged in [19876] from jennifer@painless-security.com:
+    Do not redirect user to the logout page when logging in. Fixes #3478.  
+
+  * Merged in [19878] from jennifer@painless-security.com:
+    Hide timeslots type is disabled plus other schedule editor 
+    debugging/improvements. Fixes #3510. Fixes #3430.  
+
+  * Merged in [19880] from rjsparks@nostrum.com:
+    Add gunicorn to requirements to support new deployment model.  
+
+ -- Robert Sparks <rjsparks@nostrum.com>  28 Jan 2022 14:42:05 +0000
+
 ietfdb (7.43.0) ietf; urgency=medium
+
+  ** Easier account creation, bugfixes, enhancements **
 
   * Merged in [19825] from jennifer@painless-security.com:
     Find references from submitted XML instead of rendering to text and 
