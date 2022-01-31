@@ -149,5 +149,46 @@
                 <seriesInfo name='DOI' value='10.17487/RFC1207'/>
             </reference>
         </references>
+        <references title="Malformed Normative References">
+            <!-- title attribute was for references title was removed for v3, but should be recognized -->
+            <reference anchor='RFC4086' target='https://www.rfc-editor.org/info/rfc4086'>
+                <front>
+                    <title>Randomness Requirements for Security</title>
+                    <author initials='D.' surname='Eastlake 3rd' fullname='D. Eastlake 3rd'>
+                        <organization/>
+                    </author>
+                    <author initials='J.' surname='Schiller' fullname='J. Schiller'>
+                        <organization/>
+                    </author>
+                    <author initials='S.' surname='Crocker' fullname='S. Crocker'>
+                        <organization/>
+                    </author>
+                    <date year='2005' month='June'/>
+                    <abstract>
+                        <t>Security systems are built on strong cryptographic algorithms that foil pattern analysis
+                            attempts. However, the security of these systems is dependent on generating secret
+                            quantities for passwords, cryptographic keys, and similar quantities. The use of
+                            pseudo-random processes to generate secret quantities can result in pseudo-security. A
+                            sophisticated attacker may find it easier to reproduce the environment that produced the
+                            secret quantities and to search the resulting small set of possibilities than to locate the
+                            quantities in the whole of the potential number space.
+                        </t>
+                        <t>Choosing random quantities to foil a resourceful and motivated adversary is surprisingly
+                            difficult. This document points out many pitfalls in using poor entropy sources or
+                            traditional pseudo-random number generation techniques for generating such quantities. It
+                            recommends the use of truly random hardware techniques and shows that the existing hardware
+                            on many systems can be used for this purpose. It provides suggestions to ameliorate the
+                            problem when a hardware solution is not available, and it gives examples of how large such
+                            quantities need to be for some applications. This document specifies an Internet Best
+                            Current Practices for the Internet Community, and requests discussion and suggestions for
+                            improvements.
+                        </t>
+                    </abstract>
+                </front>
+                <seriesInfo name='BCP' value='106'/>
+                <seriesInfo name='RFC' value='4086'/>
+                <seriesInfo name='DOI' value='10.17487/RFC4086'/>
+            </reference>
+        </references>
     </back>
 </rfc>

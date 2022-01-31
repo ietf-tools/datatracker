@@ -463,6 +463,7 @@ class XMLDraftTests(TestCase):
                 'rfc255': XMLDraft.REF_TYPE_INFORMATIVE,
                 'bcp6': XMLDraft.REF_TYPE_INFORMATIVE,
                 'rfc1207': XMLDraft.REF_TYPE_UNKNOWN,
+                'rfc4086': XMLDraft.REF_TYPE_NORMATIVE,
             }
         )
 

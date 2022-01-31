@@ -77,12 +77,18 @@ class XMLDraft(Draft):
                 return self.REF_TYPE_INFORMATIVE
         return self.REF_TYPE_UNKNOWN
 
+    def _reference_section_name(self, section_elt):
+        section_name = section_elt.findtext('name')
+        if section_name is None and 'title' in section_elt.keys():
+            section_name = section_elt.get('title')  # fall back to title if we have it
+        return section_name
+
     def get_refs(self):
         """Extract references from the draft"""
         refs = {}
         # accept nested <references> sections
         for section in self.xmlroot.findall('back//references'):
-            ref_type = self._reference_section_type(section.findtext('name'))
+            ref_type = self._reference_section_type(self._reference_section_name(section))
             for ref in (section.findall('./reference') + section.findall('./referencegroup')):
                 refs[self._document_name(ref.get('anchor'))] = ref_type
         return refs
