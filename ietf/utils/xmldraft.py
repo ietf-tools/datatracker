@@ -69,11 +69,12 @@ class XMLDraft(Draft):
 
     def _reference_section_type(self, section_name):
         """Determine reference type from name of references section"""
-        section_name = section_name.lower()
-        if 'normative' in section_name:
-            return self.REF_TYPE_NORMATIVE
-        elif 'informative' in section_name:
-            return self.REF_TYPE_INFORMATIVE
+        if section_name:
+            section_name = section_name.lower()
+            if 'normative' in section_name:
+                return self.REF_TYPE_NORMATIVE
+            elif 'informative' in section_name:
+                return self.REF_TYPE_INFORMATIVE
         return self.REF_TYPE_UNKNOWN
 
     def get_refs(self):
