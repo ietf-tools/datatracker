@@ -2,15 +2,20 @@
 <div class="session-details-form" data-prefix="{{ form.prefix }}">
   {% if hidden %}{{ form.name.as_hidden }}{{ form.purpose.as_hidden }}{{ form.type.as_hidden }}{{ form.requested_duration.as_hidden }}
   {% else %}
-    <table>
-      <tr>
+    <table>{% comment %}
+    The form-group class is used by session_details_form.js to identify the correct element
+    to hide the name / purpose / type fields when not needed. This is a bootstrap class - the
+    secr app does not use it, so this (and the hidden class, also needed by session_details_form.js)
+    are defined in edit.html and new.html as a kludge to make this work. 
+    {% endcomment %}
+      <tr class="form-group">
         <th>{{ form.name.label_tag }}</th>
         <td>{{ form.name }}{{ form.purpose.errors }}</td>
       </tr>
-      <tr>
+      <tr class="form-group">
         <th>{{ form.purpose.label_tag }}</th>
         <td>
-          {{ form.purpose }} {{ form.type }}
+            {{ form.purpose }} <div class="form-group">{{ form.type }}</div>
           {{ form.purpose.errors }}{{ form.type.errors }}
         </td>
       </tr>

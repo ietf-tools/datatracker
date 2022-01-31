@@ -79,7 +79,7 @@
     const name_elts = [ 
         document.getElementById(id_prefix + 'name'),
         document.getElementById(id_prefix + 'short'),
-    ];
+    ].filter(Boolean);  // removes null entries
     const type_elt = document.getElementById(id_prefix + 'type');
     const type_options = type_elt.getElementsByTagName('option');
     const allowed_types = (type_elt.dataset.allowedOptions) ?

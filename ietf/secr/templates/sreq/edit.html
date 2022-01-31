@@ -6,6 +6,10 @@
   <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
   <script type="text/javascript" src="{% static 'secr/js/sessions.js' %}"></script>
   {{ form.media }}
+  <style>
+      .hidden {display: none !important;}
+      div.form-group {display: inline;}
+  </style>
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 
