@@ -1,1 +1,1 @@
-import "zxcvbn";
+window.zxcvbn = require('zxcvbn');

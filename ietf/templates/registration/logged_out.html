@@ -1,15 +1,13 @@
+{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
 {% block title %}Signed out{% endblock %}
-
 {% block content %}
     {% origin %}
     <h1>You have been signed out</h1>
-    <a class="btn btn-primary" href="/accounts/login/" rel="nofollow">Sign in</a>
+    <a class="btn btn-primary my-3" href="/accounts/login/" rel="nofollow">Sign in</a>
 {% endblock %}
-
 {% block js %}
     {% if request.META.HTTP_REFERER %}
         <script>

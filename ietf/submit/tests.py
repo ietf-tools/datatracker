@@ -202,7 +202,7 @@ class SubmitTests(BaseSubmitTestCase):
             sys.stderr.write("Author initials: %s\n" % author.initials())
         self.assertEqual(len(submission.authors), 1)
         a = submission.authors[0]
-        self.assertEqual(a["name"], author.ascii)
+        self.assertEqual(a["name"], author.ascii_name())
         self.assertEqual(a["email"], author.email().address.lower())
         self.assertEqual(a["affiliation"], "Test Centre Inc.")
         self.assertEqual(a["country"], "UK")
@@ -2516,7 +2516,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
         if is_secretariat:
             # check that reply button is visible
 
-            reply_href = self.get_href(q, "#email-details a#reply%s:contains('Reply')" % submission.pk)
+            reply_href = self.get_href(q, "a#reply%s:contains('Reply')" % submission.pk)
 
         else:
             # No reply button
@@ -2591,7 +2591,7 @@ Thank you
         # check the page
         r = self.client.get(the_url)
         q = PyQuery(r.content)
-        post_button = q('[type=submit]:contains("Send Email")')
+        post_button = q('[type=submit]:contains("Send email")')
         self.assertEqual(len(post_button), 1)
         subject = post_button.parents("form").find('input[name="subject"]').val()
         frm = post_button.parents("form").find('input[name="frm"]').val()

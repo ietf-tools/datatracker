@@ -1,26 +1,17 @@
+{# bs5ok #}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-
 {% extends "base.html" %}
-
 {% load origin %}
-
 {% load django_bootstrap5 %}
-
 {% block title %}Sign in{% endblock %}
-
 {% block content %}
     {% origin %}
     <h1>Sign in</h1>
-    <script>window.scrollTo(0, 0)</script>
-
     <form method="post">
         {% csrf_token %}
         {% bootstrap_form form %}
         {% bootstrap_button button_type="submit" content="Sign in" %}
-
-        <div class="float-end">
-            Forgot your password?
-            <a href="{% url 'ietf.ietfauth.views.password_reset' %}">Request a reset</a>.
-        </div>
+        <a class="btn btn-secondary"
+           href="{% url 'ietf.ietfauth.views.password_reset' %}">Forgot your password?</a>
     </form>
 {% endblock %}

@@ -1,21 +1,19 @@
+{# bs5ok #}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-
 {% extends "base.html" %}
-
-{% load origin %}
-
-{% block title %}Profile update successful{% endblock%}
-
-{% block content %}
-    {% origin %}
-
-    <h1>Profile update successful</h1>
-
-    <p>Your account has been updated to reflect the changes you submitted.</p>
-
-    {% for email in email_confirmations %}
-        <p class="alert alert-info"><b>A confirmation email has been sent to {{email}}.</b> The email will be activated after you click on the link it contains.</p>
-    {% endfor %}
-
-    <a class="btn btn-primary" href="{% url "ietf.ietfauth.views.profile" %}">Edit profile</a>
-{% endblock %}
+{% load origin textfilters %}
+{% block title %}Profile update successful{% endblock %}
+    {% block content %}
+        {% origin %}
+        <h1>Profile update successful</h1>
+        <p class="my-3">
+            Your account has been updated to reflect the changes you submitted.
+        </p>
+        {% for email in email_confirmations %}
+            <p class="alert alert-success my-3">
+                <b>A confirmation email has been sent to {{ email|linkify }}.</b> The email will be activated after you click on the link it contains.
+            </p>
+        {% endfor %}
+        <a class="btn btn-primary"
+           href="{% url "ietf.ietfauth.views.profile" %}">Edit profile</a>
+    {% endblock %}

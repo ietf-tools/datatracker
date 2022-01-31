@@ -76,7 +76,7 @@ def texescape_filter(value):
 @register.filter
 @stringfilter
 def linkify(value):
-    text = mark_safe(bleach.linkify(escape(value), parse_email=True))
+    text = mark_safe(bleach.linkify(value, parse_email=True))
     return text
 
 @register.filter

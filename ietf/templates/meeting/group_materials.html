@@ -1,3 +1,4 @@
+{# bs5ok #}
 {# Copyright The IETF Trust 2015-2019, All Rights Reserved #}
 {% load origin %}
 {% origin %}
@@ -5,11 +6,6 @@
 {% load tz %}
 <tr>
     <td>
-        {% comment %}
-    <a name="{{ session.group.acronym }}"></a>
-    <a name="wg-{{ session.group.acronym }}"></a>
-    <a name="session.group-{{ session.group.acronym }}"></a>
-        {% endcomment %}
         {% if session.name %}
             <div id="{{ session.name|slugify }}">{{ session.name }}</div>
         {% else %}
@@ -22,15 +18,9 @@
         {% endif %}
     </td>
     {% if session.all_meeting_sessions_cancelled %}
-        {% if user|has_role:"Secretariat" or user_groups %}
-            <td colspan="7">
-                <span class="badge bg-danger">Session cancelled</span>
-            </td>
-        {% else %}
-            <td colspan="6">
-                <span class="badge bg-danger">Session cancelled</span>
-            </td>
-        {% endif %}
+        <td colspan="{% if user|has_role:'Secretariat' or user_groups %}7{% else %}6{% endif %}">
+            <span class="badge bg-danger">Session cancelled</span>
+        </td>
     {% else %}
         <td>
             {% if session.all_meeting_agendas %}
@@ -38,7 +28,7 @@
                     {% if session.all_meeting_agendas|length == 1 %}
                         {% if agenda.time > old %}
                             <span class="small bi bi-bell"
-                                  title="Last Update: {{ agenda.time|utc|date:"Y-m-d H:i:s" }}&nbsp;UTC"></span>
+                                  title="Last Update: {{ agenda.time|utc|date:"Y-m-d H:i:s" }} UTC"></span>
                         {% endif %}
                         <a href="{{ session.all_meeting_agendas.0|meeting_href:session.meeting }}">Agenda</a>
                         <br>
@@ -85,7 +75,7 @@
                         {% endfor %}
                     {% endif %}
                 {% else %}
-                    <span class="badge bg-bluesheets">No bluesheets</span>
+                    <span class="badge bg-warning">No bluesheets</span>
                 {% endif %}
             {% endif %}
         </td>
@@ -94,7 +84,7 @@
                 {% for slide in slides %}
                     {% if slide.time > old %}
                         <span class="small bi bi-bell"
-                              title="Last Update: {{ slide.time|utc|date:"Y-m-d H:i:s" }}&nbsp;UTC"></span>
+                              title="Last Update: {{ slide.time|utc|date:"Y-m-d H:i:s" }} UTC"></span>
                     {% endif %}
                     <a href="{{ slide|meeting_href:session.meeting }}">{{ slide.title|clean_whitespace }}</a>
                     <br>
@@ -108,7 +98,7 @@
                 {% for draft in drafts %}
                     {% if draft.time > old %}
                         <span class="small bi bi-bell"
-                              title="Last Update: {{ draft.time|utc|date:"Y-m-d H:i:s" }}&nbsp;UTC"></span>
+                              title="Last Update: {{ draft.time|utc|date:"Y-m-d H:i:s" }} UTC"></span>
                     {% endif %}
                     <a href="{{ draft.get_href }}">{{ draft.name }}</a>
                     <br>
@@ -126,7 +116,7 @@
         </td>
         <td>
             {% if user|has_role:"Secretariat" or session.group in user_groups %}
-                <div>{% include "meeting/edit_materials_button.html" %}</div>
+                <div class="float-end">{% include "meeting/edit_materials_button.html" %}</div>
             {% endif %}
         </td>
     {% endif %}

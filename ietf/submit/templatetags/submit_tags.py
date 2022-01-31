@@ -36,5 +36,5 @@ def two_pages_decorated_with_errors(submission, errors):
     for line in pages.split('\n'):
         result += escape(line)
         result += '\n'
-    result += '</pre>pre>\n'
+    result += '</pre>\n'
     return mark_safe(result)
