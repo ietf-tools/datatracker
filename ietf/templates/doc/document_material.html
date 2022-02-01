@@ -65,8 +65,7 @@
                     <td class="edit"></td>
                     <td>
                         {% for t, url in other_types %}
-                            <a href="{{ url }}">{{ t }}</a>
-                            {% if not forloop.last %},{% endif %}
+                            <a href="{{ url }}">{{ t }}</a>{% if not forloop.last %},{% endif %}
                         {% endfor %}
                     </td>
                 </tr>
@@ -130,8 +129,7 @@
             {% else %}
                 Not available as plain text.
                 {% if other_types %}
-                    <a href="{{ other_types.0.1 }}">Download as {{ other_types.0.0.upper }}</a>
-                    .
+                    <a href="{{ other_types.0.1 }}">Download as {{ other_types.0.0.upper }}</a>.
                 {% endif %}
             {% endif %}
         </div>

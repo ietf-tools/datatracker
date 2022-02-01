@@ -42,8 +42,8 @@
         </ul>
         <p>
             The API top endpoint is at
-            <a href="https://datatracker.ietf.org/api/v1/">https://datatracker.ietf.org/api/v1/</a>
-            .  The top
+            <a href="https://datatracker.ietf.org/api/v1/">https://datatracker.ietf.org/api/v1/</a>.
+            The top
             endpoint lists inferior endpoints, and thus permits some autodiscovery,
             but there's really no substitute for looking at the actual ORM model classes.
             Comparing a class in <code>models.py</code> with the equivalent endpoint may give
@@ -66,8 +66,7 @@
         <h3 id="framework-documents">Framework API: Documents</h3>
         <p>
             Documents are listed at
-            <a href="https://datatracker.ietf.org/api/v1/doc/document/">/api/v1/doc/document/</a>
-            .
+            <a href="https://datatracker.ietf.org/api/v1/doc/document/">/api/v1/doc/document/</a>.
         </p>
         <p>
             In general, individual database objects are represented in the API with a path
@@ -156,13 +155,11 @@ $ curl 'https://datatracker.ietf.org/api/v1/doc/document/?limit=0&name__contains
             <code>{% url 'ietf.doc.views_doc.document_json' name='draft-ietf-poised95-std-proc-3' %}</code>
             <a href="{% url 'ietf.doc.views_doc.document_json' name='draft-ietf-poised95-std-proc-3' %}">
                 <span class="bi bi-box-arrow-up-right"></span>
-            </a>
-            .
+            </a>.
             You can also specify an RFC:  <code>{% url 'ietf.doc.views_doc.document_json' name='rfc2026' %}</code>
             <a href="{% url 'ietf.doc.views_doc.document_json' name='rfc2026' %}">
                 <span class="bi bi-box-arrow-up-right"></span>
-            </a>
-            .
+            </a>.
             No API key is needed to access this.
         </p>
         <p>
@@ -253,8 +250,8 @@ $ curl -S -F "apikey=DgAAAMLSi3coaE5TjrRs518xO8eBRlCmFF3eQcC8_SjUTtRGLGiJh7-1SYP
         <h2 id="openid-connect">OpenID Connect</h2>
         <p>
             The datatracker supports
-            <a href="https://openid.net/connect/">OpenID Connect</a>
-            , but
+            <a href="https://openid.net/connect/">OpenID Connect</a>,
+            but
             not dynamic registration.  The OpenID Connect Issuer is
             <code> {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.api.urls.oidc_issuer' %} </code>
         </p>
@@ -277,8 +274,7 @@ $ curl -S -F "apikey=DgAAAMLSi3coaE5TjrRs518xO8eBRlCmFF3eQcC8_SjUTtRGLGiJh7-1SYP
             <code>{% url 'ietf.doc.views_ballot.api_set_position' %}</code>
             <a href="#iesg-position-api">
                 above
-            </a>
-            .
+            </a>.
             Personal API keys are available from your
             <a href="{% url 'ietf.ietfauth.views.apikey_index' %}">
                 Account API Keys
@@ -316,8 +312,8 @@ $ curl -S -F "apikey=DgAAAMLSi3coaE5TjrRs518xO8eBRlCmFF3eQcC8_SjUTtRGLGiJh7-1SYP
             <a href="https://datatracker.ietf.org/doc/html/rfc7515">
                 RFC
                 7515: JSON Web Signature (JWS)
-            </a>
-            , using a public/private keypair with
+            </a>,
+            using a public/private keypair with
             this public key:
         </p>
         <p>

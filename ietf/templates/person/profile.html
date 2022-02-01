@@ -46,9 +46,7 @@
                             <td>{{ role.name.name }}</td>
                             <td>
                                 <a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.name }}</a>
-                                (
-                                <a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.acronym }}</a>
-                                )
+                                (<a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.acronym }}</a>)
                             </td>
                             <td>
                                 <a href="mailto:{{ role.email.address }}">{{ role.email.address }}</a>

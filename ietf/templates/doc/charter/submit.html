@@ -28,9 +28,7 @@
                 {% if group.parent and group.parent.type_id == "area" %}
                     <th>{{ group.parent.type.name }}</th>
                     <td>
-                        {{ group.parent.name }} (
-                        <a href="{{ group.parent.about_url }}">{{ group.parent.acronym }}</a>
-                        )
+                        {{ group.parent.name }} (<a href="{{ group.parent.about_url }}">{{ group.parent.acronym }}</a>)
                     </td>
                 {% else %}
                     <th></th>

@@ -46,11 +46,9 @@
                 {% else %}
                     {{ doc.group.name }}
                 {% endif %}
-                (
-                <a href="{% url "ietf.group.views.review_requests" group_type=review_req.team.type_id acronym=review_req.team.acronym %}">
+                (<a href="{% url "ietf.group.views.review_requests" group_type=review_req.team.type_id acronym=review_req.team.acronym %}">
                     {{ review_req.team.acronym }}
-                </a>
-                )
+                </a>)
             </td>
         </tr>
         <tr>
@@ -144,11 +142,7 @@
                         {{ a.review_request.team.acronym|capfirst }} {{ a.review_request.type.name }} review of -{{ a.reviewed_rev|default:"??" }} by {% person_link a.reviewer.person %}
                     {% endif %}
                     {% if a.reviewed_rev and a.reviewed_rev != a.review_request.doc.rev %}
-                        (
-                        <a href="{{ rfcdiff_base_url }}?url1={{ a.review_request.doc.name }}-{{ a.reviewed_rev }}&amp;url2={{ a.review_request.doc.name }}-{{ a.review_request.doc.rev }}">
-                            diff
-                        </a>
-                        )
+                        (<a href="{{ rfcdiff_base_url }}?url1={{ a.review_request.doc.name }}-{{ a.reviewed_rev }}&amp;url2={{ a.review_request.doc.name }}-{{ a.review_request.doc.rev }}">diff</a>)
                     {% endif %}
                     <br>
                 {% endfor %}

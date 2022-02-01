@@ -56,23 +56,22 @@
             <p class="alert alert-danger my-3">
                 This IPR disclosure does not comply with the formal requirements of Section 5,
                 "IPR Disclosures," of
-                <a href="https://www.rfc-editor.org/rfc/rfc8179.txt">RFC 8179</a>
-                , "Intellectual Property Rights in IETF Technology."
+                <a href="https://www.rfc-editor.org/rfc/rfc8179.txt">RFC 8179</a>,
+                "Intellectual Property Rights in IETF Technology."
             </p>
         {% else %}
             <p class="alert alert-danger my-3">
                 This IPR disclosure does not comply with the formal requirements of Section 6,
                 "IPR Disclosures," of
-                <a href="https://www.rfc-editor.org/rfc/rfc3979.txt">RFC 3979</a>
-                , "Intellectual Property Rights in IETF Technology."
+                <a href="https://www.rfc-editor.org/rfc/rfc3979.txt">RFC 3979</a>,
+                "Intellectual Property Rights in IETF Technology."
             </p>
         {% endif %}
     {% endif %}
     {% if ipr.has_legacy_event %}
         <p>
             The text of the original IPR disclosure is available in the
-            <a href="{% url "ietf.ipr.views.history" id=ipr.id %}">disclosure history</a>
-            .
+            <a href="{% url "ietf.ipr.views.history" id=ipr.id %}">disclosure history</a>.
         </p>
     {% endif %}
     <div>
@@ -107,9 +106,7 @@
                             {% if item.source.state.slug == "removed" %}
                                 "{{ item.source.title }}" (which was removed at the request of the submitter)
                             {% else %}
-                                "
-                                <a href="{% url "ietf.ipr.views.show" id=item.source.id %}">{{ item.source.title }}</a>
-                                "
+                                "<a href="{% url "ietf.ipr.views.show" id=item.source.id %}">{{ item.source.title }}</a>"
                             {% endif %}
                         </div>
                     {% endfor %}
@@ -132,9 +129,7 @@
                             {% elif item.target.state.slug == "parked" %}
                                 "{{ item.target.title }}"
                             {% else %}
-                                "
-                                <a href="{% url "ietf.ipr.views.show" id=item.target.id %}">{{ item.target.title }}</a>
-                                "
+                                "<a href="{% url "ietf.ipr.views.show" id=item.target.id %}">{{ item.target.title }}</a>"
                             {% endif %}
                         </div>
                     {% endfor %}
@@ -158,9 +153,7 @@
                 <tr class="text-center">
                     <th class="ipr-prev col-5">
                         {% if prev.state.slug == "posted" %}
-                            Previous (
-                            <a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>
-                            )
+                            Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                         {% else %}
                             Previous (#{{ prev.id }}, {{ prev.state }})
                         {% endif %}
@@ -188,9 +181,7 @@
                     <tr class="text-center">
                         <th class="ipr-prev col-5">
                             {% if prev.state.slug == "posted" %}
-                                Previous (
-                                <a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>
-                                )
+                                Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                             {% else %}
                                 Previous (#{{ prev.id }}, {{ prev.state }})
                             {% endif %}
@@ -245,11 +236,7 @@
                     <tr class="text-center">
                         <th class="ipr-prev col-5">
                             {% if prev.state.slug == "posted" %}
-                                Previous (
-                                <a href="{% url "ietf.ipr.views.show" id=prev.id %}">
-                                    #{{ prev.id }}
-                                </a>
-                                )
+                                Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                             {% else %}
                                 Previous (#{{ prev.id }}, {{ prev.state }})
                             {% endif %}
@@ -309,11 +296,7 @@
                     <tr class="text-center">
                         <th class="ipr-prev col-5">
                             {% if prev.state.slug == "posted" %}
-                                Previous (
-                                <a href="{% url "ietf.ipr.views.show" id=prev.id %}">
-                                    #{{ prev.id }}
-                                </a>
-                                )
+                                Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                             {% else %}
                                 Previous (#{{ prev.id }}, {{ prev.state }})
                             {% endif %}
@@ -397,11 +380,7 @@
                     <tr class="text-center">
                         <th class="ipr-prev col-5">
                             {% if prev.state.slug == "posted" %}
-                                Previous (
-                                <a href="{% url "ietf.ipr.views.show" id=prev.id %}">
-                                    #{{ prev.id }}
-                                </a>
-                                )
+                                Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                             {% else %}
                                 Previous (#{{ prev.id }}, {{ prev.state }})
                             {% endif %}
@@ -439,11 +418,7 @@
                     <tr class="text-center">
                         <th class="ipr-prev col-5">
                             {% if prev.state.slug == "posted" %}
-                                Previous (
-                                <a href="{% url "ietf.ipr.views.show" id=prev.id %}">
-                                    #{{ prev.id }}
-                                </a>
-                                )
+                                Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                             {% else %}
                                 Previous (#{{ prev.id }}, {{ prev.state }})
                             {% endif %}
@@ -501,11 +476,7 @@
                     <tr class="text-center">
                         <th class="ipr-prev col-5">
                             {% if prev.state.slug == "posted" %}
-                                Previous (
-                                <a href="{% url "ietf.ipr.views.show" id=prev.id %}">
-                                    #{{ prev.id }}
-                                </a>
-                                )
+                                Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                             {% else %}
                                 Previous (#{{ prev.id }}, {{ prev.state }})
                             {% endif %}
@@ -568,11 +539,7 @@
                     <tr class="text-center">
                         <th class="ipr-prev col-5">
                             {% if prev.state.slug == "posted" %}
-                                Previous (
-                                <a href="{% url "ietf.ipr.views.show" id=prev.id %}">
-                                    #{{ prev.id }}
-                                </a>
-                                )
+                                Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                             {% else %}
                                 Previous (#{{ prev.id }}, {{ prev.state }})
                             {% endif %}
@@ -609,11 +576,7 @@
                 <tr class="text-center">
                     <th class="ipr-prev col-5">
                         {% if prev.state.slug == "posted" %}
-                            Previous (
-                            <a href="{% url "ietf.ipr.views.show" id=prev.id %}">
-                                #{{ prev.id }}
-                            </a>
-                            )
+                            Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                         {% else %}
                             Previous (#{{ prev.id }}, {{ prev.state }})
                         {% endif %}
@@ -661,11 +624,7 @@
                     <tr class="text-center">
                         <th class="ipr-prev col-5">
                             {% if prev.state.slug == "posted" %}
-                                Previous (
-                                <a href="{% url "ietf.ipr.views.show" id=prev.id %}">
-                                    #{{ prev.id }}
-                                </a>
-                                )
+                                Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                             {% else %}
                                 Previous (#{{ prev.id }}, {{ prev.state }})
                             {% endif %}

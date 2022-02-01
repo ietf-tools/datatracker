@@ -39,8 +39,7 @@
         <p>
             {% if group is not None %}
                 Below you can upload a document for the group {{ group.name }}
-                <a href="{% url "ietf.group.views.materials" acronym=group.acronym %}">({{ group.acronym }})</a>
-                .
+                <a href="{% url "ietf.group.views.materials" acronym=group.acronym %}">({{ group.acronym }})</a>.
                 The document will appear under the materials tab in the group pages.
             {% elif doc.meeting_related %}
                 Below you can upload a document for the {{ doc.get_related_meeting }} meeting.
@@ -50,8 +49,7 @@
         <p>
             {% if group is not None %}
                 Below you can upload a new revision of {{ doc_name }} for the group {{ group.name }}
-                <a href="{% url "ietf.group.views.materials" acronym=group.acronym %}">({{ group.acronym }})</a>
-                .
+                <a href="{% url "ietf.group.views.materials" acronym=group.acronym %}">({{ group.acronym }})</a>.
             {% elif doc.meeting_related %}
                 Below you can upload a new revision of {{ doc_name }} for the {{ doc.get_related_meeting }} meeting.
             {% endif %}

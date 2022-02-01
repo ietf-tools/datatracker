@@ -63,8 +63,7 @@
                     Make a
                     <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">
                         new agenda from this
-                    </a>
-                    .
+                    </a>.
                 </div>
             {% endif %}
             <div class="edit-grid {% if not can_edit %}read-only{% endif %} my-3">

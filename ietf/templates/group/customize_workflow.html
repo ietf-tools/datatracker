@@ -17,16 +17,15 @@
     </h1>
     <p class="my-3">
         Below you can customize the draft states and tags used in the
-        <a href="{{ group.about_url }}">{{ group.acronym }} {{ group.type.name }}</a>
-        . Note that some states are
+        <a href="{{ group.about_url }}">{{ group.acronym }} {{ group.type.name }}</a>.
+        Note that some states are
         mandatory for group operation and cannot be deactivated.
     </p>
     {% if group.type_id == "wg" %}
         <p>
             You can see the default Working Group I-D State Diagram
             in
-            <a href="/doc/html/rfc6174#section-4.1">Section 4.1 of RFC6174</a>
-            .
+            <a href="/doc/html/rfc6174#section-4.1">Section 4.1 of RFC6174</a>.
         </p>
     {% endif %}
     <h2 class="mt-5">States</h2>
