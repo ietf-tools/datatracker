@@ -95,13 +95,13 @@ $(document)
                     }
                     attachTo.append(menu.join(""));
                 }
+
+                if (!("ontouchstart" in document.documentElement)) {
+                    $("ul.nav li.dropdown, ul.nav li.dropend")
+                        .on("mouseenter mouseleave", dropdown_hover);
+                }
             }
         });
-
-        if (!("ontouchstart" in document.documentElement)) {
-            $("ul.nav li.dropdown, ul.nav li.dropend")
-                .on("mouseenter mouseleave", dropdown_hover);
-        }
     });
 
 // Automatically add a navigation pane to long pages

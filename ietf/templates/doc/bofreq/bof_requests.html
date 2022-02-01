@@ -43,7 +43,7 @@
                     {% for req in req_group.list %}
                         <tr>
                             <td>
-                                <a href={% url 'ietf.doc.views_doc.document_main' name=req.name %}>{{ req.name }}-{{ req.rev }}</a>
+                                <a href="{% url 'ietf.doc.views_doc.document_main' name=req.name %}">{{ req.name }}-{{ req.rev }}</a>
                             </td>
                             <td>{{ req.latest_revision_event.time|date:"Y-m-d" }}</td>
                             <td>{{ req.title }}</td>

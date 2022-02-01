@@ -47,8 +47,10 @@ from bs4 import BeautifulSoup
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from tidylib import tidy_document
 
 import django.test
+from django.test.client import Client
 from django.conf import settings
 from django.utils.text import slugify
 
@@ -150,6 +152,44 @@ class ReverseLazyTest(django.test.TestCase):
     def test_redirect_with_lazy_reverse(self):
         response = self.client.get('/ipr/update/')
         self.assertRedirects(response, "/ipr/", status_code=301)
+
+class VerifyingClient(Client):
+    def __init__(self, test):
+        super(VerifyingClient, self).__init__()
+        self.test = test
+
+    def get(self, path, *args, **extra):
+        r = super(VerifyingClient, self).get(path, *args, **extra)
+        # print(path, r.status_code, r["content-type"].lower())
+        if r.status_code < 300 and r["content-type"].lower().startswith(
+            "text/html"
+        ):
+            document, errors = tidy_document(
+                r.content, options={"drop-empty-elements": False}
+            )
+
+            errors = "\n".join(
+                [
+                    e
+                    for e in errors.splitlines()
+                    # FIXME-LARS: django-bootstrap5 incorrectly sets a "required"
+                    # proprietray attribute on some DIVs; remove those errors
+                    if not re.match(r'.*proprietary attribute "required"', e)
+                    # FIXME-LARS: some secretariat templates have this issue, ignore
+                    and not re.match(r".*id and name attribute value mismatch", e)
+                ]
+            )
+
+            if errors:
+                n = 1
+                print("\n")
+                for line in r.content.decode().splitlines():
+                    print(f"{n: 6}: {line}")
+                    n += 1
+                print(path)
+            self.test.maxDiff = None
+            self.test.assertEqual("", errors)
+        return r
 
 class TestCase(django.test.TestCase):
     """IETF TestCase class
@@ -261,6 +301,7 @@ class TestCase(django.test.TestCase):
     def setUp(self):
         # Replace settings paths with temporary directories.
         super().setUp()
+        self.client = VerifyingClient(self)  # Set up the HTML verifier
         self._ietf_temp_dirs = {}  # trashed during tearDown, DO NOT put paths you care about in this
         for setting in self.settings_temp_path_overrides:
             self._ietf_temp_dirs[setting] = self.tempdir(slugify(setting))

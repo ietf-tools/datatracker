@@ -19,14 +19,6 @@
 {% endblock %}
 
 {% block content %}
-
-    <noscript>
-        <div style="position: fixed; top: 0px; left: 0px; z-index: 3000;
-            height: 100%; width: 100%; background-color: #FFFFFF">
-            <p style="margin-left: 10px">This page requires JavaScript.</p>
-        </div>
-    </noscript>
-
     <div class="module interim-container">
         <h2>IETF {{ meeting.number }}: New {% if is_virtual %}Virtual {% endif %}Session Request</h2>
         <div class="inline-related">
@@ -35,7 +27,7 @@
                 <li><button onclick="if (window.confirm('A message will be sent to agenda@ietf.com as well as to the area director(s).\n\nContinue?')) { window.location='{% url "ietf.secr.sreq.views.no_session" acronym=group.acronym %}'};">Send a notification that the group does not plan to hold a session at IETF {{ meeting.number }}</button></li>
                 <li><button onclick="window.location='{% url "ietf.secr.sreq.views.new" acronym=group.acronym %}?previous'">Retrieve all information from previous meeting</button></li>
             </ul>
-
+        </div>
             {% include "includes/sessions_request_form.html" %}
 
         </div> <!-- module -->

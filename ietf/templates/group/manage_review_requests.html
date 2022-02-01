@@ -101,7 +101,7 @@
                                                         -{{ alatest.reviewed_rev }}
                                                     </a>
                                                     {% if alatest.reviewed_rev != r.doc.rev %}
-                                                        (<a href="{{ rfcdiff_base_url }}?url1={{ rlatest.doc.name }}-{{ alatest.reviewed_rev }}&url2={{ r.doc.name }}-{{ r.doc.rev }}">diff</a>)
+                                                        (<a href="{{ rfcdiff_base_url }}?url1={{ rlatest.doc.name }}-{{ alatest.reviewed_rev }}&amp;url2={{ r.doc.name }}-{{ r.doc.rev }}">diff</a>)
                                                     {% endif %}
                                                     :
                                                     <a href="{{ alatest.review.get_absolute_url }}">

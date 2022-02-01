@@ -204,7 +204,7 @@
             <th>Group</th>
             <td>
                 {{ submission.group|default:"Individual Submission" }}
-                {% if submission.group %}<a href="{{ doc.group.about_url }}">({{ submission.group.acronym|upper }})</a>{% endif %}
+                {% if submission.group %}<a href="{{ submission.group.about_url }}">({{ submission.group.acronym|upper }})</a>{% endif %}
                 {% if errors.group %}
                     <p class="mt-1 mb-0 text-danger">
                         {{ errors.group }}

@@ -19,14 +19,6 @@
 {% endblock %}
 
 {% block content %}
-
-    <noscript>
-        <div style="position: fixed; top: 0px; left: 0px; z-index: 3000;
-            height: 100%; width: 100%; background-color: #FFFFFF">
-            <p style="margin-left: 10px">This page requires JavaScript.</p>
-        </div>
-    </noscript>
-
     <div class="module interim-container">
         <h2>IETF {{ meeting.number }}: Edit Session Request</h2>
         <div class="inline-related">
@@ -35,7 +27,7 @@
             {% include "includes/sessions_request_form.html" %}
 
         </div> <!-- module -->
-
+    </div>
 {% endblock %}
 
 {% block footer-extras %}

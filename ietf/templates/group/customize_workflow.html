@@ -76,8 +76,8 @@
                             <label>Select the next states:</label>
                             {% for checked, default, s in state.next_states_checkboxes %}
                                 <div class="form-check {% if not s.used %}inactive{% endif %}">
-                                    <input class="form-check-input" type="checkbox" name="next_states" value="{{ s.pk }}" id="value="{{ s.pk }}"" {% if checked %} checked{% endif %}>
-                                    <label class="form-check-label" for="{{ s.pk }}">
+                                    <input class="form-check-input" type="checkbox" name="next_states" value="{{ s.pk }}" {% if checked %} checked{% endif %}>
+                                    <label class="form-check-label">
                                         {{ s.name }}
                                         {% if default %}<span class="badge bg-secondary">Default</span>{% endif %}
                                     </label>

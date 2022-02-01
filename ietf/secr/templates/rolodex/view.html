@@ -17,9 +17,9 @@
             <tr><td>Name:</td><td>{{ person.name }}</td></tr>
             <tr><td>Ascii Name:</td><td>{{ person.ascii }}</td></tr>
             <tr><td>Short Name:</td><td>{{ person.ascii_short }}</td></tr>
-            <tr><td>Aliases:</td><td>{% for alias in person.alias_set.all %}{% if not forloop.first %}, {% endif %}{{ alias.name }}{% endfor %}
+            <tr><td>Aliases:</td><td>{% for alias in person.alias_set.all %}{% if not forloop.first %}, {% endif %}{{ alias.name }}{% endfor %}</td>
                 <tr><td>User:</td><td>{{ person.user }}</td></tr>
-                <tr></tr>
+                <tr><td></td><td></td></tr>
                 {% for email in person.emails %}
                     <tr><td>Email {{ forloop.counter }}:</td><td>{{ email }}</td></tr>
                 {% endfor %}

@@ -52,17 +52,11 @@
                 <!-- END Breadcrumbs -->
             {% endif %}
 
-            {% comment %}
-    <!-- Removed per Glen 08-04-2010 -->
-    <!-- Javascript Warning -->
-    <noscript class="errornote"> You have Javascript disabled.  Javascript is required for this application.</noscript>
-    {% endcomment %}
-
             <!-- Django Messages -->
             {% if messages %}
                 <ul class="messages">
                     {% for message in messages %}
-                        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                        <li {% if message.tags %}class="{{ message.tags }}"{% endif %}>{{ message }}</li>
                     {% endfor %}
                 </ul>
             {% endif %}
@@ -83,6 +77,5 @@
             {% block footer %}<div id="footer"></div>{% endblock %}
         </div>
         <!-- END Container -->
-
     </body>
 </html>

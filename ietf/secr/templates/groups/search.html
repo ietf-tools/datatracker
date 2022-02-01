@@ -4,7 +4,11 @@
 {% block title %}Groups - Search{% endblock %}
 
 {% block extrahead %}{{ block.super }}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
     <script src="{% static 'secr/js/utils.js' %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
+{% endblock %}{% endblock %}
+
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }}

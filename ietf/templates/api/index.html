@@ -99,13 +99,13 @@
         <ul>
             <li>
                 If a document has an rfc-editor state, you can select for it by asking for, e.g.,
-                <a href="https://datatracker.ietf.org/api/v1/doc/document/?limit=0&name__contains=-v6ops-&states__type__slug__in=draft-rfceditor">
+                <a href="https://datatracker.ietf.org/api/v1/doc/document/?limit=0&amp;name__contains=-v6ops-&amp;states__type__slug__in=draft-rfceditor">
                     v6ops documents which match <code>states__type__slug__in=draft-rfceditor</code>
                 </a>
             </li>
             <li>
                 If a document has an IESG state, you can select for it by asking for, e.g.,
-                <a href="https://datatracker.ietf.org/api/v1/doc/document/?name__contains=-v6ops&states__type__slug__in=draft-iesg">
+                <a href="https://datatracker.ietf.org/api/v1/doc/document/?name__contains=-v6ops&amp;states__type__slug__in=draft-iesg">
                     v6ops documents which match <code>states__type__slug__in=draft-iesg</code>
                 </a>
             </li>
@@ -127,22 +127,22 @@
                 You could either fetch and remember the different state groups of interest to you
                 with queries like
                 <pre>
-$ curl 'https://datatracker.ietf.org/api/v1/doc/state/?format=json&limit=0&type__slug__in=draft-rfceditor'
-$ curl 'https://datatracker.ietf.org/api/v1/doc/state/?format=json&limit=0&type__slug__in=draft-iesg'
-$ curl 'https://datatracker.ietf.org/api/v1/doc/state/?format=json&limit=0&type__slug__in=draft-stream-ietf'
+$ curl 'https://datatracker.ietf.org/api/v1/doc/state/?format=json&amp;limit=0&amp;type__slug__in=draft-rfceditor'
+$ curl 'https://datatracker.ietf.org/api/v1/doc/state/?format=json&amp;limit=0&amp;type__slug__in=draft-iesg'
+$ curl 'https://datatracker.ietf.org/api/v1/doc/state/?format=json&amp;limit=0&amp;type__slug__in=draft-stream-ietf'
                 </pre>
                 and then match the listed "resource_uri" of the results to the states listed for each
                 document when you ask for
                 <pre>
-$ curl 'https://datatracker.ietf.org/api/v1/doc/document/?limit=0&name__contains=-v6ops-'
+$ curl 'https://datatracker.ietf.org/api/v1/doc/document/?limit=0&amp;name__contains=-v6ops-'
                 </pre>
             </li>
             <li>
                 Or alternatively you could do a series of queries asking for matches to the RFC Editor
                 state first, then the IESG state, then the Stream state, and exclude earlier hits:
                 <pre>
-$ curl 'https://datatracker.ietf.org/api/v1/doc/document/?limit=0&name__contains=-v6ops-&states__type__slug__in=draft-rfceditor' ...
-$ curl 'https://datatracker.ietf.org/api/v1/doc/document/?limit=0&name__contains=-v6ops-&states__type__slug__in=draft-iesg' ...
+$ curl 'https://datatracker.ietf.org/api/v1/doc/document/?limit=0&amp;name__contains=-v6ops-&amp;states__type__slug__in=draft-rfceditor' ...
+$ curl 'https://datatracker.ietf.org/api/v1/doc/document/?limit=0&amp;name__contains=-v6ops-&amp;states__type__slug__in=draft-iesg' ...
                 </pre>
                 etc.
             </li>

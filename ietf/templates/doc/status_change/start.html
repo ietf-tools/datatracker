@@ -23,7 +23,7 @@
                 class="btn btn-primary"
                 name="submit_response"
                 value="Submit">Submit</button>
-        <a class="btn btn-secondary float-end" href="{{ back_url }}">Back</a>
+        <a class="btn btn-secondary float-end" href="{% url 'ietf.doc.views_status_change.rfc_status_changes' %}">Back</a>
     </form>
 {% endblock %}
 {% block js %}

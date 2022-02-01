@@ -10,7 +10,7 @@
     <form name="review-suggested-replaces" role="form" method="post">
         {% csrf_token %}
         {% bootstrap_form form %}
-        <a class="btn btn-secondary float-end" href="{{ doc.get_absolute_url }}">Cancel</a>
+        <a class="btn btn-secondary float-end" href="{{ doc.get_absolute_url }}">Back</a>
         <button type="submit" value="Save" class="btn btn-primary">Save</button>
     </form>
 {% endblock %}

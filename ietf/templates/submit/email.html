@@ -15,7 +15,7 @@
         <br>
         <small class="text-muted">{{ submission.name }}</small>
     </h1>
-    <form method="post" class="show-required" class="my-3">
+    <form method="post" class="show-required my-3">
         {% csrf_token %}
         {% bootstrap_form form %}
         <button type="submit" class="btn btn-primary">Send email</button>

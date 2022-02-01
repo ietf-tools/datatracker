@@ -17,7 +17,7 @@
             </a>
         </div>
     {% endif %}
-    <h2 class="mt-5" id="closed-review-requests">Unassigned and open review requests and assignments</h2>
+    <h2 class="mt-5" id="unassigned-and-open-review-requests">Unassigned and open review requests and assignments</h2>
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
@@ -33,7 +33,7 @@
         {% if unassigned_review_requests %}
             <thead>
                 <tr class="table-info" id="unassigned-review-requests">
-                    <th colspan=7>Unassigned review requests</th>
+                    <th colspan="7">Unassigned review requests</th>
                 </tr>
             </thead>
             <tbody>
@@ -84,7 +84,7 @@
             {% if open_review_assignments %}
                 <thead>
                     <tr class="table-info" id="open_review_assignments">
-                        <th colspan=7>Open review requests</th>
+                        <th colspan="7">Open review requests</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -166,7 +166,7 @@
             {% if closed_review_requests %}
                 <thead>
                     <tr class="table-info">
-                        <th colspan=8>
+                        <th colspan="8">
                             Closed review requests
                         </th>
                     </tr>
@@ -206,7 +206,7 @@
             {% if closed_review_assignments %}
                 <thead>
                     <tr class="table-info">
-                        <th colspan=8>
+                        <th colspan="8">
                             Closed review assignments
                         </th>
                     </tr>
@@ -244,8 +244,8 @@
                         </tr>
                     {% endfor %}
                 </tbody>
-            </table>
-        {% endif %}
+            {% endif %}
+        </table>
     {% endblock %}
     {% block js %}
         <script src="{% static "ietf/js/list.js" %}">

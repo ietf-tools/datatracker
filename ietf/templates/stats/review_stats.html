@@ -139,6 +139,7 @@
         <h2>Completion status and completion time</h2>
         <table class="review-stats table table-sm table-striped tablesorter">
             <thead>
+                <tr>
                 <th data-sort="{{ level }}">
                     {% if level == "team" %}
                         Team
@@ -167,13 +168,13 @@
                     Avg. compl. days
                     {% if count == "pages" %}/page{% endif %}
                 </th>
+                </tr>
             </thead>
             {% for row in data %}
-                {% if forloop.first %}
                     <tbody>
-                    {% elif forloop.last %}
-                    </tbody>
-                    <tfoot>
+                    {% if forloop.last %}
+                        </tbody>
+                        <tfoot>
                     {% endif %}
                     <tr>
                         <td>{{ row.obj }}</td>
@@ -193,7 +194,7 @@
                         </td>
                     </tr>
                 {% endfor %}
-                </foot>
+                </tfoot>
             </table>
         {% elif stats_type == "results" %}
             <h2>
@@ -201,6 +202,7 @@
             </h2>
             <table class="review-stats table table-sm table-striped tablesorter">
                 <thead>
+                    <tr>
                     <th data-sort="{{ level }}">
                         {% if level == "team" %}
                             Team
@@ -213,13 +215,13 @@
                             {{ r.name }}
                         </th>
                     {% endfor %}
+                    </tr>
                 </thead>
                 {% for row in data %}
-                    {% if forloop.first %}
                         <tbody>
-                        {% elif forloop.last %}
-                        </tbody>
-                        <tfoot>
+                        {% if forloop.last %}
+                            </tbody>
+                            <tfoot>
                         {% endif %}
                         <tr>
                             <td>
@@ -240,6 +242,7 @@
             </h2>
             <table class="review-stats table table-sm table-striped tablesorter">
                 <thead>
+                    <tr>
                     <th data-sort="{{ level }}">
                         {% if level == "team" %}
                             Team
@@ -252,13 +255,13 @@
                             {{ s.name }}
                         </th>
                     {% endfor %}
+                    </tr>
                 </thead>
                 {% for row in data %}
-                    {% if forloop.first %}
-                        <tbody>
-                        {% elif forloop.last %}
-                        </tbody>
-                        <tfoot>
+                    <tbody>
+                        {% if forloop.last %}
+                            </tbody>
+                            <tfoot>
                         {% endif %}
                         <tr>
                             <td>

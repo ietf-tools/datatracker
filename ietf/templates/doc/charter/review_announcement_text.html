@@ -16,21 +16,18 @@
         {% csrf_token %}
         {% bootstrap_form announcement_text_form %}
         <button type="submit" class="btn btn-primary" name="save_text" value="Save">Submit</button>
-        <button type="submit" class="btn btn-warning" name="regenerate_text" value="Regenerate"">Regenerate
+        <button type="submit" class="btn btn-warning" name="regenerate_text" value="Regenerate">Regenerate
         </button>
         {% if user|has_role:"Secretariat" %}
             <input type="submit"
-                   type="submit"
                    class="btn btn-primary"
                    name="send_annc_only"
                    value="Send only to IETF-Announce"/>
             <input type="submit"
-                   type="submit"
                    class="btn btn-primary"
                    name="send_nw_only"
                    value="Send only to New-Work"/>
             <input type="submit"
-                   type="submit"
                    class="btn btn-primary"
                    name="send_both"
                    value="Send to both"/>

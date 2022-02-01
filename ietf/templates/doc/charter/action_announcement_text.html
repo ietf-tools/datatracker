@@ -18,7 +18,7 @@
         {% csrf_token %}
         {% bootstrap_form announcement_text_form %}
         <button type="submit" class="btn btn-primary" name="save_text" value="Save">Submit</button>
-        <button type="submit" class="btn btn-warning" name="regenerate_text" value="Regenerate"">Regenerate
+        <button type="submit" class="btn btn-warning" name="regenerate_text" value="Regenerate">Regenerate
         </button>
         {% if user|has_role:"Secretariat" %}
             <a type="submit"

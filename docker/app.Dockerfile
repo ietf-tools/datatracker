@@ -38,6 +38,7 @@ RUN apt-get install -qy \
 	less \
 	libmagic-dev \
 	libmariadb-dev \
+	libtidy-dev \
 	locales \
 	mariadb-client \
     netcat \

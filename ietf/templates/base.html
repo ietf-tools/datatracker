@@ -79,7 +79,7 @@
         <div class="pt-3 container-fluid">
             <div class="row">
                 {% if request.COOKIES.left_menu == "on" and not hide_menu %}
-                    <div class="col-1 d-none d-md-block border-end lh-sm leftmenu small">
+                    <div class="col-1 d-none d-md-block bg-light py-3 lh-sm leftmenu small">
                         <ul class="nav nav-pills flex-column">
                             {% include "base/menu.html" with flavor="left" %}
                         </ul>

@@ -3,9 +3,6 @@
 {% load origin %}
 {% origin %}
 {% load ietf_filters static %}
-{% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
-{% endblock %}
 {% if not docs %}
     {% if not skip_no_matches_warning %}<div class="alert alert-info my-3">No documents match your query.</div>{% endif %}
 {% endif %}
@@ -63,6 +60,3 @@
     </tbody>
 {% endfor %}
 {% if end_table %}</table>{% endif %}
-{% block js %}
-    <script src="{% static "ietf/js/list.js" %}"></script>
-{% endblock %}

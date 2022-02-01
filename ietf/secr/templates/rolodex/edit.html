@@ -29,6 +29,7 @@
                     <table id="rolodex-email-table" class="full-width">
                         <thead>
                             <tr>
+                                <th></th>
                                 {% for field in email_formset.forms.0 %}
                                     {% if not field.is_hidden %}
                                         <th>{{ field.label }}</th>
@@ -40,10 +41,12 @@
                             {% for form in email_formset.forms %}
                                 {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
                                 <tr class="{% cycle 'row1' 'row2' %}">
+                                    <td>
                                     {# Include the hidden fields in the form #}
                                     {% for hidden in form.hidden_fields %}
                                         {{ hidden }}
                                     {% endfor %}
+                                    </td>
                                     {% for field in form.visible_fields %}
                                         <td>
                                             {{ field.errors }}
@@ -59,8 +62,8 @@
 
             {% include "includes/buttons_save_cancel.html" %}
 
-        </form>
+        </div> <!-- module -->
+    </form>
 
-    </div> <!-- module -->
 
 {% endblock %}

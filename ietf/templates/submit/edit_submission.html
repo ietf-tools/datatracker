@@ -57,7 +57,7 @@
             <th>Group</th>
             <td>
                 {{ submission.group|default:"Individual Submission" }}
-                {% if submission.group %}<a href="{{ doc.group.about_url }}">({{ submission.group.acronym|upper }})</a>{% endif %}
+                {% if submission.group %}<a href="{{ submission.group.about_url }}">({{ submission.group.acronym|upper }})</a>{% endif %}
                 {% if errors.group %}
                     <p class="mt-1 mb-0 text-danger">
                         <b>{{ errors.group }}</b> (Note: the Secretariat will be notified of this)
@@ -93,9 +93,7 @@
                type="submit"
                value="Submit for manual posting">
     </form>
-    <p>
-        {% include "submit/problem-reports-footer.html" %}
-    </p>
+    {% include "submit/problem-reports-footer.html" %}
 {% endblock %}
 {% block js %}
     {{ all_forms|merge_media:'js' }}<script src="{% static "ietf/js/draft-submit.js" %}"></script>

@@ -27,9 +27,9 @@
             {% if field.name == "discuss" %}<div id="div_id_discuss">{% endif %}
             {% bootstrap_field field %}
             {% if field.name == "discuss" and old_pos and old_pos.discuss_time %}
-                <div class="form-text">Last edited {{ old_pos.discuss_time }}</div>
+                <div class="form-text mt-n3 mb-3">Last edited {{ old_pos.discuss_time }}</div>
             {% elif field.name == "comment" and old_pos and old_pos.comment_time %}
-                <div class="form-text">Last edited {{ old_pos.comment_time }}</div>
+                <div class="form-text mt-n3 mb-3">Last edited {{ old_pos.comment_time }}</div>
             {% endif %}
             {% if field.name == "discuss" %}</div>{% endif %}
         {% endfor %}
@@ -73,7 +73,7 @@
             }
         }
 
-        $("input[name=position]").click(function () {
+        $("input[name=position]").on("click", function () {
             discussToggle($(this).val());
         });
 

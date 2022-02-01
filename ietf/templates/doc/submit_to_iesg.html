@@ -81,7 +81,6 @@
             indicates the document might not be ready for submission. Please check each instance carefully to see if changes need to be made to the document's state before submitting.
         </p>
     {% endif %}
-    <p>
         Upon submission:
         <ul>
             <li>the document will be placed into the IESG '{{ target_state.iesg }}' state</li>
@@ -91,7 +90,6 @@
             <li>an entry will be made noting the publication request in the document's history</li>
             <li>an email message will be sent to the working group chairs, the secretariat, and everyone listed above</li>
         </ul>
-    </p>
     <form method="post">
         {% csrf_token %}
         <input type="submit"

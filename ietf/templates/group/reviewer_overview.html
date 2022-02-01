@@ -62,7 +62,6 @@
                             {% person_link person %}
                             {% if person.settings_url %}
                                 <a href="{{ person.settings_url }}" class="btn btn-primary btn-small float-end"
-                                    }
                                     title="{{ person.settings.expertise }}">Edit
                                 </a>
                             {% endif %}
@@ -92,7 +91,7 @@
                                             </td>
                                             <td>
                                                 {% if assignment_to_closure_days != None %}
-                                                    {{ assignment_to_closure_days }}&nbsp;day{{ assignment_to_closure_days|pluralize }}
+                                                    {{ assignment_to_closure_days }} day{{ assignment_to_closure_days|pluralize }}
                                                 {% endif %}
                                             </td>
                                             <td>

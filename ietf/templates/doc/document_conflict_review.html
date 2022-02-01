@@ -139,7 +139,7 @@
                 {{ doc.name }}-{{ doc.rev }}
             </div>
             <div class="card-body">
-                <pre>   {{ content|sanitize|maybewordwrap|safe }}</pre>
+                {{ content|sanitize|maybewordwrap|safe }}
             </div>
         </div>
     {% endif %}

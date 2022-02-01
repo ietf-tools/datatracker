@@ -16,6 +16,8 @@ table .sort:hover {
 table .sort:after {
     white-space: nowrap;
     font-family: 'bootstrap-icons';
+    font-size: larger;
+    color: $secondary;
     content: '\f283'; // chevron-expand
     float: right;
     padding-right: .25em;

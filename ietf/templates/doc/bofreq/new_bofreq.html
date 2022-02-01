@@ -18,7 +18,7 @@
         {% csrf_token %}
         {% bootstrap_form form layout="horizontal" %}
         <button type="submit" class="btn btn-primary">Submit</button>
-        <a class="btn btn-secondary float-end" href="{{ doc.get_absolute_url }}">Cancel</a>
+        <a class="btn btn-secondary float-end" href="{% url "ietf.doc.views_bofreq.bof_requests" %}">Back</a>
     </form>
 {% endblock %}
 {% block js %}

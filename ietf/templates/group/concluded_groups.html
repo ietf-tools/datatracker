@@ -13,7 +13,7 @@
         Note that the information on historical groups may be inaccurate.
     </p>
     {% for label, groups in sections.items %}
-        <h2 class="mt-5" id="{{ label }}">{{ label }}</h2>
+        <h2 class="mt-5" id="{{ label|slugify }}">{{ label }}</h2>
         {% if label == "WGs" %}
         {% elif label == "RGs" %}
             <p class="alert alert-info my-3">
@@ -24,8 +24,8 @@
             </p>
         {% endif %}
         {% if not groups %}
-            <p>
-                <b>No groups found.</b>
+            <p class="alert alert-info my-3">
+                No groups found.
             </p>
         {% else %}
             {% regroup groups by parent as grouped_by_areas %}
