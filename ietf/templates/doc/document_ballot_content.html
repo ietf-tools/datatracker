@@ -49,22 +49,22 @@
         {% endif %}
         {% if doc.type_id == "draft" or doc.type_id == "conflrev" or doc.type_id == "statchg" %}
             {% if deferred %}
-                <p class="alert alert-danger">
+                <p class="alert alert-danger my-3">
                     Ballot deferred by {{ deferred.by }} on {{ deferred.time|date:"Y-m-d" }}.
                 </p>
             {% endif %}
         {% endif %}
         {% if not ballot_open %}
-            <p class="alert alert-warning">
+            <p class="alert alert-warning my-3">
                 <b>Note:</b> This ballot was opened for revision {{ ballot.rev }} and is now closed.
             </p>
         {% else %}
-            <p class="alert alert-info">
+            <p class="alert alert-info my-3">
                 <b>Summary:</b> {{ summary }}
             </p>
         {% endif %}
         {% if ballot.ballot_type.question %}
-            <p class="alert alert-secondary">
+            <p class="alert alert-secondary my-3">
                 <b>Ballot question:</b> "{{ ballot.ballot_type.question }}"
             </p>
         {% endif %}

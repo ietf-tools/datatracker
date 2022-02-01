@@ -9,14 +9,14 @@
 {% block content %}
     {% origin %}
     <h1>Concluded groups</h1>
-    <p class="alert alert-info">
+    <p class="alert alert-info my-3">
         Note that the information on historical groups may be inaccurate.
     </p>
     {% for label, groups in sections.items %}
         <h2 class="mt-5" id="{{ label }}">{{ label }}</h2>
         {% if label == "WGs" %}
         {% elif label == "RGs" %}
-            <p class="alert alert-info">
+            <p class="alert alert-info my-3">
                 The information below is incomplete and misses a few older RGs.
                 Please check the
                 <a href="https://irtf.org/groups">IRTF site</a>

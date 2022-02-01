@@ -10,7 +10,7 @@
 {% block search_header %}Search result on "{{ q }}"{% endblock %}
 {% block search_result %}
     {% if not docs %}
-        <p class="alert alert-info my-3">
+        <p class="alert alert-success my-3">
             No IPR disclosures related to a document with the words "{{ q }}"" in the title have been submitted.
         </p>
     {% else %}

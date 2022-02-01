@@ -9,5 +9,5 @@ class SeparateErrorsFromHelpTextFieldRenderer(django_bootstrap5.renderers.FieldR
         if self.field_help:
             html += '<div class="form-text">{}</div>'.format(self.field_help)
         for e in self.field_errors:
-            html += '<div class="alert alert-danger">{}</div>'.format(e)
+            html += '<div class="alert alert-danger my-3">{}</div>'.format(e)
         return html

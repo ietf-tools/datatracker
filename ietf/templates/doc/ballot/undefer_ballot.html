@@ -13,7 +13,7 @@
     </h1>
     <form class="undefer mt-3" method="post">
         {% csrf_token %}
-        <p class="alert alert-danger">
+        <p class="alert alert-danger my-3">
             <b>Undefer the ballot for {{ doc }}?</b>
             <br>
             The ballot will then be put on the IESG agenda of <b>{{ telechat_date }}</b>.

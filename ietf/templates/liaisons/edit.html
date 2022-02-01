@@ -26,10 +26,8 @@
         {% endif %}
     </h1>
     {% if form.errors %}
-        <div class="alert alert-danger">
-            <p>
+        <div class="alert alert-danger my-3">
                 There were errors in the submitted form -- see below. Please correct these and resubmit.
-            </p>
         </div>
     {% endif %}
     {% bootstrap_form_errors form %}

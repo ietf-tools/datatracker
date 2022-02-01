@@ -33,7 +33,7 @@
     {% endif %}
     {% block group_content %}
         {% if search_conducted and not liaisons %}
-            <div class="alert alert-info">No statements match your query.</div>
+            <div class="alert alert-info my-3">No statements match your query.</div>
         {% else %}
             {% include "liaisons/liaison_table.html" %}
         {% endif %}

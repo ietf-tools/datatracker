@@ -9,16 +9,16 @@
 {% block content %}
     {% origin %}
     <h1>References to {{ alias_name }}</h1>
-    <p class="mt-3 alert alert-info">
+    <p class="my-3 alert alert-info my-3">
         These dependencies are extracted using heuristics looking for strings with particular prefixes. Notably, this means that references to I-Ds by title only are not reflected here. If it's really important, please inspect the documents' references sections directly.
     </p>
     <p>
         Showing RFCs and active Internet-Drafts, sorted by
-        <a href="{% url 'ietf.doc.views_help.relationship_help' subset='reference' %}">reference type</a>
-        , then document name.
+        <a href="{% url 'ietf.doc.views_help.relationship_help' subset='reference' %}">reference type</a>,
+        then document name.
     </p>
     {% if numdocs %}
-        <div class="alert alert-warning">
+        <div class="alert alert-warning my-3">
             <p>
                 Showing only the first 250 of {{ numdocs }} documents.
             </p>

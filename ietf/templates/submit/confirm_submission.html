@@ -8,7 +8,7 @@
     <h2>Confirm submission of {{ submission.name }}</h2>
     {% if submission.state_id != "auth" and submission.state_id != "aut-appr" %}
         {% if submission.state_id == "posted" %}
-            <p class="alert alert-info my-3">
+            <p class="alert alert-warning my-3">
                 The submission has already been posted. See the
                 <a href="{% url "ietf.doc.views_doc.document_main" name=submission.name %}">draft here</a>.
             </p>

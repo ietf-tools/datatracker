@@ -5810,7 +5810,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 0)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "These slides have already been  rejected")
+        self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+rejected")
 
     def test_approve_proposed_slides(self):
         submission = SlideSubmissionFactory()
@@ -5834,7 +5834,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(session.sessionpresentation_set.first().document.title,'different title')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "These slides have already been  approved")
+        self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+approved")
 
     def test_approve_proposed_slides_multisession_apply_one(self):
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')

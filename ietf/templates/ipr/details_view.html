@@ -53,14 +53,14 @@
     </div>
     {% if not ipr.compliant %}
         {% if in_force_ipr_rfc == 'RFC 8179' %}
-            <p class="alert alert-danger">
+            <p class="alert alert-danger my-3">
                 This IPR disclosure does not comply with the formal requirements of Section 5,
                 "IPR Disclosures," of
                 <a href="https://www.rfc-editor.org/rfc/rfc8179.txt">RFC 8179</a>
                 , "Intellectual Property Rights in IETF Technology."
             </p>
         {% else %}
-            <p class="alert alert-danger">
+            <p class="alert alert-danger my-3">
                 This IPR disclosure does not comply with the formal requirements of Section 6,
                 "IPR Disclosures," of
                 <a href="https://www.rfc-editor.org/rfc/rfc3979.txt">RFC 3979</a>
@@ -143,7 +143,7 @@
         {% endif %}
     {% endif %}
     {% if user|has_role:"Secretariat" and ipr.update_notified_date %}
-        <div class="alert alert-info">
+        <div class="alert alert-info my-3">
             This update was notified to the submitter of the IPR that is being updated on: {{ ipr.update_notified_date|date:"Y-m-d" }}
         </div>
     {% endif %}

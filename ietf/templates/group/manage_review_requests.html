@@ -16,7 +16,7 @@
         <small class="text-muted">{{ group.acronym }}</small>
     </h1>
     {% if newly_closed > 0 or newly_opened > 0 or newly_assigned > 0 %}
-        <p class="my-3 alert alert-danger">
+        <p class="my-3 alert alert-danger my-3">
             Changes since last refresh:
             {% if newly_closed %}{{ newly_closed }} request{{ newly_closed|pluralize }} closed.{% endif %}
             {% if newly_opened %}{{ newly_opened }} request{{ newly_opened|pluralize }} opened.{% endif %}
@@ -153,7 +153,7 @@
                                 {{ r.doc.abstract|linkify|urlize_ietf_docs }}
                             </div>
                             {% if r.form.non_field_errors %}
-                                <div class="alert alert-danger">
+                                <div class="alert alert-danger my-3">
                                     {% for e in r.form.non_field_errors %}{{ e }}{% endfor %}
                                 </div>
                             {% endif %}
@@ -192,7 +192,7 @@
                                     Cancel
                                 </button>
                                 {% if r.form.reviewer.errors or r.form.add_skip.errors %}
-                                    <div class="alert alert-danger">
+                                    <div class="alert alert-danger my-3">
                                         {% for e in r.form.reviewer.errors %}{{ e }}{% endfor %}
                                         {% for e in r.form.add_skip.errors %}{{ e }}{% endfor %}
                                     </div>

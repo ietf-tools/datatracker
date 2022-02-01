@@ -6,14 +6,13 @@
 {% block content %}
     {% origin %}
     <h1>Duplicate RFC Editor Note</h1>
-    <p class="mt-3 alert alert-danger">
+    <p class="my-3 alert alert-danger">
         Sorry, there appears to be an RFC Editor Note in the ballot writeup and
         another one in the RFC Editor Note.  Please put all of the information for
         the RFC Editor in the RFC Editor Note.
     </p>
     <p>
         The document writeup can be edited
-        <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}writeup/">here</a>
-        .
+        <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}writeup/">here</a>.
     </p>
 {% endblock %}

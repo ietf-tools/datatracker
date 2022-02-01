@@ -77,7 +77,7 @@
     <form class="ipr-form form-horizontal show-required" method="post">
         {% csrf_token %}
         {% if form.errors %}
-            <div class="alert alert-danger">
+            <div class="alert alert-danger my-3">
                 <p>
                     There were errors in the submitted form -- see below.  Please correct these and resubmit.
                 </p>
@@ -137,7 +137,7 @@
                     <div class="col-md-6">
                         {{ draft_form.id }}
                         {{ draft_form.document }}
-                        {% if draft_form.document.errors %}<div class="alert alert-danger">{{ draft_form.document.errors }}</div>{% endif %}
+                        {% if draft_form.document.errors %}<div class="alert alert-danger my-3">{{ draft_form.document.errors }}</div>{% endif %}
                     </div>
                     <div class="col-md-2">
                         {% bootstrap_field draft_form.revisions class="form-control" placeholder="Revisions, e.g., 04-07" show_help=False show_label=False %}
@@ -222,7 +222,7 @@
             {% if form.submitter_claims_all_terms_disclosed %}
                 {% bootstrap_field form.submitter_claims_all_terms_disclosed layout='horizontal' %}
                 {% if form.instance|to_class_name == "GenericIprDisclosure" %}
-                    <p class="alert alert-info">
+                    <p class="alert alert-info my-3">
                         <strong>Note</strong>: According to
                         <a href="https://www.ietf.org/rfc/rfc8179.txt?">
                             RFC 8179

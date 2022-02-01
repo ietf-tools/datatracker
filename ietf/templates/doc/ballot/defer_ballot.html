@@ -13,7 +13,7 @@
     </h1>
     <form method="post">
         {% csrf_token %}
-        <p class="alert alert-danger">
+        <p class="alert alert-danger my-3">
             <b>Defer the ballot for
                 <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a>?
             </b>

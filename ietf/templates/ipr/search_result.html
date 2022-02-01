@@ -17,11 +17,11 @@
     </h2>
     {% block search_result %}
         {% if not iprs %}
-            <p class="alert alert-info">
+            <p class="alert alert-success my-3">
                 {% block search_failed %}No IPR disclosures have been submitted by "{{ q }}".{% endblock %}
             </p>
         {% else %}
-            <p class="alert alert-info">
+            <p class="alert alert-info my-3">
                 Total number of IPR disclosures found: <b>{{ iprs|length }}</b>.
             </p>
             <table class="table table-sm table-striped tablesorter">

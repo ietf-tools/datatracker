@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 {% if not docs %}
-    {% if not skip_no_matches_warning %}<div class="alert alert-info">No documents match your query.</div>{% endif %}
+    {% if not skip_no_matches_warning %}<div class="alert alert-info my-3">No documents match your query.</div>{% endif %}
 {% endif %}
 {% if meta.max %}
     <div class="alert alert-warning my-3">

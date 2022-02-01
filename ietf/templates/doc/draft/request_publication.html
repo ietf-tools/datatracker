@@ -19,12 +19,12 @@
         .
     </p>
     {% if not doc.intended_std_level %}
-        <p class="alert alert-warning">
+        <p class="alert alert-warning my-3">
             <b>Note:</b> Intended RFC status is not set for the document.
         </p>
     {% endif %}
     {% if doc.stream_id != "ise" and not consensus_filled_in %}
-        <p class="alert alert-warning">
+        <p class="alert alert-warning my-3">
             <b>Note:</b> Consensus status is not set for the document.
         </p>
     {% endif %}
