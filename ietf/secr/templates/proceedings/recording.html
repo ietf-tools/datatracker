@@ -56,32 +56,34 @@
                         <th>Edit</th>
                     </tr>
                 </thead>
-                <tbody>
+                {% if sessions %}
+                    <tbody>
 
-                    {% for session in sessions %}
-                        {% if session.recordings %}
-                            {% for recording in session.recordings %}
+                        {% for session in sessions %}
+                            {% if session.recordings %}
+                                {% for recording in session.recordings %}
+                                    <tr>
+                                        <td>{{ session.group.acronym }}</td>
+                                        <td>{{ session.official_timeslotassignment.timeslot.time|date:"m-d H:i" }}</td>
+                                        <td class="document-name" >{{ recording.name }}</td>
+                                        <td><a href="{{ recording.get_href }}">{{ recording.get_href }}</a></td>
+                                        <td><a href="{% url 'ietf.secr.proceedings.views.recording_edit' meeting_num=meeting.number name=recording.name %}">Edit</a></td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
                                 <tr>
                                     <td>{{ session.group.acronym }}</td>
                                     <td>{{ session.official_timeslotassignment.timeslot.time|date:"m-d H:i" }}</td>
-                                    <td class="document-name" >{{ recording.name }}</td>
-                                    <td><a href="{{ recording.get_href }}">{{ recording.get_href }}</a></td>
-                                    <td><a href="{% url 'ietf.secr.proceedings.views.recording_edit' meeting_num=meeting.number name=recording.name %}">Edit</a></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
                                 </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td>{{ session.group.acronym }}</td>
-                                <td>{{ session.official_timeslotassignment.timeslot.time|date:"m-d H:i" }}</td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                            </tr>
-                        {% endif %}
+                            {% endif %}
 
-                    {% endfor %}
+                        {% endfor %}
 
-                </tbody>
+                    </tbody>
+                {% endif %}
             </table>
         </div> <!-- inline-group -->
 
@@ -94,13 +96,15 @@
                             <th>Filename</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for file in unmatched_recordings %}
-                            <tr>
-                                <td>{{ file }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
+                    {% if unmatched_recordings %}
+                        <tbody>
+                            {% for file in unmatched_recordings %}
+                                <tr>
+                                    <td>{{ file }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    {% endif %}
                 </table>
             </div> <!-- inline-group -->
         {% endif %}

@@ -24,10 +24,7 @@
             <div class="tab-pane {% if forloop.first %}active{% endif %}"
                  id="{{ ft.ft.slug }}">
                 {% for feedback in ft.feedback %}
-                    {% if forloop.first %}
-                        <p>
-                        </p>
-                    {% else %}
+                    {% if not forloop.first %}
                         <hr>
                     {% endif %}
                     <dl class="row">

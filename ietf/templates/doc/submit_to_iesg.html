@@ -67,8 +67,7 @@
                         (None)
                     {% else %}
                         {% for tag in tags %}
-                            {{ tag }}
-                            {% if not forloop.last %},{% endif %}
+                            {{ tag }}{% if not forloop.last %},{% endif %}
                         {% endfor %}
                     {% endif %}
                 </td>

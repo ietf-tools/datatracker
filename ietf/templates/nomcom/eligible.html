@@ -13,31 +13,35 @@
     <h2>Eligible People for {{ nomcom.group }}</h2>
     <table class="table table-sm table-striped tablesorter">
         <thead>
-            <th></th>
-            <th data-sort="last">Last name</th>
-            <th data-sort="first">First name</th>
-            <th data-sort="plain">Plain name</th>
-            <th data-sort="page">Profile page</th>
-            <th data-sort="email">Email addresses</th>
+            <tr>
+                <th></th>
+                <th data-sort="last">Last name</th>
+                <th data-sort="first">First name</th>
+                <th data-sort="plain">Plain name</th>
+                <th data-sort="page">Profile page</th>
+                <th data-sort="email">Email addresses</th>
+            </tr>
         </thead>
-        <tbody>
-            {% for p in eligible_persons %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ p.last_name }}</td>
-                    <td>{{ p.first_name }}</td>
-                    <td>{{ p.ascii_name }}</td>
-                    <td>{% person_link p %}</td>
-                    <td>
-                        {% for e in p.email_set.all %}
-                            {{ e.address|linkify }}
-                            {% if not forloop.last %},{% endif %}
-                        {% endfor %}
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
+        {% if eligible_persons %}
+            <tbody>
+                {% for p in eligible_persons %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ p.last_name }}</td>
+                        <td>{{ p.first_name }}</td>
+                        <td>{{ p.ascii_name }}</td>
+                        <td>{% person_link p %}</td>
+                        <td>
+                            {% for e in p.email_set.all %}
+                                {{ e.address|linkify }}{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        {% endif %}
     </table>
+}
 {% endblock %}
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>

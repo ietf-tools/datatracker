@@ -13,7 +13,7 @@
     {% if can_add_comment %}
         <a class="btn btn-primary"
            href="{% url 'ietf.group.views.add_comment' acronym=group.acronym %}">
-            <span class="bi bi-plus"></span>
+            <i class="bi bi-plus"></i>
             Add comment
         </a>
     {% endif %}
@@ -25,15 +25,17 @@
                 <th data-sort="action">Action</th>
             </tr>
         </thead>
-        <tbody>
-            {% for e in events %}
-                <tr>
-                    <td class="text-nowrap">{{ e.time|date:"Y-m-d" }}</td>
-                    <td class="text-nowrap">{% person_link e.by %}</td>
-                    <td>{{ e.desc|format_history_text }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
+        {% if events %}
+            <tbody>
+                {% for e in events %}
+                    <tr>
+                        <td class="text-nowrap">{{ e.time|date:"Y-m-d" }}</td>
+                        <td class="text-nowrap">{% person_link e.by %}</td>
+                        <td>{{ e.desc|format_history_text }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        {% endif %}
     </table>
 {% endblock %}
 {% block js %}

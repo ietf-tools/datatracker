@@ -33,7 +33,7 @@
                 <thead>
                     <tr>
                         <th>
-                            <span class="bi bi-check"></span>
+                            <i class="bi bi-check"></i>
                         </th>
                         <th data-sort="nominee">Nominee</th>
                         <th data-sort="positions">Positions</th>
@@ -43,9 +43,8 @@
                     {% for nominee in nominees %}
                         <tr>
                             <td>
-                                <input class="batch-select"
-                                       type="checkbox"
-                                       class="form-check-input"
+                                <input type="checkbox"
+                                       class="batch-select form-check-input"
                                        value="{{ nominee.id }}"
                                        name="selected"
                                        checked="checked">

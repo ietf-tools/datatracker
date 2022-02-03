@@ -50,20 +50,22 @@
                 <th data-sort="title">Title</th>
             </tr>
         </thead>
-        <tbody>
-            {% for rfc in rfcs %}
-                <tr>
-                    <td class="text-nowrap">
-                        <a href="{{ rfc.doc.get_absolute_url }}">{{ rfc.doc.canonical_name|rfcspace|upper }}</a>
-                    </td>
-                    <td class="text-nowrap">{{ rfc.doc.intended_std_level.name }}</td>
-                    <td>
-                        <a href="{{ rfc.doc.group.about_url }}">{{ rfc.doc.group.acronym }}</a>
-                    </td>
-                    <td class="text-nowrap">{{ rfc.time|date:"F Y" }}</td>
-                    <td>{{ rfc.doc.title }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
+        {% if rfcs %}
+            <tbody>
+                {% for rfc in rfcs %}
+                    <tr>
+                        <td class="text-nowrap">
+                            <a href="{{ rfc.doc.get_absolute_url }}">{{ rfc.doc.canonical_name|rfcspace|upper }}</a>
+                        </td>
+                        <td class="text-nowrap">{{ rfc.doc.intended_std_level.name }}</td>
+                        <td>
+                            <a href="{{ rfc.doc.group.about_url }}">{{ rfc.doc.group.acronym }}</a>
+                        </td>
+                        <td class="text-nowrap">{{ rfc.time|date:"F Y" }}</td>
+                        <td>{{ rfc.doc.title }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        {% endif %}
     </table>
 {% endblock %}

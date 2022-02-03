@@ -171,9 +171,9 @@
                 </tr>
             </thead>
             {% for row in data %}
-                    <tbody>
+                    {% if forloop.revcounter != 1 %}<tbody>{% endif %}
                     {% if forloop.last %}
-                        </tbody>
+                        {% if forloop.revcounter != 1 %}</tbody>{% endif %}
                         <tfoot>
                     {% endif %}
                     <tr>
@@ -218,9 +218,9 @@
                     </tr>
                 </thead>
                 {% for row in data %}
-                        <tbody>
+                        {% if forloop.revcounter != 1 %}<tbody>{% endif %}
                         {% if forloop.last %}
-                            </tbody>
+                            {% if forloop.revcounter != 1 %}</tbody>{% endif %}
                             <tfoot>
                         {% endif %}
                         <tr>
@@ -258,9 +258,9 @@
                     </tr>
                 </thead>
                 {% for row in data %}
-                    <tbody>
+                    {% if forloop.revcounter != 1 %}<tbody>{% endif %}
                         {% if forloop.last %}
-                            </tbody>
+                            {% if forloop.revcounter != 1 %}</tbody>{% endif %}
                             <tfoot>
                         {% endif %}
                         <tr>

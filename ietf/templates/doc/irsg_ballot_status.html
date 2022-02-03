@@ -18,14 +18,16 @@
                 <th data-sort="status">Status</th>
             </tr>
         </thead>
-        <tbody>
-            {% for doc in docs %}
-                <tr>
-                    <td>{{ doc.displayname_with_link }}</td>
-                    {% include "doc/search/status_columns.html" %}
-                </tr>
-            {% endfor %}
-        </tbody>
+        {% if docs %}
+            <tbody>
+                {% for doc in docs %}
+                    <tr>
+                        <td>{{ doc.displayname_with_link }}</td>
+                        {% include "doc/search/status_columns.html" %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        {% endif %}
     </table>
 {% endblock %}
 {% block js %}

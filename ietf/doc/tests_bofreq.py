@@ -8,7 +8,7 @@ from pathlib import Path
 from pyquery import PyQuery
 from random import randint
 from tempfile import NamedTemporaryFile
-from html import escape
+from html import escape, unescape
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
@@ -191,7 +191,7 @@ This test section has some text.
             self.client.login(username=username,password=username+'+password')
             r = self.client.get(url)
             self.assertEqual(r.status_code,200)
-            unescaped = unicontent(r).encode('utf-8').decode('unicode-escape')
+            unescaped = unescape(unicontent(r).encode('utf-8').decode('unicode-escape'))
             for editor in previous_editors:
                 self.assertIn(editor.name,unescaped)
             new_editors = set(previous_editors)
@@ -231,9 +231,9 @@ This test section has some text.
             self.client.login(username=username,password=username+'+password')
             r = self.client.get(url)
             self.assertEqual(r.status_code,200)
-            unescaped = unicontent(r).encode('utf-8').decode('unicode-escape')
+            unescaped = unescape(unicontent(r).encode('utf-8').decode('unicode-escape'))
             for responsible in previous_responsible: 
-                self.assertIn(escape(responsible.name), unescaped)
+                self.assertIn(responsible.name, unescaped)
             new_responsible = set(previous_responsible)
             new_responsible.add(RoleFactory(group__type_id='area',name_id='ad').person)
             postdict = dict(responsible=[str(p.pk) for p in new_responsible])

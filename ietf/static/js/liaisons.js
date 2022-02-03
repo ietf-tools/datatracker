@@ -101,7 +101,7 @@ var attachmentWidget = {
 
     initTriggers: function () {
         attachmentWidget.config.showOnDisplay.on('click', 'a.removeAttach', attachmentWidget.removeAttachment);
-        attachmentWidget.button.click(attachmentWidget.doAttach);
+        attachmentWidget.button.on("click", attachmentWidget.doAttach);
     },
 
     initFileInput: function () {
@@ -121,8 +121,8 @@ var attachmentWidget = {
             fieldids.push('#' + newfield.attr('id'));
         });
         attachmentWidget.config.fields = $(fieldids.join(","));
-        attachmentWidget.config.fields.change(attachmentWidget.setState);
-        attachmentWidget.config.fields.keyup(attachmentWidget.setState);
+        attachmentWidget.config.fields.on("change", attachmentWidget.setState);
+        attachmentWidget.config.fields.on("keyup", attachmentWidget.setState);
     },
 
     initWidget: function () {
@@ -281,14 +281,10 @@ var liaisonForm = {
     init: function () {
         liaisonForm.form = $(this);
         liaisonForm.initVariables();
-        $('#id_from_groups')
-            .select2();
-        $('#id_to_groups')
-            .select2();
-        liaisonForm.to_groups.change(function () { liaisonForm.updateInfo(false, $(this)); });
-        liaisonForm.from_groups.change(function () { liaisonForm.updateInfo(false, $(this)); });
-        liaisonForm.purpose.change(liaisonForm.updatePurpose);
-        liaisonForm.form.submit(liaisonForm.checkSubmissionDate);
+        liaisonForm.to_groups.on("change", function () { liaisonForm.updateInfo(false, $(this)); });
+        liaisonForm.from_groups.on("change", function () { liaisonForm.updateInfo(false, $(this)); });
+        liaisonForm.purpose.on("change", liaisonForm.updatePurpose);
+        liaisonForm.form.on("submit", liaisonForm.checkSubmissionDate);
         $('.addAttachmentWidget')
             .each(attachmentWidget.initWidget);
 

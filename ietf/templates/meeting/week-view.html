@@ -3,12 +3,14 @@
 {% load origin %}
 {% origin %}
 {% load static %}
-{# FIXME: the weekview only renders correctly in quirks mode, i.e., not in HTML5 with "<!doctype html>" in the next line #}
-<html>
+{# FIXME-LARS: the weekview only renders correctly in quirks mode, i.e., not in HTML5 with "<!doctype html>" in the next line #}
+<!doctype html>
+<html lang="en">
     <head>
-        <meta charset="utf-8"/>
-        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <title>Weekview</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <script src="{% static 'ietf/js/agenda_filter.js' %}"></script>
         <script src="{% static 'ietf/js/moment.js' %}"></script>
         <script src="{% static 'ietf/js/moment-timezone-with-data-10-year-range.js' %}"></script>

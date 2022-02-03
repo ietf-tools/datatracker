@@ -31,7 +31,7 @@
                 var s = '<b>' + this.points[0].key + '</b>';
 
                 $.each(this.points, function () {
-                    s += '<br />' + chartConf.yAxis.title.text + ': ' + this.y;
+                    s += '<br>' + chartConf.yAxis.title.text + ': ' + this.y;
                 });
 
                 return s;
@@ -50,15 +50,17 @@
             <th class="text-end" data-sort="authors">Authors</th>
         </tr>
     </thead>
-    <tbody>
-        {% for country, percentage, count, names in table_data %}
-            <tr>
-                <td>{{ country|default:"(unknown)" }}</td>
-                <td class="text-end">{{ percentage|floatformat:2 }}%</td>
-                <td class="text-end">{% include "stats/includes/number_with_details_cell.html" %}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
+    {% if table_data %}
+        <tbody>
+            {% for country, percentage, count, names in table_data %}
+                <tr>
+                    <td>{{ country|default:"(unknown)" }}</td>
+                    <td class="text-end">{{ percentage|floatformat:2 }}%</td>
+                    <td class="text-end">{% include "stats/includes/number_with_details_cell.html" %}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    {% endif %}
 </table>
 <p>
     The statistics are based entirely on the author addresses provided
@@ -74,8 +76,7 @@
     EU (European Union) is not a country, but has been added for reference, as the sum of
     all current EU member countries:
     {% for c in eu_countries %}
-        {{ c.name }}
-        {% if not forloop.last %},{% endif %}
+        {{ c.name }}{% if not forloop.last %},{% endif %}
     {% endfor %}
     .
 </p>
@@ -103,26 +104,30 @@
                 <th data-sort="country">Country</th>
                 <th data-sort="alias">Alias</th>
             </thead>
-            {% for name, alias, country in alias_data %}
-                <tr>
-                    <td>
-                        {% if country and request.user.is_staff %}
-                            <a href="{% url "admin:name_countryname_change" country.pk %}">{{ name|default:"(unknown)" }}</a>
-                        {% else %}
-                            {{ name|default:"(unknown)" }}
-                        {% endif %}
-                    </td>
-                    <td>
-                        {{ alias }}
-                        {% if request.user.is_staff and name != "EU" %}
-                            <a class="float-end btn btn-primary btn-sm"
-                               href="{% url "admin:doc_documentauthor_changelist" %}?country={{ alias|urlencode }}">
-                                Matching authors
-                            </a>
-                        {% endif %}
-                    </td>
-                </tr>
-            {% endfor %}
+            {% if alias_data %}
+                <tbody>
+                {% for name, alias, country in alias_data %}
+                    <tr>
+                        <td>
+                            {% if country and request.user.is_staff %}
+                                <a href="{% url "admin:name_countryname_change" country.pk %}">{{ name|default:"(unknown)" }}</a>
+                            {% else %}
+                                {{ name|default:"(unknown)" }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ alias }}
+                            {% if request.user.is_staff and name != "EU" %}
+                                <a class="float-end btn btn-primary btn-sm"
+                                   href="{% url "admin:doc_documentauthor_changelist" %}?country={{ alias|urlencode }}">
+                                    Matching authors
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            {% endif %}
         </table>
     {% endif %}
 {% else %}

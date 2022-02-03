@@ -68,10 +68,8 @@
                         <div class="due handle col-md-2 col-form-label col-form-label-md">
                             {% if form.milestone.resolved %}
                                 <span class="badge bg-success">{{ form.milestone.resolved }}</span>
-                            {% else %}
-                                <b>
-                                    {% if group.uses_milestone_dates %}{{ form.milestone.due|date:"M Y" }}{% endif %}
-                                </b>
+                            {% elif group.uses_milestone_dates and form.milestone.due %}
+                                <b>{{ form.milestone.due|date:"M Y" }}</b>
                             {% endif %}
                         </div>
                         <div class="col-md-10 col-form-label col-form-label-md">

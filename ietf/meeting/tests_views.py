@@ -3941,7 +3941,7 @@ class EditScheduleListTests(TestCase):
         self.assertTrue(r.status_code, 200)
 
         q = PyQuery(r.content)
-        self.assertEqual(len(q(".schedule-diffs tr")), 3)
+        self.assertEqual(len(q(".schedule-diffs tr")), 3+1)
 
     def test_delete_schedule(self):
         url = urlreverse('ietf.meeting.views.delete_schedule',
@@ -5758,14 +5758,14 @@ class MaterialsTests(TestCase):
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code,200)
             q = PyQuery(r.content)
-            self.assertFalse(q('#uploadslides'))
-            self.assertFalse(q('#proposeslides'))
+            self.assertFalse(q('.uploadslides'))
+            self.assertFalse(q('.proposeslides'))
 
             self.client.login(username=newperson.user.username,password=newperson.user.username+"+password")
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code,200)
             q = PyQuery(r.content)
-            self.assertTrue(q('#proposeslides'))
+            self.assertTrue(q('.proposeslides'))
             self.client.logout()
 
             login_testing_unauthorized(self,newperson.user.username,propose_url)
@@ -5783,7 +5783,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertEqual(len(q('#proposedslidelist p')), 1)
+            self.assertEqual(len(q('.proposedslidelist p')), 1)
 
             SlideSubmissionFactory(session = session)
 
@@ -5792,7 +5792,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertEqual(len(q('#proposedslidelist p')), 2)
+            self.assertEqual(len(q('.proposedslidelist p')), 2)
             self.client.logout()
 
     def test_disapprove_proposed_slides(self):

@@ -21,10 +21,11 @@
         </p>
         <p>
             To generate the keypair:
-            <ol>
-                <li>
-                    Create a config file for openssl, named <code>nomcom-config.cnf</code>, with the following contents:
-                    <pre class="border p-3 my-3">[ req ]
+        </p>
+        <ol>
+            <li>
+                Create a config file for openssl, named <code>nomcom-config.cnf</code>, with the following contents:
+                <pre class="border p-3 my-3">[ req ]
 distinguished_name = req_distinguished_name
 string_mask        = utf8only
 x509_extensions    = ss_v3_ca
@@ -40,15 +41,14 @@ keyUsage = critical, digitalSignature, keyEncipherment, dataEncipherment
 basicConstraints = critical, CA:true
 subjectAltName = email:nomcom{{year}}@ietf.org
 extendedKeyUsage= emailProtection</pre>
-                </li>
-                <li>
-                    Generate a private key and corresponding certificate:<br>
-                    <code>openssl req -config nomcom-config.cnf -x509 -new -newkey rsa:2048 -sha256 -days 730 -nodes -keyout privateKey-nomcom{{year}}.pem -out nomcom{{year}}.cert</code>
-                    <br>
-                    (Just press <kbd>Enter</kbd> when presented with <code>Common Name (e.g. NomComYY) [NomCom15]:</code>)
-                </li>
-            </ol>
-        </p>
+            </li>
+            <li>
+                Generate a private key and corresponding certificate:<br>
+                <code>openssl req -config nomcom-config.cnf -x509 -new -newkey rsa:2048 -sha256 -days 730 -nodes -keyout privateKey-nomcom{{year}}.pem -out nomcom{{year}}.cert</code>
+                <br>
+                (Just press <kbd>Enter</kbd> when presented with <code>Common Name (e.g. NomComYY) [NomCom15]:</code>)
+            </li>
+        </ol>
         <p>
             You will upload the certificate to the datatracker (and make it available to people wishing to send mail) in the steps below.
         </p>

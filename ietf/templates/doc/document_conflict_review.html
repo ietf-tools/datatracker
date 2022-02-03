@@ -139,7 +139,7 @@
                 {{ doc.name }}-{{ doc.rev }}
             </div>
             <div class="card-body">
-                {{ content|sanitize|maybewordwrap|safe }}
+                <pre>{{ content|maybewordwrap|linkify|urlize_ietf_docs }}</pre>
             </div>
         </div>
     {% endif %}

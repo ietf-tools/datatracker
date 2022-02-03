@@ -37,7 +37,7 @@
         {% endif %}
         {% if method == 'post' %}
             <a class="btn btn-primary"
-               href="{% url 'ietf.person.views.merge' %}?source={{ target.pk }}&target={{ source.pk }}"
+               href="{% url 'ietf.person.views.merge' %}?source={{ target.pk }}&amp;target={{ source.pk }}"
                role="button">
                 Swap
             </a>

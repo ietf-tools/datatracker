@@ -30,7 +30,7 @@
                     <td>{{ group.name }}</td>
                     <td class="text-center">
                         {% if group.type_id == 'review' %}
-                            <span class="bi bi-check-lg text-success"></span>
+                            <i class="bi bi-check-lg text-success"></i>
                             <span class="visually-hidden">yes</span>
                         {% endif %}
                     </td>
@@ -39,20 +39,17 @@
                     </td>
                     <td>
                         {% for ad in group.ads %}
-                            {% person_link ad.person %}
-                            {% if not forloop.last %},{% endif %}
+                            {% person_link ad.person %}{% if not forloop.last %},{% endif %}
                         {% endfor %}
                     </td>
                     <td>
                         {% for secretary in group.secretaries %}
-                            {% person_link secretary.person %}
-                            {% if not forloop.last %},{% endif %}
+                            {% person_link secretary.person %}{% if not forloop.last %},{% endif %}
                         {% endfor %}
                     </td>
                     <td>
                         {% for chair in group.chairs %}
-                            {% person_link chair.person %}
-                            {% if not forloop.last %},{% endif %}
+                            {% person_link chair.person %}{% if not forloop.last %},{% endif %}
                         {% endfor %}
                     </td>
                 </tr>

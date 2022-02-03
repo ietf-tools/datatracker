@@ -12,7 +12,7 @@
 {% block content %}
     {% origin %}
     {% include "ipr/search_form.html" %}
-    <h2>
+    <h2 class="mt-5">
         {% block search_header %}Patent owner/applicant search result{% endblock %}
     </h2>
     {% block search_result %}
@@ -26,9 +26,11 @@
             </p>
             <table class="table table-sm table-striped tablesorter">
                 <thead>
-                    <th data-sort="date">Date</th>
-                    <th data-sort="id">ID</th>
-                    <th data-sort="statement">Statement</th>
+                    <tr>
+                        <th data-sort="date">Date</th>
+                        <th data-sort="id">ID</th>
+                        <th data-sort="statement">Statement</th>
+                    </tr>
                 </thead>
                 {% block iprlist %}
                     {% for ipr in iprs %}
@@ -53,8 +55,7 @@
                                                 is related to
                                                 {% for item in iprdocrels %}
                                                     {% if forloop.last and forloop.counter > 1 %}and{% endif %}
-                                                    {{ item.formatted_name|urlize_ietf_docs }} ("{{ item.document.document.title }}")
-                                                    {% if not forloop.last and forloop.counter > 1 %},{% endif %}
+                                                    {{ item.formatted_name|urlize_ietf_docs }} ("{{ item.document.document.title }}"){% if not forloop.last and forloop.counter > 1 %},{% endif %}
                                                 {% endfor %}
                                             {% endif %}
                                         {% endwith %}

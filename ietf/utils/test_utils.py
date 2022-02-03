@@ -165,7 +165,11 @@ class VerifyingClient(Client):
             "text/html"
         ):
             document, errors = tidy_document(
-                r.content, options={"drop-empty-elements": False}
+                r.content,
+                options={
+                    # FIXME-LARS: this is causing way too many generic warnings:
+                    # "accessibility-check": 1,
+                },
             )
 
             errors = "\n".join(
@@ -173,10 +177,16 @@ class VerifyingClient(Client):
                     e
                     for e in errors.splitlines()
                     # FIXME-LARS: django-bootstrap5 incorrectly sets a "required"
-                    # proprietray attribute on some DIVs; remove those errors
+                    # proprietray attribute on some <div>s; remove those errors
                     if not re.match(r'.*proprietary attribute "required"', e)
                     # FIXME-LARS: some secretariat templates have this issue, ignore
-                    and not re.match(r".*id and name attribute value mismatch", e)
+                    and not re.match(
+                        r".*id and name attribute value mismatch", e
+                    )
+                    # FIXME-LARS: bootstrap-icons and close buttons render as empty, remove those errors.
+                    # Also, django seems to generate some empty tags, so remove those, too.
+                    and not re.match(
+                        r".*trimming empty <(i|em|button|span|optgroup)>", e)
                 ]
             )
 

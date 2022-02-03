@@ -92,7 +92,7 @@ class PersonTests(TestCase):
         #debug.show('person.photo_name()')
         self.assertContains(r, person.photo_name(), status_code=200)
         q = PyQuery(r.content)
-        self.assertIn("Photo of %s"%person, q("div.bio-text img").attr("alt"))
+        self.assertIn("Photo of %s"%person.name, q("div.bio-text img").attr("alt"))
 
         bio_text  = q("div.bio-text").text()
         self.assertIsNotNone(bio_text)

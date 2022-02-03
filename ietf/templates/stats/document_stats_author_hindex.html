@@ -36,7 +36,7 @@
                 var s = '<b>' + ' h-index ' + this.x + '</b>';
 
                 $.each(this.points, function () {
-                    s += '<br />' + chartConf.yAxis.title.text + ': ' + this.y.toFixed(1) + '%';
+                    s += '<br>' + chartConf.yAxis.title.text + ': ' + this.y.toFixed(1) + '%';
                 });
 
                 return s;
@@ -55,15 +55,17 @@
             <th data-sort="Authors">Authors</th>
         </tr>
     </thead>
-    <tbody>
-        {% for h_index, percentage, count, names in table_data %}
-            <tr>
-                <td>{{ h_index }}</td>
-                <td>{{ percentage|floatformat:2 }}%</td>
-                <td>{% include "stats/includes/number_with_details_cell.html" with content_limit=25 %}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
+    {% if table_data %}
+        <tbody>
+            {% for h_index, percentage, count, names in table_data %}
+                <tr>
+                    <td>{{ h_index }}</td>
+                    <td>{{ percentage|floatformat:2 }}%</td>
+                    <td>{% include "stats/includes/number_with_details_cell.html" with content_limit=25 %}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    {% endif %}
 </table>
 <p>
     Hirsch index or h-index is a

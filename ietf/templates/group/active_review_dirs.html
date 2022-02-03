@@ -32,20 +32,17 @@
                     </td>
                     <td>
                         {% for ad in group.ads %}
-                            {% person_link ad.person %}
-                            {% if not forloop.last %},{% endif %}
+                            {% person_link ad.person %}{% if not forloop.last %},{% endif %}
                         {% endfor %}
                     </td>
                     <td>
                         {% for secretary in group.secretaries %}
-                            {% person_link secretary.person %}
-                            {% if not forloop.last %},{% endif %}
+                            {% person_link secretary.person %}{% if not forloop.last %},{% endif %}
                         {% endfor %}
                     </td>
                     <td>
                         {% for chair in group.chairs %}
-                            {% person_link chair.person %}
-                            {% if not forloop.last %},{% endif %}
+                            {% person_link chair.person %}{% if not forloop.last %},{% endif %}
                         {% endfor %}
                     </td>
                 </tr>

@@ -49,8 +49,10 @@
             {{ area.name }}
             <a href="{% url 'ietf.group.views.active_groups' group_type='wg' %}#{{ area.acronym }}">({{ area.acronym|upper }})</a>
         </h2>
-        <p>
-            {{ area.description|linkify|urlize_ietf_docs|safe }}
-        </p>
+        {% if area.description %}
+            <p>
+                {{ area.description|linkify|urlize_ietf_docs|safe }}
+            </p>
+        {% endif %}
     {% endfor %}
 {% endblock %}

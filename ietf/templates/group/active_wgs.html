@@ -74,8 +74,7 @@
                             <td>{{ group.name }}</td>
                             <td>
                                 {% for chair in group.chairs %}
-                                    {% role_person_link chair %}
-                                    {% if not forloop.last %},{% endif %}
+                                    {% role_person_link chair %}{% if not forloop.last %},{% endif %}
                                 {% endfor %}
                                 {% if group.ad_out_of_area %}
                                     (Assigned AD: {% role_person_link group.ad_role %})

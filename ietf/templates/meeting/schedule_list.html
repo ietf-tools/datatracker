@@ -39,67 +39,69 @@
                     <td></td>
                 </tr>
             </thead>
-            <tbody>
-                {% for schedule in schedules %}
-                    <tr>
-                        <td>
-                            <a href="{% url "ietf.meeting.views.edit_meeting_schedule" meeting.number schedule.owner_email schedule.name %}"
-                               title="Show regular sessions in agenda">
-                                {{ schedule.name }}
-                            </a>
-                        </td>
-                        <td>{% person_link schedule.owner %}</td>
-                        <td>
-                            {% if schedule.origin %}
-                                <a href="{% url "ietf.meeting.views.edit_meeting_schedule" meeting.number schedule.origin.owner_email schedule.origin.name %}">
-                                    {{ schedule.origin.name }}
+            {% if schedules %}
+                <tbody>
+                    {% for schedule in schedules %}
+                        <tr>
+                            <td>
+                                <a href="{% url "ietf.meeting.views.edit_meeting_schedule" meeting.number schedule.owner_email schedule.name %}"
+                                   title="Show regular sessions in agenda">
+                                    {{ schedule.name }}
                                 </a>
-                                <a href="{% url "ietf.meeting.views.diff_schedules" meeting.number %}?from_schedule={{ schedule.origin.name|urlencode }}&to_schedule={{ schedule.name|urlencode }}"
-                                   title="{{ schedule.changes_from_origin }} change{{ schedule.changes_from_origin|pluralize }} from {{ schedule.origin.name }}">
-                                    +{{ schedule.changes_from_origin }}
-                                </a>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if schedule.base %}
-                                <a href="{% url "ietf.meeting.views.edit_meeting_timeslots_and_misc_sessions" meeting.number schedule.base.owner_email schedule.base.name %}">
-                                    {{ schedule.base.name }}
-                                </a>
-                            {% endif %}
-                        </td>
-                        <td>{{ schedule.notes|linebreaksbr }}</td>
-                        <td>
-                            {% if schedule.visible %}
-                                <div class="badge bg-success">visible</div>
-                            {% else %}
-                                <div class="badge bg-warning">hidden</div>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if schedule.public %}
-                                <div class="badge bg-success">public</div>
-                            {% else %}
-                                <div class="badge bg-warning">private</div>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="btn-group btn-group-sm float-end" role="group">
-                                {% if schedule.can_edit_properties %}
-                                    <a class="btn btn-outline-primary edit-schedule-properties"
-                                       href="{% url "ietf.meeting.views.edit_schedule_properties" meeting.number schedule.owner_email schedule.name %}?next={{ request.get_full_path|urlencode }}">
-                                        <i title="Edit agenda properties" class="bi bi-pencil"></i>
+                            </td>
+                            <td>{% person_link schedule.owner %}</td>
+                            <td>
+                                {% if schedule.origin %}
+                                    <a href="{% url "ietf.meeting.views.edit_meeting_schedule" meeting.number schedule.origin.owner_email schedule.origin.name %}">
+                                        {{ schedule.origin.name }}
+                                    </a>
+                                    <a href="{% url "ietf.meeting.views.diff_schedules" meeting.number %}?from_schedule={{ schedule.origin.name|urlencode }}&to_schedule={{ schedule.name|urlencode }}"
+                                       title="{{ schedule.changes_from_origin }} change{{ schedule.changes_from_origin|pluralize }} from {{ schedule.origin.name }}">
+                                        +{{ schedule.changes_from_origin }}
                                     </a>
                                 {% endif %}
-                                <a class="btn btn-outline-primary"
-                                   href="{% url "ietf.meeting.views.edit_meeting_timeslots_and_misc_sessions" meeting.number schedule.owner_email schedule.name %}">
-                                    <i title="Show timeslots and misc. sessions for agenda"
-                                       class="bi bi-calendar"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
+                            </td>
+                            <td>
+                                {% if schedule.base %}
+                                    <a href="{% url "ietf.meeting.views.edit_meeting_timeslots_and_misc_sessions" meeting.number schedule.base.owner_email schedule.base.name %}">
+                                        {{ schedule.base.name }}
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td>{{ schedule.notes|linebreaksbr }}</td>
+                            <td>
+                                {% if schedule.visible %}
+                                    <div class="badge bg-success">visible</div>
+                                {% else %}
+                                    <div class="badge bg-warning">hidden</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if schedule.public %}
+                                    <div class="badge bg-success">public</div>
+                                {% else %}
+                                    <div class="badge bg-warning">private</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm float-end" role="group">
+                                    {% if schedule.can_edit_properties %}
+                                        <a class="btn btn-outline-primary edit-schedule-properties"
+                                           href="{% url "ietf.meeting.views.edit_schedule_properties" meeting.number schedule.owner_email schedule.name %}?next={{ request.get_full_path|urlencode }}">
+                                            <i title="Edit agenda properties" class="bi bi-pencil"></i>
+                                        </a>
+                                    {% endif %}
+                                    <a class="btn btn-outline-primary"
+                                       href="{% url "ietf.meeting.views.edit_meeting_timeslots_and_misc_sessions" meeting.number schedule.owner_email schedule.name %}">
+                                        <i title="Show timeslots and misc. sessions for agenda"
+                                           class="bi bi-calendar"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            {% endif %}
         </table>
     {% endfor %}
 {% endblock %}

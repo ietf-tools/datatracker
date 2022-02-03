@@ -75,8 +75,7 @@
                     {{ area.name }} groups not meeting:
                     {% for session in not_meeting_sessions %}
                         {% ifchanged session.group.acronym %}
-                            <a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{ session.group.acronym }}</a>
-                            {% if not forloop.last %},{% endif %}
+                            <a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{ session.group.acronym }}</a>{% if not forloop.last %},{% endif %}
                         {% endifchanged %}
                     {% endfor %}
                 </p>

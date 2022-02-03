@@ -59,7 +59,7 @@
                 {% if can_edit_deadline %}
                     <a class="btn btn-primary btn-sm"
                        href="{% url "ietf.doc.views_review.edit_deadline" name=doc.name request_id=review_req.pk %}">
-                        <span class="bi bi-pencil"></span>
+                        <i class="bi bi-pencil"></i>
                         Edit
                     </a>
                 {% endif %}
@@ -83,8 +83,7 @@
                 <th>Authors</th>
                 <td>
                     {% for author in review_req.doc.authors %}
-                        {% person_link author %}
-                        {% if not forloop.last %},{% endif %}
+                        {% person_link author %}{% if not forloop.last %},{% endif %}
                     {% endfor %}
                 </td>
             </tr>
@@ -95,8 +94,7 @@
                 <th>WG chairs</th>
                 <td>
                     {% for chair in wg_chairs %}
-                        {% person_link chair %}
-                        {% if not forloop.last %},{% endif %}
+                        {% person_link chair %}{% if not forloop.last %},{% endif %}
                     {% endfor %}
                 </td>
             </tr>
@@ -160,8 +158,8 @@
                     {% if can_edit_comment %}
                         <a class="btn btn-primary btn-sm"
                            href="{% url "ietf.doc.views_review.edit_comment" name=doc.name request_id=review_req.pk %}">
-                            <span class="bi bi-pencil">
-                            </span>
+                            <i class="bi bi-pencil">
+                            </i>
                             Edit comment
                         </a>
                     {% endif %}
@@ -192,8 +190,8 @@
                                 {% if assignment.can_reject_reviewer_assignment %}
                                     <a class="btn btn-danger btn-sm"
                                        href="{% url "ietf.doc.views_review.reject_reviewer_assignment" name=doc.name assignment_id=assignment.pk %}">
-                                        <span class="bi bi-x-circle">
-                                        </span>
+                                        <i class="bi bi-x-circle">
+                                        </i>
                                         Reject
                                     </a>
                                 {% endif %}
@@ -206,8 +204,8 @@
                                                 type="submit"
                                                 name="action"
                                                 value="accept">
-                                            <span class="bi bi-check">
-                                            </span>
+                                            <i class="bi bi-check">
+                                            </i>
                                             Accept
                                         </button>
                                     </form>
@@ -254,8 +252,8 @@
                             {% if assignment.can_complete_review %}
                                 <a class="btn btn-primary btn-sm"
                                    href="{% url "ietf.doc.views_review.complete_review" name=doc.name assignment_id=assignment.pk %}">
-                                    <span class="bi bi-pencil">
-                                    </span>
+                                    <i class="bi bi-pencil">
+                                    </i>
                                     {% if assignment.state_id == "assigned" or assignment.state_id == "accepted" %}
                                         Complete review
                                     {% else %}
@@ -267,14 +265,14 @@
                                 {% if can_assign_reviewer %}
                                     <a class="btn btn-danger btn-sm"
                                        href="{% url "ietf.doc.views_review.mark_reviewer_assignment_no_response" name=doc.name assignment_id=assignment.pk %}">
-                                        <span class="bi bi-question-circle">
-                                        </span>
+                                        <i class="bi bi-question-circle">
+                                        </i>
                                         No response
                                     </a>
                                     <a class="btn btn-danger btn-sm"
                                        href="{% url "ietf.doc.views_review.withdraw_reviewer_assignment" name=doc.name assignment_id=assignment.pk %}">
-                                        <span class="bi bi-x-circle">
-                                        </span>
+                                        <i class="bi bi-x-circle">
+                                        </i>
                                         Withdraw
                                     </a>
                                 {% endif %}
@@ -342,8 +340,8 @@
 {% if can_assign_reviewer %}
     <a class="btn btn-primary"
        href="{% url "ietf.doc.views_review.assign_reviewer" name=doc.name request_id=review_req.pk %}">
-        <span class="bi bi-forward">
-        </span>
+        <i class="bi bi-forward">
+        </i>
         Assign reviewer
     </a>
 {% endif %}

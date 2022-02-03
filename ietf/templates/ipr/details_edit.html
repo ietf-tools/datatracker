@@ -90,7 +90,7 @@
         {% endif %}
         <p class="required">
             Fields marked with
-            <label></label>
+            <label class="required">&nbsp;</label>
             are required.
         </p>
         <h2 class="mt-4">Updates</h2>
@@ -98,7 +98,7 @@
         {% if user|has_role:"Secretariat" %}
             {% bootstrap_field form.compliant layout="horizontal" %}
         {% else %}
-            <input type="hidden" id="id_compliant" name="compliant" value="checked" />
+            <input type="hidden" id="id_compliant" name="compliant" value="checked">
         {% endif %}
         <h2 class="mt-4">
             {% cycle 'I' 'II' 'III' 'IV' 'V' 'VI' 'VII' 'VIII' as section %}.
@@ -167,7 +167,7 @@
                 <div class="col-md-2"></div>
                 <div class="col-md-10">
                     <a class="draft-add-row btn btn-primary">
-                        <span class="bi bi-plus" aria-hidden="true"></span> Add more
+                        <i class="bi bi-plus" aria-hidden="true"></i> Add more
                     </a>
                 </div>
             </div>

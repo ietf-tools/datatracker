@@ -96,8 +96,7 @@
                 <td>
                     {# Implementation that uses the current primary email for each author #}
                     {% for author in doc.authors %}
-                        {% person_link author %}
-                        {% if not forloop.last %},{% endif %}
+                        {% person_link author %}{% if not forloop.last %},{% endif %}
                     {% endfor %}
                 </td>
             </tr>
@@ -245,8 +244,8 @@
                     {% if file_urls %}
                         {% for label, url in file_urls %}
                             <a class="btn btn-primary btn-sm" href="{{ url }}">
-                                <span class="bi bi-file-{% if label == "pdf" %}pdf{% elif label == "xml" or label == "htmlized" %}code{% elif label == "bibtex" %}ruled{% elif label == "plain text" %}text{% endif %}">
-                                </span>
+                                <i class="bi bi-file-{% if label == "pdf" %}pdf{% elif label == "xml" or label == "htmlized" %}code{% elif label == "bibtex" %}ruled{% elif label == "plain text" %}text{% endif %}">
+                                </i>
                                 {{ label }}
                             </a>
                         {% endfor %}
@@ -306,8 +305,7 @@
                         {% endfor %}
                         {% if no_review_from_teams %}
                             {% for team in no_review_from_teams %}
-                                {{ team.acronym.upper }}
-                                {% if not forloop.last %},{% endif %}
+                                {{ team.acronym.upper }}{% if not forloop.last %},{% endif %}
                             {% endfor %}
                             will not review this version
                         {% endif %}
@@ -316,23 +314,23 @@
                                 {% if can_request_review %}
                                 <a class="btn btn-primary btn-sm"
                                    href="{% url "ietf.doc.views_review.request_review" doc.name %}">
-                                    <span class="bi bi-check-circle">
-                                    </span>
+                                    <i class="bi bi-check-circle">
+                                    </i>
                                     Request review
                                 </a>
                                 {% endif %}
                                 {% if can_submit_unsolicited_review_for_teams|length == 1 %}
                                     <a class="btn btn-primary btn-sm"
                                        href="{% url "ietf.doc.views_review.complete_review" doc.name can_submit_unsolicited_review_for_teams.0.acronym %}">
-                                        <span class="bi bi-pencil-square">
-                                        </span>
+                                        <i class="bi bi-pencil-square">
+                                        </i>
                                         Submit unsolicited review
                                     </a>
                                 {% elif can_submit_unsolicited_review_for_teams %}
                                     <a class="btn btn-primary btn-sm"
                                        href="{% url "ietf.doc.views_review.submit_unsolicited_review_choose_team" doc.name %}">
-                                        <span class="bi bi-pencil-square">
-                                        </span>
+                                        <i class="bi bi-pencil-square">
+                                        </i>
                                         Submit unsolicited review
                                     </a>
                                 {% endif %}
@@ -444,16 +442,14 @@
                                 <span title="{{ m.desc }} ({{ m.group.acronym }} milestone)"
                                       class="milestone">
                                     {{ m.due|date:"M Y" }} - {{m }}
-                                </span>
-                                {% if not forloop.last %},{% endif %}
+                                </span>{% if not forloop.last %},{% endif %}
                             {% endfor %}
                             )
                         {% endif %}
                         {% if stream_tags %}
                             <div class="stream-tags">
                                 {% for tag in stream_tags %}
-                                    {{ tag.name }}
-                                    {% if not forloop.last %},{% endif %}
+                                    {{ tag.name }}{% if not forloop.last %},{% endif %}
                                 {% endfor %}
                             </div>
                         {% endif %}
@@ -512,12 +508,11 @@
                         {% if presentations %}
                             {% for pres in presentations %}
                                 <a href="{% url 'ietf.meeting.views.agenda_ical' num=pres.session.meeting.number session_id=pres.session.id %}">
-                                    <span class="bi bi-calendar">
-                                    </span>
+                                    <i class="bi bi-calendar">
+                                    </i>
                                 </a>
                                 {{ pres.session.short_name }} at {{ pres.session.meeting }}
-                                {% if pres.rev and pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}
-                                {% if not forloop.last %},{% endif %}
+                                {% if pres.rev and pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}{% if not forloop.last %},{% endif %}
                             {% endfor %}
                         {% else %}
                             <span class="text-muted">
@@ -674,8 +669,8 @@
                                     {% if can_edit %}
                                         <a class="btn btn-primary btn-sm mt-3"
                                            href="{% url "ietf.doc.views_doc.remind_action_holders" name=doc.name %}">
-                                            <span class="bi bi-envelope">
-                                            </span>
+                                            <i class="bi bi-envelope">
+                                            </i>
                                             Send reminder email
                                         </a>
                                     {% endif %}
@@ -939,8 +934,8 @@
                     {% endif %}
                 </tbody>
             {% endif %}
-            <tbody class="meta border-top">
-                {% if rfc_editor_state %}
+            {% if rfc_editor_state %}
+                <tbody class="meta border-top">
                     <tr>
                         <th>
                             RFC Editor
@@ -981,29 +976,29 @@
                         <td>
                         </td>
                     </tr>
-                {% endif %}
-            </tbody>
+                </tbody>
+            {% endif %}
         </table>
         <div class="buttonlist">
             <a class="btn btn-primary btn-sm"
                href="mailto:{{ doc.name }}@ietf.org?subject=Mail%20regarding%20{{ doc.name }}">
-                <span class="bi bi-envelope">
-                </span>
+                <i class="bi bi-envelope">
+                </i>
                 Email authors
             </a>
             {% if doc.group.type.slug == 'wg' or doc.group.type.slug == 'rg' %}
                 <a class="btn btn-primary btn-sm"
                    href="mailto:{{ doc.group.list_email }}?subject=Mail%20regarding%20{{ doc.name }}">
-                    <span class="bi bi-envelope">
-                    </span>
+                    <i class="bi bi-envelope">
+                    </i>
                     Email {{ doc.group.type }}
                 </a>
             {% endif %}
             <a class="btn btn-primary btn-sm"
                href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}"
                rel="nofollow">
-                <span class="bi bi-lightning">
-                </span>
+                <i class="bi bi-lightning">
+                </i>
                 IPR
                 {% if doc.related_ipr %}
                     <span class="badge">
@@ -1014,23 +1009,23 @@
             <a class="btn btn-primary btn-sm"
                href="{% url 'ietf.doc.views_doc.document_references' doc.canonical_name %}"
                rel="nofollow">
-                <span class="bi bi-arrow-left">
-                </span>
+                <i class="bi bi-arrow-left">
+                </i>
                 References
             </a>
             <a class="btn btn-primary btn-sm"
                href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.canonical_name %}"
                rel="nofollow">
-                <span class="bi bi-arrow-right">
-                </span>
+                <i class="bi bi-arrow-right">
+                </i>
                 Referenced by
             </a>
             <a class="btn btn-primary btn-sm"
                href="{{ settings.IDNITS_BASE_URL }}?url=https://www.ietf.org/archive/id/{{ doc.filename_with_rev }}"
                rel="nofollow"
                target="_blank">
-                <span class="bi bi-exclamation">
-                </span>
+                <i class="bi bi-exclamation">
+                </i>
                 Nits
             </a>
             <div class="dropdown inline">
@@ -1039,11 +1034,11 @@
                         id="ddSearchMenu"
                         data-bs-toggle="dropdown"
                         aria-expanded="true">
-                    <span class="bi bi-search">
-                    </span>
+                    <i class="bi bi-search">
+                    </i>
                     Search lists
-                    <span class="caret">
-                    </span>
+                    <i class="caret">
+                    </i>
                 </button>
                 <ul class="dropdown-menu" role="menu">
                     <li role="presentation">
@@ -1078,15 +1073,15 @@
                 <a class="btn btn-primary btn-sm track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}"
                    href="{% url "ietf.community.views.untrack_document" username=user.username name=doc.name %}"
                    title="Remove from your personal ID list">
-                    <span class="bi bi-bookmark-check-fill">
-                    </span>
+                    <i class="bi bi-bookmark-check-fill">
+                    </i>
                     Untrack
                 </a>
                 <a class="btn btn-primary btn-sm track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}"
                    href="{% url "ietf.community.views.track_document" username=user.username name=doc.name %}"
                    title="Add to your personal ID list">
-                    <span class="bi bi-bookmark">
-                    </span>
+                    <i class="bi bi-bookmark">
+                    </i>
                     Track
                 </a>
             {% endif %}
@@ -1094,15 +1089,15 @@
                 <a class="btn btn-primary btn-sm review-wish-add-remove-doc ajax {% if not doc.has_review_wish %}hide{% endif %}"
                    href="{% url "ietf.doc.views_review.review_wishes_remove" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
                    title="Remove from your review wishes for all teams">
-                    <span class="bi bi-chats">
-                    </span>
+                    <i class="bi bi-chats">
+                    </i>
                     Remove review wishes
                 </a>
                 <a class="btn btn-primary btn-sm review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %}{% if doc.has_review_wish %}hide{% endif %}"
                    href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
                    title="Add to your review wishes">
-                    <span class="bi bi-chats">
-                    </span>
+                    <i class="bi bi-chats">
+                    </i>
                     Add review wish
                 </a>
             {% endif %}
@@ -1138,13 +1133,13 @@
                     {% endif %}
                 </div>
                 <div class="card-body">
-                    {{ content|sanitize|safe }}
+                    <pre>{{ content|sanitize|safe|default:"(Unavailable)" }}</pre>
                 </div>
             </div>
             {% if split_content %}
                 <a class="btn btn-primary my-3" href="?include_text=1">
-                    <span class="bi bi-caret-down">
-                    </span>
+                    <i class="bi bi-caret-down">
+                    </i>
                     Show full document text
                 </a>
             {% endif %}
@@ -1153,7 +1148,7 @@
                 <div class="card-header bg-warning">
                     <b>This Internet-Draft is no longer active. A copy of
                     the expired Internet-Draft can be found at:</b>
-                    <br />
+                    <br>
                     <a href="{{ doc.get_href }}">
                         {{ doc.get_href }}
                     </a>

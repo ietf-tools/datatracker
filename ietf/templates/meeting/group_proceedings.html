@@ -82,12 +82,12 @@
         <td>
             {% if session.all_meeting_sessions_for_group|length == 1 %}
                 {% for rec in session.all_meeting_recordings %}
-                    <a href="{{ rec|meeting_href:meeting }}">{{ rec|hack_recording_title:False }}</a>
+                    <a href="{{ rec|meeting_href:meeting|default:"#" }}">{{ rec|hack_recording_title:False }}</a>
                     <br>
                 {% endfor %}
             {% else %}
                 {% for rec in session.all_meeting_recordings %}
-                    <a href="{{ rec|meeting_href:meeting }}">{{ rec|hack_recording_title:True }}</a>
+                    <a href="{{ rec|meeting_href:meeting|default:"#" }}">{{ rec|hack_recording_title:True }}</a>
                     <br>
                 {% endfor %}
             {% endif %}

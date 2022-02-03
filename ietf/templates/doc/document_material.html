@@ -3,7 +3,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load static %}
-{% load ietf_filters %}
+{% load ietf_filters textfilters %}
 {% block title %}{{ doc.title }}{% endblock %}
 {% block content %}
     {% origin %}
@@ -92,8 +92,7 @@
                             {% if presentations %}
                                 {% for pres in presentations %}
                                     {{ pres.session.short_name }} at {{ pres.session.meeting }}
-                                    {% if pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}
-                                    {% if not forloop.last %},{% endif %}
+                                    {% if pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}{% if not forloop.last %},{% endif %}
                                 {% endfor %}
                             {% else %}
                                 None
@@ -124,7 +123,7 @@
                 {% if content_is_html %}
                     {{ content|sanitize|safe }}
                 {% else %}
-                    <pre>{{ content|sanitize|maybewordwrap|safe }}</pre>
+                    <pre>{{ content|maybewordwrap|linkify|urlize_ietf_docs }}</pre>
                 {% endif %}
             {% else %}
                 Not available as plain text.

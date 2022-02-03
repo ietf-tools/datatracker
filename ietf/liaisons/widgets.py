@@ -25,7 +25,7 @@ class ButtonWidget(Widget):
                 html += '<span style="display: none" class="attachRequiredField">%s</span>' % conditional_escape(i)
             required_str = 'Please fill in %s to attach a new file' % conditional_escape(self.required_label)
             html += '<span style="display: none" class="attachDisabledLabel">%s</span>' % conditional_escape(required_str)
-        html += '<input type="button" class="addAttachmentWidget btn btn-primary btn-sm" value="%s" />' % conditional_escape(self.label)
+        html += '<input type="button" class="addAttachmentWidget btn btn-primary btn-sm" value="%s">' % conditional_escape(self.label)
         return mark_safe(html)
 
 
@@ -39,7 +39,7 @@ class ShowAttachmentsWidget(Widget):
                 html += '<a class="initialAttach" href="%s">%s</a>&nbsp' % (conditional_escape(attachment.document.get_href()), conditional_escape(attachment.document.title))
                 html += '<a class="btn btn-primary btn-sm" href="{}">Edit</a>&nbsp'.format(urlreverse("ietf.liaisons.views.liaison_edit_attachment", kwargs={'object_id':attachment.statement.pk,'doc_id':attachment.document.pk}))
                 html += '<a class="btn btn-primary btn-sm" href="{}">Delete</a>&nbsp'.format(urlreverse("ietf.liaisons.views.liaison_delete_attachment", kwargs={'object_id':attachment.statement.pk,'attach_id':attachment.pk}))
-                html += '<br />'
+                html += '<br>'
         else:
             html += 'No files attached'
         html += '</div></div>'

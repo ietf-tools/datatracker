@@ -32,7 +32,7 @@
                 var s = '<b>' + this.points[0].key + '</b>';
 
                 $.each(this.points, function () {
-                    s += '<br />' + chartConf.yAxis.title.text + ': ' + this.y;
+                    s += '<br>' + chartConf.yAxis.title.text + ': ' + this.y;
                 });
 
                 return s;
@@ -51,13 +51,15 @@
             <th data-sort="label">{{ doc_label|capfirst }}s</th>
         </tr>
     </thead>
-    <tbody>
-        {% for pages, percentage, count, names in table_data %}
-            <tr>
-                <td>{{ pages }}</td>
-                <td>{{ percentage|floatformat:2 }}%</td>
-                <td>{% include "stats/includes/number_with_details_cell.html" %}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
+    {% if table_data %}
+        <tbody>
+            {% for pages, percentage, count, names in table_data %}
+                <tr>
+                    <td>{{ pages }}</td>
+                    <td>{{ percentage|floatformat:2 }}%</td>
+                    <td>{% include "stats/includes/number_with_details_cell.html" %}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    {% endif %}
 </table>

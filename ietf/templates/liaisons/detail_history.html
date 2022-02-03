@@ -30,21 +30,23 @@
                 <th data-sort="text">Text</th>
             </tr>
         </thead>
-        <tbody>
-            {% for e in events %}
-                <tr>
-                    <td class="text-nowrap">{{ e.time|date:"Y-m-d" }}</td>
-                    <td>
-                        {{ e.type }}
-                        {% if e.response_due and e.response_past_due %}
-                            <span class="bi bi-exclamation-circle" title="Response overdue"></span>
-                        {% endif %}
-                    </td>
-                    <td>{{ e.by }}</td>
-                    <td>{{ e.desc|format_history_text }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
+        {% if events %}
+            <tbody>
+                {% for e in events %}
+                    <tr>
+                        <td class="text-nowrap">{{ e.time|date:"Y-m-d" }}</td>
+                        <td>
+                            {{ e.type }}
+                            {% if e.response_due and e.response_past_due %}
+                                <i class="bi bi-exclamation-circle" title="Response overdue"></i>
+                            {% endif %}
+                        </td>
+                        <td>{{ e.by }}</td>
+                        <td>{{ e.desc|format_history_text }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        {% endif %}
     </table>
 {% endblock %}
 {% block js %}

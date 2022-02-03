@@ -11,28 +11,30 @@
             <th data-sort="title">Title</th>
         </tr>
     </thead>
-    <tbody>
-        {% for liaison in liaisons %}
-            <tr>
-                <td class="text-nowrap">{{ liaison.sort_date|date:"Y-m-d" }}</td>
-                <td class="liaison-group-col">{{ liaison.from_groups_display }}</td>
-                <td class="liaison-group-col">{{ liaison.to_groups_display }}</td>
-                <td class="text-nowrap">
-                    {{ liaison.deadline|default:"-"|date:"Y-m-d" }}
-                    {% if liaison.deadline and not liaison.action_taken %}
-                        <br>
-                        <span class="badge
-                                     {% if liaison.is_outgoing %}
-                                         bg-warning
-                                     {% else %}
-                                         bg-info
-                                     {% endif %}">Action Needed</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="{% url "ietf.liaisons.views.liaison_detail" object_id=liaison.pk %}">{{ liaison.title }}</a>
-                </td>
-            </tr>
-        {% endfor %}
-    </tbody>
+    {% if liaisons %}
+        <tbody>
+            {% for liaison in liaisons %}
+                <tr>
+                    <td class="text-nowrap">{{ liaison.sort_date|date:"Y-m-d" }}</td>
+                    <td class="liaison-group-col">{{ liaison.from_groups_display }}</td>
+                    <td class="liaison-group-col">{{ liaison.to_groups_display }}</td>
+                    <td class="text-nowrap">
+                        {{ liaison.deadline|default:"-"|date:"Y-m-d" }}
+                        {% if liaison.deadline and not liaison.action_taken %}
+                            <br>
+                            <span class="badge
+                                         {% if liaison.is_outgoing %}
+                                             bg-warning
+                                         {% else %}
+                                             bg-info
+                                         {% endif %}">Action Needed</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url "ietf.liaisons.views.liaison_detail" object_id=liaison.pk %}">{{ liaison.title }}</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    {% endif %}
 </table>

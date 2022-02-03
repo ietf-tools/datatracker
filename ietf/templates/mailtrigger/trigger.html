@@ -28,9 +28,7 @@
                             {% comment %}<span title="{{recipient.desc}}">{{recipient.slug}}</span>{% endcomment %}
                             <a href="{% url 'ietf.mailtrigger.views.show_recipients' recipient.slug %}"
                                title="{{ recipient.desc }}">
-                                {{ recipient.slug }}
-                            </a>
-                            {% if not forloop.last %},{% endif %}
+                                {{ recipient.slug }}</a>{% if not forloop.last %},{% endif %}
                         {% endfor %}
                     </td>
                     <td>
@@ -39,9 +37,7 @@
                                 {% comment %}<span title="{{recipient.desc}}">{{recipient.slug}}</span>{% endcomment %}
                                 <a href="{% url 'ietf.mailtrigger.views.show_recipients' recipient.slug %}"
                                    title="{{ recipient.desc }}">
-                                    {{ recipient.slug }}
-                                </a>
-                                {% if not forloop.last %},{% endif %}
+                                    {{ recipient.slug }}</a>{% if not forloop.last %},{% endif %}
                             {% endfor %}
                         {% endif %}
                     </td>

@@ -57,8 +57,7 @@
             <div>
                 Resources:
                 {% for r in session.resources.all %}
-                    {{ r.name }}
-                    {% if not forloop.last %},{% endif %}
+                    {{ r.name }}{% if not forloop.last %},{% endif %}
                 {% endfor %}
             </div>
         {% endif %}

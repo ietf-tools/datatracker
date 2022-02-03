@@ -19,7 +19,7 @@
         <a class="regular float-end"
            title="icalendar entry for {{ acronym }}@{{ meeting.number }}"
            href="{% url 'ietf.meeting.views.agenda_ical' num=meeting.number acronym=acronym %}">
-            <span class="bi bi-calendar"></span>
+            <i class="bi bi-calendar"></i>
         </a>
     {% endif %}
     {% if is_materials_manager and not can_manage_materials %}
@@ -39,7 +39,7 @@
                 Your proposed slides awaiting chair approval
             {% endif %}
         </h2>
-        <div id="proposedslidelist">
+        <div class="proposedslidelist">
             {% for s in pending_suggestions %}
                 {% if can_manage_materials %}
                     <p>
@@ -58,7 +58,7 @@
 {% endblock %}
 {% block js %}
     {% if can_manage_materials %}
-        <script src={% static 'ietf/js/sortable.js' %}></script>
+        <script src="{% static 'ietf/js/sortable.js' %}"></script>
         <script>
             var sortables=[];
             var options = {
@@ -70,9 +70,9 @@
             };
 
             function onAdd(event) {
-                var old_session = event.from.getAttribute("session");
-                var new_session = event.to.getAttribute("session");
-                $.post(event.to.getAttribute("addToSession"), {
+                var old_session = event.from.getAttribute("data-session");
+                var new_session = event.to.getAttribute("data-session");
+                $.post(event.to.getAttribute("data-addToSession"), {
                     'order': event.newIndex + 1,
                     'name': event.item.getAttribute("name")
                 });
@@ -82,8 +82,8 @@
             }
 
             function onRemove(event) {
-                var old_session = event.from.getAttribute("session");
-                $.post(event.from.getAttribute("removeFromSession"),{
+                var old_session = event.from.getAttribute("data-session");
+                $.post(event.from.getAttribute("data-removeFromSession"),{
                     'oldIndex': event.oldIndex + 1,
                     'name': event.item.getAttribute("name")
                 });
@@ -91,7 +91,7 @@
 
             function onEnd(event) {
                 if (event.to == event.from) {
-                    $.post(event.from.getAttribute("reorderInSession"),{
+                    $.post(event.from.getAttribute("data-reorderInSession"),{
                         'oldIndex': event.oldIndex + 1,
                         'newIndex': event.newIndex + 1
                     });

@@ -17,7 +17,7 @@
         </h1>
         <div class="col-1 text-end">
             <a href="{% url "ietf.release.views.stats" %}" class="icon-link">
-                <span class="bi bi-bar-chart-line"></span>
+                <i class="bi bi-bar-chart-line"></i>
             </a>
         </div>
     </div>
@@ -25,13 +25,13 @@
         <li class="me-auto page-item {% if not entry.prev %}disabled{% endif %}">
             <a class="page-link"
                href="{% if entry.prev %}/release/{{ entry.prev.version }}/{% else %}#{% endif %}">
-                <span class="bi bi-arrow-left"></span> Previous release
+                <i class="bi bi-arrow-left"></i> Previous release
             </a>
         </li>
         <li class="page-item {% if not entry.next %}disabled{% endif %}">
             <a class="page-link"
                href="{% if entry.next %}/release/{{ entry.next.version }}/{% else %}#{% endif %}">
-                Next release <span class="bi bi-arrow-right"></span>
+                Next release <i class="bi bi-arrow-right"></i>
             </a>
         </li>
     </ul>

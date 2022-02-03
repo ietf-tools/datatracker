@@ -48,9 +48,9 @@
                 {% csrf_token %}
                 <input type="hidden"
                        name="charter_state"
-                       value="{{ prev_charter_state.pk }}"/>
-                <input type="hidden" name="state" value="{{ prev_state.slug }}" />
-                <input type="submit" value="Back to {{ prev_charter_state.name }}" />
+                       value="{{ prev_charter_state.pk }}">
+                <input type="hidden" name="state" value="{{ prev_state.slug }}">
+                <input type="submit" value="Back to {{ prev_charter_state.name }}">
             </form>
         </div>
     {% endif %}

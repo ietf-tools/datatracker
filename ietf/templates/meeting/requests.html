@@ -88,8 +88,7 @@
                                                             {% endwith %}
                                                             {{ constraint.brief_display }}
                                                         </span>
-                                                    {% endif %}
-                                                    {% if not forloop.last %},{% endif %}
+                                                    {% endif %}{% if not forloop.last %},{% endif %}
                                                     {% if constraint_target_parent_id == constraint_source_parent_id and not constraint_person %}</b>{% endif %}
                                                 {% endwith %}
                                             {% endwith %}

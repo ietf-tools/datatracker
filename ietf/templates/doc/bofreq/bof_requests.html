@@ -49,14 +49,12 @@
                             <td>{{ req.title }}</td>
                             <td>
                                 {% for person in req.responsible %}
-                                    {% person_link person %}
-                                    {% if not forloop.last %},{% endif %}
+                                    {% person_link person %}{% if not forloop.last %},{% endif %}
                                 {% endfor %}
                             </td>
                             <td>
                                 {% for person in req.editors %}
-                                    {% person_link person %}
-                                    {% if not forloop.last %},{% endif %}
+                                    {% person_link person %}{% if not forloop.last %},{% endif %}
                                 {% endfor %}
                             </td>
                         </tr>

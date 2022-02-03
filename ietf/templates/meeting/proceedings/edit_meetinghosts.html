@@ -29,7 +29,8 @@
                     <td class="col-md-3">
                         {% if form.instance.pk and form.instance.logo %}
                             <img class="logo w-100 img-fluid img-thumbnail"
-                                 src="{% url 'ietf.meeting.views_proceedings.meetinghost_logo' num=meeting.number host_id=form.instance.pk %} ">
+                                 alt="Meeting Host Logo"
+                                 src="{% url 'ietf.meeting.views_proceedings.meetinghost_logo' num=meeting.number host_id=form.instance.pk %}">
                         {% else %}
                             (No logo)
                         {% endif %}

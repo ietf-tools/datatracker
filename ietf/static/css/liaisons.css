@@ -122,14 +122,14 @@ input[id$='DELETE'] {
     display: none;
 }
 
-#id_from_groups + span {
+/*#id_from_groups + span {
     display: none;
 }
 
 #id_to_groups + span {
     display: none;
 }
-
+*/
 .liaison-group-col {
     min-width: 10em;
 }

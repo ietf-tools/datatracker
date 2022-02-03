@@ -63,38 +63,46 @@
         <div id="groups-view-col2">
             <div class="inline-related">
                 <h2>Chairperson(s)</h2>
-                <table>
-                    {% for role in group.chairs %}
-                        <tr><td><a href="{% url 'ietf.secr.rolodex.views.view' id=role.person.id %}">{{ role.person }}</a></td></tr>
-                    {% endfor %}
-                </table>
+                {% if group.chairs %}
+                    <table>
+                        {% for role in group.chairs %}
+                            <tr><td><a href="{% url 'ietf.secr.rolodex.views.view' id=role.person.id %}">{{ role.person }}</a></td></tr>
+                        {% endfor %}
+                    </table>
+                {% endif %}
             </div> <!-- inline-related -->
 
             <div class="inline-related">
                 <h2>Document Editor(s)</h2>
-                <table>
-                    {% for role in group.editors %}
-                        <tr><td><a href="{% url 'ietf.secr.rolodex.views.view' id=role.person.id %}">{{ role.person }}</a></td></tr>
-                    {% endfor %}
-                </table>
+                {% if group.editors %}
+                    <table>
+                        {% for role in group.editors %}
+                            <tr><td><a href="{% url 'ietf.secr.rolodex.views.view' id=role.person.id %}">{{ role.person }}</a></td></tr>
+                        {% endfor %}
+                    </table>
+                {% endif %}
             </div> <!-- inline-related -->
 
             <div class="inline-related">
                 <h2>Technical Advisor(s)</h2>
-                <table>
-                    {% for role in group.techadvisors %}
-                        <tr><td><a href="{% url 'ietf.secr.rolodex.views.view' id=role.person.id %}">{{ role.person }}</a></td></tr>
-                    {% endfor %}
-                </table>
+                {% if group.techadvisors %}
+                    <table>
+                        {% for role in group.techadvisors %}
+                            <tr><td><a href="{% url 'ietf.secr.rolodex.views.view' id=role.person.id %}">{{ role.person }}</a></td></tr>
+                        {% endfor %}
+                    </table>
+                {% endif %}
             </div> <!-- inline-related -->
 
             <div class="inline-related">
                 <h2>Secretary(ies)</h2>
-                <table>
-                    {% for role in group.secretaries %}
-                        <tr><td><a href="{% url 'ietf.secr.rolodex.views.view' id=role.person.id %}">{{ role.person }}</a></td></tr>
-                    {% endfor %}
-                </table>
+                {% if group.secretaries %}
+                    <table>
+                        {% for role in group.secretaries %}
+                            <tr><td><a href="{% url 'ietf.secr.rolodex.views.view' id=role.person.id %}">{{ role.person }}</a></td></tr>
+                        {% endfor %}
+                    </table>
+                {% endif %}
             </div> <!-- inline-related -->
 
         </div> <!-- groups-view-col2 -->

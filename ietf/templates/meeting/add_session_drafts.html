@@ -31,20 +31,22 @@
                 <th data-sort="document">Document</th>
             </tr>
         </thead>
-        <tbody>
-            {% for sp in already_linked %}
-                <tr>
-                    <td>
-                        {% if sp.rev %}
-                            -{{ sp.rev }}
-                        {% else %}
-                            (current)
-                        {% endif %}
-                    </td>
-                    <td>{{ sp.document.title }} ({{ sp.document.name }})</td>
-                </tr>
-            {% endfor %}
-        </tbody>
+        {% if already_linked %}
+            <tbody>
+                {% for sp in already_linked %}
+                    <tr>
+                        <td>
+                            {% if sp.rev %}
+                                -{{ sp.rev }}
+                            {% else %}
+                                (current)
+                            {% endif %}
+                        </td>
+                        <td>{{ sp.document.title }} ({{ sp.document.name }})</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        {% endif %}
     </table>
     <h2 class="mt-5">Additional drafts to link to this session</h2>
     <form method="post">

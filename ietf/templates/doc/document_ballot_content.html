@@ -123,17 +123,17 @@
                                     {% if not p.for_current_revision %}for -{{ p.get_dochistory.rev }}{% endif %}
                                     )
                                     {% if p.send_email %}
-                                        <span class="bi bi-envelope float-end"
-                                              title="Email requested to be sent for this discuss"></span>
+                                        <i class="bi bi-envelope float-end"
+                                              title="Email requested to be sent for this discuss"></i>
                                     {% elif p.any_email_sent == True %}
-                                        <span class="bi bi-envelope float-end"
-                                              title="Email requested to be sent for earlier discuss"></span>
+                                        <i class="bi bi-envelope float-end"
+                                              title="Email requested to be sent for earlier discuss"></i>
                                     {% elif p.any_email_sent == False %}
-                                        <span class="bi bi-chat-o float-end"
-                                              title="No email send requests for this discuss"></span>
+                                        <i class="bi bi-chat-o float-end"
+                                              title="No email send requests for this discuss"></i>
                                     {% else %}
-                                        <span class="bi bi-chat-o float-end"
-                                              title="No email send requests for this discuss"></span>
+                                        <i class="bi bi-chat-o float-end"
+                                              title="No email send requests for this discuss"></i>
                                     {% endif %}
                                 </div>
                             </div>
@@ -150,17 +150,17 @@
                                     {% if not p.for_current_revision %}for -{{ p.get_dochistory.rev }}{% endif %}
                                     )
                                     {% if p.send_email %}
-                                        <span class="bi bi-envelope-check float-end"
-                                              title="Email requested to be sent for this comment"></span>
+                                        <i class="bi bi-envelope-check float-end"
+                                              title="Email requested to be sent for this comment"></i>
                                     {% elif p.any_email_sent == True %}
-                                        <span class="bi bi-envelope-plus float-end"
-                                              title="Email requested to be sent for earlier comment"></span>
+                                        <i class="bi bi-envelope-plus float-end"
+                                              title="Email requested to be sent for earlier comment"></i>
                                     {% elif p.any_email_sent == False %}
-                                        <span class="bi bi-envelope-dash float-end"
-                                              title="No email send requests for this comment"></span>
+                                        <i class="bi bi-envelope-dash float-end"
+                                              title="No email send requests for this comment"></i>
                                     {% else %}
-                                        <span class="bi bi-envelope-exclamation float-end"
-                                              title="No ballot position send log available"></span>
+                                        <i class="bi bi-envelope-exclamation float-end"
+                                              title="No ballot position send log available"></i>
                                     {% endif %}
                                 </div>
                             </div>
@@ -203,19 +203,19 @@
                                     )
                                 {% endif %}
                                 {% if p.send_email %}
-                                    <span class="bi bi-envelope float-end"
-                                          title="Email requested to be sent for this ballot position"></span>
+                                    <i class="bi bi-envelope float-end"
+                                          title="Email requested to be sent for this ballot position"></i>
                                 {% elif p.any_email_sent == True %}
-                                    <span class="bi bi-envelope float-end"
-                                          title="Email requested to be sent for earlier ballot position"></span>
+                                    <i class="bi bi-envelope float-end"
+                                          title="Email requested to be sent for earlier ballot position"></i>
                                 {% elif p.any_email_sent == False %}
-                                    <span class="bi bi-chat-o float-end"
-                                          title="No email send requests for this ballot position"></span>
+                                    <i class="bi bi-chat-o float-end"
+                                          title="No email send requests for this ballot position"></i>
                                 {% else %}
                                     <div class="float-end small italic"
                                          title="No ballot position send log available">
                                         No email
-                                        <br />
+                                        <br>
                                         send info
                                     </div>
                                 {% endif %}

@@ -7,16 +7,16 @@
 {% load django_bootstrap5 %}
 <html lang="en">
     <head>
-        <meta charset="utf-8"/>
-        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <title>
             {% block title %}No title{% endblock %}
         </title>
-        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         {% comment Halloween %}
-        <link href='https://fonts.googleapis.com/css?family=IM+Fell+English+SC|IM+Fell+DW+Pica:400,400italic|Nova+Mono|IM+Fell+English:400,400italic&subset=latin-ext,latin' rel='stylesheet' type='text/css'/>
+        <link href='https://fonts.googleapis.com/css?family=IM+Fell+English+SC|IM+Fell+DW+Pica:400,400italic|Nova+Mono|IM+Fell+English:400,400italic&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
         {% endcomment %}
-        <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}"/>
+        <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}">
         <style>
             {% block morecss %}{% endblock %}
             .leftmenu { width: 13em; }
@@ -24,13 +24,13 @@
         {% block pagehead %}{% endblock %}
         {% if server_mode and server_mode == "production" %}
             <link rel="shortcut icon"
-                  href="{% static 'ietf/images/ietf-icon-blue3.png' %}"/>
+                  href="{% static 'ietf/images/ietf-icon-blue3.png' %}">
         {% else %}
             <link rel="shortcut icon"
-                  href="{% static 'ietf/images/ietf-icon-red3.png' %}"/>
+                  href="{% static 'ietf/images/ietf-icon-red3.png' %}">
         {% endif %}
         <link rel="apple-touch-icon"
-              href="{% static 'ietf/images/apple-touch-icon.png' %}"/>
+              href="{% static 'ietf/images/apple-touch-icon.png' %}">
         <script src="{% static 'ietf/js/ietf.js' %}"></script>
     </head>
     <body {% block bodyAttrs %}{% endblock %} class="position-relative"
@@ -39,7 +39,7 @@
             <div class="container-fluid">
                 <a class="navbar-brand" href="/">
                     <img alt="IETF Logo"
-                         src="{% static 'ietf/images/ietflogo-small-transparent.png' %}"/>
+                         src="{% static 'ietf/images/ietflogo-small-transparent.png' %}">
                     Datatracker
                     {% if server_mode and server_mode != "production" %}Dev Mode{% endif %}
                 </a>
@@ -61,9 +61,9 @@
                            type="text"
                            name="name"
                            placeholder="Document search"
-                           required/>
-                    <input type="hidden" name="activedrafts" value="on"/>
-                    <input type="hidden" name="rfcs" value="on"/>
+                           required>
+                    <input type="hidden" name="activedrafts" value="on">
+                    <input type="hidden" name="rfcs" value="on">
                 </form>
                 <button class="navbar-toggler"
                         type="button"
@@ -72,7 +72,7 @@
                         aria-controls="navbar-collapse"
                         aria-expanded="false"
                         aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
+                    <i class="navbar-toggler-icon"></i>
                 </button>
             </div>
         </nav>
@@ -99,7 +99,7 @@
                     {% block content_end %}{% endblock %}
                 </div>
             </div>
-            <hr />
+            <hr>
             {% block footer %}
                 <footer class="col-md-12 col-sm-12 text-center">
                     <a href="https://www.ietf.org/" class="p-3">IETF</a>
@@ -121,15 +121,15 @@
                         Report a bug:
                         <a href="https://trac.ietf.org/trac/ietfdb/newticket">
                             Tracker
-                            <span class="bi bi-bug"></span>
+                            <i class="bi bi-bug"></i>
                         </a>
                         {% if bugreport_email %}
                             <a href="mailto:{{ bugreport_email }}">
                                 Email
-                                <span class="bi bi-envelope"></span>
+                                <i class="bi bi-envelope"></i>
                             </a>
                         {% endif %}
-                        <br />
+                        <br>
                         {% if python_version %}Python {{ python_version }}{% endif %}
                         {% if django_version %}Django {{ django_version }}{% endif %}
                         <br>

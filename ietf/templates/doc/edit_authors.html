@@ -29,7 +29,7 @@
             {% for form in formset %}
                 <div class="card author-panel mb-3">
                     <div role="button" class="handle card-header">
-                        <span class="bi bi-list"></span>
+                        <i class="bi bi-list"></i>
                     </div>
                     <div class="card-body draggable">
                         <div class="form-horizontal">{% bootstrap_form form layout='horizontal' %}</div>
@@ -40,7 +40,7 @@
         <div id="empty-author-form" class="template" style="display: none;">
             <div class="card  author-panel mb-3">
                 <div role="button" class="handle card-header">
-                    <span class="bi bi-list"></span>
+                    <i class="bi bi-list"></i>
                 </div>
                 <div class="card-body draggable">
                     <div class="form-horizontal">{% bootstrap_form formset.empty_form layout='horizontal' %}</div>

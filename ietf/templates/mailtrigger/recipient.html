@@ -18,36 +18,40 @@
                 <th data-sort="code">Code</th>
             </tr>
         </thead>
-        <tbody>
-            {% for recipient in recipients %}
-                <tr>
-                    <td>
-                        <span title="{{ recipient.desc }}">{{ recipient.slug }}</span>
-                    </td>
-                    <td>
-                        {% for mailtrigger in recipient.used_in_to.all %}
-                            <a href="{% url 'ietf.mailtrigger.views.show_triggers' mailtrigger.slug %}"
-                               title="{{ mailtrigger.desc }}">
-                                {{ mailtrigger.slug }}
-                            </a>
-                            {% if not forloop.last %},{% endif %}
-                        {% endfor %}
-                        {% if recipient.used_in_to.exists and recipient.used_in_cc.exists %},{% endif %}
-                        {% for mailtrigger in recipient.used_in_cc.all %}
-                            <a href="{% url 'ietf.mailtrigger.views.show_triggers' mailtrigger.slug %}"
-                               title="{{ mailtrigger.desc }}">
-                                {{ mailtrigger.slug }}
-                            </a>
-                            {% if not forloop.last %},{% endif %}
-                        {% endfor %}
-                    </td>
-                    <td>{{ recipient.template|linkify|urlize_ietf_docs }}</td>
-                    <td>
-                        {% if recipient.code %}<code>{{ recipient.code }}</code>{% endif %}
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
+        {% if recipients %}
+            <tbody>
+                {% for recipient in recipients %}
+                    <tr>
+                        <td>
+                            <span title="{{ recipient.desc }}">{{ recipient.slug }}</span>
+                        </td>
+                        <td>
+                            {% for mailtrigger in recipient.used_in_to.all %}
+                                <a href="{% url 'ietf.mailtrigger.views.show_triggers' mailtrigger.slug %}"
+                                   title="{{ mailtrigger.desc }}">
+                                    {{ mailtrigger.slug }}</a>{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                            {% if recipient.used_in_to.exists and recipient.used_in_cc.exists %},{% endif %}
+                            {% for mailtrigger in recipient.used_in_cc.all %}
+                                <a href="{% url 'ietf.mailtrigger.views.show_triggers' mailtrigger.slug %}"
+                                   title="{{ mailtrigger.desc }}">
+                                    {{ mailtrigger.slug }}</a>{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% if recipient.template %}
+                                <code>{{ recipient.template|escape|linebreaksbr }}</code>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if recipient.code %}
+                                <code>{{ recipient.code|escape|linebreaksbr }}</code>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        {% endif %}
     </table>
 {% endblock %}
 {% block js %}

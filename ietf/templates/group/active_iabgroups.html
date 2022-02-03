@@ -34,8 +34,7 @@
                         <td>{{ group.name }}</td>
                         <td>
                             {% for lead in group.leads %}
-                                {% person_link lead.person %}
-                                {% if not forloop.last %},{% endif %}
+                                {% person_link lead.person %}{% if not forloop.last %},{% endif %}
                             {% endfor %}
                         </td>
                     </tr>

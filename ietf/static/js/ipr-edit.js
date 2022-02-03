@@ -27,10 +27,10 @@ $(document)
                 totalField.val(total);
 
                 template.before(el);
-                el.find(".select2-field")
-                    .each(function () {
-                        setupSelect2Field($(this));
-                    });
+                // el.find(".select2-field")
+                //     .each(function () {
+                //         setupSelect2Field($(this));
+                //     });
             });
 
         function updateRevisions() {

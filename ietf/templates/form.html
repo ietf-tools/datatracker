@@ -11,9 +11,11 @@
 {% block content %}
     {% origin %}
     <h1>{{ title|safe }}</h1>
-    <p>
-        {{ description|safe }}
-    </p>
+    {% if description %}
+        <p>
+            {{ description|safe }}
+        </p>
+    {% endif %}
     <form method="post" class="show-required">
         {% csrf_token %}
         {% bootstrap_form form layout='horizontal' %}

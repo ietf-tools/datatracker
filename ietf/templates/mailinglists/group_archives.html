@@ -33,16 +33,18 @@
                 <th data-sort="name">Name</th>
             </tr>
         </thead>
-        <tbody>
-            {% for group in groups %}
-                <tr>
-                    <td>
-                        <a href="{{ group.list_archive }}">{{ group.acronym }}</a>
-                    </td>
-                    <td>{{ group.name }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
+        {% if groups %}
+            <tbody>
+                {% for group in groups %}
+                    <tr>
+                        <td>
+                            <a href="{{ group.list_archive }}">{{ group.acronym }}</a>
+                        </td>
+                        <td>{{ group.name }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        {% endif %}
     </table>
 {% endblock %}
 {% block js %}

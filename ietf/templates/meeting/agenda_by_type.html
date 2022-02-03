@@ -13,8 +13,7 @@
             <div class="typelistentry">
                 <h2 class="mt-5">{{ type.grouper|title }}</h2>
                 {% if schedule == meeting.schedule %}
-                    <a id="ical-link"
-                       class="btn btn-primary"
+                    <a class="btn btn-primary ical-link"
                        href="{% url "ietf.meeting.views.agenda_by_type_ics" num=meeting.number type=type.grouper %}">
                         Download to Calendar
                     </a>

@@ -45,8 +45,7 @@
                                         {% for pr in p.list %}
                                             {% if pr.rev != d.rev %}(-{{ pr.rev }}){% endif %}
                                         {% endfor %}
-                                    {% endif %}
-                                    {% if not forloop.last %},{% endif %}
+                                    {% endif %}{% if not forloop.last %},{% endif %}
                                 {% endfor %}
                             </td>
                             <td>
@@ -59,8 +58,7 @@
                                         {% for pr in p.list %}
                                             {% if pr.rev != d.rev %}(-{{ pr.rev }}){% endif %}
                                         {% endfor %}
-                                    {% endif %}
-                                    {% if not forloop.last %},{% endif %}
+                                    {% endif %}{% if not forloop.last %},{% endif %}
                                 {% endfor %}
                             </td>
                         </tr>

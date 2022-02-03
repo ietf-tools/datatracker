@@ -4,7 +4,7 @@
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
-{% load person_filters %}
+{% load person_filters textfilters %}
 {% block pagehead %}
     <link rel="alternate"
           type="application/atom+xml"
@@ -227,8 +227,7 @@
                 {{ doc.canonical_name }}-{{ doc.rev }}
             </div>
             <div class="card-body">
-                {# this content is already wrapped in 'pre' #}
-                {{ content|sanitize|maybewordwrap|safe }}
+                <pre>{{ content|maybewordwrap|linkify|urlize_ietf_docs }}</pre>
             </div>
         </div>
     {% endif %}

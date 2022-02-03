@@ -170,7 +170,7 @@
                                 Liaison #{{ rel.pk }}
                             {% endif %}
                         </a>
-                        <br />
+                        <br>
                     {% endfor %}
                 </td>
             </tr>
@@ -189,7 +189,7 @@
                                 Liaison #{{ rel.pk }}
                             {% endif %}
                         </a>
-                        <br />
+                        <br>
                     {% endfor %}
                 </td>
             </tr>
@@ -225,11 +225,11 @@
             </a>
         {% endif %}
         {% if liaison.state.slug == 'pending' and can_edit %}
-            <input class="btn btn-primary" type="submit" value="Approve" name='approved' />
+            <input class="btn btn-primary" type="submit" value="Approve" name='approved'>
             <input class="btn btn-primary"
                    type="submit"
                    value="Mark as Dead"
-                   name='dead'/>
+                   name='dead'>
         {% endif %}
         {% if liaison.state.slug == 'posted' and  user|has_role:"Secretariat" %}
             <a class="btn btn-primary"
@@ -241,7 +241,7 @@
             <input class="btn btn-primary"
                    type="submit"
                    value="Resurrect"
-                   name='resurrect'/>
+                   name='resurrect'>
         {% endif %}
     </form>
 {% endblock %}

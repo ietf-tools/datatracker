@@ -44,7 +44,7 @@
             <a class="float-end"
                title="icalendar entry for all scheduled future {{ group.acronym }} meetings"
                href="{% url 'ietf.meeting.views.upcoming_ical' %}?show={{ group.acronym }}">
-                <span class="bi bi-calendar"></span>
+                <i class="bi bi-calendar"></i>
             </a>
         </h2>
         <table class="table table-sm table-striped tablesorter">
@@ -81,10 +81,10 @@
                 {% with sessions=past can_edit_materials=False %}
                     {% include "group/meetings-row.html" %}
                 {% endwith %}
-                <tbody>
-                </table>
-            {% endif %}
-            <p>
-                This page shows meetings within the last four years. For earlier meetings, please see the proceedings.
-            </p>
-        {% endblock %}
+            </tbody>
+        </table>
+    {% endif %}
+    <p>
+        This page shows meetings within the last four years. For earlier meetings, please see the proceedings.
+    </p>
+{% endblock %}

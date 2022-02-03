@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 
-{% block search_header %}<div class="mt-5">Document IPR search results<br><small class="text-muted">{{doc}}</small></div>{% endblock %}
+{% block search_header %}Document IPR search results<br><small class="text-muted">{{doc}}</small>{% endblock %}
 
 {% block search_result %}
     <p class="alert alert-info my-3">Total number of IPR disclosures found: <b>{{ iprs|length }}</b>.</p>
@@ -72,7 +72,7 @@
                                     <td>{{ ipr.disclosure.time|date:"Y-m-d" }}</td>
                                     <td>{{ ipr.disclosure.id }}</td>
                                     <td><a href="{% url "ietf.ipr.views.show" id=ipr.disclosure.id %}">{{ ipr.disclosure.title }}</a>{% if ipr.disclosure.state_id == 'removed' %} (Removed) {% endif %}
-                                        {% if ipr.disclosure.updates %} <br/>(Updates ID#: {% for upd in ipr.disclosure.updates %}{{upd.target_id}}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}
+                                        {% if ipr.disclosure.updates %} <br>(Updates ID#: {% for upd in ipr.disclosure.updates %}{{upd.target_id}}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}
                                     </td>
                                 </tr>
                             {% endif %}
@@ -110,7 +110,7 @@
                         <td>{{ ipr.time|date:"Y-m-d" }}</td>
                         <td>{{ ipr.id }}</td>
                         <td><a href="{% url "ietf.ipr.views.show" id=ipr.id %}">{{ ipr.title }}</a>
-                            {% if ipr.updates %} <br/>(Updates ID#: {% for upd in ipr.updates %}{{upd.target_id}}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}
+                            {% if ipr.updates %} <br>(Updates ID#: {% for upd in ipr.updates %}{{upd.target_id}}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}
                         </td>
                     </tr>
                 {% endfor %}

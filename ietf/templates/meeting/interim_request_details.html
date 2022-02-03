@@ -112,11 +112,11 @@
                    href="{% url 'ietf.meeting.views.interim_request_edit' number=meeting.number %}">Edit</a>
             {% endif %}
             {% if can_approve and status_slug == 'apprw' %}
-                <input class="btn btn-primary" type="submit" value="Approve" name='approve' />
+                <input class="btn btn-primary" type="submit" value="Approve" name='approve'>
                 <input class="btn btn-primary"
                        type="submit"
                        value="Disapprove"
-                       name='disapprove'/>
+                       name='disapprove'>
             {% endif %}
             {% if user|has_role:"Secretariat" and status_slug == 'scheda' %}
                 <a class="btn btn-primary"

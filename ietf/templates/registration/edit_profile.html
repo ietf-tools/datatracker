@@ -102,20 +102,20 @@
                 </a>
             </label>
             <div class="col-sm-10">
-                <div class="form-control-plaintext">
-                    <dl class="row mb-0">
-                        {% for extres in person.personextresource_set.all %}
-                            <dt class="col-sm-3">
-                                {% firstof extres.display_name extres.name.name %}
-                            </dt>
-                            <dd class="col-sm-9">
-                                {{ extres.value|linkify }}
-                            </dd>
-                        {% empty %}
-                            None
-                        {% endfor %}
-                    </dl>
-                </div>
+                {% if person.personextresource_set.all %}
+                    <div class="form-control-plaintext">
+                        <dl class="row mb-0">
+                            {% for extres in person.personextresource_set.all %}
+                                <dt class="col-sm-3">
+                                    {% firstof extres.display_name extres.name.name %}
+                                </dt>
+                                <dd class="col-sm-9">
+                                    {{ extres.value|linkify }}
+                                </dd>
+                            {% endfor %}
+                        </dl>
+                    </div>
+                {% endif %}
                 <a class="btn btn-primary"
                    href="{% url 'ietf.ietfauth.views.edit_person_externalresources' %}">Edit</a>
             </div>
@@ -137,14 +137,14 @@
                                        type="radio"
                                        name="primary_email"
                                        value="{{ email.pk }}"
-                                       {% if email.primary %}checked{% endif %}/>
+                                       {% if email.primary %}checked{% endif %}>
                             </td>
                             <td class="text-center">
                                 <input class="form-check-input"
                                        type="checkbox"
                                        name="active_emails"
                                        value="{{ email.pk }}"
-                                       {% if email.active %}checked{% endif %}/>
+                                       {% if email.active %}checked{% endif %}>
                             </td>
                             <td>
                                 {% if email.origin == person.user.username or email.origin == '' %}

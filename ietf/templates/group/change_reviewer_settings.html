@@ -103,15 +103,17 @@
                     <th data-sort="description">Description</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for h in reviewersettings.history.all %}
-                    <tr>
-                        <td>{{ h.history_date|date }}</td>
-                        <td>{% person_link h.history_user.person %}</td>
-                        <td>{{ h.history_change_reason }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
+            {% if reviewersettings.history.all %}
+                <tbody>
+                    {% for h in reviewersettings.history.all %}
+                        <tr>
+                            <td>{{ h.history_date|date }}</td>
+                            <td>{% person_link h.history_user.person %}</td>
+                            <td>{{ h.history_change_reason }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            {% endif %}
         </table>
     </div>
     <h2 class="mt-5">History of unavailable periods</h2>
@@ -128,21 +130,23 @@
                     </th>
                 </tr>
             </thead>
-            <tbody>
-                {% for h in unavailable_periods_history.all %}
-                    <tr>
-                        <td>
-                            {{ h.history_date|date }}
-                        </td>
-                        <td>
-                            {% person_link h.history_user.person %}
-                        </td>
-                        <td>
-                            {{ h.history_change_reason }}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
+            {% if unavailable_periods_history.all %}
+                <tbody>
+                    {% for h in unavailable_periods_history.all %}
+                        <tr>
+                            <td>
+                                {{ h.history_date|date }}
+                            </td>
+                            <td>
+                                {% person_link h.history_user.person %}
+                            </td>
+                            <td>
+                                {{ h.history_change_reason }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            {% endif %}
         </table>
     </div>
     <p style="padding-top: 2em;">

@@ -38,8 +38,7 @@
                         </td>
                         <td>
                             {% for a in c.aliases %}
-                                {{ a.alias }}
-                                {% if not forloop.last %},{% endif %}
+                                {{ a.alias }}{% if not forloop.last %},{% endif %}
                             {% endfor %}
                         </td>
                     </tr>

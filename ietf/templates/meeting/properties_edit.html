@@ -9,7 +9,7 @@
 {% block content %}
     {% origin %}
     <h1>IETF {{ meeting.number }} Schedule<br><small class="text-muted">
-    {{ schedule.owner }}/{{ schedule.name }} ({{ schedule.official_token }})</small></h2>
+    {{ schedule.owner }}/{{ schedule.name }} ({{ schedule.official_token }})</small></h1>
     <div class="my-3">
         {% if not schedule.is_official %}
             <a class="btn btn-primary"

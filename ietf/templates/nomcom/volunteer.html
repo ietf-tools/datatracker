@@ -18,8 +18,7 @@
         <div class="alert alert-warning my-3" id="already-volunteered">
             You have already volunteered for the
             {% for nc in already_volunteered %}
-                {{ nc.year }}/{{ nc.year|add:1 }}
-                {% if not forloop.last %},{% endif %}
+                {{ nc.year }}/{{ nc.year|add:1 }}{% if not forloop.last %},{% endif %}
             {% endfor %}
             Nominating Committee{{ already_volunteered|pluralize }}.
             To modify your volunteer status, contact the NomCom chair.

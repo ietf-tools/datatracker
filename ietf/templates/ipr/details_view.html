@@ -5,9 +5,7 @@
 {% load ietf_filters ipr_filters %}
 {% block title %}IPR Details - {{ ipr.title }}{% endblock %}
 {% block pagehead %}
-    <meta name="description"
-          content="IPR disclosure #{{ ipr.ipr_id }}: {{ ipr.title }} ({{ ipr.time|date:"
-          Y/>
+    <meta name="description" content="IPR disclosure #{{ipr.ipr_id}}: {{ ipr.title }} ({{ ipr.time|date:'Y' }})">
 {% endblock %}
 {% block content %}
     {% origin %}
@@ -37,13 +35,13 @@
             {% if ipr.updates and ipr.state_id == 'pending' and ipr.update_notified_date or not ipr.updates and ipr.state_id == 'pending' %}
                 <a class="btn btn-primary"
                    href="{% url 'ietf.ipr.views.post' id=ipr.id %}">
-                    <span class="bi bi-check" aria-hidden="true"></span> Post
+                    <i class="bi bi-check" aria-hidden="true"></i> Post
                 </a>
             {% endif %}
             <a class="btn btn-primary"
                href="{% url 'ietf.ipr.views.email' id=ipr.id %}"
                title="Email submitter of this disclsoure">
-                <span class="bi bi-envelope" aria-hidden="true"></span> Email
+                <i class="bi bi-envelope" aria-hidden="true"></i> Email
             </a>
             <a class="btn btn-primary"
                href="{% url 'ietf.ipr.views.edit' id=ipr.id %}">Edit</a>
@@ -78,12 +76,12 @@
         <strong>Submitted:</strong>
         {{ ipr.time|date:"F j, Y" }} under the rules in {{ in_force_ipr_rfc }}
     </div>
-    <div>
-        {% if user|has_role:"Secretariat" %}
+    {% if user|has_role:"Secretariat" %}
+        <div>
             <strong>State:</strong>
             {{ ipr.state }}
-        {% endif %}
-    </div>
+        </div>
+    {% endif %}
     {% if ipr.state_id == 'posted' %}
         <p class="alert alert-info my-3">
             Note: Updates to IPR disclosures must only be made by authorized
@@ -220,7 +218,9 @@
                         Holder contact info
                     </th>
                     <td class="ipr-this">
-                        {{ ipr.holder_contact_info|linebreaks }}
+                        {% if ipr.holder_contact_info %}
+                            {{ ipr.holder_contact_info|linebreaks }}
+                        {% endif %}
                     </td>
                 </tr>
             </tbody>

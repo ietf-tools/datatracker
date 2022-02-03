@@ -37,8 +37,7 @@
                     <td>{{ group.name }}</td>
                     <td>
                         {% for chair in group.chairs %}
-                            {% person_link chair.person %}
-                            {% if not forloop.last %},{% endif %}
+                            {% person_link chair.person %}{% if not forloop.last %},{% endif %}
                         {% endfor %}
                     </td>
                 </tr>

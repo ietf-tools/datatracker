@@ -14,35 +14,37 @@
     {% if doc.rev != latest_rev %}
         <div class="alert alert-warning my-3">The information below is for an old version of the document.</div>
     {% endif %}
-    <table class="table table-sm table-borderless">
-        <tbody class="meta border-top">
-            {% if doc.get_state_slug != "active" %}
-                <tr>
-                    <th></th>
-                    <th>State</th>
-                    <td class="edit"></td>
-                    <td>{{ doc.get_state.name }}</td>
-                </tr>
-            {% endif %}
-            {% if other_reviews %}
-                <tr>
-                    <th></th>
-                    <th>Other reviews</th>
-                    <td class="edit"></td>
-                    <td>
-                        {% for review_assignment in other_reviews %}
-                            {% include "doc/review_assignment_summary.html" with current_doc_name=review_assignemnt.review_request.doc.name current_rev=review_assignment.reviewed_rev %}
-                        {% endfor %}
-                    </td>
-                </tr>
-            {% endif %}
-        </tbody>
-    </table>
+    {% if doc.get_state_slug != "active" or other_reviews %}
+        <table class="table table-sm table-borderless">
+            <tbody class="meta border-top">
+                {% if doc.get_state_slug != "active" %}
+                    <tr>
+                        <th></th>
+                        <th>State</th>
+                        <td class="edit"></td>
+                        <td>{{ doc.get_state.name }}</td>
+                    </tr>
+                {% endif %}
+                {% if other_reviews %}
+                    <tr>
+                        <th></th>
+                        <th>Other reviews</th>
+                        <td class="edit"></td>
+                        <td>
+                            {% for review_assignment in other_reviews %}
+                                {% include "doc/review_assignment_summary.html" with current_doc_name=review_assignemnt.review_request.doc.name current_rev=review_assignment.reviewed_rev %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    {% endif %}
     {% if doc.rev and content != None %}
         <div class="card mt-5">
             <div class="card-header">{{ doc.name }}-{{ doc.rev }}</div>
             <div class="card-body">
-                <pre class="pasted">{{ content|linkify|urlize_ietf_docs }}</pre>
+                <pre class="pasted">{{ content|maybewordwrap|linkify|urlize_ietf_docs }}</pre>
             </div>
         </div>
     {% endif %}

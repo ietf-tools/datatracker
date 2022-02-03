@@ -11,7 +11,7 @@
 {% block pagehead %}
     <link rel="alternate"
           type="application/atom+xml"
-          href="/feed/document-changes/{{ doc.name }}/"/>
+          href="/feed/document-changes/{{ doc.name }}/">
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 {% block content %}
@@ -104,7 +104,7 @@
         <div class="buttonlist">
             <a class="btn btn-primary"
                href="{% url 'ietf.doc.views_doc.add_comment' name=doc.name %}">
-                <span class="bi bi-plus"></span>
+                <i class="bi bi-plus"></i>
                 Add comment
             </a>
         </div>

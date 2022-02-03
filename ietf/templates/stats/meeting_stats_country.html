@@ -31,7 +31,7 @@
                 var s = '<b>' + this.points[0].key + '</b>';
 
                 $.each(this.points, function () {
-                    s += '<br />' + chartConf.yAxis.title.text + ': ' + this.y;
+                    s += '<br>' + chartConf.yAxis.title.text + ': ' + this.y;
                 });
 
                 return s;
@@ -92,8 +92,7 @@
     EU (European Union) is not a country, but has been added for reference, as the sum of
     all current EU member countries:
     {% for c in eu_countries %}
-        {{ c.name }}
-        {% if not forloop.last %},{% endif %}
+        {{ c.name }}{% if not forloop.last %},{% endif %}
     {% endfor %}
     .
 </p>

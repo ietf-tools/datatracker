@@ -18,9 +18,9 @@ data-official-use="{% if ts in in_official_use %}true{% else %}false{% endif %}"
 </div>
 <div class="timeslot-buttons">
 <a class="text-reset text-decoration-none" href="{% url 'ietf.meeting.views.edit_timeslot' num=ts.meeting.number slot_id=ts.id %}">
-<span class="bi bi-pencil"></span>
+<i class="bi bi-pencil"></i>
 </a>
-<span class="bi bi-trash delete-button" data-delete-scope="timeslot" title="Delete this timeslot"></span>
+<i class="bi bi-trash delete-button" data-delete-scope="timeslot" title="Delete this timeslot"></i>
 </div>
 <div class="ts-type">{{ ts.type }}</div>
 </div>

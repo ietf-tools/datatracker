@@ -4,5 +4,5 @@
 {% origin %}
 {# assumes group, form, needs_review, reviewer are in the context #}
 {% load django_bootstrap5 %}
-<input type="hidden" name="prefix" value="{{ form.prefix|default:"" }}"/>
+<input type="hidden" name="prefix" value="{{ form.prefix|default:"" }}">
 {% bootstrap_form form layout='horizontal' %}

@@ -5,7 +5,7 @@
 {% for file in files %}
     {% if file.exists %}
         <a class="btn btn-primary btn-sm float-end ms-1" href="{{ file.url }}" target="_blank">
-            <span class="bi bi-file-{% if file.ext == 'txt' %}text{% elif file.ext == 'xml' %}code{% elif file.ext == 'pdf' %}pdf{% else %}code{% endif %}"></span>
+            <i class="bi bi-file-{% if file.ext == 'txt' %}text{% elif file.ext == 'xml' %}code{% elif file.ext == 'pdf' %}pdf{% else %}code{% endif %}"></i>
             {{ file.ext }}
         </a>
     {% endif %}

@@ -77,11 +77,11 @@ a.new-timeslot-link { color: lightgray; font-size: large;}
                                 {% for day in time_slices %}
                                     <th class="day-label" colspan="{{ date_slices|colWidth:day }}">
                                         {{ day|date:'D' }} ({{ day }})
-                                        <span class="bi bi-trash delete-button"
+                                        <i class="bi bi-trash delete-button"
                                               title="Delete all on this day"
                                               data-delete-scope="day"
                                               data-date-id="{{ day.isoformat }}">
-                                        </span>
+                                        </i>
                                     </th>
                                 {% endfor %}
                             {% endif %}
@@ -96,12 +96,12 @@ a.new-timeslot-link { color: lightgray; font-size: large;}
                                     {% for slot in slot_slices|lookup:day %}
                                         <th class="time-label">
                                             {{ slot.time|date:'H:i' }}-{{ slot.end_time|date:'H:i' }}
-                                            <span class="bi bi-trash delete-button"
+                                            <i class="bi bi-trash delete-button"
                                                   data-delete-scope="column"
                                                   data-date-id="{{ day.isoformat }}"
                                                   data-col-id="{{ day.isoformat }}T{{ slot.time|date:'H:i' }}-{{ slot.end_time|date:'H:i' }}"
                                                   title="Delete all in this column">
-                                            </span>
+                                            </i>
                                         </th>
                                     {% endfor %}
                                 {% endfor %}
@@ -135,8 +135,8 @@ a.new-timeslot-link { color: lightgray; font-size: large;}
                                                             {% endfor %}
                                                         {% endif %}
                                                         <a class="new-timeslot-link text-reset text-decoration-none {% if cell_ts %}hidden{% endif %}"
-                                                           href="{% url 'ietf.meeting.views.create_timeslot' num=meeting.number %}?day={{ day.toordinal }}&date={{ day|date:'Y-m-d' }}&location={{ room.pk }}&time={{ slot.time|date:'H:i' }}&duration={{ slot.duration }}">
-                                                            <span class="bi bi-plus-square"></span>
+                                                           href="{% url 'ietf.meeting.views.create_timeslot' num=meeting.number %}?day={{ day.toordinal }}&amp;date={{ day|date:'Y-m-d' }}&amp;location={{ room.pk }}&amp;time={{ slot.time|date:'H:i' }}&amp;duration={{ slot.duration }}">
+                                                            <i class="bi bi-plus-square"></i>
                                                         </a>
                                                     {% endwith %}
                                                 {% endfor %}

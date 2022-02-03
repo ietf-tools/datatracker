@@ -36,21 +36,23 @@
                                 <th>Email</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {% for role in roles %}
-                                <tr>
-                                    <td>{{ role.name }} </td>
-                                    <td>
-                                        {% if role.group.type.slug == "area" %}
-                                            <a href="{% url "ietf.secr.areas.views.view" name=role.group.acronym %}">{{ role.group.acronym }}{% if role.group.state.slug == "conclude" %} (concluded){% endif %}</a>
-                                        {% else %}
-                                            <a href="{% url 'ietf.secr.groups.views.view' acronym=role.group.acronym %}">{{ role.group.acronym }}{% if role.group.state.slug == "conclude" %} (concluded){% endif %}</a>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ role.email }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
+                        {% if roles %}
+                            <tbody>
+                                {% for role in roles %}
+                                    <tr>
+                                        <td>{{ role.name }} </td>
+                                        <td>
+                                            {% if role.group.type.slug == "area" %}
+                                                <a href="{% url "ietf.secr.areas.views.view" name=role.group.acronym %}">{{ role.group.acronym }}{% if role.group.state.slug == "conclude" %} (concluded){% endif %}</a>
+                                            {% else %}
+                                                <a href="{% url 'ietf.secr.groups.views.view' acronym=role.group.acronym %}">{{ role.group.acronym }}{% if role.group.state.slug == "conclude" %} (concluded){% endif %}</a>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ role.email }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        {% endif %}
                     </table>
                 </div> <!-- iniline-related -->
 

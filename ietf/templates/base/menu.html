@@ -30,7 +30,7 @@
         </a>
         {% active_groups_menu flavor %}
     </li>
-    {% if flavor == 'top' %}<li class="dropdown-divider"></li>{% endif %}
+    {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
     <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>New work</li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
@@ -50,7 +50,7 @@
             BOF Requests
         </a>
     </li>
-    {% if flavor == 'top' %}<li class="dropdown-divider"></li>{% endif %}
+    {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
     <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>Other groups</li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
@@ -108,7 +108,7 @@
             </a>
         </li>
         {% if user|has_role:"Area Director,Secretariat" %}
-            {% if flavor == 'top' %}<li class="dropdown-divider"></li>{% endif %}
+            {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
                    href="{% url 'ietf.doc.views_status_change.rfc_status_changes' %}">
@@ -116,7 +116,7 @@
                 </a>
             </li>
         {% endif %}
-        {% if flavor == 'top' %}<li class="dropdown-divider"></li>{% endif %}
+        {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
         <li>
             <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
                href="{% url 'ietf.doc.views_ballot.irsg_ballot_status' %}">
@@ -124,7 +124,7 @@
             </a>
         </li>
         {% if user|has_role:"WG Chair,RG Chair" %}
-            {% if flavor == 'top' %}<li class="dropdown-divider"></li>{% endif %}
+            {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
             <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>Manage</li>
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
@@ -151,7 +151,7 @@
         {% endif %}
         {% if user|has_role:"Review Team Secretary" %}
             {% if flavor == 'top' %}
-                <li class="dropdown-divider">
+                <li><hr class="dropdown-divider">
                 </li>
             {% endif %}
             <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>
@@ -168,7 +168,7 @@
         {% endif %}
         {% if user|active_nomcoms %}
             {% if flavor == 'top' %}
-                <li class="dropdown-divider">
+                <li><hr class="dropdown-divider">
                 </li>
             {% endif %}
             <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>
@@ -185,7 +185,7 @@
         {% endif %}
     {% endif %}
     {% if flavor == 'top' %}
-        <li class="dropdown-divider">
+        <li><hr class="dropdown-divider">
         </li>
     {% endif %}
     <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>
@@ -273,7 +273,7 @@
     </li>
     {% if flavor == 'top' %}
         {% if flavor == 'top' %}
-            <li class="dropdown-divider">
+            <li><hr class="dropdown-divider">
             </li>
         {% endif %}
         <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>
@@ -288,7 +288,7 @@
     </li>
     {% if flavor == 'top' %}
         {% if flavor == 'top' %}
-            <li class="dropdown-divider">
+            <li><hr class="dropdown-divider">
             </li>
         {% endif %}
         <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>
@@ -404,14 +404,14 @@
         </a>
     </li>
     {% if flavor == 'top' %}
-        <li class="dropdown-divider">
+        <li><hr class="dropdown-divider">
         </li>
     {% endif %}
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
            href="https://trac.ietf.org/trac/ietfdb/newticket">
-            <span class="bi bi-bug">
-            </span>
+            <i class="bi bi-bug">
+            </i>
             Report a bug
         </a>
     </li>

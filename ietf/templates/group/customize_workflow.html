@@ -83,8 +83,8 @@
                                     </label>
                                 </div>
                             {% endfor %}
-                            <input type="hidden" name="state" value="{{ state.pk }}" />
-                            <input type="hidden" name="action" value="setnextstates" />
+                            <input type="hidden" name="state" value="{{ state.pk }}">
+                            <input type="hidden" name="action" value="setnextstates">
                             <button class="mt-2 btn btn-primary btn-sm" type="submit">Save</button>
                         </form>
                     </td>
@@ -92,9 +92,9 @@
                         {% if not state.mandatory %}
                             <form class="set-state text-end" method="post">
                                 {% csrf_token %}
-                                <input type="hidden" name="state" value="{{ state.pk }}" />
-                                <input type="hidden" name="action" value="setstateactive" />
-                                <input type="hidden" name="active" value="{{ state.used|yesno:"0,1" }}" />
+                                <input type="hidden" name="state" value="{{ state.pk }}">
+                                <input type="hidden" name="action" value="setstateactive">
+                                <input type="hidden" name="active" value="{{ state.used|yesno:"0,1" }}">
                                 <button class="btn btn-{% if state.used %}danger{% else %}success{% endif %} btn-sm"
                                         type="submit"
                                         title="Click to {% if state.used %}de{% endif %}activate this state">
@@ -129,9 +129,9 @@
                     <td>
                         <form class="set-tag text-end" method="post">
                             {% csrf_token %}
-                            <input type="hidden" name="tag" value="{{ tag.pk }}" />
-                            <input type="hidden" name="action" value="settagactive" />
-                            <input type="hidden" name="active" value="{{ tag.used|yesno:"0,1" }}" />
+                            <input type="hidden" name="tag" value="{{ tag.pk }}">
+                            <input type="hidden" name="action" value="settagactive">
+                            <input type="hidden" name="active" value="{{ tag.used|yesno:"0,1" }}">
                             <button class="btn btn-{% if tag.used %}danger{% else %}success{% endif %} btn-sm"
                                     type="submit"
                                     title="Click to {% if tag.used %}de{% endif %}activate this tag">

@@ -20,10 +20,8 @@
             This reminder will be sent to
             {% for person in doc.action_holders.all %}
                 {% if forloop.last and not forloop.first %}and{% endif %}
-                {%  person_link person %}
-                {% if not forloop.last %},{% endif %}
-            {% endfor %}
-            .
+                {%  person_link person %}{% if not forloop.last %},{% endif %}
+            {% endfor %}.
         </p>
         <button type="submit"
                 class="btn btn-primary"

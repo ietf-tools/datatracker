@@ -38,28 +38,30 @@
                 <th data-sort="text">Text</th>
             </tr>
         </thead>
-        <tbody>
-            {% for e in events %}
-                <tr id="history-{{ e.pk }}">
-                    <td class="text-nowrap">{{ e.time|date:"Y-m-d" }}</td>
-                    <td>
-                        {{ e.type }}
-                        {% if e.response_due and e.response_past_due %}
-                            <span class="bi bi-exclamation-circle" title="Response overdue"></span>
-                        {% endif %}
-                    </td>
-                    <td>{% person_link e.by %}</td>
-                    <td>
-                        {% if e.message %}
-                            {% if e.response_due %}<span class="badge bg-info">Response due: {{ e.response_due|date:"Y-m-d" }}</span>{% endif %}
-                            <pre>{{ e.message|render_message_for_history|format_history_text:"100" }}</pre>
-                        {% else %}
-                            {{ e.desc|format_history_text }}
-                        {% endif %}
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
+        {% if events %}
+            <tbody>
+                {% for e in events %}
+                    <tr id="history-{{ e.pk }}">
+                        <td class="text-nowrap">{{ e.time|date:"Y-m-d" }}</td>
+                        <td>
+                            {{ e.type }}
+                            {% if e.response_due and e.response_past_due %}
+                                <i class="bi bi-exclamation-circle" title="Response overdue"></i>
+                            {% endif %}
+                        </td>
+                        <td>{% person_link e.by %}</td>
+                        <td>
+                            {% if e.message %}
+                                {% if e.response_due %}<span class="badge bg-info">Response due: {{ e.response_due|date:"Y-m-d" }}</span>{% endif %}
+                                <pre>{{ e.message|render_message_for_history|format_history_text:"100" }}</pre>
+                            {% else %}
+                                {{ e.desc|format_history_text }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        {% endif %}
     </table>
 {% endblock %}
 {% block js %}

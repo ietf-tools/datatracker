@@ -38,28 +38,29 @@
                 <div class="floor-plan position-relative">
                     {% if floor.image %}
                         <img id="floor-{{ floor.name|xslugify }}-image"
+                             alt="{{ floor.name }} Map"
                              class="img-fluid w-100"
                              src="{{ floor.image.url }}">
                         {# We need as many of these as we can have individual rooms combining into one #}
                         <div id="floor-{{ floor.name|xslugify }}-arrowdiv0"
                              class="position-absolute"
                              style="visibility: hidden;">
-                            <img id="arrow" src="{% static 'ietf/images/arrow-ani.webp' %}">
+                            <img alt="Location arrow" src="{% static 'ietf/images/arrow-ani.webp' %}">
                         </div>
                         <div id="floor-{{ floor.name|xslugify }}-arrowdiv1"
                              class="position-absolute"
                              style="visibility: hidden;">
-                            <img id="arrow" src="{% static 'ietf/images/arrow-ani.webp' %}">
+                            <img alt="Location arrow" src="{% static 'ietf/images/arrow-ani.webp' %}">
                         </div>
                         <div id="floor-{{ floor.name|xslugify }}-arrowdiv2"
                              class="position-absolute"
                              style="visibility: hidden;">
-                            <img id="arrow" src="{% static 'ietf/images/arrow-ani.webp' %}">
+                            <img alt="Location arrow" src="{% static 'ietf/images/arrow-ani.webp' %}">
                         </div>
                         <div id="floor-{{ floor.name|xslugify }}-arrowdiv3"
                              class="position-absolute"
                              style="visibility: hidden;">
-                            <img id="arrow" src="{% static 'ietf/images/arrow-ani.webp' %}">
+                            <img alt="Location arrow" src="{% static 'ietf/images/arrow-ani.webp' %}">
                         </div>
                     {% else %}
                         No floor image available yet.

@@ -1,12 +1,19 @@
 {# bs5ok #}
 {# Copyright The IETF Trust 2020, All Rights Reserved #}
-<span {% if class or nowrap %}class="{% if nowrap %}text-nowrap{% endif %} {{ class }}"{% endif %}>
+<span {% if class or nowrap %}class="{% if nowrap %}text-nowrap{% endif %}
+      {{ class }}"
+      {% endif %}>
     {% if email or name %}
         <a {% if class %}class="text-reset"{% endif %}
            title="{% if title %}{{ title }}{% else %}Datatracker profile of {{ name }}.{% endif %}"
-           {% if email %} href="{% url 'ietf.person.views.profile' email_or_name=email %}" {% else %} href="{% url 'ietf.person.views.profile' email_or_name=name %}" {% endif %}>{{ name }}</a>{% if email and with_email %}
+           {% if email %} href="{% url 'ietf.person.views.profile' email_or_name=email %}" {% else %} href="{% url 'ietf.person.views.profile' email_or_name=name %}" {% endif %}>{{ name }}</a>
+        {% if email and with_email %}
             <a {% if class %}class="text-reset"{% endif %}
                href="mailto:{{ email|urlencode }}"
                title="Compose email to {{ email }}.">
-                <span class="bi bi-envelope"></span></a>
-        {% endif %}{% else %}{{ name }}{% endif %}</span>
+                <i class="bi bi-envelope"></i></a>
+        {% endif %}
+    {% else %}
+        <span class="text-muted">(None)</span>
+    {% endif %}
+</span>

@@ -31,10 +31,6 @@
         {% for form in formset %}
             <div class="fieldset{% if forloop.last %} template visually-hidden{% endif %}">
                 <hr class="my-4">
-                <input id="id_session_set-{{ forloop.counter0 }}-id"
-                       name="session_set-{{ forloop.counter0 }}-id"
-                       type="hidden"
-                       value="{{ form.instance.pk|default_if_none:"" }}">
                 {% bootstrap_form form layout='horizontal' %}
                 <button name="id_session_set-{{ forloop.counter0 }}-delete-button"
                         type="button"
@@ -45,7 +41,7 @@
         {% endfor %}
         <div class="my-3">
             <button id="add_session" type="button" class="btn btn-primary offset-md-2">
-                <span class="bi bi-plus" aria-hidden="true"></span>Add session
+                <i class="bi bi-plus" aria-hidden="true"></i>Add session
             </button>
         </div>
         <div class="my-3">

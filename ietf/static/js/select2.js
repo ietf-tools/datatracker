@@ -18,13 +18,6 @@ $.fn.select2.defaults.set("escapeMarkup", function (m) {
 // JS for ietf.utils.fields.SearchableField subclasses
 window.setupSelect2Field = function (e) {
     var url = e.data("ajax--url");
-    if (!url) {
-        if (!e.attr("disabled")) {
-            console.log("data-ajax--url missing, not enabling select2 on field", e);
-        }
-        return;
-    }
-
     var maxEntries = e.data("max-entries");
     var options = e.data("pre");
     for (var id in options) {
@@ -34,7 +27,7 @@ window.setupSelect2Field = function (e) {
     e.select2({
         multiple: maxEntries !== 1,
         maximumSelectionSize: maxEntries,
-        ajax: {
+        ajax: url ? {
             url: url,
             dataType: "json",
             delay: 250,
@@ -52,8 +45,10 @@ window.setupSelect2Field = function (e) {
                     }
                 };
             }
-        }
+        } : undefined
     });
+
+    console.log(e);
 };
 
 $(document)

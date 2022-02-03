@@ -37,7 +37,7 @@
                 var s = '<b>' + this.x + ' ' + (this.x == 1 ? "{{ doc_label }}" : '{{ doc_label }}s') + '</b>';
 
                 $.each(this.points, function () {
-                    s += '<br />' + chartConf.yAxis.title.text + ': ' + this.y.toFixed(1) + '%';
+                    s += '<br>' + chartConf.yAxis.title.text + ': ' + this.y.toFixed(1) + '%';
                 });
 
                 return s;
@@ -56,13 +56,15 @@
             <th data-sort="num">Authors</th>
         </tr>
     </thead>
-    <tbody>
-        {% for document_count, percentage, count, names in table_data %}
-            <tr>
-                <td>{{ document_count }}</td>
-                <td>{{ percentage|floatformat:2 }}%</td>
-                <td>{% include "stats/includes/number_with_details_cell.html" with content_limit=10 %}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
+    {% if table_data %}
+        <tbody>
+            {% for document_count, percentage, count, names in table_data %}
+                <tr>
+                    <td>{{ document_count }}</td>
+                    <td>{{ percentage|floatformat:2 }}%</td>
+                    <td>{% include "stats/includes/number_with_details_cell.html" with content_limit=10 %}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    {% endif %}
 </table>

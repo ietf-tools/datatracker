@@ -7,8 +7,10 @@
     {% origin %}
     <h1>
         Remove review wish
-        <br>
-        <small class="text-muted">{{ doc.name }}</small>
+        {% if doc.name %}
+            <br>
+            <small class="text-muted">{{ doc.name }}</small>
+        {% endif %}
     </h1>
     <form class="my-3" method="post">
         {% csrf_token %}

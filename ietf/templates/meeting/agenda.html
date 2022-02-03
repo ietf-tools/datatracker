@@ -44,10 +44,9 @@
             {{ schedule.meeting.agenda_info_note|removetags:"h1"|safe }}
         </p>
     {% endif %}
+    XXX1
     {% include 'meeting/tz-display.html' with id_suffix="" timezone=timezone %}
-    <p>
-        {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Personalize the agenda view..." always_show=personalize %}
-    </p>
+    {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Personalize the agenda view..." always_show=personalize %}
     {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting only %}
     <div class="input-group input-group-sm mb-3">
         <button class="btn btn-outline-primary dropdown-toggle"
@@ -303,8 +302,6 @@
 </tbody>
 </table>
 {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting only %}
-</div>
-</div>
 {% endcache %}
 {% endblock %}
 {% block js %}

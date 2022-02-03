@@ -4,7 +4,7 @@
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
-{% load person_filters %}
+{% load person_filters textfilters %}
 {% block title %}{{ doc.title }}{% endblock %}
 {% block content %}
     {% origin %}
@@ -73,8 +73,7 @@
                 </td>
                 <td>
                     {% for editor in editors %}
-                        {% person_link editor %}
-                        {% if not forloop.last %},{% endif %}
+                        {% person_link editor %}{% if not forloop.last %},{% endif %}
                     {% endfor %}
                 </td>
             </tr>
@@ -90,8 +89,7 @@
                 </td>
                 <td>
                     {% for leader in responsible %}
-                        {% person_link leader %}
-                        {% if not forloop.last %},{% endif %}
+                        {% person_link leader %}{% if not forloop.last %},{% endif %}
                     {% endfor %}
                 </td>
             </tr>
@@ -158,7 +156,7 @@
             {{ doc.name }}-{{ doc.rev }}
         </div>
         <div class="card-body">
-            {{ content|sanitize|safe }}
+            {{ content|linkify|urlize_ietf_docs }}
         </div>
     </div>
 {% endblock %}

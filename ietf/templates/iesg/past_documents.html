@@ -30,36 +30,38 @@
                 <th data-sort="discusses">Discusses</th>
             </tr>
         </thead>
-        <tbody>
-            {% for doc in docs %}
-                <tr class="{% if doc.by_me %}
-                               byme
-                           {% endif %}
+        {% if docs %}
+            <tbody>
+                {% for doc in docs %}
+                    <tr class="{% if doc.by_me %}
+                                   byme
+                               {% endif %}
 
-                           {% if doc.for_me %}
-                               forme
-                           {% endif %}">
-                    <td>
-                        {{ doc.displayname_with_link }}
-                        <br>
-                        <span class="fw-bold">{{ doc.title }}</span>
-                    </td>
-                    <td>{{ doc.telechat }}</td>
-                    {% include "doc/search/status_columns.html" %}
-                    <td>{% person_link doc.ad nowrap=False %}</td>
-                    <td>
-                        {% for p in doc.blocking_positions %}
-                            {% if p.is_old_pos %}<span class="text-muted">{% endif %}
-                            {% person_link p.balloter nowrap=False %}
-                            ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }} days ago{% endif %}
-                            {% if doc.get_state_url != "rfc" and p.rev != doc.rev %}for -{{ p.rev }}{% endif %})
+                               {% if doc.for_me %}
+                                   forme
+                               {% endif %}">
+                        <td>
+                            {{ doc.displayname_with_link }}
                             <br>
-                            {% if p.is_old_pos %}</span>{% endif %}
-                        {% endfor %}
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
+                            <span class="fw-bold">{{ doc.title }}</span>
+                        </td>
+                        <td>{{ doc.telechat }}</td>
+                        {% include "doc/search/status_columns.html" %}
+                        <td>{% person_link doc.ad nowrap=False %}</td>
+                        <td>
+                            {% for p in doc.blocking_positions %}
+                                {% if p.is_old_pos %}<span class="text-muted">{% endif %}
+                                {% person_link p.balloter nowrap=False %}
+                                ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }} days ago{% endif %}
+                                {% if doc.get_state_url != "rfc" and p.rev != doc.rev %}for -{{ p.rev }}{% endif %})
+                                <br>
+                                {% if p.is_old_pos %}</span>{% endif %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        {% endif %}
     </table>
 {% endblock %}
 {% block js %}

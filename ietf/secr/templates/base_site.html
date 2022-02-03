@@ -24,9 +24,7 @@
 {% block footer %}
     <div id="footer">
         <div id="footer-extras">
-            <ul>
-                {% block footer-extras %}{% endblock %}
-            </ul>
+            {% block footer-extras %}{% endblock %}
         </div>
         <div id="footer-version">
             <p>IETF Secretariat Tools v. {{ secr_version_num }}</p>

@@ -36,7 +36,7 @@
                 var s = '<b>' + this.x + ' ' + (this.x == 1 ? "citation" : 'citations') + '</b>';
 
                 $.each(this.points, function () {
-                    s += '<br/>' + chartConf.yAxis.title.text + ': ' + this.y.toFixed(1) + '%';
+                    s += '<br>' + chartConf.yAxis.title.text + ': ' + this.y.toFixed(1) + '%';
                 });
 
                 return s;
@@ -57,15 +57,17 @@
             <th data-sort="authors">Authors</th>
         </tr>
     </thead>
-    <tbody>
-        {% for citations, percentage, count, names in table_data %}
-            <tr>
-                <td>{{ citations }}</td>
-                <td>{{ percentage|floatformat:2 }}%</td>
-                <td>{% include "stats/includes/number_with_details_cell.html" with content_limit=10 %}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
+    {% if table_data %}
+        <tbody>
+            {% for citations, percentage, count, names in table_data %}
+                <tr>
+                    <td>{{ citations }}</td>
+                    <td>{{ percentage|floatformat:2 }}%</td>
+                    <td>{% include "stats/includes/number_with_details_cell.html" with content_limit=10 %}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    {% endif %}
 </table>
 
 <p>Note that the citation counts do not exclude self-references.</p>

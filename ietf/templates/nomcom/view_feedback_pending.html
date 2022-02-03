@@ -106,8 +106,7 @@
                                 </tr>
                             {% endif %}
                             <tr>
-                                <td>{{ form.instance.time|date:"r" }}</td>
-                                {{ form.id }}
+                                <td>{{ form.instance.time|date:"r" }}{{ form.id }}</td>
                                 {% for choice in form.type.field.choices %}
                                     <td class="text-center">
                                         <input type="radio"
@@ -127,33 +126,32 @@
                                             data-bs-target="#modal{{ form.instance.id }}">
                                         View
                                     </button>
-                                </td>
-                            </tr>
-                            <div class="modal fade"
-                                 id="modal{{ form.instance.id }}"
-                                 tabindex="-1"
-                                 role="dialog"
-                                 aria-labelledby="label{{ form.instance.id }}"
-                                 aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-scrollable modal-xl">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="label{{ form.instance.id }}">{{ form.instance.subject }}</h5>
-                                            <button type="button"
-                                                    class="btn-close"
-                                                    data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <pre>{% decrypt form.instance.comments request year 1 %}</pre>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <div class="modal fade"
+                                         id="modal{{ form.instance.id }}"
+                                         tabindex="-1"
+                                         role="dialog"
+                                         aria-labelledby="label{{ form.instance.id }}"
+                                         aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-scrollable modal-xl">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="label{{ form.instance.id }}">{{ form.instance.subject }}</h5>
+                                                    <button type="button"
+                                                            class="btn-close"
+                                                            data-bs-dismiss="modal"
+                                                            aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <pre>{% decrypt form.instance.comments request year 1 %}</pre>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        </tr>
+                                </td>
+                            </tr>
                     {% endfor %}
                 </tbody>
             </table>

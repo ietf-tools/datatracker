@@ -31,7 +31,7 @@
                 var s = '<b>' + this.points[0].key + '</b>';
 
                 $.each(this.points, function () {
-                    s += '<br />' + chartConf.yAxis.title.text + ': ' + this.y;
+                    s += '<br>' + chartConf.yAxis.title.text + ': ' + this.y;
                 });
 
                 return s;
@@ -50,15 +50,17 @@
             <th data-sort="num">Authors</th>
         </tr>
     </thead>
-    <tbody>
-        {% for affiliation, percentage, count, names in table_data %}
-            <tr>
-                <td>{{ affiliation|default:"(unknown)" }}</td>
-                <td>{{ percentage|floatformat:2 }}%</td>
-                <td>{% include "stats/includes/number_with_details_cell.html" %}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
+    {% if table_data %}
+        <tbody>
+            {% for affiliation, percentage, count, names in table_data %}
+                <tr>
+                    <td>{{ affiliation|default:"(unknown)" }}</td>
+                    <td>{{ percentage|floatformat:2 }}%</td>
+                    <td>{% include "stats/includes/number_with_details_cell.html" %}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    {% endif %}
 </table>
 <p>
     The statistics are based entirely on the author affiliation
@@ -93,12 +95,16 @@
                     <th data-sort="alias">Alias</th>
                 </tr>
             </thead>
-            {% for name, alias in alias_data %}
-                <tr>
-                    <td>{{ name|default:"(unknown)" }}</td>
-                    <td>{{ alias }}</td>
-                </tr>
-            {% endfor %}
+            {% if alias_data %}
+                <tbody>
+                    {% for name, alias in alias_data %}
+                        <tr>
+                            <td>{{ name|default:"(unknown)" }}</td>
+                            <td>{{ alias }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            {% endif %}
         </table>
     {% endif %}
 {% else %}

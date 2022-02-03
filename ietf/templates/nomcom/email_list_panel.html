@@ -1,8 +1,10 @@
 {# bs5ok #}
 {% load person_filters textfilters %}
 <{{ heading }} class="mt-3">{{ title }}</{{ heading }}>
-<ul>
-    {% for n in list %}
-        <li>{% person_link n.person with_email=False %} ({{ n.email.address|linkify }})</li>
-    {% endfor %}
-</ul>
+{% if list %}
+    <ul>
+        {% for n in list %}
+            <li>{% person_link n.person with_email=False %} ({{ n.email.address|linkify }})</li>
+        {% endfor %}
+    </ul>
+{% endif %}

@@ -5,6 +5,14 @@
 {% load static %}
 {% load textfilters %}
 {% load ietf_filters %}
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Session Materials</title>
+    </head>
+    <body>
+
 {% with item.session.agenda as agenda %}
     {% if agenda %}
         {% if agenda.file_extension == "txt" or agenda.file_extension == "md" or agenda.file_extension == "html" or agenda.file_extension == "htm" %}
@@ -22,7 +30,7 @@
     <ul class="list-unstyled">
         {% for slide in item.session.slides %}
             <li>
-                <span class="bi bi-file-{{ slide.file_extension|lower }}-o"></span>
+                <i class="bi bi-file-{{ slide.file_extension|lower }}"></i>
                 <a href="{{ slide.get_versionless_href }}">{{ slide.title|clean_whitespace }}</a>
             </li>
         {% endfor %}
@@ -40,3 +48,5 @@
         <span class="badge bg-warning">No minutes submitted</span>
     {% endif %}
 {% endwith %}
+    </body>
+</html>

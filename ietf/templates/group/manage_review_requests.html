@@ -70,8 +70,7 @@
                                 {% if r.doc.authors %}
                                     <span class="fw-bold">Authors:</span>
                                     {% for person in r.doc.authors %}
-                                        {% person_link person %}
-                                        {% if not forloop.last %},{% endif %}
+                                        {% person_link person %}{% if not forloop.last %},{% endif %}
                                     {% endfor %}
                                     <br>
                                 {% endif %}
@@ -85,8 +84,7 @@
                                 {% if r.wg_chairs %}
                                     <span class="fw-bold">{{ r.doc.group.type.name }} chairs:</span>
                                     {% for person in r.wg_chairs %}
-                                        {% person_link person %}
-                                        {% if not forloop.last %},{% endif %}
+                                        {% person_link person %}{% if not forloop.last %},{% endif %}
                                     {% endfor %}
                                     <br>
                                 {% endif %}
