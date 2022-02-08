@@ -1,6 +1,5 @@
-{# bs5ok #}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin ietf_filters %}
 {% origin %}
 {# assumes group and milestones is in context #}
 {% regroup milestones by resolved as milestonegroups %}
@@ -47,7 +46,7 @@
                             {% endif %}
                         {% endif %}
                     </td>
-                    <td>{{ milestone.desc }}</td>
+                    <td>{{ milestone.desc|urlize_ietf_docs }}</td>
                     <td>
                         {% for d in milestone.docs.all %}
                             <a href="{% url "ietf.doc.views_doc.document_main" name=d.name %}">{{ d.name }}</a>

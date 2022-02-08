@@ -191,7 +191,8 @@ This test section has some text.
             self.client.login(username=username,password=username+'+password')
             r = self.client.get(url)
             self.assertEqual(r.status_code,200)
-            unescaped = unescape(unicontent(r).encode('utf-8').decode('unicode-escape'))
+            # Yes, unescape is needed twice, for names like "O'Connor"
+            unescaped = unescape(unescape(unicontent(r).encode('utf-8').decode('unicode-escape')))
             for editor in previous_editors:
                 self.assertIn(editor.name,unescaped)
             new_editors = set(previous_editors)
@@ -231,7 +232,8 @@ This test section has some text.
             self.client.login(username=username,password=username+'+password')
             r = self.client.get(url)
             self.assertEqual(r.status_code,200)
-            unescaped = unescape(unicontent(r).encode('utf-8').decode('unicode-escape'))
+            # Yes, unescape is needed twice, for names like "O'Connor"
+            unescaped = unescape(unescape(unicontent(r).encode('utf-8').decode('unicode-escape')))
             for responsible in previous_responsible: 
                 self.assertIn(responsible.name, unescaped)
             new_responsible = set(previous_responsible)

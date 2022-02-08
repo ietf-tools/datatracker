@@ -1,4 +1,3 @@
-{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015-2021, All Rights Reserved #}
 {% load origin %}
@@ -44,7 +43,6 @@
             {{ schedule.meeting.agenda_info_note|removetags:"h1"|safe }}
         </p>
     {% endif %}
-    XXX1
     {% include 'meeting/tz-display.html' with id_suffix="" timezone=timezone %}
     {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Personalize the agenda view..." always_show=personalize %}
     {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting only %}
@@ -258,7 +256,7 @@
                 {% assignment_display_name item %}
             {% end_agenda_anchor %}
             {% if item.session.current_status == 'canceled' %}
-                <span class="badge bg-danger float-end">CANCELLED</span>
+                <span class="badge bg-danger float-end">Cancelled</span>
             {% else %}
                 <div class="float-end ps-3">
                     {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
@@ -269,7 +267,7 @@
             {% endif %}
             {% if item.session.current_status == 'resched' %}
                 <div class="badge bg-danger float-end">
-                    RESCHEDULED
+                    Rescheduled
                     {% if item.session.rescheduled_to %}
                         TO
                         <div class="timetooltip reschedtimetooltip">

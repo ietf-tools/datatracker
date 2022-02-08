@@ -1,4 +1,3 @@
-{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
@@ -12,26 +11,28 @@
 {% block bodyAttrs %}onload="draw_calendar();" onresize="draw_calendar();"{% endblock %}
 {% block content %}
     {% origin %}
-    {# FIXME-LARS: this is completely broken #}
-    {% include "meeting/meeting_heading.html" with selected="floor-plan" title_extra="Floor Plan" %}
+    {# FIXME: patched this for some minimal functionality, this code needs to be replaced, ideally with fullcalendar #}
+    <div id="mtgheader">
+        {% include "meeting/meeting_heading.html" with updated=schedule.meeting.updated selected="room-view" title_extra="Room Grid" %}
+    </div>
     <div id="daycontainer" role="tabpanel">
-        <ul id="daytabs" class="nav nav-tabs" role="tablist">
+        <ul id="daytabs" class="nav nav-tabs my-3" role="tablist">
             {% for day in days %}
                 <li class="nav-item" role="presentation">
-                    <a href="#day{{ forloop.counter0 }}"
+                    <button data-bs-target="#day{{ forloop.counter0 }}"
                        id="day{{ forloop.counter0 }}-tab"
                        role="tab"
                        class="nav-link {% if forloop.first %}active{% endif %}"
                        data-bs-toggle="tab"
                        aria-controls="day{{ forloop.counter0 }}">
                         {{ day|date:"D, M d" }}
-                    </a>
+                    </button>
                 </li>
             {% endfor %}
         </ul>
         <div class="tab-content">
             {% for day in days %}
-                <div role="tab-panel"
+                <div role="tabpanel"
                      class="tab-pane{% if forloop.first %} active{% endif %}"
                      id="day{{ forloop.counter0 }}">
                     Error loading calendar for {{ day|date:"D, M d" }}
@@ -68,15 +69,19 @@
     </script>
     <script src="{% static "ietf/js/room-view.js" %}"></script>
     <script>
-        // Javascript to enable link to tabs
-        var url = document.location.toString();
-        if (url.match('#')) {
-            console.log($('.nav-tabs a[href="#' + url.split('#')[1] + '"]'));
-            $('.nav-tabs a[href="#' + url.split('#')[1] + '"]').tab('show');
-        }
-        // Change hash for page-reload
-        $('.nav-tabs a').on('shown.bs.tab', function (e) {
-            window.location.hash = e.target.hash;
-        });
+        $(document)
+            .ready(function () {
+                // Javascript to enable link to tab
+                var url = document.location.toString();
+                if (url.match('#')) {
+                    $('.nav-tabs button[data-bs-target="#' + url.split('#')[1] + '"]')
+                        .tab('show');
+                }
+                // Change hash for page-reload
+                $('.nav-tabs button')
+                    .on('shown.bs.tab', function (e) {
+                        history.replaceState(null, null, e.currentTarget.dataset.bsTarget);
+                    });
+            });
     </script>
 {% endblock %}

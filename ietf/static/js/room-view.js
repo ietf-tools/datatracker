@@ -97,7 +97,11 @@ setInterval(animate, 50);
 window.draw_calendar = function () {
     window.setTimeout(draw_calendar, 1000);
 
-    var width = document.body.clientWidth;
+    var width = $('#mtgheader')
+        .width();
+    var offset = $('#mtgheader')
+        .offset()
+        .left;
     var height = document.body.clientHeight;
 
     if (lastheight == height &&
@@ -116,7 +120,7 @@ window.draw_calendar = function () {
         {
             var start_time = parseInt(items[i].time.substr(0, 2), 10) * 60 +
                 parseInt(items[i].time.substr(2, 2), 10);
-            var end_time = start_time + (items[i].duration / 60)
+            var end_time = start_time + (items[i].duration / 60);
 
             if (start_time < day_start) { day_start = start_time; }
             if (end_time > day_end) { day_end = end_time; }
@@ -128,8 +132,6 @@ window.draw_calendar = function () {
     var header_offset = $('#daytabs')
         .outerHeight(true) + $('#mtgheader')
         .outerHeight(true);
-    console.log($('#mtgheader')
-        .outerHeight(true));
 
     var num_minutes = day_end - day_start;
     var minute_height = (height - header_height - header_offset) / num_minutes;
@@ -146,7 +148,7 @@ window.draw_calendar = function () {
             var e = document.createElement("div");
 
             e.style.border = "solid";
-            e.style.borderWidth = border;
+            e.style.borderWidth = border + "px";
 
             e.style.background = "#2647f0";
             e.style.color = "#fff";
@@ -157,15 +159,15 @@ window.draw_calendar = function () {
             e.style.overflow = "hidden";
             e.style.position = "absolute";
 
-            e.style.top = header_offset;
-            e.style.left = timelabel_width + ri * room_width;
-            e.style.width = room_width;
-            e.style.height = header_height;
+            e.style.top = header_offset + "px";
+            e.style.left = (offset + timelabel_width + ri * room_width) + "px";
+            e.style.width = room_width + "px";
+            e.style.height = header_height + "px";
 
-            e.style.margin = 0;
-            e.style.padding = padding;
+            e.style.margin = 0 + "px";
+            e.style.padding = padding + "px";
             e.style.fontFamily = "sans-serif";
-            e.style.fontSize = header_height * 0.25;
+            e.style.fontSize = (header_height * 0.25) + "px";
 
             e.style.textAlign = "center";
 
@@ -188,7 +190,7 @@ window.draw_calendar = function () {
             e = document.createElement("div");
 
             e.style.border = "solid";
-            e.style.borderWidth = border;
+            e.style.borderWidth = border + "px";
 
             e.style.color = "#000";
             e.style.borderColor = "#fff #000";
@@ -197,13 +199,13 @@ window.draw_calendar = function () {
             e.style.overflow = "hidden";
             e.style.position = "absolute";
 
-            e.style.top = header_height + header_offset;
-            e.style.left = timelabel_width + ri * room_width;
-            e.style.width = room_width;
-            e.style.height = height - header_height - header_offset;
+            e.style.top = (header_height + header_offset) + "px";
+            e.style.left = (offset + timelabel_width + ri * room_width) + "px";
+            e.style.width = room_width + "px";
+            e.style.height = (height - header_height - header_offset) + "px";
 
-            e.style.margin = 0;
-            e.style.padding = padding;
+            e.style.margin = 0 + "px";
+            e.style.padding = padding + "px";
 
             document.getElementById("day" + day)
                 .appendChild(e);
@@ -220,28 +222,28 @@ window.draw_calendar = function () {
             e.style.borderColor = "#f8f8f8";
             e.style.overflow = "hidden";
             e.style.position = "absolute";
-            e.style.top = header_height + header_offset + (time - day_start) * minute_height;
-            e.style.left = timelabel_width;
-            e.style.width = width - timelabel_width;
-            e.style.height = 0;
+            e.style.top = (header_height + header_offset + (time - day_start) * minute_height) + "px";
+            e.style.left = (offset + timelabel_width) + "px";
+            e.style.width = (width - timelabel_width) + "px";
+            e.style.height = 0 + "px";
             e.style.zIndex = "-1";
-            e.style.margin = 0;
-            e.style.padding = padding;
+            e.style.margin = 0 + "px";
+            e.style.padding = padding + "px";
             document.getElementById("day" + day)
                 .appendChild(e);
 
             e = document.createElement("div");
             e.style.overflow = "hidden";
             e.style.position = "absolute";
-            e.style.top = header_height + header_offset - (header_height * 0.125) + (time - day_start) * minute_height;
-            e.style.left = 0;
-            e.style.width = timelabel_width;
-            e.style.height = header_height * 0.5;
+            e.style.top = (header_height + header_offset - (header_height * 0.125) + (time - day_start) * minute_height) + "px";
+            e.style.left = offset + "px";
+            e.style.width = timelabel_width + "px";
+            e.style.height = (header_height * 0.5) + "px";
             e.style.zIndex = "-1";
-            e.style.margin = 0;
+            e.style.margin = 0 + "px";
             e.style.padding = padding;
             e.style.fontFamily = "sans-serif";
-            e.style.fontSize = header_height * 0.25;
+            e.style.fontSize = (header_height * 0.25) + "px";
             e.style.textAlign = "right";
             e.style.color = "#e0e0e0";
             var label = time / 60 + "00";
@@ -270,13 +272,13 @@ window.draw_calendar = function () {
 
             var sess_width = room_width / items[i].lanes;
             var sess_height = ((end_time - start_time) * minute_height);
-            var room_left = timelabel_width + items[i].room_index * room_width;
+            var room_left = offset + timelabel_width + items[i].room_index * room_width;
             var sess_left = room_left + sess_width * items[i].lane;
             var sess_top = ((start_time - day_start) * minute_height) + header_height + header_offset;
 
             e = document.createElement("div");
             e.style.border = "solid";
-            e.style.borderWidth = border;
+            e.style.borderWidth = border + "px";
 
             if (fg[items[i].area]) {
                 e.style.background = bg[items[i].area];
@@ -291,12 +293,12 @@ window.draw_calendar = function () {
             e.style.display = "block";
             e.style.overflow = "hidden";
             e.style.position = "absolute";
-            e.style.top = sess_top;
-            e.style.left = sess_left;
-            e.style.width = sess_width;
-            e.style.height = sess_height;
-            e.style.margin = 0;
-            e.style.padding = padding;
+            e.style.top = sess_top + "px";
+            e.style.left = sess_left + "px";
+            e.style.width = sess_width + "px";
+            e.style.height = sess_height + "px";
+            e.style.margin = 0 + "px";
+            e.style.padding = padding + "px";
             e.style.fontFamily = "sans-serif";
             e.style.fontSize = "8pt";
             if (items[i].from_base_schedule)
@@ -357,20 +359,23 @@ function resize(div, t2, l2, w2, h2, to_fit) {
 }
 
 function animate() {
+    var offset = $('#mtgheader')
+        .offset()
+        .left;
     var i;
     for (i = divlist.length - 1; i >= 0; i--) {
         var div = divlist[i];
         if (div.percent < 100) {
             div.percent += 5;
-            var t1 = parseFloat(div.style.top.replace("px", ""));
-            var l1 = parseFloat(div.style.left.replace("px", ""));
-            var w1 = parseFloat(div.style.width.replace("px", ""));
-            var h1 = parseFloat(div.style.height.replace("px", ""));
+            var t1 = parseFloat(div.style.top.replace("px", "")) + "px";
+            var l1 = offset + parseFloat(div.style.left.replace("px", "")) + "px";
+            var w1 = parseFloat(div.style.width.replace("px", "")) + "px";
+            var h1 = parseFloat(div.style.height.replace("px", "")) + "px";
 
-            div.style.top = wavg(t1, div.t2, div.percent);
-            div.style.left = wavg(l1, div.l2, div.percent);
-            div.style.width = wavg(w1, div.w2, div.percent);
-            div.style.height = wavg(h1, div.h2, div.percent);
+            div.style.top = wavg(t1, div.t2, div.percent) + "px" + "px";
+            div.style.left = offset + wavg(l1, div.l2, div.percent) + "px" + "px";
+            div.style.width = wavg(w1, div.w2, div.percent) + "px" + "px";
+            div.style.height = wavg(h1, div.h2, div.percent) + "px" + "px";
 
             if (t1 == div.t2 && l1 == div.l2 &&
                 w1 == div.w2 && h1 == div.h2) { div.percent = 100; }
@@ -390,7 +395,7 @@ function animate() {
                         tmp();
                     }
                 }
-                div.style.height = tmp;
+                div.style.height = tmp + "px";
             } else {
                 divlist.remove(i);
                 if (div.callback) {
@@ -410,14 +415,17 @@ function finish_maximize(e) {
     }
 
     e.insertBefore(document.createElement("br"), e.firstChild);
+    var offset = $('#mtgheader')
+        .offset()
+        .left;
 
     var minimize_func = function (e) { return function () { minimize(e); }; };
-    var img = document.createElement("img");
-    img.src = "{% static 'ietf/images/agenda-weekview/close.png' %}";
-    img.style.cssFloat = "right";
-    img.onclick = minimize_func(e);
-    img.style.cursor = "pointer";
-    e.insertBefore(img, e.firstChild);
+    var i = document.createElement("i");
+    i.classList.add('bi', 'bi-x-lg');
+    i.style.cssFloat = "right";
+    i.onclick = minimize_func(e);
+    i.style.cursor = "pointer";
+    e.insertBefore(i, e.firstChild);
 
     var h = document.createElement("span");
     h.appendChild(document.createTextNode(items[e.id].dayname));
@@ -428,24 +436,24 @@ function finish_maximize(e) {
     var tmp = e.style.height;
     e.style.removeProperty("height");
     var used_height = e.clientHeight;
-    e.style.height = tmp;
+    e.style.height = tmp + "px";
 
     var frame = document.createElement("iframe");
     frame.setAttribute("src", items[e.id].agenda);
 
     frame.style.position = "absolute";
-    frame.style.left = 8;
-    frame.style.width = e.clientWidth - 16;
-    frame.style.top = used_height + 8;
-    frame.style.height = e.clientHeight - used_height - 16;
+    frame.style.left = (offset + 8) + "px";
+    frame.style.width = (e.clientWidth - 16) + "px";
+    frame.style.top = (used_height + 8) + "px";
+    frame.style.height = (e.clientHeight - used_height - 16) + "px";
 
     frame.style.background = "#fff";
     frame.style.overflow = "auto";
     frame.id = "agenda";
 
     frame.style.border = e.style.border;
-    frame.style.borderWidth = border;
-    frame.style.padding = padding;
+    frame.style.borderWidth = border + "px";
+    frame.style.padding = padding + "px";
     frame.style.borderColor = e.style.borderColor;
 
     e.appendChild(frame);

@@ -167,7 +167,7 @@ class VerifyingClient(Client):
             document, errors = tidy_document(
                 r.content,
                 options={
-                    # FIXME-LARS: this is causing way too many generic warnings:
+                    # this is causing way too many generic warnings:
                     # "accessibility-check": 1,
                 },
             )
@@ -176,17 +176,20 @@ class VerifyingClient(Client):
                 [
                     e
                     for e in errors.splitlines()
-                    # FIXME-LARS: django-bootstrap5 incorrectly sets a "required"
-                    # proprietray attribute on some <div>s; remove those errors
+                    # FIXME: django-bootstrap5 incorrectly sets a "required"
+                    # proprietary attribute on some <div>s; remove those errors
                     if not re.match(r'.*proprietary attribute "required"', e)
-                    # FIXME-LARS: some secretariat templates have this issue, ignore
+                    # FIXME: some secretariat templates have this issue, ignore
                     and not re.match(
                         r".*id and name attribute value mismatch", e
                     )
-                    # FIXME-LARS: bootstrap-icons and close buttons render as empty, remove those errors.
+                    # FIXME: bootstrap-icons and close buttons render as empty, remove those errors.
                     # Also, django seems to generate some empty tags, so remove those, too.
                     and not re.match(
                         r".*trimming empty <(i|em|button|span|optgroup)>", e)
+                    # FIXME: some old pages only work correctly in quirks mode :-(
+                    and not re.match(
+                        r".*missing <!DOCTYPE> declaration", e)
                 ]
             )
 

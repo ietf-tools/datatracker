@@ -33,9 +33,9 @@ class EditAuthorsTests(IetfSeleniumTestCase):
             person_span = form_elt.find_element(By.CLASS_NAME, 'select2-selection')
             self.scroll_to_element(person_span)
             person_span.click()
-            input = self.driver.find_element(By.CLASS_NAME, 'select2-search__field')
+            input = self.driver.find_element(By.CSS_SELECTOR, '.select2-search__field[aria-controls*=author]')
             input.send_keys(name)
-            result_selector = 'ul.select2-results__options > li.select2-results__option--selectable'
+            result_selector = 'ul.select2-results__options[id*=author] > li.select2-results__option--selectable'
             self.wait.until(
                 expected_conditions.text_to_be_present_in_element(
                     (By.CSS_SELECTOR, result_selector),
@@ -94,9 +94,9 @@ class EditAuthorsTests(IetfSeleniumTestCase):
         # get the "add author" button so we can add blank author forms
         add_author_button = self.driver.find_element(By.ID, 'add-author-button')
         for index, auth in enumerate(authors):
-            self.driver.execute_script("arguments[0].scrollIntoView();", add_author_button)  # FIXME-LARS: no idea why this fails:
+            self.driver.execute_script("arguments[0].scrollIntoView();", add_author_button)  # FIXME: no idea why this fails:
             # self.scroll_to_element(add_author_button)  # Can only click if it's in view!
-            self.driver.execute_script("arguments[0].click();", add_author_button)  # FIXME-LARS: no idea why this fails:
+            self.driver.execute_script("arguments[0].click();", add_author_button)  # FIXME: no idea why this fails:
             # add_author_button.click()  # Create a new form. Automatically scrolls to it.
             author_forms = authors_list.find_elements(By.CLASS_NAME, 'author-panel')
             authors_added = index + 1
@@ -119,7 +119,7 @@ class EditAuthorsTests(IetfSeleniumTestCase):
         self.driver.find_element(By.ID, 'id_basis').send_keys('change testing')
         # Now click the 'submit' button and check that the update was accepted.
         submit_button = self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
-        self.driver.execute_script("arguments[0].click();", submit_button)  # FIXME-LARS: no idea why this fails:
+        self.driver.execute_script("arguments[0].click();", submit_button)  # FIXME: no idea why this fails:
         # self.scroll_to_element(submit_button)
         # submit_button.click()
         # Wait for redirect to the document_main view

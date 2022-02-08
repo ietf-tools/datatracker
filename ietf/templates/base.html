@@ -1,4 +1,3 @@
-{# bs5ok #}
 {# Copyright The IETF Trust 2015-2021, All Rights Reserved #}
 <!doctype html>
 {% load ietf_filters static %}
@@ -17,6 +16,7 @@
         <link href='https://fonts.googleapis.com/css?family=IM+Fell+English+SC|IM+Fell+DW+Pica:400,400italic|Nova+Mono|IM+Fell+English:400,400italic&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
         {% endcomment %}
         <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}">
+        <link rel="stylesheet" href="{% static 'ietf/css/select2.css' %}">
         <style>
             {% block morecss %}{% endblock %}
             .leftmenu { width: 13em; }
@@ -56,15 +56,13 @@
                         in
                     </a>
                 {% endif %}
-                <form class="navbar-form d-flex d-none d-lg-block" action="/doc/search/">
-                    <input class="form-control"
+                <div class="d-flex d-none d-lg-block">
+                    <input class="form-control select2-field"
+                           id="navbar-doc-search"
+                           data-ajax--url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='document' doc_type='draft' %}"
                            type="text"
-                           name="name"
-                           placeholder="Document search"
-                           required>
-                    <input type="hidden" name="activedrafts" value="on">
-                    <input type="hidden" name="rfcs" value="on">
-                </form>
+                           data-placeholder="Document search">
+                </div>
                 <button class="navbar-toggler"
                         type="button"
                         data-bs-toggle="collapse"
@@ -138,6 +136,13 @@
                 </footer>
             {% endblock %}
         </div>
-        {% block js %}{% endblock %}
+        {% block js %}
+        {% endblock %}
+        <script src="{% static 'ietf/js/select2.js' %}"></script>
+        <script>
+            $('#navbar-doc-search').on('select2:select', function (e) {
+                window.location.href = e.params.data.url;
+            });
+        </script>
     </body>
 </html>

@@ -4280,8 +4280,8 @@ class InterimTests(TestCase):
         self.assertContains(r, 'IETF-%02d'%int(ietf.meeting.number))
         q = PyQuery(r.content)
         #id="-%s" % interim.group.acronym
-        #self.assertIn('CANCELLED', q('[id*="'+id+'"]').text())
-        self.assertIn('CANCELLED', q('tr>td>a>span').text())
+        #self.assertIn('Cancelled', q('[id*="'+id+'"]').text())
+        self.assertIn('Cancelled', q('tr>td>a>span').text())
 
     def do_upcoming_test(self, querystring=None, create_meeting=True):
         if create_meeting:
@@ -4304,7 +4304,7 @@ class InterimTests(TestCase):
         self.assertContains(r, 'IETF 72')
         # cancelled session
         q = PyQuery(r.content)
-        self.assertIn('CANCELLED', q('tr>td.text-end>span').text())
+        self.assertIn('Cancelled', q('tr>td.text-end>span').text())
 
     # test_upcoming_filters_ignored removed - we _don't_ want to ignore filters now, and the test passed because it wasn't testing the filtering anyhow (which requires testing the js).
 

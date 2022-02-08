@@ -1,4 +1,3 @@
-{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
@@ -90,7 +89,7 @@
                 </td>
                 <td>
                     {% if not telechat %}
-                        (None)
+                        <span class="text-muted">(None)</span>
                     {% else %}
                         On agenda of {{ telechat.telechat_date|date:"Y-m-d" }} IESG telechat
                         {% if doc.returning_item %}(returning item){% endif %}

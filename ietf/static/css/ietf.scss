@@ -143,12 +143,12 @@ pre {
 }
 
 #timeline .bar text {
-    fill: white;
+    fill: black;
     dominant-baseline: central;
     pointer-events: none;
 }
 
-$timeline-odd-color: $primary;
+$timeline-odd-color: $info;
 $timeline-odd-hover-color: shift-color($timeline-odd-color, $link-shade-percentage) !default;
 
 #timeline .bar:nth-child(odd) rect {
@@ -160,7 +160,7 @@ $timeline-odd-hover-color: shift-color($timeline-odd-color, $link-shade-percenta
     fill: $timeline-odd-hover-color;
 }
 
-$timeline-even-color: $success;
+$timeline-even-color: $warning;
 $timeline-even-hover-color: shift-color($timeline-even-color, $link-shade-percentage) !default;
 
 #timeline .bar:nth-child(even) rect {

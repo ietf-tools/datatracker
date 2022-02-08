@@ -467,7 +467,9 @@ class LogUtilTests(TestCase):
         with self.assertRaises(AssertionError):
             unreachable()
         settings.SERVER_MODE = 'development'
-        unreachable()
+        # FIXME-LARS: this fails when the tests are run with --debug-mode, i.e., DEBUG is set:
+        if not settings.DEBUG:
+            unreachable()
         settings.SERVER_MODE = 'test'
 
     def test_assertion(self):

@@ -1,4 +1,3 @@
-{# bs5ok #}
 {% extends "nomcom/nomcom_private_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
@@ -7,7 +6,7 @@
 {% block nomcom_content %}
     {% origin %}
     <h2>Feedback not related to nominees</h2>
-    <ul class="nav nav-tabs my-3">
+    <ul role="tablist" class="nav nav-tabs my-3">
         {% for ft in feedback_types %}
             <li class="nav-item">
                 <button class="nav-link {% if forloop.first %}active{% endif %}"
@@ -21,7 +20,7 @@
     </ul>
     <div class="tab-content">
         {% for ft in feedback_types %}
-            <div class="tab-pane {% if forloop.first %}active{% endif %}"
+            <div role="tabpanel" class="tab-pane {% if forloop.first %} active{% endif %}"
                  id="{{ ft.ft.slug }}">
                 {% for feedback in ft.feedback %}
                     {% if not forloop.first %}
@@ -55,4 +54,22 @@
         <a class="btn btn-secondary"
            href="{% url 'ietf.nomcom.views.view_feedback' year %}">Back</a>
     </p>
+{% endblock %}
+{% block js %}
+    <script>
+        $(document)
+            .ready(function () {
+                // Javascript to enable link to tab
+                var url = document.location.toString();
+                if (url.match('#')) {
+                    $('.nav-tabs button[data-bs-target="#' + url.split('#')[1] + '"]')
+                        .tab('show');
+                }
+                // Change hash for page-reload
+                $('.nav-tabs button')
+                    .on('shown.bs.tab', function (e) {
+                        history.replaceState(null, null, e.currentTarget.dataset.bsTarget);
+                    });
+            });
+    </script>
 {% endblock %}

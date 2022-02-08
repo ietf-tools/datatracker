@@ -1,4 +1,3 @@
-{# bs5ok #}
 {% load origin ietf_filters textfilters tz dateformat %}
 {% origin %}
 {% for session in sessions %}
@@ -11,7 +10,7 @@
                 {% if time.tzinfo.zone != "UTC" %}<span class="small">({{ time|utc|dateformat:"H:i T" }})</span>{% endif %}
             {% endfor %}
             {% if session.cancelled %}
-                <small class="badge bg-warning">CANCELLED</small>
+                <small class="badge bg-warning">Cancelled</small>
             {% else %}
                 {{ session.status }}
             {% endif %}

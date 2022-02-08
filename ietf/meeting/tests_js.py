@@ -266,7 +266,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
 
         # hide timeslots
         modal_open = self.driver.find_element(By.CSS_SELECTOR, "#timeslot-toggle-modal-open")
-        self.driver.execute_script("arguments[0].click();", modal_open)  # FIXME-LARS: not working:
+        self.driver.execute_script("arguments[0].click();", modal_open)  # FIXME: not working:
         # modal_open.click()
 
         self.assertTrue(self.driver.find_element(By.CSS_SELECTOR, "#timeslot-group-toggles-modal").is_displayed())
@@ -589,7 +589,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         # option to swap. If we used the first or last day, a fencepost error in
         # disabling options by date might be hidden.
         clicked_index = 1
-        self.driver.execute_script("arguments[0].click();", future_swap_ts_buttons[clicked_index])  # FIXME-LARS: not working:
+        self.driver.execute_script("arguments[0].click();", future_swap_ts_buttons[clicked_index])  # FIXME: not working:
         # future_swap_ts_buttons[clicked_index].click()
         try:
             modal = wait.until(
@@ -1520,7 +1520,7 @@ class AgendaTests(IetfSeleniumTestCase):
             ),
             'Modal open button not found or not clickable',
         )
-        # FIXME-LARS: no idea why we need js instead of the following:
+        # FIXME: no idea why we need js instead of the following:
         # self.scroll_to_element(open_modal_button)
         # open_modal_button.click()
         self.driver.execute_script("arguments[0].click();", open_modal_button)
@@ -1761,7 +1761,7 @@ class AgendaTests(IetfSeleniumTestCase):
         farfut_button = self.driver.find_element(By.CSS_SELECTOR, 'button[data-filter-item="farfut"]')
         break_checkbox = self.driver.find_element(By.CSS_SELECTOR, 'input[type="checkbox"][name="selected-sessions"][data-filter-item="secretariat-sessb"]')
         registration_checkbox = self.driver.find_element(By.CSS_SELECTOR, 'input[type="checkbox"][name="selected-sessions"][data-filter-item="secretariat-sessa"]')
-        self.driver.execute_script("arguments[0].click();", mars_sessa_checkbox) # select mars session; FIXME: no idea why a simple mars_sessa_checkbox.click() doesn't work
+        self.driver.execute_script("arguments[0].click();", mars_sessa_checkbox)  # select mars session; FIXME: no idea why a simple mars_sessa_checkbox.click() doesn't work
 
         try:
             wait.until(

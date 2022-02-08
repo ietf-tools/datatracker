@@ -4,7 +4,7 @@ import select2 from "select2";
 select2($);
 
 $.fn.select2.defaults.set("allowClear", true);
-$.fn.select2.defaults.set("debug", false); // FIXME-LARS: initialize from settings.DEBUG somehow?
+$.fn.select2.defaults.set("debug", false);
 $.fn.select2.defaults.set("dropdownCssClass", ":all:");
 $.fn.select2.defaults.set("minimumInputLength", 2);
 $.fn.select2.defaults.set("selectionCssClass", ":all:");
@@ -47,13 +47,12 @@ window.setupSelect2Field = function (e) {
             }
         } : undefined
     });
-
-    console.log(e);
 };
 
 $(document)
     .ready(function () {
         $(".select2-field")
+            .not(".select2-hidden-accessible")
             .each(function () {
                 if ($(this)
                     .closest(".template")

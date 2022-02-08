@@ -1,4 +1,3 @@
-{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2016-2020, All Rights Reserved #}
 {% load origin %}
@@ -44,21 +43,23 @@
                 <td class="edit"></td>
                 <td>
                     {% if doc.get_state_slug == "rfc" and not snapshot %}
-                        RFC - {{ doc.std_level }}
-                        (
+                        <span class="text-success">RFC - {{ doc.std_level }}</span>
                         {% if published %}
-                            {{ published.time|date:"F Y" }}
+                            ({{ published.time|date:"F Y" }})
                         {% else %}
-                            publication date unknown
+                            (Publication date unknown)
                         {% endif %}
-                        {% if has_errata %}
-                            ;
-                            <a href="https://www.rfc-editor.org/errata_search.php?rfc={{ rfc_number }}"
-                               rel="nofollow">Errata</a>
-                        {% else %}
-                            ; No errata
+                        {% if has_verified_errata %}
+                            <a class="badge bg-danger text-decoration-none"
+                               href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}" title="Click to view errata." rel="nofollow">
+                                Errata
+                            </a>
+                        {% elif has_errata %}
+                            <a class="badge bg-warning text-decoration-none"
+                               href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}" title="Click to view errata." rel="nofollow">
+                                Errata
+                            </a>
                         {% endif %}
-                        )
                         {% if obsoleted_by %}<div>Obsoleted by {{ obsoleted_by|urlize_related_source_list|join:", " }}</div>{% endif %}
                         {% if updated_by %}<div>Updated by {{ updated_by|urlize_related_source_list|join:", " }}</div>{% endif %}
                         {% if obsoletes %}<div>Obsoletes {{ obsoletes|urlize_related_target_list|join:", " }}</div>{% endif %}
@@ -78,7 +79,7 @@
                             </div>
                         {% endif %}
                     {% else %}
-                        {{ doc.get_state }} Internet-Draft
+                        <span class="{% if doc.get_state_slug == 'active' %}text-success{% elif doc.get_state_slug == 'expired' %}text-danger{% endif %}">{{ doc.get_state }} Internet-Draft</span>
                         {% if submission %}({{ submission|safe }}){% endif %}
                         {% if resurrected_by %}- resurrect requested by {{ resurrected_by }}{% endif %}
                     {% endif %}
@@ -107,7 +108,7 @@
                 <td>
                     {{ doc.time|date:"Y-m-d" }}
                     {% if latest_revision and latest_revision.time.date != doc.time.date %}
-                        (latest revision {{ latest_revision.time|date:"Y-m-d" }})
+                        <span class="text-muted">(Latest revision {{ latest_revision.time|date:"Y-m-d" }})</span>
                     {% endif %}
                 </td>
             </tr>
@@ -197,7 +198,7 @@
                         </a>
                     {% endif %}
                 </td>
-                <td {% if stream_desc == "(None)" %}class="text-muted"{%endif%} >
+                <td {% if stream_desc == "(None)" %}class="text-muted"{%endif%}>
                     {{ stream_desc }}
                 </td>
             </tr>
@@ -238,13 +239,13 @@
                 <td>
                     {% if doc.get_state_slug != "active" and doc.get_state_slug != "rfc" %}
                         <div class="float-end badge bg-warning">
-                            Expired & archived
+                            Expired &amp; archived
                         </div>
                     {% endif %}
                     {% if file_urls %}
                         {% for label, url in file_urls %}
                             <a class="btn btn-primary btn-sm" href="{{ url }}">
-                                <i class="bi bi-file-{% if label == "pdf" %}pdf{% elif label == "xml" or label == "htmlized" %}code{% elif label == "bibtex" %}ruled{% elif label == "plain text" %}text{% endif %}">
+                                <i class="bi bi-file-{% if label == 'pdf' %}pdf{% elif label == 'xml' or label == 'htmlized' or label == 'html' %}code{% elif label == 'bibtex' %}ruled{% elif label == 'plain text' %}text{% endif %}">
                                 </i>
                                 {{ label }}
                             </a>
@@ -427,7 +428,9 @@
                     </td>
                     <td>
                         {% if stream_state %}
-                            {{ stream_state }}
+                            <span class="{% if stream_state|slugify|slice:"6" == 'active' %}text-success{% endif %}">
+                                {{ stream_state }}
+                            </span>
                         {% else %}
                             <span class="text-muted">
                                 (None)
@@ -453,8 +456,9 @@
                                 {% endfor %}
                             </div>
                         {% endif %}
-                        {# PEY: Move this to the IRSG section when built #}
-                        {% if due_date %}[Due date: {{ due_date }}]{% endif %}
+                        {% if due_date %}
+                            <span class="text-muted">(Due date {{ due_date }})</span>
+                        {% endif %}
                     </td>
                 {% else %}
                     <th>
@@ -463,7 +467,7 @@
                     <td class="edit">
                     </td>
                     <td>
-                        (No stream defined)
+                        <span class="text-muted">(No stream defined)</span>
                     </td>
                 {% endif %}
             </tr>
@@ -575,7 +579,7 @@
                                    href="{% url 'ietf.doc.views_doc.document_shepherd_writeup' name=doc.name %}">
                                     Show
                                 </a>
-                                <small class="text-muted">(last changed {{ shepherd_writeup.time|date:"Y-m-d" }})</small>
+                                <span class="text-muted">(Last changed {{ shepherd_writeup.time|date:"Y-m-d" }})</span>
                             {% else %}
                                 <span class="text-muted">
                                     (None)
@@ -640,7 +644,13 @@
                         {% endif %}
                     </td>
                     <td>
-                        {{ iesg_state_summary|default:"I-D Exists" }}
+                        <span class="{% if iesg_state_summary|slugify == 'expired' %}text-danger{% endif %}">
+                            {% if iesg_state_summary|striptags == iesg_state_summary %}
+                                {{ iesg_state_summary|default:"I-D Exists"|urlize_ietf_docs }}
+                            {% else %}
+                                {{ iesg_state_summary|default:"I-D Exists" }}
+                            {% endif %}
+                        </span>
                     </td>
                 </tr>
                 {% if doc.action_holders_enabled %}

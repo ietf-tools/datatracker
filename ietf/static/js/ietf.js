@@ -75,7 +75,7 @@ $(document)
                     }
                     attachTo.find(".dropdown-menu")
                         .remove();
-                    var menu = ['<ul class="dropdown-menu ms-n1">'];
+                    var menu = ['<ul class="dropdown-menu ms-n1 mt-n1">'];
                     var groups = data[parentId];
                     var gtype = "";
                     for (var i = 0; i < groups.length; ++i) {

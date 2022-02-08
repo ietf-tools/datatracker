@@ -387,12 +387,12 @@ function finish_maximize(e) {
 
     e.insertBefore(document.createElement("br"), e.firstChild);
 
-    var img = document.createElement("img");
-    img.src = "{% static 'ietf/images/agenda-weekview/close.png' %}";
-    img.style.cssFloat = "right";
-    img.onclick = function () { minimize(e); };
-    img.style.cursor = "pointer";
-    e.insertBefore(img, e.firstChild);
+    var i = document.createElement("i");
+    i.classList.add('bi', 'bi-x-lg');
+    i.style.cssFloat = "right";
+    i.onclick = function () { minimize(e); };
+    i.style.cursor = "pointer";
+    e.insertBefore(i, e.firstChild);
 
     var h = document.createElement("span");
     h.appendChild(document.createTextNode(e.item.dayname));

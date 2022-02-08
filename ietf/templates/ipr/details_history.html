@@ -1,4 +1,3 @@
-{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
@@ -52,7 +51,7 @@
                         <td>{% person_link e.by %}</td>
                         <td>
                             {% if e.message %}
-                                {% if e.response_due %}<span class="badge bg-info">Response due: {{ e.response_due|date:"Y-m-d" }}</span>{% endif %}
+                                {% if e.response_due %}<span class="badge bg-info">Response due {{ e.response_due|date:"Y-m-d" }}</span>{% endif %}
                                 <pre>{{ e.message|render_message_for_history|format_history_text:"100" }}</pre>
                             {% else %}
                                 {{ e.desc|format_history_text }}

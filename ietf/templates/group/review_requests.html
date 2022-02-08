@@ -1,4 +1,3 @@
-{# bs5ok #}
 {% extends "group/group_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
@@ -42,21 +41,16 @@
                         <td>
                             {% if r.pk != None %}
                                 <a href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}">
-                                {% endif %}
-                                {{ r.doc.name }}-
-                                {% if r.requested_rev %}
-                                    {{ r.requested_rev }}
-                                {% else %}
-                                    {{ r.doc.rev }}
-                                {% endif %}
-                                {% if r.pk != None %}</a>{% endif %}
+                            {% endif %}
+                                {{ r.doc.name }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}
+                            {% if r.pk != None %}</a>{% endif %}
                             </td>
                             <td>{{ r.type.name }}</td>
                             <td>
                                 {% if r.pk %}
                                     {{ r.time|date:"Y-m-d" }} by {% person_link r.requested_by %}
                                 {% else %}
-                                    <span class="badge bg-info">auto-suggested</span>
+                                    <span class="badge bg-info">Auto-suggested</span>
                                 {% endif %}
                             </td>
                             <td>
@@ -92,12 +86,7 @@
                         <tr>
                             <td>
                                 <a href="{% url "ietf.doc.views_review.review_request" name=a.review_request.doc.name request_id=a.review_request.pk %}">
-                                    {{ a.review_request.doc.name }}-
-                                    {% if a.review_request.requested_rev %}
-                                        {{ a.review_request.requested_rev }}
-                                    {% else %}
-                                        {{ a.review_request.doc.rev }}
-                                    {% endif %}
+                                    {{ a.review_request.doc.name }}-{% if a.review_request.requested_rev %}{{ a.review_request.requested_rev }}{% else %}{{ a.review_request.doc.rev }}{% endif %}
                                 </a>
                             </td>
                             <td>{{ a.review_request.type.name }}</td>
@@ -176,8 +165,7 @@
                         <tr>
                             <td>
                                 <a href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}">
-                                    {{ r.doc.name }}
-                                    {% if r.requested_rev %}-{{ r.requested_rev }}{% endif %}
+                                    {{ r.doc.name }}{% if r.requested_rev %}-{{ r.requested_rev }}{% endif %}
                                 </a>
                             </td>
                             <td>
@@ -216,8 +204,7 @@
                         <tr>
                             <td>
                                 <a href="{% url "ietf.doc.views_review.review_request" name=a.review_request.doc.name request_id=a.review_request.pk %}">
-                                    {{ a.review_request.doc.name }}
-                                    {% if a.review_request.requested_rev %}-{{ a.review_request.requested_rev }}{% endif %}
+                                    {{ a.review_request.doc.name }}{% if a.review_request.requested_rev %}-{{ a.review_request.requested_rev }}{% endif %}
                                 </a>
                             </td>
                             <td>

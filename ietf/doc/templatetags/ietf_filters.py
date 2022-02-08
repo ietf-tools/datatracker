@@ -226,13 +226,14 @@ def urlize_ietf_docs(string, autoescape=None):
     """
     if autoescape and not isinstance(string, SafeData):
         string = escape(string)
-    string = re.sub(r"(?<!>)(RFC\s*?)0{0,3}(\d+)", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
-    string = re.sub(r"(?<!>)(BCP\s*?)0{0,3}(\d+)", "<a href=\"/doc/bcp\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
-    string = re.sub(r"(?<!>)(STD\s*?)0{0,3}(\d+)", "<a href=\"/doc/std\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
-    string = re.sub(r"(?<!>)(FYI\s*?)0{0,3}(\d+)", "<a href=\"/doc/fyi\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
-    string = re.sub(r"(?<!>)(draft-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
-    string = re.sub(r"(?<!>)(conflict-review-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
-    string = re.sub(r"(?<!>)(status-change-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(RFC\s*?)0{0,3}(\d+)", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(BCP\s*?)0{0,3}(\d+)", "<a href=\"/doc/bcp\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(STD\s*?)0{0,3}(\d+)", "<a href=\"/doc/std\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(FYI\s*?)0{0,3}(\d+)", "<a href=\"/doc/fyi\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(draft-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(conflict-review-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(status-change-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(charter-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
     return mark_safe(string)
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
@@ -240,9 +241,15 @@ urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 def urlize_related_source_list(related, autoescape=None):
     """Convert a list of DocumentRelations into list of links using the source document's canonical name"""
     links = []
+    names = set()
+    titles = set()
     for rel in related:
         name=rel.source.canonical_name()
         title = rel.source.title
+        if name in names and title in titles:
+            continue
+        names.add(name)
+        titles.add(title)
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=name))
         if autoescape:
             name = escape(name)
@@ -409,7 +416,9 @@ def ad_area(user):
 def format_history_text(text, trunc_words=25):
     """Run history text through some cleaning and add ellipsis if it's too long."""
     full = mark_safe(text)
-    full = urlize_ietf_docs(full)
+    if "</a>" not in full:
+        full = urlize_ietf_docs(full)
+    full = bleach.linkify(full, parse_email=True)
 
     return format_snippet(full, trunc_words)
 

@@ -26,8 +26,7 @@ def get_agenda_date(date=None):
             return datetime.date.today()
     else:
         try:
-            # FIXME: .active()
-            return TelechatDate.objects.all().get(date=datetime.datetime.strptime(date, "%Y-%m-%d").date()).date
+            return TelechatDate.objects.active().get(date=datetime.datetime.strptime(date, "%Y-%m-%d").date()).date
         except (ValueError, TelechatDate.DoesNotExist):
             raise Http404
 
@@ -222,4 +221,3 @@ def agenda_data(date=None):
     fill_in_agenda_management_issues(date, sections)
 
     return { 'date': date.isoformat(), 'sections': sections }
-

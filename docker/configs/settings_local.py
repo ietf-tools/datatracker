@@ -41,7 +41,7 @@ EMAIL_PORT=2025
 TRAC_WIKI_DIR_PATTERN = "test/wiki/%s"
 TRAC_SVN_DIR_PATTERN = "test/svn/%s"
 
-MEDIA_BASE_DIR = 'test'
+MEDIA_BASE_DIR = 'data/developers'
 MEDIA_ROOT = MEDIA_BASE_DIR + '/media/'
 MEDIA_URL = '/media/'
 
@@ -60,3 +60,19 @@ SUBMIT_YANG_RFC_MODEL_DIR   = 'data/developers/ietf-ftp/yang/rfcmod/'
 import socket
 hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
 INTERNAL_IPS = [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips]
+
+# DEV_TEMPLATE_CONTEXT_PROCESSORS = [
+#    'ietf.context_processors.sql_debug',
+# ]
+
+DOCUMENT_PATH_PATTERN = 'data/developers/ietf-ftp/{doc.type_id}/'
+INTERNET_DRAFT_PATH = 'data/developers/ietf-ftp/internet-drafts/'
+CHARTER_PATH = 'data/developers/ietf-ftp/charter/'
+BOFREQ_PATH = 'data/developers/ietf-ftp/bofreq/'
+CONFLICT_REVIEW_PATH = 'data/developers/ietf-ftp/conflict-reviews/'
+STATUS_CHANGE_PATH = 'data/developers/ietf-ftp/status-changes/'
+INTERNET_DRAFT_ARCHIVE_DIR = 'data/developers/ietf-ftp/internet-drafts/'
+INTERNET_ALL_DRAFTS_ARCHIVE_DIR = 'data/developers/ietf-ftp/internet-drafts/'
+
+NOMCOM_PUBLIC_KEYS_DIR = 'data/nomcom_keys/public_keys/'
+SLIDE_STAGING_PATH = 'test/staging/'

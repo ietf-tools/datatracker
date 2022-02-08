@@ -1,4 +1,3 @@
-{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
@@ -37,7 +36,7 @@
                             {% if meeting.type_id == "interim" %}
                                 <a href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.responsible_group.acronym %}">
                                     {{ meeting.number }}
-                                    {% if meeting.interim_meeting_cancelled %}<span class="badge bg-warning">CANCELLED</span>{% endif %}
+                                    {% if meeting.interim_meeting_cancelled %}<span class="badge bg-warning">Cancelled</span>{% endif %}
                                 </a>
                             {% else %}
                                 <a href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">IETF-{{ meeting.number }}</a>

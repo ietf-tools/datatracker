@@ -1,4 +1,3 @@
-{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
@@ -32,11 +31,11 @@
                             <a class="interim-meeting-link"
                                href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">
                                 {{ meeting.number }}
-                                {% if meeting.interim_meeting_cancelled %}<span class="ms-1 badge bg-warning">CANCELLED</span>{% endif %}
+                                {% if meeting.interim_meeting_cancelled %}<span class="ms-1 badge bg-warning">Cancelled</span>{% endif %}
                             </a>
                         </td>
                         <td>
-                            {% if meeting.can_approve %}<span class="badge bg-success">can be approved</span>{% endif %}
+                            {% if meeting.can_approve %}<span class="badge bg-success">Can be approved</span>{% endif %}
                         </td>
                     </tr>
                 {% endfor %}

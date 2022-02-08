@@ -1,8 +1,7 @@
-{# bs5ok #}
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load ietf_filters %}
+{% load ietf_filters textfilters %}
 {% load static %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
@@ -50,8 +49,8 @@
                         <a href="{% url 'ietf.mailtrigger.views.show_triggers' trigger %}"
                            title="{{ desc }}">{{ trigger }}</a>
                     </td>
-                    <td>{{ to|join:', ' }}</td>
-                    <td>{{ cc|join:', ' }}</td>
+                    <td>{{ to|join:', '|linkify }}</td>
+                    <td>{{ cc|join:', '|linkify }}</td>
                 </tr>
             {% endfor %}
         </tbody>

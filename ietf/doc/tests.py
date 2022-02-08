@@ -2384,7 +2384,7 @@ class FieldTests(TestCase):
         self.assertCountEqual(decoded_ids, [str(doc.id) for doc in docs])
         for doc in docs:
             self.assertEqual(
-                dict(id=doc.pk, selected=True, text=escape(uppercase_std_abbreviated_name(doc.name))),
+                dict(id=doc.pk, selected=True, url=doc.get_absolute_url(), text=escape(uppercase_std_abbreviated_name(doc.name))),
                 decoded[str(doc.pk)],
             )
 
