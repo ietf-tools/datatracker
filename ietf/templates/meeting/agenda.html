@@ -46,11 +46,12 @@
     {% include 'meeting/tz-display.html' with id_suffix="" timezone=timezone %}
     {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Personalize the agenda view..." always_show=personalize %}
     {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting only %}
-    <div class="input-group input-group-sm mb-3">
+    <div class="input-group mb-3">
         <button class="btn btn-outline-primary dropdown-toggle"
                 type="button"
                 data-bs-toggle="dropdown"
-                aria-expanded="false">
+                aria-expanded="false"
+                {% if filter_categories|length < 3 %}disabled{% endif %}>
             Download area agenda
         </button>
         <ul class="dropdown-menu">
@@ -68,7 +69,7 @@
                 {% endif %}
             {% endfor %}
         </ul>
-        <a class="btn btn-outline-primary"
+        <a class="btn btn-outline-primary {% if non_area_keywords|length == 0 %}disabled{% endif %}"
            href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{ non_area_keywords|join:',' }}">
             Download non-area events
         </a>
