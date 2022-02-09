@@ -47,8 +47,8 @@
     <table class="table table-sm table-borderless">
         <tbody class="meta border-top">
             <tr>
-                <th>Document</th>
-                <th>
+                <th class="col-1">Document</th>
+                <th class="col-2">
                     {% if doc.get_state_slug != "approved" %}
                         Proposed charter
                     {% else %}
@@ -56,7 +56,7 @@
                     {% endif %}
                 </th>
                 <td class="edit"></td>
-                <th>
+                <th class="col-9">
                     {{ group.name }} {{ group.type.name }}
                     <a href="{{ group.about_url }}">({{ group.acronym }})</a>
                     {% if snapshot %}<span class="badge bg-warning">Snapshot</span>{% endif %}
@@ -126,7 +126,7 @@
                     <th>
                     </th>
                     <th>
-                        Charter Edit AD
+                        Charter edit AD
                     </th>
                     <td class="edit">
                         {% if can_manage %}

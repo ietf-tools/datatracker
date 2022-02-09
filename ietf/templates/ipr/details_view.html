@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, 2017. All Rights Reserved. #}
 {% load origin %}
-{% load ietf_filters ipr_filters %}
+{% load ietf_filters ipr_filters textfilters %}
 {% block title %}IPR Details - {{ ipr.title }}{% endblock %}
 {% block pagehead %}
-    <meta name="description" content="IPR disclosure #{{ipr.ipr_id}}: {{ ipr.title }} ({{ ipr.time|date:'Y' }})">
+    <meta name="description"
+          content="IPR disclosure #{{ ipr.ipr_id }}: {{ ipr.title }} ({{ ipr.time|date:'Y' }})">
 {% endblock %}
 {% block content %}
     {% origin %}
@@ -73,7 +74,7 @@
     {% endif %}
     <div>
         <strong>Submitted:</strong>
-        {{ ipr.time|date:"F j, Y" }} under the rules in {{ in_force_ipr_rfc }}
+        {{ ipr.time|date:"F j, Y" }} under the rules in {{ in_force_ipr_rfc|urlize_ietf_docs }}.
     </div>
     {% if user|has_role:"Secretariat" %}
         <div>
@@ -90,7 +91,7 @@
         </p>
     {% endif %}
     {% if updates_iprs or updated_by_iprs %}
-        <h2 class="mt-4">Updates</h2>
+        <h2 class="mt-5">Updates</h2>
         {% if updated_by_iprs %}
             <dl class="row">
                 <dt class="col-sm-1">
@@ -139,7 +140,7 @@
             This update was notified to the submitter of the IPR that is being updated on: {{ ipr.update_notified_date|date:"Y-m-d" }}
         </div>
     {% endif %}
-    <h2 class="mt-4">
+    <h2 class="mt-5">
         {% cycle 'I' 'II' 'III' 'IV' 'V' 'VI' 'VII' 'VIII' as section %}.
         {% if ipr|to_class_name == "ThirdPartyIprDisclosure" %}Possible{% endif %}
         Patent Holder/Applicant ("Patent Holder")
@@ -159,19 +160,24 @@
                     <th class="col-5">This (#{{ ipr.id }})</th>
                 </tr>
             </thead>
+        {% else %}
+            <thead>
+                <tr>
+                    <th class="col-3"></th>
+                    <th class="col-9"></th>
+                </tr>
+            </thead>
         {% endif %}
         <tbody>
             <tr>
-                <td class="ipr-prev">
-                    {% if prev %}{{ prev.holder_legal_name }}{% endif %}
-                </td>
-                <th class="ipr-label text-center">Holder legal name</th>
+                {% if prev %}<td class="ipr-prev">{{ prev.holder_legal_name }}</td>{% endif %}
+                <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">Holder legal name</th>
                 <td class="ipr-this">{{ ipr.holder_legal_name }}</td>
             </tr>
         </tbody>
     </table>
     {% if ipr.holder_contact_name or ipr.holder_contact_info %}
-        <h2 class="mt-4">{% cycle section %}. Patent Holder's Contact for License Application</h2>
+        <h2 class="mt-5">{% cycle section %}. Patent Holder's Contact for License Application</h2>
         <table class="table table-sm table-striped">
             {% if prev %}
                 <thead>
@@ -187,46 +193,61 @@
                         <th class="col-5">This (#{{ ipr.id }})</th>
                     </tr>
                 </thead>
+            {% else %}
+                <thead>
+                    <tr>
+                        <th class="col-3">
+                        </th>
+                        <th class="col-9">
+                        </th>
+                    </tr>
+                </thead>
             {% endif %}
             <tbody>
                 <tr>
-                    <td class="ipr-prev">
-                        {% if prev %}{{ prev.holder_contact_name }}{% endif %}
-                    </td>
-                    <th class="ipr-label text-center">Holder contact name</th>
+                    {% if prev %}
+                        <td class="ipr-prev">
+                            {{ prev.holder_contact_name }}
+                        </td>
+                    {% endif %}
+                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                        Holder contact name
+                    </th>
                     <td class="ipr-this">
                         {{ ipr.holder_contact_name }}
                     </td>
                 </tr>
                 <tr>
-                    <td class="ipr-prev">
-                        {% if prev %}{{ prev.holder_contact_email }}{% endif %}
-                    </td>
-                    <th class="ipr-label text-center">
+                    {% if prev %}
+                        <td class="ipr-prev">
+                            {{ prev.holder_contact_email|linkify }}
+                        </td>
+                    {% endif %}
+                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Holder contact email
                     </th>
                     <td class="ipr-this">
-                        {{ ipr.holder_contact_email }}
+                        {{ ipr.holder_contact_email|linkify }}
                     </td>
                 </tr>
                 <tr>
-                    <td class="ipr-prev">
-                        {% if prev %}{{ prev.holder_contact_info|linebreaks }}{% endif %}
-                    </td>
-                    <th class="ipr-label text-center">
+                    {% if prev %}
+                        <td class="ipr-prev">
+                            {{ prev.holder_contact_info|linebreaks }}
+                        </td>
+                    {% endif %}
+                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Holder contact info
                     </th>
                     <td class="ipr-this">
-                        {% if ipr.holder_contact_info %}
-                            {{ ipr.holder_contact_info|linebreaks }}
-                        {% endif %}
+                        {% if ipr.holder_contact_info %}{{ ipr.holder_contact_info|linebreaks }}{% endif %}
                     </td>
                 </tr>
             </tbody>
         </table>
     {% endif %}
     {% if ipr.ietfer_name or ipr.ietfer_contact_email or ipr.ietfer_contact_info %}
-        <h2 class="mt-4">
+        <h2 class="mt-5">
             {% cycle section %}. Contact Information for the IETF Participant Whose Personal Belief Triggered this Disclosure
         </h2>
         <table class="table table-sm table-striped">
@@ -247,13 +268,24 @@
                         </th>
                     </tr>
                 </thead>
+            {% else %}
+                <thead>
+                    <tr>
+                        <th class="col-3">
+                        </th>
+                        <th class="col-9">
+                        </th>
+                    </tr>
+                </thead>
             {% endif %}
             <tbody>
                 <tr>
-                    <td class="ipr-prev">
-                        {% if prev %}{{ prev.ietfer_name }}{% endif %}
-                    </td>
-                    <th class="ipr-label text-center">
+                    {% if prev %}
+                        <td class="ipr-prev">
+                            {{ prev.ietfer_name }}
+                        </td>
+                    {% endif %}
+                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Name
                     </th>
                     <td class="ipr-this">
@@ -261,21 +293,25 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="ipr-prev">
-                        {% if prev %}{{ prev.ietfer_contact_email }}{% endif %}
-                    </td>
-                    <th class="ipr-label text-center">
+                    {% if prev %}
+                        <td class="ipr-prev">
+                            {{ prev.ietfer_contact_email|linkify }}
+                        </td>
+                    {% endif %}
+                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Email
                     </th>
                     <td class="ipr-this">
-                        {{ ipr.ietfer_contact_email }}
+                        {{ ipr.ietfer_contact_email|linkify }}
                     </td>
                 </tr>
                 <tr>
-                    <td class="ipr-prev">
-                        {% if prev %}{{ prev.ietfer_contact_info|linebreaks }}{% endif %}
-                    </td>
-                    <th class="ipr-label text-center">
+                    {% if prev %}
+                        <td class="ipr-prev">
+                            {{ prev.ietfer_contact_info|linebreaks }}
+                        </td>
+                    {% endif %}
+                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Other info
                     </th>
                     <td class="ipr-this">
@@ -286,7 +322,7 @@
         </table>
     {% endif %}
     {% if ipr.iprdocrel_set.all or ipr.other_designations %}
-        <h2 class="mt-4">
+        <h2 class="mt-5">
             {% cycle section %}. IETF Document or Other Contribution to Which this IPR Disclosure Relates
         </h2>
         <table class="table table-sm table-striped">
@@ -307,68 +343,101 @@
                         </th>
                     </tr>
                 </thead>
+            {% else %}
+                <thead>
+                    <tr>
+                        <th>
+                        </th>
+                    </tr>
+                </thead>
             {% endif %}
             <tbody>
                 <tr>
-                    <td class="ipr-prev">
-                        {% if prev %}
-                            {% for iprdocrel in prev.iprdocrel_set.all %}
-                                <b>{{ iprdocrel.doc_type }}:</b>
-                                {{ iprdocrel.formatted_name }} ("{{ iprdocrel.document.document.title }}")
+                    {% if prev %}
+                        <td class="ipr-prev">
+                            <dl class="row">
+                                {% for iprdocrel in prev.iprdocrel_set.all %}
+                                    <dt class="col-sm-4 my-0">
+                                        {{ iprdocrel.doc_type }}:
+                                    </dt>
+                                    <dd class="col-sm-8 my-0">
+                                        {{ iprdocrel.formatted_name|urlize_ietf_docs }} ("{{ iprdocrel.document.document.title }}")
+                                    </dd>
+                                    {% if iprdocrel.revisions %}
+                                        <dt class="col-sm-4 my-0">
+                                            Revisions:
+                                        </dt>
+                                        <dd class="col-sm-8 my-0">
+                                            {{ iprdocrel.revisions }}
+                                        </dd>
+                                    {% endif %}
+                                    {% if iprdocrel.sections %}
+                                        <dt class="col-sm-4 my-0">
+                                            Sections:
+                                        </dt>
+                                        <dd class="col-sm-8 my-0">
+                                            {{ iprdocrel.sections }}
+                                        </dd>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if prev.other_designations %}
+                                    <dt class="col-sm-4 my-0">
+                                        Designations for Other Contributions:
+                                    </dt>
+                                    <dd class="col-sm-8 my-0">
+                                        {{ prev.other_designations }}
+                                    </dd>
+                                {% endif %}
+                            </dl>
+                        </td>
+                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                    </th>
+                    {% endif %}
+                    <td class="ipr-this">
+                        <dl class="row">
+                            {% for iprdocrel in ipr.iprdocrel_set.all %}
+                                <dt class="{% if prev %}col-sm-4{% else %}col-sm-3{% endif %} my-0">
+                                    {{ iprdocrel.doc_type }}:
+                                </dt>
+                                <dd class="{% if prev %}col-sm-8{% else %}col-sm-9{% endif %} my-0">
+                                    {{ iprdocrel.formatted_name|urlize_ietf_docs }} ("{{ iprdocrel.document.document.title }}")
+                                </dd>
                                 {% if iprdocrel.revisions %}
-                                    <div>
-                                        Revisions: {{ iprdocrel.revisions }}
-                                    </div>
+                                    <dt class="{% if prev %}col-sm-4{% else %}col-sm-3{% endif %} my-0">
+                                        Revisions:
+                                    </dt>
+                                    <dd class="{% if prev %}col-sm-8{% else %}col-sm-9{% endif %} my-0">
+                                        {{ iprdocrel.revisions }}
+                                    </dd>
                                 {% endif %}
                                 {% if iprdocrel.sections %}
-                                    <div>
-                                        Sections: {{ iprdocrel.sections }}
-                                    </div>
+                                    <dt class="{% if prev %}col-sm-4{% else %}col-sm-3{% endif %} my-0">
+                                        Sections:
+                                    </dt>
+                                    <dd class="{% if prev %}col-sm-8{% else %}col-sm-9{% endif %} my-0">
+                                        {{ iprdocrel.sections }}
+                                    </dd>
                                 {% endif %}
                             {% endfor %}
                             {% if prev.other_designations %}
-                                <b>Designations for Other Contributions</b>
-                                {{ prev.other_designations }}
-                            {% endif %}
-                        {% endif %}
-                    </td>
-                    <th class="ipr-label text-center">
-                    </th>
-                    <td class="ipr-this">
-                        {% for iprdocrel in ipr.iprdocrel_set.all %}
-                            <b>{{ iprdocrel.doc_type }}:</b>
-                            {{ iprdocrel.formatted_name }} ("{{ iprdocrel.document.document.title }}")
-                            {% if iprdocrel.revisions %}
-                                <div>
-                                    Revisions: {{ iprdocrel.revisions }}
-                                </div>
-                            {% endif %}
-                            {% if iprdocrel.sections %}
-                                <div>
-                                    Sections: {{ iprdocrel.sections }}
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                        {% if ipr.other_designations %}
-                            <dl>
-                                <dt>
-                                    Designations for Other Contributions
+                                <dt class="{% if prev %}col-sm-4{% else %}col-sm-3{% endif %} my-0">
+                                    Designations for Other Contributions:
                                 </dt>
-                                <dd>
-                                    {{ ipr.other_designations }}
+                                <dd class="{% if prev %}col-sm-8{% else %}col-sm-9{% endif %} my-0">
+                                    {{ prev.other_designations }}
                                 </dd>
-                            </dl>
-                        {% endif %}
+                            {% endif %}
+                        </dl>
                     </td>
                 </tr>
             </tbody>
         </table>
     {% endif %}
     {% if ipr.patent_info or ipr.has_patent_pending %}
-        <h2 class="mt-4">
+        <h2 class="mt-5">
             {% cycle section %}. Disclosure of Patent Information
             <br>
-            <small class="text-muted">i.e., patents or patent applications required to be disclosed by {{ in_force_ipr_rfc }}</small>
+            <small class="text-muted">i.e., patents or patent applications required to be disclosed by {{ in_force_ipr_rfc|urlize_ietf_docs }}</small>
         </h2>
         <p>
             A. For granted patents or published pending patent applications, please provide the following information:
@@ -391,13 +460,24 @@
                         </th>
                     </tr>
                 </thead>
+            {% else %}
+                <thead>
+                    <tr>
+                        <th class="col-3">
+                        </th>
+                        <th class="col-9">
+                        </th>
+                    </tr>
+                </thead>
             {% endif %}
             <tbody>
                 <tr>
-                    <td class="ipr-prev">
-                        {% if prev %}{{ prev.patent_info|linebreaks }}{% endif %}
-                    </td>
-                    <th class="ipr-label text-center">
+                    {% if prev %}
+                        <td class="ipr-prev">
+                            {{ prev.patent_info|linebreaks }}
+                        </td>
+                    {% endif %}
+                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Patent, Serial,
                         Publication, Registration,
                         or Application/File number(s)
@@ -429,13 +509,24 @@
                         </th>
                     </tr>
                 </thead>
+            {% else %}
+                <thead>
+                    <tr>
+                        <th class="col-3">
+                        </th>
+                        <th class="col-9">
+                        </th>
+                    </tr>
+                </thead>
             {% endif %}
             <tbody>
                 <tr>
-                    <td class="ipr-prev">
-                        {% if prev %}{{ prev.has_patent_pending|yesno:"Yes,No" }}{% endif %}
-                    </td>
-                    <th class="ipr-label text-center">
+                    {% if prev %}
+                        <td class="ipr-prev">
+                            {{ prev.has_patent_pending|yesno:"Yes,No" }}
+                        </td>
+                    {% endif %}
+                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Has patent pending
                     </th>
                     <td class="ipr-this">
@@ -446,7 +537,7 @@
         </table>
     {% endif %}
     {% if ipr.licensing %}
-        <h2 class="mt-4">
+        <h2 class="mt-5">
             {% cycle section %}. Licensing Declaration
         </h2>
         <p>
@@ -487,19 +578,28 @@
                         </th>
                     </tr>
                 </thead>
+            {% else %}
+                <thead>
+                    <tr>
+                        <th class="col-3">
+                        </th>
+                        <th class="col-9">
+                        </th>
+                    </tr>
+                </thead>
             {% endif %}
             <tbody>
                 <tr>
-                    <td class="ipr-prev">
-                        {% if prev %}
+                    {% if prev %}
+                        <td class="ipr-prev">
                             {% if prev.licensing.slug == "provided-later" %}
                                 {{ prev.licensing.desc|slice:"2:"|slice:":117" }})
                             {% else %}
                                 {{ prev.licensing.desc|slice:"2:" }}
                             {% endif %}
-                        {% endif %}
-                    </td>
-                    <th class="ipr-label text-center">
+                        </td>
+                    {% endif %}
+                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Licensing
                     </th>
                     <td class="ipr-this">
@@ -511,14 +611,16 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="ipr-prev">
-                        {% if prev %}{{ prev.licensing_comments|default:"(No information submitted)"|linebreaks }}{% endif %}
-                    </td>
-                    <th class="ipr-label text-center">
+                    {% if prev %}
+                        <td class="ipr-prev">
+                            {{ prev.licensing_comments|default:"(No information submitted)"|linebreaks }}
+                        </td>
+                    {% endif %}
+                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Licensing information, comments, notes, or URL for further information
                     </th>
                     <td class="ipr-this">
-                        {{ ipr.licensing_comments|default:"(No information submitted)"|linebreaks }}
+                        {{ ipr.licensing_comments.strip|default:"(No information submitted)"|urlize_ietf_docs|linkify|linebreaks }}
                     </td>
                 </tr>
             </tbody>
@@ -529,7 +631,7 @@
             above-selected licensing declaration.
         </p>
     {% elif ipr.statement %}
-        <h2 class="mt-4">
+        <h2 class="mt-5">
             {% cycle section %}. Statement
         </h2>
         <table class="table table-sm table-striped">
@@ -550,13 +652,24 @@
                         </th>
                     </tr>
                 </thead>
+            {% else %}
+                <thead>
+                    <tr>
+                        <th class="col-3">
+                        </th>
+                        <th class="col-9">
+                        </th>
+                    </tr>
+                </thead>
             {% endif %}
             <tbody>
                 <tr>
-                    <td class="ipr-prev">
-                        {% if prev %}{{ prev.statement|linebreaks }}{% endif %}
-                    </td>
-                    <th class="ipr-label text-center">
+                    {% if prev %}
+                        <td class="ipr-prev">
+                            {{ prev.statement|linebreaks }}
+                        </td>
+                    {% endif %}
+                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Statement
                     </th>
                     <td class="ipr-this">
@@ -566,7 +679,7 @@
             </tbody>
         </table>
     {% endif %}
-    <h2 class="mt-4">
+    <h2 class="mt-5">
         {% cycle section %}. Contact Information of Submitter of this Form
     </h2>
     <table class="table table-sm table-striped">
@@ -587,13 +700,24 @@
                     </th>
                 </tr>
             </thead>
+        {% else %}
+            <thead>
+                <tr>
+                    <th class="col-3">
+                    </th>
+                    <th class="col-9">
+                    </th>
+                </tr>
+            </thead>
         {% endif %}
         <tbody>
             <tr>
-                <td class="ipr-prev">
-                    {% if prev %}{{ prev.submitter_name }}{% endif %}
-                </td>
-                <th class="ipr-label text-center">
+                {% if prev %}
+                    <td class="ipr-prev">
+                        {{ prev.submitter_name }}
+                    </td>
+                {% endif %}
+                <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                     Submitter name
                 </th>
                 <td class="ipr-this">
@@ -601,20 +725,22 @@
                 </td>
             </tr>
             <tr>
-                <td class="ipr-prev">
-                    {% if prev %}{{ prev.submitter_email }}{% endif %}
-                </td>
-                <th class="ipr-label text-center">
+                {% if prev %}
+                    <td class="ipr-prev">
+                        {{ prev.submitter_email|linkify }}
+                    </td>
+                {% endif %}
+                <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                     Submitter email
                 </th>
                 <td class="ipr-this">
-                    {{ ipr.submitter_email }}
+                    {{ ipr.submitter_email|linkify }}
                 </td>
             </tr>
         </tbody>
     </table>
     {% if ipr.notes %}
-        <h2 class="mt-4">
+        <h2 class="mt-5">
             {% cycle section %}. Other Notes
         </h2>
         <table class="table table-sm table-striped">
@@ -635,17 +761,28 @@
                         </th>
                     </tr>
                 </thead>
+            {% else %}
+                <thead>
+                    <tr>
+                        <th class="col-3">
+                        </th>
+                        <th class="col-9">
+                        </th>
+                    </tr>
+                </thead>
             {% endif %}
             <tbody>
                 <tr>
-                    <td class="ipr-prev">
-                        {% if prev %}{{ prev.notes|linebreaks }}{% endif %}
-                    </td>
-                    <th class="ipr-label text-center">
+                    {% if prev %}
+                        <td class="ipr-prev">
+                            {{ prev.notes|urlize_ietf_docs|linkify|linebreaks }}
+                        </td>
+                    {% endif %}
+                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Additional notes
                     </th>
                     <td class="ipr-this">
-                        {{ ipr.notes|linebreaks }}
+                        {{ ipr.notes|urlize_ietf_docs|linkify|linebreaks }}
                     </td>
                 </tr>
             </tbody>

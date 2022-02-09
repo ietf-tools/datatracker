@@ -436,19 +436,6 @@
                                 (None)
                             </span>
                         {% endif %}
-                        {% if milestones %}
-                            <br>
-                            <span class="text-muted">
-                                <span class="milestone">
-                                    WG milestone{{ milestones|pluralize }}:
-                                </span>
-                                {% for m in milestones %}
-                                    <span title="{{ m.desc }} ({{ m.group.acronym }} milestone)"
-                                          class="milestone">
-                                        {{ m.due|date:"M Y" }} - {{ m.desc }}</span>{% if not forloop.last %},{% endif %}
-                                {% endfor %}
-                            </span>
-                        {% endif %}
                         {% if stream_tags %}
                             <div class="stream-tags">
                                 {% for tag in stream_tags %}
@@ -471,6 +458,27 @@
                     </td>
                 {% endif %}
             </tr>
+            {% if milestones %}
+            <tr>
+                <th></th>
+                <th>
+                    Associated
+                        {% if doc.stream_id == 'ietf' %}
+                            WG
+                        {% else %}
+                            {{ doc.stream }}
+                        {% endif %} milestone{{ milestones|pluralize }}</th>
+                <td class="edit"></td>
+                <td>
+                    <dl class="row">
+                        {% for m in milestones %}
+                            <dt class="col-sm-2 my-0">{{ m.due|date:"M Y" }}</dt>
+                            <dd class="col-sm-10 my-0">{{ m.desc }}</dd>
+                        {% endfor %}
+                    </dl>
+                </td>
+            </tr>
+            {% endif %}
             {% if consensus and not doc.stream_id == 'ietf' %}
                 <tr>
                     <th>
