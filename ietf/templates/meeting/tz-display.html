@@ -27,7 +27,9 @@
            onclick="ietf_timezone.use('UTC')">
     <label class="btn btn-outline-primary" for="utc-timezone{{ id_suffix }}">UTC</label>
     <select id="timezone-select{{ id_suffix }}"
-            class="tz-select form-select border-primary text-primary">
+            class="tz-select select2-field form-select border-primary"
+            data-max-entries="1" data-minimum-input-length="0"
+            onchange="$('.tz-display input[name=tzradio]').prop('checked', false);">
         {# Avoid blank while loading. JavaScript replaces the option list after init. #}
         <option selected>
             {{ timezone }}
