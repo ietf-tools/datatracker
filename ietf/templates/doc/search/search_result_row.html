@@ -124,13 +124,13 @@
                     {% endif %}
                 </span>
                 {% if doc.latest_revision_date|timesince_days|new_enough:request %}
-                    <wbr>
+                    <br>
                     <div class="float-end">
                         <span class="badge bg-success">New</span>
                     </div>
                 {% endif %}
                 {% if doc.get_state_slug == "active" and doc.expirable and doc.expires|timesince_days|expires_soon:request %}
-                    <wbr>
+                    <br>
                     <span class="badge bg-warning">Expires soon</span>
                 {% endif %}
             </td>
@@ -138,7 +138,7 @@
             <td class="text-center">
                 {% if doc.related_ipr %}
                     <a href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}">
-                        <span class="badge bg-secondary">{{ doc.related_ipr|length }}</span>
+                        <span class="badge bg-info">{{ doc.related_ipr|length }}</span>
                     </a>
                 {% endif %}
             </td>
@@ -146,8 +146,8 @@
                 <td>
                     {% if doc.ad %}
                         {% person_link doc.ad title="Area Director" %}
-                        <br>
                     {% endif %}
+                    <br>
                     {% if doc.shepherd %}
                         {% email_person_link doc.shepherd title="Shepherd" class="small text-muted" %}
                     {% endif %}

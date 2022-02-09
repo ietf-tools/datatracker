@@ -67,6 +67,7 @@ INTERNAL_IPS = [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips]
 
 DOCUMENT_PATH_PATTERN = 'data/developers/ietf-ftp/{doc.type_id}/'
 INTERNET_DRAFT_PATH = 'data/developers/ietf-ftp/internet-drafts/'
+RFC_PATH = 'data/developers/ietf-ftp/rfc/'
 CHARTER_PATH = 'data/developers/ietf-ftp/charter/'
 BOFREQ_PATH = 'data/developers/ietf-ftp/bofreq/'
 CONFLICT_REVIEW_PATH = 'data/developers/ietf-ftp/conflict-reviews/'

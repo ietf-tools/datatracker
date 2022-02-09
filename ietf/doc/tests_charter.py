@@ -78,7 +78,7 @@ class ViewCharterTests(TestCase):
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs={'name':charter.name})
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual('',q('.alert').text())
+        self.assertEqual('',q('.alert:not(.alert-ignore)').text())
 
             
 

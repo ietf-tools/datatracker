@@ -46,45 +46,6 @@ def unindent(value):
     """Remove indentation from string."""
     return re.sub("\n +", "\n", value)
 
-@register.filter(name='parse_email_list')
-def parse_email_list(value):
-    """
-    Parse a list of comma-seperated email addresses into
-    a list of mailto: links.
-
-    Splitting a string of email addresses should return a list:
-
-    >>> force_str(parse_email_list('joe@example.org, fred@example.com'))
-    '<a href="mailto:joe@example.org">joe@example.org</a>, <a href="mailto:fred@example.com">fred@example.com</a>'
-
-    Parsing a non-string should return the input value, rather than fail:
-
-    >>> [ force_str(e) for e in parse_email_list(['joe@example.org', 'fred@example.com']) ]
-    ['joe@example.org', 'fred@example.com']
-
-    Null input values should pass through silently:
-
-    >>> force_str(parse_email_list(''))
-    ''
-
-    >>> parse_email_list(None)
-
-
-    """
-    if value and isinstance(value, str): # testing for 'value' being true isn't necessary; it's a fast-out route
-        addrs = re.split(", ?", value)
-        ret = []
-        for addr in addrs:
-            (name, email) = parseaddr(addr)
-            if not(name):
-                name = email
-            ret.append('<a href="mailto:%s">%s</a>' % ( email.replace('&', '&amp;'), escape(name) ))
-        return mark_safe(", ".join(ret))
-    elif value and isinstance(value, bytes):
-        log.assertion('isinstance(value, str)')        
-    else:
-        return value
-
 @register.filter
 def strip_email(value):
     """Get rid of email part of name/email string like 'Some Name <email@example.com>'."""

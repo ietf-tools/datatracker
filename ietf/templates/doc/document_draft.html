@@ -437,17 +437,17 @@
                             </span>
                         {% endif %}
                         {% if milestones %}
-                            (
-                            <span class="milestone">
-                                wg milestone{{ milestones|pluralize }}:
+                            <br>
+                            <span class="text-muted">
+                                <span class="milestone">
+                                    WG milestone{{ milestones|pluralize }}:
+                                </span>
+                                {% for m in milestones %}
+                                    <span title="{{ m.desc }} ({{ m.group.acronym }} milestone)"
+                                          class="milestone">
+                                        {{ m.due|date:"M Y" }} - {{ m.desc }}</span>{% if not forloop.last %},{% endif %}
+                                {% endfor %}
                             </span>
-                            {% for m in milestones %}
-                                <span title="{{ m.desc }} ({{ m.group.acronym }} milestone)"
-                                      class="milestone">
-                                    {{ m.due|date:"M Y" }} - {{m }}
-                                </span>{% if not forloop.last %},{% endif %}
-                            {% endfor %}
-                            )
                         {% endif %}
                         {% if stream_tags %}
                             <div class="stream-tags">
@@ -579,7 +579,7 @@
                                    href="{% url 'ietf.doc.views_doc.document_shepherd_writeup' name=doc.name %}">
                                     Show
                                 </a>
-                                <span class="text-muted">(Last changed {{ shepherd_writeup.time|date:"Y-m-d" }})</span>
+                                <span class="badge bg-secondary">Last changed {{ shepherd_writeup.time|date:"Y-m-d" }}</span>
                             {% else %}
                                 <span class="text-muted">
                                     (None)
@@ -734,11 +734,9 @@
                                 On agenda of {{ telechat.telechat_date }} IESG telechat
                                 {% if telechat.returning_item %}(returning item){% endif %}
                             {% else %}
-                                {% if can_edit %}
-                                    <span class="text-muted">
-                                        (None)
-                                    </span>
-                                {% endif %}
+                                <span class="text-muted">
+                                    (None)
+                                </span>
                             {% endif %}
                             {% if iesg_ballot_summary %}
                                 <br>
@@ -1047,12 +1045,10 @@
                     <i class="bi bi-search">
                     </i>
                     Search lists
-                    <i class="caret">
-                    </i>
                 </button>
                 <ul class="dropdown-menu" role="menu">
                     <li role="presentation">
-                        <a role="menuitem"
+                        <a class="dropdown-item"
                            href="https://mailarchive.ietf.org/arch/search?q=%22{{ doc.name }}%22"
                            rel="nofollow"
                            target="_blank">
@@ -1060,7 +1056,7 @@
                         </a>
                     </li>
                     <li role="presentation">
-                        <a role="menuitem"
+                        <a class="dropdown-item"
                            href="https://www.google.com/search?as_q={{ doc.name }}&amp;as_sitesearch={{ search_archive }}"
                            rel="nofollow"
                            target="_blank">
@@ -1069,7 +1065,7 @@
                     </li>
                     {% if user|has_role:"Area Director" %}
                         <li role="presentation">
-                            <a role="menuitem"
+                            <a class="dropdown-item"
                                href="https://www.iesg.org/bin/c5i?mid=6&amp;rid=77&amp;target={{ doc.name }}"
                                rel="nofollow"
                                target="_blank">

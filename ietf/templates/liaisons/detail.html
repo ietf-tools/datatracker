@@ -40,31 +40,31 @@
         {% if liaison.to_contacts %}
             <tr>
                 <th class="text-nowrap">To Contacts</th>
-                <td>{{ liaison.to_contacts|parse_email_list|make_one_per_line|safe|linebreaksbr }}</td>
+                <td>{{ liaison.to_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         {% if liaison.cc_contacts %}
             <tr>
                 <th class="text-nowrap">Cc</th>
-                <td>{{ liaison.cc_contacts|parse_email_list|make_one_per_line|safe|linebreaksbr }}</td>
+                <td>{{ liaison.cc_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         {% if liaison.response_contacts %}
             <tr>
                 <th class="text-nowrap">Response Contact</th>
-                <td>{{ liaison.response_contacts|parse_email_list|make_one_per_line|safe|linebreaksbr }}</td>
+                <td>{{ liaison.response_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         {% if liaison.technical_contacts %}
             <tr>
                 <th class="text-nowrap">Technical Contact</th>
-                <td>{{ liaison.technical_contacts|parse_email_list|make_one_per_line|safe|linebreaksbr }}</td>
+                <td>{{ liaison.technical_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         {% if liaison.action_holder_contacts %}
             <tr>
                 <th class="text-nowrap">Action Holder Contacts</th>
-                <td>{{ liaison.action_holder_contacts|parse_email_list|make_one_per_line|safe|linebreaksbr }}</td>
+                <td>{{ liaison.action_holder_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         <tr>
