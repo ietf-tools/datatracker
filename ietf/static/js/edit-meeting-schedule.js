@@ -497,7 +497,7 @@ jQuery(document).ready(function () {
             let originRadio = updateSwapRadios(swapDaysLabels, swapDaysRadios, originDay, 'day');
 
             // Fill in label in the modal title
-            swapDaysModal.find(".modal-title .day").text(jQuery.trim(originRadio.parent().text()));
+            swapDaysModal.find(".modal-title .day").text(originRadio.parent().text().trim());
 
             // Fill in the hidden form fields
             swapDaysModal.find("input[name=source_day]").val(originDay);

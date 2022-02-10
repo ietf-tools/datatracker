@@ -261,7 +261,6 @@ window.agenda_filter_for_testing; // methods to be accessed for automated testin
     function register_handlers() {
         $('.pickview')
             .on("click", function () {
-                console.log("pickview");
                 if (is_disabled($(this))) { return; }
                 var fp = handle_pick_button($(this));
                 update_filters(fp);

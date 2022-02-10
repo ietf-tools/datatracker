@@ -19,6 +19,7 @@ $.fn.select2.defaults.set("escapeMarkup", function (m) {
 window.setupSelect2Field = function (e) {
     var url = e.data("ajax--url");
     var maxEntries = e.data("max-entries");
+    var result_key = e.data("result-key");
     var options = e.data("pre");
     for (var id in options) {
         e.append(new Option(options[id].text, options[id].id, false, options[id].selected));
@@ -38,6 +39,10 @@ window.setupSelect2Field = function (e) {
                 };
             },
             processResults: function (results) {
+                if (result_key) {
+                    // overwrite the returned "id" fields with the data in the result_key fields
+                    results = results.map(x => ({ ...x, ...{ id: x[result_key] } }));
+                }
                 return {
                     results: results,
                     pagination: {

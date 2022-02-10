@@ -1,6 +1,8 @@
 # Copyright The IETF Trust 2014-2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+import re
+
 from django.urls import reverse as urlreverse
 from unittest import skipIf
 
@@ -12,6 +14,7 @@ try:
     from selenium.webdriver.chrome.options import Options
     from selenium.webdriver.common.action_chains import ActionChains
     from selenium.webdriver.common.by import By
+    from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 except ImportError as e:
     skip_selenium = True
     skip_message = "Skipping selenium tests: %s" % e
@@ -38,10 +41,12 @@ def start_web_driver():
     options.add_argument("disable-extensions")
     options.add_argument("disable-gpu") # headless needs this
     options.add_argument("no-sandbox") # docker needs this
+    dc = DesiredCapabilities.CHROME
+    dc["goog:loggingPrefs"] = {"browser": "ALL"}
     # For selenium 3:
-    return webdriver.Chrome("chromedriver", options=options)
+    return webdriver.Chrome("chromedriver", options=options, desired_capabilities=dc)
     # For selenium 4:
-    # return webdriver.Chrome(service=service, options=options)
+    # return webdriver.Chrome(service=service, options=options, desired_capabilities=dc)
 
 
 def selenium_enabled():
@@ -63,6 +68,24 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
         self.driver.set_window_size(1024,768)
     
     def tearDown(self):
+        for type in ["browser", "driver"]:
+            log = self.driver.get_log(type)
+            if not log:
+                continue
+            for entry in log:
+                msg = entry["message"]
+                # suppress a bunch of benign/expected messages
+                if (
+                    re.search(r"JQMIGRATE: Migrate is installed", msg)
+                    or re.search(r"No headers fields visible, hiding", msg)
+                    or re.search(r"No color for \w+: using default", msg)
+                    or re.search(r"Invalid 'X-Frame-Options'", msg)
+                    or re.search(r"Could not find parent", msg)
+                    or re.search(r"Enabling nav", msg)
+                    or re.search(r"/materials/.*mars.*status of 404", msg)
+                ):
+                    continue
+                self.test.assertEqual("", msg)
         super(IetfSeleniumTestCase, self).tearDown()
         self.driver.close()
     

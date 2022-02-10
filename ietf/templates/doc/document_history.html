@@ -25,7 +25,7 @@
             <div class="row mb-3">
                 <label for="url1" class="col-form-label col-sm-2 fw-bold">From revision</label>
                 <div class="col-sm-10">
-                    <select class="form-select" id="url1" name="url1">
+                    <select class="form-select select2-field" data-max-entries="1" data-minimum-input-length="0" id="url1" name="url1">
                         {% for name, rev, time, url in diff_revisions %}
                             <option value="{{ url }}"
                                     {% if diff_revisions|length > 1 and forloop.counter == 2 %} selected="selected"{% endif %}>
@@ -46,7 +46,7 @@
             <div class="row mb-3">
                 <label for="url2" class="col-form-label col-sm-2 fw-bold">To revision</label>
                 <div class="col-sm-10">
-                    <select class="form-select" id="url2" name="url2">
+                    <select class="form-select select2-field" data-max-entries="1" data-minimum-input-length="0" id="url2" name="url2">
                         {% for name, rev, time, url in diff_revisions %}
                             <option value="{{ url }}"
                                     {% if forloop.counter == 1 %} selected="selected"{% endif %}>

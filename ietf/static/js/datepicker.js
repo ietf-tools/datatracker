@@ -1,1 +1,1 @@
-import "bootstrap-datepicker";
+import "bootstrap-datepicker/js/bootstrap-datepicker.js";

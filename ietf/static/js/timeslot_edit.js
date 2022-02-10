@@ -213,7 +213,7 @@ timeslotEdit = (function () {
 
         let timeslotElts = Array.from(deleteModal.eltsToDelete); // make own copy as Array so we have .map()
         ajaxDeleteTimeSlot(timeslotElts.map(elt => elt.dataset.timeslotPk))
-            .error(function (jqXHR) {
+            .fail(function (jqXHR) {
                 displayError('Error deleting timeslot: ' + jqXHR.responseText);
             })
             .done(function () {
