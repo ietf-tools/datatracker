@@ -733,6 +733,12 @@ class LockAppTestCase(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
+        self.assertEqual(len(q(':disabled[name="submit"]')), 0)
+        chair = self.group.role_set.filter(name_id='chair').first().person.user.username
+        self.client.login(username=chair, password=f'{chair}+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
         self.assertEqual(len(q(':disabled[name="submit"]')), 1)
     
     def test_view_request(self):

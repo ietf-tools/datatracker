@@ -572,7 +572,7 @@ def edit(request, acronym, num=None):
         form = FormClass(group, meeting, initial=initial)
 
     return render(request, 'sreq/edit.html', {
-        'is_locked': is_locked,
+        'is_locked': is_locked and not has_role(request.user,'Secretariat'),
         'is_virtual': meeting.number in settings.SECR_VIRTUAL_MEETINGS,
         'meeting': meeting,
         'form': form,
