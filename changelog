@@ -1,3 +1,50 @@
+ietfdb (7.45.0) ietf; urgency=medium
+
+  ** MeetEcho interim request integration, bugfixes **
+
+  * Merged in [19892] from rjsparks@nostrum.com:
+    Guard against reference sections without names.  
+
+  * Merged in [19895] from jennifer@painless-security.com:
+    Look at v2 'title' attribute in reference type heuristics for XML 
+    drafts. Related to #3529.  
+
+  * Merged in [19900] from jennifer@painless-security.com:
+    Fix hiding of name/purpose/type fields when not needed in secr/sreq. 
+    Fixes #3531.  
+
+  * Merged in [19907] from rjsparks@nostrum.com:
+    Provide the complete context to the template for mail about approved 
+    interim requests. Fixes #3534.  
+
+  * Merged in [19915] from rjsparks@nostrum.com:
+    Simplify search for link back to group from the review management view. 
+ 
+  * Merged in [19919] from rjsparks@nostrum.com:
+    Allow secretariat to edit session requests when tool is closed to 
+    chairs. Fixes #3547.  
+
+  * Merged in [19920] from rjsparks@nostrum.com:
+    Make working with session purpose easier in the admin.  
+
+  * Merged in [19921] from rjsparks@nostrum.com:
+    add search to the doc states admin form.  
+
+  * Merged in [19922] from jennifer@painless-security.com:
+    Fix scoping of session loop variables in sreq edit view. Improve tests 
+    that should have caught this.  
+
+  * Merged in [19925] from jennifer@painless-security.com:
+    Suppress origin template tag in production mode, show relative path 
+    only in other modes.  
+
+  * Merged in [19917] and [19930] from jennifer@painless-security.com:
+    Create/delete Meetecho conferences when requesting/canceling interim 
+    sessions. Fixes #3507. Fixes #3508.  
+
+ -- Robert Sparks <rjsparks@nostrum.com>  14 Feb 2022 19:08:48 +0000
+
+
 ietfdb (7.44.0) ietf; urgency=medium
 
   ** Schedule editor improvements, bugfixes **
