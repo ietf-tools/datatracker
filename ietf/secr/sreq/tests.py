@@ -104,7 +104,7 @@ class SessionRequestTestCase(TestCase):
                      'joint_with_groups': group3.acronym + ' ' + group4.acronym,
                      'joint_for_session': '2',
                      'timeranges': ['thursday-afternoon-early', 'thursday-afternoon-late'],
-                     'session_set-TOTAL_FORMS': '2',
+                     'session_set-TOTAL_FORMS': '3',  # matches what view actually sends, even with only 2 filled in
                      'session_set-INITIAL_FORMS': '1',
                      'session_set-MIN_NUM_FORMS': '1',
                      'session_set-MAX_NUM_FORMS': '3',
@@ -130,6 +130,16 @@ class SessionRequestTestCase(TestCase):
                      'session_set-1-attendees': attendees,
                      'session_set-1-comments': comments,
                      'session_set-1-DELETE': '',
+                     'session_set-2-id': '',
+                     'session_set-2-name': '',
+                     'session_set-2-short': '',
+                     'session_set-2-purpose': 'regular',
+                     'session_set-2-type': 'regular',
+                     'session_set-2-requested_duration': '',
+                     'session_set-2-on_agenda': 'True',
+                     'session_set-2-attendees': attendees,
+                     'session_set-2-comments': '',
+                     'session_set-2-DELETE': 'on',
                      'submit': 'Continue'}
         r = self.client.post(url, post_data, HTTP_HOST='example.com')
         redirect_url = reverse('ietf.secr.sreq.views.view', kwargs={'acronym': 'mars'})
@@ -172,7 +182,7 @@ class SessionRequestTestCase(TestCase):
                      'comments':'need lights',
                      'joint_with_groups': group2.acronym,
                      'joint_for_session': '1',
-                     'session_set-TOTAL_FORMS': '2',
+                     'session_set-TOTAL_FORMS': '3',  # matches what view actually sends, even with only 2 filled in
                      'session_set-INITIAL_FORMS': '2',
                      'session_set-MIN_NUM_FORMS': '1',
                      'session_set-MAX_NUM_FORMS': '3',
@@ -198,6 +208,16 @@ class SessionRequestTestCase(TestCase):
                      'session_set-1-attendees': sessions[1].attendees,
                      'session_set-1-comments': sessions[1].comments,
                      'session_set-1-DELETE': '',
+                     'session_set-2-id': '',
+                     'session_set-2-name': '',
+                     'session_set-2-short': '',
+                     'session_set-2-purpose': 'regular',
+                     'session_set-2-type': 'regular',
+                     'session_set-2-requested_duration': '',
+                     'session_set-2-on_agenda': 'True',
+                     'session_set-2-attendees': attendees,
+                     'session_set-2-comments': '',
+                     'session_set-2-DELETE': 'on',
                      'submit': 'Continue'}
         r = self.client.post(url, post_data, HTTP_HOST='example.com')
         self.assertRedirects(r, redirect_url)
@@ -221,6 +241,74 @@ class SessionRequestTestCase(TestCase):
         # Check whether the updated data is visible on the view page
         r = self.client.get(redirect_url)
         self.assertContains(r, 'First session with: {}'.format(group2.acronym))
+
+
+    @override_settings(SECR_VIRTUAL_MEETINGS=tuple())  # ensure not unexpectedly testing a virtual meeting session
+    def test_edit_constraint_bethere(self):
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        mars = RoleFactory(name_id='chair', person__user__username='marschairman', group__acronym='mars').group
+        session = SessionFactory(meeting=meeting, group=mars, status_id='sched')
+        Constraint.objects.create(
+            meeting=meeting,
+            source=mars,
+            person=Person.objects.get(user__username='marschairman'),
+            name_id='bethere',
+        )
+        self.assertEqual(session.people_constraints.count(), 1)
+        url = reverse('ietf.secr.sreq.views.edit', kwargs=dict(acronym='mars'))
+        self.client.login(username='marschairman', password='marschairman+password')
+        attendees = '10'
+        ad = Person.objects.get(user__username='ad')
+        post_data = {
+            'num_session': '1',
+            'attendees': attendees,
+            'bethere': str(ad.pk),
+            'constraint_chair_conflict':'',
+            'comments':'',
+            'joint_with_groups': '',
+            'joint_for_session': '',
+            'delete_conflict': 'on',
+            'session_set-TOTAL_FORMS': '3',  # matches what view actually sends, even with only 2 filled in
+            'session_set-INITIAL_FORMS': '1',
+            'session_set-MIN_NUM_FORMS': '1',
+            'session_set-MAX_NUM_FORMS': '3',
+            'session_set-0-id':session.pk,
+            'session_set-0-name': session.name,
+            'session_set-0-short': session.short,
+            'session_set-0-purpose': session.purpose_id,
+            'session_set-0-type': session.type_id,
+            'session_set-0-requested_duration': '3600',
+            'session_set-0-on_agenda': session.on_agenda,
+            'session_set-0-remote_instructions': session.remote_instructions,
+            'session_set-0-attendees': attendees,
+            'session_set-0-comments': '',
+            'session_set-0-DELETE': '',
+            'session_set-1-id': '',
+            'session_set-1-name': '',
+            'session_set-1-short': '',
+            'session_set-1-purpose':'regular',
+            'session_set-1-type':'regular',
+            'session_set-1-requested_duration': '',
+            'session_set-1-on_agenda': 'True',
+            'session_set-1-attendees': attendees,
+            'session_set-1-comments': '',
+            'session_set-1-DELETE': 'on',
+            'session_set-2-id': '',
+            'session_set-2-name': '',
+            'session_set-2-short': '',
+            'session_set-2-purpose': 'regular',
+            'session_set-2-type': 'regular',
+            'session_set-2-requested_duration': '',
+            'session_set-2-on_agenda': 'True',
+            'session_set-2-attendees': attendees,
+            'session_set-2-comments': '',
+            'session_set-2-DELETE': 'on',
+            'submit': 'Save',
+        }
+        r = self.client.post(url, post_data, HTTP_HOST='example.com')
+        redirect_url = reverse('ietf.secr.sreq.views.view', kwargs={'acronym': 'mars'})
+        self.assertRedirects(r, redirect_url)
+        self.assertEqual([pc.person for pc in session.people_constraints.all()], [ad])
 
     def test_edit_inactive_conflicts(self):
         """Inactive conflicts should be displayed and removable"""

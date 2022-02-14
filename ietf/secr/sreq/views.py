@@ -446,9 +446,9 @@ def edit(request, acronym, num=None):
     )
     login = request.user.person
 
-    session = Session()
+    first_session = Session()
     if(len(sessions) > 0):
-        session = sessions[0]
+        first_session = sessions[0]
 
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
@@ -461,11 +461,10 @@ def edit(request, acronym, num=None):
                 changed_session_forms = [sf for sf in form.session_forms.forms_to_keep if sf.has_changed()]
                 form.session_forms.save()
                 for n, subform in enumerate(form.session_forms):
-                    session = subform.instance
-                    if session in form.session_forms.new_objects:
+                    if subform.instance in form.session_forms.new_objects:
                         SchedulingEvent.objects.create(
-                            session=session,
-                            status_id=status_slug_for_new_session(session, n),
+                            session=subform.instance,
+                            status_id=status_slug_for_new_session(subform.instance, n),
                             by=request.user.person,
                         )
                 for sf in changed_session_forms:
@@ -483,10 +482,10 @@ def edit(request, acronym, num=None):
                     new_joint_for_session_idx = int(form.data.get('joint_for_session', '-1')) - 1
                     current_joint_for_session_idx = None
                     current_joint_with_groups = None
-                    for idx, session in enumerate(sessions):
-                        if session.joint_with_groups.count():
+                    for idx, sess in enumerate(sessions):
+                        if sess.joint_with_groups.count():
                             current_joint_for_session_idx = idx
-                            current_joint_with_groups = session.joint_with_groups.all()
+                            current_joint_with_groups = sess.joint_with_groups.all()
 
                     if current_joint_with_groups != new_joint_with_groups or current_joint_for_session_idx != new_joint_for_session_idx:
                         if current_joint_for_session_idx is not None:
@@ -520,13 +519,13 @@ def edit(request, acronym, num=None):
                     new_resource_ids = form.cleaned_data['resources']
                     new_resources = [ ResourceAssociation.objects.get(pk=a)
                                       for a in new_resource_ids]
-                    session.resources = new_resources
+                    first_session.resources = new_resources
 
                 if 'bethere' in form.changed_data and set(form.cleaned_data['bethere'])!=set(initial['bethere']):
-                    session.constraints().filter(name='bethere').delete()
+                    first_session.constraints().filter(name='bethere').delete()
                     bethere_cn = ConstraintName.objects.get(slug='bethere')
                     for p in form.cleaned_data['bethere']:
-                        Constraint.objects.create(name=bethere_cn, source=group, person=p, meeting=session.meeting)
+                        Constraint.objects.create(name=bethere_cn, source=group, person=p, meeting=first_session.meeting)
 
                 if 'session_time_relation' in form.changed_data:
                     Constraint.objects.filter(meeting=meeting, source=group, name='time_relation').delete()
