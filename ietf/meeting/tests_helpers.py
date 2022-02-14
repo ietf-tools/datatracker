@@ -1,15 +1,20 @@
 # Copyright The IETF Trust 2020, All Rights Reserved
 # -*- coding: utf-8 -*-
+from unittest.mock import patch, Mock
 
 from django.conf import settings
-from django.test import override_settings
+from django.contrib.messages.storage.fallback import FallbackStorage
+from django.test import override_settings, RequestFactory
 
 from ietf.group.factories import GroupFactory
 from ietf.group.models import Group
 from ietf.meeting.factories import SessionFactory, MeetingFactory, TimeSlotFactory
-from ietf.meeting.helpers import AgendaFilterOrganizer, AgendaKeywordTagger
-from ietf.meeting.models import SchedTimeSessAssignment
+from ietf.meeting.helpers import (AgendaFilterOrganizer, AgendaKeywordTagger,
+    delete_interim_session_conferences, sessions_post_save, sessions_post_cancel,
+    create_interim_session_conferences)
+from ietf.meeting.models import SchedTimeSessAssignment, Session
 from ietf.meeting.test_data import make_meeting_test_data
+from ietf.utils.meetecho import Conference
 from ietf.utils.test_utils import TestCase
 
 
@@ -333,3 +338,280 @@ class AgendaFilterOrganizerTests(TestCase):
 
         filter_organizer = AgendaFilterOrganizer(assignments=assignments, single_category=True)
         self.assertEqual(filter_organizer.get_non_area_keywords(), expected)
+
+
+@override_settings(
+    MEETECHO_API_CONFIG={
+        'api_base': 'https://example.com',
+        'client_id': 'datatracker',
+        'client_secret': 'secret',
+        'request_timeout': 3.01,
+    }
+)
+class InterimTests(TestCase):
+    @patch('ietf.utils.meetecho.ConferenceManager')
+    def test_delete_interim_session_conferences(self, mock):
+        mock_conf_mgr = mock.return_value  # "instance" seen by the internals
+        sessions = [
+            SessionFactory(meeting__type_id='interim', remote_instructions='fake-meetecho-url'),
+            SessionFactory(meeting__type_id='interim', remote_instructions='other-fake-meetecho-url'),
+        ]
+        timeslots = [
+            session.official_timeslotassignment().timeslot for session in sessions
+        ]
+        conferences = [
+            Conference(
+                manager=mock_conf_mgr, id=1, public_id='some-uuid', description='desc',
+                start_time=timeslots[0].time, duration=timeslots[0].duration, url='fake-meetecho-url',
+                deletion_token='please-delete-me',
+            ),
+            Conference(
+                manager=mock_conf_mgr, id=2, public_id='some-uuid-2', description='desc',
+                start_time=timeslots[1].time, duration=timeslots[1].duration, url='other-fake-meetecho-url',
+                deletion_token='please-delete-me-as-well',
+            ),
+        ]
+
+        # should not call the API if MEETECHO_API_CONFIG is not defined
+        with override_settings():  # will undo any changes to settings in the block
+            del settings.MEETECHO_API_CONFIG
+            delete_interim_session_conferences([sessions[0], sessions[1]])
+        self.assertFalse(mock.called)
+
+        # no conferences, no sessions being deleted -> no conferences deleted
+        mock.reset_mock()
+        mock_conf_mgr.fetch.return_value = []
+        delete_interim_session_conferences([])
+        self.assertFalse(mock_conf_mgr.delete_conference.called)
+
+        # two conferences, no sessions being deleted -> no conferences deleted
+        mock_conf_mgr.fetch.return_value = [conferences[0], conferences[1]]
+        mock_conf_mgr.delete_conference.reset_mock()
+        delete_interim_session_conferences([])
+        self.assertFalse(mock_conf_mgr.delete_conference.called)
+        mock_conf_mgr.delete_conference.reset_mock()
+
+        # one conference, other session being deleted -> no conferences deleted
+        mock_conf_mgr.fetch.return_value = [conferences[0]]
+        delete_interim_session_conferences([sessions[1]])
+        self.assertFalse(mock_conf_mgr.delete_conference.called)
+
+        # one conference, same session being deleted -> conference deleted
+        mock.reset_mock()
+        mock_conf_mgr.fetch.return_value = [conferences[0]]
+        delete_interim_session_conferences([sessions[0]])
+        self.assertTrue(mock_conf_mgr.delete_conference.called)
+        self.assertCountEqual(
+            mock_conf_mgr.delete_conference.call_args[0],
+            (conferences[0],)
+        )
+
+        # two conferences, one being deleted -> correct conference deleted
+        mock.reset_mock()
+        mock_conf_mgr.fetch.return_value = [conferences[0], conferences[1]]
+        delete_interim_session_conferences([sessions[1]])
+        self.assertTrue(mock_conf_mgr.delete_conference.called)
+        self.assertEqual(mock_conf_mgr.delete_conference.call_count, 1)
+        self.assertEqual(
+            mock_conf_mgr.delete_conference.call_args[0],
+            (conferences[1],)
+        )
+
+        # two conferences, both being deleted -> both conferences deleted
+        mock.reset_mock()
+        mock_conf_mgr.fetch.return_value = [conferences[0], conferences[1]]
+        delete_interim_session_conferences([sessions[0], sessions[1]])
+        self.assertTrue(mock_conf_mgr.delete_conference.called)
+        self.assertEqual(mock_conf_mgr.delete_conference.call_count, 2)
+        args_list = [call_args[0] for call_args in mock_conf_mgr.delete_conference.call_args_list]
+        self.assertCountEqual(
+            args_list,
+            ((conferences[0],), (conferences[1],)),
+        )
+
+    @patch('ietf.meeting.helpers.delete_interim_session_conferences')
+    def test_sessions_post_cancel(self, mock):
+        sessions_post_cancel(RequestFactory().post('/some/url'), 'sessions arg')
+        self.assertTrue(mock.called)
+        self.assertEqual(mock.call_args[0], ('sessions arg',))
+
+    @patch('ietf.meeting.helpers.delete_interim_session_conferences')
+    def test_sessions_post_cancel_delete_exception(self, mock):
+        """sessions_post_cancel prevents exceptions percolating up"""
+        mock.side_effect = RuntimeError('oops')
+        sessions = SessionFactory.create_batch(3, meeting__type_id='interim')
+        # create mock request with session / message storage
+        request = RequestFactory().post('/some/url')
+        setattr(request, 'session', 'session')
+        messages = FallbackStorage(request)
+        setattr(request, '_messages', messages)
+        sessions_post_cancel(request, sessions)
+        self.assertTrue(mock.called)
+        self.assertEqual(mock.call_args[0], (sessions,))
+        msgs = [str(msg) for msg in messages]
+        self.assertEqual(len(msgs), 1)
+        self.assertIn('An error occurred', msgs[0])
+
+    @patch('ietf.utils.meetecho.ConferenceManager')
+    def test_create_interim_session_conferences(self, mock):
+        mock_conf_mgr = mock.return_value  # "instance" seen by the internals
+        sessions = [
+            SessionFactory(meeting__type_id='interim', remote_instructions='junk'),
+            SessionFactory(meeting__type_id='interim', remote_instructions=''),
+        ]
+        timeslots = [
+            session.official_timeslotassignment().timeslot for session in sessions
+        ]
+
+        with override_settings():  # will undo any changes to settings in the block
+            del settings.MEETECHO_API_CONFIG
+            create_interim_session_conferences([sessions[0], sessions[1]])
+        self.assertFalse(mock.called)
+
+        # create for 0 sessions
+        mock.reset_mock()
+        create_interim_session_conferences([])
+        self.assertFalse(mock_conf_mgr.create.called)
+        self.assertEqual(
+            Session.objects.get(pk=sessions[0].pk).remote_instructions,
+            'junk',
+        )
+
+        # create for 1 session
+        mock.reset_mock()
+        mock_conf_mgr.create.return_value = [
+            Conference(
+                manager=mock_conf_mgr, id=1, public_id='some-uuid', description='desc',
+                start_time=timeslots[0].time, duration=timeslots[0].duration, url='fake-meetecho-url',
+                deletion_token='please-delete-me',
+            ),
+        ]
+        create_interim_session_conferences([sessions[0]])
+        self.assertTrue(mock_conf_mgr.create.called)
+        self.assertCountEqual(
+            mock_conf_mgr.create.call_args[1],
+            {
+                'group': sessions[0].group,
+                'description': str(sessions[0]),
+                'start_time': timeslots[0].time,
+                'duration': timeslots[0].duration,
+            }
+        )
+        self.assertEqual(
+            Session.objects.get(pk=sessions[0].pk).remote_instructions,
+            'fake-meetecho-url',
+        )
+
+        # create for 2 sessions
+        mock.reset_mock()
+        mock_conf_mgr.create.side_effect = [
+            [Conference(
+                manager=mock_conf_mgr, id=1, public_id='some-uuid', description='desc',
+                start_time=timeslots[0].time, duration=timeslots[0].duration, url='different-fake-meetecho-url',
+                deletion_token='please-delete-me',
+            )],
+            [Conference(
+                manager=mock_conf_mgr, id=2, public_id='another-uuid', description='desc',
+                start_time=timeslots[1].time, duration=timeslots[1].duration, url='another-fake-meetecho-url',
+                deletion_token='please-delete-me-too',
+            )],
+        ]
+        create_interim_session_conferences([sessions[0], sessions[1]])
+        self.assertTrue(mock_conf_mgr.create.called)
+        self.assertCountEqual(
+            mock_conf_mgr.create.call_args_list,
+            [
+                ({
+                    'group': sessions[0].group,
+                    'description': str(sessions[0]),
+                    'start_time': timeslots[0].time,
+                    'duration': timeslots[0].duration,
+                 },),
+                ({
+                    'group': sessions[1].group,
+                    'description': str(sessions[1]),
+                    'start_time': timeslots[1].time,
+                    'duration': timeslots[1].duration,
+                 },),
+            ]
+        )
+        self.assertEqual(
+            Session.objects.get(pk=sessions[0].pk).remote_instructions,
+            'different-fake-meetecho-url',
+        )
+        self.assertEqual(
+            Session.objects.get(pk=sessions[1].pk).remote_instructions,
+            'another-fake-meetecho-url',
+        )
+
+    @patch('ietf.utils.meetecho.ConferenceManager')
+    def test_create_interim_session_conferences_errors(self, mock):
+        mock_conf_mgr = mock.return_value
+        session = SessionFactory(meeting__type_id='interim')
+        timeslot = session.official_timeslotassignment().timeslot
+
+        mock_conf_mgr.create.return_value = []
+        with self.assertRaises(RuntimeError):
+            create_interim_session_conferences([session])
+
+        mock.reset_mock()
+        mock_conf_mgr.create.return_value = [
+            Conference(
+                manager=mock_conf_mgr, id=1, public_id='some-uuid', description='desc',
+                start_time=timeslot.time, duration=timeslot.duration, url='different-fake-meetecho-url',
+                deletion_token='please-delete-me',
+            ),
+            Conference(
+                manager=mock_conf_mgr, id=2, public_id='another-uuid', description='desc',
+                start_time=timeslot.time, duration=timeslot.duration, url='another-fake-meetecho-url',
+                deletion_token='please-delete-me-too',
+            ),
+        ]
+        with self.assertRaises(RuntimeError):
+            create_interim_session_conferences([session])
+
+        mock.reset_mock()
+        mock_conf_mgr.create.side_effect = ValueError('some error')
+        with self.assertRaises(RuntimeError):
+            create_interim_session_conferences([session])
+
+    @patch('ietf.meeting.helpers.create_interim_session_conferences')
+    def test_sessions_post_save_creates_meetecho_conferences(self, mock_create_method):
+        session = SessionFactory(meeting__type_id='interim')
+        mock_form = Mock()
+        mock_form.instance = session
+        mock_form.has_changed.return_value = True
+        mock_form.changed_data = []
+        mock_form.requires_approval = True
+
+        mock_form.cleaned_data = {'remote_participation': None}
+        sessions_post_save(RequestFactory().post('/some/url'), [mock_form])
+        self.assertTrue(mock_create_method.called)
+        self.assertCountEqual(mock_create_method.call_args[0][0], [])
+
+        mock_create_method.reset_mock()
+        mock_form.cleaned_data = {'remote_participation': 'manual'}
+        sessions_post_save(RequestFactory().post('/some/url'), [mock_form])
+        self.assertTrue(mock_create_method.called)
+        self.assertCountEqual(mock_create_method.call_args[0][0], [])
+
+        mock_create_method.reset_mock()
+        mock_form.cleaned_data = {'remote_participation': 'meetecho'}
+        sessions_post_save(RequestFactory().post('/some/url'), [mock_form])
+        self.assertTrue(mock_create_method.called)
+        self.assertCountEqual(mock_create_method.call_args[0][0], [session])
+
+        # Check that an exception does not percolate through sessions_post_save
+        mock_create_method.side_effect = RuntimeError('some error')
+        mock_form.cleaned_data = {'remote_participation': 'meetecho'}
+        # create mock request with session / message storage
+        request = RequestFactory().post('/some/url')
+        setattr(request, 'session', 'session')
+        messages = FallbackStorage(request)
+        setattr(request, '_messages', messages)
+        sessions_post_save(request, [mock_form])
+        self.assertTrue(mock_create_method.called)
+        self.assertCountEqual(mock_create_method.call_args[0][0], [session])
+        msgs = [str(msg) for msg in messages]
+        self.assertEqual(len(msgs), 1)
+        self.assertIn('An error occurred', msgs[0])

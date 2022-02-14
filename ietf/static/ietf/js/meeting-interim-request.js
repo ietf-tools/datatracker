@@ -26,6 +26,11 @@ var interimRequest = {
         $('input[name$="-time"]').each(interimRequest.calculateEndTime);
         $('input[name$="-time"]').each(interimRequest.updateInfo);
         $('#id_country').select2({placeholder:"Country"});
+        const remoteParticipations = $('select[id$="-remote_participation"]');
+        remoteParticipations.change(
+          evt => interimRequest.updateRemoteInstructionsVisibility(evt.target)
+        );
+        remoteParticipations.each((index, elt) => interimRequest.updateRemoteInstructionsVisibility(elt));
     },
 
     addSession : function() {
@@ -225,6 +230,22 @@ var interimRequest = {
             $(".location").prop('disabled', false);
         } else {
             $(".location").prop('disabled', true);
+        }
+    },
+
+    updateRemoteInstructionsVisibility : function(elt) {
+        const sessionSetPrefix = elt.id.replace('-remote_participation', '');
+        const remoteInstructionsId = sessionSetPrefix + '-remote_instructions';
+        const remoteInstructions = $('#' + remoteInstructionsId);
+
+        switch (elt.value) {
+            case 'meetecho':
+                remoteInstructions.closest('.form-group').hide();
+                break;
+
+            default:
+                remoteInstructions.closest('.form-group').show();
+                break;
         }
     }
 }

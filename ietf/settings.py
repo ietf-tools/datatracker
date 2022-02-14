@@ -1236,6 +1236,18 @@ qvNU+qRWi+YXrITsgn92/gVxX5AoK0n+s5Lx7fpjxkARVi66SF6zTJnX
 # Default timeout for HTTP requests via the requests library
 DEFAULT_REQUESTS_TIMEOUT = 20  # seconds
 
+
+# Meetecho API setup: Uncomment this and provide real credentials to enable
+# Meetecho conference creation for interim session requests
+#
+# MEETECHO_API_CONFIG = {
+#     'api_base': 'https://meetings.conf.meetecho.com/api/v1/',
+#     'client_id': 'datatracker',
+#     'client_secret': 'some secret',
+#     'request_timeout': 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
+# }
+
+
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from ietf.settings_local import *            # pyflakes:ignore pylint: disable=wildcard-import

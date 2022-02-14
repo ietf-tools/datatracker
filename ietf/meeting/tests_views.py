@@ -45,7 +45,7 @@ from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignm
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
 from ietf.meeting.utils import finalize, condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs
-from ietf.meeting.views import session_draft_list, parse_agenda_filter_params
+from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
@@ -4456,7 +4456,9 @@ class InterimTests(TestCase):
                 'session_set-MIN_NUM_FORMS':0,
                 'session_set-MAX_NUM_FORMS':1000}
 
-        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        with patch('ietf.meeting.views.sessions_post_save', wraps=sessions_post_save) as mock:
+            r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        self.assertTrue(mock.called)
         self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
@@ -4525,7 +4527,9 @@ class InterimTests(TestCase):
                 'session_set-TOTAL_FORMS':1,
                 'session_set-INITIAL_FORMS':0}
 
-        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        with patch('ietf.meeting.views.sessions_post_save', wraps=sessions_post_save) as mock:
+            r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        self.assertTrue(mock.called)
         self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
@@ -4579,7 +4583,9 @@ class InterimTests(TestCase):
                 'session_set-TOTAL_FORMS':2,
                 'session_set-INITIAL_FORMS':0}
 
-        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        with patch('ietf.meeting.views.sessions_post_save', wraps=sessions_post_save) as mock:
+            r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        self.assertTrue(mock.called)
 
         self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
         meeting = Meeting.objects.order_by('id').last()
@@ -4715,8 +4721,9 @@ class InterimTests(TestCase):
                 'session_set-TOTAL_FORMS':2,
                 'session_set-INITIAL_FORMS':0}
 
-        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
-        
+        with patch('ietf.meeting.views.sessions_post_save', wraps=sessions_post_save) as mock:
+            r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        self.assertTrue(mock.called)
         self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
         meeting_count_after = Meeting.objects.filter(type='interim').count()
         self.assertEqual(meeting_count_after,meeting_count_before + 2)
@@ -5052,7 +5059,8 @@ class InterimTests(TestCase):
     def test_interim_request_disapprove_with_extra_and_canceled_sessions(self):
         self.do_interim_request_disapprove_test(extra_session=True, canceled_session=True)
 
-    def test_interim_request_cancel(self):
+    @patch('ietf.meeting.views.sessions_post_cancel')
+    def test_interim_request_cancel(self, mock):
         """Test that interim request cancel function works
         
         Does not test that UI buttons are present, that is handled elsewhere.
@@ -5071,6 +5079,7 @@ class InterimTests(TestCase):
         self.client.login(username="ameschairman", password="ameschairman+password")
         r = self.client.post(url, {'comments': comments})
         self.assertEqual(r.status_code, 403)
+        self.assertFalse(mock.called, 'Should not cancel sessions if request rejected')
 
         # test cancelling before announcement
         self.client.login(username="marschairman", password="marschairman+password")
@@ -5081,8 +5090,11 @@ class InterimTests(TestCase):
             self.assertEqual(session.current_status,'canceledpa')
             self.assertEqual(session.agenda_note, comments)
         self.assertEqual(len(outbox), length_before)     # no email notice
+        self.assertTrue(mock.called, 'Should cancel sessions if request handled')
+        self.assertCountEqual(mock.call_args[0][1], meeting.session_set.all())
 
         # test cancelling after announcement
+        mock.reset_mock()
         meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='sched').first().meeting
         url = urlreverse('ietf.meeting.views.interim_request_cancel', kwargs={'number': meeting.number})
         r = self.client.post(url, {'comments': comments})
@@ -5092,8 +5104,11 @@ class InterimTests(TestCase):
             self.assertEqual(session.agenda_note, comments)
         self.assertEqual(len(outbox), length_before + 1)
         self.assertIn('Interim Meeting Cancelled', outbox[-1]['Subject'])
+        self.assertTrue(mock.called, 'Should cancel sessions if request handled')
+        self.assertCountEqual(mock.call_args[0][1], meeting.session_set.all())
 
-    def test_interim_request_session_cancel(self):
+    @patch('ietf.meeting.views.sessions_post_cancel')
+    def test_interim_request_session_cancel(self, mock):
         """Test that interim meeting session cancellation functions
 
         Does not test that UI buttons are present, that is handled elsewhere.
@@ -5109,6 +5124,7 @@ class InterimTests(TestCase):
         url = urlreverse('ietf.meeting.views.interim_request_session_cancel', kwargs={'sessionid': session.pk})
         r = self.client.post(url, {'comments': comments})
         self.assertEqual(r.status_code, 409)
+        self.assertFalse(mock.called, 'Should not cancel sessions if request rejected')
 
         # Add a second session
         SessionFactory(meeting=meeting, status_id='apprw')
@@ -5118,7 +5134,8 @@ class InterimTests(TestCase):
         self.client.login(username="ameschairman", password="ameschairman+password")
         r = self.client.post(url, {'comments': comments})
         self.assertEqual(r.status_code, 403)
-        
+        self.assertFalse(mock.called, 'Should not cancel sessions if request rejected')
+
         # test cancelling before announcement
         self.client.login(username="marschairman", password="marschairman+password")
         length_before = len(outbox)
@@ -5127,6 +5144,9 @@ class InterimTests(TestCase):
         r = self.client.post(url, {'comments': comments})
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_request_details', 
                                            kwargs={'number': meeting.number}))
+        self.assertTrue(mock.called, 'Should cancel sessions if request handled')
+        self.assertCountEqual(mock.call_args[0][1], [session])
+
         # This session should be canceled...
         sessions = meeting.session_set.with_current_status()
         session = sessions.filter(id=session.pk).first()  # reload our session info
@@ -5140,6 +5160,7 @@ class InterimTests(TestCase):
         self.assertEqual(len(outbox), length_before)     # no email notice
 
         # test cancelling after announcement
+        mock.reset_mock()
         session = Session.objects.with_current_status().filter(
             meeting__type='interim', group__acronym='mars', current_status='sched').first()
         meeting = session.meeting
@@ -5148,6 +5169,7 @@ class InterimTests(TestCase):
         url = urlreverse('ietf.meeting.views.interim_request_session_cancel', kwargs={'sessionid': session.pk})
         r = self.client.post(url, {'comments': comments})
         self.assertEqual(r.status_code, 409)
+        self.assertFalse(mock.called, 'Should not cancel sessions if request rejected')
 
         # Add another session
         SessionFactory(meeting=meeting, status_id='sched')  # two sessions so canceling a session makes sense
@@ -5157,6 +5179,9 @@ class InterimTests(TestCase):
         r = self.client.post(url, {'comments': comments})
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_request_details',
                                            kwargs={'number': meeting.number}))
+        self.assertTrue(mock.called, 'Should cancel sessions if request handled')
+        self.assertCountEqual(mock.call_args[0][1], [session])
+
         # This session should be canceled...
         sessions = meeting.session_set.with_current_status()
         session = sessions.filter(id=session.pk).first()  # reload our session info

@@ -12,6 +12,7 @@ from tempfile import mkstemp
 from django.http import Http404
 from django.db.models import F, Prefetch
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.models import AnonymousUser
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
@@ -29,7 +30,7 @@ from ietf.person.models  import Person
 from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment, ImportantDate, SchedulingEvent, Session
 from ietf.meeting.utils import session_requested_by, add_event_info_to_session_qs
 from ietf.name.models import ImportantDateName, SessionPurposeName
-from ietf.utils import log
+from ietf.utils import log, meetecho
 from ietf.utils.history import find_history_replacements_active_at
 from ietf.utils.mail import send_mail
 from ietf.utils.pipe import pipe
@@ -1073,6 +1074,76 @@ def sessions_post_save(request, forms):
             update_interim_session_assignment(form)
         if 'agenda' in form.changed_data:
             form.save_agenda()
+
+        try:
+            create_interim_session_conferences(
+                form.instance for form in forms
+                if form.cleaned_data.get('remote_participation', None) == 'meetecho'
+            )
+        except RuntimeError:
+            messages.warning(
+                request,
+                'An error occurred while creating a Meetecho conference. The interim meeting request '
+                'has been created without complete remote participation information. '
+                'Please edit the request to add this or contact the secretariat if you require assistance.',
+            )
+
+
+def create_interim_session_conferences(sessions):
+    error_occurred = False
+    if hasattr(settings, 'MEETECHO_API_CONFIG'):  # do nothing if not configured
+        meetecho_manager = meetecho.ConferenceManager(settings.MEETECHO_API_CONFIG)
+        for session in sessions:
+            ts = session.official_timeslotassignment().timeslot
+            try:
+                confs = meetecho_manager.create(
+                    group=session.group,
+                    description=str(session),
+                    start_time=ts.time,
+                    duration=ts.duration,
+                )
+            except Exception as err:
+                log.log(f'Exception creating Meetecho conference for {session}: {err}')
+                confs = []
+
+            if len(confs) == 1:
+                session.remote_instructions = confs[0].url
+                session.save()
+            else:
+                error_occurred = True
+    if error_occurred:
+        raise RuntimeError('error creating meetecho conferences')
+
+
+def delete_interim_session_conferences(sessions):
+    """Delete Meetecho conference for the session, if any"""
+    if hasattr(settings, 'MEETECHO_API_CONFIG'):  # do nothing if Meetecho API not configured
+        meetecho_manager = meetecho.ConferenceManager(settings.MEETECHO_API_CONFIG)
+        for session in sessions:
+            if session.remote_instructions:
+                for conference in meetecho_manager.fetch(session.group):
+                    if conference.url == session.remote_instructions:
+                        conference.delete()
+                        break
+
+
+def sessions_post_cancel(request, sessions):
+    """Clean up after session cancellation
+
+    When this is called, the session has already been canceled, so exceptions should
+    not be raised.
+    """
+    try:
+        delete_interim_session_conferences(sessions)
+    except Exception as err:
+        sess_pks = ', '.join(str(s.pk) for s in sessions)
+        log.log(f'Exception deleting Meetecho conferences for sessions [{sess_pks}]: {err}')
+        messages.warning(
+            request,
+            'An error occurred while cleaning up Meetecho conferences for the canceled sessions. '
+            'The session or sessions have been canceled, but Meetecho conferences may not have been cleaned '
+            'up properly.',
+        )
 
 
 def update_interim_session_assignment(form):

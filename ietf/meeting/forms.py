@@ -16,6 +16,7 @@ from django.core import validators
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.forms import BaseInlineFormSet
+from django.utils.functional import cached_property
 
 import debug                            # pyflakes:ignore
 
@@ -207,7 +208,8 @@ class InterimSessionModelForm(forms.ModelForm):
     time = forms.TimeField(widget=forms.TimeInput(format='%H:%M'), required=True)
     requested_duration = CustomDurationField(required=True)
     end_time = forms.TimeField(required=False)
-    remote_instructions = forms.CharField(max_length=1024, required=True)
+    remote_participation = forms.ChoiceField(choices=(), required=False)
+    remote_instructions = forms.CharField(max_length=1024, required=False)
     agenda = forms.CharField(required=False, widget=forms.Textarea, strip=False)
     agenda_note = forms.CharField(max_length=255, required=False)
 
@@ -233,7 +235,13 @@ class InterimSessionModelForm(forms.ModelForm):
                 doc = self.instance.agenda()
                 content = doc.text_or_error()
                 self.initial['agenda'] = content
-                
+
+        # set up remote participation choices
+        choices = []
+        if hasattr(settings, 'MEETECHO_API_CONFIG'):
+            choices.append(('meetecho', 'Automatically create Meetecho conference'))
+        choices.append(('manual', 'Manually specify remote instructions...'))
+        self.fields['remote_participation'].choices = choices
 
     def clean_date(self):
         '''Date field validator.  We can't use required on the input because
@@ -250,6 +258,21 @@ class InterimSessionModelForm(forms.ModelForm):
         if not duration or duration < datetime.timedelta(minutes=min_minutes) or duration > datetime.timedelta(minutes=max_minutes):
             raise forms.ValidationError('Provide a duration, %s-%smin.' % (min_minutes, max_minutes))
         return duration
+
+    def clean(self):
+        if self.cleaned_data.get('remote_participation', None) == 'meetecho':
+            self.cleaned_data['remote_instructions'] = ''  # blank this out if we're creating a Meetecho conference
+        elif not self.cleaned_data['remote_instructions']:
+            self.add_error('remote_instructions', 'This field is required')
+        return self.cleaned_data
+
+    # Override to ignore the non-model 'remote_participation' field when computing has_changed()
+    @cached_property
+    def changed_data(self):
+        data = super().changed_data
+        if 'remote_participation' in data:
+            data.remove('remote_participation')
+        return data
 
     def save(self, *args, **kwargs):
         """NOTE: as the baseform of an inlineformset self.save(commit=True)

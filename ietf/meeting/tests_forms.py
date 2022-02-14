@@ -1,10 +1,11 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 """Tests of forms in the Meeting application"""
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 
-from ietf.meeting.forms import FileUploadForm, ApplyToAllFileUploadForm
+from ietf.meeting.forms import FileUploadForm, ApplyToAllFileUploadForm, InterimSessionModelForm
 from ietf.utils.test_utils import TestCase
 
 
@@ -102,3 +103,19 @@ class ApplyToAllFileUploadFormTests(TestCase):
     def test_no_show_apply_to_all_field(self):
         form = ApplyToAllFileUploadFormTests.TestClass(show_apply_to_all_checkbox=False)
         self.assertNotIn('apply_to_all', form.fields)
+
+
+class InterimSessionModelFormTests(TestCase):
+    @override_settings(MEETECHO_API_CONFIG={})  # setting needs to exist, don't care about its value in this test
+    def test_remote_participation_options(self):
+        """Only offer Meetecho conference creation when configured"""
+        form = InterimSessionModelForm()
+        choice_vals = [choice[0] for choice in form.fields['remote_participation'].choices]
+        self.assertIn('meetecho', choice_vals)
+        self.assertIn('manual', choice_vals)
+
+        del settings.MEETECHO_API_CONFIG
+        form = InterimSessionModelForm()
+        choice_vals = [choice[0] for choice in form.fields['remote_participation'].choices]
+        self.assertNotIn('meetecho', choice_vals)
+        self.assertIn('manual', choice_vals)
