@@ -96,10 +96,10 @@ class SchedulingEventInline(admin.TabularInline):
     raw_id_fields = ["by"]
 
 class SessionAdmin(admin.ModelAdmin):
-    list_display = ["meeting", "name", "group", "attendees", "requested", "current_status"]
-    list_filter = ["meeting", ]
+    list_display = ["meeting", "name", "group_acronym", "purpose", "attendees", "requested", "current_status"]
+    list_filter = ["purpose", "meeting", ]
     raw_id_fields = ["meeting", "group", "materials", "joint_with_groups", "tombstone_for"]
-    search_fields = ["meeting__number", "name", "group__name", "group__acronym", ]
+    search_fields = ["meeting__number", "name", "group__name", "group__acronym", "purpose__name"]
     ordering = ["-id"]
     inlines = [SchedulingEventInline]
 
@@ -108,10 +108,13 @@ class SessionAdmin(admin.ModelAdmin):
         qs = super(SessionAdmin, self).get_queryset(request)
         return qs.prefetch_related('schedulingevent_set')
 
+    def group_acronym(self, instance):
+        return instance.group and instance.group.acronym
+
     def current_status(self, instance):
         events = sorted(instance.schedulingevent_set.all(), key=lambda e: (e.time, e.id))
         if events:
-            return events[-1].time
+            return f'{events[-1].status} ({events[-1].time:%Y-%m-%d %H:%M})'
         else:
             return None
 
