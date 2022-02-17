@@ -7,6 +7,7 @@ import os
 
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.urls import reverse as urlreverse
 
@@ -15,9 +16,9 @@ import debug                            # pyflakes:ignore
 from ietf.community.models import CommunityList, SearchRule
 from ietf.community.utils import reset_name_contains_index_for_rule, can_manage_community_list
 from ietf.doc.models import Document, State
-from ietf.group.models import Group, RoleHistory, Role, GroupFeatures
+from ietf.group.models import Group, RoleHistory, Role, GroupFeatures, GroupEvent
 from ietf.ietfauth.utils import has_role
-from ietf.name.models import GroupTypeName
+from ietf.name.models import GroupTypeName, RoleName
 from ietf.person.models import Email
 from ietf.review.utils import can_manage_review_requests_for_team
 from ietf.utils import log
@@ -279,4 +280,45 @@ def group_features_role_filter(roles, person, feature):
         return roles.none()
     q = reduce(lambda a,b:a|b, [ Q(person=person, name__slug__in=getattr(t.features, feature)) for t in group_types ])
     return roles.filter(q)
-    
+
+
+def group_attribute_change_desc(attr, new, old=None):
+    if old is None:
+        return format_html('{} changed to <b>{}</b>', attr, new)
+    else:
+        return format_html('{} changed to <b>{}</b> from {}', attr, new, old)
+
+
+def update_role_set(group, role_name, new_value, by):
+    """Alter role_set for a group
+
+    Updates the value and creates history events.
+    """
+    if isinstance(role_name, str):
+        role_name = RoleName.objects.get(slug=role_name)
+    new = set(new_value)
+    old = set(r.email for r in group.role_set.filter(name=role_name).distinct().select_related("person"))
+    removed = old - new
+    added = new - old
+    if added or removed:
+        GroupEvent.objects.create(
+            group=group,
+            by=by,
+            type='info_changed',
+            desc=group_attribute_change_desc(
+                role_name.name,
+                ", ".join(sorted(x.get_name() for x in new)),
+                ", ".join(sorted(x.get_name() for x in old)),
+            )
+        )
+
+        group.role_set.filter(name=role_name, email__in=removed).delete()
+        for email in added:
+            group.role_set.create(name=role_name, email=email, person=email.person)
+
+        for e in new:
+            if not e.origin or (e.person.user and e.origin == e.person.user.username):
+                e.origin = "role: %s %s" % (group.acronym, role_name.slug)
+                e.save()
+
+    return added, removed

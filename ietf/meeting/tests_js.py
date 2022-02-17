@@ -15,6 +15,7 @@ from django.utils.timezone import now
 from django.db.models import F
 import pytz
 
+from django.conf import settings
 from django.test.utils import override_settings
 
 import debug                            # pyflakes:ignore
@@ -35,7 +36,6 @@ from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.utils.test_utils import assert_ical_response_is_valid
 from ietf.utils.jstest import ( IetfSeleniumTestCase, ifSeleniumEnabled, selenium_enabled,
                                 presence_of_element_child_by_css_selector )
-from ietf import settings
 
 if selenium_enabled():
     from selenium.webdriver.common.action_chains import ActionChains
@@ -545,21 +545,21 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
 
         past_swap_ts_buttons = self.driver.find_elements(By.CSS_SELECTOR,
             ','.join(
-                '.swap-timeslot-col[data-start="{}"]'.format(ts.utc_start_time().isoformat()) for ts in past_timeslots
+                '*[data-start="{}"] .swap-timeslot-col'.format(ts.utc_start_time().isoformat()) for ts in past_timeslots
             )
         )
         self.assertEqual(len(past_swap_ts_buttons), len(past_timeslots), 'Missing past swap timeslot col buttons')
 
         future_swap_ts_buttons = self.driver.find_elements(By.CSS_SELECTOR,
             ','.join(
-                '.swap-timeslot-col[data-start="{}"]'.format(ts.utc_start_time().isoformat()) for ts in future_timeslots
+                '*[data-start="{}"] .swap-timeslot-col'.format(ts.utc_start_time().isoformat()) for ts in future_timeslots
             )
         )
         self.assertEqual(len(future_swap_ts_buttons), len(future_timeslots), 'Missing future swap timeslot col buttons')
 
         now_swap_ts_buttons = self.driver.find_elements(By.CSS_SELECTOR,
             ','.join(
-                '.swap-timeslot-col[data-start="{}"]'.format(ts.utc_start_time().isoformat()) for ts in now_timeslots
+                '[data-start="{}"] .swap-timeslot-col'.format(ts.utc_start_time().isoformat()) for ts in now_timeslots
             )
         )
         self.assertEqual(len(now_swap_ts_buttons), len(now_timeslots), 'Missing "now" swap timeslot col buttons')

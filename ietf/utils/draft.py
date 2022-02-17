@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright The IETF Trust 2009-2020, All Rights Reserved
+# Copyright The IETF Trust 2009-2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 # -*- python -*-
 
@@ -129,11 +129,61 @@ def acronym_match(s, l):
     #_debug(" s:%s; l:%s => %s; %s" % (s, l, acronym, s==acronym)) 
     return s == acronym
 
+class Draft:
+    """Base class for drafts
+
+    Extracted from PlaintextDraft, formerly named Draft. If I missed part of its public interface
+    that is relevant for other draft formats, those should be added to this base class.
+    """
+    REF_TYPE_NORMATIVE = 'norm'
+    REF_TYPE_INFORMATIVE = 'info'
+    REF_TYPE_UNKNOWN = 'unk'
+
+    def get_abstract(self):
+        raise NotImplementedError
+
+    def get_author_list(self):
+        raise NotImplementedError
+
+    def get_authors(self):
+        raise NotImplementedError
+
+    def get_authors_with_firm(self):
+        raise NotImplementedError
+
+    def get_creation_date(self):
+        raise NotImplementedError
+
+    def get_formal_languages(self):
+        raise NotImplementedError
+
+    def get_pagecount(self):
+        raise NotImplementedError
+
+    def get_refs(self):
+        raise NotImplementedError
+
+    def get_status(self):
+        raise NotImplementedError
+
+    def get_title(self):
+        raise NotImplementedError
+
+    def get_wordcount(self):
+        raise NotImplementedError
+
 # ----------------------------------------------------------------------
 
-class Draft():
+class PlaintextDraft(Draft):
 
     def __init__(self, text, source, name_from_source=False):
+        """Initialize a Draft instance
+
+        :param text: plaintext draft contents
+        :param source: name of file containing the contents
+        :param name_from_source: if True, fall back to source to determine draft name not found from text
+        """
+        super().__init__()
         assert isinstance(text, str)
         self.source = source
         self.rawtext = text
@@ -168,6 +218,11 @@ class Draft():
         self._status = None
         self._creation_date = None
         self._title = None
+
+    @classmethod
+    def from_file(cls, source, *args, **kwargs):
+        with open(source, 'r', encoding='utf8') as f:
+            return cls(text=f.read(), source=source, *args, **kwargs)
 
     # ------------------------------------------------------------------
     def _parse_draftname(self):
@@ -1055,7 +1110,7 @@ class Draft():
         refs = {}
         in_ref_sect = False
         in_norm_ref_sect = False
-        refType = 'unk'
+        refType = self.REF_TYPE_UNKNOWN
 
         for i in range( 15, len( self.lines ) ):
             line = self.lines[ i ].strip()
@@ -1071,10 +1126,10 @@ class Draft():
                 if m:
                     if not any( [ rule.search( line ) for rule in not_starting_regexes ]):
                         in_ref_sect = True
-                        refType = 'info'
+                        refType = self.REF_TYPE_INFORMATIVE
                         if line.lower().find("normative") > 1:
                             in_norm_ref_sect = True
-                            refType = 'norm'
+                            refType = self.REF_TYPE_NORMATIVE
 
             # might be subsections within a references section
             if in_ref_sect and not in_norm_ref_sect:
@@ -1088,7 +1143,7 @@ class Draft():
                     in_ref_sect = True
                     if line.lower().find("normative") > 1:
                         in_norm_ref_sect = True
-                        refType = 'norm'
+                        refType = self.REF_TYPE_NORMATIVE
 
             # look for the end of the normative reference section
             if in_norm_ref_sect:
@@ -1100,7 +1155,7 @@ class Draft():
 
                 if m and line.lower().find("normative") < 0:
                     in_norm_ref_sect = False
-                    refType = 'info'
+                    refType = self.REF_TYPE_INFORMATIVE
 
             # find references within the section
             if in_ref_sect:
@@ -1216,9 +1271,9 @@ def getmeta(fn):
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime(os.stat(filename)[stat.ST_MTIME]))
     with io.open(filename, 'rb') as file:
         try:
-            draft = Draft(file.read().decode('utf8'), filename)
+            draft = PlaintextDraft(file.read().decode('utf8'), filename)
         except UnicodeDecodeError:
-            draft = Draft(file.read().decode('latin1'), filename)
+            draft = PlaintextDraft(file.read().decode('latin1'), filename)
     #_debug("\n".join(draft.lines))
 
     fields["eventdate"] = timestamp

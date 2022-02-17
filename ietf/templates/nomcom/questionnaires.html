@@ -5,7 +5,7 @@
 {% block nomcom_content %}
     {% origin %}
     <h2>Questionnaires</h2>
-    <ul class="nav nav-tabs my-3" role="tablist">
+    <ul class="nomcom-questnr-positions-tabs nav nav-tabs my-3" role="tablist">
         {% for position in positions %}
             <li class="nav-item" role="presentation">
                 <button class="nav-link {% if forloop.first %}active{% endif %}"
@@ -17,7 +17,7 @@
             </li>
         {% endfor %}
     </ul>
-    <div class="tab-content">
+    <div class="nomcom-questnr-positions-content tab-content">
         {% for position in positions %}
             <div role="tabpanel" class="tab-pane {% if forloop.first %} active{% endif %}"
                  id="{{ position.name|slugify }}">

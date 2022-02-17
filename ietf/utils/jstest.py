@@ -3,6 +3,7 @@
 
 import re
 
+from django.conf import settings
 from django.urls import reverse as urlreverse
 from unittest import skipIf
 
@@ -22,7 +23,6 @@ except ImportError as e:
 
 from ietf.utils.pipe import pipe
 from ietf.utils.test_runner import IetfLiveServerTestCase
-from ietf import settings
 
 executable_name = 'chromedriver'
 code, out, err = pipe('{} --version'.format(executable_name))

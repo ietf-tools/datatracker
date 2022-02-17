@@ -38,7 +38,7 @@ from ietf.submit.parsers.pdf_parser import PDFParser
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.xml_parser import XMLParser
 from ietf.utils import log
-from ietf.utils.draft import Draft
+from ietf.utils.draft import PlaintextDraft
 from ietf.utils.text import normalize_text
 
 class SubmissionBaseUploadForm(forms.Form):
@@ -302,7 +302,7 @@ class SubmissionBaseUploadForm(forms.Form):
             try:
                 text = bytes.decode(self.file_info['txt'].charset)
             #
-                self.parsed_draft = Draft(text, txt_file.name)
+                self.parsed_draft = PlaintextDraft(text, txt_file.name)
                 if self.filename == None:
                     self.filename = self.parsed_draft.filename
                 elif self.filename != self.parsed_draft.filename:

@@ -141,10 +141,11 @@ def save_conflicts(group, meeting, conflicts, name):
                                 name=constraint_name)
         constraint.save()
 
-def send_notification(group,meeting,login,session,action):
+def send_notification(group, meeting, login, sreq_data, session_data, action):
     '''
     This function generates email notifications for various session request activities.
-    session argument is a dictionary of fields from the session request form
+    sreq_data argument is a dictionary of fields from the session request form
+    session_data is an array of data from individual session subforms
     action argument is a string [new|update].
     '''
     (to_email, cc_list) = gather_address_lists('session_requested',group=group,person=login)
@@ -154,7 +155,7 @@ def send_notification(group,meeting,login,session,action):
 
     # send email
     context = {}
-    context['session'] = session
+    context['session'] = sreq_data
     context['group'] = group
     context['meeting'] = meeting
     context['login'] = login
@@ -168,12 +169,14 @@ def send_notification(group,meeting,login,session,action):
 
     # if third session requested approval is required
     # change headers TO=ADs, CC=session-request, submitter and cochairs
-    if session.get('length_session3',None):
-        context['session']['num_session'] = 3
+    if len(session_data) > 2:
         (to_email, cc_list) = gather_address_lists('session_requested_long',group=group,person=login)
         subject = '%s - Request for meeting session approval for IETF %s' % (group.acronym, meeting.number)
         template = 'sreq/session_approval_notification.txt'
         #status_text = 'the %s Directors for approval' % group.parent
+
+    context['session_lengths'] = [sd['requested_duration'] for sd in session_data]
+
     send_mail(None,
               to_email,
               from_email,
@@ -368,7 +371,14 @@ def confirm(request, acronym):
 
         # send notification
         session_data['outbound_conflicts'] = [f"{d['name']}: {d['groups']}" for d in outbound_conflicts]
-        send_notification(group,meeting,login,session_data,'new')
+        send_notification(
+            group,
+            meeting,
+            login,
+            session_data,
+            [sf.cleaned_data for sf in form.session_forms[:num_sessions]],
+            'new',
+        )
 
         status_text = 'IETF Agenda to be scheduled'
         messages.success(request, 'Your request has been sent to %s' % status_text)
@@ -436,9 +446,9 @@ def edit(request, acronym, num=None):
     )
     login = request.user.person
 
-    session = Session()
+    first_session = Session()
     if(len(sessions) > 0):
-        session = sessions[0]
+        first_session = sessions[0]
 
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
@@ -451,11 +461,10 @@ def edit(request, acronym, num=None):
                 changed_session_forms = [sf for sf in form.session_forms.forms_to_keep if sf.has_changed()]
                 form.session_forms.save()
                 for n, subform in enumerate(form.session_forms):
-                    session = subform.instance
-                    if session in form.session_forms.created_instances:
+                    if subform.instance in form.session_forms.new_objects:
                         SchedulingEvent.objects.create(
-                            session=session,
-                            status_id=status_slug_for_new_session(session, n),
+                            session=subform.instance,
+                            status_id=status_slug_for_new_session(subform.instance, n),
                             by=request.user.person,
                         )
                 for sf in changed_session_forms:
@@ -473,10 +482,10 @@ def edit(request, acronym, num=None):
                     new_joint_for_session_idx = int(form.data.get('joint_for_session', '-1')) - 1
                     current_joint_for_session_idx = None
                     current_joint_with_groups = None
-                    for idx, session in enumerate(sessions):
-                        if session.joint_with_groups.count():
+                    for idx, sess in enumerate(sessions):
+                        if sess.joint_with_groups.count():
                             current_joint_for_session_idx = idx
-                            current_joint_with_groups = session.joint_with_groups.all()
+                            current_joint_with_groups = sess.joint_with_groups.all()
 
                     if current_joint_with_groups != new_joint_with_groups or current_joint_for_session_idx != new_joint_for_session_idx:
                         if current_joint_for_session_idx is not None:
@@ -510,13 +519,13 @@ def edit(request, acronym, num=None):
                     new_resource_ids = form.cleaned_data['resources']
                     new_resources = [ ResourceAssociation.objects.get(pk=a)
                                       for a in new_resource_ids]
-                    session.resources = new_resources
+                    first_session.resources = new_resources
 
                 if 'bethere' in form.changed_data and set(form.cleaned_data['bethere'])!=set(initial['bethere']):
-                    session.constraints().filter(name='bethere').delete()
+                    first_session.constraints().filter(name='bethere').delete()
                     bethere_cn = ConstraintName.objects.get(slug='bethere')
                     for p in form.cleaned_data['bethere']:
-                        Constraint.objects.create(name=bethere_cn, source=group, person=p, meeting=session.meeting)
+                        Constraint.objects.create(name=bethere_cn, source=group, person=p, meeting=first_session.meeting)
 
                 if 'session_time_relation' in form.changed_data:
                     Constraint.objects.filter(meeting=meeting, source=group, name='time_relation').delete()
@@ -537,7 +546,14 @@ def edit(request, acronym, num=None):
                 #add_session_activity(group,'Session Request was updated',meeting,user)
 
                 # send notification
-                send_notification(group,meeting,login,form.cleaned_data,'update')
+                send_notification(
+                    group,
+                    meeting,
+                    login,
+                    form.cleaned_data,
+                    [sf.cleaned_data for sf in form.session_forms.forms_to_keep],
+                    'update',
+                )
 
             messages.success(request, 'Session Request updated')
             return redirect('ietf.secr.sreq.views.view', acronym=acronym)
@@ -555,7 +571,7 @@ def edit(request, acronym, num=None):
         form = FormClass(group, meeting, initial=initial)
 
     return render(request, 'sreq/edit.html', {
-        'is_locked': is_locked,
+        'is_locked': is_locked and not has_role(request.user,'Secretariat'),
         'is_virtual': meeting.number in settings.SECR_VIRTUAL_MEETINGS,
         'meeting': meeting,
         'form': form,

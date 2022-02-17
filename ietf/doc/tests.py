@@ -22,6 +22,7 @@ from django.urls import reverse as urlreverse
 from django.conf import settings
 from django.forms import Form
 from django.utils.html import escape
+from django.test import override_settings
 from django.utils.text import slugify
 
 from tastypie.test import ResourceTestCaseMixin
@@ -678,17 +679,24 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, "Versions:")
         self.assertContains(r, "Deimos street")
         q = PyQuery(r.content)
+        self.assertEqual(q('title').text(), 'draft-ietf-mars-test-01')
         self.assertEqual(len(q('.rfcmarkup pre')), 4)
         self.assertEqual(len(q('.rfcmarkup span.h1')), 2)
         self.assertEqual(len(q('.rfcmarkup a[href]')), 41)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name, rev=draft.rev)))
         self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(q('title').text(), 'draft-ietf-mars-test-01')
 
         rfc = WgRfcFactory()
         (Path(settings.RFC_PATH) / rfc.get_base_name()).touch()
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
         self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(q('title').text(), f'RFC {rfc.rfc_number()} - {rfc.title}')
+
+        # synonyms for the rfc should be redirected to its canonical view
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.rfc_number())))
         self.assertRedirects(r, urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=f'RFC {rfc.rfc_number()}')))
@@ -1704,6 +1712,20 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, e.desc)
 
+    def test_document_feed_with_control_character(self):
+        doc = IndividualDraftFactory()
+
+        DocEvent.objects.create(
+            doc=doc,
+            rev=doc.rev,
+            desc="Something happened involving the \x0b character.",
+            type="added_comment",
+            by=Person.objects.get(name="(System)"))
+
+        r = self.client.get("/feed/document-changes/%s/" % doc.name)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Something happened involving the')
+
     def test_last_call_feed(self):
         doc = IndividualDraftFactory()
 
@@ -1712,7 +1734,7 @@ class DocTestCase(TestCase):
         LastCallDocEvent.objects.create(
             doc=doc,
             rev=doc.rev,
-            desc="Last call",
+            desc="Last call\x0b",  # include a control character to be sure it does not break anything
             type="sent_last_call",
             by=Person.objects.get(user__username="secretary"),
             expires=datetime.date.today() + datetime.timedelta(days=7))
@@ -1752,6 +1774,12 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertNotContains(r, "Request publication")
 
+    def _parse_bibtex_response(self, response) -> dict:
+        parser = bibtexparser.bparser.BibTexParser()
+        parser.homogenise_fields = False  # do not modify field names (e.g., turns "url" into "link" by default)
+        return bibtexparser.loads(response.content.decode(), parser=parser).get_entry_dict()
+
+    @override_settings(RFC_EDITOR_INFO_BASE_URL='https://www.rfc-editor.ietf.org/info/')
     def test_document_bibtex(self):
         rfc = WgRfcFactory.create(
                   #other_aliases = ['rfc6020',],
@@ -1764,12 +1792,13 @@ class DocTestCase(TestCase):
         #
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=rfc.name))
         r = self.client.get(url)
-        entry = bibtexparser.loads(unicontent(r)).get_entry_dict()["rfc%s"%num]
+        entry = self._parse_bibtex_response(r)["rfc%s"%num]
         self.assertEqual(entry['series'],   'Request for Comments')
         self.assertEqual(entry['number'],   num)
         self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     '2010')
         self.assertEqual(entry['month'],    'oct')
+        self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
         #
         self.assertNotIn('day', entry)
 
@@ -1785,25 +1814,27 @@ class DocTestCase(TestCase):
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=april1.name))
         r = self.client.get(url)
         self.assertEqual(r.get('Content-Type'), 'text/plain; charset=utf-8')
-        entry = bibtexparser.loads(unicontent(r)).get_entry_dict()['rfc%s'%num]
+        entry = self._parse_bibtex_response(r)["rfc%s"%num]
         self.assertEqual(entry['series'],   'Request for Comments')
         self.assertEqual(entry['number'],   num)
         self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     '1990')
         self.assertEqual(entry['month'],    'apr')
         self.assertEqual(entry['day'],      '1')
+        self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
 
         draft = IndividualDraftFactory.create()
         docname = '%s-%s' % (draft.name, draft.rev)
         bibname = docname[6:]           # drop the 'draft-' prefix
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=draft.name))
         r = self.client.get(url)
-        entry = bibtexparser.loads(unicontent(r)).get_entry_dict()[bibname]
+        entry = self._parse_bibtex_response(r)[bibname]
         self.assertEqual(entry['note'],     'Work in Progress')
         self.assertEqual(entry['number'],   docname)
         self.assertEqual(entry['year'],     str(draft.pub_date().year))
         self.assertEqual(entry['month'],    draft.pub_date().strftime('%b').lower())
         self.assertEqual(entry['day'],      str(draft.pub_date().day))
+        self.assertEqual(entry['url'],      f'https://datatracker.ietf.org/doc/html/{docname}')
         #
         self.assertNotIn('doi', entry)
 
@@ -2682,3 +2713,90 @@ class RfcdiffSupportTests(TestCase):
         # tricky draft names
         self.do_rfc_with_broken_history_test(draft_name='draft-gizmo-01')
         self.do_rfc_with_broken_history_test(draft_name='draft-oh-boy-what-a-draft-02-03')
+
+
+class RawIdTests(TestCase):
+
+    def __init__(self, *args, **kwargs):
+        self.view = "ietf.doc.views_doc.document_raw_id"
+        self.mimetypes = {'txt':'text/plain','html':'text/html','xml':'application/xml'}
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+    def should_succeed(self, argdict):
+        url = urlreverse(self.view, kwargs=argdict)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        self.assertEqual(r.get('Content-Type'),f"{self.mimetypes[argdict.get('ext','txt')]};charset=utf-8")
+
+    def should_404(self, argdict):
+        url = urlreverse(self.view, kwargs=argdict)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+    def test_raw_id(self):
+        draft = WgDraftFactory(create_revisions=range(0,2))
+
+        dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
+        for r in range(0,2):
+            rev = f'{r:02d}'
+            (Path(dir) / f'{draft.name}-{rev}.txt').touch()
+            if r == 1:
+                (Path(dir) / f'{draft.name}-{rev}.html').touch()
+                (Path(dir) / f'{draft.name}-{rev}.xml').touch()
+
+        self.should_succeed(dict(name=draft.name))
+        for ext in ('txt', 'html', 'xml'):
+            self.should_succeed(dict(name=draft.name, ext=ext))
+            self.should_succeed(dict(name=draft.name, rev='01', ext=ext))
+        self.should_404(dict(name=draft.name, ext='pdf'))
+
+        self.should_succeed(dict(name=draft.name, rev='00'))
+        self.should_succeed(dict(name=draft.name, rev='00',ext='txt'))
+        self.should_404(dict(name=draft.name, rev='00',ext='html'))
+
+    def test_raw_id_rfc(self):
+        rfc = WgRfcFactory()
+        dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
+        (Path(dir) / f'{rfc.name}-{rfc.rev}.txt').touch()
+        self.should_succeed(dict(name=rfc.name))
+        self.should_404(dict(name=rfc.canonical_name()))
+
+    def test_non_draft(self):
+        charter = CharterFactory()
+        self.should_404(dict(name=charter.name))
+
+class PdfizedTests(TestCase):
+
+    def __init__(self, *args, **kwargs):
+        self.view = "ietf.doc.views_doc.document_pdfized"
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+    def should_succeed(self, argdict):
+        url = urlreverse(self.view, kwargs=argdict)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        self.assertEqual(r.get('Content-Type'),'application/pdf;charset=utf-8')
+
+    def should_404(self, argdict):
+        url = urlreverse(self.view, kwargs=argdict)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+    def test_pdfized(self):
+        rfc = WgRfcFactory(create_revisions=range(0,2))
+
+        dir = settings.RFC_PATH
+        with (Path(dir) / f'{rfc.canonical_name()}.txt').open('w') as f:
+            f.write('text content')
+        dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
+        for r in range(0,2):
+            with (Path(dir) / f'{rfc.name}-{r:02d}.txt').open('w') as f:
+                f.write('text content')
+
+        self.should_succeed(dict(name=rfc.canonical_name()))
+        self.should_succeed(dict(name=rfc.name))
+        for r in range(0,2):
+            self.should_succeed(dict(name=rfc.name,rev=f'{r:02d}'))
+            for ext in ('pdf','txt','html','anythingatall'):
+                self.should_succeed(dict(name=rfc.name,rev=f'{r:02d}',ext=ext))
+        self.should_404(dict(name=rfc.name,rev='02'))

@@ -67,9 +67,6 @@ ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", "12
 
 # Server name of the tools server
 TOOLS_SERVER = 'tools.' + IETF_DOMAIN
-TOOLS_SERVER_URL = 'https://' + TOOLS_SERVER
-TOOLS_ID_PDF_URL = TOOLS_SERVER_URL + '/pdf/'
-TOOLS_ID_HTML_URL = TOOLS_SERVER_URL + '/html/'
 
 # Override this in the settings_local.py file:
 SERVER_EMAIL = 'Django Server <django-project@' + IETF_DOMAIN + '>'
@@ -147,6 +144,7 @@ IETF_ID_URL = IETF_HOST_URL + 'id/' # currently unused
 IETF_ID_ARCHIVE_URL = IETF_HOST_URL + 'archive/id/'
 IETF_AUDIO_URL = IETF_HOST_URL + 'audio/'
 
+IETF_NOTES_URL = 'https://notes.ietf.org/'  # HedgeDoc base URL
 
 # Absolute path to the directory static files should be collected to.
 # Example: "/var/www/example.com/static/"
@@ -731,6 +729,13 @@ CACHES = {
             'MAX_ENTRIES': 100000,      # 100,000
         },
     },
+    'pdfized': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/a/cache/datatracker/pdfized',
+        'OPTIONS': {
+            'MAX_ENTRIES': 100000,      # 100,000
+        },
+    },
     'slowpages': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
         'LOCATION': '/a/cache/datatracker/slowpages',
@@ -743,6 +748,8 @@ CACHES = {
 HTMLIZER_VERSION = 1
 HTMLIZER_URL_PREFIX = "/doc/html"
 HTMLIZER_CACHE_TIME = 60*60*24*14       # 14 days
+PDFIZER_CACHE_TIME = HTMLIZER_CACHE_TIME
+PDFIZER_URL_PREFIX = IDTRACKER_BASE_URL+"/doc/pdf"
 
 # Email settings
 IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
@@ -937,6 +944,12 @@ MEETING_VALID_MIME_TYPE_EXTENSIONS = {
     'application/pdf': ['.pdf'],
 }
 
+# Files uploaded with Content-Type application/octet-stream and an extension in this map will
+# be treated as if they had been uploaded with the mapped Content-Type value.
+MEETING_APPLICATION_OCTET_STREAM_OVERRIDES = {
+    '.md': 'text/markdown',
+}
+
 MEETING_VALID_UPLOAD_MIME_FOR_OBSERVED_MIME = {
     'text/plain':   ['text/plain', 'text/markdown', 'text/x-markdown', ],
     'text/html':    ['text/html', ],
@@ -978,6 +991,7 @@ DOT_BINARY = '/usr/bin/dot'
 UNFLATTEN_BINARY= '/usr/bin/unflatten'
 RSYNC_BINARY = '/usr/bin/rsync'
 YANGLINT_BINARY = '/usr/bin/yanglint'
+DE_GFM_BINARY = '/usr/bin/de-gfm.ruby2.5'
 
 # Account settings
 DAYS_TO_EXPIRE_REGISTRATION_LINK = 3
@@ -987,8 +1001,8 @@ HTPASSWD_FILE = "/www/htpasswd"
 # Generation of pdf files
 GHOSTSCRIPT_COMMAND = "/usr/bin/gs"
 
-# Generation of bibxml files for xml2rfc
-BIBXML_BASE_PATH = '/a/www/ietf-ftp/xml2rfc'
+# Generation of bibxml files (currently only for internet drafts)
+BIBXML_BASE_PATH = '/a/ietfdata/derived/bibxml'
 
 # Timezone files for iCalendar
 TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
@@ -1206,6 +1220,22 @@ qvNU+qRWi+YXrITsgn92/gVxX5AoK0n+s5Lx7fpjxkARVi66SF6zTJnX
 -----END PRIVATE KEY-----
 """
 
+
+# Default timeout for HTTP requests via the requests library
+DEFAULT_REQUESTS_TIMEOUT = 20  # seconds
+
+
+# Meetecho API setup: Uncomment this and provide real credentials to enable
+# Meetecho conference creation for interim session requests
+#
+# MEETECHO_API_CONFIG = {
+#     'api_base': 'https://meetings.conf.meetecho.com/api/v1/',
+#     'client_id': 'datatracker',
+#     'client_secret': 'some secret',
+#     'request_timeout': 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
+# }
+
+
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from ietf.settings_local import *            # pyflakes:ignore pylint: disable=wildcard-import
@@ -1251,6 +1281,14 @@ if SERVER_MODE != 'production':
             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
             #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
             'LOCATION': '/var/cache/datatracker/htmlized',
+            'OPTIONS': {
+                'MAX_ENTRIES': 1000,
+            },
+        },
+        'pdfized': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+            #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            'LOCATION': '/var/cache/datatracker/pdfized',
             'OPTIONS': {
                 'MAX_ENTRIES': 1000,
             },

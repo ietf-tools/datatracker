@@ -8,6 +8,8 @@ import random
 import re
 import shutil
 import pytz
+import requests.exceptions
+import requests_mock
 
 from unittest import skipIf
 from mock import patch, PropertyMock
@@ -18,7 +20,6 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urlsplit
 from PIL import Image
 from pathlib import Path
-
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
@@ -44,7 +45,7 @@ from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignm
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
 from ietf.meeting.utils import finalize, condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs
-from ietf.meeting.views import session_draft_list, parse_agenda_filter_params
+from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
@@ -1676,6 +1677,23 @@ class EditMeetingScheduleTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(self._decode_json_response(r)['success'])
 
+    def test_editor_with_no_timeslots(self):
+        """Schedule editor should not crash when there are no timeslots"""
+        meeting = MeetingFactory(
+            type_id='ietf',
+            date=datetime.date.today() + datetime.timedelta(days=7),
+            populate_schedule=False,
+        )
+        meeting.schedule = ScheduleFactory(meeting=meeting)
+        meeting.save()
+        SessionFactory(meeting=meeting, add_to_schedule=False)
+        self.assertEqual(meeting.timeslot_set.count(), 0, 'Test problem - meeting should not have any timeslots')
+        url = urlreverse('ietf.meeting.views.edit_meeting_schedule', kwargs={'num': meeting.number})
+        self.assertTrue(self.client.login(username='secretary', password='secretary+password'))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'No timeslots exist')
+        self.assertContains(r, urlreverse('ietf.meeting.views.edit_timeslots', kwargs={'num': meeting.number}))
 
 
 class EditTimeslotsTests(TestCase):
@@ -4438,7 +4456,9 @@ class InterimTests(TestCase):
                 'session_set-MIN_NUM_FORMS':0,
                 'session_set-MAX_NUM_FORMS':1000}
 
-        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        with patch('ietf.meeting.views.sessions_post_save', wraps=sessions_post_save) as mock:
+            r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        self.assertTrue(mock.called)
         self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
@@ -4507,7 +4527,9 @@ class InterimTests(TestCase):
                 'session_set-TOTAL_FORMS':1,
                 'session_set-INITIAL_FORMS':0}
 
-        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        with patch('ietf.meeting.views.sessions_post_save', wraps=sessions_post_save) as mock:
+            r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        self.assertTrue(mock.called)
         self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
@@ -4561,7 +4583,9 @@ class InterimTests(TestCase):
                 'session_set-TOTAL_FORMS':2,
                 'session_set-INITIAL_FORMS':0}
 
-        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        with patch('ietf.meeting.views.sessions_post_save', wraps=sessions_post_save) as mock:
+            r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        self.assertTrue(mock.called)
 
         self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
         meeting = Meeting.objects.order_by('id').last()
@@ -4697,8 +4721,9 @@ class InterimTests(TestCase):
                 'session_set-TOTAL_FORMS':2,
                 'session_set-INITIAL_FORMS':0}
 
-        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
-        
+        with patch('ietf.meeting.views.sessions_post_save', wraps=sessions_post_save) as mock:
+            r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        self.assertTrue(mock.called)
         self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
         meeting_count_after = Meeting.objects.filter(type='interim').count()
         self.assertEqual(meeting_count_after,meeting_count_before + 2)
@@ -5033,7 +5058,8 @@ class InterimTests(TestCase):
     def test_interim_request_disapprove_with_extra_and_canceled_sessions(self):
         self.do_interim_request_disapprove_test(extra_session=True, canceled_session=True)
 
-    def test_interim_request_cancel(self):
+    @patch('ietf.meeting.views.sessions_post_cancel')
+    def test_interim_request_cancel(self, mock):
         """Test that interim request cancel function works
         
         Does not test that UI buttons are present, that is handled elsewhere.
@@ -5052,6 +5078,7 @@ class InterimTests(TestCase):
         self.client.login(username="ameschairman", password="ameschairman+password")
         r = self.client.post(url, {'comments': comments})
         self.assertEqual(r.status_code, 403)
+        self.assertFalse(mock.called, 'Should not cancel sessions if request rejected')
 
         # test cancelling before announcement
         self.client.login(username="marschairman", password="marschairman+password")
@@ -5062,8 +5089,11 @@ class InterimTests(TestCase):
             self.assertEqual(session.current_status,'canceledpa')
             self.assertEqual(session.agenda_note, comments)
         self.assertEqual(len(outbox), length_before)     # no email notice
+        self.assertTrue(mock.called, 'Should cancel sessions if request handled')
+        self.assertCountEqual(mock.call_args[0][1], meeting.session_set.all())
 
         # test cancelling after announcement
+        mock.reset_mock()
         meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='sched').first().meeting
         url = urlreverse('ietf.meeting.views.interim_request_cancel', kwargs={'number': meeting.number})
         r = self.client.post(url, {'comments': comments})
@@ -5073,8 +5103,11 @@ class InterimTests(TestCase):
             self.assertEqual(session.agenda_note, comments)
         self.assertEqual(len(outbox), length_before + 1)
         self.assertIn('Interim Meeting Cancelled', outbox[-1]['Subject'])
+        self.assertTrue(mock.called, 'Should cancel sessions if request handled')
+        self.assertCountEqual(mock.call_args[0][1], meeting.session_set.all())
 
-    def test_interim_request_session_cancel(self):
+    @patch('ietf.meeting.views.sessions_post_cancel')
+    def test_interim_request_session_cancel(self, mock):
         """Test that interim meeting session cancellation functions
 
         Does not test that UI buttons are present, that is handled elsewhere.
@@ -5090,6 +5123,7 @@ class InterimTests(TestCase):
         url = urlreverse('ietf.meeting.views.interim_request_session_cancel', kwargs={'sessionid': session.pk})
         r = self.client.post(url, {'comments': comments})
         self.assertEqual(r.status_code, 409)
+        self.assertFalse(mock.called, 'Should not cancel sessions if request rejected')
 
         # Add a second session
         SessionFactory(meeting=meeting, status_id='apprw')
@@ -5099,7 +5133,8 @@ class InterimTests(TestCase):
         self.client.login(username="ameschairman", password="ameschairman+password")
         r = self.client.post(url, {'comments': comments})
         self.assertEqual(r.status_code, 403)
-        
+        self.assertFalse(mock.called, 'Should not cancel sessions if request rejected')
+
         # test cancelling before announcement
         self.client.login(username="marschairman", password="marschairman+password")
         length_before = len(outbox)
@@ -5108,6 +5143,9 @@ class InterimTests(TestCase):
         r = self.client.post(url, {'comments': comments})
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_request_details', 
                                            kwargs={'number': meeting.number}))
+        self.assertTrue(mock.called, 'Should cancel sessions if request handled')
+        self.assertCountEqual(mock.call_args[0][1], [session])
+
         # This session should be canceled...
         sessions = meeting.session_set.with_current_status()
         session = sessions.filter(id=session.pk).first()  # reload our session info
@@ -5121,6 +5159,7 @@ class InterimTests(TestCase):
         self.assertEqual(len(outbox), length_before)     # no email notice
 
         # test cancelling after announcement
+        mock.reset_mock()
         session = Session.objects.with_current_status().filter(
             meeting__type='interim', group__acronym='mars', current_status='sched').first()
         meeting = session.meeting
@@ -5129,6 +5168,7 @@ class InterimTests(TestCase):
         url = urlreverse('ietf.meeting.views.interim_request_session_cancel', kwargs={'sessionid': session.pk})
         r = self.client.post(url, {'comments': comments})
         self.assertEqual(r.status_code, 409)
+        self.assertFalse(mock.called, 'Should not cancel sessions if request rejected')
 
         # Add another session
         SessionFactory(meeting=meeting, status_id='sched')  # two sessions so canceling a session makes sense
@@ -5138,6 +5178,9 @@ class InterimTests(TestCase):
         r = self.client.post(url, {'comments': comments})
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_request_details',
                                            kwargs={'number': meeting.number}))
+        self.assertTrue(mock.called, 'Should cancel sessions if request handled')
+        self.assertCountEqual(mock.call_args[0][1], [session])
+
         # This session should be canceled...
         sessions = meeting.session_set.with_current_status()
         session = sessions.filter(id=session.pk).first()  # reload our session info
@@ -5235,6 +5278,45 @@ class InterimTests(TestCase):
         d["hours"], rem = divmod(tdelta.seconds, 3600)
         d["minutes"], d["seconds"] = divmod(rem, 60)
         return fmt.format(**d)
+
+    def test_interim_request_edit_agenda_updates_doc(self):
+        """Updating the agenda through the request edit form should update the doc correctly"""
+        make_interim_test_data()
+        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='sched').first().meeting
+        group = meeting.session_set.first().group
+        url = urlreverse('ietf.meeting.views.interim_request_edit', kwargs={'number': meeting.number})
+        session = meeting.session_set.first()
+        agenda_doc = session.agenda()
+        rev_before = agenda_doc.rev
+        uploaded_filename_before = agenda_doc.uploaded_filename
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.get(url)
+        form_initial = r.context['form'].initial
+        formset_initial = r.context['formset'].forms[0].initial
+        data = {
+            'group': group.pk,
+            'meeting_type': 'single',
+            'session_set-0-id': session.id,
+            'session_set-0-date': formset_initial['date'].strftime('%Y-%m-%d'),
+            'session_set-0-time': formset_initial['time'].strftime('%H:%M'),
+            'session_set-0-requested_duration': '00:30',
+            'session_set-0-remote_instructions': formset_initial['remote_instructions'],
+            'session_set-0-agenda': 'modified agenda contents',
+            'session_set-0-agenda_note': formset_initial['agenda_note'],
+            'session_set-TOTAL_FORMS': 1,
+            'session_set-INITIAL_FORMS': 1,
+        }
+        data.update(form_initial)
+        r = self.client.post(url, data)
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number}))
+
+        session = Session.objects.get(pk=session.pk)  # refresh
+        agenda_doc = session.agenda()
+        self.assertEqual(agenda_doc.rev, f'{int(rev_before) + 1:02}', 'Revision of agenda should increase')
+        self.assertNotEqual(agenda_doc.uploaded_filename, uploaded_filename_before, 'Uploaded filename should be updated')
+        with (Path(agenda_doc.get_file_path()) / agenda_doc.uploaded_filename).open() as f:
+            self.assertEqual(f.read(), 'modified agenda contents', 'New agenda contents should be saved')
 
     def test_interim_request_details_permissions(self):
         make_interim_test_data()
@@ -5404,12 +5486,16 @@ class IphoneAppJsonTests(TestCase):
             self.assertTrue(msessions.filter(group__acronym=s['group']['acronym']).exists())
 
 class FinalizeProceedingsTests(TestCase):
-    @patch('urllib.request.urlopen')
-    def test_finalize_proceedings(self, mock_urlopen):
-        mock_urlopen.return_value = BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
+    @override_settings(STATS_REGISTRATION_ATTENDEES_JSON_URL='https://ietf.example.com/{number}')
+    @requests_mock.Mocker()
+    def test_finalize_proceedings(self, mock):
         make_meeting_test_data()
         meeting = Meeting.objects.filter(type_id='ietf').order_by('id').last()
         meeting.session_set.filter(group__acronym='mars').first().sessionpresentation_set.create(document=Document.objects.filter(type='draft').first(),rev=None)
+        mock.get(
+            settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number),
+            text=json.dumps([{"LastName": "Smith", "FirstName": "John", "Company": "ABC", "Country": "US"}]),
+        )
 
         url = urlreverse('ietf.meeting.views.finalize_proceedings',kwargs={'num':meeting.number})
         login_testing_unauthorized(self,"secretary",url)
@@ -5604,8 +5690,10 @@ class MaterialsTests(TestCase):
             self.assertEqual(doc.rev,'02')
 
             # Verify that we don't have dead links
-            url = url=urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})
+            url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})
             top = '/meeting/%s/' % session.meeting.number
+            self.requests_mock.get(f'{session.notes_url()}/download', text='markdown notes')
+            self.requests_mock.get(f'{session.notes_url()}/info', text=json.dumps({'title': 'title', 'updatetime': '2021-12-01T17:11:00z'}))
             self.crawl_materials(url=url, top=top)
 
     def test_upload_minutes_agenda_unscheduled(self):
@@ -5652,8 +5740,10 @@ class MaterialsTests(TestCase):
             self.assertEqual(doc.rev,'00')
 
             # Verify that we don't have dead links
-            url = url=urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})
+            url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})
             top = '/meeting/%s/' % session.meeting.number
+            self.requests_mock.get(f'{session.notes_url()}/download', text='markdown notes')
+            self.requests_mock.get(f'{session.notes_url()}/info', text=json.dumps({'title': 'title', 'updatetime': '2021-12-01T17:11:00z'}))
             self.crawl_materials(url=url, top=top)
 
     def test_upload_slides(self):
@@ -5925,6 +6015,151 @@ class MaterialsTests(TestCase):
         self.assertTrue(os.path.exists(filename))
         contents = io.open(filename,'r').read()
         self.assertIn('third version', contents)
+
+
+@override_settings(IETF_NOTES_URL='https://notes.ietf.org/')
+class ImportNotesTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
+
+    def setUp(self):
+        super().setUp()
+        self.session = SessionFactory(meeting__type_id='ietf')
+        self.meeting = self.session.meeting
+
+    def test_retrieves_note(self):
+        """Can import and preview a note from notes.ietf.org"""
+        url = urlreverse('ietf.meeting.views.import_session_minutes',
+                         kwargs={'num': self.meeting.number, 'session_id': self.session.pk})
+
+        self.client.login(username='secretary', password='secretary+password')
+        with requests_mock.Mocker() as mock:
+            mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/download', text='markdown text')
+            mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/info',
+                     text=json.dumps({"title": "title", "updatetime": "2021-12-02T11:22:33z"}))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            iframe = q('iframe#preview')
+            self.assertEqual('<p>markdown text</p>', iframe.attr('srcdoc'))
+            markdown_text_input = q('form #id_markdown_text')
+            self.assertEqual(markdown_text_input.val(), 'markdown text')
+
+    def test_retrieves_with_broken_metadata(self):
+        """Can import and preview a note even if it has a metadata problem"""
+        url = urlreverse('ietf.meeting.views.import_session_minutes',
+                         kwargs={'num': self.meeting.number, 'session_id': self.session.pk})
+
+        self.client.login(username='secretary', password='secretary+password')
+        with requests_mock.Mocker() as mock:
+            mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/download', text='markdown text')
+            mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/info', text='this is not valid json {]')
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            iframe = q('iframe#preview')
+            self.assertEqual('<p>markdown text</p>', iframe.attr('srcdoc'))
+            markdown_text_input = q('form #id_markdown_text')
+            self.assertEqual(markdown_text_input.val(), 'markdown text')
+
+    def test_redirects_on_success(self):
+        """Redirects to session details page after import"""
+        url = urlreverse('ietf.meeting.views.import_session_minutes',
+                         kwargs={'num': self.meeting.number, 'session_id': self.session.pk})
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.post(url, {'markdown_text': 'markdown text'})
+        self.assertRedirects(
+            r,
+            urlreverse(
+                'ietf.meeting.views.session_details',
+                kwargs={
+                    'num': self.meeting.number,
+                    'acronym': self.session.group.acronym,
+                },
+            ),
+        )
+
+    def test_imports_previewed_text(self):
+        """Import text that was shown as preview even if notes site is updated"""
+        url = urlreverse('ietf.meeting.views.import_session_minutes',
+                         kwargs={'num': self.meeting.number, 'session_id': self.session.pk})
+
+        self.client.login(username='secretary', password='secretary+password')
+        with requests_mock.Mocker() as mock:
+            mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/download', text='updated markdown text')
+            mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/info',
+                     text=json.dumps({"title": "title", "updatetime": "2021-12-02T11:22:33z"}))
+            r = self.client.post(url, {'markdown_text': 'original markdown text'})
+        self.assertEqual(r.status_code, 302)
+        minutes_path = Path(self.meeting.get_materials_path()) / 'minutes'
+        with (minutes_path / self.session.minutes().uploaded_filename).open() as f:
+            self.assertEqual(f.read(), 'original markdown text')
+
+    def test_refuses_identical_import(self):
+        """Should not be able to import text identical to the current revision"""
+        url = urlreverse('ietf.meeting.views.import_session_minutes',
+                         kwargs={'num': self.meeting.number, 'session_id': self.session.pk})
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.post(url, {'markdown_text': 'original markdown text'})  # create a rev
+        self.assertEqual(r.status_code, 302)
+        with requests_mock.Mocker() as mock:
+            mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/download', text='original markdown text')
+            mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/info',
+                     text=json.dumps({"title": "title", "updatetime": "2021-12-02T11:22:33z"}))
+            r = self.client.get(url)  # try to import the same text
+            self.assertContains(r, "This document is identical", status_code=200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('button:disabled[type="submit"]')), 1)
+            self.assertEqual(len(q('button:not(:disabled)[type="submit"]')), 0)
+
+    def test_handles_missing_previous_revision_file(self):
+        """Should still allow import if the file for the previous revision is missing"""
+        url = urlreverse('ietf.meeting.views.import_session_minutes',
+                         kwargs={'num': self.meeting.number, 'session_id': self.session.pk})
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.post(url, {'markdown_text': 'original markdown text'})  # create a rev
+        # remove the file uploaded for the first rev
+        minutes_docs = self.session.sessionpresentation_set.filter(document__type='minutes')
+        self.assertEqual(minutes_docs.count(), 1)
+        Path(minutes_docs.first().document.get_file_name()).unlink()
+
+        self.assertEqual(r.status_code, 302)
+        with requests_mock.Mocker() as mock:
+            mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/download', text='original markdown text')
+            mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/info',
+                     text=json.dumps({"title": "title", "updatetime": "2021-12-02T11:22:33z"}))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            iframe = q('iframe#preview')
+            self.assertEqual('<p>original markdown text</p>', iframe.attr('srcdoc'))
+            markdown_text_input = q('form #id_markdown_text')
+            self.assertEqual(markdown_text_input.val(), 'original markdown text')
+
+    def test_handles_note_does_not_exist(self):
+        """Should not try to import a note that does not exist"""
+        url = urlreverse('ietf.meeting.views.import_session_minutes',
+                         kwargs={'num': self.meeting.number, 'session_id': self.session.pk})
+
+        self.client.login(username='secretary', password='secretary+password')
+        with requests_mock.Mocker() as mock:
+            mock.get(requests_mock.ANY, status_code=404)
+            r = self.client.get(url, follow=True)
+        self.assertContains(r, 'Could not import', status_code=200)
+
+    def test_handles_notes_server_failure(self):
+        """Problems communicating with the notes server should be handled gracefully"""
+        url = urlreverse('ietf.meeting.views.import_session_minutes',
+                         kwargs={'num': self.meeting.number, 'session_id': self.session.pk})
+        self.client.login(username='secretary', password='secretary+password')
+
+        with requests_mock.Mocker() as mock:
+            mock.get(re.compile(r'.+/download'), exc=requests.exceptions.ConnectTimeout)
+            mock.get(re.compile(r'.+//info'), text='{}')
+            r = self.client.get(url, follow=True)
+        self.assertContains(r, 'Could not reach the notes server', status_code=200)
 
 
 class SessionTests(TestCase):
@@ -6911,12 +7146,15 @@ class ProceedingsTests(BaseMeetingTestCase):
             0,
         )
 
-    @patch('ietf.meeting.utils.requests.get')
-    def test_proceedings_attendees(self, mockobj):
-        mockobj.return_value.text = b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]'
-        mockobj.return_value.json = lambda: json.loads(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
+    @override_settings(STATS_REGISTRATION_ATTENDEES_JSON_URL='https://ietf.example.com/{number}')
+    @requests_mock.Mocker()
+    def test_proceedings_attendees(self, mock):
         make_meeting_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="97")
+        mock.get(
+            settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number),
+            text=json.dumps([{"LastName": "Smith", "FirstName": "John", "Company": "ABC", "Country": "US"}]),
+        )
         finalize(meeting)
         url = urlreverse('ietf.meeting.views.proceedings_attendees',kwargs={'num':97})
         response = self.client.get(url)
@@ -6924,14 +7162,18 @@ class ProceedingsTests(BaseMeetingTestCase):
         q = PyQuery(response.content)
         self.assertEqual(1,len(q("#id_attendees tbody tr")))
 
-    @patch('urllib.request.urlopen')
-    def test_proceedings_overview(self, mock_urlopen):
+    @override_settings(STATS_REGISTRATION_ATTENDEES_JSON_URL='https://ietf.example.com/{number}')
+    @requests_mock.Mocker()
+    def test_proceedings_overview(self, mock):
         '''Test proceedings IETF Overview page.
         Note: old meetings aren't supported so need to add a new meeting then test.
         '''
-        mock_urlopen.return_value = BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="97")
+        mock.get(
+            settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number),
+            text=json.dumps([{"LastName": "Smith", "FirstName": "John", "Company": "ABC", "Country": "US"}]),
+        )
         finalize(meeting)
         url = urlreverse('ietf.meeting.views.proceedings_overview',kwargs={'num':97})
         response = self.client.get(url)

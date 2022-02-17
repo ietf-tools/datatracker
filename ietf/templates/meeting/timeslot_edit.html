@@ -35,7 +35,9 @@ a.new-timeslot-link { color: lightgray; font-size: large;}
     </h1>
     <div class="my-3">
         <a class="btn btn-primary"
-           href="{% url "ietf.meeting.views.create_timeslot" num=meeting.number %}">New timeslot</a>
+           href="{% url "ietf.meeting.views.create_timeslot" num=meeting.number %}">
+            New timeslot
+        </a>
         {% if meeting.schedule %}
             <a class="btn btn-primary"
                href="{% url "ietf.secr.meetings.views.rooms" meeting_id=meeting.number schedule_name=meeting.schedule.name %}">
@@ -45,8 +47,12 @@ a.new-timeslot-link { color: lightgray; font-size: large;}
             {# secr app room view requires a schedule - show something for now (should try to avoid this possibility) #}
             <span title="Must create meeting schedule to edit rooms">Edit rooms</span>
         {% endif %}
+        <a class="btn btn-primary"
+           href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">
+            Agenda list
+        </a>
     </div>
-    <div class="timeslot-edit">
+   <div class="timeslot-edit">
         {% if rooms|length == 0 %}
             <p class="alert alert-info my-3">
                 No rooms exist for this meeting yet.

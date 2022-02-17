@@ -180,6 +180,8 @@ window.draw_calendar = function (items, filter_params) {
 
         e.style.textAlign = "center";
 
+        e.classList.add('agenda-weekview-day'); // for cypress tests
+
         var div = document.createElement("div");
         div.appendChild(document.createTextNode(day[((j + 1) % 7 + 7) % 7])); // js % is remainder, not modulus
         j++;
@@ -210,6 +212,8 @@ window.draw_calendar = function (items, filter_params) {
 
         e.style.margin = 0;
         e.style.padding = padding;
+
+        e.classList.add('agenda-weekview-column'); // for cypress tests
 
         document.body.appendChild(e);
     }
@@ -256,6 +260,12 @@ window.draw_calendar = function (items, filter_params) {
         e.style.fontFamily = "sans-serif";
         e.style.fontSize = "8pt";
         e.item = item;
+
+        // for cypress tests
+        e.classList.add('agenda-weekview-meeting');
+        if (day_width !== sess_width) {
+            e.classList.add('agenda-weekview-meeting-mini');
+        }
 
         e.onmouseenter = function () {
             resize(e, sess_top, day_left,

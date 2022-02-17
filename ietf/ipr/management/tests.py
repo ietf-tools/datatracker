@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Tests of ipr management commands"""
 import mock
+import sys
 
 from django.core.management import call_command
 from django.test.utils import override_settings
@@ -17,16 +18,17 @@ class ProcessEmailTests(TestCase):
         with name_of_file_containing('contents') as filename:
             call_command('process_email', email_file=filename)
         self.assertEqual(process_mock.call_count, 1, 'process_response_email should be called once')
+        (msg,) = process_mock.call_args.args
         self.assertEqual(
-            process_mock.call_args.args,
-            ('contents',),
+            msg.decode(),
+            'contents',
             'process_response_email should receive the correct contents'
         )
 
     @mock.patch('ietf.utils.management.base.send_smtp')
     @mock.patch('ietf.ipr.management.commands.process_email.process_response_email')
     def test_send_error_to_admin(self, process_mock, send_smtp_mock):
-        """The process_email command should email the admins on error"""
+        """The process_email command should email the admins on error in process_response_email"""
         # arrange an mock error during processing
         process_mock.side_effect = RuntimeError('mock error')
 
@@ -47,3 +49,30 @@ class ProcessEmailTests(TestCase):
         self.assertIn('mock.py', content, 'File where error occurred should be included in error email')
         self.assertIn('traceback', traceback.lower(), 'Traceback should be attached to error email')
         self.assertEqual(original, 'contents', 'Original message should be attached to error email')
+
+    @mock.patch('ietf.utils.management.base.send_smtp')
+    @mock.patch('ietf.ipr.management.commands.process_email.process_response_email')
+    def test_invalid_character_encodings(self, process_mock, send_smtp_mock):
+        """The process_email command should accept messages with invalid encoding when using a file input"""
+        invalid_characters = b'\xfe\xff'
+        with name_of_file_containing(invalid_characters, mode='wb') as filename:
+            call_command('process_email', email_file=filename)
+
+        self.assertFalse(send_smtp_mock.called)  # should not send an error email
+        self.assertTrue(process_mock.called)
+        (msg,) = process_mock.call_args.args
+        self.assertEqual(msg, invalid_characters, 'Invalid unicode should be passed to process_email()')
+
+    @mock.patch.object(sys.stdin.buffer, 'read')
+    @mock.patch('ietf.utils.management.base.send_smtp')
+    @mock.patch('ietf.ipr.management.commands.process_email.process_response_email')
+    def test_invalid_character_encodings_via_stdin(self, process_mock, send_smtp_mock, stdin_read_mock):
+        """The process_email command should attach messages with invalid encoding when using stdin"""
+        invalid_characters = b'\xfe\xff'
+        stdin_read_mock.return_value = invalid_characters
+        call_command('process_email')
+
+        self.assertFalse(send_smtp_mock.called)  # should not send an error email
+        self.assertTrue(process_mock.called)
+        (msg,) = process_mock.call_args.args
+        self.assertEqual(msg, invalid_characters, 'Invalid unicode should be passed to process_email()')

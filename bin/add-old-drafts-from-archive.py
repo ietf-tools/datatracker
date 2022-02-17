@@ -14,7 +14,7 @@ django.setup()
 
 from django.conf import settings
 from django.core.validators import validate_email, ValidationError
-from ietf.utils.draft import Draft
+from ietf.utils.draft import PlaintextDraft
 from ietf.submit.utils import update_authors
 
 import debug                            # pyflakes:ignore
@@ -61,7 +61,7 @@ for name in sorted(names):
                 except UnicodeDecodeError:
                     text = raw.decode('latin1')
                 try:
-                    draft = Draft(text, txt_file.name, name_from_source=True)
+                    draft = PlaintextDraft(text, txt_file.name, name_from_source=True)
                 except Exception as e:
                     print name, rev, "Can't parse", p,":",e
                     continue

@@ -558,7 +558,12 @@ def post_approved_draft(url, name):
     text = error = ""
 
     try:
-        r = requests.post(url, headers=headers, data=smart_bytes(urlencode({ 'draft': name })), timeout=20)
+        r = requests.post(
+            url,
+            headers=headers,
+            data=smart_bytes(urlencode({ 'draft': name })),
+            timeout=settings.DEFAULT_REQUESTS_TIMEOUT,
+        )
 
         log("RFC-Editor notification result for draft '%s': %s:'%s'" % (name, r.status_code, r.text))
 

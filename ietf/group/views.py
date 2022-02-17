@@ -38,7 +38,6 @@ import copy
 import datetime
 import itertools
 import io
-import markdown
 import math
 import os
 import re
@@ -77,9 +76,9 @@ from ietf.group.models import ( Group, Role, GroupEvent, GroupStateTransitions,
                               ChangeStateGroupEvent, GroupFeatures )
 from ietf.group.utils import (get_charter_text, can_manage_all_groups_of_type, 
                               milestone_reviewer_for_group_type, can_provide_status_update,
-                              can_manage_materials, 
+                              can_manage_materials, group_attribute_change_desc,
                               construct_group_menu_context, get_group_materials,
-                              save_group_in_history, can_manage_group, 
+                              save_group_in_history, can_manage_group, update_role_set,
                               get_group_or_404, setup_default_community_list_for_group, )                              
 #
 from ietf.ietfauth.utils import has_role, is_authorized_in_group
@@ -121,7 +120,7 @@ from ietf.settings import MAILING_LIST_INFO_URL
 from ietf.utils.pipe import pipe
 from ietf.utils.response import permission_denied
 from ietf.utils.text import strip_suffix
-
+from ietf.utils import markdown
 
 
 # --- Helpers ----------------------------------------------------------
@@ -581,7 +580,7 @@ def group_about_rendertest(request, acronym, group_type=None):
     if group.charter:
         charter = get_charter_text(group)
     try:
-        rendered = markdown.markdown(charter, extensions=['extra'])
+        rendered = markdown.markdown(charter)
     except Exception as e:
         rendered = f'Markdown rendering failed: {e}'
     return render(request, 'group/group_about_rendertest.html', {'group':group, 'charter':charter, 'rendered':rendered})
@@ -873,13 +872,6 @@ def group_photos(request, group_type=None, acronym=None):
 def edit(request, group_type=None, acronym=None, action="edit", field=None):
     """Edit or create a group, notifying parties as
     necessary and logging changes as group events."""
-    def desc(attr, new, old):
-        entry = "%(attr)s changed to <b>%(new)s</b> from %(old)s"
-        if new_group:
-            entry = "%(attr)s changed to <b>%(new)s</b>"
-
-        return entry % dict(attr=attr, new=new, old=old)
-
     def format_resources(resources, fs="\n"):
         res = []
         for r in resources:
@@ -892,11 +884,15 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
         return fs.join(res)
 
     def diff(attr, name):
-        if field and attr != field:
+        if attr not in clean or (field and attr != field):
             return
         v = getattr(group, attr)
         if clean[attr] != v:
-            changes.append((attr, clean[attr], desc(name, clean[attr], v)))
+            changes.append((
+                attr,
+                clean[attr],
+                group_attribute_change_desc(name, clean[attr], v if v else None)
+            ))
             setattr(group, attr, clean[attr])
 
     if action == "edit":
@@ -955,6 +951,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
             diff('name', "Name")
             diff('acronym', "Acronym")
             diff('state', "State")
+            diff('description', "Description")
             diff('parent', "IETF Area" if group.type=="wg" else "Group parent")
             diff('list_email', "Mailing list email")
             diff('list_subscribe', "Mailing list subscribe address")
@@ -972,47 +969,33 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
 
                 title = f.label
 
-                new = clean[attr]
-                old = Email.objects.filter(role__group=group, role__name=slug).select_related("person")
-                if set(new) != set(old):
-                    changes.append((attr, new, desc(title,
-                                        ", ".join(sorted(x.get_name() for x in new)),
-                                        ", ".join(sorted(x.get_name() for x in old)))))
-                    group.role_set.filter(name=slug).delete()
-                    for e in new:
-                        Role.objects.get_or_create(name_id=slug, email=e, group=group, person=e.person)
-                        if not e.origin or (e.person.user and e.origin == e.person.user.username):
-                            e.origin = "role: %s %s" % (group.acronym, slug)
-                            e.save()
+                added, deleted = update_role_set(group, slug, clean[attr], request.user.person)
+                changed_personnel.update(added | deleted)
+                if added:
+                    change_text=title + ' added: ' + ", ".join(x.name_and_email() for x in added)
+                    personnel_change_text+=change_text+"\n"
+                if deleted:
+                    change_text=title + ' deleted: ' + ", ".join(x.name_and_email() for x in deleted)
+                    personnel_change_text+=change_text+"\n"
 
-                    added = set(new) - set(old)
-                    deleted = set(old) - set(new)
-                    if added:
-                        change_text=title + ' added: ' + ", ".join(x.name_and_email() for x in added)
-                        personnel_change_text+=change_text+"\n"
-                    if deleted:
-                        change_text=title + ' deleted: ' + ", ".join(x.name_and_email() for x in deleted)
-                        personnel_change_text+=change_text+"\n"
-                        
-                        today = datetime.date.today()
-                        for deleted_email in deleted:
-                            # Verify the person doesn't have a separate reviewer role for the group with a different address
-                            if not group.role_set.filter(name_id='reviewer',person=deleted_email.person).exists():
-                                active_assignments = ReviewAssignment.objects.filter(
-                                    review_request__team=group,
-                                    reviewer__person=deleted_email.person,
-                                    state_id__in=['accepted', 'assigned'],
-                                )
-                                for assignment in active_assignments:
-                                    if assignment.review_request.deadline > today:
-                                        assignment.state_id = 'withdrawn'
-                                    else:
-                                        assignment.state_id = 'no-response'
-                                    # save() will update review_request state to 'requested'
-                                    # if needed, so that the review can be assigned to someone else
-                                    assignment.save()
-                                
-                    changed_personnel.update(set(old)^set(new))
+                    today = datetime.date.today()
+                    for deleted_email in deleted:
+                        # Verify the person doesn't have a separate reviewer role for the group with a different address
+                        if not group.role_set.filter(name_id='reviewer',person=deleted_email.person).exists():
+                            active_assignments = ReviewAssignment.objects.filter(
+                                review_request__team=group,
+                                reviewer__person=deleted_email.person,
+                                state_id__in=['accepted', 'assigned'],
+                            )
+                            for assignment in active_assignments:
+                                if assignment.review_request.deadline > today:
+                                    assignment.state_id = 'withdrawn'
+                                else:
+                                    assignment.state_id = 'no-response'
+                                # save() will update review_request state to 'requested'
+                                # if needed, so that the review can be assigned to someone else
+                                assignment.save()
+
 
             if personnel_change_text!="":
                 changed_personnel = [ str(p) for p in changed_personnel ]
@@ -1030,7 +1013,15 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                         value = parts[1]
                         display_name = ' '.join(parts[2:]).strip('()')
                         group.groupextresource_set.create(value=value, name_id=name, display_name=display_name)
-                    changes.append(('resources', new_resources, desc('Resources', ", ".join(new_resources), ", ".join(old_resources))))
+                    changes.append((
+                        'resources',
+                        new_resources,
+                        group_attribute_change_desc(
+                            'Resources',
+                            ", ".join(new_resources),
+                            ", ".join(old_resources) if old_resources else None
+                        )
+                    ))
 
             group.time = datetime.datetime.now()
 
@@ -1077,6 +1068,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
             init = dict(name=group.name,
                         acronym=group.acronym,
                         state=group.state,
+                        description = group.description,
                         parent=group.parent.id if group.parent else None,
                         list_email=group.list_email if group.list_email else None,
                         list_subscribe=group.list_subscribe if group.list_subscribe else None,

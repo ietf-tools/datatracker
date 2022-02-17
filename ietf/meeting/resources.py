@@ -166,11 +166,12 @@ api.meeting.register(ScheduleResource())
 
 from ietf.group.resources import GroupResource
 from ietf.doc.resources import DocumentResource
-from ietf.name.resources import TimeSlotTypeNameResource
+from ietf.name.resources import TimeSlotTypeNameResource, SessionPurposeNameResource
 from ietf.person.resources import PersonResource
 class SessionResource(ModelResource):
     meeting          = ToOneField(MeetingResource, 'meeting')
     type             = ToOneField(TimeSlotTypeNameResource, 'type')
+    purpose          = ToOneField(SessionPurposeNameResource, 'purpose')
     group            = ToOneField(GroupResource, 'group')
     materials        = ToManyField(DocumentResource, 'materials', null=True)
     resources        = ToManyField(ResourceAssociationResource, 'resources', null=True)
@@ -195,6 +196,7 @@ class SessionResource(ModelResource):
             "modified": ALL,
             "meeting": ALL_WITH_RELATIONS,
             "type": ALL_WITH_RELATIONS,
+            "purpose": ALL_WITH_RELATIONS,
             "group": ALL_WITH_RELATIONS,
             "requested_by": ALL_WITH_RELATIONS,
             "status": ALL_WITH_RELATIONS,

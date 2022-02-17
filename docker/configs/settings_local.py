@@ -48,8 +48,6 @@ MEDIA_URL = '/media/'
 PHOTOS_DIRNAME = 'photo'
 PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 
-DOCUMENT_PATH_PATTERN = 'data/developers/ietf-ftp/{doc.type_id}/'
-
 SUBMIT_YANG_CATALOG_MODEL_DIR = 'data/developers/ietf-ftp/yang/catalogmod/'
 SUBMIT_YANG_DRAFT_MODEL_DIR = 'data/developers/ietf-ftp/yang/draftmod/'
 SUBMIT_YANG_INVAL_MODEL_DIR = 'data/developers/ietf-ftp/yang/invalmod/'
@@ -77,3 +75,5 @@ INTERNET_ALL_DRAFTS_ARCHIVE_DIR = 'data/developers/ietf-ftp/internet-drafts/'
 
 NOMCOM_PUBLIC_KEYS_DIR = 'data/nomcom_keys/public_keys/'
 SLIDE_STAGING_PATH = 'test/staging/'
+
+DE_GFM_BINARY = '/usr/local/bin/de-gfm'

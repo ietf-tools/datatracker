@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2021, All Rights Reserved #}
-{% load origin django_bootstrap5 static %}
+{% load origin django_bootstrap5 static textfilters %}
 {% block title %}Start a new BOF Request{% endblock %}
 {% block content %}
     {% origin %}
@@ -9,7 +9,7 @@
         Choose a short descriptive title for your request. Take time to choose a good initial title - it will be used to make the filename for your request's content. The title can be changed later, but the filename will not change.
     </p>
     <p>
-        For example, a request with a title of "A new important bit" will be saved as <code>bofreq-a-new-important-bit-00.md</code>.
+        For example, a request with a title of "A new important bit" will be saved as <code>bofreq-{{ user.person.last_name|xslugify|slice:"64" }}-a-new-important-bit-00.md</code>.
     </p>
     <form class="upload-content form-horizontal"
           method="post"

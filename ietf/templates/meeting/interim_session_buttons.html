@@ -30,19 +30,11 @@
         {% endif %}
         {# etherpad #}
         {% if use_codimd %}
-            {% if item.slot_type.slug == 'plenary' %}
-                <a class="btn btn-outline-primary"
-                   href="https://notes.ietf.org/notes-ietf-{{ meeting.number }}-plenary"
-                   title="Notepad for note-takers">
-                    <i class="bi bi-journal-text"></i>
-                </a>
-            {% else %}
-                <a class="btn btn-outline-primary"
-                   href="https://notes.ietf.org/notes-ietf-{{ meeting.number }}-{{ acronym }}"
-                   title="Notepad for note-takers">
-                    <i class="bi bi-journal-text"></i>
-                </a>
-            {% endif %}
+            <a class="btn btn-outline-primary"
+               href="{{ session.notes_url }}"
+               title="Notepad for note-takers">
+                <i class="bi bi-journal-text"></i>
+            </a>
         {% endif %}
         {# show stream buttons up till end of session, then show archive buttons #}
         {% if now < item.timeslot.end_time %}

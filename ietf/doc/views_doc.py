@@ -40,7 +40,6 @@ import io
 import json
 import os
 import re
-import markdown
 
 from urllib.parse import quote
 
@@ -80,8 +79,8 @@ from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions,
 from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
-from ietf.utils import markup_txt, log
-from ietf.utils.draft import Draft
+from ietf.utils import markup_txt, log, markdown
+from ietf.utils.draft import PlaintextDraft
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
 
@@ -550,7 +549,7 @@ def document_main(request, name, rev=None):
                                        ))
 
     if doc.type_id == "bofreq":
-        content = markdown.markdown(doc.text_or_error(),extensions=['extra'])
+        content = markdown.markdown(doc.text_or_error())
         editors = bofreq_editors(doc)
         responsible = bofreq_responsible(doc)
         can_manage = has_role(request.user,['Secretariat', 'Area Director', 'IAB'])
@@ -661,7 +660,7 @@ def document_main(request, name, rev=None):
                 content = doc.text_or_error()
                 t = "plain text"
             elif extension == ".md":
-                content = markdown.markdown(doc.text_or_error(), extensions=['extra'])
+                content = markdown.markdown(doc.text_or_error())
                 content_is_html = True
                 t = "markdown"
             other_types.append((t, url))
@@ -719,6 +718,45 @@ def document_main(request, name, rev=None):
 
     raise Http404("Document not found: %s" % (name + ("-%s"%rev if rev else "")))
 
+
+def document_raw_id(request, name, rev=None, ext=None):
+    if not name.startswith('draft-'):
+        raise Http404
+    found = fuzzy_find_documents(name, rev)
+    num_found = found.documents.count()
+    if num_found == 0:
+        raise Http404("Document not found: %s" % name)
+    if num_found > 1:
+        raise Http404("Multiple documents matched: %s" % name)
+
+    doc = found.documents.get()
+
+    if found.matched_rev or found.matched_name.startswith('rfc'):
+        rev = found.matched_rev
+    else:
+        rev = doc.rev
+    if rev:
+        doc = doc.history_set.filter(rev=rev).first() or doc.fake_history_obj(rev)
+
+    base_path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".")
+    possible_types = settings.IDSUBMIT_FILE_TYPES
+    found_types=dict()
+    for t in possible_types:
+        if os.path.exists(base_path + t):
+            found_types[t]=base_path+t
+    if ext == None:
+        ext = 'txt'
+    if not ext in found_types:
+        raise Http404('dont have the file for that extension')
+    mimetypes = {'txt':'text/plain','html':'text/html','xml':'application/xml'}
+    try:
+        with open(found_types[ext],'rb') as f:
+            blob = f.read()
+            return HttpResponse(blob,content_type=f'{mimetypes[ext]};charset=utf-8')
+    except:
+        raise Http404
+
+
 def document_html(request, name, rev=None):
     found = fuzzy_find_documents(name, rev)
     num_found = found.documents.count()
@@ -731,9 +769,6 @@ def document_html(request, name, rev=None):
          return redirect('ietf.doc.views_doc.document_html', name=found.matched_name)
 
     doc = found.documents.get()
-    if not os.path.exists(doc.get_file_name()):
-        raise Http404("File not found: %s" % doc.get_file_name())
-
 
     if found.matched_rev or found.matched_name.startswith('rfc'):
         rev = found.matched_rev
@@ -741,6 +776,9 @@ def document_html(request, name, rev=None):
         rev = doc.rev
     if rev:
         doc = doc.history_set.filter(rev=rev).first() or doc.fake_history_obj(rev)
+
+    if not os.path.exists(doc.get_file_name()):
+        raise Http404("File not found: %s" % doc.get_file_name())
 
     if doc.type_id in ['draft',]:
         doc.supermeta = build_doc_supermeta_block(doc)
@@ -766,6 +804,36 @@ def document_html(request, name, rev=None):
             doccolor = 'bgred' # Draft
 
     return render(request, "doc/document_html.html", {"doc":doc, "doccolor":doccolor })
+
+def document_pdfized(request, name, rev=None, ext=None):
+
+    found = fuzzy_find_documents(name, rev)
+    num_found = found.documents.count()
+    if num_found == 0:
+        raise Http404("Document not found: %s" % name)
+    if num_found > 1:
+        raise Http404("Multiple documents matched: %s" % name)
+
+    if found.matched_name.startswith('rfc') and name != found.matched_name:
+         return redirect('ietf.doc.views_doc.document_pdfized', name=found.matched_name)
+
+    doc = found.documents.get()
+
+    if found.matched_rev or found.matched_name.startswith('rfc'):
+        rev = found.matched_rev
+    else:
+        rev = doc.rev
+    if rev:
+        doc = doc.history_set.filter(rev=rev).first() or doc.fake_history_obj(rev)
+
+    if not os.path.exists(doc.get_file_name()):
+        raise Http404("File not found: %s" % doc.get_file_name())
+
+    pdf = doc.pdfized()
+    if pdf:
+        return HttpResponse(pdf,content_type='application/pdf;charset=utf-8')
+    else:
+        raise Http404
 
 def check_doc_email_aliases():
     pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
@@ -1108,6 +1176,10 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
     positions = ballot.all_positions()
 
     # put into position groups
+    #
+    # Each position group is a tuple (BallotPositionName, [BallotPositionDocEvent, ...])
+    # THe list contains the latest entry for each AD, possibly with a fake 'no record' entry
+    # for any ADs without an event. Blocking positions are earlier in the list than non-blocking.
     position_groups = []
     for n in BallotPositionName.objects.filter(slug__in=[p.pos_id for p in positions]).order_by('order'):
         g = (n, [p for p in positions if p.pos_id == n.slug])
@@ -1773,7 +1845,7 @@ def idnits2_state(request, name, rev=None):
     else:
         text = doc.text()
         if text:
-            parsed_draft = Draft(text=doc.text(), source=name, name_from_source=False)
+            parsed_draft = PlaintextDraft(text=doc.text(), source=name, name_from_source=False)
             doc.deststatus = parsed_draft.get_status()
         else:
             doc.deststatus="Unknown"

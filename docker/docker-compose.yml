@@ -23,6 +23,8 @@ services:
         depends_on:
             - db
 
+        ipc: host
+
         # environment:
             # USER: django
             # UID: 1001
@@ -37,6 +39,7 @@ services:
         # (Adding the "ports" property to this file will not forward from a Codespace.)
                 
     db:
+        # image: ghcr.io/ngpixel/datatracker-db:nightly-20211208
         build:
             context: ..
             dockerfile: docker/db.Dockerfile

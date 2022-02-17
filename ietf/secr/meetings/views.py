@@ -20,14 +20,13 @@ from ietf.utils.mail import send_mail
 from ietf.meeting.forms import duration_string
 from ietf.meeting.helpers import get_meeting, make_materials_directories, populate_important_dates
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessAssignment, Schedule, SchedulingEvent
-from ietf.meeting.utils import add_event_info_to_session_qs
+from ietf.meeting.utils import add_event_info_to_session_qs, handle_upload_file
 from ietf.name.models import SessionStatusName
 from ietf.group.models import Group, GroupEvent
 from ietf.secr.meetings.blue_sheets import create_blue_sheets
 from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm, MeetingSelectForm,
     MeetingRoomForm, MiscSessionForm, TimeSlotForm, RegularSessionEditForm,
     UploadBlueSheetForm, MeetingRoomOptionsForm )
-from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.sreq.views import get_initial_session
 from ietf.secr.utils.meeting import get_session, get_timeslot
 from ietf.mailtrigger.utils import gather_address_lists
@@ -431,6 +430,7 @@ def misc_sessions(request, meeting_id, schedule_name):
                                              group=group,
                                              type=type,
                                              purpose=purpose,
+                                             on_agenda=purpose.on_agenda,
                                              remote_instructions=remote_instructions)
 
             SchedulingEvent.objects.create(
@@ -558,6 +558,8 @@ def misc_session_edit(request, meeting_id, schedule_name, slot_id):
             session.name = name
             session.short = short
             session.remote_instructions = remote_instructions
+            if session.purpose != session_purpose:  # only change if purpose is changing
+                session.on_agenda = session_purpose.on_agenda
             session.purpose = session_purpose
             session.type = slot_type
             session.save()

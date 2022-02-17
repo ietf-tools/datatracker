@@ -190,7 +190,7 @@ class MiscSessionForm(TimeSlotForm):
                      Plenary = IETF''',
         required=False)
     location = forms.ModelChoiceField(queryset=Room.objects, required=False)
-    remote_instructions = forms.CharField(max_length=255)
+    remote_instructions = forms.CharField(max_length=255, required=False)
     show_location = forms.BooleanField(required=False)
 
     def __init__(self,*args,**kwargs):

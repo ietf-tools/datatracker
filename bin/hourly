@@ -92,6 +92,9 @@ CHARTER=/a/www/ietf-ftp/charter
 wget -q https://datatracker.ietf.org/wg/1wg-charters-by-acronym.txt -O $CHARTER/1wg-charters-by-acronym.txt
 wget -q https://datatracker.ietf.org/wg/1wg-charters.txt            -O $CHARTER/1wg-charters.txt
 
+# Regenerate the last week of bibxml-ids
+$DTDIR/ietf/manage.py generate_draft_bibxml_files
+
 # Create and update group wikis
 #$DTDIR/ietf/manage.py create_group_wikis
 

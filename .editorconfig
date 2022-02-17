@@ -5,6 +5,8 @@
 root = true
 
 # Settings for IETF datatracker
+# ---------------------------------------------------------
+# PEP8 Style
 
 [*]
 indent_style = space
@@ -14,3 +16,39 @@ charset = utf-8
 # to avoid tripping Henrik's commit hook:
 trim_trailing_whitespace = false
 insert_final_newline = false
+
+# Settings for .github folder
+# ---------------------------------------------------------
+# GitHub Markdown Style
+
+[.github/**]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = false
+insert_final_newline = true
+
+# Settings for client-side JS / Vue files
+# ---------------------------------------------------------
+# StandardJS Style
+
+[client/**]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Settings for cypress tests
+# ---------------------------------------------------------
+# StandardJS Style
+
+[cypress/**]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true

@@ -232,6 +232,8 @@ def skip_url(url):
             # Skip most html conversions, not worth the time
             "^/doc/html/draft-[0-9ac-z]",
             "^/doc/html/draft-b[0-9b-z]",
+            "^/doc/pdf/draft-[0-9ac-z]",
+            "^/doc/pdf/draft-b[0-9b-z]",
             "^/doc/html/charter-.*",
             "^/doc/html/status-.*",
             "^/doc/html/rfc.*",

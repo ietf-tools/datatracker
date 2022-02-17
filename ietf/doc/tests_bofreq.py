@@ -21,6 +21,7 @@ from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.person.factories import PersonFactory
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import TestCase, reload_db_objects, unicontent, login_testing_unauthorized
+from ietf.utils.text import xslugify
 
 
 class BofreqTests(TestCase):
@@ -333,7 +334,7 @@ This test section has some text.
             empty_outbox()
             r = self.client.post(url, postdict)
             self.assertEqual(r.status_code,302)
-            name = f"bofreq-{postdict['title']}".replace(' ','-')
+            name = f"bofreq-{xslugify(nobody.last_name())[:64]}-{postdict['title']}".replace(' ','-')
             bofreq = Document.objects.filter(name=name,type_id='bofreq').first()
             self.assertIsNotNone(bofreq)
             self.assertIsNotNone(DocAlias.objects.filter(name=name).first())
@@ -345,7 +346,7 @@ This test section has some text.
             self.assertEqual(bofreq.text_or_error(), 'some stuff')
             self.assertEqual(len(outbox),1)
         os.unlink(file.name)
-        existing_bofreq = BofreqFactory()
+        existing_bofreq = BofreqFactory(requester_lastname=nobody.last_name())
         for postdict in [
                             dict(title='', bofreq_submission='enter', bofreq_content='some stuff'),
                             dict(title='a title', bofreq_submission='enter', bofreq_content=''),
@@ -354,9 +355,9 @@ This test section has some text.
                             dict(title='a title', bofreq_submission='', bofreq_content='some stuff'),
                         ]:
             r = self.client.post(url,postdict)
-            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.status_code, 200, f'Wrong status_code for {postdict}')
             q = PyQuery(r.content)
-            self.assertTrue(q('form div.is-invalid'))
+            self.assertTrue(q('form div.is-invalid'), f'Expected an error for {postdict}')
 
     def test_post_proposed_restrictions(self):
         states = State.objects.filter(type_id='bofreq').exclude(slug='proposed')
@@ -384,4 +385,3 @@ This test section has some text.
         q = PyQuery(r.content)
         self.assertEqual(0, len(q('td.edit>a.btn')))
         self.assertEqual([],q('#change-request'))
-        

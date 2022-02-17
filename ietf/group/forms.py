@@ -66,6 +66,7 @@ class GroupForm(forms.Form):
     list_email = forms.CharField(max_length=64, required=False)
     list_subscribe = forms.CharField(max_length=255, required=False)
     list_archive = forms.CharField(max_length=255, required=False)
+    description = forms.CharField(widget=forms.Textarea, required=False, help_text='Text that appears on the "about" page.')
     urls = forms.CharField(widget=forms.Textarea, label="Additional URLs", help_text="Format: https://site/path (Optional description). Separate multiple entries with newline. Prefer HTTPS URLs where possible.", required=False)
     resources = forms.CharField(widget=forms.Textarea, label="Additional Resources", help_text="Format: tag value (Optional description). Separate multiple entries with newline. Prefer HTTPS URLs where possible.", required=False)
     closing_note = forms.CharField(widget=forms.Textarea, label="Closing note", required=False)
@@ -102,6 +103,9 @@ class GroupForm(forms.Form):
             field = None
 
         super(self.__class__, self).__init__(*args, **kwargs)
+
+        if not group_features or group_features.has_chartering_process:
+            self.fields.pop('description')  # do not show the description field for chartered groups
 
         for role_slug in self.used_roles:
             role_name = RoleName.objects.get(slug=role_slug)

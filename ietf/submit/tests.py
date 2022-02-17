@@ -13,14 +13,19 @@ import mock
 from io import StringIO
 from pyquery import PyQuery
 
+from pathlib import Path
+
 from django.conf import settings
+from django.test import override_settings
+from django.test.client import RequestFactory
 from django.urls import reverse as urlreverse
 from django.utils.encoding import force_str, force_text
 
 import debug                            # pyflakes:ignore
 
-from ietf.submit.utils import expirable_submissions, expire_submission
-from ietf.doc.factories import DocumentFactory, WgDraftFactory, IndividualDraftFactory
+from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
+                               post_submission)
+from ietf.doc.factories import DocumentFactory, WgDraftFactory, IndividualDraftFactory, IndividualRfcFactory
 from ietf.doc.models import ( Document, DocAlias, DocEvent, State,
     BallotPositionDocEvent, DocumentAuthor, SubmissionDocEvent )
 from ietf.doc.utils import create_ballot_if_not_open, can_edit_docextresources, update_action_holders
@@ -40,7 +45,7 @@ from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.models import VersionInfo
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
-from ietf.utils.draft import Draft
+from ietf.utils.draft import PlaintextDraft
 
 
 class BaseSubmitTestCase(TestCase):
@@ -50,6 +55,7 @@ class BaseSubmitTestCase(TestCase):
         'SUBMIT_YANG_DRAFT_MODEL_DIR',
         'SUBMIT_YANG_IANA_MODEL_DIR',
         'SUBMIT_YANG_CATALOG_DIR',
+        'BIBXML_BASE_PATH',
     ]
 
     def setUp(self):
@@ -59,6 +65,7 @@ class BaseSubmitTestCase(TestCase):
         # old drafts may not be moved out of the way properly.
         self.saved_repository_path = settings.IDSUBMIT_REPOSITORY_PATH
         settings.IDSUBMIT_REPOSITORY_PATH = settings.INTERNET_DRAFT_PATH
+        os.mkdir(os.path.join(settings.BIBXML_BASE_PATH,'bibxml-ids'))
 
     def tearDown(self):
         settings.IDSUBMIT_REPOSITORY_PATH = self.saved_repository_path
@@ -251,6 +258,16 @@ class SubmitTests(BaseSubmitTestCase):
 
         return confirmation_url
 
+    def verify_bibxml_ids_creation(self, draft):
+        # for name in (draft.name, draft.name[6:]):
+        #     ref_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s.xml' % (name, ))
+        #     self.assertTrue(os.path.exists(ref_file_name))
+        #     ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (name, draft.rev ))
+        #     self.assertTrue(os.path.exists(ref_rev_file_name))
+        ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (draft.name, draft.rev ))
+        self.assertTrue(os.path.exists(ref_rev_file_name))
+
+
     def submit_new_wg(self, formats):
         # submit new -> supply submitter info -> approve
         GroupFactory(type_id='wg',acronym='ames')
@@ -368,6 +385,8 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertContains(r, 'mars WG')
         self.assertContains(r, 'Yang Validation')
         self.assertContains(r, 'WG Document')
+
+        self.verify_bibxml_ids_creation(draft)
 
     def test_submit_new_wg_txt(self):
         self.submit_new_wg(["txt"])
@@ -680,6 +699,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertContains(r, draft.title)
         # Check submission settings
         self.assertEqual(draft.submission().xml_version, "3" if 'xml' in formats else None)
+        self.verify_bibxml_ids_creation(draft)
 
     def test_submit_existing_txt(self):
         self.submit_existing(["txt"])
@@ -834,6 +854,7 @@ class SubmitTests(BaseSubmitTestCase):
         new_revision = draft.latest_event()
         self.assertEqual(new_revision.type, "new_revision")
         self.assertEqual(new_revision.by.name, "Submitter Name")
+        self.verify_bibxml_ids_creation(draft)
 
     def test_submit_new_individual_txt(self):
         self.submit_new_individual(["txt"])
@@ -874,6 +895,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(docauth.person, author)
         self.assertEqual(docauth.affiliation, '')
         self.assertEqual(docauth.country, '')
+        self.verify_bibxml_ids_creation(doc)
 
     def test_submit_new_draft_no_org_or_address_txt(self):
         self.submit_new_draft_no_org_or_address(['txt'])
@@ -1010,6 +1032,7 @@ class SubmitTests(BaseSubmitTestCase):
 
         # Check submission settings
         self.assertEqual(draft.submission().xml_version, "3" if 'xml' in formats else None)
+        self.verify_bibxml_ids_creation(draft)
 
     def test_submit_new_logged_in_txt(self):
         self.submit_new_individual_logged_in(["txt"])
@@ -1053,6 +1076,7 @@ class SubmitTests(BaseSubmitTestCase):
             [str(r) for r in resources],
         )
         self._assert_extresource_change_event(draft, is_present=True)
+        self.verify_bibxml_ids_creation(draft)
 
     def test_submit_update_individual(self):
         IndividualDraftFactory(name='draft-ietf-random-thing', states=[('draft','rfc')], other_aliases=['rfc9999',], pages=5)
@@ -1110,6 +1134,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertContains(r, draft.name)
         self.assertContains(r, draft.title)
         self._assert_extresource_change_event(draft, is_present=False)
+        self.verify_bibxml_ids_creation(draft)
 
     def submit_existing_with_extresources(self, group_type, stream_type='ietf'):
         """Submit a draft with external resources
@@ -1385,6 +1410,7 @@ class SubmitTests(BaseSubmitTestCase):
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, rev)
         self.assertEqual(draft.docextresource_set.count(), 0)
+        self.verify_bibxml_ids_creation(draft)
 
     def test_search_for_submission_and_edit_as_secretariat(self):
         # submit -> edit
@@ -2832,10 +2858,62 @@ class RefsTests(BaseSubmitTestCase):
 
         group = None
         file, __ = submission_file('draft-some-subject', '00', group, 'txt', "test_submission.txt", )
-        draft = Draft(file.read(), file.name)
+        draft = PlaintextDraft(file.read(), file.name)
         refs = draft.get_refs()
         self.assertEqual(refs['rfc2119'], 'norm')
         self.assertEqual(refs['rfc8174'], 'norm')
         self.assertEqual(refs['rfc8126'], 'info')
         self.assertEqual(refs['rfc8175'], 'info')
-        
+
+
+class PostSubmissionTests(BaseSubmitTestCase):
+    @override_settings(RFC_FILE_TYPES=('txt', 'xml'), IDSUBMIT_FILE_TYPES=('pdf', 'md'))
+    def test_find_submission_filenames_rfc(self):
+        """Posting an RFC submission should use RFC_FILE_TYPES"""
+        rfc = IndividualRfcFactory()
+        path = Path(self.staging_dir)
+        for ext in ['txt', 'xml', 'pdf', 'md']:
+            (path / f'{rfc.name}-{rfc.rev}.{ext}').touch()
+        files = find_submission_filenames(rfc)
+        self.assertCountEqual(
+            files,
+            {
+                'txt': f'{path}/{rfc.name}-{rfc.rev}.txt',
+                'xml': f'{path}/{rfc.name}-{rfc.rev}.xml',
+                # should NOT find the pdf or md
+            }
+        )
+
+    @override_settings(RFC_FILE_TYPES=('txt', 'xml'), IDSUBMIT_FILE_TYPES=('pdf', 'md'))
+    def test_find_submission_filenames_draft(self):
+        """Posting an I-D submission should use IDSUBMIT_FILE_TYPES"""
+        draft = WgDraftFactory()
+        path = Path(self.staging_dir)
+        for ext in ['txt', 'xml', 'pdf', 'md']:
+            (path / f'{draft.name}-{draft.rev}.{ext}').touch()
+        files = find_submission_filenames(draft)
+        self.assertCountEqual(
+            files,
+            {
+                'pdf': f'{path}/{draft.name}-{draft.rev}.pdf',
+                'md': f'{path}/{draft.name}-{draft.rev}.md',
+                # should NOT find the txt or xml
+            }
+        )
+
+    @mock.patch('ietf.submit.utils.rebuild_reference_relations')
+    @mock.patch('ietf.submit.utils.find_submission_filenames')
+    def test_post_submission_rebuilds_ref_relations(self, mock_find_filenames, mock_rebuild_reference_relations):
+        """The post_submission method should rebuild reference relations from correct files
+
+        This tests that the post_submission() utility function gets the list of files to handle from the
+        find_submission_filenames() method and passes them along to rebuild_reference_relations().
+        """
+        submission = SubmissionFactory()
+        mock_find_filenames.return_value = {'xml': f'{self.staging_dir}/{submission.name}.xml'}
+        request = RequestFactory()
+        request.user = PersonFactory().user
+        post_submission(request, submission, 'doc_desc', 'subm_desc')
+        args, kwargs = mock_rebuild_reference_relations.call_args
+        self.assertEqual(args[1], mock_find_filenames.return_value)
+

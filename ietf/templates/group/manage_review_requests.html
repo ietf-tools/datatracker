@@ -75,7 +75,7 @@
                                 {% endif %}
                                 {% if r.doc.group.type_id != "individ" %}
                                     <span class="fw-bold">{{ r.doc.group.type.name }}:</span>
-                                    <a href="{% url "ietf.group.views.group_home" acronym=r.doc.group.acronym group_type=r.doc.group.type_id %}">
+                                    <a href="{% url "ietf.group.views.group_home" acronym=r.doc.group.acronym %}">
                                         {{ r.doc.group.acronym }}
                                     </a>
                                     <br>

@@ -147,6 +147,12 @@ class IndividualRfcFactory(IndividualDraftFactory):
         else:
             obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
 
+    @factory.post_generation
+    def reset_canonical_name(obj, create, extracted, **kwargs): 
+        if hasattr(obj, '_canonical_name'):
+            del obj._canonical_name
+        return None
+
 class WgDraftFactory(BaseDocumentFactory):
 
     type_id = 'draft'
@@ -186,6 +192,11 @@ class WgRfcFactory(WgDraftFactory):
             obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
             obj.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
 
+    @factory.post_generation
+    def reset_canonical_name(obj, create, extracted, **kwargs): 
+        if hasattr(obj, '_canonical_name'):
+            del obj._canonical_name
+        return None
 
 class RgDraftFactory(BaseDocumentFactory):
 
@@ -229,6 +240,12 @@ class RgRfcFactory(RgDraftFactory):
             obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
             obj.set_state(State.objects.get(type_id='draft-stream-irtf', slug='pub'))
             obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+
+    @factory.post_generation
+    def reset_canonical_name(obj, create, extracted, **kwargs): 
+        if hasattr(obj, '_canonical_name'):
+            del obj._canonical_name
+        return None          
 
 
 class CharterFactory(BaseDocumentFactory):
@@ -394,12 +411,8 @@ class BallotPositionDocEventFactory(DocEventFactory):
         model = BallotPositionDocEvent
 
     type = 'changed_ballot_position'
-
-    # This isn't right - it needs to build a ballot for the same doc as this position
-    # For now, deal with this in test code by building BallotDocEvent and BallotPositionDocEvent
-    # separately and passing the same doc into thier factories.
-    ballot = factory.SubFactory(BallotDocEventFactory) 
-
+    ballot = factory.SubFactory(BallotDocEventFactory)
+    doc = factory.SelfAttribute('ballot.doc')  # point to same doc as the ballot
     balloter = factory.SubFactory('ietf.person.factories.PersonFactory')
     pos_id = 'discuss'
 
@@ -464,10 +477,13 @@ class BofreqResponsibleDocEventFactory(DocEventFactory):
 class BofreqFactory(BaseDocumentFactory):
     type_id = 'bofreq'
     title = factory.Faker('sentence')
-    name = factory.LazyAttribute(lambda o: 'bofreq-%s'%(xslugify(o.title)))
+    name = factory.LazyAttribute(lambda o: 'bofreq-%s-%s'%(xslugify(o.requester_lastname), xslugify(o.title)))
 
     bofreqeditordocevent = factory.RelatedFactory('ietf.doc.factories.BofreqEditorDocEventFactory','doc')
     bofreqresponsibledocevent = factory.RelatedFactory('ietf.doc.factories.BofreqResponsibleDocEventFactory','doc')
+
+    class Params:
+        requester_lastname = factory.Faker('last_name')
 
     @factory.post_generation
     def states(obj, create, extracted, **kwargs):

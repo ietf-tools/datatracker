@@ -18,7 +18,7 @@ function get_current_tz_cb() {
 
 // Initialize moments
 window.initialize_moments = function () {
-    var times = $('div.time');
+    var times = $('.time');
     $.each(times, function (i, item) {
         item.start_ts = moment.unix(this.getAttribute("data-start-time"))
             .utc();
@@ -154,7 +154,7 @@ function format_tooltip(start, end) {
 
 // Add tooltips
 window.add_tooltips = function () {
-    $('div.time')
+    $('.time')
         .each(function () {
             var tooltip = $(format_tooltip(this.start_ts, this.end_ts));
             tooltip[0].start_ts = this.start_ts;
@@ -178,9 +178,9 @@ window.add_tooltips = function () {
 
 // Update times on the agenda based on the selected timezone
 window.update_times = function (newtz) {
-    $('span.current-tz')
+    $('.current-tz')
         .html(newtz);
-    $('div.time')
+    $('.time')
         .each(function () {
             if (this.format == 4) {
                 var tz = this.start_ts.tz(newtz)

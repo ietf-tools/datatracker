@@ -69,7 +69,7 @@ api.person.register(AliasResource())
 class PersonalApiKeyResource(ModelResource):
     person           = ToOneField(PersonResource, 'person')
     class Meta:
-        queryset = PersonalApiKey.objects.all()
+        queryset = PersonalApiKey.objects.none()
         serializer = api.Serializer()
         cache = SimpleCache()
         excludes = ['salt', ]

@@ -19,6 +19,7 @@ from ietf.doc.mails import email_state_changed
 from ietf.doc.models import Document, DocEvent, State, StateDocEvent, StateType
 from ietf.doc.utils import add_state_change_event
 from ietf.person.models import Person
+from ietf.utils.log import log
 from ietf.utils.mail import parseaddr, get_payload_text
 from ietf.utils.timezone import local_timezone_to_utc, email_time_to_local_timezone, utc_to_local_timezone
 
@@ -69,8 +70,12 @@ def fetch_changes_json(url, start, end):
     username = "ietfsync"
     password = settings.IANA_SYNC_PASSWORD
     headers = { "Authorization": "Basic %s" % force_str(base64.encodebytes(smart_bytes("%s:%s" % (username, password)))).replace("\n", "") }
-    text = requests.get(url, headers=headers).text
-    return text
+    try:
+        response = requests.get(url, headers=headers, timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
+    except requests.Timeout as exc:
+        log(f'GET request failed for [{url}]: {exc}')
+        raise RuntimeError(f'Timeout retrieving [{url}]') from exc
+    return response.text
 
 def parse_changes_json(text):
     response = json.loads(text)

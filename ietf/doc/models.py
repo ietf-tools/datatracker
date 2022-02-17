@@ -10,6 +10,7 @@ import rfc2html
 import time
 
 from typing import Optional, TYPE_CHECKING
+from weasyprint import HTML as wpHTML
 
 from django.db import models
 from django.core import checks
@@ -564,6 +565,26 @@ class DocumentInfo(models.Model):
                 if html:
                     cache.set(cache_key, html, settings.HTMLIZER_CACHE_TIME)
         return html
+
+    def pdfized(self):
+        name = self.get_base_name()
+        text = self.text()
+        cache = caches['pdfized']
+        cache_key = name.split('.')[0]
+        try:
+            pdf = cache.get(cache_key)
+        except EOFError:
+            pdf = None
+        if not pdf:
+            html = rfc2html.markup(text, path=settings.PDFIZER_URL_PREFIX)
+            try:
+                pdf = wpHTML(string=html.replace('\xad','')).write_pdf(stylesheets=[io.BytesIO(b'html { font-size: 94%;}')])
+            except AssertionError:
+                log.log(f'weasyprint failed with an assert on {self.name}')
+                pdf = None
+            if pdf:
+                cache.set(cache_key, pdf, settings.PDFIZER_CACHE_TIME)
+        return pdf
 
     def references(self):
         return self.relations_that_doc(('refnorm','refinfo','refunk','refold'))
@@ -1332,7 +1353,11 @@ class BallotPositionDocEvent(DocEvent):
     def any_email_sent(self):
         # When the send_email field is introduced, old positions will have it
         # set to None.  We still essentially return True, False, or don't know:
-        sent_list = BallotPositionDocEvent.objects.filter(ballot=self.ballot, time__lte=self.time, ad=self.ad).values_list('send_email', flat=True)
+        sent_list = BallotPositionDocEvent.objects.filter(
+            ballot=self.ballot,
+            time__lte=self.time,
+            balloter=self.balloter,
+        ).values_list('send_email', flat=True)
         false = any( s==False for s in sent_list )
         true  = any( s==True for s in sent_list )
         return True if true else False if false else None

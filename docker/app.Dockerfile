@@ -36,6 +36,16 @@ RUN apt-get install -qy \
 	graphviz \
 	jq \
 	less \
+    libcairo2-dev \
+    libgtk2.0-0 \
+    libgtk-3-0 \
+    libnotify-dev \
+    libgconf-2-4 \
+    libgbm-dev \
+    libnss3 \
+    libxss1 \
+    libasound2 \
+    libxtst6 \
 	libmagic-dev \
 	libmariadb-dev \
 	libtidy-dev \
@@ -49,26 +59,36 @@ RUN apt-get install -qy \
 	ripgrep \
 	rsync \
 	rsyslog \
+    ruby \
+    ruby-rubygems \
 	subversion \
 	unzip \
 	wget \
-    yang-tools && \
+    xauth \
+    xvfb \
+    yang-tools \
 	zsh
 
-# Install chromedriver
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
-    echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list && \
-    apt-get update -y && \
-    apt-get install -y google-chrome-stable && \
-    CHROMEVER=$(google-chrome --product-version | grep -o "[^\.]*\.[^\.]*\.[^\.]*") && \
-    DRIVERVER=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROMEVER") && \
-    wget -q --continue -P /chromedriver "http://chromedriver.storage.googleapis.com/$DRIVERVER/chromedriver_linux64.zip" && \
-    unzip /chromedriver/chromedriver* -d /chromedriver && \
-    ln -s /chromedriver/chromedriver /usr/local/bin/chromedriver && \
-    ln -s /chromedriver/chromedriver /usr/bin/chromedriver
+# Install kramdown-rfc2629 (ruby)
+RUN gem install kramdown-rfc2629
+
+# Install chromedriver if supported
+COPY docker/scripts/app-install-chromedriver.sh /tmp/app-install-chromedriver.sh
+RUN sed -i 's/\r$//' /tmp/app-install-chromedriver.sh && \
+    chmod +x /tmp/app-install-chromedriver.sh
+RUN /tmp/app-install-chromedriver.sh
 
 # Get rid of installation files we don't need in the image, to reduce size
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# "fake" dbus address to prevent errors
+# https://github.com/SeleniumHQ/docker-selenium/issues/87
+ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
+
+# avoid million NPM install messages
+ENV npm_config_loglevel warn
+# allow installing when the main user is root
+ENV npm_config_unsafe_perm true
 
 # Set locale to en_US.UTF-8
 RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \

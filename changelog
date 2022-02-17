@@ -1,3 +1,283 @@
+ietfdb (7.45.0) ietf; urgency=medium
+
+  ** MeetEcho interim request integration, bugfixes **
+
+  * Merged in [19892] from rjsparks@nostrum.com:
+    Guard against reference sections without names.  
+
+  * Merged in [19895] from jennifer@painless-security.com:
+    Look at v2 'title' attribute in reference type heuristics for XML 
+    drafts. Related to #3529.  
+
+  * Merged in [19900] from jennifer@painless-security.com:
+    Fix hiding of name/purpose/type fields when not needed in secr/sreq. 
+    Fixes #3531.  
+
+  * Merged in [19907] from rjsparks@nostrum.com:
+    Provide the complete context to the template for mail about approved 
+    interim requests. Fixes #3534.  
+
+  * Merged in [19915] from rjsparks@nostrum.com:
+    Simplify search for link back to group from the review management view. 
+ 
+  * Merged in [19919] from rjsparks@nostrum.com:
+    Allow secretariat to edit session requests when tool is closed to 
+    chairs. Fixes #3547.  
+
+  * Merged in [19920] from rjsparks@nostrum.com:
+    Make working with session purpose easier in the admin.  
+
+  * Merged in [19921] from rjsparks@nostrum.com:
+    add search to the doc states admin form.  
+
+  * Merged in [19922] from jennifer@painless-security.com:
+    Fix scoping of session loop variables in sreq edit view. Improve tests 
+    that should have caught this.  
+
+  * Merged in [19925] from jennifer@painless-security.com:
+    Suppress origin template tag in production mode, show relative path 
+    only in other modes.  
+
+  * Merged in [19917] and [19930] from jennifer@painless-security.com:
+    Create/delete Meetecho conferences when requesting/canceling interim 
+    sessions. Fixes #3507. Fixes #3508.  
+
+ -- Robert Sparks <rjsparks@nostrum.com>  15 Feb 2022 14:51:10 +0000
+
+
+ietfdb (7.44.0) ietf; urgency=medium
+
+  ** Schedule editor improvements, bugfixes **
+
+  * Merged in [19874] from rjsparks@nostrum.com:
+    Rollback menu caching. More work is required to allow left menu to 
+    function correctly.  
+
+  * Merged in [19876] from jennifer@painless-security.com:
+    Do not redirect user to the logout page when logging in. Fixes #3478.  
+
+  * Merged in [19878] from jennifer@painless-security.com:
+    Hide timeslots type is disabled plus other schedule editor 
+    debugging/improvements. Fixes #3510. Fixes #3430.  
+
+  * Merged in [19880] from rjsparks@nostrum.com:
+    Add gunicorn to requirements to support new deployment model.  
+
+ -- Robert Sparks <rjsparks@nostrum.com>  28 Jan 2022 14:56:13 +0000
+
+ietfdb (7.43.0) ietf; urgency=medium
+
+  ** Easier account creation, bugfixes, enhancements **
+
+  * Merged in [19825] from jennifer@painless-security.com:
+    Find references from submitted XML instead of rendering to text and 
+    parsing. Fixes #3342.  
+
+  * Merged in [19826] from jennifer@painless-security.com:
+    Remove code still using old 'length_sessionX' SessionForm fields.  
+
+  * Merged in [19830] from jennifer@painless-security.com:
+    Include RFC title in doc/html view title element. Fixes #3488.  
+
+  * Merged in [19831] and [19832] from rjsparks@nostrum.com:
+    Cache menus by login.  
+
+  * Merged in [19833] from jennifer@painless-security.com:
+    Point to RFC editor info page in document_bibtex view. Fixes #3484.  
+
+  * Merged in [19834] from lars@eggert.org:
+    Add djhtml (https://github.com/rtts/djhtml), for auto-reformatting 
+    of the Django templates via 'djlint --profile django --reformat'.  
+    It still has some bugs and issues, esp. on complex templates and with
+    regards to whitespace after links, but those are manageable, and the 
+    benefits of having consistently-formatted templates IMO outweigh them. 
+
+  * Merged in [19837] from jennifer@painless-security.com:
+    Update any_email_sent() to use balloters instead of old ad field. Add 
+    tests to catch the otherwise quiet failure. Fixes #3438.  
+
+  * Merged in [19838] from jennifer@painless-security.com:
+    Allow editing of group non-chartered group descriptions through UI. 
+    Fixes #3388.  
+
+  * Merged in [19839] from jennifer@painless-security.com:
+    Add timeouts to requests library calls. Fixes #3498.  
+
+  * Merged in [19841] from jennifer@painless-security.com:
+    Link to the timeslot editor when meeting has no timeslots. Fixes #3511. 
+
+  * Merged in [19848] from jennifer@painless-security.com:
+    Fix several review reminder problems.
+    Send secretary's review reminders to secretary instead of assignee. 
+    Send unconfirmed assignment reminders based on assignment age and CC 
+    secretaries. 
+    Correctly separate open review reminders by review team.
+    Fixes #3482. Fixes #3324.  
+
+  * Merged in [19857] from rjsparks@nostrum.com:
+    Add a link to account creation in the login page body.
+
+  * Merged in [19858] from rjsparks@nostrum.com:
+    Remove the manual intervention step for account creation.
+
+  * Merged in [19863] from rjsparks@nostrum.com:
+    Add de-gfm to the docker setup. Fixes #3494.
+
+ -- Robert Sparks <rjsparks@nostrum.com>  19 Jan 2022 20:03:55 +0000
+
+
+ietfdb (7.42.0) ietf; urgency=medium
+
+  ** Bugfixes and minor features **
+
+  * Merged in [19786] from jennifer@painless-security.com:
+    Strip Unicode control characters out of feed content. Fixes #3398.  
+
+  * Merged in [19787] from rjsparks@nostrum.com:
+    Change to not serve any personalapikey metadata.  
+
+  * Merged in [19788] from jennifer@painless-security.com:
+    Import django.conf.settings instead of ietf.settings. Fixes #3392.  
+
+  * Merged in [19790] from rjsparks@nostrum.com:
+    Provide and maintain an rsyncable bibxml-ids dataset.  
+
+  * Merged in [19793] from nick@staff.ietf.org:
+    misc: new README.md + docker dir cleanup 
+
+  * Merged in [19801] from nick@staff.ietf.org:
+    fix: missing dependencies in dockerfile from changeset #19767 
+
+  * Merged in [19804] from rjsparks@nostrum.com:
+    Pin tastypie at 0.14.3. Related to #3500.  
+
+  * Merged in [19806] from rjsparks@nostrum.com:
+    Correct the url for the bibtex button. Provide a pdfized button. Fixes
+    #3501.
+
+  * Merged in [19811] from lars@eggert.org:
+    When using Docker, the runserver isn't being accessed over loopback,
+    so we need to initialize INTERNAL_IPS based on the current interface 
+    configuration.
+
+  * Merged in [19813] from rjsparks@nostrum.com:
+    Improve robustness of pdfization. Tune the test crawler. Don't show
+    htmlized and pdfized buttons when that genration will fail.
+
+ -- Robert Sparks <rjsparks@nostrum.com>  07 Jan 2022 15:23:26 +0000
+
+
+ietfdb (7.41.0) ietf; urgency=medium
+
+  ** improved markdown uploads, js testing, prep for move to github, pdfized documents **
+
+  * Merged in [19672] from jennifer@painless-security.com:
+    Add tests of meeting forms for the new session purpose work and a few 
+    other untested parts. Fix a few bugs uncovered.  
+
+  * Merged in [19675] from jennifer@painless-security.com:
+    Update uploaded_filename when modifying agenda through the interim 
+    meeting request edit view. Fixes #3395.  
+
+  * Merged in [19679] from jennifer@painless-security.com:
+    Include requester's last name as part of a bofreq document's name. 
+    Fixes #3377.  
+
+  * Merged in [19683] from jennifer@painless-security.com:
+    Guard against absent 'form_class' kwarg in IETFJSONField.formfield().  
+
+  * Merged in [19694] from jennifer@painless-security.com:
+    Better handle invalid character encodings in process_email and 
+    feedback_email commands. Add tests of this using stdin.  
+
+  * Merged in [19700] from lars@eggert.org:
+    Add space between RFC and number. 
+
+  * Merged in [19710] from jennifer@painless-security.com:
+    Allow nomcom chair to edit liaisons as well as members and generate 
+    GroupEvents when changed. Share code between group and nomcom for this 
+    purpose. Fixes #3376.  
+
+  * Merged in [19711] from krathnayake@ietf.org:
+    Adds private app authentication API for bibxml. Fixes #3480.  
+
+  * Merged in [19713] from lars@eggert.org:
+    Remove ietf/templates/iesg/scribe_template.html and related, 
+    which is not used anymore according to the secretariat.
+    (On merge, rjsparks@nostrum.com also removed the three other
+     templates that only that one included, and removed the test
+     that covered the view tht was removed).
+
+  * Merged in [19716] from jennifer@painless-security.com:
+    Update CSS selectors to update times/timezones for any elements with 
+    .time/.current-tz classes, not just span. Fixes #3485.  
+
+  * Merged in [19718] from rjsparks@nostrum.com:
+    Update the utility that generates batches of bibxml3 files to match the 
+    way the view uses the templates.  
+
+  * Merged in [19719] from rjsparks@nostrum.com:
+    Change the I-D announce text to mention rsync instead of ftp per 
+    RFC9141 and its associated transition plan.  
+
+  * Merged in [19693] from nick@staff.ietf.org:
+    feat: cypress JS testing for agenda meetings + weekview swimlane (WIP) 
+
+  * Merged in [19696] from nick@staff.ietf.org:
+    feat: add nomcom expand panel test 
+
+  * Merged in [19697] from nick@staff.ietf.org:
+    feat: add nomcom expand panel test (with missing file) 
+
+  * Merged in [19698] from nick@staff.ietf.org:
+    feat: add nomcom questionnaires tabs tests 
+
+  * Update coverage to reflect removal of scribe templates
+
+  * Merged in [19741] from lars@eggert.org:
+    Add ghostscript to app image, which is used by some tests. 
+
+  * Merged in [19744] from jennifer@painless-security.com:
+    Treat application/octet-stream as text/markdown for '.md' materials 
+    uploads. Refactor FileUploadForm hierarchy to reduce boilerplate. Fixes 
+    #3163.  
+
+  * Merged in [19747] from rjsparks@nostrum.com:
+    Provide a more direct replacement for tools.ietf.org/id at doc/id.  
+
+  * Merged in [19748] from nick@staff.ietf.org:
+    docs: add CONTRIBUTING.md (with associated assets) and 
+    CODE_OF_CONDUCT.md 
+
+  * Merged in [19750] from nick@staff.ietf.org:
+    build: Add GitHub Actions workflow for automatic nightly datatracker DB 
+    image build 
+
+  * Merged in [19751] from nick@staff.ietf.org:
+    misc: add .gitignore + fix cypress files to match JS style guide 
+
+  * Merged in [19753] from rjsparks@nostrum.com:
+    Provide pdfs of htmlized (pdfized) documents to replace 
+    tools.ietf.org/pdf/ at /doc/pdf.  
+
+  * Merged in [19761] from nick@staff.ietf.org:
+    fix: skip chromedriver install if arch is not supported in docker build 
+
+  * Merged in [19763] from jennifer@painless-security.com:
+    Add ability to import session minutes from notes.ietf.org. Mock out 
+    calls to the requests library in tests. Call markdown library through a 
+    util method. Fixes #3489.  
+
+  * Merged in [19766] from jennifer@painless-security.com:
+    Accept/replace invalid Unicode bytes when processing ipr response 
+    emails. Fixes #3489.  
+
+  * Pin weasyprint to an earlier version because of packaging trouble with 
+    dependencies.
+
+ -- Robert Sparks <rjsparks@nostrum.com>  10 Dec 2021 16:30:21 +0000
+
+
 ietfdb (7.40.0) ietf; urgency=medium
 
   ** Codesprint, session purposes, new docker dev env, performance improvements **

@@ -6,6 +6,9 @@ import io
 import os
 import datetime
 import json
+import re
+
+from pathlib import Path
 
 from django import forms
 from django.conf import settings
@@ -13,6 +16,7 @@ from django.core import validators
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.forms import BaseInlineFormSet
+from django.utils.functional import cached_property
 
 import debug                            # pyflakes:ignore
 
@@ -58,21 +62,18 @@ def duration_string(duration):
     '''Custom duration_string to return HH:MM (no seconds)'''
     days = duration.days
     seconds = duration.seconds
-    microseconds = duration.microseconds
 
     minutes = seconds // 60
-    seconds = seconds % 60
-
     hours = minutes // 60
     minutes = minutes % 60
 
     string = '{:02d}:{:02d}'.format(hours, minutes)
     if days:
         string = '{} '.format(days) + string
-    if microseconds:
-        string += '.{:06d}'.format(microseconds)
 
     return string
+
+
 # -------------------------------------------------
 # Forms
 # -------------------------------------------------
@@ -104,18 +105,34 @@ class InterimSessionInlineFormSet(BaseInlineFormSet):
         return                          # formset doesn't have cleaned_data
 
 class InterimMeetingModelForm(forms.ModelForm):
-    group = GroupModelChoiceField(queryset=Group.objects.filter(type_id__in=GroupFeatures.objects.filter(has_meetings=True).values_list('type_id',flat=True), state__in=('active', 'proposed', 'bof')).order_by('acronym'), required=False, empty_label="Click to select")
+    group = GroupModelChoiceField(
+        queryset=Group.objects.filter(
+            type_id__in=GroupFeatures.objects.filter(
+                has_meetings=True
+            ).values_list('type_id',flat=True),
+            state__in=('active', 'proposed', 'bof')
+        ).order_by('acronym'),
+        required=False,
+        empty_label="Click to select",
+    )
     in_person = forms.BooleanField(required=False)
-    meeting_type = forms.ChoiceField(choices=(
-        ("single", "Single"),
-        ("multi-day", "Multi-Day"),
-        ('series', 'Series')), required=False, initial='single', widget=forms.RadioSelect, help_text='''
+    meeting_type = forms.ChoiceField(
+        choices=(
+            ("single", "Single"),
+            ("multi-day", "Multi-Day"),
+            ('series', 'Series')
+        ),
+        required=False,
+        initial='single',
+        widget=forms.RadioSelect,
+        help_text='''
             Use <b>Multi-Day</b> for a single meeting that spans more than one contiguous
             workday. Do not use Multi-Day for a series of separate meetings (such as
             periodic interim calls). Use Series instead.
             Use <b>Series</b> for a series of separate meetings, such as periodic interim calls.
             Use Multi-Day for a single meeting that spans more than one contiguous
-            workday.''')
+            workday.''',
+    )
     approved = forms.BooleanField(required=False)
     city = forms.CharField(max_length=255, required=False)
     city.widget.attrs['placeholder'] = "City"
@@ -216,10 +233,16 @@ class InterimSessionModelForm(forms.ModelForm):
     requested_duration = CustomDurationField(required=True)
     end_time = forms.TimeField(required=False, help_text="Local time")
     end_time.widget.attrs['placeholder'] = "HH:MM"
-    remote_instructions = forms.CharField(max_length=1024, required=True, help_text='''
-        For virtual interims, a conference link <b>should be provided in the original request</b> in all but the most unusual circumstances.
-        Otherwise, "Remote participation is not supported" or "Remote participation information will be obtained at the time of approval" are acceptable values.
-        See <a href="https://www.ietf.org/forms/wg-webex-account-request/">here</a> for more on remote participation support.''')
+    remote_participation = forms.ChoiceField(choices=(), required=False)
+    remote_instructions = forms.CharField(
+        max_length=1024,
+        required=False,
+        help_text='''
+            For virtual interims, a conference link <b>should be provided in the original request</b> in all but the most unusual circumstances.
+            Otherwise, "Remote participation is not supported" or "Remote participation information will be obtained at the time of approval" are acceptable values.
+            See <a href="https://www.ietf.org/forms/wg-webex-account-request/">here</a> for more on remote participation support.
+        ''',
+    )
     agenda = forms.CharField(required=False, widget=forms.Textarea, strip=False)
     agenda.widget.attrs['placeholder'] = "Paste agenda here"
     agenda_note = forms.CharField(max_length=255, required=False, label=" Additional information")
@@ -246,7 +269,13 @@ class InterimSessionModelForm(forms.ModelForm):
                 doc = self.instance.agenda()
                 content = doc.text_or_error()
                 self.initial['agenda'] = content
-                
+
+        # set up remote participation choices
+        choices = []
+        if hasattr(settings, 'MEETECHO_API_CONFIG'):
+            choices.append(('meetecho', 'Automatically create Meetecho conference'))
+        choices.append(('manual', 'Manually specify remote instructions...'))
+        self.fields['remote_participation'].choices = choices
 
     def clean_date(self):
         '''Date field validator.  We can't use required on the input because
@@ -264,6 +293,21 @@ class InterimSessionModelForm(forms.ModelForm):
             raise forms.ValidationError('Provide a duration, %s-%smin.' % (min_minutes, max_minutes))
         return duration
 
+    def clean(self):
+        if self.cleaned_data.get('remote_participation', None) == 'meetecho':
+            self.cleaned_data['remote_instructions'] = ''  # blank this out if we're creating a Meetecho conference
+        elif not self.cleaned_data['remote_instructions']:
+            self.add_error('remote_instructions', 'This field is required')
+        return self.cleaned_data
+
+    # Override to ignore the non-model 'remote_participation' field when computing has_changed()
+    @cached_property
+    def changed_data(self):
+        data = super().changed_data
+        if 'remote_participation' in data:
+            data.remove('remote_participation')
+        return data
+
     def save(self, *args, **kwargs):
         """NOTE: as the baseform of an inlineformset self.save(commit=True)
         never gets called"""
@@ -279,6 +323,7 @@ class InterimSessionModelForm(forms.ModelForm):
         if self.instance.agenda():
             doc = self.instance.agenda()
             doc.rev = str(int(doc.rev) + 1).zfill(2)
+            doc.uploaded_filename = doc.filename_with_rev()
             e = NewRevisionDocEvent.objects.create(
                 type='new_revision',
                 by=self.user.person,
@@ -339,14 +384,19 @@ class InterimCancelForm(forms.Form):
         self.fields['date'].widget.attrs['disabled'] = True
 
 class FileUploadForm(forms.Form):
+    """Base class for FileUploadForms
+
+    Abstract base class - subclasses must fill in the doc_type value with
+    the type of document they handle.
+    """
     file = forms.FileField(label='File to upload')
 
+    doc_type = ''  # subclasses must set this
+
     def __init__(self, *args, **kwargs):
-        doc_type = kwargs.pop('doc_type')
-        assert doc_type in settings.MEETING_VALID_UPLOAD_EXTENSIONS
-        self.doc_type = doc_type
-        self.extensions = settings.MEETING_VALID_UPLOAD_EXTENSIONS[doc_type]
-        self.mime_types = settings.MEETING_VALID_UPLOAD_MIME_TYPES[doc_type]
+        assert self.doc_type in settings.MEETING_VALID_UPLOAD_EXTENSIONS
+        self.extensions = settings.MEETING_VALID_UPLOAD_EXTENSIONS[self.doc_type]
+        self.mime_types = settings.MEETING_VALID_UPLOAD_MIME_TYPES[self.doc_type]
         super(FileUploadForm, self).__init__(*args, **kwargs)
         label = '%s file to upload.  ' % (self.doc_type.capitalize(), )
         if self.doc_type == "slides":
@@ -359,6 +409,15 @@ class FileUploadForm(forms.Form):
         file = self.cleaned_data['file']
         validate_file_size(file)
         ext = validate_file_extension(file, self.extensions)
+
+        # override the Content-Type if needed
+        if file.content_type in 'application/octet-stream':
+            content_type_map = settings.MEETING_APPLICATION_OCTET_STREAM_OVERRIDES
+            filename = Path(file.name)
+            if filename.suffix in content_type_map:
+                file.content_type = content_type_map[filename.suffix]
+                self.cleaned_data['file'] = file
+
         mime_type, encoding = validate_mime_type(file, self.mime_types)
         if not hasattr(self, 'file_encoding'):
             self.file_encoding = {}
@@ -366,14 +425,75 @@ class FileUploadForm(forms.Form):
         if self.mime_types:
             if not file.content_type in settings.MEETING_VALID_UPLOAD_MIME_FOR_OBSERVED_MIME[mime_type]:
                 raise ValidationError('Upload Content-Type (%s) is different from the observed mime-type (%s)' % (file.content_type, mime_type))
-            if mime_type in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS:
-                if not ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS[mime_type]:
+            # We just validated that file.content_type is safe to accept despite being identified
+            # as a different MIME type by the validator. Check extension based on file.content_type
+            # because that better reflects the intention of the upload client.
+            if file.content_type in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS:
+                if not ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS[file.content_type]:
                     raise ValidationError('Upload Content-Type (%s) does not match the extension (%s)' % (file.content_type, ext))
-        if mime_type in ['text/html', ] or ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS['text/html']:
+        if (file.content_type in ['text/html', ]
+                or ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS.get('text/html', [])):
             # We'll do html sanitization later, but for frames, we fail here,
             # as the sanitized version will most likely be useless.
             validate_no_html_frame(file)
         return file
+
+
+class UploadBlueSheetForm(FileUploadForm):
+    doc_type = 'bluesheets'
+
+
+class ApplyToAllFileUploadForm(FileUploadForm):
+    """FileUploadField that adds an apply_to_all checkbox
+
+    Checkbox can be disabled by passing show_apply_to_all_checkbox=False to the constructor.
+    This entirely removes the field from the form.
+    """
+    # Note: subclasses must set doc_type for FileUploadForm
+    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=True,required=False)
+
+    def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not show_apply_to_all_checkbox:
+            self.fields.pop('apply_to_all')
+        else:
+            self.order_fields(
+                sorted(
+                    self.fields.keys(),
+                    key=lambda f: 'zzzzzz' if f == 'apply_to_all' else f
+                )
+            )
+
+class UploadMinutesForm(ApplyToAllFileUploadForm):
+    doc_type = 'minutes'
+
+
+class UploadAgendaForm(ApplyToAllFileUploadForm):
+    doc_type = 'agenda'
+
+
+class UploadSlidesForm(ApplyToAllFileUploadForm):
+    doc_type = 'slides'
+    title = forms.CharField(max_length=255)
+
+    def __init__(self, session, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.session = session
+
+    def clean_title(self):
+        title = self.cleaned_data['title']
+        # The current tables only handles Unicode BMP:
+        if ord(max(title)) > 0xffff:
+            raise forms.ValidationError("The title contains characters outside the Unicode BMP, which is not currently supported")
+        if self.session.meeting.type_id=='interim':
+            if re.search(r'-\d{2}$', title):
+                raise forms.ValidationError("Interim slides currently may not have a title that ends with something that looks like a revision number (-nn)")
+        return title
+
+
+class ImportMinutesForm(forms.Form):
+    markdown_text = forms.CharField(strip=False, widget=forms.HiddenInput)
+
 
 class RequestMinutesForm(forms.Form):
     to = MultiEmailField()
@@ -560,7 +680,11 @@ class DurationChoiceField(forms.ChoiceField):
         return ''
 
     def to_python(self, value):
-        return datetime.timedelta(seconds=round(float(value))) if value not in self.empty_values else None
+        if value in self.empty_values or (isinstance(value, str) and not value.isnumeric()):
+            return None  # treat non-numeric values as empty
+        else:
+            # noinspection PyTypeChecker
+            return datetime.timedelta(seconds=round(float(value)))
 
     def valid_value(self, value):
         return super().valid_value(self.prepare_value(value))
@@ -595,11 +719,15 @@ class SessionDetailsForm(forms.ModelForm):
 
     def __init__(self, group, *args, **kwargs):
         session_purposes = group.features.session_purposes
-        kwargs.setdefault('initial', {})
-        kwargs['initial'].setdefault(
-            'purpose',
-            session_purposes[0] if len(session_purposes) > 0 else None,
-        )
+        # Default to the first allowed session_purposes. Do not do this if we have an instance,
+        # though, because ModelForm will override instance data with initial data if it gets both.
+        # When we have an instance we want to keep its value.
+        if 'instance' not in kwargs:
+            kwargs.setdefault('initial', {})
+            kwargs['initial'].setdefault(
+                'purpose',
+                session_purposes[0] if len(session_purposes) > 0 else None,
+            )
         super().__init__(*args, **kwargs)
 
         self.fields['type'].widget.attrs.update({
@@ -615,18 +743,22 @@ class SessionDetailsForm(forms.ModelForm):
     class Meta:
         model = Session
         fields = (
-            'name', 'short', 'purpose', 'type', 'requested_duration',
+            'purpose', 'name', 'short', 'type', 'requested_duration',
             'on_agenda', 'remote_instructions', 'attendees', 'comments',
         )
         labels = {'requested_duration': 'Length'}
 
     def clean(self):
         super().clean()
+        # Fill in on_agenda. If this is a new instance or we have changed its purpose, then use
+        # the on_agenda value for the purpose. Otherwise, keep the value of an existing instance (if any)
+        # or leave it blank.
         if 'purpose' in self.cleaned_data and (
-        'purpose' in self.changed_data or self.instance.pk is None
+                self.instance.pk is None or (self.instance.purpose != self.cleaned_data['purpose'])
         ):
             self.cleaned_data['on_agenda'] = self.cleaned_data['purpose'].on_agenda
-
+        elif self.instance.pk is not None:
+            self.cleaned_data['on_agenda'] = self.instance.on_agenda
         return self.cleaned_data
 
     class Media:
@@ -642,10 +774,9 @@ class SessionEditForm(SessionDetailsForm):
         super().__init__(instance=instance, group=instance.group, *args, **kwargs)
 
 
-class SessionDetailsInlineFormset(forms.BaseInlineFormSet):
+class SessionDetailsInlineFormSet(forms.BaseInlineFormSet):
     def __init__(self, group, meeting, queryset=None, *args, **kwargs):
         self._meeting = meeting
-        self.created_instances = []
 
         # Restrict sessions to the meeting and group. The instance
         # property handles one of these for free.
@@ -667,12 +798,6 @@ class SessionDetailsInlineFormset(forms.BaseInlineFormSet):
         form.instance.meeting = self._meeting
         return super().save_new(form, commit)
 
-    def save(self, commit=True):
-        existing_instances = set(form.instance for form in self.forms if form.instance.pk)
-        saved = super().save(commit)
-        self.created_instances = [inst for inst in saved if inst not in existing_instances]
-        return saved
-
     @property
     def forms_to_keep(self):
         """Get the not-deleted forms"""
@@ -682,7 +807,7 @@ def sessiondetailsformset_factory(min_num=1, max_num=3):
     return forms.inlineformset_factory(
         Group,
         Session,
-        formset=SessionDetailsInlineFormset,
+        formset=SessionDetailsInlineFormSet,
         form=SessionDetailsForm,
         can_delete=True,
         can_order=False,

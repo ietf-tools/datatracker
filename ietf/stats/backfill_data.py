@@ -29,7 +29,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document
 from ietf.name.models import FormalLanguageName
-from ietf.utils.draft import Draft
+from ietf.utils.draft import PlaintextDraft
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--document", help="specific document name")
@@ -89,7 +89,7 @@ for doc in docs_qs.prefetch_related("docalias", "formal_languages", "documentaut
     with io.open(path, 'rb') as f:
         say("\nProcessing %s" % doc.name)
         sys.stdout.flush()
-        d = Draft(unicode(f.read()), path)
+        d = PlaintextDraft(unicode(f.read()), path)
 
         updated = False
 

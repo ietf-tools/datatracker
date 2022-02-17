@@ -3,6 +3,7 @@
 
 
 import datetime
+import unicodedata
 
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed, Rss201rev2Feed
@@ -14,6 +15,15 @@ from django.utils.html import strip_tags
 from ietf.doc.models import Document, State, LastCallDocEvent, DocEvent
 from ietf.doc.utils import augment_events_with_revision
 from ietf.doc.templatetags.ietf_filters import format_textarea
+
+
+def strip_control_characters(s):
+    """Remove Unicode control / non-printing characters from a string"""
+    replacement_char = unicodedata.lookup('REPLACEMENT CHARACTER')
+    return ''.join(
+        replacement_char if unicodedata.category(c)[0] == 'C' else c
+        for c in s
+    )
 
 class DocumentChangesFeed(Feed):
     feed_type = Atom1Feed
@@ -38,10 +48,14 @@ class DocumentChangesFeed(Feed):
         return events
 
     def item_title(self, item):
-        return "[%s] %s [rev. %s]" % (item.by, truncatewords(strip_tags(item.desc), 15), item.rev)
+        return strip_control_characters("[%s] %s [rev. %s]" % (
+            item.by,
+            truncatewords(strip_tags(item.desc), 15),
+            item.rev,
+        ))
 
     def item_description(self, item):
-        return truncatewords_html(format_textarea(item.desc), 20)
+        return strip_control_characters(truncatewords_html(format_textarea(item.desc), 20))
 
     def item_pubdate(self, item):
         return item.time
@@ -75,7 +89,7 @@ class InLastCallFeed(Feed):
                                 datefilter(item.lc_event.expires, "F j, Y"))
 
     def item_description(self, item):
-        return linebreaks(item.lc_event.desc)
+        return strip_control_characters(linebreaks(item.lc_event.desc))
 
     def item_pubdate(self, item):
         return item.lc_event.time

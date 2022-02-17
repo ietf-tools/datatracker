@@ -23,6 +23,7 @@ admin.site.register(StateType, StateTypeAdmin)
 class StateAdmin(admin.ModelAdmin):
     list_display = ["slug", "type", 'name', 'order', 'desc']
     list_filter = ["type", ]
+    search_fields = ["slug", "type__label", "type__slug", "name", "desc"]
     filter_horizontal = ["next_states"]
 admin.site.register(State, StateAdmin)
 

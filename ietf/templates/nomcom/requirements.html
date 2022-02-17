@@ -12,7 +12,7 @@
         qualifications required for the positions. The NomCom bases selections on
         all of this information. These pages may be updated periodically.
     </p>
-    <ul class="nav nav-tabs my-3" role="tablist">
+    <ul class="nomcom-req-positions-tabs nav nav-tabs my-3" role="tablist">
         {% for position in positions %}
             <li class="nav-item">
                 <button class="nav-link {% if forloop.first %}active{% endif %}"
@@ -25,7 +25,7 @@
             </li>
         {% endfor %}
     </ul>
-    <div class="tab-content">
+    <div class="nomcom-req-positions-content tab-content">
         {% for position in positions %}
             <div role="tabpanel"
                  class="tab-pane {% if forloop.first %} show active{% endif %}"

@@ -23,6 +23,6 @@ class IETFJSONField(jsonfield.JSONField):
         super().__init__(*args, **kwargs)
 
     def formfield(self, **kwargs):
-        if issubclass(kwargs['form_class'], FormIETFJSONField):
+        if 'form_class' not in kwargs or issubclass(kwargs['form_class'], FormIETFJSONField):
             kwargs.setdefault('empty_values', self.empty_values)
         return super().formfield(**{**kwargs})
