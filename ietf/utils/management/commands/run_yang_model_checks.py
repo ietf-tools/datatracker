@@ -55,7 +55,9 @@ class Command(BaseCommand):
                 if new_res != old_res:
                     if self.verbosity > 1:
                         self.stdout.write("  Saving new yang checker results for %s-%s" % (draft.name, draft.rev))
-                    SubmissionCheck.objects.create(submission=submission, checker=checker.name, passed=passed,
+                    qs = submission.checks.filter(checker=checker.name).order_by('time')
+                    submission.checks.filter(checker=checker.name).exclude(pk=qs.first().pk).delete()
+                    submission.checks.create(submission=submission, checker=checker.name, passed=passed,
                                                 message=message, errors=errors, warnings=warnings, items=items,
                                                 symbol=checker.symbol)
         else:
