@@ -8,6 +8,7 @@ import datetime
 import io
 import os
 import re
+import shutil
 import time
 
 from tempfile import mkstemp
@@ -168,7 +169,7 @@ class Command(BaseCommand):
         afile.close()
         vfile.close()
 
-        os.rename(aname, settings.DRAFT_ALIASES_PATH)
-        os.rename(vname, settings.DRAFT_VIRTUAL_PATH)
+        shutil.move(aname, settings.DRAFT_ALIASES_PATH)
+        shutil.move(vname, settings.DRAFT_VIRTUAL_PATH)
 
     
