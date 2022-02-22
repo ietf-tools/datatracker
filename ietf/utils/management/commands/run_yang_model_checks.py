@@ -11,7 +11,7 @@ from django.core.management.base import BaseCommand
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document, State, DocAlias
-from ietf.submit.models import Submission, SubmissionCheck
+from ietf.submit.models import Submission
 from ietf.submit.checkers import DraftYangChecker
 
 

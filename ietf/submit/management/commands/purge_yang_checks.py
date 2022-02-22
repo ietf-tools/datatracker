@@ -3,7 +3,6 @@
 from tqdm import tqdm
 
 from django.core.management.base import BaseCommand
-from django.db import migrations
 
 from ietf.submit.models import Submission, SubmissionCheck
 
