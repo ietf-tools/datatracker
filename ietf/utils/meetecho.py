@@ -15,11 +15,14 @@ import debug  # pyflakes: ignore
 
 from datetime import datetime, timedelta
 from json import JSONDecodeError
+from pytz import utc
 from typing import Dict, Sequence, Union
 from urllib.parse import urljoin
 
 
 class MeetechoAPI:
+    timezone = utc
+
     def __init__(self, api_base: str, client_id: str, client_secret: str, request_timeout=3.01):
         self.client_id = client_id
         self.client_secret = client_secret
@@ -57,10 +60,10 @@ class MeetechoAPI:
         return None
 
     def _deserialize_time(self, s: str) -> datetime:
-        return datetime.strptime(s, '%Y-%m-%d %H:%M:%S')
+        return self.timezone.localize(datetime.strptime(s, '%Y-%m-%d %H:%M:%S'))
 
     def _serialize_time(self, dt: datetime) -> str:
-        return dt.strftime('%Y-%m-%d %H:%M:%S')
+        return dt.astimezone(self.timezone).strftime('%Y-%m-%d %H:%M:%S')
 
     def _deserialize_duration(self, minutes: int) -> timedelta:
         return timedelta(minutes=minutes)

@@ -456,8 +456,8 @@ class InterimTests(TestCase):
     def test_create_interim_session_conferences(self, mock):
         mock_conf_mgr = mock.return_value  # "instance" seen by the internals
         sessions = [
-            SessionFactory(meeting__type_id='interim', remote_instructions='junk'),
-            SessionFactory(meeting__type_id='interim', remote_instructions=''),
+            SessionFactory(meeting__type_id='interim', meeting__time_zone='america/halifax', remote_instructions='junk'),
+            SessionFactory(meeting__type_id='interim', meeting__time_zone='asia/kuala_lumpur', remote_instructions=''),
         ]
         timeslots = [
             session.official_timeslotassignment().timeslot for session in sessions
@@ -482,18 +482,18 @@ class InterimTests(TestCase):
         mock_conf_mgr.create.return_value = [
             Conference(
                 manager=mock_conf_mgr, id=1, public_id='some-uuid', description='desc',
-                start_time=timeslots[0].time, duration=timeslots[0].duration, url='fake-meetecho-url',
+                start_time=timeslots[0].utc_start_time(), duration=timeslots[0].duration, url='fake-meetecho-url',
                 deletion_token='please-delete-me',
             ),
         ]
         create_interim_session_conferences([sessions[0]])
         self.assertTrue(mock_conf_mgr.create.called)
-        self.assertCountEqual(
+        self.assertEqual(
             mock_conf_mgr.create.call_args[1],
             {
                 'group': sessions[0].group,
                 'description': str(sessions[0]),
-                'start_time': timeslots[0].time,
+                'start_time': timeslots[0].utc_start_time(),
                 'duration': timeslots[0].duration,
             }
         )
@@ -507,30 +507,30 @@ class InterimTests(TestCase):
         mock_conf_mgr.create.side_effect = [
             [Conference(
                 manager=mock_conf_mgr, id=1, public_id='some-uuid', description='desc',
-                start_time=timeslots[0].time, duration=timeslots[0].duration, url='different-fake-meetecho-url',
+                start_time=timeslots[0].utc_start_time(), duration=timeslots[0].duration, url='different-fake-meetecho-url',
                 deletion_token='please-delete-me',
             )],
             [Conference(
                 manager=mock_conf_mgr, id=2, public_id='another-uuid', description='desc',
-                start_time=timeslots[1].time, duration=timeslots[1].duration, url='another-fake-meetecho-url',
+                start_time=timeslots[1].utc_start_time(), duration=timeslots[1].duration, url='another-fake-meetecho-url',
                 deletion_token='please-delete-me-too',
             )],
         ]
         create_interim_session_conferences([sessions[0], sessions[1]])
         self.assertTrue(mock_conf_mgr.create.called)
-        self.assertCountEqual(
+        self.assertEqual(
             mock_conf_mgr.create.call_args_list,
             [
                 ({
                     'group': sessions[0].group,
                     'description': str(sessions[0]),
-                    'start_time': timeslots[0].time,
+                    'start_time': timeslots[0].utc_start_time(),
                     'duration': timeslots[0].duration,
                  },),
                 ({
                     'group': sessions[1].group,
                     'description': str(sessions[1]),
-                    'start_time': timeslots[1].time,
+                    'start_time': timeslots[1].utc_start_time(),
                     'duration': timeslots[1].duration,
                  },),
             ]

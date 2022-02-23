@@ -1099,7 +1099,7 @@ def create_interim_session_conferences(sessions):
                 confs = meetecho_manager.create(
                     group=session.group,
                     description=str(session),
-                    start_time=ts.time,
+                    start_time=ts.utc_start_time(),
                     duration=ts.duration,
                 )
             except Exception as err:
