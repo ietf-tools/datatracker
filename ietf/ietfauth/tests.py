@@ -373,9 +373,11 @@ class IetfAuthTests(TestCase):
 
     def test_reset_password(self):
         url = urlreverse(ietf.ietfauth.views.password_reset)
+        email = 'someone@example.com'
+        password = 'foobar'
 
-        user = User.objects.create(username="someone@example.com", email="someone@example.com")
-        user.set_password("forgotten")
+        user = User.objects.create(username=email, email=email)
+        user.set_password(password)
         user.save()
         p = Person.objects.create(name="Some One", ascii="Some One", user=user)
         Email.objects.create(address=user.username, person=p, origin=user.username)
@@ -413,6 +415,39 @@ class IetfAuthTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q("form .has-error")), 0)
         self.assertTrue(self.username_in_htpasswd_file(user.username))
+
+        # reuse reset url
+        r = self.client.get(confirm_url)
+        self.assertEqual(r.status_code, 404)
+
+        # login after reset request
+        empty_outbox()
+        user.set_password(password)
+        user.save()
+
+        r = self.client.post(url, { 'username': user.username })
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(outbox), 1)
+        confirm_url = self.extract_confirm_url(outbox[-1])
+
+        r = self.client.post(urlreverse(ietf.ietfauth.views.login), {'username': email, 'password': password})
+
+        r = self.client.get(confirm_url)
+        self.assertEqual(r.status_code, 404)
+
+        # change password after reset request
+        empty_outbox()
+
+        r = self.client.post(url, { 'username': user.username })
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(outbox), 1)
+        confirm_url = self.extract_confirm_url(outbox[-1])
+
+        user.set_password('newpassword')
+        user.save()
+
+        r = self.client.get(confirm_url)
+        self.assertEqual(r.status_code, 404)
 
     def test_review_overview(self):
         review_req = ReviewRequestFactory()

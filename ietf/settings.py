@@ -1007,6 +1007,7 @@ DE_GFM_BINARY = '/usr/bin/de-gfm.ruby2.5'
 
 # Account settings
 DAYS_TO_EXPIRE_REGISTRATION_LINK = 3
+MINUTES_TO_EXPIRE_RESET_PASSWORD_LINK = 60
 HTPASSWD_COMMAND = "/usr/bin/htpasswd"
 HTPASSWD_FILE = "/www/htpasswd"
 
