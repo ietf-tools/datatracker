@@ -27,10 +27,6 @@ $(document)
                 totalField.val(total);
 
                 template.before(el);
-                // el.find(".select2-field")
-                //     .each(function () {
-                //         setupSelect2Field($(this));
-                //     });
             });
 
         function updateRevisions() {
@@ -65,6 +61,8 @@ $(document)
         });
 
         // add a little bit of delay to let the select2 box have time to do its magic
+        // FIXME: this should be done after a select2 event fires!
+        // See https://select2.org/programmatic-control/events
         setTimeout(function () {
             form.find(".draft-row")
                 .each(updateRevisions);

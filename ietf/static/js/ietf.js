@@ -123,7 +123,7 @@ $(document)
             .offset()
             .top > $(window)
             .height()) {
-            console.log("Enabling nav.");
+            // console.log("Enabling nav.");
             var n = 0;
             var last_level;
             var nav;
