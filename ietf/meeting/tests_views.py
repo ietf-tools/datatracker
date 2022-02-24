@@ -17,7 +17,7 @@ from pyquery import PyQuery
 from lxml.etree import tostring
 from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, urlsplit
+from urllib.parse import urlparse, urlsplit, quote
 from PIL import Image
 from pathlib import Path
 
@@ -410,7 +410,7 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertTrue(all([x in unicontent(r) for x in ['redraw_weekview', 'draw_calendar', ]]))
 
         # Specifying a time zone should not change the output (time zones are handled by the JS)
-        url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "?show=farfut&tz=Asia/Bangkok"
+        url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "?show=farfut&" + quote("tz=Asia/Bangkok", safe='=')
         r_with_tz = self.client.get(url)
         self.assertEqual(r_with_tz.status_code,200)
         self.assertEqual(r.content, r_with_tz.content)

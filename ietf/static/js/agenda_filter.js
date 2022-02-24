@@ -38,17 +38,16 @@ window.agenda_filter_for_testing; // methods to be accessed for automated testin
     }
 
     function parse_query_params(qs) {
-        var params = {};
-        qs = decodeURI(qs)
-            .replace(/^\?/, '')
-            .toLowerCase();
-        if (qs) {
-            var param_strs = qs.split('&');
-            for (var ii = 0; ii < param_strs.length; ii++) {
-                var toks = param_strs[ii].split('=', 2);
-                params[toks[0]] = toks[1] || true;
+        const urlSearchParams = new URLSearchParams(qs);
+        const params = Object.fromEntries(urlSearchParams.entries());
+
+        // the old code returned true for empty params, so do that, too
+        for (const property in params) {
+            if (params[property] === "") {
+                params[property] = true;
             }
         }
+
         return params;
     }
 

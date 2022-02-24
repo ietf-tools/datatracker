@@ -8,6 +8,7 @@ import shutil
 import os
 import re
 from unittest import skipIf
+import urllib.parse
 
 import django
 from django.utils.text import slugify
@@ -1725,7 +1726,7 @@ class AgendaTests(IetfSeleniumTestCase):
         # Now select a different item from the select input
         option.click()
         try:
-            wait.until(in_iframe_href('tz=america/halifax', self.driver.find_element(By.CSS_SELECTOR, '#weekview iframe')))
+            wait.until(in_iframe_href(urllib.parse.quote('tz=america/halifax', safe='='), self.driver.find_element(By.CSS_SELECTOR, '#weekview iframe')))
         except:
             self.fail('iframe href not updated to contain selected time zone')
 
@@ -1844,7 +1845,7 @@ class WeekviewTests(IetfSeleniumTestCase):
         self.login()
         for zone_name in zones_to_test:
             zone = pytz.timezone(zone_name)
-            self.driver.get(self.absreverse('ietf.meeting.views.week_view') + '?tz=' + zone_name)
+            self.driver.get(self.absreverse('ietf.meeting.views.week_view') + '?tz=' + urllib.parse.quote(zone_name, safe=''))
             for item in self.get_expected_items():
                 if item.session.name:
                     expected_name = item.session.name
@@ -1947,7 +1948,7 @@ class WeekviewTests(IetfSeleniumTestCase):
         self.login()
         
         # Test in meeting local time
-        self.driver.get(self.absreverse('ietf.meeting.views.week_view') + '?tz=%s' % local_tz.lower())
+        self.driver.get(self.absreverse('ietf.meeting.views.week_view') + '?tz=%s' % urllib.parse.quote(local_tz.lower(), safe=''))
 
         time_string = '-'.join([daytime_timeslot.local_start_time().strftime('%H%M'),
                                 daytime_timeslot.local_end_time().strftime('%H%M')])

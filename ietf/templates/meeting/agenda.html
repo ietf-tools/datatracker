@@ -369,9 +369,9 @@
             if (!weekview.hasClass('visually-hidden')) {
                 var queryparams = window.location.search;
                 if (queryparams) {
-                    queryparams += '&tz=' + encodeURI(ietf_timezone.get_current_tz().toLowerCase());
+                    queryparams += '&tz=' + encodeURIComponent(ietf_timezone.get_current_tz().toLowerCase());
                 } else {
-                    queryparams = '?tz=' + encodeURI(ietf_timezone.get_current_tz().toLowerCase());
+                    queryparams = '?tz=' + encodeURIComponent(ietf_timezone.get_current_tz().toLowerCase());
                 }
                 var new_url = 'week-view.html' + queryparams;
                 var wv_iframe = $(weekview).children('iframe');
