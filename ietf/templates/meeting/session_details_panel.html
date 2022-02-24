@@ -80,7 +80,7 @@
                                     {% else %}
                                         {% url 'ietf.meeting.views.upload_session_bluesheets' session_id=session.pk num=session.meeting.number as upload_url %}
                                     {% endif %}
-                                    {% if ag.document.type.slug != 'bluesheets' or user|has_role:"Secretariat" or meeting.type.slug == 'interim' and can_manage_materials %}
+                                    {% if pres.document.type.slug != 'bluesheets' or user|has_role:"Secretariat" or meeting.type.slug == 'interim' and can_manage_materials %}
                                         {% if pres.document.type.slug == 'minutes' %}
                                             <a class="btn btn-primary btn-sm" href="{% url 'ietf.meeting.views.import_session_minutes' num=session.meeting.number session_id=session.pk %}">Import from notes.ietf.org</a>
                                         {% endif %}

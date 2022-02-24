@@ -4181,6 +4181,6 @@ def import_session_minutes(request, session_id, num):
             'form': form,
             'note': note,
             'session': session,
-            'contents_changed': contents_changed,
+            'contents_unchanged': not contents_changed,
         },
     )

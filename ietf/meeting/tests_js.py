@@ -135,7 +135,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertEqual(session_info_container.find_element(By.CSS_SELECTOR, ".other-session .time").text, "not yet scheduled")
 
         # deselect
-        self.driver.find_element(By.CSS_SELECTOR, '.scheduling-panel').click()
+        self.driver.find_element(By.CSS_SELECTOR, '.drop-target').click()
 
         self.assertEqual(session_info_container.find_elements(By.CSS_SELECTOR, ".title"), [])
         self.assertNotIn('other-session-selected', s2b_element.get_attribute('class'))

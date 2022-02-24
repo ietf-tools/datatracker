@@ -2724,7 +2724,7 @@ class RawIdTests(TestCase):
 
     def should_succeed(self, argdict):
         url = urlreverse(self.view, kwargs=argdict)
-        r = self.client.get(url)
+        r = self.client.get(url, skip_verify=True)  # do not verify HTML, they're faked anyway
         self.assertEqual(r.status_code,200)
         self.assertEqual(r.get('Content-Type'),f"{self.mimetypes[argdict.get('ext','txt')]};charset=utf-8")
 

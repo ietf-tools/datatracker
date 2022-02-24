@@ -1196,9 +1196,9 @@ class BallotContentTests(TestCase):
         )
 
     def _assertBallotMessage(self, q, balloter, expected):
-        heading = q(f'h4[id$="_{slugify(balloter.plain_name())}"]')
+        heading = q(f'h5[id$="_{slugify(balloter.plain_name())}"]')
         self.assertEqual(len(heading), 1)
-        # <h4/> is followed by a panel with the message of interest, so use next()
+        # <h5/> is followed by a panel with the message of interest, so use next()
         self.assertEqual(
             len(heading.next().find(
                 f'*[title="{expected}"]'

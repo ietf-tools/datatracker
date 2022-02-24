@@ -160,12 +160,16 @@ class VerifyingClient(Client):
         super(VerifyingClient, self).__init__()
         self.test = test
 
-    def get(self, path, *args, **extra):
+    def get(self, path, *args, skip_verify=False, **extra):
+        """GET request
+
+        Performs verification of HTML responses unless skip_verify is True.
+        """
         r = super(VerifyingClient, self).get(path, *args, **extra)
         # print(path, r.status_code, r["content-type"].lower())
         if r.status_code < 300 and r["content-type"].lower().startswith(
             "text/html"
-        ):
+        ) and not skip_verify:
             document, errors = tidy_document(
                 r.content,
                 options={

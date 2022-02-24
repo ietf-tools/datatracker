@@ -8,7 +8,7 @@ from pathlib import Path
 from pyquery import PyQuery
 from random import randint
 from tempfile import NamedTemporaryFile
-from html import escape, unescape
+from html import unescape
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
