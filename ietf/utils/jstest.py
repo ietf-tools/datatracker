@@ -68,26 +68,27 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
         self.driver.set_window_size(1024,768)
     
     def tearDown(self):
+        msg = ""
         for type in ["browser", "driver"]:
             log = self.driver.get_log(type)
             if not log:
                 continue
             for entry in log:
-                msg = entry["message"]
+                line = entry["message"]
                 # suppress a bunch of benign/expected messages
                 if (
-                    re.search(r"JQMIGRATE: Migrate is installed", msg)
-                    or re.search(r"No headers fields visible, hiding", msg)
-                    or re.search(r"No color for \w+: using default", msg)
-                    or re.search(r"Invalid 'X-Frame-Options'", msg)
-                    or re.search(r"Could not find parent", msg)
-                    or re.search(r"Enabling nav", msg)
-                    or re.search(r"/materials/.*mars.*status of 404", msg)
+                    re.search(r"JQMIGRATE: Migrate is installed", line)
+                    or re.search(r"No color for (farfut|acronym\d+):", line)
+                    or re.search(r"Could not find parent \d+", line)
+                    or re.search(r"/materials/.*mars.*status of 404", line)
                 ):
                     continue
-                self.test.assertEqual("", msg)
+                msg += f"{entry['level']}: {line}\n"
+
         super(IetfSeleniumTestCase, self).tearDown()
         self.driver.close()
+        self.maxDiff = None
+        self.assertEqual("", msg)
     
     def absreverse(self,*args,**kwargs):
         return '%s%s'%(self.live_server_url, urlreverse(*args, **kwargs))

@@ -41,7 +41,7 @@ $(document)
 
                 if ($(table)
                     .hasClass("tablesorter-done")) {
-                    console.log("tablesorter already initialized; list.js probably loaded twice.");
+                    // console.log("tablesorter already initialized; list.js probably loaded twice.");
                     return;
                 }
 
@@ -59,7 +59,7 @@ $(document)
                     .toArray();
 
                 if (fields.length == 0 || !fields.filter(field => field != "")) {
-                    console.log("No table fields defined, disabling search/sort.");
+                    // console.log("No table fields defined, disabling search/sort.");
                     return;
                 }
 
@@ -76,7 +76,7 @@ $(document)
                 if ($(header_row)
                     .text()
                     .trim() == "") {
-                    console.log("No headers fields visible, hiding header row.");
+                    // console.log("No headers fields visible, hiding header row.");
                     header_row.addClass("visually-hidden");
                 }
 
@@ -148,7 +148,7 @@ $(document)
                             .length;
 
                         if (tbody_rows == 0) {
-                            console.log("Skipping empty tbody");
+                            // console.log("Skipping empty tbody");
                             return;
                         } else if (tbody_rows <= items_per_page) {
                             pagination = false;
@@ -168,7 +168,7 @@ $(document)
 
                         var hook = `tablewrapper-${n}`;
                         if (pagination) {
-                            console.log("Enabling pager.");
+                            // console.log("Enabling pager.");
                             $(pager)
                                 .removeClass("visually-hidden");
                             pagination = {
