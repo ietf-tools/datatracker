@@ -8,7 +8,6 @@ import bleach
 from django import template
 from django.conf import settings
 from django.template.defaultfilters import stringfilter
-from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
