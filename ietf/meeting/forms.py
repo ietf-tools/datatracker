@@ -105,6 +105,8 @@ class InterimSessionInlineFormSet(BaseInlineFormSet):
 
 class InterimMeetingModelForm(forms.ModelForm):
     group = GroupModelChoiceField(queryset=Group.objects.filter(type_id__in=GroupFeatures.objects.filter(has_meetings=True).values_list('type_id',flat=True), state__in=('active', 'proposed', 'bof')).order_by('acronym'), required=False, empty_label="Click to select")
+    group.widget.attrs['data-max-entries'] = 1
+    group.widget.attrs['data-minimum-input-length'] = 0
     in_person = forms.BooleanField(required=False)
     meeting_type = forms.ChoiceField(choices=(
         ("single", "Single"),
@@ -120,7 +122,14 @@ class InterimMeetingModelForm(forms.ModelForm):
     city = forms.CharField(max_length=255, required=False)
     city.widget.attrs['placeholder'] = "City"
     country = forms.ChoiceField(choices=countries, required=False)
+    country.widget.attrs['class'] = "select2-field"
+    country.widget.attrs['data-max-entries'] = 1
+    country.widget.attrs['data-placeholder'] = "Country"
+    country.widget.attrs['data-minimum-input-length'] = 0
     time_zone = forms.ChoiceField(choices=timezones)
+    time_zone.widget.attrs['class'] = "select2-field"
+    time_zone.widget.attrs['data-max-entries'] = 1
+    time_zone.widget.attrs['data-minimum-input-length'] = 0
 
     class Meta:
         model = Meeting

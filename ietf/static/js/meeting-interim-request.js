@@ -6,9 +6,6 @@ var interimRequest = {
         interimRequest.addButton = $('#add_session');
         interimRequest.inPerson = $('#id_in_person');
         interimRequest.timezone = $('#id_time_zone');
-        // bind functions
-        $('.select2-field')
-            .select2();
         interimRequest.addButton.on("click", interimRequest.addSession);
         $('.btn-delete')
             .on("click", interimRequest.deleteSession);
@@ -33,8 +30,6 @@ var interimRequest = {
             .each(interimRequest.calculateEndTime);
         $('input[name$="-time"]')
             .each(interimRequest.updateInfo);
-        $('#id_country')
-            .select2({ placeholder: "Country" });
     },
 
     addSession: function () {
@@ -80,11 +75,6 @@ var interimRequest = {
 
         template.before(el);
         el.removeClass("template visually-hidden");
-
-        el.find(".select2-field")
-            .each(function () {
-                setupSelect2Field($(this));
-            });
 
         // copy field contents
         var first_session = $(".fieldset:first");
@@ -265,7 +255,7 @@ var interimRequest = {
                 .prop('disabled', true);
         }
     }
-}
+};
 
 $(document)
     .ready(function () {
