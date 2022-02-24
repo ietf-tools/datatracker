@@ -9,6 +9,7 @@ import io
 import os
 import re
 import shutil
+import stat
 import time
 
 from tempfile import mkstemp
@@ -168,6 +169,9 @@ class Command(BaseCommand):
 
         afile.close()
         vfile.close()
+
+        os.chmod(aname, stat.S_IWUSR|stat.S_IRUSR|stat.S_IRGRP|stat.S_IROTH) 
+        os.chmod(vname, stat.S_IWUSR|stat.S_IRUSR|stat.S_IRGRP|stat.S_IROTH) 
 
         shutil.move(aname, settings.DRAFT_ALIASES_PATH)
         shutil.move(vname, settings.DRAFT_VIRTUAL_PATH)
