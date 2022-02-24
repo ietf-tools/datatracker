@@ -28,7 +28,7 @@ function filter_calendar_events(filter_params, event_list) {
 }
 
 // format a moment in a tz
-var moment_formats = { time: 'HH:mm', date: 'YYYY-MM-DD', datetime: 'YYYY-MM-DD HH:mm' }
+var moment_formats = { time: 'HH:mm', date: 'YYYY-MM-DD', datetime: 'YYYY-MM-DD HH:mm' };
 
 function format_moment(t_moment, tz, fmt_type) {
     return t_moment.tz(tz)
@@ -77,13 +77,13 @@ function update_calendar(tz, filter_params) {
             plugins: [dayGridPlugin],
             initialView: 'dayGridMonth',
             displayEventTime: false,
-            events: function (fInfo, success) { success(display_events) },
+            events: function (fInfo, success) { success(display_events); },
             eventDidMount: function (info) {
                 $(info.el)
-                    .tooltip({ title: info.event.title })
+                    .tooltip({ title: info.event.title });
             },
             eventDisplay: 'block'
-        })
+        });
         event_calendar.render();
     }
 }
@@ -138,6 +138,10 @@ function format_meeting_time(meeting_elt, tz) {
 }
 
 window.timezone_changed = function (newtz) {
+    if (!newtz) {
+        ietf_timezone.initialize('local');
+        newtz = ietf_timezone.get_current_tz();
+    }
     // update times for events in the table
     if (current_tz !== newtz) {
         current_tz = newtz;
