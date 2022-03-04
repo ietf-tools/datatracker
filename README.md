@@ -19,10 +19,11 @@
 - [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md)
 - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
+    - [Git Cloning Tips](#git-cloning-tips)
     - [Code Tree Overview](#code-tree-overview)
     - [Adding a New Web Page](#adding-a-new-web-page)
     - [Testing your work](#testing-your-work)
-- [Docker Dev Environment](#docker-dev-environment)
+- [Docker Dev Environment](docker/README.md)
 - [Continuous Integration](#continuous-integration)
 - [Database & Assets](#database--assets)
 
@@ -43,19 +44,19 @@ You can submit bug reports, enhancement and new feature requests in the [discuss
 - Node.js 16.x
 - MariaDB 10
 
-> See the [Docker Dev Environment](#docker-dev-environment) section below for a preconfigured docker environment.
+> See the [Docker Dev Environment](docker/README.md) section for a preconfigured docker environment.
 
 #### Git Cloning Tips
 
-Because of the extensive history of this project, cloning the datatracker project locally can take a long time / disk space. You can speed up the cloning process by limiting the history depth:
+Because of the extensive history of this project, cloning the datatracker project locally can take a long time / disk space. You can speed up the cloning process by limiting the history depth, for example:
 
 - To fetch only up to the 10 latest commits:
     ```sh
-    git clone --depth=10
+    git clone --depth=10 https://github.com/ietf-tools/datatracker.git
     ```
 - To fetch only up to a specific date:
     ```sh
-    git clone --shallow-since=DATE
+    git clone --shallow-since=DATE https://github.com/ietf-tools/datatracker.git
     ```
 
 #### Code Tree Overview
