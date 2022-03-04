@@ -22,7 +22,7 @@ jobs:
       - name: Set package.json version
         uses: HarmvZ/set-package-json-version-action@v0.1.2
         with:
-          version: ${{ env.PKG_VERSION_STRICT }}
+          version: 1.0.${{ github.run_number }}
           path: ./bootstrap
 
       - name: Build Release

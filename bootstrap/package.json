@@ -1,7 +1,7 @@
 {
-  "name": "bootstrap",
-  "description": "The most popular front-end framework for developing responsive, mobile first projects on the web.",
-  "version": "3.4.1",
+  "name": "@ietf-tools/datatracker-bs3",
+  "description": "Custom Bootstrap 3 theme for IETF Datatracker.",
+  "version": "1.0.0",
   "keywords": [
     "css",
     "less",
@@ -25,10 +25,10 @@
   "main": "./dist/js/npm",
   "repository": {
     "type": "git",
-    "url": "https://github.com/twbs/bootstrap.git"
+    "url": "https://github.com/ietf-tools/datatracker.git"
   },
   "bugs": {
-    "url": "https://github.com/twbs/bootstrap/issues"
+    "url": "https://github.com/ietf-tools/datatracker/issues"
   },
   "license": "MIT",
   "dependencies": {},
