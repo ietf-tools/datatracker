@@ -1,10 +1,10 @@
 <div align="center">
   
-<img src="media/docs/ietf-datatracker-logo.svg" alt="IETF Datatracker" width="600" />
+<img src="https://raw.githubusercontent.com/ietf-tools/common/main/assets/logos/datatracker.svg" alt="IETF Datatracker" height="125" />
 
 [![Release](https://img.shields.io/github/release/ietf-tools/datatracker.svg?style=flat&maxAge=3600)](https://github.com/ietf-tools/datatracker/releases)
-[![License](https://img.shields.io/badge/license-BSD3-blue.svg?style=flat)](https://github.com/ietf-tools/datatracker/blob/main/LICENSE)
-![Nightly DB Build](https://img.shields.io/github/workflow/status/ietf-tools/datatracker/dev-db-nightly?label=Nightly%20DB%20Build&style=flat&logo=docker&logoColor=white&maxAge=3600)
+[![License](https://img.shields.io/github/license/ietf-tools/datatracker)](https://github.com/ietf-tools/datatracker/blob/main/LICENSE)
+[![Nightly Dev DB Image](https://github.com/ietf-tools/datatracker/actions/workflows/dev-db-nightly.yml/badge.svg)](https://github.com/ietf-tools/datatracker/pkgs/container/datatracker-db)
 
 ##### The day-to-day front-end to the IETF database for people who work on IETF standards.
 
@@ -24,9 +24,9 @@
 
 ### Getting Started
 
-This project is following the standard **Git Feature Workflow with Develop Branch** development model. Learn about all the various steps of the development workflow, from creating a fork to submitting a pull request, in the [Contributing](CONTRIBUTING.md) guide.
+This project is following the standard **Git Feature Workflow** development model. Learn about all the various steps of the development workflow, from creating a fork to submitting a pull request, in the [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md) guide.
 
-> Make sure to read the [Styleguides](CONTRIBUTING.md#styleguides) section to ensure a cohesive code format across the project.
+> Make sure to read the [Styleguides](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md#styleguides) section to ensure a cohesive code format across the project.
 
 You can submit bug reports, enhancement and new feature requests in the [discussions](https://github.com/ietf-tools/datatracker/discussions) area. Accepted tickets will be converted to issues.
 
