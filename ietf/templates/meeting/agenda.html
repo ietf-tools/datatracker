@@ -78,8 +78,9 @@
         <h2>
             Schedule
             {% if schedule.meeting.agenda_warning_note %}
-                <span class="badge bg-danger">{{ schedule.meeting.agenda_warning_note|removetags:"h1"
-                |safe }}</span>
+                <span class="badge bg-danger">
+                  {{ schedule.meeting.agenda_warning_note|removetags:"h1" |safe }}
+                </span>
             {% endif %}
         </h2>
         <iframe class="w-100 overflow-hidden border border-dark" scrolling="no"></iframe>
