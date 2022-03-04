@@ -1,0 +1,35 @@
+name: Publish BS3
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ bootstrap/** ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          depth: 0
+          
+      - name: Setup Node.js 16.x
+        uses: actions/setup-node@v3.0.0
+        with:
+          node-version: 16.x
+
+      - name: Build Release
+        working-directory: bootstrap
+        run: |
+          npm install -g grunt-cli
+          npm ci
+          grunt dist
+          
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3.0.0
+        with:
+          name: dist
+          path: bootstrap/dist
