@@ -487,6 +487,9 @@ class Room(models.Model):
     def video_stream_url(self):
         urlresources = [ur for ur in self.urlresource_set.all() if ur.name_id in ['meetecho']]
         return urlresources[0].url if urlresources else None
+    def onsite_tool_url(self):
+        urlresources = [ur for ur in self.urlresource_set.all() if ur.name_id in ['meetecho_onsite']]
+        return urlresources[0].url if urlresources else None
     def webex_url(self):
         urlresources = [ur for ur in self.urlresource_set.all() if ur.name_id in ['webex']]
         return urlresources[0].url if urlresources else None

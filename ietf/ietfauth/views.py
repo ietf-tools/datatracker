@@ -36,7 +36,7 @@
 
 import importlib
 
-from datetime import date as Date
+from datetime import date as Date, datetime as DateTime
 # needed if we revert to higher barrier for account creation
 #from datetime import datetime as DateTime, timedelta as TimeDelta, date as Date
 from collections import defaultdict
@@ -418,7 +418,16 @@ def password_reset(request):
         if form.is_valid():
             username = form.cleaned_data['username']
 
-            auth = django.core.signing.dumps(username, salt="password_reset")
+            data = { 'username': username }
+            if User.objects.filter(username=username).exists():
+                user = User.objects.get(username=username)
+                data['password'] = user.password and user.password[-4:]
+                if user.last_login:
+                    data['last_login'] = user.last_login.timestamp()
+                else:
+                    data['last_login'] = None
+
+            auth = django.core.signing.dumps(data, salt="password_reset")
 
             domain = Site.objects.get_current().domain
             subject = 'Confirm password reset at %s' % domain
@@ -429,7 +438,7 @@ def password_reset(request):
                 'domain': domain,
                 'auth': auth,
                 'username': username,
-                'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
+                'expire': settings.MINUTES_TO_EXPIRE_RESET_PASSWORD_LINK,
             })
 
             success = True
@@ -443,11 +452,16 @@ def password_reset(request):
 
 def confirm_password_reset(request, auth):
     try:
-        username = django.core.signing.loads(auth, salt="password_reset", max_age=settings.DAYS_TO_EXPIRE_REGISTRATION_LINK * 24 * 60 * 60)
+        data = django.core.signing.loads(auth, salt="password_reset", max_age=settings.MINUTES_TO_EXPIRE_RESET_PASSWORD_LINK * 60)
+        username = data['username']
+        password = data['password']
+        last_login = None
+        if data['last_login']:
+            last_login = DateTime.fromtimestamp(data['last_login'])
     except django.core.signing.BadSignature:
         raise Http404("Invalid or expired auth")
 
-    user = get_object_or_404(User, username=username)
+    user = get_object_or_404(User, username=username, password__endswith=password, last_login=last_login)
 
     success = False
     if request.method == 'POST':

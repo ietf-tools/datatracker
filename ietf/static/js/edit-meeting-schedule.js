@@ -548,10 +548,43 @@ $(function () {
 
     // hints for the current schedule
 
-    function updateSessionConstraintViolations() {
-        // do a sweep on sessions sorted by start time
-        let scheduledSessions = [];
+    /** Find all pairs of overlapping intervals
+     *
+     * @param data Array of arbitrary interval-like objects with 'start' and 'end' properties
+     * @returns Map from data item index to a list of overlapping data item indexes
+     */
+    function findOverlappingIntervals(data) {
+        const overlaps = {}; // results
+        // Build ordered lists of start/end times, keeping track of the original index for each item
+        const startIndexes = data.map((d, i) => ({time: d.start, index: i}));
+        startIndexes.sort((a, b) => (b.time - a.time)); // sort reversed
+        const endIndexes = data.map((d, i) => ({time: d.end, index: i}));
+        endIndexes.sort((a, b) => (b.time - a.time)); // sort reversed
 
+        // items are sorted in reverse, so pop() will get the earliest item from each list
+        let nextStart = startIndexes.pop();
+        let nextEnd = endIndexes.pop();
+        const openIntervalIndexes = [];
+        while (nextStart && nextEnd) {
+            if (nextStart.time < nextEnd.time) {
+                // an interval opened - it overlaps all open intervals and all open intervals overlap it
+                for (const intervalIndex of openIntervalIndexes) {
+                    overlaps[intervalIndex].push(nextStart.index);
+                }
+                overlaps[nextStart.index] = [...openIntervalIndexes]; // make a copy of the open list
+                openIntervalIndexes.push(nextStart.index);
+                nextStart = startIndexes.pop();
+            } else {
+                // an interval closed - remove its index from the list of open intervals
+                openIntervalIndexes.splice(openIntervalIndexes.indexOf(nextEnd.index), 1);
+                nextEnd = endIndexes.pop();
+            }
+        }
+        return overlaps;
+    }
+
+    function updateSessionConstraintViolations() {
+        let scheduledSessions = [];
         sessions.each(function () {
             let timeslot = jQuery(this).closest(".timeslot");
             if (timeslot.length === 1) {
@@ -565,19 +598,8 @@ $(function () {
             }
         });
 
-        scheduledSessions.sort(function (a, b) {
-            if (a.start < b.start) {
-                return -1;
-            }
-            if (a.start > b.start) {
-                return 1;
-            }
-            return 0;
-        });
-
-        let currentlyOpen = {};
-        let openedIndex = 0;
-        let markSessionConstraintViolations = function (sess, currentlyOpen) {
+        // helper function to mark constraint violations
+        const markSessionConstraintViolations = function (sess, currentlyOpen) {
             sess.element.find(".constraints > span").each(function() {
                 let sessionIds = this.dataset.sessions;
 
@@ -596,25 +618,15 @@ $(function () {
             });
         };
 
-        for (let i = 0; i < scheduledSessions.length; ++i) {
-            let s = scheduledSessions[i];
-
-            // prune
-            for (let sessionIdStr in currentlyOpen) {
-                if (currentlyOpen[sessionIdStr].end <= s.start) {
-                    delete currentlyOpen[sessionIdStr];
-                }
+        // now go through the sessions and mark constraint violations
+        const overlaps = findOverlappingIntervals(scheduledSessions);
+        for (const index in overlaps) {
+            const currentlyOpen = {};
+            for (const overlapIndex of overlaps[index]) {
+                const otherSess = scheduledSessions[overlapIndex];
+                currentlyOpen[otherSess.id] = otherSess;
             }
-
-            // expand
-            while (openedIndex < scheduledSessions.length && scheduledSessions[openedIndex].start < s.end) {
-                let toAdd = scheduledSessions[openedIndex];
-                currentlyOpen[toAdd.id] = toAdd;
-                ++openedIndex;
-            }
-
-            // check for violated constraints
-            markSessionConstraintViolations(s, currentlyOpen);
+            markSessionConstraintViolations(scheduledSessions[index], currentlyOpen);
         }
     }
 

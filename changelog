@@ -1,3 +1,38 @@
+ietfdb (7.46.0) ietf; urgency=medium
+
+  ** bugfixes, security improvements, performance improvements **
+
+  * Merged in [19946] from rjsparks@nostrum.com:
+    Allow the secretariat to request many more sessions.  
+
+  * Merged in [19947] from rjsparks@nostrum.com:
+    Add link to onsite tool to agenda. Fixes #3550.  
+
+  * Merged in [19948] from rjsparks@nostrum.com:
+    Update link to handling ballot positions. Fixes #3208.  
+
+  * Merged in [19949] and [19950] from rjsparks@nostrum.com:
+    Use tempfiles while rebuilding group and doc alias files. Fixes #3521.  
+
+  * Merged in [19952] from rjsparks@nostrum.com:
+    Only keep the first and most recent yang validator SubmissionCheck for 
+    any given submission. Fixes #3542.  
+
+  * Merged in [19954] from jennifer@painless-security.com:
+    Refactor session overlap computation to treat overlapping sessions 
+    correctly.  
+
+  * Merged in [19967] from rjsparks@nostrum.com:
+    From Kesara Rathnayake: Expire password reset links on use, password 
+    change through other mechanics, login, or a short configurable time 
+    (initially one hour).
+
+  * Merged in [19969] from jennifer@painless-security.com:
+    Use correct UTC time when creating Meetecho conferences. Fixes #3565.  
+
+ -- Robert Sparks <rjsparks@nostrum.com>  24 Feb 2022 03:05:28 +0000
+
+
 ietfdb (7.45.0) ietf; urgency=medium
 
   ** MeetEcho interim request integration, bugfixes **

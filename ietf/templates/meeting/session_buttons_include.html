@@ -68,6 +68,13 @@
                                         <i class="bi bi-camera-video"></i>
                                     </a>
                                 {% endif %}
+                                {# Onsite tool (meetecho_onsite) #}
+                                {% if timeslot.location.onsite_tool_url %}
+                                    <a class=""
+                                       href="{{timeslot.location.onsite_tool_url|format:session }}"
+                                       title="Onsite tool"><span class="fa fa-fw fa-street-view"></span>
+                                    </a>
+                                {% endif %}
                                 {# Audio stream #}
                                 {% if timeslot.location.audio_stream_url %}
                                     <a class="btn btn-outline-primary"
