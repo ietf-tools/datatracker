@@ -2,7 +2,7 @@
   
 <img src="https://raw.githubusercontent.com/ietf-tools/common/main/assets/logos/datatracker.svg" alt="IETF Datatracker" height="125" />
 
-[![Release](https://img.shields.io/github/release/ietf-tools/datatracker.svg?style=flat&maxAge=3600)](https://github.com/ietf-tools/datatracker/releases)
+[![Release](https://img.shields.io/github/release/ietf-tools/datatracker.svg?style=flat&maxAge=300)](https://github.com/ietf-tools/datatracker/releases)
 [![License](https://img.shields.io/github/license/ietf-tools/datatracker)](https://github.com/ietf-tools/datatracker/blob/main/LICENSE)
 [![Nightly Dev DB Image](https://github.com/ietf-tools/datatracker/actions/workflows/dev-db-nightly.yml/badge.svg)](https://github.com/ietf-tools/datatracker/pkgs/container/datatracker-db)
 
@@ -11,6 +11,8 @@
 </div>
 
 - [**Production Website**](https://datatracker.ietf.org)
+- [Changelog](https://github.com/ietf-tools/datatracker/blob/main/CHANGELOG.md)
+- [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md)
 - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
     - [Code Tree Overview](#code-tree-overview)
