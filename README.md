@@ -4,7 +4,11 @@
 
 [![Release](https://img.shields.io/github/release/ietf-tools/datatracker.svg?style=flat&maxAge=300)](https://github.com/ietf-tools/datatracker/releases)
 [![License](https://img.shields.io/github/license/ietf-tools/datatracker)](https://github.com/ietf-tools/datatracker/blob/main/LICENSE)
-[![Nightly Dev DB Image](https://github.com/ietf-tools/datatracker/actions/workflows/dev-db-nightly.yml/badge.svg)](https://github.com/ietf-tools/datatracker/pkgs/container/datatracker-db)
+[![Nightly Dev DB Image](https://github.com/ietf-tools/datatracker/actions/workflows/dev-db-nightly.yml/badge.svg)](https://github.com/ietf-tools/datatracker/pkgs/container/datatracker-db)  
+[![Python Version](https://img.shields.io/badge/python-3.6-blue?logo=python&logoColor=white)](#prerequisites)
+[![Django Version](https://img.shields.io/badge/django-2.x-51be95?logo=django&logoColor=white)](#prerequisites)
+[![Node Version](https://img.shields.io/badge/node.js-16.x-green?logo=node.js&logoColor=white)](#prerequisites)
+[![MariaDB Version](https://img.shields.io/badge/mariadb-10-blue?logo=mariadb&logoColor=white)](#prerequisites)
 
 ##### The day-to-day front-end to the IETF database for people who work on IETF standards.
 
@@ -40,6 +44,19 @@ You can submit bug reports, enhancement and new feature requests in the [discuss
 - MariaDB 10
 
 > See the [Docker Dev Environment](#docker-dev-environment) section below for a preconfigured docker environment.
+
+#### Git Cloning Tips
+
+Because of the extensive history of this project, cloning the datatracker project locally can take a long time / disk space. You can speed up the cloning process by limiting the history depth:
+
+- To fetch only up to the 10 latest commits:
+    ```sh
+    git clone --depth=10
+    ```
+- To fetch only up to a specific date:
+    ```sh
+    git clone --shallow-since=DATE
+    ```
 
 #### Code Tree Overview
 
