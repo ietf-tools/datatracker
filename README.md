@@ -1,22 +1,29 @@
 <div align="center">
   
-<img src="media/docs/ietf-datatracker-logo.svg" alt="IETF Datatracker" width="600" />
+<img src="https://raw.githubusercontent.com/ietf-tools/common/main/assets/logos/datatracker.svg" alt="IETF Datatracker" height="125" />
 
-[![Release](https://img.shields.io/github/release/ietf-tools/datatracker.svg?style=flat&maxAge=3600)](https://github.com/ietf-tools/datatracker/releases)
-[![License](https://img.shields.io/badge/license-BSD3-blue.svg?style=flat)](https://github.com/ietf-tools/datatracker/blob/main/LICENSE)
-![Nightly DB Build](https://img.shields.io/github/workflow/status/ietf-tools/datatracker/dev-db-nightly?label=Nightly%20DB%20Build&style=flat&logo=docker&logoColor=white&maxAge=3600)
+[![Release](https://img.shields.io/github/release/ietf-tools/datatracker.svg?style=flat&maxAge=300)](https://github.com/ietf-tools/datatracker/releases)
+[![License](https://img.shields.io/github/license/ietf-tools/datatracker)](https://github.com/ietf-tools/datatracker/blob/main/LICENSE)
+[![Nightly Dev DB Image](https://github.com/ietf-tools/datatracker/actions/workflows/dev-db-nightly.yml/badge.svg)](https://github.com/ietf-tools/datatracker/pkgs/container/datatracker-db)  
+[![Python Version](https://img.shields.io/badge/python-3.6-blue?logo=python&logoColor=white)](#prerequisites)
+[![Django Version](https://img.shields.io/badge/django-2.x-51be95?logo=django&logoColor=white)](#prerequisites)
+[![Node Version](https://img.shields.io/badge/node.js-16.x-green?logo=node.js&logoColor=white)](#prerequisites)
+[![MariaDB Version](https://img.shields.io/badge/mariadb-10-blue?logo=mariadb&logoColor=white)](#prerequisites)
 
 ##### The day-to-day front-end to the IETF database for people who work on IETF standards.
 
 </div>
 
 - [**Production Website**](https://datatracker.ietf.org)
+- [Changelog](https://github.com/ietf-tools/datatracker/blob/main/CHANGELOG.md)
+- [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md)
 - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
+    - [Git Cloning Tips](#git-cloning-tips)
     - [Code Tree Overview](#code-tree-overview)
     - [Adding a New Web Page](#adding-a-new-web-page)
     - [Testing your work](#testing-your-work)
-- [Docker Dev Environment](#docker-dev-environment)
+- [Docker Dev Environment](docker/README.md)
 - [Continuous Integration](#continuous-integration)
 - [Database & Assets](#database--assets)
 - [Bootstrap 5 Upgrade](#bootstrap-5-upgrade)
@@ -25,9 +32,9 @@
 
 ### Getting Started
 
-This project is following the standard **Git Feature Workflow with Develop Branch** development model. Learn about all the various steps of the development workflow, from creating a fork to submitting a pull request, in the [Contributing](CONTRIBUTING.md) guide.
+This project is following the standard **Git Feature Workflow** development model. Learn about all the various steps of the development workflow, from creating a fork to submitting a pull request, in the [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md) guide.
 
-> Make sure to read the [Styleguides](CONTRIBUTING.md#styleguides) section to ensure a cohesive code format across the project.
+> Make sure to read the [Styleguides](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md#styleguides) section to ensure a cohesive code format across the project.
 
 You can submit bug reports, enhancement and new feature requests in the [discussions](https://github.com/ietf-tools/datatracker/discussions) area. Accepted tickets will be converted to issues.
 
@@ -38,7 +45,20 @@ You can submit bug reports, enhancement and new feature requests in the [discuss
 - Node.js 16.x
 - MariaDB 10
 
-> See the [Docker Dev Environment](#docker-dev-environment) section below for a preconfigured docker environment.
+> See the [Docker Dev Environment](docker/README.md) section for a preconfigured docker environment.
+
+#### Git Cloning Tips
+
+Because of the extensive history of this project, cloning the datatracker project locally can take a long time / disk space. You can speed up the cloning process by limiting the history depth, for example:
+
+- To fetch only up to the 10 latest commits:
+    ```sh
+    git clone --depth=10 https://github.com/ietf-tools/datatracker.git
+    ```
+- To fetch only up to a specific date:
+    ```sh
+    git clone --shallow-since=DATE https://github.com/ietf-tools/datatracker.git
+    ```
 
 #### Code Tree Overview
 

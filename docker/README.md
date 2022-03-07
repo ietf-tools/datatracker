@@ -6,15 +6,14 @@
 
 2. On Linux, you must also install [Docker Compose](https://docs.docker.com/compose/install/). Docker Desktop for Mac and Windows already include Docker Compose.
 
-2. If you have a copy of the datatracker code checked out already, simply `cd`
-   to the top-level directory.
+2. If you have a copy of the datatracker code checked out already, simply `cd` to the top-level directory.
 
-   If not, check out a datatracker branch as usual. We'll check out `trunk`
-   below, but you can use any branch:
+   If not, check out a datatracker branch as usual. We'll check out `main` below, but you can use any branch:
 
     ```sh
-    svn co https://svn.ietf.org/svn/tools/ietfdb/trunk
-    cd trunk
+    git clone https://github.com/ietf-tools/datatracker.git
+    cd datatracker
+    git checkout main
     ```
 
 3. Follow the instructions for your preferred editor:
