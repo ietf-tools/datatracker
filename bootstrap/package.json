@@ -18,7 +18,8 @@
     "release": "grunt prep-release && npm run sri && npm run release-zip",
     "release-zip": "cross-env-shell \"shx rm -rf bootstrap-$npm_package_version-dist && shx cp -r dist/ bootstrap-$npm_package_version-dist && zip -r9 bootstrap-$npm_package_version-dist.zip bootstrap-$npm_package_version-dist && shx rm -rf bootstrap-$npm_package_version-dist\"",
     "change-version": "node grunt/change-version.js",
-    "test": "grunt test"
+    "test": "grunt test",
+    "postinstall": "node post-install.js"
   },
   "style": "dist/css/bootstrap.css",
   "less": "less/bootstrap.less",
@@ -31,7 +32,9 @@
     "url": "https://github.com/ietf-tools/datatracker/issues"
   },
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "fs-extra": "^10.0.1"
+  },
   "devDependencies": {
     "autoprefixer": "^9.4.7",
     "btoa": "^1.2.1",

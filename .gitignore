@@ -53,3 +53,4 @@
 *.pyc
 __pycache__
 node_modules
+ietf/static/ietf/bootstrap
