@@ -11,7 +11,8 @@ from .models import ReviewerSettings, ReviewSecretarySettings, ReviewTeamSetting
 from .utils import (email_secretary_reminder, review_assignments_needing_secretary_reminder,
                     email_reviewer_reminder, review_assignments_needing_reviewer_reminder,
                     send_reminder_unconfirmed_assignments, send_review_reminder_overdue_assignment,
-                    send_reminder_all_open_reviews, send_unavailability_period_ending_reminder)
+                    send_reminder_all_open_reviews, send_unavailability_period_ending_reminder,
+                    ORIGIN_DATE_PERIODIC_REMINDERS)
 
 class HashTest(TestCase):
 
@@ -28,7 +29,7 @@ class HashTest(TestCase):
                 (b'xml2rfc', b'3A0F4CD6-451F-44E2-9DA4-28235C638588@rfc-editor.org','g6DN4SxJGDrlSuKsubwb6rRSePU'),
             ):
             self.assertEqual(hash, hash_list_message_id(list, msgid))
-            
+
 
 class ReviewAssignmentTest(TestCase):
     def do_test_update_review_req_status(self, assignment_state, expected_state):
@@ -468,6 +469,7 @@ class ReviewAssignmentReminderTests(TestCase):
         self.assertIn('1 overdue review', log[0])
 
     def test_send_reminder_all_open_reviews(self):
+        today = datetime.date.today()
         self.make_secretary(username='reviewsecretary')
         ReviewerSettingsFactory(team=self.team, person=self.reviewer, remind_days_open_reviews=1)
 
@@ -483,10 +485,14 @@ class ReviewAssignmentReminderTests(TestCase):
             assigned_on=second_req.time,
             reviewer=self.reviewer.email(),
         )
-        ReviewerSettingsFactory(team=second_team, person=self.reviewer, remind_days_open_reviews=13)
+        ReviewerSettingsFactory(
+            team=second_team,
+            person=self.reviewer,
+            # set the reminder never to be due to be sent today for this team
+            remind_days_open_reviews=(today - ORIGIN_DATE_PERIODIC_REMINDERS).days + 1,
+        )
 
         empty_outbox()
-        today = datetime.date.today()
         log = send_reminder_all_open_reviews(today)
 
         self.assertEqual(len(outbox), 1)
