@@ -158,9 +158,9 @@ https://www.ietf.org/standards/ids/internet-draft-mirror-sites/
 
 ---
 
-# Bootstrap 5 Update
+# Bootstrap 5 Upgrade
 
-An update of the UI to use Bootstrap 5 is under way. The following notes describe this work-in-progress and should
+An upgrade of the UI to use Bootstrap 5 is under way. The following notes describe this work-in-progress and should
 be integrated with the rest of the document as the details and processes become final.
 
 ## Intro
