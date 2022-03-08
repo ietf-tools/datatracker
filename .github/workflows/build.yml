@@ -81,10 +81,13 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
+        echo "Installing NPM dependencies..."
         npm install
         echo "Using version $PKG_VERSION_STRICT"
         sed -i -r -e "s/^__version__ += '.*'$/__version__ = '$PKG_VERSION_STRICT'/" ietf/__init__.py
-        tar -czf ../release.tar.gz -X dev/deploy/exclude-patterns.txt .
+        echo "Build release tarball... (this could take a while)"
+        mkdip -p /home/runner/work/release
+        tar -czf /home/runner/work/release/release.tar.gz -X dev/deploy/exclude-patterns.txt .
         
     - name: Update CHANGELOG
       id: changelog
@@ -104,7 +107,7 @@ jobs:
         tag: ${{ env.PKG_VERSION }}
         name: ${{ env.PKG_VERSION }}
         body: ${{ steps.changelog.outputs.changes }}
-        artifacts: "../release.tar.gz"
+        artifacts: "/home/runner/work/release/release.tar.gz"
         token: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Upload Build Artifacts
@@ -113,4 +116,4 @@ jobs:
       with:
         name: artifacts
         path: |
-          ../release.tar.gz
+          /home/runner/work/release/release.tar.gz
