@@ -83,6 +83,13 @@ jobs:
       run: |
         echo "Installing NPM dependencies..."
         npm install
+        npm install -g grunt-cli
+        cd bootstrap
+        npm install
+        echo "Generating bootstrap files..."
+        grunt dist
+        cp -r dist/. ../ietf/static/ietf/bootstrap/
+        cd ..
         echo "Using version $PKG_VERSION_STRICT"
         sed -i -r -e "s/^__version__ += '.*'$/__version__ = '$PKG_VERSION_STRICT'/" ietf/__init__.py
         echo "Build release tarball... (this could take a while)"
