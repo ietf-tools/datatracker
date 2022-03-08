@@ -1,0 +1,116 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Create Production Release'
+        required: true
+        type: boolean
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        
+    - name: Get Next Version
+      if: ${{ github.event.inputs.publish }}
+      id: semver
+      uses: ietf-tools/semver-action@v1
+      with:
+        token: ${{ github.token }}
+        branch: main
+        
+    - name: Set Next Version Env Var
+      if: ${{ github.event.inputs.publish }}
+      env:
+        NEXT_VERSION: ${{ steps.semver.outputs.next }}
+      run: |
+        echo "NEXT_VERSION=$next" >> $GITHUB_ENV
+        
+    - name: Create Draft Release
+      uses: ncipollo/release-action@v1
+      if: ${{ github.event.inputs.publish }}
+      with:
+        prerelease: true
+        draft: false
+        commit: ${{ github.sha }}
+        tag: ${{ env.NEXT_VERSION }}
+        name: ${{ env.NEXT_VERSION }}
+        body: '*pending*'
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set Build Variables
+      run: |
+        if [[ $NEXT_VERSION ]]; then
+          echo "Using AUTO SEMVER mode: $NEXT_VERSION"
+          echo "SHOULD_DEPLOY=true" >> $GITHUB_ENV
+          echo "PKG_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
+          echo "PKG_VERSION_STRICT=${NEXT_VERSION#?}" >> $GITHUB_ENV
+        elif [[ "$GITHUB_REF" =~ ^refs/tags/v* ]]; then
+          echo "Using TAG mode: $GITHUB_REF_NAME"
+          echo "SHOULD_DEPLOY=true" >> $GITHUB_ENV
+          echo "PKG_VERSION=$GITHUB_REF_NAME" >> $GITHUB_ENV
+          echo "PKG_VERSION_STRICT=${GITHUB_REF_NAME#?}" >> $GITHUB_ENV
+        else
+          echo "Using TEST mode: v7.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "SHOULD_DEPLOY=false" >> $GITHUB_ENV
+          echo "PKG_VERSION=v3.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
+          echo "PKG_VERSION_STRICT=3.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
+        fi
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v3.0.0
+      with:
+        node-version: 16.x
+    
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+        
+    - name: Make Release Build
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        npm install
+        echo "Using version $PKG_VERSION_STRICT"
+        sed -i -r -e "s/^__version__ += '.*'$/__version__ = '$PKG_VERSION_STRICT'/" ietf/__init__.py
+        tar -czf release.tar.gz -X dev/deploy/exclude-patterns.txt .
+        
+    - name: Update CHANGELOG
+      id: changelog
+      uses: Requarks/changelog-action@v1
+      if: env.SHOULD_DEPLOY == 'true'
+      with:
+        token: ${{ github.token }}
+        tag: ${{ env.PKG_VERSION }}
+        writeToFile: false
+        
+    - name: Create Release
+      uses: ncipollo/release-action@v1
+      if: env.SHOULD_DEPLOY == 'true'
+      with:
+        allowUpdates: true
+        draft: false
+        tag: ${{ env.PKG_VERSION }}
+        name: ${{ env.PKG_VERSION }}
+        body: ${{ steps.changelog.outputs.changes }}
+        artifacts: "release.tar.gz"
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v2.3.1
+      if: env.SHOULD_DEPLOY == 'false'
+      with:
+        name: artifacts
+        path: |
+          release.tar.gz
