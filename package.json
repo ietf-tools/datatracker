@@ -27,8 +27,8 @@
     "jquery-migrate": "^3.3.2",
     "parcel": "^2.0.0",
     "browserlist": "latest",
-    "cypress": "^9.0.0",
-    "cypress-real-events": "^1.5.1"
+    "cypress": "9.0.0",
+    "cypress-real-events": "1.5.1"
   },
   "targets": {
     "ietf": {
