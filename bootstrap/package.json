@@ -85,6 +85,7 @@
     "js/*.js",
     "less/**/*.less",
     "Gruntfile.js",
+    "post-install.js",
     "LICENSE"
   ],
   "jspm": {
