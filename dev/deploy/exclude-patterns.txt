@@ -1,13 +1,16 @@
 .devcontainer
 .github
 .vscode
+.git
 bootstrap
 cypress
 dev
 docker
+hooks
 notes
 svn-history
 test
+.bowerrc
 .editorconfig
 .eslintrc.js
 .npmrc
