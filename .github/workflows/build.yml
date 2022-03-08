@@ -90,10 +90,9 @@ jobs:
         grunt dist
         cp -r dist/. ../ietf/static/ietf/bootstrap/
         cd ..
-        ls -a ietf/static/ietf
-        echo "Using version $PKG_VERSION_STRICT"
+        echo "Setting version $PKG_VERSION_STRICT..."
         sed -i -r -e "s/^__version__ += '.*'$/__version__ = '$PKG_VERSION_STRICT'/" ietf/__init__.py
-        echo "Build release tarball... (this could take a while)"
+        echo "Build release tarball..."
         mkdir -p /home/runner/work/release
         tar -czf /home/runner/work/release/release.tar.gz -X dev/deploy/exclude-patterns.txt .
         
@@ -122,6 +121,5 @@ jobs:
       uses: actions/upload-artifact@v2.3.1
       if: env.SHOULD_DEPLOY == 'false'
       with:
-        name: artifacts
-        path: |
-          /home/runner/work/release/release.tar.gz
+        name: release
+        path: /home/runner/work/release/release.tar.gz
