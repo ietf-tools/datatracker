@@ -16,3 +16,4 @@ cypress.json
 hold-for-merge
 ready-for-merge
 node_modules
+release.tar.gz
