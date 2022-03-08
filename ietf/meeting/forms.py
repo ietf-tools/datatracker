@@ -285,6 +285,10 @@ class InterimSessionModelForm(forms.ModelForm):
             choices.append(('meetecho', 'Automatically create Meetecho conference'))
         choices.append(('manual', 'Manually specify remote instructions...'))
         self.fields['remote_participation'].choices = choices
+        # put remote_participation ahead of remote_instructions
+        field_order = [field for field in self.fields if field != 'remote_participation']
+        field_order.insert(field_order.index('remote_instructions'), 'remote_participation')
+        self.order_fields(field_order)
 
     def clean_date(self):
         '''Date field validator.  We can't use required on the input because

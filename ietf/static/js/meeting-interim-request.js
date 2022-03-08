@@ -254,11 +254,11 @@ const interimRequest = (function() {
 
             switch (elt.value) {
             case 'meetecho':
-                remoteInstructions.closest('.form-group').hide();
+                remoteInstructions.closest('.row').hide();
                 break;
 
             default:
-                remoteInstructions.closest('.form-group').show();
+                remoteInstructions.closest('.row').show();
                 break;
             }
         }
