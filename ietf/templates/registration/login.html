@@ -9,11 +9,11 @@
     <form method="post">
         {% csrf_token %}
         {% bootstrap_form form %}
-        {% bootstrap_button button_type="submit" content="Sign in" %}
-        <a class="btn btn-secondary"
-           href="{% url 'ietf.ietfauth.views.password_reset' %}">Forgot your password?</a>
-        <br>
-        Don't have an account?
-        <a href="{% url 'ietf.ietfauth.views.create_account' %}">Create an account</a>.
+        <div class="mt-4 mb-3">
+            {% bootstrap_button "Sign in" button_type="submit" %}
+            {% url 'ietf.ietfauth.views.password_reset' as reset_url %}
+            {% bootstrap_button "Forgot your password?" button_type="link" button_class="btn-secondary" href=reset_url %}
+        </div>
+        Don't have an account? <a href="{% url 'ietf.ietfauth.views.create_account' %}">Create an account</a>.
     </form>
 {% endblock %}
