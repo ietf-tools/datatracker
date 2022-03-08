@@ -86,7 +86,7 @@ jobs:
         echo "Using version $PKG_VERSION_STRICT"
         sed -i -r -e "s/^__version__ += '.*'$/__version__ = '$PKG_VERSION_STRICT'/" ietf/__init__.py
         echo "Build release tarball... (this could take a while)"
-        mkdip -p /home/runner/work/release
+        mkdir -p /home/runner/work/release
         tar -czf /home/runner/work/release/release.tar.gz -X dev/deploy/exclude-patterns.txt .
         
     - name: Update CHANGELOG
