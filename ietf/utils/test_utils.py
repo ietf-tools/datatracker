@@ -48,8 +48,10 @@ from bs4 import BeautifulSoup
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from tidylib import tidy_document
 
 import django.test
+from django.test.client import Client
 from django.conf import settings
 from django.utils.text import slugify
 
@@ -153,6 +155,62 @@ class ReverseLazyTest(django.test.TestCase):
         self.assertRedirects(response, "/ipr/", status_code=301)
 
 
+class VerifyingClient(Client):
+    def __init__(self, test):
+        super(VerifyingClient, self).__init__()
+        self.test = test
+
+    def get(self, path, *args, skip_verify=False, **extra):
+        """GET request
+
+        Performs verification of HTML responses unless skip_verify is True.
+        """
+        r = super(VerifyingClient, self).get(path, *args, **extra)
+        # print(path, r.status_code, r["content-type"].lower())
+        if r.status_code < 300 and r["content-type"].lower().startswith(
+            "text/html"
+        ) and not skip_verify:
+            document, errors = tidy_document(
+                r.content,
+                options={
+                    # this is causing way too many generic warnings:
+                    # "accessibility-check": 1,
+                },
+            )
+
+            errors = "\n".join(
+                [
+                    e
+                    for e in errors.splitlines()
+                    # FIXME: django-bootstrap5 incorrectly sets a "required"
+                    # proprietary attribute on some <div>s; remove those errors
+                    if not re.match(r'.*proprietary attribute "required"', e)
+                    # FIXME: some secretariat templates have this issue, ignore
+                    and not re.match(
+                        r".*id and name attribute value mismatch", e
+                    )
+                    # FIXME: bootstrap-icons and close buttons render as empty, remove those errors.
+                    # Also, django seems to generate some empty tags, so remove those, too.
+                    and not re.match(
+                        r".*trimming empty <(i|em|button|span|optgroup)>", e)
+                    # FIXME: some old pages only work correctly in quirks mode :-(
+                    and not re.match(
+                        r".*missing <!DOCTYPE> declaration", e)
+                ]
+            )
+
+            if errors:
+                n = 1
+                print("\n")
+                for line in r.content.decode().splitlines():
+                    print(f"{n: 6}: {line}")
+                    n += 1
+                print(path)
+            self.test.maxDiff = None
+            self.test.assertEqual("", errors)
+        return r
+
+
 class TestCase(django.test.TestCase):
     """IETF TestCase class
 
@@ -216,7 +274,7 @@ class TestCase(django.test.TestCase):
             os.mkdir(path)
         return path
 
-    def assertNoFormPostErrors(self, response, error_css_selector=".has-error"):
+    def assertNoFormPostErrors(self, response, error_css_selector=".is-invalid"):
         """Try to fish out form errors, if none found at least check the
         status code to be a redirect.
 
@@ -268,10 +326,11 @@ class TestCase(django.test.TestCase):
 
     def setUp(self):
         super().setUp()
-
         # Prevent the requests library from making live requests during tests
         self.requests_mock = requests_mock.Mocker()
         self.requests_mock.start()
+
+        self.client = VerifyingClient(self)  # Set up the HTML verifier
 
         # Replace settings paths with temporary directories.
         self._ietf_temp_dirs = {}  # trashed during tearDown, DO NOT put paths you care about in this

@@ -4,117 +4,180 @@
 {% load textfilters %}
 {% load ietf_filters %}
 {% origin %}
-
 {% if item and item|should_show_agenda_session_buttons %}
-{% with slug=item.slug %}{% with session=item.session %}{% with timeslot=item.timeslot %}{% with meeting=schedule.meeting %}
-<div id="session-buttons-{{session.pk}}" class="text-nowrap">
-  {% with acronym=session.historic_group.acronym %}
-  {% if session.agenda and show_agenda %}
-    {# Note: if called with show_agenda=True, calling template must load agenda_materials.js, needed by session_agenda_include.html #}
-    {% include "meeting/session_agenda_include.html" with slug=slug session=session timeslot=timeslot only %}
-    <!-- agenda pop-up button -->
-    <a class="" data-toggle="modal" data-target="#modal-{{slug}}" title="Show meeting materials"><span class="fa fa-fw fa-arrows-alt"></span></a>
-    <!-- materials tar file -->
-    <a class="" href="/meeting/{{meeting.number}}/agenda/{{acronym}}-drafts.tgz" title="Download meeting materials as .tar archive"><span class="fa fa-fw fa-file-archive-o"></span></a>
-    <!-- materials PDF file -->
-    <a class="" href="/meeting/{{ meeting.number }}/agenda/{{acronym}}-drafts.pdf" title="Download meeting materials as PDF file"><span class="fa fa-fw fa-file-pdf-o"></span></a>
-  {% endif %}
-
-  <!-- HedgeDoc -->
-  {% if use_codimd %}
-    <a class="" href="{{ session.notes_url }}" title="Notepad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
-  {% endif %}
-
-  {# show stream buttons up till end of session, then show archive buttons #}
-  {% if now < timeslot.utc_end_time %}
-    <!-- Jabber -->
-    <a class=""
-      href="xmpp:{{session.jabber_room_name}}@jabber.ietf.org?join"
-      title="Chat room for {{session.jabber_room_name}}"><span class="fa fa-fw fa-comment-o"></span></a>
-    <!-- Video stream (meetecho) -->
-    {% if timeslot.location.video_stream_url %}
-      <a class=""
-        href="{{timeslot.location.video_stream_url|format:session }}"
-        title="Video stream"><span class="fa fa-fw fa-video-camera"></span>
-      </a>
-    {% endif %}
-    <!-- Onsite tool (meetecho_onsite) -->
-    {% if timeslot.location.onsite_tool_url %}
-      <a class=""
-        href="{{timeslot.location.onsite_tool_url|format:session }}"
+    {% with slug=item.slug %}
+        {% with session=item.session %}
+            {% with timeslot=item.timeslot %}
+                {% with meeting=schedule.meeting %}
+                    {% if session.agenda and show_agenda %}
+                        {# Note: if called with show_agenda=True, calling template must load agenda_materials.js, needed by session_agenda_include.html #}
+                        {% include "meeting/session_agenda_include.html" with slug=slug session=session timeslot=timeslot only %}
+                    {% endif %}
+                    <div id="session-buttons-{{ session.pk }}"
+                         role="group"
+                         class="btn-group btn-group-sm">
+                        {% with acronym=session.historic_group.acronym %}
+                            {% if session.agenda and show_agenda %}
+                                {# agenda pop-up button #}
+                                <button class="btn btn-outline-primary"
+                                        role="button"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modal-{{ slug }}"
+                                        title="Show meeting materials">
+                                    <i class="bi bi-arrows-fullscreen"></i>
+                                </button>
+                                {# materials tar file #}
+                                <a class="btn btn-outline-primary"
+                                   role="button"
+                                   href="/meeting/{{ meeting.number }}/agenda/{{ acronym }}-drafts.tgz"
+                                   title="Download meeting materials as .tar archive">
+                                    <i class="bi bi-file-zip"></i>
+                                </a>
+                                {# materials PDF file #}
+                                <a class="btn btn-outline-primary"
+                                   role="button"
+                                   href="/meeting/{{ meeting.number }}/agenda/{{ acronym }}-drafts.pdf"
+                                   title="Download meeting materials as PDF file">
+                                    <i class="bi bi-file-pdf"></i>
+                                </a>
+                            {% endif %}
+                            {# HedgeDoc #}
+                            {% if use_codimd %}
+                                <a class="btn btn-outline-primary"
+                                   role="button"
+                                   href="{{ session.notes_url }}"
+                                   title="Notepad for note-takers">
+                                    <i class="bi bi-journal-text"></i>
+                                </a>
+                            {% endif %}
+                            {# show stream buttons up till end of session, then show archive buttons #}
+                            {% if now < timeslot.utc_end_time %}
+                                {# Jabber #}
+                                <a class="btn btn-outline-primary"
+                                   role="button"
+                                   href="xmpp:{{ session.jabber_room_name }}@jabber.ietf.org?join"
+                                   title="Chat room for {{ session.jabber_room_name }}">
+                                    <i class="bi bi-lightbulb"></i>
+                                </a>
+                                {# Video stream (meetecho) #}
+                                {% if timeslot.location.video_stream_url %}
+                                    <a class="btn btn-outline-primary"
+                                       role="button"
+                                       href="{{ timeslot.location.video_stream_url|format:session }}"
+                                       title="Video stream">
+                                        <i class="bi bi-camera-video"></i>
+                                    </a>
+                                {% endif %}
+                                {# Onsite tool (meetecho_onsite) #}
+                                {% if timeslot.location.onsite_tool_url %}
+                                    <a class=""
+                                       href="{{timeslot.location.onsite_tool_url|format:session }}"
         title="Onsite tool"><span class="fa fa-fw fa-lg fa-mobile"></span>
-      </a>
-    {% endif %}
-    <!-- Audio stream -->
-    {% if timeslot.location.audio_stream_url %}
-      <a class=""
-        href="{{timeslot.location.audio_stream_url|format:session }}"
-        title="Audio stream"><span class="glyphicon glyphicon-headphones"></span>
-      </a>
-    {% endif %}
-    <!-- Remote call-in -->
-    {% if session.agenda_note|first_url|conference_url %}
-      <a class=""
-        href="{{ session.agenda_note|first_url }}"
-        title="Online conference"><span class="fa fa-fw fd-group"></span>
-      </a>
-    {% elif session.remote_instructions|first_url|conference_url %}
-      <a class=""
-        href="{{ session.remote_instructions|first_url }}"
-        title="Online conference"><span class="fa fa-fw fd-group"></span>
-      </a>
-    {% elif timeslot.location.webex_url %}
-        <a class=""
-          href="{{timeslot.location.webex_url|format:session }}"
-          title="Webex session"><span class="fa fa-fw fd-group"></span>
-        </a>
-    {% endif %}
-    <!-- iCalendar item -->
-    <a
-      href="{% url 'ietf.meeting.views.agenda_ical' num=meeting.number session_id=session.id %}"
-      title="icalendar entry for {{acronym}} session on {{timeslot.utc_start_time|date:'Y-m-d H:i'}} UTC">
-        <span class="fa fa-fw fa-calendar-o"></span>
-    </a>
-  {% else %}
-    <!-- Jabber logs -->
-    {% if meeting.number|add:"0" >= 60 %}
-      <a class="" href="https://www.ietf.org/jabber/logs/{{session.jabber_room_name}}?C=M;O=D" title="Chat logs for {{session.jabber_room_name}}">
-        <span class="fa-stack-1"><i class="fa fa-fw fa-file-o fa-stack-1x"></i><i class="fa fa-fw fa-comment-o fa-stack-sm"></i></span>
-      </a>
-    {% endif %}
-    <!-- Recordings -->
-    {% if meeting.number|add:"0" >= 80 %}
-      {% with session.recordings as recordings %}
-        {% if recordings %}
-          {# There's no guaranteed order, so this is a bit messy: #}
-          <!-- First, the audio recordings, if any -->
-          {% for r in recordings %}
-            {% if r.get_href and 'audio' in r.get_href %}
-              <a class="" href="{{ r.get_href }}" title="{{ r.title}}"><span class="fa fa-fw fa-file-audio-o"></span></a>
-            {% endif %}
-          {% endfor %}
-          <!-- Then the youtube recordings -->
-          {% for r in recordings %}
-            {% if r.get_href and 'youtu' in r.get_href %}
-              <a class="" href="{{ r.get_href }}" title="{{ r.title }}"><span class="fa fa-fw fa-file-video-o"></span></a>
-            {% endif %}
-          {% endfor %}
-          <!-- Finally, any other recordings -->
-          {% for r in recordings %}
-            {% if r.get_href and not 'audio' in r.get_href and not 'youtu' in r.get_href %}
-              <a class="" href="{{ r.get_href }}" title="{{ r.title }}"><span class="fa fa-fw fa-file-o"></span></a>
-            {% endif %}
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
-      {% if timeslot.location.video_stream_url %}
-        <a class=""
-          href="http://www.meetecho.com/ietf{{meeting.number}}/recordings#{{acronym.upper}}"
-         title="Session recording"><span class="fd fa-fw fd-meetecho"></span></a>
-      {% endif %}
-    {% endif %}
-  {% endif %}
-  {% endwith %}
-</div>
-{% endwith %}{% endwith %}{% endwith %}{% endwith %}
+                                    </a>
+                                {% endif %}
+                                {# Audio stream #}
+                                {% if timeslot.location.audio_stream_url %}
+                                    <a class="btn btn-outline-primary"
+                                       role="button"
+                                       href="{{ timeslot.location.audio_stream_url|format:session }}"
+                                       title="Audio stream">
+                                        <i class="bi bi-headphones"></i>
+                                    </a>
+                                {% endif %}
+                                {# Remote call-in #}
+                                {% if session.agenda_note|first_url|conference_url %}
+                                    <a class="btn btn-outline-primary"
+                                       role="button"
+                                       href="{{ session.agenda_note|first_url }}"
+                                       title="Online conference">
+                                        <i class="bi bi-people"></i>
+                                    </a>
+                                {% elif session.remote_instructions|first_url|conference_url %}
+                                    <a class="btn btn-outline-primary"
+                                       role="button"
+                                       href="{{ session.remote_instructions|first_url }}"
+                                       title="Online conference">
+                                        <i class="bi bi-people"></i>
+                                    </a>
+                                {% elif timeslot.location.webex_url %}
+                                    <a class="btn btn-outline-primary"
+                                       role="button"
+                                       href="{{ timeslot.location.webex_url|format:session }}"
+                                       title="Webex session">
+                                        <i class="bi bi-people"></i>
+                                    </a>
+                                {% endif %}
+                                {# iCalendar item #}
+                                <a class="btn btn-outline-primary"
+                                   role="button"
+                                   href="{% url 'ietf.meeting.views.agenda_ical' num=meeting.number session_id=session.id %}"
+                                   title="icalendar entry for {{ acronym }} session on {{ timeslot.utc_start_time|date:'Y-m-d H:i' }} UTC">
+                                    <i class="bi bi-calendar"></i>
+                                </a>
+                            {% else %}
+                                {# Jabber logs #}
+                                {% if meeting.number|add:"0" >= 60 %}
+                                    <a class="btn btn-outline-primary"
+                                       role="button"
+                                       href="https://www.ietf.org/jabber/logs/{{ session.jabber_room_name }}?C=M;O=D"
+                                       title="Chat logs for {{ session.jabber_room_name }}">
+                                        <i class="bi bi-file-text"></i>
+                                    </a>
+                                {% endif %}
+                                {# Recordings #}
+                                {% if meeting.number|add:"0" >= 80 %}
+                                    {% with session.recordings as recordings %}
+                                        {% if recordings %}
+                                            {# There's no guaranteed order, so this is a bit messy: #}
+                                            {# First, the audio recordings, if any #}
+                                            {% for r in recordings %}
+                                                {% if r.get_href and 'audio' in r.get_href %}
+                                                    <a class="btn btn-outline-primary"
+                                                       role="button"
+                                                       href="{{ r.get_href }}"
+                                                       title="{{ r.title }}">
+                                                        <i class="bi bi-file-play"></i>
+                                                    </a>
+                                                {% endif %}
+                                            {% endfor %}
+                                            {# Then the youtube recordings #}
+                                            {% for r in recordings %}
+                                                {% if r.get_href and 'youtu' in r.get_href %}
+                                                    <a class="btn btn-outline-primary"
+                                                       role="button"
+                                                       href="{{ r.get_href }}"
+                                                       title="{{ r.title }}">
+                                                        <i class="bi bi-file-slides"></i>
+                                                    </a>
+                                                {% endif %}
+                                            {% endfor %}
+                                            {# Finally, any other recordings #}
+                                            {% for r in recordings %}
+                                                {% if r.get_href and not 'audio' in r.get_href and not 'youtu' in r.get_href %}
+                                                    <a class="btn btn-outline-primary"
+                                                       role="button"
+                                                       href="{{ r.get_href }}"
+                                                       title="{{ r.title }}">
+                                                        <i class="bi bi-file-play"></i>
+                                                    </a>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    {% endwith %}
+                                    {% if timeslot.location.video_stream_url %}
+                                        <a class="btn btn-outline-primary"
+                                           role="button"
+                                           href="http://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ acronym.upper }}"
+                                           title="Session recording">
+                                            <i class="bi bi-file-slides"></i>
+                                        </a>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                {% endwith %}
+            {% endwith %}
+        {% endwith %}
+    {% endwith %}
 {% endif %}

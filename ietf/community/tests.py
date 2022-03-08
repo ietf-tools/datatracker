@@ -101,6 +101,7 @@ class CommunityListTests(WebTest):
         self.assertContains(r, draft.name)
 
     def test_manage_personal_list(self):
+
         PersonFactory(user__username='plain')
         ad = Person.objects.get(user__username='ad')
         draft = WgDraftFactory(authors=[ad])
@@ -114,11 +115,11 @@ class CommunityListTests(WebTest):
         # add document
         self.assertIn('add_document', page.forms)
         form = page.forms['add_document']
-        form['documents']=draft.pk
+        form['documents'].options=[(draft.pk, True, draft.name)]
         page = form.submit('action',value='add_documents')
         self.assertEqual(page.status_int, 302)
         clist = CommunityList.objects.get(user__username="plain")
-        self.assertTrue(clist.added_docs.filter(pk=draft.pk))        
+        self.assertTrue(clist.added_docs.filter(pk=draft.pk))
         page = page.follow()
 
         self.assertContains(page, draft.name)

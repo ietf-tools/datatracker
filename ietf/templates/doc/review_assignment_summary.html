@@ -1,12 +1,27 @@
 <div class="review-assignment-summary">
-  {% if review_assignment.state_id == "completed" or review_assignment.state_id == "part-completed" %}
-    <a href="{% if review_assignment.review %}{% url "ietf.doc.views_doc.document_main" review_assignment.review.name %}{% else %}{% url "ietf.doc.views_review.review_request" review_assignment.review_request.doc.name review_assignment.review_request.pk %}{% endif %}">
-      {{ review_assignment.review_request.team.acronym|upper }} {{ review_assignment.review_request.type.name }} Review{% if review_assignment.reviewed_rev and review_assignment.reviewed_rev != current_rev or review_assignment.review_request.doc.name != current_doc_name %} (of {% if review_assignment.review_request.doc.name != current_doc_name %}{{ review_assignment.review_request.doc.name }}{% endif %}-{{ review_assignment.reviewed_rev }}){% endif %}{% if review_assignment.result %}:
-      {{ review_assignment.result.name }}{% endif %} {% if review_assignment.state_id == "part-completed" %}(partially completed){% endif %}
-    </a>
-  {% else %}
-    <i>
-    <a href="{% url "ietf.doc.views_review.review_request" review_assignment.review_request.doc.name review_assignment.review_request.pk %}">{{ review_assignment.review_request.team.acronym|upper }} {{ review_assignment.review_request.type.name }} Review
-      - due: {{ review_assignment.review_request.deadline|date:"Y-m-d" }}</a></i>
-  {% endif %}
+    {% if review_assignment.state_id == "completed" or review_assignment.state_id == "part-completed" %}
+        <a href="{% if review_assignment.review %}{% url 'ietf.doc.views_doc.document_main' review_assignment.review.name %}{% else %}{% url 'ietf.doc.views_review.review_request' review_assignment.review_request.doc.name review_assignment.review_request.pk %}{% endif %}">
+            {{ review_assignment.review_request.team.acronym|upper }} {{ review_assignment.review_request.type.name }} review
+            {% if review_assignment.reviewed_rev and review_assignment.reviewed_rev != current_rev or review_assignment.review_request.doc.name != current_doc_name %}
+                (of
+                {% if review_assignment.review_request.doc.name != current_doc_name %}
+                    {{ review_assignment.review_request.doc.name }}
+                {% endif %}
+                -{{ review_assignment.reviewed_rev }}){% endif %}</a>
+        {% if review_assignment.state_id == "part-completed" %}
+            <span class="ms-1 badge bg-secondary">Partially completed</span>
+        {% endif %}
+        {% if review_assignment.result %}
+            <span class="ms-1 badge {% if review_assignment.result.name|slice:5|slugify == 'ready' %}bg-success{% else %}bg-info{% endif %}">
+                {{ review_assignment.result.name }}
+            </span>
+        {% endif %}
+    {% else %}
+        <a class="text-muted"
+           href="{% url 'ietf.doc.views_review.review_request' review_assignment.review_request.doc.name review_assignment.review_request.pk %}">
+            {{ review_assignment.review_request.team.acronym|upper }} {{ review_assignment.review_request.type.name }} Review</a>
+        <span class="ms-1 badge bg-secondary">
+            Incomplete, due {{ review_assignment.review_request.deadline|date:"Y-m-d" }}
+        </span>
+    {% endif %}
 </div>

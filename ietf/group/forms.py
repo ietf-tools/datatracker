@@ -287,10 +287,10 @@ class ManageReviewRequestForm(forms.Form):
 
     action = forms.ChoiceField(choices=ACTIONS, widget=forms.HiddenInput, required=False)
     close = forms.ModelChoiceField(queryset=close_review_request_states(), required=False)
-    close_comment = forms.CharField(max_length=255, required=False)
-    reviewer = PersonEmailChoiceField(empty_label="(None)", required=False, label_with="person")
-    review_type = forms.ModelChoiceField(queryset=ReviewTypeName.objects.filter(slug__in=['telechat', 'lc']), required=True)
-    add_skip = forms.BooleanField(required=False)
+    close_comment = forms.CharField(max_length=255, required=False, label="Closing comment")
+    reviewer = PersonEmailChoiceField(empty_label="(None)", required=False, label_with="person", label="Assign reviewer")
+    review_type = forms.ModelChoiceField(queryset=ReviewTypeName.objects.filter(slug__in=['telechat', 'lc']), required=True, label="Review type")
+    add_skip = forms.BooleanField(required=False, label="Skip next time")
 
     def __init__(self, review_req, *args, **kwargs):
         if not "prefix" in kwargs:
@@ -313,10 +313,7 @@ class ManageReviewRequestForm(forms.Form):
         if close_initial:
             self.fields["close"].initial = close_initial
 
-        self.fields["close"].widget.attrs["class"] = "form-control input-sm"
-
         get_reviewer_queue_policy(review_req.team).setup_reviewer_field(self.fields["reviewer"], review_req)
-        self.fields["reviewer"].widget.attrs["class"] = "form-control input-sm"
 
         if not getattr(review_req, 'in_lc_and_telechat', False):
             del self.fields["review_type"]
@@ -395,5 +392,3 @@ class ReviewSecretarySettingsForm(forms.ModelForm):
         model = ReviewSecretarySettings
         fields = ['remind_days_before_deadline', 'max_items_to_show_in_reviewer_list',
                   'days_to_show_in_reviewer_list']
-
-

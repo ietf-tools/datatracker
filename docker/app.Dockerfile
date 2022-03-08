@@ -48,6 +48,7 @@ RUN apt-get install -qy \
     libxtst6 \
 	libmagic-dev \
 	libmariadb-dev \
+	libtidy-dev \
 	locales \
 	mariadb-client \
     netcat \
@@ -97,9 +98,6 @@ RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \
     locale-gen en_US.UTF-8 && \
     update-locale LC_ALL en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
-
-# Install bower
-RUN npm install -g bower
 
 # Install idnits
 ADD https://raw.githubusercontent.com/ietf-tools/idnits-mirror/main/idnits /usr/local/bin/

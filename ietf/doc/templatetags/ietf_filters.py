@@ -46,45 +46,6 @@ def unindent(value):
     """Remove indentation from string."""
     return re.sub("\n +", "\n", value)
 
-@register.filter(name='parse_email_list')
-def parse_email_list(value):
-    """
-    Parse a list of comma-seperated email addresses into
-    a list of mailto: links.
-
-    Splitting a string of email addresses should return a list:
-
-    >>> force_str(parse_email_list('joe@example.org, fred@example.com'))
-    '<a href="mailto:joe@example.org">joe@example.org</a>, <a href="mailto:fred@example.com">fred@example.com</a>'
-
-    Parsing a non-string should return the input value, rather than fail:
-
-    >>> [ force_str(e) for e in parse_email_list(['joe@example.org', 'fred@example.com']) ]
-    ['joe@example.org', 'fred@example.com']
-
-    Null input values should pass through silently:
-
-    >>> force_str(parse_email_list(''))
-    ''
-
-    >>> parse_email_list(None)
-
-
-    """
-    if value and isinstance(value, str): # testing for 'value' being true isn't necessary; it's a fast-out route
-        addrs = re.split(", ?", value)
-        ret = []
-        for addr in addrs:
-            (name, email) = parseaddr(addr)
-            if not(name):
-                name = email
-            ret.append('<a href="mailto:%s">%s</a>' % ( email.replace('&', '&amp;'), escape(name) ))
-        return mark_safe(", ".join(ret))
-    elif value and isinstance(value, bytes):
-        log.assertion('isinstance(value, str)')        
-    else:
-        return value
-
 @register.filter
 def strip_email(value):
     """Get rid of email part of name/email string like 'Some Name <email@example.com>'."""
@@ -231,13 +192,14 @@ def urlize_ietf_docs(string, autoescape=None):
     """
     if autoescape and not isinstance(string, SafeData):
         string = escape(string)
-    string = re.sub(r"(?<!>)(RFC ?)0{0,3}(\d+)", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string)
-    string = re.sub(r"(?<!>)(BCP ?)0{0,3}(\d+)", "<a href=\"/doc/bcp\\2/\">\\1\\2</a>", string)
-    string = re.sub(r"(?<!>)(STD ?)0{0,3}(\d+)", "<a href=\"/doc/std\\2/\">\\1\\2</a>", string)
-    string = re.sub(r"(?<!>)(FYI ?)0{0,3}(\d+)", "<a href=\"/doc/fyi\\2/\">\\1\\2</a>", string)
-    string = re.sub(r"(?<!>)(draft-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
-    string = re.sub(r"(?<!>)(conflict-review-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
-    string = re.sub(r"(?<!>)(status-change-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
+    string = re.sub(r"(RFC\s*?)0{0,3}(\d+)", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(BCP\s*?)0{0,3}(\d+)", "<a href=\"/doc/bcp\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(STD\s*?)0{0,3}(\d+)", "<a href=\"/doc/std\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(FYI\s*?)0{0,3}(\d+)", "<a href=\"/doc/fyi\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(draft-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(conflict-review-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(status-change-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(charter-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
     return mark_safe(string)
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
@@ -245,9 +207,15 @@ urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 def urlize_related_source_list(related, autoescape=None):
     """Convert a list of DocumentRelations into list of links using the source document's canonical name"""
     links = []
+    names = set()
+    titles = set()
     for rel in related:
         name=rel.source.canonical_name()
         title = rel.source.title
+        if name in names and title in titles:
+            continue
+        names.add(name)
+        titles.add(title)
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=name))
         if autoescape:
             name = escape(name)
@@ -431,30 +399,26 @@ def ad_area(user):
 def format_history_text(text, trunc_words=25):
     """Run history text through some cleaning and add ellipsis if it's too long."""
     full = mark_safe(text)
-
-    if text.startswith("This was part of a ballot set with:"):
+    if "</a>" not in full:
         full = urlize_ietf_docs(full)
+    full = bleach.linkify(full, parse_email=True)
 
     return format_snippet(full, trunc_words)
 
 @register.filter
 def format_snippet(text, trunc_words=25): 
     # urlize if there aren't already links present
-    if not 'href=' in text:
-        # django's urlize() cannot handle adjacent parentheszised
-        # expressions, for instance [REF](http://example.com/foo)
-        # Use bleach.linkify instead
-        text = bleach.linkify(text)
+    text = bleach.linkify(text, parse_email=True)
     full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_fragment(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
-        return mark_safe('<div class="snippet">%s<button class="btn btn-xs btn-default show-all"><span class="fa fa-caret-down"></span></button></div><div class="hidden full">%s</div>' % (snippet, full))
-    return full
+        return mark_safe('<div class="snippet">%s<button class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="visually-hidden full">%s</div>' % (snippet, full))
+    return mark_safe(full)
 
 @register.simple_tag
 def doc_edit_button(url_name, *args, **kwargs):
     """Given URL name/args/kwargs, looks up the URL just like "url" tag and returns a properly formatted button for the document material tables."""
-    return mark_safe('<a class="btn btn-default btn-xs" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
+    return mark_safe('<a class="btn btn-primary btn-sm" role="button" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
 
 @register.filter
 def textify(text):
@@ -515,18 +479,32 @@ def consensus(doc):
         return "Unknown"
 
 @register.filter
-def pos_to_label(text):
-    """Return a valid Bootstrap3 label type for a ballot position."""
+def pos_to_label_format(text):
+    """Returns valid Bootstrap classes to label a ballot position."""
     return {
-        'Yes':          'success',
-        'No Objection': 'pass',
-        'Abstain':      'warning',
-        'Discuss':      'danger',
-        'Block':        'danger',
-        'Recuse':       'primary',
-        'Not Ready':    'danger',
-        'Need More Time': 'danger',
-    }.get(str(text), 'blank')
+        'Yes':          'bg-yes text-light',
+        'No Objection': 'bg-noobj text-dark',
+        'Abstain':      'bg-abstain text-light',
+        'Discuss':      'bg-discuss text-light',
+        'Block':        'bg-discuss text-light',
+        'Recuse':       'bg-recuse text-light',
+        'Not Ready':    'bg-discuss text-light',
+        'Need More Time': 'bg-discuss text-light',
+    }.get(str(text), 'bg-norecord text-dark')
+
+@register.filter
+def pos_to_border_format(text):
+    """Returns valid Bootstrap classes to label a ballot position border."""
+    return {
+        'Yes':          'border-yes',
+        'No Objection': 'border-noobj',
+        'Abstain':      'border-abstain',
+        'Discuss':      'border-discuss',
+        'Block':        'border-discuss',
+        'Recuse':       'border-recuse',
+        'Not Ready':    'border-discuss',
+        'Need More Time': 'border-discuss',
+    }.get(str(text), 'border-norecord')
 
 @register.filter
 def capfirst_allcaps(text):
@@ -636,17 +614,17 @@ def action_holder_badge(action_holder):
     ''
 
     >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=16)))
-    '<span class="label label-danger" title="Goal is &lt;15 days">for 16 days</span>'
+    '<span class="badge bg-danger" title="Goal is &lt;15 days">for 16 days</span>'
 
     >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=30)))
-    '<span class="label label-danger" title="Goal is &lt;15 days">for 30 days</span>'
+    '<span class="badge bg-danger" title="Goal is &lt;15 days">for 30 days</span>'
 
     >>> settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS = old_limit
     """
     age_limit = settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS
     age = (datetime.datetime.now() - action_holder.time_added).days
     if age > age_limit:
-        return mark_safe('<span class="label label-danger" title="Goal is &lt;%d days">for %d day%s</span>' % (
+        return mark_safe('<span class="badge bg-danger" title="Goal is &lt;%d days">for %d day%s</span>' % (
             age_limit,
             age,
             's' if age != 1 else ''))

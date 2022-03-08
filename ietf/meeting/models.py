@@ -527,7 +527,7 @@ class FloorPlan(models.Model):
 class TimeSlot(models.Model):
     """
     Everything that would appear on the meeting agenda of a meeting is
-    mapped to a time slot, including breaks. Sessions are connected to
+    mapped to a timeslot, including breaks. Sessions are connected to
     TimeSlots during scheduling.
     """
     meeting = ForeignKey(Meeting)

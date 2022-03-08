@@ -1,14 +1,15 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
 {% block content %}
-  {% origin %}
-  <h1>Missing person info</h1>
-
-  <p>
-    There is no person record associated with your login.  Please
-    contact the secretariat at <a href="mailto:{{settings.SECRETARIAT_INFO_EMAIL}}">{{settings.SECRETARIAT_INFO_EMAIL}}</a>
-    and explain the situation.
-  </p>
+    {% origin %}
+    <h1>Missing person record</h1>
+    <p class="alert alert-danger my-3">
+        There is no person record associated with your login.  Please
+        contact the secretariat at
+        <a href="mailto:{{ settings.SECRETARIAT_INFO_EMAIL }}">{{ settings.SECRETARIAT_INFO_EMAIL }}</a>
+        and explain the situation.
+    </p>
+    <a class="btn btn-primary"
+       href="mailto:{{ settings.SECRETARIAT_INFO_EMAIL }}">Contact the secretariat</a>
 {% endblock %}

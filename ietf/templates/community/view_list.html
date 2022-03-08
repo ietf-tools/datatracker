@@ -1,23 +1,25 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load bootstrap3 %}
-
+{% load static django_bootstrap5 %}
 {% block title %}{{ clist.long_name }}{% endblock %}
-
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
 {% block content %}
-  {% origin %}
-  <h1>{{ clist.long_name }}</h1>
-
-  {% bootstrap_messages %}
-
-  {% if can_manage_list %}
-    <a class="btn btn-primary" href="{% url "ietf.community.views.manage_list" username=clist.user.username %}">
-      <i class="glyphicon glyphicon-cog"></i>
-      Manage list
-    </a>
-  {% endif %}
-
-  {% include "doc/search/search_results.html" with skip_no_matches_warning=True %}
-  {% include "community/list_menu.html" %}
+    {% origin %}
+    <h1>{{ clist.long_name }}</h1>
+    {% bootstrap_messages %}
+    {% if can_manage_list %}
+        <a class="btn btn-primary my-3"
+           href="{% url "ietf.community.views.manage_list" username=clist.user.username %}">
+            <i class="bi bi-gear"></i>
+            Manage list
+        </a>
+    {% endif %}
+    {% include "doc/search/search_results.html" with skip_no_matches_warning=True start_table=True end_table=True %}
+    {% include "community/list_menu.html" %}
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

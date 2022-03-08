@@ -13,7 +13,6 @@ import warnings
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
 warnings.simplefilter("always", DeprecationWarning)
-warnings.filterwarnings("ignore", message="Add the `renderer` argument to the render\(\) method of", module="bootstrap3")
 warnings.filterwarnings("ignore", message="The logout\(\) view is superseded by")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
 warnings.filterwarnings("ignore", message="{% load staticfiles %} is deprecated")
@@ -163,16 +162,11 @@ else:
     STATIC_URL = "https://www.ietf.org/lib/dt/%s/"%__version__
     STATIC_ROOT = "/a/www/www6s/lib/dt/%s/"%__version__
 
-# Destination for components handled by djangobower
-COMPONENT_ROOT = BASE_DIR + "/externals/static/"
-COMPONENT_URL  = STATIC_URL
-
 # List of finder classes that know how to find static files in
 # various locations.
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'ietf.utils.bower_storage.BowerStorageFinder',
 )
 
 WSGI_APPLICATION = "ietf.wsgi.application"
@@ -418,9 +412,8 @@ ROOT_URLCONF = 'ietf.urls'
 
 # Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static'),
-    os.path.join(BASE_DIR, 'secr/static'),
-    os.path.join(BASE_DIR, 'externals/static'),
+    os.path.join(BASE_DIR, 'static/dist'),
+    os.path.join(BASE_DIR, 'secr/static/dist'),
 )
 
 INSTALLED_APPS = [
@@ -436,11 +429,10 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.staticfiles',
     # External apps 
-    'bootstrap3',
+    'django_bootstrap5',
     'corsheaders',
     'django_markup',
     'django_password_strength',
-    'djangobwr',
     'form_utils',
     'oidc_provider',
     'simple_history',
@@ -489,32 +481,28 @@ try:
 except ImportError:
     pass
 
-# Settings for django-bootstrap3
-# See http://django-bootstrap3.readthedocs.org/en/latest/settings.html
-BOOTSTRAP3 = {
+# Settings for django-bootstrap5
+# See https://django-bootstrap5.readthedocs.io/en/latest/settings.html
+BOOTSTRAP5 = {
     # Label class to use in horizontal forms
-    'horizontal_label_class': 'col-md-2',
+    'horizontal_label_class': 'col-md-2 fw-bold',
 
     # Field class to use in horiozntal forms
     'horizontal_field_class': 'col-md-10',
 
-    # Set HTML required attribute on required fields
-    'set_required': True,
+    # Field class used for horizontal fields withut a label.
+    'horizontal_field_offset_class': 'offset-md-2',
 
     # Set placeholder attributes to label if no placeholder is provided
     'set_placeholder': False,
 
-    # Class to indicate required
-    'form_required_class': 'bootstrap3-required',
-
-    # Class to indicate error
-    'form_error_class': 'bootstrap3-error',
+    'required_css_class': 'required',
+    'error_css_class': 'is-invalid',
+    'success_css_class': 'is-valid',
 
     'field_renderers': {
         'default': 'ietf.utils.bootstrap.SeparateErrorsFromHelpTextFieldRenderer',
-        'inline': 'bootstrap3.renderers.InlineFieldRenderer',
     },
-    
 }
 
 # CORS settings

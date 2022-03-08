@@ -1,17 +1,13 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
 {% block title %}OpenID Connect Issuer{% endblock %}
-
 {% block content %}
-
-  <h2>OpenID Connect Issuer</h2>
-  <p>
-     This is the IETF Datatracker's OpenID Connect Issuer endpoint.
-     The OpenID Connect provider info is at
-     <code>
-        <a href="{% url 'oidc_provider:provider-info' %}">{% url 'oidc_provider:provider-info' %}"</a>
-     </code>
-  </p>
-
+    <h1 class="mb-3">OpenID Connect Issuer</h1>
+    <p>
+        This is the IETF Datatracker's OpenID Connect Issuer endpoint.
+        The OpenID Connect provider info is at
+        <code>
+            <a class="text-reset" href="{% url 'oidc_provider:provider-info' %}">{% url 'oidc_provider:provider-info' %}</a>
+        </code>
+    </p>
 {% endblock %}
-

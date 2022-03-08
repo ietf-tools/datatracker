@@ -49,27 +49,27 @@ class ViewCharterTests(TestCase):
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs={'name':charter.name})
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertIn('The information below is for a proposed recharter. The current approved charter is',q('#message-row').text())
+        self.assertIn('The information below is for a proposed recharter. The current approved charter is',q('.alert').text())
 
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs={'name':charter.name,'rev':'02-00'})
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertIn('The information below is for an older version of the current proposed rechartering effort',q('#message-row').text())
+        self.assertIn('The information below is for an older version of the current proposed rechartering effort',q('.alert').text())
             
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs={'name':charter.name,'rev':'02'})
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertIn('The information below is for the currently approved charter, but newer proposed charter text exists',q('#message-row').text())
+        self.assertIn('The information below is for the currently approved charter, but newer proposed charter text exists',q('.alert').text())
 
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs={'name':charter.name,'rev':'01-00'})
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertIn('The information below is for an older proposed',q('#message-row').text())
+        self.assertIn('The information below is for an older proposed',q('.alert').text())
 
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs={'name':charter.name,'rev':'01'})
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertIn('The information below is for an older approved',q('#message-row').text())
+        self.assertIn('The information below is for an older approved',q('.alert').text())
 
         e = NewRevisionDocEventFactory(doc=charter,rev="03")
         charter.rev='03'
@@ -78,7 +78,7 @@ class ViewCharterTests(TestCase):
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs={'name':charter.name})
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual('',q('#message-row').text())
+        self.assertEqual('',q('.alert:not(.alert-ignore)').text())
 
             
 
@@ -154,7 +154,7 @@ class EditCharterTests(TestCase):
         r = self.client.post(url, dict(charter_state="-12345"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         self.assertEqual(charter.get_state(), first_state)
         
         # change state

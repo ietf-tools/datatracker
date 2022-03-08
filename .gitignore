@@ -16,17 +16,18 @@
 .DS_store
 # Simulated Subversion default ignores end here
 /.coverage
+/.factoryboy_random_state
 /.mypy_cache
+/.parcel-cache
 /.project
 /.pydevproject
 /.Python
 /.settings
 /.tmp
-/.factoryboy_random_state
 /attic
 /bin
-/etc
 /env
+/etc
 /ghostdriver.log
 /htmlcov
 /include
@@ -38,6 +39,7 @@
 /mergelog
 /mergequeue
 /minimum-requirements.txt
+/node_modules
 /pip-selfcheck.json
 /selenium
 /settings_local.py

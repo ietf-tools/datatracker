@@ -206,7 +206,7 @@ class GenericDisclosureForm(forms.Form):
         help_text = patent_number_help_text)
     patent_inventor =  forms.CharField(max_length=63, required=False, validators=[ validate_name ], help_text="Inventor name")
     patent_title =  forms.CharField(max_length=255, required=False, validators=[ validate_title ], help_text="Title of invention")
-    patent_date =  forms.DateField(required=False, help_text="Date granted or applied for")
+    patent_date =  DatepickerDateField(date_format="yyyy-mm-dd", required=False, help_text="Date granted or applied for")
     patent_notes =  forms.CharField(max_length=1024, required=False, widget=forms.Textarea)
 
     has_patent_pending = forms.BooleanField(required=False)
@@ -275,7 +275,7 @@ class IprDisclosureFormBase(forms.ModelForm):
         help_text = patent_number_help_text)
     patent_inventor =  forms.CharField(max_length=63, required=True, validators=[ validate_name ], help_text="Inventor name")
     patent_title =  forms.CharField(max_length=255, required=True, validators=[ validate_title ], help_text="Title of invention")
-    patent_date =  forms.DateField(required=True, help_text="Date granted or applied for")
+    patent_date =  DatepickerDateField(date_format="yyyy-mm-dd", required=True, help_text="Date granted or applied for")
     patent_notes =  forms.CharField(max_length=4096, required=False, widget=forms.Textarea)
     
     def __init__(self,*args,**kwargs):

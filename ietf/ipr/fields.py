@@ -18,7 +18,7 @@ def select2_id_ipr_title(objs):
     return [{
         "id": o.pk,
         "text": escape("%s <%s>" % (o.title, o.time.date().isoformat())),
-    } for o in objs]
+    } for o in objs] if objs else []
 
 def select2_id_ipr_title_json(value):
     return json.dumps(select2_id_ipr_title(value))

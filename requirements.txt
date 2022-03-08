@@ -10,12 +10,12 @@ coverage>=4.0.1,!=4.0.2,<5.0    # Coverage 5.x moves from a json database to SQL
 decorator>=4.0.4
 defusedxml>=0.4.1		# for TastyPie when ussing xml; not a declared dependency
 Django>=2.2.15,<3.0
-django-bootstrap3>=14.0
+django-bootstrap5>=21.1
 django-csp>=3.5
 django-cors-headers>=2.4.0
 django-debug-toolbar>=3.2.2
 django-form-utils>=1.0.3
-django-formtools>=1.0		# instead of django.contrib.formtools in 1.8
+#django-formtools>=1.0		# instead of django.contrib.formtools in 1.8 - apparently not needed anymore in 2022?
 django-markup>=1.5
 django-oidc-provider>=0.7
 django-password-strength>=1.2.1
@@ -76,3 +76,5 @@ weasyprint>=52.5,<53
 xml2rfc>=2.35.0
 xym>=0.4.4,!=0.4.7,<1.0
 #zxcvbn-python>=4.4.14		# Not needed until we do back-end password entropy validation
+djhtml>=1.4.11  # To auto-indent templates via "djlint --profile django --reformat"
+pytidylib>=0.3.2  # Used during tests to check validity of generated HTML

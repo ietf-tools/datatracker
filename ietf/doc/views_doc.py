@@ -718,6 +718,7 @@ def document_main(request, name, rev=None):
 
     raise Http404("Document not found: %s" % (name + ("-%s"%rev if rev else "")))
 
+
 def document_raw_id(request, name, rev=None, ext=None):
     if not name.startswith('draft-'):
         raise Http404
@@ -748,7 +749,7 @@ def document_raw_id(request, name, rev=None, ext=None):
     if not ext in found_types:
         raise Http404('dont have the file for that extension')
     mimetypes = {'txt':'text/plain','html':'text/html','xml':'application/xml'}
-    try:    
+    try:
         with open(found_types[ext],'rb') as f:
             blob = f.read()
             return HttpResponse(blob,content_type=f'{mimetypes[ext]};charset=utf-8')
@@ -768,7 +769,6 @@ def document_html(request, name, rev=None):
          return redirect('ietf.doc.views_doc.document_html', name=found.matched_name)
 
     doc = found.documents.get()
-
 
     if found.matched_rev or found.matched_name.startswith('rfc'):
         rev = found.matched_rev
@@ -935,7 +935,6 @@ def document_history(request, name):
                 person__user=request.user)))
     else:
         can_add_comment = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair"))
-
     return render(request, "doc/document_history.html",
                               dict(doc=doc,
                                    top=top,
@@ -1551,7 +1550,7 @@ def edit_action_holders(request, name):
     
     if request.method == 'POST':
         form = ActionHoldersForm(request.POST)
-        if form.is_valid() and 'action_holders' in request.POST:
+        if form.is_valid():
             new_action_holders = form.cleaned_data['action_holders']  # Person queryset
             prev_action_holders = list(doc.action_holders.all())
             

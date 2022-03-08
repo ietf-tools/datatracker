@@ -251,7 +251,7 @@ class SearchTests(TestCase):
         r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad', kwargs=dict(name=ad.full_name_as_key())))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
-        self.assertContains(r, escape(draft.action_holders.first().plain_name()))
+        self.assertContains(r, escape(draft.action_holders.first().name))
         self.assertContains(r, rfc.canonical_name())
         self.assertContains(r, conflrev.name)
         self.assertContains(r, statchg.name)
@@ -279,7 +279,7 @@ class SearchTests(TestCase):
         r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_last_call'))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-        self.assertContains(r, escape(draft.action_holders.first().plain_name()))
+        self.assertContains(r, escape(draft.action_holders.first().name))
 
     def test_in_iesg_process(self):
         doc_in_process = IndividualDraftFactory()
@@ -289,7 +289,7 @@ class SearchTests(TestCase):
         r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_iesg_process'))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, doc_in_process.title)
-        self.assertContains(r, escape(doc_in_process.action_holders.first().plain_name()))
+        self.assertContains(r, escape(doc_in_process.action_holders.first().name))
         self.assertNotContains(r, doc_not_in_process.title)
         
     def test_indexes(self):
@@ -348,10 +348,10 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('td.doc')),3)
-        self.assertEqual(q('td.status span.label-warning').text(),"for 15 days")
-        self.assertEqual(q('td.status span.label-danger').text(),"for 29 days")
+        self.assertEqual(q('td.status span.badge.bg-warning').text(),"for 15 days")
+        self.assertEqual(q('td.status span.badge.bg-danger').text(),"for 29 days")
         for ah in [draft.action_holders.first() for draft in drafts]:
-            self.assertContains(r, escape(ah.plain_name()))
+            self.assertContains(r, escape(ah.name))
 
 class DocDraftTestCase(TestCase):
     draft_text = """
@@ -1245,7 +1245,7 @@ Man                    Expires September 22, 2015               [Page 3]
     def _pyquery_select_action_holder_string(q, s):
         """Helper to use PyQuery to find an action holder in the draft HTML"""
         # selector grabs the action holders heading and finds siblings with a div containing the search string
-        return q('th:contains("Action Holders") ~ td>div:contains("%s")' % s)
+        return q('th:contains("Action Holder") ~ td>div:contains("%s")' % s)
 
     @mock.patch.object(Document, 'action_holders_enabled', return_value=False, new_callable=mock.PropertyMock)
     def test_document_draft_hides_action_holders(self, mock_method):
@@ -1253,11 +1253,11 @@ Man                    Expires September 22, 2015               [Page 3]
         draft = WgDraftFactory()
         url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name))
         r = self.client.get(url)
-        self.assertNotContains(r, 'Action Holders')  # should not show action holders...
+        self.assertNotContains(r, 'Action Holder')  # should not show action holders...
 
         draft.action_holders.set([PersonFactory()])
         r = self.client.get(url)
-        self.assertNotContains(r, 'Action Holders')  # ...even if they are assigned
+        self.assertNotContains(r, 'Action Holder')  # ...even if they are assigned
 
     @mock.patch.object(Document, 'action_holders_enabled', return_value=True, new_callable=mock.PropertyMock)
     def test_document_draft_shows_action_holders(self, mock_method):
@@ -1267,7 +1267,7 @@ Man                    Expires September 22, 2015               [Page 3]
 
         # No action holders case should be shown properly
         r = self.client.get(url)
-        self.assertContains(r, 'Action Holders')  # should show action holders
+        self.assertContains(r, 'Action Holder')  # should show action holders
         q = PyQuery(r.content)
         self.assertEqual(len(self._pyquery_select_action_holder_string(q, '(None)')), 1)
         
@@ -1282,11 +1282,11 @@ Man                    Expires September 22, 2015               [Page 3]
         with self.settings(DOC_ACTION_HOLDER_AGE_LIMIT_DAYS=20):
             r = self.client.get(url)
 
-        self.assertContains(r, 'Action Holders')  # should still be shown
+        self.assertContains(r, 'Action Holder')  # should still be shown
         q = PyQuery(r.content)
         self.assertEqual(len(self._pyquery_select_action_holder_string(q, '(None)')), 0)
         for person in draft.action_holders.all():
-            self.assertEqual(len(self._pyquery_select_action_holder_string(q, person.plain_name())), 1)
+            self.assertEqual(len(self._pyquery_select_action_holder_string(q, person.name)), 1)
         # check that one action holder was marked as old
         self.assertEqual(len(self._pyquery_select_action_holder_string(q, 'for 30 days')), 1)
 
@@ -1307,7 +1307,7 @@ Man                    Expires September 22, 2015               [Page 3]
             q = PyQuery(r.content)
 
             self.assertEqual(
-                len(q('th:contains("Action Holders") ~ td a[href="%s"]' % edit_ah_url)),
+                len(q('th:contains("Action Holder") ~ td a[href="%s"]' % edit_ah_url)),
                 1 if expect_buttons else 0,
                 '%s should%s see the edit action holders button but %s' % (
                     username if username else 'unauthenticated user',
@@ -1316,7 +1316,7 @@ Man                    Expires September 22, 2015               [Page 3]
                 )
             )
             self.assertEqual(
-                len(q('th:contains("Action Holders") ~ td a[href="%s"]' % remind_ah_url)),
+                len(q('th:contains("Action Holder") ~ td a[href="%s"]' % remind_ah_url)),
                 1 if expect_buttons else 0,
                 '%s should%s see the remind action holders button but %s' % (
                     username if username else 'unauthenticated user',
@@ -1453,8 +1453,8 @@ class DocTestCase(TestCase):
         statchg = StatusChangeFactory()
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=statchg.name)))
         self.assertEqual(r.status_code, 200)
-        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=statchg.relateddocument_set.first().target.document.canonical_name())))
-        self.assertEqual(r.status_code, 200)
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=statchg.relateddocument_set.first().target.document)))
+        self.assertEqual(r.status_code, 302)
 
     def test_document_charter(self):
         CharterFactory(name='charter-ietf-mars')
@@ -1539,7 +1539,7 @@ class DocTestCase(TestCase):
         doc.save_with_history([e])
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r,  '(%s for -%s)' % (pos.comment_time.strftime('%Y-%m-%d'), oldrev))
+        self.assertRegex(r.content.decode(), r'\(\s*%s\s+for\s+-%s\s*\)' % (pos.comment_time.strftime('%Y-%m-%d'), oldrev))
 
         # Now simulate a new ballot against the new revision and make sure the "was" position is included
         pos2 = BallotPositionDocEvent.objects.create(
@@ -1587,7 +1587,7 @@ class DocTestCase(TestCase):
             href = q(f'div.balloter-name a[href$="{author_slug}"]').attr('href')
             ids = [
                 target.attr('id')
-                for target in q(f'h4.anchor-target[id$="{author_slug}"]').items()
+                for target in q(f'h5[id$="{author_slug}"]').items()
             ]
             self.assertEqual(len(ids), 1, 'Should be exactly one link for the balloter')
             self.assertEqual(href, f'#{ids[0]}', 'Anchor href should match ID')
@@ -2142,9 +2142,9 @@ class DocumentMeetingTests(TestCase):
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
         self.assertTrue(q('#addsessionsbutton'))
-        self.assertEqual(1,len(q("#inprogressmeets a.btn-default:contains('Remove document')")))
-        self.assertEqual(1,len(q("#futuremeets a.btn-default:contains('Remove document')")))
-        self.assertEqual(1,len(q("#pastmeets a.btn-default:contains('Remove document')")))
+        self.assertEqual(1,len(q("#inprogressmeets a.btn-primary:contains('Remove document')")))
+        self.assertEqual(1,len(q("#futuremeets a.btn-primary:contains('Remove document')")))
+        self.assertEqual(1,len(q("#pastmeets a.btn-primary:contains('Remove document')")))
         self.assertEqual(1,len(q("#pastmeets a.btn-warning:contains('Remove document')")))
 
         self.client.login(username=self.group_chair.user.username,password='%s+password'%self.group_chair.user.username)
@@ -2152,9 +2152,9 @@ class DocumentMeetingTests(TestCase):
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
         self.assertTrue(q('#addsessionsbutton'))
-        self.assertEqual(1,len(q("#inprogressmeets a.btn-default:contains('Remove document')")))
-        self.assertEqual(1,len(q("#futuremeets a.btn-default:contains('Remove document')")))
-        self.assertEqual(1,len(q("#pastmeets a.btn-default:contains('Remove document')")))
+        self.assertEqual(1,len(q("#inprogressmeets a.btn-primary:contains('Remove document')")))
+        self.assertEqual(1,len(q("#futuremeets a.btn-primary:contains('Remove document')")))
+        self.assertEqual(1,len(q("#pastmeets a.btn-primary:contains('Remove document')")))
         self.assertTrue(q('#pastmeets'))
         self.assertFalse(q("#pastmeets a.btn-warning:contains('Remove document')"))
 
@@ -2271,12 +2271,12 @@ class DocumentMeetingTests(TestCase):
         response = self.client.post(url,{'session':0,'version':'current'})
         self.assertEqual(response.status_code,200)
         q=PyQuery(response.content)
-        self.assertTrue(q('.form-group.has-error'))
-     
+        self.assertTrue(q('.form-select.is-invalid'))
+
         response = self.client.post(url,{'session':self.future.pk,'version':'bogus version'})
         self.assertEqual(response.status_code,200)
         q=PyQuery(response.content)
-        self.assertTrue(q('.form-group.has-error'))
+        self.assertTrue(q('.form-select.is-invalid'))
 
         self.assertEqual(1,doc.docevent_set.count())
         response = self.client.post(url,{'session':self.future.pk,'version':'current'})
@@ -2397,16 +2397,16 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
 
 class FieldTests(TestCase):
     def test_searchabledocumentsfield_pre(self):
-        # so far, just tests that the format expected by select2-field.js is set up
+        # so far, just tests that the format expected by select2 set up
         docs = IndividualDraftFactory.create_batch(3)
-        
+
         class _TestForm(Form):
             test_field = SearchableDocumentsField()
         
         form = _TestForm(initial=dict(test_field=docs))
         html = str(form)
         q = PyQuery(html)
-        json_data = q('input.select2-field').attr('data-pre')
+        json_data = q('.select2-field').attr('data-pre')
         try:
             decoded = json.loads(json_data)
         except json.JSONDecodeError as e:
@@ -2415,7 +2415,7 @@ class FieldTests(TestCase):
         self.assertCountEqual(decoded_ids, [str(doc.id) for doc in docs])
         for doc in docs:
             self.assertEqual(
-                dict(id=doc.pk, text=escape(uppercase_std_abbreviated_name(doc.name))),
+                dict(id=doc.pk, selected=True, url=doc.get_absolute_url(), text=escape(uppercase_std_abbreviated_name(doc.name))),
                 decoded[str(doc.pk)],
             )
 
@@ -2462,13 +2462,13 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertTrue(q('#materials-content > pre'))
+        self.assertTrue(q('#materials-content pre'))
 
         url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=self.doc.name,rev='01'))
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(q('#materials-content .panel-body a').attr['href'],'https://unusual.example')
+        self.assertEqual(q('#materials-content .card-body a').attr['href'],'https://unusual.example')
 
 class Idnits2SupportTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['DERIVED_DIR']
@@ -2714,6 +2714,7 @@ class RfcdiffSupportTests(TestCase):
         self.do_rfc_with_broken_history_test(draft_name='draft-gizmo-01')
         self.do_rfc_with_broken_history_test(draft_name='draft-oh-boy-what-a-draft-02-03')
 
+
 class RawIdTests(TestCase):
 
     def __init__(self, *args, **kwargs):
@@ -2723,7 +2724,7 @@ class RawIdTests(TestCase):
 
     def should_succeed(self, argdict):
         url = urlreverse(self.view, kwargs=argdict)
-        r = self.client.get(url)
+        r = self.client.get(url, skip_verify=True)  # do not verify HTML, they're faked anyway
         self.assertEqual(r.status_code,200)
         self.assertEqual(r.get('Content-Type'),f"{self.mimetypes[argdict.get('ext','txt')]};charset=utf-8")
 

@@ -28,12 +28,13 @@ class MilestoneTests(IetfSeleniumTestCase):
         """Search for a draft and get the search result element"""
         draft_input.send_keys(search_string)
 
-        result_selector = 'ul.select2-results > li > div.select2-result-label'
+        result_selector = 'ul.select2-results__options > li.select2-results__option--selectable'
         self.wait.until(
             expected_conditions.text_to_be_present_in_element(
                 (By.CSS_SELECTOR, result_selector),
                 draft.name
             ))
+
         results = self.driver.find_elements(By.CSS_SELECTOR, result_selector)
         matching_results = [r for r in results if draft.name in r.text]
         self.assertEqual(len(matching_results), 1)
@@ -91,10 +92,11 @@ class MilestoneTests(IetfSeleniumTestCase):
 
         desc_input = edit_div.find_element(By.CSS_SELECTOR, 'input[id$="_desc"]')
         due_input = edit_div.find_element(By.CSS_SELECTOR, 'input[id$="_due"]')
-        draft_input = edit_div.find_element(By.CSS_SELECTOR,
-            'div.select2-container[id$="id_docs"] input.select2-input'
-        )
-        
+        draft_input = self.wait.until(
+            expected_conditions.visibility_of_element_located(
+                (By.CSS_SELECTOR, '.select2-container textarea[aria-describedby*="_docs"]')
+            ))
+
         # fill in the edit milestone form
         desc_input.send_keys(description)
         due_input.send_keys(due_date.strftime('%m %Y\n'))  # \n closes the date selector
@@ -151,9 +153,10 @@ class MilestoneTests(IetfSeleniumTestCase):
 
         due_field = self.driver.find_element(By.ID, prefix + 'due')
         hidden_drafts_field = self.driver.find_element(By.ID, prefix + 'docs')
-        draft_input = self.driver.find_element(By.CSS_SELECTOR,
-            'div.select2-container[id*="%s"] input.select2-input' % prefix
-        )
+        draft_input = self.wait.until(
+            expected_conditions.visibility_of_element_located(
+                (By.CSS_SELECTOR, '.select2-container textarea[aria-describedby*="%sdocs"]' % prefix)
+            ))
         self.assertEqual(due_field.get_attribute('value'), milestone.due.strftime('%B %Y'))
         self.assertEqual(hidden_drafts_field.get_attribute('value'),
                          ','.join([str(doc.pk) for doc in milestone.docs.all()]))

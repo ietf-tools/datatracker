@@ -17,7 +17,7 @@ from pyquery import PyQuery
 from lxml.etree import tostring
 from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, urlsplit
+from urllib.parse import urlparse, urlsplit, quote
 from PIL import Image
 from pathlib import Path
 
@@ -407,10 +407,10 @@ class MeetingTests(BaseMeetingTestCase):
         url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "?show=farfut"
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
-        self.assertTrue(all([x in unicontent(r) for x in ['var all_items', 'maximize', 'draw_calendar', ]]))
+        self.assertTrue(all([x in unicontent(r) for x in ['redraw_weekview', 'draw_calendar', ]]))
 
         # Specifying a time zone should not change the output (time zones are handled by the JS)
-        url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "?show=farfut&tz=Asia/Bangkok"
+        url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "?show=farfut&" + quote("tz=Asia/Bangkok", safe='=')
         r_with_tz = self.client.get(url)
         self.assertEqual(r_with_tz.status_code,200)
         self.assertEqual(r.content, r_with_tz.content)
@@ -457,11 +457,11 @@ class MeetingTests(BaseMeetingTestCase):
         nav_tab_anchors = q('ul.nav.nav-tabs > li > a')
         for anchor in nav_tab_anchors.items():
             text = anchor.text().strip()
-            if text in ['Agenda', 'UTC Agenda', 'Select Sessions']:
+            if text in ['Agenda', 'UTC agenda', 'Personalize agenda']:
                 expected_elements.append(anchor)
         for btn in q('.buttonlist a.btn').items():
             text = btn.text().strip()
-            if text in ['View customized agenda', 'Download as .ics', 'Subscribe with webcal']:
+            if text in ['View personal agenda', 'Download .ics of personal agenda', 'Subscribe to personal agenda']:
                 expected_elements.append(btn)
 
         # Check that all the expected elements have the correct classes
@@ -719,7 +719,7 @@ class MeetingTests(BaseMeetingTestCase):
                 self.assertIn('%s?show=%s' % (ical_url, g.parent.acronym.lower()), content)
 
         # The 'non-area events' are those whose keywords are in the last column of buttons
-        na_col = q('#customize td.view:last-child')  # find the column
+        na_col = q('#customize .col-1:last')  # find the column
         non_area_labels = [e.attrib['data-filter-item']
                            for e in na_col.find('button.pickview')]
         assert len(non_area_labels) > 0  # test setup must produce at least one label for this test
@@ -2141,7 +2141,7 @@ class EditTimeslotsTests(TestCase):
         self.login()
         name_after = 'New Name (tm)'
         type_after = 'plenary'
-        time_after = time_before.replace(day=time_before.day + 1, hour=time_before.hour + 2)
+        time_after = time_before + datetime.timedelta(days=1, hours=2)
         duration_after = duration_before * 2
         show_location_after = False
         location_after = meeting.room_set.last()
@@ -3102,24 +3102,24 @@ class EditTests(TestCase):
         r, q = _set_date_offset_and_retrieve_page(meeting,
                                                   0 - 2 - meeting.days, # Meeting ended 2 days ago
                                                   self.client)
-        self.assertTrue(q("""em:contains("You can't edit this schedule")"""))
-        self.assertTrue(q("""em:contains("This is the official schedule for a meeting in the past")"""))
+        self.assertTrue(q(""".alert:contains("You can't edit this schedule")"""))
+        self.assertTrue(q(""".alert:contains("This is the official schedule for a meeting in the past")"""))
 
         # 2) An ongoing meeting
         #######################################################
         r, q = _set_date_offset_and_retrieve_page(meeting,
                                                   0, # Meeting starts today
                                                   self.client)
-        self.assertFalse(q("""em:contains("You can't edit this schedule")"""))
-        self.assertFalse(q("""em:contains("This is the official schedule for a meeting in the past")"""))
+        self.assertFalse(q(""".alert:contains("You can't edit this schedule")"""))
+        self.assertFalse(q(""".alert:contains("This is the official schedule for a meeting in the past")"""))
 
         # 3) A meeting in the future
         #######################################################
         r, q = _set_date_offset_and_retrieve_page(meeting,
                                                   7, # Meeting starts next week
                                                   self.client)
-        self.assertFalse(q("""em:contains("You can't edit this schedule")"""))
-        self.assertFalse(q("""em:contains("This is the official schedule for a meeting in the past")"""))
+        self.assertFalse(q(""".alert:contains("You can't edit this schedule")"""))
+        self.assertFalse(q(""".alert:contains("This is the official schedule for a meeting in the past")"""))
 
     def test_edit_meeting_schedule(self):
         meeting = make_meeting_test_data()
@@ -3196,7 +3196,7 @@ class EditTests(TestCase):
             s_other = s2 if s == s1 else s1
             self.assertEqual(len(constraints), 3)
             self.assertEqual(constraints.eq(0).attr("data-sessions"), str(s_other.pk))
-            self.assertEqual(constraints.eq(0).find(".fa-user-o").parent().text(), "1") # 1 person in the constraint
+            self.assertEqual(constraints.eq(0).find(".bi-person").parent().text(), "1") # 1 person in the constraint
             self.assertEqual(constraints.eq(1).attr("data-sessions"), str(s_other.pk))
             self.assertEqual(constraints.eq(1).find(".encircled").text(), "1" if s_other == s2 else "-1")
             self.assertEqual(constraints.eq(2).attr("data-sessions"), str(s_other.pk))
@@ -3207,7 +3207,7 @@ class EditTests(TestCase):
 
             event = SchedulingEvent.objects.filter(session=s).order_by("id").first()
             if event:
-                self.assertTrue(e.find("div:contains(\"{}\")".format(event.by.plain_name())))
+                self.assertTrue(e.find("div:contains(\"{}\")".format(event.by.name)))
 
             if s.comments:
                 self.assertIn(s.comments, e.find(".comments").text())
@@ -3221,7 +3221,7 @@ class EditTests(TestCase):
 
         self.assertEqual(len(q("#session{}.readonly".format(base_session.pk))), 1)
 
-        self.assertTrue(q("em:contains(\"You can't edit this schedule\")"))
+        self.assertTrue(q(".alert:contains(\"You can't edit this schedule\")"))
 
         # can't change anything
         r = self.client.post(url, {
@@ -3532,7 +3532,7 @@ class EditTests(TestCase):
 
         # Now enable the 'chair_conflict' constraint only
         chair_conflict = ConstraintName.objects.get(slug='chair_conflict')
-        chair_conf_label = b'<i class="fa fa-gavel"/>'  # result of etree.tostring(etree.fromstring(editor_label))
+        chair_conf_label = b'<i class="bi bi-person-plus"/>'  # result of etree.tostring(etree.fromstring(editor_label))
         meeting.group_conflict_types.add(chair_conflict)
         r = self.client.get(url)
         q = PyQuery(r.content)
@@ -3815,9 +3815,9 @@ class SessionDetailsTests(TestCase):
         self.assertNotContains(r, 'deleted')
 
         q = PyQuery(r.content)
-        self.assertTrue(q('h2#session_%s div#session-buttons-%s' % (session.id, session.id)),
+        self.assertTrue(q('div#session-buttons-%s' % session.id),
                                'Session detail page does not contain session tool buttons') 
-        self.assertFalse(q('h2#session_%s div#session-buttons-%s span.fa-arrows-alt' % (session.id, session.id)), 
+        self.assertFalse(q('div#session-buttons-%s span.bi-arrows-fullscreen' % session.id),
                          'The session detail page is incorrectly showing the "Show meeting materials" button')
 
     def test_session_details_past_interim(self):
@@ -3863,7 +3863,7 @@ class SessionDetailsTests(TestCase):
         r = self.client.post(url,dict(drafts=[new_draft.pk, old_draft.pk]))
         self.assertTrue(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn("Already linked:", q('form .alert-danger').text())
+        self.assertIn("Already linked:", q('form .text-danger').text())
 
         self.assertEqual(1,session.sessionpresentation_set.count())
         r = self.client.post(url,dict(drafts=[new_draft.pk,]))
@@ -3959,7 +3959,7 @@ class EditScheduleListTests(TestCase):
         self.assertTrue(r.status_code, 200)
 
         q = PyQuery(r.content)
-        self.assertEqual(len(q(".schedule-diffs tr")), 3)
+        self.assertEqual(len(q(".schedule-diffs tr")), 3+1)
 
     def test_delete_schedule(self):
         url = urlreverse('ietf.meeting.views.delete_schedule',
@@ -4295,11 +4295,11 @@ class InterimTests(TestCase):
         SessionFactory(meeting__type_id='interim',meeting__date=last_week,status_id='canceled',group__state_id='active',group__parent=GroupFactory(state_id='active'))
         url = urlreverse('ietf.meeting.views.past')
         r = self.client.get(url)
-        self.assertContains(r, 'IETF - %02d'%int(ietf.meeting.number))
+        self.assertContains(r, 'IETF-%02d'%int(ietf.meeting.number))
         q = PyQuery(r.content)
         #id="-%s" % interim.group.acronym
-        #self.assertIn('CANCELLED', q('[id*="'+id+'"]').text())
-        self.assertIn('CANCELLED', q('tr>td>a>span').text())
+        #self.assertIn('Cancelled', q('[id*="'+id+'"]').text())
+        self.assertIn('Cancelled', q('tr>td>a>span').text())
 
     def do_upcoming_test(self, querystring=None, create_meeting=True):
         if create_meeting:
@@ -4322,7 +4322,7 @@ class InterimTests(TestCase):
         self.assertContains(r, 'IETF 72')
         # cancelled session
         q = PyQuery(r.content)
-        self.assertIn('CANCELLED', q('tr>td.text-right>span').text())
+        self.assertIn('Cancelled', q('tr>td.text-end>span').text())
 
     # test_upcoming_filters_ignored removed - we _don't_ want to ignore filters now, and the test passed because it wasn't testing the filtering anyhow (which requires testing the js).
 
@@ -4864,7 +4864,7 @@ class InterimTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q("a.btn:contains('Announce')")),2)
+        self.assertEqual(len(q("a.btn:contains('nnounce')")),2)
 
     def test_interim_request_details_cancel(self):
         """Test access to cancel meeting / session features"""
@@ -4892,8 +4892,7 @@ class InterimTests(TestCase):
                 r = self.client.get(url)
                 self.assertEqual(r.status_code, 200)
                 q = PyQuery(r.content)
-
-                cancel_meeting_btns = q("a.btn:contains('Cancel Meeting')")
+                cancel_meeting_btns = q("a.btn:contains('Cancel meeting')")
                 self.assertEqual(len(cancel_meeting_btns), 1,
                                  'Should be exactly one cancel meeting button for user %s' % username)
                 self.assertEqual(cancel_meeting_btns.eq(0).attr('href'),
@@ -4917,7 +4916,7 @@ class InterimTests(TestCase):
                 r = self.client.get(url)
                 self.assertEqual(r.status_code, 200)
                 q = PyQuery(r.content)
-                cancel_meeting_btns = q("a.btn:contains('Cancel Meeting')")
+                cancel_meeting_btns = q("a.btn:contains('Cancel meeting')")
                 self.assertEqual(len(cancel_meeting_btns), 1,
                                  'Should be exactly one cancel meeting button for user %s' % username)
                 self.assertEqual(cancel_meeting_btns.eq(0).attr('href'),
@@ -4925,7 +4924,7 @@ class InterimTests(TestCase):
                                             kwargs={'number': meeting.number}),
                                  'Cancel meeting button points to wrong URL')
 
-                cancel_session_btns = q("a.btn:contains('Cancel Session')")
+                cancel_session_btns = q("a.btn:contains('Cancel session')")
                 self.assertEqual(len(cancel_session_btns), 2,
                                  'Should be two cancel session buttons for user %s' % username)
                 hrefs = [btn.attr('href') for btn in cancel_session_btns.items()]
@@ -5633,21 +5632,21 @@ class MaterialsTests(TestCase):
             r = self.client.post(url,dict(file=test_file))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue(q('form .has-error'))
+            self.assertTrue(q('form .is-invalid'))
     
             test_file = BytesIO(b'this is some text for a test'*1510000)
             test_file.name = "not_really.pdf"
             r = self.client.post(url,dict(file=test_file))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue(q('form .has-error'))
+            self.assertTrue(q('form .is-invalid'))
     
             test_file = BytesIO(b'<html><frameset><frame src="foo.html"></frame><frame src="bar.html"></frame></frameset></html>')
             test_file.name = "not_really.html"
             r = self.client.post(url,dict(file=test_file))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue(q('form .has-error'))
+            self.assertTrue(q('form .is-invalid'))
 
             # Test html sanitization
             test_file = BytesIO(b'<html><head><title>Title</title></head><body><h1>Title</h1><section>Some text</section></body></html>')
@@ -5809,8 +5808,8 @@ class MaterialsTests(TestCase):
         r = self.client.post(url,dict(file=test_file,title='title with bad character \U0001fabc '))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(q('form .has-error'))
-        self.assertIn("Unicode BMP", q('form .has-error div').text())
+        self.assertTrue(q('form .is-invalid'))
+        self.assertIn("Unicode BMP", q('form .is-invalid div').text())
 
     def test_remove_sessionpresentation(self):
         session = SessionFactory(meeting__type_id='ietf')
@@ -5849,14 +5848,14 @@ class MaterialsTests(TestCase):
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code,200)
             q = PyQuery(r.content)
-            self.assertFalse(q('#uploadslides'))
-            self.assertFalse(q('#proposeslides'))
+            self.assertFalse(q('.uploadslides'))
+            self.assertFalse(q('.proposeslides'))
 
             self.client.login(username=newperson.user.username,password=newperson.user.username+"+password")
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code,200)
             q = PyQuery(r.content)
-            self.assertTrue(q('#proposeslides'))
+            self.assertTrue(q('.proposeslides'))
             self.client.logout()
 
             login_testing_unauthorized(self,newperson.user.username,propose_url)
@@ -5874,7 +5873,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertEqual(len(q('#proposedslidelist p')), 1)
+            self.assertEqual(len(q('.proposedslidelist p')), 1)
 
             SlideSubmissionFactory(session = session)
 
@@ -5883,7 +5882,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertEqual(len(q('#proposedslidelist p')), 2)
+            self.assertEqual(len(q('.proposedslidelist p')), 2)
             self.client.logout()
 
     def test_disapprove_proposed_slides(self):
@@ -5901,7 +5900,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 0)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "These slides have already been  rejected")
+        self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+rejected")
 
     def test_approve_proposed_slides(self):
         submission = SlideSubmissionFactory()
@@ -5925,7 +5924,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(session.sessionpresentation_set.first().document.title,'different title')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "These slides have already been  approved")
+        self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+approved")
 
     def test_approve_proposed_slides_multisession_apply_one(self):
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
@@ -6390,7 +6389,8 @@ class AgendaFilterTests(TestCase):
         def _assert_button_ok(btn, expected_label=None, expected_filter_item=None, 
                               expected_filter_keywords=None):
             """Test button properties"""
-            self.assertIn(btn.text(), expected_label)
+            if expected_label:
+                self.assertIn(btn.text(), expected_label)
             self.assertEqual(btn.attr('data-filter-item'), expected_filter_item)
             self.assertEqual(btn.attr('data-filter-keywords'), expected_filter_keywords)
 
@@ -6399,12 +6399,12 @@ class AgendaFilterTests(TestCase):
         # Test with/without custom button text
         context = Context({'customize_button_text': None, 'filter_categories': []})
         q = PyQuery(template.render(context))
-        self.assertIn('Customize...', q('h4.panel-title').text())
+        self.assertIn('Customize...', q('h2.accordion-header').text())
         self.assertEqual(q('table'), [])  # no filter_categories, so no button table
 
         context['customize_button_text'] = 'My custom text...'
         q = PyQuery(template.render(context))
-        self.assertIn(context['customize_button_text'], q('h4.panel-title').text())
+        self.assertIn(context['customize_button_text'], q('h2.accordion-header').text())
         self.assertEqual(q('table'), [])  # no filter_categories, so no button table
         
         # Now add a non-trivial set of filters
@@ -6486,24 +6486,24 @@ class AgendaFilterTests(TestCase):
         ]
 
         q = PyQuery(template.render(context))
-        self.assertIn(context['customize_button_text'], q('h4.panel-title').text())
-        self.assertNotEqual(q('table'), [])  # should now have table
+        self.assertIn(context['customize_button_text'], q('h2.accordion-header').text())
+        self.assertNotEqual(q('button.pickview'), [])  # should now have group buttons
         
         # Check that buttons are present for the expected things
-        header_row = q('thead tr')
-        self.assertEqual(len(header_row), 1)
-        button_row = q('tbody tr')
-        self.assertEqual(len(button_row), 1)
+        header_row = q('.col-1 .row:first')
+        self.assertEqual(len(header_row), 4)
+        button_row = q('.row.view')
+        self.assertEqual(len(button_row), 4)
 
         # verify correct headers
-        header_cells = header_row('th')
-        self.assertEqual(len(header_cells), 6)  # 4 columns and 2 spacers
+        header_cells = header_row('.row')
+        self.assertEqual(len(header_cells), 4)
         header_buttons = header_cells('button.pickview')
-        self.assertEqual(len(header_buttons), 3)  # last column has blank header, so only 3
+        self.assertEqual(len(header_buttons), 3)  # last column has disabled header, so only 3
         
         # verify buttons
-        button_cells = button_row('td')
-    
+        button_cells = button_row('.btn-group-vertical')
+
         # area0
         _assert_button_ok(header_cells.eq(0)('button.keyword0'),
                           expected_label='area0',
@@ -6536,12 +6536,11 @@ class AgendaFilterTests(TestCase):
                           expected_filter_keywords='keyword1,bof')
         
         # area2
-        # Skip column index 2, which is a spacer column
-        _assert_button_ok(header_cells.eq(3)('button.keyword2'),
+        _assert_button_ok(header_cells.eq(2)('button.keyword2'),
                           expected_label='area2',
                           expected_filter_item='keyword2')
 
-        buttons = button_cells.eq(3)('button.pickview')
+        buttons = button_cells.eq(2)('button.pickview')
         self.assertEqual(len(buttons), 2)  # two children
         _assert_button_ok(buttons('.keyword20'),
                           expected_label='child20',
@@ -6552,10 +6551,11 @@ class AgendaFilterTests(TestCase):
                           expected_filter_item='keyword21',
                           expected_filter_keywords='keyword2')
 
-        # area3 (no label for this one)
-        # Skip column index 4, which is a spacer column
-        self.assertEqual([], header_cells.eq(5)('button'))  # no header button
-        buttons = button_cells.eq(5)('button.pickview')
+        # area3
+        _assert_button_ok(header_cells.eq(3)('button.keyword2'),
+                          expected_label=None,
+                          expected_filter_item=None)
+        buttons = button_cells.eq(3)('button.pickview')
         self.assertEqual(len(buttons), 2)  # two children
         _assert_button_ok(buttons('.keyword30'),
                           expected_label='child30',
@@ -7158,7 +7158,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         finalize(meeting)
         url = urlreverse('ietf.meeting.views.proceedings_attendees',kwargs={'num':97})
         response = self.client.get(url)
-        self.assertContains(response, 'Attendee List')
+        self.assertContains(response, 'Attendee list')
         q = PyQuery(response.content)
         self.assertEqual(1,len(q("#id_attendees tbody tr")))
 

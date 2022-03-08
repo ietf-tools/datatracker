@@ -1,33 +1,36 @@
 {% extends "submit/submit_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
-{% load bootstrap3 %}
-
+{% load django_bootstrap5 %}
 {% block title %}Submission status{% endblock %}
-
 {% block submit_content %}
-  {% origin %}
-  <p>
-    Please enter the name of the Internet-Draft you wish to view the
-    submission status of.
-  </p>
-
-  <form method="post">
-    {% csrf_token %}
-
-    {% if error %}
-      <p class="alert alert-danger">{{ error }}</p>
-    {% endif %}
-
-    <div class="form-group">
-      <label>I-D name</label>
-      <input type="text" class="form-control" placeholder="draft-..." name="name" value="{{ name|default:"" }}">
-    </div>
-
-    {% buttons %}
-      <input class="btn btn-primary" type="submit" value="See status">
-    {% endbuttons %}
-  </form>
-
+    {% origin %}
+    <p class="my-3">
+        Please enter the name of the Internet-Draft you wish to view the
+        submission status of.
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">I-D name</label>
+            <select class="form-control select2-field"
+                    data-placeholder="draft-..."
+                    data-ajax--url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='document' doc_type='draft' %}"
+                    data-max-entries="1"
+                    data-result-key="text"
+                    name="name">
+                {% if name %}
+                    <option id="{{ name }}" selected>
+                        {{ name }}
+                    </option>
+                {% endif %}
+            </select>
+        </div>
+        {% if error %}
+            <p class="alert alert-danger my-3">
+                {{ error }}
+            </p>
+        {% endif %}
+        <input class="btn btn-primary" type="submit" value="See status">
+    </form>
 {% endblock %}

@@ -3,45 +3,37 @@
 {% block title %}Sessions - Edit{% endblock %}
 
 {% block extrahead %}{{ block.super }}
-  <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
-  <script type="text/javascript" src="{% static 'secr/js/sessions.js' %}"></script>
-  {{ form.media }}
+    <script src="{% static 'secr/js/utils.js' %}"></script>
+    <script src="{% static 'secr/js/sessions.js' %}"></script>
+    {{ form.media }}
   <style>
       .hidden {display: none !important;}
       div.form-group {display: inline;}
   </style>
 {% endblock %}
 
-{% block breadcrumbs %}{{ block.super }} 
-  &raquo; <a href="../../">Sessions</a>
-  &raquo; <a href="../">{{ group.acronym }}</a>
-  &raquo; Edit 
+{% block breadcrumbs %}{{ block.super }}
+    &raquo; <a href="../../">Sessions</a>
+    &raquo; <a href="../">{{ group.acronym }}</a>
+    &raquo; Edit
 {% endblock %}
 
 {% block instructions %}
-  <a href="https://www.ietf.org/chairs/session-request-tool-instructions/" target="_blank">Instructions</a>
+    <a href="https://www.ietf.org/chairs/session-request-tool-instructions/" target="_blank">Instructions</a>
 {% endblock %}
 
 {% block content %}
+    <div class="module interim-container">
+        <h2>IETF {{ meeting.number }}: Edit Session Request</h2>
+        <div class="inline-related">
+            <br>
 
-<noscript>
-    <div style="position: fixed; top: 0px; left: 0px; z-index: 3000; 
-                height: 100%; width: 100%; background-color: #FFFFFF">
-        <p style="margin-left: 10px">This page requires JavaScript.</p>
+            {% include "includes/sessions_request_form.html" %}
+
+        </div> <!-- module -->
     </div>
-</noscript>
-
-<div class="module interim-container">
-    <h2>IETF {{ meeting.number }}: Edit Session Request</h2>
-         <div class="inline-related">
-         <br>
-
-         {% include "includes/sessions_request_form.html" %}
-
-</div> <!-- module -->
-
 {% endblock %}
 
 {% block footer-extras %}
-  {% include "includes/sessions_footer.html" %}
+    {% include "includes/sessions_footer.html" %}
 {% endblock %}

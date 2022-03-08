@@ -583,4 +583,4 @@ def ajax_select2_search_docs(request, model_name, doc_type):
 
         objs = qs.distinct().order_by("name")[:20]
 
-    return HttpResponse(select2_id_doc_name_json(objs), content_type='application/json')
+    return HttpResponse(select2_id_doc_name_json(model, objs), content_type='application/json')

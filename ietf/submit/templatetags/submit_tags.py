@@ -29,6 +29,8 @@ def show_submission_files(context, submission):
 
 @register.filter
 def two_pages_decorated_with_errors(submission, errors):
+    if not submission.first_two_pages:
+        return ''
     pages = submission.first_two_pages or ''
     if 'rev' not in list(errors.keys()):
         return mark_safe('<pre>%s</pre>' % escape(pages))
@@ -36,5 +38,5 @@ def two_pages_decorated_with_errors(submission, errors):
     for line in pages.split('\n'):
         result += escape(line)
         result += '\n'
-    result += '</pre>pre>\n'
+    result += '</pre>\n'
     return mark_safe(result)

@@ -1,5 +1,7 @@
 /*.pyc
 /archive
 /id
-/staging
+/rfc
 /sql_setup.sql
+/staging
+/wiki

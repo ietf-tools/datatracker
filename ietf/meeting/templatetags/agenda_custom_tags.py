@@ -17,7 +17,7 @@ def lookup(dict, index):
     return ''
 
 # returns the length of the value of a dict.
-# We are doing this to how long the title for the calendar should be. (this should return the number of time slots)
+# We are doing this to how long the title for the calendar should be. (this should return the number of timeslots)
 @register.filter(name='colWidth')
 def get_col_width(dict, index):
     if index in dict:

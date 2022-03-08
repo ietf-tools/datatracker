@@ -244,7 +244,7 @@ class SecrMeetingTestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertEqual(len(q("#id_rooms_table tr input[type='checkbox']")),meeting.room_set.count())
+        self.assertEqual(len(q("#id_rooms_table tr input[type='checkbox']")),meeting.room_set.count()+1)
         
         # test delete
         # first unschedule sessions so we can delete

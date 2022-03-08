@@ -8,6 +8,7 @@ import shutil
 import sys
 import types
 
+from pyquery import PyQuery
 from typing import Dict, List       # pyflakes:ignore
 
 from email.mime.image import MIMEImage
@@ -27,7 +28,7 @@ from django.core.management import call_command
 from django.template import Context
 from django.template import Template    # pyflakes:ignore
 from django.template.defaulttags import URLNode
-from django.template.loader import get_template
+from django.template.loader import get_template, render_to_string
 from django.templatetags.static import StaticNode
 from django.urls import reverse as urlreverse
 
@@ -37,7 +38,6 @@ from ietf.group.factories import GroupFactory
 from ietf.group.models import Group
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
-from ietf.utils.bower_storage import BowerStorageFinder
 from ietf.utils.draft import PlaintextDraft, getmeta
 from ietf.utils.log import unreachable, assertion
 from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox, get_payload_text
@@ -292,6 +292,32 @@ class TemplateChecksTestCase(TestCase):
         r = self.client.get(url)        
         self.assertTemplateUsed(r, '500.html')
 
+
+class BaseTemplateTests(TestCase):
+    base_template = 'base.html'
+
+    def test_base_template_includes_ietf_js(self):
+        content = render_to_string(self.base_template, {})
+        pq = PyQuery(content)
+        self.assertTrue(
+            pq('head > script[src$="ietf/js/ietf.js"]'),
+            'base template should include ietf.js',
+        )
+
+    def test_base_template_righthand_nav(self):
+        """The base template provides an automatic righthand navigation panel
+
+        This is provided by ietf.js and requires the ietf-auto-nav class and a parent with the row class
+        or the nav widget will not render properly.
+        """
+        content = render_to_string(self.base_template, {})
+        pq = PyQuery(content)
+        self.assertTrue(
+            pq('.row > #content.ietf-auto-nav'),
+            'base template should have a #content element with .ietf-auto-nav class and .row parent',
+        )
+
+
 @skipIf(skip_version_trac, skip_message_trac)
 @skipIf(skip_wiki_glue_testing, skip_message_svn)
 class TestWikiGlueManagementCommand(TestCase):
@@ -391,39 +417,6 @@ class AdminTestCase(TestCase):
                 else:
                     self.assertContains(r, model._meta.model_name,
                         msg_prefix="There doesn't seem to be any admin API for model %s.models.%s"%(app.__name__,model.__name__,))
-
-## One might think that the code below would work, but it doesn't ...
-
-# def list_static_files(path):
-#     r = Path(settings.STATIC_ROOT)
-#     p = r / path
-#     files =  list(p.glob('**/*'))
-#     relfn = [ str(file.relative_to(r)) for file in files ] 
-#     return relfn
-# 
-# class TestBowerStaticFiles(TestCase):
-# 
-#     def test_bower_static_file_finder(self):
-#         from django.templatetags.static import static
-#         bower_json = os.path.join(settings.BASE_DIR, 'bower.json')
-#         with open(bower_json) as file:
-#             bower_info = json.load(file)
-#         for asset in bower_info["dependencies"]:
-#             files = list_static_files(asset)
-#             self.assertGreater(len(files), 0)
-#             for file in files:
-#                 url = static(file)
-#                 debug.show('url')
-#                 r = self.client.get(url)
-#                 self.assertEqual(r.status_code, 200)
-
-class TestBowerStaticFiles(TestCase):
-
-    def test_bower_storage_finder(self):
-        bfs = BowerStorageFinder()
-        files = bfs.find('.')
-        self.assertNotEqual(files,[])
-
 
 class PlaintextDraftTests(TestCase):
 
@@ -530,7 +523,9 @@ class LogUtilTests(TestCase):
         with self.assertRaises(AssertionError):
             unreachable()
         settings.SERVER_MODE = 'development'
-        unreachable()
+        # FIXME-LARS: this fails when the tests are run with --debug-mode, i.e., DEBUG is set:
+        if not settings.DEBUG:
+            unreachable()
         settings.SERVER_MODE = 'test'
 
     def test_assertion(self):
