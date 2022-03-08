@@ -104,31 +104,37 @@ $(document)
         });
     });
 
-// Automatically add a navigation pane to long pages
-$(document)
-    .ready(function () {
-        var headings = $("#content")
+// Automatically add a navigation pane to long pages if #content element has the ietf-auto-nav class.
+// The parent of #content must have the row class or the navigation pane will render incorrectly.
+$(function () {
+    const contentElement = $('#content.ietf-auto-nav');
+    if (contentElement.length > 0) {
+        const headings = contentElement
             .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible")
             .not(".navskip");
 
-        var contents = $(headings)
-            .html()
-            .split("<")
-            .shift()
-            .trim();
+        const contents = (headings.length > 0) &&
+          ($(headings)
+              .html()
+              .split("<")
+              .shift()
+              .trim());
 
-        if (contents
-            .length > 0 && $(headings)
-            .last()
-            .offset()
-            .top > $(window)
-            .height()) {
+        if (
+            contents &&
+            (contents.length > 0) &&
+            ($(headings)
+                .last()
+                .offset()
+                .top > $(window)
+                .height())
+        ) {
             // console.log("Enabling nav.");
-            var n = 0;
-            var last_level;
-            var nav;
+            let n = 0;
+            let last_level;
+            let nav;
 
-            $("#content")
+            contentElement
                 .attr("data-bs-offset", 0)
                 .attr("tabindex", 0)
                 .after($(`
@@ -141,7 +147,7 @@ $(document)
                 .not(".navskip")
                 .each(function () {
                     // Some headings have complex HTML in them - only use first part in that case.
-                    var text = $(this)
+                    const text = $(this)
                         .html()
                         .split("<")
                         .shift()
@@ -151,7 +157,7 @@ $(document)
                         // Nothing to do for empty headings.
                         return;
                     }
-                    var id = $(this)
+                    let id = $(this)
                         .attr("id");
 
                     if (id === undefined) {
@@ -168,8 +174,8 @@ $(document)
                             .last();
                     }
 
-                    var level = parseInt(this.nodeName.substring(1)) - 1;
-                    if (last_level == undefined) {
+                    const level = parseInt(this.nodeName.substring(1)) - 1;
+                    if (!last_level) {
                         last_level = level;
                     }
 
@@ -186,7 +192,7 @@ $(document)
 
             $(window)
                 .on("scroll", function () {
-                    var item = $('#righthand-nav')
+                    const item = $('#righthand-nav')
                         .find(".active")
                         .last();
                     if (item.length) {
@@ -200,7 +206,8 @@ $(document)
                 .scrollspy("refresh");
 
         }
-    });
+    }
+});
 
 // Replace track/untrack functionality with js.
 $(document)

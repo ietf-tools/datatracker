@@ -8,6 +8,7 @@ import shutil
 import sys
 import types
 
+from pyquery import PyQuery
 from typing import Dict, List       # pyflakes:ignore
 
 from email.mime.image import MIMEImage
@@ -27,7 +28,7 @@ from django.core.management import call_command
 from django.template import Context
 from django.template import Template    # pyflakes:ignore
 from django.template.defaulttags import URLNode
-from django.template.loader import get_template
+from django.template.loader import get_template, render_to_string
 from django.templatetags.static import StaticNode
 from django.urls import reverse as urlreverse
 
@@ -290,6 +291,32 @@ class TemplateChecksTestCase(TestCase):
         url = urlreverse('django.views.defaults.server_error')
         r = self.client.get(url)        
         self.assertTemplateUsed(r, '500.html')
+
+
+class BaseTemplateTests(TestCase):
+    base_template = 'base.html'
+
+    def test_base_template_includes_ietf_js(self):
+        content = render_to_string(self.base_template, {})
+        pq = PyQuery(content)
+        self.assertTrue(
+            pq('head > script[src$="ietf/js/ietf.js"]'),
+            'base template should include ietf.js',
+        )
+
+    def test_base_template_righthand_nav(self):
+        """The base template provides an automatic righthand navigation panel
+
+        This is provided by ietf.js and requires the ietf-auto-nav class and a parent with the row class
+        or the nav widget will not render properly.
+        """
+        content = render_to_string(self.base_template, {})
+        pq = PyQuery(content)
+        self.assertTrue(
+            pq('.row > #content.ietf-auto-nav'),
+            'base template should have a #content element with .ietf-auto-nav class and .row parent',
+        )
+
 
 @skipIf(skip_version_trac, skip_message_trac)
 @skipIf(skip_wiki_glue_testing, skip_message_svn)
