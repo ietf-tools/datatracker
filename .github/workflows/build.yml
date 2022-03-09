@@ -82,7 +82,7 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
       run: |
         echo "Installing NPM dependencies..."
-        npm install
+        npm install --force
         npm install -g grunt-cli
         cd bootstrap
         npm install
