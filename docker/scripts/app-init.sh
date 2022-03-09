@@ -4,6 +4,12 @@ WORKSPACEDIR="/root/src"
 
 service rsyslog start
 
+# Generate static assets
+
+npm install
+echo "Building static assets... (this could take a minute or two)"
+npx parcel build
+
 # Copy config files if needed
 
 if [ ! -f "$WORKSPACEDIR/ietf/settings_local.py" ]; then
@@ -41,33 +47,34 @@ fi
 
 # Create assets directories
 
-for sub in					\
+for sub in \
     test/id \
     test/staging \
     test/archive \
     test/rfc \
     test/media \
     test/wiki/ietf \
-	data/nomcom_keys/public_keys			\
-	data/developers/ietf-ftp			\
-	data/developers/ietf-ftp/bofreq		\
-	data/developers/ietf-ftp/charter		\
-	data/developers/ietf-ftp/conflict-reviews	\
-	data/developers/ietf-ftp/internet-drafts	\
-	data/developers/ietf-ftp/rfc			\
-	data/developers/ietf-ftp/status-changes	\
-	data/developers/ietf-ftp/yang/catalogmod	\
-	data/developers/ietf-ftp/yang/draftmod	\
-	data/developers/ietf-ftp/yang/ianamod	\
-	data/developers/ietf-ftp/yang/invalmod	\
-	data/developers/ietf-ftp/yang/rfcmod		\
-	data/developers/www6s			\
-	data/developers/www6s/staging		\
-	data/developers/www6s/wg-descriptions	\
-	data/developers/www6s/proceedings		\
-	data/developers/www6/			\
-	data/developers/www6/iesg			\
-	data/developers/www6/iesg/evaluation		\
+	data/nomcom_keys/public_keys \
+	data/developers/ietf-ftp \
+	data/developers/ietf-ftp/bofreq \
+	data/developers/ietf-ftp/charter \
+	data/developers/ietf-ftp/conflict-reviews \
+	data/developers/ietf-ftp/internet-drafts \
+	data/developers/ietf-ftp/rfc \
+	data/developers/ietf-ftp/status-changes \
+	data/developers/ietf-ftp/yang/catalogmod \
+	data/developers/ietf-ftp/yang/draftmod \
+	data/developers/ietf-ftp/yang/ianamod \
+	data/developers/ietf-ftp/yang/invalmod \
+	data/developers/ietf-ftp/yang/rfcmod \
+	data/developers/www6s \
+	data/developers/www6s/staging \
+	data/developers/www6s/wg-descriptions \
+	data/developers/www6s/proceedings \
+	data/developers/www6/ \
+	data/developers/www6/iesg \
+	data/developers/www6/iesg/evaluation \
+    data/developers/media/photo \
 	; do
     dir="/root/src/$sub"
     if [ ! -d "$dir"  ]; then
