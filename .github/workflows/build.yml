@@ -65,6 +65,7 @@ jobs:
           echo "SHOULD_DEPLOY=false" >> $GITHUB_ENV
           echo "PKG_VERSION=v3.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
           echo "PKG_VERSION_STRICT=3.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
+          echo "::notice::Built from branch $GITHUB_REF_NAME"
         fi
         
     - name: Setup Node.js
