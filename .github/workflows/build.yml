@@ -55,16 +55,19 @@ jobs:
           echo "SHOULD_DEPLOY=true" >> $GITHUB_ENV
           echo "PKG_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
           echo "PKG_VERSION_STRICT=${NEXT_VERSION#?}" >> $GITHUB_ENV
+          echo "::notice::Release created using branch $GITHUB_REF_NAME"
         elif [[ "$GITHUB_REF" =~ ^refs/tags/v* ]]; then
           echo "Using TAG mode: $GITHUB_REF_NAME"
           echo "SHOULD_DEPLOY=true" >> $GITHUB_ENV
           echo "PKG_VERSION=$GITHUB_REF_NAME" >> $GITHUB_ENV
           echo "PKG_VERSION_STRICT=${GITHUB_REF_NAME#?}" >> $GITHUB_ENV
+          echo "::notice::Release created using tag $GITHUB_REF_NAME"
         else
           echo "Using TEST mode: v7.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "SHOULD_DEPLOY=false" >> $GITHUB_ENV
           echo "PKG_VERSION=v3.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
           echo "PKG_VERSION_STRICT=3.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
+          echo "::notice::Non-production build created using branch $GITHUB_REF_NAME"
         fi
         
     - name: Setup Node.js
@@ -81,15 +84,9 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        echo "Installing NPM dependencies..."
-        npm install
-        npm install -g grunt-cli
-        cd bootstrap
-        npm install
-        echo "Generating bootstrap files..."
-        grunt dist
-        cp -r dist/. ../ietf/static/ietf/bootstrap/
-        cd ..
+        echo "Running build script..."
+        chmod +x ./dev/deploy/build.sh
+        sh ./dev/deploy/build.sh
         echo "Setting version $PKG_VERSION_STRICT..."
         sed -i -r -e "s/^__version__ += '.*'$/__version__ = '$PKG_VERSION_STRICT'/" ietf/__init__.py
         echo "Build release tarball..."
