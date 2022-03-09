@@ -1,11 +1,11 @@
 {
   "devDependencies": {
     "browserlist": "latest",
-    "cypress": "9.0.0",
-    "cypress-real-events": "1.5.1"
+    "cypress": "9.5.1",
+    "cypress-real-events": "1.7.0",
+    "npm-check-updates": "12.5.2"
   },
   "dependencies": {
-    "caniuse-lite": "1.0.30001282",
-    "@ietf-tools/datatracker-bs3": "latest"
+    "caniuse-lite": "1.0.30001314"
   }
 }
