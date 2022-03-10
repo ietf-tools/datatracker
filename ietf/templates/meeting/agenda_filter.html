@@ -69,9 +69,9 @@ Optional parameters:
                                                                     {% if button.toggled_by %}data-filter-keywords="{{ button.toggled_by|join:"," }}"{% endif %}
                                                                     data-filter-item="{{ button.keyword }}">
                                                                 {% if button.is_bof %}
-                                                                    <i>{{ button.label }}</i>
+                                                                    <i>{{ button.label|truncatewords:"3" }}</i>
                                                                 {% else %}
-                                                                    {{ button.label }}
+                                                                    {{ button.label|truncatewords:"3" }}
                                                                 {% endif %}
                                                             </button>
                                                         </div>
