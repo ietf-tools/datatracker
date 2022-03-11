@@ -3,6 +3,3 @@ contact_links:
   - name: Help / Questions
     url: https://github.com/ietf-tools/datatracker/discussions/categories/help-questions
     about: Need help? Have a question on setting up the project or its usage?
-  - name: Report a Security Issue
-    url: https://www.ietf.org/about/administration/policies-procedures/vulnerability-disclosure/
-    about: Privately report security issues so they can be addressed quickly.
