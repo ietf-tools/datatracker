@@ -70,9 +70,11 @@
                                 {% endif %}
                                 {# Onsite tool (meetecho_onsite) #}
                                 {% if timeslot.location.onsite_tool_url %}
-                                    <a class=""
+                                    <a class="btn btn-outline-primary"
+                                       role="button"
                                        href="{{timeslot.location.onsite_tool_url|format:session }}"
-        title="Onsite tool"><span class="fa fa-fw fa-lg fa-mobile"></span>
+                                       title="Onsite tool">
+                                       <i class="bi bi-phone"></i>
                                     </a>
                                 {% endif %}
                                 {# Audio stream #}
