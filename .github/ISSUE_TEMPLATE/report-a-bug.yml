@@ -23,6 +23,7 @@ body:
         - Chrome / Edge
         - Firefox
         - Safari
+        - Not Applicable
   - type: checkboxes
     id: terms
     attributes:
