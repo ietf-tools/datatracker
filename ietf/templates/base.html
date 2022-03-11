@@ -1,5 +1,5 @@
 <!DOCTYPE html> {% load ietf_filters static %}
-{# Copyright The IETF Trust 2015-2021, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
 {% load origin %}{% origin %}
 {% load bootstrap3 %}
 <html lang="en">
@@ -133,12 +133,12 @@
 	      <p class="small text-muted">
 	        {% if version_num %}
 		  <a href="/release/about">About</a> |
-	          IETF Datatracker |
+            <a href="https://github.com/ietf-tools/datatracker/">IETF Datatracker<a> |
 	          <a href="/release/{{version_num}}/">Version {{ version_num }}</a> |
 	          {{revision_date}} |
 	        {% endif %}
 		Report a bug:
-	        <a href="https://trac.ietf.org/trac/ietfdb/newticket">Tracker:<span class="fa fa-bug"></span></a>
+	        <a href="https://github.com/ietf-tools/datatracker/issues/new/choose">GitHub:<span class="fa fa-bug"></span></a>
                 {% if bugreport_email %}
 	        <a href="mailto:{{ bugreport_email }}">Email:<span class="fa fa-envelope"></span></a>
                 {% endif %}
