@@ -3532,7 +3532,7 @@ class EditTests(TestCase):
 
         # Now enable the 'chair_conflict' constraint only
         chair_conflict = ConstraintName.objects.get(slug='chair_conflict')
-        chair_conf_label = b'<i class="bi bi-person-plus"/>'  # result of etree.tostring(etree.fromstring(editor_label))
+        chair_conf_label = b'<i class="bi bi-person-circle"/>'  # result of etree.tostring(etree.fromstring(editor_label))
         meeting.group_conflict_types.add(chair_conflict)
         r = self.client.get(url)
         q = PyQuery(r.content)

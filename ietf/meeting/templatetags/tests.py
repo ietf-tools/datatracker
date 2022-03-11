@@ -49,7 +49,7 @@ class AgendaCustomTagsTests(TestCase):
 
 class EditorTagsTests(TestCase):
     def test_constraint_icon_for(self):
-        """editor_label_for tag should render properly"""
+        """constraint_icon_for tag should render properly"""
         template = Template("""
             {% load editor_tags %}
             <html>
