@@ -10,9 +10,6 @@
                 <th data-sort="type">Type</th>
                 <th data-sort="title">Title</th>
                 <th data-sort="updated">Updated</th>
-                {% if user|has_role:'Secretariat' %}
-                    <th></th>
-                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -35,17 +32,17 @@
                         {% else %}
                             <td colspan="2"></td>
                         {% endif %}
-                        {% if user|has_role:'Secretariat' %}
-                            <td class="text-end">
-                                <a class="btn btn-sm btn-primary"
-                                   href="{% url 'ietf.meeting.views_proceedings.material_details' num=meeting.number %}">
-                                    Edit materials
-                                </a>
-                            </td>
-                        {% endif %}
                     </tr>
                 {% endif %}
             {% endfor %}
         </tbody>
     </table>
+
+    {% if user|has_role:'Secretariat' %}
+        <a class="btn btn-primary"
+           href="{% url 'ietf.meeting.views_proceedings.material_details' num=meeting.number %}">
+            Edit materials
+        </a>
+    {% endif %}
+
 {% endif %}
