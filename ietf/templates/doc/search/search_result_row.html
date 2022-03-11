@@ -83,7 +83,7 @@
                 {% endfor %}
             </div>
             {% endcomment %}
-            <b>{{ doc.title|wordwrap:60|linebreaksbr }}</b>
+            <b>{{ doc.title }}</b>
             {% if doc.has_verified_errata %}
                 <a class="badge bg-danger text-decoration-none float-end"
                    href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">
