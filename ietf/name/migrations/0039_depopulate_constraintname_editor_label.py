@@ -25,7 +25,7 @@ def reverse(apps, schema_editor):
         ('tech_overlap', '<i class="fa fa-rocket"></i>'),
         ('key_participant', '<i class="fa fa-key"></i>'),
     ]:
-        cn = ConstraintName.objects.filter(slug=slug).update(editor_label=editor_label)
+        ConstraintName.objects.filter(slug=slug).update(editor_label=editor_label)
 
 
 class Migration(migrations.Migration):
