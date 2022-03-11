@@ -37,18 +37,16 @@ You can submit bug reports, enhancement and new feature requests in the [discuss
 
 As outlined in the [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md) guide, you will first want to create a fork of the datatracker project in your personal GitHub account before cloning it.
 
-Because of the extensive history of this project, cloning the datatracker project locally can take a long time / disk space. You can speed up the cloning process by limiting the history depth, for example:
+Because of the extensive history of this project, cloning the datatracker project locally can take a long time / disk space. You can speed up the cloning process by limiting the history depth, for example *(replace `USERNAME` with your GitHub username)*:
 
 - To fetch only up to the 10 latest commits:
     ```sh
-    git clone --depth=10 https://github.com/jdoe/datatracker.git
+    git clone --depth=10 https://github.com/USERNAME/datatracker.git
     ```
 - To fetch only up to a specific date:
     ```sh
-    git clone --shallow-since=DATE https://github.com/jdoe/datatracker.git
+    git clone --shallow-since=DATE https://github.com/USERNAME/datatracker.git
     ```
-
-But substitute your GitHub username in place of *jdoe*.
 
 #### Overview of the datatracker models
 
