@@ -35,20 +35,23 @@ You can submit bug reports, enhancement and new feature requests in the [discuss
 
 #### Git Cloning Tips
 
-Because of the extensive history of this project, cloning the datatracker project locally can take a long time / disk space. You can speed up the cloning process by limiting the history depth, for example:
+As outlined in the [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md) guide, you will first want to create a fork of the datatracker project in your personal GitHub account before cloning it.
+
+Because of the extensive history of this project, cloning the datatracker project locally can take a long time / disk space. You can speed up the cloning process by limiting the history depth, for example *(replace `USERNAME` with your GitHub username)*:
 
 - To fetch only up to the 10 latest commits:
     ```sh
-    git clone --depth=10 https://github.com/ietf-tools/datatracker.git
+    git clone --depth=10 https://github.com/USERNAME/datatracker.git
     ```
 - To fetch only up to a specific date:
     ```sh
-    git clone --shallow-since=DATE https://github.com/ietf-tools/datatracker.git
+    git clone --shallow-since=DATE https://github.com/USERNAME/datatracker.git
     ```
 
 #### Overview of the datatracker models
 
-A beginning of a [walkthrough of the datatracker models](https://notes.ietf.org/iab-aid-datatracker-database-overview) was prepared for the AIB AID workshop.
+A beginning of a [walkthrough of the datatracker models](https://notes.ietf.org/iab-aid-datatracker-database-overview) was prepared for the IAB AID workshop.
+
 #### Docker Dev Environment
 
 In order to simplify and reduce the time required for setup, a preconfigured docker environment is available.
