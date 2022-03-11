@@ -14,37 +14,15 @@ body:
       placeholder: Tell us what you see!
     validations:
       required: true
-  - type: input
-    id: version
-    attributes:
-      label: Version
-      description: What version of Datatracker are you running?
-      placeholder: e.g. 7.45.0
-  - type: dropdown
-    id: os
-    attributes:
-      label: What operating system are you using?
-      options:
-        - Linux
-        - MacOS (arm)
-        - MacOS (x64)
-        - Windows
-        - Other
   - type: dropdown
     id: browsers
     attributes:
-      label: What browsers are you seeing the problem on?
+      label: What browser(s) are you seeing the problem on?
       multiple: true
       options:
         - Chrome / Edge
         - Firefox
         - Safari
-  - type: textarea
-    id: logs
-    attributes:
-      label: Relevant log output
-      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
-      render: shell
   - type: checkboxes
     id: terms
     attributes:
