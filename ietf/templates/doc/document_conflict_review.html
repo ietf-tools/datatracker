@@ -17,8 +17,8 @@
     <table class="table table-sm table-borderless mb-3">
         <tbody class="meta border-top">
             <tr>
-                <th class="col-1">Document</th>
-                <th class="col-2">
+                <th>Document</th>
+                <th>
                     {% if doc.get_state_slug not in approved_states %}
                         Proposed conflict review
                     {% else %}
@@ -26,7 +26,7 @@
                     {% endif %}
                 </th>
                 <td class="edit"></td>
-                <td class="col-9">
+                <td>
                     <a href="{% url "ietf.doc.views_doc.document_main" name=conflictdoc.canonical_name %}">
                         {% if conflictdoc.get_state_slug == 'rfc' %}
                             {{ conflictdoc.canonical_name|upper }}

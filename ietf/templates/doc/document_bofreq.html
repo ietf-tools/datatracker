@@ -16,10 +16,10 @@
     <table class="table table-sm table-borderless">
         <tbody class="meta border-top">
             <tr>
-                <th class="col-1">Document</th>
-                <th class="col-2">Type</th>
+                <th>Document</th>
+                <th>Type</th>
                 <td class="edit"></td>
-                <td class="col-9">
+                <td>
                     {{ doc.get_state.slug|capfirst }} BOF request
                     {% if snapshot %}<span class="badge bg-warning">Snapshot</span>{% endif %}
                 </td>
