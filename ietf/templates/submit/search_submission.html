@@ -15,7 +15,7 @@
             <label class="form-label">I-D name</label>
             <select class="form-control select2-field"
                     data-placeholder="draft-..."
-                    data-ajax--url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='document' doc_type='draft' %}"
+                    data-ajax--url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='docalias' doc_type='draft' %}"
                     data-max-entries="1"
                     data-result-key="text"
                     name="name">
