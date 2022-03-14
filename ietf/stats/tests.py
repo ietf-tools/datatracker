@@ -231,33 +231,38 @@ class StatisticsTests(TestCase):
     @patch('requests.get')
     def test_get_meeting_registration_data(self, mock_get):
         '''Test function to get reg data.  Confirm leading/trailing spaces stripped'''
-        response = Response()
-        response.status_code = 200
-        response._content = b'[{"LastName":"Smith ","FirstName":" John","Company":"ABC","Country":"US","Email":"john.doe@example.us"}]'
-        mock_get.return_value = response
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
+        person = PersonFactory()
+        data = {
+            'LastName': person.last_name() + ' ',
+            'FirstName': person.first_name(),
+            'Company': 'ABC',
+            'Country': 'US',
+            'Email': person.email().address,
+            'RegType': 'onsite'
+        }
+        data2 = data.copy()
+        data2['RegType'] = 'hackathon'
+        response_a = Response()
+        response_a.status_code = 200
+        response_a._content = json.dumps([data, data2]).encode('utf8')
+        # second response one less record, it's been deleted
+        response_b = Response()
+        response_b.status_code = 200
+        response_b._content = json.dumps([data]).encode('utf8')
+        # mock_get.return_value = response
+        mock_get.side_effect = [response_a, response_b]
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016, 7, 14), number="96")
         get_meeting_registration_data(meeting)
-        query = MeetingRegistration.objects.filter(first_name='John',last_name='Smith',country_code='US')
-        self.assertTrue(query.count(), 1)
-        self.assertTrue(isinstance(query[0].person,Person))
-        
-    @patch('requests.get')
-    def test_get_meeting_registration_data_user_exists(self, mock_get):
-        response = Response()
-        response.status_code = 200
-        response._content = b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US","Email":"john.doe@example.us"}]'
-        email = "john.doe@example.us"
-        user = User.objects.create(username=email)
-        user.save()
-        
-        mock_get.return_value = response
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
+        query = MeetingRegistration.objects.filter(
+            first_name=person.first_name(),
+            last_name=person.last_name(),
+            country_code='US')
+        self.assertEqual(query.count(), 2)
+        self.assertEqual(query.filter(reg_type='onsite').count(), 1)
+        self.assertEqual(query.filter(reg_type='hackathon').count(), 1)
+        # call a second time to test delete
         get_meeting_registration_data(meeting)
-        query = MeetingRegistration.objects.filter(first_name='John',last_name='Smith',country_code='US')
-        emails = Email.objects.filter(address=email)
-        self.assertTrue(query.count(), 1)
-        self.assertTrue(isinstance(query[0].person, Person))
-        self.assertTrue(len(emails)>=1)                                
-        self.assertEqual(query[0].person, emails[0].person)                        
-
-        
+        query = MeetingRegistration.objects.filter(meeting=meeting, email=person.email())
+        self.assertEqual(query.count(), 1)
+        self.assertEqual(query.filter(reg_type='onsite').count(), 1)
+        self.assertEqual(query.filter(reg_type='hackathon').count(), 0)

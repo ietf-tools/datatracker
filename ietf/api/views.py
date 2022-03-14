@@ -162,30 +162,28 @@ def api_new_meeting_registration(request):
             meeting = Meeting.objects.get(number=number)
         except Meeting.DoesNotExist:
             return err(400, "Invalid meeting value: '%s'" % (number, ))
+        reg_type = data['reg_type']
         email = data['email']
         try:
             validate_email(email)
         except ValidationError:
             return err(400, "Invalid email value: '%s'" % (email, ))
         if request.POST.get('cancelled', 'false') == 'true':
-            MeetingRegistration.objects.filter(meeting_id=meeting.pk, email=email).delete()
+            MeetingRegistration.objects.filter(
+                meeting_id=meeting.pk,
+                email=email,
+                reg_type=reg_type).delete()
             return HttpResponse('OK', status=200, content_type='text/plain')
         else:
-            object, created = MeetingRegistration.objects.get_or_create(meeting_id=meeting.pk, email=email)
+            object, created = MeetingRegistration.objects.get_or_create(
+                meeting_id=meeting.pk,
+                email=email,
+                reg_type=reg_type)
             try:
-                # Set attributes not already in the object
-                for key in set(data.keys())-set(['attended', 'apikey', 'meeting', 'email',]):
+                # Update attributes
+                for key in set(data.keys())-set(['attended', 'apikey', 'meeting', 'email']):
                     new = data.get(key)
-                    cur = getattr(object, key, None)
-                    if key in ['reg_type', 'ticket_type', ] and new:
-                        # Special handling for multiple reg types
-                        if cur:
-                            if not new in cur:
-                                setattr(object, key, cur+' '+new)
-                        else:
-                            setattr(object, key, new)
-                    else:
-                        setattr(object, key, new)
+                    setattr(object, key, new)
                 person = Person.objects.filter(email__address=email)
                 if person.exists():
                     object.person = person.first()

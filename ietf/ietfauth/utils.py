@@ -291,15 +291,15 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
             ticket_types = set([])
             reg_types = set([])
             for reg in regs:
-                for t in reg.ticket_type.split():
+                for t in reg.ticket_type:
                     ticket_types.add(t)
-                for r in reg.reg_type.split():
+                for r in reg.reg_type:
                     reg_types.add(r)
             info = {
                 'meeting':      meeting.number,
                 # full_week, one_day, student:
                 'ticket_type':  ' '.join(ticket_types),
-                # in_person, onliine, hackathon:
+                # onsite, remote, hackathon_onsite, hackathon_remote:
                 'reg_type':     ' '.join(reg_types),
                 'affiliation':  ([ reg.affiliation for reg in regs if reg.affiliation ] or [''])[0],
             }
