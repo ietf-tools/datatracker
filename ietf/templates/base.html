@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2015-2021, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
 <!doctype html>
 {% load ietf_filters static %}
 {% load origin %}
@@ -78,14 +78,14 @@
                     <a href="https://www.ietf.org/privacy-statement/" class="p-3">Privacy&nbsp;Statement</a>
                     <div class="small text-muted p-3">
                         {% if version_num %}
-                            <a href="/release/about">About</a>
-                            IETF Datatracker
-                            <a href="/release/{{ version_num }}/">Version {{ version_num }}</a>
-                            {{ revision_date }}
+		                        <a href="/release/about">About</a>
+                            <a href="https://github.com/ietf-tools/datatracker/">IETF Datatracker<a>
+	                          <a href="/release/{{ version_num }}/">Version {{ version_num }}</a>
+                	          {{ revision_date }}
                         {% endif %}
                         Report a bug:
-                        <a href="https://trac.ietf.org/trac/ietfdb/newticket">
-                            Tracker
+                        <a href="https://github.com/ietf-tools/datatracker/issues/new/choose">
+                            GitHub
                             <i class="bi bi-bug"></i>
                         </a>
                         {% if bugreport_email %}
