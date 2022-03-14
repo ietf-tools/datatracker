@@ -87,6 +87,25 @@ pre {
     font-size: inherit;
 }
 
+// Use fixed lengths for the first three columns of "meta" tables.
+table tbody.meta {
+
+    th:first-child,
+    td:first-child {
+        width: 9em;
+    }
+
+    th:nth-child(2),
+    td:nth-child(2) {
+        // text-align: right;
+        width: 14em;
+    }
+
+    td.edit {
+        width: 1px; // Make sure it uses as little space as possible
+    }
+}
+
 // Highlight required form field labels with bi-asterisk
 .required>label:after {
     display: inline-block;
