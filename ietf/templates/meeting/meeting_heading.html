@@ -13,12 +13,18 @@
         <small class="text-muted">{{ title_extra }}</small>
     {% endif %}
 </h1>
-<p class="lead">
-    {{ meeting.city|default:"Location TBD" }}, {{ meeting.date|date:"F j" }} -
-    {% if meeting.date.month != meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endif %}
-    {{ meeting.end_date|date:"j, Y" }}
-    {% if updated %}<span class="float-end">Updated: {{ updated|date:"Y-m-d \a\t G:i:s (T)" }}</span>{% endif %}
-</p>
+<div class="lead row">
+    <div class="{% if updated %}col-6{% else %}col-12{% endif %}">
+        {{ meeting.city|default:"Location TBD" }}, {{ meeting.date|date:"F j" }} -
+        {% if meeting.date.month != meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endif %}
+        {{ meeting.end_date|date:"j, Y" }}
+    </div>
+    {% if updated %}
+        <div class="col-6 text-end">
+            Updated: {{ updated|date:"Y-m-d \a\t G:i:s (T)" }}
+        </div>
+    {% endif %}
+</div>
 {% if schedule != meeting.schedule %}
     <div class="alert alert-danger my-3">
         This is schedule <b>{{ schedule.owner.email }}/{{ schedule.name }}</b>, not the official schedule.

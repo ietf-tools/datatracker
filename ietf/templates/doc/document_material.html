@@ -15,12 +15,12 @@
     <table class="table table-sm table-borderless">
         <tbody class="meta border-top">
             <tr>
-                <th class="col-2">
+                <th>
                     {% if doc.meeting_related %}Meeting{% endif %}
                     {{ doc.type.name }}
                 </th>
                 <td></td>
-                <td class="col-10">
+                <td>
                     {% if doc.group %}
                         {{ doc.group.name }}
                         <a href="{{ doc.group.about_url }}">({{ doc.group.acronym }})</a>

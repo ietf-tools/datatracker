@@ -14,15 +14,15 @@
     <table class="my-3 table table-sm table-borderless">
         <tbody class="meta border-top">
             <tr>
-                <th class="col-2">{{ group.type.name }}</th>
-                <th class="col-3">Name</th>
+                <th>{{ group.type.name }}</th>
+                <th>Name</th>
                 <td class="edit">
                     {% if can_edit_group %}
                         <a class="btn btn-primary btn-sm"
                            href="{% url 'ietf.group.views.edit' acronym=group.acronym field='name' %}">Edit</a>
                     {% endif %}
                 </td>
-                <th class="col-7">{{ group.name }}</th>
+                <th>{{ group.name }}</th>
             </tr>
             <tr>
                 <td></td>

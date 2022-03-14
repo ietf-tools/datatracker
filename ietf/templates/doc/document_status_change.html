@@ -17,8 +17,8 @@
     <table class="table table-sm table-borderless">
         <tbody class="meta border-top">
             <tr>
-                <th class="col-1">Document</th>
-                <th class="col-2">
+                <th>Document</th>
+                <th>
                     {% if doc.get_state_slug not in approved_states %}
                         Proposed status change
                     {% else %}
@@ -33,7 +33,7 @@
                         </a>
                     {% endif %}
                 </td>
-                <th class="col-9">
+                <th>
                     {{ doc.title }}
                     {% if snapshot %}<span class="badge bg-warning">Snapshot</span>{% endif %}
                 </th>
