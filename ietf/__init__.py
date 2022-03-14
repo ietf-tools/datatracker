@@ -4,8 +4,9 @@
 
 from . import checks                           # pyflakes:ignore
 
+# Version must stay in single quotes for automatic CI replace
 # Don't add patch number here:
-__version__ = "7.46.1.dev0"
+__version__ = '7.46.1.dev0'
 
 # set this to ".p1", ".p2", etc. after patching
 __patch__   = ""
