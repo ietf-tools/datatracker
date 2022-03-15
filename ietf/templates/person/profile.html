@@ -70,7 +70,7 @@
                             <td>
                                 <span title="{{ extres.name.name }}">{% firstof extres.display_name extres.name.name %}</span>
                             </td>
-                            <td>{{ extres.value }}</td>
+                            <td>{{ extres.value|linkify }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
