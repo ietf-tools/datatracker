@@ -4,7 +4,7 @@ import debug  # pyflakes: ignore
 
 from django.template import Context, Template
 
-from ietf.meeting.factories import FloorPlanFactory, RoomFactory, TimeSlotFactory, ConstraintFactory
+from ietf.meeting.factories import FloorPlanFactory, RoomFactory, TimeSlotFactory, ConstraintFactory, MeetingFactory
 from ietf.meeting.templatetags.agenda_custom_tags import AnchorNode
 from ietf.name.models import ConstraintName
 from ietf.utils.test_utils import TestCase
@@ -71,8 +71,13 @@ class EditorTagsTests(TestCase):
         bethere_count = ConstraintFactory(name=ConstraintName.objects.get(slug='bethere'))
         bethere_count.count = 4
 
+        meeting = MeetingFactory(type_id='ietf')
+
         def make_constraint(name_slug, **extra_attrs):
-            cons = ConstraintFactory(name=ConstraintName.objects.get(slug=name_slug))
+            cons = ConstraintFactory(
+                name=ConstraintName.objects.get(slug=name_slug),
+                meeting=meeting,
+            )
             for prop, val in extra_attrs.items():
                 setattr(cons, prop, val)
             return cons
@@ -90,7 +95,6 @@ class EditorTagsTests(TestCase):
             'bethere_count': make_constraint('bethere', count=4),
             'bethere_no_count': make_constraint('bethere'),
         }))
-
         self.assertInHTML('<div id="conflict"><span class="encircled">1</span></div>', result)
         self.assertInHTML('<div id="conflic2"><span class="encircled">2</span></div>', result)
         self.assertInHTML('<div id="conflic3"><span class="encircled">3</span></div>', result)
@@ -102,3 +106,50 @@ class EditorTagsTests(TestCase):
         self.assertInHTML('<div id="key_participant"><i class="bi bi-key"></i></div>', result)
         self.assertInHTML('<div id="bethere-count"><i class="bi bi-person"></i>4</div>', result)
         self.assertInHTML('<div id="bethere-no-count"><i class="bi bi-person"></i></div>', result)
+
+    def test_constraint_icon_for_reverse(self):
+        """constraint_icon_for tag should render properly when reversed
+
+        Only applies to constraints with both source and target groups.
+        """
+        template = Template("""
+            {% load editor_tags %}
+            <html>
+                <div id="conflict">{% constraint_icon_for conflict %}</div>
+                <div id="conflic2">{% constraint_icon_for conflic2 %}</div>
+                <div id="conflic3">{% constraint_icon_for conflic3 %}</div>
+                <div id="wg_adjacent">{% constraint_icon_for wg_adjacent %}</div>
+                <div id="chair_conflict">{% constraint_icon_for chair_conflict %}</div>
+                <div id="tech_overlap">{% constraint_icon_for tech_overlap %}</div>
+                <div id="key_participant">{% constraint_icon_for key_participant %}</div>
+            </html>
+        """)
+
+        meeting = MeetingFactory(type_id='ietf')
+
+        def make_constraint(name_slug, **extra_attrs):
+            cons = ConstraintFactory(
+                name=ConstraintName.objects.get(slug=name_slug),
+                meeting=meeting,
+            )
+            for prop, val in extra_attrs.items():
+                setattr(cons, prop, val)
+            return cons
+
+        result = template.render(Context({
+            'conflict': make_constraint('conflict', reversed=True),
+            'conflic2': make_constraint('conflic2', reversed=True),
+            'conflic3': make_constraint('conflic3', reversed=True),
+            'wg_adjacent': make_constraint('wg_adjacent', reversed=True),
+            'chair_conflict': make_constraint('chair_conflict', reversed=True),
+            'tech_overlap': make_constraint('tech_overlap', reversed=True),
+            'key_participant': make_constraint('key_participant', reversed=True),
+        }))
+        self.assertInHTML('<div id="conflict"><span class="encircled">-1</span></div>', result)
+        self.assertInHTML('<div id="conflic2"><span class="encircled">-2</span></div>', result)
+        self.assertInHTML('<div id="conflic3"><span class="encircled">-3</span></div>', result)
+        self.assertInHTML('<div id="wg_adjacent">-<i class="bi bi-skip-end"></i></div>', result)
+        self.assertInHTML('<div id="chair_conflict">-<i class="bi bi-person-circle"></i></div>', result)
+        self.assertInHTML('<div id="tech_overlap">-<i class="bi bi-link"></i></div>', result)
+        self.assertInHTML('<div id="key_participant">-<i class="bi bi-key"></i></div>', result)
+
