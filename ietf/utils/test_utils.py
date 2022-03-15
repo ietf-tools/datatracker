@@ -200,12 +200,13 @@ class VerifyingClient(Client):
             )
 
             if errors:
-                n = 1
-                print("\n")
-                for line in r.content.decode().splitlines():
-                    print(f"{n: 6}: {line}")
-                    n += 1
-                print(path)
+                file_name = "error" + re.sub("/", "-", path) + "source.html"
+                with open(file_name, "w") as src:
+                    src.write(r.content.decode())
+                    print("\nHTML validation error for URL path", path)
+                    print("HTML source saved to", file_name)
+                    print("See AssertionError below for error location in HTML source.")
+
             self.test.maxDiff = None
             self.test.assertEqual("", errors)
         return r
