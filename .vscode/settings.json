@@ -20,7 +20,7 @@
     "**/third_party/**",
     "**/vendor/**",
     "**/work/**",
-    "/root/src/bootstrap/nuget/MyGet.ps1"
+    "/workspace/bootstrap/nuget/MyGet.ps1"
   ],
   "taskExplorer.enableAnt": false,
   "taskExplorer.enableAppPublisher": false,
