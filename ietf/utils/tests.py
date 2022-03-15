@@ -15,15 +15,12 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from fnmatch import fnmatch
 from importlib import import_module
-from .pipe import pipe
 from textwrap import dedent
-from unittest import skipIf
 from tempfile import mkdtemp
 
 from django.apps import apps
 from django.contrib.auth.models import User
 from django.conf import settings
-from django.core.management import call_command
 from django.template import Context
 from django.template import Template    # pyflakes:ignore
 from django.template.defaulttags import URLNode
@@ -33,8 +30,6 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.group.factories import GroupFactory
-from ietf.group.models import Group
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.bower_storage import BowerStorageFinder
@@ -45,22 +40,6 @@ from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import parse_unicode
 from ietf.utils.xmldraft import XMLDraft
-
-
-skip_wiki_glue_testing = False
-skip_message_svn = ""
-skip_message_trac = ""
-try:
-    import svn                          # pyflakes:ignore
-except ImportError as e:
-    skip_wiki_glue_testing = True
-    skip_message_svn = "Skipping trac tests: %s" % e
-    print("     "+skip_message_svn)
-
-if sys.version_info.major==3:
-    skip_version_trac = True
-    skip_message_trac = "Skipping trac tests: Trac not available for Python3 as of 14 Jul 2019, 04 Jul 2020"
-    print("     "+skip_message_trac)
 
 class SendingMail(TestCase):
 
