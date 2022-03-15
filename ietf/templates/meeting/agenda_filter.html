@@ -65,9 +65,9 @@ Optional parameters:
                                                         data-filter-item="{{ group.keyword }}">
                                                     <small>
                                                         {% if group.is_bof %}
-                                                            <i>{{ group.label }}</i>
+                                                            <i>{{ group.label|truncatewords:"3" }}</i>
                                                         {% else %}
-                                                            {{ group.label }}
+                                                            {{ group.label|truncatewords:"3" }}
                                                         {% endif %}
                                                     </small>
                                                 </button>

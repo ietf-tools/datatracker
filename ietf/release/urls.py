@@ -10,7 +10,7 @@ from ietf.utils.urls import url
 urlpatterns = [
     url(r'^$',  views.release),
     url(r'^(?P<version>[0-9.]+.*)/$',  views.release),
-    url(r'^about/?$',  TemplateView.as_view(template_name='release/about.html')),
+    url(r'^about/?$',  TemplateView.as_view(template_name='release/about.html'), name='releaseabout'),
     url(r'^stats/?$',  views.stats),
 ]
 
