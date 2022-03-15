@@ -105,7 +105,7 @@
                 <td></td>
                 <th>Send notices to</th>
                 <td class="edit">
-                    {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
+                    {% if not snapshot and user|has_role:"Area Director,Secretariat" and not doc.get_state_slug == 'appr-noprob-sent' and not doc.get_state_slug == 'appr-reqnopub-sent' %}
                         <a class="btn btn-primary btn-sm float-end"
                            href="{% url 'ietf.doc.views_doc.edit_notify;conflict-review' name=doc.name %}">
                             Edit
