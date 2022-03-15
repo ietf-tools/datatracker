@@ -162,7 +162,7 @@ class MeetingTests(BaseMeetingTestCase):
         registration_text = "Registration"
 
         # utc
-        time_interval = "%s-%s" % (slot.utc_start_time().strftime("%H:%M").lstrip("0"), (slot.utc_start_time() + slot.duration).strftime("%H:%M").lstrip("0"))
+        time_interval = r"%s<span.*/span>-%s" % (slot.utc_start_time().strftime("%H:%M").lstrip("0"), (slot.utc_start_time() + slot.duration).strftime("%H:%M").lstrip("0"))
 
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number,utc='-utc')))
         self.assertEqual(r.status_code, 200)
@@ -172,14 +172,14 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertIn(session.group.name, agenda_content)
         self.assertIn(session.group.parent.acronym.upper(), agenda_content)
         self.assertIn(slot.location.name, agenda_content)
-        self.assertIn(time_interval, agenda_content)
+        self.assertRegex(agenda_content, time_interval)
         self.assertIsNotNone(q(':input[value="%s"]' % meeting.time_zone),
                              'Time zone selector should show meeting timezone')
         self.assertIsNotNone(q('.nav *:contains("%s")' % meeting.time_zone),
                              'Time zone indicator should be in nav sidebar')
 
         # plain
-        time_interval = "%s-%s" % (slot.time.strftime("%H:%M").lstrip("0"), (slot.time + slot.duration).strftime("%H:%M").lstrip("0"))
+        time_interval = r"%s<span.*/span>-%s" % (slot.time.strftime("%H:%M").lstrip("0"), (slot.time + slot.duration).strftime("%H:%M").lstrip("0"))
 
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
@@ -189,7 +189,7 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertIn(session.group.name, agenda_content)
         self.assertIn(session.group.parent.acronym.upper(), agenda_content)
         self.assertIn(slot.location.name, agenda_content)
-        self.assertIn(time_interval, agenda_content)
+        self.assertRegex(agenda_content, time_interval)
         self.assertIn(registration_text, agenda_content)
 
         # Make sure there's a frame for the session agenda and it points to the right place
@@ -208,7 +208,7 @@ class MeetingTests(BaseMeetingTestCase):
 
         # text
         # the rest of the results don't have as nicely formatted times
-        time_interval = time_interval.replace(":", "")
+        time_interval = "%s-%s" % (slot.time.strftime("%H%M").lstrip("0"), (slot.time + slot.duration).strftime("%H%M").lstrip("0"))
 
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number, ext=".txt")))
         self.assertContains(r, session.group.acronym)

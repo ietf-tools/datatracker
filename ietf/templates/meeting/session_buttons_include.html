@@ -15,7 +15,7 @@
                     {% endif %}
                     <div id="session-buttons-{{ session.pk }}"
                          role="group"
-                         class="btn-group btn-group-sm">
+                         class="btn-group btn-group-sm d-none d-lg-flex">
                         {% with acronym=session.historic_group.acronym %}
                             {% if session.agenda and show_agenda %}
                                 {# agenda pop-up button #}
@@ -57,7 +57,7 @@
                                    role="button"
                                    href="xmpp:{{ session.jabber_room_name }}@jabber.ietf.org?join"
                                    title="Chat room for {{ session.jabber_room_name }}">
-                                    <i class="bi bi-lightbulb"></i>
+                                    <i class="bi bi-chat"></i>
                                 </a>
                                 {# Video stream (meetecho) #}
                                 {% if timeslot.location.video_stream_url %}
@@ -72,7 +72,7 @@
                                 {% if timeslot.location.onsite_tool_url %}
                                     <a class="btn btn-outline-primary"
                                        role="button"
-                                       href="{{timeslot.location.onsite_tool_url|format:session }}"
+                                       href="{{ timeslot.location.onsite_tool_url|format:session }}"
                                        title="Onsite tool">
                                        <i class="bi bi-phone"></i>
                                     </a>
@@ -169,7 +169,7 @@
                                     {% if timeslot.location.video_stream_url %}
                                         <a class="btn btn-outline-primary"
                                            role="button"
-                                           href="http://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ acronym.upper }}"
+                                           href="https://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ acronym.upper }}"
                                            title="Session recording">
                                             <i class="bi bi-file-slides"></i>
                                         </a>
@@ -178,6 +178,176 @@
                             {% endif %}
                         {% endwith %}
                     </div>
+                    <div id="session-dropdown-{{ session.pk }}-FIXME"
+                         class="dropdown d-lg-none">
+                        <button class="btn btn-outline-primary btn-sm dropdown-toggle"
+                                type="button"
+                                id="session-buttons-dropdown-{{ session.pk }}"
+                                data-bs-toggle="dropdown"
+                                aria-haspopup="true"
+                                aria-expanded="false">
+                            <i class="bi bi-info-lg"></i>
+                        </button>
+                        <ul class="dropdown-menu"
+                            aria-labelledby="session-buttons-dropdown-{{ session.pk }}">
+                            {% with acronym=session.historic_group.acronym %}
+                                {% if session.agenda and show_agenda %}
+                                    {# agenda pop-up button #}
+                                    <li>
+                                        <button class="dropdown-item"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modal-{{ slug }}">
+                                            <i class="bi bi-arrows-fullscreen"></i> Show meeting materials
+                                        </button>
+                                    </li>
+                                    {# materials tar file #}
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="/meeting/{{ meeting.number }}/agenda/{{ acronym }}-drafts.tgz">
+                                            <i class="bi bi-file-zip"></i> Meeting materials archive
+                                        </a>
+                                    </li>
+                                    {# materials PDF file #}
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="/meeting/{{ meeting.number }}/agenda/{{ acronym }}-drafts.pdf">
+                                            <i class="bi bi-file-pdf"></i> Meeting materials PDF
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {# HedgeDoc #}
+                                {% if use_codimd %}
+                                    <li>
+                                        <a class="dropdown-item" href="{{ session.notes_url }}">
+                                            <i class="bi bi-journal-text"></i> Notepad for note-takers
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {# show stream buttons up till end of session, then show archive buttons #}
+                                {% if now < timeslot.utc_end_time %}
+                                    {# Jabber #}
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="xmpp:{{ session.jabber_room_name }}@jabber.ietf.org?join">
+                                            <i class="bi bi-chat"></i> Chat room
+                                        </a>
+                                    </li>
+                                    {# Video stream (meetecho) #}
+                                    {% if timeslot.location.video_stream_url %}
+                                        <li>
+                                            <a class="dropdown-item"
+                                               href="{{ timeslot.location.video_stream_url|format:session }}">
+                                                <i class="bi bi-camera-video"></i> Video stream
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {# Onsite tool (meetecho_onsite) #}
+                                    {% if timeslot.location.onsite_tool_url %}
+                                    <li>
+                                        <a class="dropdown-item"
+                                            href="{{ timeslot.location.onsite_tool_url|format:session }}">
+                                            <i class="bi bi-phone"></i> Onsite tool
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {# Audio stream #}
+                                {% if timeslot.location.audio_stream_url %}
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="{{ timeslot.location.audio_stream_url|format:session }}">
+                                            <i class="bi bi-headphones"></i> Audio stream
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {# Remote call-in #}
+                                {% if session.agenda_note|first_url|conference_url %}
+                                    <li>
+                                        <a class="dropdown-item" href="{{ session.agenda_note|first_url }}">
+                                            <i class="bi bi-people"></i> Online conference
+                                        </a>
+                                    </li>
+                                {% elif session.remote_instructions|first_url|conference_url %}
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="{{ session.remote_instructions|first_url }}">
+                                            <i class="bi bi-people"></i> Online conference
+                                        </a>
+                                    </li>
+                                {% elif timeslot.location.webex_url %}
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="{{ timeslot.location.webex_url|format:session }}">
+                                            <i class="bi bi-people"></i> Webex session
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {# iCalendar item #}
+                                <li>
+                                    <a class="dropdown-item"
+                                       href="{% url 'ietf.meeting.views.agenda_ical' num=meeting.number session_id=session.id %}">
+                                        <i class="bi bi-calendar"></i> Add to calendar
+                                    </a>
+                                </li>
+                            {% else %}
+                                {# Jabber logs #}
+                                {% if meeting.number|add:"0" >= 60 %}
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="https://www.ietf.org/jabber/logs/{{ session.jabber_room_name }}?C=M;O=D">
+                                            <i class="bi bi-file-text"></i> Chat logs
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {# Recordings #}
+                                {% if meeting.number|add:"0" >= 80 %}
+                                    {% with session.recordings as recordings %}
+                                        {% if recordings %}
+                                            {# There's no guaranteed order, so this is a bit messy: #}
+                                            {# First, the audio recordings, if any #}
+                                            {% for r in recordings %}
+                                                {% if r.get_href and 'audio' in r.get_href %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ r.get_href }}">
+                                                            <i class="bi bi-file-play"></i> {{ r.title }}
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                            {# Then the youtube recordings #}
+                                            {% for r in recordings %}
+                                                {% if r.get_href and 'youtu' in r.get_href %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ r.get_href }}">
+                                                            <i class="bi bi-file-slides"></i> {{ r.title }}
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                            {# Finally, any other recordings #}
+                                            {% for r in recordings %}
+                                                {% if r.get_href and not 'audio' in r.get_href and not 'youtu' in r.get_href %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ r.get_href }}">
+                                                            <i class="bi bi-file-play"></i> {{ r.title }}
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    {% endwith %}
+                                    {% if timeslot.location.video_stream_url %}
+                                        <li>
+                                            <a class="dropdown-item"
+                                               href="https://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ acronym.upper }}">
+                                                <i class="bi bi-file-slides"></i> Session recording
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                        {% endwith %}
+                    </ul>
+                </div>
                 {% endwith %}
             {% endwith %}
         {% endwith %}

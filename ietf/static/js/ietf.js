@@ -138,7 +138,7 @@ $(function () {
                 .attr("data-bs-offset", 0)
                 .attr("tabindex", 0)
                 .after($(`
-                 <div class="col-xl-2 small">
+                 <div class="col-xl-2 ps-0 small">
                      <nav id="righthand-nav" class="position-fixed navbar navbar-light bg-light overflow-auto flex-fill" style="height: 70vh; width: inherit;">
                      </nav>
                  </div>
