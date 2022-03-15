@@ -292,67 +292,6 @@ class TemplateChecksTestCase(TestCase):
         r = self.client.get(url)        
         self.assertTemplateUsed(r, '500.html')
 
-@skipIf(skip_version_trac, skip_message_trac)
-@skipIf(skip_wiki_glue_testing, skip_message_svn)
-class TestWikiGlueManagementCommand(TestCase):
-
-    def setUp(self):
-        super().setUp()
-        # We create temporary wiki and svn directories, and provide them to the management
-        # command through command line switches.  We have to do it this way because the
-        # management command reads in its own copy of settings.py in its own python
-        # environment, so we can't modify it here.
-        set_coverage_checking(False)
-        self.wiki_dir_pattern = os.path.abspath('tmp-wiki-dir-root/%s')
-        if not os.path.exists(os.path.dirname(self.wiki_dir_pattern)):
-            os.mkdir(os.path.dirname(self.wiki_dir_pattern))
-        self.svn_dir_pattern = os.path.abspath('tmp-svn-dir-root/%s')
-        if not os.path.exists(os.path.dirname(self.svn_dir_pattern)):
-            os.mkdir(os.path.dirname(self.svn_dir_pattern))
-
-    def tearDown(self):
-        shutil.rmtree(os.path.dirname(self.wiki_dir_pattern))
-        shutil.rmtree(os.path.dirname(self.svn_dir_pattern))
-        set_coverage_checking(True)
-        super().tearDown()
-
-    def test_wiki_create_output(self):
-        for group_type in ['wg','rg','ag','area','rag']:
-            GroupFactory(type_id=group_type)
-        groups = Group.objects.filter(
-                        type__slug__in=['wg','rg','ag','area','rag'],
-                        state__slug='active'
-                    ).order_by('acronym')
-        out = io.StringIO()
-        err = io.StringIO()
-        call_command('create_group_wikis', stdout=out, stderr=err, verbosity=2,
-            wiki_dir_pattern=self.wiki_dir_pattern,
-            svn_dir_pattern=self.svn_dir_pattern,
-        )
-        command_output = out.getvalue()
-        command_errors = err.getvalue()
-        self.assertEqual("", command_errors)
-        for group in groups:
-            self.assertIn("Processing group '%s'" % group.acronym, command_output)
-            # Do a bit of verification using trac-admin, too
-            admin_code, admin_output, admin_error = pipe(
-                'trac-admin %s permission list' % (self.wiki_dir_pattern % group.acronym))
-            self.assertEqual(admin_code, 0)
-            roles = group.role_set.filter(name_id__in=['chair', 'secr', 'ad'])
-            for role in roles:
-                user = role.email.address.lower()
-                self.assertIn("Granting admin permission for %s" % user, command_output)
-                self.assertIn(user, admin_output)
-            docs = group.document_set.filter(states__slug='active', type_id='draft')
-            for doc in docs:
-                name = doc.name
-                name = name.replace('draft-','')
-                name = name.replace(doc.stream_id+'-', '')
-                name = name.replace(group.acronym+'-', '')
-                self.assertIn("Adding component %s"%name, command_output)
-        for page in settings.TRAC_WIKI_PAGES_TEMPLATES:
-            self.assertIn("Adding page %s" % os.path.basename(page), command_output)
-        self.assertIn("Indexing default repository", command_output)
 
 OMITTED_APPS = [
     'ietf.secr.meetings',
