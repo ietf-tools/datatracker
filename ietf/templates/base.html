@@ -35,6 +35,46 @@
     </head>
     <body {% block bodyAttrs %}{% endblock %} class="position-relative"
           data-group-menu-data-url="{% url 'ietf.group.views.group_menu_data' %}">
+        <a class="visually-hidden visually-hidden-focusable" href="#content">Skip to main content</a>
+        <nav class="navbar navbar-expand-lg {% if server_mode and server_mode != "production" %} navbar-light bg-warning {% else %} navbar-dark bg-secondary {% endif %}  {% if navbar_mode %} {{ navbar_mode }} {% else %} fixed-top {% endif %}">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">
+                    <img alt="IETF Logo"
+                         src="{% static 'ietf/images/ietflogo-small-transparent.png' %}">
+                    Datatracker
+                    {% if server_mode and server_mode != "production" %}Dev Mode{% endif %}
+                </a>
+                <div class="collapse navbar-collapse" id="navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        {% include "base/menu.html" with flavor="top" %}
+                    </ul>
+                </div>
+                {% if not user.is_authenticated %}
+                    <a class="d-none d-sm-block mx-5 btn {% if server_mode and server_mode == "production" %} btn-warning {% else %} btn-info {% endif %}"
+                       rel="nofollow"
+                       href="/accounts/login/?next={{ request.get_full_path|removesuffix:"accounts/logout/"|urlencode }}">
+                        Sign
+                        in
+                    </a>
+                {% endif %}
+                <div class="d-flex d-none d-lg-block">
+                    <input class="form-control select2-field"
+                           id="navbar-doc-search"
+                           data-ajax--url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='docalias' doc_type='draft' %}"
+                           type="text"
+                           data-placeholder="Document search">
+                </div>
+                <button class="navbar-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#navbar-collapse"
+                        aria-controls="navbar-collapse"
+                        aria-expanded="false"
+                        aria-label="Toggle navigation">
+                    <i class="navbar-toggler-icon"></i>
+                </button>
+            </div>
+        </nav>
         <div class="pt-3 container-fluid">
             <div class="row">
                 {% if request.COOKIES.left_menu == "on" and not hide_menu %}
@@ -103,46 +143,6 @@
                 </footer>
             {% endblock %}
         </div>
-        {# placing the navbar here moves it to the bottom of the page for text-based browsers #}
-        <nav class="navbar navbar-expand-lg {% if server_mode and server_mode != "production" %} navbar-light bg-warning {% else %} navbar-dark bg-secondary {% endif %}  {% if navbar_mode %} {{ navbar_mode }} {% else %} fixed-top {% endif %}">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="/">
-                    <img alt="IETF Logo"
-                         src="{% static 'ietf/images/ietflogo-small-transparent.png' %}">
-                    Datatracker
-                    {% if server_mode and server_mode != "production" %}Dev Mode{% endif %}
-                </a>
-                <div class="collapse navbar-collapse" id="navbar-collapse">
-                    <ul class="nav navbar-nav">
-                        {% include "base/menu.html" with flavor="top" %}
-                    </ul>
-                </div>
-                {% if not user.is_authenticated %}
-                    <a class="d-none d-sm-block mx-5 btn {% if server_mode and server_mode == "production" %} btn-warning {% else %} btn-info {% endif %}"
-                       rel="nofollow"
-                       href="/accounts/login/?next={{ request.get_full_path|removesuffix:"accounts/logout/"|urlencode }}">
-                        Sign
-                        in
-                    </a>
-                {% endif %}
-                <div class="d-flex d-none d-lg-block">
-                    <input class="form-control select2-field"
-                           id="navbar-doc-search"
-                           data-ajax--url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='docalias' doc_type='draft' %}"
-                           type="text"
-                           data-placeholder="Document search">
-                </div>
-                <button class="navbar-toggler"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#navbar-collapse"
-                        aria-controls="navbar-collapse"
-                        aria-expanded="false"
-                        aria-label="Toggle navigation">
-                    <i class="navbar-toggler-icon"></i>
-                </button>
-            </div>
-        </nav>
         {% block js %}
         {% endblock %}
         <script src="{% static 'ietf/js/select2.js' %}"></script>
