@@ -15,7 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build the Docker image
-      run: >
+      run: |
         docker build .
           --file docker/app.Dockerfile
           --build-arg VARIANT=3.6-bullseye
