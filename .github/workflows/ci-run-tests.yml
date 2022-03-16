@@ -7,31 +7,20 @@ on:
 #    branches: [ main ]
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - name: Run all the tests
-      run: |
+    - run: >
         docker-compose
           --file docker-compose.yml
           --file docker/docker-compose.extend.yml
           up --detach
+    - run: >
         docker-compose exec app
           /docker-init.sh /workspace/ietf/manage.py test
             --settings=settings_local_sqlitetest
             --failfast
+    - run: >
         docker-compose stop
-
-
-        # docker run
-        #   --tty --interactive
-        #   --volume $(pwd):/workspace
-        #   dt-tests:ephemeral
-        #   /docker-init.sh
-        #     /workspace/ietf/manage.py test
-        #       --settings=settings_local_sqlitetest
-        #       --failfast
