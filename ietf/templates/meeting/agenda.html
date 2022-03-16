@@ -143,11 +143,11 @@
                         {% if item.timeslot.show_location and item.timeslot.get_html_location %}
                             {% with item.timeslot.location.floorplan as floor %}
                                 {% if item.timeslot.location.floorplan %}
-                                    <div class="d-none d-sm-block">
+                                    <div class="d-none d-sm-block float-end">
                                         <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#floor-{{ floor.name|xslugify }}"
                                            class="float-end"
                                            title="{{ floor.name }}">
-                                            <span class="badge bg-secondary label-wide">{{ floor.short }}</span>
+                                            <span class="badge bg-secondary">{{ floor.short }}</span>
                                         </a>
                                     </div>
                                 {% endif %}
@@ -161,7 +161,7 @@
                     {% if item.session.current_status == 'canceled' %}
                         <span class="badge bg-danger float-end">CANCELLED</span>
                     {% else %}
-                        <div class="float-end ps-3">
+                        <div class="float-end ps-2">
                             {% if item.slot_type.slug == 'other' %}
                                 {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
                                     {% include "meeting/session_buttons_include.html" with show_agenda=True item=item schedule=schedule %}
@@ -260,7 +260,7 @@
             {% if item.session.current_status == 'canceled' %}
                 <span class="badge bg-danger float-end">Cancelled</span>
             {% else %}
-                <div class="float-end ps-3">
+                <div class="float-end ps-2">
                     {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
                 </div>
             {% endif %}

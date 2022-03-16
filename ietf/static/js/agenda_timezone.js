@@ -191,16 +191,16 @@ window.update_times = function (newtz) {
                     .dayOfYear()) {
                     $(this)
                         .html(format_time(this.start_ts, newtz, this.format) +
-                            '-' + format_time(this.end_ts, newtz, 5) + tz);
+                            '<span class="d-lg-none"><br></span>-' + format_time(this.end_ts, newtz, 5) + tz);
                 } else {
                     $(this)
                         .html(format_time(this.start_ts, newtz, this.format) +
-                            '-' +
+                            '<span class="d-lg-none"><br></span>-' +
                             format_time(this.end_ts, newtz, this.format) + tz);
                 }
             } else {
                 $(this)
-                    .html(format_time(this.start_ts, newtz, this.format) + '-' +
+                    .html(format_time(this.start_ts, newtz, this.format) + '<span class="d-lg-none"><br></span>-' +
                         format_time(this.end_ts, newtz, this.format));
             }
         });
