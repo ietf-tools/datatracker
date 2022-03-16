@@ -57,11 +57,11 @@
                            {% endif %}">
                     <td>{{ doc.displayname_with_link }}</td>
                     {% include "doc/search/status_columns.html" %}
-                    <td>{% person_link doc.ad nowrap=False %}</td>
+                    <td>{% person_link doc.ad %}</td>
                     <td>
                         {% for p in doc.blocking_positions %}
                             {% if p.is_old_pos %}<span class="text-muted">{% endif %}
-                            {% person_link p.balloter nowrap=False %}
+                            {% person_link p.balloter %}
                             ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }} days ago{% endif %}
                             {% if doc.get_state_url != "rfc" and p.rev != doc.rev %}for -{{ p.rev }}{% endif %})
                             <br>

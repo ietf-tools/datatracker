@@ -19,7 +19,7 @@
     {% if name or email %}</a>{% endif %}
     <div class="card-body">
         <p class="lead mb-1">
-            {% person_link person with_email=False nowrap=False %}
+            {% person_link person with_email=False %}
         </p>
         {% for role in groups %}
             <a title="{{ role.group.name }} {{ role.group.type | upper }}"

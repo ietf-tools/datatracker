@@ -58,10 +58,10 @@
                             {% if session.requested_duration %}{{ session.requested_duration|stringformat:"s"|slice:"0:4" }}{% endif %}
                         </td>
                         <td>{{ session.attendees|default:"" }}</td>
-                        <td>{% person_link session.requested_by_person nowrap=False %}</td>
+                        <td>{% person_link session.requested_by_person %}</td>
                         <td>
                             {% if session.group.ad_role %}
-                                {% person_link session.group.ad_role.person nowrap=False %}
+                                {% person_link session.group.ad_role.person %}
                             {% endif %}
                         </td>
                         <td>
