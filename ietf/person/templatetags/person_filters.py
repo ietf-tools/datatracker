@@ -40,7 +40,6 @@ def person_link(person, **kwargs):
     title = kwargs.get("title", "")
     cls = kwargs.get("class", "")
     with_email = kwargs.get("with_email", True)
-    nowrap = kwargs.get("nowrap", True)
     if person:
         plain_name = person.plain_name()
         name = (
@@ -56,7 +55,6 @@ def person_link(person, **kwargs):
             "title": title,
             "class": cls,
             "with_email": with_email,
-            "nowrap": nowrap,
         }
     else:
         return {}
@@ -67,7 +65,6 @@ def email_person_link(email, **kwargs):
     title = kwargs.get("title", "")
     cls = kwargs.get("class", "")
     with_email = kwargs.get("with_email", True)
-    nowrap = kwargs.get("nowrap", True)
     plain_name = email.person.plain_name()
     name = (
         email.person.name
@@ -82,5 +79,4 @@ def email_person_link(email, **kwargs):
         "title": title,
         "class": cls,
         "with_email": with_email,
-        "nowrap": nowrap,
     }
