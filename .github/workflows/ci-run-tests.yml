@@ -12,17 +12,16 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Start docker
-      run: >
-        docker-compose
-          --file docker-compose.yml
-          --file docker/docker-compose.extend.yml
+      run: |
+        docker-compose \
+          --file docker-compose.yml \
+          --file docker/docker-compose.extend.yml \
           up --detach
     - name: Run all tests
-      run: >
-        docker-compose exec app
-          /docker-init.sh /workspace/ietf/manage.py test
-            --settings=settings_local_sqlitetest
+      run: |
+        docker-compose exec app \
+          /docker-init.sh /workspace/ietf/manage.py test \
+            --settings=settings_local_sqlitetest \
             --failfast
     - name: Stop docker
-      run: >
-        docker-compose stop
+      run: docker-compose stop
