@@ -11,16 +11,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Run all the tests
-    - run: >
+    - name: Start docker
+      run: >
         docker-compose
           --file docker-compose.yml
           --file docker/docker-compose.extend.yml
           up --detach
-    - run: >
+    - name: Run all tests
+      run: >
         docker-compose exec app
           /docker-init.sh /workspace/ietf/manage.py test
             --settings=settings_local_sqlitetest
             --failfast
-    - run: >
+    - name: Stop docker
+      run: >
         docker-compose stop
