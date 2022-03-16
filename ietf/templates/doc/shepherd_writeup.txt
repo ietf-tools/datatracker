@@ -1,5 +1,5 @@
 {% if doc.stream %}{% if doc.stream.slug == 'ietf' %}As required by RFC 4858, this is the current template for the Document Shepherd Write-Up. Changes are expected over time. 
-This version is dated 2 March 2023. 
+This version is dated 2 March 2022. 
 {% if doc.group.type.slug == 'individ' %} {# The odd placement of the else/endif are to control newlines in the text rendering #}
 (1) Was the document considered in any WG, and if so, why was it not adopted as a work item there?
 
