@@ -15,6 +15,30 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build the Docker image
-      run: docker build . --file docker/app.Dockerfile --tag dt-tests:$(date +%s)
-    - name: Prepare the Docker container
-      run: docker run dt-tests:$(date +%s)
+      run: >
+        docker build .
+          --file docker/app.Dockerfile
+          --build-arg VARIANT=3.6-bullseye
+          --build-arg NODE_VERSION=16
+          --tag dt-tests:ephemeral
+    - name: Run all the tests
+      run: |
+        docker-compose
+          --file docker-compose.yml
+          --file docker/docker-compose.extend.yml
+          up --detach
+        docker-compose exec app
+          /docker-init.sh /workspace/ietf/manage.py test
+            --settings=settings_local_sqlitetest
+            --failfast
+        docker-compose stop
+
+
+        # docker run
+        #   --tty --interactive
+        #   --volume $(pwd):/workspace
+        #   dt-tests:ephemeral
+        #   /docker-init.sh
+        #     /workspace/ietf/manage.py test
+        #       --settings=settings_local_sqlitetest
+        #       --failfast
