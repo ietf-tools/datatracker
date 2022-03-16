@@ -89,6 +89,8 @@ ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 ENV npm_config_loglevel warn
 # allow installing when the main user is root
 ENV npm_config_unsafe_perm true
+# disable NPM funding messages
+ENV npm_config_fund false
 
 # Set locale to en_US.UTF-8
 RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \
@@ -114,10 +116,21 @@ RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 # Colorize the bash shell
 RUN sed -i 's/#force_color_prompt=/force_color_prompt=/' /root/.bashrc
 
+ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
+RUN chmod +rx /usr/local/bin/wait-for
+
 # Copy the startup file
 COPY docker/scripts/app-init.sh /docker-init.sh
 RUN sed -i 's/\r$//' /docker-init.sh && \
     chmod +x /docker-init.sh
 
-WORKDIR /root/src
+# Create workspace
+RUN mkdir -p /workspace
+WORKDIR /workspace
+
+# Install NPM modules
+COPY package.json package.json
+RUN npm install --no-audit
+RUN rm -f package.json package-lock.json
+
 # ENTRYPOINT [ "/docker-init.sh" ]

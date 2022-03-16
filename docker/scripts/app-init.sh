@@ -1,12 +1,12 @@
 #!/bin/bash
 
-WORKSPACEDIR="/root/src"
+WORKSPACEDIR="/workspace"
 
 service rsyslog start
 
 # Generate static assets
 
-npm install
+npm install --prefer-offline --no-audit
 echo "Building static assets... (this could take a minute or two)"
 npx parcel build
 
@@ -76,7 +76,7 @@ for sub in \
 	data/developers/www6/iesg/evaluation \
     data/developers/media/photo \
 	; do
-    dir="/root/src/$sub"
+    dir="/workspace/$sub"
     if [ ! -d "$dir"  ]; then
     	echo "Creating dir $dir"
 	    mkdir -p "$dir";
@@ -86,7 +86,7 @@ done
 # Wait for DB container
 if [ -n "$EDITOR_VSCODE" ]; then
     echo "Waiting for DB container to come online ..."
-    wget -qO- https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for | sh -s -- localhost:3306 -- echo "DB ready"
+    /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
 fi
 
 # Initial checks
