@@ -29,7 +29,6 @@ class ReleasePagesTest(TestCase):
         text = q('#content').text()
         for word in ["About", "2.00", "3.00", "4.00", "5.0.0"]:
             self.assertIn(word, text)
-        self.assertGreater(len(q('#content a')), 16)
 
     def test_stats(self):
         url = reverse('ietf.release.views.stats')
