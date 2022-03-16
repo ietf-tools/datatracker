@@ -19,7 +19,7 @@ jobs:
           up --detach
     - name: Run all tests
       run: |
-        docker-compose exec app \
+        docker-compose exec -T app \
           /docker-init.sh /workspace/ietf/manage.py test \
             --settings=settings_local_sqlitetest \
             --failfast
