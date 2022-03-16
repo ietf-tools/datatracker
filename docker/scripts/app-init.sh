@@ -98,6 +98,7 @@ echo "Running initial checks..."
 echo "Done!"
 
 if [ -z "$EDITOR_VSCODE" ]; then
+    CODE=0
     python -m smtpd -n -c DebuggingServer localhost:2025 &
     if [ -z "$*" ]; then
         echo
@@ -112,6 +113,8 @@ if [ -z "$EDITOR_VSCODE" ]; then
         echo "Executing \"$*\" and stopping container."
         echo
         bash -c "$*"
+        CODE=$?
     fi
     service rsyslog stop
+    exit $CODE
 fi
