@@ -1,6 +1,6 @@
 #!/bin/bash
 
-WORKSPACEDIR="/root/src"
+WORKSPACEDIR="/workspace"
 
 ICSFILES=$(/usr/bin/find $WORKSPACEDIR/vzic/zoneinfo/ -name '*.ics' -print)
 for ICSFILE in $ICSFILES

@@ -5,8 +5,8 @@ services:
         ports:
             - '8000:8000'
         volumes:
-            - .:/root/src
-            - /root/src/node_modules
+            - .:/workspace
+            - /workspace/node_modules
     db:
         ports:
             - '3306'
