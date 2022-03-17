@@ -38,17 +38,20 @@ jobs:
 #         /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
     - name: Prepare for tests
       run: |
+        echo "Fixing permissions..."
         chmod -R 777 ./
+        echo "Copying docker config files..."
         cp ./docker/configs/settings_local.py ./ietf/settings_local.py
         cp ./docker/configs/settings_local_sqlitetest.py ./ietf/settings_local_sqlitetest.py
+        echo "Installing NPM packages..."
         npm install --prefer-offline --no-audit
+        echo "Building static assets..."
         npx parcel build
+        echo "Creating data directories..."
         chmod +x ./docker/scripts/app-create-dirs.sh
         ./docker/scripts/app-create-dirs.sh
         
     - name: Run all tests
       run: |
-        ./ietf/manage.py migrate --settings=settings_local_sqlitetest
-        ./ietf/manage.py test \
-          --settings=settings_local_sqlitetest \
-          --failfast
+        ./ietf/manage.py check --settings=settings_sqlitetest
+        ./ietf/manage.py test --settings=settings_local_sqlitetest --failfast
