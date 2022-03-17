@@ -26,11 +26,11 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Docker Build & Push Action
-        uses: mr-smithers-excellent/docker-build-push@v5.6
-        with:
-          image: ${{ env.IMAGE_NAME }}
-          tags: latest
-          registry: ${{ env.REGISTRY }}
-          dockerfile: dev/docker-test-base/Dockerfile
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      uses: mr-smithers-excellent/docker-build-push@v5.6
+      with:
+        image: ${{ env.IMAGE_NAME }}
+        tags: latest
+        registry: ${{ env.REGISTRY }}
+        dockerfile: dev/docker-test-base/Dockerfile
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
