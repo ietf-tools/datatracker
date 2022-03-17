@@ -48,6 +48,7 @@ jobs:
         
     - name: Run all tests
       run: |
+        ./ietf/manage.py migrate --settings=settings_local_sqlitetest
         ./ietf/manage.py test \
           --settings=settings_local_sqlitetest \
           --failfast
