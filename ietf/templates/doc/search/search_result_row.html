@@ -46,7 +46,7 @@
         {% endfor %}
     </td>
     <td class="doc">
-        {% if doc.pages %}<small class="float-end text-muted">{{ doc.pages }} page{{ doc.pages|pluralize }}</small>{% endif %}
+        {% if doc.pages %}<small class="float-end text-muted d-none d-sm-block">{{ doc.pages }} page{{ doc.pages|pluralize }}</small>{% endif %}
         <div>
             <a href="{{ doc.get_absolute_url }}">
                 {% if doc.get_state_slug == "rfc" %}
