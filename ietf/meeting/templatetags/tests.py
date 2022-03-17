@@ -3,6 +3,7 @@
 import debug  # pyflakes: ignore
 
 from django.template import Context, Template
+from pyquery import PyQuery
 
 from ietf.meeting.factories import FloorPlanFactory, RoomFactory, TimeSlotFactory, ConstraintFactory, MeetingFactory
 from ietf.meeting.templatetags.agenda_custom_tags import AnchorNode
@@ -48,108 +49,45 @@ class AgendaCustomTagsTests(TestCase):
 
 
 class EditorTagsTests(TestCase):
+    def _supported_constraint_names(self):
+        """Get all ConstraintNames that must be supported by the tags"""
+        constraint_names = set(ConstraintName.objects.filter(used=True))
+        # Instantiate a couple that are added at run-time in meeting.utils
+        constraint_names.add(ConstraintName(slug='joint_with_groups', name='joint with groups'))
+        constraint_names.add(ConstraintName(slug='responsible_ad', name='AD'))
+        # Reversed names are also added at run-time
+        reversed = [
+            ConstraintName(slug=n.slug + "-reversed", name="{} - reversed".format(n.name))
+            for n in constraint_names
+        ]
+        constraint_names.update(reversed)
+        return constraint_names
+
     def test_constraint_icon_for(self):
-        """constraint_icon_for tag should render properly"""
-        template = Template("""
-            {% load editor_tags %}
-            <html>
-                <div id="conflict">{% constraint_icon_for conflict %}</div>
-                <div id="conflic2">{% constraint_icon_for conflic2 %}</div>
-                <div id="conflic3">{% constraint_icon_for conflic3 %}</div>
-                <div id="timerange">{% constraint_icon_for timerange %}</div>
-                <div id="time_relation">{% constraint_icon_for time_relation %}</div>
-                <div id="wg_adjacent">{% constraint_icon_for wg_adjacent %}</div>
-                <div id="chair_conflict">{% constraint_icon_for chair_conflict %}</div>
-                <div id="tech_overlap">{% constraint_icon_for tech_overlap %}</div>
-                <div id="key_participant">{% constraint_icon_for key_participant %}</div>
-                <div id="bethere-count">{% constraint_icon_for bethere_count %}</div>
-                <div id="bethere-no-count">{% constraint_icon_for bethere_no_count %}</div>
-            </html>
-        """)
+        """constraint_icon_for tag should render all the necessary ConstraintNames
 
-        # bethere constraint with its count filled in
-        bethere_count = ConstraintFactory(name=ConstraintName.objects.get(slug='bethere'))
-        bethere_count.count = 4
-
-        meeting = MeetingFactory(type_id='ietf')
-
-        def make_constraint(name_slug, **extra_attrs):
-            cons = ConstraintFactory(
-                name=ConstraintName.objects.get(slug=name_slug),
-                meeting=meeting,
-            )
-            for prop, val in extra_attrs.items():
-                setattr(cons, prop, val)
-            return cons
-
-        result = template.render(Context({
-            'conflict': make_constraint('conflict'),
-            'conflic2': make_constraint('conflic2'),
-            'conflic3': make_constraint('conflic3'),
-            'timerange': make_constraint('timerange'),
-            'time_relation': make_constraint('time_relation'),
-            'wg_adjacent': make_constraint('wg_adjacent'),
-            'chair_conflict': make_constraint('chair_conflict'),
-            'tech_overlap': make_constraint('tech_overlap'),
-            'key_participant': make_constraint('key_participant'),
-            'bethere_count': make_constraint('bethere', count=4),
-            'bethere_no_count': make_constraint('bethere'),
-        }))
-        self.assertInHTML('<div id="conflict"><span class="encircled">1</span></div>', result)
-        self.assertInHTML('<div id="conflic2"><span class="encircled">2</span></div>', result)
-        self.assertInHTML('<div id="conflic3"><span class="encircled">3</span></div>', result)
-        self.assertInHTML('<div id="timerange"><i class="bi bi-calendar"></i></div>', result)
-        self.assertInHTML('<div id="time_relation">&Delta;</div>', result)
-        self.assertInHTML('<div id="wg_adjacent"><i class="bi bi-skip-end"></i></div>', result)
-        self.assertInHTML('<div id="chair_conflict"><i class="bi bi-person-circle"></i></div>', result)
-        self.assertInHTML('<div id="tech_overlap"><i class="bi bi-link"></i></div>', result)
-        self.assertInHTML('<div id="key_participant"><i class="bi bi-key"></i></div>', result)
-        self.assertInHTML('<div id="bethere-count"><i class="bi bi-person"></i>4</div>', result)
-        self.assertInHTML('<div id="bethere-no-count"><i class="bi bi-person"></i></div>', result)
-
-    def test_constraint_icon_for_reverse(self):
-        """constraint_icon_for tag should render properly when reversed
-
-        Only applies to constraints with both source and target groups.
+        Relies on ConstraintNames in the names.json fixture being up-to-date
         """
-        template = Template("""
-            {% load editor_tags %}
-            <html>
-                <div id="conflict">{% constraint_icon_for conflict %}</div>
-                <div id="conflic2">{% constraint_icon_for conflic2 %}</div>
-                <div id="conflic3">{% constraint_icon_for conflic3 %}</div>
-                <div id="wg_adjacent">{% constraint_icon_for wg_adjacent %}</div>
-                <div id="chair_conflict">{% constraint_icon_for chair_conflict %}</div>
-                <div id="tech_overlap">{% constraint_icon_for tech_overlap %}</div>
-                <div id="key_participant">{% constraint_icon_for key_participant %}</div>
-            </html>
-        """)
+        constraint_names = self._supported_constraint_names()
+        template = Template(
+            '{% load editor_tags %}<html>' +
+            ''.join(  # test without count param
+                f'<div id="{cn.slug}">{{% constraint_icon_for {cn.slug.replace("-", "_")} %}}</div>'
+                for cn in constraint_names
+            ) +
+            ''.join(  # test with count param
+                f'<div id="{cn.slug}-count">{{% constraint_icon_for {cn.slug.replace("-", "_")} 3 %}}</div>'
+                for cn in constraint_names
+            ) +
+            '</html>'
+        )
+        result = template.render(Context({cn.slug.replace('-', '_'): cn for cn in constraint_names}))
+        q = PyQuery(result)
+        for cn in constraint_names:
+            elts = q(f'div#{cn.slug}')
+            self.assertEqual(len(elts), 1)
+            self.assertGreater(len(elts.html()), 0)
 
-        meeting = MeetingFactory(type_id='ietf')
-
-        def make_constraint(name_slug, **extra_attrs):
-            cons = ConstraintFactory(
-                name=ConstraintName.objects.get(slug=name_slug),
-                meeting=meeting,
-            )
-            for prop, val in extra_attrs.items():
-                setattr(cons, prop, val)
-            return cons
-
-        result = template.render(Context({
-            'conflict': make_constraint('conflict', reversed=True),
-            'conflic2': make_constraint('conflic2', reversed=True),
-            'conflic3': make_constraint('conflic3', reversed=True),
-            'wg_adjacent': make_constraint('wg_adjacent', reversed=True),
-            'chair_conflict': make_constraint('chair_conflict', reversed=True),
-            'tech_overlap': make_constraint('tech_overlap', reversed=True),
-            'key_participant': make_constraint('key_participant', reversed=True),
-        }))
-        self.assertInHTML('<div id="conflict"><span class="encircled">-1</span></div>', result)
-        self.assertInHTML('<div id="conflic2"><span class="encircled">-2</span></div>', result)
-        self.assertInHTML('<div id="conflic3"><span class="encircled">-3</span></div>', result)
-        self.assertInHTML('<div id="wg_adjacent">-<i class="bi bi-skip-end"></i></div>', result)
-        self.assertInHTML('<div id="chair_conflict">-<i class="bi bi-person-circle"></i></div>', result)
-        self.assertInHTML('<div id="tech_overlap">-<i class="bi bi-link"></i></div>', result)
-        self.assertInHTML('<div id="key_participant">-<i class="bi bi-key"></i></div>', result)
-
+            elts = q(f'div#{cn.slug}-count')
+            self.assertEqual(len(elts), 1)
+            self.assertGreater(len(elts.html()), 0)
