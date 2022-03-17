@@ -40,9 +40,9 @@ jobs:
         chmod +x ./docker/scripts/app-create-dirs.sh
         ./docker/scripts/app-create-dirs.sh
         
-    - name: Wait for DB to come online
-      run: |
-        /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
+#     - name: Wait for DB to come online
+#       run: |
+#         /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
         
     - name: Run all tests
       run: |
