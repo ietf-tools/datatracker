@@ -24,7 +24,7 @@ def constraint_icon_for(constraint_name, count=None):
         'chair_conflict': '{reversed}<i class="bi bi-person-circle"></i>',
         'tech_overlap': '{reversed}<i class="bi bi-link"></i>',
         'key_participant': '{reversed}<i class="bi bi-key"></i>',
-        'joint_with_groups': '<i class=\"bi bi-link\"></i>',  # todo change this to differ from tech_overlap
+        'joint_with_groups': '<i class=\"bi bi-merge\"></i>',
         'responsible_ad': '<span class=\"encircled\">AD</span>',
     }
     reversed_suffix = '-reversed'
