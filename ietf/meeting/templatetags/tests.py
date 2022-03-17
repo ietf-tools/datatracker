@@ -5,7 +5,7 @@ import debug  # pyflakes: ignore
 from django.template import Context, Template
 from pyquery import PyQuery
 
-from ietf.meeting.factories import FloorPlanFactory, RoomFactory, TimeSlotFactory, ConstraintFactory, MeetingFactory
+from ietf.meeting.factories import FloorPlanFactory, RoomFactory, TimeSlotFactory
 from ietf.meeting.templatetags.agenda_custom_tags import AnchorNode
 from ietf.name.models import ConstraintName
 from ietf.utils.test_utils import TestCase
