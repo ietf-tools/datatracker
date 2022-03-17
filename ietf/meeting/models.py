@@ -883,7 +883,12 @@ class Constraint(models.Model):
     - time_relation: preference for a time difference between sessions
     - wg_adjacent: request for source WG to be adjacent (directly before or after,
       no breaks, same room) the target WG
-      
+
+    In the schedule editor, run-time, a couple non-persistent ConstraintName instances
+    are created for rendering purposes. This is done in
+    meeting.utils.preprocess_constraints_for_meeting_schedule_editor(). This adds:
+    - joint_with_groups
+    - responsible_ad
     """
     TIME_RELATION_CHOICES = (
         ('subsequent-days', 'Schedule the sessions on subsequent days'),
