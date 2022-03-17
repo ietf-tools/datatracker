@@ -19,8 +19,6 @@ jobs:
             MYSQL_DATABASE: ietf_utf8
             MYSQL_USER: django
             MYSQL_PASSWORD: RkTkDPFnKpko
-        ports:
-          - 3306:3306
     
     steps:
     - uses: actions/checkout@v3
