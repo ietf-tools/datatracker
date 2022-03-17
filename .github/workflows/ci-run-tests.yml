@@ -43,6 +43,8 @@ jobs:
         cp ./docker/configs/settings_local_sqlitetest.py ./ietf/settings_local_sqlitetest.py
         npm install --prefer-offline --no-audit
         npx parcel build
+        chmod +x ./docker/scripts/app-create-dirs.sh
+        ./docker/scripts/app-create-dirs.sh
         
     - name: Run all tests
       run: |
