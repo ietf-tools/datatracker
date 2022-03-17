@@ -53,5 +53,7 @@ jobs:
         
     - name: Run all tests
       run: |
+        echo "Running checks..."
         ./ietf/manage.py check --settings=settings_sqlitetest
-        ./ietf/manage.py test --settings=settings_local_sqlitetest --failfast
+        echo "Running tests..."
+        ./ietf/manage.py test --settings=settings_sqlitetest --failfast
