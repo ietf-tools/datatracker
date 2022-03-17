@@ -59,4 +59,5 @@ LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 # Copy the mysql data folder from the import stage
 COPY --from=importStage /var/lib/mysql /var/lib/mysql
 
-CMD ['--character-set-server=utf8', '--collation-server=utf8_unicode_ci', '--innodb-buffer-pool-size=1G', '--innodb-log-buffer-size=128M', '--innodb-log-file-size=256M', '--innodb-write-io-threads=8', '--innodb-flush-log-at-trx-commit=0', '--performance-schema=1']
+ENTRYPOINT ['docker-entrypoint.sh']
+CMD ['mariadbd', '--character-set-server=utf8', '--collation-server=utf8_unicode_ci', '--innodb-buffer-pool-size=1G', '--innodb-log-buffer-size=128M', '--innodb-log-file-size=256M', '--innodb-write-io-threads=8', '--innodb-flush-log-at-trx-commit=0', '--performance-schema=1']
