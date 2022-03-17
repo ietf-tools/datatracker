@@ -33,13 +33,10 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
-      with:
-        path: /workspace
 #     - name: Wait for DB to come online
 #       run: |
 #         /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
     - name: Run all tests
-      working-directory: /workspace
       run: |
         ./ietf/manage.py test \
           --settings=settings_local_sqlitetest \
