@@ -1,24 +1,46 @@
-name: Run all tests
+name: Run All Tests
 
 on:
   pull_request:
 
 jobs:
-  build:
+  tests:
+    name: Run Tests
     runs-on: ubuntu-latest
+    container: ghcr.io/ietf-tools/datatracker-test-base:latest
+    
+    services:
+      db:
+        image: ghcr.io/ietf-tools/datatracker-db:latest
+        volumes:
+            - mariadb-data:/var/lib/mysql
+        env:
+            MYSQL_ROOT_PASSWORD: ietf
+            MYSQL_DATABASE: ietf_utf8
+            MYSQL_USER: django
+            MYSQL_PASSWORD: RkTkDPFnKpko
+        ports:
+          - 3306:3306
+        options: >-
+          --character-set-server=utf8
+          --collation-server=utf8_unicode_ci
+          --innodb-buffer-pool-size=1G
+          --innodb-log-buffer-size=128M
+          --innodb-log-file-size=256M
+          --innodb-write-io-threads=8
+          --innodb-flush-log-at-trx-commit=0
+          --performance-schema=1
+    
     steps:
-    - uses: actions/checkout@v2
-    - name: Start docker
+    - uses: actions/checkout@v3
+      with:
+        path: /workspace
+    - name: Wait for DB to come online
       run: |
-        docker-compose \
-          --file docker-compose.yml \
-          --file docker/docker-compose.extend.yml \
-          up --detach
+        /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
     - name: Run all tests
+      working-directory: /workspace
       run: |
-        docker-compose exec -T app \
-          /docker-init.sh /workspace/ietf/manage.py test \
-            --settings=settings_local_sqlitetest \
-            --failfast
-    - name: Stop docker
-      run: docker-compose stop
+        ./ietf/manage.py test \
+          --settings=settings_local_sqlitetest \
+          --failfast
