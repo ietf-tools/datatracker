@@ -38,12 +38,11 @@ jobs:
 #         /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
     - name: Prepare for tests
       run: |
-        whoami
-        pwd
-        ls -la
+        mkdir -p ietf/static/dist/ietf
+        mkdir -p ietf/secr/static/dist/secr
         cp ./docker/configs/settings_local_sqlitetest.py ./ietf/settings_local_sqlitetest.py
         npm install --prefer-offline --no-audit
-        sudo npx parcel build
+        npx parcel build
         ./ietf/manage.py check --settings=settings_local_sqlitetest
         
     - name: Run all tests
