@@ -31,6 +31,6 @@ for sub in \
     ; do
     if [ ! -d "$sub"  ]; then
         echo "Creating dir $sub"
-        mkdir -p "$dir";
+        mkdir -p "$sub";
     fi
 done
