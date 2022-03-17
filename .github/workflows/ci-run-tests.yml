@@ -9,35 +9,35 @@ jobs:
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/datatracker-test-base:latest
     
-    services:
-      db:
-        image: ghcr.io/ietf-tools/datatracker-db:latest
-        volumes:
-            - mariadb-data:/var/lib/mysql
-        env:
-            MYSQL_ROOT_PASSWORD: ietf
-            MYSQL_DATABASE: ietf_utf8
-            MYSQL_USER: django
-            MYSQL_PASSWORD: RkTkDPFnKpko
-        ports:
-          - 3306:3306
-        options: >-
-          --character-set-server=utf8
-          --collation-server=utf8_unicode_ci
-          --innodb-buffer-pool-size=1G
-          --innodb-log-buffer-size=128M
-          --innodb-log-file-size=256M
-          --innodb-write-io-threads=8
-          --innodb-flush-log-at-trx-commit=0
-          --performance-schema=1
+#     services:
+#       db:
+#         image: ghcr.io/ietf-tools/datatracker-db:latest
+#         volumes:
+#             - mariadb-data:/var/lib/mysql
+#         env:
+#             MYSQL_ROOT_PASSWORD: ietf
+#             MYSQL_DATABASE: ietf_utf8
+#             MYSQL_USER: django
+#             MYSQL_PASSWORD: RkTkDPFnKpko
+#         ports:
+#           - 3306:3306
+#         options: >-
+#           --character-set-server=utf8
+#           --collation-server=utf8_unicode_ci
+#           --innodb-buffer-pool-size=1G
+#           --innodb-log-buffer-size=128M
+#           --innodb-log-file-size=256M
+#           --innodb-write-io-threads=8
+#           --innodb-flush-log-at-trx-commit=0
+#           --performance-schema=1
     
     steps:
     - uses: actions/checkout@v3
       with:
         path: /workspace
-    - name: Wait for DB to come online
-      run: |
-        /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
+#     - name: Wait for DB to come online
+#       run: |
+#         /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
     - name: Run all tests
       working-directory: /workspace
       run: |
