@@ -17,7 +17,10 @@
                 <th></th>
                 {% for h in meta.headers %}
                     {% if h.title != "Title" %}
-                        <th data-sort="{{ h.key }}">
+                        <th data-sort="{{ h.key }}"
+                            {% if h.title|slugify == "ipr" or h.title|slugify == "ad-shepherd" %}
+                              class="d-none d-sm-table-cell"
+                            {% endif %}>
                             {% if "sort_url" in h %}
                                 <a href="{{ h.sort_url }}">
                                     {{ h.title|cut:" " }}

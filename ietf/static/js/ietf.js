@@ -46,6 +46,25 @@ $(document)
             .tooltip();
     });
 
+// Help browser to wrap long link texts (esp. email addresses) more sensibly.
+$(document)
+    .ready(function () {
+        $("#content a")
+            .each(function () {
+                // get the text of the <a> element
+                var text = $(this)
+                    .text();
+                // insert some <wbr> at strategic places
+                var newtext = text.replace(/([@._])/g, "$1<wbr>");
+                // now replace only that text inside the element's HTML
+                var newhtml = $(this)
+                    .html()
+                    .replace(text, newtext);
+                $(this)
+                    .html(newhtml);
+            });
+    });
+
 $(document)
     .ready(function () {
 
@@ -114,11 +133,11 @@ $(function () {
             .not(".navskip");
 
         const contents = (headings.length > 0) &&
-          ($(headings)
-              .html()
-              .split("<")
-              .shift()
-              .trim());
+            ($(headings)
+                .html()
+                .split("<")
+                .shift()
+                .trim());
 
         if (
             contents &&
