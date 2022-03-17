@@ -273,5 +273,7 @@ $(document)
                 });
                 $(table.addClass("tablesorter-done"));
                 n++;
+                $(table)[0]
+                    .dispatchEvent(new Event("tablesorter:done"));
             });
     });
