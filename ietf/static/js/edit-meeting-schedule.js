@@ -19,6 +19,17 @@ $(function () {
         alert("Error: " + errorText);
     }
 
+    function ajaxCall(action, data) {
+        const ajaxData = { action: action };
+        Object.assign(ajaxData, data);
+        return jQuery.ajax({
+            url: window.location.href,
+            method: "post",
+            timeout: 5 * 1000,
+            data: ajaxData,
+        });
+    }
+
     /**
      * Time to treat as current time for computing whether to lock timeslots
      * @returns {*} Moment object equal to lockSeconds in the future
@@ -437,26 +448,20 @@ $(function () {
             }
 
             if (dropParent.hasClass("unassigned-sessions")) {
-                jQuery.ajax({
-                    url: window.location.href,
-                    method: "post",
-                    timeout: 5 * 1000,
-                    data: {
-                        action: "unassign",
-                        session: sessionElement.id.slice("session".length)
-                    }
-                }).fail(failHandler).done(done);
+                ajaxCall(
+                    "unassign",
+                    { session: sessionElement.id.slice('session'.length) }
+                ).fail(failHandler)
+                    .done(done);
             } else {
-                jQuery.ajax({
-                    url: window.location.href,
-                    method: "post",
-                    data: {
-                        action: "assign",
+                ajaxCall(
+                    "assign",
+                    {
                         session: sessionElement.id.slice("session".length),
                         timeslot: dropParent.attr("id").slice("timeslot".length)
-                    },
-                    timeout: 5 * 1000
-                }).fail(failHandler).done(done);
+                    }
+                ).fail(failHandler)
+                    .done(done);
             }
         });
 
@@ -759,16 +764,20 @@ $(function () {
 
     // Toggling timeslot types
     function updateTimeSlotTypeToggling() {
-        let checked = [];
-        timeSlotTypeInputs.filter(":checked").each(function () {
-            checked.push("[data-type=" + this.value + "]");
-        });
+        const checkedTypes = jQuery.map(timeSlotTypeInputs.filter(":checked"), elt => elt.value);
+        const checkedSelectors = checkedTypes.map(t => '[data-type="' + t + '"]').join(",");
 
-        sessions.filter(checked.join(",")).removeClass('hidden-timeslot-type');
-        sessions.not(checked.join(",")).addClass('hidden-timeslot-type');
-        timeslots.filter(checked.join(",")).removeClass('hidden-timeslot-type');
-        timeslots.not(checked.join(",")).addClass('hidden-timeslot-type');
+        sessions.filter(checkedSelectors).removeClass('hidden-timeslot-type');
+        sessions.not(checkedSelectors).addClass('hidden-timeslot-type');
+        timeslots.filter(checkedSelectors).removeClass('hidden-timeslot-type');
+        timeslots.not(checkedSelectors).addClass('hidden-timeslot-type');
         updateGridVisibility();
+        return checkedTypes;
+    }
+
+    function updateTimeSlotTypeTogglingAndSave() {
+        const checkedTypes = updateTimeSlotTypeToggling();
+        ajaxCall('updateview', {enabled_timeslot_types: checkedTypes});
     }
 
     // Toggling session purposes
@@ -783,7 +792,7 @@ $(function () {
     }
 
     if (timeSlotTypeInputs.length > 0) {
-        timeSlotTypeInputs.on("change", updateTimeSlotTypeToggling);
+        timeSlotTypeInputs.on("change", updateTimeSlotTypeTogglingAndSave);
         updateTimeSlotTypeToggling();
         schedEditor.find('#timeslot-type-toggles-modal .timeslot-type-toggles .select-all')
             .get(0)
@@ -791,7 +800,7 @@ $(function () {
                 'click',
                 function() {
                     timeSlotTypeInputs.prop('checked', true);
-                    updateTimeSlotTypeToggling();
+                    updateTimeSlotTypeTogglingAndSave();
                 });
         schedEditor.find('#timeslot-type-toggles-modal .timeslot-type-toggles .clear-all')
             .get(0)
@@ -799,7 +808,7 @@ $(function () {
                 'click',
                 function() {
                     timeSlotTypeInputs.prop('checked', false);
-                    updateTimeSlotTypeToggling();
+                    updateTimeSlotTypeTogglingAndSave();
                 });
     }
 

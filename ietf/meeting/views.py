@@ -728,10 +728,11 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         return JsonResponse(data, status=status)
 
     if request.method == 'POST':
-        if not can_edit:
+        action = request.POST.get('action')
+        # allow updateview action even if can_edit is false, it affects only the user's session
+        if not (can_edit or action == 'updateview'):
             permission_denied(request, "Can't edit this schedule.")
 
-        action = request.POST.get('action')
 
         # Handle ajax requests. Most of these return JSON responses with at least a 'success' key.
         # For the swapdays and swaptimeslots actions, the response is either a redirect to the
@@ -863,6 +864,15 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             )
             return HttpResponseRedirect(request.get_full_path())
 
+        elif action == 'updateview':
+            sess_data = request.session.setdefault('edit_meeting_schedule', {})
+            enabled_types = [ts_type.slug for ts_type in TimeSlotTypeName.objects.filter(
+                used=True,
+                slug__in=request.POST.getlist('enabled_timeslot_types[]', [])
+            )]
+            sess_data['enabled_timeslot_types'] = enabled_types
+            return _json_response(True)
+
         return _json_response(False, error="Invalid parameters")
 
     # Show only rooms that have regular sessions
@@ -949,6 +959,16 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         key=lambda tstype: tstype.name,
     )
 
+    # extract view configuration from session store
+    session_data = request.session.get('edit_meeting_schedule', None)
+    if session_data is None:
+        enabled_timeslot_types = ['regular']
+    else:
+        enabled_timeslot_types = [
+            ts_type.slug for ts_type in timeslot_types
+            if ts_type.slug in session_data.get('enabled_timeslot_types', [])
+        ]
+
     return render(request, "meeting/edit_meeting_schedule.html", {
         'meeting': meeting,
         'schedule': schedule,
@@ -963,6 +983,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         'timeslot_types': timeslot_types,
         'hide_menu': True,
         'lock_time': lock_time,
+        'enabled_timeslot_types': enabled_timeslot_types,
     })
 
 
