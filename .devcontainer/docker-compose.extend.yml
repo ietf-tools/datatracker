@@ -4,7 +4,6 @@ services:
     app:
         environment:
             EDITOR_VSCODE: 1
-            DJANGO_SETTINGS_MODULE: settings_local_sqlitetest
         volumes:
             - .:/workspace
             - /workspace/node_modules
