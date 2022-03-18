@@ -207,83 +207,84 @@ class SubmissionBaseUploadForm(forms.Form):
                         self.add_error('xml', "No docName attribute found in the xml root element")
                     name_error = validate_submission_name(draftname)
                     if name_error:
-                        self.add_error('xml', name_error)
-                    revmatch = re.search("-[0-9][0-9]$", draftname)
-                    if revmatch:
-                        self.revision = draftname[-2:]
-                        self.filename = draftname[:-3]
+                        self.add_error('xml', name_error) # This is a critical and immediate failure - do not proceed with other validation.
                     else:
-                        self.revision = None
-                        self.filename = draftname
-                    self.title = self.xmlroot.findtext('front/title').strip()
-                    if type(self.title) is str:
-                        self.title = unidecode(self.title)
-                    self.title = normalize_text(self.title)
-                    self.abstract = (self.xmlroot.findtext('front/abstract') or '').strip()
-                    if type(self.abstract) is str:
-                        self.abstract = unidecode(self.abstract)
-                    author_info = self.xmlroot.findall('front/author')
-                    for author in author_info:
-                        info = {
-                            "name": author.attrib.get('fullname'),
-                            "email": author.findtext('address/email'),
-                            "affiliation": author.findtext('organization'),
-                        }
-                        elem = author.find('address/postal/country')
-                        if elem != None:
-                            ascii_country = elem.get('ascii', None)
-                            info['country'] = ascii_country if ascii_country else elem.text
+                        revmatch = re.search("-[0-9][0-9]$", draftname)
+                        if revmatch:
+                            self.revision = draftname[-2:]
+                            self.filename = draftname[:-3]
+                        else:
+                            self.revision = None
+                            self.filename = draftname
+                        self.title = self.xmlroot.findtext('front/title').strip()
+                        if type(self.title) is str:
+                            self.title = unidecode(self.title)
+                        self.title = normalize_text(self.title)
+                        self.abstract = (self.xmlroot.findtext('front/abstract') or '').strip()
+                        if type(self.abstract) is str:
+                            self.abstract = unidecode(self.abstract)
+                        author_info = self.xmlroot.findall('front/author')
+                        for author in author_info:
+                            info = {
+                                "name": author.attrib.get('fullname'),
+                                "email": author.findtext('address/email'),
+                                "affiliation": author.findtext('organization'),
+                            }
+                            elem = author.find('address/postal/country')
+                            if elem != None:
+                                ascii_country = elem.get('ascii', None)
+                                info['country'] = ascii_country if ascii_country else elem.text
 
-                        for item in info:
-                            if info[item]:
-                                info[item] = info[item].strip()
-                        self.authors.append(info)
+                            for item in info:
+                                if info[item]:
+                                    info[item] = info[item].strip()
+                            self.authors.append(info)
 
-                    # --- Prep the xml ---
-                    file_name['xml'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (self.filename, self.revision, ext))
-                    try:
-                        prep = xml2rfc.PrepToolWriter(self.xmltree, quiet=True, liberal=True, keep_pis=[xml2rfc.V3_PI_TARGET])
-                        prep.options.accept_prepped = True
-                        self.xmltree.tree = prep.prep()
-                        if self.xmltree.tree == None:
-                            self.add_error('xml', "Error from xml2rfc (prep): %s" % prep.errors)
-                    except Exception as e:
-                            msgs = format_messages('prep', e, xml2rfc.log)
-                            self.add_error('xml', msgs)
-
-                    # --- Convert to txt ---
-                    if not ('txt' in self.cleaned_data and self.cleaned_data['txt']):
-                        file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (self.filename, self.revision))
+                        # --- Prep the xml ---
+                        file_name['xml'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (self.filename, self.revision, ext))
                         try:
-                            writer = xml2rfc.TextWriter(self.xmltree, quiet=True)
-                            writer.options.accept_prepped = True
-                            writer.write(file_name['txt'])
-                            log.log("In %s: xml2rfc %s generated %s from %s (version %s)" %
-                                    (   os.path.dirname(file_name['xml']),
-                                        xml2rfc.__version__,
-                                        os.path.basename(file_name['txt']),
-                                        os.path.basename(file_name['xml']),
-                                        self.xml_version))
+                            prep = xml2rfc.PrepToolWriter(self.xmltree, quiet=True, liberal=True, keep_pis=[xml2rfc.V3_PI_TARGET])
+                            prep.options.accept_prepped = True
+                            self.xmltree.tree = prep.prep()
+                            if self.xmltree.tree == None:
+                                self.add_error('xml', "Error from xml2rfc (prep): %s" % prep.errors)
                         except Exception as e:
-                            msgs = format_messages('txt', e, xml2rfc.log)
-                            log.log('\n'.join(msgs))
-                            self.add_error('xml', msgs)
+                                msgs = format_messages('prep', e, xml2rfc.log)
+                                self.add_error('xml', msgs)
 
-                    # --- Convert to html ---
-                    try:
-                        file_name['html'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.html' % (self.filename, self.revision))
-                        writer = xml2rfc.HtmlWriter(self.xmltree, quiet=True)
-                        writer.write(file_name['html'])
-                        self.file_types.append('.html')
-                        log.log("In %s: xml2rfc %s generated %s from %s (version %s)" %
-                            (   os.path.dirname(file_name['xml']),
-                                xml2rfc.__version__,
-                                os.path.basename(file_name['html']),
-                                os.path.basename(file_name['xml']),
-                                self.xml_version))
-                    except Exception as e:
-                        msgs = format_messages('html', e, xml2rfc.log)
-                        self.add_error('xml', msgs)
+                        # --- Convert to txt ---
+                        if not ('txt' in self.cleaned_data and self.cleaned_data['txt']):
+                            file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (self.filename, self.revision))
+                            try:
+                                writer = xml2rfc.TextWriter(self.xmltree, quiet=True)
+                                writer.options.accept_prepped = True
+                                writer.write(file_name['txt'])
+                                log.log("In %s: xml2rfc %s generated %s from %s (version %s)" %
+                                        (   os.path.dirname(file_name['xml']),
+                                            xml2rfc.__version__,
+                                            os.path.basename(file_name['txt']),
+                                            os.path.basename(file_name['xml']),
+                                            self.xml_version))
+                            except Exception as e:
+                                msgs = format_messages('txt', e, xml2rfc.log)
+                                log.log('\n'.join(msgs))
+                                self.add_error('xml', msgs)
+
+                        # --- Convert to html ---
+                        try:
+                            file_name['html'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.html' % (self.filename, self.revision))
+                            writer = xml2rfc.HtmlWriter(self.xmltree, quiet=True)
+                            writer.write(file_name['html'])
+                            self.file_types.append('.html')
+                            log.log("In %s: xml2rfc %s generated %s from %s (version %s)" %
+                                (   os.path.dirname(file_name['xml']),
+                                    xml2rfc.__version__,
+                                    os.path.basename(file_name['html']),
+                                    os.path.basename(file_name['xml']),
+                                    self.xml_version))
+                        except Exception as e:
+                            msgs = format_messages('html', e, xml2rfc.log)
+                            self.add_error('xml', msgs)
 
                 except Exception as e:
                     try:
@@ -292,6 +293,11 @@ class SubmissionBaseUploadForm(forms.Form):
                         self.add_error('xml', msgs)
                     except Exception:
                         self.add_error('xml', "An exception occurred when trying to process the XML file: %s" % e)
+
+        # The following errors are likely noise if we have previous field
+        # errors:
+        if self.errors:
+            raise forms.ValidationError('')
 
         if self.cleaned_data.get('txt'):
             # try to parse it

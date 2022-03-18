@@ -799,7 +799,7 @@ class MeetingTests(BaseMeetingTestCase):
                                   "1. WG status (15 minutes)\n\n2. Status of %s\n\n" % draft2.name)
         filenames = []
         for d in (draft1, draft2):
-            file,_ = submission_file(name=d.name,format='txt',templatename='test_submission.txt',group=session.group,rev="00")
+            file,_ = submission_file(name_in_doc=f'{d.name}-00',name_in_post=f'{d.name}-00.txt',templatename='test_submission.txt',group=session.group)
             filename = os.path.join(d.get_file_path(),file.name)
             with io.open(filename,'w') as draftbits:
                 draftbits.write(file.getvalue())

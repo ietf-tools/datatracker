@@ -422,7 +422,7 @@ class PlaintextDraftTests(TestCase):
 
     def setUp(self):
         super().setUp()
-        file,_ = submission_file(name='draft-test-draft-class',rev='00',format='txt',templatename='test_submission.txt',group=None)
+        file,_ = submission_file(name_in_doc='draft-test-draft-class-00', name_in_post='draft-test-draft-class-00.txt',templatename='test_submission.txt',group=None)
         self.draft = PlaintextDraft(text=file.getvalue(), source='draft-test-draft-class-00.txt', name_from_source=False)
 
     def test_get_status(self):

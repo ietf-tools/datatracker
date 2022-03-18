@@ -125,6 +125,7 @@ def validate_submission_name(name):
             if '.' in name:
                 msg += "  Did you include a filename extension in the name by mistake?"
             return msg
+    return None
 
 def validate_submission_rev(name, rev):
     if not rev:
