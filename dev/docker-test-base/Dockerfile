@@ -3,13 +3,20 @@ LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+
 RUN apt-get update
 RUN apt-get -qy upgrade
 
 # Add Node.js Source
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
 
+# Add Docker Source
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
+    $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
 # Install the packages we need
+RUN apt-get update
 RUN apt-get install -qy \
 	apache2-utils \
 	apt-file \
@@ -17,6 +24,7 @@ RUN apt-get install -qy \
 	bash \
 	build-essential \
 	curl \
+    docker-ce-cli \
 	enscript \
 	gawk \
 	gcc \
@@ -104,11 +112,6 @@ RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 # Fetch wait-for utility
 ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
 RUN chmod +rx /usr/local/bin/wait-for
-
-# Copy the startup file
-COPY docker/scripts/app-init.sh /docker-init.sh
-RUN sed -i 's/\r$//' /docker-init.sh && \
-    chmod +x /docker-init.sh
 
 # Create workspace
 RUN mkdir -p /workspace
