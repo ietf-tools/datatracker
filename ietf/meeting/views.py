@@ -1333,6 +1333,7 @@ def edit_schedule_properties(request, num, owner, name):
     meeting  = get_meeting(num)
     person   = get_person_by_email(owner)
     schedule = get_schedule_by_name(meeting, person, name)
+    persisted_schedule = schedule  # these are the same for now
     if schedule is None:
         raise Http404("No agenda information for meeting %s owner %s schedule %s available" % (num, owner, name))
 
@@ -1344,12 +1345,13 @@ def edit_schedule_properties(request, num, owner, name):
         permission_denied(request, "You may not edit this schedule.")
 
     if request.method == 'POST':
-        form = SchedulePropertiesForm(meeting, instance=schedule, data=request.POST)
+        persisted_schedule = Schedule.objects.get(pk=schedule.pk)  # keep a pristine copy
+        form = SchedulePropertiesForm(meeting, instance=schedule, data=request.POST)  # modifies its instance
         if form.is_valid():
-           form.save()
-           if request.GET.get('next'):
-               return HttpResponseRedirect(request.GET.get('next'))
-           return redirect('ietf.meeting.views.edit_meeting_schedule', num=num, owner=owner, name=name)
+            form.save()
+            if request.GET.get('next'):
+                return HttpResponseRedirect(request.GET.get('next'))
+            return redirect('ietf.meeting.views.edit_meeting_schedule', num=num, owner=owner, name=form.instance.name)
     else:
         form = SchedulePropertiesForm(meeting, instance=schedule)
 
@@ -1357,6 +1359,7 @@ def edit_schedule_properties(request, num, owner, name):
         "schedule": schedule,
         "form": form,
         "meeting": meeting,
+        "persisted_schedule": persisted_schedule,
     })
 
 

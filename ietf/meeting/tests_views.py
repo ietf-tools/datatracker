@@ -851,7 +851,7 @@ class MeetingTests(BaseMeetingTestCase):
 
         new_base = Schedule.objects.create(name="newbase", owner=schedule.owner, meeting=schedule.meeting)
         response = self.client.post(url, {
-                'name':schedule.name,
+                'name': 'some-other-name',
                 'visible':True,
                 'public':True,
                 'notes': "New Notes",
@@ -859,11 +859,19 @@ class MeetingTests(BaseMeetingTestCase):
             }
         )
         self.assertNoFormPostErrors(response)
+        self.assertRedirects(
+            response,
+            urlreverse(
+                'ietf.meeting.views.edit_meeting_schedule',
+                kwargs={'num': schedule.meeting.number, 'owner': schedule.owner.email(), 'name': 'some-other-name'}
+            ),
+        )
         schedule.refresh_from_db()
         self.assertTrue(schedule.visible)
         self.assertTrue(schedule.public)
         self.assertEqual(schedule.notes, "New Notes")
         self.assertEqual(schedule.base_id, new_base.pk)
+        self.assertEqual(schedule.name, 'some-other-name')
 
     def test_agenda_by_type_ics(self):
         session=SessionFactory(meeting__type_id='ietf',type_id='lead')

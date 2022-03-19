@@ -8,15 +8,15 @@
 {% block content %}
     {% origin %}
     <h1>IETF {{ meeting.number }} Schedule<br><small class="text-muted">
-    {{ schedule.owner }}/{{ schedule.name }} ({{ schedule.official_token }})</small></h1>
+    {{ persisted_schedule.owner }}/{{ persisted_schedule.name }} ({{ persisted_schedule.official_token }})</small></h1>
     <div class="my-3">
-        {% if not schedule.is_official %}
+        {% if not persisted_schedule.is_official %}
             <a class="btn btn-primary"
-               href="{% url 'ietf.meeting.views.make_schedule_official' num=meeting.number owner=schedule.owner.email_address name=schedule.name %}">
+               href="{% url 'ietf.meeting.views.make_schedule_official' num=meeting.number owner=schedule.owner.email_address name=persisted_schedule.name %}">
                 Make this the official schedule
             </a>
             <a class="btn btn-warning"
-               href="{% url 'ietf.meeting.views.delete_schedule' num=meeting.number owner=schedule.owner.email_address name=schedule.name %}">
+               href="{% url 'ietf.meeting.views.delete_schedule' num=meeting.number owner=schedule.owner.email_address name=persisted_schedule.name %}">
                 Delete this schedule
             </a>
         {% endif %}
