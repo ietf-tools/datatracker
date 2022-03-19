@@ -9,22 +9,16 @@
         Please enter the name of the Internet-Draft you wish to view the
         submission status of.
     </p>
-    <form method="post">
+    <form id="doc-submit-form" method="post">
         {% csrf_token %}
         <div class="mb-3">
             <label class="form-label">I-D name</label>
-            <select class="form-control select2-field"
+            <input class="form-control select2-field"
                     data-placeholder="draft-..."
-                    data-ajax--url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='docalias' doc_type='draft' %}"
-                    data-max-entries="1"
+                    data-ajax--url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='document' doc_type='draft' %}"
                     data-result-key="text"
-                    name="name">
-                {% if name %}
-                    <option id="{{ name }}" selected>
-                        {{ name }}
-                    </option>
-                {% endif %}
-            </select>
+                    name="name"
+                    id="doc-submit-name">
         </div>
         {% if error %}
             <p class="alert alert-danger my-3">
@@ -33,4 +27,12 @@
         {% endif %}
         <input class="btn btn-primary" type="submit" value="See status">
     </form>
+{% endblock %}
+{% block js %}
+    <script>
+        $('#doc-submit-name').on('select2:select', function (e) {
+            $('#doc-submit-name').val(e.params.data.text);
+            $('#doc-submit-form').trigger('submit');
+        });
+    </script>
 {% endblock %}
