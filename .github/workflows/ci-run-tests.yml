@@ -2,6 +2,9 @@ name: Run All Tests
 
 on:
   pull_request:
+    branches:
+      # TEMPORARY: Replace with main once bs5 is merged
+      - 'feat/bs5'
 
 jobs:
   tests:
