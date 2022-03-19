@@ -25,6 +25,7 @@ jobs:
     
     - name: Prepare for tests
       run: |
+        docker ps -a
         echo "Fixing permissions..."
         chmod -R 777 ./
         echo "Copying docker config files..."
