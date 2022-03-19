@@ -25,10 +25,7 @@ jobs:
     
     - name: Prepare for tests
       run: |
-        curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-        apt-get update
-        apt-get install docker-ce-cli -y
+        echo "Running containers:"
         docker ps -a
         echo "Fixing permissions..."
         chmod -R 777 ./
@@ -43,9 +40,9 @@ jobs:
         chmod +x ./docker/scripts/app-create-dirs.sh
         ./docker/scripts/app-create-dirs.sh
         
-#     - name: Wait for DB to come online
-#       run: |
-#         /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
+    - name: Ensure DB is ready
+      run: |
+        /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
         
     - name: Run all tests
       run: |
