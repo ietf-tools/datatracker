@@ -5,6 +5,8 @@ on:
     branches:
       # TEMPORARY: Replace with main once bs5 is merged
       - 'feat/bs5'
+    paths:
+      - 'ietf/**'
 
 jobs:
   tests:
