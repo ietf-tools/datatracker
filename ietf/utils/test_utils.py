@@ -162,73 +162,92 @@ class VerifyingClient(Client):
         super(VerifyingClient, self).__init__()
         self.test = test
 
+    def handle_error(self, path, source, errors):
+        file_name = "error" + re.sub("/", "-", path) + "source.html"
+        with open(file_name, "w") as src:
+            src.write(source)
+            print("\nHTML validation error for URL path", path)
+            print("HTML source saved to", file_name)
+            print("See AssertionError below for error location in HTML source.")
+        self.test.maxDiff = None
+        self.test.assertEqual("", errors)
+
     def get(self, path, *args, skip_verify=False, **extra):
         """GET request
 
         Performs verification of HTML responses unless skip_verify is True.
         """
         r = super(VerifyingClient, self).get(path, *args, **extra)
-        self.test.maxDiff = None
 
-        if r.status_code < 300 and r["content-type"].lower().startswith(
-            "text/html"
-        ) and not skip_verify:
-            # First, try https://validator.github.io/validator/ via html5validator
-            with tempfile.NamedTemporaryFile() as fp:
-                fp.write(r.content)
-                result = subprocess.run(["html5validator", fp.name], stdout=subprocess.PIPE)
-                errors = result.stdout.decode()
+        if (
+            skip_verify
+            or r.status_code >= 300
+            or not r["content-type"].lower().startswith("text/html")
+        ):
+            return r
+        source = r.content.decode()
 
-                msg = ""
-                if errors:
-                    source = r.content.decode().splitlines()
-                    for err in errors.splitlines():
-                        pos = re.match(r'".*":((\d+)\.(\d+)-(\d+)\.(\d+):.*)', err)
-                        msg += pos.group(1).strip(" .") + ":\n"
-                        for line in source[int(pos.group(2))-1:int(pos.group(4))]:
-                            msg += line.strip() + "\n"
-
-                self.test.assertEqual("", msg)
-
-            # Next, try HTML Tidy
-            document, errors = tidy_document(
-                r.content,
-                options={
-                    # this is causing way too many generic warnings:
-                    # "accessibility-check": 1,
-                },
+        # First, run https://validator.github.io/validator/ via html5validator
+        with tempfile.NamedTemporaryFile(
+            prefix=re.sub("/", "-", path).lstrip("-")
+        ) as fp:
+            fp.write(r.content)
+            fp.flush()
+            result = subprocess.run(
+                ["html5validator", "--show-warnings", fp.name], stdout=subprocess.PIPE
             )
+            errors = result.stdout.decode()
 
-            errors = "\n".join(
-                [
-                    e
-                    for e in errors.splitlines()
-                    # FIXME: django-bootstrap5 incorrectly sets a "required"
-                    # proprietary attribute on some <div>s; remove those errors
-                    if not re.match(r'.*proprietary attribute "required"', e)
-                    # FIXME: some secretariat templates have this issue, ignore
-                    and not re.match(
-                        r".*id and name attribute value mismatch", e
-                    )
-                    # FIXME: bootstrap-icons and close buttons render as empty, remove those errors.
-                    # Also, django seems to generate some empty tags, so remove those, too.
-                    and not re.match(
-                        r".*trimming empty <(i|em|button|span|optgroup)>", e)
-                    # FIXME: some old pages only work correctly in quirks mode :-(
-                    and not re.match(
-                        r".*missing <!DOCTYPE> declaration", e)
-                ]
-            )
+        if errors:
+            msg = ""
+            for err in errors.splitlines():
+                if re.match(r'.*Attribute "required" not allowed', err) or re.match(
+                    r'.*The "type" attribute is unnecessary for JavaScript', err
+                ) or re.match(r".*Consider avoiding viewport values", err):
+                    continue
 
-            if errors:
-                file_name = "error" + re.sub("/", "-", path) + "source.html"
-                with open(file_name, "w") as src:
-                    src.write(r.content.decode())
-                    print("\nHTML validation error for URL path", path)
-                    print("HTML source saved to", file_name)
-                    print("See AssertionError below for error location in HTML source.")
+                pos = re.match(r'".*":((\d+)\.(\d+)-(\d+)\.(\d+):.*)', err)
+                if not pos:
+                    print(source, err)
+                    self.handle_error(path, source, msg)
+                msg += pos.group(1).strip(" .") + ":\n"
+                for line in source.splitlines()[
+                    int(pos.group(2)) - 1 : int(pos.group(4))
+                ]:
+                    msg += line.strip() + "\n"
 
-            self.test.assertEqual("", errors)
+            if msg:
+                self.handle_error(path, source, msg)
+
+        # Next, run HTML Tidy
+        document, errors = tidy_document(
+            r.content,
+            options={
+                # this is causing way too many generic warnings:
+                # "accessibility-check": 1,
+            },
+        )
+
+        errors = "\n".join(
+            [
+                e
+                for e in errors.splitlines()
+                # FIXME: django-bootstrap5 incorrectly sets a "required"
+                # proprietary attribute on some <div>s; remove those errors
+                if not re.match(r'.*proprietary attribute "required"', e)
+                # FIXME: some secretariat templates have this issue, ignore
+                and not re.match(r".*id and name attribute value mismatch", e)
+                # FIXME: bootstrap-icons and close buttons render as empty, remove those errors.
+                # Also, django seems to generate some empty tags, so remove those, too.
+                and not re.match(r".*trimming empty <(i|em|button|span|optgroup)>", e)
+                # FIXME: some old pages only work correctly in quirks mode :-(
+                and not re.match(r".*missing <!DOCTYPE> declaration", e)
+            ]
+        )
+
+        if errors:
+            self.handle_error(path, source, errors)
+
         return r
 
 
