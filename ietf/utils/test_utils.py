@@ -41,6 +41,8 @@ import html5lib
 import requests_mock
 import shutil
 import sys
+import tempfile
+import subprocess
 
 from urllib.parse import unquote
 from unittest.util import strclass
@@ -166,10 +168,29 @@ class VerifyingClient(Client):
         Performs verification of HTML responses unless skip_verify is True.
         """
         r = super(VerifyingClient, self).get(path, *args, **extra)
-        # print(path, r.status_code, r["content-type"].lower())
+        self.test.maxDiff = None
+
         if r.status_code < 300 and r["content-type"].lower().startswith(
             "text/html"
         ) and not skip_verify:
+            # First, try https://validator.github.io/validator/ via html5validator
+            with tempfile.NamedTemporaryFile() as fp:
+                fp.write(r.content)
+                result = subprocess.run(["html5validator", fp.name], stdout=subprocess.PIPE)
+                errors = result.stdout.decode()
+
+                msg = ""
+                if errors:
+                    source = r.content.decode().splitlines()
+                    for err in errors.splitlines():
+                        pos = re.match(r'".*":((\d+)\.(\d+)-(\d+)\.(\d+):.*)', err)
+                        msg += pos.group(1).strip(" .") + ":\n"
+                        for line in source[int(pos.group(2))-1:int(pos.group(4))]:
+                            msg += line.strip() + "\n"
+
+                self.test.assertEqual("", msg)
+
+            # Next, try HTML Tidy
             document, errors = tidy_document(
                 r.content,
                 options={
@@ -207,7 +228,6 @@ class VerifyingClient(Client):
                     print("HTML source saved to", file_name)
                     print("See AssertionError below for error location in HTML source.")
 
-            self.test.maxDiff = None
             self.test.assertEqual("", errors)
         return r
 

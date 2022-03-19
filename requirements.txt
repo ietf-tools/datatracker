@@ -78,3 +78,4 @@ xym>=0.4.4,!=0.4.7,<1.0
 #zxcvbn-python>=4.4.14		# Not needed until we do back-end password entropy validation
 djhtml>=1.4.11  # To auto-indent templates via "djlint --profile django --reformat"
 pytidylib>=0.3.2  # Used during tests to check validity of generated HTML
+html5validator>=0.4.0  # Used during tests to check validity of generated HTML
