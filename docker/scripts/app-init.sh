@@ -84,10 +84,15 @@ for sub in \
 done
 
 # Wait for DB container
+
 if [ -n "$EDITOR_VSCODE" ]; then
     echo "Waiting for DB container to come online ..."
     /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
 fi
+
+# Run memcached
+
+/usr/bin/memcached -u root -d
 
 # Initial checks
 
