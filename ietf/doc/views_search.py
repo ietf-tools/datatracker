@@ -447,10 +447,6 @@ def docs_for_ad(request, name):
         if blocked_docs:
             blocked_docs.sort(key=lambda d: min(p.time for p in d.blocking_positions if p.balloter==ad), reverse=True)
 
-        for d in blocked_docs:
-           if d.get_base_name() == 'charter-ietf-shmoo-01-04.txt':
-              print('Is in list')
-
     return render(request, 'doc/drafts_for_ad.html', {
         'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name(), 'blocked_docs': blocked_docs
     })
