@@ -35,14 +35,14 @@
                     {% for ipr in iprs %}
                         {% if user|has_role:"Secretariat" %}
                             {% ifchanged %}
-                                <thead>
+                                <tbody>
                                     <tr class="table-warning">
                                         <th colspan="3">{{ ipr.state.name }}</th>
                                     </tr>
-                                </thead>
+                                </tbody>
                             {% endifchanged %}
                         {% endif %}
-                        <thead>
+                        <tbody>
                             <tr class="table-info">
                                 <th colspan="3">
                                     {% block intro_prefix %}IPR that was submitted by "{{ q }}" and{% endblock %}
@@ -62,7 +62,7 @@
                                     {% block intro_suffix %}{% endblock %}
                                 </th>
                             </tr>
-                        </thead>
+                        </tbody>
                         <tbody>
                             <tr>
                                 <td>{{ ipr.time|date:"Y-m-d" }}</td>

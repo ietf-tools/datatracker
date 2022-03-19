@@ -40,11 +40,11 @@
             </thead>
             {% for session in area.list %}
                 {% ifchanged %}
-                    <thead>
+                    <tbody>
                         <tr>
                             <th class="table-warning" colspan="7">{{ session.current_status_name|capfirst }}</th>
                         </tr>
-                    </thead>
+                    </tbody>
                 {% endifchanged %}
                 <tbody>
                     <tr>

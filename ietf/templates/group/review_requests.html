@@ -30,11 +30,11 @@
             </tr>
         </thead>
         {% if unassigned_review_requests %}
-            <thead>
+            <tbody>
                 <tr class="table-info" id="unassigned-review-requests">
                     <th colspan="7">Unassigned review requests</th>
                 </tr>
-            </thead>
+            </tbody>
             <tbody>
                 {% for r in unassigned_review_requests %}
                     <tr>
@@ -76,11 +76,11 @@
                 </tbody>
             {% endif %}
             {% if open_review_assignments %}
-                <thead>
+                <tbody>
                     <tr class="table-info" id="open_review_assignments">
                         <th colspan="7">Open review requests</th>
                     </tr>
-                </thead>
+                </tbody>
                 <tbody>
                     {% for a in open_review_assignments %}
                         <tr>
@@ -153,13 +153,13 @@
                 </tr>
             </thead>
             {% if closed_review_requests %}
-                <thead>
+                <tbody>
                     <tr class="table-info">
                         <th colspan="8">
                             Closed review requests
                         </th>
                     </tr>
-                </thead>
+                </tbody>
                 <tbody>
                     {% for r in closed_review_requests %}
                         <tr>
@@ -192,13 +192,13 @@
                 </tbody>
             {% endif %}
             {% if closed_review_assignments %}
-                <thead>
+                <tbody>
                     <tr class="table-info">
                         <th colspan="8">
                             Closed review assignments
                         </th>
                     </tr>
-                </thead>
+                </tbody>
                 <tbody>
                     {% for a in closed_review_assignments %}
                         <tr>
