@@ -4,7 +4,7 @@
     "name": "IETF Datatracker",
     "dockerComposeFile": ["../docker-compose.yml", "docker-compose.extend.yml"],
     "service": "app",
-    "workspaceFolder": "/workspace",
+    "workspaceFolder": "/root/src",
     "shutdownAction": "stopCompose",
     "postCreateCommand": "/docker-init.sh",
     "containerEnv": {
@@ -69,10 +69,7 @@
 		"spmeesseman.vscode-taskexplorer",
 		"mtxr.sqltools",
 		"mtxr.sqltools-driver-mysql",
-		"mrmlnc.vscode-duplicate",
-		"eamodio.gitlens",
-		"oderwat.indent-rainbow",
-		"johnsoncodehk.volar"
+		"mrmlnc.vscode-duplicate"
 	],
     
     // Use 'forwardPorts' to make a list of ports inside the container available locally.

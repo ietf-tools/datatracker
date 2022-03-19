@@ -1,6 +1,6 @@
 #!/bin/bash
 
-WORKSPACEDIR="/workspace"
+WORKSPACEDIR="/root/src"
 
 pushd .
 cd $WORKSPACEDIR

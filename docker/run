@@ -3,5 +3,5 @@
 cd ..
 docker-compose -f docker-compose.yml -f docker/docker-compose.extend.yml up -d
 docker-compose exec app /bin/sh /docker-init.sh
-docker-compose stop
+docker-compose down
 cd docker
