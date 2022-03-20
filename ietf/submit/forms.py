@@ -567,19 +567,15 @@ class PreapprovalForm(forms.Form):
 
     def clean_name(self):
         n = self.cleaned_data['name'].strip().lower()
-
-        if not n.startswith("draft-"):
-            raise forms.ValidationError("Name doesn't start with \"draft-\".")
-        if len(n.split(".")) > 1 and len(n.split(".")[-1]) == 3:
-            raise forms.ValidationError("Name appears to end with a file extension .%s - do not include an extension." % n.split(".")[-1])
+        error_msg = validate_submission_name(n)
+        if error_msg:
+            raise forms.ValidationError(error_msg)
 
         components = n.split("-")
         if components[-1] == "00":
             raise forms.ValidationError("Name appears to end with a revision number -00 - do not include the revision.")
         if len(components) < 4:
             raise forms.ValidationError("Name has less than four dash-delimited components - can't form a valid group draft name.")
-        if not components[-1]:
-            raise forms.ValidationError("Name ends with a dash.")
         acronym = components[2]
         if acronym not in [ g.acronym for g in self.groups ]:
             raise forms.ValidationError("Group acronym not recognized as one you can approve drafts for.")
