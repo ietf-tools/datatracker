@@ -11,7 +11,7 @@
     {% origin %}
     <h1>Edit Interim Meeting Request</h1>
     {% if form.non_field_errors %}<div class="my-3 alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
-    <form id="interim-request-form" role="form" method="post" class="my-3">
+    <form id="interim-request-form" method="post" class="my-3">
         {% csrf_token %}
         {% bootstrap_field form.group layout='horizontal' %}
         <input type="hidden" name="group" value="{{ form.group.value }}">

@@ -26,7 +26,6 @@ RUN apt-get install -qy \
 	bash \
 	build-essential \
 	curl \
-	default-jdk \
 	enscript \
 	fish \
 	gawk \
@@ -116,6 +115,11 @@ RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 
 # Colorize the bash shell
 RUN sed -i 's/#force_color_prompt=/force_color_prompt=/' /root/.bashrc
+
+# Install the Nu Html Checker (v.Nu)
+ADD https://github.com/validator/validator/releases/download/latest/vnu.linux.zip /
+RUN unzip -d / /vnu.linux.zip
+RUN rm -rf /vnu.linux.zip
 
 ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
 RUN chmod +rx /usr/local/bin/wait-for

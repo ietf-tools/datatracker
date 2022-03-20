@@ -29,7 +29,7 @@ class ReleasePagesTest(TestCase):
         text = q('#content').text()
         for word in ["About", "2.00", "3.00", "4.00", "5.0.0"]:
             self.assertIn(word, text)
-        self.assertGreater(len(q('#content a')), 16)
+        self.assertGreater(len(q('#content a')), 14)
 
     def test_stats(self):
         url = reverse('ietf.release.views.stats')
@@ -44,4 +44,3 @@ class ReleasePagesTest(TestCase):
         s = q('#frequency-data').text()
         self.assertIn("type: 'column',", s)
         self.assertIn('"data": [[2007, 7], ', s)
-

@@ -671,5 +671,5 @@ class MessageModelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(MessageModelForm, self).__init__(*args, **kwargs)
         self.fields['frm'].label='From'
-        self.fields['frm'].widget.attrs['readonly'] = 'True'
-        self.fields['reply_to'].widget.attrs['readonly'] = 'True'
+        self.fields['frm'].widget.attrs['readonly'] = True
+        self.fields['reply_to'].widget.attrs['readonly'] = True

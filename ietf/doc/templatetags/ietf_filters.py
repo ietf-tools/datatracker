@@ -197,6 +197,7 @@ def urlize_ietf_docs(string, autoescape=None):
     string = re.sub(r"(STD\s*?)0{0,3}(\d+)", "<a href=\"/doc/std\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
     string = re.sub(r"(FYI\s*?)0{0,3}(\d+)", "<a href=\"/doc/fyi\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
     string = re.sub(r"(draft-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(bofreq-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
     string = re.sub(r"(conflict-review-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
     string = re.sub(r"(status-change-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
     string = re.sub(r"(charter-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)

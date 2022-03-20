@@ -15,7 +15,7 @@
             </option>
         </select>
         <select class="form-select" name="statchg_relation_row_{{ rfc }}">
-            <option value="" {% if choice_slug == "" %}selected{% endif %}>
+            <option {% if choice_slug == "" %}selected{% endif %}>
                 (None)
             </option>
             {% for rel in relation_slugs %}
@@ -38,7 +38,7 @@
             data-placeholder="Enter new affected RFC.">
     </select>
     <select class="form-select" name="statchg_relation_row_">
-        <option value="" {% if choice_slug == "" %}selected{% endif %}>
+        <option {% if choice_slug == "" %}selected{% endif %}>
             (Select proposed new status.)
         </option>
         {% for rel in relation_slugs %}

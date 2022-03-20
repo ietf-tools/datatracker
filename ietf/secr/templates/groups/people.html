@@ -4,7 +4,7 @@
 {% block title %}Groups - People{% endblock %}
 
 {% block extrahead %}{{ block.super }}
-    <link rel="stylesheet" type="text/css" href="{% static 'ietf/css/jquery-ui.css' %}" />
+    <link rel="stylesheet" href="{% static 'ietf/css/jquery-ui.css' %}" />
     <script src="{% static 'ietf/js/jquery-ui.js' %}"></script>
     <script src="{% static 'secr/js/utils.js' %}"></script>
 {% endblock %}
@@ -45,7 +45,7 @@
         <div class="inline-related">
             <!-- <hr><br> -->
             <h3>Add Role</h3>
-            <form id="groups-people" action="" method="post">{% csrf_token %}
+            <form id="groups-people" method="post">{% csrf_token %}
                 {{ form.non_field_errors }}
                 {{ form.group_acronym }}
                 <table class="full-width">
