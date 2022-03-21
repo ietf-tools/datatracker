@@ -15,7 +15,7 @@
 </div>
 
 - [**Production Website**](https://datatracker.ietf.org)
-- [Changelog](https://github.com/ietf-tools/datatracker/blob/main/CHANGELOG.md)
+- [Changelog](https://github.com/ietf-tools/datatracker/releases)
 - [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md)
 - [Getting Started](#getting-started)
     - [Git Cloning Tips](#git-cloning-tips)
