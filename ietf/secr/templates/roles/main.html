@@ -4,7 +4,7 @@
 {% block title %}Roles{% endblock %}
 
 {% block extrahead %}{{ block.super }}
-    <link rel="stylesheet" type="text/css" href="{% static 'ietf/css/jquery-ui.css' %}" />
+    <link rel="stylesheet" href="{% static 'ietf/css/jquery-ui.css' %}" />
     <script src="{% static 'ietf/js/jquery-ui.js' %}"></script>
     <script src="{% static 'secr/js/utils.js' %}"></script>
 
@@ -40,7 +40,7 @@
 {% block content %}
 
     <div class="module interim-container">
-        <form id="roles-form" action="" method="post">{% csrf_token %}
+        <form id="roles-form" method="post">{% csrf_token %}
         <h2>Role Tool</h2>
         <div class="inline-related">
             <h3><b>Select Group</b></h3>

@@ -41,6 +41,7 @@ import html5lib
 import requests_mock
 import shutil
 import sys
+import subprocess
 
 from urllib.parse import unquote
 from unittest.util import strclass
@@ -160,55 +161,122 @@ class VerifyingClient(Client):
         super(VerifyingClient, self).__init__()
         self.test = test
 
+    def handle_error(self, path, source, errors):
+        file_name = "error" + re.sub("/", "-", path)
+        if not file_name.endswith("-"):
+            file_name += "-"
+        file_name += "source.html"
+        with open(file_name, "w") as src:
+            src.write(source)
+            print("\nHTML validation error for URL path", path)
+            print("HTML source saved to", file_name)
+            print("See AssertionError below for error location in HTML source.")
+        self.test.maxDiff = None
+        self.test.assertEqual("", errors)
+
     def get(self, path, *args, skip_verify=False, **extra):
         """GET request
 
         Performs verification of HTML responses unless skip_verify is True.
         """
         r = super(VerifyingClient, self).get(path, *args, **extra)
-        # print(path, r.status_code, r["content-type"].lower())
-        if r.status_code < 300 and r["content-type"].lower().startswith(
-            "text/html"
-        ) and not skip_verify:
-            document, errors = tidy_document(
-                r.content,
-                options={
-                    # this is causing way too many generic warnings:
-                    # "accessibility-check": 1,
-                },
-            )
 
-            errors = "\n".join(
-                [
-                    e
-                    for e in errors.splitlines()
-                    # FIXME: django-bootstrap5 incorrectly sets a "required"
-                    # proprietary attribute on some <div>s; remove those errors
-                    if not re.match(r'.*proprietary attribute "required"', e)
-                    # FIXME: some secretariat templates have this issue, ignore
-                    and not re.match(
-                        r".*id and name attribute value mismatch", e
-                    )
-                    # FIXME: bootstrap-icons and close buttons render as empty, remove those errors.
-                    # Also, django seems to generate some empty tags, so remove those, too.
-                    and not re.match(
-                        r".*trimming empty <(i|em|button|span|optgroup)>", e)
-                    # FIXME: some old pages only work correctly in quirks mode :-(
-                    and not re.match(
-                        r".*missing <!DOCTYPE> declaration", e)
-                ]
+        if (
+            skip_verify
+            or r.status_code >= 300
+            or not r["content-type"].lower().startswith("text/html")
+        ):
+            return r
+        source = r.content.decode()
+
+        if settings.VNU:
+            # First, run through https://validator.github.io/validator/
+            result = subprocess.run(
+                ["java", "nu.validator.client.HttpClient", "-"],
+                input=r.content,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
             )
+            errors = result.stdout.decode()
 
             if errors:
-                file_name = "error" + re.sub("/", "-", path) + "source.html"
-                with open(file_name, "w") as src:
-                    src.write(r.content.decode())
-                    print("\nHTML validation error for URL path", path)
-                    print("HTML source saved to", file_name)
-                    print("See AssertionError below for error location in HTML source.")
+                msg = ""
+                for err in errors.splitlines():
+                    # TODO: check if some can be removed after validating database templates
+                    if (
+                        re.match(r'.*Attribute "required" not allowed', err)
+                        or re.match(
+                            r'.*The "type" attribute is unnecessary for JavaScript', err
+                        )
+                        or re.match(
+                            r'.*Element "option" without attribute "label" must not be empty',
+                            err,
+                        )
+                        or re.match(r".*The character encoding was not declared", err)
+                        or re.match(r".*Consider avoiding viewport values", err)
+                        or re.match(
+                            r'.*The value of the "for" attribute of the "label" element must be the ID of a non-hidden form control',
+                            err,
+                        )
+                        or re.match(r".*is not in Unicode Normalization Form C", err)
+                    ):
+                        continue
+                    # ignore some errors about obsolete HTML coming from the database
+                    if re.match(
+                        r"/meeting/\d+/proceedings/overview/", path
+                    ) and re.match(
+                        r'.*The "\w+" attribute on the "\w+" element is obsolete', err
+                    ):
+                        continue
+                    # ignore some errors coming from outdated but still-needed iframes
+                    if re.match(r"/meeting/\d+/week-view", path) and re.match(
+                        r".*Start tag seen without seeing a doctype first", err
+                    ):
+                        continue
+                    pos = re.match(r'".*":((\d+)\.(\d+)-(\d+)\.(\d+):.*)', err)
+                    if not pos:
+                        self.handle_error(path, source, err)
+                        return r
+                    msg += pos.group(1).strip(" .") + ":\n"
+                    for line in source.splitlines()[
+                        int(pos.group(2)) - 1 : int(pos.group(4))
+                    ]:
+                        msg += line.strip() + "\n"
 
-            self.test.maxDiff = None
-            self.test.assertEqual("", errors)
+                if msg:
+                    self.handle_error(path, source, msg)
+                    return r
+
+        # Next, run through https://www.html-tidy.org/
+        document, errors = tidy_document(
+            r.content,
+            options={
+                # this is causing way too many generic warnings:
+                # "accessibility-check": 1,
+            },
+        )
+
+        errors = "\n".join(
+            [
+                e
+                # TODO: check if some can be removed after validating database templates
+                for e in errors.splitlines()
+                # FIXME: django-bootstrap5 incorrectly sets a "required"
+                # proprietary attribute on some <div>s; remove those errors
+                if not re.match(r'.*proprietary attribute "required"', e)
+                # FIXME: some secretariat templates have this issue, ignore
+                and not re.match(r".*id and name attribute value mismatch", e)
+                # FIXME: bootstrap-icons and close buttons render as empty, remove those errors.
+                # Also, django seems to generate some empty tags, so remove those, too.
+                and not re.match(r".*trimming empty <(i|em|button|span|optgroup)>", e)
+                # FIXME: some old pages only work correctly in quirks mode :-(
+                and not re.match(r".*missing <!DOCTYPE> declaration", e)
+            ]
+        )
+
+        if errors:
+            self.handle_error(path, source, errors)
+
         return r
 
 

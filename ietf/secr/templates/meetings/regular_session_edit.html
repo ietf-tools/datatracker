@@ -17,10 +17,10 @@
     <div class="module">
         <h2>Edit Session</h2>
 
-        <form id="meetings-schedule-form" method="post" action="">{% csrf_token %}
+        <form id="meetings-schedule-form" method="post">{% csrf_token %}
             <div class="inline-related{% if forloop.last %} last-related{% endif %}">
                 <table class="full-width amstable">
-                    <col width="200">
+                    
                     <tr>
                         <th>Day:</th>
                         <td>{% if timeslot %}{{ timeslot.time|date:"l" }}{% endif %}</td>

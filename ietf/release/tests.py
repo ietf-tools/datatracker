@@ -43,4 +43,3 @@ class ReleasePagesTest(TestCase):
         s = q('#frequency-data').text()
         self.assertIn("type: 'column',", s)
         self.assertIn('"data": [[2007, 7], ', s)
-

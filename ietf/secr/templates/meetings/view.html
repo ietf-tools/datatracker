@@ -19,8 +19,7 @@
         {% if meeting.frozen == 1 %}
             <ul class="errorlist"><li> THIS IS A FROZEN PROCEEDING</li></ul>
         {% endif %}
-        <table class="full-width">
-            <col id="proceedings-view-first-col" />
+        <table class="full-width" id="proceedings-view-first-col">
             <tr><td>Start Date:</td><td> {{ meeting.date }}</td></tr>
             <tr><td>City:</td><td> {{ meeting.city }} </td></tr>
             <tr><td>Country:</td><td> {{ meeting.country }} </td></tr>
@@ -57,23 +56,3 @@
     </div> <!-- module -->
 
 {% endblock %}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

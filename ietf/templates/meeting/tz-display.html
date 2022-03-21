@@ -3,7 +3,6 @@
 <div class="tz-display input-group my-3">
     <label class="input-group-text border-primary bg-white fw-bold">Time zone:</label>
     <input type="radio"
-           autocomplete="off"
            {% if timezone == "meeting" %}checked{% endif %}
            name="tzradio"
            class="btn-check"
@@ -11,7 +10,6 @@
            onclick="ietf_timezone.use('{{ timezone }}')">
     <label class="btn btn-outline-primary" for="meeting-timezone{{ id_suffix }}">Meeting</label>
     <input type="radio"
-           autocomplete="off"
            {% if timezone == "local" %}checked{% endif %}
            name="tzradio"
            class="btn-check"
@@ -19,7 +17,6 @@
            onclick="ietf_timezone.use('local')">
     <label class="btn btn-outline-primary" for="local-timezone{{ id_suffix }}">Local</label>
     <input type="radio"
-           autocomplete="off"
            {% if timezone == "UTC" %}checked{% endif %}
            name="tzradio"
            class="btn-check"

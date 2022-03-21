@@ -16,7 +16,7 @@
         {% csrf_token %}
         {% bootstrap_form form %}
         <div class="mb-3">
-            <label class="form-label" for="role-toolbar">Related people</label>
+            <label class="form-label">Related people</label>
             <div class="btn-toolbar"
                  role="toolbar"
                  id="role-toolbar-{{ role_type_label|slugify }}">
