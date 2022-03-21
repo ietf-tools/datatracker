@@ -95,10 +95,6 @@ echo "Running initial checks..."
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check --settings=settings_local
 # /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local
 
-# Start background HTML checker
-echo "Starting background HTML checker..."
-/vnu-runtime-image/bin/java nu.validator.servlet.Main 8888 > /dev/null &
-
 echo "Done!"
 
 if [ -z "$EDITOR_VSCODE" ]; then

@@ -171,7 +171,6 @@ class VerifyingClient(Client):
             print("\nHTML validation error for URL path", path)
             print("HTML source saved to", file_name)
             print("See AssertionError below for error location in HTML source.")
-        # print(errors)
         self.test.maxDiff = None
         self.test.assertEqual("", errors)
 
@@ -190,60 +189,63 @@ class VerifyingClient(Client):
             return r
         source = r.content.decode()
 
-        # First, run through https://validator.github.io/validator/
-        result = subprocess.run(
-            ["/vnu-runtime-image/bin/java", "nu.validator.client.HttpClient", "-"],
-            input=r.content,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-        )
-        errors = result.stdout.decode()
+        if settings.VNU:
+            # First, run through https://validator.github.io/validator/
+            result = subprocess.run(
+                ["java", "nu.validator.client.HttpClient", "-"],
+                input=r.content,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+            )
+            errors = result.stdout.decode()
 
-        if errors:
-            msg = ""
-            for err in errors.splitlines():
-                # TODO: check if some can be removed after validating database templates
-                if (
-                    re.match(r'.*Attribute "required" not allowed', err)
-                    or re.match(
-                        r'.*The "type" attribute is unnecessary for JavaScript', err
-                    )
-                    or re.match(
-                        r'.*Element "option" without attribute "label" must not be empty',
-                        err,
-                    )
-                    or re.match(r".*The character encoding was not declared", err)
-                    or re.match(r".*Consider avoiding viewport values", err)
-                    or re.match(
-                        r'.*The value of the "for" attribute of the "label" element must be the ID of a non-hidden form control',
-                        err,
-                    )
-                    or re.match(r".*is not in Unicode Normalization Form C", err)
-                ):
-                    continue
-                # ignore some errors about obsolete HTML coming from the database
-                if re.match(r"/meeting/\d+/proceedings/overview/", path) and re.match(
-                    r'.*The "\w+" attribute on the "\w+" element is obsolete', err
-                ):
-                    continue
-                # ignore some errors coming from outdated but still-needed iframes
-                if re.match(r"/meeting/\d+/week-view", path) and re.match(
-                    r'.*Start tag seen without seeing a doctype first', err
-                ):
-                    continue
-                pos = re.match(r'".*":((\d+)\.(\d+)-(\d+)\.(\d+):.*)', err)
-                if not pos:
-                    self.handle_error(path, source, err)
+            if errors:
+                msg = ""
+                for err in errors.splitlines():
+                    # TODO: check if some can be removed after validating database templates
+                    if (
+                        re.match(r'.*Attribute "required" not allowed', err)
+                        or re.match(
+                            r'.*The "type" attribute is unnecessary for JavaScript', err
+                        )
+                        or re.match(
+                            r'.*Element "option" without attribute "label" must not be empty',
+                            err,
+                        )
+                        or re.match(r".*The character encoding was not declared", err)
+                        or re.match(r".*Consider avoiding viewport values", err)
+                        or re.match(
+                            r'.*The value of the "for" attribute of the "label" element must be the ID of a non-hidden form control',
+                            err,
+                        )
+                        or re.match(r".*is not in Unicode Normalization Form C", err)
+                    ):
+                        continue
+                    # ignore some errors about obsolete HTML coming from the database
+                    if re.match(
+                        r"/meeting/\d+/proceedings/overview/", path
+                    ) and re.match(
+                        r'.*The "\w+" attribute on the "\w+" element is obsolete', err
+                    ):
+                        continue
+                    # ignore some errors coming from outdated but still-needed iframes
+                    if re.match(r"/meeting/\d+/week-view", path) and re.match(
+                        r".*Start tag seen without seeing a doctype first", err
+                    ):
+                        continue
+                    pos = re.match(r'".*":((\d+)\.(\d+)-(\d+)\.(\d+):.*)', err)
+                    if not pos:
+                        self.handle_error(path, source, err)
+                        return r
+                    msg += pos.group(1).strip(" .") + ":\n"
+                    for line in source.splitlines()[
+                        int(pos.group(2)) - 1 : int(pos.group(4))
+                    ]:
+                        msg += line.strip() + "\n"
+
+                if msg:
+                    self.handle_error(path, source, msg)
                     return r
-                msg += pos.group(1).strip(" .") + ":\n"
-                for line in source.splitlines()[
-                    int(pos.group(2)) - 1 : int(pos.group(4))
-                ]:
-                    msg += line.strip() + "\n"
-
-            if msg:
-                self.handle_error(path, source, msg)
-                return r
 
         # Next, run through https://www.html-tidy.org/
         document, errors = tidy_document(
@@ -273,7 +275,6 @@ class VerifyingClient(Client):
         )
 
         if errors:
-            print(2)
             self.handle_error(path, source, errors)
 
         return r
