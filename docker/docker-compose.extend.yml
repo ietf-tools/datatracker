@@ -3,7 +3,7 @@ version: '3.8'
 services:
     app:
         ports:
-            - '8000:8000'
+            - 'CUSTOM_PORT:8000'
         volumes:
             - .:/workspace
             - /workspace/node_modules
