@@ -1014,3 +1014,12 @@ def update_submission_external_resources(submission, new_resources):
     for new_res in new_resources:
         new_res.submission = submission
         new_res.save()
+
+def remote_ip(request):
+    if 'CF-Connecting-IP' in request.META:
+        remote_ip = request.META.get('CF-Connecting-IP')
+    elif 'X-Forwarded-For' in request.META:
+        remote_ip = request.META.get('X-Forwarded-For').split(',')[0]
+    else:
+        remote_ip = request.META.get('REMOTE_ADDR', None)
+    return remote_ip
