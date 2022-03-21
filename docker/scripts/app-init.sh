@@ -84,10 +84,15 @@ for sub in \
 done
 
 # Wait for DB container
+
 if [ -n "$EDITOR_VSCODE" ]; then
     echo "Waiting for DB container to come online ..."
     /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
 fi
+
+# Run memcached
+
+/usr/bin/memcached -u root -d
 
 # Initial checks
 
@@ -98,6 +103,7 @@ echo "Running initial checks..."
 echo "Done!"
 
 if [ -z "$EDITOR_VSCODE" ]; then
+    CODE=0
     python -m smtpd -n -c DebuggingServer localhost:2025 &
     if [ -z "$*" ]; then
         echo
@@ -112,6 +118,8 @@ if [ -z "$EDITOR_VSCODE" ]; then
         echo "Executing \"$*\" and stopping container."
         echo
         bash -c "$*"
+        CODE=$?
     fi
     service rsyslog stop
+    exit $CODE
 fi

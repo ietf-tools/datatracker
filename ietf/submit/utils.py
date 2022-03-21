@@ -18,6 +18,7 @@ from django.db import transaction
 from django.http import HttpRequest     # pyflakes:ignore
 from django.utils.module_loading import import_string
 from django.template.loader import render_to_string
+from django.contrib.auth.models import AnonymousUser
 
 import debug                            # pyflakes:ignore
 
@@ -126,6 +127,12 @@ def validate_submission_name(name):
                 msg += "  Did you include a filename extension in the name by mistake?"
             return msg
     return None
+
+    components = name.split('-')
+    if '' in components:
+        return "Name contains adjacent dashes or the name ends with a dash."
+    if len(components) < 3:
+        return "Name has less than three dash-delimited components in the name."
 
 def validate_submission_rev(name, rev):
     if not rev:
@@ -331,11 +338,15 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
         # Add all the previous submission events as docevents
         events += post_rev00_submission_events(draft, submission, submitter)
 
+    if isinstance(request.user, AnonymousUser):
+        doer=system
+    else:
+        doer=request.user.person
     # Add an approval docevent
     e = SubmissionDocEvent.objects.create(
         type="new_submission",
         doc=draft,
-        by=system,
+        by=doer,
         desc=approved_doc_desc,
         submission=submission,
         rev=submission.rev,

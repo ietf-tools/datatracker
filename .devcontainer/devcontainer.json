@@ -10,6 +10,13 @@
     "containerEnv": {
         "EDITOR_VSCODE": "true"
     },
+
+    "features": {
+        "docker-in-docker": {
+            "version": "latest"
+        },
+        "github-cli": "latest"
+    },
     
     // Set *default* container specific settings.json values on container create.
     "settings": { 

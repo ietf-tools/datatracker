@@ -13,6 +13,11 @@ EXPOSE 8000
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Add Docker Source
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
+    $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
 RUN apt-get update
 
 # apt-get upgrade is normally not a good idea, but this is a dev container
@@ -26,6 +31,7 @@ RUN apt-get install -qy \
 	bash \
 	build-essential \
 	curl \
+    docker-ce-cli \
 	enscript \
 	fish \
 	gawk \
@@ -48,9 +54,11 @@ RUN apt-get install -qy \
     libxtst6 \
 	libmagic-dev \
 	libmariadb-dev \
+    libmemcached-tools \
 	libtidy-dev \
 	locales \
 	mariadb-client \
+    memcached \
     netcat \
 	nano \
 	pigz \

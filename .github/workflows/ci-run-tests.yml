@@ -1,0 +1,57 @@
+name: Run All Tests
+
+on:
+  pull_request:
+    branches:
+      # TEMPORARY: Replace with main once bs5 is merged
+      - 'feat/bs5'
+    paths:
+      - 'ietf/**'
+
+jobs:
+  tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    container: ghcr.io/ietf-tools/datatracker-test-base:latest
+    
+    services:
+      db:
+        image: ghcr.io/ietf-tools/datatracker-db:latest
+        volumes:
+            - mariadb-data:/var/lib/mysql
+        env:
+            MYSQL_ROOT_PASSWORD: ietf
+            MYSQL_DATABASE: ietf_utf8
+            MYSQL_USER: django
+            MYSQL_PASSWORD: RkTkDPFnKpko
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Prepare for tests
+      run: |
+        echo "Running containers:"
+        docker ps -a
+        echo "Fixing permissions..."
+        chmod -R 777 ./
+        echo "Copying docker config files..."
+        cp ./docker/configs/settings_local.py ./ietf/settings_local.py
+        cp ./docker/configs/settings_local_sqlitetest.py ./ietf/settings_local_sqlitetest.py
+        echo "Installing NPM packages..."
+        npm install --prefer-offline --no-audit
+        echo "Building static assets..."
+        npx parcel build
+        echo "Creating data directories..."
+        chmod +x ./docker/scripts/app-create-dirs.sh
+        ./docker/scripts/app-create-dirs.sh
+        
+    - name: Ensure DB is ready
+      run: |
+        /usr/local/bin/wait-for db:3306 -- echo "DB ready"
+        
+    - name: Run all tests
+      run: |
+        echo "Running checks..."
+        ./ietf/manage.py check --settings=settings_local
+        echo "Running tests..."
+        ./ietf/manage.py test --settings=settings_local_sqlitetest --failfast
