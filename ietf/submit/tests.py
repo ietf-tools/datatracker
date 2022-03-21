@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2020, All Rights Reserved
+# Copyright The IETF Trust 2011-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -24,7 +24,7 @@ from django.utils.encoding import force_str, force_text
 import debug                            # pyflakes:ignore
 
 from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
-                               post_submission)
+                               post_submission, validate_submission_name, validate_submission_rev)
 from ietf.doc.factories import DocumentFactory, WgDraftFactory, IndividualDraftFactory, IndividualRfcFactory
 from ietf.doc.models import ( Document, DocAlias, DocEvent, State,
     BallotPositionDocEvent, DocumentAuthor, SubmissionDocEvent )
@@ -2917,3 +2917,52 @@ class PostSubmissionTests(BaseSubmitTestCase):
         args, kwargs = mock_rebuild_reference_relations.call_args
         self.assertEqual(args[1], mock_find_filenames.return_value)
 
+
+class ValidateSubmissionFilenameTests(BaseSubmitTestCase):
+    def test_validate_submission_name(self):
+        # This test does not need BaseSubmitTestCase, it could use TestCase
+        good_names = (
+            'draft-ietf-mars-foobar',
+            'draft-ietf-mars-foobar-01',
+            'draft-myname-mydraft')
+        bad_names = (
+            'draft-includes-filename-extension-01.txt',
+            'does-not-start-with-draft',
+            'draft-Upper-Case',
+            'draft-double--dash',
+            'draft-trailing-dash-',
+            'draft-tooshort',
+            'draft-toolong-this-is-a-very-long-name-for-an-internet-draft',
+            u'draft-contains-non-ascii-göran')
+
+        for n in good_names:
+            msg = validate_submission_name(n)
+            self.assertIsNone(msg)
+
+        for n in bad_names:
+            msg = validate_submission_name(n)
+            self.assertIsNotNone(msg)
+
+    def test_validate_submission_rev(self):
+        # This test needs BaseSubmitTestCase
+        ind_doc = IndividualDraftFactory()
+        old_wg_doc = WgDraftFactory(relations=[('replaces',ind_doc)])
+        new_wg_doc = WgDraftFactory(rev='01', relations=[('replaces',old_wg_doc)])
+        path = Path(self.archive_dir) / f'{new_wg_doc.name}-{new_wg_doc.rev}.txt'
+        path.touch()
+
+        bad_revs = (None, '', '2', 'aa', '00', '01', '100', '002', u'öö')
+        for rev in bad_revs:
+            msg = validate_submission_rev(new_wg_doc.name, rev)
+            self.assertIsNotNone(msg)
+
+        new_rev = '%02d' % (int(ind_doc.rev)+1)
+        msg = validate_submission_rev(ind_doc.name, new_rev)
+        self.assertIsNotNone(msg)
+
+        new_rev = '%02d' % (int(old_wg_doc.rev)+1)
+        msg = validate_submission_rev(old_wg_doc.name, new_rev)
+        self.assertIsNotNone(msg)
+
+        msg = validate_submission_rev(new_wg_doc.name, '02')
+        self.assertIsNone(msg)

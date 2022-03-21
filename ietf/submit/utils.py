@@ -126,9 +126,18 @@ def validate_submission_name(name):
                 msg += "  Did you include a filename extension in the name by mistake?"
             return msg
 
+    components = name.split('-')
+    if '' in components:
+        return "Name contains adjacent dashes or the name ends with a dash."
+    if len(components) < 3:
+        return "Name has less than three dash-delimited components in the name."
+
 def validate_submission_rev(name, rev):
     if not rev:
         return 'Revision not found'
+
+    if len(rev) != 2:
+        return 'Revision must be a exactly two digits'
 
     try:
         rev = int(rev)
