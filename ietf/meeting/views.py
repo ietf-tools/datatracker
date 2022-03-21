@@ -1344,12 +1344,13 @@ def edit_schedule_properties(request, num, owner, name):
         permission_denied(request, "You may not edit this schedule.")
 
     if request.method == 'POST':
-        form = SchedulePropertiesForm(meeting, instance=schedule, data=request.POST)
+        # use a new copy of the Schedule instance for the form so the template isn't fouled if validation fails
+        form = SchedulePropertiesForm(meeting, instance=Schedule.objects.get(pk=schedule.pk), data=request.POST)
         if form.is_valid():
-           form.save()
-           if request.GET.get('next'):
-               return HttpResponseRedirect(request.GET.get('next'))
-           return redirect('ietf.meeting.views.edit_meeting_schedule', num=num, owner=owner, name=name)
+            form.save()
+            if request.GET.get('next'):
+                return HttpResponseRedirect(request.GET.get('next'))
+            return redirect('ietf.meeting.views.edit_meeting_schedule', num=num, owner=owner, name=form.instance.name)
     else:
         form = SchedulePropertiesForm(meeting, instance=schedule)
 
