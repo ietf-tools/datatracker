@@ -634,6 +634,8 @@ class IetfTestRunner(DiscoverRunner):
             settings.VNU = subprocess.Popen(
                 [
                     "java",
+                    "-jar",
+                    "/vnu.jar",
                     "-Dnu.validator.servlet.bind-address=127.0.0.1",
                     "nu.validator.servlet.Main",
                     "8888",

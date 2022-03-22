@@ -8,6 +8,7 @@ on:
     paths:
       - 'package.json'
       - 'requirements.txt'
+      - 'dev/docker-test-base/Dockerfile'
 
   workflow_dispatch:
 

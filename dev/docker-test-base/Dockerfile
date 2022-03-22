@@ -3,7 +3,6 @@ LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-
 RUN apt-get update
 RUN apt-get -qy upgrade
 
@@ -25,6 +24,7 @@ RUN apt-get install -qy \
 	build-essential \
 	curl \
     docker-ce-cli \
+    default-jdk \
 	enscript \
 	gawk \
 	gcc \
@@ -108,6 +108,9 @@ RUN pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requ
 
 # Turn off rsyslog kernel logging (doesn't work in Docker)
 RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
+
+# Install the Nu Html Checker (v.Nu)
+ADD https://github.com/validator/validator/releases/download/latest/vnu.jar /
 
 # Fetch wait-for utility
 ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
