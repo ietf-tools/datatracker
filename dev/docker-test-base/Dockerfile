@@ -109,6 +109,12 @@ RUN pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requ
 # Turn off rsyslog kernel logging (doesn't work in Docker)
 RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 
+# Install the Nu Html Checker (v.Nu)
+ADD https://github.com/validator/validator/releases/download/latest/vnu.linux.zip /
+RUN unzip -d / /vnu.linux.zip
+RUN cp -r /vnu-runtime-image/* /usr/local
+RUN rm -rf /vnu.linux.zip /vnu-runtime-image
+
 # Fetch wait-for utility
 ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
 RUN chmod +rx /usr/local/bin/wait-for
