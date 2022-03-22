@@ -3,7 +3,6 @@ LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-
 RUN apt-get update
 RUN apt-get -qy upgrade
 
@@ -111,7 +110,7 @@ RUN pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requ
 RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 
 # Install the Nu Html Checker (v.Nu)
-ADD ADD https://github.com/validator/validator/releases/download/latest/vnu.jar /
+ADD https://github.com/validator/validator/releases/download/latest/vnu.jar /
 
 # Fetch wait-for utility
 ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
