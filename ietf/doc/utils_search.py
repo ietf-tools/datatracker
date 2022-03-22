@@ -144,7 +144,17 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         l.append(rel_rfc_aliases[rel.source_id])
         l.sort()
 
+def augment_docs_with_related_docs_info(docs):
+    """Augment all documents with related documents information.
+    At first, it handles only conflict review document page count to mirror the original document page count."""
 
+    for d in docs:
+        if d.type_id == 'conflrev':
+            if len(d.related_that_doc('conflrev')) != 1:
+                continue
+            originalDoc = d.related_that_doc('conflrev')[0].document
+            d.pages = originalDoc.pages
+            
 def prepare_document_table(request, docs, query=None, max_results=200):
     """Take a queryset of documents and a QueryDict with sorting info
     and return list of documents with attributes filled in for
@@ -164,6 +174,7 @@ def prepare_document_table(request, docs, query=None, max_results=200):
 
     fill_in_document_table_attributes(docs)
     augment_docs_and_user_with_user_info(docs, request.user)
+    augment_docs_with_related_docs_info(docs)
 
     meta = {}
 
