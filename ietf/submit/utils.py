@@ -126,13 +126,14 @@ def validate_submission_name(name):
             if '.' in name:
                 msg += "  Did you include a filename extension in the name by mistake?"
             return msg
-    return None
 
     components = name.split('-')
     if '' in components:
         return "Name contains adjacent dashes or the name ends with a dash."
     if len(components) < 3:
         return "Name has less than three dash-delimited components in the name."
+
+    return None
 
 def validate_submission_rev(name, rev):
     if not rev:
