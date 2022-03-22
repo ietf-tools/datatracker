@@ -139,6 +139,9 @@ def validate_submission_rev(name, rev):
     if not rev:
         return 'Revision not found'
 
+    if len(rev) != 2:
+        return 'Revision must be a exactly two digits'
+
     try:
         rev = int(rev)
     except ValueError:
