@@ -1,7 +1,42 @@
 #!/bin/bash
 
+# Usage info
+show_help() {
+    cat << EOF
+Usage: ${0##*/} [-h] [-p PORT]
+Run datatracker in dev containers using docker-compose.
+
+    -h          display this help and exit
+    -p PORT     use custom HTTP port for datatracker
+
+EOF
+}
+
+CUSTOM_PORT=8000
+
+while getopts hp: opt; do
+    case $opt in
+        h)
+            show_help
+            exit 0
+            ;;
+        p)  
+            CUSTOM_PORT=$OPTARG
+            echo "Using custom port $CUSTOM_PORT..."
+            ;;
+        *)
+            CUSTOM_PORT=8000
+            echo "Using port 8000..."
+            ;;
+    esac
+done
+
+cp docker-compose.extend.yml docker-compose.extend-custom.yml
+sed -i -r -e "s/CUSTOM_PORT/$CUSTOM_PORT/" docker-compose.extend-custom.yml
 cd ..
-docker-compose -f docker-compose.yml -f docker/docker-compose.extend.yml up -d
+docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml up -d
+docker-compose port db 3306
 docker-compose exec app /bin/sh /docker-init.sh
 docker-compose stop
 cd docker
+rm -f docker-compose.extend-custom.yml
