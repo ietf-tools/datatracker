@@ -22,3 +22,5 @@ __date__    = "$Date$"
 __rev__     = "$Rev$ (dev) Latest release: Rev. 19974 "
 
 __id__      = "$Id$"
+
+_TEST_TESTING_ = "TEST"
