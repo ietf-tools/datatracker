@@ -97,6 +97,7 @@
                             {% if session.comments %}{{ session.comments|linebreaksbr }}{% endif %}
                         </td>
                     </tr>
+                {% if forloop.last %}</tbody>{% endif %}
             {% endfor %}
         </table>
     {% endfor %}
