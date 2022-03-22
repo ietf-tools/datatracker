@@ -34,9 +34,8 @@ jobs:
         docker ps -a
         echo "Fixing permissions..."
         chmod -R 777 ./
-        echo "Copying docker config files..."
+        echo "Copying config files..."
         cp ./docker/configs/settings_local.py ./ietf/settings_local.py
-        cp ./docker/configs/settings_local_sqlitetest.py ./ietf/settings_local_sqlitetest.py
         echo "Installing NPM packages..."
         npm install --prefer-offline --no-audit
         echo "Building static assets..."
@@ -52,6 +51,6 @@ jobs:
     - name: Run all tests
       run: |
         echo "Running checks..."
-        ./ietf/manage.py check --settings=settings_local
+        ./ietf/manage.py check
         echo "Running tests..."
-        ./ietf/manage.py test --settings=settings_local_sqlitetest --failfast
+        ./ietf/manage.py test --settings=settings_sqlitetest --failfast
