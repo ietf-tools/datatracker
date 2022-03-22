@@ -192,7 +192,7 @@ class VerifyingClient(Client):
         if settings.VNU:
             # First, run through https://validator.github.io/validator/
             result = subprocess.run(
-                ["java", "nu.validator.client.HttpClient", "-"],
+                ["java", "-jar", "/vnu.jar", "nu.validator.client.HttpClient", "-"],
                 input=r.content,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
