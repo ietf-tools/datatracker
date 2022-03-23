@@ -19,7 +19,7 @@
 
     // Initialize moments
     function initialize_moments() {
-        var times = $('.time');
+        const times = $('.time');
         $.each(times, function (i, item) {
             item.start_ts = moment.unix(this.getAttribute("data-start-time"))
                 .utc();
@@ -34,8 +34,8 @@
                 item.format = +this.getAttribute("format");
             }
         });
-        times = $('[data-slot-start-ts]');
-        $.each(times, function (i, item) {
+        const things_with_slots = $('[data-slot-start-ts]');
+        $.each(things_with_slots, function (i, item) {
             item.slot_start_ts = moment.unix(this.getAttribute("data-slot-start-ts"))
                 .utc();
             item.slot_end_ts = moment.unix(this.getAttribute("data-slot-end-ts"))
@@ -44,11 +44,8 @@
     }
 
     function format_time(t, tz, fmt) {
-        var out;
-        var mtz = window.meeting_timezone;
-        if (mtz == "") {
-            mtz = "UTC";
-        }
+        let out;
+        const mtz = window.meeting_timezone || "UTC";
         switch (fmt) {
         case 0:
             out = t.tz(tz)
@@ -109,7 +106,7 @@
 
     // Format tooltip notice
     function format_tooltip_notice(start, end) {
-        var notice = "";
+        let notice = "";
 
         if (end.isBefore()) {
             notice = "Event ended " + end.fromNow();
@@ -124,8 +121,8 @@
 
     // Format tooltip table
     function format_tooltip_table(start, end) {
-        var current_timezone = get_current_tz_cb();
-        var out = '<div class="text-start"><table class="table table-sm"><tr><th></th><th>Session start</th><th>Session end</th></tr>';
+        const current_timezone = get_current_tz_cb();
+        let out = '<div class="text-start"><table class="table table-sm"><tr><th></th><th>Session start</th><th>Session end</th></tr>';
         if (window.meeting_timezone !== "") {
             out += '<tr><th class="timehead">Meeting timezone</th><td class="text-nowrap">' +
                 format_time(start, window.meeting_timezone, 0) + '</td><td class="text-nowrap">' +
@@ -157,7 +154,7 @@
     function add_tooltips() {
         $('.time')
             .each(function () {
-                var tooltip = $(format_tooltip(this.start_ts, this.end_ts));
+                const tooltip = $(format_tooltip(this.start_ts, this.end_ts));
                 tooltip[0].start_ts = this.start_ts;
                 tooltip[0].end_ts = this.end_ts;
                 tooltip[0].ustart_ts = moment(this.start_ts)
@@ -183,13 +180,11 @@
             .html(newtz);
         $('.time')
             .each(function () {
-                if (this.format == 4) {
-                    var tz = this.start_ts.tz(newtz)
-                        .format(" z");
-                    if (this.start_ts.tz(newtz)
-                        .dayOfYear() ==
-                        this.end_ts.tz(newtz)
-                            .dayOfYear()) {
+                if (this.format === 4) {
+                    const tz = this.start_ts.tz(newtz).format(" z");
+                    const start_doy = this.start_ts.tz(newtz).dayOfYear();
+                    const end_doy = this.end_ts.tz(newtz).dayOfYear();
+                    if (start_doy === end_doy) {
                         $(this)
                             .html(format_time(this.start_ts, newtz, this.format) +
                                 '<span class="d-lg-none"><br></span>-' + format_time(this.end_ts, newtz, 5) + tz);
@@ -215,7 +210,7 @@
             .remove("#now");
         $('.table-warning')
             .removeClass("table-warning");
-        var agenda_rows = $('[data-slot-start-ts]');
+        let agenda_rows = $('[data-slot-start-ts]');
         agenda_rows = agenda_rows.filter(function () {
             return moment()
                 .isBetween(this.slot_start_ts, this.slot_end_ts);
@@ -228,7 +223,7 @@
 
     // Update tooltips
     function update_tooltips() {
-        var tooltips = $('.timetooltiptext');
+        const tooltips = $('.timetooltiptext');
         tooltips.filter(function () {
             return moment()
                 .isBetween(this.ustart_ts, this.uend_ts);
@@ -241,7 +236,7 @@
 
     // Update all tooltips
     function update_tooltips_all() {
-        var tooltips = $('.timetooltiptext');
+        const tooltips = $('.timetooltiptext');
         tooltips.each(function () {
             $(this)
                 .html(format_tooltip_table(this.start_ts, this.end_ts));
@@ -255,9 +250,9 @@
     }
 
     function urlParam(name) {
-        var results = new RegExp('[\?&]' + name + '=([^&#]*)')
+        const results = new RegExp('[\?&]' + name + '=([^&#]*)')
             .exec(window.location.href);
-        if (results == null) {
+        if (results === null) {
             return null;
         } else {
             return results[1] || 0;
@@ -265,7 +260,7 @@
     }
 
     function init_timers() {
-        var fast_timer = 60000 / (speedup > 600 ? 600 : speedup);
+        const fast_timer = 60000 / (speedup > 600 ? 600 : speedup);
         update_clock();
         highlight_ongoing();
         setInterval(function () { update_clock(); }, fast_timer);
