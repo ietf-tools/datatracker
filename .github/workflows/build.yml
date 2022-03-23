@@ -13,7 +13,62 @@ on:
         type: boolean
 
 jobs:
+  tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    container: ghcr.io/ietf-tools/datatracker-test-base:latest
+    
+    services:
+      db:
+        image: ghcr.io/ietf-tools/datatracker-db:latest
+        volumes:
+            - mariadb-data:/var/lib/mysql
+        env:
+            MYSQL_ROOT_PASSWORD: ietf
+            MYSQL_DATABASE: ietf_utf8
+            MYSQL_USER: django
+            MYSQL_PASSWORD: RkTkDPFnKpko
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Prepare for tests
+      run: |
+        echo "Running containers:"
+        docker ps -a
+        echo "Fixing permissions..."
+        chmod -R 777 ./
+        echo "Copying config files..."
+        cp ./docker/configs/settings_local.py ./ietf/settings_local.py
+        echo "Installing NPM packages..."
+        npm install --prefer-offline --no-audit
+        echo "Building static assets..."
+        npx parcel build
+        echo "Creating data directories..."
+        chmod +x ./docker/scripts/app-create-dirs.sh
+        ./docker/scripts/app-create-dirs.sh
+        
+    - name: Ensure DB is ready
+      run: |
+        /usr/local/bin/wait-for db:3306 -- echo "DB ready"
+        
+    - name: Run all tests
+      run: |
+        echo "Running checks..."
+        ./ietf/manage.py check
+        echo "Running tests..."
+        ./ietf/manage.py test --settings=settings_sqlitetest --failfast
+        mv latest-coverage.json coverage.json
+        
+    - name: Upload a Coverage Results
+      uses: actions/upload-artifact@v3.0.0
+      with:
+        name: coverage
+        path: coverage.json
+        
   publish:
+    needs:
+      - tests
     runs-on: ubuntu-latest
 
     steps:
@@ -80,6 +135,11 @@ jobs:
       with:
         python-version: '3.x'
         
+    - name: Download a Coverage Results
+      uses: actions/download-artifact@v3.0.0
+      with:
+        name: coverage
+        
     - name: Make Release Build
       env:
         DEBIAN_FRONTEND: noninteractive
@@ -113,7 +173,7 @@ jobs:
         tag: ${{ env.PKG_VERSION }}
         name: ${{ env.PKG_VERSION }}
         body: ${{ steps.changelog.outputs.changes }}
-        artifacts: "/home/runner/work/release/release.tar.gz"
+        artifacts: "/home/runner/work/release/release.tar.gz,coverage.json"
         token: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Upload Build Artifacts
