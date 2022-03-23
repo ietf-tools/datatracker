@@ -205,6 +205,7 @@
     }
 
     function update_now_link(agenda_rows, ongoing_rows) {
+        agenda_rows.removeClass('next-session');
         const now_links = $('a.now-link');
         if (ongoing_rows.length > 0) {
             // Add a #now target for navigating - find the latest start time of any ongoing row
@@ -213,6 +214,7 @@
             for (let ii=0; ii < ongoing_rows.length; ii++) {
                 const dt = ongoing_rows[ii].slot_start_ts.diff(last_start_time, 'seconds');
                 if (Math.abs(dt) < 1) {
+                    $(ongoing_rows[ii]).addClass('next-session');
                     now_links.attr('href', '#' + ongoing_rows[ii].id);
                     break;
                 }
@@ -222,6 +224,7 @@
         // There were no ongoing sessions, look for the next one to start
         const later_rows = agenda_rows.filter(function() { return moment().isBefore(this.slot_start_ts); });
         if (later_rows.length > 0) {
+            $(later_rows[0]).addClass('next-session');
             now_links.attr('href', '#' + later_rows[0].id);
             return;
         }

@@ -909,6 +909,8 @@ td.position-empty {
     padding-left: 0px !important;
 }
 
+#agenda-table tbody tr.next-session { border-top: 0.2rem solid map.get($theme-colors, "info"); }
+
 .timetooltip {
     position: relative;
 }
