@@ -17,8 +17,6 @@ __release_branch__ = ''
 # set this to ".p1", ".p2", etc. after patching
 __patch__   = ""
 
-__date__    = "$Date$"
-
-__rev__     = "$Rev$ (dev) Latest release: Rev. 19974 "
-
-__id__      = "$Id$"
+# Testing - do not commit
+__release_hash__ = 'd489391b66bd67d8d702d82ef9f21006e9415385'
+__release_branch__ = 'feat/bs5'
