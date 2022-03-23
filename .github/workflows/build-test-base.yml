@@ -8,7 +8,7 @@ on:
     paths:
       - 'package.json'
       - 'requirements.txt'
-      - 'dev/docker-test-base/Dockerfile'
+      - 'dev/tests/Dockerfile'
 
   workflow_dispatch:
 
@@ -32,6 +32,6 @@ jobs:
         image: ${{ env.IMAGE_NAME }}
         tags: latest
         registry: ${{ env.REGISTRY }}
-        dockerfile: dev/docker-test-base/Dockerfile
+        dockerfile: dev/tests/Dockerfile
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}

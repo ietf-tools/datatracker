@@ -11,71 +11,27 @@ on:
         description: 'Create Production Release'
         required: true
         type: boolean
+      skiptests:
+        description: 'Skip Tests'
+        required: true
+        type: boolean
 
 jobs:
-  tests:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    container: ghcr.io/ietf-tools/datatracker-test-base:latest
-    
-    services:
-      db:
-        image: ghcr.io/ietf-tools/datatracker-db:latest
-        volumes:
-            - mariadb-data:/var/lib/mysql
-        env:
-            MYSQL_ROOT_PASSWORD: ietf
-            MYSQL_DATABASE: ietf_utf8
-            MYSQL_USER: django
-            MYSQL_PASSWORD: RkTkDPFnKpko
-    
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Prepare for tests
-      run: |
-        echo "Running containers:"
-        docker ps -a
-        echo "Fixing permissions..."
-        chmod -R 777 ./
-        echo "Copying config files..."
-        cp ./docker/configs/settings_local.py ./ietf/settings_local.py
-        echo "Installing NPM packages..."
-        npm install --prefer-offline --no-audit
-        echo "Building static assets..."
-        npx parcel build
-        echo "Creating data directories..."
-        chmod +x ./docker/scripts/app-create-dirs.sh
-        ./docker/scripts/app-create-dirs.sh
-        
-    - name: Ensure DB is ready
-      run: |
-        /usr/local/bin/wait-for db:3306 -- echo "DB ready"
-        
-    - name: Run all tests
-      run: |
-        echo "Running checks..."
-        ./ietf/manage.py check
-        echo "Running tests..."
-        ./ietf/manage.py test --settings=settings_sqlitetest --failfast
-        mv latest-coverage.json coverage.json
-        
-    - name: Upload a Coverage Results
-      uses: actions/upload-artifact@v3.0.0
-      with:
-        name: coverage
-        path: coverage.json
-        
-  publish:
-    needs:
-      - tests
-    runs-on: ubuntu-latest
+  # -----------------------------------------------------------------
+  # PREPARE
+  # -----------------------------------------------------------------
+  prepare:
+    name: Prepare Release
+    outputs:
+      should_deploy: ${{ steps.buildvars.outputs.should_deploy }}
+      pkg_version: ${{ steps.buildvars.outputs.pkg_version }}
+      pkg_version_strict: ${{ steps.buildvars.outputs.pkg_version_strict }}
 
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-        
+
     - name: Get Next Version
       if: ${{ github.event.inputs.publish == 'true' }}
       id: semver
@@ -104,26 +60,90 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Set Build Variables
+      id: buildvars
       run: |
         if [[ $NEXT_VERSION ]]; then
           echo "Using AUTO SEMVER mode: $NEXT_VERSION"
-          echo "SHOULD_DEPLOY=true" >> $GITHUB_ENV
-          echo "PKG_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
-          echo "PKG_VERSION_STRICT=${NEXT_VERSION#?}" >> $GITHUB_ENV
+          echo "::set-output name=should_deploy::true"
+          echo "::set-output name=pkg_version::$NEXT_VERSION"
+          echo "::set-output name=pkg_version_strict::${NEXT_VERSION#?}"
           echo "::notice::Release created using branch $GITHUB_REF_NAME"
         elif [[ "$GITHUB_REF" =~ ^refs/tags/v* ]]; then
           echo "Using TAG mode: $GITHUB_REF_NAME"
-          echo "SHOULD_DEPLOY=true" >> $GITHUB_ENV
-          echo "PKG_VERSION=$GITHUB_REF_NAME" >> $GITHUB_ENV
-          echo "PKG_VERSION_STRICT=${GITHUB_REF_NAME#?}" >> $GITHUB_ENV
+          echo "::set-output name=should_deploy::true"
+          echo "::set-output name=pkg_version::$GITHUB_REF_NAME"
+          echo "::set-output name=pkg_version_strict::${GITHUB_REF_NAME#?}"
           echo "::notice::Release created using tag $GITHUB_REF_NAME"
         else
           echo "Using TEST mode: v7.0.0-dev.$GITHUB_RUN_NUMBER"
-          echo "SHOULD_DEPLOY=false" >> $GITHUB_ENV
-          echo "PKG_VERSION=v3.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
-          echo "PKG_VERSION_STRICT=3.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
+          echo "::set-output name=should_deploy::false"
+          echo "::set-output name=pkg_version::v3.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "::set-output name=pkg_version_strict::3.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "::notice::Non-production build created using branch $GITHUB_REF_NAME"
         fi
+
+  # -----------------------------------------------------------------
+  # TESTS
+  # -----------------------------------------------------------------
+  tests:
+    name: Run Tests
+    if: ${{ github.event.inputs.skiptests == 'false' }}
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    container: ghcr.io/ietf-tools/datatracker-test-base:latest
+    
+    services:
+      db:
+        image: ghcr.io/ietf-tools/datatracker-db:latest
+        volumes:
+            - mariadb-data:/var/lib/mysql
+        env:
+            MYSQL_ROOT_PASSWORD: ietf
+            MYSQL_DATABASE: ietf_utf8
+            MYSQL_USER: django
+            MYSQL_PASSWORD: RkTkDPFnKpko
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Prepare for tests
+      run: ./dev/tests/prepare.sh
+        
+    - name: Ensure DB is ready
+      run: |
+        /usr/local/bin/wait-for db:3306 -- echo "DB ready"
+        
+    - name: Run all tests
+      run: |
+        echo "Running checks..."
+        ./ietf/manage.py check
+        echo "Running tests..."
+        ./ietf/manage.py test --settings=settings_sqlitetest --failfast
+        mv latest-coverage.json coverage.json
+        
+    - name: Upload a Coverage Results
+      uses: actions/upload-artifact@v3.0.0
+      with:
+        name: coverage
+        path: coverage.json
+        
+  # -----------------------------------------------------------------
+  # RELEASE
+  # -----------------------------------------------------------------
+  release:
+    name: Make Release
+    if: ${{ always() }}
+    needs: [tests, prepare]
+    runs-on: ubuntu-latest
+    env:
+      SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
+      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+      PKG_VERSION_STRICT: ${{needs.prepare.outputs.pkg_version_strict}}
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
         
     - name: Setup Node.js
       uses: actions/setup-node@v3.0.0
