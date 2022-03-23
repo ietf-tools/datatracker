@@ -204,11 +204,9 @@
         update_clock();
     }
 
-    function update_now_link(ongoing_rows) {
+    function update_now_link(agenda_rows, ongoing_rows) {
         const now_links = $('a.now-link');
-        if (ongoing_rows.length === 0) {
-            now_links.attr('href', '#');
-        } else {
+        if (ongoing_rows.length > 0) {
             // Add a #now target for navigating - find the latest start time of any ongoing row
             // and mark the first row starting at that time
             const last_start_time = ongoing_rows[ongoing_rows.length - 1].slot_start_ts;
@@ -219,7 +217,17 @@
                     break;
                 }
             }
+            return;
         }
+        // There were no ongoing sessions, look for the next one to start
+        const later_rows = agenda_rows.filter(function() { return moment().isBefore(this.slot_start_ts); });
+        if (later_rows.length > 0) {
+            now_links.attr('href', '#' + later_rows[0].id);
+            return;
+        }
+        // No sessions in the future - meeting has apparently ended
+        now_links.attr('href', '#');
+        now_links.addClass('d-none');
     }
 
     // Highlight ongoing based on the current time
@@ -231,7 +239,7 @@
                 .isBetween(this.slot_start_ts, this.slot_end_ts);
         });
         ongoing_rows.addClass("table-warning");
-        update_now_link(ongoing_rows);
+        update_now_link(agenda_rows, ongoing_rows);
     }
 
     // Update tooltips
