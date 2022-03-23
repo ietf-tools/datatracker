@@ -157,6 +157,7 @@ jobs:
         python-version: '3.x'
         
     - name: Download a Coverage Results
+      if: ${{ github.event.inputs.skiptests == 'false' }}
       uses: actions/download-artifact@v3.0.0
       with:
         name: coverage
