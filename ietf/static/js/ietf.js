@@ -120,19 +120,20 @@ $(function () {
                 .shift()
                 .trim());
 
-        if (
-            contents &&
-            (contents.length > 0) &&
-            ($(headings)
-                .last()
-                .offset()
-                .top > $(window)
-                .height())
-        ) {
+        const extraNav = contentElement.find('#extra-nav');
+
+        const pageTooTall = !!(contents &&
+          (contents.length > 0) &&
+          ($(headings)
+              .last()
+              .offset()
+              .top > $(window)
+              .height()));
+
+        if (pageTooTall || extraNav) {
             // console.log("Enabling nav.");
             let n = 0;
             let last_level;
-            let nav;
 
             contentElement
                 .attr("data-bs-offset", 0)
@@ -142,7 +143,14 @@ $(function () {
                      <nav id="righthand-nav" class="position-fixed navbar navbar-light bg-light overflow-auto flex-fill" style="height: 70vh; width: inherit;">
                      </nav>
                  </div>
-                 `))
+                 `));
+
+            const nav = $("#righthand-nav")
+                .append(`<nav class="nav nav-pills flex-column align-self-start flex-fill px-2">`)
+                .children()
+                .last();
+
+            contentElement
                 .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible, .nav-heading:visible")
                 .not(".navskip")
                 .each(function () {
@@ -166,14 +174,6 @@ $(function () {
                             .attr("id", id);
                     }
 
-                    if (nav === undefined) {
-                        nav = $("#righthand-nav");
-                        nav = $(nav)
-                            .append(`<nav class="nav nav-pills flex-column align-self-start flex-fill px-2">`)
-                            .children()
-                            .last();
-                    }
-
                     const level = parseInt(this.nodeName.substring(1)) - 1;
                     if (!last_level) {
                         last_level = level;
@@ -189,6 +189,11 @@ $(function () {
                     $(nav)
                         .append(`<a class="nav-link" href="#${id}">${text}</a>`);
                 });
+
+            if (extraNav) {
+                extraNav.children().appendTo(nav);
+                extraNav.remove();
+            }
 
             $(window)
                 .on("scroll", function () {

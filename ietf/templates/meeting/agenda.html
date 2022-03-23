@@ -23,6 +23,10 @@
     {% else %}
         {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda" title_extra="" %}
     {% endif %}
+    {# the contents of #extra-nav will be moved into the RH nav panel #}
+    <div id="extra-nav" class="d-none">
+        <a class="nav-link now-link" href="#">Current session</a>
+    </div>
     {# cache this part -- it takes 3-6 seconds to generate #}
     {% load cache %}
     {% cache cache_time ietf_meeting_agenda_utc schedule.meeting.number request.path %}
@@ -94,7 +98,6 @@
             Check boxes below to select individual sessions.
         </p>
     {% endif %}
-    <div><a class="now-link" href="#">Go to now</a></div>
     <table id="agenda-table" class="table table-sm tablesorter">
         <thead>
             <tr>
