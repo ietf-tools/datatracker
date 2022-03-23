@@ -204,45 +204,43 @@
         update_clock();
     }
 
-    function update_now_link(agenda_rows, ongoing_rows) {
-        agenda_rows.removeClass('next-session');
-        const now_links = $('a.now-link');
+    // Update hrefs in anchor tags with the "now-link" class. Mark the target with the "current-session" class.
+    function update_now_link(agenda_rows, ongoing_rows, later_rows) {
+        agenda_rows.removeClass('current-session');
+        const links_to_update = $('a.now-link');
         if (ongoing_rows.length > 0) {
-            // Add a #now target for navigating - find the latest start time of any ongoing row
-            // and mark the first row starting at that time
+            // sessions are ongoing - find those with the latest start time and mark the first of them as "now"
             const last_start_time = ongoing_rows[ongoing_rows.length - 1].slot_start_ts;
             for (let ii=0; ii < ongoing_rows.length; ii++) {
                 const dt = ongoing_rows[ii].slot_start_ts.diff(last_start_time, 'seconds');
                 if (Math.abs(dt) < 1) {
-                    $(ongoing_rows[ii]).addClass('next-session');
-                    now_links.attr('href', '#' + ongoing_rows[ii].id);
+                    $(ongoing_rows[ii]).addClass('current-session');
+                    links_to_update.attr('href', '#' + ongoing_rows[ii].id);
                     break;
                 }
             }
-            return;
+        } else if (later_rows.length > 0) {
+            // There were no ongoing sessions, look for the next one to start and mark as current
+            $(later_rows[0]).addClass('current-session');
+            links_to_update.attr('href', '#' + later_rows[0].id);
+        } else {
+            // No sessions in the future - meeting has apparently ended
+            links_to_update.attr('href', '#');
+            links_to_update.addClass('d-none'); // hide the links
         }
-        // There were no ongoing sessions, look for the next one to start
-        const later_rows = agenda_rows.filter(function() { return moment().isBefore(this.slot_start_ts); });
-        if (later_rows.length > 0) {
-            $(later_rows[0]).addClass('next-session');
-            now_links.attr('href', '#' + later_rows[0].id);
-            return;
-        }
-        // No sessions in the future - meeting has apparently ended
-        now_links.attr('href', '#');
-        now_links.addClass('d-none');
     }
 
-    // Highlight ongoing based on the current time
-    function highlight_ongoing() {
+    function update_ongoing_sessions() {
         const agenda_rows = $('[data-slot-start-ts]');
-        agenda_rows.removeClass("table-warning");
         const ongoing_rows = agenda_rows.filter(function () {
             return moment()
                 .isBetween(this.slot_start_ts, this.slot_end_ts);
         });
+        const later_rows = agenda_rows.filter(function() { return moment().isBefore(this.slot_start_ts); });
+        // Highlight ongoing based on the current time
+        agenda_rows.removeClass("table-warning");
         ongoing_rows.addClass("table-warning");
-        update_now_link(agenda_rows, ongoing_rows);
+        update_now_link(agenda_rows, ongoing_rows, later_rows); // update any "now-link" anchors
     }
 
     // Update tooltips
@@ -287,9 +285,9 @@
         speedup = speedup || 1;
         const fast_timer = 60000 / (speedup > 600 ? 600 : speedup);
         update_clock();
-        highlight_ongoing();
+        update_ongoing_sessions();
         setInterval(function () { update_clock(); }, fast_timer);
-        setInterval(function () { highlight_ongoing(); }, fast_timer);
+        setInterval(function () { update_ongoing_sessions(); }, fast_timer);
         setInterval(function () { update_tooltips(); }, fast_timer);
         setInterval(function () { update_tooltips_all(); }, 3600000 / speedup);
     }
