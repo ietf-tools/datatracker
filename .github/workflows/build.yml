@@ -166,6 +166,11 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
+        echo "Using values:"
+        echo "PKG_VERSION: $PKG_VERSION"
+        echo "PKG_VERSION_STRICT: $PKG_VERSION_STRICT"
+        echo "GITHUB_SHA: $GITHUB_SHA"
+        ehco "GITHUB_REF_NAME: $GITHUB_REF_NAME"
         echo "Running build script..."
         chmod +x ./dev/deploy/build.sh
         sh ./dev/deploy/build.sh
