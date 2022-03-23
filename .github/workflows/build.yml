@@ -22,6 +22,7 @@ jobs:
   # -----------------------------------------------------------------
   prepare:
     name: Prepare Release
+    runs-on: ubuntu-latest
     outputs:
       should_deploy: ${{ steps.buildvars.outputs.should_deploy }}
       pkg_version: ${{ steps.buildvars.outputs.pkg_version }}
