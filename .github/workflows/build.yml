@@ -108,7 +108,9 @@ jobs:
     - uses: actions/checkout@v3
     
     - name: Prepare for tests
-      run: ./dev/tests/prepare.sh
+      run: |
+        chmod +x ./dev/tests/prepare.sh
+        sh ./dev/tests/prepare.sh
         
     - name: Ensure DB is ready
       run: |
