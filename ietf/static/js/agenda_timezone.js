@@ -204,21 +204,34 @@
         update_clock();
     }
 
+    function update_now_link(ongoing_rows) {
+        const now_links = $('a.now-link');
+        if (ongoing_rows.length === 0) {
+            now_links.attr('href', '#');
+        } else {
+            // Add a #now target for navigating - find the latest start time of any ongoing row
+            // and mark the first row starting at that time
+            const last_start_time = ongoing_rows[ongoing_rows.length - 1].slot_start_ts;
+            for (let ii=0; ii < ongoing_rows.length; ii++) {
+                const dt = ongoing_rows[ii].slot_start_ts.diff(last_start_time, 'seconds');
+                if (Math.abs(dt) < 1) {
+                    now_links.attr('href', '#' + ongoing_rows[ii].id);
+                    break;
+                }
+            }
+        }
+    }
+
     // Highlight ongoing based on the current time
     function highlight_ongoing() {
-        $("div#now")
-            .remove("#now");
-        $('.table-warning')
-            .removeClass("table-warning");
-        let agenda_rows = $('[data-slot-start-ts]');
-        agenda_rows = agenda_rows.filter(function () {
+        const agenda_rows = $('[data-slot-start-ts]');
+        agenda_rows.removeClass("table-warning");
+        const ongoing_rows = agenda_rows.filter(function () {
             return moment()
                 .isBetween(this.slot_start_ts, this.slot_end_ts);
         });
-        agenda_rows.addClass("table-warning");
-        agenda_rows.first()
-            .children("th, td")
-            .prepend($('<div id="now"></div>'));
+        ongoing_rows.addClass("table-warning");
+        update_now_link(ongoing_rows);
     }
 
     // Update tooltips
@@ -245,7 +258,7 @@
 
     // Update clock
     function update_clock() {
-        $('#current-time')
+        $('span.current-time')
             .html(format_time(moment(), get_current_tz_cb(), 0));
     }
 
@@ -259,7 +272,8 @@
         }
     }
 
-    function init_timers() {
+    function init_timers(speedup) {
+        speedup = speedup || 1;
         const fast_timer = 60000 / (speedup > 600 ? 600 : speedup);
         update_clock();
         highlight_ongoing();
