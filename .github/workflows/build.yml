@@ -166,18 +166,17 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        echo "Using values:"
         echo "PKG_VERSION: $PKG_VERSION"
         echo "PKG_VERSION_STRICT: $PKG_VERSION_STRICT"
         echo "GITHUB_SHA: $GITHUB_SHA"
-        ehco "GITHUB_REF_NAME: $GITHUB_REF_NAME"
+        echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
         echo "Running build script..."
         chmod +x ./dev/deploy/build.sh
         sh ./dev/deploy/build.sh
         echo "Setting version $PKG_VERSION_STRICT..."
-        sed -i -r -e "s/^__version__ += '.*'$/__version__ = '$PKG_VERSION_STRICT'/" ietf/__init__.py
-        sed -i -r -e "s/^__release_hash__ += '.*'$/__release_hash__ = '$GITHUB_SHA'/" ietf/__init__.py
-        sed -i -r -e "s/^__release_branch__ += '.*'$/__release_branch__ = '$GITHUB_REF_NAME'/" ietf/__init__.py
+        sed -i -r -e "s|^__version__ += '.*'$|__version__ = '$PKG_VERSION_STRICT'|" ietf/__init__.py
+        sed -i -r -e "s|^__release_hash__ += '.*'$|__release_hash__ = '$GITHUB_SHA'|" ietf/__init__.py
+        sed -i -r -e "s|^__release_branch__ += '.*'$|__release_branch__ = '$GITHUB_REF_NAME'|" ietf/__init__.py
         echo "Build release tarball..."
         mkdir -p /home/runner/work/release
         tar -czf /home/runner/work/release/release.tar.gz -X dev/deploy/exclude-patterns.txt .
