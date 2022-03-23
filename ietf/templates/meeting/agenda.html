@@ -413,13 +413,13 @@
     {% endif %}
     <script>
         {% if settings.DEBUG and settings.DEBUG_AGENDA %}
-            speedup = +$.urlParam('speedup');
+            speedup = +urlParam('speedup');
             if (speedup < 1) {
                 speedup = 1;
             }
             start_time = moment().utc();
-            if ($.urlParam('date')) {
-                offset_time = moment.tz(decodeURIComponent($.urlParam('date')), "UTC");
+            if (urlParam('date')) {
+                offset_time = moment.tz(decodeURIComponent(urlParam('date')), "UTC");
             } else {
                 offset_time = start_time;
             }

@@ -10,15 +10,15 @@
 (function() {
     'use strict';
 
-    var local_timezone = moment.tz.guess();
+    const local_timezone = moment.tz.guess();
 
     // get_current_tz_cb must be overwritten using set_current_tz_cb
-    function get_current_tz_cb() {
+    let get_current_tz_cb = function() {
         throw new Error('Tried to get current timezone before callback registered. Use set_current_tz_cb().');
-    }
+    };
 
     // Initialize moments
-    window.initialize_moments = function () {
+    function initialize_moments() {
         var times = $('.time');
         $.each(times, function (i, item) {
             item.start_ts = moment.unix(this.getAttribute("data-start-time"))
@@ -41,7 +41,7 @@
             item.slot_end_ts = moment.unix(this.getAttribute("data-slot-end-ts"))
                 .utc();
         });
-    };
+    }
 
     function format_time(t, tz, fmt) {
         var out;
@@ -154,7 +154,7 @@
     }
 
     // Add tooltips
-    window.add_tooltips = function () {
+    function add_tooltips() {
         $('.time')
             .each(function () {
                 var tooltip = $(format_tooltip(this.start_ts, this.end_ts));
@@ -175,10 +175,10 @@
                         trigger: "hover"
                     });
             });
-    };
+    }
 
     // Update times on the agenda based on the selected timezone
-    window.update_times = function (newtz) {
+    function update_times(newtz) {
         $('.current-tz')
             .html(newtz);
         $('.time')
@@ -207,10 +207,10 @@
             });
         update_tooltips_all();
         update_clock();
-    };
+    }
 
     // Highlight ongoing based on the current time
-    window.highlight_ongoing = function () {
+    function highlight_ongoing() {
         $("div#now")
             .remove("#now");
         $('.table-warning')
@@ -224,10 +224,10 @@
         agenda_rows.first()
             .children("th, td")
             .prepend($('<div id="now"></div>'));
-    };
+    }
 
     // Update tooltips
-    window.update_tooltips = function () {
+    function update_tooltips() {
         var tooltips = $('.timetooltiptext');
         tooltips.filter(function () {
             return moment()
@@ -237,24 +237,24 @@
                 $(this)
                     .html(format_tooltip_table(this.start_ts, this.end_ts));
             });
-    };
+    }
 
     // Update all tooltips
-    window.update_tooltips_all = function () {
+    function update_tooltips_all() {
         var tooltips = $('.timetooltiptext');
         tooltips.each(function () {
             $(this)
                 .html(format_tooltip_table(this.start_ts, this.end_ts));
         });
-    };
+    }
 
     // Update clock
-    window.update_clock = function () {
+    function update_clock() {
         $('#current-time')
             .html(format_time(moment(), get_current_tz_cb(), 0));
-    };
+    }
 
-    $.urlParam = function (name) {
+    function urlParam(name) {
         var results = new RegExp('[\?&]' + name + '=([^&#]*)')
             .exec(window.location.href);
         if (results == null) {
@@ -262,9 +262,9 @@
         } else {
             return results[1] || 0;
         }
-    };
+    }
 
-    window.init_timers = function () {
+    function init_timers() {
         var fast_timer = 60000 / (speedup > 600 ? 600 : speedup);
         update_clock();
         highlight_ongoing();
@@ -272,7 +272,14 @@
         setInterval(function () { highlight_ongoing(); }, fast_timer);
         setInterval(function () { update_tooltips(); }, fast_timer);
         setInterval(function () { update_tooltips_all(); }, 3600000 / speedup);
-    };
+    }
+
+    /***** make public interface available on window *****/
+    window.initialize_moments = initialize_moments;
+    window.add_tooltips = add_tooltips;
+    window.update_times = update_times;
+    window.urlParam = urlParam;
+    window.init_timers = init_timers;
 
     // set method used to find current time zone
     window.set_current_tz_cb = function (fn) {
