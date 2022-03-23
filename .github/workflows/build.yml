@@ -78,8 +78,8 @@ jobs:
         else
           echo "Using TEST mode: v7.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "::set-output name=should_deploy::false"
-          echo "::set-output name=pkg_version::v3.0.0-dev.$GITHUB_RUN_NUMBER"
-          echo "::set-output name=pkg_version_strict::3.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "::set-output name=pkg_version::v7.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "::set-output name=pkg_version_strict::7.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "::notice::Non-production build created using branch $GITHUB_REF_NAME"
         fi
 
