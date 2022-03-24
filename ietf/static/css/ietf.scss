@@ -909,7 +909,9 @@ td.position-empty {
     padding-left: 0px !important;
 }
 
-#agenda-table tbody tr.current-session { border-top: 0.2rem solid map.get($theme-colors, "info"); }
+#agenda-table tbody tr.current-session {
+    border-top: map.get($border-widths, 2) solid map.get($theme-colors, "info");
+}
 
 .timetooltip {
     position: relative;
@@ -956,4 +958,10 @@ td.position-empty {
 
 #current-time {
     display: inline-block;
+}
+
+// righthand nav panel styling
+#righthand-nav {
+    width: inherit;
+    height: 70vh;
 }
