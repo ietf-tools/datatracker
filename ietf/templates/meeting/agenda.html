@@ -110,7 +110,8 @@
                 {% ifchanged item.timeslot.time|date:"Y-m-d" %}
                     <tr class="table-primary show-with-children">
                         <th colspan="{% if personalize %}6{% else %}5{% endif %}"
-                            id="slot-{{ item.timeslot.time|slugify }}">
+                            id="slot-{{ item.timeslot.time|slugify }}"
+                            class="nav-heading">
                             {{ item.timeslot.time|date:"l, F j, Y" }}
                         </th>
                     </tr>

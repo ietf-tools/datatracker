@@ -153,7 +153,7 @@ $(function () {
     const contentElement = $('#content.ietf-auto-nav');
     if (contentElement.length > 0) {
         const headings = contentElement
-            .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible")
+            .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible, .nav-heading:visible")
             .not(".navskip");
 
         const contents = (headings.length > 0) &&
@@ -186,7 +186,7 @@ $(function () {
                      </nav>
                  </div>
                  `))
-                .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible")
+                .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible, .nav-heading:visible")
                 .not(".navskip")
                 .each(function () {
                     // Some headings have complex HTML in them - only use first part in that case.
