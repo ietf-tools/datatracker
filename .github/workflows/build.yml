@@ -126,11 +126,13 @@ jobs:
         
     - name: Upload Coverage Results to Codecov
       uses: codecov/codecov-action@v2.1.0
+      if: ${{ always() }}
       with:
         files: coverage.json
         
     - name: Upload Coverage Results as Build Artifact
       uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
       with:
         name: coverage
         path: coverage.json
