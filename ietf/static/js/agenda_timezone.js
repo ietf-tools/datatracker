@@ -226,7 +226,7 @@
         } else {
             // No sessions in the future - meeting has apparently ended
             links_to_update.attr('href', '#');
-            links_to_update.addClass('d-none'); // hide the links
+            links_to_update.addClass('text-muted text-decoration-line-through'); // mark link
         }
     }
 
