@@ -122,6 +122,10 @@ jobs:
         ./ietf/manage.py check
         echo "Running tests..."
         ./ietf/manage.py test --settings=settings_sqlitetest --failfast
+        
+    - name: Rename Coverage Results
+      if: ${{ always() }}
+      run: |
         mv latest-coverage.json coverage.json
         
     - name: Upload Coverage Results to Codecov
