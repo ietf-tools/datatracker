@@ -16,18 +16,18 @@
     <table class="table table-sm table-borderless">
         <tbody>
             <tr {% if warn.intended_std_level %}class="table-warning"{% endif %}>
-                <th class="text-nowrap">Intended status level</th>
+                <th>Intended status level</th>
                 <td {% if warn.intended_std_level %}class="text-danger"{% endif %}>
                     {% if warn.intended_std_level %}<i class="bi bi-exclamation-circle"></i>{% endif %}
                     {{ doc.intended_std_level }}
                 </td>
             </tr>
             <tr>
-                <th class="text-nowrap">Responsible AD</th>
+                <th>Responsible AD</th>
                 <td>{% person_link ad %}</td>
             </tr>
             <tr {% if warn.shepherd %}class="table-warning"{% endif %}>
-                <th class="text-nowrap">Document shepherd</th>
+                <th>Document shepherd</th>
                 <td {% if warn.shepherd %}class="text-danger"{% endif %}>
                     {% if warn.shepherd %}<i class="bi bi-exclamation-circle"></i>{% endif %}
                     {% if doc.shepherd %}
@@ -38,7 +38,7 @@
                 </td>
             </tr>
             <tr {% if warn.shepherd_writeup %}class="table-warning"{% endif %}>
-                <th class="text-nowrap">Shepherd write-up exists</th>
+                <th>Shepherd write-up exists</th>
                 <td {% if warn.shepherd_writeup %}class="text-danger"{% endif %}>
                     {% if warn.shepherd_writeup %}<i class="bi bi-exclamation-circle"></i>{% endif %}
                     {% if shepherd_writeup %}
@@ -49,7 +49,7 @@
                 </td>
             </tr>
             <tr>
-                <th class="text-nowrap">Also notify</th>
+                <th>Also notify</th>
                 <td>
                     {% if notify %}
                         {{ notify }}
@@ -59,7 +59,7 @@
                 </td>
             </tr>
             <tr {% if warn.tags %}class="table-warning"{% endif %}>
-                <th class="text-nowrap">Annotation tags</th>
+                <th>Annotation tags</th>
                 <td {% if warn.tags %}class="text-danger"{% endif %}>
                     {% if warn.tags %}<i class="bi bi-exclamation-circle"></i>{% endif %}
                     {% if not tags %}

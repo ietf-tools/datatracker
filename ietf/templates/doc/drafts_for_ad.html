@@ -16,7 +16,7 @@
                 <tr>
                     <th data-sort="document">Document</th>
                     <th data-sort="status">Status</th>
-                    <th data-sort="responsible">Responsible AD</th>
+                    <th class="d-none d-sm-table-cell" data-sort="responsible">Responsible AD</th>
                     <th data-sort="discusses">Discusses</th>
                 </tr>
             </thead>
@@ -25,7 +25,7 @@
                     <tr>
                         <td>{{ doc.displayname_with_link }}</td>
                         {% include "doc/search/status_columns.html" %}
-                        <td>
+                        <td class="d-none d-sm-table-cell">
                             {% if doc.ad %}
                                 {% person_link doc.ad %}
                             {% else %}
@@ -40,11 +40,8 @@
                                     {% else %}
                                         {% person_link p.balloter %}
                                     {% endif %}
-                                    (
-                                    {% if p.discuss_time %}{{ p.discuss_time|timesince_days }}{% endif %}
-                                    days ago
-                                    {% if doc.get_state_url != "rfc" and p.rev != doc.rev %}for -{{ p.rev }}{% endif %}
-                                    )
+                                    ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }}{% endif %}
+                                    days ago{% if doc.get_state_url != "rfc" and p.rev != doc.rev %} for -{{ p.rev }}{% endif %})
                                     <br>
                                 </span>
                             {% endfor %}

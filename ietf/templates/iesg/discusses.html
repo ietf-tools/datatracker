@@ -42,7 +42,7 @@
             <tr>
                 <th data-sort="document">Document</th>
                 <th data-sort="status">Status</th>
-                <th data-sort="ad" class="text-nowrap">Responsible AD</th>
+                <th data-sort="ad" class="d-none d-sm-table-cell">Responsible AD</th>
                 <th data-sort="discusses">Discusses</th>
             </tr>
         </thead>
@@ -57,13 +57,12 @@
                            {% endif %}">
                     <td>{{ doc.displayname_with_link }}</td>
                     {% include "doc/search/status_columns.html" %}
-                    <td>{% person_link doc.ad %}</td>
+                    <td class="d-none d-sm-table-cell">{% person_link doc.ad %}</td>
                     <td>
                         {% for p in doc.blocking_positions %}
                             {% if p.is_old_pos %}<span class="text-muted">{% endif %}
                             {% person_link p.balloter %}
-                            ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }} days ago{% endif %}
-                            {% if doc.get_state_url != "rfc" and p.rev != doc.rev %}for -{{ p.rev }}{% endif %})
+                            ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }} days ago{% endif %}{% if doc.get_state_url != "rfc" and p.rev != doc.rev %}for -{{ p.rev }}{% endif %})
                             <br>
                             {% if p.is_old_pos %}</span>{% endif %}
                         {% endfor %}

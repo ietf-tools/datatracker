@@ -122,7 +122,7 @@ function format_session_time(session_elt, tz) {
         .attr('data-start-utc'));
     var end = moment.utc($(session_elt)
         .attr('data-end-utc'));
-    return format_moment(start, tz, 'datetime') + ' - ' + format_moment(end, tz, 'time');
+    return format_moment(start, tz, 'datetime') + '-' + format_moment(end, tz, 'time');
 }
 
 function format_meeting_time(meeting_elt, tz) {
@@ -134,7 +134,7 @@ function format_meeting_time(meeting_elt, tz) {
     var end = moment.tz($(meeting_elt)
             .attr('data-end-date'), meeting_tz)
         .endOf('day');
-    return format_moment(start, tz, 'date') + ' - ' + format_moment(end, tz, 'date');
+    return format_moment(start, tz, 'date') + ' to ' + format_moment(end, tz, 'date');
 }
 
 window.timezone_changed = function (newtz) {

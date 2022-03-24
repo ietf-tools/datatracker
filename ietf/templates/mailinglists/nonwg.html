@@ -20,7 +20,7 @@
         <tbody>
             {% for list in lists %}
                 <tr>
-                    <td class="text-nowrap">
+                    <td>
                         <a href="{{ list.info_url }}">{{ list.name.lower }}</a>
                     </td>
                     <td>{{ list.description|urlize_ietf_docs }}</td>
