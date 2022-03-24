@@ -5,7 +5,6 @@
 import io
 import os.path
 import shutil
-import sys
 import types
 
 from pyquery import PyQuery
