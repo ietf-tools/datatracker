@@ -121,6 +121,7 @@ $(function () {
                 .trim());
 
         const extraNav = contentElement.find('#extra-nav');
+        const haveExtraNav = extraNav.length > 0;
 
         const pageTooTall = !!(contents &&
           (contents.length > 0) &&
@@ -130,7 +131,7 @@ $(function () {
               .top > $(window)
               .height()));
 
-        if (pageTooTall || extraNav) {
+        if (pageTooTall || haveExtraNav) {
             // console.log("Enabling nav.");
             let n = 0;
             let last_level;
@@ -190,7 +191,7 @@ $(function () {
                         .append(`<a class="nav-link" href="#${id}">${text}</a>`);
                 });
 
-            if (extraNav) {
+            if (haveExtraNav) {
                 extraNav.children().appendTo(nav);
                 extraNav.remove();
             }
