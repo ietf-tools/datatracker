@@ -138,7 +138,7 @@
                                 {% endif %}
                             </td>
                         {% endif %}
-                        <td class="text-nowrap text-end">{% include "meeting/timeslot_start_end.html" %}</td>
+                        <td class="text-end">{% include "meeting/timeslot_start_end.html" %}</td>
                         <td colspan="3">
                             {% if item.timeslot.show_location and item.timeslot.location %}
                                 {% location_anchor item.timeslot %}
@@ -189,7 +189,7 @@
                         data-slot-start-ts="{{ item.start_timestamp }}"
                         data-slot-end-ts="{{ item.end_timestamp }}">
                         {% if personalize %}<th class="text-center"></th>{% endif %}
-                        <th class="text-nowrap text-end">{% include "meeting/timeslot_start_end.html" %}</th>
+                        <th class="text-end">{% include "meeting/timeslot_start_end.html" %}</th>
                         <th colspan="4">
                             {{ item.timeslot.time|date:"l" }}
                             {{ item.timeslot.name|capfirst_allcaps }}
@@ -217,7 +217,7 @@
                         </td>
                     {% endif %}
                     {% if item.slot_type.slug == 'plenary' %}
-                        <td class="text-nowrap text-end">{% include "meeting/timeslot_start_end.html" %}</td>
+                        <td class="text-end">{% include "meeting/timeslot_start_end.html" %}</td>
                         <td colspan="3">
                             {% if item.timeslot.show_location and item.timeslot.location %}
                                 {% location_anchor item.timeslot %}

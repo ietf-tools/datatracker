@@ -53,7 +53,7 @@
                                     data-start-date="{{ meeting.date }}"
                                     data-end-date="{{ meeting.end }}"
                                     data-time-zone="{{ meeting.time_zone }}">
-                                    {{ meeting.date }} - {{ meeting.end }}
+                                    {{ meeting.date }} to {{ meeting.end }}
                                 </td>
                                 <td>ietf</td>
                                 <td>
@@ -69,7 +69,7 @@
                                 <td class="session-time"
                                     data-start-utc="{{ session.official_timeslotassignment.timeslot.utc_start_time | date:'Y-m-d H:i' }}Z"
                                     data-end-utc="{{ session.official_timeslotassignment.timeslot.utc_end_time | date:'Y-m-d H:i' }}Z">
-                                    {{ session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i" }} - {{ session.official_timeslotassignment.timeslot.utc_end_time | date:"H:i" }}
+                                    {{ session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i" }}-{{ session.official_timeslotassignment.timeslot.utc_end_time | date:"H:i" }}
                                 </td>
                                 <td>
                                     <a href="{% url 'ietf.group.views.group_home' acronym=group.acronym %}">{{ group.acronym }}</a>

@@ -120,7 +120,7 @@
         <tbody>
             {% for e in events %}
                 <tr id="history-{{ e.pk }}">
-                    <td class="text-nowrap">
+                    <td>
                         <div title="{{ e.time|date:'Y-m-d H:i:s O' }}">{{ e.time|date:"Y-m-d" }}</div>
                     </td>
                     <td class="text-end">{{ e.rev }}</td>

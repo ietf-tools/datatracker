@@ -124,20 +124,20 @@
         const current_timezone = get_current_tz_cb();
         let out = '<div class="text-start"><table class="table table-sm"><tr><th></th><th>Session start</th><th>Session end</th></tr>';
         if (window.meeting_timezone !== "") {
-            out += '<tr><th class="timehead">Meeting timezone</th><td class="text-nowrap">' +
-                format_time(start, window.meeting_timezone, 0) + '</td><td class="text-nowrap">' +
+            out += '<tr><th class="timehead">Meeting timezone</th><td>' +
+                format_time(start, window.meeting_timezone, 0) + '</td><td>' +
                 format_time(end, window.meeting_timezone, 0) + '</td></tr>';
         }
-        out += '<tr><th class="timehead">Local timezone</th><td class="text-nowrap">' +
-            format_time(start, local_timezone, 0) + '</td><td class="text-nowrap">' +
+        out += '<tr><th class="timehead">Local timezone</th><td>' +
+            format_time(start, local_timezone, 0) + '</td><td>' +
             format_time(end, local_timezone, 0) + '</td></tr>';
         if (current_timezone !== 'UTC') {
-            out += '<tr><th class="timehead">Selected Timezone</th><td class="text-nowrap">' +
-                format_time(start, current_timezone, 0) + '</td><td class="text-nowrap">' +
+            out += '<tr><th class="timehead">Selected Timezone</th><td>' +
+                format_time(start, current_timezone, 0) + '</td><td>' +
                 format_time(end, current_timezone, 0) + '</td></tr>';
         }
-        out += '<tr><th class="timehead">UTC</th><td class="text-nowrap">' +
-            format_time(start, 'UTC', 0) + '</td><td class="text-nowrap">' +
+        out += '<tr><th class="timehead">UTC</th><td>' +
+            format_time(start, 'UTC', 0) + '</td><td>' +
             format_time(end, 'UTC', 0) + '</td></tr>';
         out += '</table>' + format_tooltip_notice(start, end) + '</div>';
         return out;

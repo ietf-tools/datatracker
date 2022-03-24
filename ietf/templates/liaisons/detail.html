@@ -20,60 +20,60 @@
             <td>{{ liaison.state }}</td>
         </tr>
         <tr>
-            <th class="text-nowrap">Submitted Date</th>
+            <th>Submitted Date</th>
             <td>{{ liaison.submitted|date:"Y-m-d" }}</td>
         </tr>
         <tr>
-            <th class="text-nowrap">From Group{{ liaison.from_groups.all|pluralize }}</th>
+            <th>From Group{{ liaison.from_groups.all|pluralize }}</th>
             <td>{{ liaison.from_groups_display }}</td>
         </tr>
         {% if liaison.from_contact %}
             <tr>
-                <th class="text-nowrap">From Contact</th>
+                <th>From Contact</th>
                 <td>{% person_link liaison.from_contact.person %}</td>
             </tr>
         {% endif %}
         <tr>
-            <th class="text-nowrap">To Group{{ liaison.to_groups.all|pluralize }}</th>
+            <th>To Group{{ liaison.to_groups.all|pluralize }}</th>
             <td>{{ liaison.to_groups_display }}</td>
         </tr>
         {% if liaison.to_contacts %}
             <tr>
-                <th class="text-nowrap">To Contacts</th>
+                <th>To Contacts</th>
                 <td>{{ liaison.to_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         {% if liaison.cc_contacts %}
             <tr>
-                <th class="text-nowrap">Cc</th>
+                <th>Cc</th>
                 <td>{{ liaison.cc_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         {% if liaison.response_contacts %}
             <tr>
-                <th class="text-nowrap">Response Contact</th>
+                <th>Response Contact</th>
                 <td>{{ liaison.response_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         {% if liaison.technical_contacts %}
             <tr>
-                <th class="text-nowrap">Technical Contact</th>
+                <th>Technical Contact</th>
                 <td>{{ liaison.technical_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         {% if liaison.action_holder_contacts %}
             <tr>
-                <th class="text-nowrap">Action Holder Contacts</th>
+                <th>Action Holder Contacts</th>
                 <td>{{ liaison.action_holder_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         <tr>
-            <th class="text-nowrap">Purpose</th>
+            <th>Purpose</th>
             <td>{{ liaison.purpose.name }}</td>
         </tr>
         {% if liaison.deadline %}
             <tr>
-                <th class="text-nowrap">Deadline</th>
+                <th>Deadline</th>
                 <td>
                     {{ liaison.deadline }}
                     {% if liaison.action_taken %}
@@ -95,7 +95,7 @@
         {% endif %}
         {% if relations %}
             <tr>
-                <th class="text-nowrap">
+                <th>
                     Liaisons referring to this
                 </th>
                 <td>
@@ -115,7 +115,7 @@
         {% if liaison.related_to %}
             {% if liaison.related_to.approved or is_approving %}
                 <tr>
-                    <th class="text-nowrap">
+                    <th>
                         Referenced liaison
                     </th>
                     <td>
@@ -132,7 +132,7 @@
         {% endif %}
         {% if liaison.other_identifiers %}
             <tr>
-                <th class="text-nowrap">
+                <th>
                     Other Identifiers
                 </th>
                 <td>
@@ -141,7 +141,7 @@
             </tr>
         {% endif %}
         <tr>
-            <th class="text-nowrap">
+            <th>
                 Attachments
             </th>
             <td>
@@ -157,7 +157,7 @@
         </tr>
         {% if relations_by %}
             <tr>
-                <th class="text-nowrap">
+                <th>
                     Liaisons referred by this one
                 </th>
                 <td>
@@ -176,7 +176,7 @@
         {% endif %}
         {% if relations_to %}
             <tr>
-                <th class="text-nowrap">
+                <th>
                     Liaisons referring to this one
                 </th>
                 <td>
@@ -195,7 +195,7 @@
         {% endif %}
         {% if liaison.from_contact and liaison.body %}
             <tr>
-                <th class="text-nowrap">
+                <th>
                     Body
                 </th>
                 <td>

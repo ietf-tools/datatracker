@@ -16,7 +16,7 @@
                     <th data-sort="date">Date</th>
                     <th data-sort="group">Group</th>
                     <th data-sort="name">Name</th>
-                    <th></th>
+                    <th class="d-none d-sm-table-cell"></th>
                 </tr>
             </thead>
             <tbody>
@@ -34,15 +34,13 @@
                         </td>
                         <td>
                             {% if meeting.type_id == "interim" %}
-                                <a href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.responsible_group.acronym %}">
-                                    {{ meeting.number }}
-                                    {% if meeting.interim_meeting_cancelled %}<span class="badge bg-warning">Cancelled</span>{% endif %}
-                                </a>
+                                <a href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.responsible_group.acronym %}">{{ meeting.number }}</a>
+                                {% if meeting.interim_meeting_cancelled %}<span class="badge bg-warning">Cancelled</span>{% endif %}
                             {% else %}
                                 <a href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">IETF-{{ meeting.number }}</a>
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="d-none d-sm-table-cell">
                             {% if meeting.type_id == "interim" %}
                             {% else %}
                                 {% if meeting.get_number > 97 %}

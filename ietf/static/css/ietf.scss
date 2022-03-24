@@ -92,13 +92,26 @@ table tbody.meta {
 
     th:first-child,
     td:first-child {
-        width: 9em;
+        width: 4em;
     }
 
     th:nth-child(2),
     td:nth-child(2) {
-        // text-align: right;
-        width: 14em;
+        width: 7em;
+    }
+
+    // See https://getbootstrap.com/docs/5.0/layout/breakpoints/#media-queries
+    @include media-breakpoint-up(md) {
+
+        th:first-child,
+        td:first-child {
+            width: 9em;
+        }
+
+        th:nth-child(2),
+        td:nth-child(2) {
+            width: 14em;
+        }
     }
 
     td.edit {

@@ -46,7 +46,7 @@
         {% endfor %}
     </td>
     <td class="doc">
-        {% if doc.pages %}<small class="float-end text-muted">{{ doc.pages }} page{{ doc.pages|pluralize }}</small>{% endif %}
+        {% if doc.pages %}<small class="float-end text-muted d-none d-sm-block">{{ doc.pages }} page{{ doc.pages|pluralize }}</small>{% endif %}
         <div>
             <a href="{{ doc.get_absolute_url }}">
                 {% if doc.get_state_slug == "rfc" %}
@@ -106,7 +106,6 @@
         {% endif %}
     </td>
     <td>
-        <span class="text-nowrap">
             {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}
                 {% if doc.rev != "00" %}
                     <a href="{{ rfcdiff_base_url }}?url2={{ doc.name }}-{{ doc.rev }}">
@@ -122,7 +121,6 @@
                     {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}
                         {% if doc.rev != "00" or doc.replaces %}</a>{% endif %}
                     {% endif %}
-                </span>
                 {% if doc.latest_revision_date|timesince_days|new_enough:request %}
                     <br>
                     <div class="float-end">
@@ -135,7 +133,7 @@
                 {% endif %}
             </td>
             {% include "doc/search/status_columns.html" %}
-            <td class="text-center">
+            <td class="text-center d-none d-sm-table-cell">
                 {% if doc.related_ipr %}
                     <a href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}">
                         <span class="badge bg-info">{{ doc.related_ipr|length }}</span>
@@ -143,7 +141,7 @@
                 {% endif %}
             </td>
             {% if ad_name == None or ad_name != doc.ad.plain_name %}
-                <td>
+                <td class="d-none d-sm-table-cell">
                     {% if doc.ad %}
                         {% person_link doc.ad title="Area Director" %}
                     {% endif %}
