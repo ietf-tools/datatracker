@@ -43,3 +43,22 @@ jobs:
         ./ietf/manage.py check
         echo "Running tests..."
         ./ietf/manage.py test --settings=settings_sqlitetest --failfast
+        
+    - name: Rename Coverage Results
+      if: ${{ always() }}
+      run: |
+        mv latest-coverage.json coverage.json
+        
+    - name: Upload Coverage Results to Codecov
+      uses: codecov/codecov-action@v2.1.0
+      if: ${{ always() }}
+      continue-on-error: true
+      with:
+        files: coverage.json
+        
+    - name: Upload Coverage Results as Build Artifact
+      uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
+      with:
+        name: coverage
+        path: coverage.json
