@@ -124,7 +124,12 @@ jobs:
         ./ietf/manage.py test --settings=settings_sqlitetest --failfast
         mv latest-coverage.json coverage.json
         
-    - name: Upload a Coverage Results
+    - name: Upload Coverage Results to Codecov
+      uses: codecov/codecov-action@v2.1.0
+      with:
+        files: coverage.json
+        
+    - name: Upload Coverage Results as Build Artifact
       uses: actions/upload-artifact@v3.0.0
       with:
         name: coverage
