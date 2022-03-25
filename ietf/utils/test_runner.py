@@ -65,6 +65,7 @@ from django.template.loaders.filesystem import Loader as BaseLoader
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
 from django.urls import URLResolver # type: ignore
+from django.template.backends.django import DjangoTemplates, Template
 
 import debug                            # pyflakes:ignore
 debug.debug = True
@@ -154,6 +155,22 @@ class MyPyTest(TestCase):
         self.assertEqual([], out_lines)
         self.assertEqual(code, 0)
 
+
+#'BACKEND': 'django.template.backends.django.DjangoTemplates',
+class ValidatingTemplates(DjangoTemplates):
+    def __init__(self, params):
+        super().__init__(params)
+
+    def get_template(self, template_name):
+        return ValidatingTemplate(self.engine.get_template(template_name),self)
+class ValidatingTemplate(Template):
+    def __init__(self, template, backend):
+        super().__init__(template, backend)
+
+    def render(self, context=None, request=None):
+        results = super().render(context, request)
+        print (f"Would validate {len(results)} characters")
+        return results
 class TemplateCoverageLoader(BaseLoader):
     is_usable = True
 
@@ -553,7 +570,9 @@ class IetfTestRunner(DiscoverRunner):
         print("     Datatracker %s test suite, %s:" % (ietf.__version__, time.strftime("%d %B %Y %H:%M:%S %Z")))
         print("     Python %s." % sys.version.replace('\n', ' '))
         print("     Django %s, settings '%s'" % (django.get_version(), settings.SETTINGS_MODULE))
-
+        
+        #'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        settings.TEMPLATES[0]['BACKEND'] = 'ietf.utils.test_runner.ValidatingTemplates'
         if self.check_coverage:
             if self.coverage_file.endswith('.gz'):
                 with gzip.open(self.coverage_file, "rb") as file:
