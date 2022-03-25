@@ -20,10 +20,6 @@ window.ietf_timezone; // public interface
     // Select timezone to use. Arg is name of a timezone or 'local' to guess local tz.
     function use_timezone(newtz) {
         // Guess local timezone if necessary
-        if (newtz.toLowerCase() === 'local') {
-            newtz = moment.tz.guess();
-        }
-
         if (current_timezone !== newtz) {
             current_timezone = newtz;
             // Update values of tz-select inputs but do not trigger change event
@@ -59,6 +55,7 @@ window.ietf_timezone; // public interface
             }));
         });
         tz_radios = $('input.tz-select[type="radio"]');
+        tz_radios.filter('[value="local"]').prop('value', moment.tz.guess());
         tz_radios.on('change', handle_change_event);
         select.on('change', handle_change_event);
         /* When navigating back/forward, the browser may change the select input's
