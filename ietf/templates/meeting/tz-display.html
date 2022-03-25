@@ -11,28 +11,29 @@ As long as id_suffix is different, should allow for as many copies of the widget
 {% endcomment %}
 {% load origin %}
 {% origin %}
+{% firstof id_suffix "" as suffix %}
 <div class="tz-display {% if minimal %}btn-group{% else %}input-group{% endif %} my-3">
     {% if not minimal %}<label class="input-group-text border-primary bg-white fw-bold">Time zone:</label>{% endif %}
     <input type="radio"
-           name="tzradio{{ id_suffix }}"
+           name="tzradio{{ suffix }}"
            class="btn-check tz-select"
-           id="meeting-timezone{{ id_suffix }}"
+           id="meeting-timezone{{ suffix }}"
            value="{{ meeting_timezone }}">
-    <label class="btn btn-outline-primary" for="meeting-timezone{{ id_suffix }}">Meeting</label>
+    <label class="btn btn-outline-primary" for="meeting-timezone{{ suffix }}">Meeting</label>
     <input type="radio"
-           name="tzradio{{ id_suffix }}"
+           name="tzradio{{ suffix }}"
            class="btn-check tz-select"
-           id="local-timezone{{ id_suffix }}"
+           id="local-timezone{{ suffix }}"
            value="local">
-    <label class="btn btn-outline-primary" for="local-timezone{{ id_suffix }}">Local</label>
+    <label class="btn btn-outline-primary" for="local-timezone{{ suffix }}">Local</label>
     <input type="radio"
-           name="tzradio{{ id_suffix }}"
+           name="tzradio{{ suffix }}"
            class="btn-check tz-select"
-           id="utc-timezone{{ id_suffix }}"
+           id="utc-timezone{{ suffix }}"
            value="UTC">
-    <label class="btn btn-outline-primary" for="utc-timezone{{ id_suffix }}">UTC</label>
+    <label class="btn btn-outline-primary" for="utc-timezone{{ suffix }}">UTC</label>
     {% if not minimal %}
-        <select id="timezone-select{{ id_suffix }}"
+        <select id="timezone-select{{ suffix }}"
                 class="tz-select select2-field form-select border-primary"
                 data-max-entries="1" data-minimum-input-length="0">
             {# Avoid blank while loading. JavaScript replaces the option list after init. #}
