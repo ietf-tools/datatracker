@@ -26,7 +26,9 @@
     {# the contents of #extra-nav will be moved into the RH nav panel #}
     <div id="extra-nav" class="d-none">
         <div class="d-flex flex-column">
-          <a class="nav-link now-link" href="#">Current session</a>
+          {% if now.date <= schedule.meeting.end_date %}
+              <a class="nav-link now-link" href="#">Current session</a>
+          {% endif %}
           <div class="px-3">
             Showing <span class="current-tz">{{ timezone }}</span> time
           </div>
