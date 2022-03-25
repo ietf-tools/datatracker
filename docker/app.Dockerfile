@@ -131,9 +131,6 @@ ADD https://github.com/validator/validator/releases/download/latest/vnu.jar /
 ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
 RUN chmod +rx /usr/local/bin/wait-for
 
-ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
-RUN chmod +rx /usr/local/bin/wait-for
-
 # Copy the startup file
 COPY docker/scripts/app-init.sh /docker-init.sh
 RUN sed -i 's/\r$//' /docker-init.sh && \
