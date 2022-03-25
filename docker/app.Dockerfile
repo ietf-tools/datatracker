@@ -110,6 +110,9 @@ RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \
     update-locale LC_ALL en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 
+# Install grunt
+RUN npm install -g grunt-cli
+
 # Install idnits
 ADD https://raw.githubusercontent.com/ietf-tools/idnits-mirror/main/idnits /usr/local/bin/
 RUN chmod +rx /usr/local/bin/idnits
@@ -127,6 +130,9 @@ RUN sed -i 's/#force_color_prompt=/force_color_prompt=/' /root/.bashrc
 
 # Install the Nu Html Checker (v.Nu)
 ADD https://github.com/validator/validator/releases/download/latest/vnu.jar /
+
+ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
+RUN chmod +rx /usr/local/bin/wait-for
 
 ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
 RUN chmod +rx /usr/local/bin/wait-for

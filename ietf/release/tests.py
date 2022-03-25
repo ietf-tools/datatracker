@@ -11,8 +11,6 @@ import debug                            # pyflakes:ignore
 from ietf.utils.test_utils import TestCase
 
 class ReleasePagesTest(TestCase):
-
-        
     def test_about(self):
         url = reverse('ietf.release.views.release')+"about"
         r = self.client.get(url)
