@@ -1,5 +1,5 @@
-        // Copyright The IETF Trust 2021, All Rights Reserved
-
+// Copyright The IETF Trust 2021, All Rights Reserved
+/* global moment */
 /*
  Timezone selection handling. Relies on the moment.js library.
 
@@ -13,8 +13,9 @@ window.ietf_timezone; // public interface
 (function () {
     'use strict';
     // Callback for timezone change - called after current_timezone is updated
-    var timezone_change_callback;
-    var current_timezone;
+    let timezone_change_callback;
+    let current_timezone;
+    let tz_radios;
 
     // Select timezone to use. Arg is name of a timezone or 'local' to guess local tz.
     function use_timezone(newtz) {
@@ -31,7 +32,14 @@ window.ietf_timezone; // public interface
             if (timezone_change_callback) {
                 timezone_change_callback(newtz);
             }
+            tz_radios.filter(`[value="${newtz}"]`).prop('checked', true);
+            tz_radios.filter(`[value!="${newtz}"]`).prop('checked', false);
         }
+    }
+
+    function handle_change_event(evt) {
+        const newtz = evt.target.value;
+        use_timezone(newtz); // use the requested timezone
     }
 
     /* Initialize timezone system
@@ -42,7 +50,6 @@ window.ietf_timezone; // public interface
     function timezone_init(current) {
         var tz_names = moment.tz.names();
         var select = $('select.tz-select');
-
         select.empty();
         $.each(tz_names, function (i, item) {
             select.append($('<option/>', {
@@ -51,9 +58,9 @@ window.ietf_timezone; // public interface
                 value: item
             }));
         });
-        select.on("change", function () {
-            use_timezone(this.value);
-        });
+        tz_radios = $('input.tz-select[type="radio"]');
+        tz_radios.on('change', handle_change_event);
+        select.on('change', handle_change_event);
         /* When navigating back/forward, the browser may change the select input's
          * value after the window load event. It does not fire the change event on
          * the input when it does this. The pageshow event occurs after such an update,
