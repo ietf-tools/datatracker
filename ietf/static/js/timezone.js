@@ -45,8 +45,11 @@ window.ietf_timezone; // public interface
      */
     function timezone_init(current) {
         var tz_names = moment.tz.names();
-        var select = $('select.tz-select');
-        select.empty();
+        if (current == 'local') {
+            current = moment.tz.guess();
+        }
+        tz_selects = $('select.tz-select');
+        tz_selects.empty();
         $.each(tz_names, function (i, item) {
             select.append($('<option/>', {
                 selected: current === item,
