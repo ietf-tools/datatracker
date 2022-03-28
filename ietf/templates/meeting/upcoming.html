@@ -29,7 +29,7 @@
             {% endfor %}
         </div>
     {% endif %}
-    {% include 'meeting/tz-display.html' with id_suffix="" timezone="local" %}
+    {% include 'meeting/tz-display.html' with meeting_timezone=None only %}
     {% include 'meeting/agenda_filter.html' with filter_categories=filter_categories customize_button_text="Customize the meeting list..." only %}
     {% cache 600 upcoming-meetings entries.count %}
     {% if entries %}
@@ -104,7 +104,7 @@
         <h3 class="my-3">No upcoming meetings</h3>
     {% endif %}
 {% endcache %}
-{% include 'meeting/tz-display.html' with id_suffix="-bottom" timezone="local" %}
+{% include 'meeting/tz-display.html' with id_suffix="-bottom" meeting_timezone=None only %}
 <div id="calendar">
 </div>
 {% endblock %}
