@@ -16,6 +16,7 @@ window.ietf_timezone; // public interface
     let timezone_change_callback;
     let current_timezone;
     let tz_radios;
+    let tz_selects;
 
     // Select timezone to use. Arg is name of a timezone or 'local' to guess local tz.
     function use_timezone(newtz) {
@@ -30,6 +31,8 @@ window.ietf_timezone; // public interface
             }
             tz_radios.filter(`[value="${newtz}"]`).prop('checked', true);
             tz_radios.filter(`[value!="${newtz}"]`).prop('checked', false);
+            tz_selects.val(newtz);
+            tz_selects.trigger('change.select2'); // notify only select2 of change to avoid change event storm
         }
     }
 
@@ -51,7 +54,7 @@ window.ietf_timezone; // public interface
         tz_selects = $('select.tz-select');
         tz_selects.empty();
         $.each(tz_names, function (i, item) {
-            select.append($('<option/>', {
+            tz_selects.append($('<option/>', {
                 selected: current === item,
                 html: item,
                 value: item
@@ -60,13 +63,13 @@ window.ietf_timezone; // public interface
         tz_radios = $('input.tz-select[type="radio"]');
         tz_radios.filter('[value="local"]').prop('value', moment.tz.guess());
         tz_radios.on('change', handle_change_event);
-        select.on('change', handle_change_event);
+        tz_selects.on('change', handle_change_event);
         /* When navigating back/forward, the browser may change the select input's
          * value after the window load event. It does not fire the change event on
          * the input when it does this. The pageshow event occurs after such an update,
          * so trigger the change event ourselves to be sure the UI stays consistent
          * with the timezone select input. */
-        window.addEventListener('pageshow', function () { select.trigger("change"); });
+        window.addEventListener('pageshow', function () { tz_selects.trigger("change"); });
         use_timezone(current);
     }
 
