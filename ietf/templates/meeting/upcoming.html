@@ -142,8 +142,7 @@
                   {% endif %}
                 {% endfor %}];
 
-        $(document)
-            .ready(function () {
+        $(function () {
                 // Init with best guess at local timezone.
                 ietf_timezone.set_tz_change_callback(timezone_changed);
                 ietf_timezone.initialize('local');

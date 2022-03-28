@@ -8,8 +8,6 @@
  names. Time zone can be changed via the select input or by calling the use() method with
  the name of a time zone (or 'local' to guess the user's local timezone).
  */
-window.ietf_timezone; // public interface
-
 (function () {
     'use strict';
     // Callback for timezone change - called after current_timezone is updated
@@ -74,7 +72,7 @@ window.ietf_timezone; // public interface
     }
 
     // Expose public interface
-    ietf_timezone = {
+    window.ietf_timezone = {
         get_current_tz: function () { return current_timezone; },
         initialize: timezone_init,
         set_tz_change_callback: function (cb) { timezone_change_callback = cb; },
