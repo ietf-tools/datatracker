@@ -8,6 +8,7 @@ service rsyslog start
 
 npm install --prefer-offline --no-audit
 echo "Building static assets... (this could take a minute or two)"
+rm -rf .parcel-cache
 npx parcel build
 
 # Copy config files if needed
