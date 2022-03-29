@@ -3806,6 +3806,7 @@ class EditTests(TestCase):
         self.assertTrue(mars_slot.slot_to_the_right)
         self.assertTrue(mars_scheduled.slot_to_the_right)
 
+
 class SessionDetailsTests(TestCase):
 
     def test_session_details(self):
@@ -3827,6 +3828,63 @@ class SessionDetailsTests(TestCase):
                                'Session detail page does not contain session tool buttons') 
         self.assertFalse(q('div#session-buttons-%s span.bi-arrows-fullscreen' % session.id),
                          'The session detail page is incorrectly showing the "Show meeting materials" button')
+
+    def test_session_details_has_import_minutes_buttons(self):
+        group = GroupFactory.create(
+            type_id='wg',
+            state_id='active',
+        )
+        session = SessionFactory.create(
+            meeting__type_id='ietf',
+            group=group,
+            meeting__date=datetime.date.today() + datetime.timedelta(days=90),
+        )
+        session_details_url = urlreverse(
+            'ietf.meeting.views.session_details',
+            kwargs={'num': session.meeting.number, 'acronym': group.acronym},
+        )
+        import_minutes_url = urlreverse(
+            'ietf.meeting.views.import_session_minutes',
+            kwargs={'num': session.meeting.number, 'session_id': session.pk},
+        )
+
+        # test without existing minutes
+        with patch('ietf.meeting.views.can_manage_session_materials', return_value=False):
+            r = self.client.get(session_details_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(
+                len(q(f'a[href="{import_minutes_url}"]')), 0,
+                'Do not show import new minutes buttons to non-materials manager',
+            )
+        with patch('ietf.meeting.views.can_manage_session_materials', return_value=True):
+            r = self.client.get(session_details_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertGreater(
+                len(q(f'a[href="{import_minutes_url}"]')), 0,
+                'Show import new minutes buttons to materials manager',
+            )
+
+        # now create minutes and test that we can still have the import button
+        SessionPresentationFactory.create(session=session,document__type_id='minutes')
+        with patch('ietf.meeting.views.can_manage_session_materials', return_value=False):
+            r = self.client.get(session_details_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(
+                len(q(f'a[href="{import_minutes_url}"]')), 0,
+                'Do not show import revised minutes buttons to non-materials manager',
+            )
+
+        with patch('ietf.meeting.views.can_manage_session_materials', return_value=True):
+            r = self.client.get(session_details_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertGreater(
+                len(q(f'a[href="{import_minutes_url}"]')), 0,
+                'Show import revised minutes buttons to materials manager',
+            )
 
     def test_session_details_past_interim(self):
         group = GroupFactory.create(type_id='wg',state_id='active')
