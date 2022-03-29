@@ -610,6 +610,50 @@ class MeetingTests(BaseMeetingTestCase):
                 r = self.client.get(url)
                 self.assertEqual(unicontent(r), doc.text())
 
+    def test_materials_has_edit_links(self):
+        meeting = make_meeting_test_data()
+        url = urlreverse("ietf.meeting.views.materials", kwargs=dict(num=meeting.number))
+        r = self.client.get(url)
+        self.assertNotContains(r, 'Edit materials', status_code=200)
+
+        # mars chairman can edit materials for mars group
+        self.client.login(username='marschairman', password='marschairman+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content.decode())
+        edit_url = urlreverse(
+            'ietf.meeting.views.session_details',
+            kwargs={'num': meeting.number, 'acronym': 'mars'},
+        )
+        self.assertEqual(len(q(f'a[href^="{edit_url}"]')), 1, 'Link to mars session_details for mars chairman')
+        for acro in ['ietf', 'ames']:  # other groups with materials
+            edit_url = urlreverse(
+                'ietf.meeting.views.session_details',
+                kwargs={'num': meeting.number, 'acronym': acro},
+            )
+            self.assertEqual(len(q(f'a[href^="{edit_url}"]')), 0, f'No link to {acro} session_details for mars chairman')
+
+        # secretary can edit all groups
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content.decode())
+        for acro in ['mars', 'ames']:  # wgs
+            edit_url = urlreverse(
+                'ietf.meeting.views.session_details',
+                kwargs={'num': meeting.number, 'acronym': acro},
+            )
+            self.assertEqual(len(q(f'a[href^="{edit_url}"]')), 1, f'Link to session_details page for {acro}')
+        # The IETF Plenary has a "#sessionX" tacked on to the edit url to differentiate from other sessions,
+        # so test it separately. Not bothering to check the exact session pk in detail.
+        edit_url = urlreverse(
+            'ietf.meeting.views.session_details',
+            kwargs={'num': meeting.number, 'acronym': 'ietf'},
+        )
+        self.assertEqual(len(q(f'a[href^="{edit_url}#session"]')), 1, f'Link to session_details page for {acro}')
+
+
+
     def test_materials_editable_groups(self):
         meeting = make_meeting_test_data()
         
