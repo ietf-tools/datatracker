@@ -6109,12 +6109,17 @@ class ImportNotesTests(TestCase):
                          kwargs={'num': self.meeting.number, 'session_id': self.session.pk})
 
         self.client.login(username='secretary', password='secretary+password')
-        r = self.client.post(url, {'markdown_text': 'original markdown text'})  # create a rev
-        self.assertEqual(r.status_code, 302)
         with requests_mock.Mocker() as mock:
             mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/download', text='original markdown text')
             mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/info',
                      text=json.dumps({"title": "title", "updatetime": "2021-12-02T11:22:33z"}))
+            # Create a revision. Run the original text through the preprocessing done when importing
+            # from the notes site.
+            r = self.client.get(url)  # let GET do its preprocessing
+            q = PyQuery(r.content)
+            r = self.client.post(url, {'markdown_text': q('input[name="markdown_text"]').attr['value']})
+            self.assertEqual(r.status_code, 302)
+
             r = self.client.get(url)  # try to import the same text
             self.assertContains(r, "This document is identical", status_code=200)
             q = PyQuery(r.content)
