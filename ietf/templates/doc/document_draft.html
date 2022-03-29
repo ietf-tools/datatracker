@@ -147,8 +147,7 @@
             {% if can_view_possibly_replaces %}
                 {% if possibly_replaces %}
                     <tr>
-                        <th scope="row">
-                        </th>
+                        <td></td>
                         <th scope="row">
                             Possibly Replaces
                         </th>
@@ -167,8 +166,7 @@
                 {% endif %}
                 {% if possibly_replaced_by %}
                     <tr>
-                        <th scope="row">
-                        </th>
+                        <td></td>
                         <th scope="row">
                             Possibly Replaced By
                         </th>
@@ -185,8 +183,7 @@
                 {% endif %}
             {% endif %}
             <tr>
-                <th scope="row">
-                </th>
+                <td></td>
                 <th scope="row">
                     Stream
                 </th>
@@ -204,8 +201,7 @@
             </tr>
             {% if doc.get_state_slug != "rfc" and not snapshot %}
                 <tr>
-                    <th scope="row">
-                    </th>
+                    <td></td>
                     <th scope="row">
                         Intended RFC status
                     </th>
@@ -229,8 +225,7 @@
                 </tr>
             {% endif %}
             <tr>
-                <th scope="row">
-                </th>
+                <td></td>
                 <th scope="row">
                     Formats
                 </th>
@@ -258,8 +253,7 @@
             {% for check in doc.submission.latest_checks %}
                 {% if check.passed != None and check.symbol.strip %}
                     <tr>
-                        <th scope="row">
-                        </th>
+                        <td></td>
                         <th scope="row">
                             {{ check.checker|title }}
                         </th>
@@ -293,8 +287,7 @@
             {% endfor %}
             {% if review_assignments or can_request_review %}
                 <tr>
-                    <th scope="row">
-                    </th>
+                    <td></td>
                     <th scope="row">
                         Reviews
                     </th>
@@ -342,8 +335,7 @@
             {% endif %}
             {% if conflict_reviews %}
                 <tr>
-                    <th scope="row">
-                    </th>
+                    <td></td>
                     <th scope="row">
                         IETF conflict review
                     </th>
@@ -481,8 +473,7 @@
             {% endif %}
             {% if consensus and not doc.stream_id == 'ietf' %}
                 <tr>
-                    <th scope="row">
-                    </th>
+                    <td></td>
                     <th scope="row">
                         Consensus boilerplate
                     </th>
@@ -504,8 +495,7 @@
             {% endif %}
             {% if presentations or user|has_role:"Secretariat,Area Director,WG Chair,WG Secretary,RG Chair,RG Secretary,IRTF Chair,Team Chair" or can_edit_stream_info %}
                 <tr>
-                    <th scope="row">
-                    </th>
+                    <td></td>
                     <th scope="row">
                         On agenda
                     </th>
@@ -536,8 +526,7 @@
             {% endif %}
             {% if doc.stream_id == 'ietf' or doc.stream_id == 'ise' or doc.stream_id == 'irtf' %}
                 <tr>
-                    <th scope="row">
-                    </th>
+                    <td></td>
                     <th scope="row">
                         Document shepherd
                     </th>
@@ -566,8 +555,7 @@
                 </tr>
                 {% if shepherd_writeup or can_edit_shepherd_writeup %}
                     <tr>
-                        <th scope="row">
-                        </th>
+                        <td></td>
                         <th scope="row">
                             Shepherd write-up
                         </th>
@@ -598,8 +586,7 @@
                 {% endif %}
             {% else %}
                 <tr>
-                    <th scope="row">
-                    </th>
+                    <td></td>
                     <th scope="row">
                         RFC Editor Note
                     </th>
@@ -624,8 +611,7 @@
             {% endif %}
             {% if published and started_iesg_process and published.time < started_iesg_process.time %}
                 <tr>
-                    <th scope="row">
-                    </th>
+                    <td></td>
                     <th scope="row" colspan="3" class="warning">
                         This information refers to IESG processing after the RFC was initially published:
                     </th>
@@ -663,8 +649,7 @@
                 </tr>
                 {% if doc.action_holders_enabled %}
                     <tr>
-                        <th scope="row">
-                        </th>
+                        <td></td>
                         <th scope="row">
                             Action Holder{{ doc.documentactionholder_set.all|pluralize }}
                         </th>
@@ -699,11 +684,11 @@
                                 {% endif %}
                             </div>
                         </td>
+                    </tr>
                     {% endif %}
                     {% if consensus and doc.stream_id == 'ietf' %}
                         <tr>
-                            <th scope="row">
-                            </th>
+                            <td></td>
                             <th scope="row">
                                 Consensus boilerplate
                             </th>
@@ -724,8 +709,7 @@
                         </tr>
                     {% endif %}
                     <tr>
-                        <th scope="row">
-                        </th>
+                        <td></td>
                         <th scope="row">
                             Telechat date
                         </th>
@@ -753,8 +737,7 @@
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row">
-                        </th>
+                        <td></td>
                         <th scope="row">
                             Responsible AD
                         </th>
@@ -779,8 +762,7 @@
                     {% if iesg_state.slug != 'idexists' %}
                         {% if doc.note or can_edit %}
                             <tr>
-                                <th scope="row">
-                                </th>
+                                <td></td>
                                 <th scope="row">
                                     IESG note
                                 </th>
@@ -805,8 +787,7 @@
                         {% endif %}
                     {% endif %}
                     <tr>
-                        <th scope="row">
-                        </th>
+                        <td></td>
                         <th scope="row">
                             Send notices to
                         </th>
@@ -968,8 +949,7 @@
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row">
-                        </th>
+                        <td></td>
                         <th scope="row">
                             Details
                         </th>

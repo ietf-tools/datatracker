@@ -46,6 +46,7 @@ import socket
 import datetime
 import gzip
 import unittest
+import pathlib
 import subprocess
 import tempfile
 import factory.random
@@ -182,7 +183,7 @@ class ValidatingTemplates(DjangoTemplates):
                 # the current (older) version of Django seems to add type="text/javascript" for form media, ignore:
                 "script-type": "off",
                 # django-bootstrap5 seems to still generate 'checked="checked"', ignore:
-                "attribute-boolean-style": "off"
+                "attribute-boolean-style": "off",
             },
         }
         self.config_file.write(json.dumps(htmlvalidate).encode())
@@ -241,11 +242,18 @@ class ValidatingTemplate(Template):
                 + "".join(source_lines[line - 4 : line])
                 + " " * (msg["column"] - 1)
                 + "^" * msg["size"]
-                + f' {msg["ruleId"]}: {msg["message"]}\n'
+                + f' {msg["ruleId"]}: {msg["message"]} on line {line}:{msg["column"]}\n'
                 + "".join(source_lines[line : line + 3])
                 + "\n\n"
             )
 
+        if result:
+            path = pathlib.Path(self.origin.name)
+            cwd = pathlib.Path.cwd()
+            path = path.relative_to(cwd)
+            with open("error-" + path.name, "w") as file:
+                file.write(validation_results[0]["source"])
+                result += f"Wrote HTML source to {path.name}."
         self.backend.testcase.assertEqual("", result)
         return render_result
 

@@ -118,7 +118,7 @@ a.new-timeslot-link { color: lightgray; font-size: large;}
                             <tr>
                                 <th scope="row">
                                     <span class="room-heading">{{ room.name }}
-                                        {% if room.capacity %}<span class='capacity'>({{ room.capacity }})</span>{% endif %}
+                                        {% if room.capacity %}<span class="capacity">({{ room.capacity }})</span>{% endif %}
                                     </span>
                                 </th>
                                 {% if have_no_timeslots and forloop.first %}

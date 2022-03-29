@@ -31,7 +31,7 @@
                                 <a class="title-link"
                                    href="{% url "ietf.doc.views_doc.document_main" name=d.name %}">{{ d.title }}</a>
                             </td>
-                            <td class='snippable'>{{ d.abstract|urlize_ietf_docs|format_snippet }}</td>
+                            <td class="snippable">{{ d.abstract|urlize_ietf_docs|format_snippet }}</td>
                             <td>{{ d.rev }}</td>
                             <td>{{ d.time|date:"Y-m-d" }}</td>
                             <td>

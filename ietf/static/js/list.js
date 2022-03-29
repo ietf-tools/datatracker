@@ -70,7 +70,7 @@ $(document)
                     .addClass("sort");
                 // $(header_row)
                 //     .children("th, td")
-                //     .wrapInner("<span class='tablesorter-th'></span>");
+                //     .wrapInner('<span class="tablesorter-th"></span>');
                 //     // .each((i, e) => field_magic(i, e, fields));
 
                 if ($(header_row)
