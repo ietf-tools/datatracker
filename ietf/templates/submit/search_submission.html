@@ -13,18 +13,7 @@
         {% csrf_token %}
         <div class="mb-3">
             <label class="form-label">I-D name</label>
-            <select class="form-control select2-field"
-                    data-placeholder="draft-..."
-                    data-ajax--url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='docalias' doc_type='draft' %}"
-                    data-max-entries="1"
-                    data-result-key="text"
-                    name="name">
-                {% if name %}
-                    <option id="{{ name }}" selected>
-                        {{ name }}
-                    </option>
-                {% endif %}
-            </select>
+            <input class="form-control" name="name" placeholder="draft-..." required>
         </div>
         {% if error %}
             <p class="alert alert-danger my-3">
