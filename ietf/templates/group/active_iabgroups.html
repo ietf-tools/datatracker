@@ -11,16 +11,16 @@
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th data-sort="grouptype">Group</th>
-                    <th data-sort="name">Name</th>
-                    <th data-sort="leaders">Leads</th>
+                    <th scope="col" data-sort="grouptype">Group</th>
+                    <th scope="col" data-sort="name">Name</th>
+                    <th scope="col" data-sort="leaders">Leads</th>
                 </tr>
             </thead>
 
     {% regroup iabgroups by type as grouped_groups %}
     {% for grouptype in grouped_groups %}
         <tbody>
-        <tr class="table-info"><th colspan="3">
+        <tr class="table-info"><th scope="row" colspan="3">
             {% firstof grouptype.grouper.verbose_name grouptype.grouper.name %}{{ grouptype.list|pluralize }}
         </th></tr>
         </tbody>

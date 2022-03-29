@@ -41,7 +41,7 @@
                             <tr{% if form.initial.position == 'norecord' or form.initial.position == None %} class="green-row"{% endif %}{% if form.initial.position == 'discuss' %} class="red-row"{% endif %}><td>{{ form.initial.name }}{{ form.name }}{{ form.id }}</td>
                                 {% with form.position as field %}
                                     {% for choice in field.field.choices %}
-                                        <td><input type="radio" {% if form.initial.position == choice.0 %}checked="checked" {% endif %}id="id_{{ field.html_name }}_{{ forloop.counter0 }}" value="{{ choice.0 }}" name="{{ field.html_name }}" /></td>
+                                        <td><input type="radio" {% if form.initial.position == choice.0 %}checked {% endif %}id="id_{{ field.html_name }}_{{ forloop.counter0 }}" value="{{ choice.0 }}" name="{{ field.html_name }}" /></td>
                                     {% endfor %}
                                 {% endwith %}
                             </tr>

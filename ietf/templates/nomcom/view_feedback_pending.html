@@ -69,18 +69,18 @@
                 <table class="table table-sm">
                     <thead>
                         <tr>
-                            <th>Code</th>
-                            <th>Explanation</th>
+                            <th scope="col">Code</th>
+                            <th scope="col">Explanation</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <th>U</th>
+                            <th scope="row">U</th>
                             <td>Unclassified</td>
                         </tr>
                         {% for legend, t in type_dict.items %}
                             <tr>
-                                <th>{{ legend }}</th>
+                                <th scope="row">{{ legend }}</th>
                                 <td>{{ t.name }}</td>
                             </tr>
                         {% endfor %}
@@ -89,12 +89,12 @@
                 <table class="table table-sm table-striped">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th class="text-center" title="Unclassified">U</th>
-                            {% for legend, t in type_dict.items %}<th class="text-center" title="{{ t.name }}">{{ legend }}</th>{% endfor %}
-                            <th>Author</th>
-                            <th>Subject</th>
-                            <th></th>
+                            <th scope="col">Date</th>
+                            <th scope="col" class="text-center" title="Unclassified">U</th>
+                            {% for legend, t in type_dict.items %}<th scope="col" class="text-center" title="{{ t.name }}">{{ legend }}</th>{% endfor %}
+                            <th scope="col">Author</th>
+                            <th scope="col">Subject</th>
+                            <th scope="col"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -112,7 +112,7 @@
                                                class="form-check-input"
                                                name="{{ form.type.html_name }}"
                                                value="{{ choice.0 }}"
-                                               {% if not choice.0 %}checked="checked"{% endif %}
+                                               {% if not choice.0 %}checked{% endif %}
                                                title="{{ choice.1 }}">
                                     </td>
                                 {% endfor %}

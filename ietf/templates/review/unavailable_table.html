@@ -1,22 +1,22 @@
 <table class="mt-2 mb-0 table table-sm table-borderless">
     {% for p in unavailable_periods %}
         <tr class="unavailable-period-{{ p.state }}">
-            <th>Period:</th>
+            <th scope="row">Period:</th>
             <td>{{ p.state }}</td>
         </tr>
         <tr class="unavailable-period-{{ p.state }}">
-            <th>Dates:</th>
+            <th scope="row">Dates:</th>
             <td>
                 {% if p.start_date or p.end_date %}{{ p.start_date|default:"&infin;" }} -{% endif %}
                 {{ p.end_date|default:"&infin;" }}
             </td>
         </tr>
         <tr class="unavailable-period-{{ p.state }}">
-            <th>Availability:</th>
+            <th scope="row">Availability:</th>
             <td>{{ p.get_availability_display }}</td>
         </tr>
         <tr class="unavailable-period-{{ p.state }}">
-            <th>Reason:</th>
+            <th scope="row">Reason:</th>
             <td>{{ p.reason }}</td>
         </tr>
     {% endfor %}

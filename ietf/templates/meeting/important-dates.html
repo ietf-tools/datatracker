@@ -24,16 +24,16 @@
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Weekday</th>
-                        <th>Description</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Weekday</th>
+                        <th scope="col">Description</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% with first=forloop.first %}
                         {% for d in meeting.importantdate_set.all %}
                             <tr>
-                                <th>{{ d.date }}</th>
+                                <th scope="row">{{ d.date }}</th>
                                 <td>
                                     {% if d.name.slug == 'openreg' %}
                                         Week of

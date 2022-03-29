@@ -97,19 +97,19 @@
     <table id="agenda-table" class="table table-sm tablesorter">
         <thead>
             <tr>
-                {% if personalize %}<th></th>{% endif %}
-                <th></th>
-                <th data-sort="loc"></th>
-                <th data-sort="group"></th>
-                <th data-sort="area"></th>
-                <th data-sort="desc"></th>
+                {% if personalize %}<th scope="col"></th>{% endif %}
+                <th scope="col"></th>
+                <th scope="col" data-sort="loc"></th>
+                <th scope="col" data-sort="group"></th>
+                <th scope="col" data-sort="area"></th>
+                <th scope="col" data-sort="desc"></th>
             </tr>
         </thead>
         <tbody>
             {% for item in filtered_assignments %}
                 {% ifchanged item.timeslot.time|date:"Y-m-d" %}
                     <tr class="table-primary show-with-children">
-                        <th colspan="{% if personalize %}6{% else %}5{% endif %}"
+                        <th scope="row" colspan="{% if personalize %}6{% else %}5{% endif %}"
                             id="slot-{{ item.timeslot.time|slugify }}"
                             class="nav-heading">
                             {{ item.timeslot.time|date:"l, F j, Y" }}
@@ -183,9 +183,9 @@
                     <tr class="table-secondary session-label-row show-with-children"
                         data-slot-start-ts="{{ item.start_timestamp }}"
                         data-slot-end-ts="{{ item.end_timestamp }}">
-                        {% if personalize %}<th class="text-center"></th>{% endif %}
-                        <th class="text-end">{% include "meeting/timeslot_start_end.html" %}</th>
-                        <th colspan="4">
+                        {% if personalize %}<th scope="row" class="text-center"></th>{% endif %}
+                        <th scope="row" class="text-end">{% include "meeting/timeslot_start_end.html" %}</th>
+                        <th scope="row" colspan="4">
                             {{ item.timeslot.time|date:"l" }}
                             {{ item.timeslot.name|capfirst_allcaps }}
                         </th>

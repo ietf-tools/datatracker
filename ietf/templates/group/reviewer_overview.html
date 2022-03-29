@@ -46,11 +46,11 @@
         <table class="table reviewer-overview tablesorter">
             <thead>
                 <tr>
-                    <th data-sort="num">Next</th>
-                    <th data-sort="reviewer">Reviewer</th>
-                    <th data-sort="assigned">Recent history</th>
-                    <th data-sort="num">Days since completed</th>
-                    <th data-sort="settings">Settings</th>
+                    <th scope="col" data-sort="num">Next</th>
+                    <th scope="col" data-sort="reviewer">Reviewer</th>
+                    <th scope="col" data-sort="assigned">Recent history</th>
+                    <th scope="col" data-sort="num">Days since completed</th>
+                    <th scope="col" data-sort="settings">Settings</th>
                 </tr>
             </thead>
             <tbody>
@@ -70,11 +70,11 @@
                                 <table class="table table-sm table-borderless">
                                     <thead>
                                         <tr>
-                                            <th>Assigned</th>
-                                            <th>Deadline</th>
-                                            <th>State</th>
-                                            <th>Review time</th>
-                                            <th>Document</th>
+                                            <th scope="col">Assigned</th>
+                                            <th scope="col">Deadline</th>
+                                            <th scope="col">State</th>
+                                            <th scope="col">Review time</th>
+                                            <th scope="col">Document</th>
                                         </tr>
                                     </thead>
                                     {% for assn_pk, req_pk, doc_name, reviewed_rev, assigned_time, deadline, state, assignment_to_closure_days in person.latest_reqs %}

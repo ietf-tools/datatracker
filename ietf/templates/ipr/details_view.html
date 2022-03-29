@@ -149,29 +149,29 @@
         {% if prev %}
             <thead>
                 <tr class="text-center">
-                    <th class="ipr-prev col-5">
+                    <th scope="col" class="ipr-prev col-5">
                         {% if prev.state.slug == "posted" %}
                             Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                         {% else %}
                             Previous (#{{ prev.id }}, {{ prev.state }})
                         {% endif %}
                     </th>
-                    <th></th>
-                    <th class="col-5">This (#{{ ipr.id }})</th>
+                    <th scope="col"></th>
+                    <th scope="col" class="col-5">This (#{{ ipr.id }})</th>
                 </tr>
             </thead>
         {% else %}
             <thead>
                 <tr>
-                    <th class="col-3"></th>
-                    <th class="col-9"></th>
+                    <th scope="col" class="col-3"></th>
+                    <th scope="col" class="col-9"></th>
                 </tr>
             </thead>
         {% endif %}
         <tbody>
             <tr>
                 {% if prev %}<td class="ipr-prev">{{ prev.holder_legal_name }}</td>{% endif %}
-                <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">Holder legal name</th>
+                <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">Holder legal name</th>
                 <td class="ipr-this">{{ ipr.holder_legal_name }}</td>
             </tr>
         </tbody>
@@ -182,23 +182,23 @@
             {% if prev %}
                 <thead>
                     <tr class="text-center">
-                        <th class="ipr-prev col-5">
+                        <th scope="col" class="ipr-prev col-5">
                             {% if prev.state.slug == "posted" %}
                                 Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                             {% else %}
                                 Previous (#{{ prev.id }}, {{ prev.state }})
                             {% endif %}
                         </th>
-                        <th></th>
-                        <th class="col-5">This (#{{ ipr.id }})</th>
+                        <th scope="col"></th>
+                        <th scope="col" class="col-5">This (#{{ ipr.id }})</th>
                     </tr>
                 </thead>
             {% else %}
                 <thead>
                     <tr>
-                        <th class="col-3">
+                        <th scope="col" class="col-3">
                         </th>
-                        <th class="col-9">
+                        <th scope="col" class="col-9">
                         </th>
                     </tr>
                 </thead>
@@ -210,7 +210,7 @@
                             {{ prev.holder_contact_name }}
                         </td>
                     {% endif %}
-                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                    <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Holder contact name
                     </th>
                     <td class="ipr-this">
@@ -223,7 +223,7 @@
                             {{ prev.holder_contact_email|linkify }}
                         </td>
                     {% endif %}
-                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                    <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Holder contact email
                     </th>
                     <td class="ipr-this">
@@ -236,7 +236,7 @@
                             {{ prev.holder_contact_info|linebreaks }}
                         </td>
                     {% endif %}
-                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                    <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Holder contact info
                     </th>
                     <td class="ipr-this">
@@ -254,16 +254,16 @@
             {% if prev %}
                 <thead>
                     <tr class="text-center">
-                        <th class="ipr-prev col-5">
+                        <th scope="col" class="ipr-prev col-5">
                             {% if prev.state.slug == "posted" %}
                                 Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                             {% else %}
                                 Previous (#{{ prev.id }}, {{ prev.state }})
                             {% endif %}
                         </th>
-                        <th>
+                        <th scope="col">
                         </th>
-                        <th class="col-5">
+                        <th scope="col" class="col-5">
                             This (#{{ ipr.id }})
                         </th>
                     </tr>
@@ -271,9 +271,9 @@
             {% else %}
                 <thead>
                     <tr>
-                        <th class="col-3">
+                        <th scope="col" class="col-3">
                         </th>
-                        <th class="col-9">
+                        <th scope="col" class="col-9">
                         </th>
                     </tr>
                 </thead>
@@ -285,7 +285,7 @@
                             {{ prev.ietfer_name }}
                         </td>
                     {% endif %}
-                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                    <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Name
                     </th>
                     <td class="ipr-this">
@@ -298,7 +298,7 @@
                             {{ prev.ietfer_contact_email|linkify }}
                         </td>
                     {% endif %}
-                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                    <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Email
                     </th>
                     <td class="ipr-this">
@@ -311,7 +311,7 @@
                             {{ prev.ietfer_contact_info|linebreaks }}
                         </td>
                     {% endif %}
-                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                    <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Other info
                     </th>
                     <td class="ipr-this">
@@ -329,16 +329,16 @@
             {% if prev %}
                 <thead>
                     <tr class="text-center">
-                        <th class="ipr-prev col-5">
+                        <th scope="col" class="ipr-prev col-5">
                             {% if prev.state.slug == "posted" %}
                                 Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                             {% else %}
                                 Previous (#{{ prev.id }}, {{ prev.state }})
                             {% endif %}
                         </th>
-                        <th>
+                        <th scope="col">
                         </th>
-                        <th class="col-5">
+                        <th scope="col" class="col-5">
                             This (#{{ ipr.id }})
                         </th>
                     </tr>
@@ -346,7 +346,7 @@
             {% else %}
                 <thead>
                     <tr>
-                        <th>
+                        <th scope="col">
                         </th>
                     </tr>
                 </thead>
@@ -390,7 +390,7 @@
                                 {% endif %}
                             </dl>
                         </td>
-                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                    <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                     </th>
                     {% endif %}
                     <td class="ipr-this">
@@ -446,16 +446,16 @@
             {% if prev %}
                 <thead>
                     <tr class="text-center">
-                        <th class="ipr-prev col-5">
+                        <th scope="col" class="ipr-prev col-5">
                             {% if prev.state.slug == "posted" %}
                                 Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                             {% else %}
                                 Previous (#{{ prev.id }}, {{ prev.state }})
                             {% endif %}
                         </th>
-                        <th>
+                        <th scope="col">
                         </th>
-                        <th class="col-5">
+                        <th scope="col" class="col-5">
                             This (#{{ ipr.id }})
                         </th>
                     </tr>
@@ -463,9 +463,9 @@
             {% else %}
                 <thead>
                     <tr>
-                        <th class="col-3">
+                        <th scope="col" class="col-3">
                         </th>
-                        <th class="col-9">
+                        <th scope="col" class="col-9">
                         </th>
                     </tr>
                 </thead>
@@ -477,7 +477,7 @@
                             {{ prev.patent_info|linebreaks }}
                         </td>
                     {% endif %}
-                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                    <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Patent, Serial,
                         Publication, Registration,
                         or Application/File number(s)
@@ -495,16 +495,16 @@
             {% if prev %}
                 <thead>
                     <tr class="text-center">
-                        <th class="ipr-prev col-5">
+                        <th scope="col" class="ipr-prev col-5">
                             {% if prev.state.slug == "posted" %}
                                 Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                             {% else %}
                                 Previous (#{{ prev.id }}, {{ prev.state }})
                             {% endif %}
                         </th>
-                        <th>
+                        <th scope="col">
                         </th>
-                        <th class="col-5">
+                        <th scope="col" class="col-5">
                             This (#{{ ipr.id }})
                         </th>
                     </tr>
@@ -512,9 +512,9 @@
             {% else %}
                 <thead>
                     <tr>
-                        <th class="col-3">
+                        <th scope="col" class="col-3">
                         </th>
-                        <th class="col-9">
+                        <th scope="col" class="col-9">
                         </th>
                     </tr>
                 </thead>
@@ -526,7 +526,7 @@
                             {{ prev.has_patent_pending|yesno:"Yes,No" }}
                         </td>
                     {% endif %}
-                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                    <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Has patent pending
                     </th>
                     <td class="ipr-this">
@@ -564,16 +564,16 @@
             {% if prev %}
                 <thead>
                     <tr class="text-center">
-                        <th class="ipr-prev col-5">
+                        <th scope="col" class="ipr-prev col-5">
                             {% if prev.state.slug == "posted" %}
                                 Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                             {% else %}
                                 Previous (#{{ prev.id }}, {{ prev.state }})
                             {% endif %}
                         </th>
-                        <th>
+                        <th scope="col">
                         </th>
-                        <th class="col-5">
+                        <th scope="col" class="col-5">
                             This (#{{ ipr.id }})
                         </th>
                     </tr>
@@ -581,9 +581,9 @@
             {% else %}
                 <thead>
                     <tr>
-                        <th class="col-3">
+                        <th scope="col" class="col-3">
                         </th>
-                        <th class="col-9">
+                        <th scope="col" class="col-9">
                         </th>
                     </tr>
                 </thead>
@@ -599,7 +599,7 @@
                             {% endif %}
                         </td>
                     {% endif %}
-                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                    <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Licensing
                     </th>
                     <td class="ipr-this">
@@ -616,7 +616,7 @@
                             {{ prev.licensing_comments|default:"(No information submitted)"|linebreaks }}
                         </td>
                     {% endif %}
-                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                    <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Licensing information, comments, notes, or URL for further information
                     </th>
                     <td class="ipr-this">
@@ -638,16 +638,16 @@
             {% if prev %}
                 <thead>
                     <tr class="text-center">
-                        <th class="ipr-prev col-5">
+                        <th scope="col" class="ipr-prev col-5">
                             {% if prev.state.slug == "posted" %}
                                 Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                             {% else %}
                                 Previous (#{{ prev.id }}, {{ prev.state }})
                             {% endif %}
                         </th>
-                        <th>
+                        <th scope="col">
                         </th>
-                        <th class="col-5">
+                        <th scope="col" class="col-5">
                             This (#{{ ipr.id }})
                         </th>
                     </tr>
@@ -655,9 +655,9 @@
             {% else %}
                 <thead>
                     <tr>
-                        <th class="col-3">
+                        <th scope="col" class="col-3">
                         </th>
-                        <th class="col-9">
+                        <th scope="col" class="col-9">
                         </th>
                     </tr>
                 </thead>
@@ -669,7 +669,7 @@
                             {{ prev.statement|linebreaks }}
                         </td>
                     {% endif %}
-                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                    <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Statement
                     </th>
                     <td class="ipr-this">
@@ -686,16 +686,16 @@
         {% if prev %}
             <thead>
                 <tr class="text-center">
-                    <th class="ipr-prev col-5">
+                    <th scope="col" class="ipr-prev col-5">
                         {% if prev.state.slug == "posted" %}
                             Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                         {% else %}
                             Previous (#{{ prev.id }}, {{ prev.state }})
                         {% endif %}
                     </th>
-                    <th>
+                    <th scope="col">
                     </th>
-                    <th class="col-5">
+                    <th scope="col" class="col-5">
                         This (#{{ ipr.id }})
                     </th>
                 </tr>
@@ -703,9 +703,9 @@
         {% else %}
             <thead>
                 <tr>
-                    <th class="col-3">
+                    <th scope="col" class="col-3">
                     </th>
-                    <th class="col-9">
+                    <th scope="col" class="col-9">
                     </th>
                 </tr>
             </thead>
@@ -717,7 +717,7 @@
                         {{ prev.submitter_name }}
                     </td>
                 {% endif %}
-                <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                     Submitter name
                 </th>
                 <td class="ipr-this">
@@ -730,7 +730,7 @@
                         {{ prev.submitter_email|linkify }}
                     </td>
                 {% endif %}
-                <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                     Submitter email
                 </th>
                 <td class="ipr-this">
@@ -747,16 +747,16 @@
             {% if prev %}
                 <thead>
                     <tr class="text-center">
-                        <th class="ipr-prev col-5">
+                        <th scope="col" class="ipr-prev col-5">
                             {% if prev.state.slug == "posted" %}
                                 Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{ prev.id }}</a>)
                             {% else %}
                                 Previous (#{{ prev.id }}, {{ prev.state }})
                             {% endif %}
                         </th>
-                        <th>
+                        <th scope="col">
                         </th>
-                        <th class="col-5">
+                        <th scope="col" class="col-5">
                             This (#{{ ipr.id }})
                         </th>
                     </tr>
@@ -764,9 +764,9 @@
             {% else %}
                 <thead>
                     <tr>
-                        <th class="col-3">
+                        <th scope="col" class="col-3">
                         </th>
-                        <th class="col-9">
+                        <th scope="col" class="col-9">
                         </th>
                     </tr>
                 </thead>
@@ -778,7 +778,7 @@
                             {{ prev.notes|urlize_ietf_docs|linkify|linebreaks }}
                         </td>
                     {% endif %}
-                    <th class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
+                    <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Additional notes
                     </th>
                     <td class="ipr-this">

@@ -38,8 +38,8 @@
     <table class="table table-sm table-borderless">
         <tbody class="meta border-top">
             <tr>
-                <th>Document</th>
-                <th>Type</th>
+                <th scope="row">Document</th>
+                <th scope="row">Type</th>
                 <td class="edit"></td>
                 <td>
                     {% if doc.get_state_slug == "rfc" and not snapshot %}
@@ -86,8 +86,8 @@
                 </td>
             </tr>
             <tr>
-                <th></th>
-                <th>Author{{ doc.authors|pluralize }}</th>
+                <td></td>
+                <th scope="row">Author{{ doc.authors|pluralize }}</th>
                 <td class="edit">
                     {% if can_edit_authors %}
                         <a class="btn btn-primary btn-sm"
@@ -102,8 +102,8 @@
                 </td>
             </tr>
             <tr>
-                <th></th>
-                <th>Last updated</th>
+                <td></td>
+                <th scope="row">Last updated</th>
                 <td class="edit"></td>
                 <td>
                     {{ doc.time|date:"Y-m-d" }}
@@ -114,8 +114,8 @@
             </tr>
             {% if replaces or can_edit_stream_info %}
                 <tr>
-                    <th></th>
-                    <th>Replaces</th>
+                    <td></td>
+                    <th scope="row">Replaces</th>
                     <td class="edit">
                         {% if can_edit_stream_info and not snapshot %}
                             <a class="btn btn-primary btn-sm"
@@ -133,8 +133,8 @@
             {% endif %}
             {% if replaced_by %}
                 <tr>
-                    <th></th>
-                    <th>
+                    <td></td>
+                    <th scope="row">
                         Replaced by
                     </th>
                     <td class="edit">
@@ -147,9 +147,9 @@
             {% if can_view_possibly_replaces %}
                 {% if possibly_replaces %}
                     <tr>
-                        <th>
+                        <th scope="row">
                         </th>
-                        <th>
+                        <th scope="row">
                             Possibly Replaces
                         </th>
                         <td class="edit">
@@ -167,9 +167,9 @@
                 {% endif %}
                 {% if possibly_replaced_by %}
                     <tr>
-                        <th>
+                        <th scope="row">
                         </th>
-                        <th>
+                        <th scope="row">
                             Possibly Replaced By
                         </th>
                         <td class="edit">
@@ -185,9 +185,9 @@
                 {% endif %}
             {% endif %}
             <tr>
-                <th>
+                <th scope="row">
                 </th>
-                <th>
+                <th scope="row">
                     Stream
                 </th>
                 <td class="edit">
@@ -204,9 +204,9 @@
             </tr>
             {% if doc.get_state_slug != "rfc" and not snapshot %}
                 <tr>
-                    <th>
+                    <th scope="row">
                     </th>
-                    <th>
+                    <th scope="row">
                         Intended RFC status
                     </th>
                     <td class="edit">
@@ -229,9 +229,9 @@
                 </tr>
             {% endif %}
             <tr>
-                <th>
+                <th scope="row">
                 </th>
-                <th>
+                <th scope="row">
                     Formats
                 </th>
                 <td class="edit">
@@ -258,9 +258,9 @@
             {% for check in doc.submission.latest_checks %}
                 {% if check.passed != None and check.symbol.strip %}
                     <tr>
-                        <th>
+                        <th scope="row">
                         </th>
-                        <th>
+                        <th scope="row">
                             {{ check.checker|title }}
                         </th>
                         <td class="edit">
@@ -293,9 +293,9 @@
             {% endfor %}
             {% if review_assignments or can_request_review %}
                 <tr>
-                    <th>
+                    <th scope="row">
                     </th>
-                    <th>
+                    <th scope="row">
                         Reviews
                     </th>
                     <td class="edit">
@@ -342,9 +342,9 @@
             {% endif %}
             {% if conflict_reviews %}
                 <tr>
-                    <th>
+                    <th scope="row">
                     </th>
-                    <th>
+                    <th scope="row">
                         IETF conflict review
                     </th>
                     <td class="edit">
@@ -359,7 +359,7 @@
                     <tr>
                         <td>
                         </td>
-                        <th>
+                        <th scope="row">
                             Additional resources
                         </th>
                         <td class="edit">
@@ -400,11 +400,11 @@
         </tbody>
         <tbody class="meta border-top">
             <tr>
-                <th>
+                <th scope="row">
                     Stream
                 </th>
                 {% if doc.stream %}
-                    <th>
+                    <th scope="row">
                         {% if doc.stream.slug != "legacy" %}
                             <a href="{% url "ietf.help.views.state" doc=doc.type.slug type=doc.stream.slug %}">
                                 {% if doc.stream_id == 'ietf' %}
@@ -448,7 +448,7 @@
                         {% endif %}
                     </td>
                 {% else %}
-                    <th>
+                    <th scope="row">
                         Stream state
                     </th>
                     <td class="edit">
@@ -460,8 +460,8 @@
             </tr>
             {% if milestones %}
             <tr>
-                <th></th>
-                <th>
+                <td></td>
+                <th scope="row">
                     Associated
                         {% if doc.stream_id == 'ietf' %}
                             WG
@@ -481,9 +481,9 @@
             {% endif %}
             {% if consensus and not doc.stream_id == 'ietf' %}
                 <tr>
-                    <th>
+                    <th scope="row">
                     </th>
-                    <th>
+                    <th scope="row">
                         Consensus boilerplate
                     </th>
                     <td class="edit">
@@ -504,9 +504,9 @@
             {% endif %}
             {% if presentations or user|has_role:"Secretariat,Area Director,WG Chair,WG Secretary,RG Chair,RG Secretary,IRTF Chair,Team Chair" or can_edit_stream_info %}
                 <tr>
-                    <th>
+                    <th scope="row">
                     </th>
-                    <th>
+                    <th scope="row">
                         On agenda
                     </th>
                     <td class="edit">
@@ -536,9 +536,9 @@
             {% endif %}
             {% if doc.stream_id == 'ietf' or doc.stream_id == 'ise' or doc.stream_id == 'irtf' %}
                 <tr>
-                    <th>
+                    <th scope="row">
                     </th>
-                    <th>
+                    <th scope="row">
                         Document shepherd
                     </th>
                     <td class="edit">
@@ -566,9 +566,9 @@
                 </tr>
                 {% if shepherd_writeup or can_edit_shepherd_writeup %}
                     <tr>
-                        <th>
+                        <th scope="row">
                         </th>
-                        <th>
+                        <th scope="row">
                             Shepherd write-up
                         </th>
                         <td class="edit">
@@ -598,9 +598,9 @@
                 {% endif %}
             {% else %}
                 <tr>
-                    <th>
+                    <th scope="row">
                     </th>
-                    <th>
+                    <th scope="row">
                         RFC Editor Note
                     </th>
                     <td class="edit">
@@ -624,9 +624,9 @@
             {% endif %}
             {% if published and started_iesg_process and published.time < started_iesg_process.time %}
                 <tr>
-                    <th>
+                    <th scope="row">
                     </th>
-                    <th colspan="3" class="warning">
+                    <th scope="row" colspan="3" class="warning">
                         This information refers to IESG processing after the RFC was initially published:
                     </th>
                 </tr>
@@ -635,10 +635,10 @@
         {% if not doc.stream_id == 'iab' %}
             <tbody class="meta border-top">
                 <tr>
-                    <th>
+                    <th scope="row">
                         IESG
                     </th>
-                    <th>
+                    <th scope="row">
                         <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">
                             IESG state
                         </a>
@@ -663,9 +663,9 @@
                 </tr>
                 {% if doc.action_holders_enabled %}
                     <tr>
-                        <th>
+                        <th scope="row">
                         </th>
-                        <th>
+                        <th scope="row">
                             Action Holder{{ doc.documentactionholder_set.all|pluralize }}
                         </th>
                         <td class="edit">
@@ -702,9 +702,9 @@
                     {% endif %}
                     {% if consensus and doc.stream_id == 'ietf' %}
                         <tr>
-                            <th>
+                            <th scope="row">
                             </th>
-                            <th>
+                            <th scope="row">
                                 Consensus boilerplate
                             </th>
                             <td class="edit">
@@ -724,9 +724,9 @@
                         </tr>
                     {% endif %}
                     <tr>
-                        <th>
+                        <th scope="row">
                         </th>
-                        <th>
+                        <th scope="row">
                             Telechat date
                         </th>
                         <td class="edit">
@@ -753,9 +753,9 @@
                         </td>
                     </tr>
                     <tr>
-                        <th>
+                        <th scope="row">
                         </th>
-                        <th>
+                        <th scope="row">
                             Responsible AD
                         </th>
                         <td class="edit">
@@ -779,9 +779,9 @@
                     {% if iesg_state.slug != 'idexists' %}
                         {% if doc.note or can_edit %}
                             <tr>
-                                <th>
+                                <th scope="row">
                                 </th>
-                                <th>
+                                <th scope="row">
                                     IESG note
                                 </th>
                                 <td class="edit">
@@ -805,9 +805,9 @@
                         {% endif %}
                     {% endif %}
                     <tr>
-                        <th>
+                        <th scope="row">
                         </th>
-                        <th>
+                        <th scope="row">
                             Send notices to
                         </th>
                         <td class="edit">
@@ -834,10 +834,10 @@
                 <tbody class="meta border-top">
                     {% if iana_review_state or can_edit_iana_state %}
                         <tr>
-                            <th>
+                            <th scope="row">
                                 IANA
                             </th>
-                            <th>
+                            <th scope="row">
                                 <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">
                                     IANA review state
                                 </a>
@@ -863,10 +863,10 @@
                     {% endif %}
                     {% if iana_action_state or can_edit_iana_state %}
                         <tr>
-                            <th>
+                            <th scope="row">
                                 {% if not can_edit_iana_state and not iana_review_state %}IANA{% endif %}
                             </th>
-                            <th>
+                            <th scope="row">
                                 <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-action" %}">
                                     IANA action state
                                 </a>
@@ -892,10 +892,10 @@
                     {% endif %}
                     {% if iana_experts_state or can_edit_iana_state %}
                         <tr>
-                            <th>
+                            <th scope="row">
                                 {% if not can_edit_iana_state and not iana_review_state and not iana_action_state %}IANA{% endif %}
                             </th>
-                            <th>
+                            <th scope="row">
                                 <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-experts" %}">
                                     IANA expert review state
                                 </a>
@@ -921,12 +921,12 @@
                     {% endif %}
                     {% if iana_experts_comment or can_edit_iana_state %}
                         <tr>
-                            <th>
+                            <th scope="row">
                                 {% if not can_edit_iana_state and not iana_review_state and not iana_action_state and not iana_experts_state %}
                                     IANA
                                 {% endif %}
                             </th>
-                            <th>
+                            <th scope="row">
                                 IANA expert review comments
                             </th>
                             <td class="edit">
@@ -953,10 +953,10 @@
             {% if rfc_editor_state %}
                 <tbody class="meta border-top">
                     <tr>
-                        <th>
+                        <th scope="row">
                             RFC Editor
                         </th>
-                        <th>
+                        <th scope="row">
                             <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="rfceditor" %}">
                                 RFC Editor state
                             </a>
@@ -968,9 +968,9 @@
                         </td>
                     </tr>
                     <tr>
-                        <th>
+                        <th scope="row">
                         </th>
-                        <th>
+                        <th scope="row">
                             Details
                         </th>
                         <td class="edit">

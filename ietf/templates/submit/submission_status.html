@@ -163,7 +163,7 @@
     {% endif %}
     <table class="table table-sm table-striped">
         <tr>
-            <th>Document</th>
+            <th scope="row">Document</th>
             <td>
                 {% if submission.state_id == "posted" %}
                     <a href="{% url 'ietf.doc.views_doc.document_main' name=submission.name %}">{{ submission.name }}</a>
@@ -184,7 +184,7 @@
             </td>
         </tr>
         <tr>
-            <th>Revision</th>
+            <th scope="row">Revision</th>
             <td>
                 {{ submission.rev }}
                 {% if errors.rev %}
@@ -200,7 +200,7 @@
             </td>
         </tr>
         <tr>
-            <th>Group</th>
+            <th scope="row">Group</th>
             <td>
                 {{ submission.group|default:"Individual Submission" }}
                 {% if submission.group %}<a href="{{ submission.group.about_url }}">({{ submission.group.acronym|upper }})</a>{% endif %}
@@ -212,7 +212,7 @@
             </td>
         </tr>
         <tr>
-            <th>Document date</th>
+            <th scope="row">Document date</th>
             <td>
                 {{ submission.document_date }}
                 {% if errors.document_date %}
@@ -223,11 +223,11 @@
             </td>
         </tr>
         <tr>
-            <th>Submission date</th>
+            <th scope="row">Submission date</th>
             <td>{{ submission.submission_date }}</td>
         </tr>
         <tr>
-            <th>Title</th>
+            <th scope="row">Title</th>
             <td>
                 {{ submission.title|default:"" }}
                 {% if errors.title %}
@@ -238,7 +238,7 @@
             </td>
         </tr>
         <tr>
-            <th>Author count</th>
+            <th scope="row">Author count</th>
             <td>
                 {{ submission.authors|length }} author{{ submission.authors|pluralize }}
                 {% if errors.authors %}
@@ -250,7 +250,7 @@
         </tr>
         {% for author in submission.authors %}
             <tr>
-                <th>Author {{ forloop.counter }}</th>
+                <th scope="row">Author {{ forloop.counter }}</th>
                 <td>
                     {{ author.name }}
                     {% if author.email %}&lt;{{ author.email|linkify }}&gt;{% endif %}
@@ -285,7 +285,7 @@
             </tr>
         {% endfor %}
         <tr>
-            <th>
+            <th scope="row">
                 Abstract
             </th>
             <td>
@@ -298,7 +298,7 @@
             </td>
         </tr>
         <tr>
-            <th>
+            <th scope="row">
                 Page count
             </th>
             <td>
@@ -311,7 +311,7 @@
             </td>
         </tr>
         <tr>
-            <th>
+            <th scope="row">
                 File size
             </th>
             <td>
@@ -319,7 +319,7 @@
             </td>
         </tr>
         <tr>
-            <th>
+            <th scope="row">
                 Formal languages used
             </th>
             <td>
@@ -335,7 +335,7 @@
             </td>
         </tr>
         <tr>
-            <th>
+            <th scope="row">
                 Submission additional resources
             </th>
             <td>
@@ -354,7 +354,7 @@
         </tr>
         {% if external_resources.show_changes %}
             <tr>
-                <th>
+                <th scope="row">
                     Current document additional resources
                 </th>
                 <td>
@@ -418,7 +418,7 @@
             </h2>
             <table class="table table-sm table-striped">
                 <tr>
-                    <th>
+                    <th scope="row">
                         Name
                     </th>
                     <td>
@@ -426,7 +426,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <th>
+                    <th scope="row">
                         Email address
                     </th>
                     <td>
@@ -441,7 +441,7 @@
             </h2>
             <table class="table table-sm table-striped">
                 <tr>
-                    <th>
+                    <th scope="row">
                         Replaces
                     </th>
                     <td>
@@ -521,13 +521,13 @@
     <table id="history" class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th data-sort="date">
+                <th scope="col" data-sort="date">
                     Date
                 </th>
-                <th data-sort="by">
+                <th scope="col" data-sort="by">
                     By
                 </th>
-                <th data-sort="event">
+                <th scope="col" data-sort="event">
                     Event
                 </th>
             </tr>

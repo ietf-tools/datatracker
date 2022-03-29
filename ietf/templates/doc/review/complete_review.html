@@ -32,19 +32,19 @@
         <table class="my-3 table table-sm table-borderless">
             <tbody>
                 <tr>
-                    <th>Review type:</th>
+                    <th scope="row">Review type:</th>
                     <td>{{ assignment.review_request.team.acronym }} - {{ assignment.review_request.type }} review</td>
                 </tr>
                 <tr>
-                    <th>Requested version for review:</th>
+                    <th scope="row">Requested version for review:</th>
                     <td>{{ assignment.review_request.requested_rev|default:"Current" }}</td>
                 </tr>
                 <tr>
-                    <th>Requested:</th>
+                    <th scope="row">Requested:</th>
                     <td>{{ assignment.review_request.time|date:"Y-m-d" }}</td>
                 </tr>
                 <tr>
-                    <th>Reviewer:</th>
+                    <th scope="row">Reviewer:</th>
                     <td>{% person_link assignment.reviewer.person %}</td>
                 </tr>
             </tbody>

@@ -26,9 +26,9 @@
             <table class="table table-sm table-striped tablesorter">
                 <thead>
                     <tr>
-                        <th data-sort="date">Date</th>
-                        <th data-sort="id">ID</th>
-                        <th data-sort="statement">Statement</th>
+                        <th scope="col" data-sort="date">Date</th>
+                        <th scope="col" data-sort="id">ID</th>
+                        <th scope="col" data-sort="statement">Statement</th>
                     </tr>
                 </thead>
                 {% block iprlist %}
@@ -37,14 +37,14 @@
                             {% ifchanged %}
                                 <tbody>
                                     <tr class="table-warning">
-                                        <th colspan="3">{{ ipr.state.name }}</th>
+                                        <th scope="row" colspan="3">{{ ipr.state.name }}</th>
                                     </tr>
                                 </tbody>
                             {% endifchanged %}
                         {% endif %}
                         <tbody>
                             <tr class="table-info">
-                                <th colspan="3">
+                                <th scope="row" colspan="3">
                                     {% block intro_prefix %}IPR that was submitted by "{{ q }}" and{% endblock %}
                                     {% block related %}
                                         {% with ipr.iprdocrel_set.all as iprdocrels %}

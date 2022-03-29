@@ -21,14 +21,14 @@
     <table class="table table-striped table-sm tablesorter">
         <thead>
             <tr>
-                <th data-sort="document">Document</th>
-                <th data-sort="title">Title</th>
+                <th scope="col" data-sort="document">Document</th>
+                <th scope="col" data-sort="title">Title</th>
             </tr>
         </thead>
         {% for state in state_groups %}
             <tbody>
                 <tr class="table-info">
-                    <th colspan="2">{{ state.grouper }}</th>
+                    <th scope="row" colspan="2">{{ state.grouper }}</th>
                 </tr>
             </tbody>
             <tbody>

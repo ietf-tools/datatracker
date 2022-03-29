@@ -16,7 +16,7 @@
                 {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
                 {% for field in form.visible_fields %}
                     <tr>
-                        <th>{{ field.label_tag }}{% if field.field.required %}<span class="required"> *</span>{% endif %}</th>
+                        <th scope="row">{{ field.label_tag }}{% if field.field.required %}<span class="required"> *</span>{% endif %}</th>
                         <td>{{ field.errors }}{{ field }}{% if field.help_text %}<br>{{ field.help_text }}{% endif %}</td>
                     </tr>
                 {% endfor %}

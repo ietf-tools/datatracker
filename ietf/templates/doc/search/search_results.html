@@ -14,10 +14,10 @@
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th></th>
+                <th scope="col"></th>
                 {% for h in meta.headers %}
                     {% if h.title != "Title" %}
-                        <th data-sort="{{ h.key }}"
+                        <th scope="col" data-sort="{{ h.key }}"
                             {% if h.title|slugify == "ipr" or h.title|slugify == "ad-shepherd" %}
                               class="d-none d-sm-table-cell"
                             {% endif %}>
@@ -45,11 +45,11 @@
 {% for doc_group in grouped_docs %}
     <tbody>
         <tr class="table-info">
-            <th></th>
+            <td></td>
             {% if color_ad_position %}
-                <th colspan="{{ meta.headers|length }}">
+                <th scope="row" colspan="{{ meta.headers|length }}">
             {% else %}
-                <th colspan="{{ meta.headers|length|add:"-1" }}">
+                <th scope="row" colspan="{{ meta.headers|length|add:"-1" }}">
             {% endif %}
             {{ doc_group.grouper|plural:doc_group.list }} ({{ doc_group.list|length }} {{"hit"|plural:doc_group.list }})
             </th>

@@ -29,10 +29,10 @@
                     <table id="rolodex-email-table" class="full-width">
                         <thead>
                             <tr>
-                                <th></th>
+                                <th scope="col"></th>
                                 {% for field in email_formset.forms.0 %}
                                     {% if not field.is_hidden %}
-                                        <th>{{ field.label }}</th>
+                                        <th scope="col">{{ field.label }}</th>
                                     {% endif %}
                                 {% endfor %}
                             </tr>

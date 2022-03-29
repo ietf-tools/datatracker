@@ -20,15 +20,15 @@
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th data-sort="num">
+                <th scope="col" data-sort="num">
                     {% if group.uses_milestone_dates %}
                         Date
                     {% else %}
                         Order
                     {% endif %}
                 </th>
-                <th data-sort="milestone">Milestone</th>
-                <th data-sort="docs">Associated documents</th>
+                <th scope="col" data-sort="milestone">Milestone</th>
+                <th scope="col" data-sort="docs">Associated documents</th>
             </tr>
         </thead>
         <tbody>

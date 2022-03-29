@@ -18,16 +18,16 @@
             <tbody class="meta border-top">
                 {% if doc.get_state_slug != "active" %}
                     <tr>
-                        <th></th>
-                        <th>State</th>
+                        <td></td>
+                        <th scope="row">State</th>
                         <td class="edit"></td>
                         <td>{{ doc.get_state.name }}</td>
                     </tr>
                 {% endif %}
                 {% if other_reviews %}
                     <tr>
-                        <th></th>
-                        <th>Other reviews</th>
+                        <td></td>
+                        <th scope="row">Other reviews</th>
                         <td class="edit"></td>
                         <td>
                             {% for review_assignment in other_reviews %}

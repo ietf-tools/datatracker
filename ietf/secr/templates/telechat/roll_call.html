@@ -12,7 +12,7 @@
         <br />
         <form method="post">{% csrf_token %}
             {% for person in people %}
-                <input type="checkbox" name="attendee" value="{{ person.id }}" checked="checked" /> {{ person.name }}<br />
+                <input type="checkbox" name="attendee" value="{{ person.id }}" checked /> {{ person.name }}<br />
             {% endfor %}
             <input type="submit" value="Update" />
         </form>

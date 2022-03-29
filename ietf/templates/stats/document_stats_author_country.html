@@ -44,7 +44,7 @@
 <table class="table table-sm table-striped tablesorter stats-data">
     <thead>
         <tr>
-            <th data-sort="country">Country</th>
+            <th scope="col" data-sort="country">Country</th>
             <th class="text-end" data-sort="percentage">Percentage of authors</th>
             <th class="text-end" data-sort="authors">Authors</th>
         </tr>
@@ -100,8 +100,8 @@
     {% if alias_data %}
         <table class="table table-sm table-striped tablesorter">
             <thead>
-                <th data-sort="country">Country</th>
-                <th data-sort="alias">Alias</th>
+                <th scope="col" data-sort="country">Country</th>
+                <th scope="col" data-sort="alias">Alias</th>
             </thead>
             {% if alias_data %}
                 <tbody>

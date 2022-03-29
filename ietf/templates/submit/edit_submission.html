@@ -37,7 +37,7 @@
     <h2 class="mt-5">Adjust meta-data of submitted {{ submission.name }}</h2>
     <table class="table table-sm table-striped">
         <tr>
-            <th>Document</th>
+            <th scope="row">Document</th>
             <td>
                 {{ submission.name }}
                 <button class="btn btn-primary btn-sm float-end ms-1"
@@ -49,11 +49,11 @@
             </td>
         </tr>
         <tr>
-            <th>Submission date</th>
+            <th scope="row">Submission date</th>
             <td>{{ submission.submission_date }}</td>
         </tr>
         <tr>
-            <th>Group</th>
+            <th scope="row">Group</th>
             <td>
                 {{ submission.group|default:"Individual Submission" }}
                 {% if submission.group %}<a href="{{ submission.group.about_url }}">({{ submission.group.acronym|upper }})</a>{% endif %}
@@ -65,7 +65,7 @@
             </td>
         </tr>
         <tr>
-            <th>File size</th>
+            <th scope="row">File size</th>
             <td>{{ submission.file_size|filesizeformat }}</td>
         </tr>
     </table>

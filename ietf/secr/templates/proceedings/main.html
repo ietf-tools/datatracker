@@ -19,7 +19,7 @@
             <table id="proceedings-list-table" class="full-width{% if user|has_role:"Secretariat" %} secretariat{% endif %}">
                 <thead>
                     <tr>
-                        <th>IETF Meeting</th>
+                        <th scope="col">IETF Meeting</th>
                     </tr>
                 </thead>
                 {% if meetings %}
@@ -48,7 +48,7 @@
                 <table id="proceedings-interim-table" class="full-width{% if user|has_role:"Secretariat" %} secretariat{% endif %}">
                     <thead>
                         <tr>
-                            <th>Interim Meeting</th>
+                            <th scope="col">Interim Meeting</th>
                         </tr>
                     </thead>
                     {% if interim_meetings %}

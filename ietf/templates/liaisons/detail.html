@@ -16,64 +16,64 @@
     {% include "liaisons/detail_tabs.html" %}
     <table class="table table-sm table-striped">
         <tr>
-            <th>State</th>
+            <th scope="row">State</th>
             <td>{{ liaison.state }}</td>
         </tr>
         <tr>
-            <th>Submitted Date</th>
+            <th scope="row">Submitted Date</th>
             <td>{{ liaison.submitted|date:"Y-m-d" }}</td>
         </tr>
         <tr>
-            <th>From Group{{ liaison.from_groups.all|pluralize }}</th>
+            <th scope="row">From Group{{ liaison.from_groups.all|pluralize }}</th>
             <td>{{ liaison.from_groups_display }}</td>
         </tr>
         {% if liaison.from_contact %}
             <tr>
-                <th>From Contact</th>
+                <th scope="row">From Contact</th>
                 <td>{% person_link liaison.from_contact.person %}</td>
             </tr>
         {% endif %}
         <tr>
-            <th>To Group{{ liaison.to_groups.all|pluralize }}</th>
+            <th scope="row">To Group{{ liaison.to_groups.all|pluralize }}</th>
             <td>{{ liaison.to_groups_display }}</td>
         </tr>
         {% if liaison.to_contacts %}
             <tr>
-                <th>To Contacts</th>
+                <th scope="row">To Contacts</th>
                 <td>{{ liaison.to_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         {% if liaison.cc_contacts %}
             <tr>
-                <th>Cc</th>
+                <th scope="row">Cc</th>
                 <td>{{ liaison.cc_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         {% if liaison.response_contacts %}
             <tr>
-                <th>Response Contact</th>
+                <th scope="row">Response Contact</th>
                 <td>{{ liaison.response_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         {% if liaison.technical_contacts %}
             <tr>
-                <th>Technical Contact</th>
+                <th scope="row">Technical Contact</th>
                 <td>{{ liaison.technical_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         {% if liaison.action_holder_contacts %}
             <tr>
-                <th>Action Holder Contacts</th>
+                <th scope="row">Action Holder Contacts</th>
                 <td>{{ liaison.action_holder_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         <tr>
-            <th>Purpose</th>
+            <th scope="row">Purpose</th>
             <td>{{ liaison.purpose.name }}</td>
         </tr>
         {% if liaison.deadline %}
             <tr>
-                <th>Deadline</th>
+                <th scope="row">Deadline</th>
                 <td>
                     {{ liaison.deadline }}
                     {% if liaison.action_taken %}
@@ -95,7 +95,7 @@
         {% endif %}
         {% if relations %}
             <tr>
-                <th>
+                <th scope="row">
                     Liaisons referring to this
                 </th>
                 <td>
@@ -115,7 +115,7 @@
         {% if liaison.related_to %}
             {% if liaison.related_to.approved or is_approving %}
                 <tr>
-                    <th>
+                    <th scope="row">
                         Referenced liaison
                     </th>
                     <td>
@@ -132,7 +132,7 @@
         {% endif %}
         {% if liaison.other_identifiers %}
             <tr>
-                <th>
+                <th scope="row">
                     Other Identifiers
                 </th>
                 <td>
@@ -141,7 +141,7 @@
             </tr>
         {% endif %}
         <tr>
-            <th>
+            <th scope="row">
                 Attachments
             </th>
             <td>
@@ -157,7 +157,7 @@
         </tr>
         {% if relations_by %}
             <tr>
-                <th>
+                <th scope="row">
                     Liaisons referred by this one
                 </th>
                 <td>
@@ -176,7 +176,7 @@
         {% endif %}
         {% if relations_to %}
             <tr>
-                <th>
+                <th scope="row">
                     Liaisons referring to this one
                 </th>
                 <td>
@@ -195,7 +195,7 @@
         {% endif %}
         {% if liaison.from_contact and liaison.body %}
             <tr>
-                <th>
+                <th scope="row">
                     Body
                 </th>
                 <td>

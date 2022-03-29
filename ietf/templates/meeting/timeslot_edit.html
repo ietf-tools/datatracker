@@ -75,12 +75,12 @@ a.new-timeslot-link { color: lightgray; font-size: large;}
                     <thead>
                         <tr>
                             {% if have_no_timeslots %}
-                                <th></th>
-                                <th></th>
+                                <th scope="col"></th>
+                                <th scope="col"></th>
                             {% else %}
-                                <th></th>
+                                <th scope="col"></th>
                                 {% for day in time_slices %}
-                                    <th class="day-label" colspan="{{ date_slices|colWidth:day }}">
+                                    <th scope="col" class="day-label" colspan="{{ date_slices|colWidth:day }}">
                                         {{ day|date:'D' }} ({{ day }})
                                         <i class="bi bi-trash delete-button"
                                               title="Delete all on this day"
@@ -93,13 +93,13 @@ a.new-timeslot-link { color: lightgray; font-size: large;}
                         </tr>
                         <tr>
                             {% if have_no_timeslots %}
-                                <th></th>
-                                <th></th>
+                                <th scope="col"></th>
+                                <th scope="col"></th>
                             {% else %}
-                                <th></th>
+                                <th scope="col"></th>
                                 {% for day in time_slices %}
                                     {% for slot in slot_slices|lookup:day %}
-                                        <th class="time-label">
+                                        <th scope="col" class="time-label">
                                             {{ slot.time|date:'H:i' }}-{{ slot.end_time|date:'H:i' }}
                                             <i class="bi bi-trash delete-button"
                                                   data-delete-scope="column"
@@ -116,7 +116,7 @@ a.new-timeslot-link { color: lightgray; font-size: large;}
                     <tbody>
                         {% for room in rooms %}
                             <tr>
-                                <th>
+                                <th scope="row">
                                     <span class="room-heading">{{ room.name }}
                                         {% if room.capacity %}<span class='capacity'>({{ room.capacity }})</span>{% endif %}
                                     </span>

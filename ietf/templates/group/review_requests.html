@@ -20,17 +20,17 @@
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th data-sort="request">Request</th>
-                <th data-sort="type">Type</th>
-                <th data-sort="date">Requested</th>
-                <th data-sort="date">Deadline</th>
-                <th data-sort="state">Document state</th>
-                <th data-sort="date">IESG Telechat</th>
+                <th scope="col" data-sort="request">Request</th>
+                <th scope="col" data-sort="type">Type</th>
+                <th scope="col" data-sort="date">Requested</th>
+                <th scope="col" data-sort="date">Deadline</th>
+                <th scope="col" data-sort="state">Document state</th>
+                <th scope="col" data-sort="date">IESG Telechat</th>
             </tr>
         </thead>
             <tbody>
                 <tr class="table-info" id="unassigned-review-requests">
-                    <th colspan="7">Unassigned review requests</th>
+                    <th scope="row" colspan="7">Unassigned review requests</th>
                 </tr>
             </tbody>
             <tbody>
@@ -80,7 +80,7 @@
                 </thead>
                 <tbody>
                     <tr class="table-info" id="open_review_assignments">
-                        <th colspan="7">Open review requests</th>
+                        <th scope="row" colspan="7">Open review requests</th>
                     </tr>
                 </tbody>
                 <tbody>
@@ -129,27 +129,27 @@
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th data-sort="request">Request</th>
-                    <th data-sort="type">
+                    <th scope="col" data-sort="request">Request</th>
+                    <th scope="col" data-sort="type">
                         Type
                     </th>
-                    <th data-sort="date">
+                    <th scope="col" data-sort="date">
                         Requested
                     </th>
-                    <th data-sort="date">
+                    <th scope="col" data-sort="date">
                         Deadline
                     </th>
-                    <th data-sort="date">
+                    <th scope="col" data-sort="date">
                         Closed
                     </th>
-                    <th data-sort="state">
+                    <th scope="col" data-sort="state">
                         State
                     </th>
                 </tr>
             </thead>
                 <tbody>
                     <tr class="table-info">
-                        <th colspan="8">
+                        <th scope="row" colspan="8">
                             Closed review requests
                         </th>
                     </tr>
@@ -210,7 +210,7 @@
                 </thead>
                 <tbody>
                     <tr class="table-info">
-                        <th colspan="8">
+                        <th scope="row" colspan="8">
                             Closed review assignments
                         </th>
                     </tr>
