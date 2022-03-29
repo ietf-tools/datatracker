@@ -128,11 +128,17 @@ jobs:
       run: |
         mv latest-coverage.json coverage.json
         
-    - name: Upload Coverage Results to Codecov
-      uses: codecov/codecov-action@v2.1.0
-      if: ${{ always() }}
+    - name: Report Codacy Coverage
+      uses: codacy/codacy-coverage-reporter-action@v1
       with:
-        files: coverage.json
+        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        coverage-reports: coverage.json
+        
+#     - name: Upload Coverage Results to Codecov
+#       uses: codecov/codecov-action@v2.1.0
+#       if: ${{ always() }}
+#       with:
+#         files: coverage.json
         
     - name: Upload Coverage Results as Build Artifact
       uses: actions/upload-artifact@v3.0.0
