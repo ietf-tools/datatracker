@@ -4170,7 +4170,7 @@ def import_session_minutes(request, session_id, num):
         # noinspection PyBroadException
         try:
             with open(current_minutes.get_file_name()) as f:
-                if import_contents == Note.preprocess_source(f.read()):
+                if import_contents == f.read():
                     contents_changed = False
                     messages.warning(request, 'This document is identical to the current revision, no need to import.')
         except Exception:
