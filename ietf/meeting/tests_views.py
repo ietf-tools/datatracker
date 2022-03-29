@@ -6119,7 +6119,32 @@ class ImportNotesTests(TestCase):
             self.assertContains(r, "This document is identical", status_code=200)
             q = PyQuery(r.content)
             self.assertEqual(len(q('button:disabled[type="submit"]')), 1)
-            self.assertEqual(len(q('button:not(:disabled)[type="submit"]')), 0)
+            self.assertEqual(len(q('button:enabled[type="submit"]')), 0)
+
+    def test_allows_import_on_existing_bad_unicode(self):
+        """Should not be able to import text identical to the current revision"""
+        url = urlreverse('ietf.meeting.views.import_session_minutes',
+                         kwargs={'num': self.meeting.number, 'session_id': self.session.pk})
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.post(url, {'markdown_text': 'replaced below'})  # create a rev
+        with open(
+                self.session.sessionpresentation_set.filter(document__type="minutes").first().document.get_file_name(),
+                'wb'
+        ) as f:
+            # Replace existing content with an invalid Unicode byte string. The particular invalid
+            # values here are accented characters in the MacRoman charset (see ticket #3756).
+            f.write(b'invalid \x8e unicode \x99\n')
+        self.assertEqual(r.status_code, 302)
+        with requests_mock.Mocker() as mock:
+            mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/download', text='original markdown text')
+            mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/info',
+                     text=json.dumps({"title": "title", "updatetime": "2021-12-02T11:22:33z"}))
+            r = self.client.get(url)  # try to import the same text
+            self.assertNotContains(r, "This document is identical", status_code=200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('button:enabled[type="submit"]')), 1)
+            self.assertEqual(len(q('button:disabled[type="submit"]')), 0)
 
     def test_handles_missing_previous_revision_file(self):
         """Should still allow import if the file for the previous revision is missing"""
