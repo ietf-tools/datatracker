@@ -43,25 +43,17 @@ jobs:
         ./ietf/manage.py check
         echo "Running tests..."
         ./ietf/manage.py test --settings=settings_sqlitetest --failfast
+        coverage xml
+
+    - name: Upload Coverage Results to Codecov
+      uses: codecov/codecov-action@v2.1.0
+      with:
+        files: coverage.xml
         
     - name: Convert Coverage Results
       if: ${{ always() }}
       run: |
-        coverage xml
         mv latest-coverage.json coverage.json
-        
-    - name: Report Codacy Coverage
-      uses: codacy/codacy-coverage-reporter-action@v1
-      if: ${{ always() }}
-      with:
-        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-        coverage-reports: coverage.xml
-        
-    - name: Upload Coverage Results to Codecov
-      uses: codecov/codecov-action@v2.1.0
-      if: ${{ always() }}
-      with:
-        files: coverage.xml
         
     - name: Upload Coverage Results as Build Artifact
       uses: actions/upload-artifact@v3.0.0
