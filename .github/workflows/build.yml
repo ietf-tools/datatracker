@@ -123,7 +123,7 @@ jobs:
         echo "Running tests..."
         ./ietf/manage.py test --settings=settings_sqlitetest --failfast
         
-    - name: Rename Coverage Results
+    - name: Convert Coverage Results
       if: ${{ always() }}
       run: |
         coverage xml
