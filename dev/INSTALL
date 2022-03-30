@@ -123,8 +123,7 @@ process should be used:
     out why.
 
  6. Edit ``.../ietf/__init__.py`` in the new patched release to indicate the patch
-    version in the ``__patch__`` string and current date and time in the ``__date__``
-    string.
+    version in the ``__patch__`` string.
 
  7. Change the 'web' symlink, reload etc. as described in
     `General Instructions for Deployment of a New Release`_ .
