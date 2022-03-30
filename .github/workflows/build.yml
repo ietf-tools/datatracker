@@ -126,19 +126,20 @@ jobs:
     - name: Rename Coverage Results
       if: ${{ always() }}
       run: |
+        coverage xml
         mv latest-coverage.json coverage.json
         
     - name: Report Codacy Coverage
       uses: codacy/codacy-coverage-reporter-action@v1
       with:
         project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-        coverage-reports: coverage.json
+        coverage-reports: coverage.xml
         
-#     - name: Upload Coverage Results to Codecov
-#       uses: codecov/codecov-action@v2.1.0
-#       if: ${{ always() }}
-#       with:
-#         files: coverage.json
+    - name: Upload Coverage Results to Codecov
+      uses: codecov/codecov-action@v2.1.0
+      if: ${{ always() }}
+      with:
+        files: coverage.xml
         
     - name: Upload Coverage Results as Build Artifact
       uses: actions/upload-artifact@v3.0.0
