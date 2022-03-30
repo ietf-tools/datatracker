@@ -1,8 +1,6 @@
 # Copyright The IETF Trust 2014-2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import re
-
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from unittest import skipIf
@@ -68,28 +66,9 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
         self.driver.set_window_size(1024,768)
     
     def tearDown(self):
-        msg = ""
-        for type in ["browser", "driver"]:
-            log = self.driver.get_log(type)
-            if not log:
-                continue
-            for entry in log:
-                line = entry["message"]
-                # suppress a bunch of benign/expected messages
-                if (
-                    re.search(r"JQMIGRATE: Migrate is installed", line)
-                    or re.search(r"No color for (farfut|acronym\d+):", line)
-                    or re.search(r"Could not find parent \d+", line)
-                    or re.search(r"/materials/.*mars.*status of 404", line)
-                ):
-                    continue
-                msg += f"{entry['level']}: {line}\n"
-
         super(IetfSeleniumTestCase, self).tearDown()
         self.driver.close()
-        self.maxDiff = None
-        self.assertEqual("", msg)
-    
+
     def absreverse(self,*args,**kwargs):
         return '%s%s'%(self.live_server_url, urlreverse(*args, **kwargs))
     
