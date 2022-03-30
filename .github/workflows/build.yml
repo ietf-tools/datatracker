@@ -131,6 +131,7 @@ jobs:
         
     - name: Report Codacy Coverage
       uses: codacy/codacy-coverage-reporter-action@v1
+      if: ${{ always() }}
       with:
         project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
         coverage-reports: coverage.xml
