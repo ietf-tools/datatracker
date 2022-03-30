@@ -25,7 +25,7 @@ function replace_with_internal(table, internal_table, i) {
 
 function field_magic(i, e, fields) {
     if ($(e)
-        .attr("colspan") === undefined && (fields[i] == "date" || fields[i] == "num" || fields[i] == "count" || fields[i] == "due" || fields[i] == "id")) {
+        .attr("colspan") === undefined && (fields[i] == "num" || fields[i] == "count" || fields[i] == "id")) {
         $(e)
             .addClass("text-end");
     }
