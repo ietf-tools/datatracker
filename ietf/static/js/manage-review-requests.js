@@ -36,9 +36,7 @@ $(function () {
 
   form.find('.assign-action button')
     .on('click', function () {
-      const row = $(this)
-        .closest('.review-request')
-
+      const row = $(this).closest('.review-request')
       const select = row.find('.reviewer-controls [name$=\'-reviewer\']')
       if (!select.val()) {
       // collect reviewers already assigned in this session
