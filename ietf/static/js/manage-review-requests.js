@@ -12,27 +12,23 @@ $(function () {
   }
 
   function setControlDisplay (row) {
-    const action = row.find('[name$=\'-action\']')
-      .val()
-    if (action === 'assign') {
-      row.find('.reviewer-controls')
-        .show()
-      row.find('.close-controls')
-        .hide()
-      row.find('.assign-action,.close-action')
-        .hide()
-    } else if (action === 'close') {
-      row.find('.reviewer-controls')
-        .hide()
-      row.find('.close-controls')
-        .show()
-      row.find('.assign-action,.close-action')
-        .hide()
-    } else {
-      row.find('.reviewer-controls,.close-controls')
-        .hide()
-      row.find('.assign-action,.close-action')
-        .show()
+    const action = row.find('[name$=\'-action\']').val()
+    switch (action) {
+      case 'assign':
+        row.find('.reviewer-controls').show()
+        row.find('.close-controls').hide()
+        row.find('.assign-action,.close-action').hide()
+        break
+
+      case 'close':
+        row.find('.reviewer-controls').hide()
+        row.find('.close-controls').show()
+        row.find('.assign-action,.close-action').hide()
+        break
+
+      default:
+        row.find('.reviewer-controls,.close-controls').hide()
+        row.find('.assign-action,.close-action').show()
     }
 
     updateSaveButtons()
