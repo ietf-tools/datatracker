@@ -15,6 +15,11 @@ on:
         description: 'Skip Tests'
         required: true
         type: boolean
+      summary:
+        description: 'Summary'
+        required: false
+        type: text
+        default: ''
 
 jobs:
   # -----------------------------------------------------------------
