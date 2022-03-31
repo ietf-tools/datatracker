@@ -613,7 +613,7 @@ def action_announcement_text(request, name):
         if "regenerate_text" in request.POST:
             e = default_action_text(group, charter, by)
             e.save()
-            form = ActionAnnouncementTextForm(initial=dict(announcement_text=e.text))
+            form = ActionAnnouncementTextForm(initial=dict(announcement_text=escape(e.text)))
 
         if "send_text" in request.POST and form.is_valid():
             parsed_msg = send_mail_preformatted(request, form.cleaned_data['announcement_text'])

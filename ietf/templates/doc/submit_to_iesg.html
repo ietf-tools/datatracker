@@ -90,13 +90,13 @@
         </ul>
     <form method="post">
         {% csrf_token %}
-        <input type="submit"
+        <button type="submit"
                class="btn btn-warning"
-               name="confirm"
-               value="Request publication">
-        <input type="submit"
+               name="confirm">
+               Request publication</button>
+        <button type="submit"
                class="btn btn-secondary float-end"
-               name="cancel"
-               value="Back">
+               name="cancel">
+               Back</button>
     </form>
 {% endblock %}

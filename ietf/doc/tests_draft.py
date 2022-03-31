@@ -1383,7 +1383,7 @@ class SubmitToIesgTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code,200)
             q = PyQuery(r.content)
-            self.assertEqual(len(q('form input[name="confirm"]')),1) 
+            self.assertEqual(len(q('form button[name="confirm"]')),1)
 
         url = urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=self.docname))
 

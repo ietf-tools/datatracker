@@ -28,10 +28,8 @@
         <button type="submit"
                 class="btn {% if ballot_issue_danger %}btn-danger{% else %}btn-warning{% endif %}"
                 name="issue_ballot"
-                value="Save and Issue Ballot">
-            Save
-&amp;             {% if ballot_issued %}re-{% endif %}
-            issue ballot
+                value="Save and issue ballot">
+            Save &amp; {% if ballot_issued %}re-{% endif %}issue ballot
         </button>
         <a class="btn btn-secondary float-end"
            href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">

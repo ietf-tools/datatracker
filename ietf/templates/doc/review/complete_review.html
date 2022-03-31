@@ -98,9 +98,9 @@
             {% if mail_archive_query_urls %}
                 <div class="mail-archive-search">
                     <div class="offset-md-2 col-md-10">
-                        <label class="form-label">Search mail archive subjects for:</label>
+                        <label for="mail-archive-subjects" class="form-label">Search mail archive subjects for:</label>
                         <div class="input-group mb-3">
-                            <input type="text"
+                            <input type="text" id="mail-archive-subjects"
                                    class="query-input form-control"
                                    value="{{ mail_archive_query_urls.query }}">
                             <button type="button" class="search btn btn-primary">Search</button>
