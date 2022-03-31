@@ -5,6 +5,7 @@ const find = require('lodash/find')
 const round = require('lodash/round')
 const fs = require('fs/promises')
 const { DateTime } = require('luxon')
+const isPlainObject = require('lodash/isPlainObject')
 
 const dec = new TextDecoder()
 
@@ -123,17 +124,41 @@ async function main () {
     const { ChartJSNodeCanvas } = require('chartjs-node-canvas')
     const chartJSNodeCanvas = new ChartJSNodeCanvas({ type: 'svg', width: 850, height: 300, backgroundColour: '#FFFFFF' })
 
+    // -> Reorder versions
+    const versions = []
+    for (const [key, value] of Object.entries(covData)) {
+      if (isPlainObject(value)) {
+        const vRel = find(releases, r => r.tag_name === key || r.tag_name === `v${key}`)
+        if (!vRel) {
+          continue
+        }
+        versions.push({
+          tag: key,
+          time: vRel.created_at,
+          stats: {
+            code: round(value.code * 100, 2),
+            template: round(value.template * 100, 2),
+            url: round(value.url * 100, 2)
+          }
+        })
+      }
+    }
+    const roVersions = orderBy(versions, ['time', 'tag'], ['asc', 'asc'])
+
+    // -> Fill axis + data points
     const labels = []
     const datasetCode = []
     const datasetTemplate = []
     const datasetUrl = []
-    for (const [key, value] of Object.entries(covData).sort((a, b) => a[0].localeCompare(b[0]))) {
-      labels.push(key)
-      datasetCode.push(round(value.code * 100, 2))
-      datasetTemplate.push(round(value.template * 100, 2))
-      datasetUrl.push(round(value.url * 100, 2))
+
+    for (const ver of roVersions) {
+      labels.push(ver.tag)
+      datasetCode.push(ver.stats.code)
+      datasetTemplate.push(ver.stats.template)
+      datasetUrl.push(ver.stats.url)
     }
 
+    // -> Generate chart SVG
     const outputStream = chartJSNodeCanvas.renderToBufferSync({
       type: 'line',
       options: {
@@ -212,6 +237,7 @@ async function main () {
     }, 'image/svg+xml')
     const svg = Buffer.from(outputStream).toString('base64')
 
+    // -> Upload to common repo
     console.info(`Uploading chart SVG for ${newRelease.name}...`)
     await ghCommon.rest.repos.createOrUpdateFileContents({
       owner,

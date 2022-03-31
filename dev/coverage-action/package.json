@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "Parse and generate coverage and changelog files for Datatracker releases",
   "main": "index.js",
-  "scripts": {
-    "build": "ncc build index.js -o dist"
-  },
   "author": "IETF Trust",
   "license": "BSD-3-Clause",
   "dependencies": {
@@ -17,7 +14,6 @@
     "luxon": "2.3.1"
   },
   "devDependencies": {
-    "@vercel/ncc": "0.33.3",
     "eslint": "7.32.0",
     "eslint-config-standard": "16.0.3",
     "eslint-plugin-import": "2.25.4",
