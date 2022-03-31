@@ -280,6 +280,51 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, slot.location.name)
 
+    @override_settings(PROCEEDINGS_V1_BASE_URL='https://example.com/{num}')
+    def test_agenda_redirects_for_old_meetings(self):
+        """Meetings before 64 should be forwarded to their proceedings"""
+        # meeting with no record and num < 64 is forwarded if ext is html
+        r = self.client.get(
+            urlreverse(
+                'ietf.meeting.views.agenda',
+                kwargs={'num': '32', 'ext': '.html'},
+            ))
+        self.assertRedirects(r, 'https://example.com/32', fetch_redirect_response=False)
+        r = self.client.get(
+            urlreverse(
+                'ietf.meeting.views.agenda',
+                kwargs={'num': '32', 'ext': '.csv'},
+            ))
+        self.assertEqual(r.status_code, 404)
+
+        # meeting with record but no schedule
+        MeetingFactory(type_id='ietf', number='35', populate_schedule=False)
+        r = self.client.get(
+            urlreverse(
+                'ietf.meeting.views.agenda',
+                kwargs={'num': '35', 'ext': '.html'},
+            ))
+        self.assertRedirects(r, 'https://example.com/35', fetch_redirect_response=False)
+
+        # meeting with record and schedule but no assignments
+        meeting_with_schedule = MeetingFactory(type_id='ietf', number='36', populate_schedule=True)
+        r = self.client.get(
+            urlreverse(
+                'ietf.meeting.views.agenda',
+                kwargs={'num': '36', 'ext': '.html'},
+            ))
+        self.assertRedirects(r, 'https://example.com/36', fetch_redirect_response=False)
+
+        # meeting with an assignment should not be redirected
+        SessionFactory(meeting=meeting_with_schedule)
+        r = self.client.get(
+                    urlreverse(
+                        'ietf.meeting.views.agenda',
+                        kwargs={'num': '36', 'ext': '.html'},
+                    ))
+        self.assertEqual(r.status_code, 200)
+
+
     def test_meeting_agenda_filters_ignored(self):
         """The agenda view should ignore filter querystrings
         
