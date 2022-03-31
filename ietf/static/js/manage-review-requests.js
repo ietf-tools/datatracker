@@ -2,17 +2,17 @@
 $(function () {
   'use strict'
   const form = $('form.review-requests')
-  const saveButtons = form.find('[name=action][value^=\'save\']')
+  const saveButtons = form.find('[name=action][value^="save"]')
 
   function updateSaveButtons () {
     saveButtons.prop(
       'disabled',
-      form.find('[name$=\'-action\'][value][value!=\']').length === 0
+      form.find('[name$="-action"][value][value!=""]').length === 0
     )
   }
 
   function setControlDisplay (row) {
-    const action = row.find('[name$=\'-action\']').val()
+    const action = row.find('[name$="-action"]').val()
     switch (action) {
       case 'assign':
         row.find('.reviewer-controls').show()
@@ -37,7 +37,7 @@ $(function () {
   form.find('.assign-action button')
     .on('click', function () {
       const row = $(this).closest('.review-request')
-      const select = row.find('.reviewer-controls [name$=\'-reviewer\']')
+      const select = row.find('.reviewer-controls [name$="-reviewer"]')
       if (!select.val()) {
       // collect reviewers already assigned in this session
         const reviewerAssigned = {}
@@ -48,11 +48,11 @@ $(function () {
             }
           })
 
-        form.find('[name$=\'-action\'][value=\'assign\']')
+        form.find('[name$="-action"][value="assign"]')
           .each(function () {
             const v = $(this)
               .closest('.review-request')
-              .find('[name$=\'-reviewer\']')
+              .find('[name$="-reviewer"]')
               .val()
             if (v) {
               reviewerAssigned[v] += 1
@@ -83,33 +83,33 @@ $(function () {
         }
       }
 
-      row.find('[name$=\'-action\']').val('assign')
+      row.find('[name$="-action"]').val('assign')
       setControlDisplay(row)
     })
 
   form.find('.reviewer-controls .undo')
     .on('click', function () {
       const row = $(this).closest('.review-request')
-      row.find('[name$=\'-action\']').val('')
-      row.find('[name$=\'-reviewer\']').val($(this).data('initial'))
+      row.find('[name$="-action"]').val('')
+      row.find('[name$="-reviewer"]').val($(this).data('initial'))
       setControlDisplay(row)
     })
 
   form.find('.close-action button')
     .on('click', function () {
       const row = $(this).closest('.review-request')
-      row.find('[name$=\'-action\']').val('close')
+      row.find('[name$="-action"]').val('close')
       setControlDisplay(row)
     })
 
   form.find('.close-controls .undo')
     .on('click', function () {
       const row = $(this).closest('.review-request')
-      row.find('[name$=\'-action\']').val('')
+      row.find('[name$="-action"]').val('')
       setControlDisplay(row)
     })
 
-  form.find('[class$=\'-action\']')
+  form.find('.assign-action,.close-action')
     .each(function () {
       const row = $(this).closest('.review-request')
       setControlDisplay(row)
