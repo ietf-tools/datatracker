@@ -208,6 +208,20 @@ jobs:
         tag: ${{ env.PKG_VERSION }}
         writeToFile: false
         
+    - name: Process Coverage Stats + Chart
+      id: covprocess
+      uses: ./dev/coverage-action/
+      if: ${{ github.event.inputs.skiptests == 'false' }}
+      with:
+        token: ${{ github.token }}
+        tokenCommon: ${{ secrets.GH_COMMON_TOKEN }}
+        repoCommon: common
+        version: ${{needs.prepare.outputs.pkg_version}}
+        changelog: ${{ steps.changelog.outputs.changes }}
+        summary: ${{ github.event.inputs.summary }}
+        coverageResultsPath: coverage.json
+        histCoveragePath: historical-coverage.json
+        
     - name: Create Release
       uses: ncipollo/release-action@v1
       if: env.SHOULD_DEPLOY == 'true'
@@ -216,7 +230,7 @@ jobs:
         draft: false
         tag: ${{ env.PKG_VERSION }}
         name: ${{ env.PKG_VERSION }}
-        body: ${{ steps.changelog.outputs.changes }}
+        body: ${{ steps.covprocess.outputs.changelog }}
         artifacts: "/home/runner/work/release/release.tar.gz,coverage.json"
         token: ${{ secrets.GITHUB_TOKEN }}
         
