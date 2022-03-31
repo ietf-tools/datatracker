@@ -69,6 +69,7 @@ from django.test.runner import DiscoverRunner
 from django.core.management import call_command
 from django.urls import URLResolver # type: ignore
 from django.template.backends.django import DjangoTemplates, Template
+# from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 debug.debug = True
@@ -163,12 +164,16 @@ class MyPyTest(TestCase):
 class ValidatingTemplates(DjangoTemplates):
     def __init__(self, params):
         super().__init__(params)
+
+        if settings.validate_html is False:
+            return
+
         self.validation_cache = set()
         self.testcase = TestCase()
         self.testcase.maxDiff = None
-        self.config_file = tempfile.NamedTemporaryFile()
-        # keep the html-validate config here, so it can be kept in sync easily
-        htmlvalidate = {
+
+        # keep the html-validate configs here, so they can be kept in sync easily
+        frag_config = {
             "extends": ["html-validate:recommended"],
             "rules": {
                 # many trailing whitespaces inserted by Django, ignore:
@@ -186,11 +191,28 @@ class ValidatingTemplates(DjangoTemplates):
                 "attribute-boolean-style": "off",
             },
         }
-        self.config_file.write(json.dumps(htmlvalidate).encode())
-        self.config_file.flush()
+        self.frag_config_file = tempfile.NamedTemporaryFile()
+        self.frag_config_file.write(json.dumps(frag_config).encode())
+        self.frag_config_file.flush()
+
+        doc_config = frag_config
+        # enable doc-level rules
+        doc_config["extends"].append("html-validate:document")
+        # FIXME: we should find a way to use SRI, but ignore for now:
+        doc_config["rules"]["require-sri"] = "off"
+        # permit discontinous heading numbering in cards
+        doc_config["rules"]["heading-level"] = [
+            "error",
+            {"sectioningRoots": [".card-body"]},
+        ]
+        self.doc_config_file = tempfile.NamedTemporaryFile()
+        self.doc_config_file.write(json.dumps(frag_config).encode())
+        self.doc_config_file.flush()
 
     def __del__(self):
-        self.config_file.close()
+        if settings.validate_html:
+            self.frag_config_file.close()
+            self.doc_config_file.close()
 
     def get_template(self, template_name):
         return ValidatingTemplate(self.engine.get_template(template_name), self)
@@ -202,23 +224,49 @@ class ValidatingTemplate(Template):
 
     def render(self, context=None, request=None):
         render_result = super().render(context, request)
+        if settings.validate_html is False:
+            return render_result
 
         if not self.origin.name.endswith("html"):
             # not an HTML fragnment, so skip it
             return render_result
 
+        is_doc = re.search(r"^\s*<!doctype", render_result, flags=re.IGNORECASE)
+
         fingerprint = hash(render_result)
         if fingerprint in self.backend.validation_cache:
             # already validated this HTML fragment, skip it
-            return render_result
+            print(
+                "skip\t",
+                0 if "templates/base/menu" in self.origin.name else len(render_result),
+                "\t",
+                is_doc is not None,
+                "\t",
+                self.origin.name,
+            )
+            # as an optimization, make page a bit smaller by not returning HTML for the menus
+            # FIXME: figure out why this still includes base/menu.html
+            return "" if "templates/base/menu" in self.origin.name else render_result
 
-        self.backend.validation_cache.add(fingerprint)
+        print(
+            "VAL\t",
+            len(render_result),
+            "\t",
+            is_doc is not None,
+            "\t",
+            self.origin.name,
+        )
+        config_file = (
+            self.backend.doc_config_file.name
+            if is_doc
+            else self.backend.frag_config_file.name
+        )
         proc = subprocess.run(
             [
                 "npx",
                 "html-validate",
                 "--formatter=json",
-                f"--config={self.backend.config_file.name}",
+                f"--config={config_file}",
                 "--stdin",
             ],
             input=render_result.encode(),
@@ -229,10 +277,12 @@ class ValidatingTemplate(Template):
             validation_results = json.loads(proc.stdout.decode())
         except json.decoder.JSONDecodeError:
             self.backend.testcase.assertEqual("", proc.stdout.decode())
+        self.backend.validation_cache.add(fingerprint)
         if len(validation_results) == 0:
             # no errors!
             return render_result
-
+        if validation_results[0]["source"] is None:
+            self.backend.testcase.assertEqual("", validation_results)
         source_lines = validation_results[0]["source"].splitlines(keepends=True)
         result = ""
         for msg in validation_results[0]["messages"]:
@@ -253,7 +303,7 @@ class ValidatingTemplate(Template):
             path = path.relative_to(cwd)
             with open("error-" + path.name, "w") as file:
                 file.write(validation_results[0]["source"])
-                result += f"Wrote HTML source to {path.name}."
+                result += f"Wrote HTML source to {file.name}."
         self.backend.testcase.assertEqual("", result)
         return render_result
 
@@ -623,14 +673,18 @@ class IetfTestRunner(DiscoverRunner):
         parser.add_argument('--show-logging',
             action='store_true', default=False,
             help='Show logging output going to LOG_USER in production mode')
+        parser.add_argument('--validate-html',
+            action='store_true', dest="validate_html", default=False,
+            help='Validate all generated HTML with html-validate.org')
 
-    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, **kwargs):
+    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, **kwargs):
         #
         self.check_coverage = not skip_coverage
         self.save_version_coverage = save_version_coverage
         self.html_report = html_report
         self.permit_mixed_migrations = permit_mixed_migrations
         self.show_logging = show_logging
+        settings.validate_html = validate_html
         settings.show_logging = show_logging
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
@@ -745,6 +799,11 @@ class IetfTestRunner(DiscoverRunner):
             s = json.load(f)
             s[1] = tuple(s[1])      # random.setstate() won't accept a list in lieu of a tuple
         factory.random.set_random_state(s)
+
+        if settings.validate_html:
+            print("     Validating all HTML generated during the tests; this will be slow")
+        else:
+            print("     Not validating any generated HTML; please do so at least once before committing changes")
 
         super(IetfTestRunner, self).setup_test_environment(**kwargs)
 
