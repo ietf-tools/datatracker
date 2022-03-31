@@ -37399,12 +37399,14 @@ const dec = new TextDecoder()
 
 async function main () {
   const token = core.getInput('token')
+  const tokenCommon = core.getInput('tokenCommon')
   const inputCovPath = core.getInput('coverageResultsPath') // 'data/coverage-raw.json'
   const outputCovPath = core.getInput('coverageResultsPath') // 'data/coverage.json'
   const outputHistPath = core.getInput('histCoveragePath') // 'data/historical-coverage.json'
   const relVersionRaw = core.getInput('version') // 'v7.47.0'
   const relVersion = relVersionRaw.indexOf('v') === 0 ? relVersionRaw.substring(1) : relVersionRaw
   const gh = github.getOctokit(token)
+  const ghCommon = github.getOctokit(tokenCommon)
   const owner = github.context.repo.owner // 'ietf-tools'
   const repo = github.context.repo.repo // 'datatracker'
   const sender = github.context.payload.sender.login // 'rjsparks'
@@ -37447,7 +37449,6 @@ async function main () {
       releases.push(...resp.data)
     }
   } while (hasMoreReleases)
-  console.info(releases[0])
   console.info(`Found ${releases.length} existing releases.`)
 
   // -> Fetch latest historical coverage
@@ -37484,7 +37485,7 @@ async function main () {
   }
 
   // -> Find matching release version
-  const newRelease = find(releases, ['name', 'v7.46.0']) // relVersionRaw
+  const newRelease = find(releases, ['name', relVersionRaw])
   if (!newRelease) {
     console.warn(`Could not find a release matching ${relVersionRaw}... Skipping coverage chart generation...`)
     return
@@ -37515,7 +37516,7 @@ async function main () {
     const datasetCode = []
     const datasetTemplate = []
     const datasetUrl = []
-    for (const [key, value] of Object.entries(covData)) {
+    for (const [key, value] of Object.entries(covData).sort((a, b) => a[0].localeCompare(b[0]))) {
       labels.push(key)
       datasetCode.push(round(value.code * 100, 2))
       datasetTemplate.push(round(value.template * 100, 2))
@@ -37601,7 +37602,7 @@ async function main () {
     const svg = Buffer.from(outputStream).toString('base64')
 
     console.info(`Uploading chart SVG for ${newRelease.name}...`)
-    await gh.rest.repos.createOrUpdateFileContents({
+    await ghCommon.rest.repos.createOrUpdateFileContents({
       owner,
       repo: repoCommon,
       path: `assets/graphs/datatracker/${newRelease.id}.svg`,
@@ -37629,7 +37630,7 @@ async function main () {
   formattedBody += `![](https://img.shields.io/badge/URLs-${covInfo.url}%25-${getCoverageColor(covInfo.url)}?style=flat-square)\n\n`
   formattedBody += `![chart](https://raw.githubusercontent.com/${owner}/${repoCommon}/main/assets/graphs/datatracker/${newRelease.id}.svg)`
 
-  core.exportVariable('changelog', formattedBody)
+  core.setOutput('changelog', formattedBody)
 }
 
 main()
