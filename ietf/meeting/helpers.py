@@ -60,7 +60,7 @@ def get_current_ietf_meeting_num():
 
 def get_ietf_meeting(num=None):
     if num:
-        meeting = Meeting.objects.filter(number=num).first()
+        meeting = Meeting.objects.filter(type='ietf', number=num).first()
     else:
         meeting = get_current_ietf_meeting()
     return meeting
