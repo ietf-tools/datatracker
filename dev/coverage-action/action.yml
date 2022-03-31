@@ -36,7 +36,7 @@ outputs:
     description: Changelog with headers prepended and coverage stats + chart appended
 runs:
   using: 'node16'
-  main: 'dist/index.js'
+  main: 'index.js'
 branding:
   icon: layers
   color: red

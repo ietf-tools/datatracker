@@ -207,6 +207,11 @@ jobs:
         token: ${{ github.token }}
         tag: ${{ env.PKG_VERSION }}
         writeToFile: false
+
+    - name: Prepare Coverage Action
+      if: ${{ github.event.inputs.skiptests == 'false' }}
+      working-directory: ./dev/coverage-action
+      run: npm install
         
     - name: Process Coverage Stats + Chart
       id: covprocess
