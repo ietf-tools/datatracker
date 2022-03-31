@@ -1496,16 +1496,16 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         raise Http404('Extension not allowed')
 
     # We do not have the appropriate data in the datatracker for IETF 64 and earlier.
-    # So that we're not producing misleading pages...
-
-    assert num is None or num.isdigit()
-
+    # So that we're not producing misleading pages, redirect to their proceedings.
+    # The datatracker DB does include a Meeting instance for every IETF meeting, though,
+    # so we can use that to validate that num is a valid meeting number.
     meeting = get_ietf_meeting(num)
-    if not meeting or (meeting.number.isdigit() and int(meeting.number) <= 64 and (not meeting.schedule or not meeting.schedule.assignments.exists())):
-        if ext == '.html' or (meeting and meeting.number.isdigit() and 0 < int(meeting.number) <= 64):
-            return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}')
-        else:
-            raise Http404("No such meeting")
+    if meeting is None:
+        raise Http404("No such full IETF meeting")
+    elif int(meeting.number) <= 64:
+        return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}')
+    else:
+        pass
 
     # Select the schedule to show
     if name is None:

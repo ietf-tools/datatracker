@@ -280,6 +280,54 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, slot.location.name)
 
+    @override_settings(PROCEEDINGS_V1_BASE_URL='https://example.com/{meeting.number}')
+    def test_agenda_redirects_for_old_meetings(self):
+        """Meetings before 64 should be forwarded to their proceedings"""
+        # meeting with record but no schedule
+        MeetingFactory(type_id='ietf', number='35', populate_schedule=False)
+        r = self.client.get(
+            urlreverse(
+                'ietf.meeting.views.agenda',
+                kwargs={'num': '35', 'ext': '.html'},
+            ))
+        self.assertRedirects(r, 'https://example.com/35', fetch_redirect_response=False)
+
+        # meeting with record and schedule but no assignments
+        meeting_with_schedule = MeetingFactory(type_id='ietf', number='36', populate_schedule=True)
+        r = self.client.get(
+            urlreverse(
+                'ietf.meeting.views.agenda',
+                kwargs={'num': '36', 'ext': '.html'},
+            ))
+        self.assertRedirects(r, 'https://example.com/36', fetch_redirect_response=False)
+
+        # meeting with an assignment
+        SessionFactory(meeting=meeting_with_schedule)
+        r = self.client.get(
+                    urlreverse(
+                        'ietf.meeting.views.agenda',
+                        kwargs={'num': '36', 'ext': '.html'},
+                    ))
+        self.assertRedirects(r, 'https://example.com/36', fetch_redirect_response=False)
+
+    def test_agenda_for_nonexistent_meeting(self):
+        """Return a 404 for a bad IETF meeting number"""
+        # Meetings pre-64 are redirected, but should be a 404 if there is no Meeting instance
+        r = self.client.get(
+            urlreverse(
+                'ietf.meeting.views.agenda',
+                kwargs={'num': '32', 'ext': '.html'},
+            ))
+        self.assertEqual(r.status_code, 404)
+        # Check a post-64 meeting as well
+        r = self.client.get(
+            urlreverse(
+                'ietf.meeting.views.agenda',
+                kwargs={'num': '150', 'ext': '.html'},
+            ))
+        self.assertEqual(r.status_code, 404)
+
+
     def test_meeting_agenda_filters_ignored(self):
         """The agenda view should ignore filter querystrings
         
