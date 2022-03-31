@@ -1021,7 +1021,7 @@ PROCEEDINGS_VERSION_CHANGES = [
     97,  # version 2: meeting 97 and later (was number was NEW_PROCEEDINGS_START)
     111, # version 3: meeting 111 and later
 ]
-PROCEEDINGS_V1_BASE_URL = 'https://www.ietf.org/proceedings/{meeting.number}'
+PROCEEDINGS_V1_BASE_URL = 'https://www.ietf.org/proceedings/{num}'
 YOUTUBE_API_KEY = ''
 YOUTUBE_API_SERVICE_NAME = 'youtube'
 YOUTUBE_API_VERSION = 'v3'
