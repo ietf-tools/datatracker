@@ -7,9 +7,9 @@
             <th scope="col" data-sort="revision">Revision</th>
             <th scope="col" data-sort="meeting">Meeting</th>
             <th scope="col" data-sort="session">Session</th>
-            <th scope="col">{% comment %}Agenda{% endcomment %}</th>
-            <th scope="col">{% comment %}Minutes{% endcomment %}</th>
-            <th scope="col">{% comment %}Buttons{% endcomment %}</th>
+            <th scope="col">{# Agenda #}</th>
+            <th scope="col">{# Minutes #}</th>
+            <th scope="col">{# Buttons #}</th>
         </tr>
     </thead>
     <tbody>
@@ -61,6 +61,7 @@
                         </a>
                     {% endif %}
                 </td>
-            {% endfor %}
-        </tbody>
-    </table>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

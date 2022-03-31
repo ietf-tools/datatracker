@@ -1146,15 +1146,15 @@
                     </a>
                 </div>
                 <div class="card-body">
-                    <h5 class="card-title">
+                    <p class="h5 card-title">
                         Abstract
-                    </h5>
+                    </p>
                     <p class="card-text">
                         {{ doc.abstract }}
                     </p>
-                    <h5 class="card-title">
+                    <p class="h5 card-title">
                         Authors
-                    </h5>
+                    </p>
                     <p class="card-text">
                         {% for author in doc.documentauthor_set.all %}
                             {% person_link author.person %}

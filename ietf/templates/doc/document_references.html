@@ -66,8 +66,9 @@
                     </tr>
                 {% endwith %}
             {% endfor %}
-        </table>
-    {% endblock %}
-    {% block js %}
-        <script src="{% static "ietf/js/list.js" %}"></script>
-    {% endblock %}
+        </tbody>
+    </table>
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
+{% endblock %}

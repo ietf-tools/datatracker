@@ -574,7 +574,7 @@ def lastcalltext(request, name):
             e.save()
 
             # make sure form has the updated text
-            form = LastCallTextForm(initial=dict(last_call_text=e.text))
+            form = LastCallTextForm(initial=dict(last_call_text=escape(e.text)))
 
 
     s = doc.get_state("draft-iesg")
@@ -813,7 +813,7 @@ def ballot_approvaltext(request, name):
             e.save()
 
             # make sure form has the updated text
-            form = ApprovalTextForm(initial=dict(approval_text=e.text))
+            form = ApprovalTextForm(initial=dict(approval_text=escape(e.text)))
 
     can_announce = doc.get_state("draft-iesg").order > 19
     need_intended_status = ""

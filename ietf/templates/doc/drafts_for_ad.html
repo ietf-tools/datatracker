@@ -9,14 +9,15 @@
 {% block title %}Documents for {{ ad_name }}{% endblock %}
 {% block content %}
     {% origin %}
+    <h1>Documents for {{ ad_name }}</h1>
     {% if blocked_docs %}
-        <h1>Blocking positions held by {{ ad_name }}</h1>
+        <h2>Blocking positions held by {{ ad_name }}</h2>
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
                     <th scope="col" data-sort="document">Document</th>
                     <th scope="col" data-sort="status">Status</th>
-                    <th class="d-none d-sm-table-cell" data-sort="responsible">Responsible AD</th>
+                    <th scope="col" class="d-none d-sm-table-cell" data-sort="responsible">Responsible AD</th>
                     <th scope="col" data-sort="discusses">Discusses</th>
                 </tr>
             </thead>
@@ -50,8 +51,8 @@
                 {% endfor %}
             </tbody>
         </table>
+        <h2 class="mt-3">Documents for {{ ad_name }}</h2>
     {% endif %}
-    <h1 class="mt-3">Documents for {{ ad_name }}</h1>
     {% include "doc/search/search_results.html" with start_table=True end_table=True %}
 {% endblock %}
 {% block js %}
