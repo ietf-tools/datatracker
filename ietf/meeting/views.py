@@ -1504,8 +1504,6 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         raise Http404("No such full IETF meeting")
     elif int(meeting.number) <= 64:
         return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}')
-    elif not (meeting.schedule and meeting.schedule.assignments.exists()):
-        raise Http404("Agenda not available")
     else:
         pass
 
