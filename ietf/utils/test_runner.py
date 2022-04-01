@@ -49,6 +49,7 @@ import unittest
 import pathlib
 import subprocess
 import tempfile
+import copy
 import factory.random
 from fnmatch import fnmatch
 
@@ -167,52 +168,8 @@ class ValidatingTemplates(DjangoTemplates):
 
         if settings.validate_html is False:
             return
-
         self.validation_cache = set()
-        self.testcase = TestCase()
-        self.testcase.maxDiff = None
-
-        # keep the html-validate configs here, so they can be kept in sync easily
-        frag_config = {
-            "extends": ["html-validate:recommended"],
-            "rules": {
-                # many trailing whitespaces inserted by Django, ignore:
-                "no-trailing-whitespace": "off",
-                # navbar dropdowns can't use buttons, ignore:
-                "prefer-native-element": [
-                    "error",
-                    {"exclude": ["button"]},
-                ],
-                # title length mostly only matters for SEO, ignore:
-                "long-title": "off",
-                # the current (older) version of Django seems to add type="text/javascript" for form media, ignore:
-                "script-type": "off",
-                # django-bootstrap5 seems to still generate 'checked="checked"', ignore:
-                "attribute-boolean-style": "off",
-            },
-        }
-        self.frag_config_file = tempfile.NamedTemporaryFile()
-        self.frag_config_file.write(json.dumps(frag_config).encode())
-        self.frag_config_file.flush()
-
-        doc_config = frag_config
-        # enable doc-level rules
-        doc_config["extends"].append("html-validate:document")
-        # FIXME: we should find a way to use SRI, but ignore for now:
-        doc_config["rules"]["require-sri"] = "off"
-        # permit discontinous heading numbering in cards
-        doc_config["rules"]["heading-level"] = [
-            "error",
-            {"sectioningRoots": [".card-body"]},
-        ]
-        self.doc_config_file = tempfile.NamedTemporaryFile()
-        self.doc_config_file.write(json.dumps(frag_config).encode())
-        self.doc_config_file.flush()
-
-    def __del__(self):
-        if settings.validate_html:
-            self.frag_config_file.close()
-            self.doc_config_file.close()
+        self.cwd = str(pathlib.Path.cwd())
 
     def get_template(self, template_name):
         return ValidatingTemplate(self.engine.get_template(template_name), self)
@@ -223,89 +180,42 @@ class ValidatingTemplate(Template):
         super().__init__(template, backend)
 
     def render(self, context=None, request=None):
-        render_result = super().render(context, request)
+        content = super().render(context, request)
+
         if settings.validate_html is False:
-            return render_result
+            return content
 
         if not self.origin.name.endswith("html"):
-            # not an HTML fragnment, so skip it
-            return render_result
+            # not HTML, skip it
+            return content
 
-        is_doc = re.search(r"^\s*<!doctype", render_result, flags=re.IGNORECASE)
+        if not self.origin.name.startswith(self.backend.cwd):
+            # only validate fragments in our source tree
+            return content
 
-        fingerprint = hash(render_result)
+        fingerprint = hash(content)
         if fingerprint in self.backend.validation_cache:
             # already validated this HTML fragment, skip it
-            print(
-                "skip\t",
-                0 if "templates/base/menu" in self.origin.name else len(render_result),
-                "\t",
-                is_doc is not None,
-                "\t",
-                self.origin.name,
-            )
             # as an optimization, make page a bit smaller by not returning HTML for the menus
             # FIXME: figure out why this still includes base/menu.html
-            return "" if "templates/base/menu" in self.origin.name else render_result
+            return "" if "templates/base/menu" in self.origin.name else content
 
-        print(
-            "VAL\t",
-            len(render_result),
-            "\t",
-            is_doc is not None,
-            "\t",
-            self.origin.name,
-        )
-        config_file = (
-            self.backend.doc_config_file.name
-            if is_doc
-            else self.backend.frag_config_file.name
-        )
-        proc = subprocess.run(
-            [
-                "npx",
-                "html-validate",
-                "--formatter=json",
-                f"--config={config_file}",
-                "--stdin",
-            ],
-            input=render_result.encode(),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        try:
-            validation_results = json.loads(proc.stdout.decode())
-        except json.decoder.JSONDecodeError:
-            self.backend.testcase.assertEqual("", proc.stdout.decode())
         self.backend.validation_cache.add(fingerprint)
-        if len(validation_results) == 0:
-            # no errors!
-            return render_result
-        if validation_results[0]["source"] is None:
-            self.backend.testcase.assertEqual("", validation_results)
-        source_lines = validation_results[0]["source"].splitlines(keepends=True)
-        result = ""
-        for msg in validation_results[0]["messages"]:
-            line = msg["line"]
-            result += (
-                f"{self.origin.name}:\n"
-                + "".join(source_lines[line - 4 : line])
-                + " " * (msg["column"] - 1)
-                + "^" * msg["size"]
-                + f' {msg["ruleId"]}: {msg["message"]} on line {line}:{msg["column"]}\n'
-                + "".join(source_lines[line : line + 3])
-                + "\n\n"
-            )
+        kind = (
+            "doc"
+            if re.search(r"^\s*<!doctype", content, flags=re.IGNORECASE)
+            else "frag"
+        )
 
-        if result:
-            path = pathlib.Path(self.origin.name)
-            cwd = pathlib.Path.cwd()
-            path = path.relative_to(cwd)
-            with open("error-" + path.name, "w") as file:
-                file.write(validation_results[0]["source"])
-                result += f"Wrote HTML source to {file.name}."
-        self.backend.testcase.assertEqual("", result)
-        return render_result
+        # don't validate each template by itself, causes too much overhead
+        # instead, save a batch of them and then validate them all in one go
+        # this delays error detection a bit, but is MUCH faster
+        settings.validate_html.batches[kind].append((self.origin.name, content))
+        # FWIW, a batch size of 30 seems to result in less than 10% runtime overhead
+        if len(settings.validate_html.batches[kind]) >= 30:
+            settings.validate_html.validate(kind)
+
+        return content
 
 
 class TemplateCoverageLoader(BaseLoader):
@@ -674,7 +584,7 @@ class IetfTestRunner(DiscoverRunner):
             action='store_true', default=False,
             help='Show logging output going to LOG_USER in production mode')
         parser.add_argument('--validate-html',
-            action='store_true', dest="validate_html", default=False,
+            action='store_true', dest="validate_html", default=True,
             help='Validate all generated HTML with html-validate.org')
 
     def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, **kwargs):
@@ -684,7 +594,7 @@ class IetfTestRunner(DiscoverRunner):
         self.html_report = html_report
         self.permit_mixed_migrations = permit_mixed_migrations
         self.show_logging = show_logging
-        settings.validate_html = validate_html
+        settings.validate_html = self if validate_html else False
         settings.show_logging = show_logging
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
@@ -800,10 +710,52 @@ class IetfTestRunner(DiscoverRunner):
             s[1] = tuple(s[1])      # random.setstate() won't accept a list in lieu of a tuple
         factory.random.set_random_state(s)
 
-        if settings.validate_html:
-            print("     Validating all HTML generated during the tests; this will be slow")
+        if settings.validate_html is False:
+            print("     Not validating any generated HTML; "
+                  "please do so at least once before committing changes")
         else:
-            print("     Not validating any generated HTML; please do so at least once before committing changes")
+            print("     Validating all HTML generated during the tests")
+            self.batches = {"doc": [], "frag": []}
+
+            # keep the html-validate configs here, so they can be kept in sync easily
+            config = {}
+            config["frag"] = {
+                "extends": ["html-validate:recommended"],
+                "rules": {
+                    # many trailing whitespaces inserted by Django, ignore:
+                    "no-trailing-whitespace": "off",
+                    # navbar dropdowns can't use buttons, ignore:
+                    "prefer-native-element": [
+                        "error",
+                        {"exclude": ["button"]},
+                    ],
+                    # title length mostly only matters for SEO, ignore:
+                    "long-title": "off",
+                    # the current (older) version of Django seems to add type="text/javascript" for form media, ignore:
+                    "script-type": "off",
+                    # django-bootstrap5 seems to still generate 'checked="checked"', ignore:
+                    "attribute-boolean-style": "off",
+                },
+            }
+
+            config["doc"] = copy.deepcopy(config["frag"])
+            # enable doc-level rules
+            config["doc"]["extends"].append("html-validate:document")
+            # FIXME: we should find a way to use SRI, but ignore for now:
+            config["doc"]["rules"]["require-sri"] = "off"
+            # permit discontinuous heading numbering in cards
+            config["doc"]["rules"]["heading-level"] = [
+                "error",
+                {"sectioningRoots": [".card-body"]},
+            ]
+
+            self.config_file = {}
+            for kind in ["doc", "frag"]:
+                self.config_file[kind] = tempfile.NamedTemporaryFile(
+                    prefix="html-validate-config-"
+                )
+                self.config_file[kind].write(json.dumps(config[kind]).encode())
+                self.config_file[kind].flush()
 
         super(IetfTestRunner, self).setup_test_environment(**kwargs)
 
@@ -827,6 +779,65 @@ class IetfTestRunner(DiscoverRunner):
                     with open(self.coverage_file, "w") as file:
                         json.dump(self.coverage_master, file, indent=2, sort_keys=True)
         super(IetfTestRunner, self).teardown_test_environment(**kwargs)
+
+        if settings.validate_html:
+            # self.queue.put(None)
+            for kind in ["doc", "frag"]:
+                self.validate(kind)
+                self.config_file[kind].close()
+
+    def validate(self, kind):
+        if not self.batches[kind]:
+            return
+
+        testcase = TestCase()
+        cwd = pathlib.Path.cwd()
+        tmpdir = tempfile.TemporaryDirectory(prefix="html-validate-")
+        for (name, content) in self.batches[kind]:
+            path = pathlib.Path(tmpdir.name).joinpath(
+                pathlib.Path(name).relative_to(cwd)
+            )
+            pathlib.Path(path.parent).mkdir(parents=True, exist_ok=True)
+            with path.open(mode="w") as file:
+                file.write(content)
+
+        proc = subprocess.run(
+            [
+                "npx",
+                "html-validate",
+                "--formatter=json",
+                "--config=" + self.config_file[kind].name,
+                tmpdir.name,
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+
+        try:
+            validation_results = json.loads(proc.stdout.decode())
+        except json.decoder.JSONDecodeError:
+            testcase.fail(proc.stdout.decode())
+
+        errors = ""
+        for result in validation_results:
+            source_lines = result["source"].splitlines(keepends=True)
+            for msg in result["messages"]:
+                line = msg["line"]
+                errors += (
+                    f'\n{result["filePath"]}:\n'
+                    + "".join(source_lines[line - 4 : line])
+                    + " " * (msg["column"] - 1)
+                    + "^" * msg["size"]
+                    + f' {msg["ruleId"]}: {msg["message"]} '
+                    + f'on line {line}:{msg["column"]}\n'
+                    + "".join(source_lines[line : line + 3])
+                    + "\n"
+                )
+
+        if errors:
+            testcase.fail(errors)
+        tmpdir.cleanup()
+        self.batches[kind] = []
 
     def get_test_paths(self, test_labels):
         """Find the apps and paths matching the test labels, so we later can limit
