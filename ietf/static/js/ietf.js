@@ -46,6 +46,49 @@ $(document)
             .tooltip();
     });
 
+// Help browser to wrap long link texts (esp. email addresses) more sensibly.
+$(document)
+    .ready(function () {
+        $("#content a")
+            .each(function () {
+                // get the text of the <a> element
+                var text = $(this)
+                    .text();
+                // insert some <wbr> at strategic places
+                var newtext = text.replace(/([@._])/g, "$1<wbr>");
+                if (newtext === text) {
+                    return;
+                }
+                // now replace only that text inside the element's HTML
+                var newhtml = $(this)
+                    .html()
+                    .replace(text, newtext);
+                $(this)
+                    .html(newhtml);
+            });
+
+        // $("#content table.tablesorter")
+        //     .on("tablesorter:done", function () {
+        //         $("#content table.tablesorter .date")
+        //             .each(function () {
+        //                 // get the text of the <a> element
+        //                 var text = $(this)
+        //                     .text();
+        //                 // insert some <wbr> at strategic places
+        //                 var newtext = text.replace(/([-])/g, "$1<wbr>");
+        //                 if (newtext === text) {
+        //                     return;
+        //                 }
+        //                 // now replace only that text inside the element's HTML
+        //                 var newhtml = $(this)
+        //                     .html()
+        //                     .replace(text, newtext);
+        //                 $(this)
+        //                     .html(newhtml);
+        //             });
+        //     });
+    });
+
 $(document)
     .ready(function () {
 
@@ -110,15 +153,15 @@ $(function () {
     const contentElement = $('#content.ietf-auto-nav');
     if (contentElement.length > 0) {
         const headings = contentElement
-            .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible")
+            .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible, .nav-heading:visible")
             .not(".navskip");
 
         const contents = (headings.length > 0) &&
-          ($(headings)
-              .html()
-              .split("<")
-              .shift()
-              .trim());
+            ($(headings)
+                .html()
+                .split("<")
+                .shift()
+                .trim());
 
         if (
             contents &&
@@ -143,7 +186,7 @@ $(function () {
                      </nav>
                  </div>
                  `))
-                .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible")
+                .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible, .nav-heading:visible")
                 .not(".navskip")
                 .each(function () {
                     // Some headings have complex HTML in them - only use first part in that case.

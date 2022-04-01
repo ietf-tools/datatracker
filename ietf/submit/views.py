@@ -39,7 +39,7 @@ from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_fo
     post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
     get_submission, fill_in_submission, apply_checkers, save_files, 
     check_submission_revision_consistency, accept_submission, accept_submission_requires_group_approval,
-    accept_submission_requires_prev_auth_approval, update_submission_external_resources )
+    accept_submission_requires_prev_auth_approval, update_submission_external_resources, remote_ip )
 from ietf.stats.utils import clean_country_name
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.log import log
@@ -729,7 +729,7 @@ def add_manualpost_email(request, submission_id=None, access_token=None):
     
                 submission, submission_email_event = (
                     add_submission_email(request=request,
-                                         remote_ip=request.META.get('REMOTE_ADDR', None),
+                                         remote_ip=remote_ip(request),
                                          name = form.draft_name,
                                          rev=form.revision,
                                          submission_pk = submission_pk,

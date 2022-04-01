@@ -17,7 +17,10 @@
                 <th></th>
                 {% for h in meta.headers %}
                     {% if h.title != "Title" %}
-                        <th data-sort="{{ h.key }}">
+                        <th data-sort="{{ h.key }}"
+                            {% if h.title|slugify == "ipr" or h.title|slugify == "ad-shepherd" %}
+                              class="d-none d-sm-table-cell"
+                            {% endif %}>
                             {% if "sort_url" in h %}
                                 <a href="{{ h.sort_url }}">
                                     {{ h.title|cut:" " }}
@@ -40,7 +43,7 @@
 {% endif %}
 {% regroup docs by search_heading as grouped_docs %}
 {% for doc_group in grouped_docs %}
-    <thead>
+    <tbody>
         <tr class="table-info">
             <th></th>
             {% if color_ad_position %}
@@ -51,7 +54,7 @@
             {{ doc_group.grouper|plural:doc_group.list }} ({{ doc_group.list|length }} {{"hit"|plural:doc_group.list }})
             </th>
         </tr>
-    </thead>
+    </tbody>
     <tbody>
         {% for doc in doc_group.list %}
             {% include "doc/search/search_result_row.html" %}

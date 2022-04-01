@@ -5,8 +5,8 @@
         <tr>
             <th data-sort="date">Date</th>
             <th data-sort="from">From</th>
-            <th data-sort="to">To</th>
-            <th data-sort="date">Deadline</th>
+            <th class="d-none d-sm-table-cell" data-sort="to">To</th>
+            <th class="d-none d-sm-table-cell" data-sort="date">Deadline</th>
             <th data-sort="title">Title</th>
         </tr>
     </thead>
@@ -14,10 +14,10 @@
         <tbody>
             {% for liaison in liaisons %}
                 <tr>
-                    <td class="text-nowrap">{{ liaison.sort_date|date:"Y-m-d" }}</td>
+                    <td>{{ liaison.sort_date|date:"Y-m-d" }}</td>
                     <td class="liaison-group-col">{{ liaison.from_groups_display }}</td>
-                    <td class="liaison-group-col">{{ liaison.to_groups_display }}</td>
-                    <td class="text-nowrap">
+                    <td class="liaison-group-col d-none d-sm-table-cell">{{ liaison.to_groups_display }}</td>
+                    <td class="d-none d-sm-table-cell">
                         {{ liaison.deadline|default:"-"|date:"Y-m-d" }}
                         {% if liaison.deadline and not liaison.action_taken %}
                             <br>

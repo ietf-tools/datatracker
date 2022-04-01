@@ -989,8 +989,6 @@
                                 </div>
                             {% endif %}
                         </td>
-                        <td>
-                        </td>
                     </tr>
                 </tbody>
             {% endif %}
@@ -1103,14 +1101,14 @@
                 <a class="btn btn-primary btn-sm review-wish-add-remove-doc ajax {% if not doc.has_review_wish %}hide{% endif %}"
                    href="{% url "ietf.doc.views_review.review_wishes_remove" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
                    title="Remove from your review wishes for all teams">
-                    <i class="bi bi-chats">
+                    <i class="bi bi-chat-left-heart-fill">
                     </i>
                     Remove review wishes
                 </a>
                 <a class="btn btn-primary btn-sm review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %}{% if doc.has_review_wish %}hide{% endif %}"
                    href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
                    title="Add to your review wishes">
-                    <i class="bi bi-chats">
+                    <i class="bi bi-chat-left-heart">
                     </i>
                     Add review wish
                 </a>
@@ -1154,7 +1152,7 @@
                 <a class="btn btn-primary my-3" href="?include_text=1">
                     <i class="bi bi-caret-down">
                     </i>
-                    Show full document text
+                    Show full document
                 </a>
             {% endif %}
         {% else %}

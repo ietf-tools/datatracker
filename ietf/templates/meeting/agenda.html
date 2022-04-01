@@ -83,7 +83,7 @@
                 </span>
             {% endif %}
         </h2>
-        <iframe class="w-100 overflow-hidden border border-dark" scrolling="no"></iframe>
+        <iframe class="w-100 overflow-hidden border border-dark"></iframe>
     </div>
     <h2 class="mt-3">
         {% if personalize %}Personalize{% endif %}
@@ -110,7 +110,8 @@
                 {% ifchanged item.timeslot.time|date:"Y-m-d" %}
                     <tr class="table-primary show-with-children">
                         <th colspan="{% if personalize %}6{% else %}5{% endif %}"
-                            id="slot-{{ item.timeslot.time|slugify }}">
+                            id="slot-{{ item.timeslot.time|slugify }}"
+                            class="nav-heading">
                             {{ item.timeslot.time|date:"l, F j, Y" }}
                         </th>
                     </tr>
@@ -133,7 +134,7 @@
                                 {% endif %}
                             </td>
                         {% endif %}
-                        <td class="text-nowrap text-end">{% include "meeting/timeslot_start_end.html" %}</td>
+                        <td class="text-end">{% include "meeting/timeslot_start_end.html" %}</td>
                         <td colspan="3">
                             {% if item.timeslot.show_location and item.timeslot.location %}
                                 {% location_anchor item.timeslot %}
@@ -183,7 +184,7 @@
                         data-slot-start-ts="{{ item.start_timestamp }}"
                         data-slot-end-ts="{{ item.end_timestamp }}">
                         {% if personalize %}<th class="text-center"></th>{% endif %}
-                        <th class="text-nowrap text-end">{% include "meeting/timeslot_start_end.html" %}</th>
+                        <th class="text-end">{% include "meeting/timeslot_start_end.html" %}</th>
                         <th colspan="4">
                             {{ item.timeslot.time|date:"l" }}
                             {{ item.timeslot.name|capfirst_allcaps }}
@@ -211,7 +212,7 @@
                         </td>
                     {% endif %}
                     {% if item.slot_type.slug == 'plenary' %}
-                        <td class="text-nowrap text-end">{% include "meeting/timeslot_start_end.html" %}</td>
+                        <td class="text-end">{% include "meeting/timeslot_start_end.html" %}</td>
                         <td colspan="3">
                             {% if item.timeslot.show_location and item.timeslot.location %}
                                 {% location_anchor item.timeslot %}

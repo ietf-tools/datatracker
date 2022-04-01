@@ -25,7 +25,7 @@
                 </tr>
             </thead>
             {% for alias in docs %}
-                <thead>
+                <tbody>
                     <tr>
                         <th class="table-info" colspan="3">
                             IPR that is related to {{ alias.name|lstrip:"0"|rfcnospace|urlize_ietf_docs }} ("{{ alias.document.title }}")
@@ -34,7 +34,7 @@
                             {% endif %}
                         </th>
                     </tr>
-                </thead>
+                </tbody>
                 <tbody>
                     {% if alias.document.ipr %}
                         {% for ipr in alias.document.ipr %}

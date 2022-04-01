@@ -7,11 +7,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
         <title>{% block title %}{% endblock %}</title>
         <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}"/>
-        <link rel="stylesheet" type="text/css" href="{% block stylesheet %}{% static 'secr/css/base.css' %}{% endblock %}" />
-        <link rel="stylesheet" type="text/css" href="{% static 'secr/css/forms.css' %}" />
-        <link rel="stylesheet" type="text/css" href="{% static 'secr/css/custom.css' %}" />
+        <link rel="stylesheet" href="{% block stylesheet %}{% static 'secr/css/base.css' %}{% endblock %}" />
+        <link rel="stylesheet" href="{% static 'secr/css/forms.css' %}" />
+        <link rel="stylesheet" href="{% static 'secr/css/custom.css' %}" />
         {% if not server_mode == "production" %}
-            <link rel="stylesheet" type="text/css" href="{% static 'secr/css/test.css' %}" />
+            <link rel="stylesheet" href="{% static 'secr/css/test.css' %}" />
         {% endif %}
         {% block extrastyle %}{% endblock %}
 
@@ -39,12 +39,12 @@
 
                 <!-- Breadcrumbs -->
                 <div class="breadcrumbs">
-                    <table width="100%">
+                    <table>
                         <tr>
-                            <td align="left">
+                            <td class="text-start">
                                 {% block breadcrumbs %}<a href="/secr/">Home</a>{% endblock %}
                             </td>
-                            <td align="right">
+                            <td class="text-end">
                                 {% block instructions %}{% endblock %}
                             </td>
                         </tr>

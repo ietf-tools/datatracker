@@ -73,25 +73,25 @@
                                name="difftype"
                                value="--html"
                                id="html">
-                        <label for="html"class="btn btn-outline-primary">Side-by-side</label>
+                        <label for="html" class="btn btn-outline-primary">Side-by-side</label>
                         <input type="radio"
                                class="btn-check"
                                name="difftype"
                                value="--abdiff"
                                id="abdiff">
-                        <label for="abdiff"class="btn btn-outline-primary">Before-after</label>
+                        <label for="abdiff" class="btn btn-outline-primary">Before-after</label>
                         <input type="radio"
                                class="btn-check"
                                name="difftype"
                                value="--chbars"
                                id="chbars">
-                        <label for="chbars"class="btn btn-outline-primary">Change bars</label>
+                        <label for="chbars" class="btn btn-outline-primary">Change bars</label>
                         <input type="radio"
                                class="btn-check"
                                name="difftype"
                                value="--hwdiff"
                                id="hwdiff">
-                        <label for="hwdiff"class="btn btn-outline-primary">Wdiff</label>
+                        <label for="hwdiff" class="btn btn-outline-primary">Wdiff</label>
                     </div>
                 </div>
             </div>
@@ -120,7 +120,7 @@
         <tbody>
             {% for e in events %}
                 <tr id="history-{{ e.pk }}">
-                    <td class="text-nowrap">
+                    <td>
                         <div title="{{ e.time|date:'Y-m-d H:i:s O' }}">{{ e.time|date:"Y-m-d" }}</div>
                     </td>
                     <td class="text-end">{{ e.rev }}</td>

@@ -27,11 +27,11 @@
             </tr>
         </thead>
         {% for state, docs in grouped_docs %}
-            <thead>
+            <tbody>
                 <tr class="table-info">
                     <th colspan="5">{{ state.name }}</th>
                 </tr>
-            </thead>
+            </tbody>
             <tbody>
                 {% for doc in docs %}
                     <tr>

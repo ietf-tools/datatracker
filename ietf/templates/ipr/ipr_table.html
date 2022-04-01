@@ -18,7 +18,7 @@
         <tbody>
             {% for ipr in iprs %}
                 <tr>
-                    <td class="text-nowrap text-end">{{ ipr.time|date:"Y-m-d" }}</td>
+                    <td class="text-end">{{ ipr.time|date:"Y-m-d" }}</td>
                     <td class="text-end">{{ ipr.id }}</td>
                     <td>
                         {% if ipr.state_id == 'posted' or administrative_list %}

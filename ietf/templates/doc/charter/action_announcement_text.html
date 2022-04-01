@@ -20,8 +20,7 @@
         <button type="submit" class="btn btn-warning" name="regenerate_text" value="Regenerate">Regenerate
         </button>
         {% if user|has_role:"Secretariat" %}
-            <a type="submit"
-               class="btn btn-primary"
+            <a class="btn btn-primary"
                href="{% url 'ietf.doc.views_charter.approve' name=charter.canonical_name %}">
                 Charter approval page
             </a>

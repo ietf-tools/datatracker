@@ -17,7 +17,7 @@
             {% cycle '' 'table-active' as alternator silent %}
             {% for item in alias.list %}
                 <tr {% if alternator %}class="{{ alternator }}"{% endif %}>
-                    <td class="text-nowrap">{{ alias.grouper }}{{ item.alias_type|default:'' }}@{{ ietf_domain }}</td>
+                    <td>{{ alias.grouper }}{{ item.alias_type|default:'' }}@{{ ietf_domain }}</td>
                     <td>{{ item.expansion }}</td>
                 </tr>
             {% endfor %}

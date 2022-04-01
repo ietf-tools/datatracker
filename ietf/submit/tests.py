@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2020, All Rights Reserved
+# Copyright The IETF Trust 2011-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -24,7 +24,7 @@ from django.utils.encoding import force_str, force_text
 import debug                            # pyflakes:ignore
 
 from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
-                               post_submission)
+                               post_submission, validate_submission_name, validate_submission_rev)
 from ietf.doc.factories import DocumentFactory, WgDraftFactory, IndividualDraftFactory, IndividualRfcFactory
 from ietf.doc.models import ( Document, DocAlias, DocEvent, State,
     BallotPositionDocEvent, DocumentAuthor, SubmissionDocEvent )
@@ -83,7 +83,7 @@ class BaseSubmitTestCase(TestCase):
     def archive_dir(self):
         return settings.INTERNET_DRAFT_ARCHIVE_DIR
 
-def submission_file(name, rev, group, format, templatename, author=None, email=None, title=None, year=None, ascii=True):
+def submission_file(name_in_doc, name_in_post, group, templatename, author=None, email=None, title=None, year=None, ascii=True):
     # construct appropriate text draft
     f = io.open(os.path.join(settings.BASE_DIR, "submit", templatename))
     template = f.read()
@@ -104,7 +104,7 @@ def submission_file(name, rev, group, format, templatename, author=None, email=N
             year=year,
             month=datetime.date.today().strftime("%B"),
             day=datetime.date.today().strftime("%d"),
-            name="%s-%s" % (name, rev),
+            name=name_in_doc,
             group=group or "",
             author=author.ascii if ascii else author.name,
             asciiAuthor=author.ascii,
@@ -115,7 +115,7 @@ def submission_file(name, rev, group, format, templatename, author=None, email=N
             title=title,
     )
     file = StringIO(submission_text)
-    file.name = "%s-%s.%s" % (name, rev, format)
+    file.name = name_in_post
     return file, author
 
 def create_draft_submission_with_rev_mismatch(rev='01'):
@@ -168,7 +168,7 @@ class SubmitTests(BaseSubmitTestCase):
 
         for format in formats:
             fn = '.'.join((base_filename or 'test_submission', format))
-            files[format], __ = submission_file(name, rev, group, format, fn, author=author)
+            files[format], __ = submission_file(f'{name}-{rev}', f'{name}-{rev}.{format}', group, fn, author=author)
 
         r = self.client.post(url, files)
         if r.status_code != 302:
@@ -1599,7 +1599,7 @@ class SubmitTests(BaseSubmitTestCase):
 
         
     def submit_bad_file(self, name, formats):
-        rev = ""
+        rev = "00"
         group = None
 
         # break early in case of missing configuration
@@ -1614,7 +1614,7 @@ class SubmitTests(BaseSubmitTestCase):
         # submit
         files = {}
         for format in formats:
-            files[format], author = submission_file(name, rev, group, "bad", "test_submission.bad")
+            files[format], author = submission_file(f'{name}-{rev}', f'{name}-{rev}.bad', group, "test_submission.bad")
 
         r = self.client.post(url, files)
 
@@ -1625,16 +1625,15 @@ class SubmitTests(BaseSubmitTestCase):
 
         return r, q, m
         
-    def submit_bad_doc_name_with_ext(self, name, formats):
+    def submit_bad_doc_name_with_ext(self, name_in_doc, name_in_post, formats):
         group = None
         url = urlreverse('ietf.submit.views.upload_submission')
 
         # submit
         files = {}
         for format in formats:
-            rev = '00.%s' % format
-            files[format], author = submission_file(name, rev, group, format, "test_submission.%s" % format)
-            files[format].name = "%s-%s.%s" % (name, 00, format)
+            files[format], author = submission_file(name_in_doc, name_in_post, group, "test_submission.%s" % format)
+            files[format].name = name_in_post
 
         r = self.client.post(url, files)
 
@@ -1652,10 +1651,15 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertIn('Expected an TXT file of type "text/plain"', m)
         self.assertIn('document does not contain a legitimate name', m)
 
-    def test_submit_bad_doc_name_txt(self):
-        r, q, m = self.submit_bad_doc_name_with_ext("draft-foo.dot-bar", ["txt"])
+    def test_submit_bad_doc_name(self):
+        r, q, m = self.submit_bad_doc_name_with_ext(name_in_doc="draft-foo.dot-bar", name_in_post="draft-foo.dot-bar", formats=["txt"])
         self.assertIn('contains a disallowed character with byte code: 46', m)
-        r, q, m = self.submit_bad_doc_name_with_ext("draft-foo-bar", ["xml"])
+        # This actually is allowed by the existing code. A significant rework of the validation mechanics is needed.
+        # r, q, m = self.submit_bad_doc_name_with_ext(name_in_doc="draft-foo-bar-00.txt", name_in_post="draft-foo-bar-00.txt", formats=["txt"])
+        # self.assertIn('Did you include a filename extension in the name by mistake?', m)
+        r, q, m = self.submit_bad_doc_name_with_ext(name_in_doc="draft-foo-bar-00.xml", name_in_post="draft-foo-bar-00.xml", formats=["xml"])
+        self.assertIn('Did you include a filename extension in the name by mistake?', m)
+        r, q, m = self.submit_bad_doc_name_with_ext(name_in_doc="../malicious-name-in-content-00", name_in_post="../malicious-name-in-post-00.xml", formats=["xml"])
         self.assertIn('Did you include a filename extension in the name by mistake?', m)
 
     def test_submit_bad_file_xml(self):
@@ -1692,7 +1696,7 @@ class SubmitTests(BaseSubmitTestCase):
                 fn = os.path.join(dir, "%s-%s.%s" % (name, rev, format))
                 with io.open(fn, 'w') as f:
                     f.write("a" * 2000)
-                files[format], author = submission_file(name, rev, group, format, "test_submission.%s" % format)
+                files[format], author = submission_file(f'{name}-{rev}', f'{name}-{rev}.{format}', group, "test_submission.%s" % format)
             r = self.client.post(url, files)
 
             self.assertEqual(r.status_code, 200)
@@ -1717,7 +1721,7 @@ class SubmitTests(BaseSubmitTestCase):
         user = UserFactory(first_name="Jörgen", last_name="Nilsson")
         author = PersonFactory(user=user)
 
-        file, __ = submission_file(name, rev, group, "txt", "test_submission.nonascii", author=author, ascii=False)
+        file, __ = submission_file(f'{name}-{rev}', f'{name}-{rev}.txt', group, "test_submission.nonascii", author=author, ascii=False)
         files = {"txt": file }
 
         r = self.client.post(url, files)
@@ -1738,7 +1742,7 @@ class SubmitTests(BaseSubmitTestCase):
         for e in author.email_set.all():
             e.delete()
 
-        files = {"txt": submission_file(name, rev, group, "txt", "test_submission.txt", author=author, ascii=True)[0] }
+        files = {"txt": submission_file(f'{name}-{rev}', f'{name}-{rev}.txt', group, "test_submission.txt", author=author, ascii=True)[0] }
 
         # submit
         url = urlreverse('ietf.submit.views.upload_submission')
@@ -1762,7 +1766,7 @@ class SubmitTests(BaseSubmitTestCase):
         email.address = '@bad.email'
         email.save()
 
-        files = {"xml": submission_file(name, rev, group, "xml", "test_submission.xml", author=author, ascii=False)[0] }
+        files = {"xml": submission_file(f'{name}-{rev}',f'{name}-{rev}.xml', group, "test_submission.xml", author=author, ascii=False)[0] }
 
         # submit
         url = urlreverse('ietf.submit.views.upload_submission')
@@ -1782,7 +1786,7 @@ class SubmitTests(BaseSubmitTestCase):
         group = None
 
         # submit
-        files = {"txt": submission_file(name, rev, group, "txt", "test_submission_invalid_yang.txt")[0] }
+        files = {"txt": submission_file(f'{name}-{rev}', f'{name}-{rev}.txt', group, "test_submission_invalid_yang.txt")[0] }
 
         url = urlreverse('ietf.submit.views.upload_submission')
         r = self.client.post(url, files)
@@ -2673,7 +2677,7 @@ Subject: test
         # submit
         files = {}
         for format in formats:
-            files[format], author = submission_file(name, rev, group, format, "test_submission.%s" % format)
+            files[format], author = submission_file(f'{name}-{rev}', f'{name}-{rev}.{format}', group, "test_submission.%s" % format)
 
         r = self.client.post(url, files)
         if r.status_code != 302:
@@ -2736,7 +2740,7 @@ class ApiSubmitTests(BaseSubmitTestCase):
             email = author.user.username
         # submit
         data = {}
-        data['xml'], author = submission_file(name, rev, group, 'xml', "test_submission.xml", author=author, email=email, title=title, year=year)
+        data['xml'], author = submission_file(f'{name}-{rev}', f'{name}-{rev}.xml', group, "test_submission.xml", author=author, email=email, title=title, year=year)
         data['user'] = email
         r = self.client.post(url, data)
         return r, author, name
@@ -2857,7 +2861,7 @@ class RefsTests(BaseSubmitTestCase):
     def test_draft_refs_identification(self):
 
         group = None
-        file, __ = submission_file('draft-some-subject', '00', group, 'txt', "test_submission.txt", )
+        file, __ = submission_file('draft-some-subject-00', 'draft-some-subject-00.txt', group, "test_submission.txt", )
         draft = PlaintextDraft(file.read(), file.name)
         refs = draft.get_refs()
         self.assertEqual(refs['rfc2119'], 'norm')
@@ -2917,3 +2921,52 @@ class PostSubmissionTests(BaseSubmitTestCase):
         args, kwargs = mock_rebuild_reference_relations.call_args
         self.assertEqual(args[1], mock_find_filenames.return_value)
 
+
+class ValidateSubmissionFilenameTests(BaseSubmitTestCase):
+    def test_validate_submission_name(self):
+        # This test does not need BaseSubmitTestCase, it could use TestCase
+        good_names = (
+            'draft-ietf-mars-foobar',
+            'draft-ietf-mars-foobar-01',
+            'draft-myname-mydraft')
+        bad_names = (
+            'draft-includes-filename-extension-01.txt',
+            'does-not-start-with-draft',
+            'draft-Upper-Case',
+            'draft-double--dash',
+            'draft-trailing-dash-',
+            'draft-tooshort',
+            'draft-toolong-this-is-a-very-long-name-for-an-internet-draft',
+            u'draft-contains-non-ascii-göran')
+
+        for n in good_names:
+            msg = validate_submission_name(n)
+            self.assertIsNone(msg)
+
+        for n in bad_names:
+            msg = validate_submission_name(n)
+            self.assertIsNotNone(msg)
+
+    def test_validate_submission_rev(self):
+        # This test needs BaseSubmitTestCase
+        ind_doc = IndividualDraftFactory()
+        old_wg_doc = WgDraftFactory(relations=[('replaces',ind_doc)])
+        new_wg_doc = WgDraftFactory(rev='01', relations=[('replaces',old_wg_doc)])
+        path = Path(self.archive_dir) / f'{new_wg_doc.name}-{new_wg_doc.rev}.txt'
+        path.touch()
+
+        bad_revs = (None, '', '2', 'aa', '00', '01', '100', '002', u'öö')
+        for rev in bad_revs:
+            msg = validate_submission_rev(new_wg_doc.name, rev)
+            self.assertIsNotNone(msg)
+
+        new_rev = '%02d' % (int(ind_doc.rev)+1)
+        msg = validate_submission_rev(ind_doc.name, new_rev)
+        self.assertIsNotNone(msg)
+
+        new_rev = '%02d' % (int(old_wg_doc.rev)+1)
+        msg = validate_submission_rev(old_wg_doc.name, new_rev)
+        self.assertIsNotNone(msg)
+
+        msg = validate_submission_rev(new_wg_doc.name, '02')
+        self.assertIsNone(msg)

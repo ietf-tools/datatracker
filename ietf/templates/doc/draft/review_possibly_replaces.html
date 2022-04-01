@@ -6,7 +6,7 @@
 {% block content %}
     {% origin %}
     <h1>Review suggestions for documents that {{ doc }} replaces</h1>
-    <form name="review-suggested-replaces" role="form" method="post">
+    <form name="review-suggested-replaces" method="post">
         {% csrf_token %}
         {% bootstrap_form form %}
         <a class="btn btn-secondary float-end" href="{{ doc.get_absolute_url }}">Back</a>

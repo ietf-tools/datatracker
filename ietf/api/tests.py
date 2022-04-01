@@ -354,7 +354,6 @@ class CustomApiTests(TestCase):
         r = self.client.get(url)
         data = r.json()
         self.assertEqual(data['version'], ietf.__version__+ietf.__patch__)
-        self.assertIn(data['date'], ietf.__date__)
 
     def test_api_appauth(self):
         url = urlreverse('ietf.api.views.app_auth')

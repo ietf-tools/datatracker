@@ -1,6 +1,6 @@
 {% load ams_filters %}
 <table class="full-width">
-    <col width="200">
+    
     <tr class="row1"><td>Working Group Name:</td><td>{{ group.name }} ({{ group.acronym }})</td></tr>
     <tr class="row2"><td>Area Name:</td><td>{{ group.parent }}</td></tr>
     <tr class="row1"><td>Number of Sessions Requested:</td><td>{% if session.third_session %}3{% else %}{{ session.num_session }}{% endif %}</td></tr>

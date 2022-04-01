@@ -40,7 +40,7 @@
                         {% endif %}
                     </li>
                 {% empty %}
-                    <i>NONE</i>
+                    <li><i>NONE</i></li>
                 {% endfor %}
             </ul>
         </div> <!-- inline-related -->
@@ -52,7 +52,7 @@
                 {% for group in scheduled_groups %}
                     <li><a href="{% url "ietf.secr.sreq.views.view" acronym=group.acronym %}">{{ group.acronym }} - {{ group.status_message }}</a></li>
                 {% empty %}
-                    <i>NONE</i>
+                    <li><i>NONE</i></li>
                 {% endfor %}
             </ul>
         </div> <!-- inline-related -->

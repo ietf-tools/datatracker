@@ -24,17 +24,15 @@
                 <th data-sort="type">Type</th>
                 <th data-sort="date">Requested</th>
                 <th data-sort="date">Deadline</th>
-                <th data-sort="reviewer">Reviewer</th>
                 <th data-sort="state">Document state</th>
                 <th data-sort="date">IESG Telechat</th>
             </tr>
         </thead>
-        {% if unassigned_review_requests %}
-            <thead>
+            <tbody>
                 <tr class="table-info" id="unassigned-review-requests">
                     <th colspan="7">Unassigned review requests</th>
                 </tr>
-            </thead>
+            </tbody>
             <tbody>
                 {% for r in unassigned_review_requests %}
                     <tr>
@@ -60,13 +58,6 @@
                                           title="{{ r.due }} day{{ r.due|pluralize }} past deadline">{{ r.due }} day{{ r.due|pluralize }}</span>
                                 {% endif %}
                             </td>
-                            <td>
-                                {% if r.reviewer %}
-                                    {% person_link r.reviewer.person %}
-                                    {% if r.state_id == "accepted" %}<span class="badge bg-success">Accepted</span>{% endif %}
-                                    {% if r.reviewer_unavailable %}<span class="badge bg-danger">Unavailable</span>{% endif %}
-                                {% endif %}
-                            </td>
                             <td>{{ r.doc.friendly_state }}</td>
                             <td>
                                 {% if r.doc.telechat_date %}{{ r.doc.telechat_date }}{% endif %}
@@ -74,13 +65,24 @@
                         </tr>
                     {% endfor %}
                 </tbody>
-            {% endif %}
-            {% if open_review_assignments %}
+            </table>
+            <table class="table table-sm table-striped tablesorter">
                 <thead>
+                    <tr>
+                        <th data-sort="request">Request</th>
+                        <th data-sort="type">Type</th>
+                        <th data-sort="date">Requested</th>
+                        <th data-sort="date">Deadline</th>
+                        <th data-sort="reviewer">Reviewer</th>
+                        <th data-sort="state">Document state</th>
+                        <th data-sort="date">IESG Telechat</th>
+                    </tr>
+                </thead>
+                <tbody>
                     <tr class="table-info" id="open_review_assignments">
                         <th colspan="7">Open review requests</th>
                     </tr>
-                </thead>
+                </tbody>
                 <tbody>
                     {% for a in open_review_assignments %}
                         <tr>
@@ -111,7 +113,6 @@
                     {% endfor %}
                 </tbody>
             </table>
-        {% endif %}
         <h2 class="mt-5" id="closed-review-requests">Closed review requests and assignments</h2>
         <form class="closed-review-filter" action="#closed-review-requests">
             Past:
@@ -133,7 +134,7 @@
                         Type
                     </th>
                     <th data-sort="date">
-                        Requested/Assigned
+                        Requested
                     </th>
                     <th data-sort="date">
                         Deadline
@@ -141,25 +142,18 @@
                     <th data-sort="date">
                         Closed
                     </th>
-                    <th data-sort="reviewer">
-                        Reviewer
-                    </th>
                     <th data-sort="state">
                         State
                     </th>
-                    <th data-sort="result">
-                        Result
-                    </th>
                 </tr>
             </thead>
-            {% if closed_review_requests %}
-                <thead>
+                <tbody>
                     <tr class="table-info">
                         <th colspan="8">
                             Closed review requests
                         </th>
                     </tr>
-                </thead>
+                </tbody>
                 <tbody>
                     {% for r in closed_review_requests %}
                         <tr>
@@ -181,24 +175,46 @@
                                 {{ r.request_closed_time|date:"Y-m-d" }}
                             </td>
                             <td>
-                            </td>
-                            <td>
                                 {{ r.state.name }}
-                            </td>
-                            <td>
                             </td>
                         </tr>
                     {% endfor %}
                 </tbody>
-            {% endif %}
-            {% if closed_review_assignments %}
+            </table>
+            <table class="table table-sm table-striped tablesorter">
                 <thead>
+                    <tr>
+                        <th data-sort="request">Request</th>
+                        <th data-sort="type">
+                            Type
+                        </th>
+                        <th data-sort="date">
+                            Assigned
+                        </th>
+                        <th data-sort="date">
+                            Deadline
+                        </th>
+                        <th data-sort="date">
+                            Closed
+                        </th>
+                        <th data-sort="reviewer">
+                            Reviewer
+                        </th>
+                        <th data-sort="state">
+                            State
+                        </th>
+                        <th data-sort="result">
+                            Result
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
                     <tr class="table-info">
                         <th colspan="8">
                             Closed review assignments
                         </th>
                     </tr>
-                </thead>
+                </tbody>
                 <tbody>
                     {% for a in closed_review_assignments %}
                         <tr>
@@ -231,7 +247,6 @@
                         </tr>
                     {% endfor %}
                 </tbody>
-            {% endif %}
         </table>
     {% endblock %}
     {% block js %}
