@@ -729,10 +729,17 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
     if request.method == 'POST':
         action = request.POST.get('action')
-        # allow updateview action even if can_edit is false, it affects only the user's session
-        if not (can_edit or action == 'updateview'):
+        if action == 'updateview':
+            # allow updateview action even if can_edit is false, it affects only the user's session
+            sess_data = request.session.setdefault('edit_meeting_schedule', {})
+            enabled_types = [ts_type.slug for ts_type in TimeSlotTypeName.objects.filter(
+                used=True,
+                slug__in=request.POST.getlist('enabled_timeslot_types[]', [])
+            )]
+            sess_data['enabled_timeslot_types'] = enabled_types
+            return _json_response(True)
+        elif not can_edit:
             permission_denied(request, "Can't edit this schedule.")
-
 
         # Handle ajax requests. Most of these return JSON responses with at least a 'success' key.
         # For the swapdays and swaptimeslots actions, the response is either a redirect to the
@@ -863,15 +870,6 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
                 target_timeslot.time - origin_timeslot.time,
             )
             return HttpResponseRedirect(request.get_full_path())
-
-        elif action == 'updateview':
-            sess_data = request.session.setdefault('edit_meeting_schedule', {})
-            enabled_types = [ts_type.slug for ts_type in TimeSlotTypeName.objects.filter(
-                used=True,
-                slug__in=request.POST.getlist('enabled_timeslot_types[]', [])
-            )]
-            sess_data['enabled_timeslot_types'] = enabled_types
-            return _json_response(True)
 
         return _json_response(False, error="Invalid parameters")
 
