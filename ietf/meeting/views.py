@@ -566,7 +566,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
                 for session_pk, grouped_session_pks in itertools.groupby(session_pks):
                     # count is the number of instances of session_pk - should only have multiple in the
                     # case of bethere constraints, where there will be one per person.pk
-                    count = sum(1 for i in grouped_session_pks)
+                    count = len(list(grouped_session_pks))  # list() needed because iterator has no len()
                     constraint_hints[ConstraintHint(constraint_names[name_id], count)].add(session_pk)
 
             # The constraint hint key is a tuple (ConstraintName, count). Value is the set of sessions pks that

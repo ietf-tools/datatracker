@@ -57,7 +57,7 @@ class EditorTagsTests(TestCase):
         constraint_names.add(ConstraintName(slug='responsible_ad', name='AD'))
         # Reversed names are also added at run-time
         reversed = [
-            ConstraintName(slug=n.slug + "-reversed", name="{} - reversed".format(n.name))
+            ConstraintName(slug=f'{n.slug}-reversed', name=f'{n.name} - reversed')
             for n in constraint_names
         ]
         constraint_names.update(reversed)
