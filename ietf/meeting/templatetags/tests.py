@@ -7,6 +7,7 @@ from pyquery import PyQuery
 
 from ietf.meeting.factories import FloorPlanFactory, RoomFactory, TimeSlotFactory
 from ietf.meeting.templatetags.agenda_custom_tags import AnchorNode
+from ietf.meeting.templatetags.editor_tags import constraint_icon_for
 from ietf.name.models import ConstraintName
 from ietf.utils.test_utils import TestCase
 
@@ -63,31 +64,63 @@ class EditorTagsTests(TestCase):
         constraint_names.update(reversed)
         return constraint_names
 
-    def test_constraint_icon_for(self):
+    def test_constraint_icon_for_supports_all(self):
         """constraint_icon_for tag should render all the necessary ConstraintNames
 
         Relies on ConstraintNames in the names.json fixture being up-to-date
         """
-        constraint_names = self._supported_constraint_names()
+        for cn in self._supported_constraint_names():
+            self.assertGreater(len(constraint_icon_for(cn)), 0)
+            self.assertGreater(len(constraint_icon_for(cn, count=1)), 0)
+
+    def test_constraint_icon_for(self):
+        """Constraint icons should render as expected
+
+        This is the authoritative definition of what should be rendered for each constraint.
+        Update this before changing the constraint_icon_for tag.
+        """
+        test_cases = (
+            # (ConstraintName slug, additional tag parameters, expected output HTML)
+            ('conflict', '', '<span class="encircled">1</span>'),
+            ('conflic2', '', '<span class="encircled">2</span>'),
+            ('conflic3', '', '<span class="encircled">3</span>'),
+            ('conflict-reversed', '', '<span class="encircled">-1</span>'),
+            ('conflic2-reversed', '', '<span class="encircled">-2</span>'),
+            ('conflic3-reversed', '', '<span class="encircled">-3</span>'),
+            ('bethere', '27', '<i class="bi bi-person"></i>27'),
+            ('timerange', '', '<i class="bi bi-calendar"></i>'),
+            ('time_relation', '', '\u0394'),  # \u0394 is a capital Greek Delta
+            ('wg_adjacent', '', '<i class="bi bi-skip-end"></i>'),
+            ('wg_adjacent-reversed', '', '-<i class="bi bi-skip-end"></i>'),
+            ('chair_conflict', '', '<i class="bi bi-person-circle"></i>'),
+            ('chair_conflict-reversed', '', '-<i class="bi bi-person-circle"></i>'),
+            ('tech_overlap', '', '<i class="bi bi-link"></i>'),
+            ('tech_overlap-reversed', '', '-<i class="bi bi-link"></i>'),
+            ('key_participant', '', '<i class="bi bi-key"></i>'),
+            ('key_participant-reversed', '', '-<i class="bi bi-key"></i>'),
+            ('joint_with_groups', '', '<i class="bi bi-merge"></i>'),
+            ('responsible_ad', '', '<span class="encircled">AD</span>'),
+        )
+        # Create a template with a cn_i context variable for the ConstraintName in each test case.
         template = Template(
             '{% load editor_tags %}<html>' +
-            ''.join(  # test without count param
-                f'<div id="{cn.slug}">{{% constraint_icon_for {cn.slug.replace("-", "_")} %}}</div>'
-                for cn in constraint_names
-            ) +
-            ''.join(  # test with count param
-                f'<div id="{cn.slug}-count">{{% constraint_icon_for {cn.slug.replace("-", "_")} 3 %}}</div>'
-                for cn in constraint_names
+            ''.join(
+                f'<div id="test-case-{index}">{{% constraint_icon_for cn_{index} {params} %}}</div>'
+                for index, (_, params, _) in enumerate(test_cases)
             ) +
             '</html>'
         )
-        result = template.render(Context({cn.slug.replace('-', '_'): cn for cn in constraint_names}))
+        # Construct the cn_i in the Context and render.
+        result = template.render(
+            Context({
+                f'cn_{index}': ConstraintName(slug=slug)
+                for index, (slug, _, _) in enumerate(test_cases)
+            })
+        )
         q = PyQuery(result)
-        for cn in constraint_names:
-            elts = q(f'div#{cn.slug}')
-            self.assertEqual(len(elts), 1)
-            self.assertGreater(len(elts.html()), 0)
-
-            elts = q(f'div#{cn.slug}-count')
-            self.assertEqual(len(elts), 1)
-            self.assertGreater(len(elts.html()), 0)
+        for index, (slug, params, expected) in enumerate(test_cases):
+            self.assertHTMLEqual(
+                q(f'#test-case-{index}').html(),
+                expected,
+                f'Unexpected output for {slug} {params}',
+            )

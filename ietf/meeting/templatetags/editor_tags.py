@@ -12,7 +12,7 @@ register = template.Library()
 
 @register.simple_tag
 def constraint_icon_for(constraint_name, count=None):
-    # icons must be valid HTML
+    # icons must be valid HTML and kept up to date with tests.EditorTagTests.test_constraint_icon_for()
     icons = {
         'conflict': '<span class="encircled">{reversed}1</span>',
         'conflic2': '<span class="encircled">{reversed}2</span>',
@@ -24,8 +24,8 @@ def constraint_icon_for(constraint_name, count=None):
         'chair_conflict': '{reversed}<i class="bi bi-person-circle"></i>',
         'tech_overlap': '{reversed}<i class="bi bi-link"></i>',
         'key_participant': '{reversed}<i class="bi bi-key"></i>',
-        'joint_with_groups': '<i class=\"bi bi-merge\"></i>',
-        'responsible_ad': '<span class=\"encircled\">AD</span>',
+        'joint_with_groups': '<i class="bi bi-merge"></i>',
+        'responsible_ad': '<span class="encircled">AD</span>',
     }
     reversed_suffix = '-reversed'
     if constraint_name.slug.endswith(reversed_suffix):
