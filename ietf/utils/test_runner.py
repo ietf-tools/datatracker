@@ -193,7 +193,7 @@ class ValidatingTemplate(Template):
             # only validate fragments in our source tree
             return content
 
-        fingerprint = hash(content)
+        fingerprint = hash(content) + sys.maxsize + 1  # make hash positive
         if fingerprint in self.backend.validation_cache:
             # already validated this HTML fragment, skip it
             # as an optimization, make page a bit smaller by not returning HTML for the menus
@@ -210,7 +210,9 @@ class ValidatingTemplate(Template):
         # don't validate each template by itself, causes too much overhead
         # instead, save a batch of them and then validate them all in one go
         # this delays error detection a bit, but is MUCH faster
-        settings.validate_html.batches[kind].append((self.origin.name, content))
+        settings.validate_html.batches[kind].append(
+            (self.origin.name, content, fingerprint)
+        )
         # FWIW, a batch size of 30 seems to result in less than 10% runtime overhead
         if len(settings.validate_html.batches[kind]) >= 30:
             settings.validate_html.validate(kind)
@@ -793,30 +795,35 @@ class IetfTestRunner(DiscoverRunner):
         testcase = TestCase()
         cwd = pathlib.Path.cwd()
         tmpdir = tempfile.TemporaryDirectory(prefix="html-validate-")
-        for (name, content) in self.batches[kind]:
+        for (name, content, fingerprint) in self.batches[kind]:
             path = pathlib.Path(tmpdir.name).joinpath(
                 pathlib.Path(name).relative_to(cwd)
             )
+            path = path.with_name(path.stem + "-" + hex(fingerprint) + path.suffix)
             pathlib.Path(path.parent).mkdir(parents=True, exist_ok=True)
             with path.open(mode="w") as file:
                 file.write(content)
+        self.batches[kind] = []
 
-        proc = subprocess.run(
-            [
-                "npx",
-                "html-validate",
-                "--formatter=json",
-                "--config=" + self.config_file[kind].name,
-                tmpdir.name,
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
+        validation_results = None
+        with tempfile.NamedTemporaryFile() as stdout:
+            subprocess.run(
+                [
+                    "npx",
+                    "html-validate",
+                    "--formatter=json",
+                    "--config=" + self.config_file[kind].name,
+                    tmpdir.name,
+                ],
+                stdout=stdout,
+                stderr=stdout,
+            )
 
-        try:
-            validation_results = json.loads(proc.stdout.decode())
-        except json.decoder.JSONDecodeError:
-            testcase.fail(proc.stdout.decode())
+            stdout.seek(0)
+            try:
+                validation_results = json.load(stdout)
+            except json.decoder.JSONDecodeError:
+                testcase.fail(stdout.read())
 
         errors = ""
         for result in validation_results:
@@ -825,19 +832,18 @@ class IetfTestRunner(DiscoverRunner):
                 line = msg["line"]
                 errors += (
                     f'\n{result["filePath"]}:\n'
-                    + "".join(source_lines[line - 4 : line])
+                    + "".join(source_lines[line - 5 : line])
                     + " " * (msg["column"] - 1)
                     + "^" * msg["size"]
                     + f' {msg["ruleId"]}: {msg["message"]} '
                     + f'on line {line}:{msg["column"]}\n'
-                    + "".join(source_lines[line : line + 3])
+                    + "".join(source_lines[line : line + 5])
                     + "\n"
                 )
 
         if errors:
             testcase.fail(errors)
         tmpdir.cleanup()
-        self.batches[kind] = []
 
     def get_test_paths(self, test_labels):
         """Find the apps and paths matching the test labels, so we later can limit
