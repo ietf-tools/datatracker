@@ -94,7 +94,7 @@ $(function () {
             let sessionInfoContainer = schedEditor.find(".scheduling-panel .session-info-container");
             sessionInfoContainer.html(jQuery(element).find(".session-info").html());
 
-            sessionInfoContainer.find("[data-original-title]").tooltip();
+            sessionInfoContainer.find("[data-bs-original-title]").tooltip();
 
             sessionInfoContainer.find(".time").text(jQuery(element).closest(".timeslot").data('scheduledatlabel'));
 
