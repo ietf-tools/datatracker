@@ -12,7 +12,7 @@
         <p>You are about to cancel: {{ object }}</p>
         {% if extra %}<p>{{ extra }}</p>{% endif %}
 
-        <form action="" method="post">{% csrf_token %}
+        <form method="post">{% csrf_token %}
             <div>
                 <p>
                     <input type="hidden" name="post" value="yes">

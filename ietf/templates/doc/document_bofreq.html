@@ -155,7 +155,7 @@
             {{ doc.name }}-{{ doc.rev }}
         </div>
         <div class="card-body">
-            {{ content|linkify|urlize_ietf_docs }}
+            {{ content|urlize_ietf_docs|linkify }}
         </div>
     </div>
 {% endblock %}

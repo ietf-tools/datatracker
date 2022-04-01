@@ -475,6 +475,14 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         # option to swap. If we used the first or last day, a fencepost error in
         # disabling options by date might be hidden.
         clicked_index = 1
+        # scroll so the button we want to click is just below the navbar, otherwise it may
+        # fall beneath the sessions panel
+        navbar = self.driver.find_element_by_class_name('navbar')
+        self.driver.execute_script(
+            'window.scrollBy({top: %s, behavior: "instant"})' % (
+                    future_swap_days_buttons[1].location['y'] - navbar.size['height']
+            )
+        )
         future_swap_days_buttons[clicked_index].click()
         try:
             modal = wait.until(
@@ -2312,7 +2320,7 @@ class InterimTests(IetfSeleniumTestCase):
                 end = ts.utc_end_time().astimezone(zone).strftime('%H:%M')
                 meeting_link = self.driver.find_element(By.LINK_TEXT, session.meeting.number)
                 time_td = meeting_link.find_element(By.XPATH, '../../td[contains(@class, "session-time")]')
-                self.assertIn('%s - %s' % (start, end), time_td.text)
+                self.assertIn('%s-%s' % (start, end), time_td.text)
 
         def _assert_ietf_tz_correct(meetings, tz):
             zone = pytz.timezone(tz)
@@ -2331,7 +2339,7 @@ class InterimTests(IetfSeleniumTestCase):
                 end = end_dt.astimezone(zone).strftime('%Y-%m-%d')
                 meeting_link = self.driver.find_element(By.LINK_TEXT, "IETF " + meeting.number)
                 time_td = meeting_link.find_element(By.XPATH, '../../td[contains(@class, "meeting-time")]')
-                self.assertIn('%s - %s' % (start, end), time_td.text)
+                self.assertIn('%s to %s' % (start, end), time_td.text)
 
         sessions = [m.session_set.first() for m in self.displayed_interims()]
         self.assertGreater(len(sessions), 0)

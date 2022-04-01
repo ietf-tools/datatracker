@@ -7,7 +7,7 @@
     <div class="card-body">
         {% with doc.conflictdoc as conflictdoc %}
             <div class="row">
-                <div class="col-sm-3 text-end fw-bold">Conflict review</div>
+                <div class="col-3 text-end fw-bold">Conflict review</div>
                 <div class="col">
                     <div class="fw-bold">{{ doc.title }}</div>
                     <a href="{{ doc.get_href }}">
@@ -17,7 +17,7 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-sm-3 text-end fw-bold">{{ conflictdoc.stream }} {{ conflictdoc.intended_std_level }}</div>
+                <div class="col-3 text-end fw-bold">{{ conflictdoc.stream }} {{ conflictdoc.intended_std_level }}</div>
                 <div class="col">
                     <div class="fw-bold">{{ conflictdoc.title }}</div>
                     <a href="{{ settings.IETF_ID_ARCHIVE_URL }}{{ conflictdoc.name }}-{{ conflictdoc.rev }}.txt">
@@ -28,25 +28,25 @@
             </div>
             {% if conflictdoc.note %}
                 <div class="row">
-                    <div class="col-sm-3 text-end fw-bold">Note</div>
+                    <div class="col-3 text-end fw-bold">Note</div>
                     <div class="col">{{ conflictdoc.note|linebreaksbr }}</div>
                 </div>
             {% endif %}
             <div class="row">
-                <div class="col-sm-3 text-end fw-bold">Token</div>
+                <div class="col-3 text-end fw-bold">Token</div>
                 <div class="col">{% person_link doc.ad %}</div>
             </div>
             {% with doc.active_defer_event as defer %}
                 {% if defer %}
                     <div class="row">
-                        <div class="col-sm-3 text-end fw-bold">Deferred by</div>
+                        <div class="col-3 text-end fw-bold">Deferred by</div>
                         <div class="col">{{ defer.by }} on {{ defer.time|date:"Y-m-d" }}</div>
                     </div>
                 {% endif %}
             {% endwith %}
             {% if conflictdoc.ipr %}
                 <div class="row">
-                    <div class="col-sm-3 text-end fw-bold">IPR</div>
+                    <div class="col-3 text-end fw-bold">IPR</div>
                     <div class="col">
                         {% for ipr in conflictdoc.ipr %}
                             {% if ipr.disclosure.state_id == "posted" %}

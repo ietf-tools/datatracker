@@ -25,6 +25,7 @@ from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.doc.factories import DocumentFactory
 from ietf.group.factories import RoleFactory, ReviewTeamFactory, GroupFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
+from django.utils.html import escape
 
 class ReviewTests(TestCase):
     def test_review_requests(self):
@@ -375,8 +376,8 @@ class ReviewTests(TestCase):
         # get
         r = self.client.get(unassigned_url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, review_req1.doc.name)
-        self.assertContains(r, doc_author.name)
+        self.assertContains(r, escape(review_req1.doc.name))
+        self.assertContains(r, escape(doc_author.name))
 
         # Test that conflicts are detected
         r = self.client.post(unassigned_url, {

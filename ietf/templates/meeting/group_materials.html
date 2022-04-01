@@ -113,10 +113,12 @@
                 <small class="text-muted">{{ session.last_update|utc|date:"H:i:s" }}&nbsp;UTC</small>
             {% endif %}
         </td>
-        <td>
-            {% if user|has_role:"Secretariat" or session.group in user_groups %}
-                <div class="float-end">{% include "meeting/edit_materials_button.html" %}</div>
-            {% endif %}
-        </td>
+        {% if user|has_role:"Secretariat" or user_groups %}
+            <td>
+                {% if user|has_role:"Secretariat" or session.group in user_groups %}
+                    <div class="float-end">{% include "meeting/edit_materials_button.html" %}</div>
+                {% endif %}
+            </td>
+        {% endif %}
     {% endif %}
 </tr>

@@ -28,8 +28,8 @@
             <tbody>
                 {% for e in events %}
                     <tr>
-                        <td class="text-nowrap">{{ e.time|date:"Y-m-d" }}</td>
-                        <td class="text-nowrap">{% person_link e.by %}</td>
+                        <td>{{ e.time|date:"Y-m-d" }}</td>
+                        <td>{% person_link e.by %}</td>
                         <td>{{ e.desc|format_history_text }}</td>
                     </tr>
                 {% endfor %}

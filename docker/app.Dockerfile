@@ -13,6 +13,11 @@ EXPOSE 8000
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Add Docker Source
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
+    $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
 RUN apt-get update
 
 # apt-get upgrade is normally not a good idea, but this is a dev container
@@ -26,6 +31,8 @@ RUN apt-get install -qy \
 	bash \
 	build-essential \
 	curl \
+    default-jdk \
+    docker-ce-cli \
 	enscript \
 	fish \
 	gawk \
@@ -48,9 +55,11 @@ RUN apt-get install -qy \
     libxtst6 \
 	libmagic-dev \
 	libmariadb-dev \
+    libmemcached-tools \
 	libtidy-dev \
 	locales \
 	mariadb-client \
+    memcached \
     netcat \
 	nano \
 	pigz \
@@ -115,6 +124,9 @@ RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 
 # Colorize the bash shell
 RUN sed -i 's/#force_color_prompt=/force_color_prompt=/' /root/.bashrc
+
+# Install the Nu Html Checker (v.Nu)
+ADD https://github.com/validator/validator/releases/download/latest/vnu.jar /
 
 ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
 RUN chmod +rx /usr/local/bin/wait-for

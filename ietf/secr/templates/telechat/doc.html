@@ -28,7 +28,7 @@
             Number of Open Positions: {{ open_positions }}<br />
             <br />
             <div>
-                <form action="" method="post">{% csrf_token %}
+                <form method="post">{% csrf_token %}
                     {{ formset.management_form }}
                     <table id="telechat-positions-table">
                         <tr>
@@ -56,7 +56,7 @@
 
             <hr /><br />
 
-            <form action="" method="post">{% csrf_token %}
+            <form method="post">{% csrf_token %}
                 <table>
                     {{ state_form.as_table }}
                 </table>
@@ -72,13 +72,13 @@
                 <br /><hr /><br />
             {% endif %}
 
-            <a name="writeup"><h2>Ballot Writeup</h2></a>
+            <h2 id="writeup">Ballot Writeup</h2>
             <pre>
 {{ writeup }}
     </pre>
 
             {% if downrefs %}
-                <a name="downrefs"><h2>Downward References</h2></a>
+                <h2 id="downrefs">Downward References</h2>
                 {% for ref in downrefs %}
                     <p>Add {{ref.target.document.canonical_name}}
                         ({{ref.target.document.std_level}} - {{ref.target.document.stream.desc}})

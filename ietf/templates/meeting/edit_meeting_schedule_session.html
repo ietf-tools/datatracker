@@ -12,7 +12,7 @@
     <div>
         <span class="requested-duration">{{ session.requested_duration_in_hours|floatformat }}h</span>
         {% if session.attendees != None %}<span class="attendees">&middot; {{ session.attendees }}</span>{% endif %}
-        {% if session.comments %}<span class="comments"><i class="bi bi-chat-o"></i></span>{% endif %}
+        {% if session.comments %}<span class="comments"><i class="bi bi-chat"></i></span>{% endif %}
         {% if session.constraint_hints %}
             <span class="constraints">
                 {% for hint, sessions in session.constraint_hints %}

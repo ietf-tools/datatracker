@@ -17,13 +17,13 @@
         </thead>
         {% regroup adm by parent as grouped_groups %}
         {% for grouptype in grouped_groups %}
-            <thead>
+            <tbody>
                 <tr>
                     <th colspan="2" class="table-info">
                         Active {% firstof grouptype.grouper.verbose_name grouptype.grouper.name 'Top-level Administration' %}
                     </th>
                 </tr>
-            </thead>
+            </tbody>
             <tbody>
                 {% for group in grouptype.list %}
                     <tr>

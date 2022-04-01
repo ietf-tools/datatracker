@@ -26,11 +26,11 @@
             </tr>
         </thead>
         {% for state in state_groups %}
-            <thead>
+            <tbody>
                 <tr class="table-info">
                     <th colspan="2">{{ state.grouper }}</th>
                 </tr>
-            </thead>
+            </tbody>
             <tbody>
                 {% for doc in state.list %}
                     <tr>

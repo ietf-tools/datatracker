@@ -5,7 +5,6 @@
 import io
 import os.path
 import shutil
-import sys
 import types
 
 from pyquery import PyQuery
@@ -16,15 +15,12 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from fnmatch import fnmatch
 from importlib import import_module
-from .pipe import pipe
 from textwrap import dedent
-from unittest import skipIf
 from tempfile import mkdtemp
 
 from django.apps import apps
 from django.contrib.auth.models import User
 from django.conf import settings
-from django.core.management import call_command
 from django.template import Context
 from django.template import Template    # pyflakes:ignore
 from django.template.defaulttags import URLNode
@@ -34,8 +30,6 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.group.factories import GroupFactory
-from ietf.group.models import Group
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.draft import PlaintextDraft, getmeta
@@ -45,22 +39,6 @@ from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import parse_unicode
 from ietf.utils.xmldraft import XMLDraft
-
-
-skip_wiki_glue_testing = False
-skip_message_svn = ""
-skip_message_trac = ""
-try:
-    import svn                          # pyflakes:ignore
-except ImportError as e:
-    skip_wiki_glue_testing = True
-    skip_message_svn = "Skipping trac tests: %s" % e
-    print("     "+skip_message_svn)
-
-if sys.version_info.major==3:
-    skip_version_trac = True
-    skip_message_trac = "Skipping trac tests: Trac not available for Python3 as of 14 Jul 2019, 04 Jul 2020"
-    print("     "+skip_message_trac)
 
 class SendingMail(TestCase):
 
@@ -292,7 +270,6 @@ class TemplateChecksTestCase(TestCase):
         r = self.client.get(url)        
         self.assertTemplateUsed(r, '500.html')
 
-
 class BaseTemplateTests(TestCase):
     base_template = 'base.html'
 
@@ -316,69 +293,6 @@ class BaseTemplateTests(TestCase):
             pq('.row > #content.ietf-auto-nav'),
             'base template should have a #content element with .ietf-auto-nav class and .row parent',
         )
-
-
-@skipIf(skip_version_trac, skip_message_trac)
-@skipIf(skip_wiki_glue_testing, skip_message_svn)
-class TestWikiGlueManagementCommand(TestCase):
-
-    def setUp(self):
-        super().setUp()
-        # We create temporary wiki and svn directories, and provide them to the management
-        # command through command line switches.  We have to do it this way because the
-        # management command reads in its own copy of settings.py in its own python
-        # environment, so we can't modify it here.
-        set_coverage_checking(False)
-        self.wiki_dir_pattern = os.path.abspath('tmp-wiki-dir-root/%s')
-        if not os.path.exists(os.path.dirname(self.wiki_dir_pattern)):
-            os.mkdir(os.path.dirname(self.wiki_dir_pattern))
-        self.svn_dir_pattern = os.path.abspath('tmp-svn-dir-root/%s')
-        if not os.path.exists(os.path.dirname(self.svn_dir_pattern)):
-            os.mkdir(os.path.dirname(self.svn_dir_pattern))
-
-    def tearDown(self):
-        shutil.rmtree(os.path.dirname(self.wiki_dir_pattern))
-        shutil.rmtree(os.path.dirname(self.svn_dir_pattern))
-        set_coverage_checking(True)
-        super().tearDown()
-
-    def test_wiki_create_output(self):
-        for group_type in ['wg','rg','ag','area','rag']:
-            GroupFactory(type_id=group_type)
-        groups = Group.objects.filter(
-                        type__slug__in=['wg','rg','ag','area','rag'],
-                        state__slug='active'
-                    ).order_by('acronym')
-        out = io.StringIO()
-        err = io.StringIO()
-        call_command('create_group_wikis', stdout=out, stderr=err, verbosity=2,
-            wiki_dir_pattern=self.wiki_dir_pattern,
-            svn_dir_pattern=self.svn_dir_pattern,
-        )
-        command_output = out.getvalue()
-        command_errors = err.getvalue()
-        self.assertEqual("", command_errors)
-        for group in groups:
-            self.assertIn("Processing group '%s'" % group.acronym, command_output)
-            # Do a bit of verification using trac-admin, too
-            admin_code, admin_output, admin_error = pipe(
-                'trac-admin %s permission list' % (self.wiki_dir_pattern % group.acronym))
-            self.assertEqual(admin_code, 0)
-            roles = group.role_set.filter(name_id__in=['chair', 'secr', 'ad'])
-            for role in roles:
-                user = role.email.address.lower()
-                self.assertIn("Granting admin permission for %s" % user, command_output)
-                self.assertIn(user, admin_output)
-            docs = group.document_set.filter(states__slug='active', type_id='draft')
-            for doc in docs:
-                name = doc.name
-                name = name.replace('draft-','')
-                name = name.replace(doc.stream_id+'-', '')
-                name = name.replace(group.acronym+'-', '')
-                self.assertIn("Adding component %s"%name, command_output)
-        for page in settings.TRAC_WIKI_PAGES_TEMPLATES:
-            self.assertIn("Adding page %s" % os.path.basename(page), command_output)
-        self.assertIn("Indexing default repository", command_output)
 
 OMITTED_APPS = [
     'ietf.secr.meetings',
@@ -422,7 +336,7 @@ class PlaintextDraftTests(TestCase):
 
     def setUp(self):
         super().setUp()
-        file,_ = submission_file(name='draft-test-draft-class',rev='00',format='txt',templatename='test_submission.txt',group=None)
+        file,_ = submission_file(name_in_doc='draft-test-draft-class-00', name_in_post='draft-test-draft-class-00.txt',templatename='test_submission.txt',group=None)
         self.draft = PlaintextDraft(text=file.getvalue(), source='draft-test-draft-class-00.txt', name_from_source=False)
 
     def test_get_status(self):

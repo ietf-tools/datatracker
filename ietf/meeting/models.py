@@ -734,11 +734,7 @@ class Schedule(models.Model):
 #         return self.url_edit("")
 
     def owner_email(self):
-        email = self.owner.email_set.all().order_by('primary').first()
-        if email:
-            return email.address
-        else:
-            return "noemail"
+        return self.owner.email_address() or "noemail"
 
     @property
     def is_official(self):

@@ -8,7 +8,7 @@
 
         <div class="inline-group">
             <div class="tabular inline-related">
-                <form id="meetings-meta-rooms" action="" method="post">{% csrf_token %}
+                <form id="meetings-meta-rooms" method="post">{% csrf_token %}
                     {{ formset.management_form }}
                     {{ formset.non_form_errors }}
                     {% if options_form %}{{ options_form.errors }}{% endif %}
@@ -41,7 +41,7 @@
                                     {% endfor %}
                                 </tr>
                             {% endfor %}
-            {% if options_form %}{{ options_form }}{% endif %}
+            {% if options_form %}<tr><td colspan="11">{{ options_form.as_p }}</td></tr>{% endif %}
                         </tbody>
                     </table>
                 </form>

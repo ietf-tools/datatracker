@@ -360,9 +360,9 @@ def document_main(request, name, rev=None):
         if can_adopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"] and not snapshot:
             if doc.group and doc.group.acronym != 'none': # individual submission
                 # already adopted in one group
-                button_text = "Change Document Adoption to other Group (now in %s)" % doc.group.acronym
+                button_text = "Switch adoption"
             else:
-                button_text = "Manage Document Adoption in Group"
+                button_text = "Adopt"
             actions.append((button_text, urlreverse('ietf.doc.views_draft.adopt_draft', kwargs=dict(name=doc.name))))
 
         if can_unadopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"] and not snapshot:

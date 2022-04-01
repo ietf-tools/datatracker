@@ -1485,7 +1485,7 @@ class NewActiveNomComTests(TestCase):
     def setUp(self):
         super().setUp()
         setup_test_public_keys_dir(self)
-        self.nc = NomComFactory.create(**nomcom_kwargs_for_year())
+        self.nc = NomComFactory.create(**nomcom_kwargs_for_year(year=random.randint(1992,2100)))
         self.chair = self.nc.group.role_set.filter(name='chair').first().person
         self.saved_days_to_expire_nomination_link = settings.DAYS_TO_EXPIRE_NOMINATION_LINK
 
@@ -1915,7 +1915,6 @@ Junk body for testing
         year = self.nc.year()
         def first_meeting_of_year(year):
             assert isinstance(year, int)
-            # FIXME: year is sometimes < 1990?
             assert year >= 1990
             return (year-1985)*3+2       
         people = PersonFactory.create_batch(10)

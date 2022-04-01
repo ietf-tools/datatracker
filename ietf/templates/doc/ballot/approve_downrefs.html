@@ -37,7 +37,7 @@
                 <br>
             Which downward references, if any, are to be added to the DOWNREF registry?</b>
         </p>
-        <form action="" method="post">
+        <form method="post">
             {% csrf_token %}
             {% bootstrap_form approve_downrefs_form %}
             <a class="btn btn-primary"

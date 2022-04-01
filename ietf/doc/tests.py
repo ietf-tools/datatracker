@@ -240,13 +240,20 @@ class SearchTests(TestCase):
         conflrev.set_state(State.objects.get(type='conflrev', slug='iesgeval'))
         statchg = DocumentFactory(type_id='statchg',ad=ad)
         statchg.set_state(State.objects.get(type='statchg', slug='iesgeval'))
-        charter = CharterFactory(ad=ad)
+        charter = CharterFactory(name='charter-ietf-ames',ad=ad)
         charter.set_state(State.objects.get(type='charter', slug='iesgrev'))
 
         ballot_type = BallotType.objects.get(doc_type_id='draft',slug='approve')
         ballot = BallotDocEventFactory(ballot_type=ballot_type, doc__states=[('draft-iesg','iesg-eva')])
         discuss_pos = BallotPositionName.objects.get(slug='discuss')
         discuss_other = BallotPositionDocEventFactory(ballot=ballot, doc=ballot.doc, balloter=ad, pos=discuss_pos)
+
+        blockedcharter = CharterFactory(name='charter-ietf-mars',ad=ad)
+        blockedcharter.set_state(State.objects.get(type='charter',slug='extrev'))
+        charter_ballot_type = BallotType.objects.get(doc_type_id='charter',slug='approve')
+        charterballot = BallotDocEventFactory(ballot_type=charter_ballot_type, doc__states=[('charter','extrev')])
+        block_pos = BallotPositionName.objects.get(slug='block')
+        block_other = BallotPositionDocEventFactory(ballot=charterballot, doc=ballot.doc, balloter=ad, pos=block_pos)
 
         r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad', kwargs=dict(name=ad.full_name_as_key())))
         self.assertEqual(r.status_code, 200)
@@ -258,6 +265,7 @@ class SearchTests(TestCase):
         self.assertContains(r, charter.name)
 
         self.assertContains(r, discuss_other.doc.name)
+        self.assertContains(r, block_other.doc.name)
 
     def test_auth48_doc_for_ad(self):
         """Docs in AUTH48 state should have a decoration"""
@@ -554,7 +562,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
         if settings.USER_PREFERENCE_DEFAULTS['full_draft'] == 'off':
-            self.assertContains(r, "Show full document text")
+            self.assertContains(r, "Show full document")
             self.assertNotContains(r, "Deimos street")
         self.assertContains(r, replaced.canonical_name())
         self.assertContains(r, replaced.title)
@@ -571,7 +579,7 @@ Man                    Expires September 22, 2015               [Page 3]
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=0")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
-        self.assertContains(r, "Show full document text")
+        self.assertContains(r, "Show full document")
         self.assertNotContains(r, "Deimos street")
         self.assertContains(r, replaced.canonical_name())
         self.assertContains(r, replaced.title)
@@ -588,7 +596,7 @@ Man                    Expires September 22, 2015               [Page 3]
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=foo")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
-        self.assertNotContains(r, "Show full document text")
+        self.assertNotContains(r, "Show full document")
         self.assertContains(r, "Deimos street")
         self.assertContains(r, replaced.canonical_name())
         self.assertContains(r, replaced.title)
@@ -605,7 +613,7 @@ Man                    Expires September 22, 2015               [Page 3]
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=1")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
-        self.assertNotContains(r, "Show full document text")
+        self.assertNotContains(r, "Show full document")
         self.assertContains(r, "Deimos street")
         self.assertContains(r, replaced.canonical_name())
         self.assertContains(r, replaced.title)
@@ -623,7 +631,7 @@ Man                    Expires September 22, 2015               [Page 3]
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
-        self.assertNotContains(r, "Show full document text")
+        self.assertNotContains(r, "Show full document")
         self.assertContains(r, "Deimos street")
         self.assertContains(r, replaced.canonical_name())
         self.assertContains(r, replaced.title)
@@ -641,7 +649,7 @@ Man                    Expires September 22, 2015               [Page 3]
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
-        self.assertContains(r, "Show full document text")
+        self.assertContains(r, "Show full document")
         self.assertNotContains(r, "Deimos street")
         self.assertContains(r, replaced.canonical_name())
         self.assertContains(r, replaced.title)
@@ -660,7 +668,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
         if settings.USER_PREFERENCE_DEFAULTS['full_draft'] == 'off':
-            self.assertContains(r, "Show full document text")
+            self.assertContains(r, "Show full document")
             self.assertNotContains(r, "Deimos street")
         self.assertContains(r, replaced.canonical_name())
         self.assertContains(r, replaced.title)

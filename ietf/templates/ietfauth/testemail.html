@@ -18,7 +18,7 @@
     <p>
         Current value of <code>testmailcc</code> cookie: <code>{{ cookie|default:"(Unset)" }}</code>
     </p>
-    <form role="form" method="post">
+    <form method="post">
         {% csrf_token %}
         {% bootstrap_form form %}
         <button class="btn btn-primary" type="submit">Set cookie</button>

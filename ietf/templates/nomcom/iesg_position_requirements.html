@@ -8,6 +8,7 @@
             </button>
         </h2>
         <div id="generic_iesg_reqs_{{ position.name|slugify }}"
+             role="region"
              class="accordion-collapse collapse">
             <div class="accordion-body">{{ generic_iesg_reqs|safe }}</div>
         </div>
@@ -21,6 +22,7 @@
             </button>
         </h2>
         <div id="iesg_reqs_{{ position.name|slugify }}"
+             role="region"
              class="accordion-collapse collapse show"
              aria-expanded="true">
             <div class="accordion-body">{{ specific_reqs|safe }}</div>

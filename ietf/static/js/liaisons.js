@@ -69,8 +69,7 @@ var attachmentWidget = {
             html += '</span>';
             container.hide();
         });
-        //html += ' <a href="#" class="removeAttach glyphicon glyphicon-remove text-danger"></a>';
-        html += ' <a href="#" class="removeAttach btn btn-default btn-xs">Delete</a>';
+        html += ' <a href="#" class="removeAttach btn btn-danger btn-sm">Delete</a>';
         html += '</div>';
         attachmentWidget.config.showOnDisplay.html(html);
         attachmentWidget.count += 1;

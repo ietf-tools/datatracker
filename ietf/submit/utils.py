@@ -18,6 +18,7 @@ from django.db import transaction
 from django.http import HttpRequest     # pyflakes:ignore
 from django.utils.module_loading import import_string
 from django.template.loader import render_to_string
+from django.contrib.auth.models import AnonymousUser
 
 import debug                            # pyflakes:ignore
 
@@ -126,9 +127,20 @@ def validate_submission_name(name):
                 msg += "  Did you include a filename extension in the name by mistake?"
             return msg
 
+    components = name.split('-')
+    if '' in components:
+        return "Name contains adjacent dashes or the name ends with a dash."
+    if len(components) < 3:
+        return "Name has less than three dash-delimited components in the name."
+
+    return None
+
 def validate_submission_rev(name, rev):
     if not rev:
         return 'Revision not found'
+
+    if len(rev) != 2:
+        return 'Revision must be a exactly two digits'
 
     try:
         rev = int(rev)
@@ -330,11 +342,15 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
         # Add all the previous submission events as docevents
         events += post_rev00_submission_events(draft, submission, submitter)
 
+    if isinstance(request.user, AnonymousUser):
+        doer=system
+    else:
+        doer=request.user.person
     # Add an approval docevent
     e = SubmissionDocEvent.objects.create(
         type="new_submission",
         doc=draft,
-        by=system,
+        by=doer,
         desc=approved_doc_desc,
         submission=submission,
         rev=submission.rev,
@@ -1014,3 +1030,12 @@ def update_submission_external_resources(submission, new_resources):
     for new_res in new_resources:
         new_res.submission = submission
         new_res.save()
+
+def remote_ip(request):
+    if 'CF-Connecting-IP' in request.META:
+        remote_ip = request.META.get('CF-Connecting-IP')
+    elif 'X-Forwarded-For' in request.META:
+        remote_ip = request.META.get('X-Forwarded-For').split(',')[0]
+    else:
+        remote_ip = request.META.get('REMOTE_ADDR', None)
+    return remote_ip

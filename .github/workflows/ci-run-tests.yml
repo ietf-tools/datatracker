@@ -1,0 +1,63 @@
+name: Run All Tests
+
+on:
+  pull_request:
+    branches:
+      # TEMPORARY: Replace with main once bs5 is merged
+      - 'feat/bs5'
+    paths:
+      - 'ietf/**'
+
+jobs:
+  tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    container: ghcr.io/ietf-tools/datatracker-test-base:latest
+    
+    services:
+      db:
+        image: ghcr.io/ietf-tools/datatracker-db:latest
+        volumes:
+            - mariadb-data:/var/lib/mysql
+        env:
+            MYSQL_ROOT_PASSWORD: ietf
+            MYSQL_DATABASE: ietf_utf8
+            MYSQL_USER: django
+            MYSQL_PASSWORD: RkTkDPFnKpko
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Prepare for tests
+      run: |
+        chmod +x ./dev/tests/prepare.sh
+        sh ./dev/tests/prepare.sh
+        
+    - name: Ensure DB is ready
+      run: |
+        /usr/local/bin/wait-for db:3306 -- echo "DB ready"
+        
+    - name: Run all tests
+      run: |
+        echo "Running checks..."
+        ./ietf/manage.py check
+        echo "Running tests..."
+        ./ietf/manage.py test --settings=settings_sqlitetest --failfast
+        coverage xml
+
+    - name: Upload Coverage Results to Codecov
+      uses: codecov/codecov-action@v2.1.0
+      with:
+        files: coverage.xml
+        
+    - name: Convert Coverage Results
+      if: ${{ always() }}
+      run: |
+        mv latest-coverage.json coverage.json
+        
+    - name: Upload Coverage Results as Build Artifact
+      uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
+      with:
+        name: coverage
+        path: coverage.json

@@ -26,7 +26,7 @@
                            name="milestone"
                            value="{{ milestone.id }}"
                            {% if not milestone.resolved %}checked{% endif %}>
-                    <label class="form-check-label" for="{{ milestone.id }}">
+                    <label class="form-check-label">
                         {{ milestone.desc }}
                         <span class="badge {% if milestone.resolved %}bg-success{% else %}bg-info{% endif %}">
                             {% if milestone.resolved %}

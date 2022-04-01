@@ -18,8 +18,7 @@
         {% if meeting.frozen == 1 %}
             <ul class="errorlist"><li> THIS IS A FROZEN PROCEEDING</li></ul>
         {% endif %}
-        <table class="full-width">
-            <col id="proceedings-view-first-col" />
+        <table class="full-width" id="proceedings-view-first-col">
             <tr><td>Meeting Start Date:</td><td> {{ meeting.date }}</td></tr>
             <tr><td>Meeting End Date:</td><td> {{ meeting.end_date }} </td></tr>
             <tr><td>Meeting City:</td><td> {{ meeting.city }} </td></tr>
@@ -28,8 +27,7 @@
 
         <div class="inline-related">
             <h2>Dates</h2>
-            <table class="full-width">
-                <col id="proceedings-view-first-col" />
+            <table class="full-width" id="proceedings-view-first-col">
                 <tr><td>Submission Start Date:</td><td> {{ meeting.get_submission_start_date }} </td></tr>
                 <tr><td>Submission Cut Off Date:</td><td> {{ meeting.get_submission_cut_off_date }} </td></tr>
                 <tr><td>Submission Correction Cut Off Date:</td><td> {{ meeting.get_submission_correction_date }} </td></tr>
@@ -55,26 +53,3 @@
     </div> <!-- module -->
 
 {% endblock %}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
