@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
 from . import checks                           # pyflakes:ignore
 
 # Version must stay in single quotes for automatic CI replace
