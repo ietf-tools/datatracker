@@ -30,19 +30,8 @@ jobs:
     
     - name: Prepare for tests
       run: |
-        echo "Running containers:"
-        docker ps -a
-        echo "Fixing permissions..."
-        chmod -R 777 ./
-        echo "Copying config files..."
-        cp ./docker/configs/settings_local.py ./ietf/settings_local.py
-        echo "Installing NPM packages..."
-        npm install --prefer-offline --no-audit
-        echo "Building static assets..."
-        npx parcel build
-        echo "Creating data directories..."
-        chmod +x ./docker/scripts/app-create-dirs.sh
-        ./docker/scripts/app-create-dirs.sh
+        chmod +x ./dev/tests/prepare.sh
+        sh ./dev/tests/prepare.sh
         
     - name: Ensure DB is ready
       run: |
@@ -54,3 +43,21 @@ jobs:
         ./ietf/manage.py check
         echo "Running tests..."
         ./ietf/manage.py test --settings=settings_sqlitetest --failfast
+        coverage xml
+
+    - name: Upload Coverage Results to Codecov
+      uses: codecov/codecov-action@v2.1.0
+      with:
+        files: coverage.xml
+        
+    - name: Convert Coverage Results
+      if: ${{ always() }}
+      run: |
+        mv latest-coverage.json coverage.json
+        
+    - name: Upload Coverage Results as Build Artifact
+      uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
+      with:
+        name: coverage
+        path: coverage.json

@@ -4,6 +4,10 @@ WORKSPACEDIR="/workspace"
 
 service rsyslog start
 
+# fix permissions for npm-related paths
+WORKSPACE_UID_GID=$(stat --format="%u:%g" "$WORKSPACEDIR")
+chown -R "$WORKSPACE_UID_GID" "$WORKSPACEDIR/node_modules" "$WORKSPACEDIR/.parcel-cache"
+
 # Generate static assets
 
 npm install --prefer-offline --no-audit
@@ -82,6 +86,11 @@ for sub in \
 	    mkdir -p "$dir";
     fi
 done
+
+# Download latest coverage results file
+
+echo "Downloading latest coverage results file..."
+curl -fsSL https://github.com/ietf-tools/datatracker/releases/latest/download/coverage.json -o release-coverage.json
 
 # Wait for DB container
 

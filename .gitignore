@@ -41,6 +41,7 @@
 /minimum-requirements.txt
 /node_modules
 /pip-selfcheck.json
+/release-coverage.json
 /selenium
 /settings_local.py
 /share
@@ -56,3 +57,4 @@
 __pycache__
 node_modules
 ietf/static/ietf/bootstrap
+/docker/docker-compose.extend-custom.yml

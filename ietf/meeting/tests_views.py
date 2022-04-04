@@ -280,6 +280,54 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, slot.location.name)
 
+    @override_settings(PROCEEDINGS_V1_BASE_URL='https://example.com/{meeting.number}')
+    def test_agenda_redirects_for_old_meetings(self):
+        """Meetings before 64 should be forwarded to their proceedings"""
+        # meeting with record but no schedule
+        MeetingFactory(type_id='ietf', number='35', populate_schedule=False)
+        r = self.client.get(
+            urlreverse(
+                'ietf.meeting.views.agenda',
+                kwargs={'num': '35', 'ext': '.html'},
+            ))
+        self.assertRedirects(r, 'https://example.com/35', fetch_redirect_response=False)
+
+        # meeting with record and schedule but no assignments
+        meeting_with_schedule = MeetingFactory(type_id='ietf', number='36', populate_schedule=True)
+        r = self.client.get(
+            urlreverse(
+                'ietf.meeting.views.agenda',
+                kwargs={'num': '36', 'ext': '.html'},
+            ))
+        self.assertRedirects(r, 'https://example.com/36', fetch_redirect_response=False)
+
+        # meeting with an assignment
+        SessionFactory(meeting=meeting_with_schedule)
+        r = self.client.get(
+                    urlreverse(
+                        'ietf.meeting.views.agenda',
+                        kwargs={'num': '36', 'ext': '.html'},
+                    ))
+        self.assertRedirects(r, 'https://example.com/36', fetch_redirect_response=False)
+
+    def test_agenda_for_nonexistent_meeting(self):
+        """Return a 404 for a bad IETF meeting number"""
+        # Meetings pre-64 are redirected, but should be a 404 if there is no Meeting instance
+        r = self.client.get(
+            urlreverse(
+                'ietf.meeting.views.agenda',
+                kwargs={'num': '32', 'ext': '.html'},
+            ))
+        self.assertEqual(r.status_code, 404)
+        # Check a post-64 meeting as well
+        r = self.client.get(
+            urlreverse(
+                'ietf.meeting.views.agenda',
+                kwargs={'num': '150', 'ext': '.html'},
+            ))
+        self.assertEqual(r.status_code, 404)
+
+
     def test_meeting_agenda_filters_ignored(self):
         """The agenda view should ignore filter querystrings
         
@@ -609,6 +657,50 @@ class MeetingTests(BaseMeetingTestCase):
                 url = urlreverse('ietf.meeting.views.materials_document', kwargs=dict(num=meeting.number, document=doc.name))
                 r = self.client.get(url)
                 self.assertEqual(unicontent(r), doc.text())
+
+    def test_materials_has_edit_links(self):
+        meeting = make_meeting_test_data()
+        url = urlreverse("ietf.meeting.views.materials", kwargs=dict(num=meeting.number))
+        r = self.client.get(url)
+        self.assertNotContains(r, 'Edit materials', status_code=200)
+
+        # mars chairman can edit materials for mars group
+        self.client.login(username='marschairman', password='marschairman+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content.decode())
+        edit_url = urlreverse(
+            'ietf.meeting.views.session_details',
+            kwargs={'num': meeting.number, 'acronym': 'mars'},
+        )
+        self.assertEqual(len(q(f'a[href^="{edit_url}"]')), 1, 'Link to mars session_details for mars chairman')
+        for acro in ['ietf', 'ames']:  # other groups with materials
+            edit_url = urlreverse(
+                'ietf.meeting.views.session_details',
+                kwargs={'num': meeting.number, 'acronym': acro},
+            )
+            self.assertEqual(len(q(f'a[href^="{edit_url}"]')), 0, f'No link to {acro} session_details for mars chairman')
+
+        # secretary can edit all groups
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content.decode())
+        for acro in ['mars', 'ames']:  # wgs
+            edit_url = urlreverse(
+                'ietf.meeting.views.session_details',
+                kwargs={'num': meeting.number, 'acronym': acro},
+            )
+            self.assertEqual(len(q(f'a[href^="{edit_url}"]')), 1, f'Link to session_details page for {acro}')
+        # The IETF Plenary has a "#sessionX" tacked on to the edit url to differentiate from other sessions,
+        # so test it separately. Not bothering to check the exact session pk in detail.
+        edit_url = urlreverse(
+            'ietf.meeting.views.session_details',
+            kwargs={'num': meeting.number, 'acronym': 'ietf'},
+        )
+        self.assertEqual(len(q(f'a[href^="{edit_url}#session"]')), 1, f'Link to session_details page for {acro}')
+
+
 
     def test_materials_editable_groups(self):
         meeting = make_meeting_test_data()
@@ -3806,6 +3898,7 @@ class EditTests(TestCase):
         self.assertTrue(mars_slot.slot_to_the_right)
         self.assertTrue(mars_scheduled.slot_to_the_right)
 
+
 class SessionDetailsTests(TestCase):
 
     def test_session_details(self):
@@ -3827,6 +3920,63 @@ class SessionDetailsTests(TestCase):
                                'Session detail page does not contain session tool buttons') 
         self.assertFalse(q('div#session-buttons-%s span.bi-arrows-fullscreen' % session.id),
                          'The session detail page is incorrectly showing the "Show meeting materials" button')
+
+    def test_session_details_has_import_minutes_buttons(self):
+        group = GroupFactory.create(
+            type_id='wg',
+            state_id='active',
+        )
+        session = SessionFactory.create(
+            meeting__type_id='ietf',
+            group=group,
+            meeting__date=datetime.date.today() + datetime.timedelta(days=90),
+        )
+        session_details_url = urlreverse(
+            'ietf.meeting.views.session_details',
+            kwargs={'num': session.meeting.number, 'acronym': group.acronym},
+        )
+        import_minutes_url = urlreverse(
+            'ietf.meeting.views.import_session_minutes',
+            kwargs={'num': session.meeting.number, 'session_id': session.pk},
+        )
+
+        # test without existing minutes
+        with patch('ietf.meeting.views.can_manage_session_materials', return_value=False):
+            r = self.client.get(session_details_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(
+                len(q(f'a[href="{import_minutes_url}"]')), 0,
+                'Do not show import new minutes buttons to non-materials manager',
+            )
+        with patch('ietf.meeting.views.can_manage_session_materials', return_value=True):
+            r = self.client.get(session_details_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertGreater(
+                len(q(f'a[href="{import_minutes_url}"]')), 0,
+                'Show import new minutes buttons to materials manager',
+            )
+
+        # now create minutes and test that we can still have the import button
+        SessionPresentationFactory.create(session=session,document__type_id='minutes')
+        with patch('ietf.meeting.views.can_manage_session_materials', return_value=False):
+            r = self.client.get(session_details_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(
+                len(q(f'a[href="{import_minutes_url}"]')), 0,
+                'Do not show import revised minutes buttons to non-materials manager',
+            )
+
+        with patch('ietf.meeting.views.can_manage_session_materials', return_value=True):
+            r = self.client.get(session_details_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertGreater(
+                len(q(f'a[href="{import_minutes_url}"]')), 0,
+                'Show import revised minutes buttons to materials manager',
+            )
 
     def test_session_details_past_interim(self):
         group = GroupFactory.create(type_id='wg',state_id='active')
@@ -4307,7 +4457,7 @@ class InterimTests(TestCase):
         q = PyQuery(r.content)
         #id="-%s" % interim.group.acronym
         #self.assertIn('Cancelled', q('[id*="'+id+'"]').text())
-        self.assertIn('Cancelled', q('tr>td>a>span').text())
+        self.assertIn('Cancelled', q('tr>td>a+span').text())
 
     def do_upcoming_test(self, querystring=None, create_meeting=True):
         if create_meeting:
@@ -6109,17 +6259,47 @@ class ImportNotesTests(TestCase):
                          kwargs={'num': self.meeting.number, 'session_id': self.session.pk})
 
         self.client.login(username='secretary', password='secretary+password')
-        r = self.client.post(url, {'markdown_text': 'original markdown text'})  # create a rev
+        with requests_mock.Mocker() as mock:
+            mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/download', text='original markdown text')
+            mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/info',
+                     text=json.dumps({"title": "title", "updatetime": "2021-12-02T11:22:33z"}))
+            # Create a revision. Run the original text through the preprocessing done when importing
+            # from the notes site.
+            r = self.client.get(url)  # let GET do its preprocessing
+            q = PyQuery(r.content)
+            r = self.client.post(url, {'markdown_text': q('input[name="markdown_text"]').attr['value']})
+            self.assertEqual(r.status_code, 302)
+
+            r = self.client.get(url)  # try to import the same text
+            self.assertContains(r, "This document is identical", status_code=200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('button:disabled[type="submit"]')), 1)
+            self.assertEqual(len(q('button:enabled[type="submit"]')), 0)
+
+    def test_allows_import_on_existing_bad_unicode(self):
+        """Should not be able to import text identical to the current revision"""
+        url = urlreverse('ietf.meeting.views.import_session_minutes',
+                         kwargs={'num': self.meeting.number, 'session_id': self.session.pk})
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.post(url, {'markdown_text': 'replaced below'})  # create a rev
+        with open(
+                self.session.sessionpresentation_set.filter(document__type="minutes").first().document.get_file_name(),
+                'wb'
+        ) as f:
+            # Replace existing content with an invalid Unicode byte string. The particular invalid
+            # values here are accented characters in the MacRoman charset (see ticket #3756).
+            f.write(b'invalid \x8e unicode \x99\n')
         self.assertEqual(r.status_code, 302)
         with requests_mock.Mocker() as mock:
             mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/download', text='original markdown text')
             mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/info',
                      text=json.dumps({"title": "title", "updatetime": "2021-12-02T11:22:33z"}))
             r = self.client.get(url)  # try to import the same text
-            self.assertContains(r, "This document is identical", status_code=200)
+            self.assertNotContains(r, "This document is identical", status_code=200)
             q = PyQuery(r.content)
-            self.assertEqual(len(q('button:disabled[type="submit"]')), 1)
-            self.assertEqual(len(q('button:not(:disabled)[type="submit"]')), 0)
+            self.assertEqual(len(q('button:enabled[type="submit"]')), 1)
+            self.assertEqual(len(q('button:disabled[type="submit"]')), 0)
 
     def test_handles_missing_previous_revision_file(self):
         """Should still allow import if the file for the previous revision is missing"""

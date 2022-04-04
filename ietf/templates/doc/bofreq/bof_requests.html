@@ -32,7 +32,7 @@
                 <thead>
                     <tr>
                         <th data-sort="name">Name</th>
-                        <th data-sort="date">Date</th>
+                        <th class="d-none d-sm-table-cell" data-sort="date">Date</th>
                         <th data-sort="title">Title</th>
                         <th data-sort="responsible">Responsible</th>
                         <th data-sort="editors">Editors</th>
@@ -44,7 +44,7 @@
                             <td>
                                 <a href="{% url 'ietf.doc.views_doc.document_main' name=req.name %}">{{ req.name }}-{{ req.rev }}</a>
                             </td>
-                            <td>{{ req.latest_revision_event.time|date:"Y-m-d" }}</td>
+                            <td class="d-none d-sm-table-cell">{{ req.latest_revision_event.time|date:"Y-m-d" }}</td>
                             <td>{{ req.title }}</td>
                             <td>
                                 {% for person in req.responsible %}

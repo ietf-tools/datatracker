@@ -118,10 +118,14 @@
                     <a href="https://www.ietf.org/privacy-statement/" class="p-3">Privacy&nbsp;Statement</a>
                     <div class="small text-muted p-3">
                         {% if version_num %}
-		                        <a href="/release/about">About</a>
+                            <a href="/release/about">About</a>
                             <a href="https://github.com/ietf-tools/datatracker/">IETF Datatracker</a>
-	                          <a href="/release/{{ version_num }}/">Version {{ version_num }}</a>
-                	          {{ revision_date }}
+                            {% if server_mode and server_mode == "production" %}
+                                <a href="https://github.com/ietf-tools/datatracker/releases/tag/{{version_num}}">Version {{ version_num }}{% if patch %}{{patch}}{% endif %}</a>
+                            {% else %}
+                                Version {{ version_num }}{% if patch %}{{patch}}{% endif %}
+                            {% endif %}
+                            {% if branch %}({{ branch }} - {{ git_hash|slice:":8" }}){% endif %}
                         {% endif %}
                         Report a bug:
                         <a href="https://github.com/ietf-tools/datatracker/issues/new/choose">

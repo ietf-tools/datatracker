@@ -1,0 +1,42 @@
+name: 'Datatracker Coverage + Changelog Parser'
+description: 'Parse and generate coverage and changelog files for Datatracker releases'
+author: Nicolas Giard
+inputs:
+  token:
+    description: GitHub Token
+    required: true
+  tokenCommon:
+    description: GitHub Token for Common repository
+    required: true
+  repoCommon:
+    description: Common repository containing the SVG coverage charts
+    required: false
+    default: 'common'
+  version:
+    description: Release version
+    required: true
+  changelog:
+    description: Generated changelog content from Changelog Action
+    required: true
+    default: ''
+  summary:
+    description: Summary to prepend to the changelog body
+    required: false
+    default: ''
+  coverageResultsPath:
+    description: Path to the latest coverage results file
+    required: true
+    default: 'coverage.json'
+  histCoveragePath:
+    description: Path where to output the historical coverage file
+    required: true
+    default: 'historical-coverage.json'
+outputs:
+  changelog:
+    description: Changelog with headers prepended and coverage stats + chart appended
+runs:
+  using: 'node16'
+  main: 'index.js'
+branding:
+  icon: layers
+  color: red

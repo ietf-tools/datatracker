@@ -31,11 +31,13 @@
                 {% if s.meeting.type_id == 'ietf' %}
                     {{ s.time|date:"H:i" }}
                     <a class="btn btn-primary btn-sm"
+                       title="icalendar entry for {{s.group.acronym}} at IETF {{s.meeting.number}}"
                        href="{% url 'ietf.meeting.views.agenda_ical' num=s.meeting.number session_id=s.id %}">
                         <i class="bi bi-calendar"></i>
                     </a>
                 {% else %}
                     <a class="btn btn-primary btn-sm"
+                       title="icalendar entry for {{s.meeting.number}}"
                        href="{% url 'ietf.meeting.views.agenda_ical' num=s.meeting.number acronym=s.group.acronym %}">
                         <i class="bi bi-calendar"></i>
                     </a>
