@@ -20,7 +20,7 @@
             It may also be appropriate if the group is abandoning the document.
         {% endif %}
     </div>
-    <form method='post'>
+    <form method="post">
         {% csrf_token %}
         {% bootstrap_form form %}
         <button type="submit" class="btn btn-warning">Release</button>

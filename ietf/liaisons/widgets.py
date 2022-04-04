@@ -18,13 +18,13 @@ class ButtonWidget(Widget):
         super(ButtonWidget, self).__init__(*args, **kwargs)
 
     def render(self, name, value, **kwargs):
-        html = '<span style="display: none;" class="showAttachsOn">%s</span>' % conditional_escape(self.show_on)
-        html += '<span style="display: none;" class="attachEnabledLabel">%s</span>' % conditional_escape(self.label)
+        html = '<span class="d-none showAttachsOn">%s</span>' % conditional_escape(self.show_on)
+        html += '<span class="d-none attachEnabledLabel">%s</span>' % conditional_escape(self.label)
         if self.require:
             for i in self.require:
-                html += '<span style="display: none;" class="attachRequiredField">%s</span>' % conditional_escape(i)
+                html += '<span class="d-none attachRequiredField">%s</span>' % conditional_escape(i)
             required_str = 'Please fill in %s to attach a new file' % conditional_escape(self.required_label)
-            html += '<span style="display: none;" class="attachDisabledLabel">%s</span>' % conditional_escape(required_str)
+            html += '<span class="d-none attachDisabledLabel">%s</span>' % conditional_escape(required_str)
         html += '<input type="button" class="addAttachmentWidget btn btn-primary btn-sm" value="%s">' % conditional_escape(self.label)
         return mark_safe(html)
 
@@ -32,7 +32,7 @@ class ButtonWidget(Widget):
 class ShowAttachmentsWidget(Widget):
     def render(self, name, value, **kwargs):
         html = '<div id="id_%s">' % name
-        html += '<span style="display: none;" class="showAttachmentsEmpty form-control widget">No files attached</span>'
+        html += '<span class="d-none showAttachmentsEmpty form-control widget">No files attached</span>'
         html += '<div class="attachedFiles form-control widget">'
         if value and isinstance(value, QuerySet):
             for attachment in value:

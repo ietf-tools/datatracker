@@ -41,6 +41,7 @@
         <h2 class="mt-3" id="futuremeets">
             Future Meetings
             <a class="float-end"
+               aria-label="icalendar entry for all scheduled future {{ group.acronym }} meetings"
                title="icalendar entry for all scheduled future {{ group.acronym }} meetings"
                href="{% url 'ietf.meeting.views.upcoming_ical' %}?show={{ group.acronym }}">
                 <i class="bi bi-calendar"></i>

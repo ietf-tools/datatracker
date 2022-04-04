@@ -62,6 +62,7 @@
                         {% endif %}
                         <br>
                         <button class="btn btn-primary btn-sm {% if not state.used %}disabled{% endif %}"
+                                type="button"
                                 data-bs-toggle="collapse"
                                 data-bs-target="#nexts{{ state.pk }}"
                                 aria-expanded="false"
@@ -75,8 +76,8 @@
                             <label>Select the next states:</label>
                             {% for checked, default, s in state.next_states_checkboxes %}
                                 <div class="form-check {% if not s.used %}inactive{% endif %}">
-                                    <input class="form-check-input" type="checkbox" name="next_states" value="{{ s.pk }}" {% if checked %} checked{% endif %}>
-                                    <label class="form-check-label">
+                                    <input class="form-check-input" type="checkbox" name="next_states" value="{{ s.pk }}" id="id-{{ s.pk }}-{{ state.pk }}" {% if checked %} checked{% endif %}>
+                                    <label class="form-check-label" for="id-{{ s.pk }}-{{ state.pk }}">
                                         {{ s.name }}
                                         {% if default %}<span class="badge bg-secondary">Default</span>{% endif %}
                                     </label>

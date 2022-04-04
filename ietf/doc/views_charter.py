@@ -556,8 +556,8 @@ def review_announcement_text(request, name):
             (existing, existing_new_work) = default_review_text(group, charter, by)
             existing.save()
             existing_new_work.save()
-            form = ReviewAnnouncementTextForm(initial=dict(announcement_text=existing.text,
-                                                           new_work_text=existing_new_work.text))
+            form = ReviewAnnouncementTextForm(initial=dict(announcement_text=escape(existing.text),
+                                                           new_work_text=escape(existing_new_work.text)))
 
         if any(x in request.POST for x in ['send_annc_only','send_nw_only','send_both']) and form.is_valid():
             if any(x in request.POST for x in ['send_annc_only','send_both']):

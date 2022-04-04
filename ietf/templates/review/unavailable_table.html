@@ -1,4 +1,5 @@
 <table class="mt-2 mb-0 table table-sm table-borderless">
+    <tbody>
     {% for p in unavailable_periods %}
         <tr class="unavailable-period-{{ p.state }}">
             <th scope="row">Period:</th>
@@ -20,4 +21,5 @@
             <td>{{ p.reason }}</td>
         </tr>
     {% endfor %}
+    </tbody>
 </table>

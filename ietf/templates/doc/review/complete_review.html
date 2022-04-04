@@ -94,7 +94,7 @@
         {% else %}
             <a class="btn btn-secondary float-end" href="{{ doc.get_absolute_url }}">Back</a>
         {% endif %}
-        <div class="template" style="display:none">
+        <div class="template d-none">
             {% if mail_archive_query_urls %}
                 <div class="mail-archive-search">
                     <div class="offset-md-2 col-md-10">
@@ -134,7 +134,7 @@
             {% endif %}
         </div>
         {% spaceless %}
-            <div class="template" style="display:none">
+            <div class="template d-none">
                 <button type="button" class="mail-archive-search-result list-group-item">
                     <small class="date float-end">&nbsp;</small>
                     <small class="from float-end">&nbsp;</small>

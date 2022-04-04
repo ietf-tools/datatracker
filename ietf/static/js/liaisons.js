@@ -64,7 +64,7 @@ var attachmentWidget = {
             } else {
                 html += ' ' + field.val();
             }
-            html += '<span style="display: none;" class="removeField">';
+            html += '<span class="d-none removeField">';
             html += container.attr('id');
             html += '</span>';
             container.hide();

@@ -106,7 +106,7 @@ class ChangeStateTests(TestCase):
         self.assertEqual(len(q('form select[name=state]')), 1)
         
         if next_states:
-            self.assertEqual(len(q('[type=submit][value="%s"]' % next_states[0].name)), 1)
+            self.assertEqual(len(q('[type=submit]:contains("%s")' % next_states[0].name)), 1)
 
             
         # faulty post
@@ -148,7 +148,7 @@ class ChangeStateTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form [type=submit][value="%s"]' % first_state.name)), 1)
+        self.assertEqual(len(q('form [type=submit]:contains("%s")' % first_state.name)), 1)
 
     def test_pull_from_rfc_queue(self):
         ad = Person.objects.get(user__username="ad")

@@ -193,7 +193,7 @@
                                     </a>
                                 {% endif %}
                                 {% if assignment.can_accept_reviewer_assignment %}
-                                    <form style="display:inline"
+                                    <form class="d-inline"
                                           method="post"
                                           action="{% url "ietf.doc.views_review.review_request" name=doc.name request_id=review_req.pk %}">
                                         {% csrf_token %}

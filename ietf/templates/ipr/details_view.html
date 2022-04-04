@@ -551,7 +551,7 @@
         {% if prev.licensing.slug == "provided-later" or ipr.licensing.slug == "provided-later" %}
             <div>
                 Possible licensing choices a), b), and c) when Licensing Declaration to be Provided Later:
-                <ul style="list-style: none">
+                <ul class="d-none">
                     {% for desc in choices_abc %}
                         <li>
                             {{ desc }}

@@ -20,7 +20,7 @@
         <div class="row mb-3">
             <label class="col-sm-2 col-form-label fw-bold">
                 User name
-                <a href="#pi">
+                <a href="#pi" aria-label="!">
                     <i class="bi bi-exclamation-circle"></i>
                 </a>
             </label>
@@ -34,7 +34,7 @@
         <div class="row mb-3">
             <label class="col-sm-2 col-form-label fw-bold">
                 Password
-                <a href="#pi">
+                <a href="#pi" aria-label="!">
                     <i class="bi bi-exclamation-circle"></i>
                 </a>
             </label>
@@ -46,7 +46,7 @@
             <div class="row mb-3">
                 <label class="col-sm-2 col-form-label fw-bold">
                     Photo
-                    <a href="#pi">
+                    <a href="#pi" aria-label="!">
                         <i class="bi bi-exclamation-circle"></i>
                     </a>
                 </label>
@@ -96,7 +96,7 @@
         <div class="row mb-3">
             <label class="col-sm-2 col-form-label fw-bold">
                 External Resources
-                <a href="#pi">
+                <a href="#pi" aria-label="!">
                     <i class="bi bi-exclamation-circle"></i>
                 </a>
             </label>
@@ -135,22 +135,26 @@
                     {% for email in emails %}
                         <tr>
                             <td class="text-center">
+                                <label aria-label="Primary email">
                                 <input class="form-check-input"
                                        type="radio"
                                        name="primary_email"
                                        value="{{ email.pk }}"
                                        {% if email.primary %}checked{% endif %}>
+                               </label>
                             </td>
                             <td class="text-center">
+                                <label aria-label="Active email">
                                 <input class="form-check-input"
                                        type="checkbox"
                                        name="active_emails"
                                        value="{{ email.pk }}"
                                        {% if email.active %}checked{% endif %}>
+                               </label>
                             </td>
                             <td>
                                 {% if email.origin == person.user.username or email.origin == '' %}
-                                    <a href="#pi">
+                                    <a href="#pi" aria-label="!">
                                         <i class="bi bi-exclamation-circle"></i>
                                     </a>
                                 {% endif %}
@@ -169,7 +173,7 @@
                 {% endfor %}
                 <div class="new-emails"></div>
                 <div>
-                    <button class="btn btn-primary add-email mb-5">Add new email address</button>
+                    <button type="button" class="btn btn-primary add-email mb-5">Add new email address</button>
                 </div>
                 {% for role in roles %}
                     {% bootstrap_field role.email_form.email  show_label=False %}
