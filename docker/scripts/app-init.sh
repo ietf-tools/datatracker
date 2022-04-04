@@ -87,6 +87,11 @@ for sub in \
     fi
 done
 
+# Download latest coverage results file
+
+echo "Downloading latest coverage results file..."
+curl -fsSL https://github.com/ietf-tools/datatracker/releases/latest/download/coverage.json -o release-coverage.json
+
 # Wait for DB container
 
 if [ -n "$EDITOR_VSCODE" ]; then
