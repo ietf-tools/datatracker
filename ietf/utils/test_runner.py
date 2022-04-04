@@ -797,9 +797,9 @@ class IetfTestRunner(DiscoverRunner):
         tmpdir = tempfile.TemporaryDirectory(prefix="html-validate-")
         for (name, content, fingerprint) in self.batches[kind]:
             path = pathlib.Path(tmpdir.name).joinpath(
+                hex(fingerprint)[2:],
                 pathlib.Path(name).relative_to(cwd)
             )
-            path = path.with_name(path.stem + "-" + hex(fingerprint) + path.suffix)
             pathlib.Path(path.parent).mkdir(parents=True, exist_ok=True)
             with path.open(mode="w") as file:
                 file.write(content)
@@ -833,7 +833,7 @@ class IetfTestRunner(DiscoverRunner):
                 errors += (
                     f'\n{result["filePath"]}:\n'
                     + "".join(source_lines[line - 5 : line])
-                    + " " * (msg["column"] - 1)
+                    + "-" * (msg["column"] - 1)
                     + "^" * msg["size"]
                     + f' {msg["ruleId"]}: {msg["message"]} '
                     + f'on line {line}:{msg["column"]}\n'
