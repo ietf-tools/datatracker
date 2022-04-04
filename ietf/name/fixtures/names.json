@@ -6323,6 +6323,7 @@
   {
     "fields": {
       "desc": "",
+      "editor_label": "<i class=\"bi bi-person\"></i>{count}",
       "is_group_conflict": false,
       "name": "Person must be present",
       "order": 4,
@@ -6335,6 +6336,7 @@
   {
     "fields": {
       "desc": "Indicates other WGs the chairs also lead or will be active participants in",
+      "editor_label": "<i class=\"bi bi-person-plus\"></i>",
       "is_group_conflict": true,
       "name": "Chair conflict",
       "order": 8,
@@ -6347,6 +6349,7 @@
   {
     "fields": {
       "desc": "",
+      "editor_label": "<span class=\"encircled\">2</span>",
       "is_group_conflict": true,
       "name": "Conflicts with (secondary)",
       "order": 2,
@@ -6359,6 +6362,7 @@
   {
     "fields": {
       "desc": "",
+      "editor_label": "<span class=\"encircled\">3</span>",
       "is_group_conflict": true,
       "name": "Conflicts with (tertiary)",
       "order": 3,
@@ -6371,6 +6375,7 @@
   {
     "fields": {
       "desc": "",
+      "editor_label": "<span class=\"encircled\">1</span>",
       "is_group_conflict": true,
       "name": "Conflicts with",
       "order": 1,
@@ -6383,6 +6388,7 @@
   {
     "fields": {
       "desc": "Indicates WGs with which key participants (presenter, secretary, etc.)  may overlap",
+      "editor_label": "<i class=\"bi bi-key\"></i>",
       "is_group_conflict": true,
       "name": "Key participant conflict",
       "order": 10,
@@ -6395,6 +6401,7 @@
   {
     "fields": {
       "desc": "Indicates WGs with a related technology or a closely related charter",
+      "editor_label": "<i class=\"bi bi-link\"></i>",
       "is_group_conflict": true,
       "name": "Technology overlap",
       "order": 9,
@@ -6407,6 +6414,7 @@
   {
     "fields": {
       "desc": "",
+      "editor_label": "&Delta;",
       "is_group_conflict": false,
       "name": "Preference for time between sessions",
       "order": 6,
@@ -6419,6 +6427,7 @@
   {
     "fields": {
       "desc": "",
+      "editor_label": "<i class=\"bi bi-calendar\"></i>",
       "is_group_conflict": false,
       "name": "Can't meet within timerange",
       "order": 5,
@@ -6431,6 +6440,7 @@
   {
     "fields": {
       "desc": "",
+      "editor_label": "<i class=\"bi bi-skip-end\"></i>",
       "is_group_conflict": false,
       "name": "Request for adjacent scheduling with another WG",
       "order": 7,
