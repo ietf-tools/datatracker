@@ -25,7 +25,7 @@ class ButtonWidget(Widget):
                 html += '<span class="d-none attachRequiredField">%s</span>' % conditional_escape(i)
             required_str = 'Please fill in %s to attach a new file' % conditional_escape(self.required_label)
             html += '<span class="d-none attachDisabledLabel">%s</span>' % conditional_escape(required_str)
-        html += '<input type="button" class="addAttachmentWidget btn btn-primary btn-sm" value="%s">' % conditional_escape(self.label)
+        html += '<button type="button" class="addAttachmentWidget btn btn-primary btn-sm">%s</button>' % conditional_escape(self.label)
         return mark_safe(html)
 
 

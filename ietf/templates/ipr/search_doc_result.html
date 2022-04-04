@@ -57,7 +57,7 @@
         {% for doc in docs %}
             <tbody>
                 <tr>
-                    <th class="table-info" colspan="3">
+                    <th scope="row" class="table-info" colspan="3">
                         Results for {{ doc.name|rfcspace|lstrip:"0"|urlize_ietf_docs }} ("{{ doc.document.title }}"){% if not forloop.first %}{% if doc.related %}, which was {{ doc.relation|lower }} {{ doc.related.source|rfcspace|lstrip:"0"|urlize_ietf_docs  }} ("{{ doc.related.source.title }}"){% endif %}{% endif %}
                     </th>
                 </tr>

@@ -43,14 +43,14 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
         <title>Moderator Package for {{ date }} IESG Telechat</title>
         <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}">
         <style>
-            h3 { page-break-before:always; }
+            h2 { page-break-before:always; }
             @media print {
                 html { margin: 0; }
                 body { margin: 0; }
-                h3 { margin-top: 0; }
+                h2 { margin-top: 0; }
             }
             @media screen {
-                h3 { border-top: 1px dotted #a0a0a0; padding-top: 1em; }
+                h2 { border-top: 1px dotted #a0a0a0; padding-top: 1em; }
             }
         </style>
     </head>
@@ -60,7 +60,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
             Generated at {% now "Y-m-d H:i:s T" %}.
         </p>
         {% for num, section in sections %}
-            <h3>
+            <h2>
                 {% for parent_num, parent_section in section.parents %}
                     {{ parent_num }}
                     {% if parent_num|sectionlevel == 1 %}.{% endif %}
@@ -70,7 +70,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
                 {{ num }}
                 {% if num|sectionlevel == 1 %}.{% endif %}
                 {{ section.title }}
-            </h3>
+            </h2>
             {% if num == "1.1" %}
                 {% filter linebreaks_crlf %}
                     <pre>{{ section.text }}</pre>

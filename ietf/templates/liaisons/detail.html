@@ -15,6 +15,7 @@
     </h1>
     {% include "liaisons/detail_tabs.html" %}
     <table class="table table-sm table-striped">
+        <tbody>
         <tr>
             <th scope="row">State</th>
             <td>{{ liaison.state }}</td>
@@ -84,10 +85,11 @@
                     {% if can_take_care %}
                         <form method="post" class="float-end">
                             {% csrf_token %}
-                            <input class="btn btn-warning btn-sm"
+                            <button class="btn btn-warning btn-sm"
                                    type="submit"
-                                   value="Mark as action taken"
-                                   name='do_action_taken'>
+                                   name="do_action_taken">
+                                Mark as action taken
+                            </button>
                         </form>
                     {% endif %}
                 </td>
@@ -203,8 +205,9 @@
                 </td>
             </tr>
         {% endif %}
+    </tbody>
     </table>
-    <form method="post">
+    {% if liaison.state.slug == 'pending' and can_edit or liaison.state.slug == 'dead' and can_edit %}<form method="post">{% endif %}
         {% csrf_token %}
         {% if liaison.state.slug == 'pending' and can_edit %}
             <a class="btn btn-primary"
@@ -224,11 +227,10 @@
             </a>
         {% endif %}
         {% if liaison.state.slug == 'pending' and can_edit %}
-            <input class="btn btn-primary" type="submit" value="Approve" name='approved'>
-            <input class="btn btn-primary"
+            <button class="btn btn-primary" type="submit" name="approved">Approve</button>
+            <button class="btn btn-primary"
                    type="submit"
-                   value="Mark as Dead"
-                   name='dead'>
+                   name="dead">Mark as dead</button>
         {% endif %}
         {% if liaison.state.slug == 'posted' and  user|has_role:"Secretariat" %}
             <a class="btn btn-primary"
@@ -237,10 +239,9 @@
             </a>
         {% endif %}
         {% if liaison.state.slug == 'dead' and can_edit %}
-            <input class="btn btn-primary"
+            <button class="btn btn-primary"
                    type="submit"
-                   value="Resurrect"
-                   name='resurrect'>
+                   name="resurrect">Resurrect</button>
         {% endif %}
-    </form>
+    {% if liaison.state.slug == 'pending' and can_edit or liaison.state.slug == 'dead' and can_edit %}</form>{% endif %}
 {% endblock %}

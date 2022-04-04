@@ -16,20 +16,19 @@
     </h1>
     {% csrf_token %}
     <table class="table table-sm tablesorter">
+        <thead>
+            <tr >
+                <th scope="col" data-sort="endpoint">Endpoint</th>
+                <th scope="col" data-sort="created">Created</th>
+                <th scope="col" data-sort="date">Last use</th>
+                <th scope="col" data-sort="count">Count</th>
+                <th scope="col" data-sort="valid">Valid</th>
+                <th scope="col" data-sort="key">Key hash</th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
         {% for key in person.apikeys.all %}
-            {% if forloop.first %}
-                <thead>
-                    <tr >
-                        <th scope="col" data-sort="endpoint">Endpoint</th>
-                        <th scope="col" data-sort="created">Created</th>
-                        <th scope="col" data-sort="date">Last use</th>
-                        <th scope="col" data-sort="count">Count</th>
-                        <th scope="col" data-sort="valid">Valid</th>
-                        <th scope="col" data-sort="key">Key hash</th>
-                        <th scope="col"></th>
-                    </tr>
-                </thead>
-            {% endif %}
             <tr>
                 <td>
                     <code>{{ key.endpoint }}</code>
@@ -55,6 +54,7 @@
                 <td>You have no personal API keys.</td>
             </tr>
         {% endfor %}
+        </tbody>
     </table>
     <a href="{% url 'ietf.ietfauth.views.apikey_create' %}"
        class="btn btn-primary add-apikey my-3">
