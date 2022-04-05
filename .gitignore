@@ -26,12 +26,7 @@
 /.tmp
 /attic
 /bin
-/data/ietf_utf8.bin.tar.bz2
-/data/ietf_utf8.sql.gz
-/data/mysql
-/data/.com.apple.backupd.*
-/data/developers
-/data/nomcom_keys
+/data
 /docker/docker-compose.extend-custom.yml
 /env
 /etc
