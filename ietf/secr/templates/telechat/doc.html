@@ -31,10 +31,11 @@
                 <form method="post">{% csrf_token %}
                     {{ formset.management_form }}
                     <table id="telechat-positions-table">
+                        <tbody>
                         <tr>
-                            <th>Area Director</th>
+                            <th scope="col">Area Director</th>
                             {% for position in document.active_ballot.ballot_type.positions.all %}
-                                <th>{{ position.name }}</th>
+                                <th scope="col">{{ position.name }}</th>
                             {% endfor %}
                         </tr>
                         {% for form in formset.forms %}
@@ -46,7 +47,7 @@
                                 {% endwith %}
                             </tr>
                         {% endfor %}
-
+                    </tbody>
                 </table>
                 <div class="telechat-button">
                     <ul><li><button type="submit" name="submit" value="update_ballot">Update Ballot</button></li></ul>
@@ -56,6 +57,7 @@
 
             <hr><br>
 
+            <!-- [html-validate-disable-block wcag/h32 -- FIXME: no submit button] -->
             <form method="post">{% csrf_token %}
                 <table>
                     <tbody>
