@@ -50,11 +50,11 @@ class UploadProceedingsMaterialForm(FileUploadForm):
 
     def clean(self):
         if self.cleaned_data['use_url']:
-            if not self.cleaned_data.get('external_url', None):
+            if not self.data.get('external_url', None):
                 self.add_error('external_url', 'This field is required')
         else:
             self.cleaned_data['external_url'] = None  # make sure this is empty
-            if self.cleaned_data.get('file', None) is None:
+            if self.files.get('file', None) is None:
                 self.add_error('file', 'This field is required')
 
 class EditProceedingsMaterialForm(forms.Form):
