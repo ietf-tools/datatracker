@@ -585,18 +585,18 @@ class IetfTestRunner(DiscoverRunner):
         parser.add_argument('--show-logging',
             action='store_true', default=False,
             help='Show logging output going to LOG_USER in production mode')
-        parser.add_argument('--validate-html',
-            action='store_true', dest="validate_html", default=True,
-            help='Validate all generated HTML with html-validate.org')
+        parser.add_argument('--no-validate-html',
+            action='store_true', dest="no_validate_html", default=False,
+            help='Do not validate all generated HTML with html-validate.org')
 
-    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, **kwargs):
+    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, no_validate_html=None, **kwargs):
         #
         self.check_coverage = not skip_coverage
         self.save_version_coverage = save_version_coverage
         self.html_report = html_report
         self.permit_mixed_migrations = permit_mixed_migrations
         self.show_logging = show_logging
-        settings.validate_html = self if validate_html else False
+        settings.validate_html = self if no_validate_html is False else False
         settings.show_logging = show_logging
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
@@ -748,7 +748,13 @@ class IetfTestRunner(DiscoverRunner):
             # permit discontinuous heading numbering in cards
             config["doc"]["rules"]["heading-level"] = [
                 "error",
-                {"sectioningRoots": [".card-body"]},
+                {
+                    "sectioningRoots": [
+                        ".card-body",
+                        ".modal-content",
+                        '[role="dialog"]',
+                    ]
+                },
             ]
 
             self.config_file = {}
