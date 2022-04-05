@@ -26,10 +26,13 @@
 /.tmp
 /attic
 /bin
+/data
+/docker/docker-compose.extend-custom.yml
 /env
 /etc
 /ghostdriver.log
 /htmlcov
+/ietf/static/ietf/bootstrap
 /include
 /INSTALL.pdf
 /latest-coverage.json
@@ -56,5 +59,3 @@
 *.pyc
 __pycache__
 node_modules
-ietf/static/ietf/bootstrap
-/docker/docker-compose.extend-custom.yml
