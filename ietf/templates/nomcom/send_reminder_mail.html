@@ -42,8 +42,10 @@
                     {% for nominee in nominees %}
                         <tr>
                             <td>
+                                <label class="visually-hidden" aria-label="{{ nominee.name }}" for="id-{{ nominee.id }}"></label>
                                 <input type="checkbox"
                                        class="batch-select form-check-input"
+                                       id="id-{{ nominee.id }}"
                                        value="{{ nominee.id }}"
                                        name="selected"
                                        checked>
@@ -54,10 +56,11 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <input class="btn btn-primary"
+            <button class="btn btn-primary"
                    type="submit"
-                   name="submit"
-                   value="Submit request">
+                   name="submit">
+                Submit request
+            </button>
         </form>
     {% endif %}
 {% endblock %}

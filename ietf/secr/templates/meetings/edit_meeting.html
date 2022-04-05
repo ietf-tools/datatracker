@@ -19,7 +19,10 @@
         <form action="." method="post">{% csrf_token %}
             <h2>Meetings - Edit</h2>
             <table id="proceedings-edit-table">
+                <tbody>
+                <!-- [html-validate-disable-block element-required-attributes -- FIXME: as_table renders without scope] -->
                 {{ form.as_table }}
+                </tbody>
             </table>
             {% include "includes/buttons_save_cancel.html"%}
 
@@ -28,4 +31,3 @@
     </div> <!-- module -->
 
 {% endblock %}
-

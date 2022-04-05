@@ -4,6 +4,7 @@
         {{ form.name.as_hidden }}{{ form.purpose.as_hidden }}{{ form.type.as_hidden }}{{ form.requested_duration.as_hidden }}
     {% else %}
     <table>
+        <tbody>
         {% comment %}
         The form-group class is used by session_details_form.js to identify the correct element
         to hide the name / purpose / type fields when not needed. This is a bootstrap class - the
@@ -25,6 +26,7 @@
                 <th scope="row">{{ form.requested_duration.label_tag }}</th>
                 <td>{{ form.requested_duration }}{{ form.requested_duration.errors }}</td>
             </tr>
+            </tbody>
         </table>
     {% endif %}
     {# hidden fields shown whether or not the whole form is hidden #}

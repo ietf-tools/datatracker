@@ -27,7 +27,7 @@
         </p>
         <form method="post">
             {% csrf_token %}
-            <!-- [html-validate-disable no-inline-style, prefer-native-element -- FIXME: django_password_strength uses outdated HTML] -->
+            <!-- [html-validate-disable-block no-inline-style, prefer-native-element -- FIXME: django_password_strength uses outdated HTML] -->
             {% bootstrap_form form %}
             <button type="submit" class="btn btn-primary">Set name and password</button>
         </form>

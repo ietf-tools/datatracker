@@ -14,7 +14,7 @@
     <form method="post" class="my-3">
         {% csrf_token %}
         {% bootstrap_form form %}
-        <input class="btn btn-primary" type="submit" value="Save">
+        <button class="btn btn-primary" type="submit">Save</button>
         <a class="btn btn-secondary float-end"
            href="{% url "ietf.nomcom.views.private_index" year %}">Back</a>
     </form>

@@ -76,7 +76,7 @@
             <tr>
                 <th scope="row">
                     Unique nominee totals
-                </td>
+                </th>
                 <td>
                 </td>
                 <td>
@@ -109,10 +109,10 @@
     </h2>
     <form class="my-3" method="get">
         <div class="mb-3">
-            <label class="form-label">
+            <label class="form-label" for="state">
                 State:
             </label>
-            <select class="form-select" name="state">
+            <select class="form-select" name="state" id="state">
                 <option value="">
                     All
                 </option>
@@ -125,10 +125,10 @@
             </select>
         </div>
         <div class="mb-3">
-            <label class="form-label">
+            <label class="form-label" for="position">
                 Position:
             </label>
-            <select class="form-select" name="position">
+            <select class="form-select" name="position" id="position">
                 <option value="">
                     All
                 </option>
@@ -140,7 +140,7 @@
                 {% endfor %}
             </select>
         </div>
-        <input class="btn btn-primary" name="submit" value="Filter" type="submit">
+        <button class="btn btn-primary" name="submit" type="submit">Filter</button>
     </form>
     {% if is_chair and nomcom.group.state_id == 'active' %}
         <form class="form-inline" id="batch-action-form" method="post">
@@ -175,9 +175,11 @@
                     <tr>
                         {% if is_chair and nomcom.group.state_id == 'active' %}
                             <td>
+                                <label class="visually-hidden" aria-label="np.nominee.name" for="id-{{ np.id }}"></label>
                                 <input class="batch-select form-check-input"
                                        type="checkbox"
                                        value="{{ np.id }}"
+                                       id="id-{{ np.id }}"
                                        name="selected">
                             </td>
                             <td class="edit">
@@ -217,10 +219,10 @@
         {% if is_chair %}
             {% if nomcom.group.state_id == 'active' %}
                 <div class="mb-3">
-                    <label class="form-label">
+                    <label class="form-label" for="action">
                         Action:
                     </label>
-                    <select class="form-select" name="action">
+                    <select class="form-select" name="action" id="action">
                         <option value="" selected="selected">
                             ---------
                         </option>

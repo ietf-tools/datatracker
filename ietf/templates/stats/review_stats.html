@@ -48,12 +48,14 @@
     </div>
     <form class="date-range">
         <div class="row my-3">
-            <label class="fw-bold col-sm-2 col-form-label">Request time:</label>
+            <label id="reqtime" class="fw-bold col-sm-2 col-form-label">Request time:</label>
             <div class="col-sm-10">
                 <div class="input-group">
+                    <label class="visually-hidden" for="from" aria-label="Request time, from"></label>
                     <input class="form-control"
                            type="text"
                            name="from"
+                           id="from"
                            value="{{ from_date }}"
                            data-provide="datepicker"
                            data-date-format="yyyy-mm-dd"
@@ -62,9 +64,11 @@
                            data-date-end-date="{{ today.isoformat }}"
                            data-date-start-view="months">
                     <span class="input-group-text" id="basic-addon2">&mdash;</span>
+                    <label class="visually-hidden" for="to" aria-label="Request time, to"></label>
                     <input class="form-control"
                            type="text"
                            name="to"
+                           id="to"
                            value="{{ to_date }}"
                            data-provide="datepicker"
                            data-date-format="yyyy-mm-dd"

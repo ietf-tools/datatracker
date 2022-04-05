@@ -8,6 +8,7 @@
 
         <div class="inline-group">
             <div class="tabular inline-related">
+                 <!-- [html-validate-disable-block wcag/h32 -- FIXME: no submit button] -->
                 <form id="meetings-meta-rooms" method="post">{% csrf_token %}
                     {{ formset.management_form }}
                     {{ formset.non_form_errors }}

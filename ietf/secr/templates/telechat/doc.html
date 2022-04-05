@@ -10,23 +10,23 @@
         {% if document %}
             {% if not nav_start %}<a href="./previous/">&laquo; Previous</a>{% endif %}
             {% if not nav_end %}<span class="right-nav"><a href="./next/">Next &raquo;</a></span>{% endif %}
-            <br />
+            <br>
             <h3>
                 {% for line in header %}
-                    {{ line }}<br />
+                    {{ line }}<br>
                 {% endfor %}
             </h3>
-            <br />
+            <br>
             <h3>{{ document.name }}-{{ document.rev }} ({{ document.intended_std_level }})</h3>
-            {% if conflictdoc %}References: <a href="{{ conflictdoc.get_absolute_url }}">{{ conflictdoc }}</a><br />{% endif %}
-            <a href="#writeup">Ballot Writeup</a><br />
-            Token: {{ document.ad.name }}<br />
+            {% if conflictdoc %}References: <a href="{{ conflictdoc.get_absolute_url }}">{{ conflictdoc }}</a><br>{% endif %}
+            <a href="#writeup">Ballot Writeup</a><br>
+            Token: {{ document.ad.name }}<br>
             {% if document.type_id == "draft" %}
-                Consensus: {{ document|consensus }}<br />
-                Has downref: {% if downrefs %}Yes{% else %}No{% endif %}<br />
+                Consensus: {{ document|consensus }}<br>
+                Has downref: {% if downrefs %}Yes{% else %}No{% endif %}<br>
             {% endif %}
-            Number of Open Positions: {{ open_positions }}<br />
-            <br />
+            Number of Open Positions: {{ open_positions }}<br>
+            <br>
             <div>
                 <form method="post">{% csrf_token %}
                     {{ formset.management_form }}
@@ -41,7 +41,7 @@
                             <tr{% if form.initial.position == 'norecord' or form.initial.position == None %} class="green-row"{% endif %}{% if form.initial.position == 'discuss' %} class="red-row"{% endif %}><td>{{ form.initial.name }}{{ form.name }}{{ form.id }}</td>
                                 {% with form.position as field %}
                                     {% for choice in field.field.choices %}
-                                        <td><input type="radio" {% if form.initial.position == choice.0 %}checked {% endif %}id="id_{{ field.html_name }}_{{ forloop.counter0 }}" value="{{ choice.0 }}" name="{{ field.html_name }}" /></td>
+                                        <td><input type="radio" {% if form.initial.position == choice.0 %}checked {% endif %}id="id_{{ field.html_name }}_{{ forloop.counter0 }}" value="{{ choice.0 }}" name="{{ field.html_name }}"></td>
                                     {% endfor %}
                                 {% endwith %}
                             </tr>
@@ -54,22 +54,25 @@
             </form>
             </div>
 
-            <hr /><br />
+            <hr><br>
 
             <form method="post">{% csrf_token %}
                 <table>
+                    <tbody>
+                    <!-- [html-validate-disable-block element-required-attributes -- FIXME: as_table renders without scope] -->
                     {{ state_form.as_table }}
+                    </tbody>
                 </table>
                 <div class="telechat-button">
                     <ul><li><button type="submit" name="submit" value="update_state">Update State</button></li></ul>
                 </div>
             </form>
 
-            <hr /><br />
+            <hr><br>
 
             {% if document.type_id == "charter" %}
                 {% include "telechat/group.html" %}
-                <br /><hr /><br />
+                <br><hr><br>
             {% endif %}
 
             <h2 id="writeup">Ballot Writeup</h2>
@@ -82,12 +85,12 @@
                 {% for ref in downrefs %}
                     <p>Add {{ref.target.document.canonical_name}}
                         ({{ref.target.document.std_level}} - {{ref.target.document.stream.desc}})
-                        to downref registry.<br />
+                        to downref registry.<br>
                         {% if not ref.target.document.std_level %}
-                            +++ Warning: The standards level has not been set yet!!!<br />
+                            +++ Warning: The standards level has not been set yet!!!<br>
                         {% endif %}
                         {% if not ref.target.document.stream %}
-                            +++ Warning: document stream has not been set yet!!!<br />
+                            +++ Warning: document stream has not been set yet!!!<br>
                         {% endif %}
                 {% endfor %}</p>
             {% endif %}

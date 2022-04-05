@@ -37,7 +37,7 @@
             {% if user|has_role:"Secretariat" %}
                 <div class="button-group">
                     <ul id="proceedings-meeting-buttons">
-                        <li><button onclick="window.location='{% url "ietf.secr.meetings.views.add" %}'">Add</button></li>
+                        <li><button type="button" onclick="window.location='{% url "ietf.secr.meetings.views.add" %}'">Add</button></li>
                     </ul>
                 </div> <!-- button-group -->
             {% endif %}
@@ -66,7 +66,7 @@
             </div> <!-- scroll -->
             <div class="button-group">
                 <ul id="proceedings-interim-buttons">
-                    <li><button onclick="window.location='{% url "ietf.meeting.views.interim_request" %}'">Request Interim Meeting</button></li>
+                    <li><button type="button" onclick="window.location='{% url "ietf.meeting.views.interim_request" %}'">Request Interim Meeting</button></li>
                 </ul>
             </div> <!-- button-group -->
         </div>
@@ -81,7 +81,7 @@
 
         <div class="button-group">
             <ul id="proceedings-button-list">
-                <li><button onclick="window.location='../'">Back</button></li>
+                <li><button type="button" onclick="window.location='../'">Back</button></li>
             </ul>
         </div> <!-- button-group -->
     </div> <!-- module -->

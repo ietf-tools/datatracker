@@ -20,7 +20,7 @@
         <form id="meetings-schedule-form" method="post">{% csrf_token %}
             <div class="inline-related{% if forloop.last %} last-related{% endif %}">
                 <table class="full-width amstable">
-                    
+                    <tbody>
                     <tr>
                         <th scope="row">Day:</th>
                         <td>{% if timeslot %}{{ timeslot.time|date:"l" }}{% endif %}</td>
@@ -37,7 +37,9 @@
                         <th scope="row">Status:</th>
                         <td>{{ current_status_name }}</td>
                     </tr>
-                    {{ form }}
+                     <!-- [html-validate-disable-block element-required-attributes -- FIXME: as_table renders without scope] -->
+                    {{ form.as_table }}
+                </tbody>
                 </table>
             </div> <!-- inline-related -->
 

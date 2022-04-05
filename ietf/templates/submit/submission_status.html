@@ -71,6 +71,7 @@
     {% for check in submission.latest_checks %}
         {% if check.passed != None %}
             <button class="btn btn-{% if check.passed %}{% if check.warnings %}warning{% elif check.errors %}danger{% else %}success{% endif %}{% else %}danger{% endif %}"
+                    type="button"
                     data-bs-toggle="modal"
                     data-bs-target="#check-{{ check.pk }}">
                 View {{ check.checker }}
@@ -162,6 +163,7 @@
         {% endif %}
     {% endif %}
     <table class="table table-sm table-striped">
+        <tbody>
         <tr>
             <th scope="row">Document</th>
             <td>
@@ -171,6 +173,7 @@
                     {{ submission.name }}
                 {% endif %}
                 <button class="btn btn-primary btn-sm float-end ms-1"
+                        type="button"
                         data-bs-toggle="modal"
                         data-bs-target="#twopages">
                     View first two pages
@@ -189,6 +192,7 @@
                 {{ submission.rev }}
                 {% if errors.rev %}
                     <button class="btn btn-primary btn-sm float-end"
+                            type="button"
                             data-bs-toggle="modal"
                             data-bs-target="#twopages">
                         View errors in document
@@ -372,6 +376,7 @@
                 </td>
             </tr>
         {% endif %}
+        </tbody>
     </table>
     {% if can_edit %}
         <form method="post">
@@ -417,6 +422,7 @@
                 Submitter information
             </h2>
             <table class="table table-sm table-striped">
+                <tbody>
                 <tr>
                     <th scope="row">
                         Name
@@ -433,6 +439,7 @@
                         {{ submission.submitter_parsed.email|linkify }}
                     </td>
                 </tr>
+                </tbody>
             </table>
         {% endif %}
         {% if submission.replaces %}
@@ -440,6 +447,7 @@
                 Replaced documents
             </h2>
             <table class="table table-sm table-striped">
+                <tbody>
                 <tr>
                     <th scope="row">
                         Replaces
@@ -448,6 +456,7 @@
                         {{ submission.replaces|split:","|join:", "|urlize_ietf_docs }}
                     </td>
                 </tr>
+                </tbody>
             </table>
         {% endif %}
     {% endif %}

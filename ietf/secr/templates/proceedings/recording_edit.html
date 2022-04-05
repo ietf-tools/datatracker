@@ -27,7 +27,10 @@
         <p><h3>Edit Recording Metadata:</h3></p>
         <form id="recording-form" method="post">{% csrf_token %}
             <table>
+                <tbody>
+                <!-- [html-validate-disable-block element-required-attributes -- FIXME: as_table renders without scope] -->
                 {{ form.as_table }}
+                </tbody>
             </table>
 
             {% include "includes/buttons_save_cancel.html" %}

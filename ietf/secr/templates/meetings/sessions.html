@@ -40,7 +40,7 @@
                                 <form method="post">
                                     {% csrf_token %}
                                     <input type="hidden" name="pk" value="{{ session.pk }}">
-                                    <input type="submit" name="cancel" value="Cancel">
+                                    <button type="submit" name="cancel">Cancel</button>
                                 </form>
                             {% endif %}
                         </td>

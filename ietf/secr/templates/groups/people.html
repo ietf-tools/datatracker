@@ -4,7 +4,7 @@
 {% block title %}Groups - People{% endblock %}
 
 {% block extrahead %}{{ block.super }}
-    <link rel="stylesheet" href="{% static 'ietf/css/jquery-ui.css' %}" />
+    <link rel="stylesheet" href="{% static 'ietf/css/jquery-ui.css' %}">
     <script src="{% static 'ietf/js/jquery-ui.js' %}"></script>
     <script src="{% static 'secr/js/utils.js' %}"></script>
 {% endblock %}
@@ -49,19 +49,21 @@
                 {{ form.non_field_errors }}
                 {{ form.group_acronym }}
                 <table class="full-width">
+                    <tbody>
                     <tr>
-                        <td>{{ form.name.errors }}{{ form.name }}</td>
-                        <td>{{ form.person.errors }}{{ form.person }}{% if form.person.help_text %}<br>{{ form.person.help_text }}{% endif %}</td>
-                        <td>{{ form.email.errors }}{{ form.email }}{% if form.email.help_text %}<br>{{ form.email.help_text }}{% endif %}</td>
-                        <td><input type="submit" name="submit" value="Add" /></td>
+                        <td>{{ form.name.errors }}<label for="{{ form.name.id_for_label }}" aria-label="Name"></label>{{ form.name }}</td>
+                        <td>{{ form.person.errors }}<label for="{{ form.person.id_for_label }}" aria-label="Person"></label>{{ form.person }}{% if form.person.help_text %}<br>{{ form.person.help_text }}{% endif %}</td>
+                        <td>{{ form.email.errors }}<label for="{{ form.email.id_for_label }}" aria-label="Email"></label>{{ form.email }}{% if form.email.help_text %}<br>{{ form.email.help_text }}{% endif %}</td>
+                        <td><button type="submit" name="submit">Add</button></td>
                     </tr>
+                    </tbody>
                 </table>
             </form>
         </div> <!-- inline-related -->
 
         <div class="button-group">
             <ul>
-                <li><button onclick="window.location='../'">Back</button></li>
+                <li><button type="button" onclick="window.location='../'">Back</button></li>
             </ul>
         </div> <!-- button-group -->
 

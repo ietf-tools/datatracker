@@ -10,8 +10,9 @@
     </p>
     <form method="post">
         {% csrf_token %}
-        <input class="btn btn-primary"
-               type="submit"
-               value="Trigger {{ notification }} sync">
+        <button class="btn btn-primary"
+               type="submit">
+            Trigger {{ notification }} sync
+        </button>
     </form>
 {% endblock %}

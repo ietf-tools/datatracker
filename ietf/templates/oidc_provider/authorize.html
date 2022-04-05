@@ -10,7 +10,7 @@
     </p>
     <form method="post" action="{% url 'oidc_provider:authorize' %}">
         {% csrf_token %}
-        <!-- [html-validate-disable void-style -- FIXME: django-oidc-provider uses outdated HTML] -->
+        <!-- [html-validate-disable-block void-style -- FIXME: django-oidc-provider uses outdated HTML] -->
         {{ hidden_inputs }}
         <ul>
             {% for scope in scopes %}

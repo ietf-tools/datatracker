@@ -22,7 +22,7 @@
         <ul class="none">
             <li>
                 <form class="d-inline" method="post" action="{% url "ietf.secr.meetings.views.blue_sheet_generate" meeting_id=meeting.number%}">{% csrf_token %}
-                    <input type="submit" value="Generate Blue Sheets">
+                    <button type="submit">Generate Blue Sheets</button>
                 </form>
                 &nbsp;&nbsp;Last run:
                 {% if last_run %}
@@ -35,11 +35,11 @@
         <p>Use this to download the blue sheets from the server.</p>
         <ul class="none">
             <li>
-                <button onclick="window.location='{{ url }}'">Download Blue Sheets</button>
+                <button type="button" onclick="window.location='{{ url }}'">Download Blue Sheets</button>
             </li>
         </ul>
 
-        <hr />
+        <hr>
         <p>
             Use the session details page for a group to upload scanned bluesheets. The session details pages for a group can be reached from the meeting's <a href="{% url 'ietf.meeting.views.materials' num=meeting.number %}">materials page</a>.
         </p>
