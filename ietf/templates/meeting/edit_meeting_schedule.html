@@ -312,7 +312,7 @@
                                         <label class="timeslot-type-{{ type.slug }}">
                                             <input type="checkbox"
                                                    class="form-check-input"
-                                                   {% if type.slug == 'regular' %}checked{% endif %}
+                                                   {% if type.slug in enabled_timeslot_types %}checked{% endif %}
                                                    value="{{ type.slug }}">
                                             {{ type }}
                                         </label>
