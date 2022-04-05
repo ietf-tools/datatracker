@@ -26,10 +26,18 @@
 /.tmp
 /attic
 /bin
+/data/ietf_utf8.bin.tar.bz2
+/data/ietf_utf8.sql.gz
+/data/mysql
+/data/.com.apple.backupd.*
+/data/developers
+/data/nomcom_keys
+/docker/docker-compose.extend-custom.yml
 /env
 /etc
 /ghostdriver.log
 /htmlcov
+/ietf/static/ietf/bootstrap
 /include
 /INSTALL.pdf
 /latest-coverage.json
@@ -56,5 +64,3 @@
 *.pyc
 __pycache__
 node_modules
-ietf/static/ietf/bootstrap
-/docker/docker-compose.extend-custom.yml
