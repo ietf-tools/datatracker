@@ -84,9 +84,9 @@
                 <div class="modal-dialog modal-dialog-scrollable modal-xl">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="{{ check.checker|slugify }}-label">
+                            <p class="h5 modal-title" id="{{ check.checker|slugify }}-label">
                                 {{ check.checker|title }} for {{ submission.name }}-{{ submission.rev }}
-                            </h5>
+                            </p>
                             <button type="button"
                                     class="btn-close"
                                     data-bs-dismiss="modal"
@@ -112,7 +112,7 @@
         <div class="modal-dialog modal-dialog-scrollable modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="twopageslabel">First two pages of {{ submission.name }}-{{ submission.rev }}</h5>
+                    <p class="h5 modal-title" id="twopageslabel">First two pages of {{ submission.name }}-{{ submission.rev }}</p>
                     <button type="button"
                             class="btn-close"
                             data-bs-dismiss="modal"

@@ -119,9 +119,9 @@
                id="slides_{{ session.pk }}">
             {% if session.filtered_slides %}
                 <tbody data-session="{{ session.pk }}"
-                       data-addToSession="{% url 'ietf.meeting.views.ajax_add_slides_to_session' session_id=session.pk num=session.meeting.number %}"
-                       data-removeFromSession="{% url 'ietf.meeting.views.ajax_remove_slides_from_session' session_id=session.pk num=session.meeting.number %}"
-                       data-reorderInSession="{% url 'ietf.meeting.views.ajax_reorder_slides_in_session' session_id=session.pk num=session.meeting.number %}">
+                       data-add-to-session="{% url 'ietf.meeting.views.ajax_add_slides_to_session' session_id=session.pk num=session.meeting.number %}"
+                       data-remove-from-session="{% url 'ietf.meeting.views.ajax_remove_slides_from_session' session_id=session.pk num=session.meeting.number %}"
+                       data-reorder-in-session="{% url 'ietf.meeting.views.ajax_reorder_slides_in_session' session_id=session.pk num=session.meeting.number %}">
                     {% for pres in session.filtered_slides %}
                         <tr data-name="{{ pres.document.name }}" title="Drag to reorder.">
                             {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}

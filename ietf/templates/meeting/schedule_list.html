@@ -86,14 +86,17 @@
                                 <div class="btn-group btn-group-sm float-end" role="group">
                                     {% if schedule.can_edit_properties %}
                                         <a class="btn btn-outline-primary edit-schedule-properties"
+                                           title="Edit agenda properties"
+                                           aria-label="Edit agenda properties"
                                            href="{% url "ietf.meeting.views.edit_schedule_properties" meeting.number schedule.owner_email schedule.name %}?next={{ request.get_full_path|urlencode }}">
-                                            <i title="Edit agenda properties" class="bi bi-pencil"></i>
+                                            <i class="bi bi-pencil"></i>
                                         </a>
                                     {% endif %}
                                     <a class="btn btn-outline-primary"
+                                       title="Show timeslots and misc. sessions for agenda"
+                                       aria-label="Show timeslots and misc. sessions for agenda"
                                        href="{% url "ietf.meeting.views.edit_meeting_timeslots_and_misc_sessions" meeting.number schedule.owner_email schedule.name %}">
-                                        <i title="Show timeslots and misc. sessions for agenda"
-                                           class="bi bi-calendar"></i>
+                                        <i class="bi bi-calendar"></i>
                                     </a>
                                 </div>
                             </td>

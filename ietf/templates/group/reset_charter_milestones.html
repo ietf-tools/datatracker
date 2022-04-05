@@ -25,9 +25,9 @@
                            type="checkbox"
                            name="milestone"
                            value="{{ milestone.id }}"
-                           id="id-{{ milestone.id }}"
+                           id="{{ milestone.id }}"
                            {% if not milestone.resolved %}checked{% endif %}>
-                    <label class="form-check-label" for="id-{{ milestone.id }}">
+                    <label class="form-check-label" for="{{ milestone.id_for_label }}">
                         {{ milestone.desc }}
                         <span class="badge {% if milestone.resolved %}bg-success{% else %}bg-info{% endif %}">
                             {% if milestone.resolved %}

@@ -83,7 +83,7 @@
                 </span>
             {% endif %}
         </h2>
-        <iframe class="w-100 overflow-hidden border border-dark"></iframe>
+        <iframe title="Schedule" class="w-100 overflow-hidden border border-dark"></iframe>
     </div>
     <h2 class="mt-3">
         {% if personalize %}Personalize{% endif %}
@@ -124,10 +124,15 @@
                         {% if personalize %}
                             <td class="text-center">
                                 {% if item.session_keyword %}
+                                    <label class="visually-hidden"
+                                           aria-label="Select session"
+                                           for="{{ item.session_keyword }}">
+                                   </label>
                                     <input type="checkbox"
                                            class="pickview form-check-input"
                                            title="Select session"
                                            name="selected-sessions"
+                                           id="{{ item.session_keyword }}"
                                            value="{{ item.session_keyword }}"
                                            data-filter-keywords="{{ item.filter_keywords|join:',' }}"
                                            data-filter-item="{{ item.session_keyword }}">
@@ -201,10 +206,15 @@
                     {% if personalize %}
                         <td class="text-center">
                             {% if item.session_keyword %}
+                                <label class="visually-hidden"
+                                       aria-label="Select session"
+                                       for="{{ item.session_keyword }}">
+                               </label>
                                 <input type="checkbox"
                                        class="pickview form-check-input"
                                        title="Select session"
                                        name="selected-sessions"
+                                       id="{{ item.session_keyword }}"
                                        value="{{ item.session_keyword }}"
                                        data-filter-keywords="{{ item.filter_keywords|join:',' }}"
                                        data-filter-item="{{ item.session_keyword }}">

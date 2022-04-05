@@ -32,8 +32,8 @@
                     <th scope="col" data-sort="group">Group</th>
                     <th scope="col" data-sort="num">Length</th>
                     <th scope="col" data-sort="num">Size</th>
-                    <th class="d-none d-sm-table-cell" data-sort="requester">Requester</th>
-                    <th class="d-none d-sm-table-cell" data-sort="ad">AD</th>
+                    <th scope="col" class="d-none d-sm-table-cell" data-sort="requester">Requester</th>
+                    <th scope="col" class="d-none d-sm-table-cell" data-sort="ad">AD</th>
                     <th scope="col" data-sort="constraints">Constraints</th>
                     <th scope="col" data-sort="special">Special requests</th>
                 </tr>
@@ -43,7 +43,7 @@
                     {% if not forloop.first %}</tbody>{% endif %}
                     <tbody>
                         <tr>
-                            <th class="table-warning" colspan="7">{{ session.current_status_name|capfirst }}</th>
+                            <th scope="row" class="table-warning" colspan="7">{{ session.current_status_name|capfirst }}</th>
                         </tr>
                     </tbody>
                     <tbody>
