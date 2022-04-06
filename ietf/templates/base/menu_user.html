@@ -125,11 +125,7 @@
         </li>
     {% endif %}
     {% if user|has_role:"Area Director" %}
-        {% if flavor == "top" %}
-            <li>
-                <hr class="dropdown-divider">
-            </li>
-        {% endif %}
+        {% if flavor == "top" %}<li><hr class="dropdown-divider"></li>{% endif %}
         <li {% if flavor == "top" %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>AD dashboard</li>
         <li>
             <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
@@ -163,11 +159,7 @@
         </li>
     {% endif %}
     {% if user|has_role:"Secretariat" %}
-        {% if flavor == "top" %}
-            <li>
-                <hr class="dropdown-divider">
-            </li>
-        {% endif %}
+        {% if flavor == "top" %}<li><hr class="dropdown-divider"></li>{% endif %}
         <li {% if flavor == "top" %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>
             IETF secretariat
         </li>
@@ -204,8 +196,7 @@
     {% endif %}
     {% if user|has_role:"IANA" %}
         {% if flavor == "top" %}
-            <li>
-                <hr class="dropdown-divider">
+            <li><hr class="dropdown-divider">
             </li>
         {% endif %}
         <li {% if flavor == "top" %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>
@@ -220,8 +211,7 @@
     {% endif %}
     {% if user|has_role:"RFC Editor" %}
         {% if flavor == "top" %}
-            <li>
-                <hr class="dropdown-divider">
+            <li><hr class="dropdown-divider">
             </li>
         {% endif %}
         <li {% if flavor == "top" %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>
