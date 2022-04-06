@@ -207,8 +207,10 @@
         {% endif %}
     </tbody>
     </table>
-    {% if liaison.state.slug == 'pending' and can_edit or liaison.state.slug == 'dead' and can_edit %}<form method="post">{% endif %}
+    {% if liaison.state.slug == 'pending' and can_edit or liaison.state.slug == 'dead' and can_edit %}
+    <form method="post">
         {% csrf_token %}
+    {% endif %}
         {% if liaison.state.slug == 'pending' and can_edit %}
             <a class="btn btn-primary"
                href="{% url "ietf.liaisons.views.liaison_edit" object_id=liaison.pk %}">

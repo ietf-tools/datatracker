@@ -109,7 +109,7 @@
             {% for item in filtered_assignments %}
                 {% ifchanged item.timeslot.time|date:"Y-m-d" %}
                     <tr class="table-primary show-with-children">
-                        <th scope="row" colspan="{% if personalize %}6{% else %}5{% endif %}"
+                        <th scope="col" colspan="{% if personalize %}6{% else %}5{% endif %}"
                             id="slot-{{ item.timeslot.time|slugify }}"
                             class="nav-heading">
                             {{ item.timeslot.time|date:"l, F j, Y" }}

@@ -37,14 +37,14 @@
                             {% ifchanged %}
                                 <tbody>
                                     <tr class="table-warning">
-                                        <th scope="row" colspan="3">{{ ipr.state.name }}</th>
+                                        <th scope="col" colspan="3">{{ ipr.state.name }}</th>
                                     </tr>
                                 </tbody>
                             {% endifchanged %}
                         {% endif %}
                         <tbody>
                             <tr class="table-info">
-                                <th scope="row" colspan="3">
+                                <th scope="col" colspan="3">
                                     {% block intro_prefix %}IPR that was submitted by "{{ q }}" and{% endblock %}
                                     {% block related %}
                                         {% with ipr.iprdocrel_set.all as iprdocrels %}

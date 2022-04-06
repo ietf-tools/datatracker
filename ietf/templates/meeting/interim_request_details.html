@@ -103,8 +103,10 @@
             {% endif %}
         {% endfor %}
     </dl>
-    {% if can_approve and status_slug == 'apprw' %}<form method="post">{% endif %}
+    {% if can_approve and status_slug == 'apprw' %}
+    <form method="post">
         {% csrf_token %}
+    {% endif %}
         {%  with meeting_status.slug as status_slug %}
             {% if can_edit %}
                 <a class="btn btn-primary"
