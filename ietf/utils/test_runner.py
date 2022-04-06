@@ -152,7 +152,7 @@ class MyPyTest(TestCase):
 
     @unittest.skipIf(sys.version_info[0] < 3, "Mypy and django-stubs not available under Py2")
     def mypy_test(self):
-        return  # FIXME
+        return  # FIXME: fails with error: Module 'django.template.backends.django' has no attribute 'Template'"
         self.maxDiff = None
         from mypy import api
         out, err, code = api.run(['ietf', ])
@@ -166,7 +166,7 @@ class ValidatingTemplates(DjangoTemplates):
     def __init__(self, params):
         super().__init__(params)
 
-        if settings.validate_html is False:
+        if not settings.validate_html:
             return
         self.validation_cache = set()
         self.cwd = str(pathlib.Path.cwd())
@@ -182,7 +182,7 @@ class ValidatingTemplate(Template):
     def render(self, context=None, request=None):
         content = super().render(context, request)
 
-        if settings.validate_html is False:
+        if not settings.validate_html:
             return content
 
         if not self.origin.name.endswith("html"):
@@ -586,17 +586,17 @@ class IetfTestRunner(DiscoverRunner):
             action='store_true', default=False,
             help='Show logging output going to LOG_USER in production mode')
         parser.add_argument('--no-validate-html',
-            action='store_true', dest="no_validate_html", default=False,
+            action='store_false', dest="validate_html", default=True,
             help='Do not validate all generated HTML with html-validate.org')
 
-    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, no_validate_html=None, **kwargs):
+    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, **kwargs):
         #
         self.check_coverage = not skip_coverage
         self.save_version_coverage = save_version_coverage
         self.html_report = html_report
         self.permit_mixed_migrations = permit_mixed_migrations
         self.show_logging = show_logging
-        settings.validate_html = self if no_validate_html is False else False
+        settings.validate_html = self if validate_html else None
         settings.show_logging = show_logging
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
@@ -712,7 +712,7 @@ class IetfTestRunner(DiscoverRunner):
             s[1] = tuple(s[1])      # random.setstate() won't accept a list in lieu of a tuple
         factory.random.set_random_state(s)
 
-        if settings.validate_html is False:
+        if not settings.validate_html:
             print("     Not validating any generated HTML; "
                   "please do so at least once before committing changes")
         else:
@@ -745,7 +745,7 @@ class IetfTestRunner(DiscoverRunner):
             config["doc"]["extends"].append("html-validate:document")
             # FIXME: we should find a way to use SRI, but ignore for now:
             config["doc"]["rules"]["require-sri"] = "off"
-            # permit discontinuous heading numbering in cards
+            # permit discontinuous heading numbering in cards, modals and dialogs:
             config["doc"]["rules"]["heading-level"] = [
                 "error",
                 {
@@ -758,7 +758,7 @@ class IetfTestRunner(DiscoverRunner):
             ]
 
             self.config_file = {}
-            for kind in ["doc", "frag"]:
+            for kind in self.batches:
                 self.config_file[kind] = tempfile.NamedTemporaryFile(
                     prefix="html-validate-config-"
                 )
@@ -789,8 +789,7 @@ class IetfTestRunner(DiscoverRunner):
         super(IetfTestRunner, self).teardown_test_environment(**kwargs)
 
         if settings.validate_html:
-            # self.queue.put(None)
-            for kind in ["doc", "frag"]:
+            for kind in self.batches:
                 self.validate(kind)
                 self.config_file[kind].close()
 
