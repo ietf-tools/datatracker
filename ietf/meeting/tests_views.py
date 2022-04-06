@@ -3632,7 +3632,7 @@ class EditTests(TestCase):
 
         # Now enable the 'chair_conflict' constraint only
         chair_conflict = ConstraintName.objects.get(slug='chair_conflict')
-        chair_conf_label = b'<i class="bi bi-person-plus"/>'  # result of etree.tostring(etree.fromstring(editor_label))
+        chair_conf_label = b'<i class="bi bi-person-circle"/>'  # result of etree.tostring(etree.fromstring(editor_label))
         meeting.group_conflict_types.add(chair_conflict)
         r = self.client.get(url)
         q = PyQuery(r.content)
@@ -3897,6 +3897,69 @@ class EditTests(TestCase):
         ames_slot_qs.update(time=mars_ends + datetime.timedelta(seconds=10 * 60))
         self.assertTrue(mars_slot.slot_to_the_right)
         self.assertTrue(mars_scheduled.slot_to_the_right)
+
+    def test_updateview(self):
+        """The updateview action should set visible timeslot types in the session"""
+        meeting = MeetingFactory(type_id='ietf')
+        url = urlreverse('ietf.meeting.views.edit_meeting_schedule', kwargs={'num': meeting.number})
+        types_to_enable = ['regular', 'reg', 'other']
+        r = self.client.post(
+            url,
+            {
+                'action': 'updateview',
+                'enabled_timeslot_types[]': types_to_enable,
+            },
+        )
+        self.assertEqual(r.status_code, 200)
+        session_data = self.client.session
+        self.assertIn('edit_meeting_schedule', session_data)
+        self.assertCountEqual(
+            session_data['edit_meeting_schedule']['enabled_timeslot_types'],
+            types_to_enable,
+            'Should set types requested',
+        )
+
+        r = self.client.post(
+            url,
+            {
+                'action': 'updateview',
+                'enabled_timeslot_types[]': types_to_enable + ['faketype'],
+            },
+        )
+        self.assertEqual(r.status_code, 200)
+        session_data = self.client.session
+        self.assertIn('edit_meeting_schedule', session_data)
+        self.assertCountEqual(
+            session_data['edit_meeting_schedule']['enabled_timeslot_types'],
+            types_to_enable,
+            'Should ignore unknown types',
+        )
+
+    def test_persistent_enabled_timeslot_types(self):
+        meeting = MeetingFactory(type_id='ietf')
+        TimeSlotFactory(meeting=meeting, type_id='other')
+        TimeSlotFactory(meeting=meeting, type_id='reg')
+
+        # test default behavior (only 'regular' enabled)
+        r = self.client.get(urlreverse('ietf.meeting.views.edit_meeting_schedule', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="regular"][checked]')), 1)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="other"]:not([checked])')), 1)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="reg"]:not([checked])')), 1)
+
+        # test with 'regular' and 'other' enabled via session store
+        client_session = self.client.session  # must store as var, new session is created on access
+        client_session['edit_meeting_schedule'] = {
+            'enabled_timeslot_types': ['regular', 'other']
+        }
+        client_session.save()
+        r = self.client.get(urlreverse('ietf.meeting.views.edit_meeting_schedule', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="regular"][checked]')), 1)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="other"][checked]')), 1)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="reg"]:not([checked])')), 1)
 
 
 class SessionDetailsTests(TestCase):
