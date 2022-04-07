@@ -180,18 +180,20 @@
                                 {% endif %}
                                 {% bootstrap_field r.form.action layout="horizontal" size="sm" %}
                             </div>
-                            <div class="reviewer-controls mx-1 flex-fill">
+                            <div class="reviewer-controls mx-1 flex-fill row">
                                 {% if r.form.review_type %}
-                                    {% bootstrap_field r.form.review_type layout="horizontal" size="sm" %}
+                                    {% bootstrap_field r.form.review_type layout="horizontal" wrapper_class="col" size="sm" %}
                                 {% endif %}
-                                {% bootstrap_field r.form.reviewer layout="horizontal" size="sm" %}
-                                {% bootstrap_field r.form.add_skip layout="horizontal" size="sm" %}
-                                <button type="button"
-                                        class="btn btn-sm btn-primary undo"
-                                        title="Cancel assignment"
-                                        data-initial="{{ r.form.fields.reviewer.initial|default:"" }}">
-                                    Cancel
-                                </button>
+                                {% bootstrap_field r.form.reviewer layout="horizontal" wrapper_class="col row" label_class="p-0" size="sm" %}
+                                {% bootstrap_field r.form.add_skip layout="horizontal" wrapper_class="col col-2" size="sm" %}
+                                <div class="col col-1">
+                                    <button type="button"
+                                            class="btn btn-sm btn-primary undo"
+                                            title="Cancel assignment"
+                                            data-initial="{{ r.form.fields.reviewer.initial|default:"" }}">
+                                        Cancel
+                                    </button>
+                                </div>
                                 {% if r.form.reviewer.errors or r.form.add_skip.errors %}
                                     <div class="alert alert-danger my-3">
                                         {% for e in r.form.reviewer.errors %}{{ e }}{% endfor %}
