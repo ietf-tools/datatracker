@@ -10,6 +10,7 @@
     </p>
     <form method="post" action="{% url 'oidc_provider:authorize' %}">
         {% csrf_token %}
+        <!-- [html-validate-disable-block void-style -- FIXME: django-oidc-provider uses outdated HTML] -->
         {{ hidden_inputs }}
         <ul>
             {% for scope in scopes %}
@@ -20,7 +21,7 @@
                 </li>
             {% endfor %}
         </ul>
-        <input class="btn btn-primary" name="allow" type="submit" value="Authorize">
-        <input class="btn btn-secondary float-end" type="submit" value="Decline">
+        <button class="btn btn-primary" name="allow" type="submit">Authorize</button>
+        <button class="btn btn-secondary float-end" type="submit">Decline</button>
     </form>
 {% endblock %}

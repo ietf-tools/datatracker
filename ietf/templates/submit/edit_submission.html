@@ -21,7 +21,7 @@
         <div class="modal-dialog modal-dialog-scrollable modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="twopageslabel">First two pages of {{ submission.name }}-{{ submission.rev }}</h5>
+                    <p class="h5 modal-title" id="twopageslabel">First two pages of {{ submission.name }}-{{ submission.rev }}</p>
                     <button type="button"
                             class="btn-close"
                             data-bs-dismiss="modal"
@@ -36,11 +36,13 @@
     </div>
     <h2 class="mt-5">Adjust meta-data of submitted {{ submission.name }}</h2>
     <table class="table table-sm table-striped">
+        <tbody>
         <tr>
-            <th>Document</th>
+            <th scope="row">Document</th>
             <td>
                 {{ submission.name }}
                 <button class="btn btn-primary btn-sm float-end ms-1"
+                        type="button"
                         data-bs-toggle="modal"
                         data-bs-target="#twopages">
                     View first two pages
@@ -49,11 +51,11 @@
             </td>
         </tr>
         <tr>
-            <th>Submission date</th>
+            <th scope="row">Submission date</th>
             <td>{{ submission.submission_date }}</td>
         </tr>
         <tr>
-            <th>Group</th>
+            <th scope="row">Group</th>
             <td>
                 {{ submission.group|default:"Individual Submission" }}
                 {% if submission.group %}<a href="{{ submission.group.about_url }}">({{ submission.group.acronym|upper }})</a>{% endif %}
@@ -65,9 +67,10 @@
             </td>
         </tr>
         <tr>
-            <th>File size</th>
+            <th scope="row">File size</th>
             <td>{{ submission.file_size|filesizeformat }}</td>
         </tr>
+        </tbody>
     </table>
     <h3 class="mt-5">Adjust meta-data</h3>
     {% if form_errors %}<div class="alert alert-danger my-3">Please fix the errors in the form below.</div>{% endif %}
@@ -83,14 +86,16 @@
                 <input type="hidden" name="authors-prefix" value="{{ form.prefix  }}">
             </div>
         {% endfor %}
-        <input class="btn btn-primary"
+        <button class="btn btn-primary"
                type="button"
-               value="Add another author"
                id="add-author">
+               Add another author
+        </button>
         <br>
-        <input class="btn btn-primary mt-3"
-               type="submit"
-               value="Submit for manual posting">
+        <button class="btn btn-primary mt-3"
+               type="submit">
+            Submit for manual posting
+        </button>
     </form>
     {% include "submit/problem-reports-footer.html" %}
 {% endblock %}

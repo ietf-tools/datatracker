@@ -10,7 +10,7 @@
                 <div class="col-3 text-end fw-bold">Conflict review</div>
                 <div class="col">
                     <div class="fw-bold">{{ doc.title }}</div>
-                    <a href="{{ doc.get_href }}">
+                    <a href="{{ doc.get_href }}" aria-label="Content">
                         <i class="bi bi-file-earmark-fill"></i>
                     </a>
                     <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
@@ -20,7 +20,7 @@
                 <div class="col-3 text-end fw-bold">{{ conflictdoc.stream }} {{ conflictdoc.intended_std_level }}</div>
                 <div class="col">
                     <div class="fw-bold">{{ conflictdoc.title }}</div>
-                    <a href="{{ settings.IETF_ID_ARCHIVE_URL }}{{ conflictdoc.name }}-{{ conflictdoc.rev }}.txt">
+                    <a href="{{ settings.IETF_ID_ARCHIVE_URL }}{{ conflictdoc.name }}-{{ conflictdoc.rev }}.txt" aria-label="Content">
                         <i class="bi bi-file-earmark-fill"></i>
                     </a>
                     <a href="{% url "ietf.doc.views_doc.document_main" name=conflictdoc.name %}">{{ conflictdoc.name }}</a>

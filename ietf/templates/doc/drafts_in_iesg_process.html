@@ -13,23 +13,23 @@
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th data-sort="area">Area</th>
-                <th data-sort="date">
+                <th scope="col" data-sort="area">Area</th>
+                <th scope="col" data-sort="date">
                     {% if state.slug == "lc" %}
                         Expires at
                     {% else %}
                         Date
                     {% endif %}
                 </th>
-                <th data-sort="doc">Document</th>
-                <th data-sort="level">Intended level</th>
-                <th data-sort="ad">AD</th>
+                <th scope="col" data-sort="doc">Document</th>
+                <th scope="col" data-sort="level">Intended level</th>
+                <th scope="col" data-sort="ad">AD</th>
             </tr>
         </thead>
         {% for state, docs in grouped_docs %}
             <tbody>
                 <tr class="table-info">
-                    <th colspan="5">{{ state.name }}</th>
+                    <th scope="col" colspan="5">{{ state.name }}</th>
                 </tr>
             </tbody>
             <tbody>
@@ -67,7 +67,7 @@
                             {% if doc.intended_std_level %}
                                 {{ doc.intended_std_level.name }}
                             {% else %}
-                                <span class='text-muted'>(None)</span>
+                                <span class="text-muted">(None)</span>
                             {% endif %}
                         </td>
                         <td>{% person_link doc.ad %}</td>

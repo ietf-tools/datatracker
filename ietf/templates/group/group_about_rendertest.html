@@ -27,8 +27,8 @@
             <div class="col-md-6 rightpanel">
                 <div class="h2 text-center bg-info">Markdown rendering</div>
                 <div class="border-bottom text-center">
-                    <label class="form-label">Constrain width</label>
-                    <input type="checkbox" class="form-check-input" name="widthconstraint">
+                    <label class="form-label" for="widthconstraint">Constrain width</label>
+                    <input type="checkbox" class="form-check-input" name="widthconstraint" id="widthconstraint">
             </div>
             <div class="rightcontent">{{ rendered|sanitize|safe }}</div>
         </div>

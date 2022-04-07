@@ -11,15 +11,15 @@
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th data-sort="name">Relationship</th>
-                <th data-sort="desc">Description</th>
-                <th data-sort="revname">Inverse relationship</th>
+                <th scope="col" data-sort="name">Relationship</th>
+                <th scope="col" data-sort="desc">Description</th>
+                <th scope="col" data-sort="revname">Inverse relationship</th>
             </tr>
         </thead>
         <tbody>
             {% for rel in relations %}
                 <tr id="{{ rel.slug }}">
-                    <th>{{ rel.name }}</th>
+                    <th scope="row">{{ rel.name }}</th>
                     <td>{{ rel.desc|linebreaksbr }}</td>
                     <td>{{ rel.revname }}</td>
                 </tr>

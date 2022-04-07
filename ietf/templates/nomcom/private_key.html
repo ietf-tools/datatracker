@@ -24,10 +24,11 @@
     <form enctype="multipart/form-data" method="post" class="my-3">
         {% csrf_token %}
         {% bootstrap_form form %}
-        <input class="btn btn-primary"
+        <button class="btn btn-primary"
                type="submit"
-               value="Save"
                name="save"
-               {% if submit_disabled %}disabled="disabled"{% endif %}>
+               {% if submit_disabled %}disabled{% endif %}>
+            Save
+        </button>
     </form>
 {% endblock %}

@@ -19,7 +19,10 @@
         <h2>Groups - Search</h2>
         <form enctype="multipart/form-data" method="post">{% csrf_token %}
             <table class="full-width amstable">
-                {{ form.as_table }}
+                <tbody>
+                <!-- [html-validate-disable-block element-required-attributes -- FIXME: as_table renders without scope] -->
+                 {{ form.as_table }}
+                 </tbody>
             </table>
 
             {% include "includes/buttons_search.html" %}

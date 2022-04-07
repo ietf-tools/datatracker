@@ -14,6 +14,8 @@
 *.#*
 .*.swp
 .DS_store
+datatracker.sublime-project
+datatracker.sublime-workspace
 # Simulated Subversion default ignores end here
 /.coverage
 /.factoryboy_random_state

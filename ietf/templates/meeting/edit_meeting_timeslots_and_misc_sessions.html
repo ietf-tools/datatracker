@@ -39,6 +39,7 @@
                                 {% if room.capacity %}<span class="badge bg-secondary">{{ room.capacity }}</span>{% endif %}
                             </div>
                             <div class="timeline">
+                                <!-- [html-validate-disable-block no-inline-style -- FIXME: should style this better] -->
                                 {% for t in timeslots %}
                                     <div id="timeslot{{ t.pk }}"
                                          class="timeslot"

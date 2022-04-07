@@ -8,7 +8,7 @@
 {% block content %}
     {% origin %}
     <h1>References to {{ alias_name }}</h1>
-    <p class="my-3 alert alert-info my-3">
+    <p class="alert alert-info my-3">
         These dependencies are extracted using heuristics looking for strings with particular prefixes. Notably, this means that references to I-Ds by title only are not reflected here. If it's really important, please inspect the documents' references sections directly.
     </p>
     <p>
@@ -29,11 +29,11 @@
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th data-sort="document">Document</th>
-                <th data-sort="title">Title</th>
-                <th data-sort="status">Status</th>
-                <th data-sort="type">Type</th>
-                <th data-sort="downref">Downref</th>
+                <th scope="col" data-sort="document">Document</th>
+                <th scope="col" data-sort="title">Title</th>
+                <th scope="col" data-sort="status">Status</th>
+                <th scope="col" data-sort="type">Type</th>
+                <th scope="col" data-sort="downref">Downref</th>
             </tr>
         </thead>
         <tbody>

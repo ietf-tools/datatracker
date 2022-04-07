@@ -5,12 +5,12 @@
 <table class="table table-sm table-striped tablesorter ipr-table">
     <thead>
         <tr>
-            <th data-sort="date">Date</th>
-            <th data-sort="num">ID</th>
-            <th data-sort="title">Title</th>
+            <th scope="col" data-sort="date">Date</th>
+            <th scope="col" data-sort="num">ID</th>
+            <th scope="col" data-sort="title">Title</th>
             {% if administrative_list == 'pending' %}
-                <th data-sort="query">Query</th>
-                <th data-sort="due">Response due</th>
+                <th scope="col" data-sort="query">Query</th>
+                <th scope="col" data-sort="due">Response due</th>
             {% endif %}
         </tr>
     </thead>

@@ -17,10 +17,9 @@
     <form method="post" class="my-3" enctype="multipart/form-data">
         {% csrf_token %}
         {# Null Form #}
-        <input class="btn btn-danger"
+        <button class="btn btn-danger"
                type="submit"
-               value="Delete schedule"
-               name="save">
+               name="save">Delete schedule</button>
         <a href="{% url 'ietf.meeting.views.list_schedules' num=meeting.number %}"
            class="btn btn-secondary float-end">Back</a>
     </form>
