@@ -1,4 +1,5 @@
 {% load person_filters editor_tags %}
+<!-- [html-validate-disable-block no-inline-style -- FIXME: should style this better] -->
 <div id="session{{ session.pk }}"
      class="session {% if not session.group.parent.scheduling_color %}untoggleable-by-parent{% endif %} {% if session.parent_acronym %}parent-{{ session.parent_acronym }}{% endif %} purpose-{{ session.purpose.slug }} {% if session.readonly %}readonly{% endif %} {% if not session.on_agenda %}off-agenda{% endif %}"
      style="width:{{ session.layout_width }}em;"

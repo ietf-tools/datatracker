@@ -20,8 +20,9 @@
                             {% if session.agenda and show_agenda %}
                                 {# agenda pop-up button #}
                                 <button class="btn btn-outline-primary"
-                                        data-bs-toggle="modal"
+                                        data-bs-toggle="modal" type="button"
                                         data-bs-target="#modal-{{ slug }}"
+                                        aria-label="Show meeting materials"
                                         title="Show meeting materials">
                                     <i class="bi bi-arrows-fullscreen"></i>
                                 </button>
@@ -29,6 +30,7 @@
                                 <a class="btn btn-outline-primary"
                                    role="button"
                                    href="/meeting/{{ meeting.number }}/agenda/{{ acronym }}-drafts.tgz"
+                                   aria-label="Download meeting materials as .tar archive"
                                    title="Download meeting materials as .tar archive">
                                     <i class="bi bi-file-zip"></i>
                                 </a>
@@ -36,6 +38,7 @@
                                 <a class="btn btn-outline-primary"
                                    role="button"
                                    href="/meeting/{{ meeting.number }}/agenda/{{ acronym }}-drafts.pdf"
+                                   aria-label="Download meeting materials as PDF file"
                                    title="Download meeting materials as PDF file">
                                     <i class="bi bi-file-pdf"></i>
                                 </a>
@@ -45,6 +48,7 @@
                                 <a class="btn btn-outline-primary"
                                    role="button"
                                    href="{{ session.notes_url }}"
+                                   aria-label="Notepad for note-takers"
                                    title="Notepad for note-takers">
                                     <i class="bi bi-journal-text"></i>
                                 </a>
@@ -55,6 +59,7 @@
                                 <a class="btn btn-outline-primary"
                                    role="button"
                                    href="xmpp:{{ session.jabber_room_name }}@jabber.ietf.org?join"
+                                   aria-label="Chat room for {{ session.jabber_room_name }}"
                                    title="Chat room for {{ session.jabber_room_name }}">
                                     <i class="bi bi-chat"></i>
                                 </a>
@@ -63,6 +68,7 @@
                                     <a class="btn btn-outline-primary"
                                        role="button"
                                        href="{{ timeslot.location.video_stream_url|format:session }}"
+                                       aria-label="Video stream"
                                        title="Video stream">
                                         <i class="bi bi-camera-video"></i>
                                     </a>
@@ -72,6 +78,7 @@
                                     <a class="btn btn-outline-primary"
                                        role="button"
                                        href="{{ timeslot.location.onsite_tool_url|format:session }}"
+                                       aria-label="Onsite tool"
                                        title="Onsite tool">
                                        <i class="bi bi-phone"></i>
                                     </a>
@@ -81,6 +88,7 @@
                                     <a class="btn btn-outline-primary"
                                        role="button"
                                        href="{{ timeslot.location.audio_stream_url|format:session }}"
+                                       aria-label="Audio stream"
                                        title="Audio stream">
                                         <i class="bi bi-headphones"></i>
                                     </a>
@@ -90,6 +98,7 @@
                                     <a class="btn btn-outline-primary"
                                        role="button"
                                        href="{{ session.agenda_note|first_url }}"
+                                       aria-label="Online conference"
                                        title="Online conference">
                                         <i class="bi bi-people"></i>
                                     </a>
@@ -97,6 +106,7 @@
                                     <a class="btn btn-outline-primary"
                                        role="button"
                                        href="{{ session.remote_instructions|first_url }}"
+                                       aria-label="Online conference"
                                        title="Online conference">
                                         <i class="bi bi-people"></i>
                                     </a>
@@ -104,6 +114,7 @@
                                     <a class="btn btn-outline-primary"
                                        role="button"
                                        href="{{ timeslot.location.webex_url|format:session }}"
+                                       aria-label="Webex session"
                                        title="Webex session">
                                         <i class="bi bi-people"></i>
                                     </a>
@@ -112,6 +123,7 @@
                                 <a class="btn btn-outline-primary"
                                    role="button"
                                    href="{% url 'ietf.meeting.views.agenda_ical' num=meeting.number session_id=session.id %}"
+                                   aria-label="icalendar entry for {{ acronym }} session on {{ timeslot.utc_start_time|date:'Y-m-d H:i' }} UTC"
                                    title="icalendar entry for {{ acronym }} session on {{ timeslot.utc_start_time|date:'Y-m-d H:i' }} UTC">
                                     <i class="bi bi-calendar"></i>
                                 </a>
@@ -121,6 +133,7 @@
                                     <a class="btn btn-outline-primary"
                                        role="button"
                                        href="https://www.ietf.org/jabber/logs/{{ session.jabber_room_name }}?C=M;O=D"
+                                       aria-label="Chat logs for {{ session.jabber_room_name }}"
                                        title="Chat logs for {{ session.jabber_room_name }}">
                                         <i class="bi bi-file-text"></i>
                                     </a>
@@ -136,6 +149,7 @@
                                                     <a class="btn btn-outline-primary"
                                                        role="button"
                                                        href="{{ r.get_href }}"
+                                                       aria-label="{{ r.title }}"
                                                        title="{{ r.title }}">
                                                         <i class="bi bi-file-play"></i>
                                                     </a>
@@ -147,6 +161,7 @@
                                                     <a class="btn btn-outline-primary"
                                                        role="button"
                                                        href="{{ r.get_href }}"
+                                                       aria-label="{{ r.title }}"
                                                        title="{{ r.title }}">
                                                         <i class="bi bi-file-slides"></i>
                                                     </a>
@@ -158,6 +173,7 @@
                                                     <a class="btn btn-outline-primary"
                                                        role="button"
                                                        href="{{ r.get_href }}"
+                                                       aria-label="{{ r.title }}"
                                                        title="{{ r.title }}">
                                                         <i class="bi bi-file-play"></i>
                                                     </a>
@@ -169,6 +185,7 @@
                                         <a class="btn btn-outline-primary"
                                            role="button"
                                            href="https://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ acronym.upper }}"
+                                           aria-label="Session recording"
                                            title="Session recording">
                                             <i class="bi bi-file-slides"></i>
                                         </a>
@@ -180,6 +197,7 @@
                     <div class="dropdown d-lg-none">
                         <button class="btn btn-outline-primary btn-sm dropdown-toggle"
                                 type="button"
+                                aria-label="Info"
                                 id="session-buttons-dropdown-{{ session.pk }}"
                                 data-bs-toggle="dropdown"
                                 aria-haspopup="true"
@@ -192,7 +210,7 @@
                                 {% if session.agenda and show_agenda %}
                                     {# agenda pop-up button #}
                                     <li>
-                                        <button class="dropdown-item"
+                                        <button class="dropdown-item" type="button"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#modal-{{ slug }}">
                                             <i class="bi bi-arrows-fullscreen"></i> Show meeting materials

@@ -23,6 +23,7 @@
         {{ formset.management_form }}
         {{ formset.non_form_errors }}
         <table class="table table-striped">
+            <tbody>
             {% for form in formset %}
                 <tr class="row">
                     <td class="col-md-3">
@@ -37,6 +38,7 @@
                     <td class="col-md-9">{% bootstrap_form form %}</td>
                 </tr>
             {% endfor %}
+            </tbody>
         </table>
         <a class="btn btn-secondary float-end"
            href="{% url 'ietf.meeting.views.materials' num=meeting.number %}">Back</a>

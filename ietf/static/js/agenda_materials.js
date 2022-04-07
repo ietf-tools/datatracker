@@ -34,9 +34,9 @@ var agenda_materials; // public interface
           data = "<p>Error retrieving " + data_src
             + ": Missing content-type in response header</p>";
         } else if (t.indexOf("text/plain") > -1) {
-          data = "<pre class='agenda'>" + data + "</pre>";
+          data = '<pre class="agenda">' + data + "</pre>";
         } else if (t.indexOf("text/markdown") > -1) {
-          data = "<pre class='agenda'>" + data + "</pre>";
+          data = '<pre class="agenda">' + data + "</pre>";
         } else if(t.indexOf("text/html") > -1) {
           // nothing to do here
         } else {

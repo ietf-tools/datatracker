@@ -14,40 +14,40 @@
     <table class="my-3 table table-sm table-borderless">
         <tbody class="meta border-top">
             <tr>
-                <th>{{ group.type.name }}</th>
-                <th>Name</th>
+                <th scope="row">{{ group.type.name }}</th>
+                <th scope="row">Name</th>
                 <td class="edit">
                     {% if can_edit_group %}
                         <a class="btn btn-primary btn-sm"
                            href="{% url 'ietf.group.views.edit' acronym=group.acronym field='name' %}">Edit</a>
                     {% endif %}
                 </td>
-                <th>{{ group.name }}</th>
+                <th scope="row">{{ group.name }}</th>
             </tr>
             <tr>
                 <td></td>
-                <th>Acronym</th>
+                <th scope="row">Acronym</th>
                 <td class="edit"></td>
                 <td>{{ group.acronym }}</td>
             </tr>
             <tr>
                 <td></td>
                 {% if group.parent and group.parent.type_id == "area" %}
-                    <th>{{ group.parent.type.name }}</th>
+                    <th scope="row">{{ group.parent.type.name }}</th>
                     <td class="edit"></td>
                     <td>
                         {{ group.parent.name }}
                         <a href="{% url "ietf.group.views.group_home" acronym=group.parent.acronym %}">({{ group.parent.acronym }})</a>
                     </td>
                 {% else %}
-                    <th></th>
+                    <td></td>
                     <td class="edit"></td>
                     <td></td>
                 {% endif %}
             </tr>
             <tr>
                 <td></td>
-                <th>State</th>
+                <th scope="row">State</th>
                 <td class="edit">
                     {% if can_edit_group %}
                         <a class="btn btn-primary btn-sm"
@@ -62,7 +62,7 @@
             {% if group.features.has_chartering_process %}
                 <tr>
                     <td></td>
-                    <th>Charter</th>
+                    <th scope="row">Charter</th>
                     <td class="edit"></td>
                     <td>
                         {% if group.charter %}
@@ -79,10 +79,10 @@
                 </tr>
             {% endif %}
             {% if can_provide_status_update or status_update %}
-                <tr id='status_update'>
+                <tr id="status_update">
                     <td>
                     </td>
-                    <th>
+                    <th scope="row">
                         Status update
                     </th>
                     <td class="edit">
@@ -111,10 +111,10 @@
                 </tr>
             {% endif %}
             {% if group.features.has_documents %}
-                <tr id='dependency_graph'>
+                <tr id="dependency_graph">
                     <td>
                     </td>
-                    <th>
+                    <th scope="row">
                         Document dependencies
                     </th>
                     <td class="edit">
@@ -132,7 +132,7 @@
                     <tr>
                         <td>
                         </td>
-                        <th>
+                        <th scope="row">
                             Additional resources
                         </th>
                         <td class="edit">
@@ -165,14 +165,14 @@
             {% for slug, label, roles in group.personnel %}
                 <tr>
                     {% if forloop.first %}
-                        <th>
+                        <th scope="row">
                             Personnel
                         </th>
                     {% else %}
                         <td>
                         </td>
                     {% endif %}
-                    <th>
+                    <th scope="row">
                         {{ label }}
                     </th>
                     <td class="edit">
@@ -195,10 +195,10 @@
         {% if group.list_email %}
             <tbody class="meta border-top">
                 <tr>
-                    <th>
+                    <th scope="row">
                         Mailing list
                     </th>
-                    <th>
+                    <th scope="row">
                         Address
                     </th>
                     <td class="edit">
@@ -216,7 +216,7 @@
                 <tr>
                     <td>
                     </td>
-                    <th>
+                    <th scope="row">
                         To subscribe
                     </th>
                     <td class="edit">
@@ -234,7 +234,7 @@
                 <tr>
                     <td>
                     </td>
-                    <th>
+                    <th scope="row">
                         Archive
                     </th>
                     <td class="edit">
@@ -254,10 +254,10 @@
         {% if group.state_id != "conclude" and group.features.has_default_jabber %}
             <tbody class="meta border-top">
                 <tr>
-                    <th>
+                    <th scope="row">
                         Jabber chat
                     </th>
-                    <th>
+                    <th scope="row">
                         Room address
                     </th>
                     <td class="edit">
@@ -271,7 +271,7 @@
                 <tr>
                     <td>
                     </td>
-                    <th>
+                    <th scope="row">
                         Logs
                     </th>
                     <td class="edit">

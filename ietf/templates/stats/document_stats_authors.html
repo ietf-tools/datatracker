@@ -49,9 +49,9 @@
 <table class="table table-sm table-striped tablesorter stats-data">
     <thead>
         <tr>
-            <th data-sort="num">Authors</th>
-            <th data-sort="num">Percentage of {{ doc_label }}s</th>
-            <th data-sort="num">{{ doc_label|capfirst }}s</th>
+            <th scope="col" data-sort="num">Authors</th>
+            <th scope="col" data-sort="num">Percentage of {{ doc_label }}s</th>
+            <th scope="col" data-sort="num">{{ doc_label|capfirst }}s</th>
         </tr>
     </thead>
     {% if table_data %}

@@ -149,6 +149,27 @@ table tbody.meta {
     max-width: 300px;
 }
 
+// Style the photo cards
+.photo {
+    width: 13em;
+
+    .card-img-top {
+        object-fit: cover;
+        height: 15em;
+    }
+
+    .photo-placeholder {
+        height: 15em;
+        font-size: 12em;
+    }
+}
+
+// Style the righthand navigation panel
+#righthand-nav {
+    height: 70vh;
+    width: inherit;
+}
+
 // Add some padding when there are multiple buttons in a line than can wrap
 .buttonlist .btn {
     margin-top: map.get($spacers, 2);

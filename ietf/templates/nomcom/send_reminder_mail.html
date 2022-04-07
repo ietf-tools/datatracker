@@ -31,22 +31,24 @@
             <table class="table table-sm table-striped">
                 <thead>
                     <tr>
-                        <th>
+                        <th scope="col">
                             <i class="bi bi-check"></i>
                         </th>
-                        <th data-sort="nominee">Nominee</th>
-                        <th data-sort="positions">Positions</th>
+                        <th scope="col" data-sort="nominee">Nominee</th>
+                        <th scope="col" data-sort="positions">Positions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for nominee in nominees %}
                         <tr>
                             <td>
+                                <label class="visually-hidden" aria-label="{{ nominee.name }}" for="id-{{ nominee.id }}"></label>
                                 <input type="checkbox"
                                        class="batch-select form-check-input"
+                                       id="id-{{ nominee.id }}"
                                        value="{{ nominee.id }}"
                                        name="selected"
-                                       checked="checked">
+                                       checked>
                             </td>
                             <td>{% person_link nominee.person %}</td>
                             <td>{{ nominee.interesting_positions|join:", " }}</td>
@@ -54,10 +56,11 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <input class="btn btn-primary"
+            <button class="btn btn-primary"
                    type="submit"
-                   name="submit"
-                   value="Submit request">
+                   name="submit">
+                Submit request
+            </button>
         </form>
     {% endif %}
 {% endblock %}

@@ -22,16 +22,16 @@
         <table class="center">
             <form action="modify/" method="post">{% csrf_token %}
                 <tr>
-                    <input type="hidden" name="frozen" value="{{ proceeding.frozen }}" />
+                    <input type="hidden" name="frozen" value="{{ proceeding.frozen }}">
                     {% if not proceeding.frozen %}
                         <tr>
                             <td>Active Proceeding</td>
-                            <td><input type="submit" name="submit" value="Freeze" /></td>
+                            <td><button type="submit" name="submit">Freeze</button></td>
                     {% endif %}
                     {% if proceeding.frozen %}
                         <tr>
                             <td>Frozen Proceeding</td>
-                            <td><input type="submit" name="submit" value="Activate" /></td>
+                            <td><button type="submit" name="submit">Activate</button></td>
                     {% endif %}
                 </tr>
             </form>
@@ -39,10 +39,9 @@
 
         <div class="button-group">
             <ul>
-                <li><button onclick="history.go(-1);return true">Back</button></li>
+                <li><button type="button" onclick="history.go(-1);return true">Back</button></li>
             </ul>
         </div> <!-- button-group -->
     </div> <!-- module -->
 
 {% endblock %}
-

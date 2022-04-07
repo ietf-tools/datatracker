@@ -28,13 +28,13 @@
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th data-sort="name">Name</th>
-                    <th data-sort="owner">Owner</th>
-                    <th data-sort="origin">Origin</th>
-                    <th data-sort="base">Base</th>
-                    <th data-sort="notes">Notes</th>
-                    <th data-sort="visible">Visible</th>
-                    <th data-sort="public">Public</th>
+                    <th scope="col" data-sort="name">Name</th>
+                    <th scope="col" data-sort="owner">Owner</th>
+                    <th scope="col" data-sort="origin">Origin</th>
+                    <th scope="col" data-sort="base">Base</th>
+                    <th scope="col" data-sort="notes">Notes</th>
+                    <th scope="col" data-sort="visible">Visible</th>
+                    <th scope="col" data-sort="public">Public</th>
                     <td></td>
                 </tr>
             </thead>
@@ -86,14 +86,17 @@
                                 <div class="btn-group btn-group-sm float-end" role="group">
                                     {% if schedule.can_edit_properties %}
                                         <a class="btn btn-outline-primary edit-schedule-properties"
+                                           title="Edit agenda properties"
+                                           aria-label="Edit agenda properties"
                                            href="{% url "ietf.meeting.views.edit_schedule_properties" meeting.number schedule.owner_email schedule.name %}?next={{ request.get_full_path|urlencode }}">
-                                            <i title="Edit agenda properties" class="bi bi-pencil"></i>
+                                            <i class="bi bi-pencil"></i>
                                         </a>
                                     {% endif %}
                                     <a class="btn btn-outline-primary"
+                                       title="Show timeslots and misc. sessions for agenda"
+                                       aria-label="Show timeslots and misc. sessions for agenda"
                                        href="{% url "ietf.meeting.views.edit_meeting_timeslots_and_misc_sessions" meeting.number schedule.owner_email schedule.name %}">
-                                        <i title="Show timeslots and misc. sessions for agenda"
-                                           class="bi bi-calendar"></i>
+                                        <i class="bi bi-calendar"></i>
                                     </a>
                                 </div>
                             </td>

@@ -3001,7 +3001,7 @@ def ajax_get_utc(request):
     utc_day_offset = (naive_utc_dt.date() - dt.date()).days
     html = "<span>{utc} UTC</span>".format(utc=utc)
     if utc_day_offset != 0:
-        html = html + "<span class='day-offset'> {0:+d} Day</span>".format(utc_day_offset)
+        html = html + '<span class="day-offset"> {0:+d} Day</span>'.format(utc_day_offset)
     context_data = {'timezone': timezone, 
                     'time': time, 
                     'utc': utc, 

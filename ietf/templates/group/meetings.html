@@ -25,10 +25,10 @@
             <table class="table table-sm table-striped tablesorter">
                 <thead>
                     <tr>
-                        <th data-sort="meeting">Meeting</th>
-                        <th data-sort="date">Date</th>
-                        <th></th>
-                        <th>Materials</th>
+                        <th scope="col" data-sort="meeting">Meeting</th>
+                        <th scope="col" data-sort="date">Date</th>
+                        <th scope="col"></th>
+                        <th scope="col">Materials</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -41,6 +41,7 @@
         <h2 class="mt-3" id="futuremeets">
             Future Meetings
             <a class="float-end"
+               aria-label="icalendar entry for all scheduled future {{ group.acronym }} meetings"
                title="icalendar entry for all scheduled future {{ group.acronym }} meetings"
                href="{% url 'ietf.meeting.views.upcoming_ical' %}?show={{ group.acronym }}">
                 <i class="bi bi-calendar"></i>
@@ -49,10 +50,10 @@
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th data-sort="meeting">Meeting</th>
-                    <th data-sort="date">Date</th>
-                    <th></th>
-                    <th>Materials</th>
+                    <th scope="col" data-sort="meeting">Meeting</th>
+                    <th scope="col" data-sort="date">Date</th>
+                    <th scope="col"></th>
+                    <th scope="col">Materials</th>
                 </tr>
             </thead>
             {% with sessions=future show_request=True show_ical=True can_edit_materials=can_edit %}
@@ -67,10 +68,10 @@
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th data-sort="meeting">Meeting</th>
-                    <th data-sort="date">Date</th>
-                    <th></th>
-                    <th>Materials</th>
+                    <th scope="col" data-sort="meeting">Meeting</th>
+                    <th scope="col" data-sort="date">Date</th>
+                    <th scope="col"></th>
+                    <th scope="col">Materials</th>
                 </tr>
             </thead>
             <tbody>
