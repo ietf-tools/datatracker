@@ -749,7 +749,7 @@ def login(request, extra_context=None):
                 You have personal information associated with your account which is not
                 derived from draft submissions or other ietf work, namely: %s.  Please go
                 to your <a href="/accounts/profile">account profile</a> and review your
-                personal information, then scoll to the bottom and check the "confirm"
+                personal information, then scoll to the bottom and check the 'confirm'
                 checkbox and submit the form, in order to to indicate that that the
                 provided personal information may be used and displayed within the IETF
                 datatracker.
