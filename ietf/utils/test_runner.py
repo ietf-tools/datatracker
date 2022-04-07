@@ -69,7 +69,8 @@ from django.template.loaders.filesystem import Loader as BaseLoader
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
 from django.urls import URLResolver # type: ignore
-from django.template.backends.django import DjangoTemplates, Template
+from django.template.backends.django import DjangoTemplates
+from django.template.backends.django import Template  # type: ignore[attr-defined]
 # from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
@@ -152,7 +153,6 @@ class MyPyTest(TestCase):
 
     @unittest.skipIf(sys.version_info[0] < 3, "Mypy and django-stubs not available under Py2")
     def mypy_test(self):
-        return  # FIXME: fails with error: Module 'django.template.backends.django' has no attribute 'Template'"
         self.maxDiff = None
         from mypy import api
         out, err, code = api.run(['ietf', ])
