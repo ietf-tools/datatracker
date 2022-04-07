@@ -18,7 +18,6 @@
 
     // Select timezone to use. Arg is name of a timezone or 'local' to guess local tz.
     function use_timezone(newtz) {
-        // Guess local timezone if necessary
         if (current_timezone !== newtz) {
             current_timezone = newtz;
             // Update values of tz-select inputs but do not trigger change event
@@ -46,7 +45,7 @@
      */
     function timezone_init(current) {
         var tz_names = moment.tz.names();
-        if (current == 'local') {
+        if (current === 'local') {
             current = moment.tz.guess();
         }
         tz_selects = $('select.tz-select');
