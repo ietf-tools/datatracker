@@ -943,12 +943,8 @@ td.position-empty {
     padding-left: 0px !important;
 }
 
-.ongoing>td:first-child {
-    background-color: red !important;
-}
-
-.ongoing>td:last-child {
-    background-color: red !important;
+#agenda-table tbody tr.current-session {
+    border-top: map.get($border-widths, 2) solid map.get($theme-colors, "info");
 }
 
 .timetooltip {
@@ -996,4 +992,9 @@ td.position-empty {
 
 #current-time {
     display: inline-block;
+}
+
+// righthand nav panel styling
+#righthand-nav {
+    width: inherit;
 }

@@ -23,6 +23,10 @@
     {% else %}
         {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda" title_extra="" %}
     {% endif %}
+    {# the contents of #extra-nav will be moved into the RH nav panel #}
+    <div id="extra-nav" class="d-none">
+        <a class="nav-link now-link" href="#">Current session</a>
+    </div>
     {# cache this part -- it takes 3-6 seconds to generate #}
     {% load cache %}
     {% cache cache_time ietf_meeting_agenda_utc schedule.meeting.number request.path %}
@@ -186,6 +190,7 @@
             {% if item|is_regular_agenda_item %}
                 {% ifchanged %}
                     <tr class="table-secondary session-label-row show-with-children"
+                        id="session-starting-{{ item.timeslot.utc_start_time|date:"Y-m-d H:i"|slugify }}"
                         data-slot-start-ts="{{ item.start_timestamp }}"
                         data-slot-end-ts="{{ item.end_timestamp }}">
                         {% if personalize %}<th scope="row" class="text-center"></th>{% endif %}
@@ -423,17 +428,17 @@
     {% endif %}
     <script>
         {% if settings.DEBUG and settings.DEBUG_AGENDA %}
-            speedup = +$.urlParam('speedup');
+            speedup = +urlParam('speedup');
             if (speedup < 1) {
                 speedup = 1;
             }
             start_time = moment().utc();
-            if ($.urlParam('date')) {
-                offset_time = moment.tz(decodeURIComponent($.urlParam('date')), "UTC");
+            if (urlParam('date')) {
+                offset_time = moment.tz(decodeURIComponent(urlParam('date')), "UTC");
             } else {
                 offset_time = start_time;
             }
-            if (speedup > 1 || offset_time != start_time) {
+            if (speedup > 1 || offset_time !== start_time) {
                 moment.now = function () {
                     return (+new Date() - start_time) * speedup + offset_time;
                 }
@@ -470,7 +475,7 @@
 
             // Now make other setup calls from agenda_timezone.js
             add_tooltips();
-            init_timers();
+            init_timers(speedup);
 
             // Finally, set up the agenda filter UI. This does not depend on the timezone.
             {% if personalize %}
