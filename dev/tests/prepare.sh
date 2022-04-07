@@ -13,3 +13,5 @@ npx parcel build
 echo "Creating data directories..."
 chmod +x ./docker/scripts/app-create-dirs.sh
 ./docker/scripts/app-create-dirs.sh
+echo "Fetching latest coverage results file..."
+curl -fsSL https://github.com/ietf-tools/datatracker/releases/latest/download/coverage.json -o release-coverage.json

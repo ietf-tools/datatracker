@@ -15,6 +15,11 @@ on:
         description: 'Skip Tests'
         required: true
         type: boolean
+      summary:
+        description: 'Summary'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   # -----------------------------------------------------------------
@@ -122,10 +127,21 @@ jobs:
         ./ietf/manage.py check
         echo "Running tests..."
         ./ietf/manage.py test --settings=settings_sqlitetest --failfast
+        coverage xml
+
+    - name: Upload Coverage Results to Codecov
+      uses: codecov/codecov-action@v2.1.0
+      with:
+        files: coverage.xml
+        
+    - name: Convert Coverage Results
+      if: ${{ always() }}
+      run: |
         mv latest-coverage.json coverage.json
         
-    - name: Upload a Coverage Results
+    - name: Upload Coverage Results as Build Artifact
       uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
       with:
         name: coverage
         path: coverage.json
@@ -191,6 +207,25 @@ jobs:
         token: ${{ github.token }}
         tag: ${{ env.PKG_VERSION }}
         writeToFile: false
+
+    - name: Prepare Coverage Action
+      if: ${{ github.event.inputs.skiptests == 'false' }}
+      working-directory: ./dev/coverage-action
+      run: npm install
+        
+    - name: Process Coverage Stats + Chart
+      id: covprocess
+      uses: ./dev/coverage-action/
+      if: ${{ github.event.inputs.skiptests == 'false' }}
+      with:
+        token: ${{ github.token }}
+        tokenCommon: ${{ secrets.GH_COMMON_TOKEN }}
+        repoCommon: common
+        version: ${{needs.prepare.outputs.pkg_version}}
+        changelog: ${{ steps.changelog.outputs.changes }}
+        summary: ${{ github.event.inputs.summary }}
+        coverageResultsPath: coverage.json
+        histCoveragePath: historical-coverage.json
         
     - name: Create Release
       uses: ncipollo/release-action@v1
@@ -200,8 +235,8 @@ jobs:
         draft: false
         tag: ${{ env.PKG_VERSION }}
         name: ${{ env.PKG_VERSION }}
-        body: ${{ steps.changelog.outputs.changes }}
-        artifacts: "/home/runner/work/release/release.tar.gz,coverage.json"
+        body: ${{ steps.covprocess.outputs.changelog }}
+        artifacts: "/home/runner/work/release/release.tar.gz,coverage.json,historical-coverage.json"
         token: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Upload Build Artifacts

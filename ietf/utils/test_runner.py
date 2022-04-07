@@ -46,7 +46,7 @@ import socket
 import datetime
 import gzip
 import unittest
-import subprocess
+#import subprocess
 import factory.random
 from fnmatch import fnmatch
 
@@ -630,24 +630,24 @@ class IetfTestRunner(DiscoverRunner):
             except socket.error:
                 pass
 
-        try:
-            settings.VNU = subprocess.Popen(
-                [
-                    "java",
-                    "-jar",
-                    "/vnu.jar",
-                    "-Dnu.validator.servlet.bind-address=127.0.0.1",
-                    "nu.validator.servlet.Main",
-                    "8888",
-                ],
-                stdout=subprocess.DEVNULL,
-            )
-            print("     Starting Nu Html Checker (v.Nu) for HTML5 validation")
-        except OSError:
-            print(
-                "     Could not start Nu Html Checker (v.Nu), skipping most HTML5 validation"
-            )
-            settings.VNU = None
+        # try:
+        #     settings.VNU = subprocess.Popen(
+        #         [
+        #             "java",
+        #             "-jar",
+        #             "/vnu.jar",
+        #             "-Dnu.validator.servlet.bind-address=127.0.0.1",
+        #             "nu.validator.servlet.Main",
+        #             "8888",
+        #         ],
+        #         stdout=subprocess.DEVNULL,
+        #     )
+        #     print("     Starting Nu Html Checker (v.Nu) for HTML5 validation")
+        # except OSError:
+        #     print(
+        #         "     Could not start Nu Html Checker (v.Nu), skipping most HTML5 validation"
+        #     )
+        #     settings.VNU = None
 
         if os.path.exists(settings.UTILS_TEST_RANDOM_STATE_FILE):
             print("     Loading factory-boy random state from %s" % settings.UTILS_TEST_RANDOM_STATE_FILE)
@@ -665,8 +665,8 @@ class IetfTestRunner(DiscoverRunner):
 
     def teardown_test_environment(self, **kwargs):
         self.smtpd_driver.stop()
-        if settings.VNU:
-            settings.VNU.terminate()
+        # if settings.VNU:
+        #     settings.VNU.terminate()
         if self.check_coverage:
             latest_coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_LATEST_FILE)
             coverage_latest = {}

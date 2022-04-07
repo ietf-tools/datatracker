@@ -16,7 +16,7 @@ import tarfile
 import tempfile
 
 from calendar import timegm
-from collections import OrderedDict, Counter, deque, defaultdict
+from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
 from urllib.parse import unquote
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
@@ -39,7 +39,6 @@ from django.template.loader import render_to_string
 from django.utils.encoding import force_str
 from django.utils.functional import curry
 from django.utils.text import slugify
-from django.utils.html import format_html
 from django.utils.timezone import now
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
@@ -558,20 +557,20 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             # shared between the conflicting sessions they cover - the JS
             # then simply has to detect violations and show the
             # preprocessed labels
-            constrained_sessions_grouped_by_label = defaultdict(set)
-            for name_id, ts in itertools.groupby(sorted(constraints_for_sessions.get(s.pk, [])), key=lambda t: t[0]):
+            ConstraintHint = namedtuple('ConstraintHint', 'constraint_name count')
+            constraint_hints = defaultdict(set)
+            for name_id, ts in itertools.groupby(sorted(constraints_for_sessions.get(s.pk, [])), key=lambda t: t[0]):  # name_id same for each set of ts
                 ts = list(ts)
                 session_pks = (t[1] for t in ts)
-                constraint_name = constraint_names[name_id]
-                if "{count}" in constraint_name.formatted_editor_label:
-                    for session_pk, grouped_session_pks in itertools.groupby(session_pks):
-                        count = sum(1 for i in grouped_session_pks)
-                        constrained_sessions_grouped_by_label[format_html(constraint_name.formatted_editor_label, count=count)].add(session_pk)
+                for session_pk, grouped_session_pks in itertools.groupby(session_pks):
+                    # count is the number of instances of session_pk - should only have multiple in the
+                    # case of bethere constraints, where there will be one per person.pk
+                    count = len(list(grouped_session_pks))  # list() needed because iterator has no len()
+                    constraint_hints[ConstraintHint(constraint_names[name_id], count)].add(session_pk)
 
-                else:
-                    constrained_sessions_grouped_by_label[constraint_name.formatted_editor_label].update(session_pks)
-
-            s.constrained_sessions = list(constrained_sessions_grouped_by_label.items())
+            # The constraint hint key is a tuple (ConstraintName, count). Value is the set of sessions pks that
+            # should trigger that hint.
+            s.constraint_hints = list(constraint_hints.items())
             s.formatted_constraints = formatted_constraints_for_sessions.get(s.pk, {})
 
             s.other_sessions = [s_other for s_other in sessions_for_group.get(s.group_id) if s != s_other]
@@ -728,10 +727,18 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         return JsonResponse(data, status=status)
 
     if request.method == 'POST':
-        if not can_edit:
-            permission_denied(request, "Can't edit this schedule.")
-
         action = request.POST.get('action')
+        if action == 'updateview':
+            # allow updateview action even if can_edit is false, it affects only the user's session
+            sess_data = request.session.setdefault('edit_meeting_schedule', {})
+            enabled_types = [ts_type.slug for ts_type in TimeSlotTypeName.objects.filter(
+                used=True,
+                slug__in=request.POST.getlist('enabled_timeslot_types[]', [])
+            )]
+            sess_data['enabled_timeslot_types'] = enabled_types
+            return _json_response(True)
+        elif not can_edit:
+            permission_denied(request, "Can't edit this schedule.")
 
         # Handle ajax requests. Most of these return JSON responses with at least a 'success' key.
         # For the swapdays and swaptimeslots actions, the response is either a redirect to the
@@ -949,6 +956,16 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         key=lambda tstype: tstype.name,
     )
 
+    # extract view configuration from session store
+    session_data = request.session.get('edit_meeting_schedule', None)
+    if session_data is None:
+        enabled_timeslot_types = ['regular']
+    else:
+        enabled_timeslot_types = [
+            ts_type.slug for ts_type in timeslot_types
+            if ts_type.slug in session_data.get('enabled_timeslot_types', [])
+        ]
+
     return render(request, "meeting/edit_meeting_schedule.html", {
         'meeting': meeting,
         'schedule': schedule,
@@ -963,6 +980,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         'timeslot_types': timeslot_types,
         'hide_menu': True,
         'lock_time': lock_time,
+        'enabled_timeslot_types': enabled_timeslot_types,
     })
 
 
@@ -1496,16 +1514,16 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         raise Http404('Extension not allowed')
 
     # We do not have the appropriate data in the datatracker for IETF 64 and earlier.
-    # So that we're not producing misleading pages...
-
-    assert num is None or num.isdigit()
-
+    # So that we're not producing misleading pages, redirect to their proceedings.
+    # The datatracker DB does include a Meeting instance for every IETF meeting, though,
+    # so we can use that to validate that num is a valid meeting number.
     meeting = get_ietf_meeting(num)
-    if not meeting or (meeting.number.isdigit() and int(meeting.number) <= 64 and (not meeting.schedule or not meeting.schedule.assignments.exists())):
-        if ext == '.html' or (meeting and meeting.number.isdigit() and 0 < int(meeting.number) <= 64):
-            return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}')
-        else:
-            raise Http404("No such meeting")
+    if meeting is None:
+        raise Http404("No such full IETF meeting")
+    elif int(meeting.number) <= 64:
+        return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}')
+    else:
+        pass
 
     # Select the schedule to show
     if name is None:
@@ -4169,11 +4187,11 @@ def import_session_minutes(request, session_id, num):
     if current_minutes:
         try:
             with open(current_minutes.get_file_name()) as f:
-                if import_contents == Note.preprocess_source(f.read()):
+                if import_contents == f.read():
                     contents_changed = False
                     messages.warning(request, 'This document is identical to the current revision, no need to import.')
-        except FileNotFoundError:
-            pass  # allow import if the file is missing
+        except Exception:
+            pass  # Do not let a failure here prevent minutes from being updated.
 
     return render(
         request,

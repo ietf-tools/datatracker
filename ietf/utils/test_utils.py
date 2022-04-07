@@ -41,7 +41,7 @@ import html5lib
 import requests_mock
 import shutil
 import sys
-import subprocess
+# import subprocess
 
 from urllib.parse import unquote
 from unittest.util import strclass
@@ -49,10 +49,10 @@ from bs4 import BeautifulSoup
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from tidylib import tidy_document
+# from tidylib import tidy_document
 
 import django.test
-from django.test.client import Client
+# from django.test.client import Client
 from django.conf import settings
 from django.utils.text import slugify
 
@@ -156,128 +156,128 @@ class ReverseLazyTest(django.test.TestCase):
         self.assertRedirects(response, "/ipr/", status_code=301)
 
 
-class VerifyingClient(Client):
-    def __init__(self, test):
-        super(VerifyingClient, self).__init__()
-        self.test = test
+# class VerifyingClient(Client):
+#     def __init__(self, test):
+#         super(VerifyingClient, self).__init__()
+#         self.test = test
 
-    def handle_error(self, path, source, errors):
-        file_name = "error" + re.sub("/", "-", path)
-        if not file_name.endswith("-"):
-            file_name += "-"
-        file_name += "source.html"
-        with open(file_name, "w") as src:
-            src.write(source)
-            print("\nHTML validation error for URL path", path)
-            print("HTML source saved to", file_name)
-            print("See AssertionError below for error location in HTML source.")
-        self.test.maxDiff = None
-        self.test.assertEqual("", errors)
+#     def handle_error(self, path, source, errors):
+#         file_name = "error" + re.sub("/", "-", path)
+#         if not file_name.endswith("-"):
+#             file_name += "-"
+#         file_name += "source.html"
+#         with open(file_name, "w") as src:
+#             src.write(source)
+#             print("\nHTML validation error for URL path", path)
+#             print("HTML source saved to", file_name)
+#             print("See AssertionError below for error location in HTML source.")
+#         self.test.maxDiff = None
+#         self.test.assertEqual("", errors)
 
-    def get(self, path, *args, skip_verify=False, **extra):
-        """GET request
+#     def get(self, path, *args, skip_verify=False, **extra):
+#         """GET request
 
-        Performs verification of HTML responses unless skip_verify is True.
-        """
-        r = super(VerifyingClient, self).get(path, *args, **extra)
+#         Performs verification of HTML responses unless skip_verify is True.
+#         """
+#         r = super(VerifyingClient, self).get(path, *args, **extra)
 
-        if (
-            skip_verify
-            or r.status_code >= 300
-            or not r["content-type"].lower().startswith("text/html")
-        ):
-            return r
-        source = r.content.decode()
+#         if (
+#             skip_verify
+#             or r.status_code >= 300
+#             or not r["content-type"].lower().startswith("text/html")
+#         ):
+#             return r
+#         source = r.content.decode()
 
-        if settings.VNU:
-            # First, run through https://validator.github.io/validator/
-            result = subprocess.run(
-                ["java", "-jar", "/vnu.jar", "nu.validator.client.HttpClient", "-"],
-                input=r.content,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-            )
-            errors = result.stdout.decode()
+#         if settings.VNU:
+#             # First, run through https://validator.github.io/validator/
+#             result = subprocess.run(
+#                 ["java", "-jar", "/vnu.jar", "nu.validator.client.HttpClient", "-"],
+#                 input=r.content,
+#                 stdout=subprocess.PIPE,
+#                 stderr=subprocess.DEVNULL,
+#             )
+#             errors = result.stdout.decode()
 
-            if errors:
-                msg = ""
-                for err in errors.splitlines():
-                    # TODO: check if some can be removed after validating database templates
-                    if (
-                        re.match(r'.*Attribute "required" not allowed', err)
-                        or re.match(
-                            r'.*The "type" attribute is unnecessary for JavaScript', err
-                        )
-                        or re.match(
-                            r'.*Element "option" without attribute "label" must not be empty',
-                            err,
-                        )
-                        or re.match(r".*The character encoding was not declared", err)
-                        or re.match(r".*Consider avoiding viewport values", err)
-                        or re.match(
-                            r'.*The value of the "for" attribute of the "label" element must be the ID of a non-hidden form control',
-                            err,
-                        )
-                        or re.match(r".*is not in Unicode Normalization Form C", err)
-                    ):
-                        continue
-                    # ignore some errors about obsolete HTML coming from the database
-                    if re.match(
-                        r"/meeting/\d+/proceedings/overview/", path
-                    ) and re.match(
-                        r'.*The "\w+" attribute on the "\w+" element is obsolete', err
-                    ):
-                        continue
-                    # ignore some errors coming from outdated but still-needed iframes
-                    if re.match(r"/meeting/\d+/week-view", path) and re.match(
-                        r".*Start tag seen without seeing a doctype first", err
-                    ):
-                        continue
-                    pos = re.match(r'".*":((\d+)\.(\d+)-(\d+)\.(\d+):.*)', err)
-                    if not pos:
-                        self.handle_error(path, source, err)
-                        return r
-                    msg += pos.group(1).strip(" .") + ":\n"
-                    for line in source.splitlines()[
-                        int(pos.group(2)) - 1 : int(pos.group(4))
-                    ]:
-                        msg += line.strip() + "\n"
+#             if errors:
+#                 msg = ""
+#                 for err in errors.splitlines():
+#                     # TODO: check if some can be removed after validating database templates
+#                     if (
+#                         re.match(r'.*Attribute "required" not allowed', err)
+#                         or re.match(
+#                             r'.*The "type" attribute is unnecessary for JavaScript', err
+#                         )
+#                         or re.match(
+#                             r'.*Element "option" without attribute "label" must not be empty',
+#                             err,
+#                         )
+#                         or re.match(r".*The character encoding was not declared", err)
+#                         or re.match(r".*Consider avoiding viewport values", err)
+#                         or re.match(
+#                             r'.*The value of the "for" attribute of the "label" element must be the ID of a non-hidden form control',
+#                             err,
+#                         )
+#                         or re.match(r".*is not in Unicode Normalization Form C", err)
+#                     ):
+#                         continue
+#                     # ignore some errors about obsolete HTML coming from the database
+#                     if re.match(
+#                         r"/meeting/\d+/proceedings/overview/", path
+#                     ) and re.match(
+#                         r'.*The "\w+" attribute on the "\w+" element is obsolete', err
+#                     ):
+#                         continue
+#                     # ignore some errors coming from outdated but still-needed iframes
+#                     if re.match(r"/meeting/\d+/week-view", path) and re.match(
+#                         r".*Start tag seen without seeing a doctype first", err
+#                     ):
+#                         continue
+#                     pos = re.match(r'".*":((\d+)\.(\d+)-(\d+)\.(\d+):.*)', err)
+#                     if not pos:
+#                         self.handle_error(path, source, err)
+#                         return r
+#                     msg += pos.group(1).strip(" .") + ":\n"
+#                     for line in source.splitlines()[
+#                         int(pos.group(2)) - 1 : int(pos.group(4))
+#                     ]:
+#                         msg += line.strip() + "\n"
 
-                if msg:
-                    self.handle_error(path, source, msg)
-                    return r
+#                 if msg:
+#                     self.handle_error(path, source, msg)
+#                     return r
 
-        # Next, run through https://www.html-tidy.org/
-        document, errors = tidy_document(
-            r.content,
-            options={
-                # this is causing way too many generic warnings:
-                # "accessibility-check": 1,
-            },
-        )
+#         # Next, run through https://www.html-tidy.org/
+#         document, errors = tidy_document(
+#             r.content,
+#             options={
+#                 # this is causing way too many generic warnings:
+#                 # "accessibility-check": 1,
+#             },
+#         )
 
-        errors = "\n".join(
-            [
-                e
-                # TODO: check if some can be removed after validating database templates
-                for e in errors.splitlines()
-                # FIXME: django-bootstrap5 incorrectly sets a "required"
-                # proprietary attribute on some <div>s; remove those errors
-                if not re.match(r'.*proprietary attribute "required"', e)
-                # FIXME: some secretariat templates have this issue, ignore
-                and not re.match(r".*id and name attribute value mismatch", e)
-                # FIXME: bootstrap-icons and close buttons render as empty, remove those errors.
-                # Also, django seems to generate some empty tags, so remove those, too.
-                and not re.match(r".*trimming empty <(i|em|button|span|optgroup)>", e)
-                # FIXME: some old pages only work correctly in quirks mode :-(
-                and not re.match(r".*missing <!DOCTYPE> declaration", e)
-            ]
-        )
+#         errors = "\n".join(
+#             [
+#                 e
+#                 # TODO: check if some can be removed after validating database templates
+#                 for e in errors.splitlines()
+#                 # FIXME: django-bootstrap5 incorrectly sets a "required"
+#                 # proprietary attribute on some <div>s; remove those errors
+#                 if not re.match(r'.*proprietary attribute "required"', e)
+#                 # FIXME: some secretariat templates have this issue, ignore
+#                 and not re.match(r".*id and name attribute value mismatch", e)
+#                 # FIXME: bootstrap-icons and close buttons render as empty, remove those errors.
+#                 # Also, django seems to generate some empty tags, so remove those, too.
+#                 and not re.match(r".*trimming empty <(i|em|button|span|optgroup)>", e)
+#                 # FIXME: some old pages only work correctly in quirks mode :-(
+#                 and not re.match(r".*missing <!DOCTYPE> declaration", e)
+#             ]
+#         )
 
-        if errors:
-            self.handle_error(path, source, errors)
+#         if errors:
+#             self.handle_error(path, source, errors)
 
-        return r
+#         return r
 
 
 class TestCase(django.test.TestCase):
@@ -399,7 +399,7 @@ class TestCase(django.test.TestCase):
         self.requests_mock = requests_mock.Mocker()
         self.requests_mock.start()
 
-        self.client = VerifyingClient(self)  # Set up the HTML verifier
+        # self.client = VerifyingClient(self)  # Set up the HTML verifier
 
         # Replace settings paths with temporary directories.
         self._ietf_temp_dirs = {}  # trashed during tearDown, DO NOT put paths you care about in this
