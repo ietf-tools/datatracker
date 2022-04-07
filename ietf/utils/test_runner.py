@@ -832,6 +832,7 @@ class IetfTestRunner(DiscoverRunner):
             try:
                 validation_results = json.load(stdout)
             except json.decoder.JSONDecodeError:
+                stdout.seek(0)
                 testcase.fail(stdout.read())
 
         errors = ""
