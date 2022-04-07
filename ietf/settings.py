@@ -601,7 +601,7 @@ TEST_TEMPLATE_IGNORE = [
     "500.html"                        # isn't loaded by regular loader, but checked by test_500_page()
 ]
 
-TEST_COVERAGE_MASTER_FILE = os.path.join(BASE_DIR, "../release-coverage.json.gz")
+TEST_COVERAGE_MASTER_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
 TEST_COVERAGE_LATEST_FILE = os.path.join(BASE_DIR, "../latest-coverage.json")
 
 TEST_CODE_COVERAGE_CHECKER = None
@@ -1007,7 +1007,6 @@ BIBXML_BASE_PATH = '/a/ietfdata/derived/bibxml'
 
 # Timezone files for iCalendar
 TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
-CHANGELOG_PATH =  BASE_DIR + '/../changelog'
 
 SECR_BLUE_SHEET_PATH = '/a/www/ietf-datatracker/documents/blue_sheet.rtf'
 SECR_BLUE_SHEET_URL = '//datatracker.ietf.org/documents/blue_sheet.rtf'
@@ -1015,7 +1014,6 @@ SECR_INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
 SECR_MAX_UPLOAD_SIZE = 40960000
 SECR_PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
 SECR_PPT2PDF_COMMAND = ['/usr/bin/soffice','--headless','--convert-to','pdf:writer_globaldocument_pdf_Export','--outdir']
-SECR_VIRTUAL_MEETINGS = ['108']
 STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
 PROCEEDINGS_VERSION_CHANGES = [
     0,   # version 1
@@ -1095,61 +1093,6 @@ USER_PREFERENCE_DEFAULTS = {
     "left_menu"     : "off",
 }
 
-TRAC_MASTER_DIR = "/a/www/trac-setup/"
-TRAC_WIKI_DIR_PATTERN = "/a/www/www6s/trac/%s"
-TRAC_WIKI_URL_PATTERN = "https://trac.ietf.org/trac/%s/wiki"
-TRAC_ISSUE_URL_PATTERN = "https://trac.ietf.org/trac/%s/report/1"
-TRAC_SVN_DIR_PATTERN = "/a/svn/group/%s"
-#TRAC_SVN_URL_PATTERN = "https://svn.ietf.org/svn/group/%s/"
-
-# The group types setting was replaced by a group feature entry 10 Jan 2019
-#TRAC_CREATE_GROUP_TYPES = ['wg', 'rg', 'area', 'team', 'dir', 'review', 'ag', 'nomcom', ]
-TRAC_CREATE_GROUP_STATES = ['bof', 'active', ]
-TRAC_CREATE_GROUP_ACRONYMS = ['iesg', 'iaoc', 'ietf', ]
-
-# This is overridden in production's settings-local.  Make sure to update it.
-TRAC_CREATE_ADHOC_WIKIS = [
-    # admin group acronym, name, sub-path
-    # A trailing fileglob wildcard is supported on group acronyms
-    ('iesg', 'Meeting', "ietf/meeting"),
-    ('nomcom*', 'NomCom', 'nomcom'),
-]
-
-SVN_PACKAGES = [
-    "/usr/lib/python/dist-packages/svn",
-    "/usr/lib/python3.6/dist-packages/libsvn",
-]
-
-TRAC_ENV_OPTIONS = [
-    ('project', 'name', "{name} Wiki"),
-    ('trac', 'database', 'sqlite:db/trac.db' ),
-    ('trac', 'repository_type', 'svn'),
-    ('trac', 'repository_dir', "{svn_dir}"),
-    ('inherit', 'file', "/a/www/trac-setup/conf/trac.ini"),
-    ('components', 'tracopt.versioncontrol.svn.*', 'enabled'),
-]
-
-TRAC_WIKI_PAGES_TEMPLATES = [
-    "utils/wiki/IetfSpecificFeatures",
-    "utils/wiki/InterMapTxt",
-    "utils/wiki/SvnTracHooks",
-    "utils/wiki/ThisTracInstallation",
-    "utils/wiki/TrainingMaterials",
-    "utils/wiki/WikiStart",
-]
-
-TRAC_ISSUE_SEVERITY_ADD = [
-    "-",
-    "Candidate WG Document",
-    "Active WG Document",
-    "Waiting for Expert Review",
-    "In WG Last Call",
-    "Waiting for Shepherd Writeup",
-    "Submitted WG Document",
-    "Dead WG Document",
-]
-
-SVN_ADMIN_COMMAND = "/usr/bin/svnadmin"
 
 # Email addresses people attempt to set for their account will be checked
 # against the following list of regex expressions with re.search(pat, addr):

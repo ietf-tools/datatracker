@@ -145,16 +145,24 @@
                                 <span class="fw-bold">Abstract:</span>
                                 {{ r.doc.abstract|linkify|urlize_ietf_docs }}
                             </div>
-                            {% if r.form.non_field_errors %}
-                                <div class="alert alert-danger my-3">
-                                    {% for e in r.form.non_field_errors %}{{ e }}{% endfor %}
+                        </div>
+                        {% if r.form.non_field_errors %}
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="alert alert-danger my-3">
+                                        {% for e in r.form.non_field_errors %}{{ e }}{% endfor %}
+                                    </div>
                                 </div>
-                            {% endif %}
-                            <input type="hidden" name="reviewrequest" value="{{ r.pk }}">
-                            <input type="hidden"
-                                   name="{{ r.form.prefix }}-existing_reviewer"
-                                   value="{{ r.reviewer_id|default:"" }}">
-                            <div class="assign-action">
+                            </div>
+                        {% endif %}
+                    </div>
+                    <input type="hidden" name="reviewrequest" value="{{ r.pk }}">
+                    <input type="hidden"
+                           name="{{ r.form.prefix }}-existing_reviewer"
+                           value="{{ r.reviewer_id|default:"" }}">
+                    <div class="card-footer">
+                        <div class="d-flex">
+                            <div class="assign-action mx-1">
                                 {% if r.reviewer %}
                                     <button type="button"
                                             class="btn btn-sm btn-primary btn-success"
@@ -170,20 +178,22 @@
                                         Assign reviewer
                                     </button>
                                 {% endif %}
+                                {% bootstrap_field r.form.action layout="horizontal" size="sm" %}
                             </div>
-                            {% bootstrap_field r.form.action layout="horizontal" size="sm" %}
-                            <div class="reviewer-controls">
+                            <div class="reviewer-controls mx-1 flex-fill row">
                                 {% if r.form.review_type %}
-                                    {% bootstrap_field r.form.review_type layout="horizontal" size="sm" %}
+                                    {% bootstrap_field r.form.review_type layout="horizontal" wrapper_class="col" size="sm" %}
                                 {% endif %}
-                                {% bootstrap_field r.form.reviewer layout="horizontal" size="sm" %}
-                                {% bootstrap_field r.form.add_skip layout="horizontal" size="sm" %}
-                                <button type="button"
-                                        class="btn btn-sm btn-primary undo"
-                                        title="Cancel assignment"
-                                        data-initial="{{ r.form.fields.reviewer.initial|default:"" }}">
-                                    Cancel
-                                </button>
+                                {% bootstrap_field r.form.reviewer layout="horizontal" wrapper_class="col row" label_class="p-0" size="sm" %}
+                                {% bootstrap_field r.form.add_skip layout="horizontal" wrapper_class="col col-2" size="sm" %}
+                                <div class="col col-1">
+                                    <button type="button"
+                                            class="btn btn-sm btn-primary undo"
+                                            title="Cancel assignment"
+                                            data-initial="{{ r.form.fields.reviewer.initial|default:"" }}">
+                                        Cancel
+                                    </button>
+                                </div>
                                 {% if r.form.reviewer.errors or r.form.add_skip.errors %}
                                     <div class="alert alert-danger my-3">
                                         {% for e in r.form.reviewer.errors %}{{ e }}{% endfor %}
@@ -191,11 +201,11 @@
                                     </div>
                                 {% endif %}
                             </div>
-                            <div class="close-action">
+                            <div class="close-action mx-1">
                                 <button type="button" class="btn btn-sm btn-primary btn-danger">Close</button>
                                 {% if r.doc.past_telechat_date %}(was on {{ r.doc.past_telechat_date }} telechat){% endif %}
                             </div>
-                            <div class="close-controls">
+                            <div class="close-controls mx-1 flex-fill">
                                 {% bootstrap_field r.form.close layout="horizontal" size="sm" %}
                                 {% bootstrap_field r.form.close_comment layout="horizontal" size="sm" %}
                                 <button type="button"

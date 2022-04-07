@@ -33,7 +33,7 @@ from ietf.meeting.models import Meeting
 from ietf.message.models import Message
 from ietf.name.models import FormalLanguageName, GroupTypeName
 from ietf.submit.models import Submission, Preapproval
-from ietf.submit.utils import validate_submission_name, validate_submission_rev, validate_submission_document_date
+from ietf.submit.utils import validate_submission_name, validate_submission_rev, validate_submission_document_date, remote_ip
 from ietf.submit.parsers.pdf_parser import PDFParser
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.xml_parser import XMLParser
@@ -47,7 +47,7 @@ class SubmissionBaseUploadForm(forms.Form):
     def __init__(self, request, *args, **kwargs):
         super(SubmissionBaseUploadForm, self).__init__(*args, **kwargs)
 
-        self.remote_ip = request.META.get('REMOTE_ADDR', None)
+        self.remote_ip = remote_ip(request)
 
         self.request = request
         self.in_first_cut_off = False

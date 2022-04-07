@@ -115,7 +115,7 @@
         </td>
         {% if user|has_role:"Secretariat" or user_groups %}
             <td>
-                {% if session.group in user_groups %}
+                {% if user|has_role:"Secretariat" or session.group in user_groups %}
                     <div class="float-end">{% include "meeting/edit_materials_button.html" %}</div>
                 {% endif %}
             </td>

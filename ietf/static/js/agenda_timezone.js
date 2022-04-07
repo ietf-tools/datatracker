@@ -232,11 +232,11 @@
 
     function update_ongoing_sessions() {
         const agenda_rows = $('[data-slot-start-ts]');
+        const now_moment = moment();
         const ongoing_rows = agenda_rows.filter(function () {
-            return moment()
-                .isBetween(this.slot_start_ts, this.slot_end_ts);
+            return now_moment.isBetween(this.slot_start_ts, this.slot_end_ts);
         });
-        const later_rows = agenda_rows.filter(function() { return moment().isBefore(this.slot_start_ts); });
+        const later_rows = agenda_rows.filter(function() { return now_moment.isBefore(this.slot_start_ts); });
         // Highlight ongoing based on the current time
         agenda_rows.removeClass("table-warning");
         ongoing_rows.addClass("table-warning");
