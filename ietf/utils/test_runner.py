@@ -51,7 +51,9 @@ import subprocess
 import tempfile
 import copy
 import factory.random
+
 from fnmatch import fnmatch
+from pathlib import Path
 
 from coverage.report import Reporter
 from coverage.results import Numbers
@@ -764,6 +766,7 @@ class IetfTestRunner(DiscoverRunner):
                 )
                 self.config_file[kind].write(json.dumps(config[kind]).encode())
                 self.config_file[kind].flush()
+                Path(self.config_file[kind].name).chmod(0o644)
 
         super(IetfTestRunner, self).setup_test_environment(**kwargs)
 
@@ -800,6 +803,7 @@ class IetfTestRunner(DiscoverRunner):
         testcase = TestCase()
         cwd = pathlib.Path.cwd()
         tmpdir = tempfile.TemporaryDirectory(prefix="html-validate-")
+        Path(tmpdir.name).chmod(0o655)
         for (name, content, fingerprint) in self.batches[kind]:
             path = pathlib.Path(tmpdir.name).joinpath(
                 hex(fingerprint)[2:],
