@@ -37,10 +37,10 @@
                class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th data-sort="date">Date</th>
-                    <th data-sort="group">Group</th>
-                    <th data-sort="meeting">Meeting</th>
-                    <th></th>
+                    <th scope="col" data-sort="date">Date</th>
+                    <th scope="col" data-sort="group">Group</th>
+                    <th scope="col" data-sort="meeting">Meeting</th>
+                    <th scope="col"></th>
                 </tr>
             </thead>
             <tbody>
@@ -81,11 +81,11 @@
                                     </a>
                                 </td>
                                 {% if session.current_status == 'canceled' %}
-                                    <td class='text-end'>
+                                    <td class="text-end">
                                         <span class="badge bg-warning">Cancelled</span>
                                     </td>
                                 {% else %}
-                                    <td class='text-end'>{% include "meeting/interim_session_buttons.html" with show_agenda=True %}</td>
+                                    <td class="text-end">{% include "meeting/interim_session_buttons.html" with show_agenda=True %}</td>
                                 {% endif %}
                             {% endwith %}
                         {% else %}

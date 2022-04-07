@@ -18,18 +18,21 @@
         <button type="submit" class="btn btn-warning" name="regenerate_text" value="Regenerate">Regenerate
         </button>
         {% if user|has_role:"Secretariat" %}
-            <input type="submit"
+            <button type="submit"
                    class="btn btn-primary"
-                   name="send_annc_only"
-                   value="Send only to IETF-Announce">
-            <input type="submit"
+                   name="send_annc_only">
+                   Send only to IETF-Announce
+            </button>
+            <button type="submit"
                    class="btn btn-primary"
-                   name="send_nw_only"
-                   value="Send only to New-Work">
-            <input type="submit"
+                   name="send_nw_only">
+                   Send only to New-Work
+            </button>
+            <button type="submit"
                    class="btn btn-primary"
-                   name="send_both"
-                   value="Send to both">
+                   name="send_both">
+                   Send to both
+            </button>
         {% endif %}
         <a class="btn btn-secondary float-end" href="{{ back_url }}">Back</a>
     </form>

@@ -17,8 +17,8 @@
     <table class="table table-sm table-borderless mb-3">
         <tbody class="meta border-top">
             <tr>
-                <th>Document</th>
-                <th>
+                <th scope="row">Document</th>
+                <th scope="row">
                     {% if doc.get_state_slug not in approved_states %}
                         Proposed conflict review
                     {% else %}
@@ -40,13 +40,13 @@
             </tr>
             <tr>
                 <td></td>
-                <th>Last updated</th>
+                <th scope="row">Last updated</th>
                 <td class="edit"></td>
                 <td>{{ doc.time|date:"Y-m-d" }}</td>
             </tr>
             <tr>
                 <td></td>
-                <th>
+                <th scope="row">
                     <a href="{% url 'ietf.doc.views_help.state_help' type='conflict-review' %}">State</a>
                 </th>
                 <td class="edit">
@@ -63,8 +63,8 @@
         </tbody>
         <tbody class="meta border-top">
             <tr>
-                <th>IESG</th>
-                <th>Responsible AD</th>
+                <th scope="row">IESG</th>
+                <th scope="row">Responsible AD</th>
                 <td class="edit">
                     {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
                         <a class="btn btn-primary btn-sm float-end"
@@ -78,7 +78,7 @@
             {% if not snapshot %}
                 <tr>
                     <td></td>
-                    <th>Telechat date</th>
+                    <th scope="row">Telechat date</th>
                     <td class="edit">
                         {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
                             <a class="btn btn-primary btn-sm float-end"
@@ -103,7 +103,7 @@
             {% endif %}
             <tr>
                 <td></td>
-                <th>Send notices to</th>
+                <th scope="row">Send notices to</th>
                 <td class="edit">
                     {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
                         <a class="btn btn-primary btn-sm float-end"

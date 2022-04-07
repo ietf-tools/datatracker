@@ -7,9 +7,10 @@
         {% if user|has_role:"Secretariat" %}
 
             <table class="menu">
+                <tbody>
                 <tr>
                     <td>
-                        <h3>IESG</h3>
+                        <h2>IESG</h2>
                         <ul>
                         <li> <a href="{% url 'ietf.secr.announcement.views.main' %}"><b>Announcement</b></a></li>
                         <li> <a href="{% url 'ietf.secr.telechat.views.main' %}"><b>Telechat</b></a></li>
@@ -17,7 +18,7 @@
                         </ul>
                     </td>
                     <td>
-                        <h3>IDs and WGs Process</h3>
+                        <h2>IDs and WGs Process</h2>
                         <ul>
                         <li> <a href="{% url "ietf.secr.areas.views.list_areas" %}"><b>Areas</b></a></li>
                         <li> <a href="{% url 'ietf.secr.groups.views.search' %}"><b>Groups</b></a></li>
@@ -28,7 +29,7 @@
                 </tr>
                 <tr>
                     <td>
-                        <h3>Meetings and Proceedings</h3>
+                        <h2>Meetings and Proceedings</h2>
                         <ul>
                         <li> <a href="{% url "ietf.secr.sreq.views.main" %}"><b>Session Requests</b></a></li>
                         <li> <a href="{% url 'ietf.secr.proceedings.views.main' %}"><b>Meeting Materials Manager (Proceedings)</b></a></li>
@@ -37,20 +38,22 @@
                         </ul>
                     </td>
                     <td>
-                        <h3>IPR</h3>
+                        <h2>IPR</h2>
                         <ul>
                         <li> <a href="{% url 'ietf.ipr.views.admin' state='pending' %}"><b>IPR Admin</b></a></li>
                         </ul>
                     </td>
                 </tr>
+                </tbody>
             </table>
 
         {% else %}
 
             <table class="menu">
+                <tbody>
                 <tr>
                     <td>
-                        <h3>Section 1</h3>
+                        <h2>Section 1</h2>
                         <ul>
                         <li> <a href="{% url "ietf.secr.sreq.views.main" %}"><b>Session Requests</b></a></li>
                         <li> <a href="{% url 'ietf.secr.proceedings.views.main' %}"><b>Meeting Material Manager</b></a></li>
@@ -58,17 +61,18 @@
                         </ul>
                     </td>
                     <td>
-                        <h3>Section 2</h3>
+                        <h2>Section 2</h2>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <h3>Section 3</h3>
+                        <h2>Section 3</h2>
                     </td>
                     <td>
-                        <h3>Section 4</h3>
+                        <h2>Section 4</h2>
                     </td>
                 </tr>
+                </tbody>
             </table>
 
         {% endif %}

@@ -9,11 +9,11 @@
             <table class="full-width">
                 <thead>
                     <tr>
-                        <th>Day</th>
-                        <th>Time</th>
-                        <th>Name</th>
-                        <th></th>
-                        <th></th>
+                        <th scope="col">Day</th>
+                        <th scope="col">Time</th>
+                        <th scope="col">Name</th>
+                        <th scope="col"></th>
+                        <th scope="col"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -31,24 +31,26 @@
         {% else %}
             <h3>No timeslots exist for this meeting. Add rooms with the "duplicate timeslots" option enabled to copy timeslots from the last meeting.</h3>
         {% endif %}
-        <br /><hr />
+        <br><hr>
 
         <form method="post">{% csrf_token %}
             {{ form.non_field_errors }}
             <table id="timeslot-form" class="full-width">
+                <tbody>
                 <tr>
                     <td>Day<br>{{ form.day.errors }}{{ form.day }}</td>
                     <td>Time<br>{{ form.time.errors }}{{ form.time }}</td>
                     <td>Duration<br>{{ form.duration.errors }}{{ form.duration }}</td>
                     <td>Name<br>{{ form.name.errors }}{{ form.name }}</td>
-                    <td><input type="submit" name="submit" value="Add" /></td>
+                    <td><button type="submit" name="submit">Add</button></td>
                 </tr>
+                </tbody>
             </table>
         </form>
 
         <div class="button-group">
             <ul>
-                <li><button onclick="window.location='../'">Back</button></li>
+                <li><button type="button" onclick="window.location='../'">Back</button></li>
             </ul>
         </div>
 

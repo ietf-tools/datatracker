@@ -8,6 +8,7 @@
 
         <div class="inline-group">
             <div class="tabular inline-related">
+                 <!-- [html-validate-disable-block wcag/h32 -- FIXME: no submit button] -->
                 <form id="meetings-meta-rooms" method="post">{% csrf_token %}
                     {{ formset.management_form }}
                     {{ formset.non_form_errors }}
@@ -16,9 +17,9 @@
                     <table id="id_rooms_table" class="full-width">
                         <thead>
                             <tr>
-                                <th></th>
+                                <th scope="col"></th>
                                 {% for field in formset.forms.0.visible_fields %}
-                                    <th>{{ field.label|capfirst }}</th>
+                                    <th scope="col">{{ field.label|capfirst }}</th>
                                 {% endfor %}
                             </tr>
                         </thead>

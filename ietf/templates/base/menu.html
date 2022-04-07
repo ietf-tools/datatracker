@@ -154,7 +154,7 @@
                 </li>
             {% endif %}
             <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>
-                Review Teams
+            	Review Teams
             </li>
             {% for g in user|managed_review_groups %}
                 <li>
@@ -171,7 +171,7 @@
                 </li>
             {% endif %}
             <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>
-                NomComs
+            	NomComs
             </li>
             {% for g in user|active_nomcoms %}
                 <li>

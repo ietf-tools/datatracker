@@ -16,7 +16,7 @@
     <div class="col-md-11">
       <p class="pull-left">Last updated: {% firstof note.get_update_time "unknown" %}</p>
       <p class="pull-right"><a href="{{ note.url }}">View on notes.ietf.org</a></p>
-      <iframe id="preview" srcdoc="{{ note.get_preview|force_escape }}" sandbox>
+      <iframe title="Import preview" id="preview" srcdoc="{{ note.get_preview|force_escape }}" sandbox>
       </iframe>
     </div>
   </div>

@@ -29,9 +29,12 @@
             <br>
             <form method="post">{% csrf_token %}
                 <table>
-                    {{ form }}
+                    <tbody>
+                     <!-- [html-validate-disable-block element-required-attributes -- FIXME: as_table renders without scope] -->
+                    {{ form.as_table }}
+                    </tbody>
                 </table>
-                <input type="submit" value="Select" />
+                <button type="submit">Select</button>
             </form>
         </div> <!-- inline-related -->
     </div> <!-- module -->

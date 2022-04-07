@@ -15,7 +15,7 @@
         <small class="text-muted">{{ group.acronym }}</small>
     </h1>
     {% if newly_closed > 0 or newly_opened > 0 or newly_assigned > 0 %}
-        <p class="my-3 alert alert-danger my-3">
+        <p class="alert alert-danger my-3">
             Changes since last refresh:
             {% if newly_closed %}{{ newly_closed }} request{{ newly_closed|pluralize }} closed.{% endif %}
             {% if newly_opened %}{{ newly_opened }} request{{ newly_opened|pluralize }} opened.{% endif %}

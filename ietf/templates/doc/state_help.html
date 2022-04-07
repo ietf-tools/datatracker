@@ -18,15 +18,15 @@
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th data-sort="state">State</th>
-                <th data-sort="description">Description</th>
-                {% if has_next_states %}<th data-sort="next">Next State</th>{% endif %}
+                <th scope="col" data-sort="state">State</th>
+                <th scope="col" data-sort="description">Description</th>
+                {% if has_next_states %}<th scope="col" data-sort="next">Next State</th>{% endif %}
             </tr>
         </thead>
         <tbody>
             {% for state in states %}
                 <tr id="{{ state.slug|default:"idexists" }}">
-                    <th>{{ state.name }}</th>
+                    <th scope="row">{{ state.name }}</th>
                     <td>{{ state.desc|safe|linebreaksbr }}</td>
                     {% if has_next_states %}
                         <td>
@@ -45,14 +45,14 @@
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th data-sort="tag">Tag</th>
-                    <th data-sort="description">Description</th>
+                    <th scope="col" data-sort="tag">Tag</th>
+                    <th scope="col" data-sort="description">Description</th>
                 </tr>
             </thead>
             <tbody>
                 {% for tag in tags %}
                     <tr id="{{ tag.slug }}">
-                        <th>{{ tag.name }}</th>
+                        <th scope="row">{{ tag.name }}</th>
                         <td>{{ tag.desc|linebreaksbr }}</td>
                     </tr>
                 {% endfor %}

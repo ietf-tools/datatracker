@@ -11,7 +11,7 @@
     </p>
     <form method="post">
         {% csrf_token %}
-        <input class="btn btn btn-danger" type="submit" value="Continue">
+        <button class="btn btn-danger" type="submit">Continue</button>
         <a class="btn btn-secondary float-end"
            href="{% url 'ietf.meeting.views.interim_announce' %}">Back</a>
     </form>

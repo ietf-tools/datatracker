@@ -87,7 +87,7 @@
                 </span>
             {% endif %}
         </h2>
-        <iframe class="w-100 overflow-hidden border border-dark"></iframe>
+        <iframe title="Schedule" class="w-100 overflow-hidden border border-dark"></iframe>
     </div>
     <h2 class="mt-3">
         {% if personalize %}Personalize{% endif %}
@@ -101,19 +101,19 @@
     <table id="agenda-table" class="table table-sm tablesorter">
         <thead>
             <tr>
-                {% if personalize %}<th></th>{% endif %}
-                <th></th>
-                <th data-sort="loc"></th>
-                <th data-sort="group"></th>
-                <th data-sort="area"></th>
-                <th data-sort="desc"></th>
+                {% if personalize %}<th scope="col"></th>{% endif %}
+                <th scope="col"></th>
+                <th scope="col" data-sort="loc"></th>
+                <th scope="col" data-sort="group"></th>
+                <th scope="col" data-sort="area"></th>
+                <th scope="col" data-sort="desc"></th>
             </tr>
         </thead>
         <tbody>
             {% for item in filtered_assignments %}
                 {% ifchanged item.timeslot.time|date:"Y-m-d" %}
                     <tr class="table-primary show-with-children">
-                        <th colspan="{% if personalize %}6{% else %}5{% endif %}"
+                        <th scope="col" colspan="{% if personalize %}6{% else %}5{% endif %}"
                             id="slot-{{ item.timeslot.time|slugify }}"
                             class="nav-heading">
                             {{ item.timeslot.time|date:"l, F j, Y" }}
@@ -128,10 +128,15 @@
                         {% if personalize %}
                             <td class="text-center">
                                 {% if item.session_keyword %}
+                                    <label class="visually-hidden"
+                                           aria-label="Select session"
+                                           for="{{ item.session_keyword }}">
+                                   </label>
                                     <input type="checkbox"
                                            class="pickview form-check-input"
                                            title="Select session"
                                            name="selected-sessions"
+                                           id="{{ item.session_keyword }}"
                                            value="{{ item.session_keyword }}"
                                            data-filter-keywords="{{ item.filter_keywords|join:',' }}"
                                            data-filter-item="{{ item.session_keyword }}">
@@ -188,9 +193,9 @@
                         id="session-starting-{{ item.timeslot.utc_start_time|date:"Y-m-d H:i"|slugify }}"
                         data-slot-start-ts="{{ item.start_timestamp }}"
                         data-slot-end-ts="{{ item.end_timestamp }}">
-                        {% if personalize %}<th class="text-center"></th>{% endif %}
-                        <th class="text-end">{% include "meeting/timeslot_start_end.html" %}</th>
-                        <th colspan="4">
+                        {% if personalize %}<th scope="row" class="text-center"></th>{% endif %}
+                        <th scope="row" class="text-end">{% include "meeting/timeslot_start_end.html" %}</th>
+                        <th scope="row" colspan="4">
                             {{ item.timeslot.time|date:"l" }}
                             {{ item.timeslot.name|capfirst_allcaps }}
                         </th>
@@ -206,10 +211,15 @@
                     {% if personalize %}
                         <td class="text-center">
                             {% if item.session_keyword %}
+                                <label class="visually-hidden"
+                                       aria-label="Select session"
+                                       for="{{ item.session_keyword }}">
+                               </label>
                                 <input type="checkbox"
                                        class="pickview form-check-input"
                                        title="Select session"
                                        name="selected-sessions"
+                                       id="{{ item.session_keyword }}"
                                        value="{{ item.session_keyword }}"
                                        data-filter-keywords="{{ item.filter_keywords|join:',' }}"
                                        data-filter-item="{{ item.session_keyword }}">

@@ -9,12 +9,12 @@
     <div id="telechat-content">
         <span class="telechat-warn"><h3>This feature is pending</h3></span>
         <h3>Roll Call</h3>
-        <br />
+        <br>
         <form method="post">{% csrf_token %}
             {% for person in people %}
-                <input type="checkbox" name="attendee" value="{{ person.id }}" checked="checked" /> {{ person.name }}<br />
+                <input type="checkbox" name="attendee" value="{{ person.id }}" checked> {{ person.name }}<br>
             {% endfor %}
-            <input type="submit" value="Update" />
+            <button type="submit">Update</button>
         </form>
 
     </div>

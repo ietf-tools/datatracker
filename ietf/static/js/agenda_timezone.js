@@ -122,7 +122,7 @@
     // Format tooltip table
     function format_tooltip_table(start, end) {
         const current_timezone = get_current_tz_cb();
-        let out = '<div class="text-start"><table class="table table-sm"><tr><th></th><th>Session start</th><th>Session end</th></tr>';
+        let out = '<div class="text-start"><table class="table table-sm"><thead><tr><th scope="col"></th><th scope="col">Session start</th><th scope="col">Session end</th></tr></thead>';
         if (window.meeting_timezone !== "") {
             out += '<tr><th class="timehead">Meeting timezone</th><td>' +
                 format_time(start, window.meeting_timezone, 0) + '</td><td>' +

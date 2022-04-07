@@ -1,19 +1,17 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin static person_filters %}
-<div class="card shadow-sm mb-3 text-center photo" style="width: 13em; ">
+<div class="card shadow-sm mb-3 text-center photo">
     {% if name or email %}
         <a title="Datatracker profile of {{ person.name }}."
            href="{% if name %}{% url 'ietf.person.views.profile' email_or_name=name %}{% else %}{% url 'ietf.person.views.profile' email_or_name=email %}{% endif %}">
     {% endif %}
     {% if person.photo_thumb %}
         <img class="card-img-top"
-             style="object-fit: cover;
-                    height: 15em;"
              src="{{ person.photo_thumb.url }}"
              alt="Photo of {{ person.name }}">
     {% else %}
-        <div style="height: 15em;">
-            <i class="bi bi-person text-muted" style="font-size: 12em;"></i>
+        <div class="photo-placeholder">
+            <i class="bi bi-person text-muted"></i>
         </div>
     {% endif %}
     {% if name or email %}</a>{% endif %}
