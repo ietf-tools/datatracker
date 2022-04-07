@@ -23,6 +23,7 @@
            id="utc-timezone{{ id_suffix }}"
            onclick="ietf_timezone.use('UTC')">
     <label class="btn btn-outline-primary" for="utc-timezone{{ id_suffix }}">UTC</label>
+    <label aria-label="Select timezone" class="visually-hidden" for="timezone-select{{ id_suffix }}"></label>
     <select id="timezone-select{{ id_suffix }}"
             class="tz-select select2-field form-select border-primary"
             data-max-entries="1" data-minimum-input-length="0"

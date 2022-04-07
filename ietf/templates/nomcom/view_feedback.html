@@ -21,10 +21,10 @@
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th data-sort="first">First name</th>
-                    <th data-sort="last">Last name</th>
-                    <th data-sort="email">Email</th>
-                    {% for ft in nominee_feedback_types %}<th data-sort="num">{{ ft.name }}</th>{% endfor %}
+                    <th scope="col" data-sort="first">First name</th>
+                    <th scope="col" data-sort="last">Last name</th>
+                    <th scope="col" data-sort="email">Email</th>
+                    {% for ft in nominee_feedback_types %}<th scope="col" data-sort="num">{{ ft.name }}</th>{% endfor %}
                 </tr>
             </thead>
             <tbody>
@@ -60,8 +60,8 @@
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th data-sort="topic">Topic</th>
-                {% for ft in topic_feedback_types %}<th data-sort="num">{{ ft.name }}</th>{% endfor %}
+                <th scope="col" data-sort="topic">Topic</th>
+                {% for ft in topic_feedback_types %}<th scope="col" data-sort="num">{{ ft.name }}</th>{% endfor %}
             </tr>
         </thead>
         <tbody>
@@ -87,8 +87,8 @@
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th></th>
-                    {% for ft in independent_feedback_types %}<th data-sort="num">{{ ft.name }}</th>{% endfor %}
+                    <th scope="col"></th>
+                    {% for ft in independent_feedback_types %}<th scope="col" data-sort="num">{{ ft.name }}</th>{% endfor %}
                 </tr>
             </thead>
             <tbody>

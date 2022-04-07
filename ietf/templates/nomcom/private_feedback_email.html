@@ -10,11 +10,12 @@
         <form id="paste-email-feedback-form" method="post">
             {% csrf_token %}
             {% bootstrap_form form %}
-            <input class="btn btn-primary"
+            <button class="btn btn-primary"
                    type="submit"
-                   value="Save"
                    name="save"
-                   {% if submit_disabled %}disabled="disabled"{% endif %}>
+                   {% if submit_disabled %}disabled{% endif %}>
+                Save
+            </button>
         </form>
     {% endif %}
 {% endblock %}

@@ -117,7 +117,7 @@ class SessionForm(forms.Form):
             self._add_widget_class(constraint_field.widget, 'wg_constraint')
 
             selector_field = forms.ChoiceField(choices=group_acronym_choices, required=False)
-            selector_field.widget.attrs['data-slug'] = constraintname.slug  # used by onChange handler
+            selector_field.widget.attrs['data-slug'] = constraintname.slug  # used by onchange handler
             self._add_widget_class(selector_field.widget, 'wg_constraint_selector')
 
             cfield_id = 'constraint_{}'.format(constraintname.slug)
@@ -150,7 +150,7 @@ class SessionForm(forms.Form):
                  field_id)
             )
 
-        self.fields['joint_with_groups_selector'].widget.attrs['onChange'] = "document.form_post.joint_with_groups.value=document.form_post.joint_with_groups.value + ' ' + this.options[this.selectedIndex].value; return 1;"
+        self.fields['joint_with_groups_selector'].widget.attrs['onchange'] = "document.form_post.joint_with_groups.value=document.form_post.joint_with_groups.value + ' ' + this.options[this.selectedIndex].value; return 1;"
         self.fields["resources"].choices = [(x.pk,x.desc) for x in ResourceAssociation.objects.filter(name__used=True).order_by('name__order') ]
 
         if self.hidden:

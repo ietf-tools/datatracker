@@ -3,15 +3,16 @@
 {% load origin %}
 {% origin %}
 {% load ietf_filters static django_bootstrap5 person_filters %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
 {% block group_subtitle %}Reviewers{% endblock %}
 {% block group_content %}
     {% origin %}
-    {% block pagehead %}
-        <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
-    {% endblock %}
     {% if can_access_stats %}
         <div class="float-end">
             <a href="{% url "ietf.stats.views.review_stats" stats_type="completion" acronym=group.acronym %}"
+               aria-label="Statistics"
                class="icon-link">
                 <i class="bi bi-bar-chart-line"></i>
             </a>
@@ -46,11 +47,11 @@
         <table class="table reviewer-overview tablesorter">
             <thead>
                 <tr>
-                    <th data-sort="num">Next</th>
-                    <th data-sort="reviewer">Reviewer</th>
-                    <th data-sort="assigned">Recent history</th>
-                    <th data-sort="num">Days since completed</th>
-                    <th data-sort="settings">Settings</th>
+                    <th scope="col" data-sort="num">Next</th>
+                    <th scope="col" data-sort="reviewer">Reviewer</th>
+                    <th scope="col" data-sort="assigned">Recent history</th>
+                    <th scope="col" data-sort="num">Days since completed</th>
+                    <th scope="col" data-sort="settings">Settings</th>
                 </tr>
             </thead>
             <tbody>
@@ -70,17 +71,18 @@
                                 <table class="table table-sm table-borderless">
                                     <thead>
                                         <tr>
-                                            <th>Assigned</th>
-                                            <th>Deadline</th>
-                                            <th>State</th>
-                                            <th>Review time</th>
-                                            <th>Document</th>
+                                            <th scope="col">Assigned</th>
+                                            <th scope="col">Deadline</th>
+                                            <th scope="col">State</th>
+                                            <th scope="col">Review time</th>
+                                            <th scope="col">Document</th>
                                         </tr>
                                     </thead>
+                                    <tbody>
                                     {% for assn_pk, req_pk, doc_name, reviewed_rev, assigned_time, deadline, state, assignment_to_closure_days in person.latest_reqs %}
                                         <tr>
                                             <td>
-                                                <span style="display:none">X</span>{{ assigned_time|date }}
+                                                {{ assigned_time|date }}
                                             </td>
                                             <td>
                                                 <a href="{% url 'ietf.doc.views_review.review_request' name=doc_name request_id=req_pk %}">{{ deadline|date }}</a>
@@ -99,16 +101,15 @@
                                             </td>
                                         </tr>
                                     {% endfor %}
+                                    </tbody>
                                 </table>
                             {% endif %}
                         </td>
                         <td>
                             {% if person.days_since_completed_review != 9999 %}
                                 {{ person.days_since_completed_review }}
-                            {% else %}
-                                <span style="display:none">9999</span>
-                            </td>
-                        {% endif %}
+                            {% endif %}
+                        </td>
                         <td>
                             {% if person.settings.min_interval %}
                                 <b>{{ person.settings.get_min_interval_display }}</b>

@@ -17,8 +17,8 @@
     <table class="table table-sm table-borderless">
         <tbody class="meta border-top">
             <tr>
-                <th>Document</th>
-                <th>
+                <th scope="row">Document</th>
+                <th scope="row">
                     {% if doc.get_state_slug not in approved_states %}
                         Proposed status change
                     {% else %}
@@ -33,22 +33,22 @@
                         </a>
                     {% endif %}
                 </td>
-                <th>
+                <th scope="row">
                     {{ doc.title }}
                     {% if snapshot %}<span class="badge bg-warning">Snapshot</span>{% endif %}
                 </th>
             </tr>
             <tr>
-                <th></th>
-                <th>Last updated</th>
+                <td></td>
+                <th scope="row">Last updated</th>
                 <td class="edit"></td>
                 <td>{{ doc.time|date:"Y-m-d" }}</td>
             </tr>
             {% regroup sorted_relations by relationship.name as relation_groups %}
             {% for relation_group in relation_groups %}
                 <tr>
-                    <th></th>
-                    <th>{{ relation_group.grouper }}</th>
+                    <td></td>
+                    <th scope="row">{{ relation_group.grouper }}</th>
                     <td class="edit"></td>
                     <td>
                         {% for rel in relation_group.list %}
@@ -58,8 +58,8 @@
                 </tr>
             {% endfor %}
             <tr>
-                <th></th>
-                <th>
+                <td></td>
+                <th scope="row">
                     <a href="{% url 'ietf.doc.views_help.state_help' type="status-change" %}">State</a>
                 </th>
                 <td class="edit">
@@ -77,8 +77,8 @@
         </tbody>
         <tbody class="meta border-top">
             <tr>
-                <th>IESG</th>
-                <th>Telechat date</th>
+                <th scope="row">IESG</th>
+                <th scope="row">Telechat date</th>
                 <td class="edit">
                     {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
                         <a class="btn btn-primary btn-sm float-end"
@@ -101,8 +101,8 @@
                 </td>
             </tr>
             <tr>
-                <th></th>
-                <th>Responsible AD</th>
+                <td></td>
+                <th scope="row">Responsible AD</th>
                 <td class="edit">
                     {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
                         <a class="btn btn-primary btn-sm float-end"
@@ -114,8 +114,8 @@
                 <td>{% person_link doc.ad %}</td>
             </tr>
             <tr>
-                <th></th>
-                <th>Send notices to</th>
+                <td></td>
+                <th scope="row">Send notices to</th>
                 <td class="edit">
                     {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
                         <a class="btn btn-primary btn-sm float-end"

@@ -18,7 +18,10 @@
         <div class="module">
             <h2>Rolodex - Edit</h2>
             <table id="rolodex-edit-table" class="full-width amstable">
+                <tbody>
+                <!-- [html-validate-disable-block element-required-attributes -- FIXME: as_table renders without scope] -->
                 {{ person_form.as_table }}
+                </tbody>
             </table>
 
             <div class="inline-group">
@@ -29,10 +32,10 @@
                     <table id="rolodex-email-table" class="full-width">
                         <thead>
                             <tr>
-                                <th></th>
+                                <th scope="col"></th>
                                 {% for field in email_formset.forms.0 %}
                                     {% if not field.is_hidden %}
-                                        <th>{{ field.label }}</th>
+                                        <th scope="col">{{ field.label }}</th>
                                     {% endif %}
                                 {% endfor %}
                             </tr>

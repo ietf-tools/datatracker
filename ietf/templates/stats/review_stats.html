@@ -48,12 +48,14 @@
     </div>
     <form class="date-range">
         <div class="row my-3">
-            <label class="fw-bold col-sm-2 col-form-label">Request time:</label>
+            <label id="reqtime" class="fw-bold col-sm-2 col-form-label">Request time:</label>
             <div class="col-sm-10">
                 <div class="input-group">
+                    <label class="visually-hidden" for="from" aria-label="Request time, from"></label>
                     <input class="form-control"
                            type="text"
                            name="from"
+                           id="from"
                            value="{{ from_date }}"
                            data-provide="datepicker"
                            data-date-format="yyyy-mm-dd"
@@ -62,9 +64,11 @@
                            data-date-end-date="{{ today.isoformat }}"
                            data-date-start-view="months">
                     <span class="input-group-text" id="basic-addon2">&mdash;</span>
+                    <label class="visually-hidden" for="to" aria-label="Request time, to"></label>
                     <input class="form-control"
                            type="text"
                            name="to"
+                           id="to"
                            value="{{ to_date }}"
                            data-provide="datepicker"
                            data-date-format="yyyy-mm-dd"
@@ -139,30 +143,30 @@
         <table class="review-stats table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                <th data-sort="{{ level }}">
+                <th scope="col" data-sort="{{ level }}">
                     {% if level == "team" %}
                         Team
                     {% elif level == "reviewer" %}
                         Reviewer
                     {% endif %}
                 </th>
-                <th data-sort="num"
+                <th scope="col" data-sort="num"
                     title="Requests that are currently requested or accepted by reviewer">Open in time</th>
-                <th data-sort="num"
+                <th scope="col" data-sort="num"
                     title="Requests that are currently requested or accepted by reviewer and past the deadline">
                     Open late
                 </th>
-                <th data-sort="num"
+                <th scope="col" data-sort="num"
                     title="Requests that have been completed partially or completely">Completed in time</th>
-                <th data-sort="num"
+                <th scope="col" data-sort="num"
                     title="Requests that have been completed partially or completely past the deadline">
                     Completed late
                 </th>
-                <th data-sort="num"
+                <th scope="col" data-sort="num"
                     title="Requests that are rejected by the reviewer, withdrawn, overtaken by events or with no response from reviewer">
                     Not completed
                 </th>
-                <th data-sort="num"
+                <th scope="col" data-sort="num"
                     title="Average time between assignment and completion for completed reviews, in days">
                     Avg. compl. days
                     {% if count == "pages" %}/page{% endif %}
@@ -202,7 +206,7 @@
             <table class="review-stats table table-sm table-striped tablesorter">
                 <thead>
                     <tr>
-                    <th data-sort="{{ level }}">
+                    <th scope="col" data-sort="{{ level }}">
                         {% if level == "team" %}
                             Team
                         {% elif level == "reviewer" %}
@@ -210,7 +214,7 @@
                         {% endif %}
                     </th>
                     {% for r in results %}
-                        <th data-sort="num">
+                        <th scope="col" data-sort="num">
                             {{ r.name }}
                         </th>
                     {% endfor %}
@@ -242,7 +246,7 @@
             <table class="review-stats table table-sm table-striped tablesorter">
                 <thead>
                     <tr>
-                    <th data-sort="{{ level }}">
+                    <th scope="col" data-sort="{{ level }}">
                         {% if level == "team" %}
                             Team
                         {% elif level == "reviewer" %}
@@ -250,7 +254,7 @@
                         {% endif %}
                     </th>
                     {% for s in states %}
-                        <th data-sort="num">
+                        <th scope="col" data-sort="num">
                             {{ s.name }}
                         </th>
                     {% endfor %}

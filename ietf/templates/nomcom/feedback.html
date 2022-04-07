@@ -93,7 +93,7 @@
                     <form id="feedbackform" method="post">
                         {% csrf_token %}
                         {% bootstrap_form form %}
-                        <input class="btn btn-primary" type="submit" value="Save" name="save">
+                        <button class="btn btn-primary" type="submit" name="save">Save</button>
                     </form>
                 {% endif %}
             </div>

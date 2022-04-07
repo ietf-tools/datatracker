@@ -13,6 +13,7 @@
     {% bootstrap_messages %}
     <form method="post">
         {% csrf_token %}
+        <!-- [html-validate-disable-block input-missing-label -- FIXME: django_bootstrap5 seems to render ballot_rfceditornote_form w/o for= on the label - why? ] -->
         {% bootstrap_form ballot_rfceditornote_form %}
         <div class="form-text mb-3">
             RFC Editor Note. This text will be appended to all announcements and messages to the RFC Editor.

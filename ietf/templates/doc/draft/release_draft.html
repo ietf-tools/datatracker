@@ -8,7 +8,7 @@
         <br>
         <small class="text-muted">{{ doc.name }}-{{ doc.rev }}</small>
     </h1>
-    <div class='my-3 alert alert-warning'>
+    <div class="my-3 alert alert-warning">
         <b>Warning:</b>
         {% if doc.stream.slug == 'ise' %}
             This action will unset all Independent Stream state and remove the document from the Independent Stream.
@@ -20,7 +20,7 @@
             It may also be appropriate if the group is abandoning the document.
         {% endif %}
     </div>
-    <form method='post'>
+    <form method="post">
         {% csrf_token %}
         {% bootstrap_form form %}
         <button type="submit" class="btn btn-warning">Release</button>

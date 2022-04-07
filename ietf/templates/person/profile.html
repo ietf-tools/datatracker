@@ -35,9 +35,9 @@
             <h2 class="mt-5" id="roles">Roles</h2>
             <table class="table table-sm table-striped tablesorter">
                 <thead>
-                    <th data-sort="role">Role</th>
-                    <th data-sort="group">Group</th>
-                    <th data-sort="email">Email</th>
+                    <th scope="col" data-sort="role">Role</th>
+                    <th scope="col" data-sort="group">Group</th>
+                    <th scope="col" data-sort="email">Email</th>
                 </thead>
                 <tbody>
                     {% for role in person.role_set.all|active_roles %}
@@ -61,8 +61,8 @@
             <h2 class="mt-5" id="extresources">External Resources</h2>
             <table class="table table-sm table-striped tablesorter">
                 <thead>
-                    <th data-sort="name">Name</th>
-                    <th data-sort="value">Value</th>
+                    <th scope="col" data-sort="name">Name</th>
+                    <th scope="col" data-sort="value">Value</th>
                 </thead>
                 <tbody>
                     {% for extres in person.personextresource_set.all %}
@@ -82,10 +82,10 @@
         {% if person.rfcs %}
             <table class="table table-sm table-striped tablesorter">
                 <thead>
-                    <th data-sort="rfc">RFC</th>
-                    <th data-sort="date">Date</th>
-                    <th data-sort="title">Title</th>
-                    <th data-sort="title">Cited by</th>
+                    <th scope="col" data-sort="rfc">RFC</th>
+                    <th scope="col" data-sort="date">Date</th>
+                    <th scope="col" data-sort="title">Title</th>
+                    <th scope="col" data-sort="title">Cited by</th>
                 </thead>
                 <tbody>
                     {% for doc in person.rfcs  %}

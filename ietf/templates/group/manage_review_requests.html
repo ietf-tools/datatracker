@@ -15,7 +15,7 @@
         <small class="text-muted">{{ group.acronym }}</small>
     </h1>
     {% if newly_closed > 0 or newly_opened > 0 or newly_assigned > 0 %}
-        <p class="my-3 alert alert-danger my-3">
+        <p class="alert alert-danger my-3">
             Changes since last refresh:
             {% if newly_closed %}{{ newly_closed }} request{{ newly_closed|pluralize }} closed.{% endif %}
             {% if newly_opened %}{{ newly_opened }} request{{ newly_opened|pluralize }} opened.{% endif %}
@@ -184,14 +184,16 @@
                                 {% if r.form.review_type %}
                                     {% bootstrap_field r.form.review_type layout="horizontal" wrapper_class="col" size="sm" %}
                                 {% endif %}
-                                {% bootstrap_field r.form.reviewer layout="horizontal" wrapper_class="col row" size="sm" %}
+                                {% bootstrap_field r.form.reviewer layout="horizontal" wrapper_class="col row" label_class="p-0" size="sm" %}
                                 {% bootstrap_field r.form.add_skip layout="horizontal" wrapper_class="col col-2" size="sm" %}
-                                <button type="button"
-                                        class="btn btn-sm btn-primary undo col col-1"
-                                        title="Cancel assignment"
-                                        data-initial="{{ r.form.fields.reviewer.initial|default:"" }}">
-                                    Cancel
-                                </button>
+                                <div class="col col-1">
+                                    <button type="button"
+                                            class="btn btn-sm btn-primary undo"
+                                            title="Cancel assignment"
+                                            data-initial="{{ r.form.fields.reviewer.initial|default:"" }}">
+                                        Cancel
+                                    </button>
+                                </div>
                                 {% if r.form.reviewer.errors or r.form.add_skip.errors %}
                                     <div class="alert alert-danger my-3">
                                         {% for e in r.form.reviewer.errors %}{{ e }}{% endfor %}

@@ -2,30 +2,30 @@
     <div class="accordion-item">
         <h2 class="accordion-header">
             <button data-bs-toggle="collapse"
+                    type="button"
                     data-bs-target="#generic_iesg_reqs_{{ position.name|slugify }}"
                     class="accordion-button">
                 General IESG Requirements
             </button>
         </h2>
-        <div id="generic_iesg_reqs_{{ position.name|slugify }}"
-             role="region"
+        <section id="generic_iesg_reqs_{{ position.name|slugify }}"
              class="accordion-collapse collapse">
             <div class="accordion-body">{{ generic_iesg_reqs|safe }}</div>
-        </div>
+        </section>
     </div>
     <div class="accordion-item">
         <h2 class="accordion-header">
             <button data-bs-toggle="collapse"
+                    type="button"
                     data-bs-target="#iesg_reqs_{{ position.name|slugify }}"
                     class="accordion-button">
                 {{ position.name }} Specific Requirements
             </button>
         </h2>
-        <div id="iesg_reqs_{{ position.name|slugify }}"
-             role="region"
+        <section id="iesg_reqs_{{ position.name|slugify }}"
              class="accordion-collapse collapse show"
              aria-expanded="true">
             <div class="accordion-body">{{ specific_reqs|safe }}</div>
-        </div>
+        </section>
     </div>
 </div>
