@@ -25,7 +25,17 @@
     {% endif %}
     {# the contents of #extra-nav will be moved into the RH nav panel #}
     <div id="extra-nav" class="d-none">
-        <a class="nav-link now-link" href="#">Current session</a>
+        <div class="d-flex flex-column">
+          {% if now.date <= schedule.meeting.end_date %}
+              <a class="nav-link now-link" href="#">Current session</a>
+          {% endif %}
+          <div class="px-3">
+            Showing <span class="current-tz">{{ timezone }}</span> time
+          </div>
+          <div class="px-3 w-100">
+            {% include 'meeting/tz-display.html' with id_suffix="-rh" meeting_timezone=timezone minimal=True only %}
+          </div>
+        </div>
     </div>
     {# cache this part -- it takes 3-6 seconds to generate #}
     {% load cache %}
@@ -47,7 +57,7 @@
             {{ schedule.meeting.agenda_info_note|removetags:"h1"|safe }}
         </p>
     {% endif %}
-    {% include 'meeting/tz-display.html' with id_suffix="" timezone=timezone %}
+    {% include 'meeting/tz-display.html' with meeting_timezone=timezone only %}
     {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Personalize the agenda view..." always_show=personalize %}
     {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting only %}
     <div class="input-group mb-3">
@@ -321,8 +331,7 @@
 {% endcache %}
 {% endblock %}
 {% block js %}
-    <script src="{% static 'ietf/js/agenda_filter.js' %}">
-    </script>
+    <script src="{% static 'ietf/js/agenda_filter.js' %}"></script>
     <script>
         // Update the agenda display with specified filters
         function update_agenda_display(filter_params) {
