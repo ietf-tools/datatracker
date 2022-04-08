@@ -32,7 +32,7 @@
           <div class="px-3">
             Showing <span class="current-tz">{{ timezone }}</span> time
           </div>
-          <div class="px-3 w-100">
+          <div class="align-self-center">
             {% include 'meeting/tz-display.html' with id_suffix="-rh" meeting_timezone=timezone minimal=True only %}
           </div>
         </div>
@@ -88,7 +88,7 @@
             Download non-area events
         </a>
     </div>
-    <div id="weekview" class="visually-hidden mt-3">
+    <div id="weekview" class="d-none mt-3">
         <h2>
             Schedule
             {% if schedule.meeting.agenda_warning_note %}
@@ -138,7 +138,7 @@
                         {% if personalize %}
                             <td class="text-center">
                                 {% if item.session_keyword %}
-                                    <label class="visually-hidden"
+                                    <label class="d-none"
                                            aria-label="Select session"
                                            for="{{ item.session_keyword }}">
                                    </label>
@@ -221,7 +221,7 @@
                     {% if personalize %}
                         <td class="text-center">
                             {% if item.session_keyword %}
-                                <label class="visually-hidden"
+                                <label class="d-none"
                                        aria-label="Select session"
                                        for="{{ item.session_keyword }}">
                                </label>
@@ -377,22 +377,22 @@
         }
 
         function update_ical_links(filter_params) {
-            $(".ical-link").toggleClass("visually-hidden", !agenda_filter.filtering_is_enabled(filter_params));
+            $(".ical-link").toggleClass("d-none", !agenda_filter.filtering_is_enabled(filter_params));
         }
 
         function update_weekview(filter_params) {
             var weekview = $("#weekview");
             if (agenda_filter.filtering_is_enabled(filter_params)) {
-                weekview.removeClass("visually-hidden");
+                weekview.removeClass("d-none");
             } else {
-                weekview.addClass("visually-hidden");
+                weekview.addClass("d-none");
             }
             update_weekview_display();
         }
 
         function update_weekview_display() {
             var weekview = $("#weekview");
-            if (!weekview.hasClass('visually-hidden')) {
+            if (!weekview.hasClass('d-none')) {
                 var queryparams = window.location.search;
                 if (queryparams) {
                     queryparams += '&tz=' + encodeURIComponent(ietf_timezone.get_current_tz().toLowerCase());

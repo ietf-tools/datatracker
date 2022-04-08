@@ -6,13 +6,13 @@ $(document)
             .on("click", function () {
                 var template = form.find('.draft-row.template');
                 var el = template.clone(true)
-                    .removeClass("template visually-hidden");
+                    .removeClass("template d-none");
 
                 var totalField = $('#id_iprdocrel_set-TOTAL_FORMS');
                 var total = +totalField.val();
 
                 el.find("*[for*=iprdocrel], *[id*=iprdocrel], *[name*=iprdocrel]")
-                    .not(".visually-hidden")
+                    .not(".d-none")
                     .each(function () {
                         var x = $(this);
                         ["for", "id", "name"].forEach(function (at) {

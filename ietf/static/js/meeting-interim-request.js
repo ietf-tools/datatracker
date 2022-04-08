@@ -79,7 +79,7 @@ const interimRequest = (function() {
             totalField.val(total);
 
             template.before(el);
-            el.removeClass("template visually-hidden");
+            el.removeClass("template d-none");
 
             // copy field contents
             const first_session = $(".fieldset:first");
@@ -88,7 +88,7 @@ const interimRequest = (function() {
                     .val());
 
             $('.btn-delete')
-                .removeClass("visually-hidden");
+                .removeClass("d-none");
         },
 
         updateInfo: function () {
@@ -153,9 +153,9 @@ const interimRequest = (function() {
             const meeting_type = $('input[name="meeting_type"]:checked')
                 .val();
             if (meeting_type === 'single') {
-                interimRequest.addButton.addClass("visually-hidden");
+                interimRequest.addButton.addClass("d-none");
             } else {
-                interimRequest.addButton.removeClass("visually-hidden");
+                interimRequest.addButton.removeClass("d-none");
             }
         },
 
@@ -208,7 +208,7 @@ const interimRequest = (function() {
             totalField.val(total);
             if (total === 2) {
                 $(".btn-delete")
-                    .addClass("visually-hidden");
+                    .addClass("d-none");
             }
         },
 

@@ -8,9 +8,9 @@
         {{ sql_queries|length }} queries ({{ sql_queries|timesum }}s)
         {% if sql_queries|length != 0 %}
             <a class="btn btn-primary btn-sm"
-               onclick="$('#debug-query-table').toggleClass('visually-hidden');">Show</a>
+               onclick="$('#debug-query-table').toggleClass('d-none');">Show</a>
         {% endif %}
-        <div id="debug-query-table" class="visually-hidden">
+        <div id="debug-query-table" class="d-none">
             <div class="text-start">
                 <table class="table table-sm tablesorter">
                     <thead>

@@ -83,13 +83,13 @@
                             {% for d in form.docs_names %}<div class="doc">{{ d }}</div>{% endfor %}
                         </div>
                     </div>
-                    <div class="visually-hidden row edit-milestone{% if form.changed %} changed{% endif %}">
+                    <div class="d-none row edit-milestone{% if form.changed %} changed{% endif %}">
                         {% include "group/milestone_form.html" %}
                     </div>
                 </div>
             {% endfor %}
         </div>
-        <div id="extratemplatecontainer" class="visually-hidden">
+        <div id="extratemplatecontainer" class="d-none">
             <div class="row extratemplate">
                 <hr>
                 <div class="edit-milestone template">{% include "group/milestone_form.html" with form=empty_form %}</div>

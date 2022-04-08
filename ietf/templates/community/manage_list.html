@@ -135,7 +135,7 @@
             </div>
             <button type="submit" class="btn btn-primary" name="action" value="add_rule">Add rule</button>
         </form>
-        <div class="empty-forms visually-hidden">
+        <div class="empty-forms d-none">
             {% for rule_type, f in empty_rule_forms.items %}
                 <div class="rule-type {{ rule_type }}">{% bootstrap_form f layout="horizontal" %}</div>
             {% endfor %}
