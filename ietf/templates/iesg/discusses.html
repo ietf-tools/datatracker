@@ -78,10 +78,10 @@
         $(".discuss").on("click", function () {
             var x = $(this).prev("input").val();
             if (x === "all") {
-                $("#doclist>tr").removeClass("visually-hidden");
+                $("#doclist>tr").removeClass("d-none");
             } else {
-                $("#doclist>tr." + x).removeClass("visually-hidden");
-                $("#doclist>tr:not(." + x + ")").addClass("visually-hidden");
+                $("#doclist>tr." + x).removeClass("d-none");
+                $("#doclist>tr:not(." + x + ")").addClass("d-none");
             }
         });
     </script>

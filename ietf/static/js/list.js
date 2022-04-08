@@ -77,7 +77,7 @@ $(document)
                     .text()
                     .trim() == "") {
                     // console.log("No headers fields visible, hiding header row.");
-                    header_row.addClass("visually-hidden");
+                    header_row.addClass("d-none");
                 }
 
                 // HTML for the search widget
@@ -99,7 +99,7 @@ $(document)
                     .children("button.search-reset");
 
                 var pager = $.parseHTML(`
-                    <nav aria-label="Pagination control" class="visually-hidden">
+                    <nav aria-label="Pagination control" class="d-none">
                         <ul class="pagination d-flex flex-wrap text-center"></ul>
                     </nav>`);
 
@@ -170,7 +170,7 @@ $(document)
                         if (pagination) {
                             // console.log("Enabling pager.");
                             $(pager)
-                                .removeClass("visually-hidden");
+                                .removeClass("d-none");
                             pagination = {
                                 innerWindow: 5,
                                 left: 1,

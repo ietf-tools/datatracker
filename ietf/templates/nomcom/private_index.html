@@ -175,7 +175,7 @@
                     <tr>
                         {% if is_chair and nomcom.group.state_id == 'active' %}
                             <td>
-                                <label class="visually-hidden" aria-label="np.nominee.name" for="id-{{ np.id }}"></label>
+                                <label class="d-none" aria-label="np.nominee.name" for="id-{{ np.id }}"></label>
                                 <input class="batch-select form-check-input"
                                        type="checkbox"
                                        value="{{ np.id }}"

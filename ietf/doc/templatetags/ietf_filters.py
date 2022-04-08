@@ -413,7 +413,7 @@ def format_snippet(text, trunc_words=25):
     full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_fragment(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
-        return mark_safe('<div class="snippet">%s<button type="button" aria-label="Expand" class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="visually-hidden full">%s</div>' % (snippet, full))
+        return mark_safe('<div class="snippet">%s<button type="button" aria-label="Expand" class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="d-none full">%s</div>' % (snippet, full))
     return mark_safe(full)
 
 @register.simple_tag

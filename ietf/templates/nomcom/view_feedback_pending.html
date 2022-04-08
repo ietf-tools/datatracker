@@ -107,7 +107,7 @@
                                 <td>{{ form.instance.time|date:"r" }}{{ form.id }}</td>
                                 {% for choice in form.type.field.choices %}
                                     <td class="text-center">
-                                        <label class="visually-hidden" aria-label="{{ choice.1 }}" for="{{ choice.1|slugify }}"></label>
+                                        <label class="d-none" aria-label="{{ choice.1 }}" for="{{ choice.1|slugify }}"></label>
                                         <input type="radio"
                                                class="form-check-input"
                                                name="{{ form.type.html_name }}"
