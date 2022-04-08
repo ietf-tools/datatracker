@@ -20,6 +20,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urlsplit, quote
 from PIL import Image
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
@@ -7609,6 +7610,35 @@ class ProceedingsTests(BaseMeetingTestCase):
             )
             self.assertEqual(mat.get_href(), f'{mat.document.name}:00')
 
+    def test_add_proceedings_material_doc_invalid_ext(self):
+        """Upload proceedings materials document with disallowed extension"""
+        meeting = self._procmat_test_meeting()
+        self.client.login(username='secretary', password='secretary+password')
+        with NamedTemporaryFile('w+', suffix='.png') as invalid_file:
+            invalid_file.write('this is not a PDF file!!')
+            for mat_type in ProceedingsMaterialTypeName.objects.filter(used=True):
+                url = urlreverse(
+                    'ietf.meeting.views_proceedings.upload_material',
+                    kwargs=dict(num=meeting.number, material_type=mat_type.slug),
+                )
+                invalid_file.seek(0)  # read the file contents again
+                r = self.client.post(url, {'file': invalid_file, 'external_url': ''})
+                self.assertEqual(r.status_code, 200)
+                self.assertFormError(r, 'form', 'file', 'Found an unexpected extension: .png.  Expected one of .pdf')
+
+    def test_add_proceedings_material_doc_empty(self):
+        """Upload proceedings materials document without specifying a file"""
+        meeting = self._procmat_test_meeting()
+        self.client.login(username='secretary', password='secretary+password')
+        for mat_type in ProceedingsMaterialTypeName.objects.filter(used=True):
+            url = urlreverse(
+                'ietf.meeting.views_proceedings.upload_material',
+                kwargs=dict(num=meeting.number, material_type=mat_type.slug),
+            )
+            r = self.client.post(url, {'external_url': ''})
+            self.assertEqual(r.status_code, 200)
+            self.assertFormError(r, 'form', 'file', 'This field is required')
+
     def test_add_proceedings_material_url(self):
         """Add a URL as proceedings material"""
         meeting = self._procmat_test_meeting()
@@ -7619,6 +7649,32 @@ class ProceedingsTests(BaseMeetingTestCase):
                 {'use_url': 'on', 'external_url': 'https://example.com'},
             )
             self.assertEqual(mat.get_href(), 'https://example.com')
+
+    def test_add_proceedings_material_url_invalid(self):
+        """Add proceedings materials URL with a non-URL value"""
+        meeting = self._procmat_test_meeting()
+        self.client.login(username='secretary', password='secretary+password')
+        for mat_type in ProceedingsMaterialTypeName.objects.filter(used=True):
+            url = urlreverse(
+                'ietf.meeting.views_proceedings.upload_material',
+                kwargs=dict(num=meeting.number, material_type=mat_type.slug),
+            )
+            r = self.client.post(url, {'use_url': 'on', 'external_url': "Ceci n'est pas une URL"})
+            self.assertEqual(r.status_code, 200)
+            self.assertFormError(r, 'form', 'external_url', 'Enter a valid URL.')
+
+    def test_add_proceedings_material_url_empty(self):
+        """Add proceedings materials URL without specifying the URL"""
+        meeting = self._procmat_test_meeting()
+        self.client.login(username='secretary', password='secretary+password')
+        for mat_type in ProceedingsMaterialTypeName.objects.filter(used=True):
+            url = urlreverse(
+                'ietf.meeting.views_proceedings.upload_material',
+                kwargs=dict(num=meeting.number, material_type=mat_type.slug),
+            )
+            r = self.client.post(url, {'use_url': 'on', 'external_url': ''})
+            self.assertEqual(r.status_code, 200)
+            self.assertFormError(r, 'form', 'external_url', 'This field is required')
 
     @override_settings(MEETING_DOC_HREFS={'procmaterials': '{doc.name}:{doc.rev}'})
     def test_replace_proceedings_material(self):
