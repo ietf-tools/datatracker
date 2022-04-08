@@ -16,7 +16,7 @@ import tarfile
 import tempfile
 
 from calendar import timegm
-from collections import OrderedDict, Counter, deque, defaultdict
+from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
 from urllib.parse import unquote
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
@@ -39,7 +39,6 @@ from django.template.loader import render_to_string
 from django.utils.encoding import force_str
 from django.utils.functional import curry
 from django.utils.text import slugify
-from django.utils.html import format_html
 from django.utils.timezone import now
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
@@ -558,20 +557,20 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             # shared between the conflicting sessions they cover - the JS
             # then simply has to detect violations and show the
             # preprocessed labels
-            constrained_sessions_grouped_by_label = defaultdict(set)
-            for name_id, ts in itertools.groupby(sorted(constraints_for_sessions.get(s.pk, [])), key=lambda t: t[0]):
+            ConstraintHint = namedtuple('ConstraintHint', 'constraint_name count')
+            constraint_hints = defaultdict(set)
+            for name_id, ts in itertools.groupby(sorted(constraints_for_sessions.get(s.pk, [])), key=lambda t: t[0]):  # name_id same for each set of ts
                 ts = list(ts)
                 session_pks = (t[1] for t in ts)
-                constraint_name = constraint_names[name_id]
-                if "{count}" in constraint_name.formatted_editor_label:
-                    for session_pk, grouped_session_pks in itertools.groupby(session_pks):
-                        count = sum(1 for i in grouped_session_pks)
-                        constrained_sessions_grouped_by_label[format_html(constraint_name.formatted_editor_label, count=count)].add(session_pk)
+                for session_pk, grouped_session_pks in itertools.groupby(session_pks):
+                    # count is the number of instances of session_pk - should only have multiple in the
+                    # case of bethere constraints, where there will be one per person.pk
+                    count = len(list(grouped_session_pks))  # list() needed because iterator has no len()
+                    constraint_hints[ConstraintHint(constraint_names[name_id], count)].add(session_pk)
 
-                else:
-                    constrained_sessions_grouped_by_label[constraint_name.formatted_editor_label].update(session_pks)
-
-            s.constrained_sessions = list(constrained_sessions_grouped_by_label.items())
+            # The constraint hint key is a tuple (ConstraintName, count). Value is the set of sessions pks that
+            # should trigger that hint.
+            s.constraint_hints = list(constraint_hints.items())
             s.formatted_constraints = formatted_constraints_for_sessions.get(s.pk, {})
 
             s.other_sessions = [s_other for s_other in sessions_for_group.get(s.group_id) if s != s_other]
@@ -3002,7 +3001,7 @@ def ajax_get_utc(request):
     utc_day_offset = (naive_utc_dt.date() - dt.date()).days
     html = "<span>{utc} UTC</span>".format(utc=utc)
     if utc_day_offset != 0:
-        html = html + "<span class='day-offset'> {0:+d} Day</span>".format(utc_day_offset)
+        html = html + '<span class="day-offset"> {0:+d} Day</span>'.format(utc_day_offset)
     context_data = {'timezone': timezone, 
                     'time': time, 
                     'utc': utc, 

@@ -23,6 +23,10 @@
     {% else %}
         {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda" title_extra="" %}
     {% endif %}
+    {# the contents of #extra-nav will be moved into the RH nav panel #}
+    <div id="extra-nav" class="d-none">
+        <a class="nav-link now-link" href="#">Current session</a>
+    </div>
     {# cache this part -- it takes 3-6 seconds to generate #}
     {% load cache %}
     {% cache cache_time ietf_meeting_agenda_utc schedule.meeting.number request.path %}
@@ -83,7 +87,7 @@
                 </span>
             {% endif %}
         </h2>
-        <iframe class="w-100 overflow-hidden border border-dark"></iframe>
+        <iframe title="Schedule" class="w-100 overflow-hidden border border-dark"></iframe>
     </div>
     <h2 class="mt-3">
         {% if personalize %}Personalize{% endif %}
@@ -97,19 +101,19 @@
     <table id="agenda-table" class="table table-sm tablesorter">
         <thead>
             <tr>
-                {% if personalize %}<th></th>{% endif %}
-                <th></th>
-                <th data-sort="loc"></th>
-                <th data-sort="group"></th>
-                <th data-sort="area"></th>
-                <th data-sort="desc"></th>
+                {% if personalize %}<th scope="col"></th>{% endif %}
+                <th scope="col"></th>
+                <th scope="col" data-sort="loc"></th>
+                <th scope="col" data-sort="group"></th>
+                <th scope="col" data-sort="area"></th>
+                <th scope="col" data-sort="desc"></th>
             </tr>
         </thead>
         <tbody>
             {% for item in filtered_assignments %}
                 {% ifchanged item.timeslot.time|date:"Y-m-d" %}
                     <tr class="table-primary show-with-children">
-                        <th colspan="{% if personalize %}6{% else %}5{% endif %}"
+                        <th scope="col" colspan="{% if personalize %}6{% else %}5{% endif %}"
                             id="slot-{{ item.timeslot.time|slugify }}"
                             class="nav-heading">
                             {{ item.timeslot.time|date:"l, F j, Y" }}
@@ -124,10 +128,15 @@
                         {% if personalize %}
                             <td class="text-center">
                                 {% if item.session_keyword %}
+                                    <label class="visually-hidden"
+                                           aria-label="Select session"
+                                           for="{{ item.session_keyword }}">
+                                   </label>
                                     <input type="checkbox"
                                            class="pickview form-check-input"
                                            title="Select session"
                                            name="selected-sessions"
+                                           id="{{ item.session_keyword }}"
                                            value="{{ item.session_keyword }}"
                                            data-filter-keywords="{{ item.filter_keywords|join:',' }}"
                                            data-filter-item="{{ item.session_keyword }}">
@@ -181,11 +190,12 @@
             {% if item|is_regular_agenda_item %}
                 {% ifchanged %}
                     <tr class="table-secondary session-label-row show-with-children"
+                        id="session-starting-{{ item.timeslot.utc_start_time|date:"Y-m-d H:i"|slugify }}"
                         data-slot-start-ts="{{ item.start_timestamp }}"
                         data-slot-end-ts="{{ item.end_timestamp }}">
-                        {% if personalize %}<th class="text-center"></th>{% endif %}
-                        <th class="text-end">{% include "meeting/timeslot_start_end.html" %}</th>
-                        <th colspan="4">
+                        {% if personalize %}<th scope="row" class="text-center"></th>{% endif %}
+                        <th scope="row" class="text-end">{% include "meeting/timeslot_start_end.html" %}</th>
+                        <th scope="row" colspan="4">
                             {{ item.timeslot.time|date:"l" }}
                             {{ item.timeslot.name|capfirst_allcaps }}
                         </th>
@@ -201,10 +211,15 @@
                     {% if personalize %}
                         <td class="text-center">
                             {% if item.session_keyword %}
+                                <label class="visually-hidden"
+                                       aria-label="Select session"
+                                       for="{{ item.session_keyword }}">
+                               </label>
                                 <input type="checkbox"
                                        class="pickview form-check-input"
                                        title="Select session"
                                        name="selected-sessions"
+                                       id="{{ item.session_keyword }}"
                                        value="{{ item.session_keyword }}"
                                        data-filter-keywords="{{ item.filter_keywords|join:',' }}"
                                        data-filter-item="{{ item.session_keyword }}">
@@ -413,17 +428,17 @@
     {% endif %}
     <script>
         {% if settings.DEBUG and settings.DEBUG_AGENDA %}
-            speedup = +$.urlParam('speedup');
+            speedup = +urlParam('speedup');
             if (speedup < 1) {
                 speedup = 1;
             }
             start_time = moment().utc();
-            if ($.urlParam('date')) {
-                offset_time = moment.tz(decodeURIComponent($.urlParam('date')), "UTC");
+            if (urlParam('date')) {
+                offset_time = moment.tz(decodeURIComponent(urlParam('date')), "UTC");
             } else {
                 offset_time = start_time;
             }
-            if (speedup > 1 || offset_time != start_time) {
+            if (speedup > 1 || offset_time !== start_time) {
                 moment.now = function () {
                     return (+new Date() - start_time) * speedup + offset_time;
                 }
@@ -460,7 +475,7 @@
 
             // Now make other setup calls from agenda_timezone.js
             add_tooltips();
-            init_timers();
+            init_timers(speedup);
 
             // Finally, set up the agenda filter UI. This does not depend on the timezone.
             {% if personalize %}

@@ -61,7 +61,7 @@
         {% endif %}
         {% csrf_token %}
         {% bootstrap_form form %}
-        <input class="btn btn-primary" type="submit" value="Save template">
+        <button class="btn btn-primary" type="submit">Save template</button>
         <a class="btn btn-secondary float-end"
            href="{% if return_url %}{{ return_url }}{% else %}../{% endif %}">Back</a>
     </form>

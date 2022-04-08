@@ -5,8 +5,8 @@
 <table class="my-3 table table-sm table-borderless">
     <tbody class="meta border-top">
         <tr>
-            <th>Request</th>
-            <th>Review of</th>
+            <th scope="row">Request</th>
+            <th scope="row">Review of</th>
             <td>
                 {% if review_req.requested_rev %}
                     <a href="{% url "ietf.doc.views_doc.document_main" name=review_req.doc.name rev=review_req.requested_rev %}">
@@ -18,8 +18,8 @@
             </td>
         </tr>
         <tr>
-            <th></th>
-            <th>Requested rev.</th>
+            <td></td>
+            <th scope="row">Requested rev.</th>
             <td>
                 {% if review_req.requested_rev %}
                     {{ review_req.requested_rev }}
@@ -32,13 +32,13 @@
             </td>
         </tr>
         <tr>
-            <th></th>
-            <th>Type</th>
+            <td></td>
+            <th scope="row">Type</th>
             <td>{{ review_req.type.name }} Review</td>
         </tr>
         <tr>
-            <th></th>
-            <th>Team</th>
+            <td></td>
+            <th scope="row">Team</th>
             <td>
                 {% if review_req %}
                     {{ review_req.team.name }}
@@ -49,8 +49,8 @@
             </td>
         </tr>
         <tr>
-            <th></th>
-            <th>Deadline</th>
+            <td></td>
+            <th scope="row">Deadline</th>
             <td>
                 {{ review_req.deadline|date:"Y-m-d" }}
                 {% if can_edit_deadline %}
@@ -63,21 +63,21 @@
             </td>
         </tr>
         <tr>
-            <th></th>
-            <th>Requested</th>
+            <td></td>
+            <th scope="row">Requested</th>
             <td>{{ review_req.time|date:"Y-m-d" }}</td>
         </tr>
         {% if review_req.requested_by.name != "(System)" %}
             <tr>
-                <th></th>
-                <th>Requested by</th>
+                <td></td>
+                <th scope="row">Requested by</th>
                 <td>{% person_link review_req.requested_by %}</td>
             </tr>
         {% endif %}
         {% if review_req.doc.authors %}
             <tr>
-                <th></th>
-                <th>Authors</th>
+                <td></td>
+                <th scope="row">Authors</th>
                 <td>
                     {% for author in review_req.doc.authors %}
                         {% person_link author %}{% if not forloop.last %},{% endif %}
@@ -87,8 +87,8 @@
         {% endif %}
         {% if wg_chairs %}
             <tr>
-                <th></th>
-                <th>WG chairs</th>
+                <td></td>
+                <th scope="row">WG chairs</th>
                 <td>
                     {% for chair in wg_chairs %}
                         {% person_link chair %}{% if not forloop.last %},{% endif %}
@@ -98,9 +98,9 @@
         {% endif %}
         {% if doc.time %}
             <tr>
-                <th>
+                <th scope="row">
                 </th>
-                <th>
+                <th scope="row">
                     Draft last updated
                 </th>
                 <td>
@@ -110,9 +110,9 @@
         {% endif %}
         {% if iesg_state_summary %}
             <tr>
-                <th>
+                <th scope="row">
                 </th>
-                <th>
+                <th scope="row">
                     IESG document state
                 </th>
                 <td>
@@ -121,9 +121,9 @@
             </tr>
         {% endif %}
         <tr>
-            <th>
+            <th scope="row">
             </th>
-            <th>
+            <th scope="row">
                 Completed reviews
             </th>
             <td>
@@ -145,9 +145,9 @@
         </tr>
         {% if review_req.comment %}
             <tr>
-                <th>
+                <th scope="row">
                 </th>
-                <th>
+                <th scope="row">
                     Comments
                 </th>
                 <td>
@@ -167,10 +167,10 @@
     {% for assignment in assignments %}
         <tbody class="meta border-top">
             <tr>
-                <th>
+                <th scope="row">
                     {% if forloop.first %}Assignment{{ assignments|pluralize }}{% endif %}
                 </th>
-                <th>
+                <th scope="row">
                     Reviewer
                 </th>
                 <td>
@@ -193,7 +193,7 @@
                                     </a>
                                 {% endif %}
                                 {% if assignment.can_accept_reviewer_assignment %}
-                                    <form style="display:inline"
+                                    <form class="d-inline"
                                           method="post"
                                           action="{% url "ietf.doc.views_review.review_request" name=doc.name request_id=review_req.pk %}">
                                         {% csrf_token %}
@@ -213,9 +213,9 @@
                 </td>
             </tr>
             <tr>
-                <th>
+                <th scope="row">
                 </th>
-                <th>
+                <th scope="row">
                     State
                 </th>
                 <td>
@@ -231,9 +231,9 @@
             </tr>
             {% if assignment.state_id != "withdrawn" and assignment.state_id != "no-response" and assignment.state_id != "rejected" %}
                 <tr>
-                    <th>
+                    <th scope="row">
                     </th>
-                    <th>
+                    <th scope="row">
                         Review
                     </th>
                     <td>
@@ -282,9 +282,9 @@
             {% endif %}
             {% if assignment.review and assignment.review.external_url %}
                 <tr>
-                    <th>
+                    <th scope="row">
                     </th>
-                    <th>
+                    <th scope="row">
                         Posted at
                     </th>
                     <td>
@@ -296,9 +296,9 @@
             {% endif %}
             {% if assignment.reviewed_rev %}
                 <tr>
-                    <th>
+                    <th scope="row">
                     </th>
-                    <th>
+                    <th scope="row">
                         Reviewed rev.
                     </th>
                     <td>
@@ -311,9 +311,9 @@
             {% endif %}
             {% if assignment.result %}
                 <tr>
-                    <th>
+                    <th scope="row">
                     </th>
-                    <th>
+                    <th scope="row">
                         Review result
                     </th>
                     <td class="{% if assignment.result.name|slice:5 == 'Ready' %}text-success{% else %}text-danger{% endif %}">
@@ -323,9 +323,9 @@
             {% endif %}
             {% if assignment.state_id == "completed" or assignment.state_id == "part-completed" %}
                 <tr>
-                    <th>
+                    <th scope="row">
                     </th>
-                    <th>
+                    <th scope="row">
                         Review completed:
                     </th>
                     <td>

@@ -38,6 +38,7 @@ from ietf.utils.mail import outbox, empty_outbox, parseaddr, on_behalf_of, get_p
 from ietf.utils.test_utils import login_testing_unauthorized, reload_db_objects
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import strip_prefix, xslugify
+from django.utils.html import escape
 
 class ReviewTests(TestCase):
     def setUp(self):
@@ -175,7 +176,7 @@ class ReviewTests(TestCase):
         self.assertContains(r, review_req.team.name)
         try:
             # FIXME-LARS
-            self.assertContains(r, author.name)
+            self.assertContains(r, escape(author.name))
         except:
             print(r.content)
             self.assertContains(r, author.name)

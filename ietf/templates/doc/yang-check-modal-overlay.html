@@ -8,9 +8,9 @@
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="check-{{ check.pk }}-label">
+                <p class="h5 modal-title" id="check-{{ check.pk }}-label">
                     {{ check.checker|title }} for {{ doc.name }}-{{ doc.rev }} on {{ check.time|date:"Y-m-d" }}
-                </h5>
+                </p>
                 <button type="button"
                         class="btn-close"
                         data-bs-dismiss="modal"

@@ -556,8 +556,8 @@ def review_announcement_text(request, name):
             (existing, existing_new_work) = default_review_text(group, charter, by)
             existing.save()
             existing_new_work.save()
-            form = ReviewAnnouncementTextForm(initial=dict(announcement_text=existing.text,
-                                                           new_work_text=existing_new_work.text))
+            form = ReviewAnnouncementTextForm(initial=dict(announcement_text=escape(existing.text),
+                                                           new_work_text=escape(existing_new_work.text)))
 
         if any(x in request.POST for x in ['send_annc_only','send_nw_only','send_both']) and form.is_valid():
             if any(x in request.POST for x in ['send_annc_only','send_both']):
@@ -613,7 +613,7 @@ def action_announcement_text(request, name):
         if "regenerate_text" in request.POST:
             e = default_action_text(group, charter, by)
             e.save()
-            form = ActionAnnouncementTextForm(initial=dict(announcement_text=e.text))
+            form = ActionAnnouncementTextForm(initial=dict(announcement_text=escape(e.text)))
 
         if "send_text" in request.POST and form.is_valid():
             parsed_msg = send_mail_preformatted(request, form.cleaned_data['announcement_text'])

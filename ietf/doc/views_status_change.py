@@ -716,7 +716,7 @@ def last_call(request, name):
 
         if "regenerate_last_call_text" in request.POST:
             e = generate_last_call_text(request,status_change)
-            form = LastCallTextForm(initial=dict(last_call_text=e.text))
+            form = LastCallTextForm(initial=dict(last_call_text=escape(e.text)))
             
     return render(request, 'doc/status_change/last_call.html',
                                dict(doc=status_change,

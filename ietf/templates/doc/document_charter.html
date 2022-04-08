@@ -47,8 +47,8 @@
     <table class="table table-sm table-borderless">
         <tbody class="meta border-top">
             <tr>
-                <th>Document</th>
-                <th>
+                <th scope="row">Document</th>
+                <th scope="row">
                     {% if doc.get_state_slug != "approved" %}
                         Proposed charter
                     {% else %}
@@ -56,7 +56,7 @@
                     {% endif %}
                 </th>
                 <td class="edit"></td>
-                <th>
+                <th scope="row">
                     {{ group.name }} {{ group.type.name }}
                     <a href="{{ group.about_url }}">({{ group.acronym }})</a>
                     {% if snapshot %}<span class="badge bg-warning">Snapshot</span>{% endif %}
@@ -64,7 +64,7 @@
             </tr>
             <tr>
                 <td></td>
-                <th>Title</th>
+                <th scope="row">Title</th>
                 <td class="edit">
                     {% if not snapshot and can_manage %}
                         {% doc_edit_button 'ietf.doc.views_charter.change_title' name=doc.name %}
@@ -74,13 +74,13 @@
             </tr>
             <tr>
                 <td></td>
-                <th>Last updated</th>
+                <th scope="row">Last updated</th>
                 <td class="edit"></td>
                 <td>{{ doc.time|date:"Y-m-d" }}</td>
             </tr>
             <tr>
                 <td></td>
-                <th>
+                <th scope="row">
                     <a href="{% url 'ietf.doc.views_help.state_help' type='charter' %}">State</a>
                 </th>
                 <td class="edit">
@@ -101,8 +101,8 @@
         </tbody>
         <tbody class="meta border-top">
             <tr>
-                <th>{{ group.type.name }}</th>
-                <th>State</th>
+                <th scope="row">{{ group.type.name }}</th>
+                <th scope="row">State</th>
                 <td class="edit"></td>
                 <td>
                     <span class="{% if group.state.name|slugify == 'active' %}text-success{% endif %}">
@@ -114,8 +114,8 @@
         <tbody class="meta border-top">
             {% if group.type_id != "rg" %}
                 <tr>
-                    <th>IESG</th>
-                    <th>Responsible AD</th>
+                    <th scope="row">IESG</th>
+                    <th scope="row">Responsible AD</th>
                     <td>
                     </td>
                     <td>
@@ -123,9 +123,9 @@
                     </td>
                 </tr>
                 <tr>
-                    <th>
+                    <th scope="row">
                     </th>
-                    <th>
+                    <th scope="row">
                         Charter edit AD
                     </th>
                     <td class="edit">
@@ -142,7 +142,7 @@
                 <tr>
                     <td>
                     </td>
-                    <th>
+                    <th scope="row">
                         Telechat date
                     </th>
                     <td class="edit">
@@ -166,7 +166,7 @@
             <tr>
                 <td>
                 </td>
-                <th>
+                <th scope="row">
                     Send notices to
                 </th>
                 <td class="edit">
@@ -175,7 +175,7 @@
                     {% endif %}
                 </td>
                 <td>
-                    {{ doc.notify|default:"<span class='text-muted'>(None)</span>" }}
+                    {{ doc.notify|default:'<span class="text-muted">(None)</span>' }}
                 </td>
             </tr>
         </tbody>

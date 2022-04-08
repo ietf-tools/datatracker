@@ -14,11 +14,11 @@
         {% csrf_token %}
         <pre class="border p-3 mb-3">{{ announcement }}</pre>
         {% if action == "to_announcement_list" %}
-            <button class="btn btn-primary" type="submit">Notify RFC Editor, send announcement & close ballot</button>
+            <button class="btn btn-primary" type="submit">Notify RFC Editor, send announcement &amp; close ballot</button>
         {% elif action == "to_rfc_editor" %}
-            <button class="btn btn-primary" type="submit">Email RFC Editor & close ballot</button>
+            <button class="btn btn-primary" type="submit">Email RFC Editor &amp; close ballot</button>
         {% elif action == "do_not_publish" %}
-            <button class="btn btn-primary" type="submit">Email RFC Editor (DNP) & close ballot"</button>
+            <button class="btn btn-primary" type="submit">Email RFC Editor (DNP) &amp; close ballot"</button>
         {% endif %}
         <a class="btn btn-secondary float-end"
            href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">

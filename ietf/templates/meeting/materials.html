@@ -42,14 +42,14 @@
                 <table class="table table-sm table-striped tablesorter">
                     <thead>
                         <tr>
-                            <th data-sort="group">Group</th>
-                            <th data-sort="agenda">Agenda</th>
-                            <th data-sort="minutes">Minutes</th>
-                            <th data-sort="slides">Slides</th>
-                            <th data-sort="drafts">Drafts</th>
-                            <th data-sort="updated">Updated</th>
+                            <th scope="col" data-sort="group">Group</th>
+                            <th scope="col" data-sort="agenda">Agenda</th>
+                            <th scope="col" data-sort="minutes">Minutes</th>
+                            <th scope="col" data-sort="slides">Slides</th>
+                            <th scope="col" data-sort="drafts">Drafts</th>
+                            <th scope="col" data-sort="updated">Updated</th>
                             {% if user|has_role:"Secretariat" or user_groups %}
-                                <th></th>
+                                <th scope="col"></th>
                             {% endif %}
                         </tr>
                     </thead>
@@ -69,14 +69,14 @@
                 <table class="table table-sm table-striped tablesorter">
                     <thead>
                         <tr>
-                            <th data-sort="group">Group</th>
-                            <th data-sort="agenda">Agenda</th>
-                            <th data-sort="minutes">Minutes</th>
-                            <th data-sort="slides">Slides</th>
-                            <th data-sort="drafts">Drafts</th>
-                            <th data-sort="updated">Updated</th>
+                            <th scope="col" data-sort="group">Group</th>
+                            <th scope="col" data-sort="agenda">Agenda</th>
+                            <th scope="col" data-sort="minutes">Minutes</th>
+                            <th scope="col" data-sort="slides">Slides</th>
+                            <th scope="col" data-sort="drafts">Drafts</th>
+                            <th scope="col" data-sort="updated">Updated</th>
                             {% if user|has_role:"Secretariat" or user_groups %}
-                                <th></th>
+                                <th scope="col"></th>
                             {% endif %}
                         </tr>
                     </thead>
@@ -96,19 +96,18 @@
                     <table class="table table-sm table-striped tablesorter">
                         <thead>
                             <tr>
-                                <th data-sort="group">Group</th>
-                                <th data-sort="agenda">Agenda</th>
-                                <th data-sort="minutes">Minutes</th>
-                                <th data-sort="slides">Slides</th>
-                                <th data-sort="drafts">
+                                <th scope="col" data-sort="group">Group</th>
+                                <th scope="col" data-sort="agenda">Agenda</th>
+                                <th scope="col" data-sort="minutes">Minutes</th>
+                                <th scope="col" data-sort="slides">Slides</th>
+                                <th scope="col" data-sort="drafts">
                                     Drafts
                                 </th>
-                                <th data-sort="updated">
+                                <th scope="col" data-sort="updated">
                                     Updated
                                 </th>
                                 {% if user|has_role:"Secretariat" or user_groups %}
-                                    <th>
-                                    </th>
+                                    <th scope="col"></th>
                                 {% endif %}
                             </tr>
                         </thead>
@@ -131,27 +130,26 @@
                 <table class="table table-sm table-striped tablesorter">
                     <thead>
                         <tr>
-                            <th data-sort="group">
+                            <th scope="col" data-sort="group">
                                 Group
                             </th>
-                            <th data-sort="agenda">
+                            <th scope="col" data-sort="agenda">
                                 Agenda
                             </th>
-                            <th data-sort="minutes">
+                            <th scope="col" data-sort="minutes">
                                 Minutes
                             </th>
-                            <th data-sort="slides">
+                            <th scope="col" data-sort="slides">
                                 Slides
                             </th>
-                            <th data-sort="drafts">
+                            <th scope="col" data-sort="drafts">
                                 Drafts
                             </th>
-                            <th data-sort="updated">
+                            <th scope="col" data-sort="updated">
                                 Updated
                             </th>
                             {% if user|has_role:"Secretariat" or user_groups %}
-                                <th>
-                                </th>
+                                <th scope="col"></th>
                             {% endif %}
                         </tr>
                     </thead>
@@ -172,27 +170,26 @@
                 <table class="table table-sm table-striped tablesorter">
                     <thead>
                         <tr>
-                            <th data-sort="group">
+                            <th scope="col" data-sort="group">
                                 Group
                             </th>
-                            <th data-sort="agenda">
+                            <th scope="col" data-sort="agenda">
                                 Agenda
                             </th>
-                            <th data-sort="minutes">
+                            <th scope="col" data-sort="minutes">
                                 Minutes
                             </th>
-                            <th data-sort="slides">
+                            <th scope="col" data-sort="slides">
                                 Slides
                             </th>
-                            <th data-sort="drafts">
+                            <th scope="col" data-sort="drafts">
                                 Drafts
                             </th>
-                            <th data-sort="updated">
+                            <th scope="col" data-sort="updated">
                                 Updated
                             </th>
                             {% if user|has_role:"Secretariat" or user_groups %}
-                                <th>
-                                </th>
+                                <th scope="col"></th>
                             {% endif %}
                         </tr>
                     </thead>
@@ -212,27 +209,26 @@
                 <table class="table table-sm table-striped tablesorter">
                     <thead>
                         <tr>
-                            <th data-sort="group">
+                            <th scope="col" data-sort="group">
                                 Group
                             </th>
-                            <th data-sort="agenda">
+                            <th scope="col" data-sort="agenda">
                                 Agenda
                             </th>
-                            <th data-sort="minutes">
+                            <th scope="col" data-sort="minutes">
                                 Minutes
                             </th>
-                            <th data-sort="slides">
+                            <th scope="col" data-sort="slides">
                                 Slides
                             </th>
-                            <th data-sort="drafts">
+                            <th scope="col" data-sort="drafts">
                                 Drafts
                             </th>
-                            <th data-sort="updated">
+                            <th scope="col" data-sort="updated">
                                 Updated
                             </th>
                             {% if user|has_role:"Secretariat" or user_groups %}
-                                <th>
-                                </th>
+                                <th scope="col"></th>
                             {% endif %}
                         </tr>
                     </thead>

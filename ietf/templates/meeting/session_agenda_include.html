@@ -14,14 +14,14 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="label-{{ slug }}">
+                <p class="h5 modal-title" id="label-{{ slug }}">
                     Meeting materials for
                     {% if timeslot.type.slug == 'plenary' %}
                         {{ timeslot.name }}
                     {% else %}
                         {{ session.historic_group.name }}
                     {% endif %}
-                </h5>
+                </p>
                 <button type="button"
                         class="btn-close"
                         data-bs-dismiss="modal"

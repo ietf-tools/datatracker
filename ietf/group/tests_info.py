@@ -1527,7 +1527,7 @@ class DatelessMilestoneTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(q('#switch-date-use-form button').attr('style'), 'display:none;')     
+        self.assertTrue(q('#switch-date-use-form button').hasClass('d-none'))
 
         ms.group.charter.rev='00-00'
         ms.group.charter.save()

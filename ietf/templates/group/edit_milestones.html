@@ -10,7 +10,7 @@
 {% block content %}
     {% origin %}
     <h1>{{ title }}</h1>
-    <form class="my-3" method="post" id="switch-date-use-form">
+    {% if can_change_uses_milestone_dates %}<form class="my-3" method="post" id="switch-date-use-form">{% endif %}
         <a class="btn btn-primary" href="{{ group.about_url }}">{{ group.acronym }} {{ group.type.name }}</a>
         {% if group.charter %}
             <a class="btn btn-primary"
@@ -20,11 +20,10 @@
         {% endif %}
         {% if can_change_uses_milestone_dates %}
             {% csrf_token %}
-            <button class="btn btn-primary"
+            <button class="btn btn-primary {% if milestone_set == 'charter' and not group.charter.rev == '00-00' %} d-none{% endif %}"
                     type="submit"
                     name="action"
-                    value="switch"
-                    {% if milestone_set == 'charter' and not group.charter.rev == '00-00' %} style="display:none;"{% endif %}>
+                    value="switch">
                 {% if group.uses_milestone_dates %}
                     Stop
                 {% else %}
@@ -33,7 +32,7 @@
                 using milestone dates
             </button>
         {% endif %}
-    </form>
+    {% if can_change_uses_milestone_dates %}</form>{% endif %}
     <p class="alert alert-info my-3">
         {% if forms %}Click a milestone to edit it.{% endif %}
         {% if forms and not group.uses_milestone_dates %}Drag and drop milestones to reorder them.{% endif %}

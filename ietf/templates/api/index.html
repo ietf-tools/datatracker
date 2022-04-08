@@ -135,14 +135,8 @@ $ curl 'https://datatracker.ietf.org/api/v1/doc/document/?limit=0&amp;name__cont
             A simplified Documents API, intended for cases where only a limited set of
             document attributes are necessary for an application is
             available for all documents at the relative url <code>doc.json</code>, e.g.,
-            <code>{% url 'ietf.doc.views_doc.document_json' name='draft-ietf-poised95-std-proc-3' %}</code>
-            <a href="{% url 'ietf.doc.views_doc.document_json' name='draft-ietf-poised95-std-proc-3' %}">
-                <i class="bi bi-box-arrow-up-right"></i>
-            </a>.
-            You can also specify an RFC:  <code>{% url 'ietf.doc.views_doc.document_json' name='rfc2026' %}</code>
-            <a href="{% url 'ietf.doc.views_doc.document_json' name='rfc2026' %}">
-                <i class="bi bi-box-arrow-up-right"></i>
-            </a>.
+            <code><a class="text-reset" href="{% url 'ietf.doc.views_doc.document_json' name='draft-ietf-poised95-std-proc-3' %}">{% url 'ietf.doc.views_doc.document_json' name='draft-ietf-poised95-std-proc-3' %}</a></code>.
+            You can also specify an RFC:  <code><a class="text-reset" href="{% url 'ietf.doc.views_doc.document_json' name='rfc2026' %}">{% url 'ietf.doc.views_doc.document_json' name='rfc2026' %}</a></code>.
             No API key is needed to access this.
         </p>
         <p>
@@ -255,9 +249,7 @@ $ curl -S -F "apikey=DgAAAMLSi3coaE5TjrRs518xO8eBRlCmFF3eQcC8_SjUTtRGLGiJh7-1SYP
             rather than having general access or requiring username/password
             login, see for example details for
             <code>{% url 'ietf.doc.views_ballot.api_set_position' %}</code>
-            <a href="#iesg-position-api">
-                above
-            </a>.
+            <a href="#iesg-position-api">above</a>.
             Personal API keys are available from your
             <a href="{% url 'ietf.ietfauth.views.apikey_index' %}">
                 Account API Keys

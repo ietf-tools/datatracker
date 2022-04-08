@@ -25,17 +25,18 @@
                            type="checkbox"
                            name="milestone"
                            value="{{ milestone.id }}"
+                           id="id-{{ milestone.id }}"
                            {% if not milestone.resolved %}checked{% endif %}>
-                    <label class="form-check-label">
+                    <label class="form-check-label" for="id-{{ milestone.id }}">
                         {{ milestone.desc }}
-                        <span class="badge {% if milestone.resolved %}bg-success{% else %}bg-info{% endif %}">
-                            {% if milestone.resolved %}
-                                {{ milestone.resolved }}
-                            {% else %}
-                                {% if group.uses_milestone_dates %}{{ milestone.due|date:"M Y" }}{% endif %}
-                            {% endif %}
-                        </span>
                     </label>
+                    <span class="badge {% if milestone.resolved %}bg-success{% else %}bg-info{% endif %}">
+                        {% if milestone.resolved %}
+                            {{ milestone.resolved }}
+                        {% else %}
+                            {% if group.uses_milestone_dates %}{{ milestone.due|date:"M Y" }}{% endif %}
+                        {% endif %}
+                    </span>
                 </div>
             {% endfor %}
         </div>

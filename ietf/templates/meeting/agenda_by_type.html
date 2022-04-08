@@ -23,6 +23,7 @@
                         <div class="daylistentry">
                             <h3 class="mt-4">{{ day.grouper }}</h3>
                             <table class="table table-sm table-borderless sessiontable">
+                                <tbody>
                                 {% for ss in day.list %}
                                     <tr {% if ss.schedule_id != meeting.schedule_id %}class="from-base-schedule"{% endif %}>
                                         <td>{{ ss.timeslot.time|date:"H:i" }}-{{ ss.timeslot.end_time|date:"H:i" }}</td>
@@ -37,6 +38,7 @@
                                         </td>
                                     </tr>
                                 {% endfor %}
+                                </tbody>
                             </table>
                         </div>
                     {% endfor %}

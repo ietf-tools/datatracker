@@ -163,29 +163,39 @@ $(function () {
                 .shift()
                 .trim());
 
-        if (
-            contents &&
-            (contents.length > 0) &&
-            ($(headings)
-                .last()
-                .offset()
-                .top > $(window)
-                .height())
-        ) {
+        const extraNav = contentElement.find('#extra-nav');
+        const haveExtraNav = extraNav.length > 0;
+
+        const pageTooTall = !!(contents &&
+          (contents.length > 0) &&
+          ($(headings)
+              .last()
+              .offset()
+              .top > $(window)
+              .height()));
+
+        if (pageTooTall || haveExtraNav) {
             // console.log("Enabling nav.");
             let n = 0;
             let last_level;
-            let nav;
 
             contentElement
                 .attr("data-bs-offset", 0)
                 .attr("tabindex", 0)
                 .after($(`
                  <div class="col-xl-2 ps-0 small">
-                     <nav id="righthand-nav" class="position-fixed navbar navbar-light bg-light overflow-auto flex-fill" style="height: 70vh; width: inherit;">
-                     </nav>
+                     <div id="righthand-card" class="position-fixed card d-flex flex-column justify-content-start align-items-start">
+                         <nav id="righthand-nav" class="card-body navbar navbar-light bg-light overflow-auto"></nav>
+                     </div></div>
                  </div>
-                 `))
+                 `));
+
+            const nav = $("#righthand-nav")
+                .append(`<nav class="nav nav-pills flex-column px-2">`)
+                .children()
+                .last();
+
+            contentElement
                 .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible, .nav-heading:visible")
                 .not(".navskip")
                 .each(function () {
@@ -209,14 +219,6 @@ $(function () {
                             .attr("id", id);
                     }
 
-                    if (nav === undefined) {
-                        nav = $("#righthand-nav");
-                        nav = $(nav)
-                            .append(`<nav class="nav nav-pills flex-column align-self-start flex-fill px-2">`)
-                            .children()
-                            .last();
-                    }
-
                     const level = parseInt(this.nodeName.substring(1)) - 1;
                     if (!last_level) {
                         last_level = level;
@@ -232,6 +234,12 @@ $(function () {
                     $(nav)
                         .append(`<a class="nav-link" href="#${id}">${text}</a>`);
                 });
+
+            if (haveExtraNav) {
+                $('#righthand-card').append('<div id="righthand-extra" class="card-body"></div>');
+                extraNav.children().appendTo('#righthand-extra');
+                extraNav.remove();
+            }
 
             $(window)
                 .on("scroll", function () {

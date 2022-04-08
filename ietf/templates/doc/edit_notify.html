@@ -17,10 +17,10 @@
                 class="btn btn-primary"
                 name="save_addresses"
                 value="Save">Submit</button>
-        <input type="submit"
+        <button type="submit"
                class="btn btn-warning"
-               name="regenerate_addresses"
-               value="Regenerate address list">
+               name="regenerate_addresses">
+               Regenerate address list</button>
         <a class="btn btn-secondary float-end"
            href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">
             Back

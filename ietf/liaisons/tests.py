@@ -317,7 +317,7 @@ class LiaisonManagementTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=do_action_taken]')), 0)
+        self.assertEqual(len(q('form button[name=do_action_taken]')), 0)
 
         # log in and get
         self.client.login(username="secretary", password="secretary+password")
@@ -325,13 +325,13 @@ class LiaisonManagementTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=do_action_taken]')), 1)
+        self.assertEqual(len(q('form button[name=do_action_taken]')), 1)
 
         # mark action taken
         r = self.client.post(url, dict(do_action_taken="1"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=do_action_taken]')), 0)
+        self.assertEqual(len(q('form button[name=do_action_taken]')), 0)
         liaison = LiaisonStatement.objects.get(id=liaison.id)
         self.assertTrue(liaison.action_taken)
 
@@ -357,7 +357,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, liaison.title)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=approved]')), 0)
+        self.assertEqual(len(q('form button[name=approved]')), 0)
 
         # check the detail page / authorized
         self.client.login(username="ulm-liaiman", password="ulm-liaiman+password")
@@ -368,7 +368,7 @@ class LiaisonManagementTests(TestCase):
         from ietf.liaisons.utils import can_edit_liaison
         user = User.objects.get(username='ulm-liaiman')
         self.assertTrue(can_edit_liaison(user, liaison))
-        self.assertEqual(len(q('form input[name=approved]')), 1)
+        self.assertEqual(len(q('form button[name=approved]')), 1)
 
         # approve
         mailbox_before = len(outbox)

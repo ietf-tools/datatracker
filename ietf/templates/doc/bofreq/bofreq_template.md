@@ -15,9 +15,19 @@ Fill in the details below. Keep items in the order they appear here.
    - Chair Conflicts: TBD
    - Technology Overlap: TBD
    - Key Participant Conflict: TBD
+
+## Information for IAB/IESG
+To allow evaluation of your proposal, please include the following items:
+
+- Any protocols or practices that already exist in this space:
+- Which (if any) modifications to existing protocols or practices are required:
+- Which (if any) entirely new protocols or practices are required:
+- Open source projects (if any) implementing this work:
+
 ## Agenda
    - Items, drafts, speakers, timing
    - Or a URL
+
 ## Links to the mailing list, draft charter if any, relevant Internet-Drafts, etc.
    - Mailing List: https://www.ietf.org/mailman/listinfo/example
    - Draft charter: https://datatracker.ietf.org/doc/charter-ietf-EXAMPLE/

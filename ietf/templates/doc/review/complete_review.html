@@ -32,19 +32,19 @@
         <table class="my-3 table table-sm table-borderless">
             <tbody>
                 <tr>
-                    <th>Review type:</th>
+                    <th scope="row">Review type:</th>
                     <td>{{ assignment.review_request.team.acronym }} - {{ assignment.review_request.type }} review</td>
                 </tr>
                 <tr>
-                    <th>Requested version for review:</th>
+                    <th scope="row">Requested version for review:</th>
                     <td>{{ assignment.review_request.requested_rev|default:"Current" }}</td>
                 </tr>
                 <tr>
-                    <th>Requested:</th>
+                    <th scope="row">Requested:</th>
                     <td>{{ assignment.review_request.time|date:"Y-m-d" }}</td>
                 </tr>
                 <tr>
-                    <th>Reviewer:</th>
+                    <th scope="row">Reviewer:</th>
                     <td>{% person_link assignment.reviewer.person %}</td>
                 </tr>
             </tbody>
@@ -94,13 +94,13 @@
         {% else %}
             <a class="btn btn-secondary float-end" href="{{ doc.get_absolute_url }}">Back</a>
         {% endif %}
-        <div class="template" style="display:none">
+        <div class="template d-none">
             {% if mail_archive_query_urls %}
                 <div class="mail-archive-search">
                     <div class="offset-md-2 col-md-10">
-                        <label class="form-label">Search mail archive subjects for:</label>
+                        <label for="mail-archive-subjects" class="form-label">Search mail archive subjects for:</label>
                         <div class="input-group mb-3">
-                            <input type="text"
+                            <input type="text" id="mail-archive-subjects"
                                    class="query-input form-control"
                                    value="{{ mail_archive_query_urls.query }}">
                             <button type="button" class="search btn btn-primary">Search</button>
@@ -134,7 +134,7 @@
             {% endif %}
         </div>
         {% spaceless %}
-            <div class="template" style="display:none">
+            <div class="template d-none">
                 <button type="button" class="mail-archive-search-result list-group-item">
                     <small class="date float-end">&nbsp;</small>
                     <small class="from float-end">&nbsp;</small>

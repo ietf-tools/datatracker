@@ -130,6 +130,7 @@
                                              data-rooms="{% for r in rgroup %}{{ r.room.pk }}{% if not forloop.last %},{% endif %}{% endfor %}">
                                             <div class="time-header">
                                                 {# All rooms in a group have same timeslots; grab the first for the labels #}
+                                                <!-- [html-validate-disable-block no-inline-style -- FIXME: should style this better] -->
                                                 {% for t in rgroup.0.timeslots %}
                                                     <div class="time-label"
                                                          style="width: {{ t.layout_width }}rem"
@@ -149,6 +150,7 @@
                                                     <div class="timeslots"
                                                          data-room-id="{{ room.pk }}"
                                                          data-roomcapacity="{{ room.capacity }}">
+                                                            <!-- [html-validate-disable-block no-inline-style -- FIXME: should style this better] -->
                                                         {% for t in room_data.timeslots %}
                                                             <div id="timeslot{{ t.pk }}"
                                                                  class="timeslot {{ t.start_end_group }}"
@@ -192,7 +194,7 @@
                         </div>
                     </div>
                     <div class="preferences">
-                        <span class="sort-unassigned">
+                        <label class="sort-unassigned">
                             Sort unassigned:
                             <select name="sort_unassigned" class="form-select">
                                 <option value="name" selected="selected">
@@ -208,7 +210,7 @@
                                     Special requests
                                 </option>
                             </select>
-                        </span>
+                        </label>
                         <span class="toggle-inputs session-parent-toggles">
                             Show:
                             {% for p in session_parents %}
@@ -224,6 +226,7 @@
                         {% if session_purposes|length > 1 %}
                             <button id="session-toggle-modal-open"
                                     class="btn btn-primary"
+                                    type="button"
                                     data-bs-toggle="modal"
                                     data-bs-target="#session-toggles-modal">
                               <i class="bi bi-check-square"></i>
@@ -232,6 +235,7 @@
                         {% endif %}
                         <button id="timeslot-toggle-modal-open"
                                 class="btn btn-primary"
+                                type="button"
                                 data-bs-toggle="modal"
                                 data-bs-target="#timeslot-group-toggles-modal">
                             <i class="bi bi-check-square"></i>
@@ -239,6 +243,7 @@
                         </button>
                       <button id="timeslot-type-modal-open"
                               class="btn btn-primary"
+                              type="button"
                               data-bs-toggle="modal"
                               data-bs-target="#timeslot-type-toggles-modal">
                           <i class="bi bi-check-square"></i>
@@ -255,7 +260,7 @@
                 <div class="modal-dialog modal-xl" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="timeslot-group-toggles-modal-title">Displayed timeslots</h5>
+                            <p class="h5 modal-title" id="timeslot-group-toggles-modal-title">Displayed timeslots</p>
                             <button type="button"
                                     class="btn-close"
                                     data-bs-dismiss="modal"
@@ -274,7 +279,7 @@
                                                        class="form-check-input"
                                                        name="timeslot-group"
                                                        value="{{ key }}"
-                                                       checked="checked">
+                                                       checked>
                                                 {{ start|date:"H:i" }} - {{ end|date:"H:i" }}
                                             </label>
                                         {% endfor %}
@@ -299,7 +304,7 @@
                 <div class="modal-dialog modal-xl" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="timeslot-type-toggles-modal-title">Displayed types</h5>
+                            <p class="h5 modal-title" id="timeslot-type-toggles-modal-title">Displayed types</p>
                             <button type="button"
                                     class="btn-close"
                                     data-bs-dismiss="modal"
@@ -335,7 +340,7 @@
                 <div class="modal-dialog modal-xl" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="session-toggles-modal-title">Displayed sessions</h5>
+                            <p class="h5 modal-title" id="session-toggles-modal-title">Displayed sessions</p>
                             <button type="button"
                                     class="btn-close"
                                     data-bs-dismiss="modal"
@@ -378,9 +383,9 @@
                     <form class="modal-content" method="post">
                         {% csrf_token %}
                         <div class="modal-header">
-                            <h5 class="modal-title" id="swap-days-modal-title">
+                            <p class="h5 modal-title" id="swap-days-modal-title">
                                 Swap <span class="day"></span> with
-                            </h5>
+                            </p>
                             <button type="button"
                                     class="btn-close"
                                     data-bs-dismiss="modal"
@@ -419,9 +424,9 @@
                     <form class="modal-content" method="post">
                         {% csrf_token %}
                         <div class="modal-header">
-                            <h5 class="modal-title" id="swap-timeslot-col-modal-title">
+                            <p class="h5 modal-title" id="swap-timeslot-col-modal-title">
                                 Swap <span class="origin-label"></span> with
-                            </h5>
+                            </p>
                             <button type="button"
                                     class="btn-close"
                                     data-bs-dismiss="modal"

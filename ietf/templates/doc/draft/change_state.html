@@ -34,7 +34,7 @@
             <form class="d-inline" method="post">
                 {% csrf_token %}
                 <input type="hidden" name="state" value="{{ n.pk }}">
-                <input class="btn btn-primary" type="submit" value="{{ n.name }}">
+                <button class="btn btn-primary" type="submit">{{ n.name }}</button>
             </form>
         {% endfor %}
     {% endif %}
@@ -45,7 +45,7 @@
         <form method="post">
             {% csrf_token %}
             <input type="hidden" name="state" value="{{ to_iesg_eval.pk }}">
-            <input class="btn btn-warning" type="submit" value="{{ to_iesg_eval.name }}">
+            <button class="btn btn-warning" type="submit">{{ to_iesg_eval.name }}</button>
             But the ballot for this document has not yet been issued.
             <a class="btn btn-primary"
                href="{% url 'ietf.doc.views_ballot.ballot_writeupnotes' name=doc.name %}">
@@ -60,9 +60,7 @@
         <form method="post">
             {% csrf_token %}
             <input type="hidden" name="state" value="{{ prev_state.pk }}">
-            <input class="btn btn-warning"
-                   type="submit"
-                   value="Revert to {{ prev_state.name }}">
+            <button class="btn btn-warning" type="submit">Revert to {{ prev_state.name }}</button>
         </form>
     {% endif %}
 {% endblock %}
