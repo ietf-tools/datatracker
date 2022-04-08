@@ -274,8 +274,9 @@ $(document)
                     dataType: 'json',
                     success: function (response) {
                         if (response.success) {
+                            // hide tooltip after clicking icon
                             trigger.parent()
-                                .find(".track-untrack-doc")
+                                .find(".review-wish-add-remove-doc.ajax, .track-untrack-doc")
                                 .tooltip("hide");
                             trigger.addClass("visually-hidden");
 
