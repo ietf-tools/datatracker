@@ -47,7 +47,7 @@ jQuery(document)
             content.find(".selected")
                 .removeClass("selected");
 
-            schedulingPanel.addClass("visually-hidden");
+            schedulingPanel.addClass("d-none");
             schedulingPanel.find(".panel-content")
                 .children()
                 .remove();
@@ -109,7 +109,7 @@ jQuery(document)
                         .val(this.dataset.room);
                     schedulingPanel.find("[name=type]")
                         .trigger("change");
-                    schedulingPanel.removeClass("visually-hidden");
+                    schedulingPanel.removeClass("d-none");
                     schedulingPanel.find("[name=time]")
                         .trigger("focus");
                 });
@@ -147,8 +147,8 @@ jQuery(document)
                         schedulingPanel.find(".timeslot-form [name=type]")
                             .trigger("change");
                         schedulingPanel.find(".timeslot-form")
-                            .removeClass("visually-hidden");
-                        schedulingPanel.removeClass("visually-hidden");
+                            .removeClass("d-none");
+                        schedulingPanel.removeClass("d-none");
                     });
             });
 
@@ -161,31 +161,31 @@ jQuery(document)
             form.find("[name=group],[name=short],[name=\"agenda_note\"]")
                 .prop('disabled', false)
                 .closest(".mb-3")
-                .removeClass("visually-hidden");
+                .removeClass("d-none");
 
             if (this.value == "break") {
                 form.find("[name=short]")
                     .closest(".mb-3")
-                    .addClass("visually-hidden");
+                    .addClass("d-none");
             } else if (this.value == "plenary") {
                 let group = form.find("[name=group]");
                 group.val(group.data('ietf'));
             } else if (this.value == "regular") {
                 form.find("[name=short]")
                     .closest(".mb-3")
-                    .addClass("visually-hidden");
+                    .addClass("d-none");
             }
 
             if (this.value != "regular")
                 form.find("[name=\"agenda_note\"]")
                 .closest(".mb-3")
-                .addClass("visually-hidden");
+                .addClass("d-none");
 
             if (['break', 'reg', 'reserved', 'unavail', 'regular'].indexOf(this.value) != -1) {
                 let group = form.find("[name=group]");
                 group.prop('disabled', true);
                 group.closest(".mb-3")
-                    .addClass("visually-hidden");
+                    .addClass("d-none");
             }
         });
 

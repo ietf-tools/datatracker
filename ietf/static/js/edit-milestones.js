@@ -21,7 +21,7 @@ $(document)
                 .addClass("changed");
             setSubmitButtonState();
             if (switch_date_use_form) {
-                switch_date_use_form.addClass("visually-hidden");
+                switch_date_use_form.addClass("d-none");
             }
         }
 
@@ -36,7 +36,7 @@ $(document)
             var action;
             var milestone_cnt = milestonesForm.find(".milestonerow")
                 .length;
-            var milestone_hidden_cnt = milestonesForm.find(".edit-milestone.visually-hidden")
+            var milestone_hidden_cnt = milestonesForm.find(".edit-milestone.d-none")
                 .length;
             var milestone_change_cnt = milestonesForm.find(".edit-milestone.changed")
                 .length;
@@ -53,9 +53,9 @@ $(document)
             var submit = milestonesForm.find("[type=submit]");
             submit.text(submit.data("label" + action));
             if (milestone_change_cnt + milestone_delete_cnt > 0 || action == "review") {
-                submit.removeClass("visually-hidden");
+                submit.removeClass("d-none");
             } else {
-                submit.addClass("visually-hidden");
+                submit.addClass("d-none");
             }
         }
 
@@ -63,8 +63,8 @@ $(document)
             .on("click", function () {
                 var row = $(this),
                     editRow = row.next(".edit-milestone");
-                row.addClass("visually-hidden");
-                editRow.removeClass("visually-hidden");
+                row.addClass("d-none");
+                editRow.removeClass("d-none");
 
                 editRow.find('input[name$="desc"]')
                     .trigger("focus");
@@ -79,8 +79,8 @@ $(document)
                             .next('.edit-milestone');
                         if (e.is(":visible") && !e.hasClass("changed")) {
                             $(this)
-                                .removeClass("visually-hidden");
-                            e.addClass("visually-hidden");
+                                .removeClass("d-none");
+                            e.addClass("d-none");
                         }
                     });
             });
@@ -127,7 +127,7 @@ $(document)
                     });
 
                 new_edit_milestone.removeClass("template");
-                new_edit_milestone.removeClass("visually-hidden");
+                new_edit_milestone.removeClass("d-none");
 
                 new_edit_milestone.find(".select2-field")
                     .each(function () {
@@ -151,12 +151,12 @@ $(document)
                 .find("[name$=resolved]");
             if (resolved) {
                 reason.closest(".row")
-                    .removeClass("visually-hidden");
+                    .removeClass("d-none");
                 if (!reason.val())
                     reason.val(reason.data("default"));
             } else {
                 reason.closest(".row")
-                    .addClass("visually-hidden");
+                    .addClass("d-none");
                 reason.val("");
             }
         }
@@ -223,7 +223,7 @@ $(document)
                     setSubmitButtonState();
                     setOrderControlValue();
                     if (switch_date_use_form) {
-                        switch_date_use_form.addClass("visually-hidden");
+                        switch_date_use_form.addClass("d-none");
                     }
                 }
             };

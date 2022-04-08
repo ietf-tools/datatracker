@@ -72,10 +72,10 @@
                 </div>
             {% endfor %}
         </div>
-        <div class="add-timeslot-template visually-hidden">
+        <div class="add-timeslot-template d-none">
             {% include "meeting/edit_timeslot_form.html" with timeslot_form_action='add' timeslot_form=empty_timeslot_form %}
         </div>
-        <div class="scheduling-panel {% if not edit_timeslot_form and not add_timeslot_form %}visually-hidden{% endif %}">
+        <div class="scheduling-panel {% if not edit_timeslot_form and not add_timeslot_form %}d-none{% endif %}">
             <i class="close bi bi-x float-end"></i>
             <div class="panel-content">
                 {% if edit_timeslot_form %}

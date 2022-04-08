@@ -277,7 +277,7 @@ $(document)
                             trigger.parent()
                                 .find(".track-untrack-doc")
                                 .tooltip("hide");
-                            trigger.addClass("visually-hidden");
+                            trigger.addClass("d-none");
 
                             var target_unhide = null;
                             if (trigger.hasClass('review-wish-add-remove-doc')) {
@@ -289,7 +289,7 @@ $(document)
                                 trigger.parent()
                                     .find(target_unhide)
                                     .not(trigger)
-                                    .removeClass("visually-hidden");
+                                    .removeClass("d-none");
                             }
                         }
                     }
@@ -327,8 +327,8 @@ $(document)
             .on("click", function () {
                 $(this)
                     .parents(".snippet")
-                    .addClass("visually-hidden")
+                    .addClass("d-none")
                     .siblings(".full")
-                    .removeClass("visually-hidden");
+                    .removeClass("d-none");
             });
     });
