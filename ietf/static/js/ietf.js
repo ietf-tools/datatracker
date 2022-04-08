@@ -185,7 +185,7 @@ $(function () {
                 .after($(`
                  <div class="col-xl-2 ps-0 small">
                      <div id="righthand-card" class="position-fixed card d-flex flex-column justify-content-start align-items-start">
-                         <nav id="righthand-nav" class="card-body navbar navbar-light bg-light overflow-auto"></nav>
+                         <nav id="righthand-nav" class="card-body navbar navbar-light bg-light overflow-auto align-items-start"></nav>
                      </div></div>
                  </div>
                  `));
