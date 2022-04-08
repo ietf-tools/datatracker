@@ -15,7 +15,7 @@ RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/d
     $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 # Install the packages we need
-RUN apt-get update
+RUN apt-get update --fix-missing
 RUN apt-get install -qy \
 	apache2-utils \
 	apt-file \
