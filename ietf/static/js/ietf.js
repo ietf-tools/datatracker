@@ -184,8 +184,8 @@ $(function () {
                 .attr("tabindex", 0)
                 .after($(`
                  <div class="col-xl-2 ps-0 small">
-                     <div id="righthand-card" class="position-fixed card d-flex flex-column justify-content-start align-items-start">
-                         <nav id="righthand-nav" class="card-body navbar navbar-light bg-light overflow-auto align-items-start"></nav>
+                     <div id="righthand-panel" class="position-fixed d-flex flex-column justify-content-between align-items-start">
+                         <nav id="righthand-nav" class="navbar navbar-light bg-light overflow-auto align-items-start flex-fill"></nav>
                      </div></div>
                  </div>
                  `));
@@ -236,7 +236,7 @@ $(function () {
                 });
 
             if (haveExtraNav) {
-                $('#righthand-card').append('<div id="righthand-extra" class="card-body"></div>');
+                $('#righthand-panel').append('<div id="righthand-extra" class="py-3"></div>');
                 extraNav.children().appendTo('#righthand-extra');
                 extraNav.remove();
             }
