@@ -165,6 +165,10 @@ table tbody.meta {
 }
 
 // Style the righthand navigation panel
+#righthand-panel {
+    max-height: 80vh;
+}
+
 #righthand-nav {
     height: 70vh;
     width: inherit;
@@ -992,9 +996,4 @@ td.position-empty {
 
 #current-time {
     display: inline-block;
-}
-
-// righthand nav panel styling
-#righthand-nav {
-    width: inherit;
 }
