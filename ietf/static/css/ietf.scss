@@ -151,7 +151,7 @@ table tbody.meta {
 
 // Style the photo cards
 .photo {
-    width: 13em;
+    width: 12em;
 
     .card-img-top {
         object-fit: cover;
@@ -160,7 +160,11 @@ table tbody.meta {
 
     .photo-placeholder {
         height: 15em;
-        font-size: 12em;
+
+        .bi {
+            font-size: 10em;
+            color: $gray-300;
+        }
     }
 }
 

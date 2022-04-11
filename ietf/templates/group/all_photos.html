@@ -10,7 +10,8 @@
     {% for letter in alphabet_blocks %}
         <h2 class="mt-4" id="{{ letter.grouper }}">{{ letter.grouper }}</h2>
         {% regroup letter.list by person as person_groups %}
-        <div class="mt-0 row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-2 row-cols-xl-3 row-cols-xxl-3 g-3">
+        {# keep in sync with group_photos.html #}
+        <div class="mt-0 row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-4 row-cols-xxl-5 g-2">
             {% for person_with_groups in person_groups %}
                 <div class="col">{% include "person/photo.html" with person=person_with_groups.grouper groups=person_with_groups.list%}</div>
             {% endfor %}
