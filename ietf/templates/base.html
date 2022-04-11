@@ -127,7 +127,7 @@
                             {% else %}
                                 Version {{ version_num }}{% if patch %}{{patch}}{% endif %}
                             {% endif %}
-                            {% if branch %}({{ branch }} - {{ git_hash|slice:":8" }}){% endif %}
+                            {% if branch %}({{ branch }} - {{ git_hash|slice:":7" }}){% endif %}
                         {% endif %}
                         Report a bug:
                         <a href="https://github.com/ietf-tools/datatracker/issues/new/choose">
