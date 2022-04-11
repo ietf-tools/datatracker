@@ -174,11 +174,8 @@
                 </tr>
             </thead>
             {% for row in data %}
-                    {% if forloop.revcounter != 1 %}<tbody>{% endif %}
-                    {% if forloop.last %}
-                        {% if forloop.revcounter != 1 %}</tbody>{% endif %}
-                        <tfoot>
-                    {% endif %}
+                    {% if forloop.first %}<tbody>{% endif %}
+                    {% if forloop.last %}</tbody><tfoot>{% endif %}
                     <tr>
                         <td>{{ row.obj }}</td>
                         <td>{{ row.open_in_time }}</td>
@@ -196,8 +193,8 @@
                             {% endif %}
                         </td>
                     </tr>
-                {% endfor %}
-                </tfoot>
+                {% if forloop.last %}</tfoot>{% endif %}
+            {% endfor %}
             </table>
         {% elif stats_type == "results" %}
             <h2>
@@ -221,11 +218,8 @@
                     </tr>
                 </thead>
                 {% for row in data %}
-                        {% if forloop.revcounter != 1 %}<tbody>{% endif %}
-                        {% if forloop.last %}
-                            {% if forloop.revcounter != 1 %}</tbody>{% endif %}
-                            <tfoot>
-                        {% endif %}
+                        {% if forloop.first %}<tbody>{% endif %}
+                        {% if forloop.last %}</tbody><tfoot>{% endif %}
                         <tr>
                             <td>
                                 {{ row.obj }}
@@ -236,8 +230,8 @@
                                 </td>
                             {% endfor %}
                         </tr>
-                    {% endfor %}
-                </tfoot>
+                    {% if forloop.last %}</tfoot>{% endif %}
+                {% endfor %}
             </table>
         {% elif stats_type == "states" %}
             <h2>
@@ -261,11 +255,8 @@
                     </tr>
                 </thead>
                 {% for row in data %}
-                    {% if forloop.revcounter != 1 %}<tbody>{% endif %}
-                        {% if forloop.last %}
-                            {% if forloop.revcounter != 1 %}</tbody>{% endif %}
-                            <tfoot>
-                        {% endif %}
+                    {% if forloop.first %}<tbody>{% endif %}
+                        {% if forloop.last %}</tbody><tfoot>{% endif %}
                         <tr>
                             <td>
                                 {{ row.obj }}
@@ -276,8 +267,8 @@
                                 </td>
                             {% endfor %}
                         </tr>
-                    {% endfor %}
-                </tfoot>
+                    {% if forloop.last %}</tfoot>{% endif %}
+                {% endfor %}
             </table>
         {% elif stats_type == "time" and selected_teams %}
             <h2>
