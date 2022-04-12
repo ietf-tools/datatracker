@@ -192,23 +192,15 @@ def urlize_ietf_docs(string, autoescape=None):
     """
     if autoescape and not isinstance(string, SafeData):
         string = escape(string)
-    patterns = [
-        (r"\b(draft-[-0-9a-zA-Z._+]+)\b", '<a href="/doc/\\1/">\\1</a>'),
-        (r"\b(bofreq-[-0-9a-zA-Z._+]+)\b", '<a href="/doc/\\1/">\\1</a>'),
-        (r"\b(conflict-review-[-0-9a-zA-Z._+]+)\b", '<a href="/doc/\\1/">\\1</a>'),
-        (r"\b(status-change-[-0-9a-zA-Z._+]+)\b", '<a href="/doc/\\1/">\\1</a>'),
-        (r"\b(charter-[-0-9a-zA-Z._+]+)\b", '<a href="/doc/\\1/">\\1</a>'),
-        (r"\b(RFC\s*?)0{0,3}(\d+)\b", '<a href="/doc/rfc\\2/">\\1\\2</a>'),
-        (r"\b(BCP\s*?)0{0,3}(\d+)\b", '<a href="/doc/bcp\\2/">\\1\\2</a>'),
-        (r"\b(STD\s*?)0{0,3}(\d+)\b", '<a href="/doc/std\\2/">\\1\\2</a>'),
-        (r"\b(FYI\s*?)0{0,3}(\d+)\b", '<a href="/doc/fyi\\2/">\\1\\2</a>'),
-    ]
-
-    for pat, subst in patterns:
-        repl = re.sub(pat, subst, string, flags=re.IGNORECASE)
-        if repl != string:
-            string = repl
-            break
+    string = re.sub(r"(?<!>)\b(RFC\s*?)0{0,3}(\d+)\b", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(?<!>)\b(BCP\s*?)0{0,3}(\d+)\b", "<a href=\"/doc/bcp\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(?<!>)\b(STD\s*?)0{0,3}(\d+)\b", "<a href=\"/doc/std\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(?<!>)\b(FYI\s*?)0{0,3}(\d+)\b", "<a href=\"/doc/fyi\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(?<!>)\b(draft-[-0-9a-zA-Z._+]+)\b", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(?<!>)\b(bofreq-[-0-9a-zA-Z._+]+)\b", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(?<!>)\b(conflict-review-[-0-9a-zA-Z._+]+)\b", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(?<!>)\b(status-change-[-0-9a-zA-Z._+]+)\b", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
+    string = re.sub(r"(?<!>)\b(charter-[-0-9a-zA-Z._+]+)\b", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
     return mark_safe(string)
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
