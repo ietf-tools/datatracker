@@ -137,7 +137,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, group.acronym)
         self.assertContains(r, group.name)
-        self.assertContains(r, escape(group.ad_role().person.plain_name()))
+        self.assertContains(r, group.ad_role().person.plain_name())
         self.assertContains(r, chair.address)
         self.assertContains(r, "This is a charter.")
 
@@ -146,7 +146,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, group.acronym)
         self.assertContains(r, group.name)
-        self.assertContains(r, escape(group.ad_role().person.plain_name()))
+        self.assertContains(r, group.ad_role().person.plain_name())
         self.assertContains(r, chair.address)
         self.assertContains(r, "This is a charter.")
 
