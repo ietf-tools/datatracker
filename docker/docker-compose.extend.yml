@@ -6,7 +6,6 @@ services:
             - 'CUSTOM_PORT:8000'
         volumes:
             - .:/workspace
-            - /workspace/node_modules
             - /workspace/.parcel-cache
             - /workspace/__pycache__
     db:
