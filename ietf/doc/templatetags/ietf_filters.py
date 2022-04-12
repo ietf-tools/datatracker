@@ -193,15 +193,15 @@ def urlize_ietf_docs(string, autoescape=None):
     if autoescape and not isinstance(string, SafeData):
         string = escape(string)
     patterns = [
-        (r"(draft-[-0-9a-zA-Z._+]+)", '<a href="/doc/\\1/">\\1</a>'),
-        (r"(bofreq-[-0-9a-zA-Z._+]+)", '<a href="/doc/\\1/">\\1</a>'),
-        (r"(conflict-review-[-0-9a-zA-Z._+]+)", '<a href="/doc/\\1/">\\1</a>'),
-        (r"(status-change-[-0-9a-zA-Z._+]+)", '<a href="/doc/\\1/">\\1</a>'),
-        (r"(charter-[-0-9a-zA-Z._+]+)", '<a href="/doc/\\1/">\\1</a>'),
-        (r"(RFC\s*?)0{0,3}(\d+)", '<a href="/doc/rfc\\2/">\\1\\2</a>'),
-        (r"(BCP\s*?)0{0,3}(\d+)", '<a href="/doc/bcp\\2/">\\1\\2</a>'),
-        (r"(STD\s*?)0{0,3}(\d+)", '<a href="/doc/std\\2/">\\1\\2</a>'),
-        (r"(FYI\s*?)0{0,3}(\d+)", '<a href="/doc/fyi\\2/">\\1\\2</a>'),
+        (r"\b(draft-[-0-9a-zA-Z._+]+)\b", '<a href="/doc/\\1/">\\1</a>'),
+        (r"\b(bofreq-[-0-9a-zA-Z._+]+)\b", '<a href="/doc/\\1/">\\1</a>'),
+        (r"\b(conflict-review-[-0-9a-zA-Z._+]+)\b", '<a href="/doc/\\1/">\\1</a>'),
+        (r"\b(status-change-[-0-9a-zA-Z._+]+)\b", '<a href="/doc/\\1/">\\1</a>'),
+        (r"\b(charter-[-0-9a-zA-Z._+]+)\b", '<a href="/doc/\\1/">\\1</a>'),
+        (r"\b(RFC\s*?)0{0,3}(\d+)\b", '<a href="/doc/rfc\\2/">\\1\\2</a>'),
+        (r"\b(BCP\s*?)0{0,3}(\d+)\b", '<a href="/doc/bcp\\2/">\\1\\2</a>'),
+        (r"\b(STD\s*?)0{0,3}(\d+)\b", '<a href="/doc/std\\2/">\\1\\2</a>'),
+        (r"\b(FYI\s*?)0{0,3}(\d+)\b", '<a href="/doc/fyi\\2/">\\1\\2</a>'),
     ]
 
     for pat, subst in patterns:
