@@ -206,7 +206,6 @@ def urlize_ietf_docs(string, autoescape=None):
 
     for pat, subst in patterns:
         repl = re.sub(pat, subst, string, flags=re.IGNORECASE)
-        print(repl, string)
         if repl != string:
             string = repl
             break
