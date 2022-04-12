@@ -200,7 +200,6 @@
             {% if item|is_regular_agenda_item %}
                 {% ifchanged %}
                     <tr class="table-secondary session-label-row show-with-children"
-                        id="session-starting-{{ item.timeslot.utc_start_time|date:"Y-m-d H:i"|slugify }}"
                         data-slot-start-ts="{{ item.start_timestamp }}"
                         data-slot-end-ts="{{ item.end_timestamp }}">
                         {% if personalize %}<th scope="row" class="text-center"></th>{% endif %}
