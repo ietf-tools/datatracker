@@ -66,13 +66,6 @@
                     type
                 </a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link {% if selected == "room-view" %}active{% endif %}"
-                   href="{% url 'ietf.meeting.views.room_view'      num=meeting.number name=schedule.name owner=schedule.owner.email %}">
-                    Room
-                    grid
-                </a>
-            </li>
         {% else %}
             <li class="nav-item">
                 <a class="nav-link {% if selected == "by-room" %}active{% endif %}"
@@ -84,12 +77,6 @@
                 <a class="nav-link {% if selected == "by-type" %}active{% endif %}"
                    href="{% url 'ietf.meeting.views.agenda_by_type' num=meeting.number %}">
                     By type
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if selected == "room-view" %}active{% endif %}"
-                   href="{% url 'ietf.meeting.views.room_view'      num=meeting.number %}">
-                    Room grid
                 </a>
             </li>
         {% endif %}

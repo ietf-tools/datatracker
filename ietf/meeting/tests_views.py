@@ -438,18 +438,6 @@ class MeetingTests(BaseMeetingTestCase):
         r = self.client.get(url)
         self.assertFalse(any([x in unicontent(r) for x in ['IESG Breakfast','Breakfast Room']]))
 
-    def test_agenda_room_view(self):
-        meeting = make_meeting_test_data()
-        url = urlreverse("ietf.meeting.views.room_view",kwargs=dict(num=meeting.number))
-        login_testing_unauthorized(self,"secretary",url)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
-        self.assertTrue(all([x in unicontent(r) for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
-        url = urlreverse("ietf.meeting.views.room_view",kwargs=dict(num=meeting.number,name=meeting.unofficial_schedule.name,owner=meeting.unofficial_schedule.owner.email()))
-        r = self.client.get(url)
-        self.assertTrue(all([x in unicontent(r) for x in ['mars','Test Room','Breakfast Room']]))
-        self.assertNotContains(r, 'IESG Breakfast')
-
 
     def test_agenda_week_view(self):
         meeting = make_meeting_test_data()
