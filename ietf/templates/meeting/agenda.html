@@ -58,8 +58,8 @@
         </p>
     {% endif %}
     {% include 'meeting/tz-display.html' with meeting_timezone=timezone only %}
-    {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Personalize the agenda view..." always_show=personalize %}
-    {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting only %}
+    {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Filter this agenda view..." always_show=personalize %}
+    {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting personalize=personalize only %}
     <div class="input-group mb-3">
         <button class="btn btn-outline-primary dropdown-toggle"
                 type="button"
@@ -327,7 +327,9 @@
 {% endfor %}
 </tbody>
 </table>
-{% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting only %}
+{% if personalize %}{# only show second copy of buttons for the personalize tab #}
+    {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting personalize=personalize only %}
+{% endif %}
 {% endcache %}
 {% endblock %}
 {% block js %}
