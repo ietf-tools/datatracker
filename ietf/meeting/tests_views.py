@@ -510,7 +510,7 @@ class MeetingTests(BaseMeetingTestCase):
                 expected_elements.append(anchor)
         for btn in q('.buttonlist a.btn').items():
             text = btn.text().strip()
-            if text in ['View personal agenda', 'Download .ics of personal agenda', 'Subscribe to personal agenda']:
+            if text in ['View personal agenda', 'Download .ics of filtered agenda', 'Subscribe to filtered agenda']:
                 expected_elements.append(btn)
 
         # Check that all the expected elements have the correct classes
