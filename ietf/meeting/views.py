@@ -32,7 +32,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.urls import reverse,reverse_lazy
-from django.db.models import F, Min, Max, Q
+from django.db.models import F, Max, Q
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
@@ -1905,69 +1905,6 @@ def week_view(request, num=None, name=None, owner=None):
     return render(request, "meeting/week-view.html", {
         "items": json.dumps(items),
     })
-
-@role_required('Area Director','Secretariat','IAB')
-def room_view(request, num=None, name=None, owner=None):
-    meeting = get_meeting(num)
-
-    rooms = meeting.room_set.order_by('functional_name','name')
-    if not rooms.exists():
-        return HttpResponse("No rooms defined yet")
-
-    if name is None:
-        schedule = get_schedule(meeting)
-    else:
-        person   = get_person_by_email(owner)
-        schedule = get_schedule_by_name(meeting, person, name)
-
-    assignments = SchedTimeSessAssignment.objects.filter(
-        schedule__in=[schedule, schedule.base if schedule else None]
-    ).prefetch_related(
-        'timeslot', 'timeslot__location', 'session', 'session__group', 'session__group__parent'
-    )
-    unavailable = meeting.timeslot_set.filter(type__slug='unavail')
-    if not (assignments.exists() or unavailable.exists()):
-        return HttpResponse("No sessions/timeslots available yet")
-
-    earliest = None
-    latest = None
-
-    if assignments:
-        earliest = assignments.aggregate(Min('timeslot__time'))['timeslot__time__min']
-        latest =  assignments.aggregate(Max('timeslot__time'))['timeslot__time__max']
-        
-    if unavailable:
-        earliest_unavailable = unavailable.aggregate(Min('time'))['time__min']
-        if not earliest or ( earliest_unavailable and earliest_unavailable < earliest ):
-            earliest = earliest_unavailable
-        latest_unavailable = unavailable.aggregate(Max('time'))['time__max']
-        if not latest or ( latest_unavailable and latest_unavailable > latest ):
-            latest = latest_unavailable
-
-    if not (earliest and latest):
-        raise Http404
-
-    base_time = earliest
-    base_day = datetime.datetime(base_time.year,base_time.month,base_time.day)
-
-    day = base_day
-    days = []
-    while day <= latest :
-        days.append(day)
-        day += datetime.timedelta(days=1)
-
-    unavailable = list(unavailable)
-    for t in unavailable:
-        t.delta_from_beginning = (t.time - base_time).total_seconds()
-        t.day = (t.time-base_day).days
-
-    assignments = list(assignments)
-    for ss in assignments:
-        ss.delta_from_beginning = (ss.timeslot.time - base_time).total_seconds()
-        ss.day = (ss.timeslot.time-base_day).days
-
-    template = "meeting/room-view.html"
-    return render(request, template,{"meeting":meeting,"schedule":schedule,"unavailable":unavailable,"assignments":assignments,"rooms":rooms,"days":days})
 
 def ical_session_status(assignment):
     if assignment.session.current_status == 'canceled':
