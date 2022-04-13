@@ -252,8 +252,7 @@ $(function () {
                 });
 
             // offset the scrollspy to account for the menu bar
-            const content = $('#content');
-            const contentOffset = content ? content.offset().top : 0;
+            const contentOffset = contentElement ? contentElement.offset().top : 0;
 
             $("body")
                 .attr("data-bs-spy", "scroll")
