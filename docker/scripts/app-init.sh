@@ -8,8 +8,11 @@ service rsyslog start
 WORKSPACE_UID_GID=$(stat --format="%u:%g" "$WORKSPACEDIR")
 chown -R "$WORKSPACE_UID_GID" "$WORKSPACEDIR/.parcel-cache"
 
-# Generate static assets
+# Build node packages that requrie native compilation
+echo "Compiling native node packages..."
+yarn rebuild
 
+# Generate static assets
 echo "Building static assets... (this could take a minute or two)"
 yarn build
 
