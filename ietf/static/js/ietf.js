@@ -251,9 +251,14 @@ $(function () {
                     }
                 });
 
+            // offset the scrollspy to account for the menu bar
+            const content = $('#content');
+            const contentOffset = content ? content.offset().top : 0;
+
             $("body")
                 .attr("data-bs-spy", "scroll")
                 .attr("data-bs-target", "#righthand-nav")
+                .attr("data-bs-offset", contentOffset)
                 .scrollspy("refresh");
 
         }
