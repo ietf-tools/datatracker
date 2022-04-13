@@ -1,14 +1,15 @@
 {
   "scripts": {
     "dev": "parcel",
-    "build": "parcel build"
+    "build": "parcel build",
+    "cypress": "cypress run"
   },
   "dependencies": {
     "@fullcalendar/core": "5.10.1",
     "@fullcalendar/daygrid": "5.10.1",
     "@popperjs/core": "2.10.2",
     "bootstrap": "5.1.3",
-    "bootstrap-datepicker": "uxsolutions/bootstrap-datepicker",
+    "bootstrap-datepicker": "github:uxsolutions/bootstrap-datepicker",
     "bootstrap-icons": "1.7.0",
     "caniuse-lite": "1.0.30001314",
     "d3": "3.5.17",
