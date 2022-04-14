@@ -155,7 +155,7 @@ jobs:
   # -----------------------------------------------------------------
   release:
     name: Make Release
-    if: ${{ always() && github.event.inputs.dryrun == 'false' }}
+    if: ${{ always() }}
     needs: [tests, prepare]
     runs-on: ubuntu-latest
     env:
