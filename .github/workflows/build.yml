@@ -15,6 +15,10 @@ on:
         description: 'Skip Tests'
         required: true
         type: boolean
+      dryrun:
+        description: 'Dry Run'
+        required: true
+        type: boolean
       summary:
         description: 'Summary'
         required: false
@@ -39,7 +43,7 @@ jobs:
         fetch-depth: 0
 
     - name: Get Next Version
-      if: ${{ github.event.inputs.publish == 'true' }}
+      if: ${{ github.event.inputs.publish == 'true' || github.event.inputs.dryrun == 'true' }}
       id: semver
       uses: ietf-tools/semver-action@v1
       with:
@@ -47,7 +51,7 @@ jobs:
         branch: main
         
     - name: Set Next Version Env Var
-      if: ${{ github.event.inputs.publish == 'true' }}
+      if: ${{ github.event.inputs.publish == 'true' || github.event.inputs.dryrun == 'true' }}
       env:
         NEXT_VERSION: ${{ steps.semver.outputs.next }}
       run: |
@@ -55,7 +59,7 @@ jobs:
         
     - name: Create Draft Release
       uses: ncipollo/release-action@v1
-      if: ${{ github.event.inputs.publish == 'true' }}
+      if: ${{ github.event.inputs.publish == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         prerelease: true
         draft: false
@@ -81,10 +85,10 @@ jobs:
           echo "::set-output name=pkg_version_strict::${GITHUB_REF_NAME#?}"
           echo "::notice::Release created using tag $GITHUB_REF_NAME"
         else
-          echo "Using TEST mode: v7.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "Using TEST mode: v8.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "::set-output name=should_deploy::false"
-          echo "::set-output name=pkg_version::v7.0.0-dev.$GITHUB_RUN_NUMBER"
-          echo "::set-output name=pkg_version_strict::7.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "::set-output name=pkg_version::v8.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "::set-output name=pkg_version_strict::8.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "::notice::Non-production build created using branch $GITHUB_REF_NAME"
         fi
 
@@ -151,7 +155,7 @@ jobs:
   # -----------------------------------------------------------------
   release:
     name: Make Release
-    if: ${{ always() }}
+    if: ${{ always() && github.event.inputs.dryrun == 'false' }}
     needs: [tests, prepare]
     runs-on: ubuntu-latest
     env:
@@ -229,7 +233,7 @@ jobs:
         
     - name: Create Release
       uses: ncipollo/release-action@v1
-      if: env.SHOULD_DEPLOY == 'true'
+      if: ${{ env.SHOULD_DEPLOY == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         allowUpdates: true
         draft: false
