@@ -155,7 +155,7 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <ul class="pagination pagination-sm mb-3">
+            <ul class="pagination pagination-sm flex-wrap mb-3">
                 <li class="page-item {% if not page.has_previous %}disabled{% endif %}">
                     <a class="page-link" aria-label="<"
                        href="{% if not page.has_previous %}#{% else %}?page={{ page.previous_page_number }}{% endif %}">
