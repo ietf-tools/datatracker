@@ -22,7 +22,7 @@
     <div class="col-md-10">
         {% if all_ballots and all_ballots|length > 1 %}
 	        <label class="my-1 fw-bold">Ballots:</label>
-            <ul class="pagination pagination-sm">
+            <ul class="pagination pagination-sm flex-wrap">
                 {% for b in all_ballots %}
                     <li class="page-item{% if b == ballot %} active{% endif %}">
                         <a class="page-link" href="{% url "ietf.doc.views_doc.document_ballot" name=doc.name ballot_id=b.pk %}">
