@@ -1529,10 +1529,8 @@ class AgendaTests(IetfSeleniumTestCase):
             ),
             'Modal open button not found or not clickable',
         )
-        # FIXME: no idea why we need js instead of the following:
-        # self.scroll_to_element(open_modal_button)
-        # open_modal_button.click()
-        self.driver.execute_script("arguments[0].click();", open_modal_button)
+        self.scroll_to_element(open_modal_button)
+        open_modal_button.click()
         WebDriverWait(self.driver, 2).until(
             expected_conditions.visibility_of(modal_div),
             'Modal did not become visible after clicking open button',
@@ -1586,6 +1584,7 @@ class AgendaTests(IetfSeleniumTestCase):
         )
         self.scroll_to_element(open_modal_button)
         open_modal_button.click()
+        # self.driver.execute_script("arguments[0].click();", open_modal_button)
         WebDriverWait(self.driver, 2).until(
             expected_conditions.visibility_of(modal_div),
             'Modal did not become visible after clicking open button for refresh test',

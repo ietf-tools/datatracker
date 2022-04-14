@@ -192,15 +192,12 @@ def urlize_ietf_docs(string, autoescape=None):
     """
     if autoescape and not isinstance(string, SafeData):
         string = escape(string)
-    string = re.sub(r"(RFC\s*?)0{0,3}(\d+)", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
-    string = re.sub(r"(BCP\s*?)0{0,3}(\d+)", "<a href=\"/doc/bcp\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
-    string = re.sub(r"(STD\s*?)0{0,3}(\d+)", "<a href=\"/doc/std\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
-    string = re.sub(r"(FYI\s*?)0{0,3}(\d+)", "<a href=\"/doc/fyi\\2/\">\\1\\2</a>", string, flags=re.IGNORECASE)
-    string = re.sub(r"(draft-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
-    string = re.sub(r"(bofreq-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
-    string = re.sub(r"(conflict-review-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
-    string = re.sub(r"(status-change-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
-    string = re.sub(r"(charter-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string, flags=re.IGNORECASE)
+    string = re.sub(
+        r"\b((RFC|BCP|STD|FYI|(?:draft-|bofreq-|conflict-review-|status-change-|charter-)[-\d\w.+]+)\s*0*(\d+))\b",
+        lambda x: f'<a href="/doc/{x[2].strip().lower()}{x[3]}/">{x[1]}</a>',
+        string,
+        flags=re.IGNORECASE | re.ASCII,
+    )
     return mark_safe(string)
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
