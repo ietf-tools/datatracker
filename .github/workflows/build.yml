@@ -77,19 +77,19 @@ jobs:
           echo "::set-output name=should_deploy::true"
           echo "::set-output name=pkg_version::$NEXT_VERSION"
           echo "::set-output name=pkg_version_strict::${NEXT_VERSION#?}"
-          echo "::notice::Release created using branch $GITHUB_REF_NAME"
+          echo "::notice::Release $NEXT_VERSION created using branch $GITHUB_REF_NAME"
         elif [[ "$GITHUB_REF" =~ ^refs/tags/v* ]]; then
           echo "Using TAG mode: $GITHUB_REF_NAME"
           echo "::set-output name=should_deploy::true"
           echo "::set-output name=pkg_version::$GITHUB_REF_NAME"
           echo "::set-output name=pkg_version_strict::${GITHUB_REF_NAME#?}"
-          echo "::notice::Release created using tag $GITHUB_REF_NAME"
+          echo "::notice::Release $GITHUB_REF_NAME created using tag $GITHUB_REF_NAME"
         else
           echo "Using TEST mode: v8.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "::set-output name=should_deploy::false"
           echo "::set-output name=pkg_version::v8.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "::set-output name=pkg_version_strict::8.0.0-dev.$GITHUB_RUN_NUMBER"
-          echo "::notice::Non-production build created using branch $GITHUB_REF_NAME"
+          echo "::notice::Non-production build 8.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
         fi
 
   # -----------------------------------------------------------------
