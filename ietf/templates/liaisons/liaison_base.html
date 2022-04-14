@@ -3,57 +3,46 @@
 {% load origin %}
 {% load ietf_filters %}
 {% load static %}
-
 {% block pagehead %}
-  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
-  <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+    <link rel="stylesheet" href="{% static 'ietf/css/datepicker.css' %}">
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-
 {% block title %}Liaison Statements - {{ selected_menu_entry|capfirst }}{% endblock %}
-
 {% block content %}
-  {% origin %}
-
-  <h1>Liaison Statements</h1>
-
-  {% if with_search %}
-    <div class="ietf-box search-form-box">
-      {% include "liaisons/search_form.html" %}
-    </div>
-  {% endif %}
-
-  <ul class="nav nav-tabs" role="tablist">
-    {% for name, url in menu_entries %}
-      <li {% if selected_menu_entry == name.lower %}class="active"{% endif %}>
-        <a href="{{ url }}">{{ name }}</a>
-      </li>
-    {% endfor %}
-  </ul>
-
-  {% if menu_actions %}
-    <div class="buttonlist">
-      {% for name, url in menu_actions %}
-        <a class="btn btn-default" href="{{ url }}">{{ name }}</a>
-      {% endfor %}
-    </div>
-  {% endif %}
-
-  {% block group_content %}
-
-    {% if search_conducted and not liaisons %}
-        <div class="alert alert-info">No statements match your query.</div>
-    {% else %}
-        {% include "liaisons/liaison_table.html" %}
+    {% origin %}
+    <h1>Liaison Statements</h1>
+    {% if with_search %}
+        <div class="ietf-box search-form-box">{% include "liaisons/search_form.html" %}</div>
     {% endif %}
-
-  {% endblock group_content %}
-
-  <p>Total Statements: {{ liaisons|length }}<p>
-  
-{% endblock content %}
-
+    <ul class="nav nav-tabs my-3">
+        {% for name, url in menu_entries %}
+            <li class="nav-item">
+                <a class="nav-link
+                          {% if selected_menu_entry == name.lower %}
+                              active
+                          {% endif %}"
+                   href="{{ url }}">{{ name }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+    {% if menu_actions %}
+        <div class="buttonlist">
+            {% for name, url in menu_actions %}<a class="btn btn-primary me-3" href="{{ url }}">{{ name }}</a>{% endfor %}
+        </div>
+    {% endif %}
+    {% block group_content %}
+        {% if search_conducted and not liaisons %}
+            <div class="alert alert-info my-3">No statements match your query.</div>
+        {% else %}
+            {% include "liaisons/liaison_table.html" %}
+        {% endif %}
+    {% endblock %}
+    <p>
+        Total Statements: {{ liaisons|length }}
+    </p>
+{% endblock %}
 {% block js %}
-  <script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
-  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
-  <script src="{% static 'ietf/js/liaisons.js' %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
+    <script src="{% static 'ietf/js/datepicker.js' %}"></script>
+    <script src="{% static 'ietf/js/liaisons.js' %}"></script>
 {% endblock %}

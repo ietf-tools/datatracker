@@ -51,7 +51,9 @@ from django.utils.cache import _generate_cache_key # type: ignore
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, DocAlias, State,
-    LastCallDocEvent, NewRevisionDocEvent, IESG_SUBSTATE_TAGS, IESG_BALLOT_ACTIVE_STATES )
+    LastCallDocEvent, NewRevisionDocEvent, IESG_SUBSTATE_TAGS,
+    IESG_BALLOT_ACTIVE_STATES, IESG_STATCHG_CONFLREV_ACTIVE_STATES,
+    IESG_CHARTER_ACTIVE_STATES )
 from ietf.doc.fields import select2_id_doc_name_json
 from ietf.doc.utils import get_search_cache_key, augment_events_with_revision
 from ietf.group.models import Group
@@ -420,9 +422,9 @@ def docs_for_ad(request, name):
         possible_docs = Document.objects.filter(Q(states__type="draft-iesg",
                                                   states__slug__in=IESG_BALLOT_ACTIVE_STATES) |
                                                 Q(states__type="charter",
-                                                  states__slug__in=("intrev", "iesgrev")) |
+                                                  states__slug__in=IESG_CHARTER_ACTIVE_STATES) |
                                                 Q(states__type__in=("statchg", "conflrev"),
-                                                  states__slug__in=("iesgeval", "defer")),
+                                                  states__slug__in=IESG_STATCHG_CONFLREV_ACTIVE_STATES),
                                                 docevent__ballotpositiondocevent__pos__blocking=True,
                                                 docevent__ballotpositiondocevent__balloter=ad).distinct()
         for doc in possible_docs:
@@ -431,7 +433,6 @@ def docs_for_ad(request, name):
                 continue
 
             blocking_positions = [p for p in ballot.all_positions() if p.pos.blocking]
-
             if not blocking_positions or not any( p.balloter==ad for p in blocking_positions ):
                 continue
 
@@ -445,6 +446,10 @@ def docs_for_ad(request, name):
         # latest first
         if blocked_docs:
             blocked_docs.sort(key=lambda d: min(p.time for p in d.blocking_positions if p.balloter==ad), reverse=True)
+
+        for d in blocked_docs:
+           if d.get_base_name() == 'charter-ietf-shmoo-01-04.txt':
+              print('Is in list')
 
     return render(request, 'doc/drafts_for_ad.html', {
         'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name(), 'blocked_docs': blocked_docs
@@ -583,4 +588,4 @@ def ajax_select2_search_docs(request, model_name, doc_type):
 
         objs = qs.distinct().order_by("name")[:20]
 
-    return HttpResponse(select2_id_doc_name_json(objs), content_type='application/json')
+    return HttpResponse(select2_id_doc_name_json(model, objs), content_type='application/json')

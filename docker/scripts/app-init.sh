@@ -4,16 +4,15 @@ WORKSPACEDIR="/workspace"
 
 service rsyslog start
 
+# fix permissions for npm-related paths
+WORKSPACE_UID_GID=$(stat --format="%u:%g" "$WORKSPACEDIR")
+chown -R "$WORKSPACE_UID_GID" "$WORKSPACEDIR/node_modules" "$WORKSPACEDIR/.parcel-cache"
+
 # Generate static assets
 
 npm install --prefer-offline --no-audit
 echo "Building static assets... (this could take a minute or two)"
-cd bootstrap
-npm install -g grunt-cli --prefer-offline --no-audit
-npm install --prefer-offline --no-audit
-grunt dist
-cp -r dist/. ../ietf/static/ietf/bootstrap/
-cd ..
+npx parcel build
 
 # Copy config files if needed
 
@@ -50,49 +49,27 @@ else
     fi
 fi
 
-# Create assets directories
+# Create data directories
 
-for sub in \
-    test/id \
-    test/staging \
-    test/archive \
-    test/rfc \
-    test/media \
-    test/wiki/ietf \
-	data/nomcom_keys/public_keys \
-	data/developers/ietf-ftp \
-	data/developers/ietf-ftp/bofreq \
-	data/developers/ietf-ftp/charter \
-	data/developers/ietf-ftp/conflict-reviews \
-	data/developers/ietf-ftp/internet-drafts \
-	data/developers/ietf-ftp/rfc \
-	data/developers/ietf-ftp/status-changes \
-	data/developers/ietf-ftp/yang/catalogmod \
-	data/developers/ietf-ftp/yang/draftmod \
-	data/developers/ietf-ftp/yang/ianamod \
-	data/developers/ietf-ftp/yang/invalmod \
-	data/developers/ietf-ftp/yang/rfcmod \
-	data/developers/www6s \
-	data/developers/www6s/staging \
-	data/developers/www6s/wg-descriptions \
-	data/developers/www6s/proceedings \
-	data/developers/www6/ \
-	data/developers/www6/iesg \
-	data/developers/www6/iesg/evaluation \
-    data/developers/media/photo \
-	; do
-    dir="/workspace/$sub"
-    if [ ! -d "$dir"  ]; then
-    	echo "Creating dir $dir"
-	    mkdir -p "$dir";
-    fi
-done
+echo "Creating data directories..."
+chmod +x ./docker/scripts/app-create-dirs.sh
+./docker/scripts/app-create-dirs.sh
+
+# Download latest coverage results file
+
+echo "Downloading latest coverage results file..."
+curl -fsSL https://github.com/ietf-tools/datatracker/releases/latest/download/coverage.json -o release-coverage.json
 
 # Wait for DB container
+
 if [ -n "$EDITOR_VSCODE" ]; then
     echo "Waiting for DB container to come online ..."
     /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
 fi
+
+# Run memcached
+
+/usr/bin/memcached -u root -d
 
 # Initial checks
 
@@ -103,6 +80,7 @@ echo "Running initial checks..."
 echo "Done!"
 
 if [ -z "$EDITOR_VSCODE" ]; then
+    CODE=0
     python -m smtpd -n -c DebuggingServer localhost:2025 &
     if [ -z "$*" ]; then
         echo
@@ -117,6 +95,8 @@ if [ -z "$EDITOR_VSCODE" ]; then
         echo "Executing \"$*\" and stopping container."
         echo
         bash -c "$*"
+        CODE=$?
     fi
     service rsyslog stop
+    exit $CODE
 fi

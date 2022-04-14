@@ -14,21 +14,27 @@
 *.#*
 .*.swp
 .DS_store
+datatracker.sublime-project
+datatracker.sublime-workspace
 # Simulated Subversion default ignores end here
 /.coverage
+/.factoryboy_random_state
 /.mypy_cache
+/.parcel-cache
 /.project
 /.pydevproject
 /.Python
 /.settings
 /.tmp
-/.factoryboy_random_state
 /attic
 /bin
-/etc
+/data
+/docker/docker-compose.extend-custom.yml
 /env
+/etc
 /ghostdriver.log
 /htmlcov
+/ietf/static/ietf/bootstrap
 /include
 /INSTALL.pdf
 /latest-coverage.json
@@ -38,7 +44,9 @@
 /mergelog
 /mergequeue
 /minimum-requirements.txt
+/node_modules
 /pip-selfcheck.json
+/release-coverage.json
 /selenium
 /settings_local.py
 /share
@@ -53,5 +61,3 @@
 *.pyc
 __pycache__
 node_modules
-ietf/static/ietf/bootstrap
-/docker/docker-compose.extend-custom.yml

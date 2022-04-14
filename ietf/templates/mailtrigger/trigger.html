@@ -1,41 +1,50 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
-
-{% block title %}Mail Triggers{% endblock %}
-
-
+{% load origin static %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
+{% block title %}Mail triggers{% endblock %}
 {% block content %}
-  {% origin %}
-  <h1>Mail Triggers</h1>
-
-  <table class="table table-condensed table-striped">
-    <thead>
-      <tr>
-        <th>Trigger</th>
-        <th>Recipients</th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for mailtrigger in mailtriggers %}
-        <tr>
-          <td><span title="{{mailtrigger.desc}}">{{mailtrigger.slug}}</span></td>
-          <td>To: 
-            {% for recipient in mailtrigger.to.all %}
-              {% comment %}<span title="{{recipient.desc}}">{{recipient.slug}}</span>{% endcomment %}
-              <a href="{% url 'ietf.mailtrigger.views.show_recipients' recipient.slug %}" title="{{recipient.desc}}">{{recipient.slug}}</a>{% if not forloop.last %}, {% endif %}
+    {% origin %}
+    <h1>Mail triggers</h1>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="trigger">Trigger</th>
+                <th scope="col" data-sort="to">Recipients (To)</th>
+                <th scope="col" data-sort="cc">Recipients (CC)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mailtrigger in mailtriggers %}
+                <tr>
+                    <td>
+                        <span title="{{ mailtrigger.desc }}">{{ mailtrigger.slug }}</span>
+                    </td>
+                    <td>
+                        {% for recipient in mailtrigger.to.all %}
+                            {% comment %}<span title="{{recipient.desc}}">{{recipient.slug}}</span>{% endcomment %}
+                            <a href="{% url 'ietf.mailtrigger.views.show_recipients' recipient.slug %}"
+                               title="{{ recipient.desc }}">
+                                {{ recipient.slug }}</a>{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% if mailtrigger.cc.exists %}
+                            {% for recipient in mailtrigger.cc.all %}
+                                {% comment %}<span title="{{recipient.desc}}">{{recipient.slug}}</span>{% endcomment %}
+                                <a href="{% url 'ietf.mailtrigger.views.show_recipients' recipient.slug %}"
+                                   title="{{ recipient.desc }}">
+                                    {{ recipient.slug }}</a>{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </td>
+                </tr>
             {% endfor %}
-            {% if mailtrigger.cc.exists %}
-              <br/>Cc:
-              {% for recipient in mailtrigger.cc.all %}
-                {% comment %}<span title="{{recipient.desc}}">{{recipient.slug}}</span>{% endcomment %}
-                <a href="{% url 'ietf.mailtrigger.views.show_recipients' recipient.slug %}" title="{{recipient.desc}}">{{recipient.slug}}</a>{% if not forloop.last %}, {% endif %}
-              {% endfor %}
-            {% endif %}
-          </td>
-        </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-
+        </tbody>
+    </table>
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

@@ -1,48 +1,42 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
-{% load bootstrap3 %}
-
+{% load django_bootstrap5 %}
 {% block title %}Change {{ state_type.label }} for {{ doc }}{% endblock %}
-
-
 {% block content %}
-  {% origin %}
-  <h1>Change {{ state_type.label }}<br><small>{{ doc }}</small></h1>
-
-  {% if next_states %}
-    <p>
-      <b>Move document to {{ next_states|pluralize:"to one of" }} the recommended next state{{ next_states|pluralize }}:</b>
-    </p>
-    <p class="buttonlist">
-      {% for state in next_states %}
-        <button class="btn btn-default next-state" data-state="{{ state.pk }}">{{ state.name }}</button>
-      {% endfor %}
-      <a class="btn btn-info pull-right" href="{% url 'ietf.doc.views_help.state_help' type=state_type.slug %}">Help on states</a>
-    </p>
-  {% endif %}
-
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-    {% buttons %}
-      <button type="submit" class="btn btn-primary">Submit</button>
-      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
-    {% endbuttons %}
-  </form>
+    {% origin %}
+    <h1>
+        Change {{ state_type.label }}
+        <br>
+        <small class="text-muted">{{ doc }}</small>
+    </h1>
+    {% if next_states %}
+        <a class="my-3 btn btn-info"
+           href="{% url 'ietf.doc.views_help.state_help' type=state_type.slug %}">Help on states</a>
+        <p>
+            <b>Move document to {{ next_states|pluralize:"to one of" }} the recommended next state{{ next_states|pluralize }}:</b>
+        </p>
+        {% for state in next_states %}
+            <button type="button" class="btn btn-primary next-state" data-state="{{ state.pk }}">{{ state.name }}</button>
+        {% endfor %}
+    {% endif %}
+    <form class="mt-5" method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <a class="btn btn-secondary float-end" href="{{ doc.get_absolute_url }}">Back</a>
+    </form>
 {% endblock %}
-
 {% block js %}
-  <script>
-   $(document).ready(function () {
-      $("button.next-state").click(function (e) {
-          var s = $(this).data("state");
-          if (s) {
-              e.preventDefault();
-              $("#id_new_state").val(s);
-          }
-      });
-   });
-  </script>
+    <script>
+        $(document).ready(function () {
+            $("button.next-state").click(function (e) {
+                var s = $(this).data("state");
+                if (s) {
+                    e.preventDefault();
+                    $("#id_new_state").val(s);
+                }
+            });
+        });
+    </script>
 {% endblock %}

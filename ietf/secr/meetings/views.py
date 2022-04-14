@@ -387,7 +387,7 @@ def main(request):
 @role_required('Secretariat')
 def misc_sessions(request, meeting_id, schedule_name):
     '''
-    Display and add misc session time slots, e.g. registration, beverage and snack breaks
+    Display and add misc session timeslots, e.g. registration, beverage and snack breaks
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
@@ -451,7 +451,7 @@ def misc_sessions(request, meeting_id, schedule_name):
 
     no_room = TimeSlot.objects.filter(meeting=meeting,type='other',location__isnull=True)
     if no_room:
-        messages.warning(request, 'There are misc. session time slots which do not have a room assigned')
+        messages.warning(request, 'There are misc. session timeslots which do not have a room assigned')
 
     session_statuses = {
         e.session_id: e.status_id
@@ -753,7 +753,7 @@ def regular_session_edit(request, meeting_id, schedule_name, session_id):
 @role_required('Secretariat')
 def times(request, meeting_id, schedule_name):
     '''
-    Display and edit time slots (TimeSlots).  It doesn't display every TimeSlot
+    Display and edit timeslots (TimeSlots).  It doesn't display every TimeSlot
     object for the meeting because there is one timeslot per time per room,
     rather it displays all the unique times.
     The first time this view is called for a meeting it creates a form with times

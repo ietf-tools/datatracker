@@ -1,41 +1,19 @@
-{% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% extends "base.html" %}
 {% load origin %}
-
-{% load bootstrap3 %}
-
+{% load django_bootstrap5 %}
 {% block title %}Sign in{% endblock %}
-
 {% block content %}
-  {% origin %}
-  <div class="col-md-2 col-sm-0"></div>
-  <div class="col-md-8 col-sm-12">
+    {% origin %}
     <h1>Sign in</h1>
-    <script type="text/javascript">window.scrollTo(0, 0)</script>
-
     <form method="post">
-      {% csrf_token %}
-      {% bootstrap_form form %}
-
-      {% if alert %}
-	<p class="alert alert-danger">
-	   {{ alert }}
-	</p>
-      {% endif %}
-
-      {% buttons %}
-	 <button type="submit" class="btn btn-primary">Sign in</button>
-
-	 <div class="pull-right">
-        Forgot your password?
-        <a href="{% url 'ietf.ietfauth.views.password_reset' %}">Request a reset</a>.
-        <br>
-        Don't have an account?
-        <a href="{% url 'ietf.ietfauth.views.create_account' %}">Create an account</a>.
-    </div>
-      {% endbuttons %}
-
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <div class="mt-4 mb-3">
+            {% bootstrap_button "Sign in" button_type="submit" %}
+            {% url 'ietf.ietfauth.views.password_reset' as reset_url %}
+            {% bootstrap_button "Forgot your password?" button_type="link" button_class="btn-secondary" href=reset_url %}
+        </div>
+        Don't have an account? <a href="{% url 'ietf.ietfauth.views.create_account' %}">Create an account</a>.
     </form>
-  </div>
-  <div class="col-md-2 col-sm-0"></div>
 {% endblock %}

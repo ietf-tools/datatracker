@@ -17,9 +17,10 @@ from pyquery import PyQuery
 from lxml.etree import tostring
 from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, urlsplit
+from urllib.parse import urlparse, urlsplit, quote
 from PIL import Image
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
@@ -162,7 +163,7 @@ class MeetingTests(BaseMeetingTestCase):
         registration_text = "Registration"
 
         # utc
-        time_interval = "%s-%s" % (slot.utc_start_time().strftime("%H:%M").lstrip("0"), (slot.utc_start_time() + slot.duration).strftime("%H:%M").lstrip("0"))
+        time_interval = r"%s<span.*/span>-%s" % (slot.utc_start_time().strftime("%H:%M").lstrip("0"), (slot.utc_start_time() + slot.duration).strftime("%H:%M").lstrip("0"))
 
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number,utc='-utc')))
         self.assertEqual(r.status_code, 200)
@@ -172,14 +173,14 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertIn(session.group.name, agenda_content)
         self.assertIn(session.group.parent.acronym.upper(), agenda_content)
         self.assertIn(slot.location.name, agenda_content)
-        self.assertIn(time_interval, agenda_content)
+        self.assertRegex(agenda_content, time_interval)
         self.assertIsNotNone(q(':input[value="%s"]' % meeting.time_zone),
                              'Time zone selector should show meeting timezone')
         self.assertIsNotNone(q('.nav *:contains("%s")' % meeting.time_zone),
                              'Time zone indicator should be in nav sidebar')
 
         # plain
-        time_interval = "%s-%s" % (slot.time.strftime("%H:%M").lstrip("0"), (slot.time + slot.duration).strftime("%H:%M").lstrip("0"))
+        time_interval = r"%s<span.*/span>-%s" % (slot.time.strftime("%H:%M").lstrip("0"), (slot.time + slot.duration).strftime("%H:%M").lstrip("0"))
 
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
@@ -189,7 +190,7 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertIn(session.group.name, agenda_content)
         self.assertIn(session.group.parent.acronym.upper(), agenda_content)
         self.assertIn(slot.location.name, agenda_content)
-        self.assertIn(time_interval, agenda_content)
+        self.assertRegex(agenda_content, time_interval)
         self.assertIn(registration_text, agenda_content)
 
         # Make sure there's a frame for the session agenda and it points to the right place
@@ -208,7 +209,7 @@ class MeetingTests(BaseMeetingTestCase):
 
         # text
         # the rest of the results don't have as nicely formatted times
-        time_interval = time_interval.replace(":", "")
+        time_interval = "%s-%s" % (slot.time.strftime("%H%M").lstrip("0"), (slot.time + slot.duration).strftime("%H%M").lstrip("0"))
 
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number, ext=".txt")))
         self.assertContains(r, session.group.acronym)
@@ -279,6 +280,54 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, 'CANCELLED')
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, slot.location.name)
+
+    @override_settings(PROCEEDINGS_V1_BASE_URL='https://example.com/{meeting.number}')
+    def test_agenda_redirects_for_old_meetings(self):
+        """Meetings before 64 should be forwarded to their proceedings"""
+        # meeting with record but no schedule
+        MeetingFactory(type_id='ietf', number='35', populate_schedule=False)
+        r = self.client.get(
+            urlreverse(
+                'ietf.meeting.views.agenda',
+                kwargs={'num': '35', 'ext': '.html'},
+            ))
+        self.assertRedirects(r, 'https://example.com/35', fetch_redirect_response=False)
+
+        # meeting with record and schedule but no assignments
+        meeting_with_schedule = MeetingFactory(type_id='ietf', number='36', populate_schedule=True)
+        r = self.client.get(
+            urlreverse(
+                'ietf.meeting.views.agenda',
+                kwargs={'num': '36', 'ext': '.html'},
+            ))
+        self.assertRedirects(r, 'https://example.com/36', fetch_redirect_response=False)
+
+        # meeting with an assignment
+        SessionFactory(meeting=meeting_with_schedule)
+        r = self.client.get(
+                    urlreverse(
+                        'ietf.meeting.views.agenda',
+                        kwargs={'num': '36', 'ext': '.html'},
+                    ))
+        self.assertRedirects(r, 'https://example.com/36', fetch_redirect_response=False)
+
+    def test_agenda_for_nonexistent_meeting(self):
+        """Return a 404 for a bad IETF meeting number"""
+        # Meetings pre-64 are redirected, but should be a 404 if there is no Meeting instance
+        r = self.client.get(
+            urlreverse(
+                'ietf.meeting.views.agenda',
+                kwargs={'num': '32', 'ext': '.html'},
+            ))
+        self.assertEqual(r.status_code, 404)
+        # Check a post-64 meeting as well
+        r = self.client.get(
+            urlreverse(
+                'ietf.meeting.views.agenda',
+                kwargs={'num': '150', 'ext': '.html'},
+            ))
+        self.assertEqual(r.status_code, 404)
+
 
     def test_meeting_agenda_filters_ignored(self):
         """The agenda view should ignore filter querystrings
@@ -389,28 +438,16 @@ class MeetingTests(BaseMeetingTestCase):
         r = self.client.get(url)
         self.assertFalse(any([x in unicontent(r) for x in ['IESG Breakfast','Breakfast Room']]))
 
-    def test_agenda_room_view(self):
-        meeting = make_meeting_test_data()
-        url = urlreverse("ietf.meeting.views.room_view",kwargs=dict(num=meeting.number))
-        login_testing_unauthorized(self,"secretary",url)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
-        self.assertTrue(all([x in unicontent(r) for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
-        url = urlreverse("ietf.meeting.views.room_view",kwargs=dict(num=meeting.number,name=meeting.unofficial_schedule.name,owner=meeting.unofficial_schedule.owner.email()))
-        r = self.client.get(url)
-        self.assertTrue(all([x in unicontent(r) for x in ['mars','Test Room','Breakfast Room']]))
-        self.assertNotContains(r, 'IESG Breakfast')
-
 
     def test_agenda_week_view(self):
         meeting = make_meeting_test_data()
         url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "?show=farfut"
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
-        self.assertTrue(all([x in unicontent(r) for x in ['var all_items', 'maximize', 'draw_calendar', ]]))
+        self.assertTrue(all([x in unicontent(r) for x in ['redraw_weekview', 'draw_calendar', ]]))
 
         # Specifying a time zone should not change the output (time zones are handled by the JS)
-        url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "?show=farfut&tz=Asia/Bangkok"
+        url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "?show=farfut&" + quote("tz=Asia/Bangkok", safe='=')
         r_with_tz = self.client.get(url)
         self.assertEqual(r_with_tz.status_code,200)
         self.assertEqual(r.content, r_with_tz.content)
@@ -457,11 +494,11 @@ class MeetingTests(BaseMeetingTestCase):
         nav_tab_anchors = q('ul.nav.nav-tabs > li > a')
         for anchor in nav_tab_anchors.items():
             text = anchor.text().strip()
-            if text in ['Agenda', 'UTC Agenda', 'Select Sessions']:
+            if text in ['Agenda', 'UTC agenda', 'Personalize agenda']:
                 expected_elements.append(anchor)
         for btn in q('.buttonlist a.btn').items():
             text = btn.text().strip()
-            if text in ['View customized agenda', 'Download as .ics', 'Subscribe with webcal']:
+            if text in ['View personal agenda', 'Download .ics of filtered agenda', 'Subscribe to filtered agenda']:
                 expected_elements.append(btn)
 
         # Check that all the expected elements have the correct classes
@@ -610,6 +647,50 @@ class MeetingTests(BaseMeetingTestCase):
                 r = self.client.get(url)
                 self.assertEqual(unicontent(r), doc.text())
 
+    def test_materials_has_edit_links(self):
+        meeting = make_meeting_test_data()
+        url = urlreverse("ietf.meeting.views.materials", kwargs=dict(num=meeting.number))
+        r = self.client.get(url)
+        self.assertNotContains(r, 'Edit materials', status_code=200)
+
+        # mars chairman can edit materials for mars group
+        self.client.login(username='marschairman', password='marschairman+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content.decode())
+        edit_url = urlreverse(
+            'ietf.meeting.views.session_details',
+            kwargs={'num': meeting.number, 'acronym': 'mars'},
+        )
+        self.assertEqual(len(q(f'a[href^="{edit_url}"]')), 1, 'Link to mars session_details for mars chairman')
+        for acro in ['ietf', 'ames']:  # other groups with materials
+            edit_url = urlreverse(
+                'ietf.meeting.views.session_details',
+                kwargs={'num': meeting.number, 'acronym': acro},
+            )
+            self.assertEqual(len(q(f'a[href^="{edit_url}"]')), 0, f'No link to {acro} session_details for mars chairman')
+
+        # secretary can edit all groups
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content.decode())
+        for acro in ['mars', 'ames']:  # wgs
+            edit_url = urlreverse(
+                'ietf.meeting.views.session_details',
+                kwargs={'num': meeting.number, 'acronym': acro},
+            )
+            self.assertEqual(len(q(f'a[href^="{edit_url}"]')), 1, f'Link to session_details page for {acro}')
+        # The IETF Plenary has a "#sessionX" tacked on to the edit url to differentiate from other sessions,
+        # so test it separately. Not bothering to check the exact session pk in detail.
+        edit_url = urlreverse(
+            'ietf.meeting.views.session_details',
+            kwargs={'num': meeting.number, 'acronym': 'ietf'},
+        )
+        self.assertEqual(len(q(f'a[href^="{edit_url}#session"]')), 1, f'Link to session_details page for {acro}')
+
+
+
     def test_materials_editable_groups(self):
         meeting = make_meeting_test_data()
         
@@ -719,7 +800,7 @@ class MeetingTests(BaseMeetingTestCase):
                 self.assertIn('%s?show=%s' % (ical_url, g.parent.acronym.lower()), content)
 
         # The 'non-area events' are those whose keywords are in the last column of buttons
-        na_col = q('#customize td.view:last-child')  # find the column
+        na_col = q('#customize .col-1:last')  # find the column
         non_area_labels = [e.attrib['data-filter-item']
                            for e in na_col.find('button.pickview')]
         assert len(non_area_labels) > 0  # test setup must produce at least one label for this test
@@ -799,7 +880,7 @@ class MeetingTests(BaseMeetingTestCase):
                                   "1. WG status (15 minutes)\n\n2. Status of %s\n\n" % draft2.name)
         filenames = []
         for d in (draft1, draft2):
-            file,_ = submission_file(name=d.name,format='txt',templatename='test_submission.txt',group=session.group,rev="00")
+            file,_ = submission_file(name_in_doc=f'{d.name}-00',name_in_post=f'{d.name}-00.txt',templatename='test_submission.txt',group=session.group)
             filename = os.path.join(d.get_file_path(),file.name)
             with io.open(filename,'w') as draftbits:
                 draftbits.write(file.getvalue())
@@ -851,7 +932,7 @@ class MeetingTests(BaseMeetingTestCase):
 
         new_base = Schedule.objects.create(name="newbase", owner=schedule.owner, meeting=schedule.meeting)
         response = self.client.post(url, {
-                'name':schedule.name,
+                'name': 'some-other-name',
                 'visible':True,
                 'public':True,
                 'notes': "New Notes",
@@ -859,11 +940,19 @@ class MeetingTests(BaseMeetingTestCase):
             }
         )
         self.assertNoFormPostErrors(response)
+        self.assertRedirects(
+            response,
+            urlreverse(
+                'ietf.meeting.views.edit_meeting_schedule',
+                kwargs={'num': schedule.meeting.number, 'owner': schedule.owner.email(), 'name': 'some-other-name'}
+            ),
+        )
         schedule.refresh_from_db()
         self.assertTrue(schedule.visible)
         self.assertTrue(schedule.public)
         self.assertEqual(schedule.notes, "New Notes")
         self.assertEqual(schedule.base_id, new_base.pk)
+        self.assertEqual(schedule.name, 'some-other-name')
 
     def test_agenda_by_type_ics(self):
         session=SessionFactory(meeting__type_id='ietf',type_id='lead')
@@ -2141,7 +2230,7 @@ class EditTimeslotsTests(TestCase):
         self.login()
         name_after = 'New Name (tm)'
         type_after = 'plenary'
-        time_after = time_before.replace(day=time_before.day + 1, hour=time_before.hour + 2)
+        time_after = time_before + datetime.timedelta(days=1, hours=2)
         duration_after = duration_before * 2
         show_location_after = False
         location_after = meeting.room_set.last()
@@ -3102,24 +3191,24 @@ class EditTests(TestCase):
         r, q = _set_date_offset_and_retrieve_page(meeting,
                                                   0 - 2 - meeting.days, # Meeting ended 2 days ago
                                                   self.client)
-        self.assertTrue(q("""em:contains("You can't edit this schedule")"""))
-        self.assertTrue(q("""em:contains("This is the official schedule for a meeting in the past")"""))
+        self.assertTrue(q(""".alert:contains("You can't edit this schedule")"""))
+        self.assertTrue(q(""".alert:contains("This is the official schedule for a meeting in the past")"""))
 
         # 2) An ongoing meeting
         #######################################################
         r, q = _set_date_offset_and_retrieve_page(meeting,
                                                   0, # Meeting starts today
                                                   self.client)
-        self.assertFalse(q("""em:contains("You can't edit this schedule")"""))
-        self.assertFalse(q("""em:contains("This is the official schedule for a meeting in the past")"""))
+        self.assertFalse(q(""".alert:contains("You can't edit this schedule")"""))
+        self.assertFalse(q(""".alert:contains("This is the official schedule for a meeting in the past")"""))
 
         # 3) A meeting in the future
         #######################################################
         r, q = _set_date_offset_and_retrieve_page(meeting,
                                                   7, # Meeting starts next week
                                                   self.client)
-        self.assertFalse(q("""em:contains("You can't edit this schedule")"""))
-        self.assertFalse(q("""em:contains("This is the official schedule for a meeting in the past")"""))
+        self.assertFalse(q(""".alert:contains("You can't edit this schedule")"""))
+        self.assertFalse(q(""".alert:contains("This is the official schedule for a meeting in the past")"""))
 
     def test_edit_meeting_schedule(self):
         meeting = make_meeting_test_data()
@@ -3196,7 +3285,7 @@ class EditTests(TestCase):
             s_other = s2 if s == s1 else s1
             self.assertEqual(len(constraints), 3)
             self.assertEqual(constraints.eq(0).attr("data-sessions"), str(s_other.pk))
-            self.assertEqual(constraints.eq(0).find(".fa-user-o").parent().text(), "1") # 1 person in the constraint
+            self.assertEqual(constraints.eq(0).find(".bi-person").parent().text(), "1") # 1 person in the constraint
             self.assertEqual(constraints.eq(1).attr("data-sessions"), str(s_other.pk))
             self.assertEqual(constraints.eq(1).find(".encircled").text(), "1" if s_other == s2 else "-1")
             self.assertEqual(constraints.eq(2).attr("data-sessions"), str(s_other.pk))
@@ -3207,7 +3296,7 @@ class EditTests(TestCase):
 
             event = SchedulingEvent.objects.filter(session=s).order_by("id").first()
             if event:
-                self.assertTrue(e.find("div:contains(\"{}\")".format(event.by.plain_name())))
+                self.assertTrue(e.find("div:contains(\"{}\")".format(event.by.name)))
 
             if s.comments:
                 self.assertIn(s.comments, e.find(".comments").text())
@@ -3221,7 +3310,7 @@ class EditTests(TestCase):
 
         self.assertEqual(len(q("#session{}.readonly".format(base_session.pk))), 1)
 
-        self.assertTrue(q("em:contains(\"You can't edit this schedule\")"))
+        self.assertTrue(q(".alert:contains(\"You can't edit this schedule\")"))
 
         # can't change anything
         r = self.client.post(url, {
@@ -3532,7 +3621,7 @@ class EditTests(TestCase):
 
         # Now enable the 'chair_conflict' constraint only
         chair_conflict = ConstraintName.objects.get(slug='chair_conflict')
-        chair_conf_label = b'<i class="fa fa-gavel"/>'  # result of etree.tostring(etree.fromstring(editor_label))
+        chair_conf_label = b'<i class="bi bi-person-circle"/>'  # result of etree.tostring(etree.fromstring(editor_label))
         meeting.group_conflict_types.add(chair_conflict)
         r = self.client.get(url)
         q = PyQuery(r.content)
@@ -3798,6 +3887,70 @@ class EditTests(TestCase):
         self.assertTrue(mars_slot.slot_to_the_right)
         self.assertTrue(mars_scheduled.slot_to_the_right)
 
+    def test_updateview(self):
+        """The updateview action should set visible timeslot types in the session"""
+        meeting = MeetingFactory(type_id='ietf')
+        url = urlreverse('ietf.meeting.views.edit_meeting_schedule', kwargs={'num': meeting.number})
+        types_to_enable = ['regular', 'reg', 'other']
+        r = self.client.post(
+            url,
+            {
+                'action': 'updateview',
+                'enabled_timeslot_types[]': types_to_enable,
+            },
+        )
+        self.assertEqual(r.status_code, 200)
+        session_data = self.client.session
+        self.assertIn('edit_meeting_schedule', session_data)
+        self.assertCountEqual(
+            session_data['edit_meeting_schedule']['enabled_timeslot_types'],
+            types_to_enable,
+            'Should set types requested',
+        )
+
+        r = self.client.post(
+            url,
+            {
+                'action': 'updateview',
+                'enabled_timeslot_types[]': types_to_enable + ['faketype'],
+            },
+        )
+        self.assertEqual(r.status_code, 200)
+        session_data = self.client.session
+        self.assertIn('edit_meeting_schedule', session_data)
+        self.assertCountEqual(
+            session_data['edit_meeting_schedule']['enabled_timeslot_types'],
+            types_to_enable,
+            'Should ignore unknown types',
+        )
+
+    def test_persistent_enabled_timeslot_types(self):
+        meeting = MeetingFactory(type_id='ietf')
+        TimeSlotFactory(meeting=meeting, type_id='other')
+        TimeSlotFactory(meeting=meeting, type_id='reg')
+
+        # test default behavior (only 'regular' enabled)
+        r = self.client.get(urlreverse('ietf.meeting.views.edit_meeting_schedule', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="regular"][checked]')), 1)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="other"]:not([checked])')), 1)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="reg"]:not([checked])')), 1)
+
+        # test with 'regular' and 'other' enabled via session store
+        client_session = self.client.session  # must store as var, new session is created on access
+        client_session['edit_meeting_schedule'] = {
+            'enabled_timeslot_types': ['regular', 'other']
+        }
+        client_session.save()
+        r = self.client.get(urlreverse('ietf.meeting.views.edit_meeting_schedule', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="regular"][checked]')), 1)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="other"][checked]')), 1)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="reg"]:not([checked])')), 1)
+
+
 class SessionDetailsTests(TestCase):
 
     def test_session_details(self):
@@ -3815,10 +3968,67 @@ class SessionDetailsTests(TestCase):
         self.assertNotContains(r, 'deleted')
 
         q = PyQuery(r.content)
-        self.assertTrue(q('h2#session_%s div#session-buttons-%s' % (session.id, session.id)),
+        self.assertTrue(q('div#session-buttons-%s' % session.id),
                                'Session detail page does not contain session tool buttons') 
-        self.assertFalse(q('h2#session_%s div#session-buttons-%s span.fa-arrows-alt' % (session.id, session.id)), 
+        self.assertFalse(q('div#session-buttons-%s span.bi-arrows-fullscreen' % session.id),
                          'The session detail page is incorrectly showing the "Show meeting materials" button')
+
+    def test_session_details_has_import_minutes_buttons(self):
+        group = GroupFactory.create(
+            type_id='wg',
+            state_id='active',
+        )
+        session = SessionFactory.create(
+            meeting__type_id='ietf',
+            group=group,
+            meeting__date=datetime.date.today() + datetime.timedelta(days=90),
+        )
+        session_details_url = urlreverse(
+            'ietf.meeting.views.session_details',
+            kwargs={'num': session.meeting.number, 'acronym': group.acronym},
+        )
+        import_minutes_url = urlreverse(
+            'ietf.meeting.views.import_session_minutes',
+            kwargs={'num': session.meeting.number, 'session_id': session.pk},
+        )
+
+        # test without existing minutes
+        with patch('ietf.meeting.views.can_manage_session_materials', return_value=False):
+            r = self.client.get(session_details_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(
+                len(q(f'a[href="{import_minutes_url}"]')), 0,
+                'Do not show import new minutes buttons to non-materials manager',
+            )
+        with patch('ietf.meeting.views.can_manage_session_materials', return_value=True):
+            r = self.client.get(session_details_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertGreater(
+                len(q(f'a[href="{import_minutes_url}"]')), 0,
+                'Show import new minutes buttons to materials manager',
+            )
+
+        # now create minutes and test that we can still have the import button
+        SessionPresentationFactory.create(session=session,document__type_id='minutes')
+        with patch('ietf.meeting.views.can_manage_session_materials', return_value=False):
+            r = self.client.get(session_details_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(
+                len(q(f'a[href="{import_minutes_url}"]')), 0,
+                'Do not show import revised minutes buttons to non-materials manager',
+            )
+
+        with patch('ietf.meeting.views.can_manage_session_materials', return_value=True):
+            r = self.client.get(session_details_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertGreater(
+                len(q(f'a[href="{import_minutes_url}"]')), 0,
+                'Show import revised minutes buttons to materials manager',
+            )
 
     def test_session_details_past_interim(self):
         group = GroupFactory.create(type_id='wg',state_id='active')
@@ -3863,7 +4073,7 @@ class SessionDetailsTests(TestCase):
         r = self.client.post(url,dict(drafts=[new_draft.pk, old_draft.pk]))
         self.assertTrue(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn("Already linked:", q('form .alert-danger').text())
+        self.assertIn("Already linked:", q('form .text-danger').text())
 
         self.assertEqual(1,session.sessionpresentation_set.count())
         r = self.client.post(url,dict(drafts=[new_draft.pk,]))
@@ -3959,7 +4169,7 @@ class EditScheduleListTests(TestCase):
         self.assertTrue(r.status_code, 200)
 
         q = PyQuery(r.content)
-        self.assertEqual(len(q(".schedule-diffs tr")), 3)
+        self.assertEqual(len(q(".schedule-diffs tr")), 3+1)
 
     def test_delete_schedule(self):
         url = urlreverse('ietf.meeting.views.delete_schedule',
@@ -4295,11 +4505,11 @@ class InterimTests(TestCase):
         SessionFactory(meeting__type_id='interim',meeting__date=last_week,status_id='canceled',group__state_id='active',group__parent=GroupFactory(state_id='active'))
         url = urlreverse('ietf.meeting.views.past')
         r = self.client.get(url)
-        self.assertContains(r, 'IETF - %02d'%int(ietf.meeting.number))
+        self.assertContains(r, 'IETF-%02d'%int(ietf.meeting.number))
         q = PyQuery(r.content)
         #id="-%s" % interim.group.acronym
-        #self.assertIn('CANCELLED', q('[id*="'+id+'"]').text())
-        self.assertIn('CANCELLED', q('tr>td>a>span').text())
+        #self.assertIn('Cancelled', q('[id*="'+id+'"]').text())
+        self.assertIn('Cancelled', q('tr>td>a+span').text())
 
     def do_upcoming_test(self, querystring=None, create_meeting=True):
         if create_meeting:
@@ -4322,7 +4532,7 @@ class InterimTests(TestCase):
         self.assertContains(r, 'IETF 72')
         # cancelled session
         q = PyQuery(r.content)
-        self.assertIn('CANCELLED', q('tr>td.text-right>span').text())
+        self.assertIn('Cancelled', q('tr>td.text-end>span').text())
 
     # test_upcoming_filters_ignored removed - we _don't_ want to ignore filters now, and the test passed because it wasn't testing the filtering anyhow (which requires testing the js).
 
@@ -4864,7 +5074,7 @@ class InterimTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q("a.btn:contains('Announce')")),2)
+        self.assertEqual(len(q("a.btn:contains('nnounce')")),2)
 
     def test_interim_request_details_cancel(self):
         """Test access to cancel meeting / session features"""
@@ -4892,8 +5102,7 @@ class InterimTests(TestCase):
                 r = self.client.get(url)
                 self.assertEqual(r.status_code, 200)
                 q = PyQuery(r.content)
-
-                cancel_meeting_btns = q("a.btn:contains('Cancel Meeting')")
+                cancel_meeting_btns = q("a.btn:contains('Cancel meeting')")
                 self.assertEqual(len(cancel_meeting_btns), 1,
                                  'Should be exactly one cancel meeting button for user %s' % username)
                 self.assertEqual(cancel_meeting_btns.eq(0).attr('href'),
@@ -4917,7 +5126,7 @@ class InterimTests(TestCase):
                 r = self.client.get(url)
                 self.assertEqual(r.status_code, 200)
                 q = PyQuery(r.content)
-                cancel_meeting_btns = q("a.btn:contains('Cancel Meeting')")
+                cancel_meeting_btns = q("a.btn:contains('Cancel meeting')")
                 self.assertEqual(len(cancel_meeting_btns), 1,
                                  'Should be exactly one cancel meeting button for user %s' % username)
                 self.assertEqual(cancel_meeting_btns.eq(0).attr('href'),
@@ -4925,7 +5134,7 @@ class InterimTests(TestCase):
                                             kwargs={'number': meeting.number}),
                                  'Cancel meeting button points to wrong URL')
 
-                cancel_session_btns = q("a.btn:contains('Cancel Session')")
+                cancel_session_btns = q("a.btn:contains('Cancel session')")
                 self.assertEqual(len(cancel_session_btns), 2,
                                  'Should be two cancel session buttons for user %s' % username)
                 hrefs = [btn.attr('href') for btn in cancel_session_btns.items()]
@@ -5633,21 +5842,21 @@ class MaterialsTests(TestCase):
             r = self.client.post(url,dict(file=test_file))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue(q('form .has-error'))
+            self.assertTrue(q('form .is-invalid'))
     
             test_file = BytesIO(b'this is some text for a test'*1510000)
             test_file.name = "not_really.pdf"
             r = self.client.post(url,dict(file=test_file))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue(q('form .has-error'))
+            self.assertTrue(q('form .is-invalid'))
     
             test_file = BytesIO(b'<html><frameset><frame src="foo.html"></frame><frame src="bar.html"></frame></frameset></html>')
             test_file.name = "not_really.html"
             r = self.client.post(url,dict(file=test_file))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue(q('form .has-error'))
+            self.assertTrue(q('form .is-invalid'))
 
             # Test html sanitization
             test_file = BytesIO(b'<html><head><title>Title</title></head><body><h1>Title</h1><section>Some text</section></body></html>')
@@ -5809,8 +6018,8 @@ class MaterialsTests(TestCase):
         r = self.client.post(url,dict(file=test_file,title='title with bad character \U0001fabc '))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(q('form .has-error'))
-        self.assertIn("Unicode BMP", q('form .has-error div').text())
+        self.assertTrue(q('form .is-invalid'))
+        self.assertIn("Unicode BMP", q('form .is-invalid div').text())
 
     def test_remove_sessionpresentation(self):
         session = SessionFactory(meeting__type_id='ietf')
@@ -5849,14 +6058,14 @@ class MaterialsTests(TestCase):
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code,200)
             q = PyQuery(r.content)
-            self.assertFalse(q('#uploadslides'))
-            self.assertFalse(q('#proposeslides'))
+            self.assertFalse(q('.uploadslides'))
+            self.assertFalse(q('.proposeslides'))
 
             self.client.login(username=newperson.user.username,password=newperson.user.username+"+password")
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code,200)
             q = PyQuery(r.content)
-            self.assertTrue(q('#proposeslides'))
+            self.assertTrue(q('.proposeslides'))
             self.client.logout()
 
             login_testing_unauthorized(self,newperson.user.username,propose_url)
@@ -5874,7 +6083,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertEqual(len(q('#proposedslidelist p')), 1)
+            self.assertEqual(len(q('.proposedslidelist p')), 1)
 
             SlideSubmissionFactory(session = session)
 
@@ -5883,7 +6092,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertEqual(len(q('#proposedslidelist p')), 2)
+            self.assertEqual(len(q('.proposedslidelist p')), 2)
             self.client.logout()
 
     def test_disapprove_proposed_slides(self):
@@ -5901,7 +6110,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 0)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "These slides have already been  rejected")
+        self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+rejected")
 
     def test_approve_proposed_slides(self):
         submission = SlideSubmissionFactory()
@@ -5925,7 +6134,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(session.sessionpresentation_set.first().document.title,'different title')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "These slides have already been  approved")
+        self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+approved")
 
     def test_approve_proposed_slides_multisession_apply_one(self):
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
@@ -6102,17 +6311,47 @@ class ImportNotesTests(TestCase):
                          kwargs={'num': self.meeting.number, 'session_id': self.session.pk})
 
         self.client.login(username='secretary', password='secretary+password')
-        r = self.client.post(url, {'markdown_text': 'original markdown text'})  # create a rev
+        with requests_mock.Mocker() as mock:
+            mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/download', text='original markdown text')
+            mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/info',
+                     text=json.dumps({"title": "title", "updatetime": "2021-12-02T11:22:33z"}))
+            # Create a revision. Run the original text through the preprocessing done when importing
+            # from the notes site.
+            r = self.client.get(url)  # let GET do its preprocessing
+            q = PyQuery(r.content)
+            r = self.client.post(url, {'markdown_text': q('input[name="markdown_text"]').attr['value']})
+            self.assertEqual(r.status_code, 302)
+
+            r = self.client.get(url)  # try to import the same text
+            self.assertContains(r, "This document is identical", status_code=200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('button:disabled[type="submit"]')), 1)
+            self.assertEqual(len(q('button:enabled[type="submit"]')), 0)
+
+    def test_allows_import_on_existing_bad_unicode(self):
+        """Should not be able to import text identical to the current revision"""
+        url = urlreverse('ietf.meeting.views.import_session_minutes',
+                         kwargs={'num': self.meeting.number, 'session_id': self.session.pk})
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.post(url, {'markdown_text': 'replaced below'})  # create a rev
+        with open(
+                self.session.sessionpresentation_set.filter(document__type="minutes").first().document.get_file_name(),
+                'wb'
+        ) as f:
+            # Replace existing content with an invalid Unicode byte string. The particular invalid
+            # values here are accented characters in the MacRoman charset (see ticket #3756).
+            f.write(b'invalid \x8e unicode \x99\n')
         self.assertEqual(r.status_code, 302)
         with requests_mock.Mocker() as mock:
             mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/download', text='original markdown text')
             mock.get(f'https://notes.ietf.org/{self.session.notes_id()}/info',
                      text=json.dumps({"title": "title", "updatetime": "2021-12-02T11:22:33z"}))
             r = self.client.get(url)  # try to import the same text
-            self.assertContains(r, "This document is identical", status_code=200)
+            self.assertNotContains(r, "This document is identical", status_code=200)
             q = PyQuery(r.content)
-            self.assertEqual(len(q('button:disabled[type="submit"]')), 1)
-            self.assertEqual(len(q('button:not(:disabled)[type="submit"]')), 0)
+            self.assertEqual(len(q('button:enabled[type="submit"]')), 1)
+            self.assertEqual(len(q('button:disabled[type="submit"]')), 0)
 
     def test_handles_missing_previous_revision_file(self):
         """Should still allow import if the file for the previous revision is missing"""
@@ -6390,7 +6629,8 @@ class AgendaFilterTests(TestCase):
         def _assert_button_ok(btn, expected_label=None, expected_filter_item=None, 
                               expected_filter_keywords=None):
             """Test button properties"""
-            self.assertIn(btn.text(), expected_label)
+            if expected_label:
+                self.assertIn(btn.text(), expected_label)
             self.assertEqual(btn.attr('data-filter-item'), expected_filter_item)
             self.assertEqual(btn.attr('data-filter-keywords'), expected_filter_keywords)
 
@@ -6399,12 +6639,12 @@ class AgendaFilterTests(TestCase):
         # Test with/without custom button text
         context = Context({'customize_button_text': None, 'filter_categories': []})
         q = PyQuery(template.render(context))
-        self.assertIn('Customize...', q('h4.panel-title').text())
+        self.assertIn('Customize...', q('h2.accordion-header').text())
         self.assertEqual(q('table'), [])  # no filter_categories, so no button table
 
         context['customize_button_text'] = 'My custom text...'
         q = PyQuery(template.render(context))
-        self.assertIn(context['customize_button_text'], q('h4.panel-title').text())
+        self.assertIn(context['customize_button_text'], q('h2.accordion-header').text())
         self.assertEqual(q('table'), [])  # no filter_categories, so no button table
         
         # Now add a non-trivial set of filters
@@ -6486,24 +6726,24 @@ class AgendaFilterTests(TestCase):
         ]
 
         q = PyQuery(template.render(context))
-        self.assertIn(context['customize_button_text'], q('h4.panel-title').text())
-        self.assertNotEqual(q('table'), [])  # should now have table
+        self.assertIn(context['customize_button_text'], q('h2.accordion-header').text())
+        self.assertNotEqual(q('button.pickview'), [])  # should now have group buttons
         
         # Check that buttons are present for the expected things
-        header_row = q('thead tr')
-        self.assertEqual(len(header_row), 1)
-        button_row = q('tbody tr')
-        self.assertEqual(len(button_row), 1)
+        header_row = q('.col-1 .row:first')
+        self.assertEqual(len(header_row), 4)
+        button_row = q('.row.view')
+        self.assertEqual(len(button_row), 4)
 
         # verify correct headers
-        header_cells = header_row('th')
-        self.assertEqual(len(header_cells), 6)  # 4 columns and 2 spacers
+        header_cells = header_row('.row')
+        self.assertEqual(len(header_cells), 4)
         header_buttons = header_cells('button.pickview')
-        self.assertEqual(len(header_buttons), 3)  # last column has blank header, so only 3
+        self.assertEqual(len(header_buttons), 3)  # last column has disabled header, so only 3
         
         # verify buttons
-        button_cells = button_row('td')
-    
+        button_cells = button_row('.btn-group-vertical')
+
         # area0
         _assert_button_ok(header_cells.eq(0)('button.keyword0'),
                           expected_label='area0',
@@ -6536,12 +6776,11 @@ class AgendaFilterTests(TestCase):
                           expected_filter_keywords='keyword1,bof')
         
         # area2
-        # Skip column index 2, which is a spacer column
-        _assert_button_ok(header_cells.eq(3)('button.keyword2'),
+        _assert_button_ok(header_cells.eq(2)('button.keyword2'),
                           expected_label='area2',
                           expected_filter_item='keyword2')
 
-        buttons = button_cells.eq(3)('button.pickview')
+        buttons = button_cells.eq(2)('button.pickview')
         self.assertEqual(len(buttons), 2)  # two children
         _assert_button_ok(buttons('.keyword20'),
                           expected_label='child20',
@@ -6552,10 +6791,11 @@ class AgendaFilterTests(TestCase):
                           expected_filter_item='keyword21',
                           expected_filter_keywords='keyword2')
 
-        # area3 (no label for this one)
-        # Skip column index 4, which is a spacer column
-        self.assertEqual([], header_cells.eq(5)('button'))  # no header button
-        buttons = button_cells.eq(5)('button.pickview')
+        # area3
+        _assert_button_ok(header_cells.eq(3)('button.keyword2'),
+                          expected_label=None,
+                          expected_filter_item=None)
+        buttons = button_cells.eq(3)('button.pickview')
         self.assertEqual(len(buttons), 2)  # two children
         _assert_button_ok(buttons('.keyword30'),
                           expected_label='child30',
@@ -7158,7 +7398,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         finalize(meeting)
         url = urlreverse('ietf.meeting.views.proceedings_attendees',kwargs={'num':97})
         response = self.client.get(url)
-        self.assertContains(response, 'Attendee List')
+        self.assertContains(response, 'Attendee list')
         q = PyQuery(response.content)
         self.assertEqual(1,len(q("#id_attendees tbody tr")))
 
@@ -7358,6 +7598,35 @@ class ProceedingsTests(BaseMeetingTestCase):
             )
             self.assertEqual(mat.get_href(), f'{mat.document.name}:00')
 
+    def test_add_proceedings_material_doc_invalid_ext(self):
+        """Upload proceedings materials document with disallowed extension"""
+        meeting = self._procmat_test_meeting()
+        self.client.login(username='secretary', password='secretary+password')
+        with NamedTemporaryFile('w+', suffix='.png') as invalid_file:
+            invalid_file.write('this is not a PDF file!!')
+            for mat_type in ProceedingsMaterialTypeName.objects.filter(used=True):
+                url = urlreverse(
+                    'ietf.meeting.views_proceedings.upload_material',
+                    kwargs=dict(num=meeting.number, material_type=mat_type.slug),
+                )
+                invalid_file.seek(0)  # read the file contents again
+                r = self.client.post(url, {'file': invalid_file, 'external_url': ''})
+                self.assertEqual(r.status_code, 200)
+                self.assertFormError(r, 'form', 'file', 'Found an unexpected extension: .png.  Expected one of .pdf')
+
+    def test_add_proceedings_material_doc_empty(self):
+        """Upload proceedings materials document without specifying a file"""
+        meeting = self._procmat_test_meeting()
+        self.client.login(username='secretary', password='secretary+password')
+        for mat_type in ProceedingsMaterialTypeName.objects.filter(used=True):
+            url = urlreverse(
+                'ietf.meeting.views_proceedings.upload_material',
+                kwargs=dict(num=meeting.number, material_type=mat_type.slug),
+            )
+            r = self.client.post(url, {'external_url': ''})
+            self.assertEqual(r.status_code, 200)
+            self.assertFormError(r, 'form', 'file', 'This field is required')
+
     def test_add_proceedings_material_url(self):
         """Add a URL as proceedings material"""
         meeting = self._procmat_test_meeting()
@@ -7368,6 +7637,32 @@ class ProceedingsTests(BaseMeetingTestCase):
                 {'use_url': 'on', 'external_url': 'https://example.com'},
             )
             self.assertEqual(mat.get_href(), 'https://example.com')
+
+    def test_add_proceedings_material_url_invalid(self):
+        """Add proceedings materials URL with a non-URL value"""
+        meeting = self._procmat_test_meeting()
+        self.client.login(username='secretary', password='secretary+password')
+        for mat_type in ProceedingsMaterialTypeName.objects.filter(used=True):
+            url = urlreverse(
+                'ietf.meeting.views_proceedings.upload_material',
+                kwargs=dict(num=meeting.number, material_type=mat_type.slug),
+            )
+            r = self.client.post(url, {'use_url': 'on', 'external_url': "Ceci n'est pas une URL"})
+            self.assertEqual(r.status_code, 200)
+            self.assertFormError(r, 'form', 'external_url', 'Enter a valid URL.')
+
+    def test_add_proceedings_material_url_empty(self):
+        """Add proceedings materials URL without specifying the URL"""
+        meeting = self._procmat_test_meeting()
+        self.client.login(username='secretary', password='secretary+password')
+        for mat_type in ProceedingsMaterialTypeName.objects.filter(used=True):
+            url = urlreverse(
+                'ietf.meeting.views_proceedings.upload_material',
+                kwargs=dict(num=meeting.number, material_type=mat_type.slug),
+            )
+            r = self.client.post(url, {'use_url': 'on', 'external_url': ''})
+            self.assertEqual(r.status_code, 200)
+            self.assertFormError(r, 'form', 'external_url', 'This field is required')
 
     @override_settings(MEETING_DOC_HREFS={'procmaterials': '{doc.name}:{doc.rev}'})
     def test_replace_proceedings_material(self):

@@ -304,7 +304,7 @@ class BallotWriteupsTests(TestCase):
                 save_last_call_text="1"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # save
         r = self.client.post(url, dict(
@@ -423,7 +423,7 @@ class BallotWriteupsTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=rfc_editor_note]')), 1)
         self.assertTrue(q('[type=submit]:contains("Save")'))
-        self.assertContains(r, "<label class=\"control-label\">RFC Editor Note</label>")
+        self.assertContains(r, "<label class=\"form-label\">RFC Editor Note</label>")
         self.assertContains(r, "This is a note for the RFC Editor")
 
         # save with a note
@@ -506,7 +506,7 @@ class BallotWriteupsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=ballot_writeup]')), 1)
-        self.assertFalse(q('[class=help-block]:contains("not completed IETF Last Call")'))
+        self.assertFalse(q('[class=form-text]:contains("not completed IETF Last Call")'))
         self.assertTrue(q('[type=submit]:contains("Save")'))
         self.assertCountEqual(draft.action_holders.all(), [])
 
@@ -530,7 +530,7 @@ class BallotWriteupsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=ballot_writeup]')), 1)
-        self.assertTrue(q('[class=help-block]:contains("not completed IETF Last Call")'))
+        self.assertTrue(q('[class=text-danger]:contains("not completed IETF Last Call")'))
         self.assertTrue(q('[type=submit]:contains("Save")'))
 
     def test_edit_approval_text(self):
@@ -1196,9 +1196,9 @@ class BallotContentTests(TestCase):
         )
 
     def _assertBallotMessage(self, q, balloter, expected):
-        heading = q(f'h4[id$="_{slugify(balloter.plain_name())}"]')
+        heading = q(f'p.h5[id$="_{slugify(balloter.plain_name())}"]')
         self.assertEqual(len(heading), 1)
-        # <h4/> is followed by a panel with the message of interest, so use next()
+        # <p.h5/> is followed by a panel with the message of interest, so use next()
         self.assertEqual(
             len(heading.next().find(
                 f'*[title="{expected}"]'

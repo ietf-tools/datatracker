@@ -326,39 +326,37 @@ class NomcomViewsTest(TestCase):
         response = self.client.post(self.private_merge_nominee_url, test_data)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertTrue(q("form .has-error"))
+        self.assertTrue(q("form .is-invalid"))
 
         test_data = {"primary_email": nominees[0],
                      "secondary_emails": ""}
         response = self.client.post(self.private_merge_nominee_url, test_data)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertTrue(q("form .has-error"))
+        self.assertTrue(q("form .is-invalid"))
 
         test_data = {"primary_email": "",
                      "secondary_emails": nominees[0]}
         response = self.client.post(self.private_merge_nominee_url, test_data)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertTrue(q("form .has-error"))
+        self.assertTrue(q("form .is-invalid"))
 
         test_data = {"primary_email": "unknown@example.com",
                      "secondary_emails": nominees[0]}
         response = self.client.post(self.private_merge_nominee_url, test_data)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertTrue(q("form .has-error"))
+        self.assertTrue(q("form .is-invalid"))
 
         test_data = {"primary_email": nominees[0],
                      "secondary_emails": "unknown@example.com"}
         response = self.client.post(self.private_merge_nominee_url, test_data)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertTrue(q("form .has-error"))
+        self.assertTrue(q("form .is-invalid"))
 
-        test_data = {"secondary_emails": """%s,
-                                            %s,
-                                            %s""" % (nominees[1], nominees[2], nominees[3]),
+        test_data = {"secondary_emails": [nominees[1], nominees[2], nominees[3]],
                      "primary_email": nominees[0]}
 
         response = self.client.post(self.private_merge_nominee_url, test_data)
@@ -411,10 +409,10 @@ class NomcomViewsTest(TestCase):
     def change_members(self, members=None, liaisons=None):
         test_data = {}
         if members is not None:
-            members_emails = ','.join(['%s%s' % (member, EMAIL_DOMAIN) for member in members])
+            members_emails = ['%s%s' % (member, EMAIL_DOMAIN) for member in members]
             test_data['members'] = members_emails
         if liaisons is not None:
-            liaisons_emails = ','.join(['%s%s' % (liaison, EMAIL_DOMAIN) for liaison in liaisons])
+            liaisons_emails = ['%s%s' % (liaison, EMAIL_DOMAIN) for liaison in liaisons]
             test_data['liaisons'] = liaisons_emails
         self.client.post(self.edit_members_url, test_data)
 
@@ -955,9 +953,9 @@ class NomcomViewsTest(TestCase):
         self.assertContains(response, "feedbackform")
         # Test for a link to the nominee's profile page
         q = PyQuery(response.content)
-        person_url = reverse('ietf.person.views.profile', kwargs={'email_or_name': nominee.name()})
+        person_url = reverse('ietf.person.views.profile', kwargs={'email_or_name': nominee.email})
         self.assertTrue(q('a[href="%s"]' % (person_url)), 
-                        'Nominee feedback page does not link to profile page')                            
+                        'Nominee feedback page does not link to profile page')
         
         comments = 'Test feedback view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
 
@@ -978,7 +976,7 @@ class NomcomViewsTest(TestCase):
             response = self.client.post(feedback_url, test_data)
             self.assertEqual(response.status_code, 200)
             q = PyQuery(response.content)
-            self.assertTrue(q("form .has-error"))
+            self.assertTrue(q("form .is-invalid"))
             # accept nomination
             nominee_position.state = NomineePositionStateName.objects.get(slug='accepted')
             nominee_position.save()
@@ -1200,7 +1198,7 @@ class InactiveNomcomTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             q = PyQuery(response.content)
-            self.assertIn( '(Concluded)', q('h1').text())
+            self.assertIn( 'Concluded', q('h1').text())
             self.assertIn( 'closed', q('#instructions').text())
             self.assertTrue( q('#nominees a') )
             self.assertFalse( q('#nominees a[href]') )
@@ -1231,7 +1229,7 @@ class InactiveNomcomTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             q = PyQuery(response.content)
-            self.assertIn( '(Concluded)', q('h1').text())
+            self.assertIn( 'Concluded', q('h1').text())
             self.assertIn( 'closed', q('.alert-warning').text())
 
     def test_acceptance_closed(self):
@@ -1407,7 +1405,7 @@ class FeedbackLastSeenTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.label-success')), 4 )
+        self.assertEqual( len(q('.bg-success')), 4 )
 
         f = self.nc.feedback_set.first()
         f.time = self.hour_ago
@@ -1417,20 +1415,20 @@ class FeedbackLastSeenTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.label-success')), 3 )
+        self.assertEqual( len(q('.bg-success')), 3 )
 
         FeedbackLastSeen.objects.update(time=self.second_from_now)
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.label-success')), 1 )
+        self.assertEqual( len(q('.bg-success')), 1 )
 
         TopicFeedbackLastSeen.objects.create(reviewer=self.member,topic=self.topic)
         TopicFeedbackLastSeen.objects.update(time=self.second_from_now)
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.label-success')), 0 )
+        self.assertEqual( len(q('.bg-success')), 0 )
 
     def test_feedback_nominee_badges(self):
         url = reverse('ietf.nomcom.views.view_feedback_nominee', kwargs={'year':self.nc.year(), 'nominee_id':self.nominee.id})
@@ -1439,7 +1437,7 @@ class FeedbackLastSeenTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.label-success')), 3 )
+        self.assertEqual( len(q('.bg-success')), 3 )
 
         f = self.nc.feedback_set.first()
         f.time = self.hour_ago
@@ -1449,13 +1447,13 @@ class FeedbackLastSeenTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.label-success')), 2 )
+        self.assertEqual( len(q('.bg-success')), 2 )
 
         FeedbackLastSeen.objects.update(time=self.second_from_now)
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.label-success')), 0 )
+        self.assertEqual( len(q('.bg-success')), 0 )
 
     def test_feedback_topic_badges(self):
         url = reverse('ietf.nomcom.views.view_feedback_topic', kwargs={'year':self.nc.year(), 'topic_id':self.topic.id})
@@ -1464,7 +1462,7 @@ class FeedbackLastSeenTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.label-success')), 1 )
+        self.assertEqual( len(q('.bg-success')), 1 )
 
         f = self.topic.feedback_set.first()
         f.time = self.hour_ago
@@ -1474,20 +1472,20 @@ class FeedbackLastSeenTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.label-success')), 0 )
+        self.assertEqual( len(q('.bg-success')), 0 )
 
         TopicFeedbackLastSeen.objects.update(time=self.second_from_now)
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.label-success')), 0 )
+        self.assertEqual( len(q('.bg-success')), 0 )
 
 class NewActiveNomComTests(TestCase):
 
     def setUp(self):
         super().setUp()
         setup_test_public_keys_dir(self)
-        self.nc = NomComFactory.create(**nomcom_kwargs_for_year())
+        self.nc = NomComFactory.create(**nomcom_kwargs_for_year(year=random.randint(1992,2100)))
         self.chair = self.nc.group.role_set.filter(name='chair').first().person
         self.saved_days_to_expire_nomination_link = settings.DAYS_TO_EXPIRE_NOMINATION_LINK
 
@@ -2106,7 +2104,7 @@ class ShowNomineeTests(TestCase):
         login_testing_unauthorized(self,self.plain_person.user.username,url)
         response = self.client.get(url)
         q = PyQuery(response.content)
-        self.assertTrue(q('h3'))
+        self.assertTrue(q('h2'))
         self.nc.show_accepted_nominees=False;
         self.nc.save()
         response = self.client.get(url)
@@ -2577,10 +2575,10 @@ class VolunteerTests(TestCase):
         r=self.client.post(url, dict(nomcoms=[nomcom.pk], affiliation=''))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(q('form div.has-error #id_affiliation'))
+        self.assertTrue(q('form div.is-invalid #id_affiliation'))
         r=self.client.post(url, dict(nomcoms=[], affiliation='something'))
         q = PyQuery(r.content)
-        self.assertTrue(q('form div.has-error #id_nomcoms'))
+        self.assertTrue(q('form div.is-invalid #id_nomcoms'))
         r=self.client.post(url, dict(nomcoms=[nomcom.pk], affiliation='something'))
         self.assertRedirects(r, reverse('ietf.ietfauth.views.profile'))
         self.assertEqual(person.volunteer_set.get(nomcom=nomcom).affiliation, 'something')
@@ -2592,7 +2590,7 @@ class VolunteerTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('#id_nomcoms div.checkbox')), 2)
+        self.assertEqual(len(q('#id_nomcoms input[type="checkbox"]')), 2)
         r = self.client.post(url, dict(nomcoms=[nomcom.pk, nomcom2.pk], affiliation='something'))
         self.assertRedirects(r, reverse('ietf.ietfauth.views.profile'))
         self.assertEqual(person.volunteer_set.count(), 2)
@@ -2611,7 +2609,7 @@ class VolunteerTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('#id_nomcoms div.checkbox')), 1)
+        self.assertEqual(len(q('#id_nomcoms input[type="checkbox"]')), 1)
         self.assertNotIn(f'{nomcom.year()}/', q('#already-volunteered').text())
         self.assertIn(f'{nomcom2.year()}/', q('#already-volunteered').text())
 
@@ -2671,4 +2669,3 @@ class VolunteerDecoratorUnitTests(TestCase):
                 self.assertEqual(v.qualifications,'path_2')
             if v.person == author_person:
                 self.assertEqual(v.qualifications,'path_3')
-

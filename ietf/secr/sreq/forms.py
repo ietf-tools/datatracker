@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2020, All Rights Reserved
+# Copyright The IETF Trust 2013-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -19,11 +19,13 @@ from ietf.utils import log
 # -------------------------------------------------
 
 NUM_SESSION_CHOICES = (('','--Please select'),('1','1'),('2','2'))
-# LENGTH_SESSION_CHOICES = (('','--Please select'),('1800','30 minutes'),('3600','1 hour'),('5400','1.5 hours'), ('7200','2 hours'),('9000','2.5 hours'))
-LENGTH_SESSION_CHOICES = (('','--Please select'),('3600','60 minutes'),('7200','120 minutes'))
-VIRTUAL_LENGTH_SESSION_CHOICES = (('','--Please select'),('3000','50 minutes'),('6000','100 minutes'))
 SESSION_TIME_RELATION_CHOICES = (('', 'No preference'),) + Constraint.TIME_RELATION_CHOICES
 JOINT_FOR_SESSION_CHOICES = (('1', 'First session'), ('2', 'Second session'), ('3', 'Third session'), )
+# Used for traditional face-to-face meetings:
+# LENGTH_SESSION_CHOICES = (('','--Please select'),('1800','30 minutes'),('3600','1 hour'),('5400','1.5 hours'), ('7200','2 hours'),('9000','2.5 hours'))
+# Used for totally virtual meetings during COVID-19:
+# LENGTH_SESSION_CHOICES = (('','--Please select'),('3000','50 minutes'),('6000','100 minutes'))
+LENGTH_SESSION_CHOICES = (('','--Please select'),('3600','60 minutes'),('7200','120 minutes'))
 
 # -------------------------------------------------
 # Helper Functions
@@ -115,7 +117,7 @@ class SessionForm(forms.Form):
             self._add_widget_class(constraint_field.widget, 'wg_constraint')
 
             selector_field = forms.ChoiceField(choices=group_acronym_choices, required=False)
-            selector_field.widget.attrs['data-slug'] = constraintname.slug  # used by onChange handler
+            selector_field.widget.attrs['data-slug'] = constraintname.slug  # used by onchange handler
             self._add_widget_class(selector_field.widget, 'wg_constraint_selector')
 
             cfield_id = 'constraint_{}'.format(constraintname.slug)
@@ -148,7 +150,7 @@ class SessionForm(forms.Form):
                  field_id)
             )
 
-        self.fields['joint_with_groups_selector'].widget.attrs['onChange'] = "document.form_post.joint_with_groups.value=document.form_post.joint_with_groups.value + ' ' + this.options[this.selectedIndex].value; return 1;"
+        self.fields['joint_with_groups_selector'].widget.attrs['onchange'] = "document.form_post.joint_with_groups.value=document.form_post.joint_with_groups.value + ' ' + this.options[this.selectedIndex].value; return 1;"
         self.fields["resources"].choices = [(x.pk,x.desc) for x in ResourceAssociation.objects.filter(name__used=True).order_by('name__order') ]
 
         if self.hidden:
@@ -290,9 +292,12 @@ class SessionForm(forms.Form):
         return super().media + self.session_forms.media + forms.Media(js=('secr/js/session_form.js',))
 
 
-class VirtualSessionForm(SessionForm):
-    '''A SessionForm customized for special virtual meeting requirements'''
-    attendees = forms.IntegerField(required=False)
+# Used for totally virtual meetings during COVID-19 to omit the expected
+# number of attendees since there were no room size limitations
+#
+# class VirtualSessionForm(SessionForm):
+#     '''A SessionForm customized for special virtual meeting requirements'''
+#     attendees = forms.IntegerField(required=False)
 
 
 class ToolStatusForm(forms.Form):

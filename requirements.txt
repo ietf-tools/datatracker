@@ -10,12 +10,12 @@ coverage>=4.0.1,!=4.0.2,<5.0    # Coverage 5.x moves from a json database to SQL
 decorator>=4.0.4
 defusedxml>=0.4.1		# for TastyPie when ussing xml; not a declared dependency
 Django>=2.2.15,<3.0
-django-bootstrap3>=14.0
+django-bootstrap5>=21.1
 django-csp>=3.5
 django-cors-headers>=2.4.0
 django-debug-toolbar>=3.2.2
 django-form-utils>=1.0.3
-django-formtools>=1.0		# instead of django.contrib.formtools in 1.8
+#django-formtools>=1.0		# instead of django.contrib.formtools in 1.8 - apparently not needed anymore in 2022?
 django-markup>=1.5
 django-oidc-provider>=0.7
 django-password-strength>=1.2.1
@@ -25,7 +25,7 @@ django-stubs==1.6.0		# The django-stubs version used determines the the mypy ver
 django-tastypie==0.14.3         # Django 2.1 will require 0.14.2; Django 3.0 will require 0.14.3
 django-webtest>=1.9.7
 django-widget-tweaks>=1.4.2
-djhtml>=1.4.11  # To auto-indent templates via "djlint --profile django --reformat"
+djlint>=0.7.3  # To auto-indent templates via "djlint --profile django --reformat"
 docutils>=0.12,!=0.15
 #factory-boy>=3
 #Faker>=0.8.11   # from factory-boy # Faker 0.8.9,0.8.10 sometimes return string names instead of unicode.

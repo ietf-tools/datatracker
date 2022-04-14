@@ -11,8 +11,8 @@ try:
     from selenium import webdriver
     from selenium.webdriver.chrome.service import Service
     from selenium.webdriver.chrome.options import Options
-    from selenium.webdriver.common.action_chains import ActionChains
     from selenium.webdriver.common.by import By
+    from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 except ImportError as e:
     skip_selenium = True
     skip_message = "Skipping selenium tests: %s" % e
@@ -38,10 +38,12 @@ def start_web_driver():
     options.add_argument("disable-extensions")
     options.add_argument("disable-gpu") # headless needs this
     options.add_argument("no-sandbox") # docker needs this
+    dc = DesiredCapabilities.CHROME
+    dc["goog:loggingPrefs"] = {"browser": "ALL"}
     # For selenium 3:
-    return webdriver.Chrome("chromedriver", options=options)
+    return webdriver.Chrome("chromedriver", options=options, desired_capabilities=dc)
     # For selenium 4:
-    # return webdriver.Chrome(service=service, options=options)
+    # return webdriver.Chrome(service=service, options=options, desired_capabilities=dc)
 
 
 def selenium_enabled():
@@ -65,7 +67,7 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
     def tearDown(self):
         super(IetfSeleniumTestCase, self).tearDown()
         self.driver.close()
-    
+
     def absreverse(self,*args,**kwargs):
         return '%s%s'%(self.live_server_url, urlreverse(*args, **kwargs))
     
@@ -83,8 +85,16 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
 
     def scroll_to_element(self, element):
         """Scroll an element into view"""
-        actions = ActionChains(self.driver)
-        actions.move_to_element(element).perform()
+        # Compute the offset to put the element in the center of the window
+        win_height = self.driver.get_window_rect()['height']
+        offset = element.rect['y'] + (element.rect['height'] - win_height) // 2
+        self.driver.execute_script(
+            'window.scroll({top: arguments[0], behavior: "instant"})',
+            offset,
+        )
+        # The ActionChains approach below seems to be fragile, hence he JS above.
+        # actions = ActionChains(self.driver)
+        # actions.move_to_element(element).perform()
 
 
 class presence_of_element_child_by_css_selector:

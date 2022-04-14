@@ -16,7 +16,7 @@ def select2_id_liaison(objs):
     return [{
         "id": o.pk,
         "text":"[{}] {}".format(o.pk, escape(o.title)),
-    } for o in objs]
+    } for o in objs] if objs else []
 
 def select2_id_liaison_json(objs):
     return json.dumps(select2_id_liaison(objs))

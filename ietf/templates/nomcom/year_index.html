@@ -1,10 +1,9 @@
 {% extends "nomcom/nomcom_public_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
-{% block subtitle %} - Home {% endblock %}
-
+{% block subtitle %}- Home{% endblock %}
 {% block nomcom_content %}
-  {% origin %}
-  {{ template|safe }}
+    {% origin %}
+    <!-- [html-validate-disable-block heading-level -- FIXME: old HTML in the database] -->
+    {{ template|safe }}
 {% endblock %}

@@ -3,18 +3,21 @@
 {% load origin %}
 {% load staticfiles %}
 {% load ietf_filters %}
-{% load bootstrap3 %}
-
+{% load django_bootstrap5 %}
 {% block content %}
-  {% origin %}
-  <h1>{% block title %}{% if schedule %}Copy agenda {{ schedule.name }} to new agenda{% else %}New agenda{% endif %}{% endblock %}</h1>
-
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-
-    {% buttons %}
-    <button type="submit" class="btn btn-primary">Create agenda</button>
-    {% endbuttons %}
-  </form>
+    {% origin %}
+    <h1>
+        {% block title %}
+            {% if schedule %}
+                Copy agenda {{ schedule.name }} to new agenda
+            {% else %}
+                New agenda
+            {% endif %}
+        {% endblock %}
+    </h1>
+    <form method="post" class="my-3">
+        {% csrf_token %}
+        {% bootstrap_form form layout="horizontal" %}
+        <button type="submit" class="btn btn-primary">Create agenda</button>
+    </form>
 {% endblock %}

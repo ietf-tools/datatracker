@@ -216,7 +216,7 @@ class TestCase(django.test.TestCase):
             os.mkdir(path)
         return path
 
-    def assertNoFormPostErrors(self, response, error_css_selector=".has-error"):
+    def assertNoFormPostErrors(self, response, error_css_selector=".is-invalid"):
         """Try to fish out form errors, if none found at least check the
         status code to be a redirect.
 

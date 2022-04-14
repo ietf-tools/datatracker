@@ -17,15 +17,16 @@ from ietf.doc.models import Document, DocAlias
 from ietf.doc.utils import uppercase_std_abbreviated_name
 from ietf.utils.fields import SearchableField
 
-def select2_id_doc_name(objs):
+def select2_id_doc_name(model, objs):
     return [{
         "id": o.pk,
+        "url": o.get_absolute_url() if model == Document else o.document.get_absolute_url(),
         "text": escape(uppercase_std_abbreviated_name(o.name)),
-    } for o in objs]
+    } for o in objs] if objs else []
 
 
-def select2_id_doc_name_json(objs):
-    return json.dumps(select2_id_doc_name(objs))
+def select2_id_doc_name_json(model, objs):
+    return json.dumps(select2_id_doc_name(model, objs))
 
 
 class SearchableDocumentsField(SearchableField):
@@ -55,7 +56,7 @@ class SearchableDocumentsField(SearchableField):
 
     def make_select2_data(self, model_instances):
         """Get select2 data items"""
-        return select2_id_doc_name(model_instances)
+        return select2_id_doc_name(self.model, model_instances)
 
     def ajax_url(self):
         """Get the URL for AJAX searches"""

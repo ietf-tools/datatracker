@@ -1,46 +1,68 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
-{% block subtitle %} - Template: {{ template }}{% endblock %}
-
-{% load bootstrap3 %}
-
+{% block subtitle %}- Template: {{ template }}{% endblock %}
+{% load django_bootstrap5 %}
 {% block nomcom_content %}
-  {% origin %}
-  <h2>Template: {{ template }}</h2>
-
-  <dl>
-    <dt>Title</dt>
-    <dd>{{ template.title }}</dt>
-      <dt>Group</dt>
-      <dd>{{ template.group }}</dd>
-      <dt>Template type</dt>
-      <dd>{{ template.type.name }}:
-        {% if template.type.slug == "rst" %}
-          This template uses the syntax of reStructuredText. Get a quick reference at <a href="http://docutils.sourceforge.net/docs/user/rst/quickref.html">http://docutils.sourceforge.net/docs/user/rst/quickref.html</a>. You can do variable interpolation with $variable if the template allows any variable.
-        {% elif template.type.slug == "django" %}
-          This template uses the syntax of the default django template framework. Get more info at <a href="https://docs.djangoproject.com/en/dev/topics/templates/">https://docs.djangoproject.com/en/dev/topics/templates/</a>. You can do variable interpolation with the current django markup &#123;&#123;variable&#125;&#125; if the template allows any variable.
-        {% elif template.type.slug == "plain" %}
-          This template uses plain text, so no markup is used. You can do variable interpolation with $variable if the template allows any variable.
+    {% origin %}
+    <h2>
+        Template
+        <br>
+        <small class="text-muted">{{ template }}</small>
+    </h2>
+    <dl class="row mt-3">
+        <dt class="col-sm-2">
+            Title
+        </dt>
+        <dd class="col-sm-10">
+            {{ template.title }}
+        </dd>
+        <dt class="col-sm-2">
+            Group
+        </dt>
+        <dd class="col-sm-10">
+            {{ template.group }}
+        </dd>
+        <dt class="col-sm-2">
+            Template type
+        </dt>
+        <dd class="col-sm-10">
+            {{ template.type.name }}:
+            {% if template.type.slug == "rst" %}
+                This template uses the syntax of reStructuredText. Get a quick reference at
+                <a href="http://docutils.sourceforge.net/docs/user/rst/quickref.html">
+                    http://docutils.sourceforge.net/docs/user/rst/quickref.html
+                </a>.
+                You can do variable interpolation with <code>$variable</code> if the template allows any variables.
+            {% elif template.type.slug == "django" %}
+                This template uses the syntax of the default django template framework. Get more info at
+                <a href="https://docs.djangoproject.com/en/dev/topics/templates/">
+                    https://docs.djangoproject.com/en/dev/topics/templates/
+                </a>.
+                You can do variable interpolation with the current django markup &#123;&#123;variable&#125;&#125; if the template allows any variables.
+            {% elif template.type.slug == "plain" %}
+                This template uses plain text, so no markup is used. You can do variable interpolation with <code>$variable</code> if the template allows any variables.
+            {% endif %}
+        </dd>
+        {% if template.variables %}
+            <dt class="col-sm-2">
+                Variables allowed in this template
+            </dt>
+            <dd class="col-sm-10">
+                {{ template.variables|linebreaks }}
+            </dd>
         {% endif %}
-      </dd>
-      {% if template.variables %}
-        <dt>Variables allowed in this template</dt>
-        <dd>{{ template.variables|linebreaks }}</dd>
-      {% endif %}
-  </dl>
-
-  <form id="templateform" method="post">
-    {% if form.errors %}
-      <p class="alert alert-danger">There were errors, see below.</p>
-    {% endif %}
-    {% csrf_token %}
-    {% bootstrap_form form %}
-
-    {% buttons %}
-      <input class="btn btn-primary" type="submit" value="Save template">
-      <a class="btn btn-default pull-right" href="{% if return_url %}{{ return_url }}{% else %}../{% endif %}">Back</a>
-    {% endbuttons %}
-  </form>
-{% endblock nomcom_content %}
+    </dl>
+    <form id="templateform" method="post" class="my-3">
+        {% if form.errors %}
+            <p class="alert alert-danger my-3">
+                There were errors, see below.
+            </p>
+        {% endif %}
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <button class="btn btn-primary" type="submit">Save template</button>
+        <a class="btn btn-secondary float-end"
+           href="{% if return_url %}{{ return_url }}{% else %}../{% endif %}">Back</a>
+    </form>
+{% endblock %}

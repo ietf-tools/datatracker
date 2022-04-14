@@ -1,40 +1,47 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2016, All Rights Reserved #}
-{% load origin bootstrap3 static %}
-
+{% load origin django_bootstrap5 static person_filters %}
 {% block title %}Review request for {{ review_req.doc.name }}{% endblock %}
-
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
 {% block content %}
-  {% origin %}
-  <h1>Review request<br><small>{{ review_req.doc.name }}</small></h1>
-
-  {% include "doc/review/request_info.html" %}
-
-  <div>
+    {% origin %}
+    <h1>
+        Review request
+        <br>
+        <small class="text-muted">{{ review_req.doc.name }}</small>
+    </h1>
+    {% include "doc/review/request_info.html" %}
     {% if can_close_request %}
-      <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.close_request" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Close request</a>
+        <a class="btn btn-danger"
+           href="{% url "ietf.doc.views_review.close_request" name=doc.name request_id=review_req.pk %}">
+            <i class="bi bi-x-circle"></i>
+            Close request
+        </a>
     {% endif %}
-  </div>
-
-
-    <h3>History</h3>
+    <h2 class="mt-5">History</h2>
     <div id="history">
-        <table class="table table-condensed table-striped">
-            <tr>
-                <th class="col-md-1">Date</th>
-                <th class="col-md-1">By</th>
-                <th class="col-md-10">Description</th>
-            </tr>
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th scope="col" data-sort="date">Date</th>
+                    <th scope="col" data-sort="by">By</th>
+                    <th scope="col" data-sort="description">Description</th>
+                </tr>
+            </thead>
             {% for h in history %}
                 {% if h.history_change_reason %}
                     <tr>
                         <td>{{ h.history_date|date }}</td>
-                        <td>{{ h.history_user.person }}</td>
+                        <td>{% person_link h.history_user.person %}</td>
                         <td>{{ h.history_change_reason }}</td>
                     </tr>
                 {% endif %}
             {% endfor %}
         </table>
     </div>
-
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

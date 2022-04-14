@@ -1,47 +1,50 @@
 {% extends "base.html" %}
-
 {% load origin %}
-
-{% load ietf_filters static bootstrap3 %}
-
-{% block content %}
-  {% origin %}
-
-  <h1>{% block title %}Countries known to the Datatracker{% endblock %}</h1>
-
-  <p>In case you think a country or an alias is missing from the list, you can <a href="mailto:{{ settings.SECRETARIAT_ACTION_EMAIL }}">file a ticket</a>.</p>
-
-  {% if request.user.is_staff %}
-    <p>Note: since you're an admin, the country names are linked to their corresponding admin page.</p>
-  {% endif %}
-  
-  <table class="table table-condensed table-striped">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Aliases (lowercase aliases are matched case-insensitive)</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for c in countries %}
-        <tr>
-          <td>
-            {% if request.user.is_staff %}
-              <a href="{% url "admin:name_countryname_change" c.pk %}">
-            {% endif %}
-            {{ c.name }}
-            {% if request.user.is_staff %}
-              </a>
-            {% endif %}
-          </td>
-          <td>
-            {% for a in c.aliases %}
-              {{ a.alias }}{% if not forloop.last %},{% endif %}
-            {% endfor %}
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
+{% load ietf_filters static %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        {% block title %}Countries known to the Datatracker{% endblock %}
+    </h1>
+    <p>
+        In case you think a country or an alias is missing from the list, you can
+        <a href="mailto:{{ settings.SECRETARIAT_ACTION_EMAIL }}">file a ticket</a>.
+    </p>
+    {% if request.user.is_staff %}
+        <p>
+            Note: since you're an admin, the country names are linked to their corresponding admin page.
+        </p>
+    {% endif %}
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="name">Name</th>
+                <th scope="col" data-sort="aliases">Aliases (lowercase aliases are matched case-insensitive)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in countries %}
+                <tr>
+                    <td>
+                        {% if request.user.is_staff %}
+                            <a href="{% url "admin:name_countryname_change" c.pk %}">
+                            {% endif %}
+                            {{ c.name }}
+                            {% if request.user.is_staff %}</a>{% endif %}
+                        </td>
+                        <td>
+                            {% for a in c.aliases %}
+                                {{ a.alias }}{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endblock %}
+    {% block js %}
+        <script src="{% static "ietf/js/list.js" %}"></script>
+    {% endblock %}

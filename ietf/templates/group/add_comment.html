@@ -1,24 +1,23 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
-{% load bootstrap3 %}
-
+{% load django_bootstrap5 %}
 {% block title %}Add comment for {{ group }}{% endblock %}
-
 {% block content %}
-  {% origin %}
-  <h1>Add comment<br><small>{{ group }} ({{ group.acronym }})</small></h1>
-
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-    <p class="help-block">The comment will be added to the history trail for the group.</p>
-
-    {% buttons %}
-      <button type="submit" class="btn btn-primary">Submit</button>
-      <a class="btn btn-default pull-right" href="{% url "ietf.group.views.history" acronym=group.acronym %}">Back</a>
-    {% endbuttons %}
-  </form>
-
+    {% origin %}
+    <h1>
+        Add comment
+        <br>
+        <small class="text-muted">{{ group }} ({{ group.acronym }})</small>
+    </h1>
+    <form class="my-3" method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <p class="form-text">
+            The comment will be added to the history trail for the group.
+        </p>
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <a class="btn btn-secondary float-end"
+           href="{% url "ietf.group.views.history" acronym=group.acronym %}">Back</a>
+    </form>
 {% endblock %}

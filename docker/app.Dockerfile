@@ -13,7 +13,12 @@ EXPOSE 8000
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update
+# Add Docker Source
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
+    $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+RUN apt-get update --fix-missing
 
 # apt-get upgrade is normally not a good idea, but this is a dev container
 RUN apt-get -qy upgrade
@@ -26,6 +31,7 @@ RUN apt-get install -qy \
 	bash \
 	build-essential \
 	curl \
+    docker-ce-cli \
 	enscript \
 	fish \
 	gawk \
@@ -48,8 +54,10 @@ RUN apt-get install -qy \
     libxtst6 \
 	libmagic-dev \
 	libmariadb-dev \
+    libmemcached-tools \
 	locales \
 	mariadb-client \
+    memcached \
     netcat \
 	nano \
 	pigz \
@@ -99,9 +107,6 @@ RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \
     locale-gen en_US.UTF-8 && \
     update-locale LC_ALL en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
-
-# Install bower
-RUN npm install -g bower grunt-cli
 
 # Install idnits
 ADD https://raw.githubusercontent.com/ietf-tools/idnits-mirror/main/idnits /usr/local/bin/

@@ -1,65 +1,111 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
-{% load nomcom_tags %}
-
-{% block subtitle %} - View feedback about {{ nominee.email.person.name }}{% endblock %}
-
+{% load nomcom_tags textfilters %}
+{% block subtitle %}- View feedback about {{ nominee.email.person.name }}{% endblock %}
 {% block nomcom_content %}
-  {% origin %}
-  <h2>Feedback about {{ nominee }} </h2>
-
-  <ul class="nav nav-tabs" role="tablist">
-    {% for ft in feedback_types %}
-      <li {% if forloop.first %}class="active"{% endif %}><a href="#{{ ft.slug }}" role="tab" data-toggle="tab">{{ ft.name }}</a></li>
-    {% endfor %}
-  </ul>
-
-  <div class="tab-content">
-    {% for ft in feedback_types %}
-      <div class="tab-pane {% if forloop.first %}active{% endif %}" id="{{ ft.slug }}">
-        {% for feedback in nominee.feedback_set.all %}
-          {% if feedback.type.slug == ft.slug %}
-            {% if forloop.first %}<p></p>{% else %}<hr>{% endif %}
-            <dl class="dl-horizontal">
-              <dt>{% if feedback.time > last_seen_time %}<span class="label label-success">New</span>{% endif %}From</dt>
-              <dd>{{ feedback.author|formatted_email|default:"Anonymous" }}
-                    {% if ft.slug == "nomina" and feedback.nomination_set.first.share_nominator %}
-                        <span class="bg-info"> OK to share name with nominee</span>
-                    {% endif %}
-              </dd> 
-              <dt>Date</dt>
-              <dd>{{ feedback.time|date:"Y-m-d" }}</dd>
-
-              {% if ft.slug == "nomina" %}
-                {% for fn in feedback.nomination_set.all %}
-                  {% if fn.candidate_name %}
-                    <dt>Nominee</dt>
-                    <dd>{{ fn.candidate_name }}</dd>
-                  {% endif %}
-                  {% if fn.candidate_phone %}
-                    <dt>Nominee phone</dt>
-                    <dd>{{ fn.candidate_phone }}</dd>
-                  {% endif %}
-                {% endfor %}
-              {% endif %}
-
-              <dt>Positions</dt>
-              <dd>{{ feedback.positions.all|join:"," }}</dd>
-              {% if feedback.subject %}
-                <dt>Subject</dt>
-                <dd>{{ feedback.subject }}</dd>
-              {% endif %}
-              <dt>Body</dt>
-              <dd class="pasted">{% decrypt feedback.comments request year 1 %}</dd>
-            </dl>
-          {% endif %}
+    {% origin %}
+    <h2>Feedback about {{ nominee }}</h2>
+    <ul class="nav nav-tabs my-3" role="tablist">
+        {% for ft in feedback_types %}
+            <li class="nav-item">
+                <button class="nav-link {% if forloop.first %}active{% endif %}"
+                        data-bs-target="#{{ ft.slug }}"
+                        role="tab" type="button"
+                        data-bs-toggle="tab">
+                    {{ ft.name }}
+                </button>
+            </li>
         {% endfor %}
-      </div>
-    {% endfor %}
-  </div>
-
-  <a class="btn btn-default" href="{% url 'ietf.nomcom.views.view_feedback' year %}">Back</a>
-
+    </ul>
+    <div class="tab-content">
+        {% for ft in feedback_types %}
+            <div role="tabpanel" class="tab-pane {% if forloop.first %} active{% endif %}"
+                 id="{{ ft.slug }}">
+                {% for feedback in nominee.feedback_set.all %}
+                    {% if feedback.type.slug == ft.slug %}
+                        <dl class="row">
+                            <dt class="col-sm-2">
+                                {% if feedback.time > last_seen_time %}<span class="badge bg-success">New</span>{% endif %}
+                                From
+                            </dt>
+                            <dd class="col-sm-10">
+                                {{ feedback.author|formatted_email|default:"Anonymous"|linkify }}
+                                {% if ft.slug == "nomina" and feedback.nomination_set.first.share_nominator %}
+                                    <span class="badge bg-info">OK to share name with nominee</span>
+                                {% endif %}
+                            </dd>
+                            <dt class="col-sm-2">
+                                Date
+                            </dt>
+                            <dd class="col-sm-10">
+                                {{ feedback.time|date:"Y-m-d" }}
+                            </dd>
+                            {% if ft.slug == "nomina" %}
+                                {% for fn in feedback.nomination_set.all %}
+                                    {% if fn.candidate_name %}
+                                        <dt class="col-sm-2">
+                                            Nominee
+                                        </dt>
+                                        <dd class="col-sm-10">
+                                            {{ fn.candidate_name }}
+                                        </dd>
+                                    {% endif %}
+                                    {% if fn.candidate_phone %}
+                                        <dt class="col-sm-2">
+                                            Nominee phone
+                                        </dt>
+                                        <dd class="col-sm-10">
+                                            {{ fn.candidate_phone }}
+                                        </dd>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                            <dt class="col-sm-2">
+                                Positions
+                            </dt>
+                            <dd class="col-sm-10">
+                                {{ feedback.positions.all|join:"," }}
+                            </dd>
+                            {% if feedback.subject %}
+                                <dt class="col-sm-2">
+                                    Subject
+                                </dt>
+                                <dd class="col-sm-10">
+                                    {{ feedback.subject }}
+                                </dd>
+                            {% endif %}
+                            <dt class="col-sm-2">
+                                Feedback
+                            </dt>
+                            <dd class="col-sm-10 pasted">
+                                {% decrypt feedback.comments request year 1 %}
+                            </dd>
+                        </dl>
+                        {% if not forloop.last %}<hr>{% endif %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+    <a class="btn btn-secondary"
+       href="{% url 'ietf.nomcom.views.view_feedback' year %}">Back</a>
+{% endblock %}
+{% block js %}
+    <script>
+        $(document)
+            .ready(function () {
+                // Javascript to enable link to tab
+                var url = document.location.toString();
+                if (url.match('#')) {
+                    $('.nav-tabs button[data-bs-target="#' + url.split('#')[1] + '"]')
+                        .tab('show');
+                }
+                // Change hash for page-reload
+                $('.nav-tabs button')
+                    .on('shown.bs.tab', function (e) {
+                        history.replaceState(null, null, e.currentTarget.dataset.bsTarget);
+                    });
+            });
+    </script>
 {% endblock %}

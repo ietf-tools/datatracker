@@ -2,29 +2,34 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load static %}
-{% block pagehead %}
-  {{ form.media.css }}
+{% block pagehead %}{{ form.media.css }}{% endblock %}
+{% load django_bootstrap5 %}
+{% block subtitle %}
+    -
+    {% if position %}
+        Edit
+    {% else %}
+        Add
+    {% endif %}
+    positions
 {% endblock %}
-
-{% load bootstrap3 %}
-
-{% block subtitle %} - {% if position %}Edit{% else %}Add{% endif %} positions{% endblock %}
-
 {% block nomcom_content %}
-  {% origin %}
-  <h2>{% if position %}Edit{% else %}Add{% endif %} position</h2>
-
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-
-    {% buttons %}
-      <input class="btn btn-primary" type="submit" value="{% if position %}Save{% else %}Add{% endif %}">
-      <a class="btn btn-default pull-right" href="../">Back</a>
-    {% endbuttons %}
-  </form>
+    {% origin %}
+    <h2>
+        {% if position %}
+            Edit
+        {% else %}
+            Add
+        {% endif %}
+        position
+    </h2>
+    <form method="post" class="my-3">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <button class="btn btn-primary"
+               type="submit">
+               {% if position %}Save{% else %}Add{% endif %}</button>
+        <a class="btn btn-secondary float-end" href="../">Back</a>
+    </form>
 {% endblock %}
-
-{% block content_end %}
-  {{ form.media.js }}
-{% endblock %}
+{% block content_end %}{{ form.media.js }}{% endblock %}

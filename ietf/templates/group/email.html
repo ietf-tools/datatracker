@@ -1,63 +1,59 @@
 {% extends "group/group_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load ietf_filters %}
+{% load ietf_filters textfilters %}
 {% load static %}
-
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-
 {% block group_content %}
-  {% origin %}
-
-  {% if aliases %}
-  <h2>Email aliases</h2>
-
-  <table class="table table-condensed table-striped tablesorter">
-    <thead>
-      <tr>
-        <th>Alias</th>
-        <th>Expansion</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for alias in aliases %}
-        <tr>
-          <td>
-            <a href="mailto:{{ group.acronym }}{{ alias.alias_type|default:''}}@{{ietf_domain}}">
-            {{ group.acronym }}{{ alias.alias_type|default:''}}@{{ietf_domain}}</a></td>
-          <td>{{ alias.expansion }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% endif %}
-
-  <h2>Recipient expansions</h2>
-
-  <table class="table table-condensed table-striped tablesorter">
-    <thead>
-      <tr>
-        <th>Mail trigger</th>
-        <th>To</th>
-        <th>Cc</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for trigger,desc,to,cc in expansions %}
-        <tr>
-          <td><a href="{% url 'ietf.mailtrigger.views.show_triggers' trigger %}"
-                 title="{{desc}}">{{trigger}}</a></td>
-          <td> {{to|join:', '}}</td>
-          <td> {{cc|join:', '}}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
+    {% origin %}
+    {% if aliases %}
+        <h2 class="mt-3">Email aliases</h2>
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th scope="col" data-sort="alias">Alias</th>
+                    <th scope="col" data-sort="expansion">Expansion</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for alias in aliases %}
+                    <tr>
+                        <td>
+                            <a href="mailto:{{ group.acronym }}{{ alias.alias_type|default:'' }}@{{ ietf_domain }}">
+                                {{ group.acronym }}{{ alias.alias_type|default:'' }}@{{ ietf_domain }}
+                            </a>
+                        </td>
+                        <td>{{ alias.expansion|linkify }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    <h2 class="mt-3">Recipient expansions</h2>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="mail">Mail trigger</th>
+                <th scope="col" data-sort="to">To</th>
+                <th scope="col" data-sort="cc">Cc</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for trigger,desc,to,cc in expansions %}
+                <tr>
+                    <td>
+                        <a href="{% url 'ietf.mailtrigger.views.show_triggers' trigger %}"
+                           title="{{ desc }}">{{ trigger }}</a>
+                    </td>
+                    <td>{{ to|join:', '|unescape|linkify }}</td>
+                    <td>{{ cc|join:', '|unescape|linkify }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
-
 {% block js %}
-<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

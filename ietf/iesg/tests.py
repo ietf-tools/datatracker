@@ -93,7 +93,7 @@ class IESGTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         ads = Role.objects.filter(group__type='area', group__state='active', name_id='ad')
-        self.assertEqual(len(q('div.photo-thumbnail img')), ads.count())
+        self.assertEqual(len(q('.photo')), ads.count())
         
 class IESGAgendaTests(TestCase):
     def setUp(self):
@@ -517,7 +517,6 @@ class RescheduleOnAgendaTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        
         self.assertEqual(len(q('form select[name=%s-telechat_date]' % form_id)), 1)
         self.assertEqual(len(q('form input[name=%s-clear_returning_item]' % form_id)), 1)
 

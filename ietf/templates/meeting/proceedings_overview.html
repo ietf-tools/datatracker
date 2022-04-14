@@ -1,14 +1,16 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin markup_tags %}
-
-{% block title %}IETF {{ meeting.number }} Proceedings {% endblock %}
-
+{% block title %}IETF {{ meeting.number }} proceedings{% endblock %}
 {% block content %}
-  {% origin %}
-  <h1><a href="{% url 'ietf.meeting.views.proceedings' num=meeting.number %}">IETF {{ meeting.number }} Proceedings</a></h1>
-  <h2>IETF Overview</h2>
-  
-  {{ template|safe }}
-
+    {% origin %}
+    <h1>
+        <a class="text-decoration-none text-reset"
+           href="{% url 'ietf.meeting.views.proceedings' num=meeting.number %}">
+            IETF {{ meeting.number }} proceedings
+        </a>
+    </h1>
+    <h2>IETF overview</h2>
+    <!-- [html-validate-disable-block no-deprecated-attr, void-style, element-required-attributes -- FIXME: lots of old HTML in the proceedings] -->
+    {{ template|safe }}
 {% endblock %}

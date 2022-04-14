@@ -527,7 +527,7 @@ class FloorPlan(models.Model):
 class TimeSlot(models.Model):
     """
     Everything that would appear on the meeting agenda of a meeting is
-    mapped to a time slot, including breaks. Sessions are connected to
+    mapped to a timeslot, including breaks. Sessions are connected to
     TimeSlots during scheduling.
     """
     meeting = ForeignKey(Meeting)
@@ -734,11 +734,7 @@ class Schedule(models.Model):
 #         return self.url_edit("")
 
     def owner_email(self):
-        email = self.owner.email_set.all().order_by('primary').first()
-        if email:
-            return email.address
-        else:
-            return "noemail"
+        return self.owner.email_address() or "noemail"
 
     @property
     def is_official(self):
@@ -883,7 +879,12 @@ class Constraint(models.Model):
     - time_relation: preference for a time difference between sessions
     - wg_adjacent: request for source WG to be adjacent (directly before or after,
       no breaks, same room) the target WG
-      
+
+    In the schedule editor, run-time, a couple non-persistent ConstraintName instances
+    are created for rendering purposes. This is done in
+    meeting.utils.preprocess_constraints_for_meeting_schedule_editor(). This adds:
+    - joint_with_groups
+    - responsible_ad
     """
     TIME_RELATION_CHOICES = (
         ('subsequent-days', 'Schedule the sessions on subsequent days'),

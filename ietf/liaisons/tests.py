@@ -4,6 +4,7 @@
 
 import datetime
 import io
+import json
 
 import debug    # pyflakes:ignore
 
@@ -316,7 +317,7 @@ class LiaisonManagementTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=do_action_taken]')), 0)
+        self.assertEqual(len(q('form button[name=do_action_taken]')), 0)
 
         # log in and get
         self.client.login(username="secretary", password="secretary+password")
@@ -324,13 +325,13 @@ class LiaisonManagementTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=do_action_taken]')), 1)
+        self.assertEqual(len(q('form button[name=do_action_taken]')), 1)
 
         # mark action taken
         r = self.client.post(url, dict(do_action_taken="1"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=do_action_taken]')), 0)
+        self.assertEqual(len(q('form button[name=do_action_taken]')), 0)
         liaison = LiaisonStatement.objects.get(id=liaison.id)
         self.assertTrue(liaison.action_taken)
 
@@ -356,7 +357,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, liaison.title)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=approved]')), 0)
+        self.assertEqual(len(q('form button[name=approved]')), 0)
 
         # check the detail page / authorized
         self.client.login(username="ulm-liaiman", password="ulm-liaiman+password")
@@ -367,7 +368,7 @@ class LiaisonManagementTests(TestCase):
         from ietf.liaisons.utils import can_edit_liaison
         user = User.objects.get(username='ulm-liaiman')
         self.assertTrue(can_edit_liaison(user, liaison))
-        self.assertEqual(len(q('form input[name=approved]')), 1)
+        self.assertEqual(len(q('form button[name=approved]')), 1)
 
         # approve
         mailbox_before = len(outbox)
@@ -889,7 +890,7 @@ class LiaisonManagementTests(TestCase):
         r = self.client.post(url,post_data)
         #if r.status_code != 302:
         #    q = PyQuery(r.content)
-        #    print(q('div.has-error div.alert').text())
+        #    print(q('div.is-invalid div.alert').text())
         #    print r.content
         self.assertEqual(r.status_code, 302)
         self.assertEqual(liaison.attachments.count(),1)
@@ -930,7 +931,7 @@ class LiaisonManagementTests(TestCase):
         r = self.client.post(url,data)
         q = PyQuery(r.content)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(q("form .has-error"))
+        self.assertTrue(q("form .is-invalid"))
 
     def test_liaison_history(self):
         liaison = LiaisonStatementFactory()
@@ -1012,7 +1013,8 @@ class LiaisonManagementTests(TestCase):
         reply_from_group_id = str(liaison.to_groups.first().pk)
         self.assertEqual(q('#id_from_groups').find('option:selected').val(),reply_from_group_id)
         self.assertEqual(q('#id_to_groups').find('option:selected').val(),reply_to_group_id)
-        self.assertEqual(q('#id_related_to').val(),str(liaison.pk))
+        pre = json.loads(q('#id_related_to').attr("data-pre"))
+        self.assertEqual(pre[str(liaison.pk)]['id'], liaison.pk)
 
     def test_search(self):
         # Statement 1
@@ -1117,9 +1119,9 @@ class LiaisonManagementTests(TestCase):
 
         q = PyQuery(r.content)
         self.assertEqual(r.status_code, 200)
-        result = q('#id_technical_contacts').parent().parent('.has-error')
-        result = q('#id_action_holder_contacts').parent().parent('.has-error')
-        result = q('#id_cc_contacts').parent().parent('.has-error')
+        result = q('#id_technical_contacts').parent().parent('.is-invalid')
+        result = q('#id_action_holder_contacts').parent().parent('.is-invalid')
+        result = q('#id_cc_contacts').parent().parent('.is-invalid')
         self.assertEqual(len(result), 1)
 
     def test_body_or_attachment(self):

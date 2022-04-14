@@ -35,7 +35,7 @@ def unescape(text):
 
     This function undoes what django.utils.html.escape() does
     """
-    return text.replace('&#39;', "'").replace('&quot;', '"').replace('&gt;', '>').replace('&lt;', '<' ).replace('&amp;', '&')
+    return text.replace('&amp;', '&').replace('&#39;', "'").replace('&quot;', '"').replace('&gt;', '>').replace('&lt;', '<' )
 
 @keep_lazy(str)
 def remove_tags(html, tags):

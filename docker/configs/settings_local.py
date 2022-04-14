@@ -38,14 +38,12 @@ USING_DEBUG_EMAIL_SERVER=True
 EMAIL_HOST='localhost'
 EMAIL_PORT=2025
 
-MEDIA_BASE_DIR = 'test'
+MEDIA_BASE_DIR = 'data/developers'
 MEDIA_ROOT = MEDIA_BASE_DIR + '/media/'
 MEDIA_URL = '/media/'
 
 PHOTOS_DIRNAME = 'photo'
 PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
-
-DOCUMENT_PATH_PATTERN = 'data/developers/ietf-ftp/{doc.type_id}/'
 
 SUBMIT_YANG_CATALOG_MODEL_DIR = 'data/developers/ietf-ftp/yang/catalogmod/'
 SUBMIT_YANG_DRAFT_MODEL_DIR = 'data/developers/ietf-ftp/yang/draftmod/'
@@ -57,5 +55,22 @@ SUBMIT_YANG_RFC_MODEL_DIR   = 'data/developers/ietf-ftp/yang/rfcmod/'
 import socket
 hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
 INTERNAL_IPS = [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips]
+
+# DEV_TEMPLATE_CONTEXT_PROCESSORS = [
+#    'ietf.context_processors.sql_debug',
+# ]
+
+DOCUMENT_PATH_PATTERN = 'data/developers/ietf-ftp/{doc.type_id}/'
+INTERNET_DRAFT_PATH = 'data/developers/ietf-ftp/internet-drafts/'
+RFC_PATH = 'data/developers/ietf-ftp/rfc/'
+CHARTER_PATH = 'data/developers/ietf-ftp/charter/'
+BOFREQ_PATH = 'data/developers/ietf-ftp/bofreq/'
+CONFLICT_REVIEW_PATH = 'data/developers/ietf-ftp/conflict-reviews/'
+STATUS_CHANGE_PATH = 'data/developers/ietf-ftp/status-changes/'
+INTERNET_DRAFT_ARCHIVE_DIR = 'data/developers/ietf-ftp/internet-drafts/'
+INTERNET_ALL_DRAFTS_ARCHIVE_DIR = 'data/developers/ietf-ftp/internet-drafts/'
+
+NOMCOM_PUBLIC_KEYS_DIR = 'data/nomcom_keys/public_keys/'
+SLIDE_STAGING_PATH = 'test/staging/'
 
 DE_GFM_BINARY = '/usr/local/bin/de-gfm'

@@ -8,6 +8,7 @@ from pathlib import Path
 from pyquery import PyQuery
 from random import randint
 from tempfile import NamedTemporaryFile
+from html import unescape
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
@@ -78,10 +79,10 @@ This test section has some text.
         self.assertEqual([],q('#change-request'))
         editor_row = q('#editors').html()
         for editor in editors:
-            self.assertInHTML(editor.plain_name(),editor_row)
+            self.assertInHTML(editor.name, editor_row)
         responsible_row = q('#responsible').html()
         for leader in responsible:
-            self.assertInHTML(leader.plain_name(),responsible_row)
+            self.assertInHTML(leader.name,responsible_row)
         for user in ('secretary','ad','iab-member'): 
             self.client.login(username=user,password=user+"+password")
             r = self.client.get(url)
@@ -174,7 +175,7 @@ This test section has some text.
         new_editors.discard(acting_editor)
         new_editors.add(PersonFactory())
         url = urlreverse('ietf.doc.views_bofreq.change_editors', kwargs=dict(name=doc.name))
-        postdict = dict(editors=','.join([str(p.pk) for p in new_editors]))
+        postdict = dict(editors=[str(p.pk) for p in new_editors])
         r = self.client.post(url, postdict)
         self.assertEqual(r.status_code,302)
         editors = bofreq_editors(doc)
@@ -191,13 +192,14 @@ This test section has some text.
             self.client.login(username=username,password=username+'+password')
             r = self.client.get(url)
             self.assertEqual(r.status_code,200)
-            unescaped = unicontent(r).encode('utf-8').decode('unicode-escape')
+            # Yes, unescape is needed twice, for names like "O'Connor"
+            unescaped = unescape(unescape(unicontent(r).encode('utf-8').decode('unicode-escape')))
             for editor in previous_editors:
                 self.assertIn(editor.name,unescaped)
             new_editors = set(previous_editors)
             new_editors.discard(acting_editor)
             new_editors.add(PersonFactory())
-            postdict = dict(editors=','.join([str(p.pk) for p in new_editors]))
+            postdict = dict(editors=[str(p.pk) for p in new_editors])
             r = self.client.post(url,postdict)
             self.assertEqual(r.status_code, 302)
             updated_editors = bofreq_editors(doc)
@@ -214,7 +216,7 @@ This test section has some text.
         new_responsible = set(previous_responsible[1:])
         new_responsible.add(RoleFactory(group__type_id='area',name_id='ad').person)
         url = urlreverse('ietf.doc.views_bofreq.change_responsible', kwargs=dict(name=doc.name))
-        postdict = dict(responsible=','.join([str(p.pk) for p in new_responsible]))
+        postdict = dict(responsible=[str(p.pk) for p in new_responsible])
         r = self.client.post(url, postdict)
         self.assertEqual(r.status_code,302)
         responsible = bofreq_responsible(doc)
@@ -231,12 +233,13 @@ This test section has some text.
             self.client.login(username=username,password=username+'+password')
             r = self.client.get(url)
             self.assertEqual(r.status_code,200)
-            unescaped = unicontent(r).encode('utf-8').decode('unicode-escape')
+            # Yes, unescape is needed twice, for names like "O'Connor"
+            unescaped = unescape(unescape(unicontent(r).encode('utf-8').decode('unicode-escape')))
             for responsible in previous_responsible: 
-                self.assertIn(responsible.name,unescaped)
+                self.assertIn(responsible.name, unescaped)
             new_responsible = set(previous_responsible)
             new_responsible.add(RoleFactory(group__type_id='area',name_id='ad').person)
-            postdict = dict(responsible=','.join([str(p.pk) for p in new_responsible]))
+            postdict = dict(responsible=[str(p.pk) for p in new_responsible])
             r = self.client.post(url,postdict)
             self.assertEqual(r.status_code, 302)
             updated_responsible = bofreq_responsible(doc)
@@ -257,11 +260,11 @@ This test section has some text.
         pks = set()
         pks.update([p.pk for p in good_batch])
         pks.update([p.pk for p in bad_batch])
-        postdict = dict(responsible=','.join([str(pk) for pk in pks]))
+        postdict = dict(responsible=[str(pk) for pk in pks])
         r = self.client.post(url,postdict)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        error_text = q('.has-error .alert').text()
+        error_text = q('.invalid-feedback').text()
         for p in good_batch:
             self.assertNotIn(p.plain_name(), error_text)
         for p in bad_batch:
@@ -354,7 +357,7 @@ This test section has some text.
             r = self.client.post(url,postdict)
             self.assertEqual(r.status_code, 200, f'Wrong status_code for {postdict}')
             q = PyQuery(r.content)
-            self.assertTrue(q('form div.has-error'), f'Expected an error for {postdict}')
+            self.assertTrue(q('form div.is-invalid'), f'Expected an error for {postdict}')
 
     def test_post_proposed_restrictions(self):
         states = State.objects.filter(type_id='bofreq').exclude(slug='proposed')
@@ -382,4 +385,3 @@ This test section has some text.
         q = PyQuery(r.content)
         self.assertEqual(0, len(q('td.edit>a.btn')))
         self.assertEqual([],q('#change-request'))
-        

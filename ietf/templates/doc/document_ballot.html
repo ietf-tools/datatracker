@@ -1,13 +1,10 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
 {% load ietf_filters %}
-
 {% block title %}Ballot for {{ doc.name }}-{{ doc.rev }}{% endblock %}
-
 {% block content %}
-  {% origin %}
-  {{ top|safe }}
-  {{ ballot_content|safe }}
-{% endblock content %}
+    {% origin %}
+    {{ top|safe }}
+    {{ ballot_content|safe }}
+{% endblock %}

@@ -7,6 +7,8 @@ services:
         volumes:
             - .:/workspace
             - /workspace/node_modules
+            - /workspace/.parcel-cache
+            - /workspace/__pycache__
     db:
         ports:
             - '3306'
