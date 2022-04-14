@@ -27,8 +27,10 @@
         </p>
         <table class="table table-sm table-striped tablesorter">
             <thead>
-                <th data-sort="doc">Document</th>
-                <th>Manage</th>
+                <tr>
+                    <th scope="col" data-sort="doc">Document</th>
+                    <th scope="col">Manage</th>
+                </tr>
             </thead>
             <tbody>
                 {% for d in individually_added %}
@@ -38,7 +40,7 @@
                             <form method="post" id="remove_document_{{ d.pk }}">
                                 {% csrf_token %}
                                 <input type="hidden" name="document" value="{{ d.pk }}">
-                                <button class="btn btn-danger btn-sm" name="action" value="remove_document">Remove</button>
+                                <button type="submit" class="btn btn-danger btn-sm" name="action" value="remove_document">Remove</button>
                             </form>
                         </td>
                     </tr>
@@ -78,10 +80,10 @@
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th data-sort="rule">Rule</th>
-                    <th data-sort="value">Value</th>
-                    <th data-sort="num">Matching Documents</th>
-                    <th>Manage</th>
+                    <th scope="col" data-sort="rule">Rule</th>
+                    <th scope="col" data-sort="value">Value</th>
+                    <th scope="col" data-sort="num">Matching Documents</th>
+                    <th scope="col">Manage</th>
                 </tr>
             </thead>
             <tbody>
@@ -104,7 +106,7 @@
                             <form method="post">
                                 {% csrf_token %}
                                 <input type="hidden" name="rule" value="{{ rule.pk }}">
-                                <button class="btn btn-danger btn-sm" name="action" value="remove_rule">Remove</button>
+                                <button type="submit" class="btn btn-danger btn-sm" name="action" value="remove_rule">Remove</button>
                             </form>
                         </td>
                     </tr>
@@ -133,7 +135,7 @@
             </div>
             <button type="submit" class="btn btn-primary" name="action" value="add_rule">Add rule</button>
         </form>
-        <div class="empty-forms visually-hidden">
+        <div class="empty-forms d-none">
             {% for rule_type, f in empty_rule_forms.items %}
                 <div class="rule-type {{ rule_type }}">{% bootstrap_form f layout="horizontal" %}</div>
             {% endfor %}

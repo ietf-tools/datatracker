@@ -59,28 +59,27 @@
                     </dl>
                     {% if not forloop.last %}<hr>{% endif %}
                 {% endfor %}
-                <input class="btn btn-primary"
+                <button class="btn btn-primary"
                        type="submit"
-                       value="Save feedback"
-                       name="end">
+                       name="end">Save feedback</button>
                 <a class="btn btn-secondary float-end"
                    href="{% url 'ietf.nomcom.views.view_feedback_pending' year %}">Back</a>
             {% else %}
                 <table class="table table-sm">
                     <thead>
                         <tr>
-                            <th>Code</th>
-                            <th>Explanation</th>
+                            <th scope="col">Code</th>
+                            <th scope="col">Explanation</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <th>U</th>
+                            <th scope="row">U</th>
                             <td>Unclassified</td>
                         </tr>
                         {% for legend, t in type_dict.items %}
                             <tr>
-                                <th>{{ legend }}</th>
+                                <th scope="row">{{ legend }}</th>
                                 <td>{{ t.name }}</td>
                             </tr>
                         {% endfor %}
@@ -89,12 +88,12 @@
                 <table class="table table-sm table-striped">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th class="text-center" title="Unclassified">U</th>
-                            {% for legend, t in type_dict.items %}<th class="text-center" title="{{ t.name }}">{{ legend }}</th>{% endfor %}
-                            <th>Author</th>
-                            <th>Subject</th>
-                            <th></th>
+                            <th scope="col">Date</th>
+                            <th scope="col" class="text-center" title="Unclassified">U</th>
+                            {% for legend, t in type_dict.items %}<th scope="col" class="text-center" title="{{ t.name }}">{{ legend }}</th>{% endfor %}
+                            <th scope="col">Author</th>
+                            <th scope="col">Subject</th>
+                            <th scope="col"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -108,11 +107,13 @@
                                 <td>{{ form.instance.time|date:"r" }}{{ form.id }}</td>
                                 {% for choice in form.type.field.choices %}
                                     <td class="text-center">
+                                        <label class="d-none" aria-label="{{ choice.1 }}" for="{{ choice.1|slugify }}"></label>
                                         <input type="radio"
                                                class="form-check-input"
                                                name="{{ form.type.html_name }}"
                                                value="{{ choice.0 }}"
-                                               {% if not choice.0 %}checked="checked"{% endif %}
+                                               id="{{ choice.1|slugify }}"
+                                               {% if not choice.0 %}checked{% endif %}
                                                title="{{ choice.1 }}">
                                     </td>
                                 {% endfor %}
@@ -134,7 +135,7 @@
                                         <div class="modal-dialog modal-dialog-scrollable modal-xl">
                                             <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title" id="label{{ form.instance.id }}">{{ form.instance.subject }}</h5>
+                                                    <p class="h5 modal-title" id="label{{ form.instance.id }}">{{ form.instance.subject }}</p>
                                                     <button type="button"
                                                             class="btn-close"
                                                             data-bs-dismiss="modal"
@@ -156,7 +157,7 @@
             </table>
             <ul class="pagination pagination-sm mb-3">
                 <li class="page-item {% if not page.has_previous %}disabled{% endif %}">
-                    <a class="page-link"
+                    <a class="page-link" aria-label="<"
                        href="{% if not page.has_previous %}#{% else %}?page={{ page.previous_page_number }}{% endif %}">
                         <i class="bi bi-caret-left"></i>
                     </a>
@@ -165,13 +166,13 @@
                     <a class="page-link" href="?page={{ page.number }}">Page {{ page.number }} of {{ page.paginator.num_pages }}</a>
                 </li>
                 <li class="page-item {% if not page.has_next %}disabled{% endif %}">
-                    <a class="page-link"
+                    <a class="page-link" aria-label=">"
                        href="{% if not page.has_next %}#{% else %}?page={{ page.next_page_number }}{% endif %}">
                         <i class="bi bi-caret-right"></i>
                     </a>
                 </li>
             </ul>
-            <input class="btn btn-primary" type="submit" value="Classify">
+            <button class="btn btn-primary" type="submit">Classify</button>
         {% endif %}
     </form>
 {% else %}

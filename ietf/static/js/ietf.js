@@ -163,29 +163,39 @@ $(function () {
                 .shift()
                 .trim());
 
-        if (
-            contents &&
-            (contents.length > 0) &&
-            ($(headings)
-                .last()
-                .offset()
-                .top > $(window)
-                .height())
-        ) {
+        const extraNav = contentElement.find('#extra-nav');
+        const haveExtraNav = extraNav.length > 0;
+
+        const pageTooTall = !!(contents &&
+          (contents.length > 0) &&
+          ($(headings)
+              .last()
+              .offset()
+              .top > $(window)
+              .height()));
+
+        if (pageTooTall || haveExtraNav) {
             // console.log("Enabling nav.");
             let n = 0;
             let last_level;
-            let nav;
 
             contentElement
                 .attr("data-bs-offset", 0)
                 .attr("tabindex", 0)
                 .after($(`
                  <div class="col-xl-2 ps-0 small">
-                     <nav id="righthand-nav" class="position-fixed navbar navbar-light bg-light overflow-auto flex-fill" style="height: 70vh; width: inherit;">
-                     </nav>
+                     <div id="righthand-panel" class="position-fixed d-flex flex-column justify-content-between align-items-start">
+                         <nav id="righthand-nav" class="navbar navbar-light bg-light overflow-auto align-items-start flex-fill"></nav>
+                     </div></div>
                  </div>
-                 `))
+                 `));
+
+            const nav = $("#righthand-nav")
+                .append(`<nav class="nav nav-pills flex-column px-2">`)
+                .children()
+                .last();
+
+            contentElement
                 .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible, .nav-heading:visible")
                 .not(".navskip")
                 .each(function () {
@@ -209,14 +219,6 @@ $(function () {
                             .attr("id", id);
                     }
 
-                    if (nav === undefined) {
-                        nav = $("#righthand-nav");
-                        nav = $(nav)
-                            .append(`<nav class="nav nav-pills flex-column align-self-start flex-fill px-2">`)
-                            .children()
-                            .last();
-                    }
-
                     const level = parseInt(this.nodeName.substring(1)) - 1;
                     if (!last_level) {
                         last_level = level;
@@ -232,6 +234,12 @@ $(function () {
                     $(nav)
                         .append(`<a class="nav-link" href="#${id}">${text}</a>`);
                 });
+
+            if (haveExtraNav) {
+                $('#righthand-panel').append('<div id="righthand-extra" class="py-3"></div>');
+                extraNav.children().appendTo('#righthand-extra');
+                extraNav.remove();
+            }
 
             $(window)
                 .on("scroll", function () {
@@ -266,10 +274,11 @@ $(document)
                     dataType: 'json',
                     success: function (response) {
                         if (response.success) {
+                            // hide tooltip after clicking icon
                             trigger.parent()
-                                .find(".track-untrack-doc")
+                                .find(".review-wish-add-remove-doc.ajax, .track-untrack-doc")
                                 .tooltip("hide");
-                            trigger.addClass("visually-hidden");
+                            trigger.addClass("d-none");
 
                             var target_unhide = null;
                             if (trigger.hasClass('review-wish-add-remove-doc')) {
@@ -281,7 +290,7 @@ $(document)
                                 trigger.parent()
                                     .find(target_unhide)
                                     .not(trigger)
-                                    .removeClass("visually-hidden");
+                                    .removeClass("d-none");
                             }
                         }
                     }
@@ -319,8 +328,8 @@ $(document)
             .on("click", function () {
                 $(this)
                     .parents(".snippet")
-                    .addClass("visually-hidden")
+                    .addClass("d-none")
                     .siblings(".full")
-                    .removeClass("visually-hidden");
+                    .removeClass("d-none");
             });
     });

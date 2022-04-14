@@ -38,11 +38,11 @@ $(document)
             mailArchiveSearch.find(".search")
                 .prop("disabled", true);
             mailArchiveSearch.find(".error")
-                .addClass("visually-hidden");
+                .addClass("d-none");
             mailArchiveSearch.find(".retrieving")
-                .removeClass("visually-hidden");
+                .removeClass("d-none");
             mailArchiveSearch.find(".results")
-                .addClass("visually-hidden");
+                .addClass("d-none");
 
             retrievingData = $.ajax({
                     url: searchMailArchiveUrl,
@@ -58,7 +58,7 @@ $(document)
                     mailArchiveSearch.find(".search")
                         .prop("disabled", false);
                     mailArchiveSearch.find(".retrieving")
-                        .addClass("visually-hidden");
+                        .addClass("d-none");
 
                     var err = data.error;
                     if (!err && (!data.messages || !data.messages.length))
@@ -67,7 +67,7 @@ $(document)
                     var non_reply_row = null;
                     if (err) {
                         var errorDiv = mailArchiveSearch.find(".error");
-                        errorDiv.removeClass("visually-hidden");
+                        errorDiv.removeClass("d-none");
                         errorDiv.find(".content")
                             .text(err);
                         if (data.query && data.query_url && data.query_data_url) {
@@ -78,11 +78,11 @@ $(document)
                             errorDiv.find(".try-yourself .query-data-url")
                                 .prop("href", data.query_data_url);
                             errorDiv.find(".try-yourself")
-                                .removeClass("visually-hidden");
+                                .removeClass("d-none");
                         }
                     } else {
                         mailArchiveSearch.find(".results")
-                            .removeClass("visually-hidden");
+                            .removeClass("d-none");
 
                         var results = mailArchiveSearch.find(".results .list-group");
                         results.children()
@@ -119,10 +119,10 @@ $(document)
                     mailArchiveSearch.find(".search")
                         .prop("disabled", false);
                     mailArchiveSearch.find(".retrieving")
-                        .addClass("visually-hidden");
+                        .addClass("d-none");
 
                     var errorDiv = mailArchiveSearch.find(".error");
-                    errorDiv.removeClass("visually-hidden");
+                    errorDiv.removeClass("d-none");
                     errorDiv.find(".content")
                         .text("Error trying to retrieve data from mailing list archive.");
                 });

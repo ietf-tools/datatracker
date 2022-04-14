@@ -36,20 +36,18 @@
             <button type="submit"
                     class="btn btn-primary"
                     name="send_mail"
-                    value="Save and send email">Save & send email</button>
-            <input type="submit" class="btn btn-primary" value="Save">
+                    value="Save and send email">Save &amp; send email</button>
+            <button type="submit" class="btn btn-primary">Save</button>
             {% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
                 {% if doc.stream.slug != "irtf" %}
                     {% if ballot_deferred %}
-                        <input type="submit"
+                        <button type="submit"
                                class="btn btn-warning"
-                               name="Undefer"
-                               value="Undefer ballot">
+                               name="Undefer">Undefer ballot</button>
                     {% else %}
-                        <input type="submit"
+                        <button type="submit"
                                class="btn btn-danger"
-                               name="Defer"
-                               value="Defer ballot">
+                               name="Defer">Defer ballot</button>
                     {% endif %}
                 {% endif %}
             {% endif %}

@@ -37,10 +37,11 @@
         <form id="mergeform" method="post" class="my-3">
             {% csrf_token %}
             {% bootstrap_form form %}
-            <input class="btn btn-warning"
+            <button class="btn btn-warning"
                    type="submit"
-                   value="Request merge"
                    name="save">
+                   Request merge
+            </button>
         </form>
     {% endif %}
 {% endblock %}

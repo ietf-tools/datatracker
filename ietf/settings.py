@@ -1007,7 +1007,6 @@ BIBXML_BASE_PATH = '/a/ietfdata/derived/bibxml'
 
 # Timezone files for iCalendar
 TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
-CHANGELOG_PATH =  BASE_DIR + '/../changelog'
 
 SECR_BLUE_SHEET_PATH = '/a/www/ietf-datatracker/documents/blue_sheet.rtf'
 SECR_BLUE_SHEET_URL = '//datatracker.ietf.org/documents/blue_sheet.rtf'

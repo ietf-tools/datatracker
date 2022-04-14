@@ -16,7 +16,7 @@ import tarfile
 import tempfile
 
 from calendar import timegm
-from collections import OrderedDict, Counter, deque, defaultdict
+from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
 from urllib.parse import unquote
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
@@ -32,14 +32,13 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.urls import reverse,reverse_lazy
-from django.db.models import F, Min, Max, Q
+from django.db.models import F, Max, Q
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils.encoding import force_str
 from django.utils.functional import curry
 from django.utils.text import slugify
-from django.utils.html import format_html
 from django.utils.timezone import now
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
@@ -558,20 +557,20 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             # shared between the conflicting sessions they cover - the JS
             # then simply has to detect violations and show the
             # preprocessed labels
-            constrained_sessions_grouped_by_label = defaultdict(set)
-            for name_id, ts in itertools.groupby(sorted(constraints_for_sessions.get(s.pk, [])), key=lambda t: t[0]):
+            ConstraintHint = namedtuple('ConstraintHint', 'constraint_name count')
+            constraint_hints = defaultdict(set)
+            for name_id, ts in itertools.groupby(sorted(constraints_for_sessions.get(s.pk, [])), key=lambda t: t[0]):  # name_id same for each set of ts
                 ts = list(ts)
                 session_pks = (t[1] for t in ts)
-                constraint_name = constraint_names[name_id]
-                if "{count}" in constraint_name.formatted_editor_label:
-                    for session_pk, grouped_session_pks in itertools.groupby(session_pks):
-                        count = sum(1 for i in grouped_session_pks)
-                        constrained_sessions_grouped_by_label[format_html(constraint_name.formatted_editor_label, count=count)].add(session_pk)
+                for session_pk, grouped_session_pks in itertools.groupby(session_pks):
+                    # count is the number of instances of session_pk - should only have multiple in the
+                    # case of bethere constraints, where there will be one per person.pk
+                    count = len(list(grouped_session_pks))  # list() needed because iterator has no len()
+                    constraint_hints[ConstraintHint(constraint_names[name_id], count)].add(session_pk)
 
-                else:
-                    constrained_sessions_grouped_by_label[constraint_name.formatted_editor_label].update(session_pks)
-
-            s.constrained_sessions = list(constrained_sessions_grouped_by_label.items())
+            # The constraint hint key is a tuple (ConstraintName, count). Value is the set of sessions pks that
+            # should trigger that hint.
+            s.constraint_hints = list(constraint_hints.items())
             s.formatted_constraints = formatted_constraints_for_sessions.get(s.pk, {})
 
             s.other_sessions = [s_other for s_other in sessions_for_group.get(s.group_id) if s != s_other]
@@ -728,10 +727,18 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         return JsonResponse(data, status=status)
 
     if request.method == 'POST':
-        if not can_edit:
-            permission_denied(request, "Can't edit this schedule.")
-
         action = request.POST.get('action')
+        if action == 'updateview':
+            # allow updateview action even if can_edit is false, it affects only the user's session
+            sess_data = request.session.setdefault('edit_meeting_schedule', {})
+            enabled_types = [ts_type.slug for ts_type in TimeSlotTypeName.objects.filter(
+                used=True,
+                slug__in=request.POST.getlist('enabled_timeslot_types[]', [])
+            )]
+            sess_data['enabled_timeslot_types'] = enabled_types
+            return _json_response(True)
+        elif not can_edit:
+            permission_denied(request, "Can't edit this schedule.")
 
         # Handle ajax requests. Most of these return JSON responses with at least a 'success' key.
         # For the swapdays and swaptimeslots actions, the response is either a redirect to the
@@ -949,6 +956,16 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         key=lambda tstype: tstype.name,
     )
 
+    # extract view configuration from session store
+    session_data = request.session.get('edit_meeting_schedule', None)
+    if session_data is None:
+        enabled_timeslot_types = ['regular']
+    else:
+        enabled_timeslot_types = [
+            ts_type.slug for ts_type in timeslot_types
+            if ts_type.slug in session_data.get('enabled_timeslot_types', [])
+        ]
+
     return render(request, "meeting/edit_meeting_schedule.html", {
         'meeting': meeting,
         'schedule': schedule,
@@ -963,6 +980,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         'timeslot_types': timeslot_types,
         'hide_menu': True,
         'lock_time': lock_time,
+        'enabled_timeslot_types': enabled_timeslot_types,
     })
 
 
@@ -1887,69 +1905,6 @@ def week_view(request, num=None, name=None, owner=None):
     return render(request, "meeting/week-view.html", {
         "items": json.dumps(items),
     })
-
-@role_required('Area Director','Secretariat','IAB')
-def room_view(request, num=None, name=None, owner=None):
-    meeting = get_meeting(num)
-
-    rooms = meeting.room_set.order_by('functional_name','name')
-    if not rooms.exists():
-        return HttpResponse("No rooms defined yet")
-
-    if name is None:
-        schedule = get_schedule(meeting)
-    else:
-        person   = get_person_by_email(owner)
-        schedule = get_schedule_by_name(meeting, person, name)
-
-    assignments = SchedTimeSessAssignment.objects.filter(
-        schedule__in=[schedule, schedule.base if schedule else None]
-    ).prefetch_related(
-        'timeslot', 'timeslot__location', 'session', 'session__group', 'session__group__parent'
-    )
-    unavailable = meeting.timeslot_set.filter(type__slug='unavail')
-    if not (assignments.exists() or unavailable.exists()):
-        return HttpResponse("No sessions/timeslots available yet")
-
-    earliest = None
-    latest = None
-
-    if assignments:
-        earliest = assignments.aggregate(Min('timeslot__time'))['timeslot__time__min']
-        latest =  assignments.aggregate(Max('timeslot__time'))['timeslot__time__max']
-        
-    if unavailable:
-        earliest_unavailable = unavailable.aggregate(Min('time'))['time__min']
-        if not earliest or ( earliest_unavailable and earliest_unavailable < earliest ):
-            earliest = earliest_unavailable
-        latest_unavailable = unavailable.aggregate(Max('time'))['time__max']
-        if not latest or ( latest_unavailable and latest_unavailable > latest ):
-            latest = latest_unavailable
-
-    if not (earliest and latest):
-        raise Http404
-
-    base_time = earliest
-    base_day = datetime.datetime(base_time.year,base_time.month,base_time.day)
-
-    day = base_day
-    days = []
-    while day <= latest :
-        days.append(day)
-        day += datetime.timedelta(days=1)
-
-    unavailable = list(unavailable)
-    for t in unavailable:
-        t.delta_from_beginning = (t.time - base_time).total_seconds()
-        t.day = (t.time-base_day).days
-
-    assignments = list(assignments)
-    for ss in assignments:
-        ss.delta_from_beginning = (ss.timeslot.time - base_time).total_seconds()
-        ss.day = (ss.timeslot.time-base_day).days
-
-    template = "meeting/room-view.html"
-    return render(request, template,{"meeting":meeting,"schedule":schedule,"unavailable":unavailable,"assignments":assignments,"rooms":rooms,"days":days})
 
 def ical_session_status(assignment):
     if assignment.session.current_status == 'canceled':
@@ -2983,7 +2938,7 @@ def ajax_get_utc(request):
     utc_day_offset = (naive_utc_dt.date() - dt.date()).days
     html = "<span>{utc} UTC</span>".format(utc=utc)
     if utc_day_offset != 0:
-        html = html + "<span class='day-offset'> {0:+d} Day</span>".format(utc_day_offset)
+        html = html + '<span class="day-offset"> {0:+d} Day</span>'.format(utc_day_offset)
     context_data = {'timezone': timezone, 
                     'time': time, 
                     'utc': utc, 

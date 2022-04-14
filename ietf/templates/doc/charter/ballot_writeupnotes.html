@@ -21,10 +21,8 @@
         <button type="submit"
                 class="btn btn-warning"
                 name="send_ballot"
-                value="Save and Re-Issue Ballot">
-            Save &
-            {% if ballot_issued %}re-{% endif %}
-            issue ballot
+                value="Save and re-issue ballot">
+            Save &amp; {% if ballot_issued %}re-{% endif %}issue ballot
         </button>
         <a class="btn btn-secondary float-end"
            href="{% url 'ietf.doc.views_doc.document_writeup' name=charter.name %}">

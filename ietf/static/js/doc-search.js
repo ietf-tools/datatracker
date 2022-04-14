@@ -76,35 +76,4 @@ $(document)
 
             updateAdvanced();
         }
-
-        $(".review-wish-add-remove-doc.ajax, .track-untrack-doc")
-            .on("click", function (e) {
-                e.preventDefault();
-                var trigger = $(this);
-                $.ajax({
-                    url: trigger.attr("href"),
-                    type: "POST",
-                    cache: false,
-                    dataType: "json",
-                    success: function (response) {
-                        if (response.success) {
-                            trigger.parent()
-                                .find(".tooltip")
-                                .remove();
-                            trigger.attr("hidden", true);
-
-                            var target_unhide = null;
-                            if (trigger.hasClass("review-wish-add-remove-doc")) {
-                                target_unhide = ".review-wish-add-remove-doc";
-                            } else if (trigger.hasClass("track-untrack-doc")) {
-                                target_unhide = ".track-untrack-doc";
-                            }
-                            trigger.parent()
-                                .find(target_unhide)
-                                .not(trigger)
-                                .removeAttr("hidden");
-                        }
-                    }
-                });
-            });
     });

@@ -413,13 +413,13 @@ def format_snippet(text, trunc_words=25):
     full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_fragment(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
-        return mark_safe('<div class="snippet">%s<button class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="visually-hidden full">%s</div>' % (snippet, full))
+        return mark_safe('<div class="snippet">%s<button type="button" aria-label="Expand" class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="d-none full">%s</div>' % (snippet, full))
     return mark_safe(full)
 
 @register.simple_tag
 def doc_edit_button(url_name, *args, **kwargs):
     """Given URL name/args/kwargs, looks up the URL just like "url" tag and returns a properly formatted button for the document material tables."""
-    return mark_safe('<a class="btn btn-primary btn-sm" role="button" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
+    return mark_safe('<a class="btn btn-primary btn-sm" type="button" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
 
 @register.filter
 def textify(text):

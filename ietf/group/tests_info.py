@@ -137,7 +137,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, group.acronym)
         self.assertContains(r, group.name)
-        self.assertContains(r, escape(group.ad_role().person.plain_name()))
+        self.assertContains(r, group.ad_role().person.plain_name())
         self.assertContains(r, chair.address)
         self.assertContains(r, "This is a charter.")
 
@@ -146,7 +146,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, group.acronym)
         self.assertContains(r, group.name)
-        self.assertContains(r, escape(group.ad_role().person.plain_name()))
+        self.assertContains(r, group.ad_role().person.plain_name())
         self.assertContains(r, chair.address)
         self.assertContains(r, "This is a charter.")
 
@@ -1527,7 +1527,7 @@ class DatelessMilestoneTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(q('#switch-date-use-form button').attr('style'), 'display:none;')     
+        self.assertTrue(q('#switch-date-use-form button').hasClass('d-none'))
 
         ms.group.charter.rev='00-00'
         ms.group.charter.save()

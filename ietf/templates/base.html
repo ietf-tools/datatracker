@@ -1,5 +1,5 @@
 {# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
-<!doctype html>
+<!DOCTYPE html>
 {% load ietf_filters static %}
 {% load origin %}
 {% origin %}
@@ -58,11 +58,13 @@
                     </a>
                 {% endif %}
                 <div class="d-flex d-none d-lg-block">
+                    <label aria-label="Document search">
                     <input class="form-control select2-field"
                            id="navbar-doc-search"
                            data-ajax--url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='docalias' doc_type='draft' %}"
                            type="text"
                            data-placeholder="Document search">
+                   </label>
                 </div>
                 <button class="navbar-toggler"
                         type="button"
@@ -78,7 +80,7 @@
         <div class="pt-3 container-fluid">
             <div class="row">
                 {% if request.COOKIES.left_menu == "on" and not hide_menu %}
-                    <div class="col-1 d-none d-md-block bg-light py-3 lh-sm leftmenu small">
+                    <div class="d-none d-md-block bg-light py-3 leftmenu small">
                         <ul class="nav nav-pills flex-column">
                             {% include "base/menu.html" with flavor="left" %}
                         </ul>
@@ -125,7 +127,7 @@
                             {% else %}
                                 Version {{ version_num }}{% if patch %}{{patch}}{% endif %}
                             {% endif %}
-                            {% if branch %}({{ branch }} - {{ git_hash|slice:":8" }}){% endif %}
+                            {% if branch %}({{ branch }} - {{ git_hash|slice:":7" }}){% endif %}
                         {% endif %}
                         Report a bug:
                         <a href="https://github.com/ietf-tools/datatracker/issues/new/choose">

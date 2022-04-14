@@ -11,24 +11,24 @@
     <table class="table table-sm table-striped table-hover tablesorter">
         <thead>
             <tr>
-                <th data-sort="position">Position</th>
-                <th data-sort="open">Open</th>
-                <th data-sort="accepting">Accepting nominations</th>
-                <th data-sort="accepting">Accepting feedback</th>
-                <th data-sort="num">Nominations</th>
-                <th data-sort="num">Unique nominees</th>
-                <th data-sort="num">Accepted</th>
-                <th data-sort="num">Declined</th>
-                <th data-sort="num">Pending</th>
-                <th data-sort="num">Questionnaire responses</th>
-                <th data-sort="num">Comments</th>
+                <th scope="col" data-sort="position">Position</th>
+                <th scope="col" data-sort="open">Open</th>
+                <th scope="col" data-sort="accepting">Accepting nominations</th>
+                <th scope="col" data-sort="accepting">Accepting feedback</th>
+                <th scope="col" data-sort="num">Nominations</th>
+                <th scope="col" data-sort="num">Unique nominees</th>
+                <th scope="col" data-sort="num">Accepted</th>
+                <th scope="col" data-sort="num">Declined</th>
+                <th scope="col" data-sort="num">Pending</th>
+                <th scope="col" data-sort="num">Questionnaire responses</th>
+                <th scope="col" data-sort="num">Comments</th>
             </tr>
         </thead>
         {% if stats %}
             <tbody>
                 {% for item in stats %}
                     <tr>
-                        <th>{{ item.position__name }}</th>
+                        <th scope="row">{{ item.position__name }}</th>
                         <td>{{ item.position.is_open|yesno:"Yes,No,No" }}</td>
                         <td>{{ item.position.accepting_nominations|yesno:"Yes,No,No" }}</td>
                         <td>{{ item.position.accepting_feedback|yesno:"Yes,No,No" }}</td>
@@ -45,62 +45,62 @@
         {% endif %}
         <tfoot>
             <tr>
-                <th>Totals</th>
-                <th>{{ totals.open }}</th>
-                <th>{{ totals.accepting_nominations }}</th>
-                <th>
+                <th scope="row">Totals</th>
+                <td>{{ totals.open }}</td>
+                <td>{{ totals.accepting_nominations }}</td>
+                <td>
                     {{ totals.accepting_feedback }}
-                </th>
-                <th>
+                </td>
+                <td>
                     {{ totals.nominations }}
-                </th>
-                <th>
+                </td>
+                <td>
                     {{ totals.nominees }}
-                </th>
-                <th>
+                </td>
+                <td>
                     {{ totals.accepted }}
-                </th>
-                <th>
+                </td>
+                <td>
                     {{ totals.declined }}
-                </th>
-                <th>
+                </td>
+                <td>
                     {{ totals.pending }}
-                </th>
-                <th>
+                </td>
+                <td>
                     {{ totals.questionnaire }}
-                </th>
-                <th>
+                </td>
+                <td>
                     {{ totals.comments }}
-                </th>
+                </td>
             </tr>
             <tr>
-                <th>
+                <th scope="row">
                     Unique nominee totals
                 </th>
-                <th>
-                </th>
-                <th>
-                </th>
-                <th>
-                </th>
-                <th>
-                </th>
-                <th>
+                <td>
+                </td>
+                <td>
+                </td>
+                <td>
+                </td>
+                <td>
+                </td>
+                <td>
                     {{ unique_totals.nominees }}
-                </th>
-                <th>
+                </td>
+                <td>
                     {{ unique_totals.accepted }}
-                </th>
-                <th>
+                </td>
+                <td>
                     {{ unique_totals.declined }}
-                </th>
-                <th>
+                </td>
+                <td>
                     {{ unique_totals.pending }}
-                </th>
-                <th>
-                </th>
-                <th>
-                </th>
+                </td>
+                <td>
+                </td>
+                <td>
+                </td>
             </tr>
         </tfoot>
     </table>
@@ -109,10 +109,10 @@
     </h2>
     <form class="my-3" method="get">
         <div class="mb-3">
-            <label class="form-label">
+            <label class="form-label" for="state">
                 State:
             </label>
-            <select class="form-select" name="state">
+            <select class="form-select" name="state" id="state">
                 <option value="">
                     All
                 </option>
@@ -125,10 +125,10 @@
             </select>
         </div>
         <div class="mb-3">
-            <label class="form-label">
+            <label class="form-label" for="position">
                 Position:
             </label>
-            <select class="form-select" name="position">
+            <select class="form-select" name="position" id="position">
                 <option value="">
                     All
                 </option>
@@ -140,7 +140,7 @@
                 {% endfor %}
             </select>
         </div>
-        <input class="btn btn-primary" name="submit" value="Filter" type="submit">
+        <button class="btn btn-primary" name="submit" type="submit">Filter</button>
     </form>
     {% if is_chair and nomcom.group.state_id == 'active' %}
         <form class="form-inline" id="batch-action-form" method="post">
@@ -152,20 +152,20 @@
             <thead>
                 <tr>
                     {% if is_chair and nomcom.group.state_id == 'active' %}
-                        <th colspan="2">
+                        <th scope="colgroup" colspan="2">
                             <i class="bi bi-check"></i>
                         </th>
                     {% endif %}
-                    <th data-sort="nominee" colspan="2">
+                    <th scope="col" data-sort="nominee" colspan="2">
                         Nominee
                     </th>
-                    <th data-sort="position">
+                    <th scope="col" data-sort="position">
                         Position
                     </th>
-                    <th data-sort="state">
+                    <th scope="col" data-sort="state">
                         State
                     </th>
-                    <th data-sort="questionnaire">
+                    <th scope="col" data-sort="questionnaire">
                         Questionnaire response
                     </th>
                 </tr>
@@ -175,9 +175,11 @@
                     <tr>
                         {% if is_chair and nomcom.group.state_id == 'active' %}
                             <td>
+                                <label class="d-none" aria-label="np.nominee.name" for="id-{{ np.id }}"></label>
                                 <input class="batch-select form-check-input"
                                        type="checkbox"
                                        value="{{ np.id }}"
+                                       id="id-{{ np.id }}"
                                        name="selected">
                             </td>
                             <td class="edit">
@@ -217,10 +219,10 @@
         {% if is_chair %}
             {% if nomcom.group.state_id == 'active' %}
                 <div class="mb-3">
-                    <label class="form-label">
+                    <label class="form-label" for="action">
                         Action:
                     </label>
-                    <select class="form-select" name="action">
+                    <select class="form-select" name="action" id="action">
                         <option value="" selected="selected">
                             ---------
                         </option>

@@ -20,6 +20,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urlsplit, quote
 from PIL import Image
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
@@ -437,18 +438,6 @@ class MeetingTests(BaseMeetingTestCase):
         r = self.client.get(url)
         self.assertFalse(any([x in unicontent(r) for x in ['IESG Breakfast','Breakfast Room']]))
 
-    def test_agenda_room_view(self):
-        meeting = make_meeting_test_data()
-        url = urlreverse("ietf.meeting.views.room_view",kwargs=dict(num=meeting.number))
-        login_testing_unauthorized(self,"secretary",url)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
-        self.assertTrue(all([x in unicontent(r) for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
-        url = urlreverse("ietf.meeting.views.room_view",kwargs=dict(num=meeting.number,name=meeting.unofficial_schedule.name,owner=meeting.unofficial_schedule.owner.email()))
-        r = self.client.get(url)
-        self.assertTrue(all([x in unicontent(r) for x in ['mars','Test Room','Breakfast Room']]))
-        self.assertNotContains(r, 'IESG Breakfast')
-
 
     def test_agenda_week_view(self):
         meeting = make_meeting_test_data()
@@ -509,7 +498,7 @@ class MeetingTests(BaseMeetingTestCase):
                 expected_elements.append(anchor)
         for btn in q('.buttonlist a.btn').items():
             text = btn.text().strip()
-            if text in ['View personal agenda', 'Download .ics of personal agenda', 'Subscribe to personal agenda']:
+            if text in ['View personal agenda', 'Download .ics of filtered agenda', 'Subscribe to filtered agenda']:
                 expected_elements.append(btn)
 
         # Check that all the expected elements have the correct classes
@@ -3632,7 +3621,7 @@ class EditTests(TestCase):
 
         # Now enable the 'chair_conflict' constraint only
         chair_conflict = ConstraintName.objects.get(slug='chair_conflict')
-        chair_conf_label = b'<i class="bi bi-person-plus"/>'  # result of etree.tostring(etree.fromstring(editor_label))
+        chair_conf_label = b'<i class="bi bi-person-circle"/>'  # result of etree.tostring(etree.fromstring(editor_label))
         meeting.group_conflict_types.add(chair_conflict)
         r = self.client.get(url)
         q = PyQuery(r.content)
@@ -3897,6 +3886,69 @@ class EditTests(TestCase):
         ames_slot_qs.update(time=mars_ends + datetime.timedelta(seconds=10 * 60))
         self.assertTrue(mars_slot.slot_to_the_right)
         self.assertTrue(mars_scheduled.slot_to_the_right)
+
+    def test_updateview(self):
+        """The updateview action should set visible timeslot types in the session"""
+        meeting = MeetingFactory(type_id='ietf')
+        url = urlreverse('ietf.meeting.views.edit_meeting_schedule', kwargs={'num': meeting.number})
+        types_to_enable = ['regular', 'reg', 'other']
+        r = self.client.post(
+            url,
+            {
+                'action': 'updateview',
+                'enabled_timeslot_types[]': types_to_enable,
+            },
+        )
+        self.assertEqual(r.status_code, 200)
+        session_data = self.client.session
+        self.assertIn('edit_meeting_schedule', session_data)
+        self.assertCountEqual(
+            session_data['edit_meeting_schedule']['enabled_timeslot_types'],
+            types_to_enable,
+            'Should set types requested',
+        )
+
+        r = self.client.post(
+            url,
+            {
+                'action': 'updateview',
+                'enabled_timeslot_types[]': types_to_enable + ['faketype'],
+            },
+        )
+        self.assertEqual(r.status_code, 200)
+        session_data = self.client.session
+        self.assertIn('edit_meeting_schedule', session_data)
+        self.assertCountEqual(
+            session_data['edit_meeting_schedule']['enabled_timeslot_types'],
+            types_to_enable,
+            'Should ignore unknown types',
+        )
+
+    def test_persistent_enabled_timeslot_types(self):
+        meeting = MeetingFactory(type_id='ietf')
+        TimeSlotFactory(meeting=meeting, type_id='other')
+        TimeSlotFactory(meeting=meeting, type_id='reg')
+
+        # test default behavior (only 'regular' enabled)
+        r = self.client.get(urlreverse('ietf.meeting.views.edit_meeting_schedule', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="regular"][checked]')), 1)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="other"]:not([checked])')), 1)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="reg"]:not([checked])')), 1)
+
+        # test with 'regular' and 'other' enabled via session store
+        client_session = self.client.session  # must store as var, new session is created on access
+        client_session['edit_meeting_schedule'] = {
+            'enabled_timeslot_types': ['regular', 'other']
+        }
+        client_session.save()
+        r = self.client.get(urlreverse('ietf.meeting.views.edit_meeting_schedule', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="regular"][checked]')), 1)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="other"][checked]')), 1)
+        self.assertEqual(len(q('#timeslot-type-toggles-modal input[value="reg"]:not([checked])')), 1)
 
 
 class SessionDetailsTests(TestCase):
@@ -7546,6 +7598,35 @@ class ProceedingsTests(BaseMeetingTestCase):
             )
             self.assertEqual(mat.get_href(), f'{mat.document.name}:00')
 
+    def test_add_proceedings_material_doc_invalid_ext(self):
+        """Upload proceedings materials document with disallowed extension"""
+        meeting = self._procmat_test_meeting()
+        self.client.login(username='secretary', password='secretary+password')
+        with NamedTemporaryFile('w+', suffix='.png') as invalid_file:
+            invalid_file.write('this is not a PDF file!!')
+            for mat_type in ProceedingsMaterialTypeName.objects.filter(used=True):
+                url = urlreverse(
+                    'ietf.meeting.views_proceedings.upload_material',
+                    kwargs=dict(num=meeting.number, material_type=mat_type.slug),
+                )
+                invalid_file.seek(0)  # read the file contents again
+                r = self.client.post(url, {'file': invalid_file, 'external_url': ''})
+                self.assertEqual(r.status_code, 200)
+                self.assertFormError(r, 'form', 'file', 'Found an unexpected extension: .png.  Expected one of .pdf')
+
+    def test_add_proceedings_material_doc_empty(self):
+        """Upload proceedings materials document without specifying a file"""
+        meeting = self._procmat_test_meeting()
+        self.client.login(username='secretary', password='secretary+password')
+        for mat_type in ProceedingsMaterialTypeName.objects.filter(used=True):
+            url = urlreverse(
+                'ietf.meeting.views_proceedings.upload_material',
+                kwargs=dict(num=meeting.number, material_type=mat_type.slug),
+            )
+            r = self.client.post(url, {'external_url': ''})
+            self.assertEqual(r.status_code, 200)
+            self.assertFormError(r, 'form', 'file', 'This field is required')
+
     def test_add_proceedings_material_url(self):
         """Add a URL as proceedings material"""
         meeting = self._procmat_test_meeting()
@@ -7556,6 +7637,32 @@ class ProceedingsTests(BaseMeetingTestCase):
                 {'use_url': 'on', 'external_url': 'https://example.com'},
             )
             self.assertEqual(mat.get_href(), 'https://example.com')
+
+    def test_add_proceedings_material_url_invalid(self):
+        """Add proceedings materials URL with a non-URL value"""
+        meeting = self._procmat_test_meeting()
+        self.client.login(username='secretary', password='secretary+password')
+        for mat_type in ProceedingsMaterialTypeName.objects.filter(used=True):
+            url = urlreverse(
+                'ietf.meeting.views_proceedings.upload_material',
+                kwargs=dict(num=meeting.number, material_type=mat_type.slug),
+            )
+            r = self.client.post(url, {'use_url': 'on', 'external_url': "Ceci n'est pas une URL"})
+            self.assertEqual(r.status_code, 200)
+            self.assertFormError(r, 'form', 'external_url', 'Enter a valid URL.')
+
+    def test_add_proceedings_material_url_empty(self):
+        """Add proceedings materials URL without specifying the URL"""
+        meeting = self._procmat_test_meeting()
+        self.client.login(username='secretary', password='secretary+password')
+        for mat_type in ProceedingsMaterialTypeName.objects.filter(used=True):
+            url = urlreverse(
+                'ietf.meeting.views_proceedings.upload_material',
+                kwargs=dict(num=meeting.number, material_type=mat_type.slug),
+            )
+            r = self.client.post(url, {'use_url': 'on', 'external_url': ''})
+            self.assertEqual(r.status_code, 200)
+            self.assertFormError(r, 'form', 'external_url', 'This field is required')
 
     @override_settings(MEETING_DOC_HREFS={'procmaterials': '{doc.name}:{doc.rev}'})
     def test_replace_proceedings_material(self):

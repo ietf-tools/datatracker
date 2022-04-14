@@ -109,14 +109,15 @@ def ballot_icon(context, doc):
     else:
         typename = "IESG"
 
-    res = ['<a %s href="%s" data-bs-toggle="modal" data-bs-target="#modal-%d" title="%s positions (click to show more)" class="ballot-icon"><table' % (
+    res = ['<a %s href="%s" data-bs-toggle="modal" data-bs-target="#modal-%d" aria-label="%s positions" title="%s positions (click to show more)" class="ballot-icon"><table' % (
             right_click_string,
             urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)),
             ballot.pk,
+            typename,
             typename,)]
     if my_blocking:
         res.append(' class="is-blocking" ')
-    res.append('>')
+    res.append('><tbody>')
 
     res.append("<tr>")
 
@@ -137,7 +138,7 @@ def ballot_icon(context, doc):
         res.append('<td class="position-empty"></td>')
         i = i + 1
 
-    res.append("</tr></table></a>")
+    res.append("</tr></tbody></table></a>")
     res.append('<div id="modal-%d" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable modal-xl"><div class="modal-content"></div></div></div>' % ballot.pk)
 
     return mark_safe("".join(res))

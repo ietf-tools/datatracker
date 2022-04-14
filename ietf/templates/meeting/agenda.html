@@ -23,6 +23,20 @@
     {% else %}
         {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda" title_extra="" %}
     {% endif %}
+    {# the contents of #extra-nav will be moved into the RH nav panel #}
+    <div id="extra-nav" class="d-none">
+        <div class="d-flex flex-column">
+          {% if now.date <= schedule.meeting.end_date %}
+              <a class="nav-link now-link" href="#">Current session</a>
+          {% endif %}
+          <div class="px-3">
+            Showing <span class="current-tz">{{ timezone }}</span> time
+          </div>
+          <div class="align-self-center">
+            {% include 'meeting/tz-display.html' with id_suffix="-rh" meeting_timezone=timezone minimal=True only %}
+          </div>
+        </div>
+    </div>
     {# cache this part -- it takes 3-6 seconds to generate #}
     {% load cache %}
     {% cache cache_time ietf_meeting_agenda_utc schedule.meeting.number request.path %}
@@ -43,9 +57,9 @@
             {{ schedule.meeting.agenda_info_note|removetags:"h1"|safe }}
         </p>
     {% endif %}
-    {% include 'meeting/tz-display.html' with id_suffix="" timezone=timezone %}
-    {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Personalize the agenda view..." always_show=personalize %}
-    {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting only %}
+    {% include 'meeting/tz-display.html' with meeting_timezone=timezone only %}
+    {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Filter this agenda view..." always_show=personalize %}
+    {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting personalize=personalize only %}
     <div class="input-group mb-3">
         <button class="btn btn-outline-primary dropdown-toggle"
                 type="button"
@@ -74,7 +88,7 @@
             Download non-area events
         </a>
     </div>
-    <div id="weekview" class="visually-hidden mt-3">
+    <div id="weekview" class="d-none mt-3">
         <h2>
             Schedule
             {% if schedule.meeting.agenda_warning_note %}
@@ -83,7 +97,7 @@
                 </span>
             {% endif %}
         </h2>
-        <iframe class="w-100 overflow-hidden border border-dark"></iframe>
+        <iframe title="Schedule" class="w-100 overflow-hidden border border-dark"></iframe>
     </div>
     <h2 class="mt-3">
         {% if personalize %}Personalize{% endif %}
@@ -97,19 +111,19 @@
     <table id="agenda-table" class="table table-sm tablesorter">
         <thead>
             <tr>
-                {% if personalize %}<th></th>{% endif %}
-                <th></th>
-                <th data-sort="loc"></th>
-                <th data-sort="group"></th>
-                <th data-sort="area"></th>
-                <th data-sort="desc"></th>
+                {% if personalize %}<th scope="col"></th>{% endif %}
+                <th scope="col"></th>
+                <th scope="col" data-sort="loc"></th>
+                <th scope="col" data-sort="group"></th>
+                <th scope="col" data-sort="area"></th>
+                <th scope="col" data-sort="desc"></th>
             </tr>
         </thead>
         <tbody>
             {% for item in filtered_assignments %}
                 {% ifchanged item.timeslot.time|date:"Y-m-d" %}
                     <tr class="table-primary show-with-children">
-                        <th colspan="{% if personalize %}6{% else %}5{% endif %}"
+                        <th scope="col" colspan="{% if personalize %}6{% else %}5{% endif %}"
                             id="slot-{{ item.timeslot.time|slugify }}"
                             class="nav-heading">
                             {{ item.timeslot.time|date:"l, F j, Y" }}
@@ -124,10 +138,15 @@
                         {% if personalize %}
                             <td class="text-center">
                                 {% if item.session_keyword %}
+                                    <label class="d-none"
+                                           aria-label="Select session"
+                                           for="{{ item.session_keyword }}">
+                                   </label>
                                     <input type="checkbox"
                                            class="pickview form-check-input"
                                            title="Select session"
                                            name="selected-sessions"
+                                           id="{{ item.session_keyword }}"
                                            value="{{ item.session_keyword }}"
                                            data-filter-keywords="{{ item.filter_keywords|join:',' }}"
                                            data-filter-item="{{ item.session_keyword }}">
@@ -183,9 +202,9 @@
                     <tr class="table-secondary session-label-row show-with-children"
                         data-slot-start-ts="{{ item.start_timestamp }}"
                         data-slot-end-ts="{{ item.end_timestamp }}">
-                        {% if personalize %}<th class="text-center"></th>{% endif %}
-                        <th class="text-end">{% include "meeting/timeslot_start_end.html" %}</th>
-                        <th colspan="4">
+                        {% if personalize %}<th scope="row" class="text-center"></th>{% endif %}
+                        <th scope="row" class="text-end">{% include "meeting/timeslot_start_end.html" %}</th>
+                        <th scope="row" colspan="4">
                             {{ item.timeslot.time|date:"l" }}
                             {{ item.timeslot.name|capfirst_allcaps }}
                         </th>
@@ -201,10 +220,15 @@
                     {% if personalize %}
                         <td class="text-center">
                             {% if item.session_keyword %}
+                                <label class="d-none"
+                                       aria-label="Select session"
+                                       for="{{ item.session_keyword }}">
+                               </label>
                                 <input type="checkbox"
                                        class="pickview form-check-input"
                                        title="Select session"
                                        name="selected-sessions"
+                                       id="{{ item.session_keyword }}"
                                        value="{{ item.session_keyword }}"
                                        data-filter-keywords="{{ item.filter_keywords|join:',' }}"
                                        data-filter-item="{{ item.session_keyword }}">
@@ -302,12 +326,13 @@
 {% endfor %}
 </tbody>
 </table>
-{% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting only %}
+{% if personalize %}{# only show second copy of buttons for the personalize tab #}
+    {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting personalize=personalize only %}
+{% endif %}
 {% endcache %}
 {% endblock %}
 {% block js %}
-    <script src="{% static 'ietf/js/agenda_filter.js' %}">
-    </script>
+    <script src="{% static 'ietf/js/agenda_filter.js' %}"></script>
     <script>
         // Update the agenda display with specified filters
         function update_agenda_display(filter_params) {
@@ -353,22 +378,22 @@
         }
 
         function update_ical_links(filter_params) {
-            $(".ical-link").toggleClass("visually-hidden", !agenda_filter.filtering_is_enabled(filter_params));
+            $(".ical-link").toggleClass("d-none", !agenda_filter.filtering_is_enabled(filter_params));
         }
 
         function update_weekview(filter_params) {
             var weekview = $("#weekview");
             if (agenda_filter.filtering_is_enabled(filter_params)) {
-                weekview.removeClass("visually-hidden");
+                weekview.removeClass("d-none");
             } else {
-                weekview.addClass("visually-hidden");
+                weekview.addClass("d-none");
             }
             update_weekview_display();
         }
 
         function update_weekview_display() {
             var weekview = $("#weekview");
-            if (!weekview.hasClass('visually-hidden')) {
+            if (!weekview.hasClass('d-none')) {
                 var queryparams = window.location.search;
                 if (queryparams) {
                     queryparams += '&tz=' + encodeURIComponent(ietf_timezone.get_current_tz().toLowerCase());
@@ -413,17 +438,17 @@
     {% endif %}
     <script>
         {% if settings.DEBUG and settings.DEBUG_AGENDA %}
-            speedup = +$.urlParam('speedup');
+            speedup = +urlParam('speedup');
             if (speedup < 1) {
                 speedup = 1;
             }
             start_time = moment().utc();
-            if ($.urlParam('date')) {
-                offset_time = moment.tz(decodeURIComponent($.urlParam('date')), "UTC");
+            if (urlParam('date')) {
+                offset_time = moment.tz(decodeURIComponent(urlParam('date')), "UTC");
             } else {
                 offset_time = start_time;
             }
-            if (speedup > 1 || offset_time != start_time) {
+            if (speedup > 1 || offset_time !== start_time) {
                 moment.now = function () {
                     return (+new Date() - start_time) * speedup + offset_time;
                 }
@@ -460,7 +485,7 @@
 
             // Now make other setup calls from agenda_timezone.js
             add_tooltips();
-            init_timers();
+            init_timers(speedup);
 
             // Finally, set up the agenda filter UI. This does not depend on the timezone.
             {% if personalize %}

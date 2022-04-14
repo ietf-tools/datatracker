@@ -15,7 +15,7 @@
     <table class="table table-sm table-borderless">
         <tbody class="meta border-top">
             <tr>
-                <th>
+                <th scope="row">
                     {% if doc.meeting_related %}Meeting{% endif %}
                     {{ doc.type.name }}
                 </th>
@@ -30,17 +30,17 @@
                 </td>
             </tr>
             <tr>
-                <th>Title</th>
+                <th scope="row">Title</th>
                 <td class="edit">
                     {% if not snapshot and can_manage_material %}
                         {% doc_edit_button 'ietf.doc.views_material.edit_material' name=doc.name action="title" %}
                     {% endif %}
                 </td>
-                <th>{{ doc.title }}</th>
+                <th scope="row">{{ doc.title }}</th>
             </tr>
             {% if doc.abstract or doc.type_id == 'slides' and can_manage_material and not snapshot %}
                 <tr>
-                    <th>Abstract</th>
+                    <th scope="row">Abstract</th>
                     <td class="edit">
                         {% if not snapshot and can_manage_material %}
                             {% doc_edit_button 'ietf.doc.views_material.edit_material' name=doc.name action="abstract" %}
@@ -50,7 +50,7 @@
                 </tr>
             {% endif %}
             <tr>
-                <th>State</th>
+                <th scope="row">State</th>
                 <td class="edit">
                     {% if not snapshot and can_manage_material %}
                         {% doc_edit_button 'ietf.doc.views_material.edit_material' name=doc.name action="state" %}
@@ -60,7 +60,7 @@
             </tr>
             {% if other_types %}
                 <tr>
-                    <th>Other versions</th>
+                    <th scope="row">Other versions</th>
                     <td class="edit"></td>
                     <td>
                         {% for t, url in other_types %}
@@ -71,7 +71,7 @@
             {% endif %}
             {% if doc.type_id == 'procmaterials' and doc.external_url|length > 0 %}
                 <tr>
-                    <th>External URL</th>
+                    <th scope="row">External URL</th>
                     <td class="edit"></td>
                     <td>
                         <a href="{{ doc.external_url }}">{{ doc.external_url }}</a>
@@ -81,7 +81,7 @@
             {% if doc.type_id != 'procmaterials' %}
                 {% if presentations or can_manage_material %}
                     <tr>
-                        <th>On agenda</th>
+                        <th scope="row">On agenda</th>
                         <td class="edit">
                             {% if not snapshot and can_manage_material %}
                                 {% doc_edit_button "ietf.doc.views_doc.all_presentations" name=doc.name %}
@@ -101,7 +101,7 @@
                 {% endif %}
             {% endif %}
             <tr>
-                <th>Last updated</th>
+                <th scope="row">Last updated</th>
                 <td class="edit"></td>
                 <td>{{ doc.time|date:"Y-m-d" }}</td>
             </tr>
@@ -115,7 +115,7 @@
             </a>
         {% endif %}
     </p>
-    <div id='materials-content' class="card mt-5">
+    <div id="materials-content" class="card mt-5">
         <div class="card-header">{{ doc.name }}-{{ doc.rev }}</div>
         <div class="card-body">
             {% if doc.rev and content != None %}

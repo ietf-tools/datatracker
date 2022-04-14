@@ -8,6 +8,7 @@
       action="{% url 'ietf.doc.views_search.search' %}">
     {% csrf_token %}
     <div class="input-group search_field">
+        <label for="id_name" aria-label="Document name/title/RFC number"></label>
         {{ form.name|add_class:"form-control"|attr:"placeholder:Document name/title/RFC number" }}
         <span class="input-group-btn">
             <button class="btn btn-primary" type="submit">
@@ -76,7 +77,7 @@
                                 <label for="author" class="form-check-label fw-bold">Author or Affiliation Name</label>
                             </div>
                         </div>
-                        <div class="col-sm-8">{{ form.author|add_class:"form-control" }}</div>
+                        <div class="col-sm-8"><label aria-label="Author">{{ form.author|add_class:"form-control" }}</label></div>
                     </div>
                     <div class="row mb-3 search_field">
                         <div class="col-sm-4">
@@ -90,7 +91,7 @@
                                 <label for="group" class="form-check-label fw-bold">WG</label>
                             </div>
                         </div>
-                        <div class="col-sm-8">{{ form.group|add_class:"form-control" }}</div>
+                        <div class="col-sm-8"><label aria-label="Group">{{ form.group|add_class:"form-control" }}</label></div>
                     </div>
                     <div class="row mb-3 search_field">
                         <div class="col-sm-4">
@@ -104,7 +105,7 @@
                                 <label for="area" class="form-check-label fw-bold">Area</label>
                             </div>
                         </div>
-                        <div class="col-sm-8">{{ form.area|add_class:"form-select" }}</div>
+                        <div class="col-sm-8"><label aria-label="Area">{{ form.area|add_class:"form-select" }}</label></div>
                     </div>
                     <div class="row mb-3 search_field">
                         <div class="col-sm-4">
@@ -118,7 +119,7 @@
                                 <label for="areadir" class="form-check-label fw-bold">AD</label>
                             </div>
                         </div>
-                        <div class="col-sm-8">{{ form.ad|add_class:"form-select" }}</div>
+                        <div class="col-sm-8"><label aria-label="AD">{{ form.ad|add_class:"form-select" }}</label></div>
                     </div>
                     <div class="row mb-3 search_field">
                         <div class="col-sm-4">
@@ -132,8 +133,8 @@
                                 <label for="state" class="form-check-label fw-bold">IESG State</label>
                             </div>
                         </div>
-                        <div class="col-sm-4">{{ form.state|add_class:"form-select col-sm-4" }}</div>
-                        <div class="col-sm-4">{{ form.substate|add_class:"form-select" }}</div>
+                        <div class="col-sm-4"><label aria-label="State">{{ form.state|add_class:"form-select col-sm-4" }}</label></div>
+                        <div class="col-sm-4"><label aria-label="Substate">{{ form.substate|add_class:"form-select" }}</label></div>
                     </div>
                     <div class="row mb-3 search_field">
                         <div class="col-sm-4">
@@ -147,7 +148,7 @@
                                 <label for="irtfstate" class="form-check-label fw-bold">IRTF State</label>
                             </div>
                         </div>
-                        <div class="col-sm-8">{{ form.irtfstate|add_class:"form-select" }}</div>
+                        <div class="col-sm-8"><label aria-label="IRTF State">{{ form.irtfstate|add_class:"form-select" }}</label></div>
                     </div>
                     <div class="row mb-3 search_field">
                         <div class="col-sm-4">
@@ -161,7 +162,7 @@
                                 <label for="stream" class="form-check-label fw-bold">Stream</label>
                             </div>
                         </div>
-                        <div class="col-sm-8">{{ form.stream|add_class:"form-select" }}</div>
+                        <div class="col-sm-8"><label aria-label="Stream">{{ form.stream|add_class:"form-select" }}</label></div>
                     </div>
                     <div class="row mb-3 search_field">
                         <div class="col-sm-4 d-grid">

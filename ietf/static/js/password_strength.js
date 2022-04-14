@@ -20,7 +20,7 @@
                 .closest("form");
             widget
                 .find(".hidden")
-                .addClass("visually-hidden")
+                .addClass("d-none")
                 .removeClass("hidden");
 
             widget
@@ -67,12 +67,12 @@
                             password_strength_bar.removeClass('bg-success')
                                 .addClass('bg-warning');
                             password_strength_info.find('.badge')
-                                .removeClass('visually-hidden');
+                                .removeClass('d-none');
                         } else {
                             password_strength_bar.removeClass('bg-warning')
                                 .addClass('bg-success');
                             password_strength_info.find('.badge')
-                                .addClass('visually-hidden');
+                                .addClass('d-none');
                         }
 
                         password_strength_bar.width(((result.score + 1) / 5) * 100 + '%')
@@ -80,17 +80,17 @@
                         // henrik@levkowetz.com -- this is the only changed line:
                         password_strength_info.find('.password_strength_time')
                             .html(result.crack_times_display.online_no_throttling_10_per_second);
-                        password_strength_info.removeClass('visually-hidden');
+                        password_strength_info.removeClass('d-none');
 
                         password_strength_offline_info.find('.password_strength_time')
                             .html(result.crack_times_display.offline_slow_hashing_1e4_per_second);
-                        password_strength_offline_info.removeClass('visually-hidden');
+                        password_strength_offline_info.removeClass('d-none');
                     } else {
                         password_strength_bar.removeClass('bg-success')
                             .addClass('bg-warning');
                         password_strength_bar.width('0%')
                             .attr('aria-valuenow', 0);
-                        password_strength_info.addClass('visually-hidden');
+                        password_strength_info.addClass('d-none');
                     }
                     self.match_passwords($(this));
                 });
@@ -157,18 +157,18 @@
                             $(confirm_field)
                                 .parent()
                                 .find('.password_strength_info')
-                                .addClass('visually-hidden');
+                                .addClass('d-none');
                         } else {
                             $(confirm_field)
                                 .parent()
                                 .find('.password_strength_info')
-                                .removeClass('visually-hidden');
+                                .removeClass('d-none');
                         }
                     } else {
                         $(confirm_field)
                             .parent()
                             .find('.password_strength_info')
-                            .addClass('visually-hidden');
+                            .addClass('d-none');
                     }
                 }
             });

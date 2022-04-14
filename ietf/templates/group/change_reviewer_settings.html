@@ -33,11 +33,11 @@
         <table class="table table-sm tablesorter">
             <thead>
                 <tr>
-                    <th data-sort="date">Period</th>
-                    <th data-sort="availability">Availability</th>
-                    <th data-sort="reason">Reason</th>
-                    <th></th>
-                    <th></th>
+                    <th scope="col" data-sort="date">Period</th>
+                    <th scope="col" data-sort="availability">Availability</th>
+                    <th scope="col" data-sort="reason">Reason</th>
+                    <th scope="col"></th>
+                    <th scope="col"></th>
                 </tr>
             </thead>
             {% for o in unavailable_periods %}
@@ -97,9 +97,9 @@
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th data-sort="date">Date</th>
-                    <th data-sort="by">By</th>
-                    <th data-sort="description">Description</th>
+                    <th scope="col" data-sort="date">Date</th>
+                    <th scope="col" data-sort="by">By</th>
+                    <th scope="col" data-sort="description">Description</th>
                 </tr>
             </thead>
             {% if reviewersettings.history.all %}
@@ -120,11 +120,11 @@
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th data-sort="date">Date</th>
-                    <th data-sort="by">
+                    <th scope="col" data-sort="date">Date</th>
+                    <th scope="col" data-sort="by">
                         By
                     </th>
-                    <th data-sort="description">
+                    <th scope="col" data-sort="description">
                         Description
                     </th>
                 </tr>
@@ -148,7 +148,7 @@
             {% endif %}
         </table>
     </div>
-    <p style="padding-top: 2em;">
+    <p class="mt-3">
         <a href="{{ back_url }}" class="btn btn-primary">
             Back
         </a>

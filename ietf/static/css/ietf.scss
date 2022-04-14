@@ -149,6 +149,35 @@ table tbody.meta {
     max-width: 300px;
 }
 
+// Style the photo cards
+.photo {
+    width: 12em;
+
+    .card-img-top {
+        object-fit: cover;
+        height: 15em;
+    }
+
+    .photo-placeholder {
+        height: 15em;
+
+        .bi {
+            font-size: 10em;
+            color: $gray-300;
+        }
+    }
+}
+
+// Style the righthand navigation panel
+#righthand-panel {
+    max-height: 80vh;
+}
+
+#righthand-nav {
+    height: 70vh;
+    width: inherit;
+}
+
 // Add some padding when there are multiple buttons in a line than can wrap
 .buttonlist .btn {
     margin-top: map.get($spacers, 2);
@@ -922,12 +951,8 @@ td.position-empty {
     padding-left: 0px !important;
 }
 
-.ongoing>td:first-child {
-    background-color: red !important;
-}
-
-.ongoing>td:last-child {
-    background-color: red !important;
+#agenda-table tbody tr.current-session {
+    border-top: map.get($border-widths, 2) solid map.get($theme-colors, "info");
 }
 
 .timetooltip {

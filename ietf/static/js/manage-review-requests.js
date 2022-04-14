@@ -13,22 +13,36 @@ $(function () {
 
   function setControlDisplay (row) {
     const action = row.find('[name$="-action"]').val()
+    const reviewerControls = row.find('.reviewer-controls')
+    const reviewerButtons = reviewerControls.find('button')
+    const closeControls = row.find('.close-controls')
+    const closeButtons = reviewerControls.find('button')
+    const actionElements = row.find('.assign-action,.close-action')
+    const actionButtons = actionElements.find('button')
+
     switch (action) {
       case 'assign':
-        row.find('.reviewer-controls').show()
-        row.find('.close-controls').hide()
-        row.find('.assign-action,.close-action').hide()
+        reviewerControls.show()
+        closeButtons.tooltip('hide')
+        closeControls.hide()
+        actionButtons.tooltip('hide')
+        actionElements.hide()
         break
 
       case 'close':
-        row.find('.reviewer-controls').hide()
-        row.find('.close-controls').show()
-        row.find('.assign-action,.close-action').hide()
+        reviewerButtons.tooltip('hide')
+        reviewerControls.hide()
+        closeControls.show()
+        actionButtons.tooltip('hide')
+        actionElements.hide()
         break
 
       default:
-        row.find('.reviewer-controls,.close-controls').hide()
-        row.find('.assign-action,.close-action').show()
+        closeButtons.tooltip('hide')
+        closeControls.hide()
+        reviewerButtons.tooltip('hide')
+        reviewerControls.hide()
+        actionElements.show()
     }
 
     updateSaveButtons()

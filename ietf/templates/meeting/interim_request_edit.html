@@ -19,7 +19,7 @@
         <div class="row mb-3">
             <div class="offset-md-2 col-md-10">
                 {% render_field form.approved class="form-check-input" %}
-                {% bootstrap_label "Preapproved by AD" label_for=form.approved.id %}
+                {% bootstrap_label "Preapproved by AD" label_for=form.approved.id_for_label %}
             </div>
         </div>
         {% bootstrap_field form.city layout='horizontal' %}
@@ -28,12 +28,12 @@
         {{ formset.management_form }}
         {% if formset.non_form_errors %}<div class="my-3 alert alert-danger">{{ formset.non_form_errors }}</div>{% endif %}
         {% for form in formset %}
-            <div class="fieldset{% if forloop.last %} template visually-hidden{% endif %}">
+            <div class="fieldset{% if forloop.last %} template d-none{% endif %}">
                 <hr class="my-4">
                 {% bootstrap_form form layout='horizontal' %}
                 <button name="id_session_set-{{ forloop.counter0 }}-delete-button"
                         type="button"
-                        class="btn btn-danger offset-md-2 visually-hidden btn-delete">
+                        class="btn btn-danger offset-md-2 d-none btn-delete">
                     Delete session
                 </button>
             </div>

@@ -46,9 +46,14 @@ import socket
 import datetime
 import gzip
 import unittest
-#import subprocess
+import pathlib
+import subprocess
+import tempfile
+import copy
 import factory.random
+
 from fnmatch import fnmatch
+from pathlib import Path
 
 from coverage.report import Reporter
 from coverage.results import Numbers
@@ -66,6 +71,9 @@ from django.template.loaders.filesystem import Loader as BaseLoader
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
 from django.urls import URLResolver # type: ignore
+from django.template.backends.django import DjangoTemplates
+from django.template.backends.django import Template  # type: ignore[attr-defined]
+# from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 debug.debug = True
@@ -154,6 +162,65 @@ class MyPyTest(TestCase):
         self.assertEqual([], err.splitlines())
         self.assertEqual([], out_lines)
         self.assertEqual(code, 0)
+
+
+class ValidatingTemplates(DjangoTemplates):
+    def __init__(self, params):
+        super().__init__(params)
+
+        if not settings.validate_html:
+            return
+        self.validation_cache = set()
+        self.cwd = str(pathlib.Path.cwd())
+
+    def get_template(self, template_name):
+        return ValidatingTemplate(self.engine.get_template(template_name), self)
+
+
+class ValidatingTemplate(Template):
+    def __init__(self, template, backend):
+        super().__init__(template, backend)
+
+    def render(self, context=None, request=None):
+        content = super().render(context, request)
+
+        if not settings.validate_html:
+            return content
+
+        if not self.origin.name.endswith("html"):
+            # not HTML, skip it
+            return content
+
+        if not self.origin.name.startswith(self.backend.cwd):
+            # only validate fragments in our source tree
+            return content
+
+        fingerprint = hash(content) + sys.maxsize + 1  # make hash positive
+        if fingerprint in self.backend.validation_cache:
+            # already validated this HTML fragment, skip it
+            # as an optimization, make page a bit smaller by not returning HTML for the menus
+            # FIXME: figure out why this still includes base/menu.html
+            return "" if "templates/base/menu" in self.origin.name else content
+
+        self.backend.validation_cache.add(fingerprint)
+        kind = (
+            "doc"
+            if re.search(r"^\s*<!doctype", content, flags=re.IGNORECASE)
+            else "frag"
+        )
+
+        # don't validate each template by itself, causes too much overhead
+        # instead, save a batch of them and then validate them all in one go
+        # this delays error detection a bit, but is MUCH faster
+        settings.validate_html.batches[kind].append(
+            (self.origin.name, content, fingerprint)
+        )
+        # FWIW, a batch size of 30 seems to result in less than 10% runtime overhead
+        if len(settings.validate_html.batches[kind]) >= 30:
+            settings.validate_html.validate(kind)
+
+        return content
+
 
 class TemplateCoverageLoader(BaseLoader):
     is_usable = True
@@ -520,14 +587,18 @@ class IetfTestRunner(DiscoverRunner):
         parser.add_argument('--show-logging',
             action='store_true', default=False,
             help='Show logging output going to LOG_USER in production mode')
+        parser.add_argument('--no-validate-html',
+            action='store_false', dest="validate_html", default=True,
+            help='Do not validate all generated HTML with html-validate.org')
 
-    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, **kwargs):
+    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, **kwargs):
         #
         self.check_coverage = not skip_coverage
         self.save_version_coverage = save_version_coverage
         self.html_report = html_report
         self.permit_mixed_migrations = permit_mixed_migrations
         self.show_logging = show_logging
+        settings.validate_html = self if validate_html else None
         settings.show_logging = show_logging
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
@@ -554,7 +625,8 @@ class IetfTestRunner(DiscoverRunner):
         print("     Datatracker %s test suite, %s:" % (ietf.__version__, time.strftime("%d %B %Y %H:%M:%S %Z")))
         print("     Python %s." % sys.version.replace('\n', ' '))
         print("     Django %s, settings '%s'" % (django.get_version(), settings.SETTINGS_MODULE))
-
+        
+        settings.TEMPLATES[0]['BACKEND'] = 'ietf.utils.test_runner.ValidatingTemplates'
         if self.check_coverage:
             if self.coverage_file.endswith('.gz'):
                 with gzip.open(self.coverage_file, "rb") as file:
@@ -630,25 +702,6 @@ class IetfTestRunner(DiscoverRunner):
             except socket.error:
                 pass
 
-        # try:
-        #     settings.VNU = subprocess.Popen(
-        #         [
-        #             "java",
-        #             "-jar",
-        #             "/vnu.jar",
-        #             "-Dnu.validator.servlet.bind-address=127.0.0.1",
-        #             "nu.validator.servlet.Main",
-        #             "8888",
-        #         ],
-        #         stdout=subprocess.DEVNULL,
-        #     )
-        #     print("     Starting Nu Html Checker (v.Nu) for HTML5 validation")
-        # except OSError:
-        #     print(
-        #         "     Could not start Nu Html Checker (v.Nu), skipping most HTML5 validation"
-        #     )
-        #     settings.VNU = None
-
         if os.path.exists(settings.UTILS_TEST_RANDOM_STATE_FILE):
             print("     Loading factory-boy random state from %s" % settings.UTILS_TEST_RANDOM_STATE_FILE)
         else:
@@ -661,12 +714,64 @@ class IetfTestRunner(DiscoverRunner):
             s[1] = tuple(s[1])      # random.setstate() won't accept a list in lieu of a tuple
         factory.random.set_random_state(s)
 
+        if not settings.validate_html:
+            print("     Not validating any generated HTML; "
+                  "please do so at least once before committing changes")
+        else:
+            print("     Validating all HTML generated during the tests")
+            self.batches = {"doc": [], "frag": []}
+
+            # keep the html-validate configs here, so they can be kept in sync easily
+            config = {}
+            config["frag"] = {
+                "extends": ["html-validate:recommended"],
+                "rules": {
+                    # many trailing whitespaces inserted by Django, ignore:
+                    "no-trailing-whitespace": "off",
+                    # navbar dropdowns can't use buttons, ignore:
+                    "prefer-native-element": [
+                        "error",
+                        {"exclude": ["button"]},
+                    ],
+                    # title length mostly only matters for SEO, ignore:
+                    "long-title": "off",
+                    # the current (older) version of Django seems to add type="text/javascript" for form media, ignore:
+                    "script-type": "off",
+                    # django-bootstrap5 seems to still generate 'checked="checked"', ignore:
+                    "attribute-boolean-style": "off",
+                },
+            }
+
+            config["doc"] = copy.deepcopy(config["frag"])
+            # enable doc-level rules
+            config["doc"]["extends"].append("html-validate:document")
+            # FIXME: we should find a way to use SRI, but ignore for now:
+            config["doc"]["rules"]["require-sri"] = "off"
+            # permit discontinuous heading numbering in cards, modals and dialogs:
+            config["doc"]["rules"]["heading-level"] = [
+                "error",
+                {
+                    "sectioningRoots": [
+                        ".card-body",
+                        ".modal-content",
+                        '[role="dialog"]',
+                    ]
+                },
+            ]
+
+            self.config_file = {}
+            for kind in self.batches:
+                self.config_file[kind] = tempfile.NamedTemporaryFile(
+                    prefix="html-validate-config-"
+                )
+                self.config_file[kind].write(json.dumps(config[kind]).encode())
+                self.config_file[kind].flush()
+                Path(self.config_file[kind].name).chmod(0o644)
+
         super(IetfTestRunner, self).setup_test_environment(**kwargs)
 
     def teardown_test_environment(self, **kwargs):
         self.smtpd_driver.stop()
-        # if settings.VNU:
-        #     settings.VNU.terminate()
         if self.check_coverage:
             latest_coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_LATEST_FILE)
             coverage_latest = {}
@@ -685,6 +790,70 @@ class IetfTestRunner(DiscoverRunner):
                     with open(self.coverage_file, "w") as file:
                         json.dump(self.coverage_master, file, indent=2, sort_keys=True)
         super(IetfTestRunner, self).teardown_test_environment(**kwargs)
+
+        if settings.validate_html:
+            for kind in self.batches:
+                self.validate(kind)
+                self.config_file[kind].close()
+
+    def validate(self, kind):
+        if not self.batches[kind]:
+            return
+
+        testcase = TestCase()
+        cwd = pathlib.Path.cwd()
+        tmpdir = tempfile.TemporaryDirectory(prefix="html-validate-")
+        Path(tmpdir.name).chmod(0o655)
+        for (name, content, fingerprint) in self.batches[kind]:
+            path = pathlib.Path(tmpdir.name).joinpath(
+                hex(fingerprint)[2:],
+                pathlib.Path(name).relative_to(cwd)
+            )
+            pathlib.Path(path.parent).mkdir(parents=True, exist_ok=True)
+            with path.open(mode="w") as file:
+                file.write(content)
+        self.batches[kind] = []
+
+        validation_results = None
+        with tempfile.NamedTemporaryFile() as stdout:
+            subprocess.run(
+                [
+                    "npx",
+                    "html-validate",
+                    "--formatter=json",
+                    "--config=" + self.config_file[kind].name,
+                    tmpdir.name,
+                ],
+                stdout=stdout,
+                stderr=stdout,
+            )
+
+            stdout.seek(0)
+            try:
+                validation_results = json.load(stdout)
+            except json.decoder.JSONDecodeError:
+                stdout.seek(0)
+                testcase.fail(stdout.read())
+
+        errors = ""
+        for result in validation_results:
+            source_lines = result["source"].splitlines(keepends=True)
+            for msg in result["messages"]:
+                line = msg["line"]
+                errors += (
+                    f'\n{result["filePath"]}:\n'
+                    + "".join(source_lines[line - 5 : line])
+                    + "-" * (msg["column"] - 1)
+                    + "^" * msg["size"]
+                    + f' {msg["ruleId"]}: {msg["message"]} '
+                    + f'on line {line}:{msg["column"]}\n'
+                    + "".join(source_lines[line : line + 5])
+                    + "\n"
+                )
+
+        if errors:
+            testcase.fail(errors)
+        tmpdir.cleanup()
 
     def get_test_paths(self, test_labels):
         """Find the apps and paths matching the test labels, so we later can limit

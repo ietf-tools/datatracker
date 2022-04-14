@@ -29,7 +29,7 @@
             {% endfor %}
         </div>
     {% endif %}
-    {% include 'meeting/tz-display.html' with id_suffix="" timezone="local" %}
+    {% include 'meeting/tz-display.html' with meeting_timezone=None only %}
     {% include 'meeting/agenda_filter.html' with filter_categories=filter_categories customize_button_text="Customize the meeting list..." only %}
     {% cache 600 upcoming-meetings entries.count %}
     {% if entries %}
@@ -37,10 +37,10 @@
                class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th data-sort="date">Date</th>
-                    <th data-sort="group">Group</th>
-                    <th data-sort="meeting">Meeting</th>
-                    <th></th>
+                    <th scope="col" data-sort="date">Date</th>
+                    <th scope="col" data-sort="group">Group</th>
+                    <th scope="col" data-sort="meeting">Meeting</th>
+                    <th scope="col"></th>
                 </tr>
             </thead>
             <tbody>
@@ -81,11 +81,11 @@
                                     </a>
                                 </td>
                                 {% if session.current_status == 'canceled' %}
-                                    <td class='text-end'>
+                                    <td class="text-end">
                                         <span class="badge bg-warning">Cancelled</span>
                                     </td>
                                 {% else %}
-                                    <td class='text-end'>{% include "meeting/interim_session_buttons.html" with show_agenda=True %}</td>
+                                    <td class="text-end">{% include "meeting/interim_session_buttons.html" with show_agenda=True %}</td>
                                 {% endif %}
                             {% endwith %}
                         {% else %}
@@ -104,7 +104,7 @@
         <h3 class="my-3">No upcoming meetings</h3>
     {% endif %}
 {% endcache %}
-{% include 'meeting/tz-display.html' with id_suffix="-bottom" timezone="local" %}
+{% include 'meeting/tz-display.html' with id_suffix="-bottom" meeting_timezone=None only %}
 <div id="calendar">
 </div>
 {% endblock %}
@@ -142,8 +142,7 @@
                   {% endif %}
                 {% endfor %}];
 
-        $(document)
-            .ready(function () {
+        $(function () {
                 // Init with best guess at local timezone.
                 ietf_timezone.set_tz_change_callback(timezone_changed);
                 ietf_timezone.initialize('local');

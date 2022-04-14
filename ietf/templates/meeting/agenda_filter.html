@@ -7,7 +7,7 @@ Optional parameters:
   customize_button_text - text to show on the "Customize" button (defaults to "Customize...")
 {% endcomment %}
 {% load agenda_filter_tags %}
-<div class="accordion" id="accordion">
+<div class="accordion mb-3" id="accordion">
     <div class="accordion-item">
         <h2 class="accordion-header" id="heading">
             <button class="accordion-button {% if not always_show %}collapsed{% endif %}"
@@ -60,16 +60,14 @@ Optional parameters:
                                              aria-label="{% firstof area.label area.keyword %}">
                                             {% for group in area.children %}
                                                 <button type="button"
-                                                        class="agenda-filter-groupselectbtn overflow-hidden btn btn-outline-secondary pickview {{ group.keyword }}"
+                                                        class="agenda-filter-groupselectbtn overflow-hidden btn btn-sm btn-outline-secondary pickview {{ group.keyword }}"
                                                         {% if group.toggled_by %}data-filter-keywords="{{ group.toggled_by|join:"," }}"{% endif %}
                                                         data-filter-item="{{ group.keyword }}">
-                                                    <small>
-                                                        {% if group.is_bof %}
-                                                            <i>{{ group.label|truncatewords:"3" }}</i>
-                                                        {% else %}
-                                                            {{ group.label|truncatewords:"3" }}
-                                                        {% endif %}
-                                                    </small>
+                                                    {% if group.is_bof %}
+                                                        <i>{{ group.label|truncatewords:"3"|default:"Plenary" }}</i>
+                                                    {% else %}
+                                                        {{ group.label|truncatewords:"3"|default:"Plenary" }}
+                                                    {% endif %}
                                                 </button>
                                             {% endfor %}
                                         </div>

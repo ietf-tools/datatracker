@@ -1,4 +1,5 @@
-{% load person_filters %}
+{% load person_filters editor_tags %}
+<!-- [html-validate-disable-block no-inline-style -- FIXME: should style this better] -->
 <div id="session{{ session.pk }}"
      class="session {% if not session.group.parent.scheduling_color %}untoggleable-by-parent{% endif %} {% if session.parent_acronym %}parent-{{ session.parent_acronym }}{% endif %} purpose-{{ session.purpose.slug }} {% if session.readonly %}readonly{% endif %} {% if not session.on_agenda %}off-agenda{% endif %}"
      style="width:{{ session.layout_width }}em;"
@@ -13,10 +14,10 @@
         <span class="requested-duration">{{ session.requested_duration_in_hours|floatformat }}h</span>
         {% if session.attendees != None %}<span class="attendees">&middot; {{ session.attendees }}</span>{% endif %}
         {% if session.comments %}<span class="comments"><i class="bi bi-chat"></i></span>{% endif %}
-        {% if session.constrained_sessions %}
+        {% if session.constraint_hints %}
             <span class="constraints">
-                {% for label, sessions in session.constrained_sessions %}
-                    <span data-sessions="{{ sessions|join:"," }}">{{ label }}</span>
+                {% for hint, sessions in session.constraint_hints %}
+                    <span data-sessions="{{ sessions|join:"," }}">{% constraint_icon_for hint.constraint_name hint.count %}</span>
                 {% endfor %}
             </span>
         {% endif %}
@@ -65,7 +66,7 @@
             <div class="formatted-constraints">
                 {% for constraint_name, values in session.formatted_constraints.items %}
                     <div>
-                        <span title="{{ constraint_name.name }}">{{ constraint_name.countless_formatted_editor_label }}</span>: {{ values|join:", " }}
+                        <span title="{{ constraint_name.name }}">{% constraint_icon_for constraint_name %}</span>: {{ values|join:", " }}
                     </div>
                 {% endfor %}
             </div>

@@ -16,8 +16,8 @@
     <table class="table table-sm table-borderless">
         <tbody class="meta border-top">
             <tr>
-                <th>Document</th>
-                <th>Type</th>
+                <th scope="row">Document</th>
+                <th scope="row">Type</th>
                 <td class="edit"></td>
                 <td>
                     {{ doc.get_state.slug|capfirst }} BOF request
@@ -26,7 +26,7 @@
             </tr>
             <tr>
                 <td></td>
-                <th>Title</th>
+                <th scope="row">Title</th>
                 <td class="edit">
                     {% if not snapshot %}
                         {% if editor_can_manage or can_manage %}
@@ -34,17 +34,17 @@
                         {% endif %}
                     {% endif %}
                 </td>
-                <th>{{ doc.title }}</th>
+                <th scope="row">{{ doc.title }}</th>
             </tr>
             <tr>
                 <td></td>
-                <th>Last updated</th>
+                <th scope="row">Last updated</th>
                 <td class="edit"></td>
                 <td>{{ doc.time|date:"Y-m-d" }}</td>
             </tr>
             <tr>
                 <td></td>
-                <th>
+                <th scope="row">
                     <a href="{% url 'ietf.doc.views_help.state_help' type='bofreq' %}">State</a>
                 </th>
                 <td class="edit">
@@ -62,7 +62,7 @@
             </tr>
             <tr id="editors">
                 <td></td>
-                <th>Editor{{ editors|pluralize }}</th>
+                <th scope="row">Editor{{ editors|pluralize }}</th>
                 <td class="edit">
                     {% if not snapshot %}
                         {% if editor_can_manage or can_manage %}
@@ -78,7 +78,7 @@
             </tr>
             <tr id="responsible">
                 <td></td>
-                <th>Responsible leadership</th>
+                <th scope="row">Responsible leadership</th>
                 <td class="edit">
                     {% if not snapshot %}
                         {% if can_manage %}
@@ -96,7 +96,7 @@
                 {% if resources or editor_can_manage or can_manage %}
                     <tr>
                         <td></td>
-                        <th>Additional resources</th>
+                        <th scope="row">Additional resources</th>
                         <td class="edit">
                             {% if editor_can_manage or can_manage %}
                                 <a class="btn btn-primary btn-sm"
@@ -124,7 +124,7 @@
             {% endwith %}
             <tr>
                 <td></td>
-                <th>
+                <th scope="row">
                     Send notices to
                 </th>
                 <td class="edit">

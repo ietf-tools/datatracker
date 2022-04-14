@@ -103,19 +103,18 @@
             {% endif %}
         {% endfor %}
     </dl>
+    {% if can_approve and status_slug == 'apprw' %}
     <form method="post">
         {% csrf_token %}
+    {% endif %}
         {%  with meeting_status.slug as status_slug %}
             {% if can_edit %}
                 <a class="btn btn-primary"
                    href="{% url 'ietf.meeting.views.interim_request_edit' number=meeting.number %}">Edit</a>
             {% endif %}
             {% if can_approve and status_slug == 'apprw' %}
-                <input class="btn btn-primary" type="submit" value="Approve" name='approve'>
-                <input class="btn btn-primary"
-                       type="submit"
-                       value="Disapprove"
-                       name='disapprove'>
+                <button class="btn btn-primary" type="submit" name="approve">Approve</button>
+                <button class="btn btn-primary" type="submit" name="disapprove">Disapprove</button>
             {% endif %}
             {% if user|has_role:"Secretariat" and status_slug == 'scheda' %}
                 <a class="btn btn-primary"
@@ -151,7 +150,7 @@
                    href="{% url 'ietf.meeting.views.upcoming' %}">Back</a>
             {% endif %}
         {% endwith %}
-    </form>
+    {% if can_approve and status_slug == 'apprw' %}</form>{% endif %}
 {% endblock %}
 {% block js %}
     <script src="{% static 'ietf/js/select2.js' %}"></script>

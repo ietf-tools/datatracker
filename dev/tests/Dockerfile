@@ -15,7 +15,7 @@ RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/d
     $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 # Install the packages we need
-RUN apt-get update
+RUN apt-get update --fix-missing
 RUN apt-get install -qy \
 	apache2-utils \
 	apt-file \
@@ -24,7 +24,6 @@ RUN apt-get install -qy \
 	build-essential \
 	curl \
     docker-ce-cli \
-    default-jdk \
 	enscript \
 	gawk \
 	gcc \
@@ -46,7 +45,6 @@ RUN apt-get install -qy \
     libxtst6 \
 	libmagic-dev \
 	libmariadb-dev \
-	libtidy-dev \
 	locales \
 	mariadb-client \
     netcat \
@@ -108,9 +106,6 @@ RUN pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requ
 
 # Turn off rsyslog kernel logging (doesn't work in Docker)
 RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
-
-# Install the Nu Html Checker (v.Nu)
-ADD https://github.com/validator/validator/releases/download/latest/vnu.jar /
 
 # Fetch wait-for utility
 ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/

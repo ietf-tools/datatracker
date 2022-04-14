@@ -8,20 +8,20 @@
         {{ sql_queries|length }} queries ({{ sql_queries|timesum }}s)
         {% if sql_queries|length != 0 %}
             <a class="btn btn-primary btn-sm"
-               onclick="$('#debug-query-table').toggleClass('visually-hidden');">Show</a>
+               onclick="$('#debug-query-table').toggleClass('d-none');">Show</a>
         {% endif %}
-        <div id="debug-query-table" class="visually-hidden">
+        <div id="debug-query-table" class="d-none">
             <div class="text-start">
                 <table class="table table-sm tablesorter">
                     <thead>
                         <tr>
-                            <th data-sort="num">#</th>
-                            <th data-sort="query">SQL</th>
-                            <th data-sort="num">Count</th>
-                            <th data-sort="where">WHERE</th>
-                            <th data-sort="num">View/Templ.</th>
-                            <th data-sort="num">Time</th>
-                            <th data-sort="num">Acc.</th>
+                            <th scope="col" data-sort="num">#</th>
+                            <th scope="col" data-sort="query">SQL</th>
+                            <th scope="col" data-sort="num">Count</th>
+                            <th scope="col" data-sort="where">WHERE</th>
+                            <th scope="col" data-sort="num">View/Templ.</th>
+                            <th scope="col" data-sort="num">Time</th>
+                            <th scope="col" data-sort="num">Acc.</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -61,9 +61,9 @@
                                                             <table class="table table-sm">
                                                                 <thead>
                                                                     <tr>
-                                                                        <th>File (line)</th>
-                                                                        <th>Method</th>
-                                                                        <th>Code</th>
+                                                                        <th scope="col">File (line)</th>
+                                                                        <th scope="col">Method</th>
+                                                                        <th scope="col">Code</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -103,7 +103,7 @@
             </div>
         </div>
     {% else %}
-        <small class='text-center text-muted'>
+        <small class="text-center text-muted">
             Add <code>ietf.context_processors.sql_debug</code> to <code>settings.DEV_TEMPLATE_CONTEXT_PROCESSORS</code> to turn on the SQL statement table.
         </small>
     {% endif %}

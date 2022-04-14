@@ -126,7 +126,7 @@ jobs:
         echo "Running checks..."
         ./ietf/manage.py check
         echo "Running tests..."
-        ./ietf/manage.py test --settings=settings_sqlitetest --failfast
+        ./ietf/manage.py test --settings=settings_sqlitetest
         coverage xml
 
     - name: Upload Coverage Results to Codecov
