@@ -38,7 +38,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@parcel/transformer-sass", "npm:2.4.1"],\
             ["@popperjs/core", "npm:2.10.2"],\
             ["bootstrap", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.1.3"],\
-            ["bootstrap-datepicker", "https://github.com/uxsolutions/bootstrap-datepicker.git#commit=80575b80111659e0a2099bdf594364e23f80a686"],\
             ["bootstrap-icons", "npm:1.7.0"],\
             ["browserlist", "npm:1.0.1"],\
             ["caniuse-lite", "npm:1.0.30001314"],\
@@ -1631,16 +1630,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packagePeers": [\
             "@popperjs/core",\
             "@types/popperjs__core"\
-          ],\
-          "linkType": "HARD"\
-        }]\
-      ]],\
-      ["bootstrap-datepicker", [\
-        ["https://github.com/uxsolutions/bootstrap-datepicker.git#commit=80575b80111659e0a2099bdf594364e23f80a686", {\
-          "packageLocation": "./.yarn/cache/bootstrap-datepicker-https-38c09f1e08-7e1323e466.zip/node_modules/bootstrap-datepicker/",\
-          "packageDependencies": [\
-            ["bootstrap-datepicker", "https://github.com/uxsolutions/bootstrap-datepicker.git#commit=80575b80111659e0a2099bdf594364e23f80a686"],\
-            ["jquery", "npm:3.6.0"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -4762,7 +4751,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@parcel/transformer-sass", "npm:2.4.1"],\
             ["@popperjs/core", "npm:2.10.2"],\
             ["bootstrap", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.1.3"],\
-            ["bootstrap-datepicker", "https://github.com/uxsolutions/bootstrap-datepicker.git#commit=80575b80111659e0a2099bdf594364e23f80a686"],\
             ["bootstrap-icons", "npm:1.7.0"],\
             ["browserlist", "npm:1.0.1"],\
             ["caniuse-lite", "npm:1.0.30001314"],\

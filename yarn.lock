@@ -1317,15 +1317,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bootstrap-datepicker@github:uxsolutions/bootstrap-datepicker":
-  version: 1.9.0
-  resolution: "bootstrap-datepicker@https://github.com/uxsolutions/bootstrap-datepicker.git#commit=80575b80111659e0a2099bdf594364e23f80a686"
-  dependencies:
-    jquery: ">=3.4.0 <4.0.0"
-  checksum: 7e1323e4662183a4ce70cd30dc07185d51530bb36e9874b76b11cd9f5ed5ca288dfdb0056708bde736c77acf99802bfd1db2b59e9558eb620c2df423d9c1755b
-  languageName: node
-  linkType: hard
-
 "bootstrap-icons@npm:1.7.0":
   version: 1.7.0
   resolution: "bootstrap-icons@npm:1.7.0"
@@ -2934,7 +2925,7 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"jquery@npm:3.6.0, jquery@npm:>=1.8.0 <4.0.0, jquery@npm:>=3.4.0 <4.0.0":
+"jquery@npm:3.6.0, jquery@npm:>=1.8.0 <4.0.0":
   version: 3.6.0
   resolution: "jquery@npm:3.6.0"
   checksum: 8fd5fef4aa48fd374ec716dd1c1df1af407814a228e15c1260ca140de3a697c2a77c30c54ff1d238b6a3ab4ddc445ddeef9adce6c6d28e4869d85eb9d3951c0e
@@ -4003,7 +3994,6 @@ browserlist@latest:
     "@parcel/transformer-sass": 2.4.1
     "@popperjs/core": 2.10.2
     bootstrap: 5.1.3
-    bootstrap-datepicker: "github:uxsolutions/bootstrap-datepicker"
     bootstrap-icons: 1.7.0
     browserlist: latest
     caniuse-lite: 1.0.30001314
