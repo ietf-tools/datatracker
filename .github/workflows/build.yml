@@ -41,6 +41,11 @@ jobs:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
+        
+    - name: Dry Run Notify
+      if: ${{ github.event.inputs.dryrun == 'true' }}
+      run: |
+        echo "::notice::This is a DRY RUN of a production release. No release will be created."
 
     - name: Get Next Version
       if: ${{ github.event.inputs.publish == 'true' || github.event.inputs.dryrun == 'true' }}
