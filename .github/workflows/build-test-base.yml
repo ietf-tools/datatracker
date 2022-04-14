@@ -3,8 +3,7 @@ name: Build Base Test Docker Image
 on:
   push:
     branches:
-      # TEMPORARY: Replace with main once bs5 is merged
-      - 'feat/bs5'
+      - 'main'
     paths:
       - 'package.json'
       - 'requirements.txt'
