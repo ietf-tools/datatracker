@@ -17,5 +17,5 @@ class ReleasePagesTest(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         text = q('#content').text()
-        for word in ["About", "2.00", "3.00", "4.00", "5.0.0"]:
+        for word in ["About", "2.00", "3.00", "4.00", "5.0.0", "6.0.0", "7.0.0", "8.0.0"]:
             self.assertIn(word, text)
