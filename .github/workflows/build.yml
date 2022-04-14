@@ -206,7 +206,7 @@ jobs:
     - name: Update CHANGELOG
       id: changelog
       uses: Requarks/changelog-action@v1
-      if: env.SHOULD_DEPLOY == 'true'
+      if: ${{ env.SHOULD_DEPLOY == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         token: ${{ github.token }}
         tag: ${{ env.PKG_VERSION }}
