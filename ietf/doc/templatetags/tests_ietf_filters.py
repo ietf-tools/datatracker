@@ -40,6 +40,10 @@ class IetfFiltersTests(TestCase):
                 "New version available: <b>charter-ietf-6man-03-07.txt</b>",
                 'New version available: <b><a href="/doc/charter-ietf-6man/03-07/">charter-ietf-6man-03-07.txt</a></b>'
             ),
+            (
+                "repository https://github.com/tlswg/draft-ietf-tls-ticketrequest",
+                'repository https://github.com/tlswg/draft-ietf-tls-ticketrequest'
+            )
         ]
 
         for input, output in cases:

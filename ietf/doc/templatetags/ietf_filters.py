@@ -215,7 +215,7 @@ def urlize_ietf_docs(string, autoescape=None):
             flags=re.IGNORECASE | re.ASCII,
         )
     string = re.sub(
-        r"\b(((?:draft-|bofreq-|conflict-review-|status-change-)(?:[\d\w+]+-)*)([\d\w]+)(\.txt)?)\b",
+        r"\b(?<![/-])(((?:draft-|bofreq-|conflict-review-|status-change-)(?:[\d\w+]+-)*)([\d\w]+)(\.txt)?)\b",
         lambda x: link_non_charter_doc_match(x),
         string,
         flags=re.IGNORECASE | re.ASCII,
