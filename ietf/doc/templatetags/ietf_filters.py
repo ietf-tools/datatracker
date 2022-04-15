@@ -185,6 +185,12 @@ def rfceditor_info_url(rfcnum : str):
     """Link to the RFC editor info page for an RFC"""
     return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f'rfc{rfcnum}')
 
+def link_non_charter_doc_match(match):
+    if len(match[3])==2 and match[3].isdigit():
+        return f'<a href="/doc/{match[2][:-1]}/{match[3]}/">{match[0]}</a>'
+    else:
+        return f'<a href="/doc/{match[2]}{match[3]}/">{match[0]}</a>'
+
 @register.filter(name='urlize_ietf_docs', is_safe=True, needs_autoescape=True)
 def urlize_ietf_docs(string, autoescape=None):
     """
@@ -192,8 +198,31 @@ def urlize_ietf_docs(string, autoescape=None):
     """
     if autoescape and not isinstance(string, SafeData):
         string = escape(string)
+    exp1 = r"\b(charter-(?:[\d\w+]+-)*)(\d\d-\d\d)(\.txt)?\b"
+    exp2 = r"\b(charter-(?:[\d\w+]+-)*)(\d\d)(\.txt)?\b"
+    if re.search(exp1, string):
+        string = re.sub(
+            exp1,
+            lambda x: f'<a href="/doc/{x[1][:-1]}/{x[2]}/">{x[0]}</a>',
+            string,
+            flags=re.IGNORECASE | re.ASCII,
+        )
+    elif re.search(exp2, string): 
+        string = re.sub(
+            exp2,
+            lambda x: f'<a href="/doc/{x[1][:-1]}/{x[2]}/">{x[0]}</a>',
+            string,
+            flags=re.IGNORECASE | re.ASCII,
+        )
     string = re.sub(
-        r"\b((RFC|BCP|STD|FYI|(?:draft-|bofreq-|conflict-review-|status-change-|charter-)[-\d\w.+]+)\s*0*(\d+))\b",
+        r"\b(((?:draft-|bofreq-|conflict-review-|status-change-)(?:[\d\w+]+-)*)([\d\w]+)(\.txt)?)\b",
+        lambda x: link_non_charter_doc_match(x),
+        string,
+        flags=re.IGNORECASE | re.ASCII,
+    )
+    string = re.sub(
+        # r"\b((RFC|BCP|STD|FYI|(?:draft-|bofreq-|conflict-review-|status-change-|charter-)[-\d\w.+]+)\s*0*(\d+))\b",
+        r"\b(?<!-)((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
         lambda x: f'<a href="/doc/{x[2].strip().lower()}{x[3]}/">{x[1]}</a>',
         string,
         flags=re.IGNORECASE | re.ASCII,
