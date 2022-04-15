@@ -198,8 +198,8 @@ def urlize_ietf_docs(string, autoescape=None):
     """
     if autoescape and not isinstance(string, SafeData):
         string = escape(string)
-    exp1 = r"\b(charter-(?:[\d\w+]+-)*)(\d\d-\d\d)(\.txt)?\b"
-    exp2 = r"\b(charter-(?:[\d\w+]+-)*)(\d\d)(\.txt)?\b"
+    exp1 = r"\b(charter-(?:[\d\w\.+]+-)*)(\d\d-\d\d)(\.txt)?\b"
+    exp2 = r"\b(charter-(?:[\d\w\.+]+-)*)(\d\d)(\.txt)?\b"
     if re.search(exp1, string):
         string = re.sub(
             exp1,
@@ -215,7 +215,7 @@ def urlize_ietf_docs(string, autoescape=None):
             flags=re.IGNORECASE | re.ASCII,
         )
     string = re.sub(
-        r"\b(?<![/-])(((?:draft-|bofreq-|conflict-review-|status-change-)(?:[\d\w+]+-)*)([\d\w]+)(\.txt)?)\b",
+        r"\b(?<![/-])(((?:draft-|bofreq-|conflict-review-|status-change-)(?:[\d\w\.+]+-)*)([\d\w\.+]+?)(\.txt)?)\b",
         lambda x: link_non_charter_doc_match(x),
         string,
         flags=re.IGNORECASE | re.ASCII,

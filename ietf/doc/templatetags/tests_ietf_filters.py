@@ -43,8 +43,25 @@ class IetfFiltersTests(TestCase):
             (
                 "repository https://github.com/tlswg/draft-ietf-tls-ticketrequest",
                 'repository https://github.com/tlswg/draft-ietf-tls-ticketrequest'
+            ),
+            (
+                "draft-madanapalli-nd-over-802.16-problems",
+                '<a href="/doc/draft-madanapalli-nd-over-802.16-problems/">draft-madanapalli-nd-over-802.16-problems</a>' 
+            ),
+            (
+                 "draft-madanapalli-nd-over-802.16-problems-02.txt",
+                '<a href="/doc/draft-madanapalli-nd-over-802.16-problems/02/">draft-madanapalli-nd-over-802.16-problems-02.txt</a>'                
             )
         ]
+        
+        # Some edge cases scraped from existing old draft names
+        for name in [
+            # "draft-odell-8+8", # This fails since + matches the right side of \b
+            # "draft-durand-gse+", # same failure
+            "draft-kim-xcast+-few-2-few",
+            #"draft-ietf-pem-ansix9.17",  # Fails because of not being greedy with . before txt
+        ]:
+            cases.append((name,f'<a href="/doc/{name}/">{name}</a>'))
 
         for input, output in cases:
             #debug.show("(urlize_ietf_docs(input),output)")
