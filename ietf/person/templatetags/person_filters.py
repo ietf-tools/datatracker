@@ -37,10 +37,19 @@ def person_by_name(name):
 
 @register.inclusion_tag("person/person_link.html")
 def person_link(person, **kwargs):
+    """Render a link to a Person
+
+    If person is None or a string, renders as a span containing '(None)'.
+    """
+    if isinstance(person, str):
+        # If person is a string, most likely an invalid template variable was referenced.
+        # That normally comes in as an empty string, but may be non-empty if string_if_invalid
+        # is set. Translate strings into None to try to get consistent behavior.
+        person = None
     title = kwargs.get("title", "")
     cls = kwargs.get("class", "")
     with_email = kwargs.get("with_email", True)
-    if person:
+    if person is not None:
         plain_name = person.plain_name()
         name = (
             person.name
