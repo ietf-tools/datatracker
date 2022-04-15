@@ -19,7 +19,8 @@ General Instructions for Deployment of a New Release
  2. Fetch the release tarball from github 
     (see https://github.com/ietf-tools/datatracker/releases)::
 
-      wget https://github.com/ietf-tools/datatracker/archive/refs/tags/${releasenumber}.tar.gz  
+      wget https://github.com/ietf-tools/datatracker/archive/refs/tags/${releasenumber}.tar.gz
+      tar xzvf ${releasenumber}.tar.gz
   
  3. Copy ietf/settings_local.py from previous release::
 
