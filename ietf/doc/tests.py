@@ -797,6 +797,51 @@ Man                    Expires September 22, 2015               [Page 3]
             msg_prefix='WG-like group %s (%s) should include group type in link' % (group.acronym, group.type),
         )
 
+    def test_draft_status_changes(self):
+        draft = WgRfcFactory()
+        status_change_doc = StatusChangeFactory(
+            group=draft.group,
+            changes_status_of=[('tops', draft.docalias.first())],
+        )
+        status_change_url = urlreverse(
+            'ietf.doc.views_doc.document_main',
+            kwargs={'name': status_change_doc.name},
+        )
+        proposed_status_change_doc = StatusChangeFactory(
+            group=draft.group,
+            changes_status_of=[('tobcp', draft.docalias.first())],
+            states=[State.objects.get(slug='needshep', type='statchg')],
+        )
+        proposed_status_change_url = urlreverse(
+            'ietf.doc.views_doc.document_main',
+            kwargs={'name': proposed_status_change_doc.name},
+        )
+
+        r = self.client.get(
+            urlreverse(
+                'ietf.doc.views_doc.document_main',
+                kwargs={'name': draft.canonical_name()},
+            )
+        )
+        self.assertEqual(r.status_code, 200)
+        response_content = r.content.decode()
+        self.assertInHTML(
+            'Status changed by <a href="{url}" title="{title}">{name}</a>'.format(
+                name=status_change_doc.name,
+                title=status_change_doc.title,
+                url=status_change_url,
+            ),
+            response_content,
+        )
+        self.assertInHTML(
+            'Proposed status changed by <a href="{url}" title="{title}">{name}</a>'.format(
+                name=proposed_status_change_doc.name,
+                title=proposed_status_change_doc.title,
+                url=proposed_status_change_url,
+            ),
+            response_content,
+        )
+
     def assert_correct_non_wg_group_link(self, r, group):
         """Assert correct format for non-WG-like group types"""
         self.assertContains(
