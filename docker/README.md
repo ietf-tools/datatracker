@@ -165,6 +165,14 @@ docker-compose port db 3306
 
 ## Notes / Troubleshooting
 
+### Slow zsh prompt inside Docker
+
+On Windows, the zsh prompt can become incredibly slow because of the git status check displayed as part of the prompt. To remove this delay, run the command:
+
+```sh
+git config oh-my-zsh.hide-info 1
+```
+
 ### Windows .ics files incorrectly linked
 
 When checking out the project on Windows, the `.ics` files are not correctly linked and will cause many tests to fail. To fix this issue, run the **Fix Windows Timezone File Linking** task in VS Code or run manually the script `docker/scripts/app-win32-timezone-fix.sh`
