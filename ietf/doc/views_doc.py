@@ -348,9 +348,17 @@ def document_main(request, name, rev=None):
         # conflict reviews
         conflict_reviews = [r.source.name for r in interesting_relations_that.filter(relationship="conflrev")]
 
-        status_change_docs = interesting_relations_that.filter(relationship__in=STATUSCHANGE_RELATIONS)
-        status_changes = [ r.source for r in status_change_docs  if r.source.get_state_slug() in ('appr-sent','appr-pend')]
-        proposed_status_changes = [ r.source for r in status_change_docs  if r.source.get_state_slug() in ('needshep','adrev','iesgeval','defer','appr-pr')]
+        # status changes
+        status_changes = []
+        proposed_status_changes = []
+        for r in interesting_relations_that.filter(relationship__in=STATUSCHANGE_RELATIONS):
+            state_slug = r.source.get_state_slug()
+            if state_slug in ('appr-sent', 'appr-pend'):
+                status_changes.append(r)
+            elif state_slug in ('needshep','adrev','iesgeval','defer','appr-pr'):
+                proposed_status_changes.append(r)
+            else:
+                pass
 
         presentations = doc.future_presentations()
 
