@@ -426,8 +426,9 @@ def ad_area(user):
 def format_history_text(text, trunc_words=25):
     """Run history text through some cleaning and add ellipsis if it's too long."""
     full = mark_safe(text)
-    if "</a>" not in full:
-        full = urlize_ietf_docs(full)
+    # The content of docevent.desc is full of things that urlize incorrectly, producing a massive number of new 404s
+    #if "</a>" not in full:
+    #    full = urlize_ietf_docs(full)
     full = bleach.linkify(full, parse_email=True)
 
     return format_snippet(full, trunc_words)
