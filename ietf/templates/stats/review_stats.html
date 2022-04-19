@@ -150,19 +150,19 @@
                         Reviewer
                     {% endif %}
                 </th>
-                <th scope="col" data-sort="num"
+                <th scope="col" data-sort="req-num"
                     title="Requests that are currently requested or accepted by reviewer">Open in time</th>
-                <th scope="col" data-sort="num"
+                <th scope="col" data-sort="past-num"
                     title="Requests that are currently requested or accepted by reviewer and past the deadline">
                     Open late
                 </th>
-                <th scope="col" data-sort="num"
+                <th scope="col" data-sort="comp-num"
                     title="Requests that have been completed partially or completely">Completed in time</th>
-                <th scope="col" data-sort="num"
+                <th scope="col" data-sort="comppast-num"
                     title="Requests that have been completed partially or completely past the deadline">
                     Completed late
                 </th>
-                <th scope="col" data-sort="num"
+                <th scope="col" data-sort="rej-num"
                     title="Requests that are rejected by the reviewer, withdrawn, overtaken by events or with no response from reviewer">
                     Not completed
                 </th>
@@ -211,7 +211,7 @@
                         {% endif %}
                     </th>
                     {% for r in results %}
-                        <th scope="col" data-sort="num">
+                        <th scope="col" data-sort="{{ r.name|slugify }}-num">
                             {{ r.name }}
                         </th>
                     {% endfor %}
@@ -248,7 +248,7 @@
                         {% endif %}
                     </th>
                     {% for s in states %}
-                        <th scope="col" data-sort="num">
+                        <th scope="col" data-sort="{{ s.name|slugify }}-num">
                             {{ s.name }}
                         </th>
                     {% endfor %}
