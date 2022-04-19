@@ -232,7 +232,7 @@ urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
 @register.filter(name='urlize_related_source_list', is_safe=True, needs_autoescape=True)
 def urlize_related_source_list(related, autoescape=None):
-    """Convert a list of DocumentRelations into list of links using the source document's canonical name"""
+    """Convert a list of RelatedDocuments into list of links using the source document's canonical name"""
     links = []
     names = set()
     titles = set()
@@ -256,7 +256,7 @@ def urlize_related_source_list(related, autoescape=None):
         
 @register.filter(name='urlize_related_target_list', is_safe=True, needs_autoescape=True)
 def urlize_related_target_list(related, autoescape=None):
-    """Convert a list of DocumentRelations into list of links using the source document's canonical name"""
+    """Convert a list of RelatedDocuments into list of links using the target document's canonical name"""
     links = []
     for rel in related:
         name=rel.target.document.canonical_name()
