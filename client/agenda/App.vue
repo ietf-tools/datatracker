@@ -92,7 +92,7 @@ n-theme
                   strong
                   @click='showFilter'
                   )
-                  //- n-badge(:value='selectedCatSubs.length', processing)
+                  n-badge(:value='selectedCatSubs.length', processing)
                   i.bi.bi-ui-checks-grid.me-2
                   span Filter Agenda...
                 n-button.mt-2(
@@ -152,10 +152,13 @@ n-theme
                       i.bi.bi-arrow-right-short.me-2
                       span Now
                   li.nav-item(v-for='day of meetingDays')
-                    a.nav-link(:href='`#slot-` + day.slug')
+                    a.nav-link(
+                      :class='dayIntersectId === day.slug ? `active` : ``'
+                      :href='`#slot-` + day.slug'
+                      @click='scrollToDay(day.slug, $event)'
+                      )
                       i.bi.bi-arrow-right-short.me-2
                       span {{day.label}}
-
 
     div(style='border-top: 10px solid #F00; margin: 25px 0;')
 </template>
@@ -182,7 +185,7 @@ import {
   NSelect,
   NTabPane,
   NTabs
-  } from 'naive-ui'
+} from 'naive-ui'
 import NTheme from '../components/n-theme.vue'
 import AgendaDownloadIcs from './AgendaDownloadIcs.vue'
 import AgendaFilter from './AgendaFilter.vue'
@@ -239,6 +242,8 @@ export default {
   },
   data () {
     return {
+      observer: null,
+      dayIntersectId: '',
       currentTab: 'agenda',
       timezone: DateTime.local().zoneName,
       tabs: [
@@ -340,6 +345,28 @@ export default {
       this.currentTab = 'personalize'
     }
   },
+  mounted () {
+    this.observer = new IntersectionObserver((entries) => {
+      let finalDayId = ''
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          finalDayId = entry.target.dataset.dayId
+          break
+        }
+      }
+      console.info(finalDayId)
+      this.dayIntersectId = finalDayId
+    }, {
+      root: null,
+      rootMargin: '0px',
+      threshold: [0.0, 0.75]
+    })
+    for (const mDay of this.meetingDays) {
+      const el = document.getElementById(`agenda-day-${mDay.slug}`)
+      el.dataset.dayId = mDay.slug
+      this.observer.observe(el)
+    }
+  },
   methods: {
     switchTab (key) {
       this.currentTab = key
@@ -360,6 +387,10 @@ export default {
     },
     showFilter () {
       this.filterShown = true
+    },
+    scrollToDay (dayId, ev) {
+      ev.preventDefault()
+      document.getElementById(`agenda-day-${dayId}`)?.scrollIntoView(true)
     }
   }
 }

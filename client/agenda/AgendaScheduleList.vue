@@ -15,7 +15,7 @@
         )
         //- ROW - DAY HEADING -----------------------
         template(v-if='item.displayType === `day`')
-          td(:colspan='pickerMode ? 6 : 5') {{item.date}}
+          td(:id='`agenda-day-` + item.id', :colspan='pickerMode ? 6 : 5') {{item.date}}
         //- ROW - SESSION HEADING -------------------
         template(v-else-if='item.displayType === `session-head`')
           td.agenda-table-cell-check(v-if='pickerMode') &nbsp;
@@ -95,7 +95,7 @@ import {
   NCheckbox,
   NCheckboxGroup,
   NPopover
-  } from 'naive-ui'
+} from 'naive-ui'
 
 export default {
   components: {
@@ -132,6 +132,7 @@ export default {
         const itemDate = DateTime.fromISO(item.adjustedStartDate)
         if (itemDate.toISODate() !== acc.lastDate) {
           acc.result.push({
+            id: item.id,
             key: `day-${itemDate.toISODate()}`,
             displayType: 'day',
             date: itemDate.toLocaleString(DateTime.DATE_HUGE),

@@ -17,5 +17,10 @@ export default defineConfig({
   plugins: [
     vue()
   ],
-  publicDir: 'ietf/static/public'
+  publicDir: 'ietf/static/public',
+  server: {
+    watch: {
+      usePolling: true
+    }
+  }
 })
