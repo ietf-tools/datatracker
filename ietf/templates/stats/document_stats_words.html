@@ -44,8 +44,8 @@
     <thead>
         <tr>
             <th scope="col" data-sort="num">Words</th>
-            <th scope="col" data-sort="num">Percentage of {{ doc_label }}s</th>
-            <th scope="col" data-sort="num">{{ doc_label|capfirst }}s</th>
+            <th scope="col" data-sort="percent">Percentage of {{ doc_label }}s</th>
+            <th scope="col" data-sort="count">{{ doc_label|capfirst }}s</th>
         </tr>
     </thead>
     {% if table_data %}

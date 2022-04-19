@@ -24,7 +24,7 @@
                     <th scope="col" data-sort="first">First name</th>
                     <th scope="col" data-sort="last">Last name</th>
                     <th scope="col" data-sort="email">Email</th>
-                    {% for ft in nominee_feedback_types %}<th scope="col" data-sort="num">{{ ft.name }}</th>{% endfor %}
+                    {% for ft in nominee_feedback_types %}<th scope="col" data-sort="{{ ft.name|slugify }}-num">{{ ft.name }}</th>{% endfor %}
                 </tr>
             </thead>
             <tbody>
@@ -61,7 +61,7 @@
         <thead>
             <tr>
                 <th scope="col" data-sort="topic">Topic</th>
-                {% for ft in topic_feedback_types %}<th scope="col" data-sort="num">{{ ft.name }}</th>{% endfor %}
+                {% for ft in topic_feedback_types %}<th scope="col" data-sort="{{ ft.name|slugify }}-num">{{ ft.name }}</th>{% endfor %}
             </tr>
         </thead>
         <tbody>
@@ -88,7 +88,7 @@
             <thead>
                 <tr>
                     <th scope="col"></th>
-                    {% for ft in independent_feedback_types %}<th scope="col" data-sort="num">{{ ft.name }}</th>{% endfor %}
+                    {% for ft in independent_feedback_types %}<th scope="col" data-sort="{{ ft.name|slugify }}-num">{{ ft.name }}</th>{% endfor %}
                 </tr>
             </thead>
             <tbody>
