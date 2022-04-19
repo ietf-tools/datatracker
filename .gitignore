@@ -10,6 +10,7 @@ datatracker.sublime-workspace
 /.Python
 /.settings
 /.tmp
+/.vite
 /data
 /docker/docker-compose.extend-custom.yml
 /env

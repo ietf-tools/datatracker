@@ -412,9 +412,12 @@ ROOT_URLCONF = 'ietf.urls'
 
 # Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static/dist-neue'),
     os.path.join(BASE_DIR, 'static/dist'),
     os.path.join(BASE_DIR, 'secr/static/dist'),
 )
+
+DJANGO_VITE_ASSETS_PATH = 'ietf/static/dist-neue'
 
 INSTALLED_APPS = [
     # Django apps
@@ -430,6 +433,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # External apps 
     'analytical',
+    'django_vite',
     'django_bootstrap5',
     'corsheaders',
     'django_markup',
