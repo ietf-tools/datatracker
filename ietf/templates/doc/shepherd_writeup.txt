@@ -4,11 +4,11 @@
 
 Thank you for your service as a document shepherd. Among the responsibilities is
 answering the questions in this writeup to give helpful context to Last Call and
-Internet Engineering Steering Group
-([IESG](https://www.ietf.org/about/groups/iesg/)) reviewers, and your diligence
-in completing it, is appreciated. The full role of the shepherd is further
-described in [RFC 4858](https://www.rfc-editor.org/rfc/rfc4858.html), and
-informally. You will need the cooperation of authors to complete these checks.
+Internet Engineering Steering Group ([IESG](https://www.ietf.org/about/groups/iesg/))
+reviewers, and your diligence in completing it, is appreciated. The full role of
+the shepherd is further described in [RFC 4858](https://www.rfc-editor.org/rfc/rfc4858.html),
+and informally. You will need the cooperation of authors to complete these
+checks.
 
 Note that some numbered items contain multiple related questions; please be sure
 to answer all of them.
@@ -35,9 +35,8 @@ to answer all of them.
 4. For protocol documents, are there existing implementations of the contents of
    the document? Have a significant number of potential implementers indicated
    plans to implement? Are any existing implementations reported somewhere,
-   either in the document itself (as [RFC
-   7942](https://www.rfc-editor.org/rfc/rfc7942.html) recommends) or elsewhere
-   (where)?
+   either in the document itself (as [RFC 7942](https://www.rfc-editor.org/rfc/rfc7942.html)
+   recommends) or elsewhere (where)?
 
 ### Additional Reviews
 
@@ -48,12 +47,11 @@ to answer all of them.
    such as the MIB Doctor, YANG Doctor, media type, and URI type reviews.
 
 7. If the document contains a YANG module, has the final version of the module
-   been checked with any of the [recommended validation
-   tools](https://trac.ietf.org/trac/ops/wiki/yang-review-tools) for syntax and
-   formatting validation? If there are any resulting errors or warnings, what is
-   the justification for not fixing them at this time? Does the YANG module
-   comply with the Network Management Datastore Architecture (NMDA) as specified
-   in [RFC 8342](https://www.rfc-editor.org/rfc/rfc8342.html)?
+   been checked with any of the [recommended validation tools](https://trac.ietf.org/trac/ops/wiki/yang-review-tools)
+   for syntax and formatting validation? If there are any resulting errors or
+   warnings, what is the justification for not fixing them at this time? Does
+   the YANG module comply with the Network Management Datastore Architecture
+   (NMDA) as specified in [RFC 8342](https://www.rfc-editor.org/rfc/rfc8342.html)?
 
 8. Describe reviews and automated checks performed to validate sections of the
    final version of the document written in a formal language, such as XML code,
@@ -86,10 +84,10 @@ to answer all of them.
     such? If the number of Authors/Editors on the front page is greater than 5,
     please provide a justification.
 
-14. Identify any remaining I-D nits in this document. (See [the idnits
-    tool](http://www.ietf.org/tools/idnits/) and the checkbox items found in
-    Guidelines to Authors of Internet-Drafts). Simply running the idnits tool is
-    not enough; please review the entire guidelines document.
+14. Identify any remaining I-D nits in this document. (See [the idnits tool](http://www.ietf.org/tools/idnits/)
+    and the checkbox items found in Guidelines to Authors of Internet-Drafts).
+    Simply running the idnits tool is not enough; please review the entire
+    guidelines document.
 
 15. Should any informative references be normative or vice-versa?
 
@@ -97,9 +95,8 @@ to answer all of them.
     the community have sufficient access to review any such normative
     references?
 
-17. Are there any normative downward references (see [RFC
-    3967](https://www.rfc-editor.org/rfc/rfc3967.html), [BCP
-    97](https://www.rfc-editor.org/info/bcp97))? If so, list them.
+17. Are there any normative downward references (see [RFC 3967](https://www.rfc-editor.org/rfc/rfc3967.html),
+    [BCP 97](https://www.rfc-editor.org/info/bcp97))? If so, list them.
 
 18. Are there normative references to documents that are not ready for
     advancement or are otherwise in an unclear state? If they exist, what is the
@@ -117,8 +114,7 @@ to answer all of them.
     associated with the appropriate reservations in IANA registries. Confirm
     that any referenced IANA registries have been clearly identified. Confirm
     that each newly created IANA registry specifies its initial contents,
-    allocations procedures, and a reasonable name (see [RFC
-    8126](https://www.rfc-editor.org/rfc/rfc8126.html)).
+    allocations procedures, and a reasonable name (see [RFC 8126](https://www.rfc-editor.org/rfc/rfc8126.html)).
 
 21. List any new IANA registries that require Designated Expert Review for
     future allocations. Are the instructions to the Designated Expert clear?
