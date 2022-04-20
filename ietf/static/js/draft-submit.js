@@ -1,7 +1,7 @@
 $(document)
     .ready(function () {
         // fill in submitter info when an author button is clicked
-        $("form.idsubmit input[type=button].author")
+        $("form.idsubmit button.author")
             .on("click", function () {
                 var name = $(this)
                     .data("name");
