@@ -89,12 +89,12 @@
             {% endcomment %}
             <b>{{ doc.title }}</b>
             {% if doc.has_verified_errata %}
-                <a class="badge bg-danger text-decoration-none float-end"
+                <a class="badge bg-danger text-decoration-none text-light float-end"
                    href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">
                     Errata
                 </a>
             {% elif doc.has_errata %}
-                <a class="badge bg-warning text-decoration-none float-end"
+                <a class="badge bg-warning text-decoration-none text-light float-end"
                    href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">
                     Errata
                 </a>
