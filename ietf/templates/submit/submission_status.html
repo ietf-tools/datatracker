@@ -595,5 +595,7 @@
     {% include "submit/problem-reports-footer.html" %}
 {% endblock %}
 {% block js %}
-    {{ all_forms|merge_media:'js' }}<script src="{% static "ietf/js/list.js" %}"></script>
+    {{ all_forms|merge_media:'js' }}
+    <script src="{% static "ietf/js/list.js" %}"></script>
+    <script src="{% static "ietf/js/draft-submit.js" %}"></script>
 {% endblock %}
