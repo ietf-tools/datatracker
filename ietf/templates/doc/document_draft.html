@@ -50,12 +50,12 @@
                             (Publication date unknown)
                         {% endif %}
                         {% if has_verified_errata %}
-                            <a class="badge bg-danger text-decoration-none"
+                            <a class="badge bg-danger text-decoration-none text-light"
                                href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}" title="Click to view errata." rel="nofollow">
                                 Errata
                             </a>
                         {% elif has_errata %}
-                            <a class="badge bg-warning text-decoration-none"
+                            <a class="badge bg-warning text-decoration-none text-light"
                                href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}" title="Click to view errata." rel="nofollow">
                                 Errata
                             </a>
