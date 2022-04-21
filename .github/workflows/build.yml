@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'
+      - '*'
 
   workflow_dispatch:
     inputs:
@@ -35,7 +35,6 @@ jobs:
     outputs:
       should_deploy: ${{ steps.buildvars.outputs.should_deploy }}
       pkg_version: ${{ steps.buildvars.outputs.pkg_version }}
-      pkg_version_strict: ${{ steps.buildvars.outputs.pkg_version_strict }}
 
     steps:
     - uses: actions/checkout@v2
@@ -57,10 +56,8 @@ jobs:
         
     - name: Set Next Version Env Var
       if: ${{ github.event.inputs.publish == 'true' || github.event.inputs.dryrun == 'true' }}
-      env:
-        NEXT_VERSION: ${{ steps.semver.outputs.next }}
       run: |
-        echo "NEXT_VERSION=$next" >> $GITHUB_ENV
+        echo "NEXT_VERSION=$nextStrict" >> $GITHUB_ENV
         
     - name: Create Draft Release
       uses: ncipollo/release-action@v1
@@ -81,19 +78,16 @@ jobs:
           echo "Using AUTO SEMVER mode: $NEXT_VERSION"
           echo "::set-output name=should_deploy::true"
           echo "::set-output name=pkg_version::$NEXT_VERSION"
-          echo "::set-output name=pkg_version_strict::${NEXT_VERSION#?}"
           echo "::notice::Release $NEXT_VERSION created using branch $GITHUB_REF_NAME"
-        elif [[ "$GITHUB_REF" =~ ^refs/tags/v* ]]; then
+        elif [[ "$GITHUB_REF" =~ ^refs/tags/* ]]; then
           echo "Using TAG mode: $GITHUB_REF_NAME"
           echo "::set-output name=should_deploy::true"
           echo "::set-output name=pkg_version::$GITHUB_REF_NAME"
-          echo "::set-output name=pkg_version_strict::${GITHUB_REF_NAME#?}"
           echo "::notice::Release $GITHUB_REF_NAME created using tag $GITHUB_REF_NAME"
         else
-          echo "Using TEST mode: v8.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "Using TEST mode: 8.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "::set-output name=should_deploy::false"
-          echo "::set-output name=pkg_version::v8.0.0-dev.$GITHUB_RUN_NUMBER"
-          echo "::set-output name=pkg_version_strict::8.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "::set-output name=pkg_version::8.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "::notice::Non-production build 8.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
         fi
 
@@ -166,7 +160,6 @@ jobs:
     env:
       SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
-      PKG_VERSION_STRICT: ${{needs.prepare.outputs.pkg_version_strict}}
 
     steps:
     - uses: actions/checkout@v2
@@ -194,14 +187,13 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
       run: |
         echo "PKG_VERSION: $PKG_VERSION"
-        echo "PKG_VERSION_STRICT: $PKG_VERSION_STRICT"
         echo "GITHUB_SHA: $GITHUB_SHA"
         echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
         echo "Running build script..."
         chmod +x ./dev/deploy/build.sh
         sh ./dev/deploy/build.sh
-        echo "Setting version $PKG_VERSION_STRICT..."
-        sed -i -r -e "s|^__version__ += '.*'$|__version__ = '$PKG_VERSION_STRICT'|" ietf/__init__.py
+        echo "Setting version $PKG_VERSION..."
+        sed -i -r -e "s|^__version__ += '.*'$|__version__ = '$PKG_VERSION'|" ietf/__init__.py
         sed -i -r -e "s|^__release_hash__ += '.*'$|__release_hash__ = '$GITHUB_SHA'|" ietf/__init__.py
         sed -i -r -e "s|^__release_branch__ += '.*'$|__release_branch__ = '$GITHUB_REF_NAME'|" ietf/__init__.py
 
