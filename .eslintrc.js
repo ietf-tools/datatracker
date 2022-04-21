@@ -4,13 +4,13 @@ module.exports = {
     browser: true,
     es2021: true,
     jquery: true,
-    node: true
+    node: true,
+    'vue/setup-compiler-macros': true
   },
   extends: [
     'plugin:vue/vue3-essential', // Priority A: Essential (Error Prevention)
     'plugin:vue/vue3-strongly-recommended', // Priority B: Strongly Recommended (Improving Readability)
-    'plugin:cypress/recommended',
-    'standard'
+    'plugin:cypress/recommended'
   ],
   globals: {
     d3: true
@@ -23,5 +23,6 @@ module.exports = {
     'vue'
   ],
   rules: {
+    'vue/script-setup-uses-vars': 'error'
   }
 }

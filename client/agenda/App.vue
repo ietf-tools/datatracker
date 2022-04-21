@@ -3,13 +3,13 @@ n-theme
   n-message-provider
     h1 {{title}}
     h4
-      span {{meeting.city}}, {{ meetingDate }}
+      span {{props.meeting.city}}, {{ meetingDate }}
       h6.float-end(v-if='meetingUpdated') #[span.text-muted Updated:] {{ meetingUpdated }}
 
     ul.nav.nav-tabs.my-3
-      li.nav-item(v-for='tab of tabs')
+      li.nav-item(v-for='tab of state.tabs')
         a.nav-link.agenda-link.filterable(
-          :class='{ active: tab.key === currentTab }'
+          :class='{ active: tab.key === state.currentTab }'
           @click.prevent='switchTab(tab.key)'
           :href='tab.key'
           )
@@ -24,7 +24,7 @@ n-theme
         // ----------------------------
         .row
           .col
-            h2 {{ currentTab === 'personalize' ? 'Session Selection' : 'Schedule'}}
+            h2 {{ state.currentTab === 'personalize' ? 'Session Selection' : 'Schedule'}}
           .col-auto.d-flex.align-items-center
             i.bi.bi-globe.me-2
             small.me-2: strong Timezone:
@@ -38,38 +38,38 @@ n-theme
                 @click='setTimezone(`local`)'
                 ) Local
               n-button(
-                :type='timezone === `UTC` ? `primary` : `default`'
+                :type='state.timezone === `UTC` ? `primary` : `default`'
                 @click='setTimezone(`UTC`)'
                 ) UTC
             n-select.agenda-timezone-ddn(
-              v-model:value='timezone'
+              v-model:value='state.timezone'
               :options='timezones'
               placeholder='Select Time Zone'
               filterable
               )
 
-        .alert.alert-warning.mt-3(v-if='isCurrentMeeting || true') #[strong Note:] IETF agendas are subject to change, up to and during a meeting.
-        .agenda-infonote.my-3(v-if='meeting.infoNote', v-html='meeting.infoNote')
+        .alert.alert-warning.mt-3(v-if='props.isCurrentMeeting || true') #[strong Note:] IETF agendas are subject to change, up to and during a props.meeting.
+        .agenda-infonote.my-3(v-if='props.meeting.infoNote', v-html='props.meeting.infoNote')
 
         // -----------------------------------
         // -> Drawers
         // -----------------------------------
-        agenda-download-ics(v-model:shown='downloadIcsShown', :categories='categories', :meeting-number='meeting.number')
-        agenda-filter(v-model:shown='filterShown', v-model:selection='selectedCatSubs', :categories='categories')
+        agenda-download-ics(v-model:shown='state.downloadIcsShown', :categories='props.categories', :meeting-number='props.meeting.number')
+        agenda-filter(v-model:shown='state.filterShown', v-model:selection='state.selectedCatSubs', :categories='props.categories')
 
         // -----------------------------------
         // -> SCHEDULE - VIEW SELECTOR
         // -----------------------------------
-        n-tabs(type='segment', size='large', v-model:value='scheduleTab')
+        n-tabs(type='segment', size='large', v-model:value='state.scheduleTab')
           n-tab-pane(name='list', tab='List View')
             template(v-slot:tab)
               i.bi.bi-list-columns-reverse.me-2
               span List View
             agenda-schedule-list(
               :events='scheduleAdjusted'
-              :picker-mode='pickerMode'
-              :meeting-number='meeting.number'
-              :use-codi-md='useCodiMd'
+              :picker-mode='state.pickerMode'
+              :meeting-number='props.meeting.number'
+              :use-codi-md='props.useCodiMd'
               )
           n-tab-pane(name='weekview', tab='Calendar View')
             template(v-slot:tab)
@@ -92,28 +92,28 @@ n-theme
                   strong
                   @click='showFilter'
                   )
-                  n-badge(:value='selectedCatSubs.length', processing)
+                  n-badge(:value='state.selectedCatSubs.length', processing)
                   i.bi.bi-ui-checks-grid.me-2
                   span Filter Agenda...
                 n-button.mt-2(
-                  v-if='!pickerMode'
+                  v-if='!state.pickerMode'
                   block
                   secondary
                   type='success'
                   size='large'
                   strong
-                  @click='pickerMode = true'
+                  @click='state.pickerMode = true'
                   )
                   i.bi.bi-ui-checks.me-2
                   span Pick Sessions...
                 .agenda-quickaccess-btnrow(v-else)
                   .agenda-quickaccess-btnrow-title Session Selection
                   n-button.me-1(
-                    v-if='!pickerModeView'
+                    v-if='!state.pickerModeView'
                     type='success'
                     size='large'
                     strong
-                    @click='pickerModeView = true'
+                    @click='state.pickerModeView = true'
                     )
                     i.bi.bi-check2-square.me-2
                     span Apply
@@ -122,7 +122,7 @@ n-theme
                     color='#6f42c1'
                     size='large'
                     strong
-                    @click='pickerModeView = false'
+                    @click='state.pickerModeView = false'
                     )
                     i.bi.bi-pencil-square.me-2
                     span Modify
@@ -131,7 +131,7 @@ n-theme
                     color='#666'
                     size='large'
                     strong
-                    @click='pickerMode = false'
+                    @click='state.pickerMode = false'
                     )
                     i.bi.bi-x-square.me-2
                     span Discard
@@ -141,19 +141,19 @@ n-theme
                   type='primary'
                   size='large'
                   strong
-                  @click='downloadIcsShown = true'
+                  @click='state.downloadIcsShown = true'
                   )
                   i.bi.bi-calendar3.me-2
                   span Download as .ics...
                 n-divider: small.text-muted Quick Access
                 ul.nav.nav-pills.flex-column.small
                   li.nav-item
-                    a.nav-link.active(href='#now')
+                    a.nav-link(href='#now')
                       i.bi.bi-arrow-right-short.me-2
                       span Now
                   li.nav-item(v-for='day of meetingDays')
                     a.nav-link(
-                      :class='dayIntersectId === day.slug ? `active` : ``'
+                      :class='state.dayIntersectId === day.slug ? `active` : ``'
                       :href='`#slot-` + day.slug'
                       @click='scrollToDay(day.slug, $event)'
                       )
@@ -163,8 +163,8 @@ n-theme
     div(style='border-top: 10px solid #F00; margin: 25px 0;')
 </template>
 
-<script>
-import { h } from 'vue'
+<script setup>
+import { computed, h, onMounted, reactive, ref } from 'vue'
 import uniqBy from 'lodash/uniqBy'
 import { DateTime } from 'luxon'
 import {
@@ -193,207 +193,193 @@ import AgendaScheduleList from './AgendaScheduleList.vue'
 import AgendaScheduleCalendar from './AgendaScheduleCalendar.vue'
 import timezones from '../shared/timezones'
 
-export default {
-  components: {
-    AgendaDownloadIcs,
-    AgendaFilter,
-    AgendaScheduleList,
-    AgendaScheduleCalendar,
-    NAffix,
-    NBadge,
-    NButton,
-    NButtonGroup,
-    NCheckbox,
-    NCheckboxGroup,
-    NDataTable,
-    NDivider,
-    NDrawer,
-    NDrawerContent,
-    NDropdown,
-    NInput,
-    NMessageProvider,
-    NPopover,
-    NSelect,
-    NTheme,
-    NTabPane,
-    NTabs
+// PROPS
+
+const props = defineProps({
+  meeting: {
+    type: Object,
+    default: () => ({})
   },
-  props: {
-    meeting: {
-      type: Object,
-      default: () => ({})
+  categories: {
+    type: Array,
+    default: () => ([])
+  },
+  isCurrentMeeting: {
+    type: Boolean,
+    default: false
+  },
+  useCodiMd: {
+    type: Boolean,
+    default: false
+  },
+  schedule: {
+    type: Array,
+    default: () => ([])
+  }
+})
+
+// DATA
+
+const state = reactive({
+  dayIntersectId: '',
+  currentTab: 'agenda',
+  timezone: DateTime.local().zoneName,
+  tabs: [
+    { key: 'agenda', title: 'Agenda', icon: 'bi-calendar3' },
+    // { key: 'personalize', title: 'Personalize Agenda', icon: 'bi-calendar2-check' },
+    { key: 'floorplan', title: 'Floor plan', icon: 'bi-pin-map' },
+    { key: 'plaintext', title: 'Plaintext', icon: 'bi-file-text' }
+  ],
+  scheduleTab: 'list',
+  searchText: '',
+  downloadIcsShown: false,
+  filterShown: false,
+  pickerMode: false,
+  pickerModeView: false,
+  selectedCatSubs: [],
+  downloadOptions: [
+    {
+      label: 'Current Selection...',
+      key: 'current',
+      icon () {
+        return h('i', { class: 'bi bi-calendar2-check' })
+      }
     },
-    categories: {
-      type: Array,
-      default: () => ([])
+    {
+      type: 'divider',
+      key: 'd1'
     },
-    isCurrentMeeting: {
-      type: Boolean,
-      default: false
+    {
+      label: 'ART',
+      key: 'art'
     },
-    useCodiMd: {
-      type: Boolean,
-      default: false
-    },
-    schedule: {
-      type: Array,
-      default: () => ([])
+    {
+      label: 'GEN',
+      key: 'gen'
     }
-  },
-  data () {
+  ]
+})
+
+// COMPUTED
+
+const isTimezoneLocal = computed(() => {
+  return state.timezone === DateTime.local().zoneName
+})
+const isTimezoneMeeting = computed(() => {
+  return state.timezone === props.meeting.timezone
+})
+const title = computed(() => {
+  let title = `IETF ${props.meeting.number} Meeting Agenda`
+  if (state.timezone === 'UTC') {
+    title = `${title} (UTC)`
+  }
+  if (state.currentTab === 'personalize') {
+    title = `${title} Personalization`
+  }
+  return title
+})
+const meetingDate = computed(() => {
+  const start = DateTime.fromISO(props.meeting.startDate).setZone(state.timezone)
+  const end = DateTime.fromISO(props.meeting.endDate).setZone(state.timezone)
+  if (start.month === end.month) {
+    return `${start.toFormat('MMMM d')} - ${end.toFormat('d, y')}`
+  } else {
+    return `${start.toFormat('MMMM d')} - ${end.toFormat('MMMM d, y')}`
+  }
+})
+const scheduleAdjusted = computed(() => {
+  return props.schedule.filter(s => {
+    // -> Apply filters
+    if (state.selectedCatSubs.length > 0 && !s.filterKeywords.some(k => state.selectedCatSubs.includes(k))) {
+      return false
+    }
+    if (s.type === 'lead') { return false }
+    return true
+  }).map(s => {
+    // -> Adjust times to selected timezone
+    const eventStartDate = DateTime.fromISO(s.startDateTime, { zone: props.meeting.timezone }).setZone(state.timezone)
+    const eventEndDate = eventStartDate.plus({ seconds: s.duration })
     return {
-      observer: null,
-      dayIntersectId: '',
-      currentTab: 'agenda',
-      timezone: DateTime.local().zoneName,
-      tabs: [
-        { key: 'agenda', title: 'Agenda', icon: 'bi-calendar3' },
-        // { key: 'personalize', title: 'Personalize Agenda', icon: 'bi-calendar2-check' },
-        { key: 'floorplan', title: 'Floor plan', icon: 'bi-pin-map' },
-        { key: 'plaintext', title: 'Plaintext', icon: 'bi-file-text' }
-      ],
-      scheduleTab: 'list',
-      searchText: '',
-      downloadIcsShown: false,
-      filterShown: false,
-      pickerMode: false,
-      pickerModeView: false,
-      selectedCatSubs: [],
-      downloadOptions: [
-        {
-          label: 'Current Selection...',
-          key: 'current',
-          icon () {
-            return h('i', { class: 'bi bi-calendar2-check' })
-          }
-        },
-        {
-          type: 'divider',
-          key: 'd1'
-        },
-        {
-          label: 'ART',
-          key: 'art'
-        },
-        {
-          label: 'GEN',
-          key: 'gen'
-        }
-      ]
+      ...s,
+      adjustedStart: eventStartDate,
+      adjustedEnd: eventEndDate,
+      adjustedStartDate: eventStartDate.toISODate(),
+      adjustedStartDateTime: eventStartDate.toISO(),
+      adjustedEndDateTime: eventEndDate.toISO()
     }
-  },
-  computed: {
-    timezones () { return timezones },
-    isTimezoneLocal () { return this.timezone === DateTime.local().zoneName },
-    isTimezoneMeeting () { return this.timezone === this.meeting.timezone },
-    title () {
-      let title = `IETF ${this.meeting.number} Meeting Agenda`
-      if (this.timezone === 'UTC') {
-        title = `${title} (UTC)`
-      }
-      if (this.currentTab === 'personalize') {
-        title = `${title} Personalization`
-      }
-      return title
-    },
-    meetingDate () {
-      const start = DateTime.fromISO(this.meeting.startDate).setZone(this.timezone)
-      const end = DateTime.fromISO(this.meeting.endDate).setZone(this.timezone)
-      if (start.month === end.month) {
-        return `${start.toFormat('MMMM d')} - ${end.toFormat('d, y')}`
-      } else {
-        return `${start.toFormat('MMMM d')} - ${end.toFormat('MMMM d, y')}`
-      }
-    },
-    meetingDays () {
-      return uniqBy(this.scheduleAdjusted, 'adjustedStartDate').sort().map(s => ({
-        slug: s.id,
-        label: DateTime.fromISO(s.adjustedStartDate).toLocaleString(DateTime.DATE_HUGE)
-      }))
-    },
-    scheduleAdjusted () {
-      return this.schedule.filter(s => {
-        // -> Apply filters
-        if (this.selectedCatSubs.length > 0 && !s.filterKeywords.some(k => this.selectedCatSubs.includes(k))) {
-          return false
-        }
-        if (s.type === 'lead') { return false }
-        return true
-      }).map(s => {
-        // -> Adjust times to selected timezone
-        const eventStartDate = DateTime.fromISO(s.startDateTime, { zone: this.meeting.timezone }).setZone(this.timezone)
-        const eventEndDate = eventStartDate.plus({ seconds: s.duration })
-        return {
-          ...s,
-          adjustedStart: eventStartDate,
-          adjustedEnd: eventEndDate,
-          adjustedStartDate: eventStartDate.toISODate(),
-          adjustedStartDateTime: eventStartDate.toISO(),
-          adjustedEndDateTime: eventEndDate.toISO()
-        }
-      })
-    },
-    meetingUpdated () {
-      return this.meeting.updated ? DateTime.fromISO(this.meeting.updated).setZone(this.timezone).toFormat(`DD 'at' tt ZZZZ`) : false
-    }
-  },
-  created () {
-    // Handle loading tab directly based on URL
-    if (window.location.pathname.indexOf('-utc') >= 0) {
-      this.timezone = 'UTC'
-    } else if (window.location.pathname.indexOf('personalize') >= 0) {
-      this.currentTab = 'personalize'
-    }
-  },
-  mounted () {
-    this.observer = new IntersectionObserver((entries) => {
-      let finalDayId = ''
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          finalDayId = entry.target.dataset.dayId
-          break
-        }
-      }
-      console.info(finalDayId)
-      this.dayIntersectId = finalDayId
-    }, {
-      root: null,
-      rootMargin: '0px',
-      threshold: [0.0, 0.75]
-    })
-    for (const mDay of this.meetingDays) {
-      const el = document.getElementById(`agenda-day-${mDay.slug}`)
-      el.dataset.dayId = mDay.slug
-      this.observer.observe(el)
-    }
-  },
-  methods: {
-    switchTab (key) {
-      this.currentTab = key
-      window.history.pushState({}, '', key)
-    },
-    setTimezone (tz) {
-      switch (tz) {
-        case 'meeting':
-          this.timezone = this.meeting.timezone
-          break
-        case 'local':
-          this.timezone = DateTime.local().zoneName
-          break
-        default:
-          this.timezone = tz
-          break
-      }
-    },
-    showFilter () {
-      this.filterShown = true
-    },
-    scrollToDay (dayId, ev) {
-      ev.preventDefault()
-      document.getElementById(`agenda-day-${dayId}`)?.scrollIntoView(true)
-    }
+  })
+})
+const meetingDays = computed(() => {
+  return uniqBy(scheduleAdjusted.value, 'adjustedStartDate').sort().map(s => ({
+    slug: s.id.toString(),
+    label: DateTime.fromISO(s.adjustedStartDate).toLocaleString(DateTime.DATE_HUGE)
+  }))
+})
+const meetingUpdated = computed(() => {
+  return props.meeting.updated ? DateTime.fromISO(props.meeting.updated).setZone(state.timezone).toFormat(`DD 'at' tt ZZZZ`) : false
+})
+
+// METHODS
+
+function switchTab (key) {
+  state.currentTab = key
+  window.history.pushState({}, '', key)
+}
+function setTimezone (tz) {
+  switch (tz) {
+    case 'meeting':
+      state.timezone = props.meeting.timezone
+      break
+    case 'local':
+      state.timezone = DateTime.local().zoneName
+      break
+    default:
+      state.timezone = tz
+      break
   }
 }
+function showFilter () {
+  state.filterShown = true
+}
+function scrollToDay (dayId, ev) {
+  ev.preventDefault()
+  document.getElementById(`agenda-day-${dayId}`)?.scrollIntoView(true)
+}
+
+// MOUNTED
+
+const observer = new IntersectionObserver((entries) => {
+  let finalDayId = state.dayIntersectId
+  for (const entry of entries) {
+    if (entry.isIntersecting) {
+      finalDayId = entry.target.dataset.dayId.toString()
+      break
+    }
+  }
+  state.dayIntersectId = finalDayId
+}, {
+  root: null,
+  rootMargin: '0px',
+  threshold: 1.0
+})
+
+onMounted(async () => {
+  for (const mDay of meetingDays.value) {
+    const el = document.getElementById(`agenda-day-${mDay.slug}`)
+    el.dataset.dayId = mDay.slug.toString()
+    observer.observe(el)
+  }
+})
+
+// CREATED
+
+// -> Handle loading tab directly based on URL
+if (window.location.pathname.indexOf('-utc') >= 0) {
+  state.timezone = 'UTC'
+} else if (window.location.pathname.indexOf('personalize') >= 0) {
+  state.currentTab = 'personalize'
+}
+
 </script>
 
 <style lang="scss">
