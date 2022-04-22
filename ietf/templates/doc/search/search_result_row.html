@@ -6,11 +6,7 @@
 {% load ballot_icon %}
 {% load person_filters %}
 {% load django_bootstrap5 %}
-<tr{% spaceless %}
-    {% if color_ad_position %} {% with doc|ballotposition:user as pos %} {% if pos %}class="position-{{ pos.slug }}-row"{% endif %}
-    {% endwith %}
-    {% endif %}
-    {% endspaceless %}>
+<tr {% if color_ad_position %}{% with doc|ballotposition:user as pos %}{% if pos %}class="position-{{ pos.slug }}-row"{% endif %}{% endwith %}{% endif %}>
     <td>
         {% if user.is_authenticated %}
             <a href="{% url "ietf.community.views.untrack_document" username=request.user.username name=doc.name %}"
@@ -154,10 +150,5 @@
                         {% email_person_link doc.shepherd title="Shepherd" class="small text-muted" %}
                     {% endif %}
                 </td>
-            {% endif %}
-            {% if color_ad_position %}
-                {% with doc|ballotposition:user as pos %}
-                    <td {% if pos %}class="changebar position-{{ pos.slug }}"{% endif %}></td>
-                {% endwith %}
             {% endif %}
         </tr>
