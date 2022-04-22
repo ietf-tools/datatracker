@@ -47,7 +47,9 @@ from ietf.utils.validators import (
     validate_file_extension,
 )
 from ietf.utils.fields import MissingOkImageField
+from ietf.utils.history import find_history_replacements_active_at
 from ietf.utils.log import unreachable
+
 
 countries = list(pytz.country_names.items())
 countries.sort(key=lambda x: x[1])
@@ -1257,10 +1259,16 @@ class Session(models.Model):
             
         return self._agenda_file
 
+    @property
+    def historic_group(self):
+            group_replacements = find_history_replacements_active_at([self.group], datetime.datetime.combine(self.meeting.date, datetime.time()))
+            return group_replacements.get(self.group_id)
+
+
     def jabber_room_name(self):
         if self.type_id=='plenary':
             return 'plenary'
-        elif self.historic_group:
+        elif getattr(self,'historic_group',None):
             return self.historic_group.acronym
         else:
             return self.group.acronym

@@ -771,6 +771,10 @@ def meetings(request, acronym=None, group_type=None):
         current_status__in=['sched','schedw','appr','canceled'],
     )
 
+    for s in sessions:
+        s.use_codimd = True if s.meeting.date>=settings.MEETING_USES_CODIMD_DATE else False
+
+
     future, in_progress, recent, past = group_sessions(sessions)
 
     can_edit = group.has_role(request.user,group.features.groupman_roles)
@@ -785,6 +789,7 @@ def meetings(request, acronym=None, group_type=None):
                      'past':past,
                      'can_edit':can_edit,
                      'can_always_edit':can_always_edit,
+                    'now': datetime.datetime.now(),
                   }))
 
 def chair_photos(request, group_type=None):
