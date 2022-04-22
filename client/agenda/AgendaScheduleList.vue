@@ -325,6 +325,7 @@ export default {
     border-bottom: 1px solid #FFF;
     padding: 0 12px;
     font-weight: 600;
+    scroll-margin-top: 25px;
   }
 
   &-display-session-head > td {

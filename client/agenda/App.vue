@@ -164,7 +164,7 @@ n-theme
 </template>
 
 <script setup>
-import { computed, h, onMounted, reactive, ref } from 'vue'
+import { computed, h, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import uniqBy from 'lodash/uniqBy'
 import { DateTime } from 'luxon'
 import {
@@ -222,6 +222,7 @@ const props = defineProps({
 
 const state = reactive({
   dayIntersectId: '',
+  visibleDays: [],
   currentTab: 'agenda',
   timezone: DateTime.local().zoneName,
   tabs: [
@@ -312,6 +313,7 @@ const scheduleAdjusted = computed(() => {
 const meetingDays = computed(() => {
   return uniqBy(scheduleAdjusted.value, 'adjustedStartDate').sort().map(s => ({
     slug: s.id.toString(),
+    ts: s.adjustedStartDate,
     label: DateTime.fromISO(s.adjustedStartDate).toLocaleString(DateTime.DATE_HUGE)
   }))
 })
@@ -341,35 +343,62 @@ function setTimezone (tz) {
 function showFilter () {
   state.filterShown = true
 }
+
+// Handle day indicator / scroll
+
+const visibleDays = []
+const observer = new IntersectionObserver((entries) => {
+  for (const entry of entries) {
+    if (entry.isIntersecting) {
+      if (!visibleDays.some(e => e.id === entry.target.dataset.dayId)) {
+        visibleDays.push({
+          id: entry.target.dataset.dayId,
+          ts: entry.target.dataset.dayTs
+        })
+      }
+    } else {
+      const idxToRemove = visibleDays.findIndex(e => e.id === entry.target.dataset.dayId)
+      if (idxToRemove >= 0) {
+        visibleDays.splice(idxToRemove, 1)
+      }
+    }
+  }
+
+  let finalDayId = state.dayIntersectId
+  let earliestTs = '9'
+  for (const day of visibleDays) {
+    if (day.ts < earliestTs) {
+      finalDayId = day.id
+      earliestTs = day.ts
+    }
+  }
+
+  state.dayIntersectId = finalDayId.toString()
+}, {
+  root: null,
+  rootMargin: '0px',
+  threshold: [0.0, 1.0]
+})
+
+onMounted(() => {
+  for (const mDay of meetingDays.value) {
+    const el = document.getElementById(`agenda-day-${mDay.slug}`)
+    el.dataset.dayId = mDay.slug.toString()
+    el.dataset.dayTs = mDay.ts
+    observer.observe(el)
+  }
+})
+
+onBeforeUnmount(() => {
+  for (const mDay of meetingDays.value) {
+    observer.unobserve(document.getElementById(`agenda-day-${mDay.slug}`))
+  }
+})
+
 function scrollToDay (dayId, ev) {
   ev.preventDefault()
   document.getElementById(`agenda-day-${dayId}`)?.scrollIntoView(true)
 }
-
-// MOUNTED
-
-const observer = new IntersectionObserver((entries) => {
-  let finalDayId = state.dayIntersectId
-  for (const entry of entries) {
-    if (entry.isIntersecting) {
-      finalDayId = entry.target.dataset.dayId.toString()
-      break
-    }
-  }
-  state.dayIntersectId = finalDayId
-}, {
-  root: null,
-  rootMargin: '0px',
-  threshold: 1.0
-})
-
-onMounted(async () => {
-  for (const mDay of meetingDays.value) {
-    const el = document.getElementById(`agenda-day-${mDay.slug}`)
-    el.dataset.dayId = mDay.slug.toString()
-    observer.observe(el)
-  }
-})
 
 // CREATED
 
