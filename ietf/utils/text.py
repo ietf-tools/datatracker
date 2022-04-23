@@ -16,10 +16,9 @@ import debug                            # pyflakes:ignore
 
 from .texescape import init as texescape_init, tex_escape_map
 
-tlds = " ".join(tlds.tld_set)
 bleach_linker = bleach.Linker(
-    url_re=bleach.linkifier.build_url_re(tlds=tlds),
-    email_re=bleach.linkifier.build_email_re(tlds=tlds),
+    url_re=bleach.linkifier.build_url_re(tlds=tlds.tld_set),
+    email_re=bleach.linkifier.build_email_re(tlds=tlds.tld_set),
     parse_email=True
 )
 
