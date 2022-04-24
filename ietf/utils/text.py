@@ -16,9 +16,10 @@ import debug                            # pyflakes:ignore
 
 from .texescape import init as texescape_init, tex_escape_map
 
+tlds_sorted = sorted(tlds.tld_set, key=len, reverse=True)
 bleach_linker = bleach.Linker(
-    url_re=bleach.linkifier.build_url_re(tlds=tlds.tld_set),
-    email_re=bleach.linkifier.build_email_re(tlds=tlds.tld_set),
+    url_re=bleach.linkifier.build_url_re(tlds=tlds_sorted),
+    email_re=bleach.linkifier.build_email_re(tlds=tlds_sorted),
     parse_email=True
 )
 
