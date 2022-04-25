@@ -23,7 +23,14 @@
     - [Docker Dev Environment](docker/README.md)
 - [Database & Assets](#database--assets)
 - [Old Datatracker Branches](https://github.com/ietf-tools/old-datatracker-branches/branches/all)
-- [Bootstrap 5 Upgrade](#bootstrap-5-upgrade)
+- [Frontend Development](#frontend-development)
+    - [Intro](#intro)
+    - [Bootstrap](#bootstrap)
+    - [Serving Static Files via CDN](#serving-static-files-via-cdn)
+    - [Handling of External Javascript and CSS Components](#handling-of-external-javascript-and-css-components)
+    - [Handling of Internal Static Files](#handling-of-internal-static-files)
+    - [Changes to Template Files](#changes-to-template-files)
+    - [Deployment](#deployment)
 
 ---
 
@@ -67,15 +74,9 @@ https://www.ietf.org/lib/dt/sprint/ietf_utf8.sql.gz
 
 > Note that this link is provided as reference only. To update the database in your dev environment to the latest version, you should instead run the `docker/cleandb` script!
 
+### Frontend Development
 
----
-
-# Bootstrap 5 Upgrade
-
-An upgrade of the UI to use Bootstrap 5 is under way. The following notes describe this work-in-progress and should
-be integrated with the rest of the document as the details and processes become final.
-
-## Intro
+#### Intro
 
 We now use `yarn` to manage assets for the Datatracker, and `parcel` to package them. `yarn` maintains its `node` packages under the `.yarn` directory.
 
@@ -90,7 +91,7 @@ yarn build
 
 This will create packages under `ietf/static/dist/ietf`, which are then served by the Django development server, and which must be uploaded to the CDN.
 
-## Use Bootstrap Whenever You Can
+#### Bootstrap
 
 The "new" datatracker uses Twitter Bootstrap for the UI.
 
@@ -109,13 +110,11 @@ Some ground rules:
     block of that template.
 -   Javascript that is used by multiple templates goes into
     static/js/ietf.js or a new js file.
--   Every template includes jquery, so write jquery code and not plain
-    Javascript. It's shorter and often faster.
 -   Avoid CSS, HTML styling or Javascript in the python code!
 
-## Serving Static Files via CDN
+#### Serving Static Files via CDN
 
-### Production Mode
+##### Production Mode
 
 If resources served over a CDN and/or with a high max-age don't have
 different URLs for different versions, then any component upgrade which
@@ -145,7 +144,7 @@ The result is that all static files collected via the `collectstatic`
 command will be placed in a location served via CDN, with the release
 version being part of the URL.
 
-### Development Mode
+##### Development Mode
 
 In development mode, `STATIC_URL` is set to `/static/`, and Django's
 `staticfiles` infrastructure makes the static files available under that
@@ -164,13 +163,13 @@ location from which it is served, the mapping is as follows:
 | localhost:8000/static/ietf/*  |  ietf/static/ietf/* |
 | localhost:8000/static/secr/*  |  ietf/secr/static/secr/*|
 
-## Handling of External Javascript and CSS Components
+#### Handling of External Javascript and CSS Components
 
 In order to make it easy to keep track of and upgrade external
 components, these are now handled by a tool called `npm` via the
 configuration in `package.json`.
 
-## Handling of Internal Static Files
+#### Handling of Internal Static Files
 
 Previous to this release, internal static files were located under
 `static/`, mixed together with the external components. They are now
@@ -180,7 +179,7 @@ static files associated with a particular app will be handled the same
 way (which means that all `admin/` static files automatically will be
 handled correctly, too).
 
-## Changes to Template Files
+#### Changes to Template Files
 
 In order to make the template files refer to the correct versioned CDN
 URL (as given by the STATIC_URL root) all references to static files in
@@ -190,7 +189,7 @@ serving static files from the right place in development mode, and
 referring to the correct versioned URL in production mode and the
 simpler `/static/` URLs in development mode.
 
-## Deployment
+#### Deployment
 
 During deployment, it is now necessary to run the management command:
 
