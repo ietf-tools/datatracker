@@ -138,6 +138,11 @@ In order to work backwards from a file served in development mode to the locatio
 
 In order to make it easy to keep track of and upgrade external components, these are now handled by a tool called `yarn` via the configuration in `package.json`.
 
+To add a new package, simply run (replace `<package-name>` with the NPM module name):
+```sh
+yarn add <package-name>
+```
+
 #### Handling of Internal Static Files
 
 Previous to this release, internal static files were located under `static/`, mixed together with the external components. They are now located under `ietf/static/ietf/` and `ietf/secr/static/secr`, and will be collected for serving via CDN by the `collectstatic` command. Any static files associated with a particular app will be handled the same way (which means that all `admin/` static files automatically will be handled correctly, too).
@@ -150,7 +155,7 @@ In order to make the template files refer to the correct versioned CDN URL (as g
 
 During deployment, it is now necessary to run the management command:
 
-``` shell
+```sh
 ietf/manage.py collectstatic
 ````
 before activating a new release.
