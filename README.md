@@ -77,23 +77,18 @@ be integrated with the rest of the document as the details and processes become 
 
 ## Intro
 
-We now use `npm` to manage assets for the Datatracker, and `parcel` to
-package them. `npm` maintains its `node` packages under `node_modules`.
+We now use `yarn` to manage assets for the Datatracker, and `parcel` to package them. `yarn` maintains its `node` packages under the `.yarn` directory.
 
-The Datatracker includes these packages from the various Javascript and
-CSS files in `ietf/static/js` and `ietf/static/css`, respectively.
+The Datatracker includes these packages from the various Javascript and CSS files in `ietf/static/js` and `ietf/static/css`, respectively.
 Static images are likewise in `ietf/static/images`.
 
-Whenever changes are made to the files under `ietf/static`, you must
-re-run `parcel` to package them:
+Whenever changes are made to the files under `ietf/static`, you must re-run `parcel` to package them:
 
 ``` shell
-npx parcel build
+yarn build
 ```
 
-This will create packages under `ietf/static/dist/ietf`, which are then
-served by the Django development server, and which must be uploaded to
-the CDN.
+This will create packages under `ietf/static/dist/ietf`, which are then served by the Django development server, and which must be uploaded to the CDN.
 
 ## Use Bootstrap Whenever You Can
 

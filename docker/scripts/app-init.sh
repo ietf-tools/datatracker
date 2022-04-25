@@ -6,13 +6,15 @@ service rsyslog start
 
 # fix permissions for npm-related paths
 WORKSPACE_UID_GID=$(stat --format="%u:%g" "$WORKSPACEDIR")
-chown -R "$WORKSPACE_UID_GID" "$WORKSPACEDIR/node_modules" "$WORKSPACEDIR/.parcel-cache"
+chown -R "$WORKSPACE_UID_GID" "$WORKSPACEDIR/.parcel-cache"
+
+# Build node packages that requrie native compilation
+echo "Compiling native node packages..."
+yarn rebuild
 
 # Generate static assets
-
-npm install --prefer-offline --no-audit
 echo "Building static assets... (this could take a minute or two)"
-npx parcel build
+yarn build
 
 # Copy config files if needed
 

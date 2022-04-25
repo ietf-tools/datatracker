@@ -6,7 +6,6 @@ services:
             EDITOR_VSCODE: 1
         volumes:
             - .:/workspace
-            - /workspace/node_modules
             - /workspace/.parcel-cache
             - /workspace/__pycache__
             - datatracker-vscode-ext:/root/.vscode-server/extensions

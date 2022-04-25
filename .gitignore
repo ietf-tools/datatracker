@@ -28,6 +28,7 @@ datatracker.sublime-workspace
 /.tmp
 /attic
 /bin
+/bootstrap/node_modules
 /data
 /docker/docker-compose.extend-custom.yml
 /env
@@ -60,4 +61,10 @@ datatracker.sublime-workspace
 /unix.tag
 *.pyc
 __pycache__
-node_modules
+.yarn/*
+!.yarn/cache
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
