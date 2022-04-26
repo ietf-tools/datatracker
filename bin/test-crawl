@@ -721,7 +721,7 @@ if __name__ == "__main__":
     while urls:
         if args.random:
             # popitem() is documented to be random, but really isn't
-            url = random.choice(urls.keys())
+            url = random.choice(list(urls.keys()))
             referrer = urls.pop(url)
         else:
             url, referrer = urls.popitem()
