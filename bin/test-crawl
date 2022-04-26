@@ -156,7 +156,7 @@ def check_html_valid(url, response, args):
         key = re.sub("/submit/status/nnnn/[0-9a-f]+/", "/submit/status/nnnn/bar/", key)
         key = re.sub("/team/[a-z0-9-]+/",   "/team/foo/", key)
         key = re.sub("/wg/[a-z0-9-]+/",   "/wg/foo/", key)
-        key = re.sub("\?.*$",       "", key)
+        key = re.sub(r"\?.*$",       "", key)
 
         for slug in doc_types:
             key = re.sub("/%s-.*/"%slug, "/%s-nnnn/"%slug, key)
@@ -204,7 +204,7 @@ def check_html_valid(url, response, args):
             except Exception as e:
                 for err in parser.errors:
                     pos, code, data = err
-                    tags.append(u"WARN invalid html at line, pos %s: %s" % (pos, e))
+                    tags.append("WARN invalid html at line, pos {}: {}".format(pos, e))
                 warnings += 1
 
 def skip_extract_from(url):
@@ -749,7 +749,7 @@ if __name__ == "__main__":
             sys.exit(1)
         except:
             elapsed = datetime.datetime.now() - request_start
-            tags = [ u"FAIL  (from [ %s ])" % (",\n\t".join(get_referrers(url))) ]
+            tags = [ "FAIL  (from [ %s ])" % (",\n\t".join(get_referrers(url))) ]
             log("%2d:%02d:%02d %7d %6d  %s %6.3fs %s %s" % (hrs,min,sec, len(visited), len(urls), 500, elapsed.total_seconds(), url, " ".join(tags)))
             log("=============")
             log(traceback.format_exc())
@@ -799,7 +799,7 @@ if __name__ == "__main__":
                         log("=============")
 
             else:
-                tags.append(u"FAIL  (from %s)" % (referrer, ))
+                tags.append("FAIL  (from {})".format(referrer))
                 errors += 1
 
             if elapsed.total_seconds() > slow_threshold:
