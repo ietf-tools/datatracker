@@ -1126,7 +1126,6 @@ SILENCED_SYSTEM_CHECKS = [
 ]
 
 CHECKS_LIBRARY_PATCHES_TO_APPLY = [
-    'patch/fix-unidecode-argument-warning.patch',
     'patch/change-oidc-provider-field-sizes-228.patch',
     'patch/fix-oidc-access-token-post.patch',
     'patch/fix-jwkest-jwt-logging.patch',
