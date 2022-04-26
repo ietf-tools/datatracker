@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-import bleach
 import datetime
 import re
 from urllib.parse import urljoin
@@ -26,7 +25,7 @@ from ietf.doc.models import ConsensusDocEvent
 from ietf.utils.html import sanitize_fragment
 from ietf.utils import log
 from ietf.doc.utils import prettify_std_name
-from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped
+from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped, bleach_linker
 
 register = template.Library()
 
@@ -428,14 +427,14 @@ def format_history_text(text, trunc_words=25):
     full = mark_safe(text)
     if "</a>" not in full:
         full = urlize_ietf_docs(full)
-    full = bleach.linkify(full, parse_email=True)
+    full = bleach_linker.linkify(full)
 
     return format_snippet(full, trunc_words)
 
 @register.filter
 def format_snippet(text, trunc_words=25): 
     # urlize if there aren't already links present
-    text = bleach.linkify(text, parse_email=True)
+    text = bleach_linker.linkify(text)
     full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_fragment(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
