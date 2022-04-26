@@ -8,6 +8,8 @@ echo "Copying config files..."
 cp ./docker/configs/settings_local.py ./ietf/settings_local.py
 echo "Ensure all requirements.txt packages are installed..."
 pip install -r requirements.txt
+echo "Compiling native node packages..."
+yarn rebuild
 echo "Building static assets..."
 yarn build
 echo "Creating data directories..."

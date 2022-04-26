@@ -72,6 +72,9 @@ RUN sed -i 's/\r$//' /tmp/app-install-chromedriver.sh && \
     chmod +x /tmp/app-install-chromedriver.sh
 RUN /tmp/app-install-chromedriver.sh
 
+# Activate Yarn
+RUN corepack enable
+
 # Get rid of installation files we don't need in the image, to reduce size
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -114,8 +117,3 @@ RUN chmod +rx /usr/local/bin/wait-for
 # Create workspace
 RUN mkdir -p /workspace
 WORKDIR /workspace
-
-# Install NPM modules
-COPY package.json package.json
-RUN npm install --no-audit
-RUN rm -f package.json package-lock.json
