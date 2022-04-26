@@ -57,7 +57,7 @@
             {{ schedule.meeting.agenda_info_note|removetags:"h1"|safe }}
         </p>
     {% endif %}
-    {% include 'meeting/tz-display.html' with meeting_timezone=timezone only %}
+    {% include 'meeting/tz-display.html' with id_suffix="" meeting_timezone=timezone only %}
     {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Filter this agenda view..." always_show=personalize %}
     {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting personalize=personalize only %}
     <div class="input-group mb-3">
