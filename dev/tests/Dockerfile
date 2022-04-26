@@ -23,6 +23,7 @@ RUN apt-get install -qy \
 	bash \
 	build-essential \
 	curl \
+    default-jdk \
     docker-ce-cli \
 	enscript \
 	gawk \
