@@ -9,6 +9,7 @@ import debug # pyflakes: ignore
 
 class IetfFiltersTests(TestCase):
     def test_urlize_ietf_docs(self):
+        self.maxDiff = None
         cases = [
             ("no change", "no change"),
             ("bcp1", '<a href="/doc/bcp1/">bcp1</a>'),
@@ -46,14 +47,22 @@ class IetfFiltersTests(TestCase):
             ),
             (
                 "draft-madanapalli-nd-over-802.16-problems",
-                '<a href="/doc/draft-madanapalli-nd-over-802.16-problems/">draft-madanapalli-nd-over-802.16-problems</a>' 
+                '<a href="/doc/draft-madanapalli-nd-over-802.16-problems/">draft-madanapalli-nd-over-802.16-problems</a>'
             ),
             (
                  "draft-madanapalli-nd-over-802.16-problems-02.txt",
-                '<a href="/doc/draft-madanapalli-nd-over-802.16-problems/02/">draft-madanapalli-nd-over-802.16-problems-02.txt</a>'                
+                '<a href="/doc/draft-madanapalli-nd-over-802.16-problems/02/">draft-madanapalli-nd-over-802.16-problems-02.txt</a>'
+            ),
+            (
+                '<a href="mailto:draft-ietf-some-names@ietf.org">draft-ietf-some-names@ietf.org</a>',
+                '<a href="mailto:draft-ietf-some-names@ietf.org">draft-ietf-some-names@ietf.org</a>',
+            ),
+            (
+                "http://ieee802.org/1/files/public/docs2015/cn-thaler-Qcn-draft-PAR.pdf",
+                "http://ieee802.org/1/files/public/docs2015/cn-thaler-Qcn-draft-PAR.pdf"
             )
         ]
-        
+
         # Some edge cases scraped from existing old draft names
         for name in [
             # "draft-odell-8+8", # This fails since + matches the right side of \b
