@@ -11,6 +11,7 @@ from ietf.group.models import Group
 from ietf.meeting.forms import sessiondetailsformset_factory
 from ietf.meeting.models import ResourceAssociation, Constraint
 from ietf.person.fields import SearchablePersonsField
+from ietf.person.models import Person
 from ietf.utils.html import clean_text_field
 from ietf.utils import log
 
@@ -154,10 +155,17 @@ class SessionForm(forms.Form):
         self.fields["resources"].choices = [(x.pk,x.desc) for x in ResourceAssociation.objects.filter(name__used=True).order_by('name__order') ]
 
         if self.hidden:
+            # replace all the widgets to start...
             for key in list(self.fields.keys()):
                 self.fields[key].widget = forms.HiddenInput()
+            # re-replace a couple special cases
             self.fields['resources'].widget = forms.MultipleHiddenInput()
             self.fields['timeranges'].widget = forms.MultipleHiddenInput()
+            # and entirely replace bethere - no need to support searching if input is hidden
+            self.fields['bethere'] = forms.ModelMultipleChoiceField(
+                widget=forms.MultipleHiddenInput, required=False,
+                queryset=Person.objects.all(),
+            )
 
     def wg_constraint_fields(self):
         """Iterates over wg constraint fields
