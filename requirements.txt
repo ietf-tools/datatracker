@@ -25,7 +25,6 @@ django-webtest>=1.9.7    # Only used in tests
 django-widget-tweaks>=1.4.2
 djlint>=0.7.3  # To auto-indent templates via "djlint --profile django --reformat"
 docutils>=0.12,!=0.15   # Used only by dbtemplates for RestructuredText
-#AMHERE - looking at freshness and use
 factory-boy>=3.2.1
 github3.py>=1.2
 gunicorn>=20.1.0
