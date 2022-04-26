@@ -196,7 +196,7 @@ class ValidatingTemplate(Template):
             return content
 
         fingerprint = hash(content) + sys.maxsize + 1  # make hash positive
-        if fingerprint in self.backend.validation_cache:
+        if not settings.validate_html_vnu and fingerprint in self.backend.validation_cache:
             # already validated this HTML fragment, skip it
             # as an optimization, make page a bit smaller by not returning HTML for the menus
             # FIXME: figure out why this still includes base/menu.html
@@ -590,8 +590,11 @@ class IetfTestRunner(DiscoverRunner):
         parser.add_argument('--no-validate-html',
             action='store_false', dest="validate_html", default=True,
             help='Do not validate all generated HTML with html-validate.org')
+        parser.add_argument('--also-validate-with-vnu',
+            action='store_true', dest="validate_html_vnu", default=False,
+            help='Also validate all generated HTML with validator.github.io/validator/')
 
-    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, **kwargs):
+    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, validate_html_vnu=None, **kwargs):
         #
         self.check_coverage = not skip_coverage
         self.save_version_coverage = save_version_coverage
@@ -599,6 +602,7 @@ class IetfTestRunner(DiscoverRunner):
         self.permit_mixed_migrations = permit_mixed_migrations
         self.show_logging = show_logging
         settings.validate_html = self if validate_html else None
+        settings.validate_html_vnu = self if validate_html and validate_html_vnu else None
         settings.show_logging = show_logging
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
@@ -718,7 +722,7 @@ class IetfTestRunner(DiscoverRunner):
             print("     Not validating any generated HTML; "
                   "please do so at least once before committing changes")
         else:
-            print("     Validating all HTML generated during the tests")
+            print("     Validating all HTML generated during the tests", end="")
             self.batches = {"doc": [], "frag": []}
 
             # keep the html-validate configs here, so they can be kept in sync easily
@@ -768,6 +772,27 @@ class IetfTestRunner(DiscoverRunner):
                 self.config_file[kind].flush()
                 Path(self.config_file[kind].name).chmod(0o644)
 
+            if not settings.validate_html_vnu:
+                print("")
+                self.vnu = None
+            else:
+                print(" using two validators")
+                try:
+                    self.vnu = subprocess.Popen(
+                        [
+                            "java",
+                            "-Dnu.validator.servlet.bind-address=127.0.0.1",
+                            "-cp",
+                            "bin/vnu.jar",
+                            "nu.validator.servlet.Main",
+                            "8888",
+                        ],
+                        stdout=subprocess.DEVNULL,
+                    )
+                except OSError:
+                    print("     Could not start Nu Html Checker (v.Nu)")
+                    self.vnu = None
+
         super(IetfTestRunner, self).setup_test_environment(**kwargs)
 
     def teardown_test_environment(self, **kwargs):
@@ -789,12 +814,18 @@ class IetfTestRunner(DiscoverRunner):
                 else:
                     with open(self.coverage_file, "w") as file:
                         json.dump(self.coverage_master, file, indent=2, sort_keys=True)
-        super(IetfTestRunner, self).teardown_test_environment(**kwargs)
 
         if settings.validate_html:
             for kind in self.batches:
-                self.validate(kind)
+                try:
+                    self.validate(kind)
+                except Exception:
+                    pass
                 self.config_file[kind].close()
+            if self.vnu:
+                self.vnu.terminate()
+
+        super(IetfTestRunner, self).teardown_test_environment(**kwargs)
 
     def validate(self, kind):
         if not self.batches[kind]:
@@ -853,6 +884,85 @@ class IetfTestRunner(DiscoverRunner):
 
         if errors:
             testcase.fail(errors)
+
+        if settings.validate_html_vnu:
+            if kind == "frag":
+                return
+            validation_results = None
+            with tempfile.NamedTemporaryFile() as stdout:
+                cmd = [
+                    "java",
+                    "-Dnu.validator.client.asciiquotes=yes",
+                    "-Dnu.validator.client.out=json",
+                    "-Dnu.validator.client.charset=utf-8",
+                    "-cp",
+                    "bin/vnu.jar",
+                    "nu.validator.client.HttpClient",
+                ]
+                files = [
+                    os.path.join(d, f)
+                    for d, dirs, files in os.walk(tmpdir.name)
+                    for f in files
+                ]
+                cmd.extend(files)
+                result = subprocess.run(
+                    cmd,
+                    stdout=stdout,
+                    stderr=stdout,
+                )
+                stdout.seek(0)
+                validation_results = []
+                try:
+                    # we get a bunch of concatenated JSONs blob back, ugh
+                    decoder = json.JSONDecoder()
+                    msg = stdout.read().decode()
+                    while msg:
+                        obj, index = decoder.raw_decode(msg)
+                        msg = msg[index:].lstrip()
+                        validation_results.append(obj)
+                except json.decoder.JSONDecodeError:
+                    stdout.seek(0)
+                    msg = stdout.read().decode()
+                    if not msg:
+                        return
+                    testcase.fail(msg)
+
+            for result in validation_results:
+                with open(result["url"]) as f:
+                    source_lines = f.readlines()
+                    for msg in result["messages"]:
+
+                        if (
+                            re.match(
+                                r"Overriding document character encoding",
+                                msg["message"],
+                            )
+                            or re.match(
+                                r"The 'type' attribute is unnecessary for JavaScript",
+                                msg["message"],
+                            )
+                            or re.match(
+                                r"Attribute 'required' not allowed on element 'div'",
+                                msg["message"],
+                            )
+                            or re.match(
+                                r"The document is not mappable to XML 1.0",
+                                msg["message"],
+                            )
+                        ):
+                            continue
+
+                        errors += f'\n{result["url"]}:\n'
+                        if "extract" in msg:
+                            errors += msg["extract"].replace('\n', ' ') + "\n"
+                            errors += " " * msg["hiliteStart"]
+                            errors += "^" * msg["hiliteLength"] + "\n"
+                            errors += " " * msg["hiliteStart"]
+                        errors += f'{msg["type"]}: {msg["message"]}\n'
+
+            if errors:
+                testcase.fail(errors)
+
         tmpdir.cleanup()
 
     def get_test_paths(self, test_labels):
