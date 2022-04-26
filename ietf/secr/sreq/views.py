@@ -289,9 +289,8 @@ def confirm(request, acronym):
         return redirect('ietf.secr.sreq.views.main')
                 
     session_data = form.data.copy()
-    if 'bethere' in session_data:
-        person_id_list = [ id for id in form.data['bethere'].split(',') if id ]
-        session_data['bethere'] = Person.objects.filter(pk__in=person_id_list)
+    # use cleaned_data for the 'bethere' field so we get the Person instances
+    session_data['bethere'] = form.cleaned_data['bethere'] if 'bethere' in form.cleaned_data else []
     if session_data.get('session_time_relation'):
         session_data['session_time_relation_display'] = dict(Constraint.TIME_RELATION_CHOICES)[session_data['session_time_relation']]
     if session_data.get('joint_for_session'):
