@@ -20,7 +20,7 @@ django-password-strength>=1.2.1
 django-referrer-policy>=1.0
 django-simple-history>=2.3.0
 django-stubs==1.6.0    # The django-stubs version used determines the the mypy version indicated below
-django-tastypie==0.14.3    # Django 2.1 will require 0.14.2; Django 3.0 will require 0.14.3
+django-tastypie==0.14.3    # Version must be locked in sync with version of Django
 django-webtest>=1.9.7    # Only used in tests
 django-widget-tweaks>=1.4.2
 djlint>=0.7.3    # To auto-indent templates via "djlint --profile django --reformat"
