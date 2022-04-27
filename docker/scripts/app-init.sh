@@ -20,6 +20,7 @@ yarn rebuild
 # Generate static assets
 echo "Building static assets... (this could take a minute or two)"
 yarn build
+yarn legacy:build
 
 # Copy config files if needed
 

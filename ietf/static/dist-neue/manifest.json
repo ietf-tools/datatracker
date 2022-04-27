@@ -1,0 +1,10 @@
+{
+  "client/agenda/main.js": {
+    "file": "assets/agenda.d38ef629.js",
+    "src": "client/agenda/main.js",
+    "isEntry": true,
+    "css": [
+      "assets/agenda.7838ab8d.css"
+    ]
+  }
+}

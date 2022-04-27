@@ -12,6 +12,7 @@ echo "Compiling native node packages..."
 yarn rebuild
 echo "Building static assets..."
 yarn build
+yarn legacy:build
 echo "Creating data directories..."
 chmod +x ./docker/scripts/app-create-dirs.sh
 ./docker/scripts/app-create-dirs.sh
