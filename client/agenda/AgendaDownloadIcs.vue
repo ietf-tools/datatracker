@@ -24,7 +24,7 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='250')
           span Download
     .agenda-downloadics-content
       .agenda-downloadics-grcat(
-        v-for='(grcat, idx) of categories'
+        v-for='(grcat, idx) of props.categories'
         :key='`grcat-` + idx'
         :class='`test-` + idx'
         )
@@ -48,7 +48,7 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='250')
             span Non-Area Events
 </template>
 
-<script>
+<script setup>
 import { ref, toRefs, watch } from 'vue'
 import difference from 'lodash/difference'
 import {
@@ -56,79 +56,71 @@ import {
   NDrawer,
   NDrawerContent,
   useMessage
-  } from 'naive-ui'
+} from 'naive-ui'
 
-export default {
-  components: {
-    NButton,
-    NDrawer,
-    NDrawerContent
+// PROPS
+
+const props = defineProps({
+  shown: {
+    type: Boolean,
+    required: true,
+    default: false
   },
-  props: {
-    shown: {
-      type: Boolean,
-      required: true,
-      default: false
-    },
-    categories: {
-      type: Array,
-      required: true
-    },
-    meetingNumber: {
-      type: String,
-      required: true
-    }
+  categories: {
+    type: Array,
+    required: true
   },
-  emit: ['update:shown'],
-  setup (props, context) {
-    const { categories, shown, meetingNumber } = toRefs(props)
-    const isShown = ref(shown.value)
-    const currentSelection = ref([])
-    const currentSubs = ref([])
-    const message = useMessage()
+  meetingNumber: {
+    type: String,
+    required: true
+  }
+})
 
-    watch(shown, (newValue) => {
-      isShown.value = newValue
-    })
-    watch(isShown, (newValue) => {
-      context.emit('update:shown', newValue)
-    })
+// EMITS
 
-    const close = () => {
-      context.emit('update:shown', false)
-      isShown.value = false
-    }
+const emit = defineEmits(['update:shown'])
 
-    const download = () => {
-      if (currentSubs.value.length > 0) {
-        window.location.assign(`/meeting/${meetingNumber.value}/agenda.ics?show=${currentSubs.value.join(',')}`)
-      } else {
-        window.location.assign(`/meeting/${meetingNumber.value}/agenda.ics`)
-      }
-      message.loading('Generating calendar file... Download will begin shortly.')
-      context.emit('update:shown', false)
-      isShown.value = false
-    }
+// STATE
 
-    const toggleCat = (catKeyword, children) => {
-      if (!currentSelection.value.includes(catKeyword)) {
-        currentSelection.value = [...currentSelection.value, catKeyword]
-        currentSubs.value = [...currentSubs.value, ...children.map(c => c.keyword)]
-      } else {
-        currentSelection.value = currentSelection.value.filter(c => c !== catKeyword)
-        currentSubs.value = difference(currentSubs.value, children.map(c => c.keyword))
-      }
-    }
+const isShown = ref(props.shown)
+const currentSelection = ref([])
+const currentSubs = ref([])
+const message = useMessage()
 
-    return {
-      isShown,
-      currentSelection,
-      currentSubs,
-      categories,
-      close,
-      download,
-      toggleCat
-    }
+// WATCHERS
+
+watch(() => props.shown, (newValue) => {
+  isShown.value = newValue
+})
+watch(isShown, (newValue) => {
+  emit('update:shown', newValue)
+})
+
+// METHODS
+
+const close = () => {
+  emit('update:shown', false)
+  isShown.value = false
+}
+
+const download = () => {
+  if (currentSubs.value.length > 0) {
+    window.location.assign(`/meeting/${props.meetingNumber.value}/agenda.ics?show=${currentSubs.value.join(',')}`)
+  } else {
+    window.location.assign(`/meeting/${props.meetingNumber.value}/agenda.ics`)
+  }
+  message.loading('Generating calendar file... Download will begin shortly.')
+  emit('update:shown', false)
+  isShown.value = false
+}
+
+const toggleCat = (catKeyword, children) => {
+  if (!currentSelection.value.includes(catKeyword)) {
+    currentSelection.value = [...currentSelection.value, catKeyword]
+    currentSubs.value = [...currentSubs.value, ...children.map(c => c.keyword)]
+  } else {
+    currentSelection.value = currentSelection.value.filter(c => c !== catKeyword)
+    currentSubs.value = difference(currentSubs.value, children.map(c => c.keyword))
   }
 }
 </script>

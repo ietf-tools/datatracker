@@ -56,26 +56,17 @@ n-theme
         // -----------------------------------
         agenda-download-ics(v-model:shown='state.downloadIcsShown', :categories='props.categories', :meeting-number='props.meeting.number')
         agenda-filter(v-model:shown='state.filterShown', v-model:selection='state.selectedCatSubs', :categories='props.categories')
+        agenda-schedule-calendar(v-model:shown='state.calendarShown', :events='scheduleAdjusted')
 
         // -----------------------------------
-        // -> SCHEDULE - VIEW SELECTOR
+        // -> SCHEDULE LIST
         // -----------------------------------
-        n-tabs(type='segment', size='large', v-model:value='state.scheduleTab')
-          n-tab-pane(name='list', tab='List View')
-            template(v-slot:tab)
-              i.bi.bi-list-columns-reverse.me-2
-              span List View
-            agenda-schedule-list(
-              :events='scheduleAdjusted'
-              :picker-mode='state.pickerMode'
-              :meeting-number='props.meeting.number'
-              :use-codi-md='props.useCodiMd'
-              )
-          n-tab-pane(name='weekview', tab='Calendar View')
-            template(v-slot:tab)
-              i.bi.bi-calendar2-range.me-2
-              span Calendar View
-            agenda-schedule-calendar(:events='scheduleAdjusted')
+        agenda-schedule-list(
+          :events='scheduleAdjusted'
+          :picker-mode='state.pickerMode'
+          :meeting-number='props.meeting.number'
+          :use-codi-md='props.useCodiMd'
+          )
 
       // -----------------------------------
       // -> Anchored Day Quick Access Menu
@@ -94,7 +85,7 @@ n-theme
                   )
                   n-badge(:value='state.selectedCatSubs.length', processing)
                   i.bi.bi-ui-checks-grid.me-2
-                  span Filter Agenda...
+                  span Filter Areas + Groups...
                 n-button.mt-2(
                   v-if='!state.pickerMode'
                   block
@@ -135,17 +126,27 @@ n-theme
                     )
                     i.bi.bi-x-square.me-2
                     span Discard
+                n-divider: small.text-muted Calendar
+                n-button.mt-2(
+                  block
+                  color='#6c757d'
+                  size='large'
+                  strong
+                  @click='state.calendarShown = true'
+                  )
+                  i.bi.bi-calendar3.me-2
+                  span Calendar View
                 n-button.mt-2(
                   block
                   secondary
-                  type='primary'
+                  color='#6c757d'
                   size='large'
                   strong
                   @click='state.downloadIcsShown = true'
                   )
-                  i.bi.bi-calendar3.me-2
+                  i.bi.bi-calendar-check.me-2
                   span Download as .ics...
-                n-divider: small.text-muted Quick Access
+                n-divider: small.text-muted Jump to...
                 ul.nav.nav-pills.flex-column.small
                   li.nav-item
                     a.nav-link(href='#now')
@@ -231,8 +232,8 @@ const state = reactive({
     { key: 'floorplan', title: 'Floor plan', icon: 'bi-pin-map' },
     { key: 'plaintext', title: 'Plaintext', icon: 'bi-file-text' }
   ],
-  scheduleTab: 'list',
   searchText: '',
+  calendarShown: false,
   downloadIcsShown: false,
   filterShown: false,
   pickerMode: false,
