@@ -196,7 +196,7 @@ class ValidatingTemplate(Template):
             return content
 
         fingerprint = hash(content) + sys.maxsize + 1  # make hash positive
-        if not settings.validate_html_vnu and fingerprint in self.backend.validation_cache:
+        if not settings.validate_html_harder and fingerprint in self.backend.validation_cache:
             # already validated this HTML fragment, skip it
             # as an optimization, make page a bit smaller by not returning HTML for the menus
             # FIXME: figure out why this still includes base/menu.html
@@ -590,11 +590,11 @@ class IetfTestRunner(DiscoverRunner):
         parser.add_argument('--no-validate-html',
             action='store_false', dest="validate_html", default=True,
             help='Do not validate all generated HTML with html-validate.org')
-        parser.add_argument('--also-validate-with-vnu',
-            action='store_true', dest="validate_html_vnu", default=False,
-            help='Also validate all generated HTML with validator.github.io/validator/')
+        parser.add_argument('--validate-html-harder',
+            action='store_true', dest="validate_html_harder", default=False,
+            help='Validate all generated HTML with additional validators (slow)')
 
-    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, validate_html_vnu=None, **kwargs):
+    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, validate_html_harder=None, **kwargs):
         #
         self.check_coverage = not skip_coverage
         self.save_version_coverage = save_version_coverage
@@ -602,7 +602,7 @@ class IetfTestRunner(DiscoverRunner):
         self.permit_mixed_migrations = permit_mixed_migrations
         self.show_logging = show_logging
         settings.validate_html = self if validate_html else None
-        settings.validate_html_vnu = self if validate_html and validate_html_vnu else None
+        settings.validate_html_harder = self if validate_html and validate_html_harder else None
         settings.show_logging = show_logging
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
@@ -772,7 +772,7 @@ class IetfTestRunner(DiscoverRunner):
                 self.config_file[kind].flush()
                 Path(self.config_file[kind].name).chmod(0o644)
 
-            if not settings.validate_html_vnu:
+            if not settings.validate_html_harder:
                 print("")
                 self.vnu = None
             else:
@@ -885,7 +885,7 @@ class IetfTestRunner(DiscoverRunner):
         if errors:
             testcase.fail(errors)
 
-        if settings.validate_html_vnu:
+        if settings.validate_html_harder:
             if kind == "frag":
                 return
             validation_results = None
@@ -947,6 +947,28 @@ class IetfTestRunner(DiscoverRunner):
                             )
                             or re.match(
                                 r"The document is not mappable to XML 1.0",
+                                msg["message"],
+                            )
+                            or re.search(
+                                r"Ceci n'est pas une URL",
+                                msg["message"],
+                            )
+                        ):
+                            continue
+
+                        if (
+                            result["url"].endswith("proceedings_overview.html")
+                            and re.match(
+                                r"The '\w+' attribute on the '\w+' element is obsolete",
+                                msg["message"],
+                            )
+                        ):
+                            continue
+
+                        if (
+                            result["url"].endswith("nomcom/requirements.html")
+                            and re.match(
+                                r"Section lacks heading",
                                 msg["message"],
                             )
                         ):

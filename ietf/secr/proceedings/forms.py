@@ -22,7 +22,9 @@ VALID_BLUESHEET_EXTENSIONS = ('.pdf','.jpg','.jpeg')
 
 class RecordingForm(forms.Form):
     external_url = forms.URLField(label='Url')
-    session = forms.ModelChoiceField(queryset=Session.objects,empty_label='')
+    session = forms.ModelChoiceField(queryset=Session.objects)
+    session.widget.attrs['class'] = "select2-field"
+    session.widget.attrs['data-minimum-input-length'] = 0
     
     def __init__(self, *args, **kwargs):
         self.meeting = kwargs.pop('meeting')

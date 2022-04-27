@@ -3,7 +3,7 @@
 {% origin %}
 {% load ietf_filters %}
 <h1>
-    {{ doc.title }}
+    {{ doc.title|default:"(Untitled)" }}
     <br>
     <small class="text-muted">{{ name }}</small>
 </h1>

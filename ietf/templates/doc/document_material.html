@@ -3,7 +3,7 @@
 {% load origin %}
 {% load static %}
 {% load ietf_filters textfilters %}
-{% block title %}{{ doc.title }}{% endblock %}
+{% block title %}{{ doc.title|default:"Untitled" }}{% endblock %}
 {% block content %}
     {% origin %}
     {{ top|safe }}
@@ -36,7 +36,7 @@
                         {% doc_edit_button 'ietf.doc.views_material.edit_material' name=doc.name action="title" %}
                     {% endif %}
                 </td>
-                <th scope="row">{{ doc.title }}</th>
+                <th scope="row">{{ doc.title|default:'<span class="text-muted">(None)</span>' }}</th>
             </tr>
             {% if doc.abstract or doc.type_id == 'slides' and can_manage_material and not snapshot %}
                 <tr>
