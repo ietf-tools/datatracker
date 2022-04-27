@@ -17,10 +17,11 @@ from django.utils.html import strip_tags
 from django.utils.encoding import force_text
 from django.utils.encoding import force_str # pyflakes:ignore force_str is used in the doctests
 from django.urls import reverse as urlreverse
+from django.core.cache import cache
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import BallotDocEvent
+from ietf.doc.models import BallotDocEvent, DocAlias
 from ietf.doc.models import ConsensusDocEvent
 from ietf.utils.html import sanitize_fragment
 from ietf.utils import log
@@ -184,13 +185,72 @@ def rfceditor_info_url(rfcnum : str):
     """Link to the RFC editor info page for an RFC"""
     return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f'rfc{rfcnum}')
 
+
+def doc_exists(name):
+    """Check whether a given document exists"""
+    def find_unique(n):
+        key = hash(n)
+        found = cache.get(key)
+        if not found:
+            exact = DocAlias.objects.filter(name=n).first()
+            found = exact.name if exact else "_"
+            cache.set(key, found)
+        return None if found == "_" else found
+
+    # all documents exist when tests are running
+    if settings.SERVER_MODE == 'test':
+        return True
+
+    # chop away extension
+    extension_split = re.search(r"^(.+)\.(txt|ps|pdf)$", name)
+    if extension_split:
+        name = extension_split.group(1)
+
+    while True:
+        redirect_to = find_unique(name)
+        if redirect_to is None:
+            break
+        if redirect_to == name:
+            return True
+        name = redirect_to
+
+    # check for embedded rev - this may be ambigious, so don't
+    # chop it off if we don't find a match
+    rev_split = re.search("^(.+)-([0-9]{2})$", name)
+    if rev_split:
+        redirect_to = find_unique(rev_split.group(1))
+        return redirect_to is not None
+    return False
+
+
+def link_charter_doc_match1(match):
+    if not doc_exists(match[0]):
+        return match[0]
+    return f'<a href="/doc/{match[1][:-1]}/{match[2]}/">{match[0]}</a>'
+
+
+def link_charter_doc_match2(match):
+    if not doc_exists(match[0]):
+        return match[0]
+    return f'<a href="/doc/{match[1][:-1]}/{match[2]}/">{match[0]}</a>'
+
+
 def link_non_charter_doc_match(match):
-    if len(match[3])==2 and match[3].isdigit():
+    if not doc_exists(match[0]):
+        return match[0]
+    if len(match[3]) == 2 and match[3].isdigit():
         return f'<a href="/doc/{match[2][:-1]}/{match[3]}/">{match[0]}</a>'
     else:
         return f'<a href="/doc/{match[2]}{match[3]}/">{match[0]}</a>'
 
-@register.filter(name='urlize_ietf_docs', is_safe=True, needs_autoescape=True)
+
+def link_other_doc_match(match):
+    if not doc_exists(match[0]):
+        return match[0]
+    return f'<a href="/doc/{match[2].strip().lower()}{match[3]}/">{match[1]}</a>'
+
+
+@register.filter(name="urlize_ietf_docs", is_safe=True, needs_autoescape=True)
 def urlize_ietf_docs(string, autoescape=None):
     """
     Make occurrences of RFC NNNN and draft-foo-bar links to /doc/.
@@ -202,14 +262,14 @@ def urlize_ietf_docs(string, autoescape=None):
     if re.search(exp1, string):
         string = re.sub(
             exp1,
-            lambda x: f'<a href="/doc/{x[1][:-1]}/{x[2]}/">{x[0]}</a>',
+            link_charter_doc_match1,
             string,
             flags=re.IGNORECASE | re.ASCII,
         )
-    elif re.search(exp2, string): 
+    elif re.search(exp2, string):
         string = re.sub(
             exp2,
-            lambda x: f'<a href="/doc/{x[1][:-1]}/{x[2]}/">{x[0]}</a>',
+            link_charter_doc_match2,
             string,
             flags=re.IGNORECASE | re.ASCII,
         )
@@ -222,11 +282,12 @@ def urlize_ietf_docs(string, autoescape=None):
     string = re.sub(
         # r"\b((RFC|BCP|STD|FYI|(?:draft-|bofreq-|conflict-review-|status-change-|charter-)[-\d\w.+]+)\s*0*(\d+))\b",
         r"\b(?<!-)((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
-        lambda x: f'<a href="/doc/{x[2].strip().lower()}{x[3]}/">{x[1]}</a>',
+        link_other_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
     return mark_safe(string)
+
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
 @register.filter(name='urlize_related_source_list', is_safe=True, needs_autoescape=True)
