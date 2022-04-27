@@ -85,6 +85,13 @@ else
 fi
 echo "Using destination $DEST_ROOT"
 
+for dir in bofreq; do
+  dest="$DEST_ROOT/ietf-ftp/$dir"
+  mkdir -p "$dest"
+  echo "Fetching $dest ..."
+  rsync -auz ${VERBOSE:+--info=progress2} rsync.ietf.org::$dir/ $dest/
+done
+
 for dir in charter conflict-reviews internet-drafts review rfc slides status-changes yang; do
   dest="$DEST_ROOT/ietf-ftp/$dir"
   mkdir -p "$dest"
