@@ -429,6 +429,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.staticfiles',
     # External apps 
+    'analytical',
     'django_bootstrap5',
     'corsheaders',
     'django_markup',

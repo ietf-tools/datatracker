@@ -8,6 +8,7 @@ LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 # [Choice] Node.js version: none, lts/*, 16, 14, 12, 10
 ARG NODE_VERSION="none"
 RUN if [ "${NODE_VERSION}" != "none" ]; then su vscode -c "umask 0002 && . /usr/local/share/nvm/nvm.sh && nvm install ${NODE_VERSION} 2>&1"; fi
+RUN npm install -g yarn
 
 EXPOSE 8000
 
@@ -134,10 +135,5 @@ RUN sed -i 's/\r$//' /docker-init.sh && \
 # Create workspace
 RUN mkdir -p /workspace
 WORKDIR /workspace
-
-# Install NPM modules
-COPY package.json package.json
-RUN npm install --no-audit
-RUN rm -f package.json package-lock.json
 
 # ENTRYPOINT [ "/docker-init.sh" ]

@@ -41,5 +41,10 @@
   "taskExplorer.enableTsc": false,
   "taskExplorer.enableWorkspace": true,
   "taskExplorer.enableExplorerView": false,
-  "taskExplorer.enableSideBar": true
+  "taskExplorer.enableSideBar": true,
+  "search.exclude": {
+    "**/.yarn": true,
+    "**/.pnp.*": true
+  },
+  "eslint.nodePath": ".yarn/sdks"
 }

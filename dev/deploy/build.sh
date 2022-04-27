@@ -1,7 +1,6 @@
 #!/bin/bash
 
-echo "Installing NPM dependencies..."
-npm install
-
+echo "Compiling native node packages..."
+yarn rebuild
 echo "Packaging static assets..."
-npx parcel build
+yarn build

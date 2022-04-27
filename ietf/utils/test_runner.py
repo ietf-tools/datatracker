@@ -818,7 +818,7 @@ class IetfTestRunner(DiscoverRunner):
         with tempfile.NamedTemporaryFile() as stdout:
             subprocess.run(
                 [
-                    "npx",
+                    "yarn",
                     "html-validate",
                     "--formatter=json",
                     "--config=" + self.config_file[kind].name,

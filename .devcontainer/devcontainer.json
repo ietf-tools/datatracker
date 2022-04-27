@@ -65,21 +65,23 @@
     
     // Add the IDs of extensions you want installed when the container is created.
     "extensions": [
+		"arcanis.vscode-zipfs",
+		"batisteo.vscode-django",
+        "dbaeumer.vscode-eslint",
+		"eamodio.gitlens",
+		"editorconfig.editorconfig",
+		"johnsoncodehk.volar",
+		"mrmlnc.vscode-duplicate",
+		"ms-azuretools.vscode-docker",
 		"ms-python.python",
 		"ms-python.vscode-pylance",
-		"ms-azuretools.vscode-docker",
-		"editorconfig.editorconfig",
-		"redhat.vscode-yaml",
-		"visualstudioexptteam.vscodeintellicode",
-		"batisteo.vscode-django",
-		"mutantdino.resourcemonitor",
-		"spmeesseman.vscode-taskexplorer",
-		"mtxr.sqltools",
 		"mtxr.sqltools-driver-mysql",
-		"mrmlnc.vscode-duplicate",
-		"eamodio.gitlens",
+		"mtxr.sqltools",
+		"mutantdino.resourcemonitor",
 		"oderwat.indent-rainbow",
-		"johnsoncodehk.volar"
+		"redhat.vscode-yaml",
+		"spmeesseman.vscode-taskexplorer",
+		"visualstudioexptteam.vscodeintellicode"
 	],
     
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
