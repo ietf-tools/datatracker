@@ -2,7 +2,7 @@
 n-drawer(v-model:show='isShown', placement='bottom', :height='650')
   n-drawer-content.agenda-personalize
     template(#header)
-      span Filter Agenda
+      span Filter Areas + Groups
       div
         n-button.me-2(
           ghost
@@ -21,152 +21,137 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='650')
           i.bi.bi-check-circle.me-2
           span Apply
     .agenda-personalize-content
-      n-checkbox-group(v-model:value='pendingSelection')
-        .agenda-personalize-grcat(
-          v-for='(grcat, idx) of categories'
-          :key='`grcat-` + idx'
-          :class='{ "col-auto": (grcat.length <= 2) }'
+      .agenda-personalize-category(
+        v-for='(cat, idx) of categories'
+        :key='`cat-` + idx'
+        :class='{ "col-auto": (cat.length <= 2) }'
+        )
+        .agenda-personalize-area(
+          v-for='area of cat'
+          :key='area.keyword'
           )
-          .agenda-personalize-cat(
-            v-for='cat of grcat'
-            :key='cat.keyword'
-            )
-            .agenda-personalize-catmain
-              button(
-                v-if='cat.keyword'
-                @click='toggleFilterCat(cat.keyword)'
+          .agenda-personalize-areamain
+            button(
+              v-if='area.keyword'
+              @click='toggleFilterArea(area.keyword)'
+              )
+              i.bi.bi-grid-fill.me-2
+              span {{area.label}}
+          .agenda-personalize-groups
+            button.agenda-personalize-group(
+              v-for='group of area.children'
+              :key='group.keyword'
+              :class='{"is-bof": group.is_bof, "is-checked": pendingSelection.includes(group.keyword)}'
+              @click='toggleFilterGroup(group.keyword)'
+              )
+              span {{group.label}}
+              n-popover(
+                v-if='group.is_bof'
+                trigger='hover'
+                :width='250'
                 )
-                i.bi.bi-grid-fill.me-2
-                span {{cat.label}}
-            .agenda-personalize-catsubs
-              .agenda-personalize-sub(
-                v-for='sub of cat.children'
-                :key='sub.keyword'
-                :class='{"is-bof": sub.is_bof}'
-                )
-                n-checkbox(
-                  :value='sub.keyword'
-                  :label='sub.label'
-                  @click='filterCheckboxChanged(sub.keyword)'
-                  )
-                n-popover(
-                  v-if='sub.is_bof'
-                  trigger='hover'
-                  :width='250'
-                  )
-                  template(#trigger)
-                    span.badge BoF
-                  span #[a(href='https://www.ietf.org/how/bofs/', target='_blank') Birds of a Feather] sessions (BoFs) are initial discussions about a particular topic of interest to the IETF community.
+                template(#trigger)
+                  span.badge BoF
+                span #[a(href='https://www.ietf.org/how/bofs/', target='_blank') Birds of a Feather] sessions (BoFs) are initial discussions about a particular topic of interest to the IETF community.
 </template>
 
-<script>
-import { ref, toRefs, watch } from 'vue'
+<script setup>
+import { ref, watch } from 'vue'
 import intersection from 'lodash/intersection'
 import difference from 'lodash/difference'
 import union from 'lodash/union'
 import {
   NButton,
-  NCheckbox,
-  NCheckboxGroup,
   NDrawer,
   NDrawerContent,
   NPopover
-  } from 'naive-ui'
+} from 'naive-ui'
 
-export default {
-  components: {
-    NButton,
-    NCheckbox,
-    NCheckboxGroup,
-    NDrawer,
-    NDrawerContent,
-    NPopover
+// PROPS
+
+const props = defineProps({
+  shown: {
+    type: Boolean,
+    required: true,
+    default: false
   },
-  props: {
-    shown: {
-      type: Boolean,
-      required: true,
-      default: false
-    },
-    selection: {
-      type: Array,
-      required: true
-    },
-    categories: {
-      type: Array,
-      required: true
-    }
+  selection: {
+    type: Array,
+    required: true
   },
-  emit: ['update:shown', 'update:selection'],
-  setup (props, context) {
-    const { categories, shown, selection } = toRefs(props)
-    const isShown = ref(shown.value)
-    const pendingSelection = ref(selection.value)
+  categories: {
+    type: Array,
+    required: true
+  }
+})
 
-    watch(shown, (newValue) => {
-      isShown.value = newValue
-    })
-    watch(isShown, (newValue) => {
-      context.emit('update:shown', newValue)
-    })
+// EMITS
 
-    const saveFilter = () => {
-      context.emit('update:selection', pendingSelection.value)
-      context.emit('update:shown', false)
-      isShown.value = false
-    }
+const emit = defineEmits(['update:shown', 'update:selection'])
 
-    const clearFilter = () => {
-      pendingSelection.value = []
-    }
+// STATE
 
-    const toggleFilterCat = (catKeyword) => {
-      const affectedSubs = []
-      let isAlreadySelected = false
-      // -> Find affected categories / subs
-      for (const catgr of props.categories) {
-        for (const cat of catgr) {
-          if (cat.keyword === catKeyword) {
-            isAlreadySelected = intersection(cat.children.map(s => s.keyword), pendingSelection.value).length === cat.children.length
-          }
-          for (const sub of cat.children) {
-            if (sub.toggled_by.includes(catKeyword)) {
-              affectedSubs.push(sub.keyword)
-            }
-          }
+const isShown = ref(props.shown)
+const pendingSelection = ref(props.selection)
+
+// WATCHERS
+
+watch(() => props.shown, (newValue) => {
+  isShown.value = newValue
+})
+watch(isShown, (newValue) => {
+  emit('update:shown', newValue)
+})
+
+// METHODS
+
+function saveFilter () {
+  emit('update:selection', pendingSelection.value)
+  emit('update:shown', false)
+  isShown.value = false
+}
+
+function clearFilter () {
+  pendingSelection.value = []
+}
+
+function toggleFilterArea (areaKeyword) {
+  const affectedGroups = []
+  let isAlreadySelected = false
+  // -> Find affected categories / subs
+  for (const cat of props.categories) {
+    for (const area of cat) {
+      if (area.keyword === areaKeyword) {
+        isAlreadySelected = intersection(area.children.map(s => s.keyword), pendingSelection.value).length === area.children.length
+      }
+      for (const group of area.children) {
+        if (group.toggled_by.includes(areaKeyword)) {
+          affectedGroups.push(group.keyword)
         }
       }
-      // -> Toggle depending on current state
-      pendingSelection.value = (isAlreadySelected) ? difference(pendingSelection.value, affectedSubs) : union(pendingSelection.value, affectedSubs)
-    }
-
-    const filterCheckboxChanged = (key) => {
-      const affectedSubs = []
-      for (const catgr of props.categories) {
-        for (const cat of catgr) {
-          for (const sub of cat.children) {
-            if (sub.toggled_by.includes(key)) {
-              affectedSubs.push(sub.keyword)
-            }
-          }
-        }
-      }
-      if (affectedSubs.length > 0) {
-        pendingSelection.value = (!pendingSelection.value.includes(key)) ? difference(pendingSelection.value, affectedSubs) : union(pendingSelection.value, affectedSubs)
-      }
-    }
-
-    return {
-      isShown,
-      pendingSelection,
-      categories,
-      clearFilter,
-      saveFilter,
-      toggleFilterCat,
-      filterCheckboxChanged
     }
   }
+  // -> Toggle depending on current state
+  pendingSelection.value = (isAlreadySelected) ? difference(pendingSelection.value, affectedGroups) : union(pendingSelection.value, affectedGroups)
 }
+
+function toggleFilterGroup (key) {
+  pendingSelection.value = pendingSelection.value.includes(key) ? pendingSelection.value.filter(k => k !== key) : [...pendingSelection.value, key]
+  const affectedGroups = []
+  for (const cat of props.categories) {
+    for (const area of cat) {
+      for (const group of area.children) {
+        if (group.toggled_by.includes(key)) {
+          affectedGroups.push(group.keyword)
+        }
+      }
+    }
+  }
+  if (affectedGroups.length > 0) {
+    pendingSelection.value = (!pendingSelection.value.includes(key)) ? difference(pendingSelection.value, affectedGroups) : union(pendingSelection.value, affectedGroups)
+  }
+}
+
 </script>
 
 <style lang="scss">
@@ -186,7 +171,7 @@ export default {
     }
   }
 
-  &-grcat {
+  &-category {
     background-color: $gray-200;
     padding: 5px;
     border-radius: 10px;
@@ -194,26 +179,26 @@ export default {
     &:nth-child(2) {
       background-color: $teal-100;
 
-      .agenda-personalize-catmain {
+      .agenda-personalize-areamain {
         button {
           color: $teal-600;
         }
       }
 
-      .agenda-personalize-catsubs {
+      .agenda-personalize-groups {
         background-color: lighten($teal-100, 7%);
       }
     }
     &:nth-child(3) {
       background-color: $orange-100;
 
-      .agenda-personalize-catmain {
+      .agenda-personalize-areamain {
         button {
           color: $orange-600;
         }
       }
 
-      .agenda-personalize-catsubs {
+      .agenda-personalize-groups {
         background-color: lighten($orange-100, 7%);
       }
     }
@@ -223,7 +208,7 @@ export default {
     }
   }
 
-  &-cat {
+  &-area {
     display: flex;
 
     & + & {
@@ -231,7 +216,7 @@ export default {
     }
   }
 
-  &-catmain {
+  &-areamain {
     flex: 0 1 200px;
     padding-right: 5px;
 
@@ -257,41 +242,51 @@ export default {
     }
   }
 
-  &-catsubs {
+  &-groups {
     background-color: $gray-100;
-    padding: 5px;
+    padding: 0;
     border-radius: 5px;
     flex: 1;
     display: flex;
     flex-wrap: wrap;
   }
 
-  &-sub {
+  &-group {
     display: flex;
     align-items: center;
-    padding: 5px;
+    padding: 5px 8px;
     position: relative;
+    border: none;
+    border-left: 1px solid #FFF;
+    border-right: 1px solid rgba(0,0,0,.1);
+    background-color: rgba(255,255,255,.7);
+    color: $gray-600;
+    margin-right: 0px;
+
+    &:first-child {
+      border-top-left-radius: 5px;
+      border-bottom-left-radius: 5px;
+    }
+    &:last-child {
+      border-top-right-radius: 5px;
+      border-bottom-right-radius: 5px;
+    }
 
     &.is-bof {
-      border-radius: 5px;
-      border: 1px dotted $pink-300;
-      margin: 0 3px;
+      border-top: 1px dotted $pink-300;
+      border-bottom: 2px solid $pink-300;
+      border-right: 2px solid $pink-300;
+    }
+
+    &.is-checked {
+      background-color: $blue;
+      color: #FFF;
     }
 
     .badge {
       font-size: 10px;
       background-color: $pink;
-    }
-
-    button {
-      width: 100%;
-      border: none;
-      background-color: transparent;
-      color: $gray-600;
-
-      &:hover {
-        border-color: $blue;
-      }
+      margin-left: 5px;
     }
   }
 }

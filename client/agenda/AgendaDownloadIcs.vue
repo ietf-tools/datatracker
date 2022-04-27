@@ -23,29 +23,30 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='250')
           i.bi.bi-download.me-2
           span Download
     .agenda-downloadics-content
-      .agenda-downloadics-grcat(
-        v-for='(grcat, idx) of props.categories'
-        :key='`grcat-` + idx'
-        :class='`test-` + idx'
-        )
-        template(
-          v-for='cat of grcat'
-          :key='cat.keyword'
-          )
-          button(
-            v-if='cat.keyword'
-            @click='toggleCat(cat.keyword, cat.children)'
-            :class='currentSelection.includes(cat.keyword) ? `is-selected` : ``'
-            )
-            i.bi.bi-grid-fill.me-2
-            span {{cat.label}}
-          button(
-            v-else
-            @click='toggleCat(`nonarea`, cat.children)'
-            :class='currentSelection.includes(`nonarea`) ? `is-selected` : ``'
-            )
-            i.bi.bi-grid-fill.me-2
-            span Non-Area Events
+      span Test
+      //- .agenda-downloadics-grcat(
+      //-   v-for='(grcat, idx) of props.categories'
+      //-   :key='`grcat-` + idx'
+      //-   :class='`test-` + idx'
+      //-   )
+      //-   template(
+      //-     v-for='cat of grcat'
+      //-     :key='cat.keyword'
+      //-     )
+      //-     button(
+      //-       v-if='cat.keyword'
+      //-       @click='toggleCat(cat.keyword, cat.children)'
+      //-       :class='currentSelection.includes(cat.keyword) ? `is-selected` : ``'
+      //-       )
+      //-       i.bi.bi-grid-fill.me-2
+      //-       span {{cat.label}}
+      //-     button(
+      //-       v-else
+      //-       @click='toggleCat(`nonarea`, cat.children)'
+      //-       :class='currentSelection.includes(`nonarea`) ? `is-selected` : ``'
+      //-       )
+      //-       i.bi.bi-grid-fill.me-2
+      //-       span Non-Area Events
 </template>
 
 <script setup>

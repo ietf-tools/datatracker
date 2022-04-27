@@ -238,8 +238,6 @@ export default {
 
     return {
       meetingEvents,
-      meetingNumber,
-      pickerMode,
       showMaterials
     }
   }
@@ -432,8 +430,9 @@ export default {
 
   &-cell-ts {
     border-right: 1px solid $gray-500 !important;
-    font-family: 'Squada One', monospace;
-    font-size: 1.1rem;
+    // font-family: 'Roboto Mono', monospace;
+    font-size: 1rem;
+    font-weight: 700;
     text-align: right;
   }
 

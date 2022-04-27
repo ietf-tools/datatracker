@@ -48,7 +48,7 @@ n-theme
               filterable
               )
 
-        .alert.alert-warning.mt-3(v-if='props.isCurrentMeeting || true') #[strong Note:] IETF agendas are subject to change, up to and during a props.meeting.
+        .alert.alert-warning.mt-3(v-if='props.isCurrentMeeting || true') #[strong Note:] IETF agendas are subject to change, up to and during a meeting.
         .agenda-infonote.my-3(v-if='props.meeting.infoNote', v-html='props.meeting.infoNote')
 
         // -----------------------------------
