@@ -185,7 +185,7 @@ def check_html_valid(url, response, args):
         validated_urls[key] = True
         if args.validator_nu:
             v = subprocess.Popen(["java", "-jar", basedir + "/bin/vnu.jar",
-                                  "--format", "json", "-"],
+                                  "--asciiquotes", "--format", "json", "-"],
                                  stdin=subprocess.PIPE, stderr=subprocess.PIPE)
             for m in json.loads(v.communicate(content)[1])["messages"]:
                 t = m["subType"] if m["type"] == "info" else m["type"]
@@ -196,7 +196,7 @@ def check_html_valid(url, response, args):
                             (" " * m["hiliteStart"], "^" * m["hiliteLength"]))
                 # disregard some HTML issues that are (usually) due to invalid
                 # database content
-                if not re.search(r"Forbidden code point U\+000b|is not in Unicode Normalization Form C", m["message"]):
+                if not re.search(r"Document uses the Unicode Private Use Area|Illegal character in query: '\['|The document is not mappable to XML 1\.0|Forbidden code point U\+|is not in Unicode Normalization Form C", m["message"]):
                     warnings += 1
         else:
             try:

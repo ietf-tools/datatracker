@@ -181,18 +181,20 @@
                     {% if item.session.current_status == 'canceled' %}
                         <span class="badge bg-danger float-end">CANCELLED</span>
                     {% else %}
-                        <div class="float-end ps-2">
-                            {% if item.slot_type.slug == 'other' %}
-                                {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
-                                    {% include "meeting/session_buttons_include.html" with show_agenda=True item=item schedule=schedule %}
-                                {% else %}
-                                    {% for slide in item.session.slides %}
-                                        <a href="{{ slide.get_href }}">{{ slide.title|clean_whitespace }}</a>
-                                        <br>
-                                    {% endfor %}
-                                {% endif %}
+                        {% if item.slot_type.slug == 'other' %}
+                            {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
+                            <div class="float-end ps-2">
+                                {% include "meeting/session_buttons_include.html" with show_agenda=True item=item schedule=schedule %}
+                            </div>
+                            {% else %}
+                                <div>
+                                {% for slide in item.session.slides %}
+                                    <a href="{{ slide.get_href }}">{{ slide.title|clean_whitespace }}</a>
+                                    <br>
+                                {% endfor %}
+                                </div>
                             {% endif %}
-                        </div>
+                        {% endif %}
                     {% endif %}
                 </td>
             </tr>
@@ -313,7 +315,7 @@
             {% endif %}
             {% if item.session.agenda_note|first_url|conference_url %}
                 <br>
-                <a href={{ item.session.agenda_note|first_url }}>{{ item.session.agenda_note|slice:":23" }}
+                <a href="{{ item.session.agenda_note|first_url }}">{{ item.session.agenda_note|slice:":23" }}
                 </a>
             {% elif item.session.agenda_note %}
                 <br>

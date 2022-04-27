@@ -218,8 +218,15 @@ def doc_exists(name):
     # chop it off if we don't find a match
     rev_split = re.search("^(.+)-([0-9]{2})$", name)
     if rev_split:
-        redirect_to = find_unique(rev_split.group(1))
-        return redirect_to is not None
+        name = rev_split.group(1)
+        while True:
+            redirect_to = find_unique(name)
+            if redirect_to is None:
+                return False
+            if redirect_to == name:
+                return True
+            name = redirect_to
+
     return False
 
 
@@ -245,7 +252,9 @@ def link_non_charter_doc_match(match):
 
 
 def link_other_doc_match(match):
-    if not doc_exists(match[0]):
+    # there may be whitespace in the match
+    doc = re.sub(r"\s+", "", match[0])
+    if not doc_exists(doc):
         return match[0]
     return f'<a href="/doc/{match[2].strip().lower()}{match[3]}/">{match[1]}</a>'
 
@@ -257,8 +266,8 @@ def urlize_ietf_docs(string, autoescape=None):
     """
     if autoescape and not isinstance(string, SafeData):
         string = escape(string)
-    exp1 = r"\b(charter-(?:[\d\w\.+]+-)*)(\d\d-\d\d)(\.txt)?\b"
-    exp2 = r"\b(charter-(?:[\d\w\.+]+-)*)(\d\d)(\.txt)?\b"
+    exp1 = r"\b(?<![/\-:])(charter-(?:[\d\w\.+]+-)*)(\d\d-\d\d)(\.txt)?\b"
+    exp2 = r"\b(?<![/\-:])(charter-(?:[\d\w\.+]+-)*)(\d\d)(\.txt)?\b"
     if re.search(exp1, string):
         string = re.sub(
             exp1,
@@ -281,7 +290,7 @@ def urlize_ietf_docs(string, autoescape=None):
     )
     string = re.sub(
         # r"\b((RFC|BCP|STD|FYI|(?:draft-|bofreq-|conflict-review-|status-change-|charter-)[-\d\w.+]+)\s*0*(\d+))\b",
-        r"\b(?<!-)((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
+        r"\b(?<![/\-:])((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
         link_other_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,

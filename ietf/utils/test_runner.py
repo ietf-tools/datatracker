@@ -776,7 +776,7 @@ class IetfTestRunner(DiscoverRunner):
                 print("")
                 self.vnu = None
             else:
-                print(" using two validators")
+                print(" (extra pedantically)")
                 try:
                     self.vnu = subprocess.Popen(
                         [
@@ -874,9 +874,10 @@ class IetfTestRunner(DiscoverRunner):
                 errors += (
                     f'\n{result["filePath"]}:\n'
                     + "".join(source_lines[line - 5 : line])
-                    + "-" * (msg["column"] - 1)
-                    + "^" * msg["size"]
-                    + f' {msg["ruleId"]}: {msg["message"]} '
+                    + " " * (msg["column"] - 1)
+                    + "^" * msg["size"] + "\n"
+                    + " " * (msg["column"] - 1)
+                    + f'{msg["ruleId"]}: {msg["message"]} '
                     + f'on line {line}:{msg["column"]}\n'
                     + "".join(source_lines[line : line + 5])
                     + "\n"
