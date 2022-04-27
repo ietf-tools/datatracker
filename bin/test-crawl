@@ -196,7 +196,7 @@ def check_html_valid(url, response, args):
                             (" " * m["hiliteStart"], "^" * m["hiliteLength"]))
                 # disregard some HTML issues that are (usually) due to invalid
                 # database content
-                if not re.search(r"Forbidden code point U\+000b", m["message"]):
+                if not re.search(r"Forbidden code point U\+000b|is not in Unicode Normalization Form C", m["message"]):
                     warnings += 1
         else:
             try:
