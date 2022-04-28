@@ -120,8 +120,11 @@ def start_vnu_server(port=8888):
 
 def vnu_validate(html, content_type="text/html", port=8888):
     gzippeddata = gzip.compress(html)
+    s = requests.Session()
+    a = requests.adapters.HTTPAdapter(max_retries=99)
+    s.mount('http://', a)
     try:
-        req = requests.post(
+        req = s.post(
             url=f"http://127.0.0.1:{port}/",
             params={
                 "out": "json",
@@ -262,8 +265,8 @@ class ValidatingTemplate(Template):
         settings.validate_html.batches[kind].append(
             (self.origin.name, content, fingerprint)
         )
-        # FWIW, a batch size of 3 seems to result in less than 10% runtime overhead
-        if len(settings.validate_html.batches[kind]) >= 3:
+        # FWIW, a batch size of 30 seems to result in less than 10% runtime overhead
+        if len(settings.validate_html.batches[kind]) >= 30:
             settings.validate_html.validate(kind)
 
         return content
