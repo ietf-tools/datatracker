@@ -82,7 +82,7 @@
                 @click='showFilter'
                 )
                 n-badge.me-2(:value='state.selectedCatSubs.length', processing)
-                i.bi.bi-ui-checks-grid.me-2
+                i.bi.bi-funnel.me-2
                 span Filter Areas + Groups...
               n-button.mt-2(
                 v-if='!state.pickerMode'

@@ -12,6 +12,14 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='650')
           )
           i.bi.bi-slash-square.me-2
           span Clear Selection
+        n-button.me-2(
+          ghost
+          color='gray'
+          strong
+          @click='cancelFilter'
+          )
+          i.bi.bi-x-square.me-2
+          span Cancel
         n-button(
           primary
           type='success'
@@ -35,7 +43,7 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='650')
               v-if='area.keyword'
               @click='toggleFilterArea(area.keyword)'
               )
-              i.bi.bi-grid-fill.me-2
+              i.bi.bi-diagram-3.me-2
               span {{area.label}}
           .agenda-personalize-groups
             button.agenda-personalize-group(
@@ -56,7 +64,7 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='650')
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, unref, watch } from 'vue'
 import intersection from 'lodash/intersection'
 import difference from 'lodash/difference'
 import union from 'lodash/union'
@@ -105,9 +113,13 @@ watch(isShown, (newValue) => {
 
 // METHODS
 
+function cancelFilter () {
+  isShown.value = false
+  pendingSelection.value = unref(props.selection)
+}
+
 function saveFilter () {
   emit('update:selection', pendingSelection.value)
-  emit('update:shown', false)
   isShown.value = false
 }
 
