@@ -1,5 +1,5 @@
 <template lang="pug">
-n-drawer(v-model:show='isShown', placement='bottom', :height='650')
+n-drawer(v-model:show='isShown', placement='bottom', :height='drawerHeight')
   n-drawer-content.agenda-calendar
     template(#header)
       span Calendar View
@@ -13,22 +13,11 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='650')
           i.bi.bi-x-square.me-2
           span Close
     .agenda-calendar-content
-      span Test
-      //- vue-cal.vuecal--blue-theme(
-      //-   :disable-views='[`years`, `year`]'
-      //-   :time-from='10 * 60'
-      //-   :time-to='18 * 60'
-      //-   hide-title-bar
-      //-   hide-weekends
-      //-   selected-date='2021-11-03'
-      //-   :events='calendarEvents'
-      //-   active-view='week'
-      //-   style='height: 850px;'
-      //-   )
+      full-calendar(:options='calendarOptions')
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import {
   NButton,
   NDrawer,
@@ -36,8 +25,12 @@ import {
   useMessage
 } from 'naive-ui'
 
-// import VueCal from 'vue-cal'
-// import 'vue-cal/dist/vuecal.css'
+import '@fullcalendar/core/vdom' // solves problem with Vite
+import FullCalendar from '@fullcalendar/vue3'
+import dayGridPlugin from '@fullcalendar/daygrid'
+import timeGridPlugin from '@fullcalendar/timegrid'
+import interactionPlugin from '@fullcalendar/interaction'
+import bootstrap5Plugin from '@fullcalendar/bootstrap5'
 
 // PROPS
 
@@ -60,6 +53,22 @@ const emit = defineEmits(['update:shown'])
 // STATE
 
 const isShown = ref(props.shown)
+const calendarOptions = reactive({
+  plugins: [ bootstrap5Plugin, dayGridPlugin, timeGridPlugin, interactionPlugin ],
+  initialView: 'timeGridWeek',
+  themeSystem: 'bootstrap5',
+  slotEventOverlap: false,
+  nowIndicator: true,
+  headerToolbar: {
+    left: 'timeGridWeek,timeGridDay',
+    center: 'title',
+    right: 'today prev,next'
+  },
+  slotMinTime: '06:00:00',
+  slotMaxTime: '18:00:00'
+  // initialDate: ''
+})
+const drawerHeight = Math.round(window.innerHeight * .8)
 
 // COMPUTED
 
@@ -106,9 +115,6 @@ const close = () => {
   }
 
   &-content {
-    display: flex;
-    justify-content: stretch;
-    align-items: stretch;
   }
 }
 

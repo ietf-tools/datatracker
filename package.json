@@ -8,9 +8,15 @@
     "cypress": "cypress run"
   },
   "dependencies": {
+    "@fullcalendar/bootstrap5": "5.11.0",
     "@fullcalendar/core": "5.11.0",
     "@fullcalendar/daygrid": "5.11.0",
     "@popperjs/core": "2.11.5",
+    "@fullcalendar/interaction": "5.11.0",
+    "@fullcalendar/list": "5.11.0",
+    "@fullcalendar/luxon2": "5.11.0",
+    "@fullcalendar/timegrid": "5.11.0",
+    "@fullcalendar/vue3": "5.11.0",
     "bootstrap": "5.1.3",
     "bootstrap-icons": "1.8.2",
     "caniuse-lite": "1.0.30001342",
@@ -30,7 +36,6 @@
     "select2-bootstrap-5-theme": "1.3.0",
     "sortablejs": "1.15.0",
     "vue": "3.2.33",
-    "vue-cal": "3.10.4",
     "zxcvbn": "4.4.2"
   },
   "devDependencies": {
