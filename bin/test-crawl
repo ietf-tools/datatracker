@@ -186,7 +186,7 @@ def check_html_valid(url, response, args):
             content = response.streaming_content
         validated_urls[key] = True
         if args.validator_nu:
-            ret = vnu_validate(content, response["Content-Type"])
+            ret = vnu_validate(content, response["Content-Type"], port=8887)
             for m in json.loads(ret)["messages"]:
                 t = m["subType"] if m["type"] == "info" else m["type"]
                 tags.append("\n%s\tLine %d: %s" %
@@ -727,7 +727,7 @@ if __name__ == "__main__":
             print(entry)
 
     if args.validator_nu:
-        vnu = start_vnu_server()
+        vnu = start_vnu_server(port=8887)
 
     while urls:
         if args.random:

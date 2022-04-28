@@ -97,7 +97,7 @@ code_coverage_collection = None
 url_coverage_collection = None
 
 
-def start_vnu_server():
+def start_vnu_server(port=8888):
     vnu = subprocess.Popen(
         [
             "java",
@@ -105,7 +105,7 @@ def start_vnu_server():
             "-cp",
             "bin/vnu.jar",
             "nu.validator.servlet.Main",
-            "8888",
+            f"{port}",
         ],
         stdout=subprocess.DEVNULL,
     )
@@ -118,11 +118,11 @@ def start_vnu_server():
     return vnu
 
 
-def vnu_validate(html, content_type="text/html"):
+def vnu_validate(html, content_type="text/html", port=8888):
     gzippeddata = gzip.compress(html)
     try:
         req = requests.post(
-            url="http://127.0.0.1:8888/",
+            url=f"http://127.0.0.1:{port}/",
             params={
                 "out": "json",
                 "asciiquotes": "yes",
