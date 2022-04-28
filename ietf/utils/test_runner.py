@@ -51,7 +51,8 @@ import subprocess
 import tempfile
 import copy
 import factory.random
-import requests
+import urllib3
+from urllib.parse import urlencode
 
 from fnmatch import fnmatch
 from pathlib import Path
@@ -111,38 +112,35 @@ def start_vnu_server(port=8888):
     )
 
     print("Waiting for vnu server to start up...", end="")
-    while vnu_validate(b"", content_type="") is None:
+    while vnu_validate(b"", content_type="", port=port) is None:
         print(".", end="")
         time.sleep(1)
     print()
     return vnu
 
 
+http = urllib3.PoolManager(retries=urllib3.Retry(99, redirect=False))
+
+
 def vnu_validate(html, content_type="text/html", port=8888):
     gzippeddata = gzip.compress(html)
-    s = requests.Session()
-    a = requests.adapters.HTTPAdapter(max_retries=99)
-    s.mount('http://', a)
     try:
-        req = s.post(
-            url=f"http://127.0.0.1:{port}/",
-            params={
-                "out": "json",
-                "asciiquotes": "yes",
-            },
+        req = http.request(
+            "POST",
+            f"http://127.0.0.1:{port}/?" + urlencode({"out": "json", "asciiquotes": "yes"}),
             headers={
                 "Content-Type": content_type,
                 "Accept-Encoding": "gzip",
                 "Content-Encoding": "gzip",
                 "Content-Length": str(len(gzippeddata)),
             },
-            data=gzippeddata
+            body=gzippeddata
         )
-    except (requests.exceptions.ConnectionError, ConnectionRefusedError):
+    except (urllib3.exceptions.NewConnectionError, urllib3.exceptions.MaxRetryError, ConnectionRefusedError):
         return None
 
-    assert req.status_code == 200
-    return req.text
+    assert req.status == 200
+    return req.data.decode("utf-8")
 
 
 def load_and_run_fixtures(verbosity):
@@ -933,6 +931,7 @@ class IetfTestRunner(DiscoverRunner):
             for file in files:
                 with open(file, "rb") as f:
                     result = vnu_validate(f.read())
+                    assert result
                     for msg in json.loads(result)["messages"]:
 
                         if (

@@ -272,8 +272,6 @@ class TestCase(django.test.TestCase):
         # Prevent the requests library from making live requests during tests
         self.requests_mock = requests_mock.Mocker()
         self.requests_mock.start()
-        # Allow connections to the vnu HTML validator over loopback during the tests though
-        self.requests_mock.register_uri("POST", "http://127.0.0.1:8888/", real_http=True)
 
         # Replace settings paths with temporary directories.
         self._ietf_temp_dirs = {}  # trashed during tearDown, DO NOT put paths you care about in this

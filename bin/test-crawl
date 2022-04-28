@@ -187,6 +187,7 @@ def check_html_valid(url, response, args):
         validated_urls[key] = True
         if args.validator_nu:
             ret = vnu_validate(content, response["Content-Type"], port=8887)
+            assert ret
             for m in json.loads(ret)["messages"]:
                 t = m["subType"] if m["type"] == "info" else m["type"]
                 tags.append("\n%s\tLine %d: %s" %
@@ -196,7 +197,7 @@ def check_html_valid(url, response, args):
                             (" " * m["hiliteStart"], "^" * m["hiliteLength"]))
                 # disregard some HTML issues that are (usually) due to invalid
                 # database content
-                if not re.search(r"Document uses the Unicode Private Use Area|Illegal character in query: '\['|The document is not mappable to XML 1\.0|Forbidden code point U\+|is not in Unicode Normalization Form C", m["message"]):
+                if not re.search(r"Duplicate ID 'session-buttons|The first occurrence of ID 'session-buttons|Document uses the Unicode Private Use Area|Illegal character in query: '\['|The document is not mappable to XML 1\.0|Forbidden code point U\+|is not in Unicode Normalization Form C", m["message"]):
                     warnings += 1
         else:
             try:
