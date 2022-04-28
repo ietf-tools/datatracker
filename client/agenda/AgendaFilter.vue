@@ -72,7 +72,8 @@ import {
   NButton,
   NDrawer,
   NDrawerContent,
-  NPopover
+  NPopover,
+  useMessage
 } from 'naive-ui'
 
 // PROPS
@@ -101,6 +102,7 @@ const emit = defineEmits(['update:shown', 'update:selection'])
 
 const isShown = ref(props.shown)
 const pendingSelection = ref(props.selection)
+const message = useMessage()
 
 // WATCHERS
 
@@ -125,6 +127,7 @@ function saveFilter () {
 
 function clearFilter () {
   pendingSelection.value = []
+  message.success('Filters have been reset.')
 }
 
 function toggleFilterArea (areaKeyword) {

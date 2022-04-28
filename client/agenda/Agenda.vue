@@ -134,16 +134,22 @@
                 )
                 i.bi.bi-calendar3.me-2
                 span Calendar View
-              n-button.mt-2(
-                block
-                secondary
-                color='#6c757d'
+              n-dropdown(
+                :options='downloadIcsOptions'
                 size='large'
-                strong
-                @click='downloadIcs'
+                :show-arrow='true'
+                trigger='click'
+                @select='downloadIcs'
                 )
-                i.bi.bi-calendar-check.me-2
-                span Download as .ics...
+                n-button.mt-2(
+                  block
+                  secondary
+                  color='#6c757d'
+                  size='large'
+                  strong
+                  )
+                  i.bi.bi-calendar-check.me-2
+                  span Add to your calendar...
               n-divider: small.text-muted Jump to...
               ul.nav.nav-pills.flex-column.small
                 li.nav-item
@@ -176,6 +182,7 @@ import {
   NDrawer,
   NDrawerContent,
   NDropdown,
+  NIcon,
   NInput,
   NPopover,
   NSelect,
@@ -340,14 +347,35 @@ function showFilter () {
   state.filterShown = true
 }
 
-function downloadIcs () {
+function downloadIcs (key) {
   message.loading('Generating calendar file... Download will begin shortly.')
+  let icsUrl = ''
   if (state.selectedCatSubs.length > 0) {
-    window.location.assign(`/meeting/${props.meeting.number}/agenda.ics?show=${state.selectedCatSubs.join(',')}`)
+    icsUrl = `/meeting/${props.meeting.number}/agenda.ics?show=${state.selectedCatSubs.join(',')}`
   } else {
-    window.location.assign(`/meeting/${props.meeting.number}/agenda.ics`)
+    icsUrl = `/meeting/${props.meeting.number}/agenda.ics`
+  }
+  if (key === 'subscribe') {
+    window.location.assign(`webcal://${window.location.host}${icsUrl}`)
+  } else {
+    window.location.assign(icsUrl)
   }
 }
+
+// Download Ics Options
+
+const downloadIcsOptions = [
+  {
+    label: 'Subscribe... (webcal)',
+    key: 'subscribe',
+    icon: () => h('i', { class: 'bi bi-calendar-week text-blue' })
+  },
+  {
+    label: 'Download... (.ics)',
+    key: 'download',
+    icon: () => h('i', { class: 'bi bi-arrow-down-square' })
+  }
+]
 
 // Handle day indicator / scroll
 
