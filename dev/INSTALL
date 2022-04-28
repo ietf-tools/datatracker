@@ -20,7 +20,7 @@ General Instructions for Deployment of a New Release
     (see https://github.com/ietf-tools/datatracker/releases)::
 
       wget https://github.com/ietf-tools/datatracker/releases/download/${releasenumber}/release.tar.gz
-      tar xzvf ${releasenumber}.tar.gz
+      tar xzvf release.tar.gz
   
  3. Copy ietf/settings_local.py from previous release::
 
