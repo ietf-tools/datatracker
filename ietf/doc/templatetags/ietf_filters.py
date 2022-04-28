@@ -269,8 +269,8 @@ def urlize_ietf_docs(string, autoescape=None):
     """
     if autoescape and not isinstance(string, SafeData):
         string = escape(string)
-    exp1 = r"\b(?<![/\-:])(charter-(?:[\d\w\.+]+-)*)(\d\d-\d\d)(\.txt)?\b"
-    exp2 = r"\b(?<![/\-:])(charter-(?:[\d\w\.+]+-)*)(\d\d)(\.txt)?\b"
+    exp1 = r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d\d-\d\d)(\.txt)?\b"
+    exp2 = r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d\d)(\.txt)?\b"
     if re.search(exp1, string):
         string = re.sub(
             exp1,
@@ -286,14 +286,14 @@ def urlize_ietf_docs(string, autoescape=None):
             flags=re.IGNORECASE | re.ASCII,
         )
     string = re.sub(
-        r"\b(?<![/\-:])(((?:draft-|bofreq-|conflict-review-|status-change-)(?:[\d\w\.+]+-)*)([\d\w\.+]+?)(\.txt)?)\b(?![-@])",
+        r"\b(?<![/\-:=#])(((?:draft-|bofreq-|conflict-review-|status-change-)(?:[\d\w\.+]+-)*)([\d\w\.+]+?)(\.txt)?)\b(?![-@])",
         link_non_charter_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
     string = re.sub(
         # r"\b((RFC|BCP|STD|FYI|(?:draft-|bofreq-|conflict-review-|status-change-|charter-)[-\d\w.+]+)\s*0*(\d+))\b",
-        r"\b(?<![/\-:])((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
+        r"\b(?<![/\-:=#])((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
         link_other_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
