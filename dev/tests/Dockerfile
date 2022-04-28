@@ -1,4 +1,4 @@
-FROM python:3.6-bullseye
+FROM python:3.9-bullseye
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
