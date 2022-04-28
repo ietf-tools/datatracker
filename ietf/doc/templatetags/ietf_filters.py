@@ -4,6 +4,7 @@
 
 import datetime
 import re
+import os
 from urllib.parse import urljoin
 
 from email.utils import parseaddr
@@ -199,7 +200,9 @@ def doc_exists(name):
 
     # all documents exist when tests are running
     if settings.SERVER_MODE == 'test':
-        return True
+        # unless we are running test-crawl, which would otherwise 404
+        if "DJANGO_URLIZE_IETF_DOCS_PRODUCTION" not in os.environ:
+            return True
 
     # chop away extension
     extension_split = re.search(r"^(.+)\.(txt|ps|pdf)$", name)
