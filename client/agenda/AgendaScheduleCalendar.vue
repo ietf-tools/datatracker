@@ -229,36 +229,48 @@ function close () {
   }
 
   .fc-v-event {
-    background: linear-gradient(to top, #333940, #525a62);
-    border-color: #333940;
+    background-color: #333940;
+    border: 1px solid #333940;
+    border-left-width: 5px;
+    background-image: linear-gradient(to top, #333940, #525a62);
+    padding-left: 5px;
   }
 
   .event-area-art {
-    background: rgba(204, 121, 167);
+    border-color: rgba(204, 121, 167);
+    background-image: linear-gradient(to top, rgba(204, 121, 167, .35), rgba(204, 121, 167, 0));
   }
   .event-area-gen {
-    background: rgba(29, 78, 17);
+    border-color: rgba(29, 78, 17);
+    background-image: linear-gradient(to top, rgba(29, 78, 17, .35), rgba(29, 78, 17, 0));
   }
   .event-area-iab {
-    background: rgba(255, 165, 0);
+    border-color: rgba(255, 165, 0);
+    background-image: linear-gradient(to top, rgba(255, 165, 0, .35), rgba(255, 165, 0, 0));
   }
   .event-area-int {
-    background: rgba(132, 240, 240);
+    border-color: rgba(132, 240, 240);
+    background-image: linear-gradient(to top, rgba(132, 240, 240, .35), rgba(132, 240, 240, 0));
   }
   .event-area-irtf {
-    background: rgba(154, 119, 230);
+    border-color: rgba(154, 119, 230);
+    background-image: linear-gradient(to top, rgba(154, 119, 230, .35), rgba(154, 119, 230, 0));
   }
   .event-area-ops {
-    background: rgba(199, 133, 129);
+    border-color: rgba(199, 133, 129);
+    background-image: linear-gradient(to top, rgba(199, 133, 129, .35), rgba(199, 133, 129, 0));
   }
   .event-area-rtg {
-    background: rgba(222, 219, 124);
+    border-color: rgba(222, 219, 124);
+    background-image: linear-gradient(to top, rgba(222, 219, 124, .35), rgba(222, 219, 124, 0));
   }
   .event-area-sec {
-    background: rgba(0, 114, 178);
+    border-color: rgba(0, 114, 178);
+    background-image: linear-gradient(to top, rgba(0, 114, 178, .35), rgba(0, 114, 178, 0));
   }
   .event-area-tsv {
-    background: rgba(117,201,119);
+    border-color: rgba(117,201,119);
+    background-image: linear-gradient(to top, rgba(117,201,119, .35), rgba(117,201,119, 0));
   }
 }
 
