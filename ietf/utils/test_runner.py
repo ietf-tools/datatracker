@@ -103,6 +103,7 @@ def start_vnu_server(port=8888):
         [
             "java",
             "-Dnu.validator.servlet.bind-address=127.0.0.1",
+            "-Dnu.validator.servlet.max-file-size=16777216",
             "-cp",
             "bin/vnu.jar",
             "nu.validator.servlet.Main",
@@ -141,6 +142,17 @@ def vnu_validate(html, content_type="text/html", port=8888):
 
     assert req.status == 200
     return req.data.decode("utf-8")
+
+
+def vnu_fmt_message(file, msg):
+    ret = f"\n{file}:\n"
+    if "extract" in msg:
+        ret += msg["extract"].replace("\n", " ") + "\n"
+        ret += " " * msg["hiliteStart"]
+        ret += "^" * msg["hiliteLength"] + "\n"
+        ret += " " * msg["hiliteStart"]
+    ret += f"{msg['type']}: {msg['message']}\n"
+    return ret
 
 
 def load_and_run_fixtures(verbosity):
@@ -976,13 +988,7 @@ class IetfTestRunner(DiscoverRunner):
                         ):
                             continue
 
-                        errors += f'\n{file}:\n'
-                        if "extract" in msg:
-                            errors += msg["extract"].replace('\n', ' ') + "\n"
-                            errors += " " * msg["hiliteStart"]
-                            errors += "^" * msg["hiliteLength"] + "\n"
-                            errors += " " * msg["hiliteStart"]
-                        errors += f'{msg["type"]}: {msg["message"]}\n'
+                        errors = vnu_fmt_message(file, msg)
 
             if errors:
                 testcase.fail(errors)
