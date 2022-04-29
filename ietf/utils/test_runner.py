@@ -967,6 +967,10 @@ class IetfTestRunner(DiscoverRunner):
                                 r"Ceci n'est pas une URL",
                                 msg["message"],
                             )
+                            or re.search(
+                                r"is not in Unicode Normalization Form C",
+                                msg["message"],
+                            )
                         ):
                             continue
 
