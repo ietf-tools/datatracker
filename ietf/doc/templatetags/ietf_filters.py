@@ -19,6 +19,8 @@ from django.utils.encoding import force_text
 from django.utils.encoding import force_str # pyflakes:ignore force_str is used in the doctests
 from django.urls import reverse as urlreverse
 from django.core.cache import cache
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
 
 import debug                            # pyflakes:ignore
 
@@ -838,3 +840,16 @@ def absurl(viewname, **kwargs):
     Uses settings.IDTRACKER_BASE_URL as the base.
     """
     return urljoin(settings.IDTRACKER_BASE_URL, urlreverse(viewname, kwargs=kwargs))
+
+
+@register.filter
+def is_valid_url(url):
+    """
+    Check if the given URL is syntactically valid/
+    """
+    validate_url = URLValidator()
+    try:
+        validate_url(url)
+    except ValidationError:
+        return False
+    return True
