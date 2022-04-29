@@ -959,7 +959,7 @@ class IetfTestRunner(DiscoverRunner):
                             continue
 
                         if (
-                            result["url"].endswith("proceedings_overview.html")
+                            file.endswith("proceedings_overview.html")
                             and re.match(
                                 r"The '\w+' attribute on the '\w+' element is obsolete",
                                 msg["message"],
@@ -968,7 +968,7 @@ class IetfTestRunner(DiscoverRunner):
                             continue
 
                         if (
-                            result["url"].endswith("nomcom/requirements.html")
+                            file.endswith("nomcom/requirements.html")
                             and re.match(
                                 r"Section lacks heading",
                                 msg["message"],
@@ -976,7 +976,7 @@ class IetfTestRunner(DiscoverRunner):
                         ):
                             continue
 
-                        errors += f'\n{result["url"]}:\n'
+                        errors += f'\n{file}:\n'
                         if "extract" in msg:
                             errors += msg["extract"].replace('\n', ' ') + "\n"
                             errors += " " * msg["hiliteStart"]
