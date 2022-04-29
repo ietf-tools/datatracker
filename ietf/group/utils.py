@@ -23,6 +23,7 @@ from ietf.person.models import Email
 from ietf.review.utils import can_manage_review_requests_for_team
 from ietf.utils import log
 from ietf.utils.history import get_history_object_for, copy_many_to_many_for_history
+from ietf.doc.templatetags.ietf_filters import is_valid_url
 from functools import reduce
 
 def save_group_in_history(group):
@@ -208,7 +209,8 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     entries.append(("Photos", urlreverse("ietf.group.views.group_photos", kwargs=kwargs)))
     entries.append(("Email expansions", urlreverse("ietf.group.views.email", kwargs=kwargs)))
     if group.list_archive.startswith("http:") or group.list_archive.startswith("https:") or group.list_archive.startswith("ftp:"):
-        entries.append((mark_safe("List archive &raquo;"), group.list_archive))
+        if is_valid_url(group.list_archive):
+            entries.append((mark_safe("List archive &raquo;"), group.list_archive))
 
 
     # actions
