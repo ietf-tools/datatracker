@@ -53,8 +53,18 @@
       // -----------------------------------
       // -> Drawers
       // -----------------------------------
-      agenda-filter(v-model:shown='state.filterShown', v-model:selection='state.selectedCatSubs', :categories='props.categories')
-      agenda-schedule-calendar(v-model:shown='state.calendarShown', :events='scheduleAdjusted')
+      agenda-filter(
+        v-model:shown='state.filterShown'
+        v-model:selection='state.selectedCatSubs'
+        :categories='props.categories'
+        )
+      agenda-schedule-calendar(
+        v-model:shown='state.calendarShown'
+        v-model:timezone='state.timezone'
+        :events='scheduleAdjusted'
+        :meeting-timezone='props.meeting.timezone'
+        @toggle-filter-drawer='showFilter'
+        )
 
       // -----------------------------------
       // -> SCHEDULE LIST

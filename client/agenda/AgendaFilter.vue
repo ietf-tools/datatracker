@@ -127,7 +127,6 @@ function saveFilter () {
 
 function clearFilter () {
   pendingSelection.value = []
-  message.success('Filters have been reset.')
 }
 
 function toggleFilterArea (areaKeyword) {
