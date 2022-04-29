@@ -19,8 +19,8 @@ General Instructions for Deployment of a New Release
  2. Fetch the release tarball from github 
     (see https://github.com/ietf-tools/datatracker/releases)::
 
-      wget https://github.com/ietf-tools/datatracker/archive/refs/tags/${releasenumber}.tar.gz
-      tar xzvf ${releasenumber}.tar.gz
+      wget https://github.com/ietf-tools/datatracker/releases/download/${releasenumber}/release.tar.gz
+      tar xzvf release.tar.gz
   
  3. Copy ietf/settings_local.py from previous release::
 
@@ -33,17 +33,19 @@ General Instructions for Deployment of a New Release
       pip install --upgrade setuptools
       pip install -r requirements.txt
 
- 5. Run system checks (which patches the just installed modules)::
-
-     ietf/manage.py check
-
- 6. Move static files into place for CDN (/a/www/www6s/lib/dt):
+ 5. Move static files into place for CDN (/a/www/www6s/lib/dt):
 
       ietf/manage.py collectstatic --noinput --ignore=bower.json --ignore='README.*' --ignore=rev | grep -v "Found another file with the destination path"
+
+ 6. Run system checks (which patches the just installed modules)::
+
+     ietf/manage.py check
 
  7. Run migrations:  
 
       ietf/manage.py migrate
+
+      Take note if any migrations were executed.
  
  8. Back out one directory level, then re-point the 'web' symlink::
 
@@ -59,7 +61,9 @@ General Instructions for Deployment of a New Release
 
       http://datatracker.ietf.org/
 
- 11. If install failed, revert web symlink and repeat the restart in step 9.
+ 11. If install failed and there were no migrations at step 7, revert web symlink and repeat the restart in step 9.
+     If there were migrations at step 7, they will need to be reversed before the restart at step 9. If it's not obvious
+     what to do to reverse the migrations, contact the dev team.
 
  
 Patching a Production Release
