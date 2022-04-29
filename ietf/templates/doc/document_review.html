@@ -9,7 +9,11 @@
     {% origin %}
     {{ top|safe }}
     {% include "doc/revisions_list.html" %}
-    {% include "doc/review/request_info.html" %}
+    {% if review_req %}
+      {% include "doc/review/request_info.html" %}
+    {% else %}
+       <div class="alert alert-warning my-3">This review has no associated review request</div>
+    {% endif %}
     {% if doc.rev != latest_rev %}
         <div class="alert alert-warning my-3">The information below is for an old version of the document.</div>
     {% endif %}
@@ -31,7 +35,7 @@
                         <td class="edit"></td>
                         <td>
                             {% for review_assignment in other_reviews %}
-                                {% include "doc/review_assignment_summary.html" with current_doc_name=review_assignemnt.review_request.doc.name current_rev=review_assignment.reviewed_rev %}
+                                {% include "doc/review_assignment_summary.html" with current_doc_name=review_assignment.review_request.doc.name current_rev=review_assignment.reviewed_rev %}
                             {% endfor %}
                         </td>
                     </tr>
