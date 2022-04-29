@@ -211,26 +211,16 @@ def doc_exists(name):
     if extension_split:
         name = extension_split.group(1)
 
-    while True:
-        redirect_to = find_unique(name)
-        if redirect_to is None:
-            break
-        if redirect_to == name:
-            return True
-        name = redirect_to
+    if find_unique(name):
+        return True
 
-    # check for embedded rev - this may be ambigious, so don't
+    # check for embedded rev - this may be ambiguous, so don't
     # chop it off if we don't find a match
-    rev_split = re.search("^(.+)-([0-9]{2})$", name)
+    rev_split = re.search("^(.+)-([0-9]{2,})$", name)
     if rev_split:
         name = rev_split.group(1)
-        while True:
-            redirect_to = find_unique(name)
-            if redirect_to is None:
-                return False
-            if redirect_to == name:
-                return True
-            name = redirect_to
+        if find_unique(name):
+            return True
 
     return False
 
