@@ -302,7 +302,7 @@
                         <div class="timetooltip reschedtimetooltip">
                             <div data-start-time="{{ item.session.rescheduled_to.utc_start_time|date:"U" }}"
                                  data-end-time="{{ item.session.rescheduled_to.utc_end_time|date:"U" }}"
-                                 {% if item.timeslot.time|date:"l" != item.session.rescheduled_to.time|date:"l" %} weekday="1"{% endif %}>
+                                 {% if item.timeslot.time|date:"l" != item.session.rescheduled_to.time|date:"l" %} data-weekday="1"{% endif %}>
                                 {% if "-utc" in request.path %}
                                     {{ item.session.rescheduled_to.utc_start_time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.utc_end_time|date:"G:i" }}
                                 {% else %}

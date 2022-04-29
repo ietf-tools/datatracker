@@ -25,7 +25,7 @@
                 .utc();
             item.end_ts = moment.unix(this.getAttribute("data-end-time"))
                 .utc();
-            if (this.hasAttribute("weekday")) {
+            if (this.hasAttribute("data-weekday")) {
                 item.format = 2;
             } else {
                 item.format = 1;
