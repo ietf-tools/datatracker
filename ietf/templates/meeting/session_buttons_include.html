@@ -9,7 +9,7 @@
         {% with session=item.session %}
             {% with timeslot=item.timeslot %}
                 {% with meeting=schedule.meeting %}
-                    {% if session.agenda and show_agenda %}
+                    {% if session.agenda and show_agenda and meeting.type.slug != 'interim' %}
                         {# Note: if called with show_agenda=True, calling template must load agenda_materials.js, needed by session_agenda_include.html #}
                         {% include "meeting/session_agenda_include.html" with slug=slug session=session timeslot=timeslot only %}
                     {% endif %}

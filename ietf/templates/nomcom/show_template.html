@@ -49,7 +49,7 @@
             </dd>
         {% endif %}
     </dl>
-    <pre class="border p-3 pasted">{{ template.content|linkify|urlize_ietf_docs|linebreaksbr }}</pre>
+    <pre class="border p-3 pasted">{{ template.content|urlize_ietf_docs|linkify|linebreaksbr }}</pre>
     <a class="btn btn-secondary my-3"
        href="{% if return_url %}{{ return_url }}{% else %}../{% endif %}">Back</a>
 {% endblock %}

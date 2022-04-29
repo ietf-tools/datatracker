@@ -36,5 +36,5 @@
             {{ message.subject|linkify }}
         </dd>
     </dl>
-    <pre>{{ message.body|linkify|urlize_ietf_docs }}</pre>
+    <pre>{{ message.body|urlize_ietf_docs|linkify }}</pre>
 {% endblock %}

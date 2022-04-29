@@ -42,7 +42,7 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {{ d.name.desc|linkify|urlize_ietf_docs }}
+                                    {{ d.name.desc|urlize_ietf_docs|linkify }}
                                     {% if first and d.name.slug == 'openreg' or first and d.name.slug == 'earlybird' %}
                                         <a href="https://www.ietf.org/how/meetings/register/">Register here</a>.
                                     {% endif %}

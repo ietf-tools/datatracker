@@ -29,7 +29,7 @@
             {% if person.photo %}
                 <div class="float-end ms-3 mb-3">{% include "person/photo.html" with person=person %}</div>
             {% endif %}
-            {{ person.biography|apply_markup:"restructuredtext"|linkify|urlize_ietf_docs }}
+            {{ person.biography|apply_markup:"restructuredtext"|urlize_ietf_docs|linkify }}
         </div>
         {% if person.role_set.exists %}
             <h2 class="mt-5" id="roles">Roles</h2>
