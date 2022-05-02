@@ -66,7 +66,7 @@ import debug    # pyflakes:ignore
 from ietf.name.models import DocTypeName
 from ietf.utils.html import unescape
 from ietf.utils.test_utils import unicontent
-from ietf.utils.test_runner import start_vnu_server, vnu_validate, vnu_fmt_message
+from ietf.utils.test_runner import start_vnu_server, vnu_validate, vnu_fmt_message, vnu_filter_message
 
 # --- Constants ---
 
@@ -180,7 +180,7 @@ def check_html_valid(url, response, args):
                     tag = vnu_fmt_message(url, m)
                 # disregard some HTML issues that are (usually) due to invalid
                 # database content
-                if not re.search(r"The 'type' attribute is unnecessary for JavaScript|Attribute 'required' not allowed on element|Duplicate ID 'session-buttons|The first occurrence of ID 'session-buttons|Document uses the Unicode Private Use Area|document is not mappable to XML 1\.0|Forbidden code point U\+|is not in Unicode Normalization Form C", tag):
+                if not vnu_filter_message(m, True, False):
                     warnings += 1
                     tags.append(tag)
         else:

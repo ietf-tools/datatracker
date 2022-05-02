@@ -99,6 +99,7 @@ url_coverage_collection = None
 
 
 def start_vnu_server(port=8888):
+    "Start a vnu validation server on the indicated port"
     vnu = subprocess.Popen(
         [
             "java",
@@ -124,20 +125,26 @@ http = urllib3.PoolManager(retries=urllib3.Retry(99, redirect=False))
 
 
 def vnu_validate(html, content_type="text/html", port=8888):
+    "Pass the HTML to the vnu server running on the indicated port"
     gzippeddata = gzip.compress(html)
     try:
         req = http.request(
             "POST",
-            f"http://127.0.0.1:{port}/?" + urlencode({"out": "json", "asciiquotes": "yes"}),
+            f"http://127.0.0.1:{port}/?"
+            + urlencode({"out": "json", "asciiquotes": "yes"}),
             headers={
                 "Content-Type": content_type,
                 "Accept-Encoding": "gzip",
                 "Content-Encoding": "gzip",
                 "Content-Length": str(len(gzippeddata)),
             },
-            body=gzippeddata
+            body=gzippeddata,
         )
-    except (urllib3.exceptions.NewConnectionError, urllib3.exceptions.MaxRetryError, ConnectionRefusedError):
+    except (
+        urllib3.exceptions.NewConnectionError,
+        urllib3.exceptions.MaxRetryError,
+        ConnectionRefusedError,
+    ):
         return None
 
     assert req.status == 200
@@ -145,6 +152,7 @@ def vnu_validate(html, content_type="text/html", port=8888):
 
 
 def vnu_fmt_message(file, msg):
+    "Convert a vnu JSON message into a printable string"
     ret = f"\n{file}:\n"
     if "extract" in msg:
         ret += msg["extract"].replace("\n", " ") + "\n"
@@ -153,6 +161,33 @@ def vnu_fmt_message(file, msg):
         ret += " " * msg["hiliteStart"]
     ret += f"{msg['type']}: {msg['message']}\n"
     return ret
+
+
+def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
+    "True if the vnu message is a known false positive"
+    if filter_db_issues and re.match(
+        r"""Forbidden\ code\ point\ U\+""",
+        msg["message"],
+        flags=re.VERBOSE,
+    ):
+        return True
+
+    if filter_test_issues and re.match(
+        r"""The\ 'type'\ attribute\ is\ unnecessary\ for\ JavaScript|
+            Attribute\ 'required'\ not\ allowed\ on\ element\ 'div'|
+            Ceci\ n'est\ pas\ une\ URL
+            """,
+        msg["message"],
+        flags=re.VERBOSE,
+    ):
+        return True
+
+    return re.match(
+        r"""The\ document\ is\ not\ mappable\ to\ XML\ 1
+            """,
+        msg["message"],
+        flags=re.VERBOSE,
+    )
 
 
 def load_and_run_fixtures(verbosity):
@@ -945,53 +980,8 @@ class IetfTestRunner(DiscoverRunner):
                     result = vnu_validate(f.read())
                     assert result
                     for msg in json.loads(result)["messages"]:
-
-                        if (
-                            re.match(
-                                r"Overriding document character encoding",
-                                msg["message"],
-                            )
-                            or re.match(
-                                r"The 'type' attribute is unnecessary for JavaScript",
-                                msg["message"],
-                            )
-                            or re.match(
-                                r"Attribute 'required' not allowed on element 'div'",
-                                msg["message"],
-                            )
-                            or re.match(
-                                r"The document is not mappable to XML 1.0",
-                                msg["message"],
-                            )
-                            or re.search(
-                                r"Ceci n'est pas une URL",
-                                msg["message"],
-                            )
-                            or re.search(
-                                r"is not in Unicode Normalization Form C",
-                                msg["message"],
-                            )
-                        ):
+                        if vnu_filter_message(msg, False, True):
                             continue
-
-                        if (
-                            file.endswith("proceedings_overview.html")
-                            and re.match(
-                                r"The '\w+' attribute on the '\w+' element is obsolete",
-                                msg["message"],
-                            )
-                        ):
-                            continue
-
-                        if (
-                            file.endswith("nomcom/requirements.html")
-                            and re.match(
-                                r"Section lacks heading",
-                                msg["message"],
-                            )
-                        ):
-                            continue
-
                         errors = vnu_fmt_message(file, msg)
 
             if errors:
