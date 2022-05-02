@@ -113,7 +113,7 @@ def start_vnu_server(port=8888):
         stdout=subprocess.DEVNULL,
     )
 
-    print("Waiting for vnu server to start up...", end="")
+    print("     Waiting for vnu server to start up...", end="")
     while vnu_validate(b"", content_type="", port=port) is None:
         print(".", end="")
         time.sleep(1)
@@ -165,26 +165,28 @@ def vnu_fmt_message(file, msg):
 
 def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
     "True if the vnu message is a known false positive"
-    if filter_db_issues and re.match(
-        r"""Forbidden\ code\ point\ U\+""",
+    if filter_db_issues and re.search(
+        r"""^Forbidden\ code\ point\ U\+|
+            'href'\ on\ element\ 'a':\ Percentage\ \("%"\)\ is\ not\ followed|
+            ^Document\ uses\ the\ Unicode\ Private\ Use\ Area""",
         msg["message"],
         flags=re.VERBOSE,
     ):
         return True
 
-    if filter_test_issues and re.match(
-        r"""The\ 'type'\ attribute\ is\ unnecessary\ for\ JavaScript|
-            Attribute\ 'required'\ not\ allowed\ on\ element\ 'div'|
-            Ceci\ n'est\ pas\ une\ URL
-            """,
+    if filter_test_issues and re.search(
+        r"""^The\ 'type'\ attribute\ is\ unnecessary\ for\ JavaScript|
+            ^Attribute\ 'required'\ not\ allowed\ on\ element\ 'div'|
+            Ceci\ n'est\ pas\ une\ URL|
+            ^The\ '\w+'\ attribute\ on\ the\ '\w+'\ element\ is\ obsolete
+            is\ not\ in\ Unicode\ Normalization\ Form\ C""",
         msg["message"],
         flags=re.VERBOSE,
     ):
         return True
 
-    return re.match(
-        r"""The\ document\ is\ not\ mappable\ to\ XML\ 1
-            """,
+    return re.search(
+        r"""document\ is\ not\ mappable\ to\ XML\ 1""",
         msg["message"],
         flags=re.VERBOSE,
     )
@@ -207,14 +209,14 @@ def safe_create_test_db(self, verbosity, *args, **kwargs):
     global test_database_name, old_create
     keepdb = kwargs.get('keepdb', False)
     if not keepdb:
-        print("Creating test database...")
+        print("     Creating test database...")
         if settings.DATABASES["default"]["ENGINE"] == 'django.db.backends.mysql':
             settings.DATABASES["default"]["OPTIONS"] = settings.DATABASE_TEST_OPTIONS
-            print("Using OPTIONS: %s" % settings.DATABASES["default"]["OPTIONS"])
+            print("     Using OPTIONS: %s" % settings.DATABASES["default"]["OPTIONS"])
     test_database_name = old_create(self, 0, *args, **kwargs)
 
     if settings.GLOBAL_TEST_FIXTURES:
-        print("Loading global test fixtures: %s" % ", ".join(settings.GLOBAL_TEST_FIXTURES))
+        print("     Loading global test fixtures: %s" % ", ".join(settings.GLOBAL_TEST_FIXTURES))
         load_and_run_fixtures(verbosity)
 
     return test_database_name
@@ -721,9 +723,9 @@ class IetfTestRunner(DiscoverRunner):
         settings.PASSWORD_HASHERS = ( 'django.contrib.auth.hashers.MD5PasswordHasher', )
         settings.SERVER_MODE = 'test'
         #
-        print("Datatracker %s test suite, %s:" % (ietf.__version__, time.strftime("%d %B %Y %H:%M:%S %Z")))
-        print("Python %s." % sys.version.replace('\n', ' '))
-        print("Django %s, settings '%s'" % (django.get_version(), settings.SETTINGS_MODULE))
+        print("     Datatracker %s test suite, %s:" % (ietf.__version__, time.strftime("%d %B %Y %H:%M:%S %Z")))
+        print("     Python %s." % sys.version.replace('\n', ' '))
+        print("     Django %s, settings '%s'" % (django.get_version(), settings.SETTINGS_MODULE))
         
         settings.TEMPLATES[0]['BACKEND'] = 'ietf.utils.test_runner.ValidatingTemplates'
         if self.check_coverage:
@@ -762,27 +764,27 @@ class IetfTestRunner(DiscoverRunner):
 
             self.code_coverage_checker = settings.TEST_CODE_COVERAGE_CHECKER
             if not self.code_coverage_checker._started:
-                sys.stderr.write("*  Warning: In %s: Expected the coverage checker to have\n"
-                                 "   been started already, but it wasn't. Doing so now.  Coverage numbers\n"
-                                 "   will be off, though.\n" % __name__)
+                sys.stderr.write(" **  Warning: In %s: Expected the coverage checker to have\n"
+                                 "       been started already, but it wasn't. Doing so now.  Coverage numbers\n"
+                                 "       will be off, though.\n" % __name__)
                 self.code_coverage_checker.start()
 
         if settings.SITE_ID != 1:
-            print("Changing SITE_ID to '1' during testing.")
+            print("     Changing SITE_ID to '1' during testing.")
             settings.SITE_ID = 1
 
         if True:
             if settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] != '':
-                print("Changing TEMPLATES[0]['OPTIONS']['string_if_invalid'] to '' during testing")
+                print("     Changing TEMPLATES[0]['OPTIONS']['string_if_invalid'] to '' during testing")
                 settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] = ''
         else:
             # Alternative code to trigger test exceptions on failure to
             # resolve variables in templates.
-            print("Changing TEMPLATES[0]['OPTIONS']['string_if_invalid'] during testing")
+            print("     Changing TEMPLATES[0]['OPTIONS']['string_if_invalid'] during testing")
             settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] = InvalidString('%s')
 
         if settings.INTERNAL_IPS:
-            print("Changing INTERNAL_IPS to '[]' during testing.")
+            print("     Changing INTERNAL_IPS to '[]' during testing.")
             settings.INTERNAL_IPS = []
 
         assert not settings.IDTRACKER_BASE_URL.endswith('/')
@@ -796,15 +798,15 @@ class IetfTestRunner(DiscoverRunner):
                 ietf.utils.mail.SMTP_ADDR['port'] = base + offset 
                 self.smtpd_driver = SMTPTestServerDriver((ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port']),None) 
                 self.smtpd_driver.start()
-                print(("Running an SMTP test server on %(ip4)s:%(port)s to catch outgoing email." % ietf.utils.mail.SMTP_ADDR))
+                print(("     Running an SMTP test server on %(ip4)s:%(port)s to catch outgoing email." % ietf.utils.mail.SMTP_ADDR))
                 break
             except socket.error:
                 pass
 
         if os.path.exists(settings.UTILS_TEST_RANDOM_STATE_FILE):
-            print("Loading factory-boy random state from %s" % settings.UTILS_TEST_RANDOM_STATE_FILE)
+            print("     Loading factory-boy random state from %s" % settings.UTILS_TEST_RANDOM_STATE_FILE)
         else:
-            print("Saving factory-boy random state to %s" % settings.UTILS_TEST_RANDOM_STATE_FILE)
+            print("     Saving factory-boy random state to %s" % settings.UTILS_TEST_RANDOM_STATE_FILE)
             with open(settings.UTILS_TEST_RANDOM_STATE_FILE, 'w') as f:
                 s = factory.random.get_random_state()
                 json.dump(s, f)
@@ -814,10 +816,10 @@ class IetfTestRunner(DiscoverRunner):
         factory.random.set_random_state(s)
 
         if not settings.validate_html:
-            print("Not validating any generated HTML; "
+            print("     Not validating any generated HTML; "
                   "please do so at least once before committing changes")
         else:
-            print("Validating all HTML generated during the tests", end="")
+            print("     Validating all HTML generated during the tests", end="")
             self.batches = {"doc": [], "frag": []}
 
             # keep the html-validate configs here, so they can be kept in sync easily
@@ -1087,10 +1089,10 @@ class IetfTestRunner(DiscoverRunner):
                 test_coverage = test_data["coverage"]
 
                 if self.run_full_test_suite:
-                    print((" %8s coverage: %6.2f%%  (%s: %6.2f%%)" %
+                    print(("      %8s coverage: %6.2f%%  (%s: %6.2f%%)" %
                         (test.capitalize(), test_coverage*100, latest_coverage_version, master_coverage*100, )))
                 else:
-                    print((" %8s coverage: %6.2f%%" %
+                    print(("      %8s coverage: %6.2f%%" %
                         (test.capitalize(), test_coverage*100, )))
 
             print(("""

@@ -209,6 +209,8 @@ def skip_url(url):
             # Skip most of the slow pdf composite generation urls and svg urls
             "^/meeting/[0-9]+/agenda/[0-9b-z].*-drafts\\.pdf",
             "^/wg/[a-z0-9-]+/deps/svg/",
+            # Skip other bad urls
+            r"/dir/tsvdir/reviews/",
             # Skip most html conversions, not worth the time
             "^/doc/html/draft-[0-9ac-z]",
             "^/doc/html/draft-b[0-9b-z]",
