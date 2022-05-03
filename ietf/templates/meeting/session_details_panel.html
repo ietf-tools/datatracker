@@ -45,7 +45,7 @@
             {% endif %}
         {% endif %}
         {% if meeting.type.slug == 'interim' and session.remote_instructions %}
-            <div>
+            <div class="my-3">
                 <b>Remote instructions:</b>
                 {% if session.agenda_note|first_url|conference_url %}
                     <a href="{{ session.agenda_note|first_url }}" title="Online conference">
@@ -125,6 +125,7 @@
                     {% for pres in session.filtered_slides %}
                         <tr data-name="{{ pres.document.name }}" title="Drag to reorder.">
                             {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
+                            <td><i class="bi bi-grip-vertical"></i></td>
                             <td>
                                 <a href="{{ pres.document.get_href }}">{{ pres.document.title }}</a>
                                 <a href="{{ url }}">({{ pres.document.name }})</a>
@@ -158,7 +159,7 @@
             </a>
         {% endif %}
 
-    {% if can_manage_materials %}<div class="small">Drag-and-drop to reorder slides</div>{% endif %}
+    {% if can_manage_materials %}<div class="form-text">Drag-and-drop to reorder slides</div>{% endif %}
     <h3 class="mt-4">Drafts</h3>
     <table class="table table-sm table-striped">
         {% if session.filtered_drafts %}
