@@ -35,7 +35,9 @@ class FeedbackEmailTests(TestCase):
         self.assertEqual(msg['to'], 'admin@example.com', 'Email recipient should be the admins')
         self.assertIn('error', msg['subject'], 'Email subject should indicate error')
         self.assertFalse(msg.is_multipart(), 'Nomcom feedback error sent to admin should not have attachments')
-        content = msg.get_payload()
+        # decode=True decodes the quoted-printable encoding, including removing soft linebreaks.
+        # The .decode() converts the resulting octet-stream bytes to a string
+        content = msg.get_payload(decode=True).decode()
         self.assertIn('CommandError', content, 'Admin email should contain error type')
         self.assertIn('feedback_email.py', content, 'Admin email should contain file where error occurred')
         self.assertNotIn('traceback', content.lower(), 'Admin email should not contain traceback')
@@ -63,7 +65,8 @@ class FeedbackEmailTests(TestCase):
         self.assertTrue(msg.is_multipart(), 'Chair feedback error should have attachments')
         parts = msg.get_payload()
         content = parts[0].get_payload()
-        # decode=True decodes the base64 encoding, .decode() converts the octet-stream bytes to a string
+        # decode=True decodes the quoted-printable encoding, including removing soft linebreaks.
+        # The .decode() converts the resulting octet-stream bytes to a string
         attachment = parts[1].get_payload(decode=True).decode()
         self.assertIn('RuntimeError', content, 'Nomcom email should contain error type')
         self.assertIn('mock.py', content, 'Nomcom email should contain file where error occurred')

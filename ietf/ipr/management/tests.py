@@ -42,9 +42,11 @@ class ProcessEmailTests(TestCase):
         self.assertTrue(msg.is_multipart(), 'Error email should have attachments')
         parts = msg.get_payload()
         self.assertEqual(len(parts), 3, 'Error email should contain message, traceback, and original message')
-        content = parts[0].get_payload()
-        traceback = parts[1].get_payload()
-        original = parts[2].get_payload(decode=True).decode()  # convert octet-stream to string
+        # decode=True decodes the quoted-printable encoding, including removing soft linebreaks.
+        # The .decode() converts the resulting octet-stream bytes to a string
+        content = parts[0].get_payload(decode=True).decode()
+        traceback = parts[1].get_payload(decode=True).decode()
+        original = parts[2].get_payload(decode=True).decode()
         self.assertIn('RuntimeError', content, 'Error type should be included in error email')
         self.assertIn('mock.py', content, 'File where error occurred should be included in error email')
         self.assertIn('traceback', traceback.lower(), 'Traceback should be attached to error email')
