@@ -11,7 +11,7 @@
         <br>
         <small class="text-muted">{{ doc.canonical_name }}-{{ doc.rev }}</small>
     </h1>
-    <pre class="border p-3 my-3">{{writeup|linkify|urlize_ietf_docs|wordwrap:"80"}}</pre>
+    <pre class="border p-3 my-3">{{writeup|maybewordwrap|urlize_ietf_docs|linkify}}</pre>
     {% if can_edit %}
         <a class="btn btn-primary"
            href="{% url 'ietf.doc.views_draft.edit_shepherd_writeup' name=doc.name %}">Edit</a>

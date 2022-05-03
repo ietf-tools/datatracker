@@ -148,10 +148,10 @@
                                 {% for resource in resources|dictsort:"display_name" %}
                                     {# Maybe make how a resource displays itself a method on the class so templates aren't doing this switching #}
                                     {% if resource.name.type.slug == 'url' or resource.name.type.slug == 'email' %}
-                                        <a href="{{ resource.value }}" title="{{ resource.name.name }}">
+                                        <a href="{{ resource.value|urlencode }}" title="{{ resource.name.name }}">
                                             {% firstof resource.display_name resource.name.name %}</a>{% else %}
                                         <span title="{{ resource.name.name }}">
-                                            {% firstof resource.display_name resource.name.name %}: {{ resource.value }}
+                                            {% firstof resource.display_name resource.name.name %}: {{ resource.value|escape }}
                                         </span>{% endif %}{% if not forloop.last %}{% if resource.display_name|length < 15 and resource.name.name|length < 15 and resources|length <= 3 %},{% else %}<br>{% endif %}{% endif %}
                                 {% endfor %}
                             {% endif %}
@@ -309,7 +309,7 @@
             {{ group.type.desc.title }}
         </h2>
         {# the linebreaks filter adds <p>, no surrounding <p> necessary: #}
-        {{ group.charter_text|linkify|urlize_ietf_docs|linebreaks }}
+        {{ group.charter_text|urlize_ietf_docs|linkify|linebreaks }}
     {% else %}
         <h2 class="mt-3">
             {% if requested_close or group.state_id == "conclude" %}Final{% endif %}

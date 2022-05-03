@@ -201,7 +201,7 @@
                     Body
                 </th>
                 <td>
-                    <pre>{{ liaison.body|maybewordwrap:"80"|linkify|urlize_ietf_docs }}</pre>
+                    <pre>{{ liaison.body|maybewordwrap:"80"|urlize_ietf_docs|linkify }}</pre>
                 </td>
             </tr>
         {% endif %}

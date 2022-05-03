@@ -15,6 +15,7 @@
         <small class="text-muted">{{ user.username }}</small>
     </h1>
     {% csrf_token %}
+    {% if person.apikeys.all %}
     <table class="table table-sm tablesorter">
         <thead>
             <tr >
@@ -49,13 +50,12 @@
                     {% endif %}
                 </td>
             </tr>
-        {% empty %}
-            <tr>
-                <td>You have no personal API keys.</td>
-            </tr>
         {% endfor %}
         </tbody>
     </table>
+    {% else %}
+        <p>You have no personal API keys.</p>
+    {% endif %}
     <a href="{% url 'ietf.ietfauth.views.apikey_create' %}"
        class="btn btn-primary add-apikey my-3">
         Get a new personal API key

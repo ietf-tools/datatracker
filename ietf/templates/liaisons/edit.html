@@ -52,7 +52,14 @@
         {% for fieldset in form.fieldsets %}
             <h2>{{ fieldset.name }}</h2>
             {% for field in fieldset %}
-                {% bootstrap_field field layout="horizontal" %}
+                {% if field.id_for_label != "id_attachments" %}
+                    {% bootstrap_field field layout="horizontal" %}
+                {% else %}
+                    <div class="row mb-3">
+                        <p class="col-md-2 fw-bold col-form-label">{{ field.label }}</p>
+                        <div class="col-md-10">{{ field }}</div>
+                    </div>
+                {% endif %}
             {% endfor %}
         {% endfor %}
         <a class="btn btn-danger float-end"
