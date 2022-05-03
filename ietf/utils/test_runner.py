@@ -151,7 +151,7 @@ def vnu_validate(html, content_type="text/html", port=8888):
     return req.data.decode("utf-8")
 
 
-def vnu_fmt_message(file, msg):
+def vnu_fmt_message(file, msg, content):
     "Convert a vnu JSON message into a printable string"
     ret = f"\n{file}:\n"
     if "extract" in msg:
@@ -160,6 +160,11 @@ def vnu_fmt_message(file, msg):
         ret += "^" * msg["hiliteLength"] + "\n"
         ret += " " * msg["hiliteStart"]
     ret += f"{msg['type']}: {msg['message']}\n"
+    if "firstLine" in msg and "lastLine" in msg:
+        ret += f'Source snippet, lines {msg["firstLine"]-5} to {msg["lastLine"]+5}:'
+        lines = content.splitlines()
+        for line in range(msg["firstLine"] - 5, msg["lastLine"] + 5):
+            ret += f"{line}: {lines[line]}\n"
     return ret
 
 
@@ -168,6 +173,7 @@ def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
     if filter_db_issues and re.search(
         r"""^Forbidden\ code\ point\ U\+|
             'href'\ on\ element\ 'a':\ Percentage\ \("%"\)\ is\ not\ followed|
+            ^Saw\ U\+\d+\ in\ stream|
             ^Document\ uses\ the\ Unicode\ Private\ Use\ Area""",
         msg["message"],
         flags=re.VERBOSE,
@@ -175,10 +181,9 @@ def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
         return True
 
     if filter_test_issues and re.search(
-        r"""^The\ 'type'\ attribute\ is\ unnecessary\ for\ JavaScript|
-            ^Attribute\ 'required'\ not\ allowed\ on\ element\ 'div'|
-            Ceci\ n'est\ pas\ une\ URL|
-            ^The\ '\w+'\ attribute\ on\ the\ '\w+'\ element\ is\ obsolete
+        r"""Ceci\ n'est\ pas\ une\ URL|
+            ^The\ '\w+'\ attribute\ on\ the\ '\w+'\ element\ is\ obsolete|
+            ^Section\ lacks\ heading|
             is\ not\ in\ Unicode\ Normalization\ Form\ C""",
         msg["message"],
         flags=re.VERBOSE,
@@ -186,7 +191,9 @@ def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
         return True
 
     return re.search(
-        r"""document\ is\ not\ mappable\ to\ XML\ 1""",
+        r"""document\ is\ not\ mappable\ to\ XML\ 1|
+            ^Attribute\ 'required'\ not\ allowed\ on\ element\ 'div'|
+            ^The\ 'type'\ attribute\ is\ unnecessary\ for\ JavaScript""",
         msg["message"],
         flags=re.VERBOSE,
     )
@@ -979,12 +986,13 @@ class IetfTestRunner(DiscoverRunner):
             ]
             for file in files:
                 with open(file, "rb") as f:
-                    result = vnu_validate(f.read())
+                    content = f.read()
+                    result = vnu_validate(content)
                     assert result
                     for msg in json.loads(result)["messages"]:
                         if vnu_filter_message(msg, False, True):
                             continue
-                        errors = vnu_fmt_message(file, msg)
+                        errors = vnu_fmt_message(file, msg, content)
 
             if errors:
                 testcase.fail(errors)

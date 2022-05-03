@@ -177,7 +177,7 @@ def check_html_valid(url, response, args):
                 if "lastLine" not in m:
                     tag = m  # just dump the raw JSON for now
                 else:
-                    tag = vnu_fmt_message(url, m)
+                    tag = vnu_fmt_message(url, m, content.decode())
                 # disregard some HTML issues that are (usually) due to invalid
                 # database content
                 if not vnu_filter_message(m, True, False):
@@ -204,21 +204,22 @@ def skip_extract_from(url):
 
 def skip_url(url):
     for pattern in (
-            "^/community/[0-9]+/remove_document/",
-            "^/community/personal/",
+            r"^/community/[0-9]+/remove_document/",
+            r"^/community/personal/",
             # Skip most of the slow pdf composite generation urls and svg urls
-            "^/meeting/[0-9]+/agenda/[0-9b-z].*-drafts\\.pdf",
-            "^/wg/[a-z0-9-]+/deps/svg/",
+            r"^/meeting/[0-9]+/agenda/[0-9b-z].*-drafts\\.pdf",
+            r"^/wg/[a-z0-9-]+/deps/svg/",
             # Skip other bad urls
-            r"/dir/tsvdir/reviews/",
+            r"^/dir/tsvdir/reviews/",
+            r"/ipr/491/history/",
             # Skip most html conversions, not worth the time
-            "^/doc/html/draft-[0-9ac-z]",
-            "^/doc/html/draft-b[0-9b-z]",
-            "^/doc/pdf/draft-[0-9ac-z]",
-            "^/doc/pdf/draft-b[0-9b-z]",
-            "^/doc/html/charter-.*",
-            "^/doc/html/status-.*",
-            "^/doc/html/rfc.*",
+            r"^/doc/html/draft-[0-9ac-z]",
+            r"^/doc/html/draft-b[0-9b-z]",
+            r"^/doc/pdf/draft-[0-9ac-z]",
+            r"^/doc/pdf/draft-b[0-9b-z]",
+            r"^/doc/html/charter-.*",
+            r"^/doc/html/status-.*",
+            r"^/doc/html/rfc.*",
             r"^/static/coverage/",
             r"^/meeting/\d{,2}/agenda",  # no agendas < 100
         ):
