@@ -370,7 +370,7 @@ def document_main(request, name, rev=None):
                 # already adopted in one group
                 button_text = "Switch adoption"
             else:
-                button_text = "Adopt"
+                button_text = "Manage adoption"
             actions.append((button_text, urlreverse('ietf.doc.views_draft.adopt_draft', kwargs=dict(name=doc.name))))
 
         if can_unadopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"] and not snapshot:
