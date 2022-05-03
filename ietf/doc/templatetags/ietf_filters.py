@@ -838,7 +838,7 @@ def absurl(viewname, **kwargs):
 @register.filter
 def is_valid_url(url):
     """
-    Check if the given URL is syntactically valid/
+    Check if the given URL is syntactically valid
     """
     validate_url = URLValidator()
     try:
