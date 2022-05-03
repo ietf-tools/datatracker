@@ -15,7 +15,7 @@ $.fn.select2.defaults.set("escapeMarkup", function (m) {
     return m;
 });
 
-function underscore_to_space(x) {
+function prettify_tz(x) {
     return x.text.replaceAll("_", " ").replaceAll("/", " / ");
 }
 
@@ -30,7 +30,7 @@ window.setupSelect2Field = function (e) {
         e.append(new Option(options[id].text, options[id].id, false, options[id].selected));
     }
 
-    template_modify = e.hasClass("tz-select") ? underscore_to_space : undefined;
+    template_modify = e.hasClass("tz-select") ? prettify_tz : undefined;
 
     e.select2({
         multiple: maxEntries !== 1,
