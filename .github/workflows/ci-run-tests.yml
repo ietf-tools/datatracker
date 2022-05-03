@@ -41,7 +41,9 @@ jobs:
         echo "Running checks..."
         ./ietf/manage.py check
         echo "Validating migrations..."
-        ./ietf/manage.py makemigrations | tee /dev/stderr | grep -q "^No changes detected$" || echo -e "\nModel changes without migrations found." && exit 1"
+        if ! (ietf/manage.py makemigrations 2>&1 | grep -q "^No changes detected$") ; then
+            echo -e "\nModel changes without migrations found." ; exit 1
+        fi
         echo "Running tests..."
         ./ietf/manage.py test --settings=settings_sqlitetest
         coverage xml
