@@ -184,14 +184,14 @@ $(function () {
                 .attr("tabindex", 0)
                 .after($(`
                  <div class="col-xl-2 ps-0 small">
-                     <div id="righthand-panel" class="position-fixed d-flex flex-column justify-content-between align-items-start">
-                         <nav id="righthand-nav" class="navbar navbar-light bg-light overflow-auto align-items-start flex-fill"></nav>
+                     <div id="righthand-panel" class="position-fixed col-xl-2 bg-light d-flex flex-column justify-content-between align-items-start">
+                         <nav id="righthand-nav" class="navbar navbar-light w-100 overflow-auto align-items-start flex-fill"></nav>
                      </div></div>
                  </div>
                  `));
 
             const nav = $("#righthand-nav")
-                .append(`<nav class="nav nav-pills flex-column px-2">`)
+                .append(`<nav class="nav nav-pills flex-column w-100 px-2">`)
                 .children()
                 .last();
 
@@ -236,7 +236,7 @@ $(function () {
                 });
 
             if (haveExtraNav) {
-                $('#righthand-panel').append('<div id="righthand-extra" class="py-3"></div>');
+                $('#righthand-panel').append('<div id="righthand-extra" class="w-100 py-3"></div>');
                 extraNav.children().appendTo('#righthand-extra');
                 extraNav.remove();
             }

@@ -25,15 +25,15 @@
     {% endif %}
     {# the contents of #extra-nav will be moved into the RH nav panel #}
     <div id="extra-nav" class="d-none">
-        <div class="d-flex flex-column">
+        <div class="d-flex flex-column px-2">
           {% if now.date <= schedule.meeting.end_date %}
-              <a class="nav-link now-link" href="#">Current session</a>
+              <a class="btn btn-sm btn-primary my-3 now-link" href="#">Jump to current session</a>
           {% endif %}
-          <div class="px-3">
-            Showing <span class="current-tz">{{ timezone }}</span> time
-          </div>
-          <div class="align-self-center">
+          <div class="d-flex">
             {% include 'meeting/tz-display.html' with id_suffix="-rh" meeting_timezone=timezone minimal=True only %}
+          </div>
+          <div class="small text-muted">
+            Showing <span class="current-tz">{{ timezone|split:"_"|join:" "|split:"/"|join:" / " }}</span> time
           </div>
         </div>
     </div>

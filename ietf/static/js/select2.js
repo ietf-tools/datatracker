@@ -15,6 +15,10 @@ $.fn.select2.defaults.set("escapeMarkup", function (m) {
     return m;
 });
 
+function prettify_tz(x) {
+    return x.text.replaceAll("_", " ").replaceAll("/", " / ");
+}
+
 // Copyright The IETF Trust 2015-2021, All Rights Reserved
 // JS for ietf.utils.fields.SearchableField subclasses
 window.setupSelect2Field = function (e) {
@@ -26,9 +30,13 @@ window.setupSelect2Field = function (e) {
         e.append(new Option(options[id].text, options[id].id, false, options[id].selected));
     }
 
+    template_modify = e.hasClass("tz-select") ? prettify_tz : undefined;
+
     e.select2({
         multiple: maxEntries !== 1,
         maximumSelectionSize: maxEntries,
+        templateResult: template_modify,
+        templateSelection: template_modify,
         ajax: url ? {
             url: url,
             dataType: "json",
