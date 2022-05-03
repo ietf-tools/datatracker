@@ -184,14 +184,14 @@ $(function () {
                 .attr("tabindex", 0)
                 .after($(`
                  <div class="col-xl-2 ps-0 small">
-                     <div id="righthand-panel" class="position-fixed d-flex flex-column justify-content-between align-items-start">
-                         <nav id="righthand-nav" class="navbar navbar-light bg-light overflow-auto align-items-start flex-fill"></nav>
+                     <div id="righthand-panel" class="position-fixed col-xl-2 d-flex flex-column justify-content-between align-items-start">
+                         <nav id="righthand-nav" class="navbar navbar-light bg-light w-100 overflow-auto align-items-start flex-fill"></nav>
                      </div></div>
                  </div>
                  `));
 
             const nav = $("#righthand-nav")
-                .append(`<nav class="nav nav-pills flex-column px-2">`)
+                .append(`<nav class="nav nav-pills flex-column w-100 px-2">`)
                 .children()
                 .last();
 
