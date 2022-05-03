@@ -9,7 +9,6 @@ import debug # pyflakes: ignore
 
 class IetfFiltersTests(TestCase):
     def test_urlize_ietf_docs(self):
-        self.maxDiff = None
         cases = [
             ("no change", "no change"),
             ("bcp1", '<a href="/doc/bcp1/">bcp1</a>'),
