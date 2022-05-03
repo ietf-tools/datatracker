@@ -161,7 +161,7 @@ def vnu_fmt_message(file, msg, content):
         ret += " " * msg["hiliteStart"]
     ret += f"{msg['type']}: {msg['message']}\n"
     if "firstLine" in msg and "lastLine" in msg:
-        ret += f'Source snippet, lines {msg["firstLine"]-5} to {msg["lastLine"]+5}:'
+        ret += f'Source snippet, lines {msg["firstLine"]-5} to {msg["lastLine"]+4}:\n'
         lines = content.splitlines()
         for line in range(msg["firstLine"] - 5, msg["lastLine"] + 5):
             ret += f"{line}: {lines[line]}\n"
