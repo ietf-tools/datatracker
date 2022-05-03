@@ -260,7 +260,10 @@ def urlize_ietf_docs(string, autoescape=None):
     Make occurrences of RFC NNNN and draft-foo-bar links to /doc/.
     """
     if autoescape and not isinstance(string, SafeData):
-        string = escape(string)
+        if "<" in string:
+            string = escape(string)
+        else:
+            string = mark_safe(string)
     exp1 = r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d\d-\d\d)(\.txt)?\b"
     exp2 = r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d\d)(\.txt)?\b"
     if re.search(exp1, string):
