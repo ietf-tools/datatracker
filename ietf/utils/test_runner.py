@@ -126,6 +126,11 @@ http = urllib3.PoolManager(retries=urllib3.Retry(99, redirect=False))
 
 def vnu_validate(html, content_type="text/html", port=8888):
     "Pass the HTML to the vnu server running on the indicated port"
+    if "** No value found for " in html.decode():
+        return json.dumps(
+            {"messages": [{"message": '"** No value found for" in source'}]}
+        )
+
     gzippeddata = gzip.compress(html)
     try:
         req = http.request(

@@ -68,7 +68,9 @@
                         {% if group.charter %}
                             <a href="{% url "ietf.doc.views_doc.document_main" name=group.charter.name %}">
                                 {{ group.charter.name }}-{{ group.charter.rev }}</a>
-                            <span class="badge bg-info">{{ group.charter.get_state.name }}</span>
+                            {% if group.charter.get_state.name %}
+                                <span class="badge bg-info">{{ group.charter.get_state.name }}</span>
+                            {% endif %}
                         {% else %}
                             <span class="text-muted">(None)</span>
                             {% if user|has_role:"Area Director,Secretariat" %}
