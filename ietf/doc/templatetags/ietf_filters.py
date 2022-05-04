@@ -29,7 +29,7 @@ from ietf.doc.models import ConsensusDocEvent
 from ietf.utils.html import sanitize_fragment
 from ietf.utils import log
 from ietf.doc.utils import prettify_std_name
-from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped, bleach_linker
+from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped, bleach_linker, bleach_cleaner
 
 register = template.Library()
 
@@ -492,10 +492,8 @@ def ad_area(user):
 @register.filter
 def format_history_text(text, trunc_words=25):
     """Run history text through some cleaning and add ellipsis if it's too long."""
-    full = mark_safe(text)
-    if "</a>" not in full:
-        full = urlize_ietf_docs(full)
-    full = bleach_linker.linkify(full)
+    full = mark_safe(bleach_cleaner.clean(text))
+    full = bleach_linker.linkify(urlize_ietf_docs(full))
 
     return format_snippet(full, trunc_words)
 

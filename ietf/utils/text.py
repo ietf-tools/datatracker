@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 
-import bleach
+import bleach  # type: ignore
+import copy
 import email
 import re
 import textwrap
@@ -17,13 +18,17 @@ import debug                            # pyflakes:ignore
 from .texescape import init as texescape_init, tex_escape_map
 
 tlds_sorted = sorted(tlds.tld_set, key=len, reverse=True)
-protocols = bleach.sanitizer.ALLOWED_PROTOCOLS
+protocols = copy.copy(bleach.sanitizer.ALLOWED_PROTOCOLS)
 protocols.append("ftp")  # we still have some ftp links
 bleach_linker = bleach.Linker(
     url_re=bleach.linkifier.build_url_re(tlds=tlds_sorted, protocols=protocols),
     email_re=bleach.linkifier.build_email_re(tlds=tlds_sorted), # type: ignore
     parse_email=True
 )
+
+tags = copy.copy(bleach.sanitizer.ALLOWED_TAGS)
+tags.remove("a")
+bleach_cleaner = bleach.sanitizer.Cleaner(tags=tags, protocols=protocols)
 
 
 @keep_lazy(str)
