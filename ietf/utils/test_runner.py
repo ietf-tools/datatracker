@@ -183,8 +183,7 @@ def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
     if filter_test_issues and re.search(
         r"""Ceci\ n'est\ pas\ une\ URL|
             ^The\ '\w+'\ attribute\ on\ the\ '\w+'\ element\ is\ obsolete|
-            ^Section\ lacks\ heading|
-            is\ not\ in\ Unicode\ Normalization\ Form\ C""",
+            ^Section\ lacks\ heading""",
         msg["message"],
         flags=re.VERBOSE,
     ):
@@ -193,7 +192,8 @@ def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
     return re.search(
         r"""document\ is\ not\ mappable\ to\ XML\ 1|
             ^Attribute\ 'required'\ not\ allowed\ on\ element\ 'div'|
-            ^The\ 'type'\ attribute\ is\ unnecessary\ for\ JavaScript""",
+            ^The\ 'type'\ attribute\ is\ unnecessary\ for\ JavaScript|
+            is\ not\ in\ Unicode\ Normalization\ Form\ C""",
         msg["message"],
         flags=re.VERBOSE,
     )
