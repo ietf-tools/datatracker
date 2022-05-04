@@ -129,8 +129,10 @@ jobs:
         echo "Running checks..."
         ./ietf/manage.py check
         echo "Validating migrations..."
-        if ! (ietf/manage.py makemigrations 2>&1 | grep -q "^No changes detected$") ; then
+        MSG=$(ietf/manage.py makemigrations 2>&1)
+        if ! ( echo ${MSG} | grep -q "^No changes detected$") ; then
           echo "Model changes without migrations found."
+          echo ${MSG}
           exit 1
         fi
         echo "Running tests..."
