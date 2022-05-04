@@ -3,6 +3,7 @@ name: Build Celery Worker Docker Image
 on:
   push:
     branches:
+      - 'main'
       - 'jennifer/celery'
     paths:
       - 'requirements.txt'
