@@ -268,7 +268,9 @@
                     {% endif %}
                 </td>
                 <td>
-                    <div class="d-none d-sm-block">{{ item.session.historic_group.historic_parent.acronym }}</div>
+                    {% if item.session.historic_group.historic_parent.acronym %}
+                        <div class="d-none d-sm-block">{{ item.session.historic_group.historic_parent.acronym }}</div>
+                    {% endif %}
                 </td>
                 <td>
                     {% if item.session.historic_group %}
