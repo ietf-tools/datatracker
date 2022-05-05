@@ -216,7 +216,7 @@ def doc_exists(name):
 
     # check for embedded rev - this may be ambiguous, so don't
     # chop it off if we don't find a match
-    rev_split = re.search("^(.+)-([0-9]{2,})$", name)
+    rev_split = re.search(r"^(.+)-(\d{2}|[1-9]\d{2,})$", name)
     if rev_split:
         name = rev_split.group(1)
         if find_unique(name):
