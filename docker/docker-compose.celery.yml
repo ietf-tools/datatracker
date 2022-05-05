@@ -25,7 +25,11 @@ services:
 
   celery:
     image: ghcr.io/painless-security/datatracker-celery:latest
-    command: celery --app=ietf worker --loglevel=INFO
+    environment:
+      CELERY_APP: ietf
+      # UPDATE_REQUIREMENTS: 1  # uncomment to update Python requirements on startup
+    command:
+      - '--loglevel=INFO'
     user: '${CELERY_UID:?Must specify CELERY_UID}'
     volumes:
       - ..:/workspace

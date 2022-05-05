@@ -88,3 +88,9 @@ RUN chmod +rx /usr/local/bin/wait-for
 # Create workspace
 RUN mkdir -p /workspace
 WORKDIR /workspace
+
+# Install endpoint script
+COPY dev/celery/docker-init.sh /docker-init.sh
+RUN chmod +rx /docker-init.sh
+
+ENTRYPOINT [ "/docker-init.sh" ]
