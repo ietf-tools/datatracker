@@ -34,6 +34,7 @@ from ietf.submit.forms import ( SubmissionManualUploadForm, SubmissionAutoUpload
 from ietf.submit.mail import send_full_url, send_manual_post_request, add_submission_email, get_reply_to
 from ietf.submit.models import (Submission, Preapproval, SubmissionExtResource,
     DraftSubmissionStateName, SubmissionEmailEvent )
+from ietf.submit.tasks import poke
 from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
     recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
     post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
@@ -175,7 +176,7 @@ def api_submit(request):
                     raise ValidationError('Submitter %s is not one of the document authors' % user.username)
 
                 submission.submitter = user.person.formatted_email()
-                sent_to = accept_submission(request, submission)
+                sent_to = accept_submission(submission, request)
 
                 return HttpResponse(
                     "Upload of %s OK, confirmation requests sent to:\n  %s" % (submission.name, ',\n  '.join(sent_to)),
@@ -365,13 +366,13 @@ def submission_status(request, submission_id, access_token=None):
                         permission_denied(request, 'You do not have permission to perform this action')
 
                     # go directly to posting submission
-                    docevent_from_submission(request, submission, desc="Uploaded new revision")
+                    docevent_from_submission(submission, desc="Uploaded new revision")
 
                     desc = "Secretariat manually posting. Approvals already received"
                     post_submission(request, submission, desc, desc)
 
                 else:
-                    accept_submission(request, submission, autopost=True)
+                    accept_submission(submission, request, autopost=True)
 
                 if access_token:
                     return redirect("ietf.submit.views.submission_status", submission_id=submission.pk, access_token=access_token)
@@ -698,9 +699,7 @@ def cancel_waiting_for_draft(request):
         create_submission_event(request, submission, "Cancelled submission")
         if (submission.rev != "00"):
             # Add a doc event
-            docevent_from_submission(request, 
-                                     submission,
-                                     "Cancelled submission for rev {}".format(submission.rev))
+            docevent_from_submission(submission, "Cancelled submission for rev {}".format(submission.rev))
     
     return redirect("ietf.submit.views.manualpost")
 
@@ -924,3 +923,8 @@ def get_submission_or_404(submission_id, access_token=None):
         raise Http404
 
     return submission
+
+
+def async_poke_test(request):
+    result = poke.delay()
+    return HttpResponse(f'Poked {result}', content_type='text/plain')
