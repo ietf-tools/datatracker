@@ -19,7 +19,6 @@ from django.utils.encoding import force_text
 from django.utils.encoding import force_str # pyflakes:ignore force_str is used in the doctests
 from django.urls import reverse as urlreverse
 from django.core.cache import cache
-from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 
 import debug                            # pyflakes:ignore
@@ -29,7 +28,7 @@ from ietf.doc.models import ConsensusDocEvent
 from ietf.utils.html import sanitize_fragment
 from ietf.utils import log
 from ietf.doc.utils import prettify_std_name
-from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped, bleach_linker, bleach_cleaner
+from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped, bleach_linker, bleach_cleaner, validate_url
 
 register = template.Library()
 
@@ -189,8 +188,8 @@ def rfceditor_info_url(rfcnum : str):
     return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f'rfc{rfcnum}')
 
 
-def doc_exists(name):
-    """Check whether a given document exists"""
+def doc_canonical_name(name):
+    """Check whether a given document exists, and return its canonical name"""
     def find_unique(n):
         key = hash(n)
         found = cache.get(key)
@@ -204,7 +203,7 @@ def doc_exists(name):
     if settings.SERVER_MODE == 'test':
         # unless we are running test-crawl, which would otherwise 404
         if "DJANGO_URLIZE_IETF_DOCS_PRODUCTION" not in os.environ:
-            return True
+            return name
 
     # chop away extension
     extension_split = re.search(r"^(.+)\.(txt|ps|pdf)$", name)
@@ -212,7 +211,7 @@ def doc_exists(name):
         name = extension_split.group(1)
 
     if find_unique(name):
-        return True
+        return name
 
     # check for embedded rev - this may be ambiguous, so don't
     # chop it off if we don't find a match
@@ -220,27 +219,28 @@ def doc_exists(name):
     if rev_split:
         name = rev_split.group(1)
         if find_unique(name):
-            return True
+            return name
 
-    return False
+    return ""
 
 
 def link_charter_doc_match1(match):
-    if not doc_exists(match[0]):
+    if not doc_canonical_name(match[0]):
         return match[0]
     return f'<a href="/doc/{match[1][:-1]}/{match[2]}/">{match[0]}</a>'
 
 
 def link_charter_doc_match2(match):
-    if not doc_exists(match[0]):
+    if not doc_canonical_name(match[0]):
         return match[0]
     return f'<a href="/doc/{match[1][:-1]}/{match[2]}/">{match[0]}</a>'
 
 
 def link_non_charter_doc_match(match):
-    if not doc_exists(match[0]):
+    name = doc_canonical_name(match[0])
+    if not name:
         return match[0]
-    if len(match[3]) == 2 and match[3].isdigit():
+    if name != match[0] and len(match[3]) == 2 and match[3].isdigit():
         return f'<a href="/doc/{match[2][:-1]}/{match[3]}/">{match[0]}</a>'
     else:
         return f'<a href="/doc/{match[2]}{match[3]}/">{match[0]}</a>'
@@ -249,7 +249,7 @@ def link_non_charter_doc_match(match):
 def link_other_doc_match(match):
     # there may be whitespace in the match
     doc = re.sub(r"\s+", "", match[0])
-    if not doc_exists(doc):
+    if not doc_canonical_name(doc):
         return match[0]
     return f'<a href="/doc/{match[2].strip().lower()}{match[3]}/">{match[1]}</a>'
 
@@ -838,7 +838,6 @@ def is_valid_url(url):
     """
     Check if the given URL is syntactically valid
     """
-    validate_url = URLValidator()
     try:
         validate_url(url)
     except ValidationError:
