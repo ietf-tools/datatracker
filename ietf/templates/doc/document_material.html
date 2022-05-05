@@ -56,7 +56,13 @@
                         {% doc_edit_button 'ietf.doc.views_material.edit_material' name=doc.name action="state" %}
                     {% endif %}
                 </td>
-                <td>{{ doc.get_state.name }}</td>
+                <td>
+                    {% if doc.get_state.name %}
+                        {{ doc.get_state.name }}
+                    {% else %}
+                        <span class="text-muted">(None)</span>
+                    {% endif %}
+                </td>
             </tr>
             {% if other_types %}
                 <tr>
