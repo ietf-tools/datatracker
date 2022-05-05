@@ -69,7 +69,7 @@ services:
         restart: unless-stopped
 
     celery:
-        image: celery
+        image: ghcr.io/painless-security/datatracker-celery:latest
         environment:
             CELERY_APP: ietf
             UPDATE_REQUIREMENTS: 1
