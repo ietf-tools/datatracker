@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  mq:
+    image: rabbitmq:3-alpine
+    user: '${RABBITMQ_UID:?Must specify RABBITMQ_UID}'
+    hostname: datatracker-mq
+    deploy:
+      resources:
+        limits:
+          memory: 1gb # coordinate with settings in rabbitmq.conf
+        reservations:
+          memory: 512mb
+    ports:
+      - '${MQ_PORT:-5672}:5672'
+    volumes:
+      - /var/lib/rabbitmq
+      - ./rabbitmq.conf:/etc/rabbitmq/conf.d/90-ietf.conf
+      - ./definitions.json:/ietf-conf/definitions.json
+    restart: unless-stopped
+#    logging:
+#      driver: "syslog"
+#      options:
+#        syslog-address: "tcp://ietfa.amsl.com:514"
+
+  celery:
+    image: ghcr.io/painless-security/datatracker-celery:latest
+    command: celery --app=ietf worker --loglevel=INFO
+    user: '${CELERY_UID:?Must specify CELERY_UID}'
+    volumes:
+      - ..:/workspace
+      - '${MYSQL_SOCKET_PATH:-/run/mysqld}:/run/mysqld'
+    depends_on:
+      - mq
+    restart: unless-stopped
+#    logging:
+#      driver: "syslog"
+#      options:
+#        syslog-address: "tcp://ietfa.amsl.com:514"
