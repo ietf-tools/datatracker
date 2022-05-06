@@ -44,7 +44,6 @@ args = parser.parse_args()
 
 # Import Django, call setup()
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", args.settings or "ietf.settings_testcrawl")
-os.environ["DJANGO_URLIZE_IETF_DOCS_PRODUCTION"] = "1"
 
 import django
 import django.test

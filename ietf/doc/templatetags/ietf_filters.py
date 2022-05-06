@@ -4,7 +4,6 @@
 
 import datetime
 import re
-import os
 from urllib.parse import urljoin
 
 from email.utils import parseaddr
@@ -190,6 +189,7 @@ def rfceditor_info_url(rfcnum : str):
 
 def doc_canonical_name(name):
     """Check whether a given document exists, and return its canonical name"""
+
     def find_unique(n):
         key = hash(n)
         found = cache.get(key)
@@ -199,14 +199,8 @@ def doc_canonical_name(name):
             cache.set(key, found)
         return None if found == "_" else found
 
-    # all documents exist when tests are running
-    if settings.SERVER_MODE == 'test':
-        # unless we are running test-crawl, which would otherwise 404
-        if "DJANGO_URLIZE_IETF_DOCS_PRODUCTION" not in os.environ:
-            return name
-
     # chop away extension
-    extension_split = re.search(r"^(.+)\.(txt|ps|pdf)$", name)
+    extension_split = re.search(r"^(.+)\.(txt|ps|pdf|html)$", name)
     if extension_split:
         name = extension_split.group(1)
 
@@ -237,21 +231,37 @@ def link_charter_doc_match2(match):
 
 
 def link_non_charter_doc_match(match):
-    name = doc_canonical_name(match[0])
-    if not name:
+    name = match[0]
+    cname = doc_canonical_name(name)
+    if not cname:
         return match[0]
-    if name != match[0] and len(match[3]) == 2 and match[3].isdigit():
-        return f'<a href="/doc/{match[2][:-1]}/{match[3]}/">{match[0]}</a>'
+    if name == cname:
+        return f'<a href="/doc/{cname}/">{match[0]}</a>'
+
+    # if we get here, the name probably has a version number and/or extension at the end
+    rev_split = re.search(r"^(" + re.escape(cname) + r")-(\d{2,})", name)
+    if rev_split:
+        name = rev_split.group(1)
     else:
-        return f'<a href="/doc/{match[2]}{match[3]}/">{match[0]}</a>'
+        return f'<a href="/doc/{cname}/">{match[0]}</a>'
+
+    cname = doc_canonical_name(name)
+    if not cname:
+        return match[0]
+    if name == cname:
+        return f'<a href="/doc/{cname}/{rev_split.group(2)}/">{match[0]}</a>'
+
+    # if we get here, we can't linkify
+    print("d")
+    return match[0]
 
 
 def link_other_doc_match(match):
-    # there may be whitespace in the match
-    doc = re.sub(r"\s+", "", match[0])
-    if not doc_canonical_name(doc):
+    doc = match[2].strip().lower()
+    rev = match[3]
+    if not doc_canonical_name(doc + rev):
         return match[0]
-    return f'<a href="/doc/{match[2].strip().lower()}{match[3]}/">{match[1]}</a>'
+    return f'<a href="/doc/{doc}{rev}/">{match[1]}</a>'
 
 
 @register.filter(name="urlize_ietf_docs", is_safe=True, needs_autoescape=True)
@@ -264,8 +274,8 @@ def urlize_ietf_docs(string, autoescape=None):
             string = escape(string)
         else:
             string = mark_safe(string)
-    exp1 = r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d\d-\d\d)(\.txt)?\b"
-    exp2 = r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d\d)(\.txt)?\b"
+    exp1 = r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d{2}-\d{2})(\.(?:txt|ps|pdf|html))?\b"
+    exp2 = r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d{2})(\.(?:txt|ps|pdf|html))?\b"
     if re.search(exp1, string):
         string = re.sub(
             exp1,
@@ -281,7 +291,8 @@ def urlize_ietf_docs(string, autoescape=None):
             flags=re.IGNORECASE | re.ASCII,
         )
     string = re.sub(
-        r"\b(?<![/\-:=#])(((?:draft-|bofreq-|conflict-review-|status-change-)(?:[\d\w\.+]+-)*)([\d\w\.+]+?)(\.txt)?)\b(?![-@])",
+        r"\b(?<![/\-:=#])((?:draft-|bofreq-|conflict-review-|status-change-)[\d\w\.+-]+(?![-@]))",
+        # r"\b(?<![/\-:=#])(((?:draft-|bofreq-|conflict-review-|status-change-)(?:[\d\w\.+]+-)*)([\d\w\.+]+?)(\.(?:txt|ps|pdf|html))?)\b(?![-@])",
         link_non_charter_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
@@ -294,6 +305,7 @@ def urlize_ietf_docs(string, autoescape=None):
         flags=re.IGNORECASE | re.ASCII,
     )
     return mark_safe(string)
+
 
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
