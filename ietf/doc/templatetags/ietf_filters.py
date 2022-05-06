@@ -252,7 +252,6 @@ def link_non_charter_doc_match(match):
         return f'<a href="/doc/{cname}/{rev_split.group(2)}/">{match[0]}</a>'
 
     # if we get here, we can't linkify
-    print("d")
     return match[0]
 
 
