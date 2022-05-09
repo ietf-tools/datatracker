@@ -38,6 +38,8 @@ urlpatterns = [
     url(r'^openid/', include('oidc_provider.urls', namespace='oidc_provider')),
     # Draft submission API
     url(r'^submit/?$', submit_views.api_submit),
+    # Draft upload API
+    url(r'^upload/?$', submit_views.api_upload),
     # Datatracker version
     url(r'^version/?$', api_views.version),
     # Application authentication API key

@@ -108,6 +108,101 @@ def upload_submission(request):
                                'form': form})
 
 @csrf_exempt
+def api_upload(request):
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+
+    if request.method == 'GET':
+        return render(request, 'submit/api_submit_info.html')
+    elif request.method == 'POST':
+        exception = None
+        submission = None
+        try:
+            debug.mark()
+            form = SubmissionAutoUploadForm(request, data=request.POST, files=request.FILES)
+            if form.is_valid():
+                log('got valid submission form for %s' % form.filename)
+                username = form.cleaned_data['user']
+                user = User.objects.filter(username=username)
+                if user.count() == 0:
+                    # See if a secondary login was being used
+                    email = Email.objects.filter(address=username, active=True)
+                    # The error messages don't talk about 'email', as the field we're
+                    # looking at is still the 'username' field.
+                    if email.count() == 0:
+                        return err(400, "No such user: %s" % username)
+                    elif email.count() > 1:
+                        return err(500, "Multiple matching accounts for %s" % username)
+                    email = email.first()
+                    if not hasattr(email, 'person'):
+                        return err(400, "No person matches %s" % username)
+                    person = email.person
+                    if not hasattr(person, 'user'):
+                        return err(400, "No user matches: %s" % username)
+                    user = person.user
+                elif user.count() > 1:
+                    return err(500, "Multiple matching accounts for %s" % username)
+                else:
+                    user = user.first()
+                if not hasattr(user, 'person'):
+                    return err(400, "No person with username %s" % username)
+
+                saved_files = save_files(form)
+
+                # todo sort out author parsing - this only works for xml drafts
+                authors = form.authors
+                for a in authors:
+                    if not a['email']:
+                        raise ValidationError("Missing email address for author %s" % a)
+
+                submission = get_submission(form)
+                fill_in_submission(form, submission, authors, '', None)
+                create_submission_event(request, submission, desc="Uploaded unchecked submission")
+
+                # must do this after validate_submission() or data needed for check may be invalid
+                if check_submission_revision_consistency(submission):
+                    return err( 409, "Submission failed due to a document revision inconsistency error "
+                                     "in the database. Please contact the secretariat for assistance.")
+
+                author_emails = [a['email'].lower() for a in authors]
+                if not any(
+                        email.address.lower() in author_emails
+                        for email in user.person.email_set.filter(active=True)
+                ):
+                    raise ValidationError('Submitter %s is not one of the document authors' % user.username)
+
+                submission.submitter = user.person.formatted_email()
+                submission.save()
+
+                from .tasks import check_and_accept_submission, render_missing_formats
+                (
+                        render_missing_formats.si(submission.pk)
+                        | check_and_accept_submission(submission.pk)
+                ).delay()
+
+                return HttpResponse(
+                    f'Upload of {submission.name} OK, validation and acceptance pending',
+                    content_type="text/plain")
+            else:
+                raise ValidationError(form.errors)
+        except IOError as e:
+            exception = e
+            return err(500, "IO Error: %s" % str(e))
+        except ValidationError as e:
+            exception = e
+            return err(400, "Validation Error: %s" % str(e))
+        except Exception as e:
+            exception = e
+            raise
+            return err(500, "Exception: %s" % str(e))
+        finally:
+            if exception and submission:
+                remove_submission_files(submission)
+                submission.delete()
+    else:
+        return err(405, "Method not allowed")
+
+@csrf_exempt
 def api_submit(request):
     "Automated submission entrypoint"
     submission = None

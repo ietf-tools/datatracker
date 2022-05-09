@@ -8,8 +8,9 @@ import os
 import pathlib
 import re
 import time
+import xml2rfc
 
-from typing import Callable, Optional # pyflakes:ignore
+from typing import Optional  # pyflakes:ignore
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -209,8 +210,8 @@ def create_submission_event(request, submission, desc):
 
     SubmissionEvent.objects.create(submission=submission, by=by, desc=desc)
 
-def docevent_from_submission(request, submission, desc, who=None):
-    # type: (HttpRequest, Submission, str, Optional[Person]) -> Optional[DocEvent]
+def docevent_from_submission(submission, desc, who=None):
+    # type: (Submission, str, Optional[Person]) -> Optional[DocEvent]
     log.assertion('who is None or isinstance(who, Person)')
 
     try:
@@ -814,6 +815,10 @@ def get_draft_meta(form, saved_files):
 
 
 def get_submission(form):
+    # See if there is a Submission in state waiting-for-draft
+    # for this revision.
+    # If so - we're going to update it otherwise we create a new object
+
     submissions = Submission.objects.filter(name=form.filename,
                                             rev=form.revision,
                                             state_id = "waiting-for-draft").distinct()
@@ -827,32 +832,29 @@ def get_submission(form):
 
 
 def fill_in_submission(form, submission, authors, abstract, file_size):
-    # See if there is a Submission in state waiting-for-draft
-    # for this revision.
-    # If so - we're going to update it otherwise we create a new object 
-
     submission.state = DraftSubmissionStateName.objects.get(slug="uploaded")
     submission.remote_ip = form.remote_ip
     submission.title = form.title
     submission.abstract = abstract
-    submission.pages = form.parsed_draft.get_pagecount()
-    submission.words = form.parsed_draft.get_wordcount()
     submission.authors = authors
-    submission.first_two_pages = ''.join(form.parsed_draft.pages[:2])
     submission.file_size = file_size
     submission.file_types = ','.join(form.file_types)
     submission.xml_version = form.xml_version
     submission.submission_date = datetime.date.today()
-    submission.document_date = form.parsed_draft.get_creation_date()
     submission.replaces = ""
-
+    # todo think through whether to do this
+    if form.parsed_draft is not None:
+        submission.pages = form.parsed_draft.get_pagecount()
+        submission.words = form.parsed_draft.get_wordcount()
+        submission.first_two_pages = ''.join(form.parsed_draft.pages[:2])
+        submission.document_date = form.parsed_draft.get_creation_date()
     submission.save()
 
-    submission.formal_languages.set(FormalLanguageName.objects.filter(slug__in=form.parsed_draft.get_formal_languages()))
+    if form.parsed_draft is not None:
+        submission.formal_languages.set(FormalLanguageName.objects.filter(slug__in=form.parsed_draft.get_formal_languages()))
     set_extresources_from_existing_draft(submission)
 
-def apply_checkers(submission, file_name):
-    # run submission checkers
+def apply_checker(checker, submission, file_name):
     def apply_check(submission, checker, method, fn):
         func = getattr(checker, method)
         passed, message, errors, warnings, info = func(fn)
@@ -860,18 +862,21 @@ def apply_checkers(submission, file_name):
                                 message=message, errors=errors, warnings=warnings, items=info,
                                 symbol=checker.symbol)
         check.save()
+    # ordered list of methods to try
+    for method in ("check_fragment_xml", "check_file_xml", "check_fragment_txt", "check_file_txt", ):
+        ext = method[-3:]
+        if hasattr(checker, method) and ext in file_name:
+            apply_check(submission, checker, method, file_name[ext])
+            break
 
+def apply_checkers(submission, file_name):
+    # run submission checkers
     mark = time.time()
     for checker_path in settings.IDSUBMIT_CHECKER_CLASSES:
         lap = time.time()
         checker_class = import_string(checker_path)
         checker = checker_class()
-        # ordered list of methods to try
-        for method in ("check_fragment_xml", "check_file_xml", "check_fragment_txt", "check_file_txt", ):
-            ext = method[-3:]
-            if hasattr(checker, method) and ext in file_name:
-                apply_check(submission, checker, method, file_name[ext])
-                break
+        apply_checker(checker, submission, file_name)
         tau = time.time() - lap
         log.log(f"ran {checker.__class__.__name__} ({tau:.3}s) for {file_name}")
     tau = time.time() - mark
@@ -892,7 +897,74 @@ def accept_submission_requires_group_approval(submission):
         and not Preapproval.objects.filter(name=submission.name).exists()
     )
 
-def accept_submission(request, submission, autopost=False):
+
+class SubmissionError(Exception):
+    pass
+
+
+def staging_path(filename, revision, ext):
+    return pathlib.Path(settings.IDSUBMIT_STAGING_PATH) / f'{filename}-{revision}{ext}'
+
+
+def render_missing_formats(submission):
+    """Generate txt and html formats from xml draft
+
+    todo allow for forms that have already been uploaded
+    """
+    # todo check timestamps??
+    xml2rfc.log.write_out = io.StringIO()   # open(os.devnull, "w")
+    xml2rfc.log.write_err = io.StringIO()   # open(os.devnull, "w")
+    os.environ["XML_LIBRARY"] = settings.XML_LIBRARY
+    xml_path = staging_path(submission.name, submission.rev, '.xml')
+    parser = xml2rfc.XmlRfcParser(str(xml_path), quiet=True)
+    # --- Parse the xml ---
+    xmltree = parser.parse(remove_comments=False)
+    # If we have v2, run it through v2v3. Keep track of the submitted version, though.
+    xmlroot = xmltree.getroot()
+    xml_version = xmlroot.get('version', '2')
+    if xml_version == '2':
+        v2v3 = xml2rfc.V2v3XmlWriter(xmltree)
+        xmltree.tree = v2v3.convert2to3()
+
+    # --- Prep the xml ---
+    prep = xml2rfc.PrepToolWriter(xmltree, quiet=True, liberal=True, keep_pis=[xml2rfc.V3_PI_TARGET])
+    prep.options.accept_prepped = True
+    xmltree.tree = prep.prep()
+    if xmltree.tree == None:
+        raise SubmissionError(f'Error from xml2rfc (prep): {prep.errors}')
+
+    # --- Convert to txt ---
+    txt_path = staging_path(submission.name, submission.rev, '.txt')
+    if not txt_path.exists():
+        writer = xml2rfc.TextWriter(xmltree, quiet=True)
+        writer.options.accept_prepped = True
+        writer.write(txt_path)
+        log.log(
+            'In %s: xml2rfc %s generated %s from %s (version %s)' % (
+                str(xml_path.parent),
+                xml2rfc.__version__,
+                txt_path.name,
+                xml_path.name,
+                xml_version,
+            )
+        )
+
+    # --- Convert to html ---
+    html_path = staging_path(submission.name, submission.rev, '.html')
+    writer = xml2rfc.HtmlWriter(xmltree, quiet=True)
+    writer.write(str(html_path))
+    log.log(
+        'In %s: xml2rfc %s generated %s from %s (version %s)' % (
+            str(xml_path.parent),
+            xml2rfc.__version__,
+            html_path.name,
+            xml_path.name,
+            xml_version,
+        )
+    )
+
+
+def accept_submission(submission: Submission, request: Optional[HttpRequest] = None, autopost=False):
     """Accept a submission and post or put in correct state to await approvals
 
     If autopost is True, will post draft if submitter is authorized to do so.
@@ -903,17 +975,14 @@ def accept_submission(request, submission, autopost=False):
                      for author in submission.authors ]
     # Is the user authenticated as an author who can approve this submission?
     user_is_author = (
-        request.user.is_authenticated
+        request is not None
+        and request.user.is_authenticated
         and request.user.person in (prev_authors if submission.rev != '00' else curr_authors) # type: ignore
     )
 
     # If "who" is None, docevent_from_submission will pull it out of submission
-    docevent_from_submission(
-        request,
-        submission,
-        desc="Uploaded new revision",
-        who=request.user.person if user_is_author else None,
-    )
+    docevent_from_submission(submission, desc="Uploaded new revision",
+                             who=request.user.person if user_is_author else None)
 
     replaces = DocAlias.objects.filter(name__in=submission.replaces_names)
     pretty_replaces = '(none)' if not replaces else (
@@ -1008,7 +1077,7 @@ def accept_submission(request, submission, autopost=False):
     if sub_event_desc:
         create_submission_event(request, submission, sub_event_desc)
     if docevent_desc:
-        docevent_from_submission(request, submission, docevent_desc, who=Person.objects.get(name="(System)"))
+        docevent_from_submission(submission, docevent_desc, who=Person.objects.get(name="(System)"))
 
     return address_list
 

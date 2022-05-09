@@ -307,9 +307,7 @@ def add_submission_email(request, remote_ip, name, rev, submission_pk, message, 
             create_submission_event(request, 
                                     submission,
                                     desc)
-            docevent_from_submission(request,
-                                     submission,
-                                     desc)
+            docevent_from_submission(submission, desc)
         except Exception as e:
             log("Exception: %s\n" % e)
             raise
