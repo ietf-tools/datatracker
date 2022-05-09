@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
 # -*- coding: utf-8 -*-
+import io
 import os
 import xml2rfc
 
@@ -33,7 +34,9 @@ class XMLDraft(Draft):
         orig_write_out = xml2rfc.log.write_out
         orig_write_err = xml2rfc.log.write_err
         orig_xml_library = os.environ.get('XML_LIBRARY', None)
-        tree = None
+        parser_out = io.StringIO()
+        parser_err = io.StringIO()
+
         with ExitStack() as stack:
             @stack.callback
             def cleanup():  # called when context exited, even if there's an exception
@@ -43,12 +46,16 @@ class XMLDraft(Draft):
                 if orig_xml_library is not None:
                     os.environ['XML_LIBRARY'] = orig_xml_library
 
-            xml2rfc.log.write_out = open(os.devnull, 'w')
-            xml2rfc.log.write_err = open(os.devnull, 'w')
+            xml2rfc.log.write_out = parser_out
+            xml2rfc.log.write_err = parser_err
             os.environ['XML_LIBRARY'] = settings.XML_LIBRARY
 
             parser = xml2rfc.XmlRfcParser(filename, quiet=True)
-            tree = parser.parse()
+            try:
+                tree = parser.parse()
+            except Exception as e:
+                raise XMLParseError(parser_out.getvalue(), parser_err.getvalue()) from e
+
             xml_version = tree.getroot().get('version', '2')
             if xml_version == '2':
                 v2v3 = xml2rfc.V2v3XmlWriter(tree)
@@ -83,6 +90,48 @@ class XMLDraft(Draft):
             section_name = section_elt.get('title')  # fall back to title if we have it
         return section_name
 
+    def get_draftname(self):
+        return self.xmlroot.attrib.get('docName')
+
+    def get_title(self):
+        return self.xmlroot.findtext('front/title').strip()
+
+    def get_abstract(self):
+        abstract = self.xmlroot.findtext('front/abstract')
+        return abstract.strip() if abstract else ''
+
+    def get_author_list(self):
+        """Get detailed author list
+
+        Returns a list of dicts with the following keys:
+            name, first_name, middle_initial, last_name,
+            name_suffix, email, country, affiliation
+        Values will be None if not available
+        """
+        result = []
+        empty_author = {
+            k: None for k in [
+                'name', 'first_name', 'middle_initial', 'last_name',
+                'name_suffix', 'email', 'country', 'affiliation',
+            ]
+        }
+
+        for author in self.xmlroot.findall('front/author'):
+            info = {
+                'name': author.attrib.get('fullname'),
+                'email': author.findtext('address/email'),
+                'affiliation': author.findtext('organization'),
+            }
+            elem = author.find('address/postal/country')
+            if elem is not None:
+                ascii_country = elem.get('ascii', None)
+                info['country'] = ascii_country if ascii_country else elem.text
+            for item in info:
+                if info[item]:
+                    info[item] = info[item].strip()
+            result.append(empty_author | info)  # merge, preferring info
+        return result
+
     def get_refs(self):
         """Extract references from the draft"""
         refs = {}
@@ -92,3 +141,14 @@ class XMLDraft(Draft):
             for ref in (section.findall('./reference') + section.findall('./referencegroup')):
                 refs[self._document_name(ref.get('anchor'))] = ref_type
         return refs
+
+
+class XMLParseError(Exception):
+    """An error occurred while parsing"""
+    def __init__(self, out: str, err: str, *args):
+        super().__init__(*args)
+        self._out = out
+        self._err = err
+
+    def parser_msgs(self):
+        return self._out.splitlines() + self._err.splitlines()
