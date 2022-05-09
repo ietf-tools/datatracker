@@ -665,11 +665,22 @@ def move_files_to_repository(submission):
             elif ext in submission.file_types.split(','):
                 raise ValueError("Intended to move '%s' to '%s', but found source and destination missing.")
 
+
+def remove_staging_files(name, rev, exts=None):
+    """Remove staging files corresponding to a submission
+    
+    exts is a list of extensions to be removed. If None, defaults to settings.IDSUBMIT_FILE_TYPES.
+    """
+    if exts is None:
+        exts = [f'.{ext}' for ext in settings.IDSUBMIT_FILE_TYPES]
+    basename = pathlib.Path(settings.IDSUBMIT_STAGING_PATH) / f'{name}-{rev}' 
+    for ext in exts:
+        basename.with_suffix(ext).unlink(missing_ok=True)
+
+
 def remove_submission_files(submission):
-    for ext in submission.file_types.split(','):
-        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.name, submission.rev, ext))
-        if os.path.exists(source):
-            os.unlink(source)
+    remove_staging_files(submission.name, submission.rev, submission.file_types.split(','))
+
 
 def approvable_submissions_for_user(user):
     if not user.is_authenticated:
@@ -731,6 +742,12 @@ def expire_submission(submission, by):
     submission.save()
 
     SubmissionEvent.objects.create(submission=submission, by=by, desc="Cancelled expired submission")
+
+
+def clear_existing_files(form):
+    """Make sure there are no leftover files from a previous submission"""
+    remove_staging_files(form.filename, form.revision)
+
 
 def save_files(form):
     file_name = {}

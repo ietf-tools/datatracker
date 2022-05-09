@@ -38,7 +38,7 @@ from ietf.submit.tasks import poke
 from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
     recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
     post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
-    get_submission, fill_in_submission, apply_checkers, save_files, 
+    get_submission, fill_in_submission, apply_checkers, save_files, clear_existing_files,
     check_submission_revision_consistency, accept_submission, accept_submission_requires_group_approval,
     accept_submission_requires_prev_auth_approval, update_submission_external_resources, remote_ip )
 from ietf.stats.utils import clean_country_name
@@ -53,6 +53,7 @@ def upload_submission(request):
             form = SubmissionManualUploadForm(request, data=request.POST, files=request.FILES)
             if form.is_valid():
                 log('got valid submission form for %s' % form.filename)
+                clear_existing_files(form)
                 saved_files = save_files(form)
                 authors, abstract, file_name, file_size = get_draft_meta(form, saved_files)
 
@@ -147,7 +148,8 @@ def api_upload(request):
                 if not hasattr(user, 'person'):
                     return err(400, "No person with username %s" % username)
 
-                saved_files = save_files(form)
+                clear_existing_files(form)
+                save_files(form)
 
                 # todo sort out author parsing - this only works for xml drafts
                 authors = form.authors
@@ -242,6 +244,7 @@ def api_submit(request):
                 if not hasattr(user, 'person'):
                     return err(400, "No person with username %s" % username)
 
+                clear_existing_files(form)
                 saved_files = save_files(form)
                 authors, abstract, file_name, file_size = get_draft_meta(form, saved_files)
                 for a in authors:
