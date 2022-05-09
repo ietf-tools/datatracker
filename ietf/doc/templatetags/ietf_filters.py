@@ -209,7 +209,9 @@ def doc_canonical_name(name):
 
     # check for embedded rev - this may be ambiguous, so don't
     # chop it off if we don't find a match
-    rev_split = re.search(r"^(.+)-(\d{2}|[1-9]\d{2,})$", name)
+    rev_split = re.search(r"^(charter-.+)-(\d{2}-\d{2})$", name) or re.search(
+        r"^(.+)-(\d{2}|[1-9]\d{2,})$", name
+    )
     if rev_split:
         name = rev_split.group(1)
         if find_unique(name):

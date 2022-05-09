@@ -1,8 +1,15 @@
 # Copyright The IETF Trust 2022, All Rights Reserved
 
-from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, CharterFactory
+from django.conf import settings
+
+from ietf.doc.factories import (
+    WgDraftFactory,
+    IndividualDraftFactory,
+    CharterFactory,
+    NewRevisionDocEventFactory,
+)
 from ietf.doc.models import State, DocEvent, DocAlias
-from ietf.doc.templatetags.ietf_filters import urlize_ietf_docs
+from ietf.doc.templatetags.ietf_filters import urlize_ietf_docs, is_valid_url
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
 
@@ -12,6 +19,11 @@ import debug  # pyflakes: ignore
 
 
 class IetfFiltersTests(TestCase):
+    def test_is_valid_url(self):
+        cases = [(settings.IDTRACKER_BASE_URL, True), ("not valid", False)]
+        for url, result in cases:
+            self.assertEqual(is_valid_url(url), result)
+
     def test_urlize_ietf_docs(self):
         wg_id = WgDraftFactory()
         wg_id.set_state(State.objects.get(type="draft", slug="rfc"))
@@ -38,6 +50,12 @@ class IetfFiltersTests(TestCase):
         id_plus_end = IndividualDraftFactory(name="draft-durand-gse+")
         id_dot = IndividualDraftFactory(name="draft-ietf-pem-ansix9.17")
         charter = CharterFactory()
+        e = NewRevisionDocEventFactory(doc=charter, rev="01")
+        charter.rev = e.rev
+        charter.save_with_history([e])
+        e = NewRevisionDocEventFactory(doc=charter, rev="01-00")
+        charter.rev = e.rev
+        charter.save_with_history([e])
 
         cases = [
             ("no change", "no change"),
@@ -67,8 +85,8 @@ class IetfFiltersTests(TestCase):
                 f'New version available: <b><a href="/doc/{charter.name}/{charter.rev}/">{charter.name}-{charter.rev}.txt</a></b>',
             ),
             (
-                f"New version available: <b>{charter.name}-{charter.rev}.txt</b>",
-                f'New version available: <b><a href="/doc/{charter.name}/{charter.rev}/">{charter.name}-{charter.rev}.txt</a></b>',
+                f"New version available: <b>{charter.name}-01-00.txt</b>",
+                f'New version available: <b><a href="/doc/{charter.name}/01-00/">{charter.name}-01-00.txt</a></b>',
             ),
             (
                 "repository https://github.com/tlswg/draft-ietf-tls-ticketrequest",
