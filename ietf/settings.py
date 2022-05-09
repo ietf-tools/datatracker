@@ -516,7 +516,7 @@ CORS_URLS_REGEX = r'^(/api/.*|.*\.json|.*/json/?)$'
 REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # Content security policy configuration (django-csp)
-CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", "data: https://datatracker.ietf.org/ https://www.ietf.org/")
+CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", "data: https://datatracker.ietf.org/ https://www.ietf.org/ https://analytics.ietf.org/")
 
 # django.middleware.security.SecurityMiddleware 
 SECURE_BROWSER_XSS_FILTER       = True
