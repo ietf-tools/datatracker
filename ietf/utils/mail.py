@@ -73,7 +73,7 @@ class SMTPSomeRefusedRecipients(smtplib.SMTPException):
     def detailed_refusals(self):
         details = "The following recipients were refused:\n"
         for recipient in self.refusals:
-             details += "\n{}: {}".format(recipient,self.refusals[recipient])
+             details += f"\n{recipient}: {self.refusals[recipient]}"
         return details
 
     def summary_refusals(self):
@@ -343,7 +343,7 @@ def save_as_message(request, msg, bcc):
         ]:
         kwargs[arg] = msg.get(field, '')
     m = ietf.message.models.Message.objects.create(**kwargs)
-    log("Saved outgoing email from '{}' to {} id {} subject '{} as Message[{}]'".format(m.frm, m.to, m.msgid, m.subject, m.pk))
+    log(f"Saved outgoing email from '{m.frm}' to {m.to} id {m.msgid} subject '{m.subject} as Message[{m.pk}]'")
     return m
 
 def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=False, bcc=None, copy=True, save=True):
@@ -508,7 +508,7 @@ def exception_components(e):
         
 def log_smtp_exception(e):
     (extype, value, tb) = exception_components(e)
-    log("SMTP Exception: {} : {}".format(extype,value), e)
+    log(f"SMTP Exception: {extype} : {value}", e)
     if isinstance(e,SMTPSomeRefusedRecipients):
         log("     SomeRefused: %s"%(e.summary_refusals()), e)
     log("     Traceback: %s" % tb, e) 
@@ -581,7 +581,7 @@ def send_error_to_secretariat(msg):
     except smtplib.SMTPException:
         log("Exception encountered while sending a ticket to the secretariat")
         (extype,value) = sys.exc_info()[:2]
-        log("SMTP Exception: {} : {}".format(extype,value))
+        log(f"SMTP Exception: {extype} : {value}")
     
 def is_valid_email(address):
     try:

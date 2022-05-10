@@ -21,7 +21,7 @@ class EncryptedTextField(models.TextField):
             except ValueError as e:
                 raise ValueError("Trying to read the NomCom public key: " + str(e))
 
-            command = "{} smime -encrypt -in /dev/stdin {}".format(settings.OPENSSL_COMMAND, cert_file)
+            command = f"{settings.OPENSSL_COMMAND} smime -encrypt -in /dev/stdin {cert_file}"
             code, out, error = pipe(command, comments.encode('utf-8'))
             if code != 0:
                 log("openssl error: %s:\n  Error %s: %s" %(command, code, error))

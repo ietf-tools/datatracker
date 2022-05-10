@@ -63,11 +63,11 @@ def dump_sublist(afile, vfile, alias, adomains, vdomain, emails):
     if not emails:
         return emails
     try:
-        filtername  = 'xfilter-{}'.format(alias)  # in aliases, --> | expandname
-        expandname  = 'expand-{}'.format(alias)   # in virtual, --> email list
+        filtername  = f'xfilter-{alias}'  # in aliases, --> | expandname
+        expandname  = f'expand-{alias}'   # in virtual, --> email list
 
         for domain in adomains:
-            aliasaddr   = '{}@{}'.format(alias, domain) # in virtual, --> filtername
+            aliasaddr   = f'{alias}@{domain}' # in virtual, --> filtername
             vfile.write('%-64s  %s\n' % (aliasaddr, filtername))
         afile.write('%-64s  "|%s filter %s %s"\n' % (filtername+':', settings.POSTCONFIRM_PATH, expandname, vdomain))
         vfile.write('%-64s  %s\n' % ("%s@%s"%(expandname, vdomain), ', '.join(emails)))
@@ -76,7 +76,7 @@ def dump_sublist(afile, vfile, alias, adomains, vdomain, emails):
         # If there's unicode in email address, something is badly
         # wrong and we just silently punt
         # XXX - is there better approach?
-        log('Error encoding email address for an {} alias: {}'.format(alias, repr(emails)))
+        log(f'Error encoding email address for an {alias} alias: {repr(emails)}')
         return []
     return emails
 

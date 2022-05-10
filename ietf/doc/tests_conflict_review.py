@@ -387,7 +387,7 @@ class ConflictReviewSubmitTests(TestCase):
         # Right now, nothing to test - we let people put whatever the web browser will let them put into that textbox
 
         # sane post using textbox
-        path = os.path.join(settings.CONFLICT_REVIEW_PATH, '{}-{}.txt'.format(doc.canonical_name(), doc.rev))
+        path = os.path.join(settings.CONFLICT_REVIEW_PATH, f'{doc.canonical_name()}-{doc.rev}.txt')
         self.assertEqual(doc.rev,'00')
         self.assertFalse(os.path.exists(path))
         r = self.client.post(url,dict(content="Some initial review text\n",submit_response="1"))
@@ -407,7 +407,7 @@ class ConflictReviewSubmitTests(TestCase):
         # A little additional setup 
         # doc.rev is u'00' per the test setup - double-checking that here - if it fails, the breakage is in setUp
         self.assertEqual(doc.rev,'00')
-        path = os.path.join(settings.CONFLICT_REVIEW_PATH, '{}-{}.txt'.format(doc.canonical_name(), doc.rev))
+        path = os.path.join(settings.CONFLICT_REVIEW_PATH, f'{doc.canonical_name()}-{doc.rev}.txt')
         with open(path,'w') as f:
             f.write('This is the old proposal.')
             f.close()
@@ -434,7 +434,7 @@ class ConflictReviewSubmitTests(TestCase):
         self.assertEqual(r.status_code, 302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEqual(doc.rev,'01')
-        path = os.path.join(settings.CONFLICT_REVIEW_PATH, '{}-{}.txt'.format(doc.canonical_name(), doc.rev))
+        path = os.path.join(settings.CONFLICT_REVIEW_PATH, f'{doc.canonical_name()}-{doc.rev}.txt')
         with open(path) as f:
             self.assertEqual(f.read(),"This is a new proposal.")
             f.close()

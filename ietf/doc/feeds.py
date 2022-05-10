@@ -142,7 +142,7 @@ class RfcFeed(Feed):
         return [doc for doc,time in results]
     
     def item_title(self, item):
-        return "{} : {}".format(item.canonical_name(),item.title)
+        return f"{item.canonical_name()} : {item.title}"
 
     def item_description(self, item):
         return item.abstract

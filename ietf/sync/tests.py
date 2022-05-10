@@ -338,7 +338,7 @@ class RFCSyncTests(TestCase):
         self.assertEqual(pages, "42")
         self.assertEqual(abstract, "This is some interesting text.")
 
-        draft_filename = "{}-{}.txt".format(doc.name, doc.rev)
+        draft_filename = f"{doc.name}-{doc.rev}.txt"
         self.write_draft_file(draft_filename, 5000)
 
         changes = []

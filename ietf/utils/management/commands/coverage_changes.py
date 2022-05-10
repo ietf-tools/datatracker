@@ -62,7 +62,7 @@ class Command(BaseCommand):
                 if filename.endswith(".gz"):
                     file = gzip.open(filename, "rb")
                 else:
-                    file = open(filename, "r", encoding="utf-8")
+                    file = open(filename, encoding="utf-8")
             except OSError as e:
                 self.stderr.write("%s" % e)
                 exit(1)
@@ -71,16 +71,16 @@ class Command(BaseCommand):
         try:
             data = json.load(file)
         except ValueError as e:
-            raise CommandError("Failure to read json data from {}: {}".format(filename, e))
+            raise CommandError(f"Failure to read json data from {filename}: {e}")
         version = version or data["version"]
         if not version in data:
-            raise CommandError("There is no data for version {} available in {}".format(version, filename))
+            raise CommandError(f"There is no data for version {version} available in {filename}")
         return data[version], version
 
     def coverage_diff(self, master, latest, sections, release=None, **options):
         master_coverage, mversion = self.read_coverage(master, release)
         latest_coverage, lversion = self.read_coverage(latest)
-        self.stdout.write("\nShowing coverage differeces between {} and {}:\n".format(mversion, lversion))
+        self.stdout.write(f"\nShowing coverage differeces between {mversion} and {lversion}:\n")
         for section in sections:
             mcoverage = master_coverage[section]["covered"]
             mformat   = master_coverage[section].get("format", 1)
@@ -158,7 +158,7 @@ class Command(BaseCommand):
                         if prefix in ['+', '-']:
                             if not n in [p, p+1]:
                                 self.stdout.write('\n')
-                            self.stdout.write("{}".format(line))
+                            self.stdout.write(f"{line}")
                         p = n
                     self.stdout.write('\n')
             lkey_set = set(lkeys)
@@ -176,7 +176,7 @@ class Command(BaseCommand):
 
     def coverage_list(self, latest, sections, **options):
         latest_coverage, lversion = self.read_coverage(latest)
-        self.stdout.write("\nShowing coverage for {}:\n".format(lversion))
+        self.stdout.write(f"\nShowing coverage for {lversion}:\n")
         for section in sections:
             lcoverage = latest_coverage[section]["covered"]
             lformat   = latest_coverage[section].get("format", 1)

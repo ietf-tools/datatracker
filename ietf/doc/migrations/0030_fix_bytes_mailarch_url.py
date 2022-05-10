@@ -17,9 +17,9 @@ def forward(apps, schema_editor):
     for d in Document.objects.filter(external_url__contains="/b'"):
         match = re.search("^(%s/arch/msg/[^/]+/)b'([^']+)'$" % settings.MAILING_LIST_ARCHIVE_URL, d.external_url)
         if match:
-            d.external_url = "{}{}".format(match.group(1), match.group(2))
+            d.external_url = f"{match.group(1)}{match.group(2)}"
             d.save()
-            print('Fixed url #{}: {}'.format(d.id, d.external_url))
+            print(f'Fixed url #{d.id}: {d.external_url}')
 
 def reverse(apps, schema_editor):
     pass

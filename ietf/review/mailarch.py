@@ -117,7 +117,7 @@ def retrieve_messages(query_data_url):
                 q = PyQuery(r)
                 div = q('div[class~="no-results"]')
                 if div:
-                    raise KeyError("No results: {} -> {}".format(query_data_url, div.text()))
+                    raise KeyError(f"No results: {query_data_url} -> {div.text()}")
             raise Exception("Export failed - this usually means no matches were found")
 
         with tarfile.open(fileobj=fileobj, mode='r|*') as tar:

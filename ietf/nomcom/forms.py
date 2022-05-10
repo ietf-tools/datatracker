@@ -37,12 +37,12 @@ class PositionNomineeField(forms.ChoiceField):
         results = []
         for position in positions:
             accepted_nominees = [np.nominee for np in NomineePosition.objects.filter(position=position,state='accepted').exclude(nominee__duplicated__isnull=False)]
-            nominees = [('{}_{}'.format(position.id, i.id), str(i)) for i in accepted_nominees]
+            nominees = [(f'{position.id}_{i.id}', str(i)) for i in accepted_nominees]
             if nominees:
                 results.append((position.name+" (Accepted)", nominees))
         for position in positions:
             other_nominees = [np.nominee for np in NomineePosition.objects.filter(position=position).exclude(state='accepted').exclude(nominee__duplicated__isnull=False)]
-            nominees = [('{}_{}'.format(position.id, i.id), str(i)) for i in other_nominees]
+            nominees = [(f'{position.id}_{i.id}', str(i)) for i in other_nominees]
             if nominees:
                 results.append((position.name+" (Declined or Pending)", nominees))
         kwargs['choices'] = results
@@ -501,7 +501,7 @@ class FeedbackForm(forms.ModelForm):
         if self.nominee and self.position:
             if not NomineePosition.objects.accepted().filter(nominee=self.nominee,
                                                         position=self.position):
-                msg = "There isn't a accepted nomination for {} on the {} position".format(self.nominee, self.position)
+                msg = f"There isn't a accepted nomination for {self.nominee} on the {self.position} position"
                 self._errors["comment_text"] = self.error_class([msg])
         return self.cleaned_data
 

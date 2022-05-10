@@ -184,9 +184,9 @@ class IprDocRel(models.Model):
 
     def __str__(self):
         if self.revisions:
-            return "{} which applies to {}-{}".format(self.disclosure, self.document.name, self.revisions)
+            return f"{self.disclosure} which applies to {self.document.name}-{self.revisions}"
         else:
-            return "{} which applies to {}".format(self.disclosure, self.document.name)
+            return f"{self.disclosure} which applies to {self.document.name}"
 
 class RelatedIpr(models.Model):
     source       = ForeignKey(IprDisclosureBase,related_name='relatedipr_source_set')
@@ -194,7 +194,7 @@ class RelatedIpr(models.Model):
     relationship = ForeignKey(DocRelationshipName) # Re-use; change to a dedicated RelName if needed
 
     def __str__(self):
-        return "{} {} {}".format(self.source.title, self.relationship.name.lower(), self.target.title)
+        return f"{self.source.title} {self.relationship.name.lower()} {self.target.title}"
 
 class IprEvent(models.Model):
     time        = models.DateTimeField(auto_now_add=True)
@@ -207,7 +207,7 @@ class IprEvent(models.Model):
     response_due= models.DateTimeField(blank=True,null=True)
 
     def __str__(self):
-        return "{} {} by {} at {}".format(self.disclosure.title, self.type.name.lower(), self.by.plain_name(), self.time)
+        return f"{self.disclosure.title} {self.type.name.lower()} by {self.by.plain_name()} at {self.time}"
 
     def save(self, *args, **kwargs):
         created = not self.pk

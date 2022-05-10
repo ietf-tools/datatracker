@@ -130,20 +130,20 @@ def create_proceedings_templates(meeting):
         content = render_to_string('meeting/proceedings_attendees_table.html', {
             'attendees':attendees})
         try:
-            template = DBTemplate.objects.get(path='/meeting/proceedings/{}/attendees.html'.format(meeting.number))
+            template = DBTemplate.objects.get(path=f'/meeting/proceedings/{meeting.number}/attendees.html')
             template.title='IETF %s Attendee List' % meeting.number
             template.type_id='django'
             template.content=content
             template.save()
         except DBTemplate.DoesNotExist:
             DBTemplate.objects.create(
-                path='/meeting/proceedings/{}/attendees.html'.format(meeting.number),
+                path=f'/meeting/proceedings/{meeting.number}/attendees.html',
                 title='IETF %s Attendee List' % meeting.number,
                 type_id='django',
                 content=content)    
     # Make copy of default IETF Overview template
     if not meeting.overview:
-        path = '/meeting/proceedings/{}/overview.rst'.format(meeting.number)
+        path = f'/meeting/proceedings/{meeting.number}/overview.rst'
         try:
             template = DBTemplate.objects.get(path=path)
         except DBTemplate.DoesNotExist:
@@ -685,7 +685,7 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
                 try:
                     text = smart_text(text)
                 except UnicodeDecodeError as e:
-                    return "Failure trying to save '{}'. Hint: Try to upload as UTF-8: {}...".format(filename, str(e)[:120])
+                    return f"Failure trying to save '{filename}'. Hint: Try to upload as UTF-8: {str(e)[:120]}..."
             # Whole file sanitization; add back what's missing from a complete
             # document (sanitize will remove these).
             clean = sanitize_document(text)

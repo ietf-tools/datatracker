@@ -30,7 +30,7 @@ def forward(apps, schema_editor):
         for d in m.docs.all():
             count += 1
             GroupMilestoneDocs.objects.get_or_create(groupmilestone=m, document_id=nameid[d.name])
-    sys.stderr.write(' {} GroupMilestoneDocs objects created\n'.format(count))
+    sys.stderr.write(f' {count} GroupMilestoneDocs objects created\n')
 
     sys.stderr.write(' {}.{}:\n'.format(GroupMilestoneHistory.__name__, 'docs'))
     count = 0
@@ -38,7 +38,7 @@ def forward(apps, schema_editor):
         for d in m.docs.all():
             count += 1
             GroupMilestoneHistoryDocs.objects.get_or_create(GroupMilestoneHistory=m, document_id=nameid[d.name])
-    sys.stderr.write(' {} GroupMilestoneHistoryDocs objects created\n'.format(count))
+    sys.stderr.write(f' {count} GroupMilestoneHistoryDocs objects created\n')
 
 
 def reverse(apps, schema_editor):

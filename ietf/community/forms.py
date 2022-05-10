@@ -87,7 +87,7 @@ class SearchRuleForm(forms.ModelForm):
 
         if 'group' in self.fields:
             self.fields['group'].queryset = self.fields['group'].queryset.filter(state="active").order_by("acronym")
-            self.fields['group'].choices = [(g.pk, "{} - {}".format(g.acronym, g.name)) for g in self.fields['group'].queryset]
+            self.fields['group'].choices = [(g.pk, f"{g.acronym} - {g.name}") for g in self.fields['group'].queryset]
 
         for name, f in self.fields.items():
             f.required = True

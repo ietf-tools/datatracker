@@ -16,7 +16,7 @@ from ietf.utils.fields import SearchableField
 def select2_id_ipr_title(objs):
     return [{
         "id": o.pk,
-        "text": escape("{} <{}>".format(o.title, o.time.date().isoformat())),
+        "text": escape(f"{o.title} <{o.time.date().isoformat()}>"),
     } for o in objs] if objs else []
 
 def select2_id_ipr_title_json(value):

@@ -93,15 +93,15 @@ class SubmissionBaseUploadForm(forms.Form):
 
         if cutoff_00 == cutoff_01:
             if now.date() >= (cutoff_00.date() - meeting.idsubmit_cutoff_warning_days) and now.date() < cutoff_00.date():
-                self.cutoff_warning = ( 'The last submission time for Internet-Drafts before {} is {}.<br><br>'.format(meeting, cutoff_00_str))
+                self.cutoff_warning = ( f'The last submission time for Internet-Drafts before {meeting} is {cutoff_00_str}.<br><br>')
             elif now <= cutoff_00:
                 self.cutoff_warning = (
                     'The last submission time for new Internet-Drafts before the meeting is %s.<br>'
                     'After that, you will not be able to submit drafts until after %s (IETF-meeting local time)' % (cutoff_00_str, reopen_str, ))
         else:
             if now.date() >= (cutoff_00.date() - meeting.idsubmit_cutoff_warning_days) and now.date() < cutoff_00.date():
-                self.cutoff_warning = ( 'The last submission time for new documents (i.e., version -00 Internet-Drafts) before {} is {}.<br><br>'.format(meeting, cutoff_00_str) +
-                                        'The last submission time for revisions to existing documents before {} is {}.<br>'.format(meeting, cutoff_01_str) )
+                self.cutoff_warning = ( f'The last submission time for new documents (i.e., version -00 Internet-Drafts) before {meeting} is {cutoff_00_str}.<br><br>' +
+                                        f'The last submission time for revisions to existing documents before {meeting} is {cutoff_01_str}.<br>' )
             elif now.date() >= cutoff_00.date() and now <= cutoff_01:
                 # We are in the first_cut_off
                 if now < cutoff_00:
@@ -146,7 +146,7 @@ class SubmissionBaseUploadForm(forms.Form):
                 typ, val, tb = sys.exc_info()
                 m = traceback.format_exception(typ, val, tb)
                 m = [ l.replace('\n ', ':\n ') for l in m ]
-            msgs = [s for s in (["Error from xml2rfc ({}):".format(where)] + m + out +  err) if s]
+            msgs = [s for s in ([f"Error from xml2rfc ({where}):"] + m + out +  err) if s]
             return msgs
 
         if self.shutdown and not has_role(self.request.user, "Secretariat"):
@@ -240,7 +240,7 @@ class SubmissionBaseUploadForm(forms.Form):
                             self.authors.append(info)
 
                         # --- Prep the xml ---
-                        file_name['xml'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '{}-{}{}'.format(self.filename, self.revision, ext))
+                        file_name['xml'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, f'{self.filename}-{self.revision}{ext}')
                         try:
                             prep = xml2rfc.PrepToolWriter(self.xmltree, quiet=True, liberal=True, keep_pis=[xml2rfc.V3_PI_TARGET])
                             prep.options.accept_prepped = True
@@ -253,7 +253,7 @@ class SubmissionBaseUploadForm(forms.Form):
 
                         # --- Convert to txt ---
                         if not ('txt' in self.cleaned_data and self.cleaned_data['txt']):
-                            file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '{}-{}.txt'.format(self.filename, self.revision))
+                            file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, f'{self.filename}-{self.revision}.txt')
                             try:
                                 writer = xml2rfc.TextWriter(self.xmltree, quiet=True)
                                 writer.options.accept_prepped = True
@@ -271,7 +271,7 @@ class SubmissionBaseUploadForm(forms.Form):
 
                         # --- Convert to html ---
                         try:
-                            file_name['html'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '{}-{}.html'.format(self.filename, self.revision))
+                            file_name['html'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, f'{self.filename}-{self.revision}.html')
                             writer = xml2rfc.HtmlWriter(self.xmltree, quiet=True)
                             writer.write(file_name['html'])
                             self.file_types.append('.html')
@@ -311,15 +311,15 @@ class SubmissionBaseUploadForm(forms.Form):
                 if self.filename == None:
                     self.filename = self.parsed_draft.filename
                 elif self.filename != self.parsed_draft.filename:
-                    self.add_error('txt', "Inconsistent name information: xml:{}, txt:{}".format(self.filename, self.parsed_draft.filename))
+                    self.add_error('txt', f"Inconsistent name information: xml:{self.filename}, txt:{self.parsed_draft.filename}")
                 if self.revision == None:
                     self.revision = self.parsed_draft.revision
                 elif self.revision != self.parsed_draft.revision:
-                    self.add_error('txt', "Inconsistent revision information: xml:{}, txt:{}".format(self.revision, self.parsed_draft.revision))
+                    self.add_error('txt', f"Inconsistent revision information: xml:{self.revision}, txt:{self.parsed_draft.revision}")
                 if self.title == None:
                     self.title = self.parsed_draft.get_title()
                 elif self.title != self.parsed_draft.get_title():
-                    self.add_error('txt', "Inconsistent title information: xml:{}, txt:{}".format(self.title, self.parsed_draft.get_title()))
+                    self.add_error('txt', f"Inconsistent title information: xml:{self.title}, txt:{self.parsed_draft.get_title()}")
             except (UnicodeDecodeError, LookupError) as e:
                 self.add_error('txt', 'Failed decoding the uploaded file: "%s"' % str(e))
 
@@ -395,9 +395,9 @@ class SubmissionBaseUploadForm(forms.Form):
         submissions = Submission.objects.filter(**filter_kwargs)
 
         if len(submissions) > max_amount:
-            raise forms.ValidationError("Max submissions {} has been reached for today (maximum is {} submissions).".format(which, max_amount))
+            raise forms.ValidationError(f"Max submissions {which} has been reached for today (maximum is {max_amount} submissions).")
         if sum(s.file_size for s in submissions if s.file_size) > max_size * 1024 * 1024:
-            raise forms.ValidationError("Max uploaded amount {} has been reached for today (maximum is {} MB).".format(which, max_size))
+            raise forms.ValidationError(f"Max uploaded amount {which} has been reached for today (maximum is {max_size} MB).")
 
     def deduce_group(self):
         """Figure out group from name or previously submitted draft, returns None if individual."""
@@ -423,7 +423,7 @@ class SubmissionBaseUploadForm(forms.Form):
 
                 # first check groups with dashes
                 for g in Group.objects.filter(acronym__contains="-", type=group_type):
-                    if name.startswith('draft-{}-{}-'.format(name_parts[1], g.acronym)):
+                    if name.startswith(f'draft-{name_parts[1]}-{g.acronym}-'):
                         return g
 
                 try:

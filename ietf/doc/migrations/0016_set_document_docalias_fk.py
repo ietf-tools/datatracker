@@ -15,7 +15,7 @@ def forward(apps, schema_editor):
         if n:
             i = nameid[n]
             if not isinstance(i, int):
-                raise ValueError("Inappropriate value: {}: nameid[{}]: {}".format(o.__class__.__name__, n, i))
+                raise ValueError(f"Inappropriate value: {o.__class__.__name__}: nameid[{n}]: {i}")
             if getattr(o, a+'2_id') != i:
                 setattr(o, a+'2_id', i)
                 o.save()
@@ -68,7 +68,7 @@ def forward(apps, schema_editor):
             ( SessionPresentation        , 'document'),
             ( Submission                 , 'draft'),
         ]:
-        sys.stderr.write(' {}.{}:\n'.format(C.__name__, a))
+        sys.stderr.write(f' {C.__name__}.{a}:\n')
         for o in tqdm(C.objects.all()):
             add_id_fk(o, a, nameid)
 
@@ -86,7 +86,7 @@ def forward(apps, schema_editor):
             ( RelatedDocument            , 'target'),
             ( RelatedDocHistory          , 'target'),
         ]:
-        sys.stderr.write(' {}.{}:\n'.format(C.__name__, a))
+        sys.stderr.write(f' {C.__name__}.{a}:\n')
         for o in tqdm(C.objects.all()):
             add_id_fk(o, a, nameid)
 

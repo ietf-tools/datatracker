@@ -287,10 +287,10 @@ def document_main(request, name, rev=None):
             submission = "individual in %s area" % group.acronym
         else:
             if group.features.acts_like_wg:
-                submission = "{} {}".format(group.acronym, group.type)
+                submission = f"{group.acronym} {group.type}"
             else:
                 submission = group.acronym
-            submission = "<a href=\"{}\">{}</a>".format(group.about_url(), submission)
+            submission = f"<a href=\"{group.about_url()}\">{submission}</a>"
             if doc.stream_id and doc.get_state_slug("draft-stream-%s" % doc.stream_id) == "c-adopt":
                 submission = "candidate for %s" % submission
 
@@ -576,7 +576,7 @@ def document_main(request, name, rev=None):
                                        ))
 
     if doc.type_id == "conflrev":
-        filename = "{}-{}.txt".format(doc.canonical_name(), doc.rev)
+        filename = f"{doc.canonical_name()}-{doc.rev}.txt"
         pathname = os.path.join(settings.CONFLICT_REVIEW_PATH,filename)
 
         if doc.rev == "00" and not os.path.isfile(pathname):
@@ -606,7 +606,7 @@ def document_main(request, name, rev=None):
                                        ))
 
     if doc.type_id == "statchg":
-        filename = "{}-{}.txt".format(doc.canonical_name(), doc.rev)
+        filename = f"{doc.canonical_name()}-{doc.rev}.txt"
         pathname = os.path.join(settings.STATUS_CHANGE_PATH,filename)
 
         if doc.rev == "00" and not os.path.isfile(pathname):
@@ -648,7 +648,7 @@ def document_main(request, name, rev=None):
             # we need to remove the extension for the globbing below to work
             basename = os.path.splitext(doc.uploaded_filename)[0]
         else:
-            basename = "{}-{}".format(doc.canonical_name(), doc.rev)
+            basename = f"{doc.canonical_name()}-{doc.rev}"
 
         pathname = os.path.join(doc.get_file_path(), basename)
 
@@ -846,7 +846,7 @@ def check_doc_email_aliases():
     pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
     good_count = 0
     tot_count = 0
-    with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
+    with open(settings.DRAFT_VIRTUAL_PATH) as virtual_file:
         for line in virtual_file.readlines():
             m = pattern.match(line)
             tot_count += 1
@@ -862,7 +862,7 @@ def get_doc_email_aliases(name):
     else:
         pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
     aliases = []
-    with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
+    with open(settings.DRAFT_VIRTUAL_PATH) as virtual_file:
         for line in virtual_file.readlines():
             m = pattern.match(line)
             if m:
@@ -1692,7 +1692,7 @@ def email_aliases(request,name=''):
         # require login for the overview page, but not for the
         # document-specific pages 
         if not request.user.is_authenticated:
-                return redirect('{}?next={}'.format(settings.LOGIN_URL, request.path))
+                return redirect(f'{settings.LOGIN_URL}?next={request.path}')
     aliases = get_doc_email_aliases(name)
 
     return render(request,'doc/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'doc':doc})
@@ -1728,7 +1728,7 @@ def edit_sessionpresentation(request,name,session_id):
             if initial['version'] != new_selection:
                 doc.sessionpresentation_set.filter(pk=sp.pk).update(rev=None if new_selection=='current' else new_selection)
                 c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
-                c.desc = "Revision for session {} changed to  {}".format(sp.session,new_selection)
+                c.desc = f"Revision for session {sp.session} changed to  {new_selection}"
                 c.save()
             return redirect('ietf.doc.views_doc.all_presentations', name=name)
     else:

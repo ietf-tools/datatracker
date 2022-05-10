@@ -320,11 +320,11 @@ class IESGAgendaTests(TestCase):
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
-                self.assertContains(r, d.group.name, msg_prefix="{} '{}' not in response".format(k, d.group.name))
-                self.assertContains(r, d.group.acronym, msg_prefix="{} '{}' acronym not in response".format(k, d.group.acronym))
+                self.assertContains(r, d.group.name, msg_prefix=f"{k} '{d.group.name}' not in response")
+                self.assertContains(r, d.group.acronym, msg_prefix=f"{k} '{d.group.acronym}' acronym not in response")
             else:
-                self.assertContains(r, d.name, msg_prefix="{} '{}' not in response".format(k, d.name))
-                self.assertContains(r, d.title, msg_prefix="{} '{}' title not in response".format(k, d.title))
+                self.assertContains(r, d.name, msg_prefix=f"{k} '{d.name}' not in response")
+                self.assertContains(r, d.title, msg_prefix=f"{k} '{d.title}' title not in response")
 
         self.assertTrue(r.json())
 
@@ -334,11 +334,11 @@ class IESGAgendaTests(TestCase):
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
-                self.assertContains(r, d.group.name, msg_prefix="{} '{}' not in response".format(k, d.group.name))
-                self.assertContains(r, d.group.acronym, msg_prefix="{} '{}' acronym not in response".format(k, d.group.acronym))
+                self.assertContains(r, d.group.name, msg_prefix=f"{k} '{d.group.name}' not in response")
+                self.assertContains(r, d.group.acronym, msg_prefix=f"{k} '{d.group.acronym}' acronym not in response")
             else:
-                self.assertContains(r, d.name, msg_prefix="{} '{}' not in response".format(k, d.name))
-                self.assertContains(r, d.title, msg_prefix="{} '{}' title not in response".format(k, d.title))
+                self.assertContains(r, d.name, msg_prefix=f"{k} '{d.name}' not in response")
+                self.assertContains(r, d.title, msg_prefix=f"{k} '{d.title}' title not in response")
 
         for i, mi in enumerate(self.mgmt_items, start=1):
             s = "6." + str(i)
@@ -354,11 +354,11 @@ class IESGAgendaTests(TestCase):
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
-                self.assertContains(r, d.group.name, msg_prefix="{} '{}' not in response".format(k, d.group.name))
-                self.assertContains(r, d.group.acronym, msg_prefix="{} '{}' acronym not in response".format(k, d.group.acronym))
+                self.assertContains(r, d.group.name, msg_prefix=f"{k} '{d.group.name}' not in response")
+                self.assertContains(r, d.group.acronym, msg_prefix=f"{k} '{d.group.acronym}' acronym not in response")
             else:
-                self.assertContains(r, d.name, msg_prefix="{} '{}' not in response".format(k, d.name))
-                self.assertContains(r, d.title, msg_prefix="{} '{}' title not in response".format(k, d.title))
+                self.assertContains(r, d.name, msg_prefix=f"{k} '{d.name}' not in response")
+                self.assertContains(r, d.title, msg_prefix=f"{k} '{d.title}' title not in response")
 
         for i, mi in enumerate(self.mgmt_items, start=1):
             s = "6." + str(i)
@@ -376,17 +376,17 @@ class IESGAgendaTests(TestCase):
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
-                self.assertContains(r, d.group.name, msg_prefix="{} '{}' not in response".format(k, d.group.name))
-                self.assertContains(r, d.group.acronym, msg_prefix="{} '{}' acronym not in response".format(k, d.group.acronym))
+                self.assertContains(r, d.group.name, msg_prefix=f"{k} '{d.group.name}' not in response")
+                self.assertContains(r, d.group.acronym, msg_prefix=f"{k} '{d.group.acronym}' acronym not in response")
             else:
                 if d.type_id == "draft" and d.name == "draft-ietf-mars-test":
-                    self.assertContains(r, d.name, msg_prefix="{} '{}' not in response".format(k, d.name))
-                    self.assertContains(r, d.title, msg_prefix="{} '{}' title not in response".format(k, d.title))
-                    self.assertContains(r, "Has downref: Yes", msg_prefix="{} downref not in response".format(k))
-                    self.assertContains(r, "Add rfc6666", msg_prefix="{} downref not in response".format(k))
+                    self.assertContains(r, d.name, msg_prefix=f"{k} '{d.name}' not in response")
+                    self.assertContains(r, d.title, msg_prefix=f"{k} '{d.title}' title not in response")
+                    self.assertContains(r, "Has downref: Yes", msg_prefix=f"{k} downref not in response")
+                    self.assertContains(r, "Add rfc6666", msg_prefix=f"{k} downref not in response")
                 else:
-                    self.assertContains(r, d.name, msg_prefix="{} '{}' not in response".format(k, d.name))
-                    self.assertContains(r, d.title, msg_prefix="{} '{}' title not in response".format(k, d.title))        
+                    self.assertContains(r, d.name, msg_prefix=f"{k} '{d.name}' not in response")
+                    self.assertContains(r, d.title, msg_prefix=f"{k} '{d.title}' title not in response")        
 
     def test_agenda_package(self):
         url = urlreverse("ietf.iesg.views.agenda_package")
@@ -396,11 +396,11 @@ class IESGAgendaTests(TestCase):
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
-                self.assertContains(r, d.group.name, msg_prefix="{} '{}' not in response".format(k, d.group.name))
-                self.assertContains(r, d.group.acronym, msg_prefix="{} '{}' acronym not in response".format(k, d.group.acronym))
+                self.assertContains(r, d.group.name, msg_prefix=f"{k} '{d.group.name}' not in response")
+                self.assertContains(r, d.group.acronym, msg_prefix=f"{k} '{d.group.acronym}' acronym not in response")
             else:
-                self.assertContains(r, d.name, msg_prefix="{} '{}' not in response".format(k, d.name))
-                self.assertContains(r, d.title, msg_prefix="{} '{}' title not in response".format(k, d.title))
+                self.assertContains(r, d.name, msg_prefix=f"{k} '{d.name}' not in response")
+                self.assertContains(r, d.title, msg_prefix=f"{k} '{d.title}' title not in response")
 
     def test_agenda_documents_txt(self):
         url = urlreverse("ietf.iesg.views.agenda_documents_txt")
@@ -408,7 +408,7 @@ class IESGAgendaTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.items():
-            self.assertContains(r, d.name, msg_prefix="{} '{}' not in response".format(k, d.name))
+            self.assertContains(r, d.name, msg_prefix=f"{k} '{d.name}' not in response")
 
     def test_agenda_documents(self):
         url = urlreverse("ietf.iesg.views.agenda_documents")
@@ -416,8 +416,8 @@ class IESGAgendaTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.items():
-            self.assertContains(r, d.name, msg_prefix="{} '{}' not in response".format(k, d.name))
-            self.assertContains(r, d.title, msg_prefix="{} '{}' title not in response".format(k, d.title))
+            self.assertContains(r, d.name, msg_prefix=f"{k} '{d.name}' not in response")
+            self.assertContains(r, d.title, msg_prefix=f"{k} '{d.title}' title not in response")
 
     def test_past_documents(self):
         url = urlreverse("ietf.iesg.views.past_documents")
@@ -456,8 +456,8 @@ class IESGAgendaTests(TestCase):
         d1 = self.telechat_docs["ietf_draft"]
         d2 = self.telechat_docs["ise_draft"]
 
-        d1_filename = "{}-{}.txt".format(d1.name, d1.rev)
-        d2_filename = "{}-{}.txt".format(d2.name, d2.rev)
+        d1_filename = f"{d1.name}-{d1.rev}.txt"
+        d2_filename = f"{d2.name}-{d2.rev}.txt"
 
         with (Path(settings.INTERNET_DRAFT_PATH) / d1_filename).open("w") as f:
             f.write("test content")

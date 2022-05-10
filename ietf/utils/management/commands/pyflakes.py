@@ -95,7 +95,7 @@ def checkPath(filename, verbosity):
             text = f.read()
         return check(text + b'\n', filename, verbosity)
     except OSError as msg:
-        return ["{}: {}".format(filename, msg.args[1])]
+        return [f"{filename}: {msg.args[1]}"]
     except TypeError:
         pass
 
@@ -109,7 +109,7 @@ def checkPaths(filenames, verbosity):
                         try:
                             warnings.extend(checkPath(os.path.join(dirpath, filename), verbosity))
                         except TypeError as e:
-                            print("Exception while processing dirpath={}, filename={}: {}".format(dirpath, filename, e ))
+                            print(f"Exception while processing dirpath={dirpath}, filename={filename}: {e}")
                             raise
         else:
             warnings.extend(checkPath(arg, verbosity))

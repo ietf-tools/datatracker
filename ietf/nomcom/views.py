@@ -50,7 +50,7 @@ def index(request):
     for nomcom in nomcom_list:
         year = int(nomcom.acronym[6:])
         nomcom.year = year
-        nomcom.label = "{}/{}".format(year, year+1)
+        nomcom.label = f"{year}/{year+1}"
         if year > 2012:
             nomcom.url = "/nomcom/%04d" % year
         else:
@@ -65,7 +65,7 @@ def index(request):
 
 def year_index(request, year):
     nomcom = get_nomcom_by_year(year)
-    home_template = '/nomcom/{}/{}'.format(nomcom.group.acronym, HOME_TEMPLATE)
+    home_template = f'/nomcom/{nomcom.group.acronym}/{HOME_TEMPLATE}'
     template = render_to_string(home_template, {})
     return render(request, 'nomcom/year_index.html',
                               {'nomcom': nomcom,
@@ -138,7 +138,7 @@ def history(request):
 
             nomcom.personnel.sort(key=lambda t: t[2][0].name.order)
 
-            regimes.append(dict(year=year, label="{}/{}".format(year, year+1), nomcom=nomcom))
+            regimes.append(dict(year=year, label=f"{year}/{year+1}", nomcom=nomcom))
 
     regimes.sort(key=lambda x: x['year'], reverse=True)
 
@@ -711,7 +711,7 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
         permission_denied(request, "The nomination already was %s" % nominee_position.state)
 
     state = get_object_or_404(NomineePositionStateName, slug=state)
-    messages.info(request, "Click on 'Save' to set the state of your nomination to {} to {} (this is not a final commitment - you can notify us later if you need to change this).".format(nominee_position.position.name, state.name))
+    messages.info(request, f"Click on 'Save' to set the state of your nomination to {nominee_position.position.name} to {state.name} (this is not a final commitment - you can notify us later if you need to change this).")
     if request.method == 'POST':
         form = NominationResponseCommentForm(request.POST)
         if form.is_valid():
@@ -734,7 +734,7 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
                 f.positions.add(nominee_position.position)
                 f.nominees.add(nominee_position.nominee)
         
-            messages.success(request,  'Your nomination on {} has been set as {}'.format(nominee_position.position.name, state.name))
+            messages.success(request,  f'Your nomination on {nominee_position.position.name} has been set as {state.name}')
     else:
         form = NominationResponseCommentForm()
     return render(request, 'nomcom/process_nomination_status.html',
@@ -889,7 +889,7 @@ def view_feedback_pending(request, year):
                     formset = FullFeedbackFormSet(queryset=Feedback.objects.filter(id__in=[i.id for i in nominations]))
                     for form in formset.forms:
                         form.set_nomcom(nomcom, request.user, nominations)
-                    extra_ids = ','.join(['{}:{}'.format(i.id, i.type.pk) for i in extra])
+                    extra_ids = ','.join([f'{i.id}:{i.type.pk}' for i in extra])
                 else:
                     formset = FullFeedbackFormSet(queryset=Feedback.objects.filter(id__in=[i.id for i in extra]))
                     for form in formset.forms:

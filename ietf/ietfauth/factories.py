@@ -53,4 +53,4 @@ class OidClientRecordFactory(factory.django.DjangoModelFactory):
             extracted.user = user
             extracted.save()
         else:
-            PersonFactory(name='{} {}'.format(user.first_name, user.last_name), user=user)
+            PersonFactory(name=f'{user.first_name} {user.last_name}', user=user)

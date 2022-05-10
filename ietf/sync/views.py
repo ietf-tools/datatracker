@@ -86,7 +86,7 @@ def notify(request, org, notification):
             out = out.decode('utf-8')
             err = err.decode('utf-8')
             if p.returncode:
-                log("Subprocess error {} when running '{}': {} {}".format(p.returncode, cmd, err, out))
+                log(f"Subprocess error {p.returncode} when running '{cmd}': {err} {out}")
                 raise subprocess.CalledProcessError(p.returncode, cmdstring, "\n".join([err, out]))
 
         log("Running sync script from notify view POST")

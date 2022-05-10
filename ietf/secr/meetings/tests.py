@@ -179,7 +179,7 @@ class SecrMeetingTestCase(TestCase):
         # test upload
         group = Group.objects.filter(type='wg',state='active').first()
         file = StringIO('dummy bluesheet')
-        file.name = "bluesheets-{}-{}.pdf".format(meeting.number,group.acronym)
+        file.name = f"bluesheets-{meeting.number}-{group.acronym}.pdf"
         files = {'file':file}
         response = self.client.post(url, files)
         self.assertEqual(response.status_code, 302)

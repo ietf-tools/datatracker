@@ -11,7 +11,7 @@ def update_htpasswd_file(username, password):
     if getattr(settings, 'USE_PYTHON_HTDIGEST', None):
         pass_file = settings.HTPASSWD_FILE
         realm = settings.HTDIGEST_REALM
-        prefix = force_bytes('{}:{}:'.format(username, realm))
+        prefix = force_bytes(f'{username}:{realm}:')
         key = force_bytes(hashlib.md5(prefix + force_bytes(password)).hexdigest())
         f = open(pass_file, 'r+b')
         pos = f.tell()

@@ -79,7 +79,7 @@ class SearchRule(models.Model):
     name_contains_index = models.ManyToManyField(Document)
 
     def __str__(self):
-        return "{} {} {}/{}/{}/{}".format(self.community_list, self.rule_type, self.state, self.group, self.person, self.text)
+        return f"{self.community_list} {self.rule_type} {self.state}/{self.group}/{self.person}/{self.text}"
 
 class EmailSubscription(models.Model):
     community_list = ForeignKey(CommunityList)
@@ -92,7 +92,7 @@ class EmailSubscription(models.Model):
     notify_on = models.CharField(max_length=30, choices=NOTIFICATION_CHOICES, default="all")
 
     def __str__(self):
-        return "{} to {} ({} changes)".format(self.email, self.community_list, self.notify_on)
+        return f"{self.email} to {self.community_list} ({self.notify_on} changes)"
 
 
 def notify_events(sender, instance, **kwargs):

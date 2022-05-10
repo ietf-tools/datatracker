@@ -28,9 +28,9 @@ class RestApi(ResourceTestCaseMixin, TestCase):
             elif format == 'xml':
                 self.assertValidXMLResponse(r)
             else:
-                raise Exception("Unknown format found when testing the RestApi: {}".format(format))
+                raise Exception(f"Unknown format found when testing the RestApi: {format}")
         except Exception:
-            sys.stderr.write(" * Exception for resource: {}, format: {}\n".format(resource, format))
+            sys.stderr.write(f" * Exception for resource: {resource}, format: {format}\n")
             raise
         data = self.deserialize(r)
         for name in data:

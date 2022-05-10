@@ -276,7 +276,7 @@ def create_ballot_if_not_open(request, doc, by, ballot_slug, time=None, duedate=
         return e
     else:
         if request:
-            messages.warning(request, "There already exists an open '{}' ballot for {}.  No new ballot created.".format(ballot_type, doc.name))
+            messages.warning(request, f"There already exists an open '{ballot_type}' ballot for {doc.name}.  No new ballot created.")
         return None
 
 def close_ballot(doc, by, ballot_slug):
@@ -432,7 +432,7 @@ def add_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_t
     e.type = "changed_state"
     e.state_type = (prev_state or new_state).type
     e.state = new_state
-    e.desc = "{} changed to <b>{}</b>".format(e.state_type.label, new_state.name + tags_suffix(new_tags))
+    e.desc = f"{e.state_type.label} changed to <b>{new_state.name + tags_suffix(new_tags)}</b>"
     if prev_state:
         e.desc += " from %s" % (prev_state.name + tags_suffix(prev_tags))
     if timestamp:
@@ -807,7 +807,7 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, com
     e = DocEvent(doc=doc, rev=doc.rev, by=by, type='changed_document')
     new_replaces_names = ", ".join(d.name for d in new_replaces) or "None"
     old_replaces_names = ", ".join(d.name for d in old_replaces) or "None"
-    e.desc = "This document now replaces <b>{}</b> instead of {}".format(new_replaces_names, old_replaces_names)
+    e.desc = f"This document now replaces <b>{new_replaces_names}</b> instead of {old_replaces_names}"
     e.save()
 
     events.append(e)
@@ -994,7 +994,7 @@ def label_wrap(label, items, joiner=',', max=50):
     lines = []
     if not items:
         return lines
-    line = '{}: {}'.format(label, items[0])
+    line = f'{label}: {items[0]}'
     for item in items[1:]:
         if len(line)+len(joiner+' ')+len(item) > max:
             lines.append(line+joiner)
@@ -1306,10 +1306,10 @@ def fuzzy_find_documents(name, rev=None):
     if name.startswith('rfc0'):
         name = "rfc" + name[3:].lstrip('0')
     if name.startswith('review-') and re.search(r'-\d\d\d\d-\d\d$', name):
-        name = "{}-{}".format(name, rev)
+        name = f"{name}-{rev}"
         rev = None
     if rev and not name.startswith('charter-') and re.search('[0-9]{1,2}-[0-9]{2}', rev):
-        name = "{}-{}".format(name, rev[:-3])
+        name = f"{name}-{rev[:-3]}"
         rev = rev[-2:]
     if re.match("^[0-9]+$", name):
         name = f'rfc{name}'
@@ -1321,7 +1321,7 @@ def fuzzy_find_documents(name, rev=None):
     if rev and not docs.exists():
         # No document found, see if the name/rev split has been misidentified.
         # Handles some special cases, like draft-ietf-tsvwg-ieee-802-11.
-        name = '{}-{}'.format(name, rev)
+        name = f'{name}-{rev}'
         docs = Document.objects.filter(docalias__name=name, type_id='draft')
         if docs.exists():
             rev = None  # found a doc by name with rev = None, so update that

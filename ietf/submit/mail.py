@@ -114,7 +114,7 @@ def send_manual_post_request(request, submission, errors):
     from_email = settings.IDSUBMIT_FROM_EMAIL
     (to_email,cc) = gather_address_lists('sub_manual_post_requested',submission=submission)
     checker = DraftIdnitsChecker(options=[]) # don't use the default --submitcheck limitation
-    file_name = os.path.join(settings.IDSUBMIT_STAGING_PATH, '{}-{}.txt'.format(submission.name, submission.rev))
+    file_name = os.path.join(settings.IDSUBMIT_STAGING_PATH, f'{submission.name}-{submission.rev}.txt')
     nitspass, nitsmsg, nitserr, nitswarn, nitsresult = checker.check_file_txt(file_name)
     send_mail(request, to_email, from_email, subject, 'submit/manual_post_request.txt', {
         'submission': submission,
@@ -132,7 +132,7 @@ def announce_to_lists(request, submission):
             m.by = request.user.person
         except Person.DoesNotExist:
             pass
-    m.subject = 'I-D Action: {}-{}.txt'.format(submission.name, submission.rev)
+    m.subject = f'I-D Action: {submission.name}-{submission.rev}.txt'
     m.frm = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
     (m.to, m.cc) = gather_address_lists('sub_announced',submission=submission).as_strings()
     if m.cc:
@@ -154,7 +154,7 @@ def announce_new_wg_00(request, submission):
             m.by = request.user.person
         except Person.DoesNotExist:
             pass
-    m.subject = 'I-D Action: {}-{}.txt'.format(submission.name, submission.rev)
+    m.subject = f'I-D Action: {submission.name}-{submission.rev}.txt'
     m.frm = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
     (m.to, m.cc) = gather_address_lists('sub_new_wg_00',submission=submission).as_strings()
     if m.cc:
@@ -172,7 +172,7 @@ def announce_new_version(request, submission, draft, state_change_msg):
     (to_email,cc) = gather_address_lists('sub_new_version',doc=draft,submission=submission)
 
     if to_email:
-        subject = 'New Version Notification - {}-{}.txt'.format(submission.name, submission.rev)
+        subject = f'New Version Notification - {submission.name}-{submission.rev}.txt'
         from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
         send_mail(request, to_email, from_email, subject, 'submit/announce_new_version.txt',
                   {'submission': submission,
@@ -182,7 +182,7 @@ def announce_new_version(request, submission, draft, state_change_msg):
 def announce_to_authors(request, submission):
     (to_email, cc) = gather_address_lists('sub_announced_to_authors',submission=submission)
     from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
-    subject = 'New Version Notification for {}-{}.txt'.format(submission.name, submission.rev)
+    subject = f'New Version Notification for {submission.name}-{submission.rev}.txt'
     if submission.group:
         group = submission.group.acronym
     elif submission.name.startswith('draft-iesg'):

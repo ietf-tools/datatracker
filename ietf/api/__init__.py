@@ -46,7 +46,7 @@ def autodiscover():
         mod = import_module(app)
         # Attempt to import the app's admin module.
         try:
-            import_module('{}.resources'.format(app))
+            import_module(f'{app}.resources')
         except:
             # Decide whether to bubble up this error. If the app just
             # doesn't have an admin module, we can ignore the error
@@ -85,7 +85,7 @@ class TimedeltaField(ApiField):
                 data = match.groupdict()
                 return datetime.timedelta(int(data['days']), int(data['hours']), int(data['minutes']), int(data['seconds']))
             else:
-                raise ApiFieldError("Timedelta provided to '{}' field doesn't appear to be a valid timedelta string: '{}'".format(self.instance_name, value))
+                raise ApiFieldError(f"Timedelta provided to '{self.instance_name}' field doesn't appear to be a valid timedelta string: '{value}'")
 
         return value
 
@@ -103,10 +103,10 @@ class TimedeltaField(ApiField):
                     else:
                         raise ValueError()
                 except (ValueError, TypeError):
-                    raise ApiFieldError("Timedelta provided to '{}' field doesn't appear to be a valid datetime string: '{}'".format(self.instance_name, value))
+                    raise ApiFieldError(f"Timedelta provided to '{self.instance_name}' field doesn't appear to be a valid datetime string: '{value}'")
 
             else:
-                raise ApiFieldError("Datetime provided to '{}' field must be a string: {}".format(self.instance_name, value))
+                raise ApiFieldError(f"Datetime provided to '{self.instance_name}' field must be a string: {value}")
 
         return value
 
@@ -137,7 +137,7 @@ class ToOneField(tastypie.fields.ToOneField):
                 if callable(self.attribute):
                     raise ApiFieldError("The related resource for resource %s could not be found." % (previous_obj))
                 else:
-                    raise ApiFieldError("The model '{!r}' has an empty attribute '{}' and doesn't allow a null value.".format(previous_obj, attrib))
+                    raise ApiFieldError(f"The model '{previous_obj!r}' has an empty attribute '{attrib}' and doesn't allow a null value.")
             return None
 
         fk_resource = self.get_related_resource(foreign_obj)

@@ -137,7 +137,7 @@ def move_draft_files_to_archive(doc, rev):
                     raise
 
     src_dir = Path(settings.INTERNET_DRAFT_PATH)
-    for file in src_dir.glob("{}-{}.*".format(doc.name, rev)):
+    for file in src_dir.glob(f"{doc.name}-{rev}.*"):
         move_file(str(file.name))
 
 def expire_draft(doc):

@@ -57,7 +57,7 @@ class TimeSlotAdmin(admin.ModelAdmin):
             if instance.session.name:
                 return instance.session.name
             elif instance.session.group:
-                return "{} ({})".format(instance.session.group.name, instance.session.group.acronym)
+                return f"{instance.session.group.name} ({instance.session.group.acronym})"
 
         return ""
     session_desc.short_description = "session" # type: ignore # https://github.com/python/mypy/issues/2087

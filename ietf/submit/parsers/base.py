@@ -77,7 +77,7 @@ class FileParser:
 
     def parse_filename_extension(self):
         if not self.fd.name.lower().endswith('.'+self.ext):
-            self.parsed_info.add_error('Expected the {} file to have extension ".{}", found the name "{}"'.format(self.ext.upper(), self.ext, self.fd.name))
+            self.parsed_info.add_error(f'Expected the {self.ext.upper()} file to have extension ".{self.ext}", found the name "{self.fd.name}"')
 
     def parse_file_type(self):
         self.fd.file.seek(0)

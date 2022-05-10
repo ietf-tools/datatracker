@@ -25,12 +25,12 @@ class Command(BaseCommand):
             
     def handle(self, *filenames, **options):
         for c in VersionInfo.objects.filter(used=True):
-            cmd = "{} {}".format(c.command, c.switch)
+            cmd = f"{c.command} {c.switch}"
             code, out, err = pipe(cmd)
             out = out.decode('utf-8')
             err = err.decode('utf-8')
             if code != 0:
-                sys.stderr.write("Command '{}' retuned {}: \n{}\n{}\n".format(cmd, code, out, err))
+                sys.stderr.write(f"Command '{cmd}' retuned {code}: \n{out}\n{err}\n")
             else:
                 c.version = (out.strip()+'\n'+err.strip()).strip()
                 if options.get('verbosity', 1) > 1:

@@ -72,7 +72,7 @@ class Command(BaseCommand):
         doc_events = doc_events.order_by('time')
 
         for e in doc_events:
-            self.mutter('{} {}'.format(e.time, e.doc.name))
+            self.mutter(f'{e.time} {e.doc.name}')
             try:
                 doc = e.doc
                 if e.rev != doc.rev:
@@ -89,7 +89,7 @@ class Command(BaseCommand):
                 # for name in (doc.name, doc.name[6:]):
                 #     ref_rev_file_name = os.path.join(bibxmldir, 'reference.I-D.%s-%s.xml' % (name, doc.rev))
                 #     self.write(ref_rev_file_name, ref_text)
-                ref_rev_file_name = os.path.join(bibxmldir, 'reference.I-D.{}-{}.xml'.format(doc.name, doc.rev))
+                ref_rev_file_name = os.path.join(bibxmldir, f'reference.I-D.{doc.name}-{doc.rev}.xml')
                 self.write(ref_rev_file_name, ref_text)
             except Exception as ee:
-                sys.stderr.write('\n{}-{}: {}\n'.format(doc.name, doc.rev, ee))
+                sys.stderr.write(f'\n{doc.name}-{doc.rev}: {ee}\n')

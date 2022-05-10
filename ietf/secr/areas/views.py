@@ -23,7 +23,7 @@ def getpeople(request):
 
     qs = Person.objects.filter(name__icontains=term)
     for item in qs:
-        full = '{} - ({})'.format(item.name,item.id)
+        full = f'{item.name} - ({item.id})'
         result.append(full)
         
     return HttpResponse(json.dumps(result), content_type='application/javascript')

@@ -162,7 +162,7 @@ def update_drafts_from_queue(drafts):
             continue
 
         if not state or state not in state_mapping:
-            warnings.append("unknown state '{}' for {}".format(state, name))
+            warnings.append(f"unknown state '{state}' for {name}")
             continue
 
         d = drafts_in_db[name]
@@ -464,7 +464,7 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
                 if prev_state.slug not in ("pub", "idexists"):
                     new_state = State.objects.select_related("type").get(used=True, type=t, slug="pub")
                     doc.set_state(new_state)
-                    changes.append("changed {} to {}".format(new_state.type.label, new_state))
+                    changes.append(f"changed {new_state.type.label} to {new_state}")
                     e = update_action_holders(doc, prev_state, new_state)
                     if e:
                         events.append(e)
@@ -489,12 +489,12 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
         for x in parse_relation_list(obsoletes):
             if not RelatedDocument.objects.filter(source=doc, target=x, relationship=relationship_obsoletes):
                 r = RelatedDocument.objects.create(source=doc, target=x, relationship=relationship_obsoletes)
-                changes.append("created {} relation between {} and {}".format(r.relationship.name.lower(), prettify_std_name(r.source.name), prettify_std_name(r.target.name)))
+                changes.append(f"created {r.relationship.name.lower()} relation between {prettify_std_name(r.source.name)} and {prettify_std_name(r.target.name)}")
 
         for x in parse_relation_list(updates):
             if not RelatedDocument.objects.filter(source=doc, target=x, relationship=relationship_updates):
                 r = RelatedDocument.objects.create(source=doc, target=x, relationship=relationship_updates)
-                changes.append("created {} relation between {} and {}".format(r.relationship.name.lower(), prettify_std_name(r.source.name), prettify_std_name(r.target.name)))
+                changes.append(f"created {r.relationship.name.lower()} relation between {prettify_std_name(r.source.name)} and {prettify_std_name(r.target.name)}")
 
         if also:
             for a in also:
@@ -550,10 +550,10 @@ def post_approved_draft(url, name):
     headers = {
             "Content-type": "application/x-www-form-urlencoded",
             "Accept": "text/plain",
-            "Authorization": "Basic %s" % force_str(base64.encodebytes(smart_bytes("{}:{}".format(username, password)))).replace("\n", ""),
+            "Authorization": "Basic %s" % force_str(base64.encodebytes(smart_bytes(f"{username}:{password}"))).replace("\n", ""),
         }
 
-    log("Posting RFC-Editor notifcation of approved draft '{}' to '{}'".format(name, url))
+    log(f"Posting RFC-Editor notifcation of approved draft '{name}' to '{url}'")
     text = error = ""
 
     try:
@@ -564,7 +564,7 @@ def post_approved_draft(url, name):
             timeout=settings.DEFAULT_REQUESTS_TIMEOUT,
         )
 
-        log("RFC-Editor notification result for draft '{}': {}:'{}'".format(name, r.status_code, r.text))
+        log(f"RFC-Editor notification result for draft '{name}': {r.status_code}:'{r.text}'")
 
         if r.status_code != 200:
             raise RuntimeError("Status code is not 200 OK (it's %s)." % r.status_code)
@@ -575,7 +575,7 @@ def post_approved_draft(url, name):
     except Exception as e:
         # catch everything so we don't leak exceptions, convert them
         # into string instead
-        msg = "Exception on RFC-Editor notification for draft '{}': {}: {}".format(name, type(e), str(e))
+        msg = f"Exception on RFC-Editor notification for draft '{name}': {type(e)}: {str(e)}"
         log(msg)
         if settings.SERVER_MODE == 'test':
             debug.say(msg)

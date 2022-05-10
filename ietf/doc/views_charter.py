@@ -112,7 +112,7 @@ def change_state(request, name, option=None):
                     e.time = group.time
                     e.by = by
                     e.state_id = group.state.slug
-                    e.desc = "Group state changed to \"{}\" from \"{}\"".format(group.state, oldstate)
+                    e.desc = f"Group state changed to \"{group.state}\" from \"{oldstate}\""
                     e.save()
 
                 else:
@@ -201,10 +201,10 @@ def change_state(request, name, option=None):
                 init = dict()
             elif option == "initcharter":
                 hide = ['charter_state']
-                init = dict(initial_time=1, message='{} has initiated chartering of the proposed {}:\n "{}" ({}).'.format(by.plain_name(), group.type.name, group.name, group.acronym))
+                init = dict(initial_time=1, message=f'{by.plain_name()} has initiated chartering of the proposed {group.type.name}:\n "{group.name}" ({group.acronym}).')
             elif option == "abandon":
                 hide = ['initial_time', 'charter_state']
-                init = dict(message='{} has abandoned the chartering effort on the {}:\n "{}" ({}).'.format(by.plain_name(), group.type.name, group.name, group.acronym))
+                init = dict(message=f'{by.plain_name()} has abandoned the chartering effort on the {group.type.name}:\n "{group.name}" ({group.acronym}).')
         form = ChangeStateForm(hide=hide, initial=init, group=group)
 
     prev_charter_state = None
@@ -213,21 +213,21 @@ def change_state(request, name, option=None):
         prev_charter_state = charter_hists[0].get_state()
 
     title = {
-        "initcharter": "Initiate chartering of {} {}".format(group.acronym, group.type.name),
-        "recharter": "Recharter {} {}".format(group.acronym, group.type.name),
-        "abandon": "Abandon effort on {} {}".format(group.acronym, group.type.name),
+        "initcharter": f"Initiate chartering of {group.acronym} {group.type.name}",
+        "recharter": f"Recharter {group.acronym} {group.type.name}",
+        "abandon": f"Abandon effort on {group.acronym} {group.type.name}",
         }.get(option)
     if not title:
-        title = "Change chartering state of {} {}".format(group.acronym, group.type.name)
+        title = f"Change chartering state of {group.acronym} {group.type.name}"
 
     def state_pk(slug):
         return State.objects.get(used=True, type="charter", slug=slug).pk
 
     info_msg = {}
     if group.type_id == "wg":
-        info_msg[state_pk("infrev")] = 'The proposed charter for {} "{}" ({}) has been set to Informal IESG review by {}.'.format(group.type.name, group.name, group.acronym, by.plain_name())
-        info_msg[state_pk("intrev")] = 'The proposed charter for {} "{}" ({}) has been set to Internal review by {}.\nPlease place it on the next IESG telechat if it has not already been placed.'.format(group.type.name, group.name, group.acronym, by.plain_name())
-        info_msg[state_pk("extrev")] = 'The proposed charter for {} "{}" ({}) has been set to External review by {}.\nPlease send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: '.format(group.type.name, group.name, group.acronym, by.plain_name())
+        info_msg[state_pk("infrev")] = f'The proposed charter for {group.type.name} "{group.name}" ({group.acronym}) has been set to Informal IESG review by {by.plain_name()}.'
+        info_msg[state_pk("intrev")] = f'The proposed charter for {group.type.name} "{group.name}" ({group.acronym}) has been set to Internal review by {by.plain_name()}.\nPlease place it on the next IESG telechat if it has not already been placed.'
+        info_msg[state_pk("extrev")] = f'The proposed charter for {group.type.name} "{group.name}" ({group.acronym}) has been set to External review by {by.plain_name()}.\nPlease send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: '
 
     states_for_ballot_wo_extern = State.objects.none()
     if group.type_id == "wg":
@@ -279,7 +279,7 @@ def change_title(request, name, option=None):
                 charter.rev = charter_rev
 
                 if not comment:
-                    comment = "Changed charter title from '{}' to '{}'.".format(prev_title, new_title)
+                    comment = f"Changed charter title from '{prev_title}' to '{new_title}'."
                 e = DocEvent(type="added_comment", doc=charter, rev=charter.rev, by=by)
                 e.desc = comment
                 e.save()
@@ -293,7 +293,7 @@ def change_title(request, name, option=None):
             return redirect('ietf.doc.views_doc.document_main', name=charter.name)
     else:
         form = ChangeTitleForm(charter=charter)
-    title = "Change charter title of {} {}".format(group.acronym, group.type.name)
+    title = f"Change charter title of {group.acronym} {group.type.name}"
     return render(request, 'doc/charter/change_title.html',
                   dict(form=form,
                        doc=group.charter,
@@ -378,7 +378,7 @@ def submit(request, name, option=None):
         permission_denied(request, "You don't have permission to access this view.")
 
 
-    path = os.path.join(settings.CHARTER_PATH, '{}-{}.txt'.format(charter_canonical_name, charter_rev))
+    path = os.path.join(settings.CHARTER_PATH, f'{charter_canonical_name}-{charter_rev}.txt')
     not_uploaded_yet = charter_rev.endswith("-00") and not os.path.exists(path)
 
     if not_uploaded_yet or not charter:
@@ -417,13 +417,13 @@ def submit(request, name, option=None):
 
             events = []
             e = NewRevisionDocEvent(doc=charter, by=request.user.person, type="new_revision")
-            e.desc = "New version available: <b>{}-{}.txt</b>".format(charter.canonical_name(), charter.rev)
+            e.desc = f"New version available: <b>{charter.canonical_name()}-{charter.rev}.txt</b>"
             e.rev = charter.rev
             e.save()
             events.append(e)
 
             # Save file on disk
-            filename = os.path.join(settings.CHARTER_PATH, '{}-{}.txt'.format(charter.canonical_name(), charter.rev))
+            filename = os.path.join(settings.CHARTER_PATH, f'{charter.canonical_name()}-{charter.rev}.txt')
             with open(filename, 'w', encoding='utf-8') as destination:
                 if form.cleaned_data['txt']:
                     destination.write(form.cleaned_data['txt'])
@@ -450,10 +450,10 @@ def submit(request, name, option=None):
                 charter_canonical_name = h.canonical_name()
                 charter_rev = h.rev
 
-        filename = os.path.join(settings.CHARTER_PATH, '{}-{}.txt'.format(charter_canonical_name, charter_rev))
+        filename = os.path.join(settings.CHARTER_PATH, f'{charter_canonical_name}-{charter_rev}.txt')
 
         try:
-            with open(filename, 'r') as f:
+            with open(filename) as f:
                 init["content"] = f.read()
         except OSError:
             pass
@@ -674,7 +674,7 @@ def ballot_writeupnotes(request, name):
                     pos.type = "changed_ballot_position"
                     pos.balloter = by
                     pos.pos_id = "yes"
-                    pos.desc = "[Ballot Position Update] New position, {}, has been recorded for {}".format(pos.pos.name, pos.balloter.plain_name())
+                    pos.desc = f"[Ballot Position Update] New position, {pos.pos.name}, has been recorded for {pos.balloter.plain_name()}"
                     pos.save()
                     # Consider mailing this position to 'iesg_ballot_saved'
 
@@ -782,7 +782,7 @@ def approve(request, name):
 
                 MilestoneGroupEvent.objects.create(
                     group=group, type="changed_milestone", by=by,
-                    desc="Added milestone \"{}\", due {}, from approved charter".format(m.desc, m.due),
+                    desc=f"Added milestone \"{m.desc}\", due {m.due}, from approved charter",
                     milestone=m)
 
         for m in milestones_to_delete:
@@ -813,12 +813,12 @@ def charter_with_milestones_txt(request, name, rev):
 
     # read charter text
     c = find_history_active_at(charter, revision_event.time) or charter
-    filename = '{}-{}.txt'.format(c.canonical_name(), rev)
+    filename = f'{c.canonical_name()}-{rev}.txt'
 
     charter_text = ""
 
     try:
-        with open(os.path.join(settings.CHARTER_PATH, filename), 'r') as f:
+        with open(os.path.join(settings.CHARTER_PATH, filename)) as f:
             charter_text = force_text(f.read(), errors='ignore')
     except OSError:
         charter_text = "Error reading charter text %s" % filename

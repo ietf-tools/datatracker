@@ -166,7 +166,7 @@ def notify_event_to_subscribers(event):
 
     for sub in subscriptions.select_related("community_list", "email"):
         clist = sub.community_list
-        subject = '{} notification: Changes to {}'.format(clist.long_name(), event.doc.name)
+        subject = f'{clist.long_name()} notification: Changes to {event.doc.name}'
 
         send_mail(None, sub.email.address, settings.DEFAULT_FROM_EMAIL, subject, 'community/notification_email.txt',
                   context = {

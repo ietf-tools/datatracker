@@ -57,7 +57,7 @@ def get_nomcom_choices(user):
     addresses = []
     for nomcom in nomcoms:
         year = nomcom.group.acronym[-4:]
-        addresses.append('NomCom Chair {} <nomcom-chair-{}@ietf.org>'.format(year,year))
+        addresses.append(f'NomCom Chair {year} <nomcom-chair-{year}@ietf.org>')
 
     return addresses
         

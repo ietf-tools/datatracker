@@ -41,7 +41,7 @@ def unique_obj_name(obj):
     app = obj._meta.app_label
     model = obj.__class__.__name__.lower()
     id = obj.pk
-    return "{}.{}[{}]".format(app,model,id)
+    return f"{app}.{model}[{id}]"
 
 def cached_get(key, calculate_value, timeout=None):
     """Try to get value from cache using key. If no value exists calculate
@@ -95,7 +95,7 @@ class AdminJsonSerializer(Serializer):
         qi = options.get('query_info', '').encode('utf-8')
         if len(list(queryset)) == 1:
             obj = queryset[0]
-            key = 'json:{}:{}'.format(hashlib.md5(qi).hexdigest(), unique_obj_name(obj))
+            key = f'json:{hashlib.md5(qi).hexdigest()}:{unique_obj_name(obj)}'
             is_cached = cache.get(model_top_level_cache_key(obj)) is True
             if is_cached:
                 value = cached_get(key, lambda: super(AdminJsonSerializer, self).serialize(queryset, **options))

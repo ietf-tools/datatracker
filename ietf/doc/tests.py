@@ -793,7 +793,7 @@ Man                    Expires September 22, 2015               [Page 3]
                 group_type=group.type,
                 about_url=group.about_url(),
             ),
-            msg_prefix='WG-like group {} ({}) should include group type in link'.format(group.acronym, group.type),
+            msg_prefix=f'WG-like group {group.acronym} ({group.type}) should include group type in link',
         )
 
     def test_draft_status_changes(self):
@@ -849,7 +849,7 @@ Man                    Expires September 22, 2015               [Page 3]
                 group_acro=group.acronym,
                 about_url=group.about_url(),
             ),
-            msg_prefix='Non-WG-like group {} ({}) should not include group type in link'.format(group.acronym, group.type),
+            msg_prefix=f'Non-WG-like group {group.acronym} ({group.type}) should not include group type in link',
         )
 
     def login(self, username):
@@ -1876,7 +1876,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
 
         draft = IndividualDraftFactory.create()
-        docname = '{}-{}'.format(draft.name, draft.rev)
+        docname = f'{draft.name}-{draft.rev}'
         bibname = docname[6:]           # drop the 'draft-' prefix
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=draft.name))
         r = self.client.get(url)
@@ -1892,7 +1892,7 @@ class DocTestCase(TestCase):
 
     def test_document_bibxml(self):
         draft = IndividualDraftFactory.create()
-        docname = '{}-{}'.format(draft.name, draft.rev)
+        docname = f'{draft.name}-{draft.rev}'
         for viewname in [ 'ietf.doc.views_doc.document_bibxml', 'ietf.doc.views_doc.document_bibxml_ref' ]:
             url = urlreverse(viewname, kwargs=dict(name=draft.name))
             r = self.client.get(url)
@@ -1908,7 +1908,7 @@ class DocTestCase(TestCase):
 
     def test_trailing_hypen_digit_name_bibxml(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test-2')
-        docname = '{}-{}'.format(draft.name, draft.rev)
+        docname = f'{draft.name}-{draft.rev}'
         for viewname in [ 'ietf.doc.views_doc.document_bibxml', 'ietf.doc.views_doc.document_bibxml_ref' ]:
             # This will need to be adjusted if settings.URL_REGEXPS is changed
             url = urlreverse(viewname, kwargs=dict(name=draft.name[:-2], rev=draft.name[-1:]+'-'+draft.rev))

@@ -60,7 +60,7 @@ class Submission(models.Model):
     draft = ForeignKey(Document, null=True, blank=True)
 
     def __str__(self):
-        return "{}-{}".format(self.name, self.rev)
+        return f"{self.name}-{self.rev}"
 
     def submitter_parsed(self):
         return parse_email_line(self.submitter)

@@ -90,7 +90,7 @@ class PersonFactory(factory.django.DjangoModelFactory):
         import atexit
         if obj.biography:
             photo_name = obj.photo_name()
-            media_name = "{}/{}.jpg".format(settings.PHOTOS_DIRNAME, photo_name)
+            media_name = f"{settings.PHOTOS_DIRNAME}/{photo_name}.jpg"
             obj.photo = media_name
             obj.photo_thumb = media_name
             photosrc = os.path.join(settings.TEST_DATA_DIR, "profile-default.jpg")

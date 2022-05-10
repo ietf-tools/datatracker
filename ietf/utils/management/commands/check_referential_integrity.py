@@ -70,11 +70,11 @@ class Command(BaseCommand):
                     self.stdout.write("\r  [ "+self.style.SUCCESS('ok')+" ]\n")
             else:
                 if dangling:
-                    self.stdout.write("\n{}.{}.{} -> {}.{}  ** Bad key values:\n   {}\n".format(model.__module__, model.__name__, field.name, foreign_model.__module__, foreign_model.__name__, sorted(list(dangling))))
+                    self.stdout.write(f"\n{model.__module__}.{model.__name__}.{field.name} -> {foreign_model.__module__}.{foreign_model.__name__}  ** Bad key values:\n   {sorted(list(dangling))}\n")
 
             if dangling and options.get('delete'):
                 if verbosity > 1:
-                    self.stdout.write("Removing dangling values: {}.{}.{}\n".format(model.__module__, model.__name__, field.name))
+                    self.stdout.write(f"Removing dangling values: {model.__module__}.{model.__name__}.{field.name}\n")
                 for value in tqdm(dangling):
                     kwargs = { field.name: value }
                     for obj in field.model.objects.filter(**kwargs):
@@ -92,14 +92,14 @@ class Command(BaseCommand):
                                     self.stderr.write("\nUnexpected field type: %s\n" % type(field))
                         except IntegrityError as e:
                             self.stderr.write('\n')
-                            self.stderr.write("Tried setting {}[{}].{} to {}, but got:\n".format(model.__name__, obj.pk, field.name, None))
+                            self.stderr.write(f"Tried setting {model.__name__}[{obj.pk}].{field.name} to {None}, but got:\n")
                             self.stderr.write("Exception: %s\n" % e)
                 if verbosity > 1:
                     self.stdout.write('\n')
 
         def check_many_to_many_field(field):
             model = field.remote_field.through
-            self.stdout.write("        {}.{} (through table)\n".format(model.__module__,model.__name__))
+            self.stdout.write(f"        {model.__module__}.{model.__name__} (through table)\n")
 
             for ff in [f for f in model._meta.fields if isinstance(f, (ForeignKey, OneToOneField)) ]: 
                 check_field(ff, through_table=True)
@@ -111,7 +111,7 @@ class Command(BaseCommand):
                 if model._meta.proxy:
                     continue
                 if verbosity > 1:
-                    self.stdout.write("        {}.{}\n".format(model.__module__,model.__name__))
+                    self.stdout.write(f"        {model.__module__}.{model.__name__}\n")
                 for field in [f for f in model._meta.fields if isinstance(f, (ForeignKey, OneToOneField)) ]: 
                     check_field(field)
                 for field in [f for f in model._meta.many_to_many ]: 

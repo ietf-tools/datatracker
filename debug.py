@@ -62,10 +62,10 @@ def trace(fn):                 # renamed from 'report' by henrik 16 Jun 2011
         indent = ' ' * _report_indent[0]
         fr = tb.format_stack()[-3].strip()[4:]                      # call from
         fi, co = ( l.strip() for l in fr.splitlines()[:2] )         # file info, code
-        fu = "{}.{}()".format(fn.__module__, fn.__name__)               # function name
+        fu = f"{fn.__module__}.{fn.__name__}()"               # function name
         fc = "{}({})".format(fn.__name__, ', '.join(                    # function call
             [fix(repr(a)) for a in params] +
-            ["{} = {}".format(a, fix(repr(b))) for a,b in kwargs.items()]
+            [f"{a} = {fix(repr(b))}" for a,b in kwargs.items()]
         ))
 
         if debug:
@@ -77,7 +77,7 @@ def trace(fn):                 # renamed from 'report' by henrik 16 Jun 2011
         tau = timeutils.time() - mark
         _report_indent[0] -= increment
         if debug:
-            sys.stderr.write("{}  {} | {:.3f}s [#{}] ==> {}\n".format(indent, fc, tau, call, fix(repr(ret))))
+            sys.stderr.write(f"{indent}  {fc} | {tau:.3f}s [#{call}] ==> {fix(repr(ret))}\n")
 
         return ret
     wrap.callcount = 0
@@ -92,7 +92,7 @@ def filepos():
     parts = file.split(os.sep)
     name = os.sep.join(parts[-2:])
     indent = ' ' * (_report_indent[0])
-    return "{}{}:{}: {}()".format(indent, name, line, func)
+    return f"{indent}{name}:{line}: {func}()"
 
 def mark():
     def show_entry(e):
@@ -102,7 +102,7 @@ def mark():
         file, line, func, text = tb.extract_stack(None, 2)[0]
         parts = file.split(os.sep)
         name = os.sep.join(parts[-2:])
-        sys.stderr.write("{}Mark {}:{}\n".format(indent, name, line))
+        sys.stderr.write(f"{indent}Mark {name}:{line}\n")
         _mark[0] = timeutils.time()
 
 def lap(s):
@@ -110,7 +110,7 @@ def lap(s):
         clk = timeutils.time()
         tau = clk - _mark[0]
         ts = timeutils.strftime("%H:%M:%S", timeutils.localtime(clk))
-        say("{}: {:.3f}s since mark: {}".format(ts, tau, s))
+        say(f"{ts}: {tau:.3f}s since mark: {s}")
 
 def clock(s):
     if debug:
@@ -123,12 +123,12 @@ def time(fn):
     def wrap(fn, *params,**kwargs):
 
         indent = ' ' * _report_indent[0]
-        fc = "{}.{}()".format(fn.__module__, fn.__name__)
+        fc = f"{fn.__module__}.{fn.__name__}()"
 
         mark = timeutils.time()
         ret = fn(*params,**kwargs)
         tau = timeutils.time() - mark
-        sys.stderr.write("{}| {} | {:.3f}s\n".format(indent, fc, tau))
+        sys.stderr.write(f"{indent}| {fc} | {tau:.3f}s\n")
 
         return ret
     wrap.callcount = 0
@@ -143,7 +143,7 @@ def show(name):
         frame = inspect.stack()[1][0]
         value = eval(name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
-        sys.stderr.write("{}{}: '{}'\n".format(indent, name, value))
+        sys.stderr.write(f"{indent}{name}: '{value}'\n")
 
 def showpos(name):
     if debug:
@@ -154,21 +154,21 @@ def showpos(name):
         frame = inspect.stack()[1][0]
         value = eval(name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
-        sys.stderr.write("{}{}:{}: {}: '{}'\n".format(indent, fn, line, name, value))
+        sys.stderr.write(f"{indent}{fn}:{line}: {name}: '{value}'\n")
 
 def log(name):
     if debug:
         frame = inspect.stack()[1][0]
         value = eval(name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
-        logger("{}{}: {}".format(indent, name, value))
+        logger(f"{indent}{name}: {value}")
 
 def pprint(name):
     if debug:
         frame = inspect.stack()[1][0]
         value = eval(name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
-        sys.stderr.write("{}{}:\n".format(indent, name))
+        sys.stderr.write(f"{indent}{name}:\n")
         lines = pformat(value).split('\n')
         for line in lines:
             sys.stderr.write("%s %s\n"%(indent, line))
@@ -179,7 +179,7 @@ def dir(name):
         frame = inspect.stack()[1][0]
         value = eval(name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
-        sys.stderr.write("{}{}:\n".format(indent, name))
+        sys.stderr.write(f"{indent}{name}:\n")
         lines = pformat(value).split('\n')
         for line in lines:
             sys.stderr.write("%s %s\n"%(indent, line))
@@ -190,12 +190,12 @@ def type(name):
         frame = inspect.stack()[1][0]
         value = eval(name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
-        sys.stderr.write("{}{}: {}\n".format(indent, name, value))
+        sys.stderr.write(f"{indent}{name}: {value}\n")
             
 def say(s):
     if debug:
         indent = ' ' * (_report_indent[0])
-        sys.stderr.write("{}{}\n".format(indent, s))
+        sys.stderr.write(f"{indent}{s}\n")
         sys.stderr.flush()
 
 def profile(fn):
@@ -220,7 +220,7 @@ def traceback(levels=None):
         else:
             start = None
         for s in tb.format_stack()[start:-1]:
-            sys.stderr.write("{}{}".format(indent, s))
+            sys.stderr.write(f"{indent}{s}")
         sys.stderr.write("%s---------------\n" % indent)
 
 def show_caller(level=None):
@@ -228,7 +228,7 @@ def show_caller(level=None):
         indent = ' ' * (_report_indent[0])
         if level is None:
             level = -3
-        sys.stderr.write("{}Called from {}\n".format(indent, tb.format_stack()[level].strip()[4:]))
+        sys.stderr.write(f"{indent}Called from {tb.format_stack()[level].strip()[4:]}\n")
 
 def info(name):
     if debug:
@@ -236,4 +236,4 @@ def info(name):
         value = eval(name, frame.f_globals, frame.f_locals)
         vtype = eval("type(%s)"%name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
-        sys.stderr.write("{}{}: '{}' ({})\n".format(indent, name, value, vtype))
+        sys.stderr.write(f"{indent}{name}: '{value}' ({vtype})\n")

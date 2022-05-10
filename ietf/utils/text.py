@@ -212,7 +212,7 @@ def dict_to_text(d):
     "Convert a dictionary to RFC2822-formatted text"
     t = ""
     for k, v in d.items():
-        t += "{}: {}\n".format(k, v)
+        t += f"{k}: {v}\n"
     return t
 
 def texescape(s):

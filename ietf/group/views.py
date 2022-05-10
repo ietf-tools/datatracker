@@ -201,7 +201,7 @@ def check_group_email_aliases():
     pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
     tot_count = 0
     good_count = 0
-    with open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
+    with open(settings.GROUP_VIRTUAL_PATH) as virtual_file:
         for line in virtual_file.readlines():
             m = pattern.match(line)
             tot_count += 1
@@ -509,7 +509,7 @@ def group_documents_txt(request, acronym, group_type=None):
         if rfc_number != None:
             name = rfc_number
         else:
-            name = "{}-{}".format(d.name, d.rev)
+            name = f"{d.name}-{d.rev}"
 
         rows.append("\t".join((d.prefix, name, clean_whitespace(d.title))))
 
@@ -651,7 +651,7 @@ def get_group_email_aliases(acronym, group_type):
         pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
 
     aliases = []
-    with open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
+    with open(settings.GROUP_VIRTUAL_PATH) as virtual_file:
         for line in virtual_file.readlines():
             m = pattern.match(line)
             if m:
@@ -726,8 +726,8 @@ def dependencies(request, acronym, group_type=None, output_type="pdf"):
     outhandle, outname = mkstemp()
     os.close(outhandle)
 
-    pipe("{} -f -l 10 -o {} {}".format(settings.UNFLATTEN_BINARY, unflatname, dotname))
-    pipe("{} -T{} -o {} {}".format(settings.DOT_BINARY, output_type, outname, unflatname))
+    pipe(f"{settings.UNFLATTEN_BINARY} -f -l 10 -o {unflatname} {dotname}")
+    pipe(f"{settings.DOT_BINARY} -T{output_type} -o {outname} {unflatname}")
 
     outhandle = open(outname, "rb")
     out = outhandle.read()
@@ -750,7 +750,7 @@ def email_aliases(request, acronym=None, group_type=None):
         # require login for the overview page, but not for the group-specific
         # pages 
         if not request.user.is_authenticated:
-                return redirect('{}?next={}'.format(settings.LOGIN_URL, request.path))
+                return redirect(f'{settings.LOGIN_URL}?next={request.path}')
 
     aliases = get_group_email_aliases(acronym, group_type)
 
@@ -877,7 +877,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
             if r.display_name:
                 res.append("{} {} ({})".format(r.name.slug, r.value, r.display_name.strip('()')))
             else:
-                res.append("{} {}".format(r.name.slug, r.value)) 
+                res.append(f"{r.name.slug} {r.value}") 
                 # TODO: This is likely problematic if value has spaces. How then to delineate value and display_name? Perhaps in the short term move to comma or pipe separation.
                 # Might be better to shift to a formset instead of parsing these lines.
         return fs.join(res)
@@ -998,7 +998,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
 
             if personnel_change_text!="":
                 changed_personnel = [ str(p) for p in changed_personnel ]
-                personnel_change_text = "{} has updated {} personnel:\n\n".format(request.user.person.plain_name(), group.acronym.upper() ) + personnel_change_text
+                personnel_change_text = f"{request.user.person.plain_name()} has updated {group.acronym.upper()} personnel:\n\n" + personnel_change_text
                 email_personnel_change(request, group, personnel_change_text, changed_personnel)
 
             if 'resources' in clean:
@@ -1273,7 +1273,7 @@ def stream_edit(request, acronym):
                 for e in new:
                     Role.objects.get_or_create(name_id=slug, email=e, group=group, person=e.person)
                     if not e.origin or e.origin == e.person.user.username:
-                        e.origin = "role: {} {}".format(group.acronym, slug)
+                        e.origin = f"role: {group.acronym} {slug}"
                         e.save()
 
             return redirect("ietf.group.views.streams")

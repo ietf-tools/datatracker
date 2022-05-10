@@ -247,7 +247,7 @@ def materials_document(request, document, num=None, ext=None):
             bytes = file.read()
         
         mtype, chset = get_mime_type(bytes)
-        content_type = "{}; charset={}".format(mtype, chset)
+        content_type = f"{mtype}; charset={chset}"
 
         file_ext = os.path.splitext(filename)
         if len(file_ext) == 2 and file_ext[1] == '.md' and mtype == 'text/plain':
@@ -435,7 +435,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         schedule = get_schedule_by_name(meeting, get_person_by_email(owner), name)
 
     if schedule is None:
-        raise Http404("No meeting information for meeting {} owner {} schedule {} available".format(num, owner, name))
+        raise Http404(f"No meeting information for meeting {num} owner {owner} schedule {name} available")
 
     can_see, can_edit, secretariat = schedule_permissions(meeting, schedule, request.user)
 
@@ -1099,7 +1099,7 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
         schedule = get_schedule_by_name(meeting, get_person_by_email(owner), name)
 
     if schedule is None:
-        raise Http404("No meeting information for meeting {} owner {} schedule {} available".format(num, owner, name))
+        raise Http404(f"No meeting information for meeting {num} owner {owner} schedule {name} available")
 
     rooms = list(Room.objects.filter(meeting=meeting).prefetch_related('session_types').order_by('-capacity', 'name'))
     rooms.append(Room(name="(No location)"))
@@ -1351,7 +1351,7 @@ def edit_schedule_properties(request, num, owner, name):
     person   = get_person_by_email(owner)
     schedule = get_schedule_by_name(meeting, person, name)
     if schedule is None:
-        raise Http404("No agenda information for meeting {} owner {} schedule {} available".format(num, owner, name))
+        raise Http404(f"No agenda information for meeting {num} owner {owner} schedule {name} available")
 
     can_see, can_edit, secretariat = schedule_permissions(meeting, schedule, request.user)
 
@@ -2486,12 +2486,12 @@ def upload_session_agenda(request, session_id, num):
                     title = 'Agenda IETF{}: {}'.format(session.meeting.number, 
                                                          session.group.acronym) 
                     if not apply_to_all:
-                        name += '-{}'.format(session.docname_token())
+                        name += f'-{session.docname_token()}'
                         if sess_time:
                             title += ': {}'.format(sess_time.strftime("%a %H:%M"))
                 else:
-                    name = 'agenda-{}-{}'.format(session.meeting.number, session.docname_token())
-                    title = 'Agenda {}'.format(session.meeting.number)
+                    name = f'agenda-{session.meeting.number}-{session.docname_token()}'
+                    title = f'Agenda {session.meeting.number}'
                     if sess_time:
                         title += ': {}'.format(sess_time.strftime("%a %H:%M"))
                 if Document.objects.filter(name=name).exists():
@@ -2582,9 +2582,9 @@ def upload_session_slides(request, session_id, num, name):
                     name = 'slides-{}-{}'.format(session.meeting.number, 
                                              session.group.acronym) 
                     if not apply_to_all:
-                        name += '-{}'.format(session.docname_token())
+                        name += f'-{session.docname_token()}'
                 else:
-                    name = 'slides-{}-{}'.format(session.meeting.number, session.docname_token())
+                    name = f'slides-{session.meeting.number}-{session.docname_token()}'
                 name = name + '-' + slugify(title).replace('_', '-')[:128]
                 if Document.objects.filter(name=name).exists():
                    doc = Document.objects.get(name=name)
@@ -2668,9 +2668,9 @@ def propose_session_slides(request, session_id, num):
                 name = 'slides-{}-{}'.format(session.meeting.number, 
                                          session.group.acronym) 
                 if not apply_to_all:
-                    name += '-{}'.format(session.docname_token())
+                    name += f'-{session.docname_token()}'
             else:
-                name = 'slides-{}-{}'.format(session.meeting.number, session.docname_token())
+                name = f'slides-{session.meeting.number}-{session.docname_token()}'
             name = name + '-' + slugify(title).replace('_', '-')[:128]
             filename = '%s-ss%d%s'% (name, submission.id, ext)
             destination = open(os.path.join(settings.SLIDE_STAGING_PATH, filename),'wb+')
@@ -3670,39 +3670,39 @@ def api_set_session_video_url(request):
         number = request.POST.get('meeting')
         sessions = Session.objects.filter(meeting__number=number)
         if not sessions.exists():
-            return err(400, "No sessions found for meeting '{}'".format(number))
+            return err(400, f"No sessions found for meeting '{number}'")
         acronym = request.POST.get('group')
         sessions = sessions.filter(group__acronym=acronym)
         if not sessions.exists():
-            return err(400, "No sessions found in meeting '{}' for group '{}'".format(number, acronym))
+            return err(400, f"No sessions found in meeting '{number}' for group '{acronym}'")
         session_times = [ (s.official_timeslotassignment().timeslot.time, s.id, s) for s in sessions if s.official_timeslotassignment() ]
         session_times.sort()
         item = request.POST.get('item')
         if not item.isdigit():
-            return err(400, "Expected a numeric value for 'item', found '{}'".format(item))
+            return err(400, f"Expected a numeric value for 'item', found '{item}'")
         n = int(item)-1              # change 1-based to 0-based
         try:
             time, __, session = session_times[n]
         except IndexError:
-            return err(400, "No item '{}' found in list of sessions for group".format(item))
+            return err(400, f"No item '{item}' found in list of sessions for group")
         url = request.POST.get('url')
         try:
             URLValidator()(url)
         except ValidationError:
-            return err(400, "Invalid url value: '{}'".format(url))
+            return err(400, f"Invalid url value: '{url}'")
         recordings = [ (r.name, r.title, r) for r in session.recordings() if 'video' in r.title.lower() ]
         if recordings:
             r = recordings[-1][-1]
             if r.external_url != url:
                 e = DocEvent.objects.create(doc=r, rev=r.rev, type="added_comment", by=request.user.person,
-                    desc="External url changed from {} to {}".format(r.external_url, url))
+                    desc=f"External url changed from {r.external_url} to {url}")
                 r.external_url = url
                 r.save_with_history([e])
             else:
                 return err(400, "URL is the same")
         else:
             time = session.official_timeslotassignment().timeslot.time
-            title = 'Video recording for {} on {} at {}'.format(acronym, time.date(), time.time())
+            title = f'Video recording for {acronym} on {time.date()} at {time.time()}'
             create_recording(session, url, title=title, user=user)
     else:
         return err(405, "Method not allowed")
@@ -3732,26 +3732,26 @@ def api_upload_bluesheet(request):
         number = request.POST.get('meeting')
         sessions = Session.objects.filter(meeting__number=number)
         if not sessions.exists():
-            return err(400, "No sessions found for meeting '{}'".format(number))
+            return err(400, f"No sessions found for meeting '{number}'")
         acronym = request.POST.get('group')
         sessions = sessions.filter(group__acronym=acronym)
         if not sessions.exists():
-            return err(400, "No sessions found in meeting '{}' for group '{}'".format(number, acronym))
+            return err(400, f"No sessions found in meeting '{number}' for group '{acronym}'")
         session_times = [ (s.official_timeslotassignment().timeslot.time, s.id, s) for s in sessions if s.official_timeslotassignment() ]
         session_times.sort()
         item = request.POST.get('item')
         if not item.isdigit():
-            return err(400, "Expected a numeric value for 'item', found '{}'".format(item))
+            return err(400, f"Expected a numeric value for 'item', found '{item}'")
         n = int(item)-1              # change 1-based to 0-based
         try:
             time, __, session = session_times[n]
         except IndexError:
-            return err(400, "No item '{}' found in list of sessions for group".format(item))
+            return err(400, f"No item '{item}' found in list of sessions for group")
         bjson = request.POST.get('bluesheet')
         try:
             data = json.loads(bjson)
         except json.decoder.JSONDecodeError:
-            return err(400, "Invalid json value: '{}'".format(bjson))
+            return err(400, f"Invalid json value: '{bjson}'")
 
         text = render_to_string('meeting/bluesheet.txt', {
                 'data': data,

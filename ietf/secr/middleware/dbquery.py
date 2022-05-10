@@ -18,7 +18,7 @@ class QueryCountDebugMiddleware:
     """
     def process_response(self, request, response):
         #assert False, request.path
-        logger.debug('called middleware. {}:{}'.format(request.path,len(connection.queries)))
+        logger.debug(f'called middleware. {request.path}:{len(connection.queries)}')
         if response.status_code == 200:
             total_time = 0
             #for query in connection.queries:
@@ -31,5 +31,5 @@ class QueryCountDebugMiddleware:
                     # in milliseconds, not seconds.
             #        query_time = query.get('duration', 0) / 1000
             #    total_time += float(query_time)
-            logger.debug('{}: {} queries run, total {} seconds'.format(request.path,len(connection.queries), total_time))
+            logger.debug(f'{request.path}: {len(connection.queries)} queries run, total {total_time} seconds')
         return response

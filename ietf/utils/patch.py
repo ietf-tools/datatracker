@@ -855,7 +855,7 @@ class PatchSet:
       filename = self.findfile(old, new)
 
       if not filename:
-          warning("source/target file does not exist:\n  --- {}\n  +++ {}".format(old, new))
+          warning(f"source/target file does not exist:\n  --- {old}\n  +++ {new}")
           errors += 1
           continue
       if not isfile(filename):
@@ -1110,7 +1110,7 @@ class PatchSet:
       print('--- ' + p.source)
       print('+++ ' + p.target)
       for h in p.hunks:
-        print('@@ -{},{} +{},{} @@'.format(h.startsrc, h.linessrc, h.starttgt, h.linestgt))
+        print(f'@@ -{h.startsrc},{h.linessrc} +{h.starttgt},{h.linestgt} @@')
         for line in h.text:
           print(line.rstrip('\n'))
 

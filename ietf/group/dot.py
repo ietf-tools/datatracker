@@ -86,13 +86,13 @@ def get_node_styles(node, group):
             label = label[6:]
         try:
             t = label.index('-')
-            label = r"{}\n{}".format(label[:t], label[t+1:])
+            label = fr"{label[:t]}\n{label[t+1:]}"
         except:
             pass
     if node.group.acronym != 'none' and node.group != group:
-        label = "({}) {}".format(node.group.acronym, label)
+        label = f"({node.group.acronym}) {label}"
     if node.get_state('draft').slug == 'rfc':
-        label = "{}\\n({})".format(label, node.canonical_name())
+        label = f"{label}\\n({node.canonical_name()})"
     styles['label'] = '"%s"' % label
 
     return styles

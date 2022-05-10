@@ -91,7 +91,7 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
         return
     
     if not text:
-        text = "Stream changed to <b>{}</b> from {}".format(new_stream, old_stream)
+        text = f"Stream changed to <b>{new_stream}</b> from {old_stream}"
     text = strip_tags(text)
 
     send_mail(request, to, None,
@@ -106,7 +106,7 @@ def email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state):
     addrs = gather_address_lists('doc_pulled_from_rfc_queue',doc=doc)
     extra['Cc'] = addrs.cc
     send_mail(request, addrs.to , None,
-              "{} changed state from {} to {}".format(doc.name, prev_state.name, next_state.name),
+              f"{doc.name} changed state from {prev_state.name} to {next_state.name}",
               "doc/mail/pulled_from_rfc_queue_email.txt",
               dict(doc=doc,
                    prev_state=prev_state,
@@ -195,7 +195,7 @@ def generate_last_call_announcement(request, doc):
         group = "an individual submitter"
         expiration_date += datetime.timedelta(days=14)
     else:
-        group = "the {} {} ({})".format(doc.group.name, doc.group.type.name, doc.group.acronym)
+        group = f"the {doc.group.name} {doc.group.type.name} ({doc.group.acronym})"
 
     doc.filled_title = textwrap.fill(doc.title, width=70, subsequent_indent=" " * 3)
     
@@ -323,7 +323,7 @@ def generate_publication_request(request, doc):
     if doc.group and doc.group.acronym != "none":
         group_description = doc.group.name
         if doc.group.type_id not in ("ietf", "irtf", "iab",):
-            group_description += " {} ({})".format(doc.group.type, doc.group.acronym)
+            group_description += f" {doc.group.type} ({doc.group.acronym})"
 
     e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
     consensus = e.consensus if e else None
@@ -541,7 +541,7 @@ def email_intended_status_changed(request, doc, text):
     
     text = strip_tags(text)
     send_mail(request, to, None,
-              "Intended Status for {} changed to {}".format(doc.file_tag(),doc.intended_std_level),
+              f"Intended Status for {doc.file_tag()} changed to {doc.intended_std_level}",
               "doc/mail/intended_status_changed_email.txt",
               dict(text=text,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
@@ -585,7 +585,7 @@ def email_stream_state_changed(request, doc, prev_state, new_state, by, comment=
     state_type = (prev_state or new_state).type
 
     send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
-              "{} changed for {}".format(state_type.label, doc.name),
+              f"{state_type.label} changed for {doc.name}",
               'doc/mail/stream_state_changed_email.txt',
               dict(doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
@@ -623,7 +623,7 @@ def send_review_possibly_replaces_request(request, doc, submitter_info):
         cc.update(other_cc)
 
     send_mail(request, list(to), settings.DEFAULT_FROM_EMAIL,
-              'Review of suggested possible replacements for {}-{} needed'.format(doc.name, doc.rev),
+              f'Review of suggested possible replacements for {doc.name}-{doc.rev} needed',
               'doc/mail/review_possibly_replaces_request.txt', 
               dict(doc= doc,
                    submitter_info=submitter_info,

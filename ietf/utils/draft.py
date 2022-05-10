@@ -99,15 +99,15 @@ def _debug(string):
 
 # ----------------------------------------------------------------------
 def _note(string):
-    sys.stdout.write("{}: {}\n".format(program, string))
+    sys.stdout.write(f"{program}: {string}\n")
     
 # ----------------------------------------------------------------------
 def _warn(string):
-    sys.stderr.write("{}: Warning: {}\n".format(program, string))
+    sys.stderr.write(f"{program}: Warning: {string}\n")
     
 # ----------------------------------------------------------------------
 def _err(string):
-    sys.stderr.write("{}: Error: {}\n".format(program, string))
+    sys.stderr.write(f"{program}: Error: {string}\n")
     sys.exit(1)
 
 # ----------------------------------------------------------------------
@@ -626,7 +626,7 @@ class PlaintextDraft(Draft):
             if " " in first:
                 # if there's a middle part, let it be optional
                 first, middle = first.split(" ", 1)
-                first = "{}( +{})?".format(first, middle)
+                first = f"{first}( +{middle})?"
 
             # Double names (e.g., Jean-Michel) are abbreviated as two letter
             # connected by a dash -- let this expand appropriately
@@ -777,8 +777,8 @@ class PlaintextDraft(Draft):
         found_pos = []
         company_or_author = None
         for i in range(len(authors)):
-            _debug("1: authors[{}]: {}".format(i, authors[i]))
-            _debug("   company[{}]: {}".format(i, companies[i]))
+            _debug(f"1: authors[{i}]: {authors[i]}")
+            _debug(f"   company[{i}]: {companies[i]}")
             author = authors[i]
             if i+1 < len(authors):
                 company_or_author = authors[i+1]
@@ -794,7 +794,7 @@ class PlaintextDraft(Draft):
                 suffix = None
             if "," in author:
                 last, first = author.split(",",1)
-                author = "{} {}".format(first.strip(), last.strip())
+                author = f"{first.strip()} {last.strip()}"
             if not " " in author:
                 if "." in author:
                     first, last = author.rsplit(".", 1)
@@ -817,10 +817,10 @@ class PlaintextDraft(Draft):
                 prefix = prefix_match.group(1)
                 first = first[:-len(prefix)].strip()
                 last = prefix+" "+last
-            _debug("First, Last: '{}' '{}'".format(first, last))
+            _debug(f"First, Last: '{first}' '{last}'")
             for firstname, surname, casefixname in [ (first,last,last), (last,first,first), (first,last,last.upper()), (last,first,first.upper()), ]:
                 for left, right in [(firstname, casefixname), (casefixname, firstname)]:
-                    author = "{} {}".format(left, right)
+                    author = f"{left} {right}"
                     _debug("\nAuthors: "+str(authors))
                     _debug("Author: "+author)
 
@@ -842,7 +842,7 @@ class PlaintextDraft(Draft):
 
                                     start = j
                                     found_pos += [ start ]
-                                    _debug( " ==> start {}, normalized '{}'".format(start, form.strip()))
+                                    _debug( f" ==> start {start}, normalized '{form.strip()}'")
                                     # The author info could be formatted in multiple columns...
                                     columns = re.split("(    +|  and  )", form)
                                     # _debug( "Columns:" + str(columns))
@@ -866,7 +866,7 @@ class PlaintextDraft(Draft):
                                                 _debug( "End2:  %d '%s'" % (end, "".join(columns[col:col+2])))
                                             _debug( "Cut:   '%s'" % form[beg:end])
                                             author_match = re.search(authpat, columns[col].strip()).group(1)
-                                            _debug( "AuthMatch: '{}'".format(author_match))
+                                            _debug( f"AuthMatch: '{author_match}'")
                                             if re.search(r'\(.*\)$', author_match.strip()):
                                                 author_match = author_match.rsplit('(',1)[0].strip()
                                             if author_match in companies_seen:
@@ -906,7 +906,7 @@ class PlaintextDraft(Draft):
                                                         companies[i] = None
                                                         break
                                                 else:
-                                                    _warn("Author tuple doesn't match text in draft: {}, {}".format(authors[i], fullname))
+                                                    _warn(f"Author tuple doesn't match text in draft: {authors[i]}, {fullname}")
                                                     authors[i] = None
                                             break
                             except AssertionError:
@@ -922,9 +922,9 @@ class PlaintextDraft(Draft):
             # End for:
             if not authors[i]:
                 continue
-            _debug("2: authors[{}]: {}".format(i, authors[i]))
+            _debug(f"2: authors[{i}]: {authors[i]}")
             if start and col != None:
-                _debug("\n * {}".format(authors[i]))
+                _debug(f"\n * {authors[i]}")
                 nonblank_count = 0
                 blanklines = 0
                 email = None
@@ -1020,7 +1020,7 @@ class PlaintextDraft(Draft):
                                 country = column.strip() or None
                                 _debug(" Country: %s" % country)
 
-                    _debug("3: authors[{}]: {}".format(i, authors[i]))
+                    _debug(f"3: authors[{i}]: {authors[i]}")
 
                     emailmatch = re.search("[-A-Za-z0-9_.+]+@[-A-Za-z0-9_.]+", column)
                     if emailmatch and not "@" in author:
@@ -1039,19 +1039,19 @@ class PlaintextDraft(Draft):
         _debug('Company list: %s' % companies)
         for i in range(len(authors)):
             if authors[i]:
-                _debug('authors[{}]: {}'.format(i, authors[i]))
+                _debug(f'authors[{i}]: {authors[i]}')
                 company = ''
                 for k in range(i+1, len(companies)):
-                    _debug('companies[{}]: {}'.format(k, companies[k]))
+                    _debug(f'companies[{k}]: {companies[k]}')
                     if companies[k] != None:
                         company = companies[k]
                         break
                 authors[i] = authors[i] + ( company, )
 
         authors = [ a for a in authors if a ]
-        _debug(" * Final author tuples: {}".format(authors))
-        _debug(" * Final company list: {}".format(companies))
-        _debug(" * Final companies_seen: {}".format(companies_seen))
+        _debug(f" * Final author tuples: {authors}")
+        _debug(f" * Final company list: {companies}")
+        _debug(f" * Final companies_seen: {companies_seen}")
         self._author_info = authors        
         self._authors_with_firm = [ "%s <%s> (%s)"%(full,email,company) for full,first,middle,last,suffix,email,country,company in authors ] # pyflakes:ignore
         self._authors = [ "%s <%s>"%(full,email) if email else full for full,first,middle,last,suffix,email,country,company in authors ]
@@ -1256,7 +1256,7 @@ def getmeta(fn):
                         prev = "%02d" % (int(rev)-1)
                         fn = fn.replace("-%s."%rev, "-%s."%prev)
                         if os.path.exists(fn):
-                            _warn("Using rev {} instead: '{}'".format(prev, filename))
+                            _warn(f"Using rev {prev} instead: '{filename}'")
                             filename = fn
                             fn = os.path.basename(fn)
                             break
@@ -1393,7 +1393,7 @@ def _main(outfile=sys.stdout):
     try:
         opts, files = getopt.gnu_getopt(sys.argv[1:], "dhatTv", ["debug", "getauthors", "attribs", "attributes", "help", "timestamp", "notimestamp", "trace", "version",])
     except Exception as e:
-        print("{}: {}".format(program, e))
+        print(f"{program}: {e}")
         sys.exit(1)
 
     # parse options

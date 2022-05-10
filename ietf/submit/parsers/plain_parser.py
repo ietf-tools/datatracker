@@ -31,7 +31,7 @@ class PlainParser(FileParser):
                 'You probably have one or more non-ascii characters in your file.'  % charset
             )
         if self.fd.charset and charset != self.fd.charset:
-            self.parsed_info.add_error("Unexpected charset mismatch: upload: {}, libmagic: {}".format(self.fd.charset, charset))
+            self.parsed_info.add_error(f"Unexpected charset mismatch: upload: {self.fd.charset}, libmagic: {charset}")
 
 
     def parse_name(self):
@@ -56,7 +56,7 @@ class PlainParser(FileParser):
                 extra_chars = re.sub(r'[0-9a-z\-]', '', name)
                 if extra_chars:
                     if len(extra_chars) == 1:
-                        self.parsed_info.add_error(('The document name on the first page, "{}", contains a disallowed character with byte code: {} '.format(name, ord(extra_chars[0]))) +
+                        self.parsed_info.add_error((f'The document name on the first page, "{name}", contains a disallowed character with byte code: {ord(extra_chars[0])} ') +
                                                     '(see https://www.ietf.org/id-info/guidelines.html#naming for details).')
                     else:
                         self.parsed_info.add_error(('The document name on the first page, "{}", contains disallowed characters with byte codes: {} '.format(name, (', '.join([ str(ord(c)) for c in extra_chars] )))) +
@@ -65,7 +65,7 @@ class PlainParser(FileParser):
                 if match_revision:
                     self.parsed_info.metadata.rev = match_revision.group(1)
                 else:
-                    self.parsed_info.add_error('The name found on the first page of the document does not contain a revision: "{}"'.format(name))
+                    self.parsed_info.add_error(f'The name found on the first page of the document does not contain a revision: "{name}"')
                 name = re.sub(r'-\d+$', '', name)
                 self.parsed_info.metadata.name = name
                 return

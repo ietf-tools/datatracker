@@ -511,7 +511,7 @@ class IetfAuthTests(TestCase):
         chpw_url = urlreverse(ietf.ietfauth.views.change_password)
         prof_url = urlreverse(ietf.ietfauth.views.profile)
         login_url = urlreverse(ietf.ietfauth.views.login)
-        redir_url = '{}?next={}'.format(login_url, chpw_url)
+        redir_url = f'{login_url}?next={chpw_url}'
 
         # get without logging in
         r = self.client.get(chpw_url)
@@ -558,7 +558,7 @@ class IetfAuthTests(TestCase):
         chun_url = urlreverse(ietf.ietfauth.views.change_username)
         prof_url = urlreverse(ietf.ietfauth.views.profile)
         login_url = urlreverse(ietf.ietfauth.views.login)
-        redir_url = '{}?next={}'.format(login_url, chun_url)
+        redir_url = f'{login_url}?next={chun_url}'
 
         # get without logging in
         r = self.client.get(chun_url)

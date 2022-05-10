@@ -29,7 +29,7 @@ def forward(apps, schema_editor):
         for d in m.related_docs.all():
             count += 1;
             MessageDocs.objects.get_or_create(message=m, document_id=nameid[d.name])
-    sys.stderr.write(' {} MessageDocs objects created\n'.format(count))
+    sys.stderr.write(f' {count} MessageDocs objects created\n')
 
 def reverse(apps, schema_editor):
     pass

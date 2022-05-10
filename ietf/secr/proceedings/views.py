@@ -104,7 +104,7 @@ def get_next_slide_num(session):
     '''
 
     if session.meeting.type_id == 'ietf':
-        pattern = 'slides-{}-{}'.format(session.meeting.number,session.group.acronym)
+        pattern = f'slides-{session.meeting.number}-{session.group.acronym}'
     elif session.meeting.type_id == 'interim':
         pattern = 'slides-%s' % (session.meeting.number)
     slides = Document.objects.filter(type='slides',name__startswith=pattern)
@@ -205,7 +205,7 @@ def process_pdfs(request, meeting_num):
             warn_count += 1
 
     if warn_count:
-        messages.warning(request, '{} PDF files processed.  {} PowerPoint files still not converted.'.format(count, warn_count))
+        messages.warning(request, f'{count} PDF files processed.  {warn_count} PowerPoint files still not converted.')
     else:
         messages.success(request, '%s PDF files processed' % count)
     url = reverse('ietf.secr.proceedings.views.select', kwargs={'meeting_num':meeting_num})

@@ -152,7 +152,7 @@ def request_review(request, name):
                     state=None,
                 )
 
-                subject = "{} {} Review requested: {}".format(review_req.team.acronym, review_req.type.name, doc.name)
+                subject = f"{review_req.team.acronym} {review_req.type.name} Review requested: {doc.name}"
 
                 msg = subject
 
@@ -627,7 +627,7 @@ class CompleteReviewForm(forms.Form):
                 log.log(f'GET request timed out for [{url}]: {exc}')
                 raise forms.ValidationError("Trying to retrieve the URL resulted in a request timeout. Please provide a URL that can be retrieved.") from exc
             if r.status_code != 200:
-                raise forms.ValidationError("Trying to retrieve the URL resulted in status code {}: {}.  Please provide a URL that can be retrieved.".format(r.status_code, r.reason))
+                raise forms.ValidationError(f"Trying to retrieve the URL resulted in status code {r.status_code}: {r.reason}.  Please provide a URL that can be retrieved.")
         return url
 
     def clean(self):

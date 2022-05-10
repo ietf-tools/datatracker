@@ -94,7 +94,7 @@ def main(request):
                                 group=group)
 
             if not email.origin or email.origin == person.user.username:
-                email.origin = "role: {} {}".format(group.acronym, name.slug)
+                email.origin = f"role: {group.acronym} {name.slug}"
                 email.save()
 
             messages.success(request, 'New %s added successfully!' % name)

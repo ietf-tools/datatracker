@@ -117,7 +117,7 @@ def save_proceedings_material_doc(meeting, material_type, title, request, file=N
             doc=doc,
             rev=doc.rev,
             by=by,
-            desc="New version available: <b>{}-{}</b>".format(doc.name, doc.rev),
+            desc=f"New version available: <b>{doc.name}-{doc.rev}</b>",
         )
         events.append(e)
     elif (external_url is not None) and external_url != doc.external_url:

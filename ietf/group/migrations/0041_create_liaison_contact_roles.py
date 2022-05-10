@@ -31,7 +31,7 @@ def find_or_create_email(email_model, person_model, formatted_email, group):
         recreated_contact_email = email.address
     else:
         person_plain = email.person.plain if email.person.plain else plain_name(email.person.name)
-        recreated_contact_email = "{} <{}>".format(person_plain, email.address)
+        recreated_contact_email = f"{person_plain} <{email.address}>"
     if recreated_contact_email != formatted_email:
         print('>> Note: address "{}" is now "{}" ({})'.format(
             formatted_email,

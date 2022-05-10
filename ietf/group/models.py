@@ -286,7 +286,7 @@ class GroupURL(models.Model):
     url = models.URLField()
 
     def __str__(self):
-        return "{} ({})".format(self.url, self.name)
+        return f"{self.url} ({self.name})"
 
 class GroupExtResource(models.Model):
     group = ForeignKey(Group) # Should this really be to GroupInfo?
@@ -295,7 +295,7 @@ class GroupExtResource(models.Model):
     value = models.CharField(max_length=2083) # 2083 is the maximum legal URL length
     def __str__(self):
         priority = self.display_name or self.name.name
-        return "{} ({}) {}".format(priority, self.name.slug, self.value)
+        return f"{priority} ({self.name.slug}) {self.value}"
         
 class GroupMilestoneInfo(models.Model):
     group = ForeignKey(Group)
@@ -332,7 +332,7 @@ class GroupStateTransitions(models.Model):
     next_states = models.ManyToManyField('doc.State', related_name='previous_groupstatetransitions_states')
 
     def __str__(self):
-        return '{} "{}" -> {}'.format(self.group.acronym, self.state.name, [s.name for s in self.next_states.all()])
+        return f'{self.group.acronym} "{self.state.name}" -> {[s.name for s in self.next_states.all()]}'
 
 GROUP_EVENT_CHOICES = [
     ("changed_state", "Changed state"),
@@ -353,7 +353,7 @@ class GroupEvent(models.Model):
     desc = models.TextField()
 
     def __str__(self):
-        return "{} {} at {}".format(self.by.plain_name(), self.get_type_display().lower(), self.time)
+        return f"{self.by.plain_name()} {self.get_type_display().lower()} at {self.time}"
 
     class Meta:
         ordering = ['-time', 'id']
@@ -373,7 +373,7 @@ class Role(models.Model):
     person = ForeignKey(Person)
     email = ForeignKey(Email, help_text="Email address used by person for this role.")
     def __str__(self):
-        return "{} is {} in {}".format(self.person.plain_name(), self.name.name, self.group.acronym or self.group.name)
+        return f"{self.person.plain_name()} is {self.name.name} in {self.group.acronym or self.group.name}"
 
     def formatted_ascii_email(self):
         return email.utils.formataddr((self.person.plain_ascii(), self.email.address))
@@ -394,7 +394,7 @@ class RoleHistory(models.Model):
     person = ForeignKey(Person)
     email = ForeignKey(Email, help_text="Email address used by person for this role.")
     def __str__(self):
-        return "{} is {} in {}".format(self.person.plain_name(), self.name.name, self.group.acronym)
+        return f"{self.person.plain_name()} is {self.name.name} in {self.group.acronym}"
 
     class Meta:
         verbose_name_plural = "role histories"
@@ -423,7 +423,7 @@ This is an automated notification of a group name change:
     The datatracker
 """.format(current.acronym, current.name, instance.name)
             send_mail_text(None, to=addr, frm=None, subject="Group '%s' name change"%instance.acronym, txt=msg)
-            log.log("Sent notification email: {}: '{}' --> '{}' to {}".format(current.acronym, current.name, instance.name, addr))
+            log.log(f"Sent notification email: {current.acronym}: '{current.name}' --> '{instance.name}' to {addr}")
 
             
 ## Keep this code as a worked and tested example of sending signed notifies

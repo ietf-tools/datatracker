@@ -241,7 +241,7 @@ class Command(LoadCommand):
                 self.fixture_object_count += objects_in_fixture
             except Exception as e:
                 if not isinstance(e, CommandError):
-                    e.args = ("Problem installing fixture '{}': {}".format(fixture_file, e),)
+                    e.args = (f"Problem installing fixture '{fixture_file}': {e}",)
                 raise
             finally:
                 fixture.close()

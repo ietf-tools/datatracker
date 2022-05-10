@@ -23,7 +23,7 @@ class Redirect(models.Model):
     rest = models.CharField(max_length=100, blank=True)
     remove = models.CharField(max_length=50, blank=True)
     def __str__(self):
-        return "{} -> {}/{}".format(self.cgi, self.url, self.rest)
+        return f"{self.cgi} -> {self.url}/{self.rest}"
 
 class Suffix(models.Model):
     """This is a "rest" and "remove" (see Redirect class)
@@ -32,7 +32,7 @@ class Suffix(models.Model):
     rest = models.CharField(max_length=100, blank=True)
     remove = models.CharField(max_length=50, blank=True)
     def __str__(self):
-        return "-> {} - {}".format(self.rest, self.remove)
+        return f"-> {self.rest} - {self.remove}"
     class Meta:
         verbose_name_plural="Suffixes"
 
@@ -48,7 +48,7 @@ class Command(models.Model):
     script = ForeignKey(Redirect, related_name='commands', editable=False)
     suffix = ForeignKey(Suffix, null=True, blank=True)
     def __str__(self):
-        ret = "{}?command={}".format(self.script.cgi, self.command)
+        ret = f"{self.script.cgi}?command={self.command}"
         if self.suffix_id:
             ret += " %s" % (self.suffix)
         return ret

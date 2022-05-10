@@ -337,7 +337,7 @@ def maybe_patch_library(app_configs, **kwargs):
                     ))
         except OSError as e:
             errors.append(
-                checks.Warning("Could not apply patch from {}: {}".format(patch_file, e),
+                checks.Warning(f"Could not apply patch from {patch_file}: {e}",
                     hint="Check file permissions and locations",
                     id="datatracker.W0003",
                 )

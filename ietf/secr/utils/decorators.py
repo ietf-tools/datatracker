@@ -42,7 +42,7 @@ def check_permissions(func):
     """
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return HttpResponseRedirect('{}?{}={}'.format(settings.LOGIN_URL, REDIRECT_FIELD_NAME, urlquote(request.get_full_path())))
+            return HttpResponseRedirect(f'{settings.LOGIN_URL}?{REDIRECT_FIELD_NAME}={urlquote(request.get_full_path())}')
         
         session = None
         # short circuit.  secretariat user has full access

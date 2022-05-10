@@ -112,7 +112,7 @@ class Command(AppCommand):
                                 if rel_model_name == model_name:
                                     # foreign key to self class -- quote
                                     # the rmodel_name
-                                    rmodel_name="'{}.resources.{}Resource'".format(app.name, rel_model_name)
+                                    rmodel_name=f"'{app.name}.resources.{rel_model_name}Resource'"
                                 else:
                                     rmodel_name=rel_model_name+"Resource"
                                 foreign_keys.append(dict(
@@ -140,7 +140,7 @@ class Command(AppCommand):
                                 if rel_model_name == model_name:
                                     # foreign key to self class -- quote
                                     # the rmodel_name
-                                    rmodel_name="'{}.resources.{}Resource'".format(app.name, rel_model_name)
+                                    rmodel_name=f"'{app.name}.resources.{rel_model_name}Resource'"
                                 else:
                                     rmodel_name=rel_model_name+"Resource"
                                 m2m_keys.append(dict(

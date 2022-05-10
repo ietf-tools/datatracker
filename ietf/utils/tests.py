@@ -142,7 +142,7 @@ class TestSMTPServer(TestCase):
 def get_callbacks(urllist, namespace=None):
     callbacks = set()
     def qualified(name):
-        return '{}:{}'.format(namespace, name) if namespace else name
+        return f'{namespace}:{name}' if namespace else name
     for entry in urllist:
         if hasattr(entry, 'url_patterns'):
             callbacks.update(get_callbacks(entry.url_patterns, entry.namespace))
@@ -151,7 +151,7 @@ def get_callbacks(urllist, namespace=None):
                 callbacks.add(qualified(entry._callback_str))
             if (hasattr(entry, 'callback') and entry.callback and
                 type(entry.callback) in [types.FunctionType, types.MethodType ]):
-                    callbacks.add(qualified("{}.{}".format(entry.callback.__module__, entry.callback.__name__)))
+                    callbacks.add(qualified(f"{entry.callback.__module__}.{entry.callback.__name__}"))
             if hasattr(entry, 'name') and entry.name:
                 callbacks.add(qualified(entry.name))
             if hasattr(entry, 'lookup_str') and entry.lookup_str:
@@ -194,7 +194,7 @@ class TemplateChecksTestCase(TestCase):
                 except Exception as e:
                     errors.append((path, e))
         if errors:
-            messages = [ "Parsing template '{}' failed with error: {}".format(path, ex) for (path, ex) in errors ]
+            messages = [ f"Parsing template '{path}' failed with error: {ex}" for (path, ex) in errors ]
             raise self.failureException("Template parsing failed for {} templates:\n  {}".format(len(errors), "\n  ".join(messages)))
 
     def apply_template_test(self, func, node_type, msg, *args, **kwargs):

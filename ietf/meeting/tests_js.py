@@ -1095,7 +1095,7 @@ class AgendaTests(IetfSeleniumTestCase):
         self.do_agenda_view_filter_test('?show=ames,mars&hide=%s' % area.acronym, [])
         
         # Area shown
-        self.do_agenda_view_filter_test('?show={}&hide={}'.format(area.acronym, area.acronym), [])
+        self.do_agenda_view_filter_test(f'?show={area.acronym}&hide={area.acronym}', [])
 
         # Type shown
         self.do_agenda_view_filter_test('?show=plenary,regular&hide=%s' % area.acronym, ['ietf'])
@@ -1218,10 +1218,10 @@ class AgendaTests(IetfSeleniumTestCase):
                 item_div = None
 
             if visible_groups is None or item.session.group.acronym in visible_groups:
-                self.assertIsNotNone(item_div, 'No weekview entry for "{}" ({})'.format(label, item.slug()))
-                self.assertTrue(item_div.is_displayed(), 'Entry for "{} ({})" is not displayed but should be'.format(label, item.slug()))
+                self.assertIsNotNone(item_div, f'No weekview entry for "{label}" ({item.slug()})')
+                self.assertTrue(item_div.is_displayed(), f'Entry for "{label} ({item.slug()})" is not displayed but should be')
             else:
-                self.assertIsNone(item_div, 'Unexpected weekview entry for "{}" ({})'.format(label, item.slug()))
+                self.assertIsNone(item_div, f'Unexpected weekview entry for "{label}" ({item.slug()})')
 
     @staticmethod
     def open_agenda_filter_ui(wait):
@@ -1421,7 +1421,7 @@ class AgendaTests(IetfSeleniumTestCase):
         self.scroll_to_element(group_button)
         group_button.click()  # click!
 
-        expected_url = '{}?show={}'.format(url, group_acronym)
+        expected_url = f'{url}?show={group_acronym}'
         WebDriverWait(self.driver, 2).until(expected_conditions.url_to_be(expected_url))
         # no assertion here - if WebDriverWait raises an exception, the test will fail.
         # We separately test whether this URL will filter correctly.
@@ -1495,7 +1495,7 @@ class AgendaTests(IetfSeleniumTestCase):
         r = self.client.get(ics_url + filter_string)
         # verify that all expected sessions are found
         expected_uids = [
-            'ietf-{}-{}-{}'.format(session.meeting.number, timeslot.pk, session.group.acronym) 
+            f'ietf-{session.meeting.number}-{timeslot.pk}-{session.group.acronym}' 
             for (session, timeslot) in sessions
         ]
         assert_ical_response_is_valid(self, r, 
@@ -2197,7 +2197,7 @@ class InterimTests(IetfSeleniumTestCase):
         ))
         # The UID formats should match those in the upcoming.ics template
         expected_uids = [
-            'ietf-{}-{}'.format(item.session.meeting.number, item.timeslot.pk)
+            f'ietf-{item.session.meeting.number}-{item.timeslot.pk}'
             for item in expected_assignments
         ] + [
             'ietf-%s' % (ietf.number) for ietf in expected_ietfs
@@ -2277,7 +2277,7 @@ class InterimTests(IetfSeleniumTestCase):
         self.do_upcoming_view_filter_test('?hide=%s' % area.acronym, ietf_meetings)
 
         # With area shown
-        self.do_upcoming_view_filter_test('?show={}&hide={}'.format(area.acronym, area.acronym),
+        self.do_upcoming_view_filter_test(f'?show={area.acronym}&hide={area.acronym}',
                                           ietf_meetings)
 
         # With group shown
@@ -2318,7 +2318,7 @@ class InterimTests(IetfSeleniumTestCase):
                 end = ts.utc_end_time().astimezone(zone).strftime('%H:%M')
                 meeting_link = self.driver.find_element(By.LINK_TEXT, session.meeting.number)
                 time_td = meeting_link.find_element(By.XPATH, '../../td[contains(@class, "session-time")]')
-                self.assertIn('{}-{}'.format(start, end), time_td.text)
+                self.assertIn(f'{start}-{end}', time_td.text)
 
         def _assert_ietf_tz_correct(meetings, tz):
             zone = pytz.timezone(tz)
@@ -2337,7 +2337,7 @@ class InterimTests(IetfSeleniumTestCase):
                 end = end_dt.astimezone(zone).strftime('%Y-%m-%d')
                 meeting_link = self.driver.find_element(By.LINK_TEXT, "IETF " + meeting.number)
                 time_td = meeting_link.find_element(By.XPATH, '../../td[contains(@class, "meeting-time")]')
-                self.assertIn('{} to {}'.format(start, end), time_td.text)
+                self.assertIn(f'{start} to {end}', time_td.text)
 
         sessions = [m.session_set.first() for m in self.displayed_interims()]
         self.assertGreater(len(sessions), 0)

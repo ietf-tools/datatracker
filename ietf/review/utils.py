@@ -428,7 +428,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
 
     email_review_request_change(
         request, review_req,
-        "{} {} assignment: {}".format(review_req.team.acronym.capitalize(), review_req.type.name,review_req.doc.name),
+        f"{review_req.team.acronym.capitalize()} {review_req.type.name} assignment: {review_req.doc.name}",
         msg ,
         by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=False)
 
@@ -696,7 +696,7 @@ def get_default_filter_re(person):
         person = Person.objects.get(id=person)
     groups_to_avoid =  [ r.group for r in person.role_set.all() if r.name in r.group.features.groupman_roles and r.group.features.acts_like_wg ]
     if not groups_to_avoid:
-        return '^draft-{}-.*$'.format( person.last_name().lower())
+        return f'^draft-{person.last_name().lower()}-.*$'
     else:
         return '^draft-({}|{})-.*$'.format( person.last_name().lower(), '|'.join(['ietf-%s' % g.acronym for g in groups_to_avoid]))
 

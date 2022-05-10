@@ -79,7 +79,7 @@ def change_state(request, name, option=None):
                         pos.type = "changed_ballot_position"
                         pos.balloter = login
                         pos.pos_id = "yes"
-                        pos.desc = "[Ballot Position Update] New position, {}, has been recorded for {}".format(pos.pos.name, pos.balloter.plain_name())
+                        pos.desc = f"[Ballot Position Update] New position, {pos.pos.name}, has been recorded for {pos.balloter.plain_name()}"
                         pos.save()
 
                     send_status_change_eval_email(request,status_change)
@@ -146,7 +146,7 @@ class UploadForm(forms.Form):
         return get_cleaned_text_file_content(self.cleaned_data["txt"])
 
     def save(self, doc):
-       filename = os.path.join(settings.STATUS_CHANGE_PATH, '{}-{}.txt'.format(doc.canonical_name(), doc.rev))
+       filename = os.path.join(settings.STATUS_CHANGE_PATH, f'{doc.canonical_name()}-{doc.rev}.txt')
        with open(filename, 'w', encoding='utf-8') as destination:
            if self.cleaned_data['txt']:
                destination.write(self.cleaned_data['txt'])
@@ -160,7 +160,7 @@ def submit(request, name):
 
     login = request.user.person
 
-    path = os.path.join(settings.STATUS_CHANGE_PATH, '{}-{}.txt'.format(doc.canonical_name(), doc.rev))
+    path = os.path.join(settings.STATUS_CHANGE_PATH, f'{doc.canonical_name()}-{doc.rev}.txt')
     not_uploaded_yet = doc.rev == "00" and not os.path.exists(path)
 
     if not_uploaded_yet:
@@ -177,7 +177,7 @@ def submit(request, name):
 
                 events = []
                 e = NewRevisionDocEvent(doc=doc, by=login, type="new_revision")
-                e.desc = "New version available: <b>{}-{}.txt</b>".format(doc.canonical_name(), doc.rev)
+                e.desc = f"New version available: <b>{doc.canonical_name()}-{doc.rev}.txt</b>"
                 e.rev = doc.rev
                 e.save()
                 events.append(e)
@@ -209,9 +209,9 @@ def submit(request, name):
                                                 dict(),
                                               )
         else:
-            filename = os.path.join(settings.STATUS_CHANGE_PATH, '{}-{}.txt'.format(doc.canonical_name(), doc.rev))
+            filename = os.path.join(settings.STATUS_CHANGE_PATH, f'{doc.canonical_name()}-{doc.rev}.txt')
             try:
-                with open(filename, 'r') as f:
+                with open(filename) as f:
                     init["content"] = f.read()
             except OSError:
                 pass
@@ -251,7 +251,7 @@ def edit_title(request, name):
         init = { "title" : status_change.title }
         form = ChangeTitleForm(initial=init)
 
-    titletext = '{}-{}.txt'.format(status_change.canonical_name(),status_change.rev)
+    titletext = f'{status_change.canonical_name()}-{status_change.rev}.txt'
     return render(request, 'doc/change_title.html',
                               {'form': form,
                                'doc': status_change,
@@ -282,7 +282,7 @@ def edit_ad(request, name):
         init = { "ad" : status_change.ad_id }
         form = AdForm(initial=init)
 
-    titletext = '{}-{}.txt'.format(status_change.canonical_name(),status_change.rev)
+    titletext = f'{status_change.canonical_name()}-{status_change.rev}.txt'
     return render(request, 'doc/change_ad.html',
                               {'form': form,
                                'doc': status_change,

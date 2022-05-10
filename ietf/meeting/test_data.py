@@ -42,7 +42,7 @@ def make_interim_meeting(group,date,status='sched'):
     # agenda
     name = "agenda-{}-{}-{}".format(meeting.number, group.acronym, "01")
     rev = '00'
-    file = "{}-{}.txt".format(name, rev)
+    file = f"{name}-{rev}.txt"
     doc = DocumentFactory.create(name=name, type_id='agenda', title="Agenda",
         uploaded_filename=file, group=group, rev=rev, states=[('draft','active')])
     pres = SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
@@ -50,7 +50,7 @@ def make_interim_meeting(group,date,status='sched'):
     # minutes
     name = "minutes-{}-{}".format(meeting.number, time.strftime("%Y%m%d%H%M"))
     rev = '00'
-    file = "{}-{}.txt".format(name, rev)
+    file = f"{name}-{rev}.txt"
     doc = DocumentFactory.create(name=name, type_id='minutes', title="Minutes",
         uploaded_filename=file, group=group, rev=rev, states=[('draft','active')])
     pres = SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
@@ -58,9 +58,9 @@ def make_interim_meeting(group,date,status='sched'):
     # slides
     title = "Slideshow"
 
-    name = "slides-{}-sessa-{}".format(meeting.number, slugify(title))
+    name = f"slides-{meeting.number}-sessa-{slugify(title)}"
     rev = '00'
-    file = "{}-{}.txt".format(name, rev)
+    file = f"{name}-{rev}.txt"
     doc = DocumentFactory.create(name=name, type_id='slides', title=title,
         uploaded_filename=file, group=group, rev=rev,
         states=[('slides','active'), ('reuse_policy', 'single')])

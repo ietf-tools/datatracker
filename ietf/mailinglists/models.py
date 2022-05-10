@@ -23,7 +23,7 @@ class Subscribed(models.Model):
     email = models.CharField(max_length=128, validators=[validate_email])
     lists = models.ManyToManyField(List)
     def __str__(self):
-        return "<Subscribed: {} at {}>".format(self.email, self.time)
+        return f"<Subscribed: {self.email} at {self.time}>"
     class Meta:
         verbose_name_plural = "Subscribed"
 
@@ -32,7 +32,7 @@ class Whitelisted(models.Model):
     email = models.CharField("Email address", max_length=64, validators=[validate_email])
     by = ForeignKey(Person)
     def __str__(self):
-        return "<Whitelisted: {} at {}>".format(self.email, self.time)
+        return f"<Whitelisted: {self.email} at {self.time}>"
     class Meta:
         verbose_name_plural = "Whitelisted"
 

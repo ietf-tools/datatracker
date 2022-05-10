@@ -54,7 +54,7 @@ def get_charter_text(group):
         if (h.rev > c.rev and not (c_appr and not h_appr)) or (h_appr and not c_appr):
             c = h
 
-    filename = os.path.join(c.get_file_path(), "{}-{}.txt".format(c.canonical_name(), c.rev))
+    filename = os.path.join(c.get_file_path(), f"{c.canonical_name()}-{c.rev}.txt")
     try:
         with open(filename, 'rb') as f:
             text = f.read()
@@ -319,7 +319,7 @@ def update_role_set(group, role_name, new_value, by):
 
         for e in new:
             if not e.origin or (e.person.user and e.origin == e.person.user.username):
-                e.origin = "role: {} {}".format(group.acronym, role_name.slug)
+                e.origin = f"role: {group.acronym} {role_name.slug}"
                 e.save()
 
     return added, removed

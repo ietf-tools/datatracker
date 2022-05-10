@@ -106,7 +106,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
                 else:
                     d.expirable = False
         else:
-            d.search_heading = "{}".format(d.type)
+            d.search_heading = f"{d.type}"
             d.expirable = False
 
         if d.get_state_slug() != "rfc":

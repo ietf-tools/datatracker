@@ -62,11 +62,11 @@ class Command(BaseCommand):
                 email = Email.objects.filter(address=a).first()
                 if email:
                     if email.person_id:
-                        self.stdout.write('Would deactivate <{}> (person {})\n'.format(a, email.person.plain_ascii()))
+                        self.stdout.write(f'Would deactivate <{a}> (person {email.person.plain_ascii()})\n')
                     else:
-                        self.stderr.write('No person is associated with <{}>\n'.format(a))
+                        self.stderr.write(f'No person is associated with <{a}>\n')
                 else:
-                    self.stderr.write('Address not found: <{}>\n'.format(a))
+                    self.stderr.write(f'Address not found: <{a}>\n')
                     with open('./failed', 'a') as failed:
                         failed.write(messages[a].as_string(unixfrom=True))
                         failed.write('\n')
@@ -88,10 +88,10 @@ class Command(BaseCommand):
                     if email is None:
                         not_found.append(a)
                     elif not email.person_id:
-                        self.stderr.write("Could not deactivate <{}>: Null person record\n".format(a))
+                        self.stderr.write(f"Could not deactivate <{a}>: Null person record\n")
                     else:
-                        self.stderr.write("Unexpected error when processing <{}>: Quitting.".format(a))
+                        self.stderr.write(f"Unexpected error when processing <{a}>: Quitting.")
                         sys.exit(1)
             for a in not_found:
-                self.stderr.write('Address not found: <{}>\n'.format(a))
+                self.stderr.write(f'Address not found: <{a}>\n')
                         

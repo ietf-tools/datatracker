@@ -72,20 +72,20 @@ class UploadMaterialForm(forms.Form):
             del self.fields['abstract']
 
     def _default_name(self):
-        return "{}-{}-".format(self.doc_type.slug, self.group.acronym)
+        return f"{self.doc_type.slug}-{self.group.acronym}-"
 
     def clean_name(self):
         name = self.cleaned_data["name"].strip().rstrip("-")
 
         check_common_doc_name_rules(name)
 
-        if not re.search("^{}-{}-[a-z0-9]+".format(self.doc_type.slug, self.group.acronym), name):
-            raise forms.ValidationError("The name must start with {}-{}- followed by descriptive dash-separated words.".format(self.doc_type.slug, self.group.acronym))
+        if not re.search(f"^{self.doc_type.slug}-{self.group.acronym}-[a-z0-9]+", name):
+            raise forms.ValidationError(f"The name must start with {self.doc_type.slug}-{self.group.acronym}- followed by descriptive dash-separated words.")
 
         existing = Document.objects.filter(type=self.doc_type, name=name)
         if existing:
             url = urlreverse('ietf.doc.views_material.edit_material', kwargs={ 'name': existing[0].name, 'action': 'revise' })
-            raise forms.ValidationError(mark_safe("Can't upload: {} with name {} already exists. Choose another title and name for what you're uploading or <a href=\"{}\">revise the existing {}</a>.".format(self.doc_type.name, name, url, name)))
+            raise forms.ValidationError(mark_safe(f"Can't upload: {self.doc_type.name} with name {name} already exists. Choose another title and name for what you're uploading or <a href=\"{url}\">revise the existing {name}</a>."))
 
         return name
 
@@ -162,7 +162,7 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
             if prev_rev != doc.rev:
                 e = NewRevisionDocEvent(type="new_revision", doc=doc, rev=doc.rev)
                 e.by = request.user.person
-                e.desc = "New version available: <b>{}-{}</b>".format(doc.name, doc.rev)
+                e.desc = f"New version available: <b>{doc.name}-{doc.rev}</b>"
                 e.save()
                 events.append(e)
 

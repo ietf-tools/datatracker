@@ -30,7 +30,7 @@ def charter_name_for_group(group):
     else:
         top_org = "ietf"
 
-    return "charter-{}-{}".format(top_org, group.acronym)
+    return f"charter-{top_org}-{group.acronym}"
 
 def split_charter_name(charter_name):
     top_org, group_acronym = charter_name.split("-", 2)[1:]
@@ -58,9 +58,9 @@ def next_approved_revision(rev):
     return "%#02d" % (int(m.group('major')) + 1)
 
 def read_charter_text(doc):
-    filename = os.path.join(settings.CHARTER_PATH, '{}-{}.txt'.format(doc.canonical_name(), doc.rev))
+    filename = os.path.join(settings.CHARTER_PATH, f'{doc.canonical_name()}-{doc.rev}.txt')
     try:
-        with open(filename, 'r') as f:
+        with open(filename) as f:
             return f.read()
     except OSError:
         return "Error: couldn't read charter text"
@@ -88,16 +88,16 @@ def change_group_state_after_charter_approval(group, by):
 def fix_charter_revision_after_approval(charter, by):
     # according to spec, 00-02 becomes 01, so copy file and record new revision
     try:
-        old = os.path.join(charter.get_file_path(), '{}-{}.txt'.format(charter.canonical_name(), charter.rev))
-        new = os.path.join(charter.get_file_path(), '{}-{}.txt'.format(charter.canonical_name(), next_approved_revision(charter.rev)))
+        old = os.path.join(charter.get_file_path(), f'{charter.canonical_name()}-{charter.rev}.txt')
+        new = os.path.join(charter.get_file_path(), f'{charter.canonical_name()}-{next_approved_revision(charter.rev)}.txt')
         shutil.copy(old, new)
     except OSError:
-        log("There was an error copying {} to {}".format(old, new))
+        log(f"There was an error copying {old} to {new}")
 
     events = []
     e = NewRevisionDocEvent(doc=charter, by=by, type="new_revision")
     e.rev = next_approved_revision(charter.rev)
-    e.desc = "New version available: <b>{}-{}.txt</b>".format(charter.canonical_name(), e.rev)
+    e.desc = f"New version available: <b>{charter.canonical_name()}-{e.rev}.txt</b>"
     e.save()
     events.append(e)
 

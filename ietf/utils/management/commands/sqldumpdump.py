@@ -85,7 +85,7 @@ class Command(DumpdataCommand):
                     lc += 1
                     line = line.strip()
                     if line and line[0] in ['<', '>']:
-                        self.err("Input file '{}' looks like a diff file.  Please provide just the SQL 'INSERT' statements for the records to be dumped.".format(fn))
+                        self.err(f"Input file '{fn}' looks like a diff file.  Please provide just the SQL 'INSERT' statements for the records to be dumped.")
                     if prev:
                         line = prev + line
                     prev = None

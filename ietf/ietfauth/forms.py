@@ -173,7 +173,7 @@ class NewEmailForm(forms.Form):
         if email:
             existing = Email.objects.filter(address=email).first()
             if existing:
-                raise forms.ValidationError("Email address '{}' is already assigned to account '{}' ({})".format(existing, existing.person and existing.person.user, existing.person))
+                raise forms.ValidationError(f"Email address '{existing}' is already assigned to account '{existing.person and existing.person.user}' ({existing.person})")
 
         for pat in settings.EXCLUDED_PERSONAL_EMAIL_REGEX_PATTERNS:
             if re.search(pat, email):
@@ -189,8 +189,8 @@ class RoleEmailForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         f = self.fields["email"]
-        f.label = "{} in {}".format(role.name, role.group.acronym.upper())
-        f.help_text = "Email to use for <i>{}</i> role in {}".format(role.name, role.group.name)
+        f.label = f"{role.name} in {role.group.acronym.upper()}"
+        f.help_text = f"Email to use for <i>{role.name}</i> role in {role.group.name}"
         f.queryset = f.queryset.filter(models.Q(person=role.person_id) | models.Q(role=role)).distinct()
         f.initial = role.email_id
         f.choices = [(e.pk, e.address if e.active else f"({e.address})") for e in f.queryset]

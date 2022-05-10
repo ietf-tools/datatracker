@@ -213,7 +213,7 @@ class RelatedLiaisonStatement(models.Model):
     relationship = ForeignKey(DocRelationshipName)
 
     def __str__(self):
-        return "{} {} {}".format(self.source.title, self.relationship.name.lower(), self.target.title)
+        return f"{self.source.title} {self.relationship.name.lower()} {self.target.title}"
 
 
 class LiaisonStatementEvent(models.Model):
@@ -224,7 +224,7 @@ class LiaisonStatementEvent(models.Model):
     desc = models.TextField()
 
     def __str__(self):
-        return "{} {} by {} at {}".format(self.statement.title, self.type.slug, self.by.plain_name(), self.time)
+        return f"{self.statement.title} {self.type.slug} by {self.by.plain_name()} at {self.time}"
 
     class Meta:
         ordering = ['-time', '-id']

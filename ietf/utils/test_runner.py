@@ -425,12 +425,12 @@ def save_test_results(failures, test_labels):
     tfile = open(os.path.join(topdir,".testresult"), "a", encoding='utf-8')
     timestr = time.strftime("%Y-%m-%d %H:%M:%S")
     if failures:
-        tfile.write("{} FAILED (failures={})\n".format(timestr, failures))
+        tfile.write(f"{timestr} FAILED (failures={failures})\n")
     else:
         if test_labels:
-            tfile.write("{} SUCCESS (tests={})\n".format(timestr, test_labels))
+            tfile.write(f"{timestr} SUCCESS (tests={test_labels})\n")
         else:
-            tfile.write("{} OK\n".format(timestr))
+            tfile.write(f"{timestr} OK\n")
     tfile.close()
 
 def set_coverage_checking(flag=True):
@@ -502,7 +502,7 @@ class CoverageTest(unittest.TestCase):
                 # Permit 0.02% variation in results -- otherwise small code changes become a pain
                 fudge_factor = 0.0002
                 self.assertLessEqual(len(test_missing), len(master_missing),
-                    msg = "New {} without test coverage since {}: {}".format(test, latest_coverage_version, list(set(test_missing) - set(master_missing))))
+                    msg = f"New {test} without test coverage since {latest_coverage_version}: {list(set(test_missing) - set(master_missing))}")
                 self.assertGreaterEqual(test_coverage, master_coverage - fudge_factor,
                     msg = "The %s coverage percentage is now lower (%.2f%%) than for version %s (%.2f%%)" %
                         ( test, test_coverage*100, latest_coverage_version, master_coverage*100, ))
@@ -736,7 +736,7 @@ class IetfTestRunner(DiscoverRunner):
         #
         print("     Datatracker {} test suite, {}:".format(ietf.__version__, time.strftime("%d %B %Y %H:%M:%S %Z")))
         print("     Python %s." % sys.version.replace('\n', ' '))
-        print("     Django {}, settings '{}'".format(django.get_version(), settings.SETTINGS_MODULE))
+        print(f"     Django {django.get_version()}, settings '{settings.SETTINGS_MODULE}'")
         
         settings.TEMPLATES[0]['BACKEND'] = 'ietf.utils.test_runner.ValidatingTemplates'
         if self.check_coverage:

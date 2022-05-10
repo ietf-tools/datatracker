@@ -18,7 +18,7 @@ class GroupChangesFeed(Feed):
         return Group.objects.get(acronym=acronym)
 
     def title(self, obj):
-        return "Changes for {} {}".format(obj.acronym, obj.type)
+        return f"Changes for {obj.acronym} {obj.type}"
 
     def link(self, obj):
         if not obj:
@@ -47,7 +47,7 @@ class GroupChangesFeed(Feed):
         return obj.time
 
     def item_title(self, obj):
-        title = "{} - {}".format(truncatewords(strip_tags(obj.desc), 10), obj.by)
+        title = f"{truncatewords(strip_tags(obj.desc), 10)} - {obj.by}"
         if isinstance(obj, DocEvent):
             title = "Chartering: %s" % title
 

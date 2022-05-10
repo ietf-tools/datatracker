@@ -307,7 +307,7 @@ class Meeting(models.Model):
         return ConstraintName.objects.filter(slug__in=slugs)
 
     def base_url(self):
-        return "/meeting/{}".format(self.number)
+        return f"/meeting/{self.number}"
 
     def build_timeslices(self):
         """Get unique day/time/timeslot data for meeting
@@ -428,7 +428,7 @@ class Room(models.Model):
     # end floorplan-related stuff
 
     def __str__(self):
-        return "{} size: {}".format(self.name, self.capacity)
+        return f"{self.name} size: {self.capacity}"
 
     def delete_timeslots(self):
         for ts in self.timeslot_set.all():
@@ -505,7 +505,7 @@ class UrlResource(models.Model):
 
 def floorplan_path(instance, filename):
     root, ext = os.path.splitext(filename)
-    return "{}/floorplan-{}-{}{}".format(settings.FLOORPLAN_MEDIA_DIR, instance.meeting.number, xslugify(instance.name), ext)
+    return f"{settings.FLOORPLAN_MEDIA_DIR}/floorplan-{instance.meeting.number}-{xslugify(instance.name)}{ext}"
 
 class FloorPlan(models.Model):
     name    = models.CharField(max_length=255)
@@ -519,7 +519,7 @@ class FloorPlan(models.Model):
         ordering = ['-id',]
     #
     def __str__(self):
-        return 'floorplan-{}-{}'.format(self.meeting.number, xslugify(self.name))
+        return f'floorplan-{self.meeting.number}-{xslugify(self.name)}'
 
 # === Schedules, Sessions, Timeslots and Assignments ===========================
 
@@ -715,10 +715,10 @@ class Schedule(models.Model):
                           limit_choices_to={'base': None}) # prevent the inheritance from being more than one layer deep (no recursion)
 
     def __str__(self):
-        return "{}:{}({})".format(self.meeting, self.name, self.owner)
+        return f"{self.meeting}:{self.name}({self.owner})"
 
     def base_url(self):
-        return "/meeting/{}/agenda/{}/{}".format(self.meeting.number, self.owner_email(), self.name)
+        return f"/meeting/{self.meeting.number}/agenda/{self.owner_email()}/{self.name}"
 
     # temporary property to pacify the places where Schedule.assignments is used
 #    @property
@@ -794,7 +794,7 @@ class SchedTimeSessAssignment(models.Model):
         ordering = ["timeslot__time", "timeslot__type__slug", "session__group__parent__name", "session__group__acronym", "session__name", ]
 
     def __str__(self):
-        return "{} [{}<->{}]".format(self.schedule, self.session, self.timeslot)
+        return f"{self.schedule} [{self.session}<->{self.timeslot}]"
 
     @property
     def room_name(self):
@@ -900,7 +900,7 @@ class Constraint(models.Model):
     active_status = None
 
     def __str__(self):
-        return "{} {} target={} person={}".format(self.source, self.name.name.lower(), self.target, self.person)
+        return f"{self.source} {self.name.name.lower()} target={self.target} person={self.person}"
 
     def brief_display(self):
         if self.name.slug == "wg_adjacent":
@@ -911,7 +911,7 @@ class Constraint(models.Model):
             timeranges_str = ", ".join([t.desc for t in self.timeranges.all()])
             return "Can't meet %s" % timeranges_str
         elif self.target and self.person:
-            return "{} ; {}".format(self.target.acronym, self.person)
+            return f"{self.target.acronym} ; {self.person}"
         elif self.target and not self.person:
             return "%s " % (self.target.acronym)
         elif not self.target and self.person:
@@ -930,7 +930,7 @@ class SessionPresentation(models.Model):
         unique_together = (('session', 'document'),)
 
     def __str__(self):
-        return "{} -> {}-{}".format(self.session, self.document.name, self.rev)
+        return f"{self.session} -> {self.document.name}-{self.rev}"
 
 constraint_cache_uses = 0
 constraint_cache_initials = 0
@@ -1183,7 +1183,7 @@ class Session(models.Model):
             ss = self.timeslotassignments.filter(schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting.schedule else None]).order_by('timeslot__time')
             if ss:
                 ss0name = ','.join(x.timeslot.time.strftime("%a-%H%M") for x in ss)
-        return "{}: {} {} {}".format(self.meeting, self.group.acronym, self.name, ss0name)
+        return f"{self.meeting}: {self.group.acronym} {self.name} {ss0name}"
 
     @property
     def short_name(self):
@@ -1214,7 +1214,7 @@ class Session(models.Model):
             if index < 26:
                 token = 'sess%s' % (string.ascii_lowercase[index])
             else:
-                token = 'sess{}{}'.format(string.ascii_lowercase[index//26],string.ascii_lowercase[index%26])
+                token = f'sess{string.ascii_lowercase[index//26]}{string.ascii_lowercase[index%26]}'
             return token
         return None
         
@@ -1252,7 +1252,7 @@ class Session(models.Model):
                 return ""
 
             # FIXME: uploaded_filename should be replaced with a function that computes filenames when they are of a fixed schema and not uploaded names
-            self._agenda_file = "{}/agenda/{}".format(self.meeting.number, agenda.uploaded_filename)
+            self._agenda_file = f"{self.meeting.number}/agenda/{agenda.uploaded_filename}"
             
         return self._agenda_file
 
@@ -1278,7 +1278,7 @@ class SchedulingEvent(models.Model):
     by = ForeignKey(Person)
 
     def __str__(self):
-        return '{} : {} : {} : {}'.format(self.session, self.status, self.time, self.by)
+        return f'{self.session} : {self.status} : {self.time} : {self.by}'
 
 class ImportantDate(models.Model):
     meeting = ForeignKey(Meeting)
@@ -1288,7 +1288,7 @@ class ImportantDate(models.Model):
         ordering = ["-meeting_id","date", ]
 
     def __str__(self):
-        return '{} : {} : {}'.format( self.meeting, self.name, self.date )
+        return f'{self.meeting} : {self.name} : {self.date}'
 
 class SlideSubmission(models.Model):
     time = models.DateTimeField(auto_now=True)

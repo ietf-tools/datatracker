@@ -92,7 +92,7 @@ class NomCom(models.Model):
         except ValueError as e:
             raise ValueError("Trying to read the NomCom public key: " + str(e))
 
-        command = "{} smime -encrypt -in /dev/stdin {}".format(settings.OPENSSL_COMMAND, cert_file)
+        command = f"{settings.OPENSSL_COMMAND} smime -encrypt -in /dev/stdin {cert_file}"
         code, out, error = pipe(command, cleartext.encode('utf-8'))
         if code != 0:
             log("openssl error: %s:\n  Error %s: %s" %(command, code, error))
@@ -140,7 +140,7 @@ class Nomination(models.Model):
         verbose_name_plural = 'Nominations'
 
     def __str__(self):
-        return "{} ({})".format(self.candidate_name, self.candidate_email)
+        return f"{self.candidate_name} ({self.candidate_email})"
 
 
 class Nominee(models.Model):
@@ -160,13 +160,13 @@ class Nominee(models.Model):
 
     def __str__(self):
         if self.email.person and self.email.person.name:
-            return "{} <{}> {}".format(self.email.person.plain_name(), self.email.address, self.nomcom.year())
+            return f"{self.email.person.plain_name()} <{self.email.address}> {self.nomcom.year()}"
         else:
-            return "{} {}".format(self.email.address, self.nomcom.year())
+            return f"{self.email.address} {self.nomcom.year()}"
 
     def name(self):
         if self.email.person and self.email.person.name:
-            return '{}'.format(self.email.person.plain_name())
+            return f'{self.email.person.plain_name()}'
         else:
             return self.email.address
 
@@ -191,7 +191,7 @@ class NomineePosition(models.Model):
         super().save(**kwargs)
 
     def __str__(self):
-        return "{} - {} - {}".format(self.nominee, self.state, self.position)
+        return f"{self.nominee} - {self.state} - {self.position}"
 
     @property
     def questionnaires(self):

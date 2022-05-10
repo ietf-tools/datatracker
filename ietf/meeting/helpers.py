@@ -637,7 +637,7 @@ def read_session_file(type, num, doc):
     #  DOC_PATH_FORMAT = { "agenda": "/foo/bar/agenda-{meeting.number}/agenda-{meeting-number}-{doc.group}*", }
     #
     # FIXME: uploaded_filename should be replaced with a function call that computes names that are fixed
-    path = os.path.join(settings.AGENDA_PATH, "{}/{}/{}".format(num, type, doc.uploaded_filename))
+    path = os.path.join(settings.AGENDA_PATH, f"{num}/{type}/{doc.uploaded_filename}")
     if doc.uploaded_filename and os.path.exists(path):
         with open(path, 'rb') as f:
             return f.read(), path
@@ -652,7 +652,7 @@ def convert_draft_to_pdf(doc_name):
     outpath = os.path.join(settings.INTERNET_DRAFT_PDF_PATH, doc_name + ".pdf")
 
     try:
-        infile = open(inpath, "r")
+        infile = open(inpath)
     except OSError:
         return
 
@@ -853,7 +853,7 @@ def get_next_interim_number(acronym,date):
     This function takes a group acronym and date object and returns the next number
     to use for an interim meeting.  The format is interim-[year]-[acronym]-[01-99]
     '''
-    base = 'interim-{}-{}-'.format(date.year, acronym)
+    base = f'interim-{date.year}-{acronym}-'
     # can't use count() to calculate the next number in case one was deleted
     meetings = Meeting.objects.filter(type='interim', number__startswith=base)
     if meetings:

@@ -30,7 +30,7 @@ def forward(apps, schema_editor):
         for d in l.added_docs.all():
             count += 1
             CommunityListDocs.objects.get_or_create(communitylist=l, document_id=nameid[d.name])
-    sys.stderr.write(' {} CommunityListDocs objects created\n'.format(count))
+    sys.stderr.write(f' {count} CommunityListDocs objects created\n')
 
     sys.stderr.write(' {}.{}:\n'.format(SearchRule.__name__, 'name_contains_index'))
     count = 0
@@ -38,7 +38,7 @@ def forward(apps, schema_editor):
         for d in r.name_contains_index.all():
             count += 1
             SearchRuleDocs.objects.get_or_create(searchrule=r, document_id=nameid[d.name])
-    sys.stderr.write(' {} SearchRuleDocs objects created\n'.format(count))
+    sys.stderr.write(f' {count} SearchRuleDocs objects created\n')
 
 def reverse(apps, schema_editor):
     pass

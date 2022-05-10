@@ -42,7 +42,7 @@ class Utf8ExceptionMiddleware:
         if isinstance(exception, OperationalError):
             extype, e, tb = exc_parts()
             if e.args[0] == 1366:
-                log("Database 4-byte utf8 exception: {}: {}".format(extype, e))
+                log(f"Database 4-byte utf8 exception: {extype}: {e}")
                 return render(request, 'utf8_4byte_failed.html',
                               {'exception': extype, 'args': e.args, 'traceback': "".join(tb)} )
         return None

@@ -37,7 +37,7 @@ def get_proceedings_path(meeting,group):
     return path
 
 def get_proceedings_url(meeting,group=None):
-    url = '{}proceedings/{}/'.format(settings.IETF_HOST_URL,meeting.number)
+    url = f'{settings.IETF_HOST_URL}proceedings/{meeting.number}/'
     if meeting.type_id == 'ietf' and group:
         url = url + '%s.html' % group.acronym
     elif meeting.type_id == 'interim':

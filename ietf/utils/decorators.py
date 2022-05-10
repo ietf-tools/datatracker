@@ -75,12 +75,12 @@ def require_api_key(f, request, *args, **kwargs):
     key.count += 1
     key.latest = datetime.datetime.now()
     key.save()
-    PersonApiKeyEvent.objects.create(person=person, type='apikey_login', key=key, desc="Logged in with key ID {}, endpoint {}".format(key.id, key.endpoint))
+    PersonApiKeyEvent.objects.create(person=person, type='apikey_login', key=key, desc=f"Logged in with key ID {key.id}, endpoint {key.endpoint}")
     # Execute decorated function
     try:
         ret = f(request, *args, **kwargs)
     except AttributeError as e:
-        log.log("Bad API call: args: {}, kwargs: {}, exception: {}".format(args, kwargs, e))
+        log.log(f"Bad API call: args: {args}, kwargs: {kwargs}, exception: {e}")
         return err(400, "Bad or missing parameters")
     return ret
 

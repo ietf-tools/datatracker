@@ -33,7 +33,7 @@ class PersonAdmin(simple_history.admin.SimpleHistoryAdmin):
             return obj.plain
         else:
             prefix, first, middle, last, suffix = name_parts(obj.name)
-            return "{} {}".format(first, last)
+            return f"{first} {last}"
     list_display = ["name", "short", "plain_name", "time", "user", ]
     fields = ("user", "time", "name", "plain", "name_from_draft", "ascii", "ascii_short", "biography", "photo", "photo_thumb", "consent",)
     readonly_fields = ("name_from_draft", )

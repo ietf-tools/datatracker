@@ -92,28 +92,28 @@ def import_mailman_listinfo(verbosity=0):
                     old = Subscribed.objects.get(email=addr)
                     log_time("    Fetched subscribed object")
                     old.lists.remove(mmlist)
-                    log_time("    Removed {} from {}".format(mmlist, old))
+                    log_time(f"    Removed {mmlist} from {old}")
                     if old.lists.count() == 0:
                         note("    Removing address with no subscriptions: %s" % (addr))
                         old.delete()
                         log_time("      Removed %s" % old)
             log_time("  Removed addresses no longer subscribed")
             if to_remove:
-                log("  Removed {} addresses from {}".format(len(to_remove), name))
+                log(f"  Removed {len(to_remove)} addresses from {name}")
             for addr in to_add:
                 if len(addr) > addr_max_length:
-                    sys.stderr.write("    **  Email address subscribed to '{}' too long for table: <{}>\n".format(name, addr))
+                    sys.stderr.write(f"    **  Email address subscribed to '{name}' too long for table: <{addr}>\n")
                     continue
                 note("  Adding subscription: %s" % (addr))
                 try:
                     new, created = Subscribed.objects.get_or_create(email=addr)
                 except MultipleObjectsReturned as e:
-                    sys.stderr.write("    **  Error handling {} in {}: {}\n".format(addr, name, e))
+                    sys.stderr.write(f"    **  Error handling {addr} in {name}: {e}\n")
                     continue
                 new.lists.add(mmlist)
             log_time("  Added new addresses")
             if to_add:
-                log("  Added {} addresses to {}".format(len(to_add), name))
+                log(f"  Added {len(to_add)} addresses to {name}")
     log("Completed import of list info from Mailman")    
 
 class Command(BaseCommand):

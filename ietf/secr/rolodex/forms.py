@@ -139,7 +139,7 @@ class NewPersonForm(forms.ModelForm):
             user = User.objects.get(username=email)
             person = Person.objects.get(user=user)
             if user and person:
-                raise forms.ValidationError("This account already exists. [name={}, id={}, email={}]".format(person.name,person.id,email))
+                raise forms.ValidationError(f"This account already exists. [name={person.name}, id={person.id}, email={email}]")
         except ObjectDoesNotExist:
             pass
             

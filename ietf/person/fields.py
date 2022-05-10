@@ -22,7 +22,7 @@ from ietf.utils.fields import SearchableField
 
 def select2_id_name(objs):
     def format_email(e):
-        return escape("{} <{}>".format(e.person.name, e.address))
+        return escape(f"{e.person.name} <{e.address}>")
     def format_person(p):
         if p.name_count > 1:
             return escape('{} ({})'.format(p.name,p.email().address if p.email() else 'no email address'))

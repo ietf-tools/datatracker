@@ -105,7 +105,7 @@ def format_addresses(addresses, header_name=None, charset=None):
                 # if name is byte string, charset will be used to decode it first
                 header.append(name)
                 # here us-ascii must be used and not default 'charset'  
-                header.append('<{}>'.format(addr), charset='us-ascii') 
+                header.append(f'<{addr}>', charset='us-ascii') 
                     
     return header
 
@@ -475,21 +475,21 @@ def send_mail(payload, mail_from, rcpt_to, smtp_host, smtp_port=25, smtp_mode='n
     try:
         ret=send_mail2(payload, mail_from, rcpt_to, smtp_host, smtp_port, smtp_mode, smtp_login, smtp_password)
     except OSError as e:
-        error='server {}:{} not responding: {}'.format(smtp_host, smtp_port, e)
+        error=f'server {smtp_host}:{smtp_port} not responding: {e}'
     except smtplib.SMTPAuthenticationError as e:
-        error='authentication error: {}'.format(e)
+        error=f'authentication error: {e}'
     except smtplib.SMTPRecipientsRefused as e:
         # code, error=e.recipients[recipient_addr]
         error='all recipients refused: '+', '.join(list(e.recipients.keys()))
     except smtplib.SMTPSenderRefused as e:
         # e.sender, e.smtp_code, e.smtp_error
-        error='sender refused: {}'.format(e.sender)
+        error=f'sender refused: {e.sender}'
     except smtplib.SMTPDataError as e:
-        error='SMTP protocol mismatch: {}'.format(e)
+        error=f'SMTP protocol mismatch: {e}'
     except smtplib.SMTPHeloError as e:
-        error="server didn't reply properly to the HELO greeting: {}".format(e)
+        error=f"server didn't reply properly to the HELO greeting: {e}"
     except smtplib.SMTPException as e:
-        error='SMTP error: {}'.format(e)
+        error=f'SMTP error: {e}'
 #    except Exception, e:
 #        raise # unknown error
     else:

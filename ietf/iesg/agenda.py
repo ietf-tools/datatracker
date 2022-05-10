@@ -145,7 +145,7 @@ def fill_in_agenda_administrivia(date, sections):
 
     for s, key, filename in extra_info_files:
         try:
-            with open(filename, 'r', encoding='utf-8', errors='replace') as f:
+            with open(filename, encoding='utf-8', errors='replace') as f:
                 t = f.read().strip()
         except OSError:
             t = "(Error reading %s)" % filename

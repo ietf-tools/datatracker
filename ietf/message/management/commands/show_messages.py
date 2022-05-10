@@ -79,4 +79,4 @@ class Command(BaseCommand):
                 self.stdout.write('%s  %16s  %16s  %56s  %s -> %s  "%s"\n' %
                     (m.pk, m.time.strftime('%Y-%m-%d %H:%M'), m.sent and m.sent.strftime('%Y-%m-%d %H:%M') or '',
                         m.msgid.strip('<>'), addr(m.frm), to, m.subject.strip()))
-            self.stdout.write("\n{} messages ({})\n".format(messages.count(), selection_str))
+            self.stdout.write(f"\n{messages.count()} messages ({selection_str})\n")

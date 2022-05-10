@@ -74,7 +74,7 @@ class GroupAdmin(admin.ModelAdmin):
         roles = Role.objects.filter(group=obj).order_by("name", "person__name").select_related('person')
         res = []
         for r in roles:
-            res.append('<a href="../../person/person/{}/">{}</a> (<a href="../../group/role/{}/">{})'.format(r.person.pk, escape(r.person.plain_name()), r.pk, r.name.name))
+            res.append(f'<a href="../../person/person/{r.person.pk}/">{escape(r.person.plain_name())}</a> (<a href="../../group/role/{r.pk}/">{r.name.name})')
         return ", ".join(res)
     role_list.short_description = "Persons" # type: ignore # https://github.com/python/mypy/issues/2087
     role_list.allow_tags = True         # type: ignore     # https://github.com/python/mypy/issues/2087

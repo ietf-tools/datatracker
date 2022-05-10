@@ -123,10 +123,10 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
     desc_editable = has_role(request.user,["Secretariat","Area Director","IRTF Chair"])
 
     if milestone_set == "current":
-        title = "Edit milestones for {} {}".format(group.acronym, group.type.name)
+        title = f"Edit milestones for {group.acronym} {group.type.name}"
         milestones = group.groupmilestone_set.filter(state__in=("active", "review"))
     elif milestone_set == "charter":
-        title = "Edit charter milestones for {} {}".format(group.acronym, group.type.name)
+        title = f"Edit charter milestones for {group.acronym} {group.type.name}"
         milestones = group.groupmilestone_set.filter(state="charter")
 
     reviewer = milestone_reviewer_for_group_type(group_type)
@@ -235,7 +235,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                 if order != m.order:
                     if not history:
                         history = save_milestone_in_history(m)
-                    changes.append("Milestone order changed from {} to {}".format( m.order, order ))
+                    changes.append(f"Milestone order changed from {m.order} to {order}")
                     m.order = order
 
             resolved = c["resolved"]
@@ -293,7 +293,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
             if milestone_set == "charter":
                 named_milestone = "charter " + named_milestone
 
-            desc = 'Added {}'.format(named_milestone)
+            desc = f'Added {named_milestone}'
             if m.state_id == 'review':
                 desc += ' for review'
             if 'due' in f.fields:
@@ -446,7 +446,7 @@ def reset_charter_milestones(request, group_type, acronym):
             if group.uses_milestone_dates:
                 desc='Added milestone "{}", due {}, from current group milestones'.format(new.desc, new.due.strftime("%B %Y"))
             else:
-                desc='Added milestone "{}" from current group milestones'.format( new.desc)
+                desc=f'Added milestone "{new.desc}" from current group milestones'
             DocEvent.objects.create(type="changed_charter_milestone",
                                     doc=group.charter,
                                     rev=group.charter.rev,

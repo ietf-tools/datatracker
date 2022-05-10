@@ -13,7 +13,7 @@ def rfcdiff_base_url(request):
     
 def python_version():
     v = sys.version_info
-    return "{}.{}.{}".format(v.major, v.minor, v.micro)
+    return f"{v.major}.{v.minor}.{v.micro}"
 
 def revision_info(request):
     return {

@@ -68,7 +68,7 @@ def fetch_changes_json(url, start, end):
     # HTTP basic auth
     username = "ietfsync"
     password = settings.IANA_SYNC_PASSWORD
-    headers = { "Authorization": "Basic %s" % force_str(base64.encodebytes(smart_bytes("{}:{}".format(username, password)))).replace("\n", "") }
+    headers = { "Authorization": "Basic %s" % force_str(base64.encodebytes(smart_bytes(f"{username}:{password}"))).replace("\n", "") }
     try:
         response = requests.get(url, headers=headers, timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
     except requests.Timeout as exc:
@@ -88,7 +88,7 @@ def parse_changes_json(text):
     for i in changes:
         for f in ['doc', 'type', 'time']:
             if f not in i:
-                raise Exception('Error in response: Field {} missing in input: {} - {}'.format(f, json.dumps(i), json.dumps(changes)))
+                raise Exception(f'Error in response: Field {f} missing in input: {json.dumps(i)} - {json.dumps(changes)}')
 
         # a little bit of cleaning
         i["doc"] = i["doc"].strip()
@@ -210,7 +210,7 @@ def update_history_with_changes(changes, send_email=True):
                         doc.save_with_history([e])
 
                     if send_email and (state != prev_state):
-                        email_state_changed(None, doc, "IANA {} state changed to \"{}\"".format(kind, state.name),'doc_iana_state_changed')
+                        email_state_changed(None, doc, f"IANA {kind} state changed to \"{state.name}\"",'doc_iana_state_changed')
 
 
     return added_events, warnings
@@ -222,7 +222,7 @@ def find_document_name(text):
     prefix_re = r'(%s)' % '|'.join(prefixes)
     tail_re = r'(-[a-z0-9]+)+?(-\d\d\.txt)?'
     trailing_delimiter_re = r'((?![-a-zA-Z0-9])|$)'
-    name_re = r'{}({}{}){}'.format(leading_delimiter_re, prefix_re, tail_re, trailing_delimiter_re)
+    name_re = fr'{leading_delimiter_re}({prefix_re}{tail_re}){trailing_delimiter_re}'
     m = re.search(name_re,text)
     return m and m.group(0).lower()
 
@@ -285,7 +285,7 @@ def parse_review_email(text):
 
     m = re.search(r"<(.*)>", msg["From"])
     if m:
-        comment = '(Via {}): {}'.format( m.group(1).strip() , comment )
+        comment = f'(Via {m.group(1).strip()}): {comment}'
 
     return doc_name, review_time, by, comment
 

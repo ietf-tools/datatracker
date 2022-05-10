@@ -75,8 +75,8 @@ class IndexTests(TestCase):
 
         NewRevisionDocEvent.objects.create(doc=draft, rev=draft.rev, type="new_revision", by=draft.ad)
 
-        self.write_draft_file("{}-{}.txt".format(draft.name, draft.rev), 5000)
-        self.write_draft_file("{}-{}.pdf".format(draft.name, draft.rev), 5000)
+        self.write_draft_file(f"{draft.name}-{draft.rev}.txt", 5000)
+        self.write_draft_file(f"{draft.name}-{draft.rev}.pdf", 5000)
 
         t = get_fields(all_id2_txt())
         self.assertEqual(t[0], draft.name + "-" + draft.rev)
@@ -94,9 +94,9 @@ class IndexTests(TestCase):
         self.assertEqual(t[12], ".pdf,.txt")
         self.assertEqual(t[13], draft.title)
         author = draft.documentauthor_set.order_by("order").get()
-        self.assertEqual(t[14], "{} <{}>".format(author.person.plain_name(), author.email.address))
-        self.assertEqual(t[15], "{} <{}>".format(draft.shepherd.person.plain_ascii(), draft.shepherd.address))
-        self.assertEqual(t[16], "{} <{}>".format(draft.ad.plain_ascii(), draft.ad.email_address()))
+        self.assertEqual(t[14], f"{author.person.plain_name()} <{author.email.address}>")
+        self.assertEqual(t[15], f"{draft.shepherd.person.plain_ascii()} <{draft.shepherd.address}>")
+        self.assertEqual(t[16], f"{draft.ad.plain_ascii()} <{draft.ad.email_address()}>")
 
 
         # test RFC

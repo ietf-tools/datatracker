@@ -741,7 +741,7 @@ def document_stats(request, stats_type=None):
             "eu_countries": sorted(eu_countries or [], key=lambda c: c.name),
             "content_template": f"stats/document_stats_{template_name}.html",
         }
-        log("Cache miss for '{}'.  Data size: {}k".format(cache_key, len(str(data))/1000))
+        log(f"Cache miss for '{cache_key}'.  Data size: {len(str(data))/1000}k")
         cache.set(cache_key, data, 24*60*60)
     return render(request, "stats/document_stats.html", data)
 
@@ -985,7 +985,7 @@ def meeting_stats(request, num=None, stats_type=None):
             "eu_countries": sorted(eu_countries or [], key=lambda c: c.name),
             "content_template": f"stats/meeting_stats_{template_name}.html",
         }
-        log("Cache miss for '{}'.  Data size: {}k".format(cache_key, len(str(data))/1000))
+        log(f"Cache miss for '{cache_key}'.  Data size: {len(str(data))/1000}k")
         cache.set(cache_key, data, 24*60*60)
     #
     return render(request, "stats/meeting_stats.html", data)

@@ -56,7 +56,7 @@ def check_statetype_slugs(app_configs, **kwargs):
     for type in DocTypeName.objects.all():
         if not type.slug in state_type_slugs:
             errors.append(checks.Error(
-                "The document type '{} ({})' does not have a corresponding entry in the doc.StateType table".format(type.name, type.slug),
+                f"The document type '{type.name} ({type.slug})' does not have a corresponding entry in the doc.StateType table",
                 hint="You should add a doc.StateType entry with a slug '%s' to match the DocTypeName slug."%(type.slug),
                 obj=type,
                 id='datatracker.doc.E0015',
@@ -162,12 +162,12 @@ class DocumentInfo(models.Model):
                 self._cached_base_name = self.uploaded_filename
             elif self.type_id == 'draft':
                 if self.is_dochistory():
-                    self._cached_base_name = "{}-{}.txt".format(self.doc.name, self.rev)
+                    self._cached_base_name = f"{self.doc.name}-{self.rev}.txt"
                 else:
                     if self.get_state_slug() == 'rfc':
                         self._cached_base_name = "%s.txt" % self.canonical_name()
                     else:
-                        self._cached_base_name = "{}-{}.txt".format(self.name, self.rev)
+                        self._cached_base_name = f"{self.name}-{self.rev}.txt"
             elif self.type_id in ["slides", "agenda", "minutes", "bluesheets", "procmaterials", ] and self.meeting_related():
                 ext = 'pdf' if self.type_id == 'procmaterials' else 'txt'
                 self._cached_base_name = f'{self.canonical_name()}-{self.rev}.{ext}'
@@ -175,12 +175,12 @@ class DocumentInfo(models.Model):
                 # TODO: This will be wrong if a review is updated on the same day it was created (or updated more than once on the same day)
                 self._cached_base_name = "%s.txt" % self.name
             elif self.type_id == 'bofreq':
-                self._cached_base_name = "{}-{}.md".format(self.name, self.rev)
+                self._cached_base_name = f"{self.name}-{self.rev}.md"
             else:
                 if self.rev:
-                    self._cached_base_name = "{}-{}.txt".format(self.canonical_name(), self.rev)
+                    self._cached_base_name = f"{self.canonical_name()}-{self.rev}.txt"
                 else:
-                    self._cached_base_name = "{}.txt".format(self.canonical_name())
+                    self._cached_base_name = f"{self.canonical_name()}.txt"
         return self._cached_base_name
 
     def get_file_name(self):
@@ -337,7 +337,7 @@ class DocumentInfo(models.Model):
                      iesg_state_summary = iesg_state_summary + "::"+"::".join(tag.name for tag in iesg_substate)
              
             if state.slug == "rfc":
-                return "RFC {} ({})".format(self.rfc_number(), self.std_level)
+                return f"RFC {self.rfc_number()} ({self.std_level})"
             elif state.slug == "repl":
                 rs = self.related_that("replaces")
                 if rs:
@@ -608,7 +608,7 @@ class RelatedDocument(models.Model):
     def action(self):
         return self.relationship.name
     def __str__(self):
-        return "{} {} {}".format(self.source.name, self.relationship.name.lower(), self.target.name)
+        return f"{self.source.name} {self.relationship.name.lower()} {self.target.name}"
 
     def is_downref(self):
 
@@ -681,7 +681,7 @@ class DocumentAuthor(DocumentAuthorInfo):
     document = ForeignKey('Document')
 
     def __str__(self):
-        return "{} {} ({})".format(self.document.name, self.person, self.order)
+        return f"{self.document.name} {self.person} ({self.order})"
 
 
 class DocumentActionHolder(models.Model):
@@ -756,7 +756,7 @@ class Document(DocumentInfo):
                         url = self.external_url
                     else:
                         filename = self.uploaded_filename
-                        url = '{}proceedings/{}/{}/{}'.format(settings.IETF_HOST_URL,meeting.number,self.type_id,filename)
+                        url = f'{settings.IETF_HOST_URL}proceedings/{meeting.number}/{self.type_id}/{filename}'
             else:
                 url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ 'name': name }, urlconf="ietf.urls")
             self._cached_absolute_url = url
@@ -773,7 +773,7 @@ class Document(DocumentInfo):
         return "<%s>" % self.filename_with_rev()
 
     def filename_with_rev(self):
-        return "{}-{}.txt".format(self.name, self.rev)
+        return f"{self.name}-{self.rev}.txt"
     
     def latest_event(self, *args, **filter_args):
         """Get latest event of optional Python type and with filter
@@ -896,7 +896,7 @@ class Document(DocumentInfo):
         return self.latest_event(LastCallDocEvent,type="sent_last_call")
 
     def displayname_with_link(self):
-        return mark_safe('<a href="{}">{}-{}</a>'.format(self.get_absolute_url(), self.name , self.rev))
+        return mark_safe(f'<a href="{self.get_absolute_url()}">{self.name}-{self.rev}</a>')
 
     def ipr(self,states=('posted','removed')):
         """Returns the IPR disclosures against this document (as a queryset over IprDocRel)."""
@@ -988,7 +988,7 @@ class ExtResource(models.Model):
     value = models.CharField(max_length=2083) # 2083 is the maximum legal URL length
     def __str__(self):
         priority = self.display_name or self.name.name
-        return "{} ({}) {}".format(priority, self.name.slug, self.value)
+        return f"{priority} ({self.name.slug}) {self.value}"
 
     class Meta:
         abstract = True
@@ -1003,7 +1003,7 @@ class ExtResource(models.Model):
         if self.display_name:
             return "{} {} ({})".format(self.name.slug, self.value, self.display_name.strip('()'))
         else:
-            return "{} {}".format(self.name.slug, self.value)
+            return f"{self.name.slug} {self.value}"
 
     @classmethod
     def from_form_entry_str(cls, s):
@@ -1038,7 +1038,7 @@ class RelatedDocHistory(models.Model):
     target = ForeignKey('DocAlias', related_name="reversely_related_document_history_set")
     relationship = ForeignKey(DocRelationshipName)
     def __str__(self):
-        return "{} {} {}".format(self.source.doc.name, self.relationship.name.lower(), self.target.name)
+        return f"{self.source.doc.name} {self.relationship.name.lower()} {self.target.name}"
 
 class DocHistoryAuthor(DocumentAuthorInfo):
     # use same naming convention as non-history version to make it a bit
@@ -1046,7 +1046,7 @@ class DocHistoryAuthor(DocumentAuthorInfo):
     document = ForeignKey('DocHistory', related_name="documentauthor_set")
 
     def __str__(self):
-        return "{} {} ({})".format(self.document.doc.name, self.person, self.order)
+        return f"{self.document.doc.name} {self.person} ({self.order})"
 
 class DocHistory(DocumentInfo):
     doc = ForeignKey(Document, related_name="history_set")
@@ -1233,7 +1233,7 @@ class DocEvent(models.Model):
         return DocHistory.objects.filter(time__lte=self.time,doc__name=self.doc.name).order_by('-time', '-pk').first()
 
     def __str__(self):
-        return "{} {} by {} at {}".format(self.doc.name, self.get_type_display().lower(), self.by.plain_name(), self.time)
+        return f"{self.doc.name} {self.get_type_display().lower()} by {self.by.plain_name()} at {self.time}"
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)        
@@ -1270,7 +1270,7 @@ class BallotType(models.Model):
     positions = models.ManyToManyField(BallotPositionName, blank=True)
 
     def __str__(self):
-        return "{}: {}".format(self.name, self.doc_type.name)
+        return f"{self.name}: {self.doc_type.name}"
     
     class Meta:
         ordering = ['order']
@@ -1405,7 +1405,7 @@ class DeletedEvent(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
 
     def __str__(self):
-        return "{} by {} {}".format(self.content_type, self.by, self.time)
+        return f"{self.content_type} by {self.by} {self.time}"
 
 class EditedAuthorsDocEvent(DocEvent):
     """ Capture the reasoning or authority for changing a document author list.

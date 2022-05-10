@@ -56,7 +56,7 @@ def populate_email_origin(apps, schema_editor):
         sys.stdout.write("    Assigning email origins from %s records...\n" % model.__name__)
         for o in model.objects.filter(email__origin=''):
             if not o.email.origin:
-                o.email.origin = "role: {} {}".format(o.group.acronym, o.name.slug)
+                o.email.origin = f"role: {o.group.acronym} {o.name.slug}"
                 o.email.save()
                 count += 1
         sys.stdout.write("    %s email origins assigned: %d\n" % (model.__name__, count))

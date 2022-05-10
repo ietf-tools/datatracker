@@ -91,7 +91,7 @@ def blue_dot(request):
         groups = [ r.group.acronym for r in person.role_set.filter(name__slug='chair',
                                                                    group__type='wg',
                                                                    group__state__slug__in=('active','bof','proposed')) ]
-        entry = {'name':'{}, {}'.format(parts[3], parts[1]),
+        entry = {'name':f'{parts[3]}, {parts[1]}',
                  'groups': ', '.join(groups)}
         chairs.append(entry)
 
@@ -189,7 +189,7 @@ def people(request, acronym):
                                 group=group)
 
             if not email.origin or email.origin == person.user.username:
-                email.origin = "role: {} {}".format(group.acronym, name.slug)
+                email.origin = f"role: {group.acronym} {name.slug}"
                 email.save()
 
             messages.success(request, 'New %s added successfully!' % name)

@@ -54,7 +54,7 @@ class Command(BaseCommand):
         self.output = sys.stdout if options.get('stdout') else open(os.path.join(settings.BASE_DIR, "name/fixtures/names.json"), 'w')
 
         def model_name(m):
-            return '{}.{}'.format(m._meta.app_label, m.__name__)
+            return f'{m._meta.app_label}.{m.__name__}'
 
         def output(seq):
             try:

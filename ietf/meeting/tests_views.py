@@ -120,7 +120,7 @@ class BaseMeetingTestCase(TestCase):
         super().tearDown()
 
     def write_materials_file(self, meeting, doc, content):
-        path = os.path.join(self.materials_dir, "{}/{}/{}".format(meeting.number, doc.type_id, doc.uploaded_filename))
+        path = os.path.join(self.materials_dir, f"{meeting.number}/{doc.type_id}/{doc.uploaded_filename}")
 
         dirname = os.path.dirname(path)
         if not os.path.exists(dirname):
@@ -796,7 +796,7 @@ class MeetingTests(BaseMeetingTestCase):
         groups = [a.session.group for a in assignments if a.session is not None]
         for g in groups:
             if g.parent_id is not None:
-                self.assertIn('{}?show={}'.format(ical_url, g.parent.acronym.lower()), content)
+                self.assertIn(f'{ical_url}?show={g.parent.acronym.lower()}', content)
 
         # The 'non-area events' are those whose keywords are in the last column of buttons
         na_col = q('#customize .col-1:last')  # find the column
@@ -873,7 +873,7 @@ class MeetingTests(BaseMeetingTestCase):
         draft1 = WgDraftFactory(group=session.group)
         session.sessionpresentation_set.create(document=draft1)
         draft2 = WgDraftFactory(group=session.group)
-        agenda = DocumentFactory(type_id='agenda',group=session.group, uploaded_filename='agenda-{}-{}'.format(session.meeting.number,session.group.acronym), states=[('agenda','active')])
+        agenda = DocumentFactory(type_id='agenda',group=session.group, uploaded_filename=f'agenda-{session.meeting.number}-{session.group.acronym}', states=[('agenda','active')])
         session.sessionpresentation_set.create(document=agenda)
         self.write_materials_file(session.meeting, session.materials.get(type="agenda"),
                                   "1. WG status (15 minutes)\n\n2. Status of %s\n\n" % draft2.name)
@@ -4672,7 +4672,7 @@ class InterimTests(TestCase):
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-{}-{}-{}'.format(date.year, group.acronym, next_num))
+        self.assertEqual(meeting.number,f'interim-{date.year}-{group.acronym}-{next_num}')
         self.assertEqual(meeting.city,'')
         self.assertEqual(meeting.country,'')
         self.assertEqual(meeting.time_zone,'UTC')
@@ -4743,7 +4743,7 @@ class InterimTests(TestCase):
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-{}-{}-{}'.format(date.year, group.acronym, next_num))
+        self.assertEqual(meeting.number,f'interim-{date.year}-{group.acronym}-{next_num}')
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
@@ -4800,7 +4800,7 @@ class InterimTests(TestCase):
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-{}-{}-{}'.format(date.year, group.acronym, next_num))
+        self.assertEqual(meeting.number,f'interim-{date.year}-{group.acronym}-{next_num}')
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
@@ -4941,7 +4941,7 @@ class InterimTests(TestCase):
         meeting = meetings[1]
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-{}-{}-{}'.format(date.year, group.acronym, next_num))
+        self.assertEqual(meeting.number,f'interim-{date.year}-{group.acronym}-{next_num}')
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
@@ -4956,7 +4956,7 @@ class InterimTests(TestCase):
         meeting = meetings[0]
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date2)
-        self.assertEqual(meeting.number,'interim-{}-{}-{}'.format(date2.year, group.acronym, next_num2))
+        self.assertEqual(meeting.number,f'interim-{date2.year}-{group.acronym}-{next_num2}')
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
@@ -5973,7 +5973,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(session1.sessionpresentation_set.count(),1) 
         self.assertEqual(session2.sessionpresentation_set.count(),1) 
         sp = session2.sessionpresentation_set.first()
-        self.assertEqual(sp.document.name, 'slides-{}-{}-a-test-slide-file'.format(session1.meeting.number,session1.group.acronym ) )
+        self.assertEqual(sp.document.name, f'slides-{session1.meeting.number}-{session1.group.acronym}-a-test-slide-file' )
         self.assertEqual(sp.order,1)
 
         url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session2.meeting.number,'session_id':session2.id})
@@ -6222,7 +6222,7 @@ class MaterialsTests(TestCase):
         path = os.path.join(submission.session.meeting.get_materials_path(),'slides')
         filename = os.path.join(path,session.sessionpresentation_set.first().document.name+'-01.txt')
         self.assertTrue(os.path.exists(filename))
-        contents = open(filename,'r').read()
+        contents = open(filename).read()
         self.assertIn('third version', contents)
 
 
@@ -6476,7 +6476,7 @@ class HasMeetingsTests(TestCase):
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-{}-{}-{}'.format(date.year, group.acronym, next_num))
+        self.assertEqual(meeting.number,f'interim-{date.year}-{group.acronym}-{next_num}')
         self.assertTrue(len(outbox)>0)
         self.assertIn('interim approved',outbox[0]["Subject"])
         self.assertIn(user.person.email().address,outbox[0]["To"])

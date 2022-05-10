@@ -228,7 +228,7 @@ def feed(request, username=None, acronym=None, group_type=None):
         events = events.filter(type="changed_state", statedocevent__state__in=list(states_of_significant_change()))
 
     host = request.get_host()
-    feed_url = 'https://{}{}'.format(host, request.get_full_path())
+    feed_url = f'https://{host}{request.get_full_path()}'
     feed_id = uuid.uuid5(uuid.NAMESPACE_URL, str(feed_url))
     title = '%s RSS Feed' % clist.long_name()
     if significant:

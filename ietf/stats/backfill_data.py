@@ -83,7 +83,7 @@ for doc in docs_qs.prefetch_related("docalias", "formal_languages", "documentaut
         path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, canonical_name + "-" + doc.rev + ".txt")
 
     if not os.path.exists(path):
-        say("Skipping {}, no txt file found at {}".format(doc.name, path))
+        say(f"Skipping {doc.name}, no txt file found at {path}")
         continue
 
     with open(path, 'rb') as f:
@@ -147,11 +147,11 @@ for doc in docs_qs.prefetch_related("docalias", "formal_languages", "documentaut
                     old_author = old_authors_by_name.get(full)
 
                 if not old_author:
-                    say("UNKNOWN AUTHOR: {}, {}, {}, {}, {}".format(doc.name, full, email, country, company))
+                    say(f"UNKNOWN AUTHOR: {doc.name}, {full}, {email}, {country}, {company}")
                     continue
 
                 if old_author.affiliation != company:
-                    say("new affiliation: {} [ {} <{}> ] {} -> {}".format(canonical_name, full, email, old_author.affiliation, company))
+                    say(f"new affiliation: {canonical_name} [ {full} <{email}> ] {old_author.affiliation} -> {company}")
                     old_author.affiliation = company
                     old_author.save(update_fields=["affiliation"])
                     updated = True
@@ -160,7 +160,7 @@ for doc in docs_qs.prefetch_related("docalias", "formal_languages", "documentaut
                     country = ""
 
                 if old_author.country != country:
-                    say("new country: {} [ {} <{}> ] {} -> {}".format(canonical_name , full, email, old_author.country, country))
+                    say(f"new country: {canonical_name} [ {full} <{email}> ] {old_author.country} -> {country}")
                     old_author.country = country
                     old_author.save(update_fields=["country"])
                     updated = True

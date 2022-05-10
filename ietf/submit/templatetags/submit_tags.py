@@ -15,14 +15,14 @@ def show_submission_files(context, submission):
     result = []
     for ext in submission.file_types.split(','):
         exists = False
-        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '{}-{}{}'.format(submission.name, submission.rev, ext))
+        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, f'{submission.name}-{submission.rev}{ext}')
         if os.path.exists(source):
             exists = True
         elif submission.state_id == "posted":
             continue
         result.append({'ext': '%s' % ext[1:],
                        'exists': exists,
-                       'url': '{}{}-{}{}'.format(settings.IDSUBMIT_STAGING_URL, submission.name, submission.rev, ext)})
+                       'url': f'{settings.IDSUBMIT_STAGING_URL}{submission.name}-{submission.rev}{ext}'})
     return {'files': result}
 
 

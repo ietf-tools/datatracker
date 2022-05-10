@@ -516,7 +516,7 @@ def format_snippet(text, trunc_words=25):
     full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_fragment(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
-        return mark_safe('<div class="snippet">{}<button type="button" aria-label="Expand" class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="d-none full">{}</div>'.format(snippet, full))
+        return mark_safe(f'<div class="snippet">{snippet}<button type="button" aria-label="Expand" class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="d-none full">{full}</div>')
     return mark_safe(full)
 
 @register.simple_tag
@@ -534,7 +534,7 @@ def textify(text):
 @register.filter
 def state(doc, slug):
     if slug == "stream": # convenient shorthand
-        slug = "{}-stream-{}".format(doc.type_id, doc.stream_id)
+        slug = f"{doc.type_id}-stream-{doc.stream_id}"
     return doc.get_state(slug)
 
 @register.filter
@@ -543,7 +543,7 @@ def statehelp(state):
     from django.urls import reverse as urlreverse
     tooltip = escape(strip_tags(state.desc))
     url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type=state.type_id)) + "#" + state.slug
-    return mark_safe('<a class="state-help-icon" href="{}" title="{}">?</a>'.format(url, tooltip))
+    return mark_safe(f'<a class="state-help-icon" href="{url}" title="{tooltip}">?</a>')
 
 @register.filter
 def sectionlevel(section_number):

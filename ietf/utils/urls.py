@@ -11,7 +11,7 @@ from django.utils.encoding import force_str
 
 def url(regex, view, kwargs=None, name=None):
     if callable(view) and hasattr(view, '__name__'):
-        view_name = "{}.{}".format(view.__module__, view.__name__)
+        view_name = f"{view.__module__}.{view.__name__}"
     else:
         view_name = regex
 
@@ -31,7 +31,7 @@ def url(regex, view, kwargs=None, name=None):
         branch = 'class'
     else:
         branch = 'notimpl'
-        raise NotImplementedError("Auto-named url from view of type {}: {}".format(type(view), view))
+        raise NotImplementedError(f"Auto-named url from view of type {type(view)}: {view}")
     if branch == 'name':
         # List explicit url names with accompanying view dotted-path:
         #debug.say("%s %s" % (view_name, name))

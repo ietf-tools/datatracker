@@ -158,7 +158,7 @@ class Person(models.Model):
     def photo_name(self,thumb=False):
         hasher = Hashids(salt='Person photo name salt',min_length=5)
         _, first, _, last, _ = name_parts(self.ascii)
-        return '{}-{}{}'.format( slugify("{} {}".format(first, last)), hasher.encode(self.id), '-th' if thumb else '' )
+        return '{}-{}{}'.format( slugify(f"{first} {last}"), hasher.encode(self.id), '-th' if thumb else '' )
 
     def has_drafts(self):
         from ietf.doc.models import Document
@@ -255,7 +255,7 @@ class PersonExtResource(models.Model):
     value = models.CharField(max_length=2083) # 2083 is the maximum legal URL length
     def __str__(self):
         priority = self.display_name or self.name.name
-        return "{} ({}) {}".format(priority, self.name.slug, self.value)
+        return f"{priority} ({self.name.slug}) {self.value}"
 
 class Alias(models.Model):
     """This is used for alternative forms of a name.  This is the
@@ -313,7 +313,7 @@ class Email(models.Model):
         Use self.formatted_email() for that.
         """
         if self.person:
-            return "{} <{}>".format(self.person.plain_name(), self.address)
+            return f"{self.person.plain_name()} <{self.address}>"
         else:
             return "<%s>" % self.address
 
@@ -418,7 +418,7 @@ class PersonEvent(models.Model):
     desc = models.TextField()
 
     def __str__(self):
-        return "{} {} at {}".format(self.person.plain_name(), self.get_type_display().lower(), self.time)
+        return f"{self.person.plain_name()} {self.get_type_display().lower()} at {self.time}"
 
     class Meta:
         ordering = ['-time', '-id']

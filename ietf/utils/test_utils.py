@@ -263,7 +263,7 @@ class TestCase(django.test.TestCase):
             self.assertGreater(len(mlist), 0)
 
     def __str__(self):
-        return "{} ({}.{})".format(self._testMethodName, strclass(self.__class__),self._testMethodName)
+        return f"{self._testMethodName} ({strclass(self.__class__)}.{self._testMethodName})"
 
     def setUp(self):
         super().setUp()

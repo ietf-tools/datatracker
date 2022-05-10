@@ -86,7 +86,7 @@ class EditCharterTests(TestCase):
 
     def write_charter_file(self, charter):
         with (Path(settings.CHARTER_PATH) /
-              ("{}-{}.txt".format(charter.canonical_name(), charter.rev))
+              (f"{charter.canonical_name()}-{charter.rev}.txt")
         ).open("w") as f:
             f.write("This is a charter.")
 
@@ -786,7 +786,7 @@ class EditCharterTests(TestCase):
 
         self.assertEqual(charter.rev, "01")
         self.assertTrue(
-            (Path(settings.CHARTER_PATH) / ("charter-ietf-{}-{}.txt".format(group.acronym, charter.rev))).exists()
+            (Path(settings.CHARTER_PATH) / (f"charter-ietf-{group.acronym}-{charter.rev}.txt")).exists()
         )
 
         self.assertEqual(len(outbox), 2)

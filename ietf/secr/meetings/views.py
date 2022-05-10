@@ -126,9 +126,9 @@ def send_notifications(meeting, groups, person):
         addrs = gather_address_lists('session_scheduled',group=group,session=sessions[0])
         from_email = ('"IETF Secretariat"','agenda@ietf.org')
         if len(sessions) == 1:
-            subject = '{} - Requested session has been scheduled for IETF {}'.format(group.acronym, meeting.number)
+            subject = f'{group.acronym} - Requested session has been scheduled for IETF {meeting.number}'
         else:
-            subject = '{} - Requested sessions have been scheduled for IETF {}'.format(group.acronym, meeting.number)
+            subject = f'{group.acronym} - Requested sessions have been scheduled for IETF {meeting.number}'
         template = 'meetings/session_schedule_notification.txt'
 
         # easier to populate template from timeslot perspective. assuming one-to-one timeslot-session

@@ -68,7 +68,7 @@ class RolodexTestCase(TestCase):
             'email-0-origin': email.origin,
             'email-1-person':person.pk,
             'email-1-address': 'name@example.com',
-            'email-1-origin': 'role: {} {}'.format(group.acronym, role.name.slug),
+            'email-1-origin': f'role: {group.acronym} {role.name.slug}',
             'email-TOTAL_FORMS':2,
             'email-INITIAL_FORMS':1,
             'email-MIN_NUM_FORMS':0,

@@ -246,7 +246,7 @@ def get_meeting_registration_data(meeting):
             if response.content.strip() == 'Invalid meeting':
                 pass
             else:
-                raise RuntimeError("Could not decode response from registrations API: '{}...'".format(response.content[:64]))
+                raise RuntimeError(f"Could not decode response from registrations API: '{response.content[:64]}...'")
 
         records = MeetingRegistration.objects.filter(meeting_id=meeting.pk).select_related('person')
         meeting_registrations = {r.email:r for r in records}
@@ -293,7 +293,7 @@ def get_meeting_registration_data(meeting):
                         and ( last_name == last_name.upper() or last_name == last_name.lower() ) ):
                             first_name = first_name.capitalize()
                             last_name = last_name.capitalize()
-                    regname = "{} {}".format(first_name, last_name)
+                    regname = f"{first_name} {last_name}"
                     # if there are any unicode characters decode the string to ascii
                     ascii_name = unidecode_name(regname)
 
@@ -352,7 +352,7 @@ def get_meeting_registration_data(meeting):
                 num_created += 1
             num_processed += 1
     else:
-        raise RuntimeError("Bad response from registrations API: {}, '{}'".format(response.status_code, response.content))
+        raise RuntimeError(f"Bad response from registrations API: {response.status_code}, '{response.content}'")
     num_total = MeetingRegistration.objects.filter(meeting_id=meeting.pk).count()
     if meeting.attendees is None or num_total > meeting.attendees:
         meeting.attendees = num_total

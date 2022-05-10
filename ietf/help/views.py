@@ -26,7 +26,7 @@ def state(request, doc, type=None):
         streams = [ s.slug for s in StreamName.objects.all() ]
         if type in streams:
             type = "stream-%s" % type
-    slug = "{}-{}".format(doc,type) if type else doc
+    slug = f"{doc}-{type}" if type else doc
     statetype = get_object_or_404(StateType, slug=slug)
     states = State.objects.filter(used=True, type=statetype).order_by('order')
     return render(request, 'help/states.html', {"doc": doc, "type": statetype, "states":states} )

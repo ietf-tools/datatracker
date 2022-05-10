@@ -134,7 +134,7 @@ class ReviewRequest(models.Model):
     comment       = models.TextField(verbose_name="Requester's comments and instructions", max_length=2048, blank=True, help_text="Provide any additional information to show to the review team secretary and reviewer", default='')
 
     def __str__(self):
-        return "{} review on {} by {} {}".format(self.type, self.doc, self.team, self.state)
+        return f"{self.type} review on {self.doc} by {self.team} {self.state}"
 
     def all_completed_assignments_for_doc(self):
         return ReviewAssignment.objects.filter(review_request__doc=self.doc, state__in=['completed','part-completed'])
@@ -162,7 +162,7 @@ class ReviewAssignment(models.Model):
         self._original_state = self.state_id
 
     def __str__(self):
-        return "Assignment for {} ({}) : {} {} of {}".format(self.reviewer.person, self.state, self.review_request.team.acronym, self.review_request.type, self.review_request.doc)
+        return f"Assignment for {self.reviewer.person} ({self.state}) : {self.review_request.team.acronym} {self.review_request.type} of {self.review_request.doc}"
 
     def save(self, *args, **kwargs):
         """
@@ -202,7 +202,7 @@ class ReviewTeamSettings(models.Model):
                   " want these reminders to be sent.")
 
     def __str__(self):
-        return "{}".format(self.group.acronym)
+        return f"{self.group.acronym}"
 
     class Meta:
         verbose_name = "Review team settings"

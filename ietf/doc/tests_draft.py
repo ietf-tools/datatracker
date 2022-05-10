@@ -594,7 +594,7 @@ class ResurrectTests(DraftFileMixin, TestCase):
         DocEventFactory(doc=draft,type="requested_resurrect",by=ad)
 
         # create file and expire draft
-        txt = "{}-{}.txt".format(draft.name, draft.rev)
+        txt = f"{draft.name}-{draft.rev}.txt"
         self.write_draft_file(txt, 5000)
         expire_draft(draft)
 
@@ -724,7 +724,7 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         self.assertTrue('aread@' in outbox[-1]['Cc'])
 
         # test expiry
-        txt = "{}-{}.txt".format(draft.name, draft.rev)
+        txt = f"{draft.name}-{draft.rev}.txt"
         self.write_draft_file(txt, 5000)
 
         expire_draft(draft)
@@ -775,9 +775,9 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         # RFC draft
         draft.set_state(State.objects.get(used=True, type="draft", slug="rfc"))
 
-        txt = "{}-{}.txt".format(draft.name, draft.rev)
+        txt = f"{draft.name}-{draft.rev}.txt"
         self.write_draft_file(txt, 5000)
-        pdf = "{}-{}.pdf".format(draft.name, draft.rev)
+        pdf = f"{draft.name}-{draft.rev}.pdf"
         self.write_draft_file(pdf, 5000)
 
         clean_up_draft_files()
@@ -798,7 +798,7 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         e.text="Document has expired"
         e.save()
 
-        txt = "{}-{}.txt".format(draft.name, draft.rev)
+        txt = f"{draft.name}-{draft.rev}.txt"
         self.write_draft_file(txt, 5000)
 
         clean_up_draft_files()
@@ -1121,7 +1121,7 @@ class IndividualInfoFormsTests(TestCase):
         
         # test buggy change
         ad = Person.objects.get(name='Areað Irector')
-        two_answers = "{},{}".format(plain_email, ad.email_set.all()[0])
+        two_answers = f"{plain_email},{ad.email_set.all()[0]}"
         r = self.client.post(url, dict(shepherd=two_answers))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)

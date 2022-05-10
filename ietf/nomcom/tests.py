@@ -320,7 +320,7 @@ class NomcomViewsTest(TestCase):
         ## merge nominations
         self.access_chair_url(self.private_merge_nominee_url)
 
-        test_data = {"secondary_emails": "{}, {}".format(nominees[0], nominees[1]),
+        test_data = {"secondary_emails": f"{nominees[0]}, {nominees[1]}",
                      "primary_email": nominees[0]}
         response = self.client.post(self.private_merge_nominee_url, test_data)
         self.assertEqual(response.status_code, 200)
@@ -408,10 +408,10 @@ class NomcomViewsTest(TestCase):
     def change_members(self, members=None, liaisons=None):
         test_data = {}
         if members is not None:
-            members_emails = ['{}{}'.format(member, EMAIL_DOMAIN) for member in members]
+            members_emails = [f'{member}{EMAIL_DOMAIN}' for member in members]
             test_data['members'] = members_emails
         if liaisons is not None:
-            liaisons_emails = ['{}{}'.format(liaison, EMAIL_DOMAIN) for liaison in liaisons]
+            liaisons_emails = [f'{liaison}{EMAIL_DOMAIN}' for liaison in liaisons]
             test_data['liaisons'] = liaisons_emails
         self.client.post(self.edit_members_url, test_data)
 
@@ -692,7 +692,7 @@ class NomcomViewsTest(TestCase):
         if not searched_email.person:
             searched_email.person = PersonFactory()
             searched_email.save()
-        nominator_email = kwargs.pop('nominator_email', "{}{}".format(COMMUNITY_USER, EMAIL_DOMAIN))
+        nominator_email = kwargs.pop('nominator_email', f"{COMMUNITY_USER}{EMAIL_DOMAIN}")
         position_name = kwargs.pop('position', 'IAOC')
         confirmation = kwargs.pop('confirmation', False)
 
@@ -710,7 +710,7 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+        nomcom.public_key.save('cert', File(open(self.cert_file.name)))
 
         response = self.client.get(nominate_url)
         self.assertEqual(response.status_code, 200)
@@ -753,12 +753,12 @@ class NomcomViewsTest(TestCase):
                                candidate_phone=candidate_phone,
                                nominee=nominee,
                                comments=feedback,
-                               nominator_email="{}{}".format(COMMUNITY_USER, EMAIL_DOMAIN))
+                               nominator_email=f"{COMMUNITY_USER}{EMAIL_DOMAIN}")
 
     def nominate_newperson_view(self, *args, **kwargs):
         public = kwargs.pop('public', True)
         nominee_email = kwargs.pop('nominee_email', 'nominee@example.com')
-        nominator_email = kwargs.pop('nominator_email', "{}{}".format(COMMUNITY_USER, EMAIL_DOMAIN))
+        nominator_email = kwargs.pop('nominator_email', f"{COMMUNITY_USER}{EMAIL_DOMAIN}")
         position_name = kwargs.pop('position', 'IAOC')
         confirmation = kwargs.pop('confirmation', False)
 
@@ -776,7 +776,7 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+        nomcom.public_key.save('cert', File(open(self.cert_file.name)))
 
         response = self.client.get(nominate_url)
         self.assertEqual(response.status_code, 200)
@@ -831,7 +831,7 @@ class NomcomViewsTest(TestCase):
                                    candidate_phone=candidate_phone,
                                    nominee=nominee,
                                    comments=feedback,
-                                   nominator_email="{}{}".format(COMMUNITY_USER, EMAIL_DOMAIN))
+                                   nominator_email=f"{COMMUNITY_USER}{EMAIL_DOMAIN}")
 
     def test_add_questionnaire(self):
         self.access_chair_url(self.add_questionnaire_url)
@@ -841,7 +841,7 @@ class NomcomViewsTest(TestCase):
     def add_questionnaire(self, *args, **kwargs):
         public = kwargs.pop('public', False)
         nominee_email = kwargs.pop('nominee_email', 'nominee@example.com')
-        nominator_email = kwargs.pop('nominator_email', "{}{}".format(COMMUNITY_USER, EMAIL_DOMAIN))
+        nominator_email = kwargs.pop('nominator_email', f"{COMMUNITY_USER}{EMAIL_DOMAIN}")
         position_name = kwargs.pop('position', 'IAOC')
 
         self.nominate_view(public=public,
@@ -858,7 +858,7 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+        nomcom.public_key.save('cert', File(open(self.cert_file.name)))
 
         response = self.client.get(self.add_questionnaire_url)
         self.assertEqual(response.status_code, 200)
@@ -870,7 +870,7 @@ class NomcomViewsTest(TestCase):
         comment_text = 'Test add questionnaire view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
 
         test_data = {'comment_text': comment_text,
-                     'nominee': '{}_{}'.format(position.id, nominee.id)}
+                     'nominee': f'{position.id}_{nominee.id}'}
 
         response = self.client.post(self.add_questionnaire_url, test_data)
 
@@ -915,7 +915,7 @@ class NomcomViewsTest(TestCase):
     def feedback_view(self, *args, **kwargs):
         public = kwargs.pop('public', True)
         nominee_email = kwargs.pop('nominee_email', 'nominee@example.com')
-        nominator_email = kwargs.pop('nominator_email', "{}{}".format(COMMUNITY_USER, EMAIL_DOMAIN))
+        nominator_email = kwargs.pop('nominator_email', f"{COMMUNITY_USER}{EMAIL_DOMAIN}")
         position_name = kwargs.pop('position', 'IAOC')
         confirmation = kwargs.pop('confirmation', False)
 
@@ -937,7 +937,7 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+        nomcom.public_key.save('cert', File(open(self.cert_file.name)))
 
         response = self.client.get(feedback_url)
         self.assertEqual(response.status_code, 200)
@@ -1061,7 +1061,7 @@ class FeedbackTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+        nomcom.public_key.save('cert', File(open(self.cert_file.name)))
 
         comment_text = 'Plain text. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
         comments = nomcom.encrypt(comment_text)
@@ -1084,7 +1084,7 @@ class ReminderTest(TestCase):
         self.nomcom = get_nomcom_by_year(NOMCOM_YEAR)
         self.cert_file, self.privatekey_file = get_cert_files()
         #self.nomcom.public_key.storage.location = tempfile.gettempdir()
-        self.nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+        self.nomcom.public_key.save('cert', File(open(self.cert_file.name)))
 
         gen = Position.objects.get(nomcom=self.nomcom,name='GEN')
         rai = Position.objects.get(nomcom=self.nomcom,name='RAI')

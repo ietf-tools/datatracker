@@ -41,7 +41,7 @@ class Message(models.Model):
         ]
 
     def __str__(self):
-        return "'{}' {} -> {}".format(self.subject, self.frm, self.to)
+        return f"'{self.subject}' {self.frm} -> {self.to}"
 
     def get(self, field):
         r = getattr(self, field)

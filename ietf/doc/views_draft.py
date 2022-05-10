@@ -365,7 +365,7 @@ def replaces(request, name):
 
             if new_replaces != old_replaces:
                 events = set_replaces_for_document(request, doc, new_replaces, by=by,
-                                                   email_subject="{} replacement status updated by {}".format(doc.name, by),
+                                                   email_subject=f"{doc.name} replacement status updated by {by}",
                                                    comment=comment)
 
                 doc.save_with_history(events)
@@ -422,7 +422,7 @@ def review_possibly_replaces(request, name):
 
             if new_replaces != old_replaces:
                 events.extend(set_replaces_for_document(request, doc, new_replaces, by=by,
-                                                        email_subject="{} replacement status updated by {}".format(doc.name, by),
+                                                        email_subject=f"{doc.name} replacement status updated by {by}",
                                                         comment=comment))
 
             if comment:
@@ -633,7 +633,7 @@ def to_iesg(request,name):
             send_mail(request=request,
                       to = addrs.to,
                       frm = on_behalf_of(by.formatted_email()),
-                      subject = "Publication has been requested for {}-{}".format(doc.name,doc.rev),
+                      subject = f"Publication has been requested for {doc.name}-{doc.rev}",
                       template = "doc/submit_to_iesg_email.txt",
                       context = dict(doc=doc,by=by,url="%s%s"%(settings.IDTRACKER_BASE_URL,doc.get_absolute_url()),),
                       extra = extra)
@@ -703,7 +703,7 @@ def edit_info(request, name):
                     e.by = Person.objects.get(name="(System)")
                     e.doc = doc
                     e.rev = doc.rev
-                    e.desc = "Earlier history may be found in the Comment Log for <a href=\"{}\">{}</a>".format(replaces[0], replaces[0].get_absolute_url())
+                    e.desc = f"Earlier history may be found in the Comment Log for <a href=\"{replaces[0]}\">{replaces[0].get_absolute_url()}</a>"
                     e.save()
                     events.append(e)
 
@@ -877,10 +877,10 @@ def restore_draft_file(request, draft):
     for file in files:
         try:
             shutil.move(file, settings.INTERNET_DRAFT_PATH)
-            log.log("  Moved file {} to {}".format(file, settings.INTERNET_DRAFT_PATH))
+            log.log(f"  Moved file {file} to {settings.INTERNET_DRAFT_PATH}")
         except shutil.Error as ex:
             messages.warning(request, f'There was an error restoring the draft file: {file} ({ex})')
-            log.log("  Exception {} when attempting to move {}".format(ex, file))
+            log.log(f"  Exception {ex} when attempting to move {file}")
 
 
 class IESGNoteForm(forms.Form):
@@ -1308,7 +1308,7 @@ def request_publication(request, name):
 
         from ietf.doc.templatetags.mail_filters import std_level_prompt
 
-        subject = "{}: '{}' to {} ({}-{}.txt)".format(action, doc.title, std_level_prompt(doc), doc.name, doc.rev)
+        subject = f"{action}: '{doc.title}' to {std_level_prompt(doc)} ({doc.name}-{doc.rev}.txt)"
 
         body = generate_publication_request(request, doc)
 
@@ -1364,7 +1364,7 @@ class AdoptDraftForm(forms.Form):
                 group_queryset = self.fields["group"].queryset.filter(role__person__user=user, role__name__in=wg_features.docman_roles).distinct()
             self.fields["group"].queryset = group_queryset
 
-        self.fields['group'].choices = [(g.pk, '{} - {}'.format(g.acronym, g.name)) for g in self.fields["group"].queryset]
+        self.fields['group'].choices = [(g.pk, f'{g.acronym} - {g.name}') for g in self.fields["group"].queryset]
         self.fields['newstate'].choices = [('','-- Pick a state --')]
         self.fields['newstate'].choices.extend([(x.pk,x.name + " (IETF)") for x in state_choices if x.type_id == 'draft-stream-ietf'])
         self.fields['newstate'].choices.extend([(x.pk,x.name + " (IRTF)") for x in state_choices if x.type_id == 'draft-stream-irtf'])
@@ -1419,9 +1419,9 @@ def adopt_draft(request, name):
             # group
             if group != doc.group:
                 e = DocEvent(type="changed_group", doc=doc, rev=doc.rev, by=by)
-                e.desc = "Changed group to <b>{} ({})</b>".format(group.name, group.acronym.upper())
+                e.desc = f"Changed group to <b>{group.name} ({group.acronym.upper()})</b>"
                 if doc.group.type_id != "individ":
-                    e.desc += " from {} ({})".format(doc.group.name, doc.group.acronym.upper())
+                    e.desc += f" from {doc.group.name} ({doc.group.acronym.upper()})"
                 e.save()
                 events.append(e)
                 doc.group = group

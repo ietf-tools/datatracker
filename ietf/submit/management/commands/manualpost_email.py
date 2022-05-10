@@ -23,7 +23,7 @@ class Command(BaseCommand):
         if not email:
             msg = sys.stdin.read()
         else:
-            msg = open(email, "r").read()
+            msg = open(email).read()
 
         try:
             process_response_email(msg)

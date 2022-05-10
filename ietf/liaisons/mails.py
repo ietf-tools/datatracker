@@ -68,7 +68,7 @@ def possibly_send_deadline_reminder(liaison):
         subject = '[Liaison OUT OF DATE] %s' % liaison.title
         days_msg = 'is out of date for %s days' % (-days_to_go)
     else:
-        subject = '[Liaison deadline {}] {}'.format(PREVIOUS_DAYS[days_to_go], liaison.title)
+        subject = f'[Liaison deadline {PREVIOUS_DAYS[days_to_go]}] {liaison.title}'
         days_msg = 'expires %s' % PREVIOUS_DAYS[days_to_go]
 
     from_email = settings.LIAISON_UNIVERSAL_FROM

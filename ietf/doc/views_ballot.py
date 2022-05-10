@@ -173,9 +173,9 @@ def save_position(form, doc, ballot, balloter, login=None, send_email=False):
 
     # figure out a description
     if not old_pos and pos.pos.slug != "norecord":
-        pos.desc = "[Ballot Position Update] New position, {}, has been recorded for {}".format(pos.pos.name, pos.balloter.plain_name())
+        pos.desc = f"[Ballot Position Update] New position, {pos.pos.name}, has been recorded for {pos.balloter.plain_name()}"
     elif old_pos and pos.pos != old_pos.pos:
-        pos.desc = "[Ballot Position Update] Position for {} has been changed to {} from {}".format(pos.balloter.plain_name(), pos.pos.name, old_pos.pos.name)
+        pos.desc = f"[Ballot Position Update] Position for {pos.balloter.plain_name()} has been changed to {pos.pos.name} from {old_pos.pos.name}"
 
     if not pos.desc and changes:
         pos.desc = "Ballot {} text updated for {}".format(" and ".join(changes), balloter.plain_name())
@@ -290,7 +290,7 @@ def api_set_position(request):
             pos = save_position(form, doc, ballot, ad, send_email=True)
         else:
             errors = form.errors
-            summary = ','.join([ "{}: {}".format(f, striptags(errors[f])) for f in errors ])
+            summary = ','.join([ f"{f}: {striptags(errors[f])}" for f in errors ])
             return err(400, "Form not valid: %s" % summary)
     else:
         return err(405, "Method not allowed")
@@ -659,7 +659,7 @@ def ballot_writeupnotes(request, name):
                         pos.type = "changed_ballot_position"
                         pos.balloter = login
                         pos.pos_id = "yes"
-                        pos.desc = "[Ballot Position Update] New position, {}, has been recorded for {}".format(pos.pos.name, pos.balloter.plain_name())
+                        pos.desc = f"[Ballot Position Update] New position, {pos.pos.name}, has been recorded for {pos.balloter.plain_name()}"
                         pos.save()
 
                         # Consider mailing this position to 'iesg_ballot_saved'

@@ -26,12 +26,12 @@ class Command(BaseCommand):
         for m in options['meeting']:
             meeting = Meeting.objects.filter(number=m).first()
             if not meeting:
-                self.stderr.write("\nMeeting not found: {}\n".format(m))
+                self.stderr.write(f"\nMeeting not found: {m}\n")
                 continue
             if meeting.date < datetime.date.today() + datetime.timedelta(days=max_offset):
-                self.stderr.write("\nMeeting {}: Won't change dates for meetings in the past or close future\n".format(meeting))
+                self.stderr.write(f"\nMeeting {meeting}: Won't change dates for meetings in the past or close future\n")
                 continue
-            self.stdout.write('\n{}\n\n'.format(meeting))
+            self.stdout.write(f'\n{meeting}\n\n')
             pre_dates = { d.name_id: d for d in ImportantDate.objects.filter(meeting=meeting) }
             update_important_dates(meeting)
             post_dates = { d.name_id: d for d in ImportantDate.objects.filter(meeting=meeting) }

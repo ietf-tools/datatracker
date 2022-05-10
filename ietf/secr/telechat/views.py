@@ -252,9 +252,9 @@ def doc_detail(request, date, name):
                     pos.ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
                     pos.pos = clean['position']
                     if form.initial['position'] == None:
-                        pos.desc = '[Ballot Position Update] New position, {}, has been recorded for {} by {}'.format(pos.pos.name, balloter.name, login.name)
+                        pos.desc = f'[Ballot Position Update] New position, {pos.pos.name}, has been recorded for {balloter.name} by {login.name}'
                     else:
-                        pos.desc = '[Ballot Position Update] Position for {} has been changed to {} by {}'.format(balloter.name, pos.pos.name, login.name)
+                        pos.desc = f'[Ballot Position Update] Position for {balloter.name} has been changed to {pos.pos.name} by {login.name}'
                     pos.save()
                     has_changed = True
 

@@ -46,7 +46,7 @@ def top_level(request):
 
     for name in sorted( name for name, api in _api_list if len(api._registry) > 0 ):
         available_resources[name] = {
-            'list_endpoint': '{}/{}/'.format(apitop, name),
+            'list_endpoint': f'{apitop}/{name}/',
         }
 
     serializer = Serializer()
@@ -160,12 +160,12 @@ def api_new_meeting_registration(request):
         try:
             meeting = Meeting.objects.get(number=number)
         except Meeting.DoesNotExist:
-            return err(400, "Invalid meeting value: '{}'".format(number))
+            return err(400, f"Invalid meeting value: '{number}'")
         email = data['email']
         try:
             validate_email(email)
         except ValidationError:
-            return err(400, "Invalid email value: '{}'".format(email))
+            return err(400, f"Invalid email value: '{email}'")
         if request.POST.get('cancelled', 'false') == 'true':
             MeetingRegistration.objects.filter(meeting_id=meeting.pk, email=email).delete()
             return HttpResponse('OK', status=200, content_type='text/plain')

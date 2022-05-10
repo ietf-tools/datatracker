@@ -351,7 +351,7 @@ def edit_person_externalresources(request):
             if r.display_name:
                 res.append("{} {} ({})".format(r.name.slug, r.value, r.display_name.strip('()')))
             else:
-                res.append("{} {}".format(r.name.slug, r.value)) 
+                res.append(f"{r.name.slug} {r.value}") 
                 # TODO: This is likely problematic if value has spaces. How then to delineate value and display_name? Perhaps in the short term move to comma or pipe separation.
                 # Might be better to shift to a formset instead of parsing these lines.
         return fs.join(res)

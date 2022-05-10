@@ -79,6 +79,6 @@ class Command(BaseCommand):
                 to = ','.join( a[1] for a in email.utils.getaddresses([m.to]) )
                 try:
                     send_mail_message(None, m)
-                    self.stdout.write('{}  {} -> {}  "{}"'.format(m.pk, m.frm, to, m.subject.strip()))
+                    self.stdout.write(f'{m.pk}  {m.frm} -> {to}  "{m.subject.strip()}"')
                 except smtplib.SMTPException as e:
-                    self.stdout.write('Failure {}:  {}  {} -> {}  "{}"'.format(e, m.pk, m.frm, to, m.subject.strip()))
+                    self.stdout.write(f'Failure {e}:  {m.pk}  {m.frm} -> {to}  "{m.subject.strip()}"')

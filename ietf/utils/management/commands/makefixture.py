@@ -136,7 +136,7 @@ class Command(LabelCommand):
                 related = []
                 for obj in objects:
                     if DEBUG:
-                        print("Adding {}[{}]".format(model_name(obj), obj.pk))
+                        print(f"Adding {model_name(obj)}[{obj.pk}]")
                     # follow forward relation fields
                     for f in obj.__class__._meta.fields + obj.__class__._meta.many_to_many:
                         if isinstance(f, ForeignKey):

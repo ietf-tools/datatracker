@@ -28,8 +28,8 @@ def get_charter_text(group):
     Takes a group object and returns the text or the group's charter as a string
     '''
     charter = group.charter
-    path = os.path.join(settings.CHARTER_PATH, '{}-{}.txt'.format(charter.canonical_name(), charter.rev))
-    f = open(path,'r')
+    path = os.path.join(settings.CHARTER_PATH, f'{charter.canonical_name()}-{charter.rev}.txt')
+    f = open(path)
     text = f.read()
     f.close()
 

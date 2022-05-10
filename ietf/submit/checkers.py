@@ -78,7 +78,7 @@ class DraftIdnitsChecker:
         warnstart = ['  == ', '  -- ']
         
 
-        cmd = "{} {} {}".format(settings.IDSUBMIT_IDNITS_BINARY, self.options, path)
+        cmd = f"{settings.IDSUBMIT_IDNITS_BINARY} {self.options} {path}"
         code, out, err = pipe(cmd)
         out = out.decode('utf-8')
         err = err.decode('utf-8')
@@ -106,7 +106,7 @@ class DraftIdnitsChecker:
                 elif item[:5] in warnstart:
                     warnings += 1
                 else:
-                    raise RuntimeError("Unexpected state in idnits checker: item: {}, line: {}".format(item, line))
+                    raise RuntimeError(f"Unexpected state in idnits checker: item: {item}, line: {line}")
                 item = ""
             elif item and line.strip() != "":
                 item += " " + line.strip()
@@ -154,7 +154,7 @@ class DraftYangChecker:
             except Exception as exc:
                 sys.stdout = saved_stdout
                 sys.stderr = saved_stderr
-                msg = "Exception when running xym on {}: {}".format(name, exc)
+                msg = f"Exception when running xym on {name}: {exc}"
                 log(msg)
                 raise
                 return None, msg, 0, 0, info

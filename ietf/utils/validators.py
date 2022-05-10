@@ -68,7 +68,7 @@ def validate_file_size(file, missing_ok=False):
             raise
 
     if size > settings.SECR_MAX_UPLOAD_SIZE:
-        raise ValidationError('Please keep filesize under {}. Requested upload size was {}'.format(filesizeformat(settings.SECR_MAX_UPLOAD_SIZE), filesizeformat(file.size)))
+        raise ValidationError(f'Please keep filesize under {filesizeformat(settings.SECR_MAX_UPLOAD_SIZE)}. Requested upload size was {filesizeformat(file.size)}')
 
 def validate_mime_type(file, valid, missing_ok=False):
     try:

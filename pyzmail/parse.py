@@ -785,7 +785,7 @@ if __name__ == "__main__":
         
     msg=PyzMessage.factory(open(sys.argv[1], 'rb'))
     
-    print('Subject: {!r}'.format(msg.get_subject()))
+    print(f'Subject: {msg.get_subject()!r}')
     print('From: {!r}'.format(msg.get_address('from')))
     print('To: {!r}'.format(msg.get_addresses('to')))
     print('Cc: {!r}'.format(msg.get_addresses('cc')))
