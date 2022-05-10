@@ -9,7 +9,7 @@ body:
   - type: textarea
     id: description
     attributes:
-      label: Describe the issue:
+      label: Describe the issue
       description: Include as much info as possible, including the current behavior, expected behavior, screenshots, etc.
       placeholder: Description
     validations:
