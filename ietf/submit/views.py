@@ -151,30 +151,17 @@ def api_upload(request):
                 clear_existing_files(form)
                 save_files(form)
 
-                # todo sort out author parsing - this only works for xml drafts
-                authors = form.authors
-                for a in authors:
-                    if not a['email']:
-                        raise ValidationError("Missing email address for author %s" % a)
-
                 submission = get_submission(form)
-                fill_in_submission(form, submission, authors, '', None)
-                create_submission_event(request, submission, desc="Uploaded unchecked submission")
-
-                # must do this after validate_submission() or data needed for check may be invalid
+                submission.state = DraftSubmissionStateName.objects.get(slug="uploaded")
+                submission.remote_ip = form.remote_ip
+                submission.file_types = ','.join(form.file_types)
+                submission.submission_date = datetime.date.today()
                 if check_submission_revision_consistency(submission):
                     return err( 409, "Submission failed due to a document revision inconsistency error "
                                      "in the database. Please contact the secretariat for assistance.")
-
-                author_emails = [a['email'].lower() for a in authors]
-                if not any(
-                        email.address.lower() in author_emails
-                        for email in user.person.email_set.filter(active=True)
-                ):
-                    raise ValidationError('Submitter %s is not one of the document authors' % user.username)
-
                 submission.submitter = user.person.formatted_email()
                 submission.save()
+                create_submission_event(request, submission, desc="Uploaded submission through API")
 
                 from .tasks import check_and_accept_submission, render_missing_formats
                 (
@@ -196,7 +183,6 @@ def api_upload(request):
         except Exception as e:
             exception = e
             raise
-            return err(500, "Exception: %s" % str(e))
         finally:
             if exception and submission:
                 remove_submission_files(submission)
