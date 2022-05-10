@@ -5,13 +5,13 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report!
+        Thanks for taking the time to fill out this bug report.
   - type: textarea
-    id: what-happened
+    id: description
     attributes:
-      label: What happened?
-      description: Also tell us, what did you expect to happen?
-      placeholder: Tell us what you see!
+      label: Describe the issue:
+      description: Include as much info as possible, including the current behavior, expected behavior, screenshots, etc.
+      placeholder: Description
     validations:
       required: true
   - type: dropdown
@@ -20,9 +20,9 @@ body:
       label: What browser(s) are you seeing the problem on?
       multiple: true
       options:
-        - Chrome / Edge
-        - Firefox
-        - Safari
+        - Google Chrome / Microsoft Edge
+        - Mozilla Firefox
+        - Apple Safari
         - Not Applicable
   - type: checkboxes
     id: terms
@@ -30,5 +30,5 @@ body:
       label: Code of Conduct
       description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/ietf-tools/.github/blob/main/CODE_OF_CONDUCT.md)
       options:
-        - label: I agree to follow the IETF's Code of Conduct
+        - label: I agree to follow the [IETF's Code of Conduct](https://github.com/ietf-tools/.github/blob/main/CODE_OF_CONDUCT.md)
           required: true
