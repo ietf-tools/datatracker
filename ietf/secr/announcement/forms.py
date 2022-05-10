@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django import forms
@@ -58,7 +57,7 @@ def get_nomcom_choices(user):
     addresses = []
     for nomcom in nomcoms:
         year = nomcom.group.acronym[-4:]
-        addresses.append('NomCom Chair %s <nomcom-chair-%s@ietf.org>' % (year,year))
+        addresses.append('NomCom Chair {} <nomcom-chair-{}@ietf.org>'.format(year,year))
 
     return addresses
         
@@ -86,7 +85,7 @@ class AnnounceForm(forms.ModelForm):
             self.hidden = False
         user = kwargs.pop('user')
         person = user.person
-        super(AnnounceForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['to'].widget = forms.Select(choices=get_to_choices())
         self.fields['to'].help_text = 'Select name OR select Other... and enter email below'
         self.fields['cc'].help_text = 'Use comma separated lists for emails (Cc, Bcc, Reply To)'
@@ -106,7 +105,7 @@ class AnnounceForm(forms.ModelForm):
                 self.fields[key].widget = forms.HiddenInput()
 
     def clean(self):
-        super(AnnounceForm, self).clean()
+        super().clean()
         data = self.cleaned_data
         if self.errors:
             return self.cleaned_data
@@ -119,7 +118,7 @@ class AnnounceForm(forms.ModelForm):
 
     def save(self, *args, **kwargs):
         user = kwargs.pop('user')
-        message = super(AnnounceForm, self).save(commit=False)
+        message = super().save(commit=False)
         message.by = user.person
         if self.cleaned_data['to'] == 'Other...':
             message.to = self.cleaned_data['to_custom']

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2022, All Rights Reserved
-# -*- coding: utf-8 -*-
 from django.template import Context, Origin, Template
 from django.test import override_settings
 

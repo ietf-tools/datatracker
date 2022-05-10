@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import email
@@ -72,7 +71,7 @@ class Command(BaseCommand):
             self.stderr.write("Error: Asked to send one or more already sent messages, and --resend not given")
             for m in sent:
                 to = ','.join( a[1] for a in email.utils.getaddresses([m.to]) )
-                self.stderr.write('  sent %s: %s  %s -> %s  "%s"' % (m.sent.strftime('%Y-%m-%d %H:%M'), m.pk, m.frm, to, m.subject.strip()))
+                self.stderr.write('  sent {}: {}  {} -> {}  "{}"'.format(m.sent.strftime('%Y-%m-%d %H:%M'), m.pk, m.frm, to, m.subject.strip()))
         else:
             if unsent:
                 messages = messages.filter(sent__isnull=True)
@@ -80,6 +79,6 @@ class Command(BaseCommand):
                 to = ','.join( a[1] for a in email.utils.getaddresses([m.to]) )
                 try:
                     send_mail_message(None, m)
-                    self.stdout.write('%s  %s -> %s  "%s"' % (m.pk, m.frm, to, m.subject.strip()))
+                    self.stdout.write('{}  {} -> {}  "{}"'.format(m.pk, m.frm, to, m.subject.strip()))
                 except smtplib.SMTPException as e:
-                    self.stdout.write('Failure %s:  %s  %s -> %s  "%s"' % (e, m.pk, m.frm, to, m.subject.strip()))
+                    self.stdout.write('Failure {}:  {}  {} -> {}  "{}"'.format(e, m.pk, m.frm, to, m.subject.strip()))

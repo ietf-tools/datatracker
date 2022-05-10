@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -180,7 +179,7 @@ class SecrMeetingTestCase(TestCase):
         # test upload
         group = Group.objects.filter(type='wg',state='active').first()
         file = StringIO('dummy bluesheet')
-        file.name = "bluesheets-%s-%s.pdf" % (meeting.number,group.acronym)
+        file.name = "bluesheets-{}-{}.pdf".format(meeting.number,group.acronym)
         files = {'file':file}
         response = self.client.post(url, files)
         self.assertEqual(response.status_code, 302)

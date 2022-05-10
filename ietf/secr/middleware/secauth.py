@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from ietf.ietfauth.utils import has_role, role_required
 
 
-class SecAuthMiddleware(object):
+class SecAuthMiddleware:
     """
     Middleware component that performs custom auth check for secretariat
     apps.  request except those excluded by SECR_AUTH_UNRESTRICTED_URLS.

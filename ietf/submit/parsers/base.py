@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import re
@@ -13,7 +12,7 @@ from django.template.defaultfilters import filesizeformat
 
 from ietf.utils.mime import get_mime_type
 
-class MetaData(object):
+class MetaData:
     rev = None
     name = None
     group = None
@@ -24,7 +23,7 @@ class MetaData(object):
     document_date = None
     authors = None
 
-class ParseInfo(object):
+class ParseInfo:
     """Collect errors from a parse"""
 
     def __init__(self):
@@ -45,7 +44,7 @@ class ParseInfo(object):
         self.warnings[warning_type] = warn_list + [warning_str]
 
 
-class FileParser(object):
+class FileParser:
     ext = None                          # type: Optional[str]
     mimetypes = []                      # type: List[str]
 
@@ -78,14 +77,13 @@ class FileParser(object):
 
     def parse_filename_extension(self):
         if not self.fd.name.lower().endswith('.'+self.ext):
-            self.parsed_info.add_error('Expected the %s file to have extension ".%s", found the name "%s"' % (self.ext.upper(), self.ext, self.fd.name))
+            self.parsed_info.add_error('Expected the {} file to have extension ".{}", found the name "{}"'.format(self.ext.upper(), self.ext, self.fd.name))
 
     def parse_file_type(self):
         self.fd.file.seek(0)
         content = self.fd.file.read(64*1024)
         mimetype, charset = get_mime_type(content)
         if not mimetype in self.mimetypes:
-            self.parsed_info.add_error('Expected an %s file of type "%s", found one of type "%s"' % (self.ext.upper(), '" or "'.join(self.mimetypes), mimetype))
+            self.parsed_info.add_error('Expected an {} file of type "{}", found one of type "{}"'.format(self.ext.upper(), '" or "'.join(self.mimetypes), mimetype))
         self.parsed_info.mimetype = mimetype
         self.parsed_info.charset = charset
-        

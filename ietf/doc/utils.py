@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -45,9 +44,9 @@ from ietf.utils.xmldraft import XMLDraft
 def save_document_in_history(doc):
     """Save a snapshot of document and related objects in the database."""
     def get_model_fields_as_dict(obj):
-        return dict((field.name, getattr(obj, field.name))
+        return {field.name: getattr(obj, field.name)
                     for field in obj._meta.fields
-                    if field is not obj._meta.pk)
+                    if field is not obj._meta.pk}
 
     # copy fields
     fields = get_model_fields_as_dict(doc)
@@ -249,7 +248,7 @@ def irsg_needed_ballot_positions(doc, active_positions):
 def create_ballot(request, doc, by, ballot_slug, time=None):
     closed = close_open_ballots(doc, by)
     for e in closed:
-        messages.warning(request, "Closed earlier open ballot created %s on '%s' for %s" % (e.time.strftime('%Y-%m-%d %H:%M'), e.ballot_type, e.doc.name, ))
+        messages.warning(request, "Closed earlier open ballot created {} on '{}' for {}".format(e.time.strftime('%Y-%m-%d %H:%M'), e.ballot_type, e.doc.name))
     if time:
         e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev, time=time)
     else:
@@ -277,7 +276,7 @@ def create_ballot_if_not_open(request, doc, by, ballot_slug, time=None, duedate=
         return e
     else:
         if request:
-            messages.warning(request, "There already exists an open '%s' ballot for %s.  No new ballot created." % (ballot_type, doc.name))
+            messages.warning(request, "There already exists an open '{}' ballot for {}.  No new ballot created.".format(ballot_type, doc.name))
         return None
 
 def close_ballot(doc, by, ballot_slug):
@@ -340,7 +339,7 @@ def add_links_in_new_revision_events(doc, events, diff_revisions):
     """Add direct .txt links and diff links to new_revision events."""
     prev = None
 
-    diff_urls = dict(((name, revision), url) for name, revision, time, url in diff_revisions)
+    diff_urls = {(name, revision): url for name, revision, time, url in diff_revisions}
 
     for e in sorted(events, key=lambda e: (e.time, e.id)):
         if not e.type == "new_revision":
@@ -365,7 +364,7 @@ def add_links_in_new_revision_events(doc, events, diff_revisions):
             links += ""
 
         if prev != None:
-            links += ' (<a href="%s?url1=%s&amp;url2=%s">diff from previous</a>)' % (settings.RFCDIFF_BASE_URL, quote(prev, safe="~"), quote(diff_url, safe="~"))
+            links += ' (<a href="{}?url1={}&amp;url2={}">diff from previous</a>)'.format(settings.RFCDIFF_BASE_URL, quote(prev, safe="~"), quote(diff_url, safe="~"))
 
         # replace the bold filename part
         e.desc = re.sub(r"<b>(.+-[0-9][0-9].txt)</b>", links, e.desc)
@@ -385,9 +384,9 @@ def add_events_message_info(events):
 
 def get_unicode_document_content(key, filename, codec='utf-8', errors='ignore'):
     try:
-        with io.open(filename, 'rb') as f:
+        with open(filename, 'rb') as f:
             raw_content = f.read().decode(codec,errors)
-    except IOError:
+    except OSError:
         if settings.DEBUG:
             error = "Error; cannot read ("+filename+")"
         else:
@@ -399,9 +398,9 @@ def get_unicode_document_content(key, filename, codec='utf-8', errors='ignore'):
 def get_document_content(key, filename, split=True, markup=True):
     log.unreachable("2017-12-05")
     try:
-        with io.open(filename, 'rb') as f:
+        with open(filename, 'rb') as f:
             raw_content = f.read()
-    except IOError:
+    except OSError:
         if settings.DEBUG:
             error = "Error; cannot read ("+filename+")"
         else:
@@ -433,7 +432,7 @@ def add_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_t
     e.type = "changed_state"
     e.state_type = (prev_state or new_state).type
     e.state = new_state
-    e.desc = "%s changed to <b>%s</b>" % (e.state_type.label, new_state.name + tags_suffix(new_tags))
+    e.desc = "{} changed to <b>{}</b>".format(e.state_type.label, new_state.name + tags_suffix(new_tags))
     if prev_state:
         e.desc += " from %s" % (prev_state.name + tags_suffix(prev_tags))
     if timestamp:
@@ -548,9 +547,9 @@ def update_documentauthors(doc, new_docauthors, by=None, basis=None):
             return None
         else:
             if was_empty and not now_empty:
-                return 'set {field} to "{new}"'.format(field=field, new=newval)
+                return f'set {field} to "{newval}"'
             elif now_empty and not was_empty:
-                return 'cleared {field} (was "{old}")'.format(field=field, old=oldval)
+                return f'cleared {field} (was "{oldval}")'
             else:
                 return 'changed {field} from "{old}" to "{new}"'.format(
                     field=field, old=oldval, new=newval
@@ -567,7 +566,7 @@ def update_documentauthors(doc, new_docauthors, by=None, basis=None):
             # None exists, so create a new one (do not just use docauthor here because that
             # will modify the input and might cause side effects)
             auth = DocumentAuthor(document=doc, person=docauthor.person)
-            changes.append('Added "{name}" as author'.format(name=auth.person.name))
+            changes.append(f'Added "{auth.person.name}" as author')
 
         author_changes = []
         # Now fill in other author details
@@ -587,7 +586,7 @@ def update_documentauthors(doc, new_docauthors, by=None, basis=None):
 
     # Finally, remove any authors no longer in the list
     removed_authors = doc.documentauthor_set.exclude(person__in=persons) 
-    changes.extend(['Removed "{name}" as author'.format(name=auth.person.name)
+    changes.extend([f'Removed "{auth.person.name}" as author'
                     for auth in removed_authors])
     removed_authors.delete()
 
@@ -721,7 +720,7 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
         else:
             e.desc = "Removed from agenda for telechat"
     elif on_agenda and new_telechat_date != prev_telechat:
-        e.desc = "Telechat date has been changed to <b>%s</b> from <b>%s</b>" % (
+        e.desc = "Telechat date has been changed to <b>{}</b> from <b>{}</b>".format(
             new_telechat_date, prev_telechat)
     else:
         # we didn't reschedule but flipped returning item bit - let's
@@ -759,7 +758,7 @@ def rebuild_reference_relations(doc, filenames):
         filename = filenames['txt']
         try:
             refs = draft.PlaintextDraft.from_file(filename).get_refs()
-        except IOError as e:
+        except OSError as e:
             return { 'errors': ["%s :%s" %  (e.strerror, filename)] }
     else:
         return {'errors': ['No draft text available for rebuilding reference relations. Need XML or plaintext.']}
@@ -808,7 +807,7 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, com
     e = DocEvent(doc=doc, rev=doc.rev, by=by, type='changed_document')
     new_replaces_names = ", ".join(d.name for d in new_replaces) or "None"
     old_replaces_names = ", ".join(d.name for d in old_replaces) or "None"
-    e.desc = "This document now replaces <b>%s</b> instead of %s" % (new_replaces_names, old_replaces_names)
+    e.desc = "This document now replaces <b>{}</b> instead of {}".format(new_replaces_names, old_replaces_names)
     e.save()
 
     events.append(e)
@@ -884,7 +883,7 @@ def get_initial_notify(doc,extra=None):
             extra = extra.split(', ')
         receivers.extend(extra)
 
-    return ", ".join(set([x.strip() for x in receivers]))
+    return ", ".join({x.strip() for x in receivers})
 
 def uppercase_std_abbreviated_name(name):
     if re.match('(rfc|bcp|std|fyi) ?[0-9]+$', name):
@@ -986,8 +985,8 @@ def make_rev_history(doc):
 
 def get_search_cache_key(params):
     from ietf.doc.views_search import SearchForm
-    fields = set(SearchForm.base_fields) - set(['sort',])
-    kwargs = dict([ (k,v) for (k,v) in list(params.items()) if k in fields ])
+    fields = set(SearchForm.base_fields) - {'sort'}
+    kwargs = { k:v for (k,v) in list(params.items()) if k in fields }
     key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode('utf-8')).hexdigest()
     return key
     
@@ -995,7 +994,7 @@ def label_wrap(label, items, joiner=',', max=50):
     lines = []
     if not items:
         return lines
-    line = '%s: %s' % (label, items[0])
+    line = '{}: {}'.format(label, items[0])
     for item in items[1:]:
         if len(line)+len(joiner+' ')+len(item) > max:
             lines.append(line+joiner)
@@ -1109,7 +1108,7 @@ def build_doc_meta_block(doc, path):
         name = doc.name
         rfcnum = doc.rfc_number()
         errata_url = settings.RFC_EDITOR_ERRATA_URL.format(rfc_number=rfcnum) if not is_hst else ""
-        ipr_url = "%s?submit=draft&amp;id=%s" % (urlreverse('ietf.ipr.views.search'), name)
+        ipr_url = "{}?submit=draft&amp;id={}".format(urlreverse('ietf.ipr.views.search'), name)
         for i, line in enumerate(lines):
             # add draft links
             line = re.sub(r'\b(draft-[-a-z0-9]+)\b', r'<a href="%s/\g<1>">\g<1></a>'%(path, ), line)
@@ -1307,10 +1306,10 @@ def fuzzy_find_documents(name, rev=None):
     if name.startswith('rfc0'):
         name = "rfc" + name[3:].lstrip('0')
     if name.startswith('review-') and re.search(r'-\d\d\d\d-\d\d$', name):
-        name = "%s-%s" % (name, rev)
+        name = "{}-{}".format(name, rev)
         rev = None
     if rev and not name.startswith('charter-') and re.search('[0-9]{1,2}-[0-9]{2}', rev):
-        name = "%s-%s" % (name, rev[:-3])
+        name = "{}-{}".format(name, rev[:-3])
         rev = rev[-2:]
     if re.match("^[0-9]+$", name):
         name = f'rfc{name}'
@@ -1322,7 +1321,7 @@ def fuzzy_find_documents(name, rev=None):
     if rev and not docs.exists():
         # No document found, see if the name/rev split has been misidentified.
         # Handles some special cases, like draft-ietf-tsvwg-ieee-802-11.
-        name = '%s-%s' % (name, rev)
+        name = '{}-{}'.format(name, rev)
         docs = Document.objects.filter(docalias__name=name, type_id='draft')
         if docs.exists():
             rev = None  # found a doc by name with rev = None, so update that

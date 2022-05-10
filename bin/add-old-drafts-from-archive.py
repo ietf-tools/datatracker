@@ -97,7 +97,7 @@ for name in sorted(names):
 
                     def turn_into_unicode(s):
                         if s is None:
-                            return u""
+                            return ""
 
                         if isinstance(s, unicode):
                             return s

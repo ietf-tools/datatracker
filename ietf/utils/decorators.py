@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -76,12 +75,12 @@ def require_api_key(f, request, *args, **kwargs):
     key.count += 1
     key.latest = datetime.datetime.now()
     key.save()
-    PersonApiKeyEvent.objects.create(person=person, type='apikey_login', key=key, desc="Logged in with key ID %s, endpoint %s" % (key.id, key.endpoint))
+    PersonApiKeyEvent.objects.create(person=person, type='apikey_login', key=key, desc="Logged in with key ID {}, endpoint {}".format(key.id, key.endpoint))
     # Execute decorated function
     try:
         ret = f(request, *args, **kwargs)
     except AttributeError as e:
-        log.log("Bad API call: args: %s, kwargs: %s, exception: %s" % (args, kwargs, e))
+        log.log("Bad API call: args: {}, kwargs: {}, exception: {}".format(args, kwargs, e))
         return err(400, "Bad or missing parameters")
     return ret
 

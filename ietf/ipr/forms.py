@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -44,7 +43,7 @@ class MessageModelChoiceField(forms.ModelChoiceField):
             subject = obj.subject[:43] + '....'
         else:
             subject = obj.subject
-        return '{} - {}'.format(date,subject)
+        return f'{date} - {subject}'
 
 # ----------------------------------------------------------------
 # Forms
@@ -61,7 +60,7 @@ class AddEmailForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         self.ipr = kwargs.pop('ipr', None)
-        super(AddEmailForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if self.ipr:
             self.fields['in_reply_to'].queryset = Message.objects.filter(msgevents__disclosure__id=self.ipr.pk)
@@ -72,7 +71,7 @@ class AddEmailForm(forms.Form):
         message = email.message_from_string(force_str(text))
         for field in ('to','from','subject','date'):
             if not message[field]:
-                raise forms.ValidationError('Error parsing email: {} field not found.'.format(field))
+                raise forms.ValidationError(f'Error parsing email: {field} field not found.')
         date = utc_from_string(message['date'])
         if not isinstance(date,datetime.datetime):
             raise forms.ValidationError('Error parsing email date field')
@@ -81,7 +80,7 @@ class AddEmailForm(forms.Form):
     def clean(self):
         if any(self.errors):
             return self.cleaned_data
-        super(AddEmailForm, self).clean()
+        super().clean()
         in_reply_to = self.cleaned_data['in_reply_to']
         message = self.cleaned_data['message']
         direction = self.cleaned_data['direction']
@@ -215,11 +214,11 @@ class GenericDisclosureForm(forms.Form):
     same_as_ii_above = forms.BooleanField(label="Same as in section II above", required=False)
     
     def __init__(self,*args,**kwargs):
-        super(GenericDisclosureForm, self).__init__(*args,**kwargs)
+        super().__init__(*args,**kwargs)
         self.fields['compliant'].initial = True
         
     def clean(self):
-        super(GenericDisclosureForm, self).clean()
+        super().clean()
         cleaned_data = self.cleaned_data
         
         # if same_as_above not checked require submitted
@@ -237,7 +236,7 @@ class GenericDisclosureForm(forms.Form):
                                         "but a patent-specific disclosure must provide full patent information.")
 
         patent_fields += ['patent_notes']
-        patent_info = dict([ (k.replace('patent_','').capitalize(), cleaned_data.get(k)) for k in patent_fields if cleaned_data.get(k) ] )
+        patent_info = { k.replace('patent_','').capitalize(): cleaned_data.get(k) for k in patent_fields if cleaned_data.get(k)  }
         cleaned_data['patent_info'] = dict_to_text(patent_info).strip()
         cleaned_data['patent_fields'] = patent_fields
 
@@ -279,7 +278,7 @@ class IprDisclosureFormBase(forms.ModelForm):
     patent_notes =  forms.CharField(max_length=4096, required=False, widget=forms.Textarea)
     
     def __init__(self,*args,**kwargs):
-        super(IprDisclosureFormBase, self).__init__(*args,**kwargs)
+        super().__init__(*args,**kwargs)
         self.fields['submitter_name'].required = False
         self.fields['submitter_email'].required = False
         self.fields['compliant'].initial = True
@@ -310,7 +309,7 @@ class IprDisclosureFormBase(forms.ModelForm):
         fields = '__all__'
 
     def clean(self):
-        super(IprDisclosureFormBase, self).clean()
+        super().clean()
         cleaned_data = self.cleaned_data
         
         if not self.instance.pk:
@@ -321,7 +320,7 @@ class IprDisclosureFormBase(forms.ModelForm):
         
         patent_fields = [ 'patent_'+k for k in ['number', 'inventor', 'title', 'date', 'notes'] ]
 
-        patent_info = dict([ (k.replace('patent_','').capitalize(), cleaned_data.get(k)) for k in patent_fields if cleaned_data.get(k) ] )
+        patent_info = { k.replace('patent_','').capitalize(): cleaned_data.get(k) for k in patent_fields if cleaned_data.get(k)  }
         cleaned_data['patent_info'] = dict_to_text(patent_info).strip()
         cleaned_data['patent_fields'] = patent_fields
 
@@ -336,7 +335,7 @@ class HolderIprDisclosureForm(IprDisclosureFormBase):
         exclude = [ 'by','docs','state','rel' ]
         
     def __init__(self, *args, **kwargs):
-        super(HolderIprDisclosureForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.instance.pk:
             # editing existing disclosure
             self.fields['patent_info'].required = False
@@ -347,13 +346,13 @@ class HolderIprDisclosureForm(IprDisclosureFormBase):
             self.fields['licensing'].queryset = IprLicenseTypeName.objects.exclude(slug='none-selected')
             
     def clean(self):
-        cleaned_data = super(HolderIprDisclosureForm, self).clean()
+        cleaned_data = super().clean()
         if not self.data.get('iprdocrel_set-0-document') and not cleaned_data.get('other_designations'):
             raise forms.ValidationError('You need to specify a contribution in Section IV')
         return cleaned_data
 
     def save(self, *args, **kwargs):
-        obj = super(HolderIprDisclosureForm, self).save(*args,commit=False)
+        obj = super().save(*args,commit=False)
         if self.cleaned_data.get('same_as_ii_above') == True:
             obj.submitter_name = obj.holder_contact_name
             obj.submitter_email = obj.holder_contact_email
@@ -376,7 +375,7 @@ class MessageModelForm(forms.ModelForm):
         exclude = ['time','by','content_type','related_groups','related_docs']
     
     def __init__(self, *args, **kwargs):
-        super(MessageModelForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['frm'].label='From'
         self.fields['frm'].widget.attrs['readonly'] = True
         self.fields['reply_to'].widget.attrs['readonly'] = True
@@ -396,13 +395,13 @@ class ThirdPartyIprDisclosureForm(IprDisclosureFormBase):
         exclude = [ 'by','docs','state','rel' ]
 
     def clean(self):
-        cleaned_data = super(ThirdPartyIprDisclosureForm, self).clean()
+        cleaned_data = super().clean()
         if not self.data.get('iprdocrel_set-0-document') and not cleaned_data.get('other_designations'):
             raise forms.ValidationError('You need to specify a contribution in Section III')
         return cleaned_data
     
     def save(self, *args, **kwargs):
-        obj = super(ThirdPartyIprDisclosureForm, self).save(*args,commit=False)
+        obj = super().save(*args,commit=False)
         if self.cleaned_data.get('same_as_ii_above') == True:
             obj.submitter_name = obj.ietfer_name
             obj.submitter_email = obj.ietfer_contact_email

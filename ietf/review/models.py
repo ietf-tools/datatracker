@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -41,7 +40,7 @@ class ReviewerSettings(models.Model):
     expertise = models.TextField(verbose_name="Reviewer's expertise in this team's area", max_length=2048, blank=True, help_text="Describe the reviewer's expertise in this team's area", default='')
 
     def __str__(self):
-        return "{} in {}".format(self.person, self.team)
+        return f"{self.person} in {self.team}"
 
     class Meta:
         verbose_name_plural = "reviewer settings"
@@ -57,7 +56,7 @@ class ReviewSecretarySettings(models.Model):
     days_to_show_in_reviewer_list = models.IntegerField(null=True, blank=True, help_text="Maximum number of days to show in reviewer list for completed items.")
 
     def __str__(self):
-        return "{} in {}".format(self.person, self.team)
+        return f"{self.person} in {self.team}"
 
     class Meta:
         verbose_name_plural = "review secretary settings"
@@ -101,7 +100,7 @@ class ReviewWish(models.Model):
     doc         = ForeignKey(Document)
 
     def __str__(self):
-        return "{} wishes to review {} in {}".format(self.person, self.doc.name, self.team.acronym)
+        return f"{self.person} wishes to review {self.doc.name} in {self.team.acronym}"
 
     class Meta:
         verbose_name_plural = "review wishes"
@@ -112,7 +111,7 @@ class NextReviewerInTeam(models.Model):
     next_reviewer = ForeignKey(Person)
 
     def __str__(self):
-        return "{} next in {}".format(self.next_reviewer, self.team)
+        return f"{self.next_reviewer} next in {self.team}"
 
     class Meta:
         verbose_name = "next reviewer in team setting"
@@ -135,7 +134,7 @@ class ReviewRequest(models.Model):
     comment       = models.TextField(verbose_name="Requester's comments and instructions", max_length=2048, blank=True, help_text="Provide any additional information to show to the review team secretary and reviewer", default='')
 
     def __str__(self):
-        return "%s review on %s by %s %s" % (self.type, self.doc, self.team, self.state)
+        return "{} review on {} by {} {}".format(self.type, self.doc, self.team, self.state)
 
     def all_completed_assignments_for_doc(self):
         return ReviewAssignment.objects.filter(review_request__doc=self.doc, state__in=['completed','part-completed'])
@@ -163,7 +162,7 @@ class ReviewAssignment(models.Model):
         self._original_state = self.state_id
 
     def __str__(self):
-        return "Assignment for %s (%s) : %s %s of %s" % (self.reviewer.person, self.state, self.review_request.team.acronym, self.review_request.type, self.review_request.doc)
+        return "Assignment for {} ({}) : {} {} of {}".format(self.reviewer.person, self.state, self.review_request.team.acronym, self.review_request.type, self.review_request.doc)
 
     def save(self, *args, **kwargs):
         """
@@ -203,7 +202,7 @@ class ReviewTeamSettings(models.Model):
                   " want these reminders to be sent.")
 
     def __str__(self):
-        return "%s" % (self.group.acronym,)
+        return "{}".format(self.group.acronym)
 
     class Meta:
         verbose_name = "Review team settings"

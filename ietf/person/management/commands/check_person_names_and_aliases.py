@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2018-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from tqdm import tqdm
@@ -100,4 +99,3 @@ class Command(BaseCommand):
                 print(n)
         else:
             print("  Use -v2 to list them.")
-                        

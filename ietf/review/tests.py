@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2019-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 import datetime
 
 from ietf.group.factories import RoleFactory
@@ -21,9 +20,9 @@ class HashTest(TestCase):
                 ('ietf', '156182196167.12901.11966487185176024571@ietfa.amsl.com',  'lr6RtZ4TiVMZn1fZbykhkXeKhEk'),
                 ('codesprints', 'E1hNffl-0004RM-Dh@zinfandel.tools.ietf.org',       'N1nFHHUXiFWYtdzBgjtqzzILFHI'),
                 ('xml2rfc', '3A0F4CD6-451F-44E2-9DA4-28235C638588@rfc-editor.org',  'g6DN4SxJGDrlSuKsubwb6rRSePU'),
-                (u'ietf', u'156182196167.12901.11966487185176024571@ietfa.amsl.com','lr6RtZ4TiVMZn1fZbykhkXeKhEk'),
-                (u'codesprints', u'E1hNffl-0004RM-Dh@zinfandel.tools.ietf.org',     'N1nFHHUXiFWYtdzBgjtqzzILFHI'),
-                (u'xml2rfc', u'3A0F4CD6-451F-44E2-9DA4-28235C638588@rfc-editor.org','g6DN4SxJGDrlSuKsubwb6rRSePU'),
+                ('ietf', '156182196167.12901.11966487185176024571@ietfa.amsl.com','lr6RtZ4TiVMZn1fZbykhkXeKhEk'),
+                ('codesprints', 'E1hNffl-0004RM-Dh@zinfandel.tools.ietf.org',     'N1nFHHUXiFWYtdzBgjtqzzILFHI'),
+                ('xml2rfc', '3A0F4CD6-451F-44E2-9DA4-28235C638588@rfc-editor.org','g6DN4SxJGDrlSuKsubwb6rRSePU'),
                 (b'ietf', b'156182196167.12901.11966487185176024571@ietfa.amsl.com','lr6RtZ4TiVMZn1fZbykhkXeKhEk'),
                 (b'codesprints', b'E1hNffl-0004RM-Dh@zinfandel.tools.ietf.org',     'N1nFHHUXiFWYtdzBgjtqzzILFHI'),
                 (b'xml2rfc', b'3A0F4CD6-451F-44E2-9DA4-28235C638588@rfc-editor.org','g6DN4SxJGDrlSuKsubwb6rRSePU'),
@@ -457,13 +456,13 @@ class ReviewAssignmentReminderTests(TestCase):
 
         self.assertEqual(len(outbox), 1)
         self.assertTrue(secretary.person.email_address() in outbox[0]["To"])
-        self.assertEqual(outbox[0]["Subject"], "1 Overdue review for team {}".format(self.team.acronym))
+        self.assertEqual(outbox[0]["Subject"], f"1 Overdue review for team {self.team.acronym}")
         message = get_payload_text(outbox[0])
         self.assertIn(
             self.team.acronym + ' has 1 accepted or assigned review overdue by at least 5 days.',
             message,
         )
-        self.assertIn('Review of {} by {}'.format(self.review_req.doc.name, self.reviewer.plain_name()), message)
+        self.assertIn(f'Review of {self.review_req.doc.name} by {self.reviewer.plain_name()}', message)
         self.assertEqual(len(log), 1)
         self.assertIn(secretary.person.email_address(), log[0])
         self.assertIn('1 overdue review', log[0])

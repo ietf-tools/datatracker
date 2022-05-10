@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 def import_htpasswd_file(filename, verbosity=1, overwrite=False):
-    with io.open(filename) as file:
+    with open(filename) as file:
         for line in file:
             if not ':' in line:
                 raise ValueError('Found a line without colon separator in the htpassword file %s:'

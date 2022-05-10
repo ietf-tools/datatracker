@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import io
@@ -24,7 +23,7 @@ class Command(BaseCommand):
         if not email:
             msg = sys.stdin.read()
         else:
-            msg = io.open(email, "r").read()
+            msg = open(email, "r").read()
 
         try:
             process_response_email(msg)

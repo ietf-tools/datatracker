@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -80,7 +79,7 @@ def change_state(request, name, option=None):
                         pos.type = "changed_ballot_position"
                         pos.balloter = login
                         pos.pos_id = "yes"
-                        pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.balloter.plain_name())
+                        pos.desc = "[Ballot Position Update] New position, {}, has been recorded for {}".format(pos.pos.name, pos.balloter.plain_name())
                         pos.save()
 
                     send_status_change_eval_email(request,status_change)
@@ -147,8 +146,8 @@ class UploadForm(forms.Form):
         return get_cleaned_text_file_content(self.cleaned_data["txt"])
 
     def save(self, doc):
-       filename = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
-       with io.open(filename, 'w', encoding='utf-8') as destination:
+       filename = os.path.join(settings.STATUS_CHANGE_PATH, '{}-{}.txt'.format(doc.canonical_name(), doc.rev))
+       with open(filename, 'w', encoding='utf-8') as destination:
            if self.cleaned_data['txt']:
                destination.write(self.cleaned_data['txt'])
            else:
@@ -161,7 +160,7 @@ def submit(request, name):
 
     login = request.user.person
 
-    path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
+    path = os.path.join(settings.STATUS_CHANGE_PATH, '{}-{}.txt'.format(doc.canonical_name(), doc.rev))
     not_uploaded_yet = doc.rev == "00" and not os.path.exists(path)
 
     if not_uploaded_yet:
@@ -178,7 +177,7 @@ def submit(request, name):
 
                 events = []
                 e = NewRevisionDocEvent(doc=doc, by=login, type="new_revision")
-                e.desc = "New version available: <b>%s-%s.txt</b>" % (doc.canonical_name(), doc.rev)
+                e.desc = "New version available: <b>{}-{}.txt</b>".format(doc.canonical_name(), doc.rev)
                 e.rev = doc.rev
                 e.save()
                 events.append(e)
@@ -210,11 +209,11 @@ def submit(request, name):
                                                 dict(),
                                               )
         else:
-            filename = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
+            filename = os.path.join(settings.STATUS_CHANGE_PATH, '{}-{}.txt'.format(doc.canonical_name(), doc.rev))
             try:
-                with io.open(filename, 'r') as f:
+                with open(filename, 'r') as f:
                     init["content"] = f.read()
-            except IOError:
+            except OSError:
                 pass
 
         form = UploadForm(initial=init)
@@ -252,7 +251,7 @@ def edit_title(request, name):
         init = { "title" : status_change.title }
         form = ChangeTitleForm(initial=init)
 
-    titletext = '%s-%s.txt' % (status_change.canonical_name(),status_change.rev)
+    titletext = '{}-{}.txt'.format(status_change.canonical_name(),status_change.rev)
     return render(request, 'doc/change_title.html',
                               {'form': form,
                                'doc': status_change,
@@ -283,7 +282,7 @@ def edit_ad(request, name):
         init = { "ad" : status_change.ad_id }
         form = AdForm(initial=init)
 
-    titletext = '%s-%s.txt' % (status_change.canonical_name(),status_change.rev)
+    titletext = '{}-{}.txt'.format(status_change.canonical_name(),status_change.rev)
     return render(request, 'doc/change_ad.html',
                               {'form': form,
                                'doc': status_change,
@@ -388,7 +387,7 @@ def approve(request, name):
             for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
                 # Add a document event to each target
                 c = DocEvent(type="added_comment", doc=rel.target.document, rev=rel.target.document.rev, by=login)
-                c.desc = "New status of %s approved by the IESG\n%s%s" % (newstatus(rel), settings.IDTRACKER_BASE_URL,reverse('ietf.doc.views_doc.document_main', kwargs={'name': status_change.name}))
+                c.desc = "New status of {} approved by the IESG\n{}{}".format(newstatus(rel), settings.IDTRACKER_BASE_URL,reverse('ietf.doc.views_doc.document_main', kwargs={'name': status_change.name}))
                 c.save()
 
             return HttpResponseRedirect(status_change.get_absolute_url())
@@ -725,4 +724,3 @@ def last_call(request, name):
                                     last_call_form  = form,
                                    ),
                            )
-               

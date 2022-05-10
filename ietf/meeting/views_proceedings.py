@@ -104,7 +104,7 @@ def save_proceedings_material_doc(meeting, material_type, title, request, file=N
 
     if file:
         if not created:
-            doc.rev = '{:02}'.format(int(doc.rev) + 1)
+            doc.rev = f'{int(doc.rev) + 1:02}'
         filename = f'{doc.name}-{doc.rev}{Path(file.name).suffix}'
         save_error = handle_upload_file(file, filename, meeting, 'procmaterials', )
         if save_error is not None:
@@ -117,12 +117,12 @@ def save_proceedings_material_doc(meeting, material_type, title, request, file=N
             doc=doc,
             rev=doc.rev,
             by=by,
-            desc="New version available: <b>%s-%s</b>" % (doc.name, doc.rev),
+            desc="New version available: <b>{}-{}</b>".format(doc.name, doc.rev),
         )
         events.append(e)
     elif (external_url is not None) and external_url != doc.external_url:
         if not created:
-            doc.rev = '{:02}'.format(int(doc.rev) + 1)
+            doc.rev = f'{int(doc.rev) + 1:02}'
         doc.uploaded_filename = ''
         doc.external_url = external_url
         e = NewRevisionDocEvent.objects.create(
@@ -130,7 +130,7 @@ def save_proceedings_material_doc(meeting, material_type, title, request, file=N
             doc=doc,
             rev=doc.rev,
             by=by,
-            desc="Set external URL to <b>{}</b>".format(external_url),
+            desc=f"Set external URL to <b>{external_url}</b>",
         )
         events.append(e)
 

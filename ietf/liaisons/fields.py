@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import json
@@ -15,7 +14,7 @@ from ietf.utils.fields import SearchableField
 def select2_id_liaison(objs):
     return [{
         "id": o.pk,
-        "text":"[{}] {}".format(o.pk, escape(o.title)),
+        "text":f"[{o.pk}] {escape(o.title)}",
     } for o in objs] if objs else []
 
 def select2_id_liaison_json(objs):

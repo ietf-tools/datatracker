@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import time
@@ -121,13 +120,13 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertEqual(len(self.driver.find_elements(By.CSS_SELECTOR, '.session.purpose-regular')), 3)
 
         # select - show session info
-        s2_element = self.driver.find_element(By.CSS_SELECTOR, '#session{}'.format(s2.pk))
-        s2b_element = self.driver.find_element(By.CSS_SELECTOR, '#session{}'.format(s2b.pk))
+        s2_element = self.driver.find_element(By.CSS_SELECTOR, f'#session{s2.pk}')
+        s2b_element = self.driver.find_element(By.CSS_SELECTOR, f'#session{s2b.pk}')
         self.assertNotIn('other-session-selected', s2b_element.get_attribute('class'))
         s2_element.click()
 
         # other session for group should be flagged for highlighting
-        s2b_element = self.driver.find_element(By.CSS_SELECTOR, '#session{}'.format(s2b.pk))
+        s2b_element = self.driver.find_element(By.CSS_SELECTOR, f'#session{s2b.pk}')
         self.assertIn('other-session-selected', s2b_element.get_attribute('class'))
 
         # other session for group should appear in the info panel
@@ -158,9 +157,9 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
 
         self.driver.execute_script('!function(s){s.fn.simulateDragDrop=function(t){return this.each(function(){new s.simulateDragDrop(this,t)})},s.simulateDragDrop=function(t,a){this.options=a,this.simulateEvent(t,a)},s.extend(s.simulateDragDrop.prototype,{simulateEvent:function(t,a){var e="dragstart",n=this.createEvent(e);this.dispatchEvent(t,e,n),e="drop";var r=this.createEvent(e,{});r.dataTransfer=n.dataTransfer,this.dispatchEvent(s(a.dropTarget)[0],e,r),e="dragend";var i=this.createEvent(e,{});i.dataTransfer=n.dataTransfer,this.dispatchEvent(t,e,i)},createEvent:function(t){var a=document.createEvent("CustomEvent");return a.initCustomEvent(t,!0,!0,null),a.dataTransfer={data:{},setData:function(t,a){this.data[t]=a},getData:function(t){return this.data[t]}},a},dispatchEvent:function(t,a,e){t.dispatchEvent?t.dispatchEvent(e):t.fireEvent&&t.fireEvent("on"+a,e)}})}(jQuery);')
 
-        self.driver.execute_script("jQuery('#session{}').simulateDragDrop({{dropTarget: '.unassigned-sessions .drop-target'}});".format(s2.pk))
+        self.driver.execute_script(f"jQuery('#session{s2.pk}').simulateDragDrop({{dropTarget: '.unassigned-sessions .drop-target'}});")
 
-        WebDriverWait(self.driver, 2).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, '.unassigned-sessions #session{}'.format(s2.pk))))
+        WebDriverWait(self.driver, 2).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, f'.unassigned-sessions #session{s2.pk}')))
 
         self.assertEqual(list(SchedTimeSessAssignment.objects.filter(session=s2, schedule=schedule)), [])
 
@@ -182,19 +181,19 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertTrue(self.driver.find_element(By.CSS_SELECTOR, '.unassigned-sessions .drop-target #session{} + #session{}'.format(*sorted_pks)))
 
         # schedule
-        self.driver.execute_script("jQuery('#session{}').simulateDragDrop({{dropTarget: '#timeslot{} .drop-target'}});".format(s2.pk, slot1.pk))
+        self.driver.execute_script(f"jQuery('#session{s2.pk}').simulateDragDrop({{dropTarget: '#timeslot{slot1.pk} .drop-target'}});")
 
-        WebDriverWait(self.driver, 2).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, '#timeslot{} #session{}'.format(slot1.pk, s2.pk))))
+        WebDriverWait(self.driver, 2).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, f'#timeslot{slot1.pk} #session{s2.pk}')))
 
         assignment = SchedTimeSessAssignment.objects.get(session=s2, schedule=schedule)
         self.assertEqual(assignment.timeslot, slot1)
 
         # timeslot constraint hints when selected
-        s1_element = self.driver.find_element(By.CSS_SELECTOR, '#session{}'.format(s1.pk))
+        s1_element = self.driver.find_element(By.CSS_SELECTOR, f'#session{s1.pk}')
         s1_element.click()
 
         # violated due to constraints - both the timeslot and its timeslot label
-        self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, '#timeslot{}.would-violate-hint'.format(slot1.pk)))
+        self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, f'#timeslot{slot1.pk}.would-violate-hint'))
         # Find the timeslot label for slot1 - it's the first timeslot in the first room group
         slot1_roomgroup_elt = self.driver.find_element(By.CSS_SELECTOR,
             '.day-flow .day:first-child .room-group:nth-child(2)'  # count from 2 - first-child is the day label
@@ -207,7 +206,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         )
 
         # violated due to missing capacity
-        self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, '#timeslot{}.would-violate-hint'.format(slot3.pk)))
+        self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, f'#timeslot{slot3.pk}.would-violate-hint'))
         # Find the timeslot label for slot3 - it's the second timeslot in the second room group
         slot3_roomgroup_elt = self.driver.find_element(By.CSS_SELECTOR,
             '.day-flow .day:first-child .room-group:nth-child(3)'  # count from 2 - first-child is the day label
@@ -220,36 +219,36 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         )
 
         # reschedule
-        self.driver.execute_script("jQuery('#session{}').simulateDragDrop({{dropTarget: '#timeslot{} .drop-target'}});".format(s2.pk, slot2.pk))
+        self.driver.execute_script(f"jQuery('#session{s2.pk}').simulateDragDrop({{dropTarget: '#timeslot{slot2.pk} .drop-target'}});")
 
-        WebDriverWait(self.driver, 2).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, '#timeslot{} #session{}'.format(slot2.pk, s2.pk))))
+        WebDriverWait(self.driver, 2).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, f'#timeslot{slot2.pk} #session{s2.pk}')))
 
         assignment = SchedTimeSessAssignment.objects.get(session=s2, schedule=schedule)
         self.assertEqual(assignment.timeslot, slot2)
 
         # too many attendees warning
-        self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, '#session{}.too-many-attendees'.format(s2.pk)))
+        self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, f'#session{s2.pk}.too-many-attendees'))
 
         # overfull timeslot
-        self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, '#timeslot{}.overfull'.format(slot2.pk)))
+        self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, f'#timeslot{slot2.pk}.overfull'))
 
         # constraint hints
         s1_element.click()
         self.assertIn('would-violate-hint', s2_element.get_attribute('class'))
-        constraint_element = s2_element.find_element(By.CSS_SELECTOR, ".constraints span[data-sessions=\"{}\"].would-violate-hint".format(s1.pk))
+        constraint_element = s2_element.find_element(By.CSS_SELECTOR, f".constraints span[data-sessions=\"{s1.pk}\"].would-violate-hint")
         self.assertTrue(constraint_element.is_displayed())
 
         # current constraint violations
-        self.driver.execute_script("jQuery('#session{}').simulateDragDrop({{dropTarget: '#timeslot{} .drop-target'}});".format(s1.pk, slot1.pk))
+        self.driver.execute_script(f"jQuery('#session{s1.pk}').simulateDragDrop({{dropTarget: '#timeslot{slot1.pk} .drop-target'}});")
 
-        WebDriverWait(self.driver, 2).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, '#timeslot{} #session{}'.format(slot1.pk, s1.pk))))
+        WebDriverWait(self.driver, 2).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, f'#timeslot{slot1.pk} #session{s1.pk}')))
 
-        constraint_element = s2_element.find_element(By.CSS_SELECTOR, ".constraints span[data-sessions=\"{}\"].violated-hint".format(s1.pk))
+        constraint_element = s2_element.find_element(By.CSS_SELECTOR, f".constraints span[data-sessions=\"{s1.pk}\"].violated-hint")
         self.assertTrue(constraint_element.is_displayed())
 
         # hide sessions in area
         self.assertTrue(s1_element.is_displayed())
-        self.driver.find_element(By.CSS_SELECTOR, ".session-parent-toggles [value=\"{}\"]".format(s1.group.parent.acronym)).click()
+        self.driver.find_element(By.CSS_SELECTOR, f".session-parent-toggles [value=\"{s1.group.parent.acronym}\"]").click()
         self.assertTrue(s1_element.is_displayed())  # should still be displayed
         self.assertIn('hidden-parent', s1_element.get_attribute('class'),
                       'Session should be hidden when parent disabled')
@@ -257,7 +256,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertNotIn('selected', s1_element.get_attribute('class'),
                          'Session should not be selectable when parent disabled')
 
-        self.driver.find_element(By.CSS_SELECTOR, ".session-parent-toggles [value=\"{}\"]".format(s1.group.parent.acronym)).click()
+        self.driver.find_element(By.CSS_SELECTOR, f".session-parent-toggles [value=\"{s1.group.parent.acronym}\"]").click()
         self.assertTrue(s1_element.is_displayed())
         self.assertNotIn('hidden-parent', s1_element.get_attribute('class'),
                          'Session should not be hidden when parent enabled')
@@ -276,25 +275,25 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertTrue(not self.driver.find_element(By.CSS_SELECTOR, "#timeslot-group-toggles-modal").is_displayed())
 
         # swap days
-        self.driver.find_element(By.CSS_SELECTOR, ".day .swap-days[data-dayid=\"{}\"]".format(slot4.time.date().isoformat())).click()
+        self.driver.find_element(By.CSS_SELECTOR, f".day .swap-days[data-dayid=\"{slot4.time.date().isoformat()}\"]").click()
         self.assertTrue(self.driver.find_element(By.CSS_SELECTOR, "#swap-days-modal").is_displayed())
-        self.driver.find_element(By.CSS_SELECTOR, "#swap-days-modal input[name=\"target_day\"][value=\"{}\"]".format(slot1.time.date().isoformat())).click()
+        self.driver.find_element(By.CSS_SELECTOR, f"#swap-days-modal input[name=\"target_day\"][value=\"{slot1.time.date().isoformat()}\"]").click()
         self.driver.find_element(By.CSS_SELECTOR, "#swap-days-modal button[type=\"submit\"]").click()
 
-        self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, '#timeslot{} #session{}'.format(slot4.pk, s1.pk)),
+        self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, f'#timeslot{slot4.pk} #session{s1.pk}'),
                         'Session s1 should have moved to second meeting day')
 
         # swap timeslot column - put session in a differently-timed timeslot
         self.driver.find_element(By.CSS_SELECTOR,
-            '.day .swap-timeslot-col[data-timeslot-pk="{}"]'.format(slot1b.pk)
+            f'.day .swap-timeslot-col[data-timeslot-pk="{slot1b.pk}"]'
         ).click()  # open modal on the second timeslot for room1
         self.assertTrue(self.driver.find_element(By.CSS_SELECTOR, "#swap-timeslot-col-modal").is_displayed())
         self.driver.find_element(By.CSS_SELECTOR,
-            '#swap-timeslot-col-modal input[name="target_timeslot"][value="{}"]'.format(slot4.pk)
+            f'#swap-timeslot-col-modal input[name="target_timeslot"][value="{slot4.pk}"]'
         ).click()  # select room1 timeslot that has a session in it
         self.driver.find_element(By.CSS_SELECTOR, '#swap-timeslot-col-modal button[type="submit"]').click()
 
-        self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, '#timeslot{} #session{}'.format(slot1b.pk, s1.pk)),
+        self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, f'#timeslot{slot1b.pk} #session{s1.pk}'),
                         'Session s1 should have moved to second timeslot on first meeting day')
 
     def test_past_flags(self):
@@ -363,25 +362,25 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.driver.get(url)
 
         past_flags = self.driver.find_elements(By.CSS_SELECTOR,
-            ','.join('#timeslot{} .past-flag'.format(ts.pk) for ts in past_timeslots)
+            ','.join(f'#timeslot{ts.pk} .past-flag' for ts in past_timeslots)
         )
         self.assertGreaterEqual(len(past_flags), len(past_timeslots) + len(past_sessions),
                                 'Expected at least one flag for each past timeslot and session')
 
         now_flags = self.driver.find_elements(By.CSS_SELECTOR,
-            ','.join('#timeslot{} .past-flag'.format(ts.pk) for ts in now_timeslots)
+            ','.join(f'#timeslot{ts.pk} .past-flag' for ts in now_timeslots)
         )
         self.assertGreaterEqual(len(now_flags), len(now_timeslots) + len(now_sessions),
                                 'Expected at least one flag for each "now" timeslot and session')
 
         future_flags = self.driver.find_elements(By.CSS_SELECTOR,
-            ','.join('#timeslot{} .past-flag'.format(ts.pk) for ts in future_timeslots)
+            ','.join(f'#timeslot{ts.pk} .past-flag' for ts in future_timeslots)
         )
         self.assertGreaterEqual(len(future_flags), len(future_timeslots) + len(future_sessions),
                                 'Expected at least one flag for each future timeslot and session')
 
         wait.until(expected_conditions.presence_of_element_located(
-            (By.CSS_SELECTOR, '#timeslot{}.past'.format(past_timeslots[0].pk))
+            (By.CSS_SELECTOR, f'#timeslot{past_timeslots[0].pk}.past')
         ))
         for flag in past_flags:
             self.assertTrue(flag.is_displayed(), 'Past timeslot or session not flagged as past')
@@ -430,21 +429,21 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
 
         past_swap_days_buttons = self.driver.find_elements(By.CSS_SELECTOR,
             ','.join(
-                '.swap-days[data-start="{}"]'.format(ts.time.date().isoformat()) for ts in past_timeslots
+                f'.swap-days[data-start="{ts.time.date().isoformat()}"]' for ts in past_timeslots
             )
         )
         self.assertEqual(len(past_swap_days_buttons), len(past_timeslots), 'Missing past swap days buttons')
 
         future_swap_days_buttons = self.driver.find_elements(By.CSS_SELECTOR,
             ','.join(
-                '.swap-days[data-start="{}"]'.format(ts.time.date().isoformat()) for ts in future_timeslots
+                f'.swap-days[data-start="{ts.time.date().isoformat()}"]' for ts in future_timeslots
             )
         )
         self.assertEqual(len(future_swap_days_buttons), len(future_timeslots), 'Missing future swap days buttons')
 
         now_swap_days_buttons = self.driver.find_elements(By.CSS_SELECTOR,
             ','.join(
-                '.swap-days[data-start="{}"]'.format(ts.time.date().isoformat()) for ts in now_timeslots
+                f'.swap-days[data-start="{ts.time.date().isoformat()}"]' for ts in now_timeslots
             )
         )
         # only one "now" button because both sessions are on the same day
@@ -495,7 +494,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertFalse(
             any(radio.is_enabled()
                 for radio in modal.find_elements(By.CSS_SELECTOR, ','.join(
-                'input[name="target_day"][value="{}"]'.format(ts.time.date().isoformat()) for ts in past_timeslots)
+                f'input[name="target_day"][value="{ts.time.date().isoformat()}"]' for ts in past_timeslots)
             )),
             'Past day is enabled in swap-days modal for official schedule',
         )
@@ -504,14 +503,14 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertTrue(
             all(radio.is_enabled()
                 for radio in modal.find_elements(By.CSS_SELECTOR, ','.join(
-                'input[name="target_day"][value="{}"]'.format(ts.time.date().isoformat()) for ts in enabled_timeslots)
+                f'input[name="target_day"][value="{ts.time.date().isoformat()}"]' for ts in enabled_timeslots)
             )),
             'Future day is not enabled in swap-days modal for official schedule',
         )
         self.assertFalse(
             any(radio.is_enabled()
                 for radio in modal.find_elements(By.CSS_SELECTOR, ','.join(
-                'input[name="target_day"][value="{}"]'.format(ts.time.date().isoformat()) for ts in now_timeslots)
+                f'input[name="target_day"][value="{ts.time.date().isoformat()}"]' for ts in now_timeslots)
             )),
             '"Now" day is enabled in swap-days modal for official schedule',
         )
@@ -554,21 +553,21 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
 
         past_swap_ts_buttons = self.driver.find_elements(By.CSS_SELECTOR,
             ','.join(
-                '*[data-start="{}"] .swap-timeslot-col'.format(ts.utc_start_time().isoformat()) for ts in past_timeslots
+                f'*[data-start="{ts.utc_start_time().isoformat()}"] .swap-timeslot-col' for ts in past_timeslots
             )
         )
         self.assertEqual(len(past_swap_ts_buttons), len(past_timeslots), 'Missing past swap timeslot col buttons')
 
         future_swap_ts_buttons = self.driver.find_elements(By.CSS_SELECTOR,
             ','.join(
-                '*[data-start="{}"] .swap-timeslot-col'.format(ts.utc_start_time().isoformat()) for ts in future_timeslots
+                f'*[data-start="{ts.utc_start_time().isoformat()}"] .swap-timeslot-col' for ts in future_timeslots
             )
         )
         self.assertEqual(len(future_swap_ts_buttons), len(future_timeslots), 'Missing future swap timeslot col buttons')
 
         now_swap_ts_buttons = self.driver.find_elements(By.CSS_SELECTOR,
             ','.join(
-                '[data-start="{}"] .swap-timeslot-col'.format(ts.utc_start_time().isoformat()) for ts in now_timeslots
+                f'[data-start="{ts.utc_start_time().isoformat()}"] .swap-timeslot-col' for ts in now_timeslots
             )
         )
         self.assertEqual(len(now_swap_ts_buttons), len(now_timeslots), 'Missing "now" swap timeslot col buttons')
@@ -611,7 +610,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertFalse(
             any(radio.is_enabled()
                 for radio in modal.find_elements(By.CSS_SELECTOR, ','.join(
-                'input[name="target_timeslot"][value="{}"]'.format(ts.pk) for ts in past_timeslots)
+                f'input[name="target_timeslot"][value="{ts.pk}"]' for ts in past_timeslots)
             )),
             'Past timeslot is enabled in swap-timeslot-col modal for official schedule',
         )
@@ -620,14 +619,14 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertTrue(
             all(radio.is_enabled()
                 for radio in modal.find_elements(By.CSS_SELECTOR, ','.join(
-                'input[name="target_timeslot"][value="{}"]'.format(ts.pk) for ts in enabled_timeslots)
+                f'input[name="target_timeslot"][value="{ts.pk}"]' for ts in enabled_timeslots)
             )),
             'Future timeslot is not enabled in swap-timeslot-col modal for official schedule',
         )
         self.assertFalse(
             any(radio.is_enabled()
                 for radio in modal.find_elements(By.CSS_SELECTOR, ','.join(
-                'input[name="target_timeslot"][value="{}"]'.format(ts.pk) for ts in now_timeslots)
+                f'input[name="target_timeslot"][value="{ts.pk}"]' for ts in now_timeslots)
             )),
             '"Now" timeslot is enabled in swap-timeslot-col modal for official schedule',
         )
@@ -645,7 +644,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         def sort_by_position(driver, sessions):
             """Helper to sort sessions by the position of their session element in the unscheduled box"""
             def _sort_key(sess):
-                elt = driver.find_element(By.ID, 'session{}'.format(sess.pk))
+                elt = driver.find_element(By.ID, f'session{sess.pk}')
                 return (elt.location['y'], elt.location['x'])
             return sorted(sessions, key=_sort_key)
 
@@ -669,7 +668,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         # now create WGs with acronyms that sort differently than by area (g00, g01, g02...)
         num = 0
         wgs = []
-        group_acro = lambda n: 'g{:02d}'.format(n)
+        group_acro = lambda n: f'g{n:02d}'
         for _ in range(2):
             wgs.append(GroupFactory(acronym=group_acro(num), type_id='wg', parent=None))
             num += 1
@@ -877,16 +876,16 @@ class ScheduleEditTests(IetfSeleniumTestCase):
         WebDriverWait(self.driver, 10).until(expected_conditions.invisibility_of_element(read_only_note), "Read-only schedule")
 
         s1 = Session.objects.filter(group__acronym='mars', meeting=meeting).first()
-        selector = "#session_{}".format(s1.pk)
+        selector = f"#session_{s1.pk}"
         WebDriverWait(self.driver, 30).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, selector)), "Did not find %s"%selector)
 
-        self.assertEqual(self.driver.find_elements(By.CSS_SELECTOR, "#sortable-list #session_{}".format(s1.pk)), [])
+        self.assertEqual(self.driver.find_elements(By.CSS_SELECTOR, f"#sortable-list #session_{s1.pk}"), [])
 
-        element = self.driver.find_element(By.ID, 'session_{}'.format(s1.pk))
+        element = self.driver.find_element(By.ID, f'session_{s1.pk}')
         target  = self.driver.find_element(By.ID, 'sortable-list')
         ActionChains(self.driver).drag_and_drop(element,target).perform()
 
-        self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, "#sortable-list #session_{}".format(s1.pk)))
+        self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, f"#sortable-list #session_{s1.pk}"))
 
         time.sleep(0.1) # The API that modifies the database runs async
 
@@ -895,7 +894,7 @@ class ScheduleEditTests(IetfSeleniumTestCase):
 @ifSeleniumEnabled
 class SlideReorderTests(IetfSeleniumTestCase):
     def setUp(self):
-        super(SlideReorderTests, self).setUp()
+        super().setUp()
         self.session = SessionFactory(meeting__type_id='ietf', status_id='sched')
         self.session.sessionpresentation_set.create(document=DocumentFactory(type_id='slides',name='one'),order=1)
         self.session.sessionpresentation_set.create(document=DocumentFactory(type_id='slides',name='two'),order=2)
@@ -926,7 +925,7 @@ class SlideReorderTests(IetfSeleniumTestCase):
 @ifSeleniumEnabled
 class AgendaTests(IetfSeleniumTestCase):
     def setUp(self):
-        super(AgendaTests, self).setUp()
+        super().setUp()
         self.meeting = make_meeting_test_data()
 
     def row_id_for_item(self, item):
@@ -975,30 +974,30 @@ class AgendaTests(IetfSeleniumTestCase):
             """
             // start empty, add item
             var list0=[];
-            %(toggle_list_item)s(list0, 'item');
+            {toggle_list_item}(list0, 'item');
             
             // one item, remove it
             var list1=['item'];
-            %(toggle_list_item)s(list1, 'item');
+            {toggle_list_item}(list1, 'item');
             
             // one item, add another
             var list2=['item1'];
-            %(toggle_list_item)s(list2, 'item2');
+            {toggle_list_item}(list2, 'item2');
             
             // multiple items, remove first
             var list3=['item1', 'item2', 'item3'];
-            %(toggle_list_item)s(list3, 'item1');
+            {toggle_list_item}(list3, 'item1');
             
             // multiple items, remove middle
             var list4=['item1', 'item2', 'item3'];
-            %(toggle_list_item)s(list4, 'item2');
+            {toggle_list_item}(list4, 'item2');
             
             // multiple items, remove last
             var list5=['item1', 'item2', 'item3'];
-            %(toggle_list_item)s(list5, 'item3');
+            {toggle_list_item}(list5, 'item3');
             
             return [list0, list1, list2, list3, list4, list5];
-            """ % {'toggle_list_item': 'agenda_filter_for_testing.toggle_list_item'}
+            """.format(toggle_list_item='agenda_filter_for_testing.toggle_list_item')
         )
         self.assertEqual(result[0], ['item'], 'Adding item to empty list failed')
         self.assertEqual(result[1], [], 'Removing only item in a list failed')
@@ -1096,7 +1095,7 @@ class AgendaTests(IetfSeleniumTestCase):
         self.do_agenda_view_filter_test('?show=ames,mars&hide=%s' % area.acronym, [])
         
         # Area shown
-        self.do_agenda_view_filter_test('?show=%s&hide=%s' % (area.acronym, area.acronym), [])
+        self.do_agenda_view_filter_test('?show={}&hide={}'.format(area.acronym, area.acronym), [])
 
         # Type shown
         self.do_agenda_view_filter_test('?show=plenary,regular&hide=%s' % area.acronym, ['ietf'])
@@ -1219,10 +1218,10 @@ class AgendaTests(IetfSeleniumTestCase):
                 item_div = None
 
             if visible_groups is None or item.session.group.acronym in visible_groups:
-                self.assertIsNotNone(item_div, 'No weekview entry for "%s" (%s)' % (label, item.slug()))
-                self.assertTrue(item_div.is_displayed(), 'Entry for "%s (%s)" is not displayed but should be' % (label, item.slug()))
+                self.assertIsNotNone(item_div, 'No weekview entry for "{}" ({})'.format(label, item.slug()))
+                self.assertTrue(item_div.is_displayed(), 'Entry for "{} ({})" is not displayed but should be'.format(label, item.slug()))
             else:
-                self.assertIsNone(item_div, 'Unexpected weekview entry for "%s" (%s)' % (label, item.slug()))
+                self.assertIsNone(item_div, 'Unexpected weekview entry for "{}" ({})'.format(label, item.slug()))
 
     @staticmethod
     def open_agenda_filter_ui(wait):
@@ -1422,7 +1421,7 @@ class AgendaTests(IetfSeleniumTestCase):
         self.scroll_to_element(group_button)
         group_button.click()  # click!
 
-        expected_url = '%s?show=%s' % (url, group_acronym)
+        expected_url = '{}?show={}'.format(url, group_acronym)
         WebDriverWait(self.driver, 2).until(expected_conditions.url_to_be(expected_url))
         # no assertion here - if WebDriverWait raises an exception, the test will fail.
         # We separately test whether this URL will filter correctly.
@@ -1496,7 +1495,7 @@ class AgendaTests(IetfSeleniumTestCase):
         r = self.client.get(ics_url + filter_string)
         # verify that all expected sessions are found
         expected_uids = [
-            'ietf-%s-%s-%s' % (session.meeting.number, timeslot.pk, session.group.acronym) 
+            'ietf-{}-{}-{}'.format(session.meeting.number, timeslot.pk, session.group.acronym) 
             for (session, timeslot) in sessions
         ]
         assert_ical_response_is_valid(self, r, 
@@ -1814,7 +1813,7 @@ class AgendaTests(IetfSeleniumTestCase):
 @ifSeleniumEnabled
 class WeekviewTests(IetfSeleniumTestCase):
     def setUp(self):
-        super(WeekviewTests, self).setUp()
+        super().setUp()
         self.meeting = make_meeting_test_data()
 
     def get_expected_items(self):
@@ -1840,7 +1839,7 @@ class WeekviewTests(IetfSeleniumTestCase):
             WebDriverWait(self.driver, 2).until(
                 expected_conditions.presence_of_element_located(
                     (By.XPATH, 
-                     '//div/div[contains(text(), "%s")]/span[contains(text(), "%s")]' % (
+                     '//div/div[contains(text(), "{}")]/span[contains(text(), "{}")]'.format(
                          expected_time, expected_name))
                 )
             )
@@ -1869,10 +1868,10 @@ class WeekviewTests(IetfSeleniumTestCase):
                 WebDriverWait(self.driver, 2).until(
                     expected_conditions.presence_of_element_located(
                         (By.XPATH, 
-                         '//div/div[contains(text(), "%s")]/span[contains(text(), "%s")]' % (
+                         '//div/div[contains(text(), "{}")]/span[contains(text(), "{}")]'.format(
                              expected_time, expected_name))
                     ),
-                    'Could not find event "%s" at %s for time zone %s' % (expected_name, 
+                    'Could not find event "{}" at {} for time zone {}'.format(expected_name, 
                                                                           expected_time,
                                                                           zone_name),
                 )
@@ -1962,7 +1961,7 @@ class WeekviewTests(IetfSeleniumTestCase):
         displayed = WebDriverWait(self.driver, 2).until(
             expected_conditions.presence_of_all_elements_located(
                 (By.XPATH,
-                 '//div/div[contains(text(), "%s")]/span[contains(text(), "%s")]' % (
+                 '//div/div[contains(text(), "{}")]/span[contains(text(), "{}")]'.format(
                      time_string,
                      daytime_session.name))
             )
@@ -1974,7 +1973,7 @@ class WeekviewTests(IetfSeleniumTestCase):
         displayed = WebDriverWait(self.driver, 2).until(
             expected_conditions.presence_of_all_elements_located(
                 (By.XPATH,
-                 '//div/div[contains(text(), "%s")]/span[contains(text(), "%s")]' % (
+                 '//div/div[contains(text(), "{}")]/span[contains(text(), "{}")]'.format(
                      time_string,
                      overnight_session.name))
             )
@@ -1989,7 +1988,7 @@ class WeekviewTests(IetfSeleniumTestCase):
         displayed = WebDriverWait(self.driver, 2).until(
             expected_conditions.presence_of_all_elements_located(
                 (By.XPATH,
-                 '//div/div[contains(text(), "%s")]/span[contains(text(), "%s")]' % (
+                 '//div/div[contains(text(), "{}")]/span[contains(text(), "{}")]'.format(
                      time_string,
                      daytime_session.name))
             )
@@ -2001,7 +2000,7 @@ class WeekviewTests(IetfSeleniumTestCase):
         displayed = WebDriverWait(self.driver, 2).until(
             expected_conditions.presence_of_all_elements_located(
                 (By.XPATH,
-                 '//div/div[contains(text(), "%s")]/span[contains(text(), "%s")]' % (
+                 '//div/div[contains(text(), "{}")]/span[contains(text(), "{}")]'.format(
                      time_string,
                      overnight_session.name))
             )
@@ -2011,7 +2010,7 @@ class WeekviewTests(IetfSeleniumTestCase):
 @ifSeleniumEnabled
 class InterimTests(IetfSeleniumTestCase):
     def setUp(self):
-        super(InterimTests, self).setUp()
+        super().setUp()
         self.materials_dir = self.tempdir('materials')
         self.saved_agenda_path = settings.AGENDA_PATH
         settings.AGENDA_PATH = self.materials_dir
@@ -2033,12 +2032,12 @@ class InterimTests(IetfSeleniumTestCase):
     def tearDown(self):
         settings.AGENDA_PATH = self.saved_agenda_path
         shutil.rmtree(self.materials_dir)
-        super(InterimTests, self).tearDown()
+        super().tearDown()
 
     def tempdir(self, label):
         # Borrowed from  test_utils.TestCase
         slug = slugify(self.__class__.__name__.replace('.','-'))
-        dirname = "tmp-{label}-{slug}-dir".format(**locals())
+        dirname = f"tmp-{label}-{slug}-dir"
         if 'VIRTUAL_ENV' in os.environ:
             dirname = os.path.join(os.environ['VIRTUAL_ENV'], dirname)
         path = os.path.abspath(dirname)
@@ -2198,7 +2197,7 @@ class InterimTests(IetfSeleniumTestCase):
         ))
         # The UID formats should match those in the upcoming.ics template
         expected_uids = [
-            'ietf-%s-%s' % (item.session.meeting.number, item.timeslot.pk)
+            'ietf-{}-{}'.format(item.session.meeting.number, item.timeslot.pk)
             for item in expected_assignments
         ] + [
             'ietf-%s' % (ietf.number) for ietf in expected_ietfs
@@ -2278,7 +2277,7 @@ class InterimTests(IetfSeleniumTestCase):
         self.do_upcoming_view_filter_test('?hide=%s' % area.acronym, ietf_meetings)
 
         # With area shown
-        self.do_upcoming_view_filter_test('?show=%s&hide=%s' % (area.acronym, area.acronym),
+        self.do_upcoming_view_filter_test('?show={}&hide={}'.format(area.acronym, area.acronym),
                                           ietf_meetings)
 
         # With group shown
@@ -2319,7 +2318,7 @@ class InterimTests(IetfSeleniumTestCase):
                 end = ts.utc_end_time().astimezone(zone).strftime('%H:%M')
                 meeting_link = self.driver.find_element(By.LINK_TEXT, session.meeting.number)
                 time_td = meeting_link.find_element(By.XPATH, '../../td[contains(@class, "session-time")]')
-                self.assertIn('%s-%s' % (start, end), time_td.text)
+                self.assertIn('{}-{}'.format(start, end), time_td.text)
 
         def _assert_ietf_tz_correct(meetings, tz):
             zone = pytz.timezone(tz)
@@ -2338,7 +2337,7 @@ class InterimTests(IetfSeleniumTestCase):
                 end = end_dt.astimezone(zone).strftime('%Y-%m-%d')
                 meeting_link = self.driver.find_element(By.LINK_TEXT, "IETF " + meeting.number)
                 time_td = meeting_link.find_element(By.XPATH, '../../td[contains(@class, "meeting-time")]')
-                self.assertIn('%s to %s' % (start, end), time_td.text)
+                self.assertIn('{} to {}'.format(start, end), time_td.text)
 
         sessions = [m.session_set.first() for m in self.displayed_interims()]
         self.assertGreater(len(sessions), 0)
@@ -2668,7 +2667,7 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
         keep = [TimeSlotFactory(meeting=self.meeting)]
 
         self.do_delete_test(
-            '#timeslot-table #timeslot{} .delete-button'.format(delete[0].pk),
+            f'#timeslot-table #timeslot{delete[0].pk} .delete-button',
             keep,
             delete
         )

@@ -14,7 +14,7 @@ class TelechatDateAdmin(admin.ModelAdmin):
         '''If changing a Telechat date, change all related TelechatDocEvents, which is how
         documents are related to the Telechat
         '''
-        super(TelechatDateAdmin, self).save_model(request, obj, form, change)
+        super().save_model(request, obj, form, change)
         if 'date' in form.changed_data:
             old_date = form.data['initial-date']
             new_date = form.cleaned_data['date']

@@ -205,7 +205,7 @@ def pathstrip(path, n):
 # --- /Utility function ---
 
 
-class Hunk(object):
+class Hunk:
   """ Parsed hunk data container (hunk starts with @@ -R +R @@) """
 
   def __init__(self):
@@ -228,7 +228,7 @@ class Hunk(object):
 #    pass
 
 
-class Patch(object):
+class Patch:
   """ Patch for a single file.
       If used as an iterable, returns hunks.
   """
@@ -242,11 +242,10 @@ class Patch(object):
     self.type = None
 
   def __iter__(self):
-    for h in self.hunks:
-      yield h
+    yield from self.hunks
 
 
-class PatchSet(object):
+class PatchSet:
   """ PatchSet is a patch parser and container.
       When used as an iterable, returns patches.
   """
@@ -274,8 +273,7 @@ class PatchSet(object):
     return len(self.items)
 
   def __iter__(self):
-    for i in self.items:
-      yield i
+    yield from self.items
 
   def parse(self, stream):
     """ parse unified diff
@@ -309,7 +307,7 @@ class PatchSet(object):
           return False
 
         try:
-          self._lineno, self._line = compat_next(super(wrapumerate, self))
+          self._lineno, self._line = compat_next(super())
         except StopIteration:
           self._exhausted = True
           self._line = False
@@ -610,7 +608,7 @@ class PatchSet(object):
     for idx, p in enumerate(self.items):
       self.items[idx].type = self._detect_type(p)
 
-    types = set([p.type for p in self.items])
+    types = {p.type for p in self.items}
     if len(types) > 1:
       self.type = MIXED
     else:
@@ -857,7 +855,7 @@ class PatchSet(object):
       filename = self.findfile(old, new)
 
       if not filename:
-          warning("source/target file does not exist:\n  --- %s\n  +++ %s" % (old, new))
+          warning("source/target file does not exist:\n  --- {}\n  +++ {}".format(old, new))
           errors += 1
           continue
       if not isfile(filename):
@@ -1081,14 +1079,13 @@ class PatchSet(object):
             srclineno += 1
           line2write = hline[1:]
           # detect if line ends are consistent in source file
-          if sum([bool(lineends[x]) for x in lineends]) == 1:
+          if sum(bool(lineends[x]) for x in lineends) == 1:
             newline = [x for x in lineends if lineends[x] != 0][0]
             yield line2write.rstrip(b"\r\n")+newline
           else: # newlines are mixed
             yield line2write
      
-    for line in instream:
-      yield line
+    yield from instream
 
 
   def write_hunks(self, srcname, tgtname, hunks):
@@ -1113,7 +1110,7 @@ class PatchSet(object):
       print('--- ' + p.source)
       print('+++ ' + p.target)
       for h in p.hunks:
-        print('@@ -%s,%s +%s,%s @@' % (h.startsrc, h.linessrc, h.starttgt, h.linestgt))
+        print('@@ -{},{} +{},{} @@'.format(h.startsrc, h.linessrc, h.starttgt, h.linestgt))
         for line in h.text:
           print(line.rstrip('\n'))
 

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import re
@@ -27,7 +26,7 @@ class SearchRuleForm(forms.ModelForm):
 
     def __init__(self, clist, rule_type, *args, **kwargs):
         kwargs["prefix"] = rule_type # add prefix to avoid mixups in the Javascript
-        super(SearchRuleForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         def restrict_state(state_type, slug=None):
             f = self.fields['state']
@@ -88,7 +87,7 @@ class SearchRuleForm(forms.ModelForm):
 
         if 'group' in self.fields:
             self.fields['group'].queryset = self.fields['group'].queryset.filter(state="active").order_by("acronym")
-            self.fields['group'].choices = [(g.pk, "%s - %s" % (g.acronym, g.name)) for g in self.fields['group'].queryset]
+            self.fields['group'].choices = [(g.pk, "{} - {}".format(g.acronym, g.name)) for g in self.fields['group'].queryset]
 
         for name, f in self.fields.items():
             f.required = True
@@ -107,7 +106,7 @@ class SubscriptionForm(forms.ModelForm):
         self.clist = clist
         self.user = user
 
-        super(SubscriptionForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.fields["notify_on"].widget = forms.RadioSelect(choices=self.fields["notify_on"].choices)
         self.fields["email"].queryset = self.fields["email"].queryset.filter(person__user=user, active=True).order_by("-primary")

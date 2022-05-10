@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2021, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django.core.management.base import BaseCommand, CommandError
@@ -13,5 +12,5 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             generate_draft_recursive_txt()
-        except (ValueError, IOError) as e:
+        except (ValueError, OSError) as e:
             raise CommandError(e)

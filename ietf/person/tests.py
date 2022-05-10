@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -153,7 +152,7 @@ class PersonTests(TestCase):
     def test_merge_with_params(self):
         p1 = get_person_no_user()
         p2 = PersonFactory()
-        url = urlreverse("ietf.person.views.merge") + "?source={}&target={}".format(p1.pk, p2.pk)
+        url = urlreverse("ietf.person.views.merge") + f"?source={p1.pk}&target={p2.pk}"
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertContains(r, 'retaining login', status_code=200)
@@ -255,7 +254,7 @@ class PersonUtilsTests(TestCase):
         ReviewerSettings.objects.create(team=groups[0],person=target,min_interval=7)
         self.assertEqual(source.reviewersettings_set.count(), 1)
         result = handle_reviewer_settings(source, target)
-        self.assertEqual(result, ['REVIEWER SETTINGS ACTION: dropping duplicate ReviewSettings for team: {}'.format(rs1.team)])
+        self.assertEqual(result, [f'REVIEWER SETTINGS ACTION: dropping duplicate ReviewSettings for team: {rs1.team}'])
         self.assertEqual(source.reviewersettings_set.count(), 0)
         self.assertEqual(target.reviewersettings_set.count(), 1)
 
@@ -275,19 +274,19 @@ class PersonUtilsTests(TestCase):
 
         # target user
         result = handle_users(source2, target2)
-        self.assertTrue("DATATRACKER LOGIN ACTION: retaining login {}".format(target2.user) in result)
+        self.assertTrue(f"DATATRACKER LOGIN ACTION: retaining login {target2.user}" in result)
 
         # source user
         user = source3.user
         result = handle_users(source3, target3)
-        self.assertTrue("DATATRACKER LOGIN ACTION: retaining login {}".format(user) in result)
+        self.assertTrue(f"DATATRACKER LOGIN ACTION: retaining login {user}" in result)
         self.assertTrue(target3.user == user)
 
         # both have user
         source_user = source4.user
         target_user = target4.user
         result = handle_users(source4, target4)
-        self.assertTrue("DATATRACKER LOGIN ACTION: retaining login: {}, removing login: {}".format(target_user,source_user) in result)
+        self.assertTrue(f"DATATRACKER LOGIN ACTION: retaining login: {target_user}, removing login: {source_user}" in result)
         self.assertTrue(target4.user == target_user)
         self.assertTrue(source4.user == None)
 
@@ -385,7 +384,7 @@ class PersonUtilsTests(TestCase):
         self.assertEqual(get_dots(iabmember),['iab'])
         iabchair = RoleFactory(name_id='chair',group__acronym='iab').person
         RoleFactory(person=iabchair,group__acronym='iab',name_id='member')
-        self.assertEqual(set(get_dots(iabchair)),set(['iab','iesg']))
+        self.assertEqual(set(get_dots(iabchair)),{'iab','iesg'})
         llcboard = RoleFactory(name_id='member',group__acronym='llc-board').person
         self.assertEqual(get_dots(llcboard),['llc'])
         ietftrust = RoleFactory(name_id='member',group__acronym='ietf-trust').person
@@ -398,4 +397,3 @@ class PersonUtilsTests(TestCase):
 
 
 
-       

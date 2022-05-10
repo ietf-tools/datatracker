@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2015-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from tqdm import tqdm
@@ -39,15 +38,15 @@ class Command(BaseCommand):
                 debug.pprint('dir(field)')
                 raise
             if verbosity > 1:
-                self.stdout.write("  [....]  %s -> %s.%s" % (
+                self.stdout.write("  [....]  {} -> {}.{}".format(
                     field.name, foreign_model.__module__, foreign_model.__name__))
                 self.stdout.flush()
             used = set(field.model.objects.values_list(field.name, flat=True))
             used.discard(None)
             exists = set(foreign_model.objects.values_list('pk', flat=True))
             if through_table:
-                used = set( int(i) if isinstance(i, str) and i.isdigit() else i for i in used )
-                exists = set( int(i) if isinstance(i, str) and i.isdigit() else i for i in exists )
+                used = { int(i) if isinstance(i, str) and i.isdigit() else i for i in used }
+                exists = { int(i) if isinstance(i, str) and i.isdigit() else i for i in exists }
             dangling = used - exists
             if dangling:
                 debug.say('')
@@ -71,11 +70,11 @@ class Command(BaseCommand):
                     self.stdout.write("\r  [ "+self.style.SUCCESS('ok')+" ]\n")
             else:
                 if dangling:
-                    self.stdout.write("\n%s.%s.%s -> %s.%s  ** Bad key values:\n   %s\n" % (model.__module__, model.__name__, field.name, foreign_model.__module__, foreign_model.__name__, sorted(list(dangling))))
+                    self.stdout.write("\n{}.{}.{} -> {}.{}  ** Bad key values:\n   {}\n".format(model.__module__, model.__name__, field.name, foreign_model.__module__, foreign_model.__name__, sorted(list(dangling))))
 
             if dangling and options.get('delete'):
                 if verbosity > 1:
-                    self.stdout.write("Removing dangling values: %s.%s.%s\n" % (model.__module__, model.__name__, field.name, ))
+                    self.stdout.write("Removing dangling values: {}.{}.{}\n".format(model.__module__, model.__name__, field.name))
                 for value in tqdm(dangling):
                     kwargs = { field.name: value }
                     for obj in field.model.objects.filter(**kwargs):
@@ -93,14 +92,14 @@ class Command(BaseCommand):
                                     self.stderr.write("\nUnexpected field type: %s\n" % type(field))
                         except IntegrityError as e:
                             self.stderr.write('\n')
-                            self.stderr.write("Tried setting %s[%s].%s to %s, but got:\n" % (model.__name__, obj.pk, field.name, None))
+                            self.stderr.write("Tried setting {}[{}].{} to {}, but got:\n".format(model.__name__, obj.pk, field.name, None))
                             self.stderr.write("Exception: %s\n" % e)
                 if verbosity > 1:
                     self.stdout.write('\n')
 
         def check_many_to_many_field(field):
             model = field.remote_field.through
-            self.stdout.write("        %s.%s (through table)\n" % (model.__module__,model.__name__))
+            self.stdout.write("        {}.{} (through table)\n".format(model.__module__,model.__name__))
 
             for ff in [f for f in model._meta.fields if isinstance(f, (ForeignKey, OneToOneField)) ]: 
                 check_field(ff, through_table=True)
@@ -112,7 +111,7 @@ class Command(BaseCommand):
                 if model._meta.proxy:
                     continue
                 if verbosity > 1:
-                    self.stdout.write("        %s.%s\n" % (model.__module__,model.__name__))
+                    self.stdout.write("        {}.{}\n".format(model.__module__,model.__name__))
                 for field in [f for f in model._meta.fields if isinstance(f, (ForeignKey, OneToOneField)) ]: 
                     check_field(field)
                 for field in [f for f in model._meta.many_to_many ]: 

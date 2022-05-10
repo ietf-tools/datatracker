@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import re
@@ -115,7 +114,7 @@ def send_manual_post_request(request, submission, errors):
     from_email = settings.IDSUBMIT_FROM_EMAIL
     (to_email,cc) = gather_address_lists('sub_manual_post_requested',submission=submission)
     checker = DraftIdnitsChecker(options=[]) # don't use the default --submitcheck limitation
-    file_name = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (submission.name, submission.rev))
+    file_name = os.path.join(settings.IDSUBMIT_STAGING_PATH, '{}-{}.txt'.format(submission.name, submission.rev))
     nitspass, nitsmsg, nitserr, nitswarn, nitsresult = checker.check_file_txt(file_name)
     send_mail(request, to_email, from_email, subject, 'submit/manual_post_request.txt', {
         'submission': submission,
@@ -133,7 +132,7 @@ def announce_to_lists(request, submission):
             m.by = request.user.person
         except Person.DoesNotExist:
             pass
-    m.subject = 'I-D Action: %s-%s.txt' % (submission.name, submission.rev)
+    m.subject = 'I-D Action: {}-{}.txt'.format(submission.name, submission.rev)
     m.frm = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
     (m.to, m.cc) = gather_address_lists('sub_announced',submission=submission).as_strings()
     if m.cc:
@@ -155,7 +154,7 @@ def announce_new_wg_00(request, submission):
             m.by = request.user.person
         except Person.DoesNotExist:
             pass
-    m.subject = 'I-D Action: %s-%s.txt' % (submission.name, submission.rev)
+    m.subject = 'I-D Action: {}-{}.txt'.format(submission.name, submission.rev)
     m.frm = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
     (m.to, m.cc) = gather_address_lists('sub_new_wg_00',submission=submission).as_strings()
     if m.cc:
@@ -173,7 +172,7 @@ def announce_new_version(request, submission, draft, state_change_msg):
     (to_email,cc) = gather_address_lists('sub_new_version',doc=draft,submission=submission)
 
     if to_email:
-        subject = 'New Version Notification - %s-%s.txt' % (submission.name, submission.rev)
+        subject = 'New Version Notification - {}-{}.txt'.format(submission.name, submission.rev)
         from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
         send_mail(request, to_email, from_email, subject, 'submit/announce_new_version.txt',
                   {'submission': submission,
@@ -183,7 +182,7 @@ def announce_new_version(request, submission, draft, state_change_msg):
 def announce_to_authors(request, submission):
     (to_email, cc) = gather_address_lists('sub_announced_to_authors',submission=submission)
     from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
-    subject = 'New Version Notification for %s-%s.txt' % (submission.name, submission.rev)
+    subject = 'New Version Notification for {}-{}.txt'.format(submission.name, submission.rev)
     if submission.group:
         group = submission.group.acronym
     elif submission.name.startswith('draft-iesg'):
@@ -202,7 +201,7 @@ def get_reply_to():
     local,domain = get_base_submission_message_address().split('@')
     while True:
         rand = force_text(base64.urlsafe_b64encode(os.urandom(12)))
-        address = "{}+{}@{}".format(local,rand,domain)
+        address = f"{local}+{rand}@{domain}"
         q = Message.objects.filter(reply_to=address)
         if not q:
             return address
@@ -225,17 +224,17 @@ def process_response_email(msg):
     try:
         to_message = Message.objects.get(reply_to=to)
     except Message.DoesNotExist:
-        log('Error finding matching message ({})'.format(to))
+        log(f'Error finding matching message ({to})')
         return None
 
     try:
         submission = to_message.manualevents.first().submission
     except:
-        log('Error processing message ({})'.format(to))
+        log(f'Error processing message ({to})')
         return None
 
     if not submission:
-        log('Error processing message - no submission ({})'.format(to))
+        log(f'Error processing message - no submission ({to})')
         return None
 
     parts = pyzmail.parse.get_mail_parts(message)
@@ -288,7 +287,7 @@ def add_submission_email(request, remote_ip, name, rev, submission_pk, message, 
         # Must not exist
         submissions = Submission.objects.filter(name=name,rev=rev).exclude(state_id='cancel')
         if submissions.count() > 0:
-            raise ValidationError("Submission {} already exists".format(name))
+            raise ValidationError(f"Submission {name} already exists")
             
         # create Submission using the name
         try:
@@ -303,7 +302,7 @@ def add_submission_email(request, remote_ip, name, rev, submission_pk, message, 
                     replaces="",
             )
             from ietf.submit.utils import create_submission_event, docevent_from_submission
-            desc = "Submission created for rev {} in response to email".format(rev)
+            desc = f"Submission created for rev {rev} in response to email"
             create_submission_event(request, 
                                     submission,
                                     desc)
@@ -319,7 +318,7 @@ def add_submission_email(request, remote_ip, name, rev, submission_pk, message, 
     else:
         rs = "Sent"
 
-    desc = "{} message - manual post - {}-{}".format(rs, name, rev)
+    desc = f"{rs} message - manual post - {name}-{rev}"
     submission_email_event = SubmissionEmailEvent.objects.create(
             desc = desc,
             submission = submission,

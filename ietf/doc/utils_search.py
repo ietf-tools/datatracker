@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 import re
 import datetime
@@ -16,7 +15,7 @@ def wrap_value(v):
 
 def fill_in_telechat_date(docs, doc_dict=None, doc_ids=None):
     if doc_dict is None:
-        doc_dict = dict((d.pk, d) for d in docs)
+        doc_dict = {d.pk: d for d in docs}
         doc_ids = list(doc_dict.keys())
     if doc_ids is None:
         doc_ids = list(doc_dict.keys())        
@@ -48,10 +47,10 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
     # some hairy template code and avoid repeated SQL queries
     # TODO - this function evolved from something that assumed it was handling only drafts. It still has places where it assumes all docs are drafts where that is not a correct assumption
 
-    doc_dict = dict((d.pk, d) for d in docs)
+    doc_dict = {d.pk: d for d in docs}
     doc_ids = list(doc_dict.keys())
 
-    rfc_aliases = dict([ (a.document.id, a.name) for a in DocAlias.objects.filter(name__startswith="rfc", docs__id__in=doc_ids) ])
+    rfc_aliases = { a.document.id: a.name for a in DocAlias.objects.filter(name__startswith="rfc", docs__id__in=doc_ids) }
 
     # latest event cache
     event_types = ("published_rfc",
@@ -107,12 +106,12 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
                 else:
                     d.expirable = False
         else:
-            d.search_heading = "%s" % (d.type,)
+            d.search_heading = "{}".format(d.type)
             d.expirable = False
 
         if d.get_state_slug() != "rfc":
-            d.milestones = [ m for (t, s, v, m) in sorted(((m.time, m.state.slug, m.desc, m) for m in d.groupmilestone_set.all() if m.state_id == "active")) ]
-            d.reviewed_by_teams = sorted(set(r.team.acronym for r in d.reviewrequest_set.filter(state__in=["assigned","accepted","part-completed","completed"]).distinct().select_related('team')))
+            d.milestones = [ m for (t, s, v, m) in sorted((m.time, m.state.slug, m.desc, m) for m in d.groupmilestone_set.all() if m.state_id == "active") ]
+            d.reviewed_by_teams = sorted({r.team.acronym for r in d.reviewrequest_set.filter(state__in=["assigned","accepted","part-completed","completed"]).distinct().select_related('team')})
 
         e = d.latest_event_cache.get('started_iesg_process', None)
         d.balloting_started = e.time if e else datetime.datetime.min
@@ -134,7 +133,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
 
     xed_by = RelatedDocument.objects.filter(target__name__in=list(rfc_aliases.values()),
                                             relationship__in=("obs", "updates")).select_related('target')
-    rel_rfc_aliases = dict([ (a.document.id, re.sub(r"rfc(\d+)", r"RFC \1", a.name, flags=re.IGNORECASE)) for a in DocAlias.objects.filter(name__startswith="rfc", docs__id__in=[rel.source_id for rel in xed_by]) ])
+    rel_rfc_aliases = { a.document.id: re.sub(r"rfc(\d+)", r"RFC \1", a.name, flags=re.IGNORECASE) for a in DocAlias.objects.filter(name__startswith="rfc", docs__id__in=[rel.source_id for rel in xed_by]) }
     for rel in xed_by:
         d = doc_dict[rel.target.document.id]
         if rel.relationship_id == "obs":

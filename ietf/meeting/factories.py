@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import factory
@@ -42,7 +41,7 @@ class MeetingFactory(factory.django.DjangoModelFactory):
     def number(self,n):
         if self.type_id == 'ietf':
             if Meeting.objects.filter(type='ietf').exists():
-                so_far = max([int(x.number) for x in Meeting.objects.filter(type='ietf')])
+                so_far = max(int(x.number) for x in Meeting.objects.filter(type='ietf'))
                 return '%02d'%(so_far+1)
             else:
                 return '%02d'%(n+80)

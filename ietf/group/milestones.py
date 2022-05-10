@@ -64,7 +64,7 @@ class MilestoneForm(forms.Form):
 
             kwargs["prefix"] = "m%s" % m.pk
 
-        super(MilestoneForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if not uses_dates:
             self.fields.pop('due')
@@ -123,17 +123,17 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
     desc_editable = has_role(request.user,["Secretariat","Area Director","IRTF Chair"])
 
     if milestone_set == "current":
-        title = "Edit milestones for %s %s" % (group.acronym, group.type.name)
+        title = "Edit milestones for {} {}".format(group.acronym, group.type.name)
         milestones = group.groupmilestone_set.filter(state__in=("active", "review"))
     elif milestone_set == "charter":
-        title = "Edit charter milestones for %s %s" % (group.acronym, group.type.name)
+        title = "Edit charter milestones for {} {}".format(group.acronym, group.type.name)
         milestones = group.groupmilestone_set.filter(state="charter")
 
     reviewer = milestone_reviewer_for_group_type(group_type)
 
     forms = []
 
-    milestones_dict = dict((str(m.id), m) for m in milestones)
+    milestones_dict = {str(m.id): m for m in milestones}
 
     def due_month_year_to_date(c):
         if isinstance(c, dict):
@@ -228,14 +228,14 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                 if c_due != m_due:
                     if not history:
                         history = save_milestone_in_history(m)
-                    changes.append('set due date to %s from %s' % (c_due.strftime("%B %Y"), m.due.strftime("%B %Y")))
+                    changes.append('set due date to {} from {}'.format(c_due.strftime("%B %Y"), m.due.strftime("%B %Y")))
                     m.due = c_due
             else:
                 order = c["order"]
                 if order != m.order:
                     if not history:
                         history = save_milestone_in_history(m)
-                    changes.append("Milestone order changed from %s to %s" % ( m.order, order ))
+                    changes.append("Milestone order changed from {} to {}".format( m.order, order ))
                     m.order = order
 
             resolved = c["resolved"]
@@ -293,11 +293,11 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
             if milestone_set == "charter":
                 named_milestone = "charter " + named_milestone
 
-            desc = 'Added %s' % (named_milestone, )
+            desc = 'Added {}'.format(named_milestone)
             if m.state_id == 'review':
                 desc += ' for review'
             if 'due' in f.fields:
-                desc += ', due %s' % (m.due.strftime("%B %Y"), )
+                desc += ', due {}'.format(m.due.strftime("%B %Y"))
             return desc
 
     form_errors = False
@@ -444,9 +444,9 @@ def reset_charter_milestones(request, group_type, acronym):
             new.docs.set(m.docs.all())
 
             if group.uses_milestone_dates:
-                desc='Added milestone "%s", due %s, from current group milestones' % (new.desc, new.due.strftime("%B %Y"))
+                desc='Added milestone "{}", due {}, from current group milestones'.format(new.desc, new.due.strftime("%B %Y"))
             else:
-                desc='Added milestone "%s" from current group milestones' % ( new.desc, )
+                desc='Added milestone "{}" from current group milestones'.format( new.desc)
             DocEvent.objects.create(type="changed_charter_milestone",
                                     doc=group.charter,
                                     rev=group.charter.rev,

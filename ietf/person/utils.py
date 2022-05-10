@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2015-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -23,13 +22,13 @@ def merge_persons(request, source, target, file=sys.stdout, verbose=False):
 
     # write log
     syslog.openlog(str(os.path.basename(__file__)), syslog.LOG_PID, syslog.LOG_USER)
-    syslog.syslog("Merging person records {} => {}".format(source.pk,target.pk))
+    syslog.syslog(f"Merging person records {source.pk} => {target.pk}")
     
     # handle primary emails
     for email in get_extra_primary(source,target):
         email.primary = False
         email.save()
-        changes.append('EMAIL ACTION: {} no longer marked as primary'.format(email.address))
+        changes.append(f'EMAIL ACTION: {email.address} no longer marked as primary')
 
     changes.append(handle_users(source, target))
     reviewer_changes = handle_reviewer_settings(source, target)
@@ -51,13 +50,13 @@ def merge_persons(request, source, target, file=sys.stdout, verbose=False):
     deletable_objects = admin.utils.get_deleted_objects(objs, request, admin.site)
     deletable_objects_summary = deletable_objects[1]
     if len(deletable_objects_summary) > 1:    # should only inlcude one object (Person)
-        print("Not Deleting Person: {}({})".format(source.ascii,source.pk), file=file)
+        print(f"Not Deleting Person: {source.ascii}({source.pk})", file=file)
         print("Related objects remain:", file=file)
         pprint.pprint(deletable_objects[1], stream=file)
         success = False
     else:
         success = True
-        print("Deleting Person: {}({})".format(source.ascii,source.pk), file=file)
+        print(f"Deleting Person: {source.ascii}({source.pk})", file=file)
         source.delete()
     
     return success, changes
@@ -80,7 +79,7 @@ def handle_reviewer_settings(source, target):
     changes = []
     for rs in source.reviewersettings_set.all():
         if target.reviewersettings_set.filter(team=rs.team):
-            changes.append('REVIEWER SETTINGS ACTION: dropping duplicate ReviewSettings for team: {}'.format(rs.team))
+            changes.append(f'REVIEWER SETTINGS ACTION: dropping duplicate ReviewSettings for team: {rs.team}')
             rs.delete()      
     return changes
 
@@ -92,9 +91,9 @@ def handle_users(source,target,check_only=False):
     if not (source.user or target.user):
         return "DATATRACKER LOGIN ACTION: none (no login defined)"
     if not source.user and target.user:
-        return "DATATRACKER LOGIN ACTION: retaining login {}".format(target.user)
+        return f"DATATRACKER LOGIN ACTION: retaining login {target.user}"
     if source.user and not target.user:
-        message = "DATATRACKER LOGIN ACTION: retaining login {}".format(source.user)
+        message = f"DATATRACKER LOGIN ACTION: retaining login {source.user}"
         if not check_only:
             target.user = source.user
             source.user = None
@@ -102,10 +101,10 @@ def handle_users(source,target,check_only=False):
             target.save()
         return message
     if source.user and target.user:
-        message = "DATATRACKER LOGIN ACTION: retaining login: {}, removing login: {}".format(target.user,source.user)
+        message = f"DATATRACKER LOGIN ACTION: retaining login: {target.user}, removing login: {source.user}"
         if not check_only:
             merge_users(source.user, target.user)
-            syslog.syslog('merge-person-records: deactivating user {}'.format(source.user.username))
+            syslog.syslog(f'merge-person-records: deactivating user {source.user.username}')
             user = source.user
             source.user = None
             source.save()
@@ -123,7 +122,7 @@ def move_related_objects(source, target, file, verbose=False):
         field_name = related_object.field.name
         queryset = getattr(source, accessor).all()
         if verbose:
-            print("Merging {}:{}".format(accessor,queryset.count()), file=file)
+            print(f"Merging {accessor}:{queryset.count()}", file=file)
         kwargs = { field_name:target }
         queryset.update(**kwargs)
 

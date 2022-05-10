@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2019-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -33,7 +32,7 @@ class Command(BaseCommand):
             '%s__lt'%field: stop,
             }
         app_label = model._meta.app_label
-        self.note("%s.%s.%s:" % (app_label, model.__name__, field))
+        self.note("{}.{}.{}:".format(app_label, model.__name__, field))
         for d in model.objects.filter(**lookup).order_by('-%s'%field):
             orig = getattr(d, field)
             try:
@@ -41,7 +40,7 @@ class Command(BaseCommand):
             except pytz.AmbiguousTimeError as e:
                 new = orig-datetime.timedelta(minutes=60)
                 setattr(d, field, new)
-                desc = "  %s: changed ambiguous time:  %s --> %s" % (d.pk, orig, new)
+                desc = "  {}: changed ambiguous time:  {} --> {}".format(d.pk, orig, new)
                 self.note(desc)
                 if app_label == 'doc' and model.__name__ == 'Document':
                     e = DocEvent(type='added_comment', doc=d, rev=d.rev, by=by, desc=desc)

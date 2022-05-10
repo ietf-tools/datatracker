@@ -5,7 +5,7 @@ import os
 from django.conf import settings
 from django.db import migrations
 
-class Helper(object):
+class Helper:
 
     def __init__(self, review_path, comments_by, document_class):
         self.review_path = review_path
@@ -13,12 +13,12 @@ class Helper(object):
         self.document_class = document_class
 
     def remove_file(self,name):
-        filename = os.path.join(self.review_path, '{}.txt'.format(name))
+        filename = os.path.join(self.review_path, f'{name}.txt')
         os.remove(filename)
 
     def rename_file(self, old_name, new_name):
-        old_filename = os.path.join(self.review_path, '{}.txt'.format(old_name))
-        new_filename = os.path.join(self.review_path, '{}.txt'.format(new_name))
+        old_filename = os.path.join(self.review_path, f'{old_name}.txt')
+        new_filename = os.path.join(self.review_path, f'{new_name}.txt')
         os.rename(old_filename, new_filename)
 
     def add_comment(self, name, comment):

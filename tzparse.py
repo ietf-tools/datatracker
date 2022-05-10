@@ -183,4 +183,3 @@ if __name__ == "__main__":
         print("Running module tests:\n")
         import doctest
         print(doctest.testmod())
-    

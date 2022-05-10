@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 import datetime
 from io import StringIO
@@ -24,7 +23,7 @@ class CommandTests(TestCase):
         if expected_delete_count == 0:
             delete_text = 'No events older than'
         else:
-            delete_text = 'Deleting {} event'.format(expected_delete_count)
+            delete_text = f'Deleting {expected_delete_count} event'
         self.assertIn(delete_text, cmd_output)
         self.assertCountEqual(
             PersonApiKeyEvent.objects.all(),
@@ -37,7 +36,7 @@ class CommandTests(TestCase):
         if expected_delete_count == 0:
             delete_text = 'No events older than'
         else:
-            delete_text = 'Would delete {} event'.format(expected_delete_count)
+            delete_text = f'Would delete {expected_delete_count} event'
         self.assertIn(delete_text, cmd_output)
         self.assertCountEqual(
             PersonApiKeyEvent.objects.all(),

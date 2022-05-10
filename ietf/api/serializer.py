@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2018-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import hashlib
@@ -31,9 +30,9 @@ def filter_from_queryargs(request):
     def is_ascii(s):
         return all(ord(c) < 128 for c in s)
     # limit parameter keys to ascii.
-    params = dict( (k,v) for (k,v) in list(request.GET.items()) if is_ascii(k) )
-    filter = fix_ranges(dict([(k,params[k]) for k in list(params.keys()) if not k.startswith("not__")]))
-    exclude = fix_ranges(dict([(k[5:],params[k]) for k in list(params.keys()) if k.startswith("not__")]))
+    params = { k:v for (k,v) in list(request.GET.items()) if is_ascii(k) }
+    filter = fix_ranges({k:params[k] for k in list(params.keys()) if not k.startswith("not__")})
+    exclude = fix_ranges({k[5:]:params[k] for k in list(params.keys()) if k.startswith("not__")})
     return filter, exclude
 
 def unique_obj_name(obj):
@@ -42,7 +41,7 @@ def unique_obj_name(obj):
     app = obj._meta.app_label
     model = obj.__class__.__name__.lower()
     id = obj.pk
-    return "%s.%s[%s]" % (app,model,id)
+    return "{}.{}[{}]".format(app,model,id)
 
 def cached_get(key, calculate_value, timeout=None):
     """Try to get value from cache using key. If no value exists calculate
@@ -96,20 +95,20 @@ class AdminJsonSerializer(Serializer):
         qi = options.get('query_info', '').encode('utf-8')
         if len(list(queryset)) == 1:
             obj = queryset[0]
-            key = 'json:%s:%s' % (hashlib.md5(qi).hexdigest(), unique_obj_name(obj))
+            key = 'json:{}:{}'.format(hashlib.md5(qi).hexdigest(), unique_obj_name(obj))
             is_cached = cache.get(model_top_level_cache_key(obj)) is True
             if is_cached:
                 value = cached_get(key, lambda: super(AdminJsonSerializer, self).serialize(queryset, **options))
             else:
-               value = super(AdminJsonSerializer, self).serialize(queryset, **options)
+               value = super().serialize(queryset, **options)
                cache.set(key, value)
                cache.set(model_top_level_cache_key(obj), True)
             return value
         else:
-            return super(AdminJsonSerializer, self).serialize(queryset, **options)
+            return super().serialize(queryset, **options)
 
     def start_serialization(self):
-        super(AdminJsonSerializer, self).start_serialization()
+        super().start_serialization()
         self.json_kwargs.pop("expand", None)
         self.json_kwargs.pop("query_info", None)
 
@@ -133,10 +132,10 @@ class AdminJsonSerializer(Serializer):
                             # models pulled in by select_related().  If that's acceptable, we can
                             # comment this in again later.  (The problem is known, captured in
                             # Django issue #15040: https://code.djangoproject.com/ticket/15040
-                            self._current[name] = dict([ (rel.pk, self.expand_related(rel, name)) for rel in field.all().select_related() ])
+                            self._current[name] = { rel.pk: self.expand_related(rel, name) for rel in field.all().select_related() }
                             # self._current[name] = dict([ (rel.pk, self.expand_related(rel, name)) for rel in field.all() ])
                         else:
-                            self._current[name] = dict([ (rel.pk, self.expand_related(rel, name)) for rel in field.all() ])
+                            self._current[name] = { rel.pk: self.expand_related(rel, name) for rel in field.all() }
                     else:
                         if callable(field):
                             try:
@@ -146,7 +145,7 @@ class AdminJsonSerializer(Serializer):
                         else:
                             field_value = field
                         if isinstance(field_value, QuerySet) or isinstance(field_value, list):
-                            self._current[name] = dict([ (rel.pk, self.expand_related(rel, name)) for rel in field_value ])
+                            self._current[name] = { rel.pk: self.expand_related(rel, name) for rel in field_value }
                         else:
                             if hasattr(field_value, "_meta"):
                                 self._current[name] = self.expand_related(field_value, name)
@@ -159,13 +158,13 @@ class AdminJsonSerializer(Serializer):
                 if name in names and hasattr(obj, '%s_set' % name):
                     related_objects = getattr(obj, '%s_set' % name).all()
                     if self.options["expand"]:
-                        self._current[name] = dict([(rel.pk, self.expand_related(rel, name)) for rel in related_objects.select_related()])
+                        self._current[name] = {rel.pk: self.expand_related(rel, name) for rel in related_objects.select_related()}
                     else:
-                        self._current[name] = dict([(rel.pk, self.expand_related(rel, name)) for rel in related_objects])
+                        self._current[name] = {rel.pk: self.expand_related(rel, name) for rel in related_objects}
                 else:
                     raise FieldError("Cannot resolve keyword '%s' into field. "
                         "Choices are: %s" % (name, ", ".join(names)))
-        super(AdminJsonSerializer, self).end_object(obj)
+        super().end_object(obj)
 
     def expand_related(self, related, name):
         options = self.options.copy()
@@ -205,7 +204,7 @@ class AdminJsonSerializer(Serializer):
             self._current[field.name] = [m2m_value(related)
                                for related in getattr(obj, field.name).iterator()]
 
-class JsonExportMixin(object):
+class JsonExportMixin:
     """
     Adds JSON export to a DetailView
     """
@@ -247,7 +246,7 @@ class JsonExportMixin(object):
         #
         expand = set(expand)
         content_type = 'application/json'
-        query_info = "%s?%s" % (request.META["PATH_INFO"], request.META["QUERY_STRING"])
+        query_info = "{}?{}".format(request.META["PATH_INFO"], request.META["QUERY_STRING"])
         try:
             qs = self.get_queryset().filter(**filter).exclude(**exclude)
         except (FieldError, ValueError) as e:
@@ -257,7 +256,7 @@ class JsonExportMixin(object):
                 qs = qs.select_related()
             serializer = AdminJsonSerializer()
             items = [(getattr(o, key), serializer.serialize([o], expand=expand, query_info=query_info) )  for o in qs ]
-            qd = dict( ( k, json.loads(v)[0] )  for k,v in items )
+            qd = {  k: json.loads(v)[0]   for k,v in items }
         except (FieldError, ValueError) as e:
             return HttpResponse(json.dumps({"error": str(e)}, sort_keys=True, indent=3), content_type=content_type)
         text = json.dumps({smart_text(self.model._meta): qd}, sort_keys=True, indent=3)

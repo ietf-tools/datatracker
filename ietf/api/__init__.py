@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -47,7 +46,7 @@ def autodiscover():
         mod = import_module(app)
         # Attempt to import the app's admin module.
         try:
-            import_module('%s.resources' % (app, ))
+            import_module('{}.resources'.format(app))
         except:
             # Decide whether to bubble up this error. If the app just
             # doesn't have an admin module, we can ignore the error
@@ -66,7 +65,7 @@ class ModelResource(tastypie.resources.ModelResource):
         smooshed = urlencode(kwargs)
 
         # Use a list plus a ``.join()`` because it's faster than concatenation.
-        return "%s:%s:%s:%s" % (self._meta.api_name, self._meta.resource_name, ':'.join(args), smooshed)
+        return "{}:{}:{}:{}".format(self._meta.api_name, self._meta.resource_name, ':'.join(args), smooshed)
 
 
 TIMEDELTA_REGEX = re.compile(r'^(?P<days>\d+d)?\s?(?P<hours>\d+h)?\s?(?P<minutes>\d+m)?\s?(?P<seconds>\d+s?)$')
@@ -86,12 +85,12 @@ class TimedeltaField(ApiField):
                 data = match.groupdict()
                 return datetime.timedelta(int(data['days']), int(data['hours']), int(data['minutes']), int(data['seconds']))
             else:
-                raise ApiFieldError("Timedelta provided to '%s' field doesn't appear to be a valid timedelta string: '%s'" % (self.instance_name, value))
+                raise ApiFieldError("Timedelta provided to '{}' field doesn't appear to be a valid timedelta string: '{}'".format(self.instance_name, value))
 
         return value
 
     def hydrate(self, bundle):
-        value = super(TimedeltaField, self).hydrate(bundle)
+        value = super().hydrate(bundle)
 
         if value and not hasattr(value, 'seconds'):
             if isinstance(value, str):
@@ -104,10 +103,10 @@ class TimedeltaField(ApiField):
                     else:
                         raise ValueError()
                 except (ValueError, TypeError):
-                    raise ApiFieldError("Timedelta provided to '%s' field doesn't appear to be a valid datetime string: '%s'" % (self.instance_name, value))
+                    raise ApiFieldError("Timedelta provided to '{}' field doesn't appear to be a valid datetime string: '{}'".format(self.instance_name, value))
 
             else:
-                raise ApiFieldError("Datetime provided to '%s' field must be a string: %s" % (self.instance_name, value))
+                raise ApiFieldError("Datetime provided to '{}' field must be a string: {}".format(self.instance_name, value))
 
         return value
 
@@ -138,7 +137,7 @@ class ToOneField(tastypie.fields.ToOneField):
                 if callable(self.attribute):
                     raise ApiFieldError("The related resource for resource %s could not be found." % (previous_obj))
                 else:
-                    raise ApiFieldError("The model '%r' has an empty attribute '%s' and doesn't allow a null value." % (previous_obj, attrib))
+                    raise ApiFieldError("The model '{!r}' has an empty attribute '{}' and doesn't allow a null value.".format(previous_obj, attrib))
             return None
 
         fk_resource = self.get_related_resource(foreign_obj)

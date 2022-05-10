@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2019-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django.db import migrations
@@ -24,8 +23,8 @@ def forward(apps, schema_editor):
             continue
         team_acronym = group.acronym.lower()
         for review_type in review_team.review_types.all():
-            slug = 'review_completed_{}_{}'.format(team_acronym, review_type.slug)
-            desc = 'Recipients when a {} {} review is completed'.format(team_acronym, review_type)
+            slug = f'review_completed_{team_acronym}_{review_type.slug}'
+            desc = f'Recipients when a {team_acronym} {review_type} review is completed'
             if MailTrigger.objects.filter(slug=slug):
                 # Never overwrite existing triggers
                 continue

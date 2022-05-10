@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from collections import defaultdict
@@ -264,7 +263,7 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
     special_group_labels = dict(edu='EDU', iepg='IEPG')
 
     def __init__(self, *, single_category=False, **kwargs):
-        super(AgendaFilterOrganizer, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.single_category = single_category
         # filled in when _organize_filters() is called
         self.filter_categories = None
@@ -324,12 +323,12 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
         heading group.
         """
         # groups in the schedule that have a historic_parent group
-        groups = set(self._get_group(s) for s in self.sessions
+        groups = {self._get_group(s) for s in self.sessions
                      if s
-                     and self._get_group(s))
+                     and self._get_group(s)}
         log.assertion('len(groups) == len(set(g.acronym for g in groups))')  # no repeated acros
 
-        group_parents = set(self._get_group_parent(g) for g in groups if self._get_group_parent(g))
+        group_parents = {self._get_group_parent(g) for g in groups if self._get_group_parent(g)}
         log.assertion('len(group_parents) == len(set(gp.acronym for gp in group_parents))')  # no repeated acros
 
         all_groups = groups.union(group_parents)
@@ -337,8 +336,8 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
         headings = {g: set()
                     for g in all_groups
                     if g.features.agenda_filter_type_id == 'heading'}
-        special = set(g for g in all_groups
-                      if g.features.agenda_filter_type_id == 'special')
+        special = {g for g in all_groups
+                      if g.features.agenda_filter_type_id == 'special'}
 
         for g in groups:
             if g.features.agenda_filter_type_id == 'normal':
@@ -514,7 +513,7 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
         return self._filter_column(
             label=None if heading is None else self._group_label(heading),
             keyword=self._group_keyword(heading),
-            children=sorted([self._group_filter_entry(g) for g in children], key=self._group_sort_key),
+            children=sorted((self._group_filter_entry(g) for g in children), key=self._group_sort_key),
         )
 
     @staticmethod
@@ -628,7 +627,7 @@ class AgendaKeywordTagger(AgendaKeywordTool):
             return None
         kw = self._group_keyword(group)  # start with this
         token = session.docname_token_only_for_multiple()
-        return kw if token is None else '{}-{}'.format(kw, token)
+        return kw if token is None else f'{kw}-{token}'
 
 
 def read_session_file(type, num, doc):
@@ -638,9 +637,9 @@ def read_session_file(type, num, doc):
     #  DOC_PATH_FORMAT = { "agenda": "/foo/bar/agenda-{meeting.number}/agenda-{meeting-number}-{doc.group}*", }
     #
     # FIXME: uploaded_filename should be replaced with a function call that computes names that are fixed
-    path = os.path.join(settings.AGENDA_PATH, "%s/%s/%s" % (num, type, doc.uploaded_filename))
+    path = os.path.join(settings.AGENDA_PATH, "{}/{}/{}".format(num, type, doc.uploaded_filename))
     if doc.uploaded_filename and os.path.exists(path):
-        with io.open(path, 'rb') as f:
+        with open(path, 'rb') as f:
             return f.read(), path
     else:
         return None, path
@@ -653,13 +652,13 @@ def convert_draft_to_pdf(doc_name):
     outpath = os.path.join(settings.INTERNET_DRAFT_PDF_PATH, doc_name + ".pdf")
 
     try:
-        infile = io.open(inpath, "r")
-    except IOError:
+        infile = open(inpath, "r")
+    except OSError:
         return
 
     t,tempname = mkstemp()
     os.close(t)
-    tempfile = io.open(tempname, "w")
+    tempfile = open(tempname, "w")
 
     pageend = 0;
     newpage = 0;
@@ -843,7 +842,7 @@ def get_announcement_initial(meeting, is_change=False):
 
 def get_earliest_session_date(formset):
     '''Return earliest date from InterimSession Formset'''
-    return sorted([f.cleaned_data['date'] for f in formset.forms if f.cleaned_data.get('date')])[0]
+    return sorted(f.cleaned_data['date'] for f in formset.forms if f.cleaned_data.get('date'))[0]
 
 
 def is_interim_meeting_approved(meeting):
@@ -854,11 +853,11 @@ def get_next_interim_number(acronym,date):
     This function takes a group acronym and date object and returns the next number
     to use for an interim meeting.  The format is interim-[year]-[acronym]-[01-99]
     '''
-    base = 'interim-%s-%s-' % (date.year, acronym)
+    base = 'interim-{}-{}-'.format(date.year, acronym)
     # can't use count() to calculate the next number in case one was deleted
     meetings = Meeting.objects.filter(type='interim', number__startswith=base)
     if meetings:
-        serial = sorted([ int(x.number.split('-')[-1]) for x in meetings ])[-1]
+        serial = sorted( int(x.number.split('-')[-1]) for x in meetings )[-1]
     else:
         serial = 0
     return "%s%02d" % (base, serial+1)
@@ -905,7 +904,7 @@ def send_interim_approval_request(meetings):
     requester = session_requested_by(first_session)
     (to_email, cc_list) = gather_address_lists('session_requested',group=group,person=requester)
     from_email = (settings.SESSION_REQUEST_FROM_EMAIL)
-    subject = '{group} - New Interim Meeting Request'.format(group=group.acronym)
+    subject = f'{group.acronym} - New Interim Meeting Request'
     template = 'meeting/interim_approval_request.txt'
     approval_urls = []
     for meeting in meetings:
@@ -963,7 +962,7 @@ def send_interim_announcement_request(meeting):
     requester = session_requested_by(first_session)
     (to_email, cc_list) = gather_address_lists('interim_announce_requested')
     from_email = (settings.SESSION_REQUEST_FROM_EMAIL)
-    subject = '{group} - interim meeting ready for announcement'.format(group=group.acronym)
+    subject = f'{group.acronym} - interim meeting ready for announcement'
     template = 'meeting/interim_announcement_request.txt'
     announce_url = settings.IDTRACKER_BASE_URL + reverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
     context = locals()

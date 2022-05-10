@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from typing import List, Tuple      # pyflakes:ignore
@@ -38,19 +37,19 @@ class PositionNomineeField(forms.ChoiceField):
         results = []
         for position in positions:
             accepted_nominees = [np.nominee for np in NomineePosition.objects.filter(position=position,state='accepted').exclude(nominee__duplicated__isnull=False)]
-            nominees = [('%s_%s' % (position.id, i.id), str(i)) for i in accepted_nominees]
+            nominees = [('{}_{}'.format(position.id, i.id), str(i)) for i in accepted_nominees]
             if nominees:
                 results.append((position.name+" (Accepted)", nominees))
         for position in positions:
             other_nominees = [np.nominee for np in NomineePosition.objects.filter(position=position).exclude(state='accepted').exclude(nominee__duplicated__isnull=False)]
-            nominees = [('%s_%s' % (position.id, i.id), str(i)) for i in other_nominees]
+            nominees = [('{}_{}'.format(position.id, i.id), str(i)) for i in other_nominees]
             if nominees:
                 results.append((position.name+" (Declined or Pending)", nominees))
         kwargs['choices'] = results
-        super(PositionNomineeField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def clean(self, value):
-        nominee = super(PositionNomineeField, self).clean(value)
+        nominee = super().clean(value)
         if not nominee:
             return nominee
         (position_id, nominee_id) = nominee.split('_')
@@ -108,7 +107,7 @@ class EditNomcomForm(forms.ModelForm):
 
 
     def __init__(self, *args, **kwargs):
-        super(EditNomcomForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if self.instance:
             if self.instance.public_key:
@@ -148,7 +147,7 @@ class MergeNomineeForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
-        super(MergeNomineeForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def clean_primary_email(self):
         email = self.cleaned_data['primary_email']
@@ -225,7 +224,7 @@ class MergePersonForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
-        super(MergePersonForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def clean(self):
         primary_person = self.cleaned_data.get("primary_person")
@@ -259,7 +258,7 @@ class NominateForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         self.public = kwargs.pop('public', None)
 
-        super(NominateForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         new_person_url_name = 'ietf.nomcom.views.%s_nominate_newperson' % ('public' if self.public else 'private' )
         self.fields['searched_email'].label = 'Candidate email'
@@ -289,7 +288,7 @@ class NominateForm(forms.ModelForm):
 
     def save(self, commit=True):
         # Create nomination
-        nomination = super(NominateForm, self).save(commit=False)
+        nomination = super().save(commit=False)
         nominator_email = self.cleaned_data.get('nominator_email', None)
         searched_email = self.cleaned_data['searched_email']
         position = self.cleaned_data['position']
@@ -364,7 +363,7 @@ class NominateNewPersonForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         self.public = kwargs.pop('public', None)
 
-        super(NominateNewPersonForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.fields['nominator_email'].label = 'Nominator email'
         if self.nomcom:
@@ -403,7 +402,7 @@ class NominateNewPersonForm(forms.ModelForm):
 
     def save(self, commit=True):
         # Create nomination
-        nomination = super(NominateNewPersonForm, self).save(commit=False)
+        nomination = super().save(commit=False)
         nominator_email = self.cleaned_data.get('nominator_email', None)
         candidate_email = self.cleaned_data['candidate_email']
         candidate_name = self.cleaned_data['candidate_name']
@@ -482,7 +481,7 @@ class FeedbackForm(forms.ModelForm):
         self.nominee = kwargs.pop('nominee', None)
         self.topic = kwargs.pop('topic', None)
 
-        super(FeedbackForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         author = get_user_email(self.user)
 
@@ -502,12 +501,12 @@ class FeedbackForm(forms.ModelForm):
         if self.nominee and self.position:
             if not NomineePosition.objects.accepted().filter(nominee=self.nominee,
                                                         position=self.position):
-                msg = "There isn't a accepted nomination for %s on the %s position" % (self.nominee, self.position)
+                msg = "There isn't a accepted nomination for {} on the {} position".format(self.nominee, self.position)
                 self._errors["comment_text"] = self.error_class([msg])
         return self.cleaned_data
 
     def save(self, commit=True):
-        feedback = super(FeedbackForm, self).save(commit=False)
+        feedback = super().save(commit=False)
         confirmation = self.cleaned_data['confirmation']
         comment_text = self.cleaned_data['comment_text']
         nomcom_template_path = '/nomcom/%s/' % self.nomcom.group.acronym
@@ -566,7 +565,7 @@ class FeedbackEmailForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
-        super(FeedbackEmailForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def save(self, commit=True):
         create_feedback_email(self.nomcom, self.cleaned_data['email_text'])
@@ -580,11 +579,11 @@ class QuestionnaireForm(forms.ModelForm):
         self.nomcom = kwargs.pop('nomcom', None)
         self.user = kwargs.pop('user', None)
 
-        super(QuestionnaireForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['nominee'] = PositionNomineeField(nomcom=self.nomcom, required=True)
 
     def save(self, commit=True):
-        feedback = super(QuestionnaireForm, self).save(commit=False)
+        feedback = super().save(commit=False)
         comment_text = self.cleaned_data['comment_text']
         (position, nominee) = self.cleaned_data['nominee']
 
@@ -617,11 +616,11 @@ class PositionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
-        super(PositionForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def save(self, *args, **kwargs):
         self.instance.nomcom = self.nomcom
-        super(PositionForm, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 class TopicForm(forms.ModelForm):
 
@@ -631,11 +630,11 @@ class TopicForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
-        super(TopicForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def save(self, *args, **kwargs):
         self.instance.nomcom = self.nomcom
-        super(TopicForm, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 class PrivateKeyForm(forms.Form):
 
@@ -668,7 +667,7 @@ class PendingFeedbackForm(forms.ModelForm):
                                                               #help_text='Hold down "Control", or "Command" on a Mac, to select more than one.')
 
     def save(self, commit=True):
-        feedback = super(PendingFeedbackForm, self).save(commit=False)
+        feedback = super().save(commit=False)
         feedback.nomcom = self.nomcom
         feedback.user = self.user
         feedback.save()
@@ -681,11 +680,11 @@ class ReminderDatesForm(forms.ModelForm):
         fields = ('date',)
 
     def __init__(self, *args, **kwargs):
-        super(ReminderDatesForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['date'].required = False
 
     def clean(self):
-        cleaned_data = super(ReminderDatesForm, self).clean()
+        cleaned_data = super().clean()
         date = cleaned_data.get('date')
         if date is None:
             cleaned_data['date'] = ''
@@ -730,7 +729,7 @@ class MutableFeedbackForm(forms.ModelForm):
             self.fields['candidate_phone'] = forms.CharField(label="Candidate phone", required=False)
 
     def clean(self):
-        cleaned_data = super(MutableFeedbackForm,self).clean()
+        cleaned_data = super().clean()
         if self.feedback_type.slug == 'nomina':
             searched_email = self.cleaned_data.get('searched_email')
             candidate_name = self.cleaned_data.get('candidate_name')
@@ -754,7 +753,7 @@ class MutableFeedbackForm(forms.ModelForm):
         return cleaned_data
 
     def save(self, commit=True):
-        feedback = super(MutableFeedbackForm, self).save(commit=False)
+        feedback = super().save(commit=False)
         if self.instance.type.slug == 'nomina':
             searched_email = self.cleaned_data['searched_email']
             candidate_email = self.cleaned_data['candidate_email']
@@ -811,7 +810,7 @@ class EditNomineeForm(forms.ModelForm):
     nominee_email = forms.ModelChoiceField(queryset=Email.objects.none(),empty_label=None)
 
     def __init__(self, *args, **kwargs):
-        super(EditNomineeForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['nominee_email'].queryset = Email.objects.filter(person=self.instance.person,active=True)
         self.fields['nominee_email'].initial = self.instance.email
         self.fields['nominee_email'].help_text = "If the address you are looking for does not appear in this list, ask the nominee (or the secretariat) to add the address to their datatracker account and ensure it is marked as active."
@@ -834,7 +833,7 @@ class EditNomineeForm(forms.ModelForm):
         return self.cleaned_data
 
     def save(self, commit=True):
-        nominee = super(EditNomineeForm, self).save(commit=False)
+        nominee = super().save(commit=False)
         nominee_email = self.cleaned_data.get("nominee_email")
         nominee.email = nominee_email
         nominee.save()

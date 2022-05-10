@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -41,17 +40,17 @@ def make_interim_meeting(group,date,status='sched'):
         session=session,
         schedule=session.meeting.schedule)
     # agenda
-    name = "agenda-%s-%s-%s" % (meeting.number, group.acronym, "01")
+    name = "agenda-{}-{}-{}".format(meeting.number, group.acronym, "01")
     rev = '00'
-    file = "%s-%s.txt" % (name, rev)
+    file = "{}-{}.txt".format(name, rev)
     doc = DocumentFactory.create(name=name, type_id='agenda', title="Agenda",
         uploaded_filename=file, group=group, rev=rev, states=[('draft','active')])
     pres = SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
     session.sessionpresentation_set.add(pres)
     # minutes
-    name = "minutes-%s-%s" % (meeting.number, time.strftime("%Y%m%d%H%M"))
+    name = "minutes-{}-{}".format(meeting.number, time.strftime("%Y%m%d%H%M"))
     rev = '00'
-    file = "%s-%s.txt" % (name, rev)
+    file = "{}-{}.txt".format(name, rev)
     doc = DocumentFactory.create(name=name, type_id='minutes', title="Minutes",
         uploaded_filename=file, group=group, rev=rev, states=[('draft','active')])
     pres = SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
@@ -59,9 +58,9 @@ def make_interim_meeting(group,date,status='sched'):
     # slides
     title = "Slideshow"
 
-    name = "slides-%s-sessa-%s" % (meeting.number, slugify(title))
+    name = "slides-{}-sessa-{}".format(meeting.number, slugify(title))
     rev = '00'
-    file = "%s-%s.txt" % (name, rev)
+    file = "{}-{}.txt".format(name, rev)
     doc = DocumentFactory.create(name=name, type_id='slides', title=title,
         uploaded_filename=file, group=group, rev=rev,
         states=[('slides','active'), ('reuse_policy', 'single')])

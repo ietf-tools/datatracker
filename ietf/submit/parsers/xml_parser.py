@@ -8,6 +8,6 @@ class XMLParser(FileParser):
     # If some error is found after this method invocation
     # no other file parsing is recommended
     def critical_parse(self):
-        super(XMLParser, self).critical_parse()
+        super().critical_parse()
         return self.parsed_info
     

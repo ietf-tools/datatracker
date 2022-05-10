@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2017-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import socket
@@ -21,7 +20,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
-            raise EnvironmentError("Refusing to create a dummy nomcom on a production server")
+            raise OSError("Refusing to create a dummy nomcom on a production server")
 
         opt_delete = options.get('delete', False)
         if opt_delete:

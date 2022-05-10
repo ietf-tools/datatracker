@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -106,12 +105,12 @@ def get_section_header(doc, agenda):
         if parent:
             if "." not in parent_num:
                 parent_num += "."
-            header.append("%s %s" % (parent_num, parent["title"]))
+            header.append("{} {}".format(parent_num, parent["title"]))
 
     section = agenda["sections"][num]
-    header.append("%s %s" % (num, section["title"]))
+    header.append("{} {}".format(num, section["title"]))
 
-    count = '%s of %s' % (section["docs"].index(doc) + 1, len(section["docs"]))
+    count = '{} of {}'.format(section["docs"].index(doc) + 1, len(section["docs"]))
     header.append(count)
 
     return header
@@ -253,9 +252,9 @@ def doc_detail(request, date, name):
                     pos.ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
                     pos.pos = clean['position']
                     if form.initial['position'] == None:
-                        pos.desc = '[Ballot Position Update] New position, %s, has been recorded for %s by %s' % (pos.pos.name, balloter.name, login.name)
+                        pos.desc = '[Ballot Position Update] New position, {}, has been recorded for {} by {}'.format(pos.pos.name, balloter.name, login.name)
                     else:
-                        pos.desc = '[Ballot Position Update] Position for %s has been changed to %s by %s' % (balloter.name, pos.pos.name, login.name)
+                        pos.desc = '[Ballot Position Update] Position for {} has been changed to {} by {}'.format(balloter.name, pos.pos.name, login.name)
                     pos.save()
                     has_changed = True
 

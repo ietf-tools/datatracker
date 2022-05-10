@@ -78,7 +78,7 @@ def import_mailman_listinfo(verbosity=0):
         if mlist.advertised:
             members = mlist.getRegularMemberKeys() + mlist.getDigestMemberKeys()
             log_time("  Fetched list of list members")
-            members = set([ m for m in members if mlist.getDeliveryStatus(m) == MemberAdaptor.ENABLED ])
+            members = { m for m in members if mlist.getDeliveryStatus(m) == MemberAdaptor.ENABLED }
             log_time("  Filtered list of list members")
             if not mlist.real_name in subscribed:
                 log("Note: didn't find '%s' in the dictionary of subscriptions" % mlist.real_name)
@@ -92,28 +92,28 @@ def import_mailman_listinfo(verbosity=0):
                     old = Subscribed.objects.get(email=addr)
                     log_time("    Fetched subscribed object")
                     old.lists.remove(mmlist)
-                    log_time("    Removed %s from %s" % (mmlist, old))
+                    log_time("    Removed {} from {}".format(mmlist, old))
                     if old.lists.count() == 0:
                         note("    Removing address with no subscriptions: %s" % (addr))
                         old.delete()
                         log_time("      Removed %s" % old)
             log_time("  Removed addresses no longer subscribed")
             if to_remove:
-                log("  Removed %s addresses from %s" % (len(to_remove), name))
+                log("  Removed {} addresses from {}".format(len(to_remove), name))
             for addr in to_add:
                 if len(addr) > addr_max_length:
-                    sys.stderr.write("    **  Email address subscribed to '%s' too long for table: <%s>\n" % (name, addr))
+                    sys.stderr.write("    **  Email address subscribed to '{}' too long for table: <{}>\n".format(name, addr))
                     continue
                 note("  Adding subscription: %s" % (addr))
                 try:
                     new, created = Subscribed.objects.get_or_create(email=addr)
                 except MultipleObjectsReturned as e:
-                    sys.stderr.write("    **  Error handling %s in %s: %s\n" % (addr, name, e))
+                    sys.stderr.write("    **  Error handling {} in {}: {}\n".format(addr, name, e))
                     continue
                 new.lists.add(mmlist)
             log_time("  Added new addresses")
             if to_add:
-                log("  Added %s addresses to %s" % (len(to_add), name))
+                log("  Added {} addresses to {}".format(len(to_add), name))
     log("Completed import of list info from Mailman")    
 
 class Command(BaseCommand):

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2019-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import os
@@ -26,4 +25,3 @@ class Command(BaseCommand):
                 if not dst.endswith(os.pathsep):
                     dst += os.pathsep
                 subprocess.call(('rsync', '-auz', '--info=progress2', src, dst))
-                

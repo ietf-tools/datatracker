@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django import template
@@ -93,7 +92,7 @@ class AnchorNode(template.Node):
     def render(self, context):
         url = self.resolve_url(context)
         if url:
-            return '<a href="{}">{}</a>'.format(url, self.nodelist.render(context))
+            return f'<a href="{url}">{self.nodelist.render(context)}</a>'
         else:
             return self.nodelist.render(context)
 

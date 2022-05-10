@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2018-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import gzip
@@ -95,12 +94,12 @@ class Command(loaddata.Command):
                         if "Duplicate entry" in error_msg:
                             pass
                         else:
-                            self.stderr.write("Could not load %(app_label)s.%(object_name)s(pk=%(pk)s): %(error_msg)s" % {
-                                'app_label': obj.object._meta.app_label,
-                                'object_name': obj.object._meta.object_name,
-                                'pk': obj.object.pk,
-                                'error_msg': error_msg,
-                            }, )
+                            self.stderr.write("Could not load {app_label}.{object_name}(pk={pk}): {error_msg}".format(
+                                app_label=obj.object._meta.app_label,
+                                object_name=obj.object._meta.object_name,
+                                pk=obj.object.pk,
+                                error_msg=error_msg,
+                            ), )
             self.fixture_object_count += objects_in_fixture
 
         if self.verbosity >= 1:

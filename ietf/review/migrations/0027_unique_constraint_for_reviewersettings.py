@@ -16,9 +16,9 @@ def forward(apps, schema_editor):
         """Helper to decide how to handle duplicate settings"""
         team = duplicate_settings[0].team
         person = duplicate_settings[0].person
-        assert(all((s.person == person and s.team == team for s in duplicate_settings)))
+        assert(all(s.person == person and s.team == team for s in duplicate_settings))
     
-        print('\n>> Found duplicate settings for {}'.format(duplicate_settings[0]))
+        print(f'\n>> Found duplicate settings for {duplicate_settings[0]}')
         # In the DB as of Dec 2020, the only duplicate settings sets were pairs where the
         # earlier PK had a change history and the latter PK did not. Based on this, assuming
         # a change history indicates that the settings are important. If only one has history,
@@ -39,10 +39,10 @@ def forward(apps, schema_editor):
                 )
             )
             
-        print('>>    Keeping pk={} ({})'.format(keep.pk, reason))
+        print(f'>>    Keeping pk={keep.pk} ({reason})')
         for settings in duplicate_settings:
             if settings.pk != keep.pk:
-                print('>>    Deleting pk={}'.format(settings.pk))
+                print(f'>>    Deleting pk={settings.pk}')
                 settings.delete()
     
     # forward migration starts here

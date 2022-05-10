@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2021, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import io
@@ -55,16 +54,16 @@ def get_charter_text(group):
         if (h.rev > c.rev and not (c_appr and not h_appr)) or (h_appr and not c_appr):
             c = h
 
-    filename = os.path.join(c.get_file_path(), "%s-%s.txt" % (c.canonical_name(), c.rev))
+    filename = os.path.join(c.get_file_path(), "{}-{}.txt".format(c.canonical_name(), c.rev))
     try:
-        with io.open(filename, 'rb') as f:
+        with open(filename, 'rb') as f:
             text = f.read()
             try:
                 text = text.decode('utf8')
             except UnicodeDecodeError:
                 text = text.decode('latin1')
             return text
-    except IOError:
+    except OSError:
         return 'Error Loading Group Charter'
 
 def get_group_role_emails(group, roles):
@@ -72,7 +71,7 @@ def get_group_role_emails(group, roles):
     if not group or not group.acronym or group.acronym == 'none':
         return set()
     emails = Email.objects.filter(role__group=group, role__name__in=roles)
-    return set([_f for _f in [e.email_address() for e in emails] if _f])
+    return {_f for _f in [e.email_address() for e in emails] if _f}
 
 def get_child_group_role_emails(parent, roles, group_type='wg'):
     """Get a list of email addresses for a given set of
@@ -268,7 +267,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 def group_features_group_filter(groups, person, feature):
     """This returns a list of groups filtered such that the given person has
     a role listed in the given feature for each group."""
-    feature_groups = set([])
+    feature_groups = set()
     for g in groups:
         for r in person.role_set.filter(group=g):
             if r.name.slug in getattr(r.group.type.features, feature):
@@ -299,7 +298,7 @@ def update_role_set(group, role_name, new_value, by):
     if isinstance(role_name, str):
         role_name = RoleName.objects.get(slug=role_name)
     new = set(new_value)
-    old = set(r.email for r in group.role_set.filter(name=role_name).distinct().select_related("person"))
+    old = {r.email for r in group.role_set.filter(name=role_name).distinct().select_related("person")}
     removed = old - new
     added = new - old
     if added or removed:
@@ -320,7 +319,7 @@ def update_role_set(group, role_name, new_value, by):
 
         for e in new:
             if not e.origin or (e.person.user and e.origin == e.person.user.username):
-                e.origin = "role: %s %s" % (group.acronym, role_name.slug)
+                e.origin = "role: {} {}".format(group.acronym, role_name.slug)
                 e.save()
 
     return added, removed

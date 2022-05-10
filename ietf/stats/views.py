@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import os
@@ -91,7 +90,7 @@ def put_into_bin(value, bin_size):
         return (0, '')
 
     v = (value // bin_size) * bin_size
-    return (v, "{} - {}".format(v, v + bin_size - 1))
+    return (v, f"{v} - {v + bin_size - 1}")
 
 def prune_unknown_bin_with_known(bins):
     # remove from the unknown bin all authors within the
@@ -142,7 +141,7 @@ def document_stats(request, stats_type=None):
 
     # the length limitation is to keep the key shorter than memcached's limit
     # of 250 after django has added the key_prefix and key_version parameters
-    cache_key = ("stats:document_stats:%s:%s" % (stats_type, slugify(request.META.get('QUERY_STRING',''))))[:228]
+    cache_key = ("stats:document_stats:{}:{}".format(stats_type, slugify(request.META.get('QUERY_STRING',''))))[:228]
     data = cache.get(cache_key)
     if not data:
         names_limit = settings.STATS_NAMES_LIMIT
@@ -254,7 +253,7 @@ def document_stats(request, stats_type=None):
                     yield chosen
 
             if stats_type == "authors":
-                stats_title = "Number of authors for each {}".format(doc_label)
+                stats_title = f"Number of authors for each {doc_label}"
 
                 bins = defaultdict(set)
 
@@ -270,7 +269,7 @@ def document_stats(request, stats_type=None):
                 chart_data.append({ "data": series_data })
 
             elif stats_type == "pages":
-                stats_title = "Number of pages for each {}".format(doc_label)
+                stats_title = f"Number of pages for each {doc_label}"
 
                 bins = defaultdict(set)
 
@@ -287,7 +286,7 @@ def document_stats(request, stats_type=None):
                 chart_data.append({ "data": series_data })
 
             elif stats_type == "words":
-                stats_title = "Number of words for each {}".format(doc_label)
+                stats_title = f"Number of words for each {doc_label}"
 
                 bin_size = 500
 
@@ -307,7 +306,7 @@ def document_stats(request, stats_type=None):
                 chart_data.append({ "data": series_data })
 
             elif stats_type == "format":
-                stats_title = "Submission formats for each {}".format(doc_label)
+                stats_title = f"Submission formats for each {doc_label}"
 
                 bins = defaultdict(set)
 
@@ -359,7 +358,7 @@ def document_stats(request, stats_type=None):
                 chart_data.append({ "data": series_data })
 
             elif stats_type == "formlang":
-                stats_title = "Formal languages used for each {}".format(doc_label)
+                stats_title = f"Formal languages used for each {doc_label}"
 
                 bins = defaultdict(set)
 
@@ -406,7 +405,7 @@ def document_stats(request, stats_type=None):
                 doc_label = "document"
 
             if stats_type == "author/documents":
-                stats_title = "Number of {}s per author".format(doc_label)
+                stats_title = f"Number of {doc_label}s per author"
 
                 bins = defaultdict(set)
 
@@ -421,13 +420,13 @@ def document_stats(request, stats_type=None):
                 for document_count, names in sorted(bins.items(), key=lambda t: t[0]):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     series_data.append((document_count, percentage))
-                    plain_names = sorted([ plain_name(n) for n in names ])
+                    plain_names = sorted( plain_name(n) for n in names )
                     table_data.append((document_count, percentage, len(plain_names), list(plain_names)[:names_limit]))
 
                 chart_data.append({ "data": series_data })
 
             elif stats_type == "author/affiliation":
-                stats_title = "Number of {} authors per affiliation".format(doc_label)
+                stats_title = f"Number of {doc_label} authors per affiliation"
 
                 bins = defaultdict(set)
 
@@ -455,7 +454,7 @@ def document_stats(request, stats_type=None):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     if affiliation:
                         series_data.append((affiliation, len(names)))
-                    plain_names = sorted([ plain_name(n) for n in names ])
+                    plain_names = sorted( plain_name(n) for n in names )
                     table_data.append((affiliation, percentage, len(plain_names), list(plain_names)[:names_limit]))
 
                 series_data.sort(key=lambda t: t[1], reverse=True)
@@ -467,7 +466,7 @@ def document_stats(request, stats_type=None):
                     alias_data.append((name, alias))
 
             elif stats_type == "author/country":
-                stats_title = "Number of {} authors per country".format(doc_label)
+                stats_title = f"Number of {doc_label} authors per country"
 
                 bins = defaultdict(set)
 
@@ -504,7 +503,7 @@ def document_stats(request, stats_type=None):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     if country:
                         series_data.append((country, len(names)))
-                    plain_names = sorted([ plain_name(n) for n in names ])
+                    plain_names = sorted( plain_name(n) for n in names )
                     table_data.append((country, percentage, len(plain_names), list(plain_names)[:names_limit]))
 
                 series_data.sort(key=lambda t: t[1], reverse=True)
@@ -518,7 +517,7 @@ def document_stats(request, stats_type=None):
                 alias_data.sort()
 
             elif stats_type == "author/continent":
-                stats_title = "Number of {} authors per continent".format(doc_label)
+                stats_title = f"Number of {doc_label} authors per continent"
 
                 bins = defaultdict(set)
 
@@ -546,7 +545,7 @@ def document_stats(request, stats_type=None):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     if continent:
                         series_data.append((continent, len(names)))
-                    plain_names = sorted([ plain_name(n) for n in names ])
+                    plain_names = sorted( plain_name(n) for n in names )
                     table_data.append((continent, percentage, len(plain_names), list(plain_names)[:names_limit]))
 
                 series_data.sort(key=lambda t: t[1], reverse=True)
@@ -554,7 +553,7 @@ def document_stats(request, stats_type=None):
                 chart_data.append({ "data": series_data })
 
             elif stats_type == "author/citations":
-                stats_title = "Number of citations of {}s written by author".format(doc_label)
+                stats_title = f"Number of citations of {doc_label}s written by author"
 
                 bins = defaultdict(set)
 
@@ -572,13 +571,13 @@ def document_stats(request, stats_type=None):
                 for citations, names in sorted(bins.items(), key=lambda t: t[0], reverse=True):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     series_data.append((citations, percentage))
-                    plain_names = sorted([ plain_name(n) for n in names ])
+                    plain_names = sorted( plain_name(n) for n in names )
                     table_data.append((citations, percentage, len(plain_names), list(plain_names)[:names_limit]))
 
                 chart_data.append({ "data": sorted(series_data, key=lambda t: t[0]) })
 
             elif stats_type == "author/hindex":
-                stats_title = "h-index for {}s written by author".format(doc_label)
+                stats_title = f"h-index for {doc_label}s written by author"
 
                 bins = defaultdict(set)
 
@@ -598,7 +597,7 @@ def document_stats(request, stats_type=None):
                 for citations, names in sorted(bins.items(), key=lambda t: t[0], reverse=True):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     series_data.append((citations, percentage))
-                    plain_names = sorted([ plain_name(n) for n in names ])
+                    plain_names = sorted( plain_name(n) for n in names )
                     table_data.append((citations, percentage, len(plain_names), list(plain_names)[:names_limit]))
 
                 chart_data.append({ "data": sorted(series_data, key=lambda t: t[0]) })
@@ -640,7 +639,7 @@ def document_stats(request, stats_type=None):
 
 
             if stats_type == "yearly/affiliation":
-                stats_title = "Number of {} authors per affiliation over the years".format(doc_label)
+                stats_title = f"Number of {doc_label} authors per affiliation over the years"
 
                 person_qs = Person.objects.filter(person_filters)
 
@@ -662,7 +661,7 @@ def document_stats(request, stats_type=None):
                 add_labeled_top_series_from_bins(chart_data, bins, limit=8)
 
             elif stats_type == "yearly/country":
-                stats_title = "Number of {} authors per country over the years".format(doc_label)
+                stats_title = f"Number of {doc_label} authors per country over the years"
 
                 person_qs = Person.objects.filter(person_filters)
 
@@ -696,7 +695,7 @@ def document_stats(request, stats_type=None):
 
 
             elif stats_type == "yearly/continent":
-                stats_title = "Number of {} authors per continent".format(doc_label)
+                stats_title = f"Number of {doc_label} authors per continent"
 
                 person_qs = Person.objects.filter(person_filters)
 
@@ -740,9 +739,9 @@ def document_stats(request, stats_type=None):
             "hide_aliases_url": build_document_stats_url(get_overrides={ "showaliases": None }),
             "alias_data": alias_data,
             "eu_countries": sorted(eu_countries or [], key=lambda c: c.name),
-            "content_template": "stats/document_stats_{}.html".format(template_name),
+            "content_template": f"stats/document_stats_{template_name}.html",
         }
-        log("Cache miss for '%s'.  Data size: %sk" % (cache_key, len(str(data))/1000))
+        log("Cache miss for '{}'.  Data size: {}k".format(cache_key, len(str(data))/1000))
         cache.set(cache_key, data, 24*60*60)
     return render(request, "stats/document_stats.html", data)
 
@@ -772,7 +771,7 @@ def meeting_stats(request, num=None, stats_type=None):
 
         return urlreverse(meeting_stats, kwargs={ k: v for k, v in kwargs.items() if v is not None }) + generate_query_string(request.GET, get_overrides)
 
-    cache_key = ("stats:meeting_stats:%s:%s:%s" % (num, stats_type, slugify(request.META.get('QUERY_STRING',''))))[:228]
+    cache_key = ("stats:meeting_stats:{}:{}:{}".format(num, stats_type, slugify(request.META.get('QUERY_STRING',''))))[:228]
     data = cache.get(cache_key)
     if not data:
         names_limit = settings.STATS_NAMES_LIMIT
@@ -803,7 +802,7 @@ def meeting_stats(request, num=None, stats_type=None):
         def get_country_mapping(attendees):
             return {
                 alias.alias: alias.country
-                for alias in CountryAlias.objects.filter(alias__in=set(r.country_code for r in attendees)).select_related("country", "country__continent")
+                for alias in CountryAlias.objects.filter(alias__in={r.country_code for r in attendees}).select_related("country", "country__continent")
                 if alias.alias.isupper()
             }
 
@@ -814,7 +813,7 @@ def meeting_stats(request, num=None, stats_type=None):
             attendees = MeetingRegistration.objects.filter(meeting=meeting, attended=True)
 
             if stats_type == "country":
-                stats_title = "Number of attendees for {} {} per country".format(meeting.type.name, meeting.number)
+                stats_title = f"Number of attendees for {meeting.type.name} {meeting.number} per country"
 
                 bins = defaultdict(set)
 
@@ -854,7 +853,7 @@ def meeting_stats(request, num=None, stats_type=None):
                 chart_data.append({ "data": series_data })
 
             elif stats_type == "continent":
-                stats_title = "Number of attendees for {} {} per continent".format(meeting.type.name, meeting.number)
+                stats_title = f"Number of attendees for {meeting.type.name} {meeting.number} per continent"
 
                 bins = defaultdict(set)
 
@@ -913,7 +912,7 @@ def meeting_stats(request, num=None, stats_type=None):
                     for continent in list(continents.keys()):
                         if continent == country.continent.name:
                             d = {
-                                "name": "IETF {} - {}, {}".format(int(m.number), m.city, country),
+                                "name": f"IETF {int(m.number)} - {m.city}, {country}",
                                 "x": int(m.number),
                                 "y": m.attendees,
                                 "date": m.date.strftime("%d %b %Y"),
@@ -984,9 +983,9 @@ def meeting_stats(request, num=None, stats_type=None):
             "bin_size": bin_size,
             "meeting": meeting,
             "eu_countries": sorted(eu_countries or [], key=lambda c: c.name),
-            "content_template": "stats/meeting_stats_{}.html".format(template_name),
+            "content_template": f"stats/meeting_stats_{template_name}.html",
         }
-        log("Cache miss for '%s'.  Data size: %sk" % (cache_key, len(str(data))/1000))
+        log("Cache miss for '{}'.  Data size: {}k".format(cache_key, len(str(data))/1000))
         cache.set(cache_key, data, 24*60*60)
     #
     return render(request, "stats/meeting_stats.html", data)

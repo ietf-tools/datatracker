@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import os
@@ -72,7 +71,7 @@ class NomCom(models.Model):
 
     def save(self, *args, **kwargs):
         created = not self.id
-        super(NomCom, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
         if created:
             initialize_templates_for_group(self)
 
@@ -93,7 +92,7 @@ class NomCom(models.Model):
         except ValueError as e:
             raise ValueError("Trying to read the NomCom public key: " + str(e))
 
-        command = "%s smime -encrypt -in /dev/stdin %s" % (settings.OPENSSL_COMMAND, cert_file)
+        command = "{} smime -encrypt -in /dev/stdin {}".format(settings.OPENSSL_COMMAND, cert_file)
         code, out, error = pipe(command, cleartext.encode('utf-8'))
         if code != 0:
             log("openssl error: %s:\n  Error %s: %s" %(command, code, error))
@@ -141,7 +140,7 @@ class Nomination(models.Model):
         verbose_name_plural = 'Nominations'
 
     def __str__(self):
-        return "%s (%s)" % (self.candidate_name, self.candidate_email)
+        return "{} ({})".format(self.candidate_name, self.candidate_email)
 
 
 class Nominee(models.Model):
@@ -161,13 +160,13 @@ class Nominee(models.Model):
 
     def __str__(self):
         if self.email.person and self.email.person.name:
-            return "%s <%s> %s" % (self.email.person.plain_name(), self.email.address, self.nomcom.year())
+            return "{} <{}> {}".format(self.email.person.plain_name(), self.email.address, self.nomcom.year())
         else:
-            return "%s %s" % (self.email.address, self.nomcom.year())
+            return "{} {}".format(self.email.address, self.nomcom.year())
 
     def name(self):
         if self.email.person and self.email.person.name:
-            return '%s' % (self.email.person.plain_name(),)
+            return '{}'.format(self.email.person.plain_name())
         else:
             return self.email.address
 
@@ -189,10 +188,10 @@ class NomineePosition(models.Model):
     def save(self, **kwargs):
         if not self.pk and not self.state_id:
             self.state = NomineePositionStateName.objects.get(slug='pending')
-        super(NomineePosition, self).save(**kwargs)
+        super().save(**kwargs)
 
     def __str__(self):
-        return "%s - %s - %s" % (self.nominee, self.state, self.position)
+        return "{} - {} - {}".format(self.nominee, self.state, self.position)
 
     @property
     def questionnaires(self):
@@ -224,7 +223,7 @@ class Position(models.Model):
 
     def save(self, *args, **kwargs):
         created = not self.id
-        super(Position, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
         changed = False
         if created and self.id and not self.requirement_id:
             self.requirement = initialize_requirements_for_position(self)
@@ -275,7 +274,7 @@ class Topic(models.Model):
 
     def save(self, *args, **kwargs):
         created = not self.id
-        super(Topic, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
         changed = False
         if created and self.id and not self.description_id:
             self.description = initialize_description_for_topic(self)

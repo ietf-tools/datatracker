@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import os
@@ -219,7 +218,7 @@ ICANN
 
 class RFCSyncTests(TestCase):
     def write_draft_file(self, name, size):
-        with io.open(os.path.join(settings.INTERNET_DRAFT_PATH, name), 'w') as f:
+        with open(os.path.join(settings.INTERNET_DRAFT_PATH, name), 'w') as f:
             f.write("a" * size)
 
     def test_rfc_index(self):
@@ -331,7 +330,7 @@ class RFCSyncTests(TestCase):
         self.assertEqual(rfc_published_date.month, today.month)
         self.assertEqual(current_status, "Proposed Standard")
         self.assertEqual(updates, ["RFC123"])
-        self.assertEqual(set(also), set(["BCP1", "FYI1", "STD1"]))
+        self.assertEqual(set(also), {"BCP1", "FYI1", "STD1"})
         self.assertEqual(draft, doc.name)
         self.assertEqual(wg, doc.group.acronym)
         self.assertEqual(has_errata, True)
@@ -339,7 +338,7 @@ class RFCSyncTests(TestCase):
         self.assertEqual(pages, "42")
         self.assertEqual(abstract, "This is some interesting text.")
 
-        draft_filename = "%s-%s.txt" % (doc.name, doc.rev)
+        draft_filename = "{}-{}.txt".format(doc.name, doc.rev)
         self.write_draft_file(draft_filename, 5000)
 
         changes = []
@@ -462,7 +461,7 @@ class RFCSyncTests(TestCase):
         draft_name, date_received, state, tags, missref_generation, stream, auth48, cluster, refs = drafts[0]
         self.assertEqual(draft_name, draft.name)
         self.assertEqual(state, "EDIT")
-        self.assertEqual(set(tags), set(["iana", "ref"]))
+        self.assertEqual(set(tags), {"iana", "ref"})
         self.assertEqual(auth48, "http://www.rfc-editor.org/auth48/rfc1234")
 
     def test_rfceditor_parse_queue_TI_state(self):

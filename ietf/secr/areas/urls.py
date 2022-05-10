@@ -1,4 +1,3 @@
-
 from ietf.secr.areas import views
 from ietf.utils.urls import url
 

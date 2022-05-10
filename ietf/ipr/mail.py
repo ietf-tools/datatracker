@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import base64
@@ -100,7 +99,7 @@ def get_reply_to():
     local,domain = get_base_ipr_request_address().split('@')
     while True:
         rand = force_text(base64.urlsafe_b64encode(os.urandom(12)))
-        address = "{}+{}@{}".format(local,rand,domain)
+        address = f"{local}+{rand}@{domain}"
         q = Message.objects.filter(reply_to=address)
         if not q:
             break
@@ -185,13 +184,13 @@ def process_response_email(msg):
     try:
         to_message = Message.objects.get(reply_to=to)
     except Message.DoesNotExist:
-        log('Error finding matching message ({})'.format(to))
+        log(f'Error finding matching message ({to})')
         return None
 
     try:
         disclosure = to_message.msgevents.first().disclosure
     except:
-        log('Error processing message ({})'.format(to))
+        log(f'Error processing message ({to})')
         return None
 
     ietf_message = message_from_message(message)

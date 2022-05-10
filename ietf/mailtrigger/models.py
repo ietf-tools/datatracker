@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2015-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django.db import models
@@ -215,7 +214,7 @@ class Recipient(models.Model):
         addrs = []
         if 'submission' in kwargs:
             submission = kwargs['submission']
-            addrs.extend(["%s <%s>" % (author["name"], author["email"]) for author in submission.authors if author.get("email")])
+            addrs.extend(["{} <{}>".format(author["name"], author["email"]) for author in submission.authors if author.get("email")])
         return addrs
 
     def gather_submission_submitter(self, **kwargs):
@@ -231,7 +230,7 @@ class Recipient(models.Model):
                 try:
                     submitter = Alias.objects.get(name=submission.submitter).person
                     if submitter and submitter.email():
-                        addrs.extend(["%s <%s>" % (submitter.name, submitter.email().address)])
+                        addrs.extend(["{} <{}>".format(submitter.name, submitter.email().address)])
                 except (Alias.DoesNotExist, Alias.MultipleObjectsReturned):
                     pass
         return addrs
@@ -280,8 +279,8 @@ class Recipient(models.Model):
 
                 addrs.extend([ author.formatted_email() for author in old_authors])
 
-                old_author_email_set = set(author.email.address for author in old_authors)
-                new_author_email_set = set(author["email"] for author in submission.authors if author.get("email"))
+                old_author_email_set = {author.email.address for author in old_authors}
+                new_author_email_set = {author["email"] for author in submission.authors if author.get("email")}
 
                 if doc.group and old_author_email_set != new_author_email_set:
                     if doc.group.features.acts_like_wg:

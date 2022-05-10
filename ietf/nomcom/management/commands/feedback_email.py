@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import io
@@ -42,7 +41,7 @@ class Command(EmailOnFailureCommand):
         except NomCom.DoesNotExist:
             raise CommandError("NomCom %s does not exist or it isn't active" % year)
 
-        binary_input = io.open(email, 'rb') if email else sys.stdin.buffer
+        binary_input = open(email, 'rb') if email else sys.stdin.buffer
         self.msg = binary_input.read()
 
         try:

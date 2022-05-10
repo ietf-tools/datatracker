@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import os
@@ -13,7 +12,7 @@ from ietf.meeting.models import Meeting
 class InterimManager(models.Manager):
     '''A custom manager to limit objects to type=interim'''
     def get_queryset(self):
-        return super(InterimManager, self).get_queryset().filter(type='interim')
+        return super().get_queryset().filter(type='interim')
         
 class InterimMeeting(Meeting):
     '''
@@ -53,7 +52,7 @@ class InterimMeeting(Meeting):
         If the proceedings file doesn't exist return empty string.  For use in templates.
         '''
         if os.path.exists(self.get_proceedings_path()):
-            url = "%sproceedings/%s/proceedings.html" % (
+            url = "{}proceedings/{}/proceedings.html".format(
                 settings.IETF_HOST_URL,
                 self.number)
             return url

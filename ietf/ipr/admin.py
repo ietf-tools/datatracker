@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2010-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django import forms
@@ -35,7 +34,7 @@ class RelatedIprInline(admin.TabularInline):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "relationship":
             kwargs["queryset"] = DocRelationshipName.objects.filter(slug='updates')
-        return super(RelatedIprInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
         
 class IprDisclosureBaseAdmin(admin.ModelAdmin):
     list_display = ['title', 'time', 'related_docs', 'state']

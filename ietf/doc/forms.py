@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -33,7 +32,7 @@ class TelechatForm(forms.Form):
         choice_display = {}
         for d in dates:
           self.page_count[d] = telechat_page_count(date=d).for_approval
-          choice_display[d] = '%s (%s pages)' % (d.strftime("%Y-%m-%d"),self.page_count[d])
+          choice_display[d] = '{} ({} pages)'.format(d.strftime("%Y-%m-%d"),self.page_count[d])
           if d-datetime.date.today() < datetime.timedelta(days=13):
               choice_display[d] += ' : WARNING - this may not leave enough time for directorate reviews!'
         self.fields['telechat_date'].choices = [("", "(not on agenda)")] + [(d, choice_display[d]) for d in dates]
@@ -46,7 +45,7 @@ class DocAuthorForm(forms.Form):
     country = forms.CharField(max_length=255, required=False)
     
     def __init__(self, *args, **kwargs):
-        super(DocAuthorForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         person = self.data.get(
             self.add_prefix('person'),
@@ -166,7 +165,7 @@ class ExtResourceForm(forms.Form):
                 # Convert objects to string representation
                 initial['resources'] = self.format_resources(resources)
             kwargs['initial'] = initial
-        super(ExtResourceForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     def format_resources(resources, fs="\n"):
@@ -194,7 +193,7 @@ class ExtResourceForm(forms.Form):
                 try:
                     name = ExtResourceName.objects.get(slug=name_slug)
                 except ObjectDoesNotExist:
-                    errors.append("Bad tag in '%s': Expected one of %s" % (l, ', '.join([ o.slug for o in ExtResourceName.objects.all() ])))
+                    errors.append("Bad tag in '{}': Expected one of {}".format(l, ', '.join([ o.slug for o in ExtResourceName.objects.all() ])))
                     continue
                 value = parts[1]
                 try:
@@ -211,7 +210,7 @@ class ExtResourceForm(forms.Form):
 
         Converts resource strings into ExtResource model instances.
         """
-        cleaned_data = super(ExtResourceForm, self).clean()
+        cleaned_data = super().clean()
         cleaned_resources = []
         cls = self.extresource_model or DocExtResource
         for crs in cleaned_data.get('resources', []):

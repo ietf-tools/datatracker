@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import re
@@ -167,7 +166,7 @@ def notify_event_to_subscribers(event):
 
     for sub in subscriptions.select_related("community_list", "email"):
         clist = sub.community_list
-        subject = '%s notification: Changes to %s' % (clist.long_name(), event.doc.name)
+        subject = '{} notification: Changes to {}'.format(clist.long_name(), event.doc.name)
 
         send_mail(None, sub.email.address, settings.DEFAULT_FROM_EMAIL, subject, 'community/notification_email.txt',
                   context = {

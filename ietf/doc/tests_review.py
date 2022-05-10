@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime, os, shutil
@@ -7,7 +6,7 @@ import io
 import tarfile, tempfile, mailbox
 import email.mime.multipart, email.mime.text, email.utils
 
-from mock import patch
+from unittest.mock import patch
 from requests import Response
 
 
@@ -94,7 +93,7 @@ class ReviewTests(TestCase):
 
         qs = ReviewRequest.objects.filter(doc=doc, state="requested")
         self.assertEqual(qs.count(),2)
-        self.assertEqual(set(qs.values_list('team__acronym',flat=True)),set(['reviewteam','reviewteam3']))
+        self.assertEqual(set(qs.values_list('team__acronym',flat=True)),{'reviewteam','reviewteam3'})
         for req in qs:
             self.assertEqual(req.deadline, deadline)
             self.assertEqual(req.requested_rev, "01")
@@ -159,7 +158,7 @@ class ReviewTests(TestCase):
 
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ "name": doc.name })
         r = self.client.get(url)
-        self.assertContains(r, "{} Review".format(review_req.type.name))
+        self.assertContains(r, f"{review_req.type.name} Review")
 
     def test_review_request(self):
         author = PersonFactory()
@@ -313,7 +312,7 @@ class ReviewTests(TestCase):
         r = self.client.get(assign_url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        reviewer_label = q("option[value=\"{}\"]".format(reviewer_email.address)).text().lower()
+        reviewer_label = q(f"option[value=\"{reviewer_email.address}\"]").text().lower()
         self.assertIn("reviewed document before", reviewer_label)
         self.assertIn("wishes to review", reviewer_label)
         self.assertIn("is author", reviewer_label)
@@ -339,10 +338,10 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 1)
         self.assertEqual('"Some Reviewer" <reviewer@example.com>', outbox[0]["To"])
         message = get_payload_text(outbox[0])
-        self.assertIn("Pages: {}".format(doc.pages), message )
-        self.assertIn("{} has assigned {}".format(secretary.person.ascii, reviewer.person.ascii), message)
+        self.assertIn(f"Pages: {doc.pages}", message )
+        self.assertIn(f"{secretary.person.ascii} has assigned {reviewer.person.ascii}", message)
         self.assertIn("This team has completed other reviews", message)
-        self.assertIn("{} -01 Serious Issues".format(reviewer_email.person.ascii), message)
+        self.assertIn(f"{reviewer_email.person.ascii} -01 Serious Issues", message)
 
     def test_previously_reviewed_replaced_doc(self):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
@@ -364,7 +363,7 @@ class ReviewTests(TestCase):
         r = self.client.get(assign_url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        reviewer_label = q("option[value=\"{}\"]".format(rev_role.email.address)).text().lower()
+        reviewer_label = q(f"option[value=\"{rev_role.email.address}\"]").text().lower()
         self.assertIn("reviewed document before", reviewer_label)
 
     def test_accept_reviewer_assignment(self):
@@ -465,7 +464,7 @@ class ReviewTests(TestCase):
                 msg = email.mime.text.MIMEText("Hello,\n\nI have reviewed the document and did not find any problems.\n\nJohn Doe")
                 msg["From"] = "John Doe <johndoe@example.com>"
                 msg["To"] = review_req.team.list_email
-                msg["Subject"] = "Review of {}-01".format(review_req.doc.name)
+                msg["Subject"] = f"Review of {review_req.doc.name}-01"
                 msg["Message-ID"] = email.utils.make_msgid()
                 msg["Archived-At"] = "<https://www.example.com/testmessage>"
                 msg["Date"] = email.utils.formatdate()
@@ -476,7 +475,7 @@ class ReviewTests(TestCase):
                 msg = email.mime.multipart.MIMEMultipart('alternative')
                 msg["From"] = "John Doe II <johndoe2@example.com>"
                 msg["To"] = review_req.team.list_email
-                msg["Subject"] = "Review of {}".format(review_req.doc.name)
+                msg["Subject"] = f"Review of {review_req.doc.name}"
                 msg["Message-ID"] = email.utils.make_msgid()
                 msg["Archived-At"] = "<https://www.example.com/testmessage2>"
 
@@ -529,7 +528,7 @@ class ReviewTests(TestCase):
 
             self.assertEqual(messages[0]["url"], "https://www.example.com/testmessage")
             self.assertTrue("John Doe" in messages[0]["content"])
-            self.assertEqual(messages[0]["subject"], "Review of {}-01".format(review_req.doc.name))
+            self.assertEqual(messages[0]["subject"], f"Review of {review_req.doc.name}-01")
             self.assertEqual(messages[0]["revision_guess"], "01")
             self.assertEqual(messages[0]["splitfrom"], ["John Doe", "johndoe@example.com"])
             self.assertEqual(messages[0]["utcdate"][0], today.isoformat())
@@ -537,7 +536,7 @@ class ReviewTests(TestCase):
             self.assertEqual(messages[1]["url"], "https://www.example.com/testmessage2")
             self.assertTrue("Looks OK" in messages[1]["content"])
             self.assertTrue("<html>" not in messages[1]["content"])
-            self.assertEqual(messages[1]["subject"], "Review of {}".format(review_req.doc.name))
+            self.assertEqual(messages[1]["subject"], f"Review of {review_req.doc.name}")
             self.assertFalse('revision_guess' in messages[1])
             self.assertEqual(messages[1]["splitfrom"], ["John Doe II", "johndoe2@example.com"])
             self.assertEqual(messages[1]["utcdate"][0], "")
@@ -545,7 +544,7 @@ class ReviewTests(TestCase):
 
             # Test failure to return mailarch results
             no_result_path = os.path.join(self.review_dir, "mailarch_no_result.html")
-            with io.open(no_result_path, "w") as f:
+            with open(no_result_path, "w") as f:
                 f.write('Content-Type: text/html\n\n<html><body><div class="xtr"><div class="xtd no-results">No results found</div></div>')
             ietf.review.mailarch.construct_query_urls = lambda doc, team, query=None: { "query_data_url": "file://" + os.path.abspath(no_result_path) }
 
@@ -647,7 +646,7 @@ class ReviewTests(TestCase):
         self.assertTrue(assignment.review_request.team.acronym.lower() in assignment.review.name)
         self.assertTrue(assignment.review_request.doc.rev in assignment.review.name)
 
-        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
+        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 1)
@@ -671,7 +670,7 @@ class ReviewTests(TestCase):
         # check the review document page
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ "name": assignment.review.name })
         r = self.client.get(url)
-        self.assertContains(r, "{} Review".format(assignment.review_request.type.name))
+        self.assertContains(r, f"{assignment.review_request.type.name} Review")
         self.assertContains(r, "This is a review")
 
 
@@ -702,7 +701,7 @@ class ReviewTests(TestCase):
         completed_time_diff = datetime.datetime.now() - assignment.completed_on
         self.assertLess(completed_time_diff, datetime.timedelta(seconds=10))
 
-        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
+        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 1)
@@ -743,7 +742,7 @@ class ReviewTests(TestCase):
         self.assertLess(event0_time_diff, datetime.timedelta(seconds=10))
         self.assertEqual(events[1].time, datetime.datetime(2012, 12, 24, 12, 13, 14))
         
-        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
+        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 1)
@@ -830,7 +829,7 @@ class ReviewTests(TestCase):
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, "completed")
 
-        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
+        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 0)
@@ -880,7 +879,7 @@ class ReviewTests(TestCase):
         self.assertEqual(assignment.reviewer, rev_role.person.role_email('reviewer'))
         self.assertEqual(assignment.state_id, "completed")
 
-        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
+        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 0)
@@ -989,7 +988,7 @@ class ReviewTests(TestCase):
         self.assertLess(event_time_diff, datetime.timedelta(seconds=10))
         self.assertTrue('revised' in event1.desc.lower())
 
-        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
+        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 0)

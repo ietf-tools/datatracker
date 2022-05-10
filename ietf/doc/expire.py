@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2010-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 # expiry of Internet Drafts
 
 
@@ -19,7 +18,7 @@ from ietf.doc.utils import add_state_change_event, update_action_holders
 from ietf.mailtrigger.utils import gather_address_lists
 
 
-nonexpirable_states: Optional[List[State]] = None
+nonexpirable_states: Optional[list[State]] = None
 
 def expirable_drafts(queryset=None):
     """Return a queryset with expirable drafts."""
@@ -131,14 +130,14 @@ def move_draft_files_to_archive(doc, rev):
         if os.path.exists(src):
             try:
                 shutil.move(src, dst)
-            except IOError as e:
+            except OSError as e:
                 if "No such file or directory" in str(e):
                     pass
                 else:
                     raise
 
     src_dir = Path(settings.INTERNET_DRAFT_PATH)
-    for file in src_dir.glob("%s-%s.*" % (doc.name, rev)):
+    for file in src_dir.glob("{}-{}.*".format(doc.name, rev)):
         move_file(str(file.name))
 
 def expire_draft(doc):

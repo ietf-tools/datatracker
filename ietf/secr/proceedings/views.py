@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -73,7 +72,7 @@ def get_unmatched_recordings(meeting):
     Returns a list of recording filenames that haven't been matched to a session
     '''
     unmatched_recordings = []
-    path = os.path.join(settings.MEETING_RECORDINGS_DIR,'ietf{}'.format(meeting.number))
+    path = os.path.join(settings.MEETING_RECORDINGS_DIR,f'ietf{meeting.number}')
     try:
         files = os.listdir(path)
     except OSError:
@@ -105,7 +104,7 @@ def get_next_slide_num(session):
     '''
 
     if session.meeting.type_id == 'ietf':
-        pattern = 'slides-%s-%s' % (session.meeting.number,session.group.acronym)
+        pattern = 'slides-{}-{}'.format(session.meeting.number,session.group.acronym)
     elif session.meeting.type_id == 'interim':
         pattern = 'slides-%s' % (session.meeting.number)
     slides = Document.objects.filter(type='slides',name__startswith=pattern)
@@ -206,7 +205,7 @@ def process_pdfs(request, meeting_num):
             warn_count += 1
 
     if warn_count:
-        messages.warning(request, '%s PDF files processed.  %s PowerPoint files still not converted.' % (count, warn_count))
+        messages.warning(request, '{} PDF files processed.  {} PowerPoint files still not converted.'.format(count, warn_count))
     else:
         messages.success(request, '%s PDF files processed' % count)
     url = reverse('ietf.secr.proceedings.views.select', kwargs={'meeting_num':meeting_num})

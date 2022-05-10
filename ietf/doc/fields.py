@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import json
@@ -35,7 +34,7 @@ class SearchableDocumentsField(SearchableField):
     default_hint_text = "Type name to search for document"
 
     def __init__(self, doc_type="draft", *args, **kwargs):
-        super(SearchableDocumentsField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.doc_type = doc_type
 
     def doc_type_filter(self, queryset):

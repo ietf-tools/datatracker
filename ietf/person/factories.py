@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2015-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import factory
@@ -32,7 +31,7 @@ def setup():
     # extraction code, and also don't seem to match the way people with arabic
     # names romanize arabic names.  Exlude those locales from name generation
     # in order to avoid test failures.
-    locales = set( [ l for l in faker.config.AVAILABLE_LOCALES if not (l.startswith('ar_') or l.startswith('sg_') or l=='fr_QC') ] )
+    locales = {  l for l in faker.config.AVAILABLE_LOCALES if not (l.startswith('ar_') or l.startswith('sg_') or l=='fr_QC')  }
     acceptable_fakers = [faker.Faker(locale) for locale in locales]
 setup()
 
@@ -91,7 +90,7 @@ class PersonFactory(factory.django.DjangoModelFactory):
         import atexit
         if obj.biography:
             photo_name = obj.photo_name()
-            media_name = "%s/%s.jpg" % (settings.PHOTOS_DIRNAME, photo_name)
+            media_name = "{}/{}.jpg".format(settings.PHOTOS_DIRNAME, photo_name)
             obj.photo = media_name
             obj.photo_thumb = media_name
             photosrc = os.path.join(settings.TEST_DATA_DIR, "profile-default.jpg")

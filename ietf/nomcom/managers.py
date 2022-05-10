@@ -4,7 +4,7 @@ from django.db.models.query import QuerySet
 
 import debug                            # pyflakes:ignore
 
-class MixinManager(object):
+class MixinManager:
     def __getattr__(self, attr):
         if  attr.startswith('__'):
             return getattr(self.__class__, attr)            

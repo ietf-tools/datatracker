@@ -105,7 +105,7 @@ def format_addresses(addresses, header_name=None, charset=None):
                 # if name is byte string, charset will be used to decode it first
                 header.append(name)
                 # here us-ascii must be used and not default 'charset'  
-                header.append('<%s>' % (addr,), charset='us-ascii') 
+                header.append('<{}>'.format(addr), charset='us-ascii') 
                     
     return header
 
@@ -390,14 +390,8 @@ def send_mail2(payload, mail_from, rcpt_to, smtp_host, smtp_port=25, smtp_mode='
             smtp.starttls()
             
     if smtp_login and smtp_password:
-        if sys.version_info<(3, 0):
-            # python 2.x  
-            # login and password must be encoded 
-            # because HMAC used in CRAM_MD5 require non unicode string
-            smtp.login(smtp_login.encode('utf-8'), smtp_password.encode('utf-8'))
-        else:
-            #python 3.x
-            smtp.login(smtp_login, smtp_password)
+        #python 3.x
+        smtp.login(smtp_login, smtp_password)
     try:
         ret=smtp.sendmail(mail_from, rcpt_to, payload)
     finally:
@@ -480,22 +474,22 @@ def send_mail(payload, mail_from, rcpt_to, smtp_host, smtp_port=25, smtp_mode='n
     error=dict()
     try:
         ret=send_mail2(payload, mail_from, rcpt_to, smtp_host, smtp_port, smtp_mode, smtp_login, smtp_password)
-    except (socket.error, ) as e:
-        error='server %s:%s not responding: %s' % (smtp_host, smtp_port, e)
+    except OSError as e:
+        error='server {}:{} not responding: {}'.format(smtp_host, smtp_port, e)
     except smtplib.SMTPAuthenticationError as e:
-        error='authentication error: %s' % (e, )
+        error='authentication error: {}'.format(e)
     except smtplib.SMTPRecipientsRefused as e:
         # code, error=e.recipients[recipient_addr]
         error='all recipients refused: '+', '.join(list(e.recipients.keys()))
     except smtplib.SMTPSenderRefused as e:
         # e.sender, e.smtp_code, e.smtp_error
-        error='sender refused: %s' % (e.sender, )
+        error='sender refused: {}'.format(e.sender)
     except smtplib.SMTPDataError as e:
-        error='SMTP protocol mismatch: %s' % (e, )
+        error='SMTP protocol mismatch: {}'.format(e)
     except smtplib.SMTPHeloError as e:
-        error="server didn't reply properly to the HELO greeting: %s" % (e, )
+        error="server didn't reply properly to the HELO greeting: {}".format(e)
     except smtplib.SMTPException as e:
-        error='SMTP error: %s' % (e, )
+        error='SMTP error: {}'.format(e)
 #    except Exception, e:
 #        raise # unknown error
     else:

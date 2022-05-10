@@ -74,4 +74,4 @@ def expire_last_call(doc):
     if doc.type_id == 'draft':
         lc_text = doc.latest_event(LastCallDocEvent, type="sent_last_call").desc
         if "document makes the following downward references" in lc_text:
-            email_last_call_expired_with_downref(doc, lc_text)           
+            email_last_call_expired_with_downref(doc, lc_text)

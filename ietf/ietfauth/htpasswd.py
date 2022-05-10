@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import io
@@ -12,9 +11,9 @@ def update_htpasswd_file(username, password):
     if getattr(settings, 'USE_PYTHON_HTDIGEST', None):
         pass_file = settings.HTPASSWD_FILE
         realm = settings.HTDIGEST_REALM
-        prefix = force_bytes('%s:%s:' % (username, realm))
+        prefix = force_bytes('{}:{}:'.format(username, realm))
         key = force_bytes(hashlib.md5(prefix + force_bytes(password)).hexdigest())
-        f = io.open(pass_file, 'r+b')
+        f = open(pass_file, 'r+b')
         pos = f.tell()
         line = f.readline()
         while line:

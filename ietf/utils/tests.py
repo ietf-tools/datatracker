@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import io
@@ -143,7 +142,7 @@ class TestSMTPServer(TestCase):
 def get_callbacks(urllist, namespace=None):
     callbacks = set()
     def qualified(name):
-        return '%s:%s' % (namespace, name) if namespace else name
+        return '{}:{}'.format(namespace, name) if namespace else name
     for entry in urllist:
         if hasattr(entry, 'url_patterns'):
             callbacks.update(get_callbacks(entry.url_patterns, entry.namespace))
@@ -152,7 +151,7 @@ def get_callbacks(urllist, namespace=None):
                 callbacks.add(qualified(entry._callback_str))
             if (hasattr(entry, 'callback') and entry.callback and
                 type(entry.callback) in [types.FunctionType, types.MethodType ]):
-                    callbacks.add(qualified("%s.%s" % (entry.callback.__module__, entry.callback.__name__)))
+                    callbacks.add(qualified("{}.{}".format(entry.callback.__module__, entry.callback.__name__)))
             if hasattr(entry, 'name') and entry.name:
                 callbacks.add(qualified(entry.name))
             if hasattr(entry, 'lookup_str') and entry.lookup_str:
@@ -195,8 +194,8 @@ class TemplateChecksTestCase(TestCase):
                 except Exception as e:
                     errors.append((path, e))
         if errors:
-            messages = [ "Parsing template '%s' failed with error: %s" % (path, ex) for (path, ex) in errors ]
-            raise self.failureException("Template parsing failed for %s templates:\n  %s" % (len(errors), "\n  ".join(messages)))
+            messages = [ "Parsing template '{}' failed with error: {}".format(path, ex) for (path, ex) in errors ]
+            raise self.failureException("Template parsing failed for {} templates:\n  {}".format(len(errors), "\n  ".join(messages)))
 
     def apply_template_test(self, func, node_type, msg, *args, **kwargs):
         errors = []
@@ -310,7 +309,7 @@ class AdminTestCase(TestCase):
                 models_path = os.path.join(os.path.dirname(app.__file__), "models.py")
                 if os.path.exists(models_path):
                     self.apps[name] = app_name
-        super(AdminTestCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def test_all_model_admins_exist(self):
 
@@ -343,18 +342,18 @@ class PlaintextDraftTests(TestCase):
         self.assertEqual(self.draft.get_status(),'Informational')
     
     def test_get_authors(self):
-        self.assertTrue(all([u'@' in author for author in self.draft.get_authors()]))
+        self.assertTrue(all(['@' in author for author in self.draft.get_authors()]))
 
     def test_get_authors_with_firm(self):
-        self.assertTrue(all([u'@' in author for author in self.draft.get_authors_with_firm()]))
+        self.assertTrue(all(['@' in author for author in self.draft.get_authors_with_firm()]))
         
     def test_old_get_refs(self):
-        self.assertEqual(self.draft.old_get_refs()[1][0],u'rfc2119')
+        self.assertEqual(self.draft.old_get_refs()[1][0],'rfc2119')
 
     def test_get_meta(self):
         tempdir = mkdtemp()
         filename = os.path.join(tempdir,self.draft.source)
-        with io.open(filename,'w') as file:
+        with open(filename,'w') as file:
             file.write(self.draft.text)
         self.assertEqual(getmeta(filename)['docdeststatus'],'Informational')
         shutil.rmtree(tempdir)

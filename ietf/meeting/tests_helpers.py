@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 import datetime
 
 from unittest.mock import patch, Mock

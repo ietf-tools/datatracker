@@ -83,7 +83,7 @@ longform = {
     "Ned": "Edward",
     "Ted":"Edward",
 }
-longform = dict([ (short+" ", longform[short]+" ") for short in longform ])
+longform = { short+" ": longform[short]+" " for short in longform }
 
 
 month_names = [ 'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december' ]
@@ -99,20 +99,20 @@ def _debug(string):
 
 # ----------------------------------------------------------------------
 def _note(string):
-    sys.stdout.write("%s: %s\n" % (program, string))
+    sys.stdout.write("{}: {}\n".format(program, string))
     
 # ----------------------------------------------------------------------
 def _warn(string):
-    sys.stderr.write("%s: Warning: %s\n" % (program, string))
+    sys.stderr.write("{}: Warning: {}\n".format(program, string))
     
 # ----------------------------------------------------------------------
 def _err(string):
-    sys.stderr.write("%s: Error: %s\n" % (program, string))
+    sys.stderr.write("{}: Error: {}\n".format(program, string))
     sys.exit(1)
 
 # ----------------------------------------------------------------------
 def _gettext(file):
-    file = io.open(file)
+    file = open(file)
     text = file.read()
     file.close()
 
@@ -221,7 +221,7 @@ class PlaintextDraft(Draft):
 
     @classmethod
     def from_file(cls, source, *args, **kwargs):
-        with open(source, 'r', encoding='utf8') as f:
+        with open(source, encoding='utf8') as f:
             return cls(text=f.read(), source=source, *args, **kwargs)
 
     # ------------------------------------------------------------------
@@ -626,7 +626,7 @@ class PlaintextDraft(Draft):
             if " " in first:
                 # if there's a middle part, let it be optional
                 first, middle = first.split(" ", 1)
-                first = "%s( +%s)?" % (first, middle)
+                first = "{}( +{})?".format(first, middle)
 
             # Double names (e.g., Jean-Michel) are abbreviated as two letter
             # connected by a dash -- let this expand appropriately
@@ -777,8 +777,8 @@ class PlaintextDraft(Draft):
         found_pos = []
         company_or_author = None
         for i in range(len(authors)):
-            _debug("1: authors[%s]: %s" % (i, authors[i]))
-            _debug("   company[%s]: %s" % (i, companies[i]))
+            _debug("1: authors[{}]: {}".format(i, authors[i]))
+            _debug("   company[{}]: {}".format(i, companies[i]))
             author = authors[i]
             if i+1 < len(authors):
                 company_or_author = authors[i+1]
@@ -794,7 +794,7 @@ class PlaintextDraft(Draft):
                 suffix = None
             if "," in author:
                 last, first = author.split(",",1)
-                author = "%s %s" % (first.strip(), last.strip())
+                author = "{} {}".format(first.strip(), last.strip())
             if not " " in author:
                 if "." in author:
                     first, last = author.rsplit(".", 1)
@@ -817,10 +817,10 @@ class PlaintextDraft(Draft):
                 prefix = prefix_match.group(1)
                 first = first[:-len(prefix)].strip()
                 last = prefix+" "+last
-            _debug("First, Last: '%s' '%s'" % (first, last))
+            _debug("First, Last: '{}' '{}'".format(first, last))
             for firstname, surname, casefixname in [ (first,last,last), (last,first,first), (first,last,last.upper()), (last,first,first.upper()), ]:
                 for left, right in [(firstname, casefixname), (casefixname, firstname)]:
-                    author = "%s %s" % (left, right)
+                    author = "{} {}".format(left, right)
                     _debug("\nAuthors: "+str(authors))
                     _debug("Author: "+author)
 
@@ -842,7 +842,7 @@ class PlaintextDraft(Draft):
 
                                     start = j
                                     found_pos += [ start ]
-                                    _debug( " ==> start %s, normalized '%s'" % (start, form.strip()))
+                                    _debug( " ==> start {}, normalized '{}'".format(start, form.strip()))
                                     # The author info could be formatted in multiple columns...
                                     columns = re.split("(    +|  and  )", form)
                                     # _debug( "Columns:" + str(columns))
@@ -866,7 +866,7 @@ class PlaintextDraft(Draft):
                                                 _debug( "End2:  %d '%s'" % (end, "".join(columns[col:col+2])))
                                             _debug( "Cut:   '%s'" % form[beg:end])
                                             author_match = re.search(authpat, columns[col].strip()).group(1)
-                                            _debug( "AuthMatch: '%s'" % (author_match,))
+                                            _debug( "AuthMatch: '{}'".format(author_match))
                                             if re.search(r'\(.*\)$', author_match.strip()):
                                                 author_match = author_match.rsplit('(',1)[0].strip()
                                             if author_match in companies_seen:
@@ -906,7 +906,7 @@ class PlaintextDraft(Draft):
                                                         companies[i] = None
                                                         break
                                                 else:
-                                                    _warn("Author tuple doesn't match text in draft: %s, %s" % (authors[i], fullname))
+                                                    _warn("Author tuple doesn't match text in draft: {}, {}".format(authors[i], fullname))
                                                     authors[i] = None
                                             break
                             except AssertionError:
@@ -922,9 +922,9 @@ class PlaintextDraft(Draft):
             # End for:
             if not authors[i]:
                 continue
-            _debug("2: authors[%s]: %s" % (i, authors[i]))
+            _debug("2: authors[{}]: {}".format(i, authors[i]))
             if start and col != None:
-                _debug("\n * %s" % (authors[i], ))
+                _debug("\n * {}".format(authors[i]))
                 nonblank_count = 0
                 blanklines = 0
                 email = None
@@ -1020,7 +1020,7 @@ class PlaintextDraft(Draft):
                                 country = column.strip() or None
                                 _debug(" Country: %s" % country)
 
-                    _debug("3: authors[%s]: %s" % (i, authors[i]))
+                    _debug("3: authors[{}]: {}".format(i, authors[i]))
 
                     emailmatch = re.search("[-A-Za-z0-9_.+]+@[-A-Za-z0-9_.]+", column)
                     if emailmatch and not "@" in author:
@@ -1039,19 +1039,19 @@ class PlaintextDraft(Draft):
         _debug('Company list: %s' % companies)
         for i in range(len(authors)):
             if authors[i]:
-                _debug('authors[%s]: %s' % (i, authors[i]))
+                _debug('authors[{}]: {}'.format(i, authors[i]))
                 company = ''
                 for k in range(i+1, len(companies)):
-                    _debug('companies[%s]: %s' % (k, companies[k]))
+                    _debug('companies[{}]: {}'.format(k, companies[k]))
                     if companies[k] != None:
                         company = companies[k]
                         break
                 authors[i] = authors[i] + ( company, )
 
         authors = [ a for a in authors if a ]
-        _debug(" * Final author tuples: %s" % (authors,))
-        _debug(" * Final company list: %s" % (companies,))
-        _debug(" * Final companies_seen: %s" % (companies_seen,))
+        _debug(" * Final author tuples: {}".format(authors))
+        _debug(" * Final company list: {}".format(companies))
+        _debug(" * Final companies_seen: {}".format(companies_seen))
         self._author_info = authors        
         self._authors_with_firm = [ "%s <%s> (%s)"%(full,email,company) for full,first,middle,last,suffix,email,country,company in authors ] # pyflakes:ignore
         self._authors = [ "%s <%s>"%(full,email) if email else full for full,first,middle,last,suffix,email,country,company in authors ]
@@ -1256,7 +1256,7 @@ def getmeta(fn):
                         prev = "%02d" % (int(rev)-1)
                         fn = fn.replace("-%s."%rev, "-%s."%prev)
                         if os.path.exists(fn):
-                            _warn("Using rev %s instead: '%s'" % (prev, filename))
+                            _warn("Using rev {} instead: '{}'".format(prev, filename))
                             filename = fn
                             fn = os.path.basename(fn)
                             break
@@ -1269,7 +1269,7 @@ def getmeta(fn):
         return
 
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime(os.stat(filename)[stat.ST_MTIME]))
-    with io.open(filename, 'rb') as file:
+    with open(filename, 'rb') as file:
         try:
             draft = PlaintextDraft(file.read().decode('utf8'), filename)
         except UnicodeDecodeError:
@@ -1340,7 +1340,7 @@ def _output(docname, fields, outfile=sys.stdout):
                 outfile.write("%-24s: %s\n" % ( key, field.replace("\\", "\\\\" ).replace("'", "\\x27" )))
         else:
             def outputkey(key, fields):
-                outfile.write(" %s='%s'" % ( key.lower(), fields[key].strip().replace("\\", "\\\\" ).replace("'", "\\x27" ).replace("\n", "\\n")))
+                outfile.write(" {}='{}'".format( key.lower(), fields[key].strip().replace("\\", "\\\\" ).replace("'", "\\x27" ).replace("\n", "\\n")))
             if opt_timestamp:
                 outfile.write("%s " % (fields["eventdate"]))
             outfile.write("%s" % (os.path.basename(docname.strip())))
@@ -1363,7 +1363,7 @@ def _printmeta(fn, outfile=sys.stdout):
         _output(fields.get("doctag", fn[:-7]), fields, outfile)
 
     if opt_trace:
-        sys.stderr.write("%5.1f\n" % ((time.time() - t)))
+        sys.stderr.write("%5.1f\n" % (time.time() - t))
 
 # ----------------------------------------------------------------------
 # Main
@@ -1377,7 +1377,7 @@ def _main(outfile=sys.stdout):
     # Option processing
     # ----------------------------------------------------------------------
     options = ""
-    for line in re.findall(r"\n +(if|elif) +opt in \[(.+)\]:\s+#(.+)\n", io.open(sys.argv[0]).read()):
+    for line in re.findall(r"\n +(if|elif) +opt in \[(.+)\]:\s+#(.+)\n", open(sys.argv[0]).read()):
         if not options:
             options += "OPTIONS\n"
         options += "        %-16s %s\n" % (line[1].replace('"', ''), line[2])
@@ -1393,7 +1393,7 @@ def _main(outfile=sys.stdout):
     try:
         opts, files = getopt.gnu_getopt(sys.argv[1:], "dhatTv", ["debug", "getauthors", "attribs", "attributes", "help", "timestamp", "notimestamp", "trace", "version",])
     except Exception as e:
-        print("%s: %s" % (program, e))
+        print("{}: {}".format(program, e))
         sys.exit(1)
 
     # parse options
@@ -1423,7 +1423,7 @@ def _main(outfile=sys.stdout):
 
     company_domain = {}
     if opt_getauthors:
-        gadata = io.open("/www/tools.ietf.org/tools/getauthors/getauthors.data")
+        gadata = open("/www/tools.ietf.org/tools/getauthors/getauthors.data")
         for line in gadata:
             if line.startswith("company:"):
                 try:
@@ -1442,7 +1442,7 @@ def _main(outfile=sys.stdout):
             import gzip
             file = gzip.open(file)
         else:
-            file = io.open(file)
+            file = open(file)
 
         basename = os.path.basename(file.name)
         if basename.startswith("draft-"):

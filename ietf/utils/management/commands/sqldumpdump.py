@@ -1,6 +1,4 @@
 # Copyright The IETF Trust 2020, All Rights Reserved
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function, unicode_literals
 
 import collections
 import gzip
@@ -35,7 +33,7 @@ class Command(DumpdataCommand):
     help = __doc__
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         # remove the usual positional args
         for i, a in enumerate(parser._actions):
             if a.dest == 'args':
@@ -60,7 +58,7 @@ class Command(DumpdataCommand):
         sys.exit(1)
 
     def get_tables(self):
-        seen = set([])
+        seen = set()
         tables = {}
         for name, appconf in apps.app_configs.items():
             for model in appconf.get_models():
@@ -82,12 +80,12 @@ class Command(DumpdataCommand):
         for fn in filenames:
             prev = ''
             lc = 0
-            with gzip.open(fn, 'rt') if fn.endswith('.gz') else io.open(fn) as f:
+            with gzip.open(fn, 'rt') if fn.endswith('.gz') else open(fn) as f:
                 for line in f:
                     lc += 1
                     line = line.strip()
                     if line and line[0] in ['<', '>']:
-                        self.err("Input file '%s' looks like a diff file.  Please provide just the SQL 'INSERT' statements for the records to be dumped." % (fn, ))
+                        self.err("Input file '{}' looks like a diff file.  Please provide just the SQL 'INSERT' statements for the records to be dumped.".format(fn))
                     if prev:
                         line = prev + line
                     prev = None
@@ -153,8 +151,7 @@ class Command(DumpdataCommand):
                 if count_only:
                     yield queryset.order_by().count()
                 else:
-                    for obj in queryset.iterator():
-                        yield obj
+                    yield from queryset.iterator()
 
 
     def handle(self, filenames=[], **options):
@@ -223,4 +220,3 @@ class Command(DumpdataCommand):
                 if show_traceback:
                     raise
                 raise CommandError("Unable to serialize database: %s" % e)
-        

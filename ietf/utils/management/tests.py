@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
-import mock
+from unittest import mock
 
 from django.core.management import call_command, CommandError
 from django.test import override_settings

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2022, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django import forms
@@ -57,7 +56,7 @@ class GroupSelectForm(forms.Form):
 
     def __init__(self,*args,**kwargs):
         choices = kwargs.pop('choices')
-        super(GroupSelectForm, self).__init__(*args,**kwargs)
+        super().__init__(*args,**kwargs)
         self.fields['group'].widget.choices = choices
 
 
@@ -95,7 +94,7 @@ class SessionForm(forms.Form):
         self.group = group
         formset_class = sessiondetailsformset_factory(max_num=3 if group.features.acts_like_wg else 50)
         self.session_forms = formset_class(group=self.group, meeting=meeting, data=data)
-        super(SessionForm, self).__init__(data=data, *args, **kwargs)
+        super().__init__(data=data, *args, **kwargs)
 
         # Allow additional sessions for non-wg-like groups
         if not self.group.features.acts_like_wg:
@@ -121,8 +120,8 @@ class SessionForm(forms.Form):
             selector_field.widget.attrs['data-slug'] = constraintname.slug  # used by onchange handler
             self._add_widget_class(selector_field.widget, 'wg_constraint_selector')
 
-            cfield_id = 'constraint_{}'.format(constraintname.slug)
-            cselector_id = 'wg_selector_{}'.format(constraintname.slug)
+            cfield_id = f'constraint_{constraintname.slug}'
+            cselector_id = f'wg_selector_{constraintname.slug}'
             # keep an eye out for field name conflicts
             log.assertion('cfield_id not in self.fields')
             log.assertion('cselector_id not in self.fields')
@@ -142,7 +141,7 @@ class SessionForm(forms.Form):
         ).distinct()
 
         for inactive_constraint_name in inactive_cnames:
-            field_id = 'delete_{}'.format(inactive_constraint_name.slug)
+            field_id = f'delete_{inactive_constraint_name.slug}'
             self.fields[field_id] = forms.BooleanField(required=False, label='Delete this conflict', help_text='Delete this inactive conflict?')
             constraints = group.constraint_source_set.filter(meeting=meeting, name=inactive_constraint_name)
             self._inactive_wg_field_data.append(
@@ -243,7 +242,7 @@ class SessionForm(forms.Form):
         return super().is_valid() and self.session_forms.is_valid()
 
     def clean(self):
-        super(SessionForm, self).clean()
+        super().clean()
         self.session_forms.clean()
 
         data = self.cleaned_data

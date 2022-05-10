@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import io
@@ -463,14 +462,14 @@ class StatusChangeSubmitTests(TestCase):
         # Right now, nothing to test - we let people put whatever the web browser will let them put into that textbox
 
         # sane post using textbox
-        path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
+        path = os.path.join(settings.STATUS_CHANGE_PATH, '{}-{}.txt'.format(doc.canonical_name(), doc.rev))
         self.assertEqual(doc.rev,'00')
         self.assertFalse(os.path.exists(path))
         r = self.client.post(url,dict(content="Some initial review text\n",submit_response="1"))
         self.assertEqual(r.status_code,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.rev,'00')
-        with io.open(path) as f:
+        with open(path) as f:
             self.assertEqual(f.read(),"Some initial review text\n")
         self.assertTrue( "mid-review-00" in doc.latest_event(NewRevisionDocEvent).desc)
 
@@ -482,8 +481,8 @@ class StatusChangeSubmitTests(TestCase):
         # A little additional setup 
         # doc.rev is u'00' per the test setup - double-checking that here - if it fails, the breakage is in setUp
         self.assertEqual(doc.rev,'00')
-        path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
-        with io.open(path,'w') as f:
+        path = os.path.join(settings.STATUS_CHANGE_PATH, '{}-{}.txt'.format(doc.canonical_name(), doc.rev))
+        with open(path,'w') as f:
             f.write('This is the old proposal.')
             f.close()
         # Put the old proposal into IESG review (exercises ballot tab when looking at an older revision below)
@@ -514,8 +513,8 @@ class StatusChangeSubmitTests(TestCase):
         self.assertEqual(r.status_code, 302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.rev,'01')
-        path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
-        with io.open(path) as f:
+        path = os.path.join(settings.STATUS_CHANGE_PATH, '{}-{}.txt'.format(doc.canonical_name(), doc.rev))
+        with open(path) as f:
             self.assertEqual(f.read(),"This is a new proposal.")
             f.close()
         self.assertTrue( "mid-review-01" in doc.latest_event(NewRevisionDocEvent).desc)

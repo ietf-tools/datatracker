@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2009-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 #
 # Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -288,10 +287,10 @@ def document_main(request, name, rev=None):
             submission = "individual in %s area" % group.acronym
         else:
             if group.features.acts_like_wg:
-                submission = "%s %s" % (group.acronym, group.type)
+                submission = "{} {}".format(group.acronym, group.type)
             else:
                 submission = group.acronym
-            submission = "<a href=\"%s\">%s</a>" % (group.about_url(), submission)
+            submission = "<a href=\"{}\">{}</a>".format(group.about_url(), submission)
             if doc.stream_id and doc.get_state_slug("draft-stream-%s" % doc.stream_id) == "c-adopt":
                 submission = "candidate for %s" % submission
 
@@ -577,7 +576,7 @@ def document_main(request, name, rev=None):
                                        ))
 
     if doc.type_id == "conflrev":
-        filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
+        filename = "{}-{}.txt".format(doc.canonical_name(), doc.rev)
         pathname = os.path.join(settings.CONFLICT_REVIEW_PATH,filename)
 
         if doc.rev == "00" and not os.path.isfile(pathname):
@@ -607,7 +606,7 @@ def document_main(request, name, rev=None):
                                        ))
 
     if doc.type_id == "statchg":
-        filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
+        filename = "{}-{}.txt".format(doc.canonical_name(), doc.rev)
         pathname = os.path.join(settings.STATUS_CHANGE_PATH,filename)
 
         if doc.rev == "00" and not os.path.isfile(pathname):
@@ -649,7 +648,7 @@ def document_main(request, name, rev=None):
             # we need to remove the extension for the globbing below to work
             basename = os.path.splitext(doc.uploaded_filename)[0]
         else:
-            basename = "%s-%s" % (doc.canonical_name(), doc.rev)
+            basename = "{}-{}".format(doc.canonical_name(), doc.rev)
 
         pathname = os.path.join(doc.get_file_path(), basename)
 
@@ -699,7 +698,7 @@ def document_main(request, name, rev=None):
 
 
     if doc.type_id == "review":
-        basename = "{}.txt".format(doc.name)
+        basename = f"{doc.name}.txt"
         pathname = os.path.join(doc.get_file_path(), basename)
         content = get_unicode_document_content(basename, pathname)
         # If we want to go back to using markup_txt.markup_unicode, call it explicitly here like this:
@@ -847,7 +846,7 @@ def check_doc_email_aliases():
     pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
     good_count = 0
     tot_count = 0
-    with io.open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
+    with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
         for line in virtual_file.readlines():
             m = pattern.match(line)
             tot_count += 1
@@ -863,7 +862,7 @@ def get_doc_email_aliases(name):
     else:
         pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
     aliases = []
-    with io.open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
+    with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
         for line in virtual_file.readlines():
             m = pattern.match(line)
             if m:
@@ -1489,10 +1488,10 @@ def edit_authors(request, name):
 
         def __init__(self, *args, **kwargs):
             kwargs['prefix'] = 'author'
-            super(_AuthorsBaseFormSet, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
 
         def add_fields(self, form, index):
-            super(_AuthorsBaseFormSet, self).add_fields(form, index)
+            super().add_fields(form, index)
             for fh in self.HIDE_FIELDS:
                 if fh in form.fields:
                     form.fields[fh].widget = forms.HiddenInput()
@@ -1693,7 +1692,7 @@ def email_aliases(request,name=''):
         # require login for the overview page, but not for the
         # document-specific pages 
         if not request.user.is_authenticated:
-                return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+                return redirect('{}?next={}'.format(settings.LOGIN_URL, request.path))
     aliases = get_doc_email_aliases(name)
 
     return render(request,'doc/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'doc':doc})
@@ -1705,7 +1704,7 @@ class VersionForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         choices = kwargs.pop('choices')
-        super(VersionForm,self).__init__(*args,**kwargs)
+        super().__init__(*args,**kwargs)
         self.fields['version'].choices = choices
 
 def edit_sessionpresentation(request,name,session_id):
@@ -1729,7 +1728,7 @@ def edit_sessionpresentation(request,name,session_id):
             if initial['version'] != new_selection:
                 doc.sessionpresentation_set.filter(pk=sp.pk).update(rev=None if new_selection=='current' else new_selection)
                 c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
-                c.desc = "Revision for session %s changed to  %s" % (sp.session,new_selection)
+                c.desc = "Revision for session {} changed to  {}".format(sp.session,new_selection)
                 c.save()
             return redirect('ietf.doc.views_doc.all_presentations', name=name)
     else:
@@ -1761,7 +1760,7 @@ class SessionChooserForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         choices = kwargs.pop('choices')
-        super(SessionChooserForm,self).__init__(*args,**kwargs)
+        super().__init__(*args,**kwargs)
         self.fields['session'].choices = choices
 
 @role_required("Secretariat","Area Director","WG Chair","WG Secretary","RG Chair","RG Secretary","IRTF Chair","Team Chair")
@@ -1787,7 +1786,7 @@ def add_sessionpresentation(request,name):
             rev = None if version=='current' else version
             doc.sessionpresentation_set.create(session_id=session_id,rev=rev)
             c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
-            c.desc = "%s to session: %s" % ('Added -%s'%rev if rev else 'Added', Session.objects.get(pk=session_id))
+            c.desc = "{} to session: {}".format('Added -%s'%rev if rev else 'Added', Session.objects.get(pk=session_id))
             c.save()
             return redirect('ietf.doc.views_doc.all_presentations', name=name)
 

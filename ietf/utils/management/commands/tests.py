@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2015-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import io
@@ -82,10 +81,10 @@ class CoverageChangeTestCase(TestCase):
             }
             """
         mfh, master = tempfile.mkstemp(suffix='.json')
-        with io.open(master, "w") as file:
+        with open(master, "w") as file:
             file.write(master_txt)
         lfh, latest = tempfile.mkstemp(suffix='.json')
-        with io.open(latest, "w") as file:
+        with open(latest, "w") as file:
             file.write(latest_txt)
         output = io.StringIO()
         call_command('coverage_changes', master, latest, stdout=output)

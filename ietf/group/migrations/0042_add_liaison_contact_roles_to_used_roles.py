@@ -26,7 +26,7 @@ def forward(apps, schema_editor):
             if used_roles_is_set and has_contacts:
                 for role_name in role_names_to_add:
                     if role_name not in group.used_roles:
-                        print('>> Adding %s to used_roles for %s' % (role_name, group.acronym))
+                        print('>> Adding {} to used_roles for {}'.format(role_name, group.acronym))
                         group.used_roles.append(role_name)
                 group.save()
 
@@ -40,14 +40,14 @@ def reverse(apps, schema_editor):
     for group in Group.objects.all():
         for role_name in role_names_to_remove:
             if role_name in group.used_roles:
-                print('>> Removing %s from used_roles for %s' % (role_name, group.acronym))
+                print('>> Removing {} from used_roles for {}'.format(role_name, group.acronym))
                 group.used_roles.remove(role_name)
                 group.save()
 
     for gf in GroupFeatures.objects.all():
         for role_name in role_names_to_remove:
             if role_name in gf.default_used_roles:
-                print('>> Removing %s from default_used_roles for %s' % (role_name, gf.type_id))
+                print('>> Removing {} from default_used_roles for {}'.format(role_name, gf.type_id))
                 gf.default_used_roles.remove(role_name)
                 gf.save()
 

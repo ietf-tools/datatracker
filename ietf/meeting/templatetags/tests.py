@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2009-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 import debug  # pyflakes: ignore
 
 from django.template import Context, Template

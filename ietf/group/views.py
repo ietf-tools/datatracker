@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright The IETF Trust 2009-2020, All Rights Reserved
 #
 # Portion Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
@@ -202,7 +201,7 @@ def check_group_email_aliases():
     pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
     tot_count = 0
     good_count = 0
-    with io.open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
+    with open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
         for line in virtual_file.readlines():
             m = pattern.match(line)
             tot_count += 1
@@ -423,7 +422,7 @@ def concluded_groups(request):
     for name, groups in sections.items():
         
         # add start/conclusion date
-        d = dict((g.pk, g) for g in groups)
+        d = {g.pk: g for g in groups}
 
         for g in groups:
             g.start_date = g.conclude_date = None
@@ -510,7 +509,7 @@ def group_documents_txt(request, acronym, group_type=None):
         if rfc_number != None:
             name = rfc_number
         else:
-            name = "%s-%s" % (d.name, d.rev)
+            name = "{}-{}".format(d.name, d.rev)
 
         rows.append("\t".join((d.prefix, name, clean_whitespace(d.title))))
 
@@ -652,7 +651,7 @@ def get_group_email_aliases(acronym, group_type):
         pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
 
     aliases = []
-    with io.open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
+    with open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
         for line in virtual_file.readlines():
             m = pattern.match(line)
             if m:
@@ -713,7 +712,7 @@ def dependencies(request, acronym, group_type=None, output_type="pdf"):
 
     dothandle, dotname = mkstemp()
     os.close(dothandle)
-    dotfile = io.open(dotname, "w")
+    dotfile = open(dotname, "w")
     dotfile.write(make_dot(group))
     dotfile.close()
 
@@ -727,10 +726,10 @@ def dependencies(request, acronym, group_type=None, output_type="pdf"):
     outhandle, outname = mkstemp()
     os.close(outhandle)
 
-    pipe("%s -f -l 10 -o %s %s" % (settings.UNFLATTEN_BINARY, unflatname, dotname))
-    pipe("%s -T%s -o %s %s" % (settings.DOT_BINARY, output_type, outname, unflatname))
+    pipe("{} -f -l 10 -o {} {}".format(settings.UNFLATTEN_BINARY, unflatname, dotname))
+    pipe("{} -T{} -o {} {}".format(settings.DOT_BINARY, output_type, outname, unflatname))
 
-    outhandle = io.open(outname, "rb")
+    outhandle = open(outname, "rb")
     out = outhandle.read()
     outhandle.close()
 
@@ -751,7 +750,7 @@ def email_aliases(request, acronym=None, group_type=None):
         # require login for the overview page, but not for the group-specific
         # pages 
         if not request.user.is_authenticated:
-                return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+                return redirect('{}?next={}'.format(settings.LOGIN_URL, request.path))
 
     aliases = get_group_email_aliases(acronym, group_type)
 
@@ -876,9 +875,9 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
         res = []
         for r in resources:
             if r.display_name:
-                res.append("%s %s (%s)" % (r.name.slug, r.value, r.display_name.strip('()')))
+                res.append("{} {} ({})".format(r.name.slug, r.value, r.display_name.strip('()')))
             else:
-                res.append("%s %s" % (r.name.slug, r.value)) 
+                res.append("{} {}".format(r.name.slug, r.value)) 
                 # TODO: This is likely problematic if value has spaces. How then to delineate value and display_name? Perhaps in the short term move to comma or pipe separation.
                 # Might be better to shift to a formset instead of parsing these lines.
         return fs.join(res)
@@ -999,7 +998,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
 
             if personnel_change_text!="":
                 changed_personnel = [ str(p) for p in changed_personnel ]
-                personnel_change_text = "%s has updated %s personnel:\n\n" % (request.user.person.plain_name(), group.acronym.upper() ) + personnel_change_text
+                personnel_change_text = "{} has updated {} personnel:\n\n".format(request.user.person.plain_name(), group.acronym.upper() ) + personnel_change_text
                 email_personnel_change(request, group, personnel_change_text, changed_personnel)
 
             if 'resources' in clean:
@@ -1206,7 +1205,7 @@ def customize_workflow(request, group_type=None, acronym=None):
 
     unused_states = group.unused_states.all().values_list('slug', flat=True)
     states = State.objects.filter(used=True, type="draft-stream-%s" % stream_id)
-    transitions = dict((o.state, o) for o in group.groupstatetransitions_set.all())
+    transitions = {o.state: o for o in group.groupstatetransitions_set.all()}
     for s in states:
         s.used = s.slug not in unused_states
         s.mandatory = s.slug in MANDATORY_STATES
@@ -1265,7 +1264,7 @@ def stream_edit(request, acronym):
             new = form.cleaned_data[attr]
             old = Email.objects.filter(role__group=group, role__name=slug).select_related("person")
             if set(new) != set(old):
-                desc = "%s changed to <b>%s</b> from %s" % (
+                desc = "{} changed to <b>{}</b> from {}".format(
                     title, ", ".join(x.get_name() for x in new), ", ".join(x.get_name() for x in old))
 
                 GroupEvent.objects.create(group=group, by=request.user.person, type="info_changed", desc=desc)
@@ -1274,7 +1273,7 @@ def stream_edit(request, acronym):
                 for e in new:
                     Role.objects.get_or_create(name_id=slug, email=e, group=group, person=e.person)
                     if not e.origin or e.origin == e.person.user.username:
-                        e.origin = "role: %s %s" % (group.acronym, slug)
+                        e.origin = "role: {} {}".format(group.acronym, slug)
                         e.save()
 
             return redirect("ietf.group.views.streams")
@@ -1490,7 +1489,7 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
 
     document_requests = extract_revision_ordered_review_requests_for_documents_and_replaced(
         ReviewRequest.objects.filter(state__in=("part-completed", "completed", "assigned"), team=group).prefetch_related("reviewassignment_set__result"),
-        set(r.doc.name for r in review_requests),
+        {r.doc.name for r in review_requests},
     )
 
     # we need a mutable query dict for resetting upon saving with
@@ -1533,7 +1532,7 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
         # check for conflicts
         review_requests_dict = { str(r.pk): r for r in review_requests if r.pk}
         posted_reqs = set(request.POST.getlist("reviewrequest", []))
-        posted_reqs.discard(u'None')
+        posted_reqs.discard('None')
         current_reqs = set(review_requests_dict.keys())
 
         closed_reqs = posted_reqs - current_reqs
@@ -1640,7 +1639,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
         r.lastcall_ends = e and e.expires.date().isoformat()
         r.earlier_review = ReviewAssignment.objects.filter(review_request__doc=r.review_request.doc,reviewer__in=r.reviewer.person.email_set.all(),state="completed")
         if r.earlier_review:
-            earlier_reviews_formatted = ['-{} {} reviewed'.format(ra.reviewed_rev, ra.review_request.type.slug) for ra in r.earlier_review]
+            earlier_reviews_formatted = [f'-{ra.reviewed_rev} {ra.review_request.type.slug} reviewed' for ra in r.earlier_review]
             r.earlier_reviews = '({})'.format(', '.join(earlier_reviews_formatted))
 
     # If a document is both scheduled for a telechat and a last call review, replicate
@@ -1761,7 +1760,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
             if settings.get_min_interval_display() != prev_min_interval:
                 changes.append("Frequency changed to \"{}\" from \"{}\".".format(settings.get_min_interval_display() or "Not specified", prev_min_interval or "Not specified"))
             if settings.skip_next != prev_skip_next:
-                changes.append("Skip next assignments changed to {} from {}.".format(settings.skip_next, prev_skip_next))
+                changes.append(f"Skip next assignments changed to {settings.skip_next} from {prev_skip_next}.")
             if settings.request_assignment_next:
                 changes.append("Reviewer has requested to be the next person selected for an "
                                "assignment, as soon as possible, and will be on the top of "
@@ -1783,7 +1782,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
             period.team = group
             period.person = reviewer
             period.save()
-            update_change_reason(period, "Added unavailability period: {}".format(period))
+            update_change_reason(period, f"Added unavailability period: {period}")
 
             today = datetime.date.today()
 
@@ -1805,12 +1804,12 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
                     msg += "\n\n"
 
                     if review_assignments:
-                        msg += "{} is currently assigned to review:".format(reviewer_role.person)
+                        msg += f"{reviewer_role.person} is currently assigned to review:"
                         for r in review_assignments:
                             msg += "\n\n"
-                            msg += "{} (deadline: {})".format(r.review_request.doc.name, r.review_request.deadline.isoformat())
+                            msg += f"{r.review_request.doc.name} (deadline: {r.review_request.deadline.isoformat()})"
                     else:
-                        msg += "{} does not have any assignments currently.".format(reviewer_role.person)
+                        msg += f"{reviewer_role.person} does not have any assignments currently."
 
                 email_reviewer_availability_change(request, group, reviewer_role, msg, request.user.person)
 
@@ -1824,7 +1823,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
             for period in unavailable_periods:
                 if str(period.pk) == period_id:
                     period.delete()
-                    update_change_reason(period, "Removed unavailability period: {}".format(period))
+                    update_change_reason(period, f"Removed unavailability period: {period}")
 
                     today = datetime.date.today()
 
@@ -1852,7 +1851,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
                 if not period.end_date and period.end_form.is_valid():
                     period.end_date = period.end_form.cleaned_data["end_date"]
                     period.save()
-                    update_change_reason(period, "Set end date of unavailability period: {}".format(period))
+                    update_change_reason(period, f"Set end date of unavailability period: {period}")
 
                     msg = "Set end date of unavailable period: {} - {} ({})".format(
                         period.start_date.isoformat() if period.start_date else "indefinite",
@@ -1934,7 +1933,7 @@ class ResetNextReviewerForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.pop('instance')
-        super(ResetNextReviewerForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['next_reviewer'].choices = [ (p.pk, p.plain_name()) for p in get_reviewer_queue_policy(instance.team).default_reviewer_rotation_list(include_unavailable=True)]
 
 @login_required

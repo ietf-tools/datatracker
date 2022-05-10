@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
-# -*- coding: utf-8 -*-
 """Tests of forms in the Meeting application"""
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile

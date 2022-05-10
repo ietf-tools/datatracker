@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -47,13 +46,13 @@ class Command(BaseCommand):
         # normalize new
         new = re.sub(r'\r\n?', r'\n', new)
         try:
-            with io.open(fn, encoding='utf-8') as f:
+            with open(fn, encoding='utf-8') as f:
                 old = f.read()
-        except IOError:
+        except OSError:
             old = ""
         if old.strip() != new.strip():
             self.note('Writing %s' % os.path.basename(fn))
-            with io.open(fn, "w", encoding='utf-8') as f:
+            with open(fn, "w", encoding='utf-8') as f:
                 f.write(new)
 
     def handle(self, *args, **options):
@@ -73,7 +72,7 @@ class Command(BaseCommand):
         doc_events = doc_events.order_by('time')
 
         for e in doc_events:
-            self.mutter('%s %s' % (e.time, e.doc.name))
+            self.mutter('{} {}'.format(e.time, e.doc.name))
             try:
                 doc = e.doc
                 if e.rev != doc.rev:
@@ -90,7 +89,7 @@ class Command(BaseCommand):
                 # for name in (doc.name, doc.name[6:]):
                 #     ref_rev_file_name = os.path.join(bibxmldir, 'reference.I-D.%s-%s.xml' % (name, doc.rev))
                 #     self.write(ref_rev_file_name, ref_text)
-                ref_rev_file_name = os.path.join(bibxmldir, 'reference.I-D.%s-%s.xml' % (doc.name, doc.rev))
+                ref_rev_file_name = os.path.join(bibxmldir, 'reference.I-D.{}-{}.xml'.format(doc.name, doc.rev))
                 self.write(ref_rev_file_name, ref_text)
             except Exception as ee:
-                sys.stderr.write('\n%s-%s: %s\n' % (doc.name, doc.rev, ee))
+                sys.stderr.write('\n{}-{}: {}\n'.format(doc.name, doc.rev, ee))

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import io
@@ -58,7 +57,7 @@ def clean_doc_revision(doc, rev):
         rev = rev.rjust(2, "0")
 
         if not NewRevisionDocEvent.objects.filter(doc=doc, rev=rev).exists():
-            raise forms.ValidationError("Could not find revision \"{}\" of the document.".format(rev))
+            raise forms.ValidationError(f"Could not find revision \"{rev}\" of the document.")
 
     return rev
 
@@ -71,7 +70,7 @@ class RequestReviewForm(forms.ModelForm):
         fields = ('requested_by', 'type', 'deadline', 'requested_rev', 'comment') 
 
     def __init__(self, user, doc, *args, **kwargs):
-        super(RequestReviewForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.doc = doc
 
@@ -106,7 +105,7 @@ class RequestReviewForm(forms.ModelForm):
         if chosen_type and chosen_teams:
             for t in chosen_teams:
                 if chosen_type not in t.reviewteamsettings.review_types.all():
-                    self.add_error("type", "{} does not use the review type {}.".format(t.name, chosen_type.name))
+                    self.add_error("type", f"{t.name} does not use the review type {chosen_type.name}.")
 
         return self.cleaned_data
 
@@ -153,7 +152,7 @@ def request_review(request, name):
                     state=None,
                 )
 
-                subject = "%s %s Review requested: %s" % (review_req.team.acronym, review_req.type.name, doc.name)
+                subject = "{} {} Review requested: {}".format(review_req.team.acronym, review_req.type.name, doc.name)
 
                 msg = subject
 
@@ -235,7 +234,7 @@ def review_request(request, name, request_id):
             if assignment.can_accept_reviewer_assignment:
                 assignment.state = ReviewAssignmentStateName.objects.get(slug="accepted")
                 assignment.save()
-                update_change_reason(assignment, 'Assignment for {} accepted'.format(assignment.reviewer.person))
+                update_change_reason(assignment, f'Assignment for {assignment.reviewer.person} accepted')
         return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
 
     wg_chairs = None
@@ -267,7 +266,7 @@ class CloseReviewRequestForm(forms.Form):
     close_comment = forms.CharField(label='Comment (optional)', max_length=255, required=False)
 
     def __init__(self, can_manage_request, *args, **kwargs):
-        super(CloseReviewRequestForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if not can_manage_request:
             self.fields["close_reason"].queryset = self.fields["close_reason"].queryset.filter(slug__in=["withdrawn"])
@@ -311,7 +310,7 @@ class AssignReviewerForm(forms.Form):
     add_skip = forms.BooleanField(label='Skip next time', required=False)
 
     def __init__(self, review_req, *args, **kwargs):
-        super(AssignReviewerForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         get_reviewer_queue_policy(review_req.team).setup_reviewer_field(self.fields["reviewer"], review_req)
 
 
@@ -489,7 +488,7 @@ class SubmitUnsolicitedReviewTeamChoiceForm(forms.Form):
     team = forms.ModelChoiceField(queryset=Group.objects.filter(reviewteamsettings__isnull=False), widget=forms.RadioSelect, empty_label=None)
     
     def __init__(self, user, *args, **kwargs):
-        super(SubmitUnsolicitedReviewTeamChoiceForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['team'].queryset = self.fields['team'].queryset.filter(role__person__user=user, role__name='secr')
         
 
@@ -540,7 +539,7 @@ class CompleteReviewForm(forms.Form):
         self.assignment = assignment
         self.doc = doc
 
-        super(CompleteReviewForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         known_revisions = NewRevisionDocEvent.objects.filter(doc=doc).order_by("time", "id").values_list("rev", "time", flat=False)
 
@@ -553,7 +552,7 @@ class CompleteReviewForm(forms.Form):
 
         if not revising_review:
             self.fields["state"].choices = [
-                (slug, "{} - extra reviewer is to be assigned".format(label)) if slug == "part-completed" else (slug, label)
+                (slug, f"{label} - extra reviewer is to be assigned") if slug == "part-completed" else (slug, label)
                 for slug, label in self.fields["state"].choices
             ]
 
@@ -628,12 +627,12 @@ class CompleteReviewForm(forms.Form):
                 log.log(f'GET request timed out for [{url}]: {exc}')
                 raise forms.ValidationError("Trying to retrieve the URL resulted in a request timeout. Please provide a URL that can be retrieved.") from exc
             if r.status_code != 200:
-                raise forms.ValidationError("Trying to retrieve the URL resulted in status code %s: %s.  Please provide a URL that can be retrieved." % (r.status_code, r.reason))
+                raise forms.ValidationError("Trying to retrieve the URL resulted in status code {}: {}.  Please provide a URL that can be retrieved.".format(r.status_code, r.reason))
         return url
 
     def clean(self):
         if self.assignment and "@" in self.assignment.reviewer.person.ascii:
-            raise forms.ValidationError("Reviewer name must be filled in (the ASCII version is currently \"{}\" - since it contains an @ sign the name is probably still the original email address).".format(self.review_req.reviewer.person.ascii))
+            raise forms.ValidationError(f"Reviewer name must be filled in (the ASCII version is currently \"{self.review_req.reviewer.person.ascii}\" - since it contains an @ sign the name is probably still the original email address).")
 
         def require_field(f):
             if not self.cleaned_data.get(f):
@@ -665,9 +664,9 @@ def complete_review(request, name, assignment_id=None, acronym=None):
         team_acronym = assignment.review_request.team.acronym.lower()
         request_type = assignment.review_request.type
         reviewer = assignment.reviewer
-        mailtrigger_slug = 'review_completed_{}_{}'.format(team_acronym, request_type.slug)
+        mailtrigger_slug = f'review_completed_{team_acronym}_{request_type.slug}'
         # Description is only used if the mailtrigger does not exist yet.
-        mailtrigger_desc = 'Recipients when a {} {} review is completed'.format(team_acronym, request_type)
+        mailtrigger_desc = f'Recipients when a {team_acronym} {request_type} review is completed'
         to, cc = gather_address_lists(
             mailtrigger_slug,
             create_from_slug_if_not_exists='review_completed',
@@ -735,7 +734,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
                     review = review,
                 )
 
-            review.rev = "00" if not review.rev else "{:02}".format(int(review.rev) + 1)
+            review.rev = "00" if not review.rev else f"{int(review.rev) + 1:02}"
             review.title = "{} Review of {}-{}".format(assignment.review_request.type.name, assignment.review_request.doc.name, form.cleaned_data["reviewed_rev"])
             review.time = datetime.datetime.now()
             if review_submission == "link":
@@ -760,8 +759,8 @@ def complete_review(request, name, assignment_id=None, acronym=None):
             else:
                 content = form.cleaned_data['review_content']
 
-            filename = os.path.join(review.get_file_path(), '{}.txt'.format(review.name))
-            with io.open(filename, 'w', encoding='utf-8') as destination:
+            filename = os.path.join(review.get_file_path(), f'{review.name}.txt')
+            with open(filename, 'w', encoding='utf-8') as destination:
                 destination.write(content)
 
             completion_datetime = datetime.datetime.now()
@@ -790,7 +789,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
             if need_to_email_review:
                 desc += " " + "Sent review to list."
             if revising_review:
-                desc += " Review has been revised by {}.".format(request.user.person)
+                desc += f" Review has been revised by {request.user.person}."
             elif submitted_on_different_date:
                 desc += " Submission of review completed at an earlier date."
             close_event = ReviewAssignmentDocEvent(type="closed_review_assignment", review_assignment=assignment)
@@ -825,7 +824,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
             if assignment.state_id == "part-completed" and not revising_review: 
                 existing_assignments = ReviewAssignment.objects.filter(review_request__doc=assignment.review_request.doc, review_request__team=assignment.review_request.team, state__in=("assigned", "accepted", "completed"))
 
-                subject = "Review of {}-{} completed partially".format(assignment.review_request.doc.name, assignment.reviewed_rev)
+                subject = f"Review of {assignment.review_request.doc.name}-{assignment.reviewed_rev} completed partially"
 
                 msg = render_to_string("review/partially_completed_review.txt", {
                     "existing_assignments": existing_assignments,
@@ -894,7 +893,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
         }
 
         try:
-            initial['review_content'] = render_to_string('/group/%s/review/content_templates/%s.txt' % (assignment.review_request.team.acronym,
+            initial['review_content'] = render_to_string('/group/{}/review/content_templates/{}.txt'.format(assignment.review_request.team.acronym,
                                                                                                         request_type.slug), {'assignment':assignment, 'today':datetime.date.today()}) 
         except (TemplateDoesNotExist, AttributeError):
             pass
@@ -1001,7 +1000,7 @@ def edit_deadline(request, name, request_id):
         if form.is_valid():
             if form.cleaned_data['deadline'] != old_deadline:
                 form.save()
-                subject = "Deadline changed: {} {} review of {}-{}".format(review_req.team.acronym.capitalize(),review_req.type.name.lower(), review_req.doc.name, review_req.requested_rev)
+                subject = f"Deadline changed: {review_req.team.acronym.capitalize()} {review_req.type.name.lower()} review of {review_req.doc.name}-{review_req.requested_rev}"
                 msg = render_to_string("review/deadline_changed.txt", {
                     "review_req": review_req,
                     "old_deadline": old_deadline,
@@ -1024,7 +1023,7 @@ class ReviewWishAddForm(forms.Form):
                                   widget=forms.RadioSelect, empty_label=None, required=True)
 
     def __init__(self, user, doc, *args, **kwargs):
-        super(ReviewWishAddForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.person = get_object_or_404(Person, user=user)
         self.doc = doc
         self.fields['team'].queryset = self.fields['team'].queryset.filter(role__person=self.person,

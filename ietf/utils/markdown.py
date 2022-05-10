@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
-# -*- coding: utf-8 -*-
 """Markdown wrapper
 
 Use this instead of importing markdown directly to guarantee consistent extensions / options through

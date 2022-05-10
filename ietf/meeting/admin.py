@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django.contrib import admin
@@ -58,7 +57,7 @@ class TimeSlotAdmin(admin.ModelAdmin):
             if instance.session.name:
                 return instance.session.name
             elif instance.session.group:
-                return "%s (%s)" % (instance.session.group.name, instance.session.group.acronym)
+                return "{} ({})".format(instance.session.group.name, instance.session.group.acronym)
 
         return ""
     session_desc.short_description = "session" # type: ignore # https://github.com/python/mypy/issues/2087
@@ -105,7 +104,7 @@ class SessionAdmin(admin.ModelAdmin):
 
 
     def get_queryset(self, request):
-        qs = super(SessionAdmin, self).get_queryset(request)
+        qs = super().get_queryset(request)
         return qs.prefetch_related('schedulingevent_set')
 
     def group_acronym(self, instance):

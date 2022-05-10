@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import os
@@ -15,14 +14,14 @@ from django.utils.safestring import mark_safe
 from ietf.dbtemplate.models import DBTemplate
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(__file__)
 RST_TEMPLATE = os.path.join(BASE_DIR, 'resources/rst.txt')
 
 
 class Template(DjangoTemplate):
 
     def __init__(self, template_string, origin=None, name='<Unknown Template>', engine=None):
-        super(Template, self).__init__(template_string, origin, name, engine)
+        super().__init__(template_string, origin, name, engine)
         self.template_string = string.Template(template_string)
 
     def render(self, context):
@@ -41,7 +40,7 @@ class PlainTemplate(Template):
 class RSTTemplate(PlainTemplate):
 
     def render(self, context):
-        interpolated_string = super(RSTTemplate, self).render(context)
+        interpolated_string = super().render(context)
         try:
             return publish_string(source=interpolated_string,
                                   writer_name='html',
@@ -61,7 +60,7 @@ class RSTTemplate(PlainTemplate):
 
 class Loader(BaseLoader):
     def __init__(self, engine):
-        super(Loader, self).__init__(engine)
+        super().__init__(engine)
         self.is_usable = True
 
     def get_template(self, template_name, skip=None):

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import os
@@ -85,7 +84,7 @@ class Command(AppCommand):
 
             if missing_resources:
                 print("Updating resources.py for %s" % app.name)
-                with io.open(resource_file_path, "a") as rfile:
+                with open(resource_file_path, "a") as rfile:
                     info = dict(
                         app=app.name,
                         app_label=app.label,
@@ -113,7 +112,7 @@ class Command(AppCommand):
                                 if rel_model_name == model_name:
                                     # foreign key to self class -- quote
                                     # the rmodel_name
-                                    rmodel_name="'%s.resources.%sResource'" % (app.name, rel_model_name)
+                                    rmodel_name="'{}.resources.{}Resource'".format(app.name, rel_model_name)
                                 else:
                                     rmodel_name=rel_model_name+"Resource"
                                 foreign_keys.append(dict(
@@ -141,7 +140,7 @@ class Command(AppCommand):
                                 if rel_model_name == model_name:
                                     # foreign key to self class -- quote
                                     # the rmodel_name
-                                    rmodel_name="'%s.resources.%sResource'" % (app.name, rel_model_name)
+                                    rmodel_name="'{}.resources.{}Resource'".format(app.name, rel_model_name)
                                 else:
                                     rmodel_name=rel_model_name+"Resource"
                                 m2m_keys.append(dict(

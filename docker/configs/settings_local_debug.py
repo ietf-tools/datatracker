@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 from ietf.settings import INSTALLED_APPS, MIDDLEWARE
 from ietf.settings_local import *                  # pyflakes:ignore

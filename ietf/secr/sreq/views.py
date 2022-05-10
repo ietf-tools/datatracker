@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2022, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -74,10 +73,10 @@ def get_initial_session(sessions, prune_conflicts=False):
     if prune_conflicts:
         conflicts = [c for c in conflicts if valid_conflict(c)]
 
-    conflict_name_ids = set(c.name_id for c in conflicts)
+    conflict_name_ids = {c.name_id for c in conflicts}
     for name_id in conflict_name_ids:
         target_acros = [c.target.acronym for c in conflicts if c.name_id == name_id]
-        initial['constraint_{}'.format(name_id)] = ' '.join(target_acros)
+        initial[f'constraint_{name_id}'] = ' '.join(target_acros)
 
     initial['comments'] = sessions[0].comments
     initial['resources'] = sessions[0].resources.all()
@@ -112,11 +111,11 @@ def get_requester_text(person,group):
     '''
     roles = group.role_set.filter(name__in=('chair','secr'),person=person)
     if roles:
-        return '%s, a %s of the %s working group' % (person.ascii, roles[0].name, group.acronym)
+        return '{}, a {} of the {} working group'.format(person.ascii, roles[0].name, group.acronym)
     if group.parent and group.parent.role_set.filter(name='ad',person=person):
-        return '%s, a %s Area Director' % (person.ascii, group.parent.acronym.upper())
+        return '{}, a {} Area Director'.format(person.ascii, group.parent.acronym.upper())
     if person.role_set.filter(name='secr',group__acronym='secretariat'):
-        return '%s, on behalf of the %s working group' % (person.ascii, group.acronym)
+        return '{}, on behalf of the {} working group'.format(person.ascii, group.acronym)
 
 def save_conflicts(group, meeting, conflicts, name):
     '''
@@ -143,7 +142,7 @@ def send_notification(group, meeting, login, sreq_data, session_data, action):
     '''
     (to_email, cc_list) = gather_address_lists('session_requested',group=group,person=login)
     from_email = (settings.SESSION_REQUEST_FROM_EMAIL)
-    subject = '%s - New Meeting Session Request for IETF %s' % (group.acronym, meeting.number)
+    subject = '{} - New Meeting Session Request for IETF {}'.format(group.acronym, meeting.number)
     template = 'sreq/session_request_notification.txt'
 
     # send email
@@ -157,14 +156,14 @@ def send_notification(group, meeting, login, sreq_data, session_data, action):
 
     # update overrides
     if action == 'update':
-        subject = '%s - Update to a Meeting Session Request for IETF %s' % (group.acronym, meeting.number)
+        subject = '{} - Update to a Meeting Session Request for IETF {}'.format(group.acronym, meeting.number)
         context['header'] = 'An update to a'
 
     # if third session requested approval is required
     # change headers TO=ADs, CC=session-request, submitter and cochairs
     if len(session_data) > 2:
         (to_email, cc_list) = gather_address_lists('session_requested_long',group=group,person=login)
-        subject = '%s - Request for meeting session approval for IETF %s' % (group.acronym, meeting.number)
+        subject = '{} - Request for meeting session approval for IETF {}'.format(group.acronym, meeting.number)
         template = 'sreq/session_approval_notification.txt'
         #status_text = 'the %s Directors for approval' % group.parent
 
@@ -252,7 +251,7 @@ def cancel(request, acronym):
     # send notifitcation
     (to_email, cc_list) = gather_address_lists('session_request_cancelled',group=group,person=login)
     from_email = (settings.SESSION_REQUEST_FROM_EMAIL)
-    subject = '%s - Cancelling a meeting request for IETF %s' % (group.acronym, meeting.number)
+    subject = '{} - Cancelling a meeting request for IETF {}'.format(group.acronym, meeting.number)
     send_mail(request, to_email, from_email, subject, 'sreq/session_cancel_notification.txt',
               {'requester':get_requester_text(login,group),
                'meeting':meeting}, cc=cc_list)
@@ -552,7 +551,7 @@ def edit(request, acronym, num=None):
         for obc in group.constraint_source_set.filter(meeting=meeting, name__is_group_conflict=True):
             outbound_constraints[obc.name.slug].append(obc.target.acronym)
         for slug, groups in outbound_constraints.items():
-            initial['constraint_{}'.format(slug)] = ' '.join(groups)
+            initial[f'constraint_{slug}'] = ' '.join(groups)
 
         if not sessions:
             return redirect('ietf.secr.sreq.views.new', acronym=acronym)
@@ -612,14 +611,14 @@ def main(request):
 
     # warn if there are no associated groups
     if not scheduled_groups and not unscheduled_groups:
-        messages.warning(request, 'The account %s is not associated with any groups.  If you have multiple Datatracker accounts you may try another or report a problem to %s' % (request.user, settings.SECRETARIAT_ACTION_EMAIL))
+        messages.warning(request, 'The account {} is not associated with any groups.  If you have multiple Datatracker accounts you may try another or report a problem to {}'.format(request.user, settings.SECRETARIAT_ACTION_EMAIL))
      
     # add session status messages for use in template
     for group in scheduled_groups:
         if not group.features.acts_like_wg or (len(group.meeting_sessions) < 3):
             group.status_message = group.meeting_sessions[0].current_status
         else:
-            group.status_message = 'First two sessions: %s, Third session: %s' % (group.meeting_sessions[0].current_status, group.meeting_sessions[2].current_status)
+            group.status_message = 'First two sessions: {}, Third session: {}'.format(group.meeting_sessions[0].current_status, group.meeting_sessions[2].current_status)
 
     # add not meeting indicators for use in template
     for group in unscheduled_groups:
@@ -731,7 +730,7 @@ def no_session(request, acronym):
     # send notification
     (to_email, cc_list) = gather_address_lists('session_request_not_meeting',group=group,person=login)
     from_email = (settings.SESSION_REQUEST_FROM_EMAIL)
-    subject = '%s - Not having a session at IETF %s' % (group.acronym, meeting.number)
+    subject = '{} - Not having a session at IETF {}'.format(group.acronym, meeting.number)
     send_mail(request, to_email, from_email, subject, 'sreq/not_meeting_notification.txt',
               {'login':login,
                'group':group,

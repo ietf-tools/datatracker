@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2018-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import flufl.bounce
@@ -63,12 +62,12 @@ class Command(BaseCommand):
                 email = Email.objects.filter(address=a).first()
                 if email:
                     if email.person_id:
-                        self.stdout.write('Would deactivate <%s> (person %s)\n' % (a, email.person.plain_ascii()))
+                        self.stdout.write('Would deactivate <{}> (person {})\n'.format(a, email.person.plain_ascii()))
                     else:
-                        self.stderr.write('No person is associated with <%s>\n' % (a, ))
+                        self.stderr.write('No person is associated with <{}>\n'.format(a))
                 else:
-                    self.stderr.write('Address not found: <%s>\n' % (a, ))
-                    with io.open('./failed', 'a') as failed:
+                    self.stderr.write('Address not found: <{}>\n'.format(a))
+                    with open('./failed', 'a') as failed:
                         failed.write(messages[a].as_string(unixfrom=True))
                         failed.write('\n')
 
@@ -84,15 +83,15 @@ class Command(BaseCommand):
                     email.origin = email.person.user.username if email.person.user_id else ('script: %s deactivation' % options['reason'])
                     email.save()
                     PersonEvent.objects.create(person=email.person, type='email_address_deactivated',
-                        desc="Deactivated the email addres <%s>. Reason: %s" % (email.address, options['reason']) )
+                        desc="Deactivated the email addres <{}>. Reason: {}".format(email.address, options['reason']) )
                 else:
                     if email is None:
                         not_found.append(a)
                     elif not email.person_id:
-                        self.stderr.write("Could not deactivate <%s>: Null person record\n" % (a, ))
+                        self.stderr.write("Could not deactivate <{}>: Null person record\n".format(a))
                     else:
-                        self.stderr.write("Unexpected error when processing <%s>: Quitting." % (a, ))
+                        self.stderr.write("Unexpected error when processing <{}>: Quitting.".format(a))
                         sys.exit(1)
             for a in not_found:
-                self.stderr.write('Address not found: <%s>\n' % (a, ))
+                self.stderr.write('Address not found: <{}>\n'.format(a))
                         

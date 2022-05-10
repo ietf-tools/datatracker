@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django.db import models
@@ -24,7 +23,7 @@ class Redirect(models.Model):
     rest = models.CharField(max_length=100, blank=True)
     remove = models.CharField(max_length=50, blank=True)
     def __str__(self):
-        return "%s -> %s/%s" % (self.cgi, self.url, self.rest)
+        return "{} -> {}/{}".format(self.cgi, self.url, self.rest)
 
 class Suffix(models.Model):
     """This is a "rest" and "remove" (see Redirect class)
@@ -33,7 +32,7 @@ class Suffix(models.Model):
     rest = models.CharField(max_length=100, blank=True)
     remove = models.CharField(max_length=50, blank=True)
     def __str__(self):
-        return "-> %s - %s" % (self.rest, self.remove)
+        return "-> {} - {}".format(self.rest, self.remove)
     class Meta:
         verbose_name_plural="Suffixes"
 
@@ -49,7 +48,7 @@ class Command(models.Model):
     script = ForeignKey(Redirect, related_name='commands', editable=False)
     suffix = ForeignKey(Suffix, null=True, blank=True)
     def __str__(self):
-        ret = "%s?command=%s" % (self.script.cgi, self.command)
+        ret = "{}?command={}".format(self.script.cgi, self.command)
         if self.suffix_id:
             ret += " %s" % (self.suffix)
         return ret

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2018-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -12,7 +11,7 @@ from ietf.ipr.models import (
 )
 
 def _fake_patent_info():
-    return "Date: %s\nNotes: %s\nTitle: %s\nNumber: %s\nInventor: %s\n" % (
+    return "Date: {}\nNotes: {}\nTitle: {}\nNumber: {}\nInventor: {}\n".format(
         (datetime.datetime.today()-datetime.timedelta(days=365)).strftime("%Y-%m-%d"),
         factory.Faker('paragraph'),
         factory.Faker('sentence', nb_words=8),

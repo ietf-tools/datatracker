@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2015-2022, All Rights Reserved
-# -*- coding: utf-8 -*-
 from pathlib import Path
 
 from django import template

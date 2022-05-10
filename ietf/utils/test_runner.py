@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2009-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 #
 # Portion Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -239,7 +238,7 @@ def safe_destroy_test_db(*args, **kwargs):
     keepdb = kwargs.get('keepdb', False)
     if not keepdb:
         if settings.DATABASES["default"]["NAME"] != test_database_name:
-            print('     NOT SAFE; Changing settings.DATABASES["default"]["NAME"] from %s to %s' % (settings.DATABASES["default"]["NAME"], test_database_name))
+            print('     NOT SAFE; Changing settings.DATABASES["default"]["NAME"] from {} to {}'.format(settings.DATABASES["default"]["NAME"], test_database_name))
             settings.DATABASES["default"]["NAME"] = test_database_name
     return old_destroy(*args, **kwargs)
 
@@ -247,7 +246,7 @@ class PyFlakesTestCase(TestCase):
 
     def __init__(self, test_runner=None, **kwargs):
         self.runner = test_runner
-        super(PyFlakesTestCase, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def pyflakes_test(self):
         self.maxDiff = None
@@ -260,7 +259,7 @@ class MyPyTest(TestCase):
 
     def __init__(self, test_runner=None, **kwargs):
         self.runner = test_runner
-        super(MyPyTest, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     @unittest.skipIf(sys.version_info[0] < 3, "Mypy and django-stubs not available under Py2")
     def mypy_test(self):
@@ -423,15 +422,15 @@ def save_test_results(failures, test_labels):
     # results and avoid re-running tests if we've alread run them with OK
     # result after the latest code changes:
     topdir = os.path.dirname(os.path.dirname(settings.BASE_DIR))
-    tfile = io.open(os.path.join(topdir,".testresult"), "a", encoding='utf-8')
+    tfile = open(os.path.join(topdir,".testresult"), "a", encoding='utf-8')
     timestr = time.strftime("%Y-%m-%d %H:%M:%S")
     if failures:
-        tfile.write("%s FAILED (failures=%s)\n" % (timestr, failures))
+        tfile.write("{} FAILED (failures={})\n".format(timestr, failures))
     else:
         if test_labels:
-            tfile.write("%s SUCCESS (tests=%s)\n" % (timestr, test_labels))
+            tfile.write("{} SUCCESS (tests={})\n".format(timestr, test_labels))
         else:
-            tfile.write("%s OK\n" % (timestr, ))
+            tfile.write("{} OK\n".format(timestr))
     tfile.close()
 
 def set_coverage_checking(flag=True):
@@ -461,7 +460,7 @@ class CoverageReporter(Reporter):
                 analysis = self.coverage._analyze(fr)
                 nums = analysis.numbers
                 missing_nums = sorted(analysis.missing)
-                with io.open(analysis.filename, encoding='utf-8') as file:
+                with open(analysis.filename, encoding='utf-8') as file:
                     lines = file.read().splitlines()
                 missing_lines = [ lines[l-1] for l in missing_nums ]
                 result["covered"][fr.relative_filename()] = (nums.n_statements, nums.pc_covered/100.0, missing_nums, missing_lines)
@@ -484,7 +483,7 @@ class CoverageTest(unittest.TestCase):
 
     def __init__(self, test_runner=None, **kwargs):
         self.runner = test_runner
-        super(CoverageTest, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def report_test_result(self, test):
             latest_coverage_version = self.runner.coverage_master["version"]
@@ -503,7 +502,7 @@ class CoverageTest(unittest.TestCase):
                 # Permit 0.02% variation in results -- otherwise small code changes become a pain
                 fudge_factor = 0.0002
                 self.assertLessEqual(len(test_missing), len(master_missing),
-                    msg = "New %s without test coverage since %s: %s" % (test, latest_coverage_version, list(set(test_missing) - set(master_missing))))
+                    msg = "New {} without test coverage since {}: {}".format(test, latest_coverage_version, list(set(test_missing) - set(master_missing))))
                 self.assertGreaterEqual(test_coverage, master_coverage - fudge_factor,
                     msg = "The %s coverage percentage is now lower (%.2f%%) than for version %s (%.2f%%)" %
                         ( test, test_coverage*100, latest_coverage_version, master_coverage*100, ))
@@ -519,7 +518,7 @@ class CoverageTest(unittest.TestCase):
             covered = [ k for k in all if k in loaded_templates ]
             self.runner.coverage_data["template"] = {
                 "coverage": (1.0*len(covered)/len(all)) if len(all)>0 else float('nan'),
-                "covered":  dict( (k, k in covered) for k in all ),
+                "covered":  { k: k in covered for k in all },
                 "format": 1,
                 }
             self.report_test_result("template")
@@ -554,7 +553,7 @@ class CoverageTest(unittest.TestCase):
 
             self.runner.coverage_data["url"] = {
                 "coverage": 1.0*len(covered)/len(patterns),
-                "covered": dict( (k, (o.lookup_str, k in covered)) for k,p,o in patterns ),
+                "covered": { k: (o.lookup_str, k in covered) for k,p,o in patterns },
                 "format": 4,
                 }
 
@@ -677,7 +676,7 @@ class IetfTestRunner(DiscoverRunner):
 
     @classmethod
     def add_arguments(cls, parser):
-        super(IetfTestRunner, cls).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument('--skip-coverage',
             action='store_true', dest='skip_coverage', default=False,
             help='Skip test coverage measurements for code, templates, and URLs. ' )
@@ -716,7 +715,7 @@ class IetfTestRunner(DiscoverRunner):
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
         self.coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_MASTER_FILE)
-        super(IetfTestRunner, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         if self.parallel > 1:
             if self.html_report == True:
                 sys.stderr.write("The switches --parallel and --html-report cannot be combined, "
@@ -735,9 +734,9 @@ class IetfTestRunner(DiscoverRunner):
         settings.PASSWORD_HASHERS = ( 'django.contrib.auth.hashers.MD5PasswordHasher', )
         settings.SERVER_MODE = 'test'
         #
-        print("     Datatracker %s test suite, %s:" % (ietf.__version__, time.strftime("%d %B %Y %H:%M:%S %Z")))
+        print("     Datatracker {} test suite, {}:".format(ietf.__version__, time.strftime("%d %B %Y %H:%M:%S %Z")))
         print("     Python %s." % sys.version.replace('\n', ' '))
-        print("     Django %s, settings '%s'" % (django.get_version(), settings.SETTINGS_MODULE))
+        print("     Django {}, settings '{}'".format(django.get_version(), settings.SETTINGS_MODULE))
         
         settings.TEMPLATES[0]['BACKEND'] = 'ietf.utils.test_runner.ValidatingTemplates'
         if self.check_coverage:
@@ -745,7 +744,7 @@ class IetfTestRunner(DiscoverRunner):
                 with gzip.open(self.coverage_file, "rb") as file:
                     self.coverage_master = json.load(file)
             else:
-                with io.open(self.coverage_file, encoding='utf-8') as file:
+                with open(self.coverage_file, encoding='utf-8') as file:
                     self.coverage_master = json.load(file)
             self.coverage_data = {
                 "time": datetime.datetime.now(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -810,9 +809,9 @@ class IetfTestRunner(DiscoverRunner):
                 ietf.utils.mail.SMTP_ADDR['port'] = base + offset 
                 self.smtpd_driver = SMTPTestServerDriver((ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port']),None) 
                 self.smtpd_driver.start()
-                print(("     Running an SMTP test server on %(ip4)s:%(port)s to catch outgoing email." % ietf.utils.mail.SMTP_ADDR))
+                print("     Running an SMTP test server on %(ip4)s:%(port)s to catch outgoing email." % ietf.utils.mail.SMTP_ADDR)
                 break
-            except socket.error:
+            except OSError:
                 pass
 
         if os.path.exists(settings.UTILS_TEST_RANDOM_STATE_FILE):
@@ -888,7 +887,7 @@ class IetfTestRunner(DiscoverRunner):
                 print(" (extra pedantically)")
                 self.vnu = start_vnu_server()
 
-        super(IetfTestRunner, self).setup_test_environment(**kwargs)
+        super().setup_test_environment(**kwargs)
 
     def teardown_test_environment(self, **kwargs):
         self.smtpd_driver.stop()
@@ -920,7 +919,7 @@ class IetfTestRunner(DiscoverRunner):
             if self.vnu:
                 self.vnu.terminate()
 
-        super(IetfTestRunner, self).teardown_test_environment(**kwargs)
+        super().teardown_test_environment(**kwargs)
 
     def validate(self, kind):
         if not self.batches[kind]:
@@ -1009,7 +1008,7 @@ class IetfTestRunner(DiscoverRunner):
            the coverage data to those apps and paths.
         """
         test_apps = []
-        app_roots = set( app.split('.')[0] for app in settings.INSTALLED_APPS )
+        app_roots = { app.split('.')[0] for app in settings.INSTALLED_APPS }
         for label in test_labels:
             part_list = label.split('.')
             if label in settings.INSTALLED_APPS:
@@ -1046,7 +1045,7 @@ class IetfTestRunner(DiscoverRunner):
         # database and the test database are way too dangerous to run
         # against the production database
         if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
-            raise EnvironmentError("Refusing to run tests on production server")
+            raise OSError("Refusing to run tests on production server")
 
         old_create = connection.creation.__class__.create_test_db
         connection.creation.__class__.create_test_db = safe_create_test_db
@@ -1080,14 +1079,14 @@ class IetfTestRunner(DiscoverRunner):
             # necessary to get the right ordering:
             self.reorder_by = (PyFlakesTestCase, MyPyTest, ) + self.reorder_by + (StaticLiveServerTestCase, TemplateTagTest, CoverageTest, )
 
-        failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
+        failures = super().run_tests(test_labels, extra_tests=extra_tests, **kwargs)
 
         if self.check_coverage:
             print("")
             if self.run_full_test_suite:
                 print("Test coverage data:")
             else:
-                print(("Test coverage for this test run across the related app%s (%s):" % (("s" if len(self.test_apps)>1 else ""), ", ".join(self.test_apps))))
+                print("Test coverage for this test run across the related app{} ({}):".format(("s" if len(self.test_apps)>1 else ""), ", ".join(self.test_apps)))
             for test in ["template", "url", "code"]:
                 latest_coverage_version = self.coverage_master["version"]
 
@@ -1102,19 +1101,19 @@ class IetfTestRunner(DiscoverRunner):
                 test_coverage = test_data["coverage"]
 
                 if self.run_full_test_suite:
-                    print(("      %8s coverage: %6.2f%%  (%s: %6.2f%%)" %
-                        (test.capitalize(), test_coverage*100, latest_coverage_version, master_coverage*100, )))
+                    print("      %8s coverage: %6.2f%%  (%s: %6.2f%%)" %
+                        (test.capitalize(), test_coverage*100, latest_coverage_version, master_coverage*100, ))
                 else:
-                    print(("      %8s coverage: %6.2f%%" %
-                        (test.capitalize(), test_coverage*100, )))
+                    print("      %8s coverage: %6.2f%%" %
+                        (test.capitalize(), test_coverage*100, ))
 
-            print(("""
+            print("""
                 Per-file code and template coverage and per-url-pattern url coverage data
                 for the latest test run has been written to %s.
 
                 Per-statement code coverage data has been written to '.coverage', readable
                 by the 'coverage' program.
-                """.replace("    ","") % (settings.TEST_COVERAGE_LATEST_FILE)))
+                """.replace("    ","") % (settings.TEST_COVERAGE_LATEST_FILE))
 
         save_test_results(failures, test_labels)
 
@@ -1127,10 +1126,10 @@ class IetfLiveServerTestCase(StaticLiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         set_coverage_checking(False)
-        super(IetfLiveServerTestCase, cls).setUpClass()
+        super().setUpClass()
 
     def setUp(self):
-        super(IetfLiveServerTestCase, self).setUp()
+        super().setUp()
         # LiveServerTestCase uses TransactionTestCase which seems to
         # somehow interfere with the fixture loading process in
         # IetfTestRunner when running multiple tests (the first test
@@ -1147,7 +1146,7 @@ class IetfLiveServerTestCase(StaticLiveServerTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super(IetfLiveServerTestCase, cls).tearDownClass()
+        super().tearDownClass()
         set_coverage_checking(True)
 
     def tearDown(self):

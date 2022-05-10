@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import io
@@ -80,7 +79,7 @@ class Command(BaseCommand):
                         modfile.rename(str(moddir/name))
                 model_list = [ n.replace('"','') for n in model_list ]
             except Exception as e:
-                self.stderr.write("** Error when extracting from %s: %s" % (file, str(e)))
+                self.stderr.write("** Error when extracting from {}: {}".format(file, str(e)))
             finally:
                 sys.stdout = saved_stdout
                 sys.stderr = saved_stderr
@@ -117,7 +116,7 @@ class Command(BaseCommand):
                     for name in model_list:
                         if name.startswith('ietf') or name.startswith('iana'):
                             if verbosity > 1:
-                                self.stdout.write("  Extracted from %s: %s" % (item, name))
+                                self.stdout.write("  Extracted from {}: {}".format(item, name))
                             elif verbosity > 0:
                                 self.stdout.write('.', ending='')
                                 self.stdout.flush()
@@ -125,7 +124,7 @@ class Command(BaseCommand):
                             modfile = moddir / name
                             modfile.unlink()
                             if verbosity > 1:
-                                self.stdout.write("  Skipped module from %s: %s" % (item, name))
+                                self.stdout.write("  Skipped module from {}: {}".format(item, name))
         if verbosity > 0:
             self.stdout.write("")
 
@@ -154,7 +153,7 @@ class Command(BaseCommand):
                     for name in model_list:
                         if not name.startswith('example'):
                             if verbosity > 1:
-                                self.stdout.write("  Extracted module from %s: %s" % (item, name))
+                                self.stdout.write("  Extracted module from {}: {}".format(item, name))
                             elif verbosity > 0:
                                 self.stdout.write('.', ending='')
                                 self.stdout.flush()
@@ -162,9 +161,9 @@ class Command(BaseCommand):
                             modfile = moddir / name
                             modfile.unlink()
                             if verbosity > 1:
-                                self.stdout.write("  Skipped module from %s: %s" % (item, name))
+                                self.stdout.write("  Skipped module from {}: {}".format(item, name))
             except UnicodeDecodeError as e:
-                self.stderr.write('\nError: %s' % (e, ))
+                self.stderr.write('\nError: {}'.format(e))
                 self.stderr.write(item.name)
                 self.stderr.write('')
         if verbosity > 0:

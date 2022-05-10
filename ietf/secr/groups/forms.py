@@ -56,7 +56,7 @@ class RoleForm(forms.Form):
     
     def __init__(self, *args, **kwargs):
         self.group = kwargs.pop('group')
-        super(RoleForm, self).__init__(*args,**kwargs)
+        super().__init__(*args,**kwargs)
         # this form is re-used in roles app, use different roles in select
         if self.group.features.custom_group_roles:
             self.fields['name'].queryset = RoleName.objects.all()
@@ -90,7 +90,7 @@ class RoleForm(forms.Form):
         if any(self.errors):
             # Don't bother validating the formset unless each form is valid on its own
             return
-        super(RoleForm, self).clean()
+        super().clean()
         cleaned_data = self.cleaned_data
         person = cleaned_data['person']
         email = cleaned_data['email']

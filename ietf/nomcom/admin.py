@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2021, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django.contrib import admin

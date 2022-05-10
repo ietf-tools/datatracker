@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import smtpd
@@ -8,7 +7,7 @@ import asyncore
 
 import debug                            # pyflakes:ignore
 
-class AsyncCoreLoopThread(object):
+class AsyncCoreLoopThread:
 
     def wrap_loop(self, exit_condition, timeout=1.0, use_poll=False, map=None):
         if map is None:
@@ -37,19 +36,19 @@ class SMTPTestChannel(smtpd.SMTPChannel):
 
     def smtp_RCPT(self, arg):
         if not self.mailfrom:
-            self.push(str('503 Error: need MAIL command'))
+            self.push('503 Error: need MAIL command')
             return
         arg = self._strip_command_keyword('TO:', arg)
         address, __ = self._getaddr(arg)
         if not address:
-            self.push(str('501 Syntax: RCPT TO: <address>'))
+            self.push('501 Syntax: RCPT TO: <address>')
             return
         if "poison" in address:
-            self.push(str('550 Error: Not touching that'))
+            self.push('550 Error: Not touching that')
             return
         self.rcpt_options = []
         self.rcpttos.append(address)
-        self.push(str('250 Ok'))
+        self.push('250 Ok')
 
 class SMTPTestServer(smtpd.SMTPServer):
 
@@ -71,7 +70,7 @@ class SMTPTestServer(smtpd.SMTPServer):
         self.inbox.append(data)
 
 
-class SMTPTestServerDriver(object):
+class SMTPTestServerDriver:
     def __init__(self, localaddr, remoteaddr, inbox=None):
         self.localaddr=localaddr
         self.remoteaddr=remoteaddr

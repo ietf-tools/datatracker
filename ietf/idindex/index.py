@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 # code to generate plain-text index files that are placed on
@@ -129,14 +128,14 @@ def all_id2_txt():
         else:
             l = authors[a.document.name]
         if a.email:
-            l.append('%s <%s>' % (a.person.plain_name().replace("@", ""), a.email.address.replace(",", "")))
+            l.append('{} <{}>'.format(a.person.plain_name().replace("@", ""), a.email.address.replace(",", "")))
         else:
             l.append(a.person.plain_name())
 
-    shepherds = dict((e.pk, e.formatted_ascii_email().replace('"', ''))
-                     for e in Email.objects.filter(shepherd_document_set__type="draft").select_related("person").distinct())
-    ads = dict((p.pk, p.formatted_ascii_email().replace('"', ''))
-               for p in Person.objects.filter(ad_document_set__type="draft").distinct())
+    shepherds = {e.pk: e.formatted_ascii_email().replace('"', '')
+                     for e in Email.objects.filter(shepherd_document_set__type="draft").select_related("person").distinct()}
+    ads = {p.pk: p.formatted_ascii_email().replace('"', '')
+               for p in Person.objects.filter(ad_document_set__type="draft").distinct()}
 
     res = []
     for d in drafts:
@@ -229,12 +228,12 @@ def active_drafts_index_by_group(extra_values=()):
     wg_adopt = State.objects.get(type="draft-stream-ietf", slug="c-adopt")
     individual = Group.objects.get(acronym='none')
 
-    groups_dict = dict((g.id, g) for g in Group.objects.all())
+    groups_dict = {g.id: g for g in Group.objects.all()}
 
     extracted_values = ("name", "rev", "title", "group_id") + extra_values
 
-    docs_dict = dict((d["name"], d)
-                     for d in Document.objects.filter(states=active_state).values(*extracted_values))
+    docs_dict = {d["name"]: d
+                     for d in Document.objects.filter(states=active_state).values(*extracted_values)}
 
     # Special case for drafts with group set, but in state wg_cand:
     for d in Document.objects.filter(states=active_state).filter(states__in=[wg_cand, wg_adopt]):

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -68,7 +67,7 @@ class ReviewTests(TestCase):
         doc.rev = "10"
         doc.save_with_history([e])
 
-        prev_rev = "{:02}".format(int(doc.rev) - 1)
+        prev_rev = f"{int(doc.rev) - 1:02}"
 
         # blocked by existing request
         review_req.requested_rev = ""
@@ -383,10 +382,10 @@ class ReviewTests(TestCase):
         r = self.client.post(unassigned_url, {
             "reviewrequest": [str(review_req3.pk)],
 
-            "r{}-existing_reviewer".format(review_req3.pk): "",
-            "r{}-action".format(review_req3.pk): "assign",
-            "r{}-reviewer".format(review_req3.pk): another_reviewer.email_set.first().pk,
-            "r{}-add_skip".format(review_req3.pk): 1,
+            f"r{review_req3.pk}-existing_reviewer": "",
+            f"r{review_req3.pk}-action": "assign",
+            f"r{review_req3.pk}-reviewer": another_reviewer.email_set.first().pk,
+            f"r{review_req3.pk}-add_skip": 1,
             
             "action": "save",
         })
@@ -395,12 +394,12 @@ class ReviewTests(TestCase):
         r = self.client.post(unassigned_url, {
             "reviewrequest": [str(review_req1.pk),str(review_req2.pk),str(review_req3.pk)],
 
-            "r{}-existing_reviewer".format(review_req3.pk): "",
-            "r{}-action".format(review_req3.pk): "assign",
-            "r{}-reviewer".format(review_req3.pk): another_reviewer.email_set.first().pk,
-            "r{}-add_skip".format(review_req3.pk): 1,
+            f"r{review_req3.pk}-existing_reviewer": "",
+            f"r{review_req3.pk}-action": "assign",
+            f"r{review_req3.pk}-reviewer": another_reviewer.email_set.first().pk,
+            f"r{review_req3.pk}-add_skip": 1,
             # Should be ignored, setting review_type only applies to suggested reviews
-            "r{}-review_type".format(review_req3.pk): ReviewTypeName.objects.get(slug='telechat').pk,
+            f"r{review_req3.pk}-review_type": ReviewTypeName.objects.get(slug='telechat').pk,
 
             "action": "save",
         })
@@ -446,9 +445,9 @@ class ReviewTests(TestCase):
 
         # Submit as lc review
         r = self.client.post(unassigned_url, {
-            "rlc-{}-action".format(doc.name): "assign",
-            "rlc-{}-review_type".format(doc.name): ReviewTypeName.objects.get(slug='lc').pk,
-            "rlc-{}-reviewer".format(doc.name): reviewer.person.email_set.first().pk,
+            f"rlc-{doc.name}-action": "assign",
+            f"rlc-{doc.name}-review_type": ReviewTypeName.objects.get(slug='lc').pk,
+            f"rlc-{doc.name}-reviewer": reviewer.person.email_set.first().pk,
 
             "action": "save",
         })
@@ -461,9 +460,9 @@ class ReviewTests(TestCase):
         review_request.delete()
         
         r = self.client.post(unassigned_url, {
-            "rlc-{}-action".format(doc.name): "assign",
-            "rlc-{}-review_type".format(doc.name): ReviewTypeName.objects.get(slug='telechat').pk,
-            "rlc-{}-reviewer".format(doc.name): reviewer.person.email_set.first().pk,
+            f"rlc-{doc.name}-action": "assign",
+            f"rlc-{doc.name}-review_type": ReviewTypeName.objects.get(slug='telechat').pk,
+            f"rlc-{doc.name}-reviewer": reviewer.person.email_set.first().pk,
 
             "action": "save",
         })
@@ -716,13 +715,13 @@ class BulkAssignmentTests(TestCase):
         postdict['reviewrequest'] = [r.id for r in requests]
         # assignments that affect the first 3 reviewers in queue
         for i in range(3):
-            postdict['r{}-existing_reviewer'.format(requests[i].pk)] = ''
-            postdict['r{}-action'.format(requests[i].pk)] = 'assign'
-            postdict['r{}-reviewer'.format(requests[i].pk)] = rot_list[i].email_address()
+            postdict[f'r{requests[i].pk}-existing_reviewer'] = ''
+            postdict[f'r{requests[i].pk}-action'] = 'assign'
+            postdict[f'r{requests[i].pk}-reviewer'] = rot_list[i].email_address()
         # and one out of order assignment
-        postdict['r{}-existing_reviewer'.format(requests[3].pk)] = ''
-        postdict['r{}-action'.format(requests[3].pk)] = 'assign'
-        postdict['r{}-reviewer'.format(requests[3].pk)] = rot_list[5].email_address()
+        postdict[f'r{requests[3].pk}-existing_reviewer'] = ''
+        postdict[f'r{requests[3].pk}-action'] = 'assign'
+        postdict[f'r{requests[3].pk}-reviewer'] = rot_list[5].email_address()
         postdict['action'] = 'save'
         self.client.login(username=secretary.person.user.username,password=secretary.person.user.username+'+password')
         r = self.client.post(unassigned_url, postdict)

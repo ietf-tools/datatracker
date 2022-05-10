@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import copy
@@ -74,7 +73,7 @@ class SMTPSomeRefusedRecipients(smtplib.SMTPException):
     def detailed_refusals(self):
         details = "The following recipients were refused:\n"
         for recipient in self.refusals:
-             details += "\n%s: %s" % (recipient,self.refusals[recipient])
+             details += "\n{}: {}".format(recipient,self.refusals[recipient])
         return details
 
     def summary_refusals(self):
@@ -98,7 +97,7 @@ def send_smtp(msg, bcc=None):
         addrlist += [bcc]
     to = [addr for name, addr in getaddresses(addrlist) if ( addr != '' and not addr.startswith('unknown-email-') )]
     if not to:
-        log("No addressees for email from '%s', subject '%s'.  Nothing sent." % (frm, msg.get('Subject', '[no subject]')))
+        log("No addressees for email from '{}', subject '{}'.  Nothing sent.".format(frm, msg.get('Subject', '[no subject]')))
     else:
         if test_mode:
             outbox.append(msg)
@@ -126,7 +125,7 @@ def send_smtp(msg, bcc=None):
                 raise SMTPSomeRefusedRecipients(message="%d addresses were refused"%len(unhandled),original_msg=msg,refusals=unhandled)
         except Exception as e:
             # need to improve log message
-            log("Exception while trying to send email from '%s' to %s subject '%s'" % (frm, to, msg.get('Subject', '[no subject]')), e=e)
+            log("Exception while trying to send email from '{}' to {} subject '{}'".format(frm, to, msg.get('Subject', '[no subject]')), e=e)
             if isinstance(e, smtplib.SMTPException):
                 e.original_msg=msg
                 raise 
@@ -139,7 +138,7 @@ def send_smtp(msg, bcc=None):
                 pass
         subj = force_text(msg.get('Subject', '[no subject]'))
         tau = time.time() - mark
-        log("sent email (%.3fs) from '%s' to %s id %s subject '%s'" % (tau, frm, to, msg.get('Message-ID', ''), subj))
+        log("sent email ({:.3f}s) from '{}' to {} id {} subject '{}'".format(tau, frm, to, msg.get('Message-ID', ''), subj))
     
 def copy_email(msg, to, toUser=False, originalBcc=None):
     '''
@@ -166,7 +165,7 @@ def copy_email(msg, to, toUser=False, originalBcc=None):
     # Overwrite the From: header, so that the copy from a development or
     # test server doesn't look like spam.
     new['From'] = settings.DEFAULT_FROM_EMAIL
-    new['Subject'] = '[Django %s] %s' % (settings.SERVER_MODE, force_text(msg.get('Subject', '[no subject]')))
+    new['Subject'] = '[Django {}] {}'.format(settings.SERVER_MODE, force_text(msg.get('Subject', '[no subject]')))
     new['To'] = to
     send_smtp(new)
 
@@ -246,7 +245,7 @@ def excludeaddrs(addrlist, exlist):
     Takes a list or set of email address strings in 2822 format, and
     eliminates entries whose address part occurs in the given exclusion list.
     """
-    exlist = set([ parseaddr(a)[1] for a in exlist ])
+    exlist = { parseaddr(a)[1] for a in exlist }
     filtered = []
     for a in addrlist:
         if not parseaddr(a)[1] in exlist:
@@ -320,7 +319,7 @@ def show_that_mail_was_sent(request,leadline,msg,bcc):
         if request and request.user:
             from ietf.ietfauth.utils import has_role
             if has_role(request.user,['Area Director','Secretariat','IANA','RFC Editor','ISE','IAD','IRTF Chair','WG Chair','RG Chair','WG Secretary','RG Secretary']):
-                info =  "%s at %s %s\n" % (leadline,datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),settings.TIME_ZONE)
+                info =  "{} at {} {}\n".format(leadline,datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),settings.TIME_ZONE)
                 info += "Subject: %s\n" % force_text(msg.get('Subject','[no subject]'))
                 info += "To: %s\n" % msg.get('To','[no to]')
                 if msg.get('Cc'):
@@ -344,7 +343,7 @@ def save_as_message(request, msg, bcc):
         ]:
         kwargs[arg] = msg.get(field, '')
     m = ietf.message.models.Message.objects.create(**kwargs)
-    log("Saved outgoing email from '%s' to %s id %s subject '%s as Message[%s]'" % (m.frm, m.to, m.msgid, m.subject, m.pk))
+    log("Saved outgoing email from '{}' to {} id {} subject '{} as Message[{}]'".format(m.frm, m.to, m.msgid, m.subject, m.pk))
     return m
 
 def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=False, bcc=None, copy=True, save=True):
@@ -509,7 +508,7 @@ def exception_components(e):
         
 def log_smtp_exception(e):
     (extype, value, tb) = exception_components(e)
-    log("SMTP Exception: %s : %s" % (extype,value), e)
+    log("SMTP Exception: {} : {}".format(extype,value), e)
     if isinstance(e,SMTPSomeRefusedRecipients):
         log("     SomeRefused: %s"%(e.summary_refusals()), e)
     log("     Traceback: %s" % tb, e) 
@@ -582,7 +581,7 @@ def send_error_to_secretariat(msg):
     except smtplib.SMTPException:
         log("Exception encountered while sending a ticket to the secretariat")
         (extype,value) = sys.exc_info()[:2]
-        log("SMTP Exception: %s : %s" % (extype,value))
+        log("SMTP Exception: {} : {}".format(extype,value))
     
 def is_valid_email(address):
     try:
@@ -628,4 +627,3 @@ def get_payload_text(msg, decode=True, default_charset="utf-8"):
     payload = msg.get_payload(decode=decode)
     payload = payload.decode(str(charset))
     return payload
-        

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2017-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 # -*- check-flake8 -*-
 
 
@@ -9,7 +8,7 @@ from django.template.loader import render_to_string
 from ietf.doc.models import RelatedDocument
 
 
-class Edge(object):
+class Edge:
     def __init__(self, relateddocument):
         self.relateddocument = relateddocument
 
@@ -87,13 +86,13 @@ def get_node_styles(node, group):
             label = label[6:]
         try:
             t = label.index('-')
-            label = r"%s\n%s" % (label[:t], label[t+1:])
+            label = r"{}\n{}".format(label[:t], label[t+1:])
         except:
             pass
     if node.group.acronym != 'none' and node.group != group:
-        label = "(%s) %s" % (node.group.acronym, label)
+        label = "({}) {}".format(node.group.acronym, label)
     if node.get_state('draft').slug == 'rfc':
-        label = "%s\\n(%s)" % (label, node.canonical_name())
+        label = "{}\\n({})".format(label, node.canonical_name())
     styles['label'] = '"%s"' % label
 
     return styles
@@ -120,7 +119,7 @@ def make_dot(group):
     for x in replacements:
         edges.add(Edge(x))
 
-    nodes = set([x.relateddocument.source for x in edges]).union([x.relateddocument.target.document for x in edges])
+    nodes = {x.relateddocument.source for x in edges}.union([x.relateddocument.target.document for x in edges])
 
     for node in nodes:
         node.nodename = nodename(node.name)

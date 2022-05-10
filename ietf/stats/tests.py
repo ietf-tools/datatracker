@@ -1,12 +1,11 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import calendar
 import datetime
 import json
 
-from mock import patch
+from unittest.mock import patch
 from pyquery import PyQuery
 from requests import Response
 
@@ -201,7 +200,7 @@ class StatisticsTests(TestCase):
         expected_date = datetime.date.today().replace(day=1)
         expected_js_timestamp = calendar.timegm(expected_date.timetuple()) * 1000
         url = urlreverse(ietf.stats.views.review_stats, kwargs={ "stats_type": "time" })
-        url += "?team={}".format(review_req.team.acronym)
+        url += f"?team={review_req.team.acronym}"
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertEqual(json.loads(r.context['data']), [
@@ -213,7 +212,7 @@ class StatisticsTests(TestCase):
 
         # check non-stacked chart
         url = urlreverse(ietf.stats.views.review_stats, kwargs={ "stats_type": "time" })
-        url += "?team={}".format(review_req.team.acronym)
+        url += f"?team={review_req.team.acronym}"
         url += "&completion=not_completed"
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)

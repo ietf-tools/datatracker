@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import io
@@ -64,9 +63,9 @@ def get_internal_choices(user):
     groups are included.'''
     choices = []
     groups = get_groups_for_person(user.person if user else None)
-    main = [ (g.pk, 'The {}'.format(g.acronym.upper())) for g in groups.filter(acronym__in=('ietf','iesg','iab')) ]
-    areas = [ (g.pk, '{} - {}'.format(g.acronym,g.name)) for g in groups.filter(type='area') ]
-    wgs = [ (g.pk, '{} - {}'.format(g.acronym,g.name)) for g in groups.filter(type='wg') ]
+    main = [ (g.pk, f'The {g.acronym.upper()}') for g in groups.filter(acronym__in=('ietf','iesg','iab')) ]
+    areas = [ (g.pk, f'{g.acronym} - {g.name}') for g in groups.filter(type='area') ]
+    wgs = [ (g.pk, f'{g.acronym} - {g.name}') for g in groups.filter(type='wg') ]
     choices.append(('Main IETF Entities', main))
     choices.append(('IETF Areas', areas))
     choices.append(('IETF Working Groups', wgs ))
@@ -146,7 +145,7 @@ class SearchLiaisonForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         self.queryset = kwargs.pop('queryset')
-        super(SearchLiaisonForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def get_results(self):
         results = self.queryset
@@ -206,7 +205,7 @@ class CustomModelMultipleChoiceField(forms.ModelMultipleChoiceField):
                 not isinstance(value, str) and
                 not hasattr(value, '_meta')):
             return [super(CustomModelMultipleChoiceField, self).prepare_value(v) for v in value]
-        return super(CustomModelMultipleChoiceField, self).prepare_value(value)
+        return super().prepare_value(value)
 
 
 class LiaisonModelForm(BetterModelForm):
@@ -243,7 +242,7 @@ class LiaisonModelForm(BetterModelForm):
                      ('Add attachment', {'fields': ['attach_title', 'attach_file', 'attach_button'], 'legend': ''})]
 
     def __init__(self, user, *args, **kwargs):
-        super(LiaisonModelForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.user = user
         self.edit = False
         self.person = get_person_for_user(user)
@@ -316,7 +315,7 @@ class LiaisonModelForm(BetterModelForm):
 
     def full_clean(self):
         self.set_required_fields()
-        super(LiaisonModelForm, self).full_clean()
+        super().full_clean()
         self.reset_required_fields()
 
     def has_attachments(self):
@@ -329,7 +328,7 @@ class LiaisonModelForm(BetterModelForm):
         assert NotImplemented
 
     def save(self, *args, **kwargs):
-        super(LiaisonModelForm, self).save(*args,**kwargs)
+        super().save(*args,**kwargs)
 
         # set state for new statements
         if self.is_new:
@@ -382,7 +381,7 @@ class LiaisonModelForm(BetterModelForm):
             if created:
                 DocAlias.objects.create(name=attach.name).docs.add(attach)
             LiaisonStatementAttachment.objects.create(statement=self.instance,document=attach)
-            attach_file = io.open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'wb')
+            attach_file = open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'wb')
             attach_file.write(attached_file.read())
             attach_file.close()
 
@@ -392,7 +391,7 @@ class LiaisonModelForm(BetterModelForm):
                     type_id='modified',
                     by=self.person,
                     statement=self.instance,
-                    desc='Added attachment: {}'.format(attachment_title)
+                    desc=f'Added attachment: {attachment_title}'
                 )
 
     def save_related_liaisons(self):
@@ -431,7 +430,7 @@ class IncomingLiaisonForm(LiaisonModelForm):
     def clean(self):
         if 'send' in list(self.data.keys()) and self.get_post_only():
             raise forms.ValidationError('As an IETF Liaison Manager you can not send incoming liaison statements, you only can post them')
-        return super(IncomingLiaisonForm, self).clean()
+        return super().clean()
 
     def is_approved(self):
         '''Incoming Liaison Statements do not required approval'''
@@ -527,7 +526,7 @@ class OutgoingLiaisonForm(LiaisonModelForm):
 
 class EditLiaisonForm(LiaisonModelForm):
     def __init__(self, *args, **kwargs):
-        super(EditLiaisonForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.edit = True
         self.fields['attachments'].initial = self.instance.liaisonstatementattachment_set.exclude(removed=True)
         related = [ str(x.pk) for x in self.instance.source_of_set.all() ]
@@ -535,7 +534,7 @@ class EditLiaisonForm(LiaisonModelForm):
         self.fields['submitted_date'].initial = self.instance.submitted
 
     def save(self, *args, **kwargs):
-        super(EditLiaisonForm, self).save(*args,**kwargs)
+        super().save(*args,**kwargs)
         if self.has_changed() and 'submitted_date' in self.changed_data:
             event = self.instance.liaisonstatementevent_set.filter(type='submitted').first()
             event.time = self.cleaned_data.get('submitted_date')

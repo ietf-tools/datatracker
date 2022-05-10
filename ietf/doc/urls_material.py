@@ -1,4 +1,3 @@
-
 from ietf.doc import views_material
 from ietf.utils.urls import url
 

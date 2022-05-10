@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -52,7 +51,7 @@ def validate_submission(submission):
 
     if submission.state_id not in ("cancel", "posted"):
         for ext in submission.file_types.split(','):
-            source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.name, submission.rev, ext))
+            source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '{}-{}{}'.format(submission.name, submission.rev, ext))
             if not os.path.exists(source):
                 errors['files'] = '"%s" was not found in the staging area. We recommend you that you cancel this submission and upload your files again.' % os.path.basename(source)
                 break
@@ -167,7 +166,7 @@ def validate_submission_rev(name, rev):
             if existing:
                 plural = '' if len(existing) == 1 else 's'
                 files  = ', '.join([ f.name for f in existing ])
-                return 'Unexpected file%s already in the archive: %s' % (plural, files)
+                return 'Unexpected file{} already in the archive: {}'.format(plural, files)
 
     replaced_by=has_been_replaced_by(name)
     if replaced_by:
@@ -293,7 +292,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     submitter_parsed = submission.submitter_parsed()
     if submitter_parsed["name"] and submitter_parsed["email"]:
         submitter, _ = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"], submission.name)
-        submitter_info = '%s <%s>' % (submitter_parsed["name"], submitter_parsed["email"])
+        submitter_info = '{} <{}>'.format(submitter_parsed["name"], submitter_parsed["email"])
     else:
         submitter = system
         submitter_info = system.name
@@ -363,7 +362,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
         doc=draft,
         rev=draft.rev,
         by=submitter,
-        desc="New version available: <b>%s-%s.txt</b>" % (draft.name, draft.rev),
+        desc="New version available: <b>{}-{}.txt</b>".format(draft.name, draft.rev),
     )
     events.append(e)
     log.log(f"{submission.name}: created doc events")
@@ -488,8 +487,8 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     #     ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (name, draft.rev ))
     #     with io.open(ref_rev_file_name, "w", encoding='utf-8') as f:
     #         f.write(ref_text)
-    ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (draft.name, draft.rev ))
-    with io.open(ref_rev_file_name, "w", encoding='utf-8') as f:
+    ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.{}-{}.xml'.format(draft.name, draft.rev ))
+    with open(ref_rev_file_name, "w", encoding='utf-8') as f:
         f.write(ref_text)
 
     log.log(f"{submission.name}: done")
@@ -535,7 +534,7 @@ def update_replaces_from_submission(request, submission, draft):
     except Person.DoesNotExist:
         by = Person.objects.get(name="(System)")
     set_replaces_for_document(request, draft, existing_replaces + approved, by,
-                              email_subject="%s replacement status set during submit by %s" % (draft.name, submission.submitter_parsed()["name"]))
+                              email_subject="{} replacement status set during submit by {}".format(draft.name, submission.submitter_parsed()["name"]))
 
 
     if suggested:
@@ -647,15 +646,15 @@ def cancel_submission(submission):
 
 def rename_submission_files(submission, prev_rev, new_rev):
     for ext in settings.IDSUBMIT_FILE_TYPES:
-        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, prev_rev, ext))
-        dest = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, new_rev, ext))
+        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '{}-{}.{}'.format(submission.name, prev_rev, ext))
+        dest = os.path.join(settings.IDSUBMIT_STAGING_PATH, '{}-{}.{}'.format(submission.name, new_rev, ext))
         if os.path.exists(source):
             os.rename(source, dest)
 
 def move_files_to_repository(submission):
     for ext in settings.IDSUBMIT_FILE_TYPES:
-        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, submission.rev, ext))
-        dest = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, '%s-%s.%s' % (submission.name, submission.rev, ext))
+        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '{}-{}.{}'.format(submission.name, submission.rev, ext))
+        dest = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, '{}-{}.{}'.format(submission.name, submission.rev, ext))
         if os.path.exists(source):
             os.rename(source, dest)
         else:
@@ -666,7 +665,7 @@ def move_files_to_repository(submission):
 
 def remove_submission_files(submission):
     for ext in submission.file_types.split(','):
-        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.name, submission.rev, ext))
+        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '{}-{}{}'.format(submission.name, submission.rev, ext))
         if os.path.exists(source):
             os.unlink(source)
 
@@ -740,9 +739,9 @@ def save_files(form):
         if not f:
             continue
 
-        name = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (form.filename, form.revision, ext))
+        name = os.path.join(settings.IDSUBMIT_STAGING_PATH, '{}-{}.{}'.format(form.filename, form.revision, ext))
         file_name[ext] = name
-        with io.open(name, 'wb+') as destination:
+        with open(name, 'wb+') as destination:
             for chunk in f.chunks():
                 destination.write(chunk)
         log.log("saved file %s" % name)
@@ -756,9 +755,9 @@ def get_draft_meta(form, saved_files):
         # Some meta-information, such as the page-count, can only
         # be retrieved from the generated text file.  Provide a
         # parsed draft object to get at that kind of information.
-        file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (form.filename, form.revision))
+        file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '{}-{}.txt'.format(form.filename, form.revision))
         file_size = os.stat(file_name['txt']).st_size
-        with io.open(file_name['txt']) as txt_file:
+        with open(file_name['txt']) as txt_file:
             form.parsed_draft = PlaintextDraft(txt_file.read(), txt_file.name)
     else:
         file_size = form.cleaned_data['txt'].size
@@ -935,7 +934,7 @@ def accept_submission(request, submission, autopost=False):
         requires_prev_ad_approval = False
 
     # Partial message for submission event
-    sub_event_desc = 'Set submitter to \"%s\", replaces to %s' % (parse_unicode(submission.submitter), pretty_replaces)
+    sub_event_desc = 'Set submitter to \"{}\", replaces to {}'.format(parse_unicode(submission.submitter), pretty_replaces)
     docevent_desc = None
     address_list = []
     if requires_ad_approval or requires_prev_ad_approval:

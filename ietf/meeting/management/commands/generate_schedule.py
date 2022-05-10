@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
 # For an overview of this process and context, see:
 # https://trac.ietf.org/trac/ietfdb/wiki/MeetingConstraints
-from __future__ import absolute_import, print_function, unicode_literals
 
 import calendar
 import datetime
@@ -76,7 +75,7 @@ class Command(BaseCommand):
         ScheduleHandler(self.stdout, meeting, name, max_cycles, verbosity, base_id).run()
 
 
-class ScheduleHandler(object):
+class ScheduleHandler:
     def __init__(self, stdout, meeting_number, name=None, max_cycles=OPTIMISER_MAX_CYCLES,
                  verbosity=1, base_id=None):
         self.stdout = stdout
@@ -87,7 +86,7 @@ class ScheduleHandler(object):
             try:
                 self.meeting = models.Meeting.objects.get(type="ietf", number=meeting_number)
             except models.Meeting.DoesNotExist:
-                raise CommandError('Unknown meeting number {}'.format(meeting_number))
+                raise CommandError(f'Unknown meeting number {meeting_number}')
         else:
             self.meeting = models.Meeting.get_current_meeting()
 
@@ -98,7 +97,7 @@ class ScheduleHandler(object):
             if base_id.owner is not None:
                 base_candidates = base_candidates.filter(owner=get_person_by_email(base_id.owner))
             if base_candidates.count() == 0:
-                raise CommandError('Base schedule "{}" not found'.format(base_id))
+                raise CommandError(f'Base schedule "{base_id}" not found')
             elif base_candidates.count() >= 2:
                 raise CommandError('Base schedule "{}" not unique (candidates are {})'.format(
                     base_id,
@@ -108,9 +107,9 @@ class ScheduleHandler(object):
                 self.base_schedule = base_candidates.first()  # only have one
 
         if self.verbosity >= 1:
-            msgs = ['Running automatic schedule layout for meeting IETF {}'.format(self.meeting.number)]
+            msgs = [f'Running automatic schedule layout for meeting IETF {self.meeting.number}']
             if self.base_schedule is not None:
-                msgs.append('Applying schedule {} as base schedule'.format(ScheduleId.from_schedule(self.base_schedule)))
+                msgs.append(f'Applying schedule {ScheduleId.from_schedule(self.base_schedule)} as base schedule')
             self.stdout.write('\n{}\n\n'.format('\n'.join(msgs)))
         self._load_meeting()
 
@@ -150,7 +149,7 @@ class ScheduleHandler(object):
             self.name = 'auto-%s-%02d' % (self.meeting.number, count)
         if models.Schedule.objects.filter(name=self.name).exists():
             self.stdout.write("WARNING: A schedule with the name '%s' already exists.  Picking another random one." % self.name)
-            self.name = 'auto-%s-%s' % (self.meeting.number, ''.join(random.choice(string.ascii_lowercase) for i in range(10)))
+            self.name = 'auto-{}-{}'.format(self.meeting.number, ''.join(random.choice(string.ascii_lowercase) for i in range(10)))
         schedule_db = models.Schedule.objects.create(
             meeting=self.meeting,
             name=self.name,
@@ -161,7 +160,7 @@ class ScheduleHandler(object):
             badness=cost,
         )
         self.schedule.save_assignments(schedule_db)
-        self.stdout.write('Schedule saved as {}'.format(self.name))
+        self.stdout.write(f'Schedule saved as {self.name}')
 
     def _available_timeslots(self):
         """Find timeslots available for schedule generation
@@ -247,7 +246,7 @@ class ScheduleHandler(object):
         self.schedule.adjust_for_timeslot_availability()  # calculates some fixed costs
 
 
-class Schedule(object):
+class Schedule:
     """
     The Schedule object represents the schedule, and contains code to generate/optimise it.
     The schedule is internally represented as a dict, timeslots being keys, sessions being values.
@@ -658,7 +657,7 @@ class Schedule(object):
             self.best_schedule = self.schedule.copy()
 
 
-class TimeSlot(object):
+class TimeSlot:
     """
     This TimeSlot class is analogous to the TimeSlot class in the models,
     i.e. it represents a timeframe in a particular location.
@@ -710,7 +709,7 @@ class TimeSlot(object):
                 self.adjacent.add(other)
 
 
-class Session(object):
+class Session:
     """
     This TimeSlot class is analogous to the Session class in the models,
     i.e. it represents a single session to be scheduled. It also pulls
@@ -803,8 +802,8 @@ class Session(object):
         """
         for other_session in other_sessions:
             self.complexity += sum([
-                sum([cost for group, cost in other_session.conflict_groups.items() if
-                     group == self.group]),
+                sum(cost for group, cost in other_session.conflict_groups.items() if
+                     group == self.group),
                 self.conflict_people_penalty * len(
                     self.conflict_people.intersection(other_session.conflict_people))
             ])
@@ -833,11 +832,11 @@ class Session(object):
 
         if include_fixed or (not self.is_fixed):
             if self.attendees > my_timeslot.capacity:
-                violations.append('{}: scheduled in too small room'.format(self.group))
+                violations.append(f'{self.group}: scheduled in too small room')
                 cost += self.business_constraint_costs['session_requires_trim']
 
             if self.requested_duration > my_timeslot.duration:
-                violations.append('{}: scheduled in too short timeslot'.format(self.group))
+                violations.append(f'{self.group}: scheduled in too short timeslot')
                 cost += self.business_constraint_costs['session_requires_trim']
 
             if my_timeslot.time_group in self.timeranges_unavailable:
@@ -858,7 +857,7 @@ class Session(object):
         cost += c
 
         if self.wg_adjacent and (include_fixed or not self.is_fixed):
-            adjacent_groups = tuple([schedule[t].group for t in my_timeslot.adjacent if t in schedule])
+            adjacent_groups = tuple(schedule[t].group for t in my_timeslot.adjacent if t in schedule)
             if self.wg_adjacent not in adjacent_groups:
                 violations.append('{}: missing adjacency with {}, adjacents are: {}'
                                   .format(self.group, self.wg_adjacent, ', '.join(adjacent_groups)))
@@ -876,10 +875,10 @@ class Session(object):
             if self.is_fixed and other.is_fixed:
                 continue
             if other.group == self.group:
-                violations.append('{}: scheduled twice in overlapping slots'.format(self.group))
+                violations.append(f'{self.group}: scheduled twice in overlapping slots')
                 cost += math.inf
             if other.group in self.conflict_groups:
-                violations.append('{}: group conflict with {}'.format(self.group, other.group))
+                violations.append(f'{self.group}: group conflict with {other.group}')
                 cost += self.conflict_groups[other.group]
     
             conflict_people = self.conflict_people.intersection(other.conflict_people)
@@ -929,7 +928,7 @@ class Session(object):
                 cost += self.business_constraint_costs['area_overlapping_other_area']
             # WGs overseen by the same Area Director should not conflict  
             if self.ad and self.ad == other.ad:
-                violations.append('{}: has same AD as {}'.format(self.group, other.group))
+                violations.append(f'{self.group}: has same AD as {other.group}')
                 cost += self.business_constraint_costs['session_overlap_ad']
         return violations, cost
     
@@ -949,7 +948,7 @@ class Session(object):
             # Only possible to keep sessions in order if fixed sessions are in order - ignore cost if not.
             if fixed_sessions_in_order and (list(my_sessions) != sort_sessions(my_sessions)):
                 session_order = [s.session_pk for t, s in list(my_sessions)]
-                violations.append('{}: sessions out of order: {}'.format(self.group, session_order))
+                violations.append(f'{self.group}: sessions out of order: {session_order}')
                 cost += self.business_constraint_costs['sessions_out_of_order']
                 
             if self.time_relation:

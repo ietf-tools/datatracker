@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2010-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 # Standard settings except we use SQLite and skip migrations, this is
@@ -20,7 +19,7 @@ debug.debug = True
 # the test database instead of doing it through the migrations.  Taken from
 # https://gist.github.com/NotSqrt/5f3c76cd15e40ef62d09
 
-class DisableMigrations(object):
+class DisableMigrations:
  
     def __contains__(self, item):
         return True

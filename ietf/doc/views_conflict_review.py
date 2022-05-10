@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -76,7 +75,7 @@ def change_state(request, name, option=None):
                         pos.type = "changed_ballot_position"
                         pos.balloter = login
                         pos.pos_id = "yes"
-                        pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.balloter.plain_name())
+                        pos.desc = "[Ballot Position Update] New position, {}, has been recorded for {}".format(pos.pos.name, pos.balloter.plain_name())
                         pos.save()
                         # Consider mailing that position to 'iesg_ballot_saved'
                     send_conflict_eval_email(request,review)
@@ -171,8 +170,8 @@ class UploadForm(forms.Form):
         return get_cleaned_text_file_content(self.cleaned_data["txt"])
 
     def save(self, review):
-        filename = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.canonical_name(), review.rev))
-        with io.open(filename, 'w', encoding='utf-8') as destination:
+        filename = os.path.join(settings.CONFLICT_REVIEW_PATH, '{}-{}.txt'.format(review.canonical_name(), review.rev))
+        with open(filename, 'w', encoding='utf-8') as destination:
             if self.cleaned_data['txt']:
                 destination.write(self.cleaned_data['txt'])
             else:
@@ -185,7 +184,7 @@ def submit(request, name):
 
     login = request.user.person
 
-    path = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.canonical_name(), review.rev))
+    path = os.path.join(settings.CONFLICT_REVIEW_PATH, '{}-{}.txt'.format(review.canonical_name(), review.rev))
     not_uploaded_yet = review.rev == "00" and not os.path.exists(path)
 
     if not_uploaded_yet:
@@ -202,7 +201,7 @@ def submit(request, name):
 
                 events = []
                 e = NewRevisionDocEvent(doc=review, by=login, type="new_revision")
-                e.desc = "New version available: <b>%s-%s.txt</b>" % (review.canonical_name(), review.rev)
+                e.desc = "New version available: <b>{}-{}.txt</b>".format(review.canonical_name(), review.rev)
                 e.rev = review.rev
                 e.save()
                 events.append(e)
@@ -234,11 +233,11 @@ def submit(request, name):
                                                 dict(),
                                               ))
         else:
-            filename = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.canonical_name(), review.rev))
+            filename = os.path.join(settings.CONFLICT_REVIEW_PATH, '{}-{}.txt'.format(review.canonical_name(), review.rev))
             try:
-                with io.open(filename, 'r') as f:
+                with open(filename, 'r') as f:
                     init["content"] = f.read()
-            except IOError:
+            except OSError:
                 pass
 
         form = UploadForm(initial=init)
@@ -276,7 +275,7 @@ def edit_ad(request, name):
 
     
     conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document
-    titletext = 'the conflict review of %s-%s' % (conflictdoc.canonical_name(),conflictdoc.rev)
+    titletext = 'the conflict review of {}-{}'.format(conflictdoc.canonical_name(),conflictdoc.rev)
     return render(request, 'doc/change_ad.html',
                               {'form': form,
                                'doc': review,
@@ -413,7 +412,7 @@ def build_notify_addresses(doc_to_review):
     # Take care to do the right thing during ietf chair and stream owner transitions
     notify_addresses = []
     notify_addresses.extend([r.formatted_email() for r in Role.objects.filter(group__acronym=doc_to_review.stream.slug, name='chair')])
-    notify_addresses.append("%s@%s" % (doc_to_review.name, settings.DRAFT_ALIAS_DOMAIN))
+    notify_addresses.append("{}@{}".format(doc_to_review.name, settings.DRAFT_ALIAS_DOMAIN))
     return notify_addresses
 
 def build_conflict_review_document(login, doc_to_review, ad, notify, create_in_state):
@@ -448,7 +447,7 @@ def build_conflict_review_document(login, doc_to_review, ad, notify, create_in_s
 
     c = DocEvent(type="added_comment", doc=doc_to_review, rev=doc_to_review.rev, by=login)
     # Is it really OK to put html tags into comment text?
-    c.desc = 'IETF conflict review initiated - see <a href="%s">%s</a>' % (reverse('ietf.doc.views_doc.document_main', kwargs={'name':conflict_review.name}),conflict_review.name)
+    c.desc = 'IETF conflict review initiated - see <a href="{}">{}</a>'.format(reverse('ietf.doc.views_doc.document_main', kwargs={'name':conflict_review.name}),conflict_review.name)
     c.save()
 
     return conflict_review

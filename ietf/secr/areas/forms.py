@@ -19,7 +19,7 @@ class AreaDirectorForm(forms.Form):
     
     # set css class=name-autocomplete for name field (to provide select list)
     def __init__(self, *args, **kwargs):
-        super(AreaDirectorForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['ad_name'].widget.attrs['class'] = 'name-autocomplete'
         self.fields['email'].widget = forms.Select(choices=[])
 

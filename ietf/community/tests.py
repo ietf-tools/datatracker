@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from pyquery import PyQuery
@@ -394,5 +393,4 @@ class CommunityListTests(WebTest):
         add_state_change_event(draft, system, active_state, rfc_state)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue(draft.name in outbox[-1]["Subject"])
-        
         

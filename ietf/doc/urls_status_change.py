@@ -1,4 +1,3 @@
-
 from ietf.doc import views_status_change, views_doc
 from ietf.utils.urls import url
 

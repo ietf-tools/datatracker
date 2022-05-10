@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2009-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -66,7 +65,7 @@ class IetfAuthTests(TestCase):
         self.saved_htpasswd_file = settings.HTPASSWD_FILE
         self.htpasswd_dir = self.tempdir('htpasswd')
         settings.HTPASSWD_FILE = os.path.join(self.htpasswd_dir, "htpasswd")
-        io.open(settings.HTPASSWD_FILE, 'a').close() # create empty file
+        open(settings.HTPASSWD_FILE, 'a').close() # create empty file
 
         self.saved_htdigest_realm = getattr(settings, "HTDIGEST_REALM", None)
         settings.HTDIGEST_REALM = "test-realm"
@@ -131,11 +130,11 @@ class IetfAuthTests(TestCase):
         return confirm_url
 
     def username_in_htpasswd_file(self, username):
-        with io.open(settings.HTPASSWD_FILE) as f:
+        with open(settings.HTPASSWD_FILE) as f:
             for l in f:
                 if l.startswith(username + ":"):
                     return True
-        with io.open(settings.HTPASSWD_FILE) as f:
+        with open(settings.HTPASSWD_FILE) as f:
             print(f.read())
 
         return False
@@ -512,7 +511,7 @@ class IetfAuthTests(TestCase):
         chpw_url = urlreverse(ietf.ietfauth.views.change_password)
         prof_url = urlreverse(ietf.ietfauth.views.profile)
         login_url = urlreverse(ietf.ietfauth.views.login)
-        redir_url = '%s?next=%s' % (login_url, chpw_url)
+        redir_url = '{}?next={}'.format(login_url, chpw_url)
 
         # get without logging in
         r = self.client.get(chpw_url)
@@ -559,7 +558,7 @@ class IetfAuthTests(TestCase):
         chun_url = urlreverse(ietf.ietfauth.views.change_username)
         prof_url = urlreverse(ietf.ietfauth.views.profile)
         login_url = urlreverse(ietf.ietfauth.views.login)
-        redir_url = '%s?next=%s' % (login_url, chun_url)
+        redir_url = '{}?next={}'.format(login_url, chun_url)
 
         # get without logging in
         r = self.client.get(chun_url)
@@ -946,7 +945,7 @@ class OpenIDConnectTests(TestCase):
                     email=email_list[1], ticket_type='one_day', reg_type='hackathon remote', affiliation='Some Company, Inc',
                 )
             userinfo = client.do_user_info_request(state=params["state"], scope=args['scope'])
-            self.assertEqual(set(userinfo['reg_type'].split()), set(['remote', 'hackathon']))
+            self.assertEqual(set(userinfo['reg_type'].split()), {'remote', 'hackathon'})
 
             # Check that ending a session works
             r = client.do_end_session_request(state=params["state"], scope=args['scope'])

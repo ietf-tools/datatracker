@@ -20,7 +20,7 @@ import debug                            # pyflakes:ignore
 class SortedJsonEncoder(DjangoJSONEncoder):
     def __init__(self, *args, **kwargs):
         kwargs['sort_keys'] = True
-        return super(SortedJsonEncoder, self).__init__(*args, **kwargs)
+        return super().__init__(*args, **kwargs)
 
 class Command(BaseCommand):
     help = """
@@ -51,10 +51,10 @@ class Command(BaseCommand):
             sys.stdout.write('\n')
 
     def handle(self, *args, **options):
-        self.output = sys.stdout if options.get('stdout') else io.open(os.path.join(settings.BASE_DIR, "name/fixtures/names.json"), 'w')
+        self.output = sys.stdout if options.get('stdout') else open(os.path.join(settings.BASE_DIR, "name/fixtures/names.json"), 'w')
 
         def model_name(m):
-            return '%s.%s' % (m._meta.app_label, m.__name__)
+            return '{}.{}'.format(m._meta.app_label, m.__name__)
 
         def output(seq):
             try:

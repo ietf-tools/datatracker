@@ -1,6 +1,4 @@
 # Copyright The IETF Trust 2020, All Rights Reserved
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 from django.db import migrations
 from django.db.models import OuterRef, Subquery

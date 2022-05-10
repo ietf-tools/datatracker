@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -42,7 +41,7 @@ class Message(models.Model):
         ]
 
     def __str__(self):
-        return "'%s' %s -> %s" % (self.subject, self.frm, self.to)
+        return "'{}' {} -> {}".format(self.subject, self.frm, self.to)
 
     def get(self, field):
         r = getattr(self, field)
@@ -79,7 +78,7 @@ class SendQueue(models.Model):
         ]
 
     def __str__(self):
-        return "'%s' %s -> %s (sent at %s)" % (self.message.subject, self.message.frm, self.message.to, self.sent_at or "<not yet>")
+        return "'{}' {} -> {} (sent at {})".format(self.message.subject, self.message.frm, self.message.to, self.sent_at or "<not yet>")
 
 
 class AnnouncementFrom(models.Model):

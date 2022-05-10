@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 # From https://github.com/ericholscher/django-test-utils/blob/master/test_utils/management/commands/makefixture.py
 
 
@@ -82,7 +81,7 @@ class Command(LabelCommand):
             try:
                 getattr(model, related_set_name)
             except AttributeError:
-                raise CommandError("Field '%s' does not exist on model '%s'" % (
+                raise CommandError("Field '{}' does not exist on model '{}'".format(
                                    related_set_name, model_name))
             to_reverse.setdefault(model, []).append(related_set_name)
         return to_reverse
@@ -120,7 +119,7 @@ class Command(LabelCommand):
                 raise CommandError("Wrong slice: %s" % slice)
 
         all = objects
-        collected = set([(x.__class__, x.pk) for x in all])
+        collected = {(x.__class__, x.pk) for x in all}
         related = []
         for obj in objects:
             # follow reverse relations as requested
@@ -137,7 +136,7 @@ class Command(LabelCommand):
                 related = []
                 for obj in objects:
                     if DEBUG:
-                        print("Adding %s[%s]" % (model_name(obj), obj.pk))
+                        print("Adding {}[{}]".format(model_name(obj), obj.pk))
                     # follow forward relation fields
                     for f in obj.__class__._meta.fields + obj.__class__._meta.many_to_many:
                         if isinstance(f, ForeignKey):

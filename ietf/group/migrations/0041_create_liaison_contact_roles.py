@@ -31,9 +31,9 @@ def find_or_create_email(email_model, person_model, formatted_email, group):
         recreated_contact_email = email.address
     else:
         person_plain = email.person.plain if email.person.plain else plain_name(email.person.name)
-        recreated_contact_email = "%s <%s>" % (person_plain, email.address)
+        recreated_contact_email = "{} <{}>".format(person_plain, email.address)
     if recreated_contact_email != formatted_email:
-        print('>> Note: address "%s" is now "%s" (%s)' % (
+        print('>> Note: address "{}" is now "{}" ({})'.format(
             formatted_email,
             recreated_contact_email,
             group.acronym,
@@ -91,7 +91,7 @@ def forward(apps, schema_editor):
         
         if not lsgc:
             if group.role_set.filter(name__in=[contact_role_name, cc_contact_role_name]).exists():
-                raise ValueError('%s group has contact roles after migration but had no LiaisonStatementGroupContacts' % (
+                raise ValueError('{} group has contact roles after migration but had no LiaisonStatementGroupContacts'.format(
                     group.acronym,
                 ))
         else:
@@ -109,7 +109,7 @@ def forward(apps, schema_editor):
                 email = contact.email.address
                 if email.lower() not in lsgc.contacts.lower():
                     raise ValueError(
-                        '%s group has "%s" contact but not found in LiaisonStatementGroupContacts.contacts = "%s"' % (
+                        '{} group has "{}" contact but not found in LiaisonStatementGroupContacts.contacts = "{}"'.format(
                             group.acronym, email, lsgc.contacts,
                         )
                     )
@@ -128,7 +128,7 @@ def forward(apps, schema_editor):
                 email = cc_contact.email.address
                 if email.lower() not in lsgc.cc_contacts.lower():
                     raise ValueError(
-                        '%s group has "%s" CC contact but not found in LiaisonStatementGroupContacts.cc_contacts = "%s"' % (
+                        '{} group has "{}" CC contact but not found in LiaisonStatementGroupContacts.cc_contacts = "{}"'.format(
                             group.acronym, email, lsgc.cc_contacts,
                         )
                     )

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 import datetime
 import debug                            # pyflakes:ignore
@@ -18,7 +17,7 @@ if selenium_enabled():
 @ifSeleniumEnabled
 class MilestoneTests(IetfSeleniumTestCase):
     def setUp(self):
-        super(MilestoneTests, self).setUp()
+        super().setUp()
         
         self.wait = WebDriverWait(self.driver, 2)
         self.group = GroupFactory()

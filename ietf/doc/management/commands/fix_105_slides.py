@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2019-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import os
@@ -30,7 +29,7 @@ class Command(BaseCommand):
             slides = sp.document
             if not os.path.exists(os.path.join(slides_path,slides.uploaded_filename)):
                 name, ext = os.path.splitext(slides.uploaded_filename)
-                target_filename = '%s-%s%s' % (name[:name.rfind('-ss')], slides.rev,ext)
+                target_filename = '{}-{}{}'.format(name[:name.rfind('-ss')], slides.rev,ext)
                 if os.path.exists(os.path.join(slides_path,target_filename)):
                     slides.uploaded_filename = target_filename
                     if not options['dry-run']:

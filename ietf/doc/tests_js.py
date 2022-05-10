@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 import debug                            # pyflakes:ignore
 
@@ -18,7 +17,7 @@ if selenium_enabled():
 @ifSeleniumEnabled
 class EditAuthorsTests(IetfSeleniumTestCase):
     def setUp(self):
-        super(EditAuthorsTests, self).setUp()
+        super().setUp()
         self.wait = WebDriverWait(self.driver, 2)
 
     def test_add_author_forms(self):
@@ -48,7 +47,7 @@ class EditAuthorsTests(IetfSeleniumTestCase):
             # This will only work if the email matches an address for the selected person.
             email_select = form_elt.find_element(By.CSS_SELECTOR, 'select[name$="email"]')
             email_option = self.wait.until(
-                presence_of_element_child_by_css_selector(email_select, 'option[value="{}"]'.format(email))
+                presence_of_element_child_by_css_selector(email_select, f'option[value="{email}"]')
             )
             email_option.click()  # select the email
 

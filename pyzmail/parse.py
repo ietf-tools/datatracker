@@ -108,22 +108,14 @@ class MailPart:
         payload=None
         if self.type.startswith('message/'): 
             # I don't use msg.as_string() because I want to use mangle_from_=False
-            if sys.version_info<(3, 0):
-                # python 2.x  
-                from email.generator import Generator
-                fp = io.StringIO()
-                g = Generator(fp, mangle_from_=False)
-                g.flatten(self.part, unixfrom=False)
-                payload=fp.getvalue()
-            else:
-                # support only for python >= 3.2
-                from email.generator import BytesGenerator
-                import io
-                fp = io.BytesIO()
-                g = BytesGenerator(fp, mangle_from_=False)
-                g.flatten(self.part, unixfrom=False)
-                payload=fp.getvalue()
-                
+            # support only for python >= 3.2
+            from email.generator import BytesGenerator
+            import io
+            fp = io.BytesIO()
+            g = BytesGenerator(fp, mangle_from_=False)
+            g.flatten(self.part, unixfrom=False)
+            payload=fp.getvalue()
+            
         else:
             payload=self.part.get_payload(decode=True)
         return payload
@@ -451,7 +443,7 @@ def get_mail_parts(msg):
     # retrieve messages of the email
     contents=search_message_content(msg)
     # reverse contents dict
-    parts=dict((v,k) for k, v in contents.items())
+    parts={v:k for k, v in contents.items()}
 
     # organize the stack to handle deep first search
     stack=[ msg, ]
@@ -793,12 +785,12 @@ if __name__ == "__main__":
         
     msg=PyzMessage.factory(open(sys.argv[1], 'rb'))
     
-    print('Subject: %r' % (msg.get_subject(), ))
-    print('From: %r' % (msg.get_address('from'), ))
-    print('To: %r' % (msg.get_addresses('to'), ))
-    print('Cc: %r' % (msg.get_addresses('cc'), ))
-    print('Date: %r' % (msg.get_decoded_header('date', ''), ))
-    print('Message-Id: %r' % (msg.get_decoded_header('message-id', ''), ))
+    print('Subject: {!r}'.format(msg.get_subject()))
+    print('From: {!r}'.format(msg.get_address('from')))
+    print('To: {!r}'.format(msg.get_addresses('to')))
+    print('Cc: {!r}'.format(msg.get_addresses('cc')))
+    print('Date: {!r}'.format(msg.get_decoded_header('date', '')))
+    print('Message-Id: {!r}'.format(msg.get_decoded_header('message-id', '')))
     
     for mailpart in msg.mailparts:
         # dont forget to be careful to sanitize 'filename' and be carefull

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2021, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django.http import HttpResponsePermanentRedirect, Http404, BadHeaderError

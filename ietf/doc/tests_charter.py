@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
 
 
@@ -87,7 +86,7 @@ class EditCharterTests(TestCase):
 
     def write_charter_file(self, charter):
         with (Path(settings.CHARTER_PATH) /
-              ("%s-%s.txt" % (charter.canonical_name(), charter.rev))
+              ("{}-{}.txt".format(charter.canonical_name(), charter.rev))
         ).open("w") as f:
             f.write("This is a charter.")
 
@@ -787,7 +786,7 @@ class EditCharterTests(TestCase):
 
         self.assertEqual(charter.rev, "01")
         self.assertTrue(
-            (Path(settings.CHARTER_PATH) / ("charter-ietf-%s-%s.txt" % (group.acronym, charter.rev))).exists()
+            (Path(settings.CHARTER_PATH) / ("charter-ietf-{}-{}.txt".format(group.acronym, charter.rev))).exists()
         )
 
         self.assertEqual(len(outbox), 2)

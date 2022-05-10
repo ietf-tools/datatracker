@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import ast
@@ -15,7 +14,7 @@ import debug                            # pyflakes:ignore
 
 # BlackHole, PySyntaxError and checking based on 
 # https://github.com/patrys/gedit-pyflakes-plugin.git
-class BlackHole(object):
+class BlackHole:
     write = flush = lambda *args, **kwargs: None
 
     def __enter__(self):
@@ -30,7 +29,7 @@ class PySyntaxError(messages.Message):
 
     def __init__(self, filename, lineno, col, message):
         try:
-            super(PySyntaxError, self).__init__(filename, lineno)
+            super().__init__(filename, lineno)
         except Exception:
             sys.stderr.write("\nAn exception occurred while processing file %s\n"
                 "The file could contain syntax errors.\n\n" % filename)
@@ -92,11 +91,11 @@ def checkPath(filename, verbosity):
         sys.stderr.write("\n  %-78s " % filename)
         sys.stderr.flush()
     try:
-        with io.open(filename, 'br') as f:
+        with open(filename, 'br') as f:
             text = f.read()
         return check(text + b'\n', filename, verbosity)
-    except IOError as msg:
-        return ["%s: %s" % (filename, msg.args[1])]
+    except OSError as msg:
+        return ["{}: {}".format(filename, msg.args[1])]
     except TypeError:
         pass
 
@@ -110,7 +109,7 @@ def checkPaths(filenames, verbosity):
                         try:
                             warnings.extend(checkPath(os.path.join(dirpath, filename), verbosity))
                         except TypeError as e:
-                            print("Exception while processing dirpath=%s, filename=%s: %s" % (dirpath, filename, e ))
+                            print("Exception while processing dirpath={}, filename={}: {}".format(dirpath, filename, e ))
                             raise
         else:
             warnings.extend(checkPath(arg, verbosity))

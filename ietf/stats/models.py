@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2017-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django.db import models
@@ -20,11 +19,11 @@ class AffiliationAlias(models.Model):
     name = models.CharField(max_length=255)
 
     def __str__(self):
-        return "{} -> {}".format(self.alias, self.name)
+        return f"{self.alias} -> {self.name}"
 
     def save(self, *args, **kwargs):
         self.alias = self.alias.lower()
-        super(AffiliationAlias, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name_plural = "affiliation aliases"
@@ -45,7 +44,7 @@ class CountryAlias(models.Model):
     country = ForeignKey(CountryName, max_length=255)
 
     def __str__(self):
-        return "{} -> {}".format(self.alias, self.country.name)
+        return f"{self.alias} -> {self.country.name}"
 
     class Meta:
         verbose_name_plural = "country aliases"
@@ -64,4 +63,4 @@ class MeetingRegistration(models.Model):
     attended = models.BooleanField(default=False)
 
     def __str__(self):
-        return "{} {}".format(self.first_name, self.last_name)
+        return f"{self.first_name} {self.last_name}"

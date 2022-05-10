@@ -1,11 +1,10 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import os
 import datetime
 import io
-import mock
+from unittest import mock
 
 from collections import Counter
 from pathlib import Path
@@ -595,7 +594,7 @@ class ResurrectTests(DraftFileMixin, TestCase):
         DocEventFactory(doc=draft,type="requested_resurrect",by=ad)
 
         # create file and expire draft
-        txt = "%s-%s.txt" % (draft.name, draft.rev)
+        txt = "{}-{}.txt".format(draft.name, draft.rev)
         self.write_draft_file(txt, 5000)
         expire_draft(draft)
 
@@ -725,7 +724,7 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         self.assertTrue('aread@' in outbox[-1]['Cc'])
 
         # test expiry
-        txt = "%s-%s.txt" % (draft.name, draft.rev)
+        txt = "{}-{}.txt".format(draft.name, draft.rev)
         self.write_draft_file(txt, 5000)
 
         expire_draft(draft)
@@ -776,9 +775,9 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         # RFC draft
         draft.set_state(State.objects.get(used=True, type="draft", slug="rfc"))
 
-        txt = "%s-%s.txt" % (draft.name, draft.rev)
+        txt = "{}-{}.txt".format(draft.name, draft.rev)
         self.write_draft_file(txt, 5000)
-        pdf = "%s-%s.pdf" % (draft.name, draft.rev)
+        pdf = "{}-{}.pdf".format(draft.name, draft.rev)
         self.write_draft_file(pdf, 5000)
 
         clean_up_draft_files()
@@ -799,7 +798,7 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         e.text="Document has expired"
         e.save()
 
-        txt = "%s-%s.txt" % (draft.name, draft.rev)
+        txt = "{}-{}.txt".format(draft.name, draft.rev)
         self.write_draft_file(txt, 5000)
 
         clean_up_draft_files()
@@ -1122,7 +1121,7 @@ class IndividualInfoFormsTests(TestCase):
         
         # test buggy change
         ad = Person.objects.get(name='Areað Irector')
-        two_answers = "%s,%s" % (plain_email, ad.email_set.all()[0])
+        two_answers = "{},{}".format(plain_email, ad.email_set.all()[0])
         r = self.client.post(url, dict(shepherd=two_answers))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -1510,7 +1509,7 @@ class ReleaseDraftTests(TestCase):
         self.assertIn("Tags changed", cat_subjects)
         self.assertIn("State Update", cat_subjects)
         self.assertIn("Stream Change", cat_subjects)
-        descs = sorted([event.desc for event in set(list(draft.docevent_set.all())) - set(events_before)])
+        descs = sorted(event.desc for event in set(list(draft.docevent_set.all())) - set(events_before))
         self.assertEqual("Changed stream to <b>None</b> from IETF",descs[0])
         self.assertEqual("Here are some comments",descs[1])
         self.assertEqual("State changed to <b>None</b> from WG Document",descs[2])
@@ -1551,7 +1550,7 @@ class ReleaseDraftTests(TestCase):
         self.assertIn("Tags changed", cat_subjects)
         self.assertIn("State Update", cat_subjects)
         self.assertIn("Stream Change", cat_subjects)
-        descs = sorted([event.desc for event in set(list(draft.docevent_set.all())) - set(events_before)])
+        descs = sorted(event.desc for event in set(list(draft.docevent_set.all())) - set(events_before))
         self.assertEqual("Changed stream to <b>None</b> from ISE",descs[0])
         self.assertEqual("Here are some comments",descs[1])
         self.assertEqual("State changed to <b>None</b> from In ISE Review",descs[2])

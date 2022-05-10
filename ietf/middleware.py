@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django.db import connection
@@ -22,7 +21,7 @@ def sql_log_middleware(get_response):
         return response
     return sql_log
 
-class SMTPExceptionMiddleware(object):
+class SMTPExceptionMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
     def __call__(self, request):
@@ -34,7 +33,7 @@ class SMTPExceptionMiddleware(object):
                           {'exception': extype, 'args': value, 'traceback': "".join(tb)} )
         return None
 
-class Utf8ExceptionMiddleware(object):
+class Utf8ExceptionMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
     def __call__(self, request):
@@ -43,7 +42,7 @@ class Utf8ExceptionMiddleware(object):
         if isinstance(exception, OperationalError):
             extype, e, tb = exc_parts()
             if e.args[0] == 1366:
-                log("Database 4-byte utf8 exception: %s: %s" % (extype, e))
+                log("Database 4-byte utf8 exception: {}: {}".format(extype, e))
                 return render(request, 'utf8_4byte_failed.html',
                               {'exception': extype, 'args': e.args, 'traceback': "".join(tb)} )
         return None

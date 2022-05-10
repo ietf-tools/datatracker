@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import os
@@ -29,7 +28,7 @@ validate_no_control_chars = RegexValidator(
 
 
 @deconstructible
-class RegexStringValidator(object):
+class RegexStringValidator:
     "Validates that a given regular expression can be compiled."
 
     def __init__(self):
@@ -69,7 +68,7 @@ def validate_file_size(file, missing_ok=False):
             raise
 
     if size > settings.SECR_MAX_UPLOAD_SIZE:
-        raise ValidationError('Please keep filesize under %s. Requested upload size was %s' % (filesizeformat(settings.SECR_MAX_UPLOAD_SIZE), filesizeformat(file.size)))
+        raise ValidationError('Please keep filesize under {}. Requested upload size was {}'.format(filesizeformat(settings.SECR_MAX_UPLOAD_SIZE), filesizeformat(file.size)))
 
 def validate_mime_type(file, valid, missing_ok=False):
     try:
@@ -116,7 +115,7 @@ class WrappedValidator:
 def validate_file_extension(file, valid):
     name, ext = os.path.splitext(file.name)
     if ext.lower() not in valid:
-        raise ValidationError('Found an unexpected extension: %s.  Expected one of %s' % (ext, ','.join(valid)))
+        raise ValidationError('Found an unexpected extension: {}.  Expected one of {}'.format(ext, ','.join(valid)))
     return ext
 
 def validate_no_html_frame(file):

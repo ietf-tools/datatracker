@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -71,9 +70,9 @@ def get_document_emails(ipr):
         doc = rel.document.document
 
         if is_draft(doc):
-            doc_info = 'Internet-Draft entitled "{}" ({})'.format(doc.title,doc.name)
+            doc_info = f'Internet-Draft entitled "{doc.title}" ({doc.name})'
         else:
-            doc_info = 'RFC entitled "{}" (RFC{})'.format(doc.title,get_rfc_num(doc))
+            doc_info = f'RFC entitled "{doc.title}" (RFC{get_rfc_num(doc)})'
 
         addrs = gather_address_lists('ipr_posted_on_doc',doc=doc).as_strings(compact=False)
 
@@ -125,12 +124,12 @@ def set_disclosure_title(disclosure):
 
     if isinstance(disclosure, HolderIprDisclosure):
         ipr_summary = get_ipr_summary(disclosure)
-        title = get_genitive(disclosure.holder_legal_name) + ' Statement about IPR related to {}'.format(ipr_summary)
+        title = get_genitive(disclosure.holder_legal_name) + f' Statement about IPR related to {ipr_summary}'
     elif isinstance(disclosure, (GenericIprDisclosure,NonDocSpecificIprDisclosure)):
         title = get_genitive(disclosure.holder_legal_name) + ' General License Statement'
     elif isinstance(disclosure, ThirdPartyIprDisclosure):
         ipr_summary = get_ipr_summary(disclosure)
-        title = get_genitive(disclosure.ietfer_name) + ' Statement about IPR related to {} belonging to {}'.format(ipr_summary,disclosure.holder_legal_name)
+        title = get_genitive(disclosure.ietfer_name) + f' Statement about IPR related to {ipr_summary} belonging to {disclosure.holder_legal_name}'
     
     # truncate for db
     if len(title) > 255:
@@ -346,7 +345,7 @@ def edit(request, id, updates=None):
         initial = model_to_dict(ipr)
         patent_info = text_to_dict(initial.get('patent_info', ''))
         if list(patent_info.keys()):
-            patent_dict = dict([ ('patent_'+k.lower(), v) for k,v in list(patent_info.items()) ])
+            patent_dict = { 'patent_'+k.lower(): v for k,v in list(patent_info.items()) }
         else:
             patent_dict = {'patent_notes': initial.get('patent_info', '')}
         initial.update(patent_dict)
@@ -410,7 +409,7 @@ def email(request, id):
             'to': addrs.to,
             'cc': addrs.cc,
             'frm': settings.IPR_EMAIL_FROM,
-            'subject': 'Regarding {}'.format(ipr.title),
+            'subject': f'Regarding {ipr.title}',
             'reply_to': reply_to,
         }
         form = MessageModelForm(initial=initial)
@@ -550,7 +549,7 @@ def new(request, type, updates=None):
             initial.update({'updates':str(updates), })
             patent_info = text_to_dict(initial.get('patent_info', ''))
             if list(patent_info.keys()):
-                patent_dict = dict([ ('patent_'+k.lower(), v) for k,v in list(patent_info.items()) ])
+                patent_dict = { 'patent_'+k.lower(): v for k,v in list(patent_info.items()) }
             else:
                 patent_dict = {'patent_notes': initial.get('patent_info', '')}
             initial.update(patent_dict)
@@ -710,7 +709,7 @@ def search(request):
                     related += related_docs(doc)
                 iprs = iprs_from_docs(list(set(docs+related)),states=states)
                 docs = [ doc for doc in docs if doc.document.ipr() ]
-                docs = sorted(docs, key=lambda x: max([ipr.disclosure.time for ipr in x.document.ipr()]), reverse=True)
+                docs = sorted(docs, key=lambda x: max(ipr.disclosure.time for ipr in x.document.ipr()), reverse=True)
                 template = "ipr/search_wg_result.html"
                 q = Group.objects.get(id=q).acronym     # make acronym for use in template
 
@@ -723,7 +722,7 @@ def search(request):
                     related += related_docs(doc)
                 iprs = iprs_from_docs(list(set(docs+related)),states=states)
                 docs = [ doc for doc in docs if doc.document.ipr() ]
-                docs = sorted(docs, key=lambda x: max([ipr.disclosure.time for ipr in x.document.ipr()]), reverse=True)
+                docs = sorted(docs, key=lambda x: max(ipr.disclosure.time for ipr in x.document.ipr()), reverse=True)
                 template = "ipr/search_doctitle_result.html"
 
             # Search by title of IPR disclosure

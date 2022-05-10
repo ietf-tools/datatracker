@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2011-2022, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -8,7 +7,7 @@ import io
 import os
 import re
 import sys
-import mock
+from unittest import mock
 
 from io import StringIO
 from pyquery import PyQuery
@@ -85,7 +84,7 @@ class BaseSubmitTestCase(TestCase):
 
 def submission_file(name_in_doc, name_in_post, group, templatename, author=None, email=None, title=None, year=None, ascii=True):
     # construct appropriate text draft
-    f = io.open(os.path.join(settings.BASE_DIR, "submit", templatename))
+    f = open(os.path.join(settings.BASE_DIR, "submit", templatename))
     template = f.read()
     f.close()
 
@@ -177,9 +176,9 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertNoFormPostErrors(r, ".invalid-feedback,.alert-danger")
 
         for format in formats:
-            self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, format))))
+            self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "{}-{}.{}".format(name, rev, format))))
             if format == 'xml':
-                self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, 'html'))))
+                self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "{}-{}.{}".format(name, rev, 'html'))))
         return r
 
     def do_submission(self, name, rev, group=None, formats=["txt",], author=None):
@@ -264,7 +263,7 @@ class SubmitTests(BaseSubmitTestCase):
         #     self.assertTrue(os.path.exists(ref_file_name))
         #     ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (name, draft.rev ))
         #     self.assertTrue(os.path.exists(ref_rev_file_name))
-        ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (draft.name, draft.rev ))
+        ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.{}-{}.xml'.format(draft.name, draft.rev ))
         self.assertTrue(os.path.exists(ref_rev_file_name))
 
 
@@ -345,8 +344,8 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(new_revision.type, "new_revision")
         self.assertEqual(new_revision.by.name, author.name)
         self.assertTrue(draft.latest_event(type="added_suggested_replaces"))
-        self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))))
-        self.assertTrue(os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, rev))))
+        self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, "{}-{}.txt".format(name, rev))))
+        self.assertTrue(os.path.exists(os.path.join(self.repository_dir, "{}-{}.txt".format(name, rev))))
         self.assertEqual(draft.type_id, "draft")
         self.assertEqual(draft.stream_id, "ietf")
         self.assertTrue(draft.expires >= datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE - 1))
@@ -556,7 +555,7 @@ class SubmitTests(BaseSubmitTestCase):
 
         # write the old draft in a file so we can check it's moved away
         old_rev = draft.rev
-        with io.open(os.path.join(self.repository_dir, "%s-%s.txt" % (name, old_rev)), 'w') as f:
+        with open(os.path.join(self.repository_dir, "{}-{}.txt".format(name, old_rev)), 'w') as f:
             f.write("a" * 2000)
 
         old_docevents = list(draft.docevent_set.all())
@@ -631,14 +630,14 @@ class SubmitTests(BaseSubmitTestCase):
 
         def inspect_docevents(docevents, event_delta, event_type, be_in_desc, by_name):
             self.assertEqual(docevents[event_delta].type, event_type,
-                             'Unexpected event type for event_delta={}'.format(event_delta))
+                             f'Unexpected event type for event_delta={event_delta}')
             self.assertIn(be_in_desc, docevents[event_delta].desc,
-                          'Expected text not found for event_delta={}'.format(event_delta))
+                          f'Expected text not found for event_delta={event_delta}')
             self.assertEqual(docevents[event_delta].by.name, by_name,
-                             'Unexpected name for event_delta={}'.format(event_delta))
+                             f'Unexpected name for event_delta={event_delta}')
             if len(docevents) > event_delta + 1:
                 self.assertGreater(docevents[event_delta].id, docevents[event_delta+1].id,
-                                   'Event out of order for event_delta={}'.format(event_delta))
+                                   f'Event out of order for event_delta={event_delta}')
 
         # Assert event content in chronological order:
         if draft.stream_id == 'ietf':
@@ -667,10 +666,10 @@ class SubmitTests(BaseSubmitTestCase):
         for event_delta, (event_type, be_in_desc, by_name) in enumerate(expected_docevents[::-1]):
             inspect_docevents(docevents, event_delta, event_type, be_in_desc, by_name)
 
-        self.assertTrue(not os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, old_rev))))
-        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "%s-%s.txt" % (name, old_rev))))
-        self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))))
-        self.assertTrue(os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, rev))))
+        self.assertTrue(not os.path.exists(os.path.join(self.repository_dir, "{}-{}.txt".format(name, old_rev))))
+        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "{}-{}.txt".format(name, old_rev))))
+        self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, "{}-{}.txt".format(name, rev))))
+        self.assertTrue(os.path.exists(os.path.join(self.repository_dir, "{}-{}.txt".format(name, rev))))
         self.assertEqual(draft.type_id, "draft")
         if stream_type == 'ietf':
             self.assertEqual(draft.stream_id, "ietf")
@@ -1313,7 +1312,7 @@ class SubmitTests(BaseSubmitTestCase):
 
         # cancel
         r = self.client.post(status_url, dict(action=action))
-        self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))))
+        self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, "{}-{}.txt".format(name, rev))))
 
     def test_edit_submission_and_force_post(self):
         # submit -> edit
@@ -1504,13 +1503,13 @@ class SubmitTests(BaseSubmitTestCase):
 
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
 
-        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))))
-        self.assertTrue(name in io.open(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))).read())
-        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.xml" % (name, rev))))
-        self.assertTrue(name in io.open(os.path.join(self.staging_dir, "%s-%s.xml" % (name, rev))).read())
-        self.assertTrue('<?xml version="1.0" encoding="UTF-8"?>' in io.open(os.path.join(self.staging_dir, "%s-%s.xml" % (name, rev))).read())
-        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.pdf" % (name, rev))))
-        self.assertTrue('This is PDF' in io.open(os.path.join(self.staging_dir, "%s-%s.pdf" % (name, rev))).read())
+        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "{}-{}.txt".format(name, rev))))
+        self.assertTrue(name in open(os.path.join(self.staging_dir, "{}-{}.txt".format(name, rev))).read())
+        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "{}-{}.xml".format(name, rev))))
+        self.assertTrue(name in open(os.path.join(self.staging_dir, "{}-{}.xml".format(name, rev))).read())
+        self.assertTrue('<?xml version="1.0" encoding="UTF-8"?>' in open(os.path.join(self.staging_dir, "{}-{}.xml".format(name, rev))).read())
+        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "{}-{}.pdf".format(name, rev))))
+        self.assertTrue('This is PDF' in open(os.path.join(self.staging_dir, "{}-{}.pdf".format(name, rev))).read())
 
     def test_expire_submissions(self):
         s = Submission.objects.create(name="draft-ietf-mars-foo",
@@ -1693,8 +1692,8 @@ class SubmitTests(BaseSubmitTestCase):
         for dir in [self.repository_dir, self.archive_dir, ]:
             files = {}
             for format in formats:
-                fn = os.path.join(dir, "%s-%s.%s" % (name, rev, format))
-                with io.open(fn, 'w') as f:
+                fn = os.path.join(dir, "{}-{}.{}".format(name, rev, format))
+                with open(fn, 'w') as f:
                     f.write("a" * 2000)
                 files[format], author = submission_file(f'{name}-{rev}', f'{name}-{rev}.{format}', group, "test_submission.%s" % format)
             r = self.client.post(url, files)
@@ -2555,7 +2554,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
 
         # check that attachment link is visible
 
-        url = self.get_href(q, "#email-details a#attach{}:contains('attach.txt')".format(submission.pk))
+        url = self.get_href(q, f"#email-details a#attach{submission.pk}:contains('attach.txt')")
 
         # Fetch the attachment
         r = self.client.get(url)
@@ -2592,7 +2591,7 @@ Thank you
 """.format(datetime.datetime.now().ctime())
 
             r = self.client.post(add_email_url, {
-                "name": "{}-{}".format(submission.name, submission.rev),
+                "name": f"{submission.name}-{submission.rev}",
                 "direction": "incoming",
                 "submission_pk": submission.pk,
                 "message": new_message_string,
@@ -2688,7 +2687,7 @@ Subject: test
 
         status_url = r["Location"]
         for format in formats:
-            self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, format))))
+            self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "{}-{}.{}".format(name, rev, format))))
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
         submission = Submission.objects.get(name=name)
         self.assertTrue(all([ c.passed!=False for c in submission.checks.all() ]))
@@ -2758,7 +2757,7 @@ class ApiSubmitTests(BaseSubmitTestCase):
 
     def test_api_submit_ok(self):
         r, author, name = self.do_post_submission('00')
-        expected = "Upload of %s OK, confirmation requests sent to:\n  %s" % (name, author.formatted_email().replace('\n',''))
+        expected = "Upload of {} OK, confirmation requests sent to:\n  {}".format(name, author.formatted_email().replace('\n',''))
         self.assertContains(r, expected, status_code=200)
 
     def test_api_submit_secondary_email_active(self):
@@ -2766,7 +2765,7 @@ class ApiSubmitTests(BaseSubmitTestCase):
         email = EmailFactory(person=person)
         r, author, name = self.do_post_submission('00', author=person, email=email.address)
         for expected in [
-                "Upload of %s OK, confirmation requests sent to:" % (name, ),
+                "Upload of {} OK, confirmation requests sent to:".format(name),
                 author.formatted_email().replace('\n',''),
             ]:
             self.assertContains(r, expected, status_code=200)
@@ -2937,7 +2936,7 @@ class ValidateSubmissionFilenameTests(BaseSubmitTestCase):
             'draft-trailing-dash-',
             'draft-tooshort',
             'draft-toolong-this-is-a-very-long-name-for-an-internet-draft',
-            u'draft-contains-non-ascii-göran')
+            'draft-contains-non-ascii-göran')
 
         for n in good_names:
             msg = validate_submission_name(n)
@@ -2955,7 +2954,7 @@ class ValidateSubmissionFilenameTests(BaseSubmitTestCase):
         path = Path(self.archive_dir) / f'{new_wg_doc.name}-{new_wg_doc.rev}.txt'
         path.touch()
 
-        bad_revs = (None, '', '2', 'aa', '00', '01', '100', '002', u'öö')
+        bad_revs = (None, '', '2', 'aa', '00', '01', '100', '002', 'öö')
         for rev in bad_revs:
             msg = validate_submission_rev(new_wg_doc.name, rev)
             self.assertIsNotNone(msg)

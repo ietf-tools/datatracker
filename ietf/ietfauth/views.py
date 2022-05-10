@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 #
 # Portions Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -191,7 +190,7 @@ def confirm_account(request, auth):
                                                name=name,
                                                ascii=ascii)
 
-                for name in set([ person.name, person.ascii, person.plain_name(), person.plain_ascii(), ]):
+                for name in { person.name, person.ascii, person.plain_name(), person.plain_ascii()}:
                     Alias.objects.create(person=person, name=name)
 
             if not email_obj:
@@ -288,7 +287,7 @@ def profile(request):
 
             # Make sure the alias table contains any new and/or old names.
             existing_aliases = set(Alias.objects.filter(person=person).values_list("name", flat=True))
-            curr_names = set(x for x in [updated_person.name, updated_person.ascii, updated_person.ascii_short, updated_person.plain_name(), updated_person.plain_ascii(), ] if x)
+            curr_names = {x for x in [updated_person.name, updated_person.ascii, updated_person.ascii_short, updated_person.plain_name(), updated_person.plain_ascii(), ] if x}
             new_aliases = curr_names - existing_aliases
             for name in new_aliases:
                 Alias.objects.create(person=updated_person, name=name)
@@ -334,7 +333,7 @@ def edit_person_externalresources(request):
                     try:
                         name = ExtResourceName.objects.get(slug=name_slug)
                     except ObjectDoesNotExist:
-                        errors.append("Bad tag in '%s': Expected one of %s" % (l, ', '.join([ o.slug for o in ExtResourceName.objects.all() ])))
+                        errors.append("Bad tag in '{}': Expected one of {}".format(l, ', '.join([ o.slug for o in ExtResourceName.objects.all() ])))
                         continue
                     value = parts[1]
                     try:
@@ -350,9 +349,9 @@ def edit_person_externalresources(request):
         res = []
         for r in resources:
             if r.display_name:
-                res.append("%s %s (%s)" % (r.name.slug, r.value, r.display_name.strip('()')))
+                res.append("{} {} ({})".format(r.name.slug, r.value, r.display_name.strip('()')))
             else:
-                res.append("%s %s" % (r.name.slug, r.value)) 
+                res.append("{} {}".format(r.name.slug, r.value)) 
                 # TODO: This is likely problematic if value has spaces. How then to delineate value and display_name? Perhaps in the short term move to comma or pipe separation.
                 # Might be better to shift to a formset instead of parsing these lines.
         return fs.join(res)
@@ -541,7 +540,7 @@ class AddReviewWishForm(forms.Form):
     team = forms.ModelChoiceField(queryset=Group.objects.all(), empty_label="(Choose review team)")
 
     def __init__(self, teams, *args, **kwargs):
-        super(AddReviewWishForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         f = self.fields["team"]
         f.queryset = teams
@@ -766,7 +765,7 @@ def apikey_index(request):
 @login_required
 @person_required
 def apikey_create(request):
-    endpoints = [('', '----------')] + list(set([ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES if r==None or has_role(request.user, r) ]))
+    endpoints = [('', '----------')] + list({ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES if r==None or has_role(request.user, r) })
     class ApiKeyForm(forms.ModelForm):
         endpoint = forms.ChoiceField(choices=endpoints)
 

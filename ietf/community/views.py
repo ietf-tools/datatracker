@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import csv
@@ -183,7 +182,7 @@ def export_to_csv(request, username=None, acronym=None, group_type=None):
 
     response['Content-Disposition'] = 'attachment; filename=%s' % filename
 
-    writer = csv.writer(response, dialect=csv.excel, delimiter=str(','))
+    writer = csv.writer(response, dialect=csv.excel, delimiter=',')
 
     header = [
         "Name",
@@ -229,7 +228,7 @@ def feed(request, username=None, acronym=None, group_type=None):
         events = events.filter(type="changed_state", statedocevent__state__in=list(states_of_significant_change()))
 
     host = request.get_host()
-    feed_url = 'https://%s%s' % (host, request.get_full_path())
+    feed_url = 'https://{}{}'.format(host, request.get_full_path())
     feed_id = uuid.uuid5(uuid.NAMESPACE_URL, str(feed_url))
     title = '%s RSS Feed' % clist.long_name()
     if significant:

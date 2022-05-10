@@ -95,11 +95,11 @@ class _Wrapper(TestCase):
             """
             index = len(self.reviewers)
             assert(index < 100)  # ordering by label will fail if > 100 reviewers are created
-            label = '{:02d}'.format(index)
+            label = f'{index:02d}'
             reviewer = create_person(self.team,
                                      'reviewer',
-                                     name='Test Reviewer{}'.format(label),
-                                     username='testreviewer{}'.format(label))
+                                     name=f'Test Reviewer{label}',
+                                     username=f'testreviewer{label}')
             self.reviewers.append(reviewer)
             if skip_count is not None:
                 settings = self.reviewer_settings_for(reviewer)
@@ -435,8 +435,8 @@ class _Wrapper(TestCase):
             order = self.policy.recommended_assignment_order(Email.objects.all(), review_req)
             self.assertEqual(order[0][0], str(reviewer_high.email()))
             self.assertEqual(order[1][0], str(reviewer_low.email()))
-            self.assertIn('{}: #2'.format(reviewer_high.name), order[0][1])
-            self.assertIn('{}: is author of document; #1'.format(reviewer_low.name), order[1][1])
+            self.assertIn(f'{reviewer_high.name}: #2', order[0][1])
+            self.assertIn(f'{reviewer_low.name}: is author of document; #1', order[1][1])
     
             with self.assertRaises(ValueError):
                 review_req_other_team = ReviewRequestFactory(doc=doc, type_id='early')
@@ -483,8 +483,8 @@ class _Wrapper(TestCase):
             self.assertEqual(field.choices[0], ('', '(None)'))
             self.assertEqual(field.choices[1][0], str(reviewer.email()))
             self.assertEqual(field.choices[2][0], str(partial_reviewer.email()))
-            self.assertIn('{}: #1'.format(reviewer.name), field.choices[1][1])
-            self.assertIn('{}: #2'.format(partial_reviewer.name), field.choices[2][1])
+            self.assertIn(f'{reviewer.name}: #1', field.choices[1][1])
+            self.assertIn(f'{partial_reviewer.name}: #2', field.choices[2][1])
             self.assertIn('1 partially complete', field.choices[2][1])
             
         
@@ -650,7 +650,7 @@ class LeastRecentlyUsedReviewerQueuePolicyTest(_Wrapper.ReviewerQueuePolicyTestC
     reviewer_queue_policy_id = 'LeastRecentlyUsed'
 
     def setUp(self):
-        super(LeastRecentlyUsedReviewerQueuePolicyTest, self).setUp()
+        super().setUp()
         self.last_assigned_on = timezone.now() - datetime.timedelta(days=365)
         
     def append_reviewer(self, skip_count=None):
@@ -658,7 +658,7 @@ class LeastRecentlyUsedReviewerQueuePolicyTest(_Wrapper.ReviewerQueuePolicyTestC
         
         New reviewer will be last in the default reviewer rotation list.
         """
-        reviewer = super(LeastRecentlyUsedReviewerQueuePolicyTest, self).append_reviewer(skip_count)
+        reviewer = super().append_reviewer(skip_count)
         self.create_reviewer_assignment(reviewer)
         return reviewer
 
@@ -683,7 +683,7 @@ class LeastRecentlyUsedReviewerQueuePolicyTest(_Wrapper.ReviewerQueuePolicyTestC
         # Make a review older than our oldest review
         assert('assigned_on' not in kwargs)
         kwargs['assigned_on'] = timezone.now() - datetime.timedelta(days=400)
-        return super(LeastRecentlyUsedReviewerQueuePolicyTest, self).create_old_review_assignment(reviewer, **kwargs)
+        return super().create_old_review_assignment(reviewer, **kwargs)
 
     def test_default_reviewer_rotation_list_uses_latest_assignment(self):
         available_reviewers, _ = self.set_up_default_reviewer_rotation_list_test()

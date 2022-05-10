@@ -21,7 +21,7 @@ def contacts_from_roles(roles):
         else:
             # Person had a name of some sort, use that as the friendly name
             person_name = r.person.plain if r.person.plain else plain_name(r.person.name)
-            emails.append('{} <{}>'.format(person_name,r.email.address))
+            emails.append(f'{person_name} <{r.email.address}>')
     return ','.join(emails)
 
 def reverse(apps, schema_editor):

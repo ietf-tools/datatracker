@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2009-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -52,7 +51,7 @@ class IprTests(TestCase):
         ipr = HolderIprDisclosureFactory()
         update = HolderIprDisclosureFactory(updates=[ipr,])
         result = get_holders(update)
-        self.assertEqual(set(result),set([ipr.holder_contact_email,update.holder_contact_email]))
+        self.assertEqual(set(result),{ipr.holder_contact_email,update.holder_contact_email})
         
     def test_get_ipr_summary(self):
         ipr = HolderIprDisclosureFactory(docs=[WgDraftFactory(),])
@@ -72,7 +71,7 @@ class IprTests(TestCase):
         ipr = HolderIprDisclosureFactory()
         update = HolderIprDisclosureFactory(updates=[ipr,])
         result = get_update_cc_addrs(update)
-        self.assertEqual(set(result.split(',')),set([update.holder_contact_email,ipr.submitter_email,ipr.holder_contact_email]))
+        self.assertEqual(set(result.split(',')),{update.holder_contact_email,ipr.submitter_email,ipr.holder_contact_email})
         
     def test_get_update_submitter_emails(self):
         ipr = HolderIprDisclosureFactory()
@@ -376,7 +375,7 @@ class IprTests(TestCase):
         self.assertEqual(len(iprs), 1)
         ipr = iprs[0].get_child()
         self.assertEqual(ipr.holder_legal_name, "Test Legal")
-        patent_info_dict = dict( (k.replace('patent_','').capitalize(), v) for k, v in list(post_data.items()) if k.startswith('patent_') )
+        patent_info_dict = { k.replace('patent_','').capitalize(): v for k, v in list(post_data.items()) if k.startswith('patent_') }
         self.assertEqual(text_to_dict(ipr.patent_info), patent_info_dict)
         self.assertEqual(ipr.state.slug, 'posted')
 
@@ -740,4 +739,3 @@ Subject: test
         removed_docevent = doc.docevent_set.filter(type='removed_related_ipr').first()
         self.assertIn(ipr.title, removed_docevent.desc,
                       'IprDisclosure title does not appear in DocEvent desc when removed')
-        

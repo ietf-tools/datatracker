@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import re
@@ -109,7 +108,7 @@ def get_person_form(*args, **kwargs):
             }            
 
         def __init__(self, *args, **kwargs):
-            super(PersonForm, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
 
             # blank ascii if it's the same as name
             self.fields["ascii"].required = self.fields["ascii"].widget.is_required = False
@@ -174,7 +173,7 @@ class NewEmailForm(forms.Form):
         if email:
             existing = Email.objects.filter(address=email).first()
             if existing:
-                raise forms.ValidationError("Email address '%s' is already assigned to account '%s' (%s)" % (existing, existing.person and existing.person.user, existing.person))
+                raise forms.ValidationError("Email address '{}' is already assigned to account '{}' ({})".format(existing, existing.person and existing.person.user, existing.person))
 
         for pat in settings.EXCLUDED_PERSONAL_EMAIL_REGEX_PATTERNS:
             if re.search(pat, email):
@@ -187,14 +186,14 @@ class RoleEmailForm(forms.Form):
     email = forms.ModelChoiceField(label="Role email", queryset=Email.objects.all())
 
     def __init__(self, role, *args, **kwargs):
-        super(RoleEmailForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         f = self.fields["email"]
-        f.label = "%s in %s" % (role.name, role.group.acronym.upper())
-        f.help_text = "Email to use for <i>%s</i> role in %s" % (role.name, role.group.name)
+        f.label = "{} in {}".format(role.name, role.group.acronym.upper())
+        f.help_text = "Email to use for <i>{}</i> role in {}".format(role.name, role.group.name)
         f.queryset = f.queryset.filter(models.Q(person=role.person_id) | models.Q(role=role)).distinct()
         f.initial = role.email_id
-        f.choices = [(e.pk, e.address if e.active else "({})".format(e.address)) for e in f.queryset]
+        f.choices = [(e.pk, e.address if e.active else f"({e.address})") for e in f.queryset]
 
 
 class ResetPasswordForm(forms.Form):
@@ -204,7 +203,7 @@ class ResetPasswordForm(forms.Form):
         import ietf.ietfauth.views
         username = self.cleaned_data["username"]
         if not User.objects.filter(username=username).exists():
-            raise forms.ValidationError(mark_safe("Didn't find a matching account. If you don't have an account yet, you can <a href=\"{}\">create one</a>.".format(urlreverse(ietf.ietfauth.views.create_account))))
+            raise forms.ValidationError(mark_safe(f"Didn't find a matching account. If you don't have an account yet, you can <a href=\"{urlreverse(ietf.ietfauth.views.create_account)}\">create one</a>."))
         return username
 
 
@@ -230,7 +229,7 @@ class ChangePasswordForm(forms.Form):
 
     def __init__(self, user, data=None):
         self.user = user
-        super(ChangePasswordForm, self).__init__(data)
+        super().__init__(data)
 
     def clean_current_password(self):
         password = self.cleaned_data.get('current_password', None)
@@ -251,7 +250,7 @@ class ChangeUsernameForm(forms.Form):
 
     def __init__(self, user, *args, **kwargs):
         assert isinstance(user, User)
-        super(ChangeUsernameForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.user = user
         emails = user.person.email_set.filter(active=True)
         choices = [ (email.address, email.address) for email in emails ]

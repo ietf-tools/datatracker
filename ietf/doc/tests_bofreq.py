@@ -28,7 +28,7 @@ class BofreqTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['BOFREQ_PATH']
 
     def write_bofreq_file(self, bofreq):
-        fname = Path(settings.BOFREQ_PATH) / ("%s-%s.md" % (bofreq.canonical_name(), bofreq.rev))
+        fname = Path(settings.BOFREQ_PATH) / ("{}-{}.md".format(bofreq.canonical_name(), bofreq.rev))
         with fname.open("w") as f:
             f.write(f"""# This is a test bofreq.
 Version: {bofreq.rev}

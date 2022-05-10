@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import debug                            # pyflakes:ignore
@@ -56,7 +55,7 @@ class VideoRecordingTestCase(TestCase):
 
     def test_get_urls_from_json(self):
         path = os.path.join(settings.BASE_DIR, "../test/data/youtube-playlistitems.json")
-        with io.open(path) as f:
+        with open(path) as f:
             doc = json.load(f)
         urls = _get_urls_from_json(doc)
         self.assertEqual(len(urls),2)
@@ -105,7 +104,7 @@ class RecordingTestCase(TestCase):
         path = os.path.join(settings.MEETING_RECORDINGS_DIR,'ietf' + timeslot.meeting.number,filename)
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
-        with io.open(path, "w") as f:
+        with open(path, "w") as f:
             f.write('dummy')
 
     def get_filename_for_timeslot(self, timeslot):
@@ -170,7 +169,7 @@ class RecordingTestCase(TestCase):
     def test_create_recording(self):
         session = SessionFactory(meeting__type_id='ietf', meeting__number=72, group__acronym='mars')
         filename = 'ietf42-testroomt-20000101-0800.mp3'
-        url = settings.IETF_AUDIO_URL + 'ietf{}/{}'.format(session.meeting.number, filename)
+        url = settings.IETF_AUDIO_URL + f'ietf{session.meeting.number}/{filename}'
         doc = create_recording(session, url)
         self.assertEqual(doc.name,'recording-72-mars-1')
         self.assertEqual(doc.group,session.group)

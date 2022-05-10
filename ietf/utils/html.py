@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2010-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 # Taken from http://code.google.com/p/soclone/source/browse/trunk/soclone/utils/html.py
 """Utilities for working with HTML."""
 
@@ -40,7 +39,7 @@ def unescape(text):
 @keep_lazy(str)
 def remove_tags(html, tags):
     """Returns the given HTML sanitized, and with the given tags removed."""
-    allowed = set(acceptable_tags) - set([ t.lower() for t in tags ])
+    allowed = set(acceptable_tags) - { t.lower() for t in tags }
     return bleach.clean(html, tags=allowed)
 
 # ----------------------------------------------------------------------
@@ -59,7 +58,7 @@ class Cleaner(lxml.html.clean.Cleaner):
     charset = 'utf-8'
     def __init__(self, charset='utf-8', **kw):
         self.charset = charset
-        super(Cleaner, self).__init__(**kw)
+        super().__init__(**kw)
         
     # Copied from lxml 4.2.0 and modified to insert charset meta:
     def clean_html(self, html):
@@ -95,4 +94,3 @@ def clean_text_field(text):
     else:
         raise forms.ValidationError("Unexpected text field mime type: %s" % mime_type)
     return text
-    

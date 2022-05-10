@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import io
@@ -23,7 +22,7 @@ class Command(EmailOnFailureCommand):
 
     def handle(self, *args, **options):
         email = options.get('email', None)
-        binary_input = io.open(email, 'rb') if email else sys.stdin.buffer
+        binary_input = open(email, 'rb') if email else sys.stdin.buffer
         self.msg_bytes = binary_input.read()
         try:
             process_response_email(self.msg_bytes)

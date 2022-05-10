@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2017-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import json
@@ -36,7 +35,7 @@ class Command(BaseCommand):
 
     def check_yang(self, checker, draft, force=False):
         if self.verbosity > 1:
-            self.stdout.write("Checking %s-%s" % (draft.name, draft.rev))
+            self.stdout.write("Checking {}-{}".format(draft.name, draft.rev))
         elif self.verbosity > 0:
             self.stderr.write('.', ending='')
         submission = Submission.objects.filter(name=draft.name, rev=draft.rev).order_by('-id').first()
@@ -54,14 +53,14 @@ class Command(BaseCommand):
                 old_res = (check.passed, check.errors, check.warnings, check.message) if check else ()
                 if new_res != old_res:
                     if self.verbosity > 1:
-                        self.stdout.write("  Saving new yang checker results for %s-%s" % (draft.name, draft.rev))
+                        self.stdout.write("  Saving new yang checker results for {}-{}".format(draft.name, draft.rev))
                     qs = submission.checks.filter(checker=checker.name).order_by('time')
                     submission.checks.filter(checker=checker.name).exclude(pk=qs.first().pk).delete()
                     submission.checks.create(submission=submission, checker=checker.name, passed=passed,
                                                 message=message, errors=errors, warnings=warnings, items=items,
                                                 symbol=checker.symbol)
         else:
-            self.stderr.write("Error: did not find any submission object for %s-%s" % (draft.name, draft.rev))
+            self.stderr.write("Error: did not find any submission object for {}-{}".format(draft.name, draft.rev))
 
     def handle(self, *filenames, **options):
         """

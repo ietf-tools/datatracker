@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2018-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import io
@@ -108,7 +107,7 @@ class Command(BaseCommand):
                     try:
                         model = app_config.get_model(model_label)
                     except LookupError:
-                        raise CommandError("Unknown model: %s.%s" % (app_label, model_label))
+                        raise CommandError("Unknown model: {}.{}".format(app_label, model_label))
 
                     app_list_value = app_list.setdefault(app_config, [])
 
@@ -145,8 +144,7 @@ class Command(BaseCommand):
             if isinstance(l, list):
                 for el in l:
                     if isinstance(el, list):
-                        for sub in flatten(el):
-                            yield sub
+                        yield from flatten(el)
                     else:
                         yield el
             else:
@@ -180,8 +178,7 @@ class Command(BaseCommand):
                             collector.collect([obj,])
                             object_list = list(flatten(collector.nested()))
                             object_list.reverse()
-                            for o in object_list:
-                                yield o
+                            yield from object_list
 
         try:
             self.stdout.ending = None
@@ -191,7 +188,7 @@ class Command(BaseCommand):
             if (output and self.stdout.isatty() and options['verbosity'] > 0):
                 progress_output = self.stdout
                 object_count = sum(get_objects(count_only=True))
-            stream = io.open(output, 'w') if output else None
+            stream = open(output, 'w') if output else None
             try:
                 serializers.serialize(
                     format, get_objects(), indent=indent,

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2017-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import sys
@@ -26,12 +25,12 @@ class Command(BaseCommand):
             
     def handle(self, *filenames, **options):
         for c in VersionInfo.objects.filter(used=True):
-            cmd = "%s %s" % (c.command, c.switch)
+            cmd = "{} {}".format(c.command, c.switch)
             code, out, err = pipe(cmd)
             out = out.decode('utf-8')
             err = err.decode('utf-8')
             if code != 0:
-                sys.stderr.write("Command '%s' retuned %s: \n%s\n%s\n" % (cmd, code, out, err))
+                sys.stderr.write("Command '{}' retuned {}: \n{}\n{}\n".format(cmd, code, out, err))
             else:
                 c.version = (out.strip()+'\n'+err.strip()).strip()
                 if options.get('verbosity', 1) > 1:

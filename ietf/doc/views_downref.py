@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2017-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django.urls import reverse as urlreverse
@@ -43,12 +42,12 @@ def downref_registry_add(request):
                         target=rfc, relationship_id='downref-approval')
                 c = DocEvent(type="downref_approved", doc=da.document,
                         rev=da.document.rev, by=login)
-                c.desc = "Downref to RFC %s approved by Last Call for %s-%s" % (
+                c.desc = "Downref to RFC {} approved by Last Call for {}-{}".format(
                         rfc.document.rfc_number(), da.name, da.document.rev)
                 c.save()
                 c = DocEvent(type="downref_approved", doc=rfc.document,
                         rev=rfc.document.rev, by=login)
-                c.desc = "Downref to RFC %s approved by Last Call for %s-%s" % (
+                c.desc = "Downref to RFC {} approved by Last Call for {}-{}".format(
                         rfc.document.rfc_number(), da.name, da.document.rev)
                 c.save()
 

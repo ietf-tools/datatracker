@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2015-2021, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import os
@@ -66,7 +65,7 @@ def check_group_email_aliases_exists(app_configs, **kwargs):
                 obj=None,
                 id="datatracker.E0002",
             ))
-    except IOError as e:
+    except OSError as e:
         errors.append(checks.Error(
             "Could not read group email aliases:\n   %s" % e,
             hint="Please run the generate_group_aliases management command to generate them.",
@@ -93,7 +92,7 @@ def check_doc_email_aliases_exists(app_configs, **kwargs):
                 obj=None,
                 id="datatracker.E0004",
             ))
-    except IOError as e:
+    except OSError as e:
         errors.append(checks.Error(
             "Could not read document email aliases:\n   %s" % e,
             hint="Please run the generate_draft_aliases management command to generate them.",
@@ -336,9 +335,9 @@ def maybe_patch_library(app_configs, **kwargs):
                     hint="Make sure that the patch file contains a unified diff",
                     id="datatracker.W0001",
                     ))
-        except IOError as e:
+        except OSError as e:
             errors.append(
-                checks.Warning("Could not apply patch from %s: %s" % (patch_file, e),
+                checks.Warning("Could not apply patch from {}: {}".format(patch_file, e),
                     hint="Check file permissions and locations",
                     id="datatracker.W0003",
                 )

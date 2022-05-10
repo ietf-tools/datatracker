@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2022, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -163,7 +162,7 @@ class SessionRequestTestCase(TestCase):
         self.assertContains(r, 'Schedule the sessions on subsequent days')
         self.assertContains(r, 'Thursday early afternoon, Thursday late afternoon')
         self.assertContains(r, group2.acronym)
-        self.assertContains(r, 'Second session with: {} {}'.format(group3.acronym, group4.acronym))
+        self.assertContains(r, f'Second session with: {group3.acronym} {group4.acronym}')
 
         # check that a notification was sent
         self.assertEqual(len(outbox), 1)
@@ -238,7 +237,7 @@ class SessionRequestTestCase(TestCase):
 
         # Check whether the updated data is visible on the view page
         r = self.client.get(redirect_url)
-        self.assertContains(r, 'First session with: {}'.format(group2.acronym))
+        self.assertContains(r, f'First session with: {group2.acronym}')
 
 
     def test_edit_constraint_bethere(self):
@@ -399,7 +398,7 @@ class SessionRequestTestCase(TestCase):
             q = PyQuery(r.content)
             self.assertCountEqual(
                 [elt.attr('id') for elt in q.items('*[id^=id_constraint_]')],
-                ['id_constraint_{}'.format(conf_name) for conf_name in expected],
+                [f'id_constraint_{conf_name}' for conf_name in expected],
             )
 
     def test_edit_req_constraint_types(self):
@@ -427,12 +426,12 @@ class SessionRequestTestCase(TestCase):
             q = PyQuery(r.content)
             self.assertCountEqual(
                 [elt.attr('id') for elt in q.items('*[id^=id_constraint_]')],
-                ['id_constraint_{}'.format(conf_name) for conf_name in expected],
+                [f'id_constraint_{conf_name}' for conf_name in expected],
             )
 
 class SubmitRequestCase(TestCase):
     def setUp(self):
-        super(SubmitRequestCase, self).setUp()
+        super().setUp()
         # Ensure meeting numbers are predictable. Temporarily needed while basing
         # constraint types on meeting number, expected to go away when #2770 is resolved.
         MeetingFactory.reset_sequence(0)
@@ -482,7 +481,7 @@ class SubmitRequestCase(TestCase):
         # Verify the contents of the confirm view
         self.assertContains(r, 'Thursday early afternoon, Thursday late afternoon')
         self.assertContains(r, group2.acronym)
-        self.assertContains(r, 'First session with: {} {}'.format(group3.acronym, group4.acronym))
+        self.assertContains(r, f'First session with: {group3.acronym} {group4.acronym}')
 
         post_data['submit'] = 'Submit'
         r = self.client.post(confirm_url,post_data)
@@ -690,7 +689,7 @@ class SubmitRequestCase(TestCase):
         self.assertTrue('Schedule the sessions on subsequent days' in notification_payload)
         self.assertTrue(group2.acronym in notification_payload)
         self.assertTrue("Can't meet: Thursday early afternoon, Thursday late" in notification_payload)
-        self.assertTrue('Second session joint with: {}'.format(group3.acronym) in notification_payload)
+        self.assertTrue(f'Second session joint with: {group3.acronym}' in notification_payload)
         self.assertTrue(ad.ascii_name() in notification_payload)
         self.assertIn(ConstraintName.objects.get(slug='chair_conflict').name, notification_payload)
         self.assertIn(group.acronym, notification_payload)
@@ -797,7 +796,7 @@ class SubmitRequestCase(TestCase):
         self.assertTrue('Schedule the sessions on subsequent days' in notification_payload)
         self.assertTrue(group2.acronym in notification_payload)
         self.assertTrue("Can't meet: Thursday early afternoon, Thursday late" in notification_payload)
-        self.assertTrue('Second session joint with: {}'.format(group3.acronym) in notification_payload)
+        self.assertTrue(f'Second session joint with: {group3.acronym}' in notification_payload)
         self.assertTrue(ad.ascii_name() in notification_payload)
         self.assertIn(ConstraintName.objects.get(slug='chair_conflict').name, notification_payload)
         self.assertIn(group.acronym, notification_payload)

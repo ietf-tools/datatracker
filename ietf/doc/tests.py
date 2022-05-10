@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import os
@@ -7,7 +6,7 @@ import datetime
 import io
 import lxml
 import bibtexparser
-import mock
+from unittest import mock
 import json
 import copy
 
@@ -627,7 +626,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertNotContains(r, updated_by.canonical_name())
         self.assertNotContains(r, updated_by.title)
 
-        self.client.cookies = SimpleCookie({str('full_draft'): str('on')})
+        self.client.cookies = SimpleCookie({'full_draft': 'on'})
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
@@ -645,7 +644,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertNotContains(r, updated_by.canonical_name())
         self.assertNotContains(r, updated_by.title)
 
-        self.client.cookies = SimpleCookie({str('full_draft'): str('off')})
+        self.client.cookies = SimpleCookie({'full_draft': 'off'})
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
@@ -663,7 +662,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertNotContains(r, updated_by.canonical_name())
         self.assertNotContains(r, updated_by.title)
 
-        self.client.cookies = SimpleCookie({str('full_draft'): str('foo')})
+        self.client.cookies = SimpleCookie({'full_draft': 'foo'})
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
@@ -789,12 +788,12 @@ Man                    Expires September 22, 2015               [Page 3]
         """Assert correct format for WG-like group types"""
         self.assertContains(
             r,
-            '(<a href="%(about_url)s">%(group_acro)s %(group_type)s</a>)' % {
-                "group_acro": group.acronym,
-                "group_type": group.type,
-                "about_url": group.about_url(),
-            },
-            msg_prefix='WG-like group %s (%s) should include group type in link' % (group.acronym, group.type),
+            '(<a href="{about_url}">{group_acro} {group_type}</a>)'.format(
+                group_acro=group.acronym,
+                group_type=group.type,
+                about_url=group.about_url(),
+            ),
+            msg_prefix='WG-like group {} ({}) should include group type in link'.format(group.acronym, group.type),
         )
 
     def test_draft_status_changes(self):
@@ -846,11 +845,11 @@ Man                    Expires September 22, 2015               [Page 3]
         """Assert correct format for non-WG-like group types"""
         self.assertContains(
             r,
-            '(<a href="%(about_url)s">%(group_acro)s</a>)' % {
-                "group_acro": group.acronym,
-                "about_url": group.about_url(),
-            },
-            msg_prefix='Non-WG-like group %s (%s) should not include group type in link' % (group.acronym, group.type),
+            '(<a href="{about_url}">{group_acro}</a>)'.format(
+                group_acro=group.acronym,
+                about_url=group.about_url(),
+            ),
+            msg_prefix='Non-WG-like group {} ({}) should not include group type in link'.format(group.acronym, group.type),
         )
 
     def login(self, username):
@@ -910,7 +909,7 @@ Man                    Expires September 22, 2015               [Page 3]
         """Helper to generate edit_authors POST data for a set of authors"""
         def _add_prefix(s):
             # The prefix here needs to match the formset prefix in the edit_authors() view
-            return 'author-{}'.format(s)
+            return f'author-{s}'
 
         data = {
             'basis': basis,
@@ -947,7 +946,7 @@ Man                    Expires September 22, 2015               [Page 3]
         DocumentAuthor order property, which is 1-indexed)
         """
         def _add_prefix(s):
-            return '{}-{}'.format(prefix, s)
+            return f'{prefix}-{s}'
 
         total_forms = int(post_data[_add_prefix('TOTAL_FORMS')]) - 1  # subtract 1 for empty form 
         if insert_order < 0:
@@ -1362,7 +1361,7 @@ Man                    Expires September 22, 2015               [Page 3]
             self.assertEqual(
                 len(q('th:contains("Action Holder") ~ td a[href="%s"]' % edit_ah_url)),
                 1 if expect_buttons else 0,
-                '%s should%s see the edit action holders button but %s' % (
+                '{} should{} see the edit action holders button but {}'.format(
                     username if username else 'unauthenticated user',
                     '' if expect_buttons else ' not',
                     'did not' if expect_buttons else 'did',
@@ -1371,7 +1370,7 @@ Man                    Expires September 22, 2015               [Page 3]
             self.assertEqual(
                 len(q('th:contains("Action Holder") ~ td a[href="%s"]' % remind_ah_url)),
                 1 if expect_buttons else 0,
-                '%s should%s see the remind action holders button but %s' % (
+                '{} should{} see the remind action holders button but {}'.format(
                     username if username else 'unauthenticated user',
                     '' if expect_buttons else ' not',
                     'did not' if expect_buttons else 'did',
@@ -1592,7 +1591,7 @@ class DocTestCase(TestCase):
         doc.save_with_history([e])
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertRegex(r.content.decode(), r'\(\s*%s\s+for\s+-%s\s*\)' % (pos.comment_time.strftime('%Y-%m-%d'), oldrev))
+        self.assertRegex(r.content.decode(), r'\(\s*{}\s+for\s+-{}\s*\)'.format(pos.comment_time.strftime('%Y-%m-%d'), oldrev))
 
         # Now simulate a new ballot against the new revision and make sure the "was" position is included
         pos2 = BallotPositionDocEvent.objects.create(
@@ -1741,13 +1740,13 @@ class DocTestCase(TestCase):
     def test_history_bis_00(self):
         rfcname='rfc9090'
         rfc = WgRfcFactory(alias2=rfcname)
-        bis_draft = WgDraftFactory(name='draft-ietf-{}-{}bis'.format(rfc.group.acronym,rfcname))
+        bis_draft = WgDraftFactory(name=f'draft-ietf-{rfc.group.acronym}-{rfcname}bis')
 
         url = urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=bis_draft.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200) 
         q = PyQuery(unicontent(r))
-        attr1='value="{}"'.format(rfcname)
+        attr1=f'value="{rfcname}"'
         self.assertEqual(len(q('option['+attr1+'][selected="selected"]')), 1)
 
 
@@ -1877,7 +1876,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
 
         draft = IndividualDraftFactory.create()
-        docname = '%s-%s' % (draft.name, draft.rev)
+        docname = '{}-{}'.format(draft.name, draft.rev)
         bibname = docname[6:]           # drop the 'draft-' prefix
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=draft.name))
         r = self.client.get(url)
@@ -1893,7 +1892,7 @@ class DocTestCase(TestCase):
 
     def test_document_bibxml(self):
         draft = IndividualDraftFactory.create()
-        docname = '%s-%s' % (draft.name, draft.rev)
+        docname = '{}-{}'.format(draft.name, draft.rev)
         for viewname in [ 'ietf.doc.views_doc.document_bibxml', 'ietf.doc.views_doc.document_bibxml_ref' ]:
             url = urlreverse(viewname, kwargs=dict(name=draft.name))
             r = self.client.get(url)
@@ -1909,7 +1908,7 @@ class DocTestCase(TestCase):
 
     def test_trailing_hypen_digit_name_bibxml(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test-2')
-        docname = '%s-%s' % (draft.name, draft.rev)
+        docname = '{}-{}'.format(draft.name, draft.rev)
         for viewname in [ 'ietf.doc.views_doc.document_bibxml', 'ietf.doc.views_doc.document_bibxml_ref' ]:
             # This will need to be adjusted if settings.URL_REGEXPS is changed
             url = urlreverse(viewname, kwargs=dict(name=draft.name[:-2], rev=draft.name[-1:]+'-'+draft.rev))
@@ -2491,10 +2490,10 @@ class MaterialsTests(TestCase):
         # and there should be a more usable unit to save bits to disk (handle_file_upload isn't quite right) that tests can leverage
         uploaded_filename_00 = f'agenda-{meeting_number}-{group_acronym}-00.txt'
         uploaded_filename_01 = f'agenda-{meeting_number}-{group_acronym}-01.md'
-        f = io.open(os.path.join(agenda_dir, uploaded_filename_00), 'w')
+        f = open(os.path.join(agenda_dir, uploaded_filename_00), 'w')
         f.write('This is some unremarkable text')
         f.close()
-        f = io.open(os.path.join(agenda_dir, uploaded_filename_01), 'w')
+        f = open(os.path.join(agenda_dir, uploaded_filename_01), 'w')
         f.write('This links to [an unusual place](https://unusual.example).')
         f.close()
 

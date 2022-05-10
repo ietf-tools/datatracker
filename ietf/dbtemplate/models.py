@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
 
 

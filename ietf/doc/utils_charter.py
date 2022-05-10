@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -31,7 +30,7 @@ def charter_name_for_group(group):
     else:
         top_org = "ietf"
 
-    return "charter-%s-%s" % (top_org, group.acronym)
+    return "charter-{}-{}".format(top_org, group.acronym)
 
 def split_charter_name(charter_name):
     top_org, group_acronym = charter_name.split("-", 2)[1:]
@@ -59,11 +58,11 @@ def next_approved_revision(rev):
     return "%#02d" % (int(m.group('major')) + 1)
 
 def read_charter_text(doc):
-    filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
+    filename = os.path.join(settings.CHARTER_PATH, '{}-{}.txt'.format(doc.canonical_name(), doc.rev))
     try:
-        with io.open(filename, 'r') as f:
+        with open(filename, 'r') as f:
             return f.read()
-    except IOError:
+    except OSError:
         return "Error: couldn't read charter text"
 
 def change_group_state_after_charter_approval(group, by):
@@ -89,16 +88,16 @@ def change_group_state_after_charter_approval(group, by):
 def fix_charter_revision_after_approval(charter, by):
     # according to spec, 00-02 becomes 01, so copy file and record new revision
     try:
-        old = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-        new = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev)))
+        old = os.path.join(charter.get_file_path(), '{}-{}.txt'.format(charter.canonical_name(), charter.rev))
+        new = os.path.join(charter.get_file_path(), '{}-{}.txt'.format(charter.canonical_name(), next_approved_revision(charter.rev)))
         shutil.copy(old, new)
-    except IOError:
-        log("There was an error copying %s to %s" % (old, new))
+    except OSError:
+        log("There was an error copying {} to {}".format(old, new))
 
     events = []
     e = NewRevisionDocEvent(doc=charter, by=by, type="new_revision")
     e.rev = next_approved_revision(charter.rev)
-    e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), e.rev)
+    e.desc = "New version available: <b>{}-{}.txt</b>".format(charter.canonical_name(), e.rev)
     e.save()
     events.append(e)
 

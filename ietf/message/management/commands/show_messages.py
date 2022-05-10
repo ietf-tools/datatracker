@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import email
@@ -64,10 +63,10 @@ class Command(BaseCommand):
         messages = messages.filter(time__gte=options['start'])
         if options['stop']:
             messages = messages.filter(sent__lte=options['stop'])
-            selection_str = "%s messages between %s and %s" % (options['state'], options['start'], options['stop'])
+            selection_str = "{} messages between {} and {}".format(options['state'], options['start'], options['stop'])
 
         else:
-            selection_str = "%s messages since %s" % (options['state'], options['start'])
+            selection_str = "{} messages since {}".format(options['state'], options['start'])
         self.stdout.write("\nShowimg %s:\n\n" % selection_str)
 
         if options['pk']:
@@ -80,4 +79,4 @@ class Command(BaseCommand):
                 self.stdout.write('%s  %16s  %16s  %56s  %s -> %s  "%s"\n' %
                     (m.pk, m.time.strftime('%Y-%m-%d %H:%M'), m.sent and m.sent.strftime('%Y-%m-%d %H:%M') or '',
                         m.msgid.strip('<>'), addr(m.frm), to, m.subject.strip()))
-            self.stdout.write("\n%s messages (%s)\n" % (messages.count(), selection_str))
+            self.stdout.write("\n{} messages ({})\n".format(messages.count(), selection_str))

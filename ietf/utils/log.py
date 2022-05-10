@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import sys
@@ -38,7 +37,7 @@ for name, level in settings.UTILS_LOGGER_LEVELS.items():
             h.setFormatter(formatter)
             h.setLevel(level)
             logger.addHandler(h)
-    debug.say(" Setting %s logging level to %s" % (logger.name, level))
+    debug.say(" Setting {} logging level to {}".format(logger.name, level))
     logger.setLevel(level)
 
 def getclass(frame):
@@ -129,9 +128,9 @@ def assertion(statement, state=True, note=None):
     if bool(value) != bool(state):
         if (settings.DEBUG is True) or (settings.SERVER_MODE == 'test') :
             if note:
-                raise AssertionError("Assertion failed: '%s': %s != %s (%s)." % (statement, repr(value), state, note))
+                raise AssertionError("Assertion failed: '{}': {} != {} ({}).".format(statement, repr(value), state, note))
             else:
-                raise AssertionError("Assertion failed: '%s': %s != %s." % (statement, repr(value), state))
+                raise AssertionError("Assertion failed: '{}': {} != {}.".format(statement, repr(value), state))
         else:
             # build a simulated traceback object
             tb = build_traceback(inspect.stack()[1:])
@@ -150,7 +149,7 @@ def unreachable(date="(unknown)"):
     "Raises an assertion or sends traceback to admins if executed."
     frame = inspect.currentframe().f_back
     if settings.DEBUG is True or settings.SERVER_MODE == 'test':
-        raise AssertionError("Arrived at code in %s() which was marked unreachable on %s." % (frame.f_code.co_name, date))
+        raise AssertionError("Arrived at code in {}() which was marked unreachable on {}.".format(frame.f_code.co_name, date))
     else:
         # build a simulated traceback object
         tb = build_traceback(inspect.stack()[1:])
@@ -159,5 +158,5 @@ def unreachable(date="(unknown)"):
         for key in [ 'request', 'status_code', ]:
             if key in frame.f_locals:
                 extra[key] = frame.f_locals[key]
-        logger.error("Arrived at code in %s() which was marked unreachable on %s." % (frame.f_code.co_name, date),
+        logger.error("Arrived at code in {}() which was marked unreachable on {}.".format(frame.f_code.co_name, date),
                         exc_info=(AssertionError, None, tb), extra=extra)

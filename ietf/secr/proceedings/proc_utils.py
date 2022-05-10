@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 '''
@@ -80,7 +79,7 @@ def import_audio_files(meeting):
             ).order_by('timeslotassignments__timeslot__time')
             if not sessions:
                 continue
-            url = settings.IETF_AUDIO_URL + 'ietf{}/{}'.format(meeting.number, filename)
+            url = settings.IETF_AUDIO_URL + f'ietf{meeting.number}/{filename}'
             doc = get_or_create_recording_document(url, sessions[0])
             attach_recording(doc, sessions)
         else:
@@ -124,9 +123,9 @@ def attach_recording(doc, sessions):
                 document=doc,
                 rev=doc.rev)
             session.sessionpresentation_set.add(presentation)
-            if not doc.docalias.filter(name__startswith='recording-{}-{}'.format(session.meeting.number,session.group.acronym)):
+            if not doc.docalias.filter(name__startswith=f'recording-{session.meeting.number}-{session.group.acronym}'):
                 sequence = get_next_sequence(session.group,session.meeting,'recording')
-                name = 'recording-{}-{}-{}'.format(session.meeting.number,session.group.acronym,sequence)
+                name = f'recording-{session.meeting.number}-{session.group.acronym}-{sequence}'
                 DocAlias.objects.create(name=name).docs.add(doc)
 
 def normalize_room_name(name):
@@ -145,13 +144,13 @@ def create_recording(session, url, title=None, user=None):
     NewRevisionDocEvent
     '''
     sequence = get_next_sequence(session.group,session.meeting,'recording')
-    name = 'recording-{}-{}-{}'.format(session.meeting.number,session.group.acronym,sequence)
+    name = f'recording-{session.meeting.number}-{session.group.acronym}-{sequence}'
     time = session.official_timeslotassignment().timeslot.time.strftime('%Y-%m-%d %H:%M')
     if not title:
         if url.endswith('mp3'):
-            title = 'Audio recording for {}'.format(time)
+            title = f'Audio recording for {time}'
         else:
-            title = 'Video recording for {}'.format(time)
+            title = f'Video recording for {time}'
         
     doc = Document.objects.create(name=name,
                                   title=title,
@@ -180,7 +179,7 @@ def get_next_sequence(group,meeting,type):
     Returns the next sequence number to use for a document of type = type.
     Takes a group=Group object, meeting=Meeting object, type = string
     '''
-    aliases = DocAlias.objects.filter(name__startswith='{}-{}-{}-'.format(type,meeting.number,group.acronym))
+    aliases = DocAlias.objects.filter(name__startswith=f'{type}-{meeting.number}-{group.acronym}-')
     if not aliases:
         return 1
     aliases = aliases.order_by('name')
@@ -216,14 +215,14 @@ def get_progress_stats(sdate,edate):
     data['actions_count'] = events.filter(type='iesg_approved').count()
     data['last_calls_count'] = events.filter(type='sent_last_call').count()
     new_draft_events = events.filter(newrevisiondocevent__rev='00')
-    new_drafts = list(set([ e.doc_id for e in new_draft_events ]))
-    data['new_docs'] = list(set([ e.doc for e in new_draft_events ]))
+    new_drafts = list({ e.doc_id for e in new_draft_events })
+    data['new_docs'] = list({ e.doc for e in new_draft_events })
     data['new_drafts_count'] = len(new_drafts)
     data['new_drafts_updated_count'] = events.filter(doc__id__in=new_drafts,newrevisiondocevent__rev='01').count()
     data['new_drafts_updated_more_count'] = events.filter(doc__id__in=new_drafts,newrevisiondocevent__rev='02').count()
     
     update_events = events.filter(type='new_revision').exclude(doc__id__in=new_drafts)
-    data['updated_drafts_count'] = len(set([ e.doc_id for e in update_events ]))
+    data['updated_drafts_count'] = len({ e.doc_id for e in update_events })
     
     # Calculate Final Four Weeks stats (ffw)
     ffwdate = edate - datetime.timedelta(days=28)
@@ -237,7 +236,7 @@ def get_progress_stats(sdate,edate):
     data['ffw_new_percent'] = ffw_new_percent
     
     ffw_update_events = events.filter(time__gte=ffwdate,type='new_revision').exclude(doc__id__in=new_drafts)
-    ffw_update_count = len(set([ e.doc_id for e in ffw_update_events ]))
+    ffw_update_count = len({ e.doc_id for e in ffw_update_events })
     try:
         ffw_update_percent = format(ffw_update_count / float(data['updated_drafts_count']),'.0%')
     except ZeroDivisionError:

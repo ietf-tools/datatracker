@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -111,7 +110,7 @@ class IprDisclosureBase(models.Model):
         """Returns the set of disclosures updated directly or transitively by this disclosure"""
         if disc_set == None:
             disc_set = set()
-        new_candidates = set([y.target.get_child() for y in self.updates])
+        new_candidates = {y.target.get_child() for y in self.updates}
         unseen = new_candidates - disc_set
         disc_set.update(unseen)
         for disc in unseen:
@@ -185,9 +184,9 @@ class IprDocRel(models.Model):
 
     def __str__(self):
         if self.revisions:
-            return "%s which applies to %s-%s" % (self.disclosure, self.document.name, self.revisions)
+            return "{} which applies to {}-{}".format(self.disclosure, self.document.name, self.revisions)
         else:
-            return "%s which applies to %s" % (self.disclosure, self.document.name)
+            return "{} which applies to {}".format(self.disclosure, self.document.name)
 
 class RelatedIpr(models.Model):
     source       = ForeignKey(IprDisclosureBase,related_name='relatedipr_source_set')
@@ -195,7 +194,7 @@ class RelatedIpr(models.Model):
     relationship = ForeignKey(DocRelationshipName) # Re-use; change to a dedicated RelName if needed
 
     def __str__(self):
-        return "%s %s %s" % (self.source.title, self.relationship.name.lower(), self.target.title)
+        return "{} {} {}".format(self.source.title, self.relationship.name.lower(), self.target.title)
 
 class IprEvent(models.Model):
     time        = models.DateTimeField(auto_now_add=True)
@@ -208,11 +207,11 @@ class IprEvent(models.Model):
     response_due= models.DateTimeField(blank=True,null=True)
 
     def __str__(self):
-        return "%s %s by %s at %s" % (self.disclosure.title, self.type.name.lower(), self.by.plain_name(), self.time)
+        return "{} {} by {} at {}".format(self.disclosure.title, self.type.name.lower(), self.by.plain_name(), self.time)
 
     def save(self, *args, **kwargs):
         created = not self.pk
-        super(IprEvent, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
         if created:
             self.create_doc_events()
         
@@ -244,7 +243,7 @@ class IprEvent(models.Model):
                     by=self.by,
                     doc=doc,
                     rev='',
-                    desc='%s related IPR disclosure <b>%s</b>' % (self.type.name, 
+                    desc='{} related IPR disclosure <b>{}</b>'.format(self.type.name, 
                                                                   self.disclosure.title),
                 )
                     

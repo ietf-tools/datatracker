@@ -44,23 +44,17 @@ class TestParse(unittest.TestCase):
         self.assertEqual([ ('Beno\xeet', 'benoit@example.com')], get_mail_addresses(Msg('=?utf-8?q?Beno=C3=AEt?= <benoit@example.com>'), 'to'))
         
         # address already encoded into utf8 (bad)
-        address='Ant\xf3nio Foo <a.foo@example.com>'.encode('utf8')
-        if sys.version_info<(3, 0):
-            self.assertEqual([('Ant\ufffd\ufffdnio Foo', 'a.foo@example.com')], get_mail_addresses(Msg(address), 'to'))
-        else:
-            # Python 3.2 return header when surrogate characters are used in header
-            self.assertEqual([('Ant??nio Foo', 'a.foo@example.com'), ], get_mail_addresses(Msg(email.header.Header(address, charset=email.charset.UNKNOWN8BIT, header_name='to')), 'to'))
+        address='Ant\xf3nio Foo <a.foo@example.com>'.encode()
+        # Python 3.2 return header when surrogate characters are used in header
+        self.assertEqual([('Ant??nio Foo', 'a.foo@example.com'), ], get_mail_addresses(Msg(email.header.Header(address, charset=email.charset.UNKNOWN8BIT, header_name='to')), 'to'))
         
     def test_get_filename(self):
         """test get_filename()"""
         import email.mime.image
 
         filename='Fran\xe7ais.png'
-        if sys.version_info<(3, 0):
-            encoded_filename=filename.encode('iso-8859-1')
-        else:
-            encoded_filename=filename
-               
+        encoded_filename=filename
+           
         payload=b'data'
         attach=email.mime.image.MIMEImage(payload, 'png')
         attach.add_header('Content-Disposition', 'attachment', filename='image.png')
@@ -118,10 +112,7 @@ Content-ID: <this.is.the.normaly.unique.contentid>
 ZGF0YQ==<HERE1>
 --===limit1==--"""
     
-        if sys.version_info<(3, 0):
-            expected_raw=expected_raw.replace('<HERE1>','')
-        else:
-            expected_raw=expected_raw.replace('<HERE1>','\n')
+        expected_raw=expected_raw.replace('<HERE1>','\n')
 
         self.assertEqual(raw, expected_raw)
         
@@ -218,10 +209,10 @@ bo\xc3\xaete mail = mailbox
     raw_3=b'Content-Type: text/plain; charset="us-ascii"\n' \
           b'MIME-Version: 1.0\n' \
           b'Content-Transfer-Encoding: 7bit\n' \
-          + 'Subject: Beno\xeet & Ant\xf3nio\n'.encode('utf8') +\
+          + 'Subject: Beno\xeet & Ant\xf3nio\n'.encode() +\
           b'From: =?utf-8?q?Beno=C3=AEt?= <benoit@example.com>\n' \
-          + 'To: Ant\xf3nio Foo <a.foo@example.com>\n'.encode('utf8') \
-          + 'Cc: Beno\xeet <benoit@foo.com>, d@foo.com\n'.encode('utf8') +\
+          + 'To: Ant\xf3nio Foo <a.foo@example.com>\n'.encode() \
+          + 'Cc: Beno\xeet <benoit@foo.com>, d@foo.com\n'.encode() +\
           b'User-Agent: pyzmail\n' \
           b'\n' \
           b'The text.\n'

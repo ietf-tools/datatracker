@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2010-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -159,7 +158,7 @@ class Person(models.Model):
     def photo_name(self,thumb=False):
         hasher = Hashids(salt='Person photo name salt',min_length=5)
         _, first, _, last, _ = name_parts(self.ascii)
-        return '%s-%s%s' % ( slugify("%s %s" % (first, last)), hasher.encode(self.id), '-th' if thumb else '' )
+        return '{}-{}{}'.format( slugify("{} {}".format(first, last)), hasher.encode(self.id), '-th' if thumb else '' )
 
     def has_drafts(self):
         from ietf.doc.models import Document
@@ -206,7 +205,7 @@ class Person(models.Model):
 
     def save(self, *args, **kwargs):
         created = not self.pk
-        super(Person, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
         if created:
             if Person.objects.filter(name=self.name).count() > 1 :
                 msg = render_to_string('person/mail/possible_duplicates.txt',
@@ -230,7 +229,7 @@ class Person(models.Model):
 
     def available_api_endpoints(self):
         from ietf.ietfauth.utils import has_role
-        return list(set([ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES if r==None or has_role(self.user, r) ]))
+        return list({ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES if r==None or has_role(self.user, r) })
 
     def cdn_photo_url(self, size=80):
         if self.photo:
@@ -256,7 +255,7 @@ class PersonExtResource(models.Model):
     value = models.CharField(max_length=2083) # 2083 is the maximum legal URL length
     def __str__(self):
         priority = self.display_name or self.name.name
-        return u"%s (%s) %s" % (priority, self.name.slug, self.value)
+        return "{} ({}) {}".format(priority, self.name.slug, self.value)
 
 class Alias(models.Model):
     """This is used for alternative forms of a name.  This is the
@@ -269,7 +268,7 @@ class Alias(models.Model):
 
     def save(self, *args, **kwargs):
         created = not self.pk
-        super(Alias, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
         if created:
             if Alias.objects.filter(name=self.name).exclude(person=self.person).count() > 0 :
                 msg = render_to_string('person/mail/possible_duplicates.txt',
@@ -314,7 +313,7 @@ class Email(models.Model):
         Use self.formatted_email() for that.
         """
         if self.person:
-            return "%s <%s>" % (self.person.plain_name(), self.address)
+            return "{} <{}>".format(self.person.plain_name(), self.address)
         else:
             return "<%s>" % self.address
 
@@ -341,7 +340,7 @@ class Email(models.Model):
     def save(self, *args, **kwargs):
         if not self.origin:
             log.assertion('self.origin')
-        super(Email, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 # "{key.id}{salt}{hash}
 KEY_STRUCT = "i12s32s"
@@ -359,7 +358,7 @@ PERSON_API_KEY_VALUES = [
     ("/api/appauth/authortools", "/api/appauth/authortools", None),
     ("/api/appauth/bibxml", "/api/appauth/bibxml", None),
 ]
-PERSON_API_KEY_ENDPOINTS = sorted(list(set([ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES ])))
+PERSON_API_KEY_ENDPOINTS = sorted(list({ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES }))
 
 class PersonalApiKey(models.Model):
     person   = ForeignKey(Person, related_name='apikeys')
@@ -419,7 +418,7 @@ class PersonEvent(models.Model):
     desc = models.TextField()
 
     def __str__(self):
-        return "%s %s at %s" % (self.person.plain_name(), self.get_type_display().lower(), self.time)
+        return "{} {} at {}".format(self.person.plain_name(), self.get_type_display().lower(), self.time)
 
     class Meta:
         ordering = ['-time', '-id']

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2009-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import os
@@ -114,7 +113,7 @@ class GroupPagesTests(TestCase):
 
         chair = Email.objects.filter(role__group=group, role__name="chair")[0]
 
-        with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
+        with (Path(settings.CHARTER_PATH) / ("{}-{}.txt".format(group.charter.canonical_name(), group.charter.rev))).open("w") as f:
             f.write("This is a charter.")
 
         url = urlreverse('ietf.group.views.wg_summary_area', kwargs=dict(group_type="wg"))
@@ -246,7 +245,7 @@ class GroupPagesTests(TestCase):
         group = CharterFactory().group
         draft = WgDraftFactory(group=group)
 
-        with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
+        with (Path(settings.CHARTER_PATH) / ("{}-{}.txt".format(group.charter.canonical_name(), group.charter.rev))).open("w") as f:
             f.write("This is a charter.")
 
         milestone = GroupMilestone.objects.create(
@@ -645,7 +644,7 @@ class GroupEditTests(TestCase):
         self.assertTrue(len(q('form .is-invalid')) > 0)
         
         # edit info
-        with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
+        with (Path(settings.CHARTER_PATH) / ("{}-{}.txt".format(group.charter.canonical_name(), group.charter.rev))).open("w") as f:
             f.write("This is a charter.")
         area = group.parent
         ad = Person.objects.get(name="Areað Irector")
@@ -688,7 +687,7 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.list_archive, "archive.mars")
         self.assertEqual(group.description, '')
 
-        self.assertTrue((Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).exists())
+        self.assertTrue((Path(settings.CHARTER_PATH) / ("{}-{}.txt".format(group.charter.canonical_name(), group.charter.rev))).exists())
         self.assertEqual(len(outbox), 2)
         self.assertTrue('Personnel change' in outbox[0]['Subject'])
         for prefix in ['ad1','ad2','aread','marschairman','marsdelegate']:
@@ -757,9 +756,9 @@ class GroupEditTests(TestCase):
             self.assertEqual(r.status_code, 200)
 
             q = PyQuery(r.content)
-            self.assertEqual(len(q('div#content > form input[name=%s], div#content > form select[name=%s]' % (field_name, field_name))), 1)
+            self.assertEqual(len(q('div#content > form input[name={}], div#content > form select[name={}]'.format(field_name, field_name))), 1)
             for prohibited_name in prohibited_form_names:
-                self.assertEqual(len(q('div#content > form input[name=%s], div#content > form select[name=%s]' % (prohibited_name, prohibited_name))), 0)
+                self.assertEqual(len(q('div#content > form input[name={}], div#content > form select[name={}]'.format(prohibited_name, prohibited_name))), 0)
 
             # edit info
             r = self.client.post(url, {field_name: field_content})
@@ -1002,7 +1001,7 @@ class GroupFormTests(TestCase):
         if r.display_name:
             return '{} {} ({})'.format(r.name.slug, r.value, r.display_name.strip('()'))
         else:
-            return '{} {}'.format(r.name.slug, r.value)
+            return f'{r.name.slug} {r.value}'
 
     def _group_post_data(self, group):
         data=dict(
@@ -1018,7 +1017,7 @@ class GroupFormTests(TestCase):
         )
         # fill in original values
         for rslug in group.get_used_roles():
-            data['{}_roles'.format(rslug)] = list(group.role_set.filter(name_id=rslug).values_list('email__address', flat=True).all())
+            data[f'{rslug}_roles'] = list(group.role_set.filter(name_id=rslug).values_list('email__address', flat=True).all())
 
         return data
 
@@ -1034,7 +1033,7 @@ class GroupFormTests(TestCase):
                 actual = value.pk
             else:
                 actual = '' if value is None else value
-            self.assertEqual(actual, expected, 'unexpected value for {}'.format(attr))
+            self.assertEqual(actual, expected, f'unexpected value for {attr}')
 
     def do_edit_roles_test(self, group):
         # get post_data for the group
@@ -1047,7 +1046,7 @@ class GroupFormTests(TestCase):
         # This does not actually update group, so start with orig_data each time.
         for rslug in group.get_used_roles():
             data = orig_data.copy()
-            edit_field = '{}_roles'.format(rslug)
+            edit_field = f'{rslug}_roles'
             data[edit_field] = [new_email.address]
 
             form = GroupForm(data, group=group, group_type=group.type_id, field=None)

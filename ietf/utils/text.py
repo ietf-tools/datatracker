@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import bleach  # type: ignore
@@ -82,7 +81,7 @@ def fill(text, width):
     for para in paras:
         if para:
             lines = para.split("\n")
-            maxlen = max([len(line) for line in lines])
+            maxlen = max(len(line) for line in lines)
             if maxlen > width:
                 para = textwrap.fill(para, width, replace_whitespace=False)
             wrapped.append(para)
@@ -213,7 +212,7 @@ def dict_to_text(d):
     "Convert a dictionary to RFC2822-formatted text"
     t = ""
     for k, v in d.items():
-        t += "%s: %s\n" % (k, v)
+        t += "{}: {}\n".format(k, v)
     return t
 
 def texescape(s):

@@ -1,5 +1,3 @@
-
-
 from ietf.community import views
 from ietf.utils.urls import url
 

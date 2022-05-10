@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 import datetime
 import itertools
 import requests
@@ -131,20 +130,20 @@ def create_proceedings_templates(meeting):
         content = render_to_string('meeting/proceedings_attendees_table.html', {
             'attendees':attendees})
         try:
-            template = DBTemplate.objects.get(path='/meeting/proceedings/%s/attendees.html' % (meeting.number, ))
+            template = DBTemplate.objects.get(path='/meeting/proceedings/{}/attendees.html'.format(meeting.number))
             template.title='IETF %s Attendee List' % meeting.number
             template.type_id='django'
             template.content=content
             template.save()
         except DBTemplate.DoesNotExist:
             DBTemplate.objects.create(
-                path='/meeting/proceedings/%s/attendees.html' % (meeting.number, ),
+                path='/meeting/proceedings/{}/attendees.html'.format(meeting.number),
                 title='IETF %s Attendee List' % meeting.number,
                 type_id='django',
                 content=content)    
     # Make copy of default IETF Overview template
     if not meeting.overview:
-        path = '/meeting/proceedings/%s/overview.rst' % (meeting.number, )
+        path = '/meeting/proceedings/{}/overview.rst'.format(meeting.number)
         try:
             template = DBTemplate.objects.get(path=path)
         except DBTemplate.DoesNotExist:
@@ -312,7 +311,7 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
         # add reversed version of the name
         reverse_n = ConstraintName(
             slug=n.slug + "-reversed",
-            name="{} - reversed".format(n.name),
+            name=f"{n.name} - reversed",
         )
         constraint_names[reverse_n.slug] = reverse_n
 
@@ -321,7 +320,7 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
 
     # synthesize AD constraints - we can treat them as a special kind of 'bethere'
     responsible_ad_for_group = {}
-    session_groups = set(s.group for s in sessions if s.group and s.group.parent and s.group.parent.type_id == 'area')
+    session_groups = {s.group for s in sessions if s.group and s.group.parent and s.group.parent.type_id == 'area'}
     meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
 
     # dig up historic AD names
@@ -586,16 +585,16 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
         if not sess_time:
             raise SessionNotScheduledError
         if session.meeting.type_id=='ietf':
-            name = 'minutes-%s-%s' % (session.meeting.number,
+            name = 'minutes-{}-{}'.format(session.meeting.number,
                                       session.group.acronym)
-            title = 'Minutes IETF%s: %s' % (session.meeting.number,
+            title = 'Minutes IETF{}: {}'.format(session.meeting.number,
                                             session.group.acronym)
             if not apply_to_all:
-                name += '-%s' % (sess_time.strftime("%Y%m%d%H%M"),)
-                title += ': %s' % (sess_time.strftime("%a %H:%M"),)
+                name += '-{}'.format(sess_time.strftime("%Y%m%d%H%M"))
+                title += ': {}'.format(sess_time.strftime("%a %H:%M"))
         else:
-            name = 'minutes-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
-            title = 'Minutes %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
+            name = 'minutes-{}-{}'.format(session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
+            title = 'Minutes {}: {}'.format(session.meeting.number, sess_time.strftime("%a %H:%M"))
         if Document.objects.filter(name=name).exists():
             doc = Document.objects.get(name=name)
             doc.rev = '%02d' % (int(doc.rev)+1)
@@ -686,7 +685,7 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
                 try:
                     text = smart_text(text)
                 except UnicodeDecodeError as e:
-                    return "Failure trying to save '%s'. Hint: Try to upload as UTF-8: %s..." % (filename, str(e)[:120])
+                    return "Failure trying to save '{}'. Hint: Try to upload as UTF-8: {}...".format(filename, str(e)[:120])
             # Whole file sanitization; add back what's missing from a complete
             # document (sanitize will remove these).
             clean = sanitize_document(text)

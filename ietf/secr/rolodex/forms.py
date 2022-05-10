@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import re
@@ -24,7 +23,7 @@ class SearchForm(forms.Form):
     id = forms.IntegerField(required=False)
 
     def clean(self):
-        super(SearchForm, self).clean()
+        super().clean()
         if any(self.errors):
             return
         data = self.cleaned_data
@@ -49,7 +48,7 @@ class EmailForm(forms.ModelForm):
         origin = self.cleaned_data['origin']
         if ':' in origin:
             valid_tags = ['author', 'role', 'registration', ]
-            tag, value = [ v.strip() for v in origin.split(':', 1) ]
+            tag, value = ( v.strip() for v in origin.split(':', 1) )
             if not tag in valid_tags:
                 raise forms.ValidationError("Invalid tag.  Valid tags are: %s" % ','.join(valid_tags))
             if   tag == 'author':
@@ -63,7 +62,7 @@ class EmailForm(forms.ModelForm):
                     raise forms.ValidationError("Invalid group: %s. A valid 'group role' string is required with 'role:'" % acronym)
                 if not RoleName.objects.filter(slug=slug).exists():
                     roles = RoleName.objects.values_list('slug', flat=True)
-                    raise forms.ValidationError("Invalid role: %s. A valid 'group role' string is required with 'role:'.\n  Valid roles are: %s" % (slug, ', '.join(roles)))
+                    raise forms.ValidationError("Invalid role: {}. A valid 'group role' string is required with 'role:'.\n  Valid roles are: {}".format(slug, ', '.join(roles)))
         else:
             validate_email(origin)
         return origin
@@ -75,7 +74,7 @@ class EditPersonForm(forms.ModelForm):
         exclude = ('time',)
 
     def __init__(self, *args, **kwargs):
-        super(EditPersonForm, self).__init__(*args,**kwargs)
+        super().__init__(*args,**kwargs)
         self.fields['user'] = forms.CharField(max_length=64,required=False,help_text="Corresponds to Django User ID (usually email address)")
         if self.instance.user:
             self.initial['user'] = self.instance.user.username
@@ -140,7 +139,7 @@ class NewPersonForm(forms.ModelForm):
             user = User.objects.get(username=email)
             person = Person.objects.get(user=user)
             if user and person:
-                raise forms.ValidationError("This account already exists. [name=%s, id=%s, email=%s]" % (person.name,person.id,email))
+                raise forms.ValidationError("This account already exists. [name={}, id={}, email={}]".format(person.name,person.id,email))
         except ObjectDoesNotExist:
             pass
             

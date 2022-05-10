@@ -230,7 +230,7 @@ class Conference:
 class ConferenceManager:
     def __init__(self, api_config: dict):
         self.api = MeetechoAPI(**api_config)
-        self.wg_tokens: Dict[str, str] = {}
+        self.wg_tokens: dict[str, str] = {}
         
     def wg_token(self, group):
         group_acronym = group.acronym if hasattr(group, 'acronym') else group

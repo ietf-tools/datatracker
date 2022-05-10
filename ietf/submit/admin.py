@@ -20,12 +20,12 @@ class SubmissionAdmin(admin.ModelAdmin):
         url = urlreverse('ietf.submit.views.submission_status',
                          kwargs=dict(submission_id=instance.pk,
                                      access_token=instance.access_token()))
-        return '<a href="%s">%s</a>' % (url, instance.state)
+        return '<a href="{}">{}</a>'.format(url, instance.state)
     status_link.allow_tags = True       # type: ignore # https://github.com/python/mypy/issues/2087
 
     def draft_link(self, instance):
         if instance.state_id == "posted":
-            return '<a href="%s/%s-%s.txt">%s</a>' % (settings.IETF_ID_ARCHIVE_URL,instance.name, instance.rev, instance.name)
+            return '<a href="{}/{}-{}.txt">{}</a>'.format(settings.IETF_ID_ARCHIVE_URL,instance.name, instance.rev, instance.name)
         else:
             return instance.name
     draft_link.allow_tags = True        # type: ignore # https://github.com/python/mypy/issues/2087

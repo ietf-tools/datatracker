@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -35,7 +34,7 @@ class MultiEmailField(forms.Field):
     def validate(self, value):
         "Check if value consists only of valid emails."
         # Use the parent's handling of required fields, etc.
-        super(MultiEmailField, self).validate(value)
+        super().validate(value)
 
         for email in value:
             validate_email(email)
@@ -93,7 +92,7 @@ class DatepickerDateInput(forms.DateInput):
         self.attrs.setdefault('placeholder', date_format)
         if picker_settings is not None:
             for k, v in picker_settings.items():
-                self.attrs['data-date-{}'.format(k)] = v
+                self.attrs[f'data-date-{k}'] = v
 
 
 class DatepickerSplitDateTimeWidget(forms.SplitDateTimeWidget):
@@ -114,7 +113,7 @@ class DatepickerSplitDateTimeWidget(forms.SplitDateTimeWidget):
         date_attrs.setdefault("placeholder", date_format)
         if picker_settings is not None:
             for k, v in picker_settings.items():
-                date_attrs['data-date-{}'.format(k)] = v
+                date_attrs[f'data-date-{k}'] = v
         super().__init__(date_format=yyyymmdd_to_strftime_format(date_format), **kwargs)
 
 
@@ -124,7 +123,7 @@ class DatepickerDateField(forms.DateField):
         strftime_format = yyyymmdd_to_strftime_format(date_format)
         kwargs["input_formats"] = [strftime_format]
         kwargs["widget"] = DatepickerDateInput(dict(placeholder=date_format), date_format, picker_settings)
-        super(DatepickerDateField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 # This accepts any ordered combination of labelled days, hours, minutes, seconds
@@ -211,7 +210,7 @@ class SearchableField(forms.MultipleChoiceField):
         if 'max_entries' in kwargs:
             self.max_entries = kwargs.pop('max_entries')
 
-        super(SearchableField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.widget.attrs["class"] = "select2-field"
         self.widget.attrs["data-placeholder"] = self.hint_text
@@ -302,7 +301,7 @@ class SearchableField(forms.MultipleChoiceField):
         try:
             objs = self.model.objects.filter(pk__in=pks)
         except ValueError as e:
-            raise forms.ValidationError('Unexpected field value; {}'.format(e))
+            raise forms.ValidationError(f'Unexpected field value; {e}')
 
         found_pks = [ str(o.pk) for o in objs ]
         failed_pks = [ x for x in pks if x not in found_pks ]

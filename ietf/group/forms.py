@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2017-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 # Stdlib imports
@@ -202,7 +201,7 @@ class GroupForm(forms.Form):
                 if confirmed:
                     return acronym
                 else:
-                    raise forms.ValidationError("Warning: Acronym used for an existing %s (%s, %s)." % (existing.type.name, existing.acronym, existing.state.name if existing.state else "unknown state"))
+                    raise forms.ValidationError("Warning: Acronym used for an existing {} ({}, {}).".format(existing.type.name, existing.acronym, existing.state.name if existing.state else "unknown state"))
 
         if existing:
             raise forms.ValidationError("Acronym used for an existing group (%s)." % existing.acronym)
@@ -232,7 +231,7 @@ class GroupForm(forms.Form):
                 try:
                     name = ExtResourceName.objects.get(slug=name_slug)
                 except ObjectDoesNotExist:
-                    errors.append("Bad tag in '%s': Expected one of %s" % (l, ', '.join([ o.slug for o in ExtResourceName.objects.all() ])))
+                    errors.append("Bad tag in '{}': Expected one of {}".format(l, ', '.join([ o.slug for o in ExtResourceName.objects.all() ])))
                     continue
                 value = parts[1]
                 try:
@@ -246,7 +245,7 @@ class GroupForm(forms.Form):
 
     def clean_delegates(self):
         if len(self.cleaned_data["delegates"]) > MAX_GROUP_DELEGATES:
-            raise forms.ValidationError("At most %s delegates can be appointed at the same time, please remove %s delegates." % (
+            raise forms.ValidationError("At most {} delegates can be appointed at the same time, please remove {} delegates.".format(
                     MAX_GROUP_DELEGATES, len(self.cleaned_data["delegates"]) - MAX_GROUP_DELEGATES))
         return self.cleaned_data["delegates"]
 
@@ -265,7 +264,7 @@ class GroupForm(forms.Form):
                 "Found that the group '%s' would end up being the ancestor of (%s)" % (p.acronym, ', '.join([g.acronym for g in seen])))
 
     def clean(self):
-        cleaned_data = super(GroupForm, self).clean()
+        cleaned_data = super().clean()
         state = cleaned_data.get('state', None)
         parent = cleaned_data.get('parent', None)
         if state and (state.slug in ['bof', ] and 'parent' in self.fields and not parent):
@@ -295,11 +294,11 @@ class ManageReviewRequestForm(forms.Form):
     def __init__(self, review_req, *args, **kwargs):
         if not "prefix" in kwargs:
             if review_req.pk is None:
-                kwargs["prefix"] = "r{}-{}".format(review_req.type_id, review_req.doc.name)
+                kwargs["prefix"] = f"r{review_req.type_id}-{review_req.doc.name}"
             else:
-                kwargs["prefix"] = "r{}".format(review_req.pk)
+                kwargs["prefix"] = f"r{review_req.pk}"
 
-        super(ManageReviewRequestForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if review_req.pk is None:
             self.fields["close"].queryset = self.fields["close"].queryset.filter(slug__in=["no-review-version", "no-review-document"])
@@ -340,7 +339,7 @@ class ReviewerSettingsForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
        exclude_fields = kwargs.pop('exclude_fields', [])
-       super(ReviewerSettingsForm, self).__init__(*args, **kwargs)
+       super().__init__(*args, **kwargs)
        for field_name in exclude_fields:
             self.fields.pop(field_name)
 
@@ -357,7 +356,7 @@ class AddUnavailablePeriodForm(forms.ModelForm):
         fields = ['start_date', 'end_date', 'availability', 'reason']
 
     def __init__(self, *args, **kwargs):
-        super(AddUnavailablePeriodForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.fields["start_date"] = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label=self.fields["start_date"].label, help_text=self.fields["start_date"].help_text, required=self.fields["start_date"].required, initial=datetime.date.today())
         self.fields["end_date"] = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label=self.fields["end_date"].label, help_text=self.fields["end_date"].help_text, required=self.fields["end_date"].required)
@@ -374,7 +373,7 @@ class AddUnavailablePeriodForm(forms.ModelForm):
 
 class EndUnavailablePeriodForm(forms.Form):
     def __init__(self, start_date, *args, **kwargs):
-        super(EndUnavailablePeriodForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.fields["end_date"] = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1", "start-date": start_date.isoformat() if start_date else "" })
 

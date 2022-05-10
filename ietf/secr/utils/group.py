@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 # Python imports
@@ -29,8 +28,8 @@ def get_charter_text(group):
     Takes a group object and returns the text or the group's charter as a string
     '''
     charter = group.charter
-    path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-    f = io.open(path,'r')
+    path = os.path.join(settings.CHARTER_PATH, '{}-{}.txt'.format(charter.canonical_name(), charter.rev))
+    f = open(path,'r')
     text = f.read()
     f.close()
 

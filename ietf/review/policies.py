@@ -338,10 +338,10 @@ class AssignmentOrderResolver:
         periods = self.unavailable_periods.get(email.person_id, [])
         def format_period(p):
             if p.end_date:
-                res = "unavailable until {}".format(p.end_date.isoformat())
+                res = f"unavailable until {p.end_date.isoformat()}"
             else:
                 res = "unavailable indefinitely"
-            return "{} ({})".format(res, p.get_availability_display())
+            return f"{res} ({p.get_availability_display()})"
         if periods:
             explanations.append(", ".join(format_period(p) for p in periods))
             
@@ -363,12 +363,12 @@ class AssignmentOrderResolver:
         # skip next value
         scores.append(-settings.skip_next)
         if settings.skip_next > 0:
-            explanations.append("skip next {}".format(settings.skip_next))
+            explanations.append(f"skip next {settings.skip_next}")
             
         # index in the default rotation order
         index = self.rotation_index.get(email.person_id, 0)
         scores.append(-index)
-        explanations.append("#{}".format(index + 1))
+        explanations.append(f"#{index + 1}")
         
         # stats (for information, do not affect score)
         stats = self._collect_reviewer_stats(email)
@@ -419,7 +419,7 @@ class AssignmentOrderResolver:
         connections[doc.ad_id] = "is associated Area Director"
         for r in Role.objects.filter(group=doc.group_id,
                                      person__in=person_ids).select_related("name"):
-            connections[r.person_id] = "is group {}".format(r.name)
+            connections[r.person_id] = f"is group {r.name}"
         if doc.shepherd:
             connections[doc.shepherd.person_id] = "is shepherd of document"
         for author in DocumentAuthor.objects.filter(document=doc,
@@ -447,9 +447,7 @@ class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
     positioned.
     """
     def default_reviewer_rotation_list(self, include_unavailable=False):
-        reviewers = super(
-            RotateAlphabeticallyReviewerQueuePolicy, self
-        ).default_reviewer_rotation_list(include_unavailable)
+        reviewers = super().default_reviewer_rotation_list(include_unavailable)
 
         reviewers.sort(key=lambda p: p.last_name())
         next_reviewer_index = 0
@@ -488,7 +486,7 @@ class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         way.   
         """
 
-        super(RotateAlphabeticallyReviewerQueuePolicy, self)._update_skip_next(rotation_pks,
+        super()._update_skip_next(rotation_pks,
                                                                                assignee_person)
         # All reviewers in the list ahead of the assignee have already had their skip_next
         # values decremented. Now need to update NextReviewerInTeam.
@@ -514,7 +512,7 @@ class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         if len(rotation_settings) < len(unfolded_rotation_pks):
             min_skip_next = 0  # one or more reviewers has no settings object, so they have skip_count=0   
         else:
-            min_skip_next = min([rs.skip_next for rs in rotation_settings.values()])
+            min_skip_next = min(rs.skip_next for rs in rotation_settings.values())
 
         next_reviewer_index = None
         for index, pk in enumerate(unfolded_rotation_pks):
@@ -545,9 +543,7 @@ class LeastRecentlyUsedReviewerQueuePolicy(AbstractReviewerQueuePolicy):
     assigned, accepted or completed review assignment.
     """
     def default_reviewer_rotation_list(self, include_unavailable=False):
-        reviewers = super(
-            LeastRecentlyUsedReviewerQueuePolicy, self
-        ).default_reviewer_rotation_list(include_unavailable)
+        reviewers = super().default_reviewer_rotation_list(include_unavailable)
 
         reviewers_dict = {p.pk: p for p in reviewers}
         assignments = ReviewAssignment.objects.filter(

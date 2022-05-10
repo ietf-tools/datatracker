@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2018-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -27,15 +26,15 @@ class Command(BaseCommand):
         for m in options['meeting']:
             meeting = Meeting.objects.filter(number=m).first()
             if not meeting:
-                self.stderr.write("\nMeeting not found: %s\n" % (m, ))
+                self.stderr.write("\nMeeting not found: {}\n".format(m))
                 continue
             if meeting.date < datetime.date.today() + datetime.timedelta(days=max_offset):
-                self.stderr.write("\nMeeting %s: Won't change dates for meetings in the past or close future\n" % (meeting, ))
+                self.stderr.write("\nMeeting {}: Won't change dates for meetings in the past or close future\n".format(meeting))
                 continue
-            self.stdout.write('\n%s\n\n' % (meeting, ))
-            pre_dates = dict( (d.name_id, d) for d in ImportantDate.objects.filter(meeting=meeting) )
+            self.stdout.write('\n{}\n\n'.format(meeting))
+            pre_dates = { d.name_id: d for d in ImportantDate.objects.filter(meeting=meeting) }
             update_important_dates(meeting)
-            post_dates = dict( (d.name_id, d) for d in ImportantDate.objects.filter(meeting=meeting) )
+            post_dates = { d.name_id: d for d in ImportantDate.objects.filter(meeting=meeting) }
             for slug in slugs:
                 if slug in pre_dates:
                     if pre_dates[slug].date == post_dates[slug].date:

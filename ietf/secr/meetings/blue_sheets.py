@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import io
@@ -23,7 +22,7 @@ RTF quick reference (from Word2007RTFSpec9.doc):
 '''
 
 def create_blue_sheets(meeting, groups):
-    file = io.open(settings.SECR_BLUE_SHEET_PATH, 'wb')
+    file = open(settings.SECR_BLUE_SHEET_PATH, 'wb')
     
     header = b'''{\\rtf1\\ansi\\ansicpg1252\\uc1 \\deff0\\deflang1033\\deflangfe1033
  {\\fonttbl{\\f0\\froman\\fcharset0\\fprq2{\\*\\panose 02020603050405020304}Times New Roman;}}

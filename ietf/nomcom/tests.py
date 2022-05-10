@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -321,7 +320,7 @@ class NomcomViewsTest(TestCase):
         ## merge nominations
         self.access_chair_url(self.private_merge_nominee_url)
 
-        test_data = {"secondary_emails": "%s, %s" % (nominees[0], nominees[1]),
+        test_data = {"secondary_emails": "{}, {}".format(nominees[0], nominees[1]),
                      "primary_email": nominees[0]}
         response = self.client.post(self.private_merge_nominee_url, test_data)
         self.assertEqual(response.status_code, 200)
@@ -409,10 +408,10 @@ class NomcomViewsTest(TestCase):
     def change_members(self, members=None, liaisons=None):
         test_data = {}
         if members is not None:
-            members_emails = ['%s%s' % (member, EMAIL_DOMAIN) for member in members]
+            members_emails = ['{}{}'.format(member, EMAIL_DOMAIN) for member in members]
             test_data['members'] = members_emails
         if liaisons is not None:
-            liaisons_emails = ['%s%s' % (liaison, EMAIL_DOMAIN) for liaison in liaisons]
+            liaisons_emails = ['{}{}'.format(liaison, EMAIL_DOMAIN) for liaison in liaisons]
             test_data['liaisons'] = liaisons_emails
         self.client.post(self.edit_members_url, test_data)
 
@@ -488,7 +487,7 @@ class NomcomViewsTest(TestCase):
         q = PyQuery(r.content)
         reminder_date = '%s-09-30' % self.year
 
-        f = io.open(self.cert_file.name)
+        f = open(self.cert_file.name)
         response = self.client.post(self.edit_nomcom_url, {
             'public_key': f,
             'reminderdates_set-TOTAL_FORMS': q('input[name="reminderdates_set-TOTAL_FORMS"]').val(),
@@ -517,7 +516,7 @@ class NomcomViewsTest(TestCase):
         self.assertEqual(check_comments(feedback.comments, comment_text, self.privatekey_file), True)
 
         # Check that the set reminder date is present
-        reminder_dates = dict([ (d.id,str(d.date)) for d in nomcom.reminderdates_set.all() ])
+        reminder_dates = { d.id:str(d.date) for d in nomcom.reminderdates_set.all() }
         self.assertIn(reminder_date, list(reminder_dates.values()))
 
         # Remove reminder date
@@ -532,7 +531,7 @@ class NomcomViewsTest(TestCase):
         self.assertEqual(r.status_code, 200)
 
         # Check that reminder date has been removed
-        reminder_dates = dict([ (d.id,str(d.date)) for d in ReminderDates.objects.filter(nomcom=nomcom) ])
+        reminder_dates = { d.id:str(d.date) for d in ReminderDates.objects.filter(nomcom=nomcom) }
         self.assertNotIn(reminder_date, list(reminder_dates.values()))
 
         self.client.logout()
@@ -693,7 +692,7 @@ class NomcomViewsTest(TestCase):
         if not searched_email.person:
             searched_email.person = PersonFactory()
             searched_email.save()
-        nominator_email = kwargs.pop('nominator_email', "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
+        nominator_email = kwargs.pop('nominator_email', "{}{}".format(COMMUNITY_USER, EMAIL_DOMAIN))
         position_name = kwargs.pop('position', 'IAOC')
         confirmation = kwargs.pop('confirmation', False)
 
@@ -711,7 +710,7 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
         response = self.client.get(nominate_url)
         self.assertEqual(response.status_code, 200)
@@ -754,12 +753,12 @@ class NomcomViewsTest(TestCase):
                                candidate_phone=candidate_phone,
                                nominee=nominee,
                                comments=feedback,
-                               nominator_email="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
+                               nominator_email="{}{}".format(COMMUNITY_USER, EMAIL_DOMAIN))
 
     def nominate_newperson_view(self, *args, **kwargs):
         public = kwargs.pop('public', True)
         nominee_email = kwargs.pop('nominee_email', 'nominee@example.com')
-        nominator_email = kwargs.pop('nominator_email', "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
+        nominator_email = kwargs.pop('nominator_email', "{}{}".format(COMMUNITY_USER, EMAIL_DOMAIN))
         position_name = kwargs.pop('position', 'IAOC')
         confirmation = kwargs.pop('confirmation', False)
 
@@ -777,7 +776,7 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
         response = self.client.get(nominate_url)
         self.assertEqual(response.status_code, 200)
@@ -832,7 +831,7 @@ class NomcomViewsTest(TestCase):
                                    candidate_phone=candidate_phone,
                                    nominee=nominee,
                                    comments=feedback,
-                                   nominator_email="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
+                                   nominator_email="{}{}".format(COMMUNITY_USER, EMAIL_DOMAIN))
 
     def test_add_questionnaire(self):
         self.access_chair_url(self.add_questionnaire_url)
@@ -842,7 +841,7 @@ class NomcomViewsTest(TestCase):
     def add_questionnaire(self, *args, **kwargs):
         public = kwargs.pop('public', False)
         nominee_email = kwargs.pop('nominee_email', 'nominee@example.com')
-        nominator_email = kwargs.pop('nominator_email', "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
+        nominator_email = kwargs.pop('nominator_email', "{}{}".format(COMMUNITY_USER, EMAIL_DOMAIN))
         position_name = kwargs.pop('position', 'IAOC')
 
         self.nominate_view(public=public,
@@ -859,7 +858,7 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
         response = self.client.get(self.add_questionnaire_url)
         self.assertEqual(response.status_code, 200)
@@ -871,7 +870,7 @@ class NomcomViewsTest(TestCase):
         comment_text = 'Test add questionnaire view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
 
         test_data = {'comment_text': comment_text,
-                     'nominee': '%s_%s' % (position.id, nominee.id)}
+                     'nominee': '{}_{}'.format(position.id, nominee.id)}
 
         response = self.client.post(self.add_questionnaire_url, test_data)
 
@@ -916,7 +915,7 @@ class NomcomViewsTest(TestCase):
     def feedback_view(self, *args, **kwargs):
         public = kwargs.pop('public', True)
         nominee_email = kwargs.pop('nominee_email', 'nominee@example.com')
-        nominator_email = kwargs.pop('nominator_email', "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
+        nominator_email = kwargs.pop('nominator_email', "{}{}".format(COMMUNITY_USER, EMAIL_DOMAIN))
         position_name = kwargs.pop('position', 'IAOC')
         confirmation = kwargs.pop('confirmation', False)
 
@@ -938,7 +937,7 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
         response = self.client.get(feedback_url)
         self.assertEqual(response.status_code, 200)
@@ -1062,7 +1061,7 @@ class FeedbackTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
         comment_text = 'Plain text. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
         comments = nomcom.encrypt(comment_text)
@@ -1085,7 +1084,7 @@ class ReminderTest(TestCase):
         self.nomcom = get_nomcom_by_year(NOMCOM_YEAR)
         self.cert_file, self.privatekey_file = get_cert_files()
         #self.nomcom.public_key.storage.location = tempfile.gettempdir()
-        self.nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        self.nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
         gen = Position.objects.get(nomcom=self.nomcom,name='GEN')
         rai = Position.objects.get(nomcom=self.nomcom,name='RAI')
@@ -2421,7 +2420,7 @@ class rfc8989EligibilityTests(TestCase):
             self.assertTrue(is_eligible(person=secr,nomcom=nomcom))
             self.assertFalse(is_eligible(person=nobody,nomcom=nomcom))
 
-            self.assertEqual(set([chair,secr]), set(list_eligible(nomcom=nomcom)))
+            self.assertEqual({chair,secr}, set(list_eligible(nomcom=nomcom)))
             Role.objects.filter(person__in=(chair,secr)).delete()
 
 

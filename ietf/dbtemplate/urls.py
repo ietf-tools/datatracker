@@ -1,5 +1,3 @@
-
-
 from ietf.dbtemplate import views
 from ietf.utils.urls import url
 

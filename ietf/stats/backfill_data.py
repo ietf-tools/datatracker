@@ -18,7 +18,7 @@ os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
 
 virtualenv_activation = os.path.join(basedir, "env", "bin", "activate_this.py")
 if os.path.exists(virtualenv_activation):
-    exec(compile(io.open(virtualenv_activation, "rb").read(), virtualenv_activation, 'exec'), dict(__file__=virtualenv_activation))
+    exec(compile(open(virtualenv_activation, "rb").read(), virtualenv_activation, 'exec'), dict(__file__=virtualenv_activation))
 
 import django
 django.setup()
@@ -46,7 +46,7 @@ if args.document:
     docs_qs = docs_qs.filter(docalias__name=args.document)
 
 ts = time.strftime("%Y-%m-%d_%H:%M%z")
-logfile = io.open('backfill-authorstats-%s.log'%ts, 'w')
+logfile = open('backfill-authorstats-%s.log'%ts, 'w')
 print("Writing log to %s" % os.path.abspath(logfile.name))
 
 def say(msg):
@@ -83,10 +83,10 @@ for doc in docs_qs.prefetch_related("docalias", "formal_languages", "documentaut
         path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, canonical_name + "-" + doc.rev + ".txt")
 
     if not os.path.exists(path):
-        say("Skipping %s, no txt file found at %s" % (doc.name, path))
+        say("Skipping {}, no txt file found at {}".format(doc.name, path))
         continue
 
-    with io.open(path, 'rb') as f:
+    with open(path, 'rb') as f:
         say("\nProcessing %s" % doc.name)
         sys.stdout.flush()
         d = PlaintextDraft(unicode(f.read()), path)
@@ -103,7 +103,7 @@ for doc in docs_qs.prefetch_related("docalias", "formal_languages", "documentaut
         if args.formlang:
             langs = d.get_formal_languages()
 
-            new_formal_languages = set(formal_language_dict[l] for l in langs)
+            new_formal_languages = {formal_language_dict[l] for l in langs}
             old_formal_languages = set(doc.formal_languages.all())
 
             if new_formal_languages != old_formal_languages:
@@ -147,11 +147,11 @@ for doc in docs_qs.prefetch_related("docalias", "formal_languages", "documentaut
                     old_author = old_authors_by_name.get(full)
 
                 if not old_author:
-                    say("UNKNOWN AUTHOR: %s, %s, %s, %s, %s" % (doc.name, full, email, country, company))
+                    say("UNKNOWN AUTHOR: {}, {}, {}, {}, {}".format(doc.name, full, email, country, company))
                     continue
 
                 if old_author.affiliation != company:
-                    say("new affiliation: %s [ %s <%s> ] %s -> %s" % (canonical_name, full, email, old_author.affiliation, company))
+                    say("new affiliation: {} [ {} <{}> ] {} -> {}".format(canonical_name, full, email, old_author.affiliation, company))
                     old_author.affiliation = company
                     old_author.save(update_fields=["affiliation"])
                     updated = True
@@ -160,7 +160,7 @@ for doc in docs_qs.prefetch_related("docalias", "formal_languages", "documentaut
                     country = ""
 
                 if old_author.country != country:
-                    say("new country: %s [ %s <%s> ] %s -> %s" % (canonical_name , full, email, old_author.country, country))
+                    say("new country: {} [ {} <{}> ] {} -> {}".format(canonical_name , full, email, old_author.country, country))
                     old_author.country = country
                     old_author.save(update_fields=["country"])
                     updated = True

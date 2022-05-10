@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django.conf import settings
@@ -22,7 +21,7 @@ class EncryptedTextField(models.TextField):
             except ValueError as e:
                 raise ValueError("Trying to read the NomCom public key: " + str(e))
 
-            command = "%s smime -encrypt -in /dev/stdin %s" % (settings.OPENSSL_COMMAND, cert_file)
+            command = "{} smime -encrypt -in /dev/stdin {}".format(settings.OPENSSL_COMMAND, cert_file)
             code, out, error = pipe(command, comments.encode('utf-8'))
             if code != 0:
                 log("openssl error: %s:\n  Error %s: %s" %(command, code, error))

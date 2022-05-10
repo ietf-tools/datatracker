@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django.conf import settings
@@ -24,7 +23,7 @@ class Subscribed(models.Model):
     email = models.CharField(max_length=128, validators=[validate_email])
     lists = models.ManyToManyField(List)
     def __str__(self):
-        return "<Subscribed: %s at %s>" % (self.email, self.time)
+        return "<Subscribed: {} at {}>".format(self.email, self.time)
     class Meta:
         verbose_name_plural = "Subscribed"
 
@@ -33,7 +32,7 @@ class Whitelisted(models.Model):
     email = models.CharField("Email address", max_length=64, validators=[validate_email])
     by = ForeignKey(Person)
     def __str__(self):
-        return "<Whitelisted: %s at %s>" % (self.email, self.time)
+        return "<Whitelisted: {} at {}>".format(self.email, self.time)
     class Meta:
         verbose_name_plural = "Whitelisted"
 

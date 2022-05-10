@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2022, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 """Custom tags for the schedule editor"""
 import debug  # pyflakes: ignore

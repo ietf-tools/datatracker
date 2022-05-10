@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django.conf import settings
@@ -63,7 +62,7 @@ class LiaisonStatement(models.Model):
             type_id=event_type_id,
             by=person,
             statement=self,
-            desc='Statement {}'.format(event_type_id.capitalize())
+            desc=f'Statement {event_type_id.capitalize()}'
         )
 
     def get_absolute_url(self):
@@ -197,7 +196,7 @@ class LiaisonStatement(models.Model):
         if self.from_groups.count() > 1:
             for group in self.from_groups.all():
                 approval_set.intersection_update(group.liaison_approvers())
-        return list(set([ r.email.address for r in approval_set ]))
+        return list({ r.email.address for r in approval_set })
 
 class LiaisonStatementAttachment(models.Model):
     statement = ForeignKey(LiaisonStatement)
@@ -214,7 +213,7 @@ class RelatedLiaisonStatement(models.Model):
     relationship = ForeignKey(DocRelationshipName)
 
     def __str__(self):
-        return "%s %s %s" % (self.source.title, self.relationship.name.lower(), self.target.title)
+        return "{} {} {}".format(self.source.title, self.relationship.name.lower(), self.target.title)
 
 
 class LiaisonStatementEvent(models.Model):
@@ -225,7 +224,7 @@ class LiaisonStatementEvent(models.Model):
     desc = models.TextField()
 
     def __str__(self):
-        return "%s %s by %s at %s" % (self.statement.title, self.type.slug, self.by.plain_name(), self.time)
+        return "{} {} by {} at {}".format(self.statement.title, self.type.slug, self.by.plain_name(), self.time)
 
     class Meta:
         ordering = ['-time', '-id']

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 # various utilities for working with the mailarch mail archive at
@@ -53,7 +52,7 @@ def construct_query_urls(doc, team, query=None):
         "qdr": "c", # custom time frame
         "start_date": (datetime.date.today() - datetime.timedelta(days=180)).isoformat(),
         "email_list": list_name,
-        "q": "subject:({})".format(query),
+        "q": f"subject:({query})",
         "as": "1", # this is an advanced search
     })
 
@@ -64,7 +63,7 @@ def construct_query_urls(doc, team, query=None):
     }
 
 def construct_message_url(list_name, msgid):
-    return "{}/arch/msg/{}/{}".format(settings.MAILING_LIST_ARCHIVE_URL, list_name, hash_list_message_id(list_name, msgid))
+    return f"{settings.MAILING_LIST_ARCHIVE_URL}/arch/msg/{list_name}/{hash_list_message_id(list_name, msgid)}"
 
 def retrieve_messages_from_mbox(mbox_fileobj):
     """Return selected content in message from mbox from mailarch."""
@@ -118,7 +117,7 @@ def retrieve_messages(query_data_url):
                 q = PyQuery(r)
                 div = q('div[class~="no-results"]')
                 if div:
-                    raise KeyError("No results: %s -> %s" % (query_data_url, div.text(), ))
+                    raise KeyError("No results: {} -> {}".format(query_data_url, div.text()))
             raise Exception("Export failed - this usually means no matches were found")
 
         with tarfile.open(fileobj=fileobj, mode='r|*') as tar:

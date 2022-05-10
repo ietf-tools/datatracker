@@ -28,7 +28,7 @@ class RecordingForm(forms.Form):
     
     def __init__(self, *args, **kwargs):
         self.meeting = kwargs.pop('meeting')
-        super(RecordingForm, self).__init__(*args,**kwargs)
+        super().__init__(*args,**kwargs)
         self.fields['session'].queryset = add_event_info_to_session_qs(
             Session.objects.filter(meeting=self.meeting, type__in=['regular','plenary','other'])
         ).filter(current_status='sched').order_by('group__acronym')
@@ -39,6 +39,6 @@ class RecordingEditForm(forms.ModelForm):
         fields = ['external_url']
         
     def __init__(self, *args, **kwargs):
-        super(RecordingEditForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['external_url'].label='Url'
 

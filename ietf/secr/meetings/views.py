@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 import datetime
 import os
@@ -127,9 +126,9 @@ def send_notifications(meeting, groups, person):
         addrs = gather_address_lists('session_scheduled',group=group,session=sessions[0])
         from_email = ('"IETF Secretariat"','agenda@ietf.org')
         if len(sessions) == 1:
-            subject = '%s - Requested session has been scheduled for IETF %s' % (group.acronym, meeting.number)
+            subject = '{} - Requested session has been scheduled for IETF {}'.format(group.acronym, meeting.number)
         else:
-            subject = '%s - Requested sessions have been scheduled for IETF %s' % (group.acronym, meeting.number)
+            subject = '{} - Requested sessions have been scheduled for IETF {}'.format(group.acronym, meeting.number)
         template = 'meetings/session_schedule_notification.txt'
 
         # easier to populate template from timeslot perspective. assuming one-to-one timeslot-session
@@ -140,7 +139,7 @@ def send_notifications(meeting, groups, person):
             t = d['timeslot']
             dur = s.requested_duration.seconds/60
             items[i]['duration'] = "%d:%02d" % (dur//60, dur%60)
-            items[i]['period'] = '%s-%s' % (t.time.strftime('%H%M'),(t.time + t.duration).strftime('%H%M'))
+            items[i]['period'] = '{}-{}'.format(t.time.strftime('%H%M'),(t.time + t.duration).strftime('%H%M'))
 
         # send email
         first_event = SchedulingEvent.objects.filter(session=sessions[0]).select_related('by').order_by('time', 'id').first()

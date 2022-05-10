@@ -1,4 +1,3 @@
-
 from ietf.nomcom import views
 from ietf.message import views as message_views
 from ietf.utils.urls import url

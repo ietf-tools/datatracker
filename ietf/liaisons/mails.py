@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -69,7 +68,7 @@ def possibly_send_deadline_reminder(liaison):
         subject = '[Liaison OUT OF DATE] %s' % liaison.title
         days_msg = 'is out of date for %s days' % (-days_to_go)
     else:
-        subject = '[Liaison deadline %s] %s' % (PREVIOUS_DAYS[days_to_go], liaison.title)
+        subject = '[Liaison deadline {}] {}'.format(PREVIOUS_DAYS[days_to_go], liaison.title)
         days_msg = 'expires %s' % PREVIOUS_DAYS[days_to_go]
 
     from_email = settings.LIAISON_UNIVERSAL_FROM

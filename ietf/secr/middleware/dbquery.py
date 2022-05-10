@@ -9,7 +9,7 @@ logger = getLogger(__name__)
 #logger.setLevel(logging.DEBUG)
 #logger.addHandler(logging.FileHandler(settings.SECR_LOG_FILE))
 
-class QueryCountDebugMiddleware(object):
+class QueryCountDebugMiddleware:
     """
     This middleware will log the number of queries run
     and the total time taken for each request (with a
@@ -18,7 +18,7 @@ class QueryCountDebugMiddleware(object):
     """
     def process_response(self, request, response):
         #assert False, request.path
-        logger.debug('called middleware. %s:%s' % (request.path,len(connection.queries)))
+        logger.debug('called middleware. {}:{}'.format(request.path,len(connection.queries)))
         if response.status_code == 200:
             total_time = 0
             #for query in connection.queries:
@@ -31,5 +31,5 @@ class QueryCountDebugMiddleware(object):
                     # in milliseconds, not seconds.
             #        query_time = query.get('duration', 0) / 1000
             #    total_time += float(query_time)
-            logger.debug('%s: %s queries run, total %s seconds' % (request.path,len(connection.queries), total_time))
+            logger.debug('{}: {} queries run, total {} seconds'.format(request.path,len(connection.queries), total_time))
         return response

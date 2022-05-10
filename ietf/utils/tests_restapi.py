@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import sys
@@ -29,9 +28,9 @@ class RestApi(ResourceTestCaseMixin, TestCase):
             elif format == 'xml':
                 self.assertValidXMLResponse(r)
             else:
-                raise Exception("Unknown format found when testing the RestApi: %s" % (format, ))
+                raise Exception("Unknown format found when testing the RestApi: {}".format(format))
         except Exception:
-            sys.stderr.write(" * Exception for resource: %s, format: %s\n" % (resource, format))
+            sys.stderr.write(" * Exception for resource: {}, format: {}\n".format(resource, format))
             raise
         data = self.deserialize(r)
         for name in data:
@@ -58,7 +57,7 @@ class RestApi(ResourceTestCaseMixin, TestCase):
         apitop = reverse('ietf.api.views.top_level')
         r = self.api_client.get('%s/doc/document/'%apitop, format='json', limit=100)
         doclist = self.deserialize(r)["objects"]
-        docs = dict( (doc["name"], doc) for doc in doclist )
+        docs = { doc["name"]: doc for doc in doclist }
         for name in (
                 "charter-ietf-mars", 
                 "charter-ietf-ames", 

@@ -237,7 +237,7 @@ class MiscTests(TestCase):
                 ],
             )
         except IntegrityError as err:
-            self.fail('IntegrityError was raised: {}'.format(err))
+            self.fail(f'IntegrityError was raised: {err}')
 
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0].type, 'edited_authors')

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import io
@@ -67,9 +66,9 @@ def duration_string(duration):
     hours = minutes // 60
     minutes = minutes % 60
 
-    string = '{:02d}:{:02d}'.format(hours, minutes)
+    string = f'{hours:02d}:{minutes:02d}'
     if days:
-        string = '{} '.format(days) + string
+        string = f'{days} ' + string
 
     return string
 
@@ -80,13 +79,13 @@ def duration_string(duration):
 
 class InterimSessionInlineFormSet(BaseInlineFormSet):
     def __init__(self, *args, **kwargs):
-        super(InterimSessionInlineFormSet, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if 'data' in kwargs:
             self.meeting_type = kwargs['data']['meeting_type']
 
     def clean(self):
         '''Custom clean method to verify dates are consecutive for multi-day meetings'''
-        super(InterimSessionInlineFormSet, self).clean()
+        super().clean()
         if self.meeting_type == 'multi-day':
             dates = []
             for form in self.forms:
@@ -153,7 +152,7 @@ class InterimMeetingModelForm(forms.ModelForm):
         fields = ('group', 'in_person', 'meeting_type', 'approved', 'city', 'country', 'time_zone')
 
     def __init__(self, request, *args, **kwargs):
-        super(InterimMeetingModelForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.user = request.user
         self.person = self.user.person
         self.is_edit = bool(self.instance.pk)
@@ -173,7 +172,7 @@ class InterimMeetingModelForm(forms.ModelForm):
             self.fields['approved'].widget.attrs['disabled'] = True
 
     def clean(self):
-        super(InterimMeetingModelForm, self).clean()
+        super().clean()
         cleaned_data = self.cleaned_data
         if not cleaned_data.get('group'):
             raise forms.ValidationError("You must select a group")
@@ -213,7 +212,7 @@ class InterimMeetingModelForm(forms.ModelForm):
         '''Save must handle fields not included in the form: date,number,type_id'''
         date = kwargs.pop('date')
         group = self.cleaned_data.get('group')
-        meeting = super(InterimMeetingModelForm, self).save(commit=False)
+        meeting = super().save(commit=False)
         if not meeting.type_id:
             meeting.type_id = 'interim'
         if not meeting.number:
@@ -268,7 +267,7 @@ class InterimSessionModelForm(forms.ModelForm):
             self.group = kwargs.pop('group')
         if 'requires_approval' in kwargs:
             self.requires_approval = kwargs.pop('requires_approval')
-        super(InterimSessionModelForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.is_edit = bool(self.instance.pk)
         # setup fields that aren't intrinsic to the Session object
         if self.is_edit:
@@ -303,7 +302,7 @@ class InterimSessionModelForm(forms.ModelForm):
         max_minutes = settings.INTERIM_SESSION_MAXIMUM_MINUTES
         duration = self.cleaned_data.get('requested_duration')
         if not duration or duration < datetime.timedelta(minutes=min_minutes) or duration > datetime.timedelta(minutes=max_minutes):
-            raise forms.ValidationError('Provide a duration, %s-%smin.' % (min_minutes, max_minutes))
+            raise forms.ValidationError('Provide a duration, {}-{}min.'.format(min_minutes, max_minutes))
         return duration
 
     def clean(self):
@@ -324,12 +323,12 @@ class InterimSessionModelForm(forms.ModelForm):
     def save(self, *args, **kwargs):
         """NOTE: as the baseform of an inlineformset self.save(commit=True)
         never gets called"""
-        session = super(InterimSessionModelForm, self).save(commit=False)
+        session = super().save(commit=False)
         session.group = self.group
         session.type_id = 'regular'
         session.purpose_id = 'regular'
         if kwargs.get('commit', True) is True:
-            super(InterimSessionModelForm, self).save(commit=True)
+            super().save(commit=True)
         return session
 
     def save_agenda(self):
@@ -353,7 +352,7 @@ class InterimSessionModelForm(forms.ModelForm):
                 rev='00',
                 # FIXME: if these are always computed, they shouldn't be in uploaded_filename - just compute them when needed
                 # FIXME: What about agendas in html or markdown format?
-                uploaded_filename='{}-00.txt'.format(filename))
+                uploaded_filename=f'{filename}-00.txt')
             doc.set_state(State.objects.get(type__slug=doc.type.slug, slug='active'))
             DocAlias.objects.create(name=doc.name).docs.add(doc)
             self.instance.sessionpresentation_set.create(document=doc, rev=doc.rev)
@@ -368,7 +367,7 @@ class InterimSessionModelForm(forms.ModelForm):
         directory = os.path.dirname(path)
         if not os.path.exists(directory):
             os.makedirs(directory)
-        with io.open(path, "w", encoding='utf-8') as file:
+        with open(path, "w", encoding='utf-8') as file:
             file.write(self.cleaned_data['agenda'])
 
 
@@ -379,7 +378,7 @@ class InterimAnnounceForm(forms.ModelForm):
 
     def save(self, *args, **kwargs):
         user = kwargs.pop('user')
-        message = super(InterimAnnounceForm, self).save(commit=False)
+        message = super().save(commit=False)
         message.by = user.person
         message.save()
 
@@ -392,7 +391,7 @@ class InterimCancelForm(forms.Form):
     comments = forms.CharField(required=False, widget=forms.Textarea(attrs={'placeholder': 'enter optional comments here'}), strip=False)
 
     def __init__(self, *args, **kwargs):
-        super(InterimCancelForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['group'].widget.attrs['disabled'] = True
         self.fields['date'].widget.attrs['disabled'] = True
 
@@ -410,8 +409,8 @@ class FileUploadForm(forms.Form):
         assert self.doc_type in settings.MEETING_VALID_UPLOAD_EXTENSIONS
         self.extensions = settings.MEETING_VALID_UPLOAD_EXTENSIONS[self.doc_type]
         self.mime_types = settings.MEETING_VALID_UPLOAD_MIME_TYPES[self.doc_type]
-        super(FileUploadForm, self).__init__(*args, **kwargs)
-        label = '%s file to upload.  ' % (self.doc_type.capitalize(), )
+        super().__init__(*args, **kwargs)
+        label = '{} file to upload.  '.format(self.doc_type.capitalize())
         if self.doc_type == "slides":
             label += 'Did you remember to put in slide numbers? '
         if self.mime_types:
@@ -437,13 +436,13 @@ class FileUploadForm(forms.Form):
         self.file_encoding[file.name] = encoding or None
         if self.mime_types:
             if not file.content_type in settings.MEETING_VALID_UPLOAD_MIME_FOR_OBSERVED_MIME[mime_type]:
-                raise ValidationError('Upload Content-Type (%s) is different from the observed mime-type (%s)' % (file.content_type, mime_type))
+                raise ValidationError('Upload Content-Type ({}) is different from the observed mime-type ({})'.format(file.content_type, mime_type))
             # We just validated that file.content_type is safe to accept despite being identified
             # as a different MIME type by the validator. Check extension based on file.content_type
             # because that better reflects the intention of the upload client.
             if file.content_type in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS:
                 if not ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS[file.content_type]:
-                    raise ValidationError('Upload Content-Type (%s) does not match the extension (%s)' % (file.content_type, ext))
+                    raise ValidationError('Upload Content-Type ({}) does not match the extension ({})'.format(file.content_type, ext))
         if (file.content_type in ['text/html', ]
                 or ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS.get('text/html', [])):
             # We'll do html sanitization later, but for frames, we fail here,
@@ -531,7 +530,7 @@ class CsvModelPkInput(forms.TextInput):
 
     def value_from_datadict(self, data, files, name):
         """Convert data back to list of PKs"""
-        value = super(CsvModelPkInput, self).value_from_datadict(data, files, name)
+        value = super().value_from_datadict(data, files, name)
         return value.split(',')
 
 
@@ -563,7 +562,7 @@ class SwapTimeslotsForm(forms.Form):
     )
 
     def __init__(self, meeting, *args, **kwargs):
-        super(SwapTimeslotsForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.meeting = meeting
         self.fields['origin_timeslot'].queryset = meeting.timeslot_set.all()
         self.fields['target_timeslot'].queryset = meeting.timeslot_set.all()
@@ -595,7 +594,7 @@ class TimeSlotEditForm(forms.ModelForm):
         )
 
     def __init__(self, *args, **kwargs):
-        super(TimeSlotEditForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['location'].queryset = self.instance.meeting.room_set.all()
 
 
@@ -628,7 +627,7 @@ class TimeSlotCreateForm(forms.Form):
     )
 
     def __init__(self, meeting, *args, **kwargs):
-        super(TimeSlotCreateForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         meeting_days = [
             meeting.date + datetime.timedelta(days=n)
@@ -671,7 +670,7 @@ class TimeSlotCreateForm(forms.Form):
         but fromisoformat() is not available in python 3.6..
         """
         choices = [
-            (str(day.toordinal()), day.strftime('%A ({})'.format(day.isoformat())))
+            (str(day.toordinal()), day.strftime(f'%A ({day.isoformat()})'))
             for day in days
         ]
         return choices

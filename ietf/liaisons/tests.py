@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2009-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -212,7 +211,7 @@ class AjaxTests(TestCase):
         LiaisonStatementFactory(to_groups=[group,])
         contact_email = contact_email_from_role(RoleFactory(name_id='liaison_contact', group=group))
 
-        url = urlreverse('ietf.liaisons.views.ajax_get_liaison_info') + "?to_groups={}&from_groups=".format(group.pk)
+        url = urlreverse('ietf.liaisons.views.ajax_get_liaison_info') + f"?to_groups={group.pk}&from_groups="
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 #
 # Portion Copyright (C) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -246,7 +245,7 @@ def agenda_moderator_package(request, date=None):
             for i, d in enumerate(s["docs"], start=1):
                 downrefs = [rel for rel in d.relateddocument_set.all() if rel.is_downref() and not rel.is_approved_downref()]
                 flattened_sections.append((num, {
-                            "title": s["title"] + " (%s of %s)" % (i, len(s["docs"])),
+                            "title": s["title"] + " ({} of {})".format(i, len(s["docs"])),
                             "doc": d,
                             "downrefs": downrefs,
                             "parents": s["parents"],
@@ -353,7 +352,7 @@ def handle_reschedule_form(request, doc, dates, status):
 def agenda_documents(request):
     dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
 
-    docs_by_date = dict((d, []) for d in dates)
+    docs_by_date = {d: [] for d in dates}
     docs = Document.objects.filter(docevent__telechatdocevent__telechat_date__in=dates).distinct()
     docs = docs.select_related("ad", "std_level", "intended_std_level", "group", "stream", "shepherd", )
     # No prefetch-related -- turns out not to be worth it
@@ -527,4 +526,3 @@ def photos(request):
         role.last_initial = role.person.last_name()[0]
     return render(request, 'iesg/photos.html', {'group_type': 'IESG', 'role': '', 'roles': roles })
 
-    

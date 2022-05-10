@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -61,7 +60,7 @@ class Submission(models.Model):
     draft = ForeignKey(Document, null=True, blank=True)
 
     def __str__(self):
-        return "%s-%s" % (self.name, self.rev)
+        return "{}-{}".format(self.name, self.rev)
 
     def submitter_parsed(self):
         return parse_email_line(self.submitter)
@@ -126,7 +125,7 @@ class SubmissionCheck(models.Model):
     symbol = models.CharField(max_length=64, default='')
     #
     def __str__(self):
-        return "%s submission check: %s: %s" % (self.checker, 'Passed' if self.passed else 'Failed', self.message[:48]+'...')
+        return "{} submission check: {}: {}".format(self.checker, 'Passed' if self.passed else 'Failed', self.message[:48]+'...')
     def has_warnings(self):
         return self.warnings != '[]'
     def has_errors(self):
@@ -139,7 +138,7 @@ class SubmissionEvent(models.Model):
     desc = models.TextField()
 
     def __str__(self):
-        return "%s %s by %s at %s" % (self.submission.name, self.desc, self.by.plain_name() if self.by else "(unknown)", self.time)
+        return "{} {} by {} at {}".format(self.submission.name, self.desc, self.by.plain_name() if self.by else "(unknown)", self.time)
 
     class Meta:
         ordering = ("-time", "-id")
@@ -163,7 +162,7 @@ class SubmissionEmailEvent(SubmissionEvent):
     in_reply_to = ForeignKey(Message, null=True, blank=True,related_name='irtomanual')
 
     def __str__(self):
-        return "%s %s by %s at %s" % (self.submission.name, self.desc, self.by.plain_name() if self.by else "(unknown)", self.time)
+        return "{} {} by {} at {}".format(self.submission.name, self.desc, self.by.plain_name() if self.by else "(unknown)", self.time)
 
     class Meta:
         ordering = ['-time', '-id']

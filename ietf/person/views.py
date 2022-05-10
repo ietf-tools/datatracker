@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -72,7 +71,7 @@ def profile(request, email_or_name):
         persons = [ get_object_or_404(Email, address=email_or_name).person, ]
     else:
         aliases = Alias.objects.filter(name=email_or_name)
-        persons = list(set([ a.person for a in aliases ]))
+        persons = list({ a.person for a in aliases })
     persons = [ p for p in persons if p and p.id ]
     if not persons:
         raise Http404
@@ -84,7 +83,7 @@ def photo(request, email_or_name):
         persons = [ get_object_or_404(Email, address=email_or_name).person, ]
     else:
         aliases = Alias.objects.filter(name=email_or_name)
-        persons = list(set([ a.person for a in aliases ]))
+        persons = list({ a.person for a in aliases })
         if not persons:
             raise Http404("No such person")
     if len(persons) > 1:

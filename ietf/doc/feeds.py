@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -48,7 +47,7 @@ class DocumentChangesFeed(Feed):
         return events
 
     def item_title(self, item):
-        return strip_control_characters("[%s] %s [rev. %s]" % (
+        return strip_control_characters("[{}] {} [rev. {}]".format(
             item.by,
             truncatewords(strip_tags(item.desc), 15),
             item.rev,
@@ -84,7 +83,7 @@ class InLastCallFeed(Feed):
         return docs
 
     def item_title(self, item):
-        return "%s (%s - %s)" % (item.name,
+        return "{} ({} - {})".format(item.name,
                                 datefilter(item.lc_event.time, "F j"),
                                 datefilter(item.lc_event.expires, "F j, Y"))
 
@@ -96,14 +95,14 @@ class InLastCallFeed(Feed):
 
 class Rss201WithNamespacesFeed(Rss201rev2Feed):
     def root_attributes(self):
-        attrs = super(Rss201WithNamespacesFeed, self).root_attributes()
+        attrs = super().root_attributes()
         attrs['xmlns:dcterms'] = 'http://purl.org/dc/terms/'
         attrs['xmlns:media'] = 'http://search.yahoo.com/mrss/'
         attrs['xmlns:xsi'] = 'http://www.w3.org/2001/XMLSchema-instance'
         return attrs
 
     def add_item_elements(self, handler, item):
-        super(Rss201WithNamespacesFeed, self).add_item_elements(handler, item)
+        super().add_item_elements(handler, item)
 
         for element_name in ['abstract','accessRights', 'format', 'publisher',]:
             dc_item_name = 'dcterms_%s' % element_name
@@ -143,7 +142,7 @@ class RfcFeed(Feed):
         return [doc for doc,time in results]
     
     def item_title(self, item):
-        return "%s : %s" % (item.canonical_name(),item.title)
+        return "{} : {}".format(item.canonical_name(),item.title)
 
     def item_description(self, item):
         return item.abstract
@@ -155,7 +154,7 @@ class RfcFeed(Feed):
         return item.publication_time
 
     def item_extra_kwargs(self, item):
-        extra = super(RfcFeed, self).item_extra_kwargs(item)
+        extra = super().item_extra_kwargs(item)
         extra.update({'dcterms_accessRights': 'gratis'})
         extra.update({'dcterms_format': 'text/html'})
         extra.update({'media_content': {'url': 'https://rfc-editor.org/rfc/%s.txt' % item.canonical_name(),

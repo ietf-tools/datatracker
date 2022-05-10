@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2021, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
@@ -22,10 +21,10 @@ from ietf.utils.pipe import pipe
 from ietf.utils.test_runner import IetfLiveServerTestCase
 
 executable_name = 'chromedriver'
-code, out, err = pipe('{} --version'.format(executable_name))
+code, out, err = pipe(f'{executable_name} --version')
 if code != 0:
     skip_selenium = True
-    skip_message = "Skipping selenium tests: '{}' executable not found.".format(executable_name)
+    skip_message = f"Skipping selenium tests: '{executable_name}' executable not found."
 if skip_selenium:
     print("     "+skip_message)
 
@@ -60,12 +59,12 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
     login_view = 'ietf.ietfauth.views.login'
 
     def setUp(self):
-        super(IetfSeleniumTestCase, self).setUp()
+        super().setUp()
         self.driver = start_web_driver()
         self.driver.set_window_size(1024,768)
     
     def tearDown(self):
-        super(IetfSeleniumTestCase, self).tearDown()
+        super().tearDown()
         self.driver.close()
 
     def absreverse(self,*args,**kwargs):

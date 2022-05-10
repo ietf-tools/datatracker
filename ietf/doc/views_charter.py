@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -53,7 +52,7 @@ class ChangeStateForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.hide = kwargs.pop('hide', None)
         group = kwargs.pop('group')
-        super(ChangeStateForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         state_field = self.fields["charter_state"]
         if group.type_id == "wg":
             state_field.queryset = state_field.queryset.filter(slug__in=("infrev", "intrev", "extrev", "iesgrev"))
@@ -113,7 +112,7 @@ def change_state(request, name, option=None):
                     e.time = group.time
                     e.by = by
                     e.state_id = group.state.slug
-                    e.desc = "Group state changed to \"%s\" from \"%s\"" % (group.state, oldstate)
+                    e.desc = "Group state changed to \"{}\" from \"{}\"".format(group.state, oldstate)
                     e.save()
 
                 else:
@@ -202,10 +201,10 @@ def change_state(request, name, option=None):
                 init = dict()
             elif option == "initcharter":
                 hide = ['charter_state']
-                init = dict(initial_time=1, message='%s has initiated chartering of the proposed %s:\n "%s" (%s).' % (by.plain_name(), group.type.name, group.name, group.acronym))
+                init = dict(initial_time=1, message='{} has initiated chartering of the proposed {}:\n "{}" ({}).'.format(by.plain_name(), group.type.name, group.name, group.acronym))
             elif option == "abandon":
                 hide = ['initial_time', 'charter_state']
-                init = dict(message='%s has abandoned the chartering effort on the %s:\n "%s" (%s).' % (by.plain_name(), group.type.name, group.name, group.acronym))
+                init = dict(message='{} has abandoned the chartering effort on the {}:\n "{}" ({}).'.format(by.plain_name(), group.type.name, group.name, group.acronym))
         form = ChangeStateForm(hide=hide, initial=init, group=group)
 
     prev_charter_state = None
@@ -214,21 +213,21 @@ def change_state(request, name, option=None):
         prev_charter_state = charter_hists[0].get_state()
 
     title = {
-        "initcharter": "Initiate chartering of %s %s" % (group.acronym, group.type.name),
-        "recharter": "Recharter %s %s" % (group.acronym, group.type.name),
-        "abandon": "Abandon effort on %s %s" % (group.acronym, group.type.name),
+        "initcharter": "Initiate chartering of {} {}".format(group.acronym, group.type.name),
+        "recharter": "Recharter {} {}".format(group.acronym, group.type.name),
+        "abandon": "Abandon effort on {} {}".format(group.acronym, group.type.name),
         }.get(option)
     if not title:
-        title = "Change chartering state of %s %s" % (group.acronym, group.type.name)
+        title = "Change chartering state of {} {}".format(group.acronym, group.type.name)
 
     def state_pk(slug):
         return State.objects.get(used=True, type="charter", slug=slug).pk
 
     info_msg = {}
     if group.type_id == "wg":
-        info_msg[state_pk("infrev")] = 'The proposed charter for %s "%s" (%s) has been set to Informal IESG review by %s.' % (group.type.name, group.name, group.acronym, by.plain_name())
-        info_msg[state_pk("intrev")] = 'The proposed charter for %s "%s" (%s) has been set to Internal review by %s.\nPlease place it on the next IESG telechat if it has not already been placed.' % (group.type.name, group.name, group.acronym, by.plain_name())
-        info_msg[state_pk("extrev")] = 'The proposed charter for %s "%s" (%s) has been set to External review by %s.\nPlease send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: ' % (group.type.name, group.name, group.acronym, by.plain_name())
+        info_msg[state_pk("infrev")] = 'The proposed charter for {} "{}" ({}) has been set to Informal IESG review by {}.'.format(group.type.name, group.name, group.acronym, by.plain_name())
+        info_msg[state_pk("intrev")] = 'The proposed charter for {} "{}" ({}) has been set to Internal review by {}.\nPlease place it on the next IESG telechat if it has not already been placed.'.format(group.type.name, group.name, group.acronym, by.plain_name())
+        info_msg[state_pk("extrev")] = 'The proposed charter for {} "{}" ({}) has been set to External review by {}.\nPlease send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: '.format(group.type.name, group.name, group.acronym, by.plain_name())
 
     states_for_ballot_wo_extern = State.objects.none()
     if group.type_id == "wg":
@@ -252,7 +251,7 @@ class ChangeTitleForm(forms.Form):
     comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the charter history.", required=False, strip=False)
     def __init__(self, *args, **kwargs):
         charter = kwargs.pop('charter')
-        super(ChangeTitleForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         charter_title_field = self.fields["charter_title"]
         charter_title_field.initial = charter.title;
 
@@ -280,7 +279,7 @@ def change_title(request, name, option=None):
                 charter.rev = charter_rev
 
                 if not comment:
-                    comment = "Changed charter title from '%s' to '%s'." % (prev_title, new_title)
+                    comment = "Changed charter title from '{}' to '{}'.".format(prev_title, new_title)
                 e = DocEvent(type="added_comment", doc=charter, rev=charter.rev, by=by)
                 e.desc = comment
                 e.save()
@@ -294,7 +293,7 @@ def change_title(request, name, option=None):
             return redirect('ietf.doc.views_doc.document_main', name=charter.name)
     else:
         form = ChangeTitleForm(charter=charter)
-    title = "Change charter title of %s %s" % (group.acronym, group.type.name)
+    title = "Change charter title of {} {}".format(group.acronym, group.type.name)
     return render(request, 'doc/charter/change_title.html',
                   dict(form=form,
                        doc=group.charter,
@@ -379,7 +378,7 @@ def submit(request, name, option=None):
         permission_denied(request, "You don't have permission to access this view.")
 
 
-    path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter_canonical_name, charter_rev))
+    path = os.path.join(settings.CHARTER_PATH, '{}-{}.txt'.format(charter_canonical_name, charter_rev))
     not_uploaded_yet = charter_rev.endswith("-00") and not os.path.exists(path)
 
     if not_uploaded_yet or not charter:
@@ -418,14 +417,14 @@ def submit(request, name, option=None):
 
             events = []
             e = NewRevisionDocEvent(doc=charter, by=request.user.person, type="new_revision")
-            e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), charter.rev)
+            e.desc = "New version available: <b>{}-{}.txt</b>".format(charter.canonical_name(), charter.rev)
             e.rev = charter.rev
             e.save()
             events.append(e)
 
             # Save file on disk
-            filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-            with io.open(filename, 'w', encoding='utf-8') as destination:
+            filename = os.path.join(settings.CHARTER_PATH, '{}-{}.txt'.format(charter.canonical_name(), charter.rev))
+            with open(filename, 'w', encoding='utf-8') as destination:
                 if form.cleaned_data['txt']:
                     destination.write(form.cleaned_data['txt'])
                 else:
@@ -451,12 +450,12 @@ def submit(request, name, option=None):
                 charter_canonical_name = h.canonical_name()
                 charter_rev = h.rev
 
-        filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter_canonical_name, charter_rev))
+        filename = os.path.join(settings.CHARTER_PATH, '{}-{}.txt'.format(charter_canonical_name, charter_rev))
 
         try:
-            with io.open(filename, 'r') as f:
+            with open(filename, 'r') as f:
                 init["content"] = f.read()
-        except IOError:
+        except OSError:
             pass
         form = UploadForm(initial=init)
         fill_in_charter_info(group)
@@ -562,10 +561,10 @@ def review_announcement_text(request, name):
         if any(x in request.POST for x in ['send_annc_only','send_nw_only','send_both']) and form.is_valid():
             if any(x in request.POST for x in ['send_annc_only','send_both']):
                 parsed_msg = send_mail_preformatted(request, form.cleaned_data['announcement_text'])
-                messages.success(request, "The email To: '%s' with Subject: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
+                messages.success(request, "The email To: '{}' with Subject: '{}' has been sent.".format(parsed_msg["To"],parsed_msg["Subject"]))
             if any(x in request.POST for x in ['send_nw_only','send_both']):
                 parsed_msg = send_mail_preformatted(request, form.cleaned_data['new_work_text'])
-                messages.success(request, "The email To: '%s' with Subject: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
+                messages.success(request, "The email To: '{}' with Subject: '{}' has been sent.".format(parsed_msg["To"],parsed_msg["Subject"]))
             return redirect('ietf.doc.views_doc.document_writeup', name=charter.name)
 
     return render(request, 'doc/charter/review_announcement_text.html',
@@ -617,7 +616,7 @@ def action_announcement_text(request, name):
 
         if "send_text" in request.POST and form.is_valid():
             parsed_msg = send_mail_preformatted(request, form.cleaned_data['announcement_text'])
-            messages.success(request, "The email To: '%s' with Subject: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
+            messages.success(request, "The email To: '{}' with Subject: '{}' has been sent.".format(parsed_msg["To"],parsed_msg["Subject"]))
             return redirect('ietf.doc.views_doc.document_writeup', name=charter.name)
 
     return render(request, 'doc/charter/action_announcement_text.html',
@@ -675,7 +674,7 @@ def ballot_writeupnotes(request, name):
                     pos.type = "changed_ballot_position"
                     pos.balloter = by
                     pos.pos_id = "yes"
-                    pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.balloter.plain_name())
+                    pos.desc = "[Ballot Position Update] New position, {}, has been recorded for {}".format(pos.pos.name, pos.balloter.plain_name())
                     pos.save()
                     # Consider mailing this position to 'iesg_ballot_saved'
 
@@ -783,7 +782,7 @@ def approve(request, name):
 
                 MilestoneGroupEvent.objects.create(
                     group=group, type="changed_milestone", by=by,
-                    desc="Added milestone \"%s\", due %s, from approved charter" % (m.desc, m.due),
+                    desc="Added milestone \"{}\", due {}, from approved charter".format(m.desc, m.due),
                     milestone=m)
 
         for m in milestones_to_delete:
@@ -814,14 +813,14 @@ def charter_with_milestones_txt(request, name, rev):
 
     # read charter text
     c = find_history_active_at(charter, revision_event.time) or charter
-    filename = '%s-%s.txt' % (c.canonical_name(), rev)
+    filename = '{}-{}.txt'.format(c.canonical_name(), rev)
 
     charter_text = ""
 
     try:
-        with io.open(os.path.join(settings.CHARTER_PATH, filename), 'r') as f:
+        with open(os.path.join(settings.CHARTER_PATH, filename), 'r') as f:
             charter_text = force_text(f.read(), errors='ignore')
-    except IOError:
+    except OSError:
         charter_text = "Error reading charter text %s" % filename
 
     milestones = historic_milestones_for_charter(charter, rev)

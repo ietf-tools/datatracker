@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 # various authentication and authorization utilities
@@ -116,7 +115,7 @@ def passes_test_decorator(test_func, message):
         @wraps(view_func, assigned=available_attrs(view_func))
         def inner(request, *args, **kwargs):
             if not request.user.is_authenticated:
-                return HttpResponseRedirect('%s?%s=%s' % (settings.LOGIN_URL, REDIRECT_FIELD_NAME, urlquote(request.get_full_path())))
+                return HttpResponseRedirect('{}?{}={}'.format(settings.LOGIN_URL, REDIRECT_FIELD_NAME, urlquote(request.get_full_path())))
             elif test_func(request.user, *args, **kwargs):
                 return view_func(request, *args, **kwargs)
             else:
@@ -129,7 +128,7 @@ def role_required(*role_names):
     """View decorator for checking that the user is logged in and
     has one of the listed roles."""
     return passes_test_decorator(lambda u, *args, **kwargs: has_role(u, role_names, *args, **kwargs),
-                                 "Restricted to role%s: %s" % ("s" if len(role_names) != 1 else "", ", ".join(role_names)))
+                                 "Restricted to role{}: {}".format("s" if len(role_names) != 1 else "", ", ".join(role_names)))
 
 # specific permissions
 
@@ -288,8 +287,8 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
                             reg.attended = True
                             reg.save()
             # fill in info to return
-            ticket_types = set([])
-            reg_types = set([])
+            ticket_types = set()
+            reg_types = set()
             for reg in regs:
                 for t in reg.ticket_type.split():
                     ticket_types.add(t)
@@ -305,4 +304,3 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
             }
 
         return info
-            

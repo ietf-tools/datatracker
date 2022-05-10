@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2009-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 #
 # Portion Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -208,7 +207,7 @@ class TestCase(django.test.TestCase):
 
     def tempdir(self, label):
         slug = slugify(self.__class__.__name__.replace('.','-'))
-        dirname = "tmp-{label}-{slug}-dir".format(**locals())
+        dirname = f"tmp-{label}-{slug}-dir"
         if 'VIRTUAL_ENV' in os.environ:
             dirname = os.path.join(os.environ['VIRTUAL_ENV'], dirname)
         path = os.path.abspath(dirname)
@@ -233,7 +232,7 @@ class TestCase(django.test.TestCase):
 
             errors = [html.tostring(n).decode() for n in PyQuery(response.content)(error_css_selector)]
             if errors:
-                explanation = "{} != {}\nGot form back with errors:\n----\n".format(response.status_code, 302) + "----\n".join(errors)
+                explanation = f"{response.status_code} != {302}\nGot form back with errors:\n----\n" + "----\n".join(errors)
                 self.assertEqual(response.status_code, 302, explanation)
 
         self.assertEqual(response.status_code, 302)
@@ -264,7 +263,7 @@ class TestCase(django.test.TestCase):
             self.assertGreater(len(mlist), 0)
 
     def __str__(self):
-        return u"%s (%s.%s)" % (self._testMethodName, strclass(self.__class__),self._testMethodName)
+        return "{} ({}.{})".format(self._testMethodName, strclass(self.__class__),self._testMethodName)
 
     def setUp(self):
         super().setUp()

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -517,7 +516,7 @@ def format_snippet(text, trunc_words=25):
     full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_fragment(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
-        return mark_safe('<div class="snippet">%s<button type="button" aria-label="Expand" class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="d-none full">%s</div>' % (snippet, full))
+        return mark_safe('<div class="snippet">{}<button type="button" aria-label="Expand" class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="d-none full">{}</div>'.format(snippet, full))
     return mark_safe(full)
 
 @register.simple_tag
@@ -535,7 +534,7 @@ def textify(text):
 @register.filter
 def state(doc, slug):
     if slug == "stream": # convenient shorthand
-        slug = "%s-stream-%s" % (doc.type_id, doc.stream_id)
+        slug = "{}-stream-{}".format(doc.type_id, doc.stream_id)
     return doc.get_state(slug)
 
 @register.filter
@@ -544,7 +543,7 @@ def statehelp(state):
     from django.urls import reverse as urlreverse
     tooltip = escape(strip_tags(state.desc))
     url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type=state.type_id)) + "#" + state.slug
-    return mark_safe('<a class="state-help-icon" href="%s" title="%s">?</a>' % (url, tooltip))
+    return mark_safe('<a class="state-help-icon" href="{}" title="{}">?</a>'.format(url, tooltip))
 
 @register.filter
 def sectionlevel(section_number):
@@ -651,7 +650,7 @@ def format_timedelta(timedelta):
     s = timedelta.seconds
     hours, remainder = divmod(s, 3600)
     minutes, seconds = divmod(remainder, 60)
-    return '{hours:02d}:{minutes:02d}'.format(hours=hours,minutes=minutes)
+    return f'{hours:02d}:{minutes:02d}'
 
 @register.filter()
 def nbsp(value):

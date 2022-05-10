@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2018-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 # Copied from https://github.com/sphinx-doc/sphinx/blob/master/sphinx/util/texescape.py
 # Copyright and license as indicated in the original and below
 

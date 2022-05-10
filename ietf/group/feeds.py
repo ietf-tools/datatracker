@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
@@ -19,7 +18,7 @@ class GroupChangesFeed(Feed):
         return Group.objects.get(acronym=acronym)
 
     def title(self, obj):
-        return "Changes for %s %s" % (obj.acronym, obj.type)
+        return "Changes for {} {}".format(obj.acronym, obj.type)
 
     def link(self, obj):
         if not obj:
@@ -48,7 +47,7 @@ class GroupChangesFeed(Feed):
         return obj.time
 
     def item_title(self, obj):
-        title = "%s - %s" % (truncatewords(strip_tags(obj.desc), 10), obj.by)
+        title = "{} - {}".format(truncatewords(strip_tags(obj.desc), 10), obj.by)
         if isinstance(obj, DocEvent):
             title = "Chartering: %s" % title
 

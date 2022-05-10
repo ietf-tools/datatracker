@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2010-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 # changing state and metadata on Internet Drafts
@@ -335,7 +334,7 @@ class ReplacesForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         self.doc = kwargs.pop('doc')
-        super(ReplacesForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.initial['replaces'] = self.doc.related_that_doc("replaces")
 
     def clean_replaces(self):
@@ -366,7 +365,7 @@ def replaces(request, name):
 
             if new_replaces != old_replaces:
                 events = set_replaces_for_document(request, doc, new_replaces, by=by,
-                                                   email_subject="%s replacement status updated by %s" % (doc.name, by),
+                                                   email_subject="{} replacement status updated by {}".format(doc.name, by),
                                                    comment=comment)
 
                 doc.save_with_history(events)
@@ -386,7 +385,7 @@ class SuggestedReplacesForm(forms.Form):
     comment = forms.CharField(label="Optional comment", widget=forms.Textarea, required=False, strip=False)
 
     def __init__(self, suggested, *args, **kwargs):
-        super(SuggestedReplacesForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         pks = [d.pk for d in suggested]
         self.fields["replaces"].initial = pks
         self.fields["replaces"].queryset = self.fields["replaces"].queryset.filter(pk__in=pks)
@@ -423,7 +422,7 @@ def review_possibly_replaces(request, name):
 
             if new_replaces != old_replaces:
                 events.extend(set_replaces_for_document(request, doc, new_replaces, by=by,
-                                                        email_subject="%s replacement status updated by %s" % (doc.name, by),
+                                                        email_subject="{} replacement status updated by {}".format(doc.name, by),
                                                         comment=comment))
 
             if comment:
@@ -485,7 +484,7 @@ def change_intention(request, name):
                 if not prev_consensus and doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
                     ce = ConsensusDocEvent(doc=doc, rev=doc.rev, by=login, type="changed_consensus")
                     ce.consensus = True
-                    ce.desc = "Changed consensus to <b>%s</b> from %s" % (nice_consensus(True),
+                    ce.desc = "Changed consensus to <b>{}</b> from {}".format(nice_consensus(True),
                                                                           nice_consensus(prev_consensus))
                     ce.save()
                     events.append(ce)
@@ -634,7 +633,7 @@ def to_iesg(request,name):
             send_mail(request=request,
                       to = addrs.to,
                       frm = on_behalf_of(by.formatted_email()),
-                      subject = "Publication has been requested for %s-%s" % (doc.name,doc.rev),
+                      subject = "Publication has been requested for {}-{}".format(doc.name,doc.rev),
                       template = "doc/submit_to_iesg_email.txt",
                       context = dict(doc=doc,by=by,url="%s%s"%(settings.IDTRACKER_BASE_URL,doc.get_absolute_url()),),
                       extra = extra)
@@ -704,7 +703,7 @@ def edit_info(request, name):
                     e.by = Person.objects.get(name="(System)")
                     e.doc = doc
                     e.rev = doc.rev
-                    e.desc = "Earlier history may be found in the Comment Log for <a href=\"%s\">%s</a>" % (replaces[0], replaces[0].get_absolute_url())
+                    e.desc = "Earlier history may be found in the Comment Log for <a href=\"{}\">{}</a>".format(replaces[0], replaces[0].get_absolute_url())
                     e.save()
                     events.append(e)
 
@@ -872,16 +871,16 @@ def resurrect(request, name):
 
 def restore_draft_file(request, draft):
     '''restore latest revision document file from archive'''
-    basename = '{}-{}'.format(draft.name, draft.rev)
+    basename = f'{draft.name}-{draft.rev}'
     files = glob.glob(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, basename) + '.*')
     log.log("Resurrecting %s.  Moving files:" % draft.name)
     for file in files:
         try:
             shutil.move(file, settings.INTERNET_DRAFT_PATH)
-            log.log("  Moved file %s to %s" % (file, settings.INTERNET_DRAFT_PATH))
+            log.log("  Moved file {} to {}".format(file, settings.INTERNET_DRAFT_PATH))
         except shutil.Error as ex:
-            messages.warning(request, 'There was an error restoring the draft file: {} ({})'.format(file, ex))
-            log.log("  Exception %s when attempting to move %s" % (ex, file))
+            messages.warning(request, f'There was an error restoring the draft file: {file} ({ex})')
+            log.log("  Exception {} when attempting to move {}".format(ex, file))
 
 
 class IESGNoteForm(forms.Form):
@@ -1068,7 +1067,7 @@ class ChangeShepherdEmailForm(forms.Form):
     shepherd = forms.ModelChoiceField(queryset=Email.objects.all(), label="Shepherd email", empty_label=None)
 
     def __init__(self, *args, **kwargs):
-        super(ChangeShepherdEmailForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields["shepherd"].queryset = self.fields["shepherd"].queryset.filter(person__email=self.initial["shepherd"]).distinct()
     
 def change_shepherd_email(request, name):
@@ -1195,7 +1194,7 @@ def edit_consensus(request, name):
                 if not e.consensus and doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
                     permission_denied(request, "BCPs and Standards Track documents must include the consensus boilerplate.")
 
-                e.desc = "Changed consensus to <b>%s</b> from %s" % (nice_consensus(e.consensus),
+                e.desc = "Changed consensus to <b>{}</b> from {}".format(nice_consensus(e.consensus),
                                                                      nice_consensus(prev_consensus))
 
                 e.save()
@@ -1309,7 +1308,7 @@ def request_publication(request, name):
 
         from ietf.doc.templatetags.mail_filters import std_level_prompt
 
-        subject = "%s: '%s' to %s (%s-%s.txt)" % (action, doc.title, std_level_prompt(doc), doc.name, doc.rev)
+        subject = "{}: '{}' to {} ({}-{}.txt)".format(action, doc.title, std_level_prompt(doc), doc.name, doc.rev)
 
         body = generate_publication_request(request, doc)
 
@@ -1338,7 +1337,7 @@ class AdoptDraftForm(forms.Form):
         rg_features = GroupFeatures.objects.get(type_id='rg')
         wg_features = GroupFeatures.objects.get(type_id='wg')
 
-        super(AdoptDraftForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         state_types = set()
         if has_role(user, "Secretariat"):
@@ -1365,7 +1364,7 @@ class AdoptDraftForm(forms.Form):
                 group_queryset = self.fields["group"].queryset.filter(role__person__user=user, role__name__in=wg_features.docman_roles).distinct()
             self.fields["group"].queryset = group_queryset
 
-        self.fields['group'].choices = [(g.pk, '%s - %s' % (g.acronym, g.name)) for g in self.fields["group"].queryset]
+        self.fields['group'].choices = [(g.pk, '{} - {}'.format(g.acronym, g.name)) for g in self.fields["group"].queryset]
         self.fields['newstate'].choices = [('','-- Pick a state --')]
         self.fields['newstate'].choices.extend([(x.pk,x.name + " (IETF)") for x in state_choices if x.type_id == 'draft-stream-ietf'])
         self.fields['newstate'].choices.extend([(x.pk,x.name + " (IRTF)") for x in state_choices if x.type_id == 'draft-stream-irtf'])
@@ -1420,9 +1419,9 @@ def adopt_draft(request, name):
             # group
             if group != doc.group:
                 e = DocEvent(type="changed_group", doc=doc, rev=doc.rev, by=by)
-                e.desc = "Changed group to <b>%s (%s)</b>" % (group.name, group.acronym.upper())
+                e.desc = "Changed group to <b>{} ({})</b>".format(group.name, group.acronym.upper())
                 if doc.group.type_id != "individ":
-                    e.desc += " from %s (%s)" % (doc.group.name, doc.group.acronym.upper())
+                    e.desc += " from {} ({})".format(doc.group.name, doc.group.acronym.upper())
                 e.save()
                 events.append(e)
                 doc.group = group
@@ -1492,7 +1491,7 @@ def release_draft(request, name):
                     doc.tags.clear()
                     e = DocEvent(type="changed_document", doc=doc, rev=doc.rev, by=by)
                     l = []
-                    l.append("Tag%s %s cleared." % (pluralize(existing_tags), ", ".join(t.name for t in existing_tags)))
+                    l.append("Tag{} {} cleared.".format(pluralize(existing_tags), ", ".join(t.name for t in existing_tags)))
                     e.desc = " ".join(l)
                     e.save()
                     events.append(e)
@@ -1550,7 +1549,7 @@ class ChangeStreamStateForm(forms.Form):
         state_type = kwargs.pop("state_type")
         self.can_set_sub_pub = kwargs.pop("can_set_sub_pub")
         self.stream = kwargs.pop("stream")
-        super(ChangeStreamStateForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         f = self.fields["new_state"]
         f.queryset = f.queryset.filter(type=state_type)
@@ -1651,9 +1650,9 @@ def change_stream_state(request, name, state_type):
                 removed_tags = existing_tags - new_tags
                 l = []
                 if added_tags:
-                    l.append("Tag%s %s set." % (pluralize(added_tags), ", ".join(t.name for t in added_tags)))
+                    l.append("Tag{} {} set.".format(pluralize(added_tags), ", ".join(t.name for t in added_tags)))
                 if removed_tags:
-                    l.append("Tag%s %s cleared." % (pluralize(removed_tags), ", ".join(t.name for t in removed_tags)))
+                    l.append("Tag{} {} cleared.".format(pluralize(removed_tags), ", ".join(t.name for t in removed_tags)))
                 e.desc = " ".join(l)
                 e.save()
                 events.append(e)

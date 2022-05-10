@@ -23,7 +23,7 @@ class BallotForm(forms.Form):
     
     def __init__(self, *args, **kwargs):
         ballot_type = kwargs.pop("ballot_type")
-        super(BallotForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['position'].queryset = ballot_type.positions.order_by('order')
 
 class ChangeStateForm(forms.Form):
@@ -36,7 +36,7 @@ class ChangeStateForm(forms.Form):
     substate = forms.ModelChoiceField(DocTagName.objects.filter(slug__in=(TELECHAT_TAGS)), required=False)
     
     def __init__(self,*args,**kwargs):
-        super(ChangeStateForm, self).__init__(*args,**kwargs)
+        super().__init__(*args,**kwargs)
         state = State.objects.get(id=self.initial['state'])
         self.fields['state'].queryset = State.objects.filter(type=state.type)
         
@@ -45,7 +45,7 @@ class DateSelectForm(forms.Form):
     
     def __init__(self,*args,**kwargs):
         choices = kwargs.pop('choices')
-        super(DateSelectForm, self).__init__(*args,**kwargs)
+        super().__init__(*args,**kwargs)
         self.fields['date'].widget.choices = choices
 
 class IssueModelForm(forms.ModelForm):

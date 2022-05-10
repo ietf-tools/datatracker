@@ -1,4 +1,3 @@
-
 from ietf.submit import views
 from ietf.utils.urls import url
 

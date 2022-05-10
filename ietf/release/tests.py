@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2022, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from pyquery import PyQuery

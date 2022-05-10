@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2017-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import json
@@ -45,9 +44,9 @@ def top_level(request):
 
     apitop = reverse('ietf.api.views.top_level')
 
-    for name in sorted([ name for name, api in _api_list if len(api._registry) > 0 ]):
+    for name in sorted( name for name, api in _api_list if len(api._registry) > 0 ):
         available_resources[name] = {
-            'list_endpoint': '%s/%s/' % (apitop, name),
+            'list_endpoint': '{}/{}/'.format(apitop, name),
         }
 
     serializer = Serializer()
@@ -161,12 +160,12 @@ def api_new_meeting_registration(request):
         try:
             meeting = Meeting.objects.get(number=number)
         except Meeting.DoesNotExist:
-            return err(400, "Invalid meeting value: '%s'" % (number, ))
+            return err(400, "Invalid meeting value: '{}'".format(number))
         email = data['email']
         try:
             validate_email(email)
         except ValidationError:
-            return err(400, "Invalid email value: '%s'" % (email, ))
+            return err(400, "Invalid email value: '{}'".format(email))
         if request.POST.get('cancelled', 'false') == 'true':
             MeetingRegistration.objects.filter(meeting_id=meeting.pk, email=email).delete()
             return HttpResponse('OK', status=200, content_type='text/plain')
@@ -174,7 +173,7 @@ def api_new_meeting_registration(request):
             object, created = MeetingRegistration.objects.get_or_create(meeting_id=meeting.pk, email=email)
             try:
                 # Set attributes not already in the object
-                for key in set(data.keys())-set(['attended', 'apikey', 'meeting', 'email',]):
+                for key in set(data.keys())-{'attended', 'apikey', 'meeting', 'email'}:
                     new = data.get(key)
                     cur = getattr(object, key, None)
                     if key in ['reg_type', 'ticket_type', ] and new:

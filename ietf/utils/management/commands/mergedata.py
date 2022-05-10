@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import os
@@ -24,8 +23,7 @@ def flatten(l):
     if isinstance(l, list):
         for el in l:
             if isinstance(el, list):
-                for sub in flatten(el):
-                    yield sub
+                yield from flatten(el)
             else:
                 yield el
     else:
@@ -41,7 +39,7 @@ class Command(LoadCommand):
 #             '-e', '--exclude', dest='exclude', action='append', default=[],
 #             help='An app_label or app_label.ModelName to exclude. Can be used multiple times.',
 #         )
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
 
     def load_label(self, fixture_label):
         """
@@ -229,13 +227,13 @@ class Command(LoadCommand):
                                     ending=''
                                 )
                         except (DatabaseError, IntegrityError) as e:
-                            e.args = ("Could not load %(app_label)s.%(object_name)s(pk=%(pk)s): %(error_msg)s\n  %(data)s\n" % {
-                                'app_label': obj.object._meta.app_label,
-                                'object_name': obj.object._meta.object_name,
-                                'pk': obj.object.pk,
-                                'data': obj_to_dict(obj.object),
-                                'error_msg': force_text(e)
-                            },)
+                            e.args = ("Could not load {app_label}.{object_name}(pk={pk}): {error_msg}\n  {data}\n".format(
+                                app_label=obj.object._meta.app_label,
+                                object_name=obj.object._meta.object_name,
+                                pk=obj.object.pk,
+                                data=obj_to_dict(obj.object),
+                                error_msg=force_text(e)
+                            ),)
                             raise
                 if objects and show_progress:
                     self.stdout.write('')  # add a newline after progress indicator
@@ -243,7 +241,7 @@ class Command(LoadCommand):
                 self.fixture_object_count += objects_in_fixture
             except Exception as e:
                 if not isinstance(e, CommandError):
-                    e.args = ("Problem installing fixture '%s': %s" % (fixture_file, e),)
+                    e.args = ("Problem installing fixture '{}': {}".format(fixture_file, e),)
                 raise
             finally:
                 fixture.close()
@@ -261,5 +259,5 @@ class Command(LoadCommand):
         if os.path.exists(fixture_label):
             fixture_files = [ (fixture_label, os.path.dirname(fixture_label) or os.getcwd(), os.path.basename(fixture_label)) ]
         else:
-            fixture_files = super(Command, self).find_fixtures(fixture_label)
+            fixture_files = super().find_fixtures(fixture_label)
         return fixture_files

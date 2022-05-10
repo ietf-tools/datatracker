@@ -20,7 +20,7 @@ def is_nomcom_eligible(person, date=datetime.date.today()):
 @register.filter
 def person_by_name(name):
     "Look up a person record from name"
-    if not isinstance(name, (type(b""), type(""))):
+    if not isinstance(name, (bytes, str)):
         return None
     alias = Alias.objects.filter(name=name).first()
     return alias.person if alias else None

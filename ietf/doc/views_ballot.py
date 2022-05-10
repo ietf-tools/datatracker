@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2010-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 # ballot management (voting, commenting, writeups, ...) for Area
 # Directors and Secretariat
 
@@ -114,7 +113,7 @@ class EditPositionForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         ballot_type = kwargs.pop("ballot_type")
-        super(EditPositionForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['position'].queryset = ballot_type.positions.order_by('order')
 
     def clean_discuss(self):
@@ -174,12 +173,12 @@ def save_position(form, doc, ballot, balloter, login=None, send_email=False):
 
     # figure out a description
     if not old_pos and pos.pos.slug != "norecord":
-        pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.balloter.plain_name())
+        pos.desc = "[Ballot Position Update] New position, {}, has been recorded for {}".format(pos.pos.name, pos.balloter.plain_name())
     elif old_pos and pos.pos != old_pos.pos:
-        pos.desc = "[Ballot Position Update] Position for %s has been changed to %s from %s" % (pos.balloter.plain_name(), pos.pos.name, old_pos.pos.name)
+        pos.desc = "[Ballot Position Update] Position for {} has been changed to {} from {}".format(pos.balloter.plain_name(), pos.pos.name, old_pos.pos.name)
 
     if not pos.desc and changes:
-        pos.desc = "Ballot %s text updated for %s" % (" and ".join(changes), balloter.plain_name())
+        pos.desc = "Ballot {} text updated for {}".format(" and ".join(changes), balloter.plain_name())
 
     # only add new event if we actually got a change
     if pos.desc:
@@ -246,7 +245,7 @@ def edit_position(request, name, ballot_id):
             
         form = EditPositionForm(initial=initial, ballot_type=ballot.ballot_type)
 
-    blocking_positions = dict((p.pk, p.name) for p in form.fields["position"].queryset.all() if p.blocking)
+    blocking_positions = {p.pk: p.name for p in form.fields["position"].queryset.all() if p.blocking}
 
     ballot_deferred = doc.active_defer_event()
 
@@ -291,7 +290,7 @@ def api_set_position(request):
             pos = save_position(form, doc, ballot, ad, send_email=True)
         else:
             errors = form.errors
-            summary = ','.join([ "%s: %s" % (f, striptags(errors[f])) for f in errors ])
+            summary = ','.join([ "{}: {}".format(f, striptags(errors[f])) for f in errors ])
             return err(400, "Form not valid: %s" % summary)
     else:
         return err(405, "Method not allowed")
@@ -317,7 +316,7 @@ def build_position_email(balloter, doc, pos):
         subj.append("COMMENT")
 
     balloter_name_genitive = balloter.plain_name() + "'" if balloter.plain_name().endswith('s') else balloter.plain_name() + "'s"
-    subject = "%s %s on %s" % (balloter_name_genitive, pos.pos.name if pos.pos else "No Position", doc.name + "-" + doc.rev)
+    subject = "{} {} on {}".format(balloter_name_genitive, pos.pos.name if pos.pos else "No Position", doc.name + "-" + doc.rev)
     if subj:
         subject += ": (with %s)" % " and ".join(subj)
 
@@ -660,7 +659,7 @@ def ballot_writeupnotes(request, name):
                         pos.type = "changed_ballot_position"
                         pos.balloter = login
                         pos.pos_id = "yes"
-                        pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.balloter.plain_name())
+                        pos.desc = "[Ballot Position Update] New position, {}, has been recorded for {}".format(pos.pos.name, pos.balloter.plain_name())
                         pos.save()
 
                         # Consider mailing this position to 'iesg_ballot_saved'
@@ -953,7 +952,7 @@ class ApproveDownrefsForm(forms.Form):
 
 
     def __init__(self, queryset, *args, **kwargs):
-        super(ApproveDownrefsForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['checkboxes'].queryset = queryset
 
     def clean(self):
@@ -983,12 +982,12 @@ def approve_downrefs(request, name):
                         target=rel.target, relationship_id='downref-approval')
                 c = DocEvent(type="downref_approved", doc=rel.source,
                         rev=rel.source.rev, by=login)
-                c.desc = "Downref to RFC %s approved by Last Call for %s-%s" % (
+                c.desc = "Downref to RFC {} approved by Last Call for {}-{}".format(
                         rel.target.document.rfc_number(), rel.source, rel.source.rev)
                 c.save()
                 c = DocEvent(type="downref_approved", doc=rel.target.document,
                         rev=rel.target.document.rev, by=login)
-                c.desc = "Downref to RFC %s approved by Last Call for %s-%s" % (
+                c.desc = "Downref to RFC {} approved by Last Call for {}-{}".format(
                         rel.target.document.rfc_number(), rel.source, rel.source.rev)
                 c.save()
 

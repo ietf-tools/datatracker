@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -22,7 +21,7 @@ from ietf.utils.log import log
 from ietf.utils.response import permission_denied
 
 
-SYNC_BIN_PATH = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../bin"))
+SYNC_BIN_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../bin"))
 
 #@role_required('Secretariat', 'IANA', 'RFC Editor')
 def discrepancies(request):
@@ -87,7 +86,7 @@ def notify(request, org, notification):
             out = out.decode('utf-8')
             err = err.decode('utf-8')
             if p.returncode:
-                log("Subprocess error %s when running '%s': %s %s" % (p.returncode, cmd, err, out))
+                log("Subprocess error {} when running '{}': {} {}".format(p.returncode, cmd, err, out))
                 raise subprocess.CalledProcessError(p.returncode, cmdstring, "\n".join([err, out]))
 
         log("Running sync script from notify view POST")

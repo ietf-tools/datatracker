@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django.contrib.auth.models import User
@@ -80,7 +79,7 @@ class SearchRule(models.Model):
     name_contains_index = models.ManyToManyField(Document)
 
     def __str__(self):
-        return "%s %s %s/%s/%s/%s" % (self.community_list, self.rule_type, self.state, self.group, self.person, self.text)
+        return "{} {} {}/{}/{}/{}".format(self.community_list, self.rule_type, self.state, self.group, self.person, self.text)
 
 class EmailSubscription(models.Model):
     community_list = ForeignKey(CommunityList)
@@ -93,7 +92,7 @@ class EmailSubscription(models.Model):
     notify_on = models.CharField(max_length=30, choices=NOTIFICATION_CHOICES, default="all")
 
     def __str__(self):
-        return "%s to %s (%s changes)" % (self.email, self.community_list, self.notify_on)
+        return "{} to {} ({} changes)".format(self.email, self.community_list, self.notify_on)
 
 
 def notify_events(sender, instance, **kwargs):

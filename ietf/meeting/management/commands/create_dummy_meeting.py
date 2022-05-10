@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2020-2021, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 # This command generates a Meeting (IETF 999) with Rooms, TimeSlots, Sessions and Constraints.
 # It is mainly meant to support the development of the Automatic Schedule Builder, by
@@ -40,7 +39,6 @@
 # - The joint second idr session was added from IETF 105, to have another case of
 #   a joint session in the dataset.
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import debug                            # pyflakes:ignore
 
@@ -82,14 +80,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
-            raise EnvironmentError("Refusing to create a dummy meetng on a production server")
+            raise OSError("Refusing to create a dummy meetng on a production server")
 
         opt_delete = options.get('delete', False)
         opt_use_old_conflicts = options.get('old_conflicts', False)
         self.start_date = options['start_date']
         meeting_tz = options['tz']
         if not opt_delete and (meeting_tz not in pytz.common_timezones):
-            self.stderr.write("Warning: {} is not a recognized time zone.".format(meeting_tz))
+            self.stderr.write(f"Warning: {meeting_tz} is not a recognized time zone.")
 
         if opt_delete:
             if Meeting.objects.filter(number='999').exists():

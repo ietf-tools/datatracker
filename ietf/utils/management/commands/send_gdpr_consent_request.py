@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2018-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -98,6 +97,6 @@ class Command(BaseCommand):
                             },
                         )
                     PersonEvent.objects.create(person=person, type='gdpr_notice_email', 
-                                               desc="Sent GDPR notice email to %s with confirmation deadline %s" % (to, date))
+                                               desc="Sent GDPR notice email to {} with confirmation deadline {}".format(to, date))
                     time.sleep(delay)
                 

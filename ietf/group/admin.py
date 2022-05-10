@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2010-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 import re
 
@@ -75,7 +74,7 @@ class GroupAdmin(admin.ModelAdmin):
         roles = Role.objects.filter(group=obj).order_by("name", "person__name").select_related('person')
         res = []
         for r in roles:
-            res.append('<a href="../../person/person/%s/">%s</a> (<a href="../../group/role/%s/">%s)' % (r.person.pk, escape(r.person.plain_name()), r.pk, r.name.name))
+            res.append('<a href="../../person/person/{}/">{}</a> (<a href="../../group/role/{}/">{})'.format(r.person.pk, escape(r.person.plain_name()), r.pk, r.name.name))
         return ", ".join(res)
     role_list.short_description = "Persons" # type: ignore # https://github.com/python/mypy/issues/2087
     role_list.allow_tags = True         # type: ignore     # https://github.com/python/mypy/issues/2087
@@ -96,7 +95,7 @@ class GroupAdmin(admin.ModelAdmin):
             url(r'^reminder/$', wrap(self.send_reminder), name='%s_%s_reminder' % info),
             url(r'^(.+)/reminder/$', wrap(self.send_one_reminder), name='%s_%s_one_reminder' % info),
         ]
-        urls += super(GroupAdmin, self).get_urls()
+        urls += super().get_urls()
         return urls
 
     def send_reminder(self, request, sdo=None):

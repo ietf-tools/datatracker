@@ -43,7 +43,7 @@ def populate_parent_types(apps, schema_editor):
 
     # validate
     for gtn in GroupTypeName.objects.all():
-        slugs_in_db = set(type.slug for type in gtn.features.parent_types.all())
+        slugs_in_db = {type.slug for type in gtn.features.parent_types.all()}
         assert(slugs_in_db == set(type_map[gtn.slug]))
 
 

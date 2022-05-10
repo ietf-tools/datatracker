@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import json
@@ -90,7 +89,7 @@ def _find_person_in_emails(liaison, person):
     return False
 
 def contact_email_from_role(role):
-    return '{} <{}>'.format(role.person.plain_name(), role.email.address)
+    return f'{role.person.plain_name()} <{role.email.address}>'
 
 def contacts_from_roles(roles):
     '''Returns contact string for given roles'''
@@ -121,7 +120,7 @@ def get_cc(group):
         chair_roles = group.role_set.filter(name='chair')
         emails.extend([ contact_email_from_role(r) for r in chair_roles ])
         if group.list_email:
-            emails.append('{} Discussion List <{}>'.format(group.name,group.list_email))
+            emails.append(f'{group.name} Discussion List <{group.list_email}>')
     elif group.type_id == 'sdo':
         liaiman_roles = group.role_set.filter(name='liaiman')
         emails.extend([ contact_email_from_role(r) for r in liaiman_roles ])
@@ -388,7 +387,7 @@ def liaison_delete_attachment(request, object_id, attach_id):
         type_id='modified',
         by=get_person_for_user(request.user),
         statement=liaison,
-        desc='Attachment Removed: {}'.format(attach.document.title)
+        desc=f'Attachment Removed: {attach.document.title}'
     )
     messages.success(request, 'Attachment Deleted')
     return redirect('ietf.liaisons.views.liaison_detail', object_id=liaison.pk)
@@ -455,7 +454,7 @@ def liaison_edit_attachment(request, object_id, doc_id):
                 type_id='modified',
                 by=get_person_for_user(request.user),
                 statement=liaison,
-                desc='Attachment Title changed to {}'.format(title)
+                desc=f'Attachment Title changed to {title}'
             )
 
             doc.title = title

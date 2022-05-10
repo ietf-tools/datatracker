@@ -23,7 +23,7 @@ def getpeople(request):
 
     qs = Person.objects.filter(name__icontains=term)
     for item in qs:
-        full = '%s - (%s)' % (item.name,item.id)
+        full = '{} - ({})'.format(item.name,item.id)
         result.append(full)
         
     return HttpResponse(json.dumps(result), content_type='application/javascript')
@@ -105,7 +105,7 @@ def people(request, name):
                 Role.objects.create(name_id='pre-ad',group=area,email=email,person=person)
                 
                 if not email.origin or email.origin == person.user.username:
-                    email.origin = "role: %s %s" % (area.acronym, 'pre-ad')
+                    email.origin = "role: {} {}".format(area.acronym, 'pre-ad')
                     email.save()
 
                 messages.success(request, 'New Area Director added successfully!')

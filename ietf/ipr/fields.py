@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import json
@@ -17,7 +16,7 @@ from ietf.utils.fields import SearchableField
 def select2_id_ipr_title(objs):
     return [{
         "id": o.pk,
-        "text": escape("%s <%s>" % (o.title, o.time.date().isoformat())),
+        "text": escape("{} <{}>".format(o.title, o.time.date().isoformat())),
     } for o in objs] if objs else []
 
 def select2_id_ipr_title_json(value):
@@ -37,7 +36,7 @@ class SearchableIprDisclosuresField(SearchableField):
         for key in item_ids:
             if not key.isdigit():
                 item_ids.remove(key)
-        return super(SearchableIprDisclosuresField, self).get_model_instances(item_ids)
+        return super().get_model_instances(item_ids)
 
     def make_select2_data(self, model_instances):
         return select2_id_ipr_title(model_instances)

@@ -75,9 +75,8 @@ def sanitize_filename(filename, alt_name, alt_ext):
             filename=filename[:len(name)]+b'A'+filename[len(name):]
             break
 
-    if sys.version_info>=(3, 0):
-        # back to string
-        filename=filename.decode('us-ascii')
+    # back to string
+    filename=filename.decode('us-ascii')
 
     if filename.rfind('.')==0:
         filename=alt_name+filename
@@ -152,4 +151,3 @@ def is_usascii(value):
         return False
     
     return True
- 

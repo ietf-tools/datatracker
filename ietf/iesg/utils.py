@@ -24,7 +24,7 @@ def telechat_page_count(date=None, docs=None):
 
     drafts = [d for d in for_approval if d.type_id == 'draft']
 
-    pages_for_approval = sum([d.pages or 0 for d in drafts])
+    pages_for_approval = sum(d.pages or 0 for d in drafts)
 
     pages_for_action = 0
     for d in for_action:

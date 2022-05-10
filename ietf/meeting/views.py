@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import csv
@@ -244,11 +243,11 @@ def materials_document(request, document, num=None, ext=None):
 
     old_proceedings_format = meeting.number.isdigit() and int(meeting.number) <= 96
     if settings.MEETING_MATERIALS_SERVE_LOCALLY or old_proceedings_format:
-        with io.open(filename, 'rb') as file:
+        with open(filename, 'rb') as file:
             bytes = file.read()
         
         mtype, chset = get_mime_type(bytes)
-        content_type = "%s; charset=%s" % (mtype, chset)
+        content_type = "{}; charset={}".format(mtype, chset)
 
         file_ext = os.path.splitext(filename)
         if len(file_ext) == 2 and file_ext[1] == '.md' and mtype == 'text/plain':
@@ -304,7 +303,7 @@ def edit_timeslots(request, num=None):
                     ', '.join(sorted(missing_ids))
                 ))
             timeslots.delete()
-            return HttpResponse(content='; '.join('Deleted TimeSlot {}'.format(id) for id in slot_ids))
+            return HttpResponse(content='; '.join(f'Deleted TimeSlot {id}' for id in slot_ids))
         else:
             return HttpResponseBadRequest('unknown action')
 
@@ -436,7 +435,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         schedule = get_schedule_by_name(meeting, get_person_by_email(owner), name)
 
     if schedule is None:
-        raise Http404("No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
+        raise Http404("No meeting information for meeting {} owner {} schedule {} available".format(num, owner, name))
 
     can_see, can_edit, secretariat = schedule_permissions(meeting, schedule, request.user)
 
@@ -523,7 +522,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
     def prepare_sessions_for_display(sessions):
         # requesters
-        requested_by_lookup = {p.pk: p for p in Person.objects.filter(pk__in=set(s.requested_by for s in sessions if s.requested_by))}
+        requested_by_lookup = {p.pk: p for p in Person.objects.filter(pk__in={s.requested_by for s in sessions if s.requested_by})}
 
         # constraints
         constraints_for_sessions, formatted_constraints_for_sessions, constraint_names = preprocess_constraints_for_meeting_schedule_editor(meeting, sessions)
@@ -756,7 +755,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
             if existing_assignments:
                 assertion('len(existing_assignments) <= 1',
-                          note='Multiple assignments for {} in schedule {}'.format(session, schedule))
+                          note=f'Multiple assignments for {session} in schedule {schedule}')
 
                 if timeslot_locked(existing_assignments[0].timeslot):
                     return _json_response(False, error="Can't reassign this session.")
@@ -807,7 +806,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             session = get_object_or_404(sessions, pk=request.POST['session'])
             existing_assignments = SchedTimeSessAssignment.objects.filter(session=session, schedule=schedule)
             assertion('len(existing_assignments) <= 1',
-                      note='Multiple assignments for {} in schedule {}'.format(session, schedule))
+                      note=f'Multiple assignments for {session} in schedule {schedule}')
             if not any(timeslot_locked(ea.timeslot) for ea in existing_assignments):
                 existing_assignments.delete()
             else:
@@ -821,7 +820,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
             swap_days_form = SwapDaysForm(request.POST)
             if not swap_days_form.is_valid():
-                return HttpResponseBadRequest("Invalid swap: {}".format(swap_days_form.errors))
+                return HttpResponseBadRequest(f"Invalid swap: {swap_days_form.errors}")
 
             source_day = swap_days_form.cleaned_data['source_day']
             target_day = swap_days_form.cleaned_data['target_day']
@@ -842,7 +841,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             # The origin/target timeslots do not need to be the same duration.
             swap_timeslots_form = SwapTimeslotsForm(meeting, request.POST)
             if not swap_timeslots_form.is_valid():
-                return HttpResponseBadRequest("Invalid swap: {}".format(swap_timeslots_form.errors))
+                return HttpResponseBadRequest(f"Invalid swap: {swap_timeslots_form.errors}")
 
             affected_rooms = swap_timeslots_form.cleaned_data['rooms']
             origin_timeslot = swap_timeslots_form.cleaned_data['origin_timeslot']
@@ -920,10 +919,10 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             max(0, min(x + a * (1.97294 * math.cos(phi)), 1)),
         )
 
-    session_parents = sorted(set(
+    session_parents = sorted({
         s.group.parent for s in sessions
         if s.group and s.group.parent and (s.group.parent.type_id == 'area' or s.group.parent.acronym in ('irtf','iab'))
-    ), key=lambda p: p.acronym)
+    }, key=lambda p: p.acronym)
 
     liz_preferred_colors = {
         'art' : { 'dark' : (204, 121, 167) , 'light' : (234, 232, 230) },
@@ -946,11 +945,11 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             p.scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round(x * 255)) for x in rgb_color))
             p.light_scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round((0.9 + 0.1 * x) * 255)) for x in rgb_color))
 
-    session_purposes = sorted(set(s.purpose for s in sessions if s.purpose), key=lambda p: p.name)
+    session_purposes = sorted({s.purpose for s in sessions if s.purpose}, key=lambda p: p.name)
     timeslot_types = sorted(
-        set(
+        {
             s.type for s in sessions if s.type
-        ).union(
+        }.union(
             t.type for t in timeslots_qs.all()
         ),
         key=lambda tstype: tstype.name,
@@ -1100,7 +1099,7 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
         schedule = get_schedule_by_name(meeting, get_person_by_email(owner), name)
 
     if schedule is None:
-        raise Http404("No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
+        raise Http404("No meeting information for meeting {} owner {} schedule {} available".format(num, owner, name))
 
     rooms = list(Room.objects.filter(meeting=meeting).prefetch_related('session_types').order_by('-capacity', 'name'))
     rooms.append(Room(name="(No location)"))
@@ -1138,7 +1137,7 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
     def redirect_with_scroll():
         url = request.get_full_path()
         if scroll and scroll.isdecimal():
-            url += "#scroll={}".format(scroll)
+            url += f"#scroll={scroll}"
         return HttpResponseRedirect(url)
 
     add_timeslot_form = None
@@ -1352,7 +1351,7 @@ def edit_schedule_properties(request, num, owner, name):
     person   = get_person_by_email(owner)
     schedule = get_schedule_by_name(meeting, person, name)
     if schedule is None:
-        raise Http404("No agenda information for meeting %s owner %s schedule %s available" % (num, owner, name))
+        raise Http404("No agenda information for meeting {} owner {} schedule {} available".format(num, owner, name))
 
     can_see, can_edit, secretariat = schedule_permissions(meeting, schedule, request.user)
 
@@ -1444,7 +1443,7 @@ class DiffSchedulesForm(forms.Form):
 
         sorted_schedules = sorted(qs, reverse=True, key=lambda s: natural_sort_key(s.name))
 
-        schedule_choices = [(schedule.name, "{} ({})".format(schedule.name, schedule.owner)) for schedule in sorted_schedules]
+        schedule_choices = [(schedule.name, f"{schedule.name} ({schedule.owner})") for schedule in sorted_schedules]
 
         self.fields['from_schedule'].choices = schedule_choices
         self.fields['to_schedule'].choices = schedule_choices
@@ -1469,7 +1468,7 @@ def diff_schedules(request, num):
                 s = d['session']
                 s.session_label = s.short_name
                 if s.requested_duration:
-                    s.session_label = "{} ({}h)".format(s.session_label, round(s.requested_duration.seconds / 60.0 / 60.0, 1))
+                    s.session_label = f"{s.session_label} ({round(s.requested_duration.seconds / 60.0 / 60.0, 1)}h)"
     else:
         form = DiffSchedulesForm(meeting, request.user)
 
@@ -1571,7 +1570,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
 
 def agenda_csv(schedule, filtered_assignments):
     response = HttpResponse(content_type="text/csv; charset=%s"%settings.DEFAULT_CHARSET)
-    writer = csv.writer(response, delimiter=str(','), quoting=csv.QUOTE_ALL)
+    writer = csv.writer(response, delimiter=',', quoting=csv.QUOTE_ALL)
 
     headings = ["Date", "Start", "End", "Session", "Room", "Area", "Acronym", "Type", "Description", "Session ID", "Agenda", "Slides"]
 
@@ -1586,12 +1585,12 @@ def agenda_csv(schedule, filtered_assignments):
     def agenda_field(item):
         agenda_doc = item.session.agenda()
         if agenda_doc:
-            return "http://www.ietf.org/proceedings/{schedule.meeting.number}/agenda/{agenda.uploaded_filename}".format(schedule=schedule, agenda=agenda_doc)
+            return f"http://www.ietf.org/proceedings/{schedule.meeting.number}/agenda/{agenda_doc.uploaded_filename}"
         else:
             return ""
 
     def slides_field(item):
-        return "|".join("http://www.ietf.org/proceedings/{schedule.meeting.number}/slides/{slide.uploaded_filename}".format(schedule=schedule, slide=slide) for slide in item.session.slides())
+        return "|".join(f"http://www.ietf.org/proceedings/{schedule.meeting.number}/slides/{slide.uploaded_filename}" for slide in item.session.slides())
 
     write_row(headings)
 
@@ -1608,7 +1607,7 @@ def agenda_csv(schedule, filtered_assignments):
             row.append("")
             row.append("")
             row.append(item.timeslot.name)
-            row.append("b{}".format(item.timeslot.pk))
+            row.append(f"b{item.timeslot.pk}")
         elif item.slot_type().slug == "reg":
             row.append(item.slot_type().name)
             row.append(schedule.meeting.reg_area)
@@ -1616,7 +1615,7 @@ def agenda_csv(schedule, filtered_assignments):
             row.append("")
             row.append("")
             row.append(item.timeslot.name)
-            row.append("r{}".format(item.timeslot.pk))
+            row.append(f"r{item.timeslot.pk}")
         elif item.slot_type().slug == "other":
             row.append("None")
             row.append(item.timeslot.location.name if item.timeslot.location else "")
@@ -1785,7 +1784,7 @@ def session_draft_tarfile(request, num, acronym):
     tarstream = tarfile.open('','w:gz',response)
     mfh, mfn = mkstemp()
     os.close(mfh)
-    manifest = io.open(mfn, "w")
+    manifest = open(mfn, "w")
 
     for doc_name in drafts:
         pdf_path = os.path.join(settings.INTERNET_DRAFT_PDF_PATH, doc_name + ".pdf")
@@ -1813,7 +1812,7 @@ def session_draft_pdf(request, num, acronym):
     curr_page = 1
     pmh, pmn = mkstemp()
     os.close(pmh)
-    pdfmarks = io.open(pmn, "w")
+    pdfmarks = open(pmn, "w")
     pdf_list = ""
 
     for draft in drafts:
@@ -1834,7 +1833,7 @@ def session_draft_pdf(request, num, acronym):
     code, out, err = pipe(gs + " -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=" + pdfn + " " + pdf_list + " " + pmn)
     assertion('code == 0')
 
-    pdf = io.open(pdfn,"rb")
+    pdf = open(pdfn,"rb")
     pdf_contents = pdf.read()
     pdf.close()
 
@@ -1934,7 +1933,7 @@ def parse_agenda_filter_params(querydict):
         if key in filt_params:
             vals = unquote(value).lower().split(',')
             vals = [v.strip() for v in vals]
-            filt_params[key] = set([v for v in vals if len(v) > 0])  # remove empty strings
+            filt_params[key] = {v for v in vals if len(v) > 0}  # remove empty strings
 
     return filt_params
 
@@ -2180,7 +2179,7 @@ def session_details(request, num, acronym):
     # for what the group was called at the time. 
     meeting_time = datetime.datetime.combine(meeting.date, datetime.time()) 
 
-    groups = list(set([ s.group for s in sessions ]))
+    groups = list({ s.group for s in sessions })
     group_replacements = find_history_replacements_active_at(groups, meeting_time) 
 
     status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
@@ -2360,15 +2359,15 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
         sess_time = ota and ota.timeslot.time
 
         if session.meeting.type_id=='ietf':
-            name = 'bluesheets-%s-%s-%s' % (session.meeting.number, 
+            name = 'bluesheets-{}-{}-{}'.format(session.meeting.number, 
                                             session.group.acronym, 
                                             sess_time.strftime("%Y%m%d%H%M"))
-            title = 'Bluesheets IETF%s: %s : %s' % (session.meeting.number, 
+            title = 'Bluesheets IETF{}: {} : {}'.format(session.meeting.number, 
                                                     session.group.acronym, 
                                                     sess_time.strftime("%a %H:%M"))
         else:
-            name = 'bluesheets-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
-            title = 'Bluesheets %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
+            name = 'bluesheets-{}-{}'.format(session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
+            title = 'Bluesheets {}: {}'.format(session.meeting.number, sess_time.strftime("%a %H:%M"))
         doc = Document.objects.create(
                   name = name,
                   type_id = 'bluesheets',
@@ -2482,19 +2481,19 @@ def upload_session_agenda(request, session_id, num):
                 if not sess_time:
                     return HttpResponseGone("Cannot receive uploads for an unscheduled session.  Please check the session ID.", content_type="text/plain")
                 if session.meeting.type_id=='ietf':
-                    name = 'agenda-%s-%s' % (session.meeting.number, 
+                    name = 'agenda-{}-{}'.format(session.meeting.number, 
                                                  session.group.acronym) 
-                    title = 'Agenda IETF%s: %s' % (session.meeting.number, 
+                    title = 'Agenda IETF{}: {}'.format(session.meeting.number, 
                                                          session.group.acronym) 
                     if not apply_to_all:
-                        name += '-%s' % (session.docname_token(),)
+                        name += '-{}'.format(session.docname_token())
                         if sess_time:
-                            title += ': %s' % (sess_time.strftime("%a %H:%M"),)
+                            title += ': {}'.format(sess_time.strftime("%a %H:%M"))
                 else:
-                    name = 'agenda-%s-%s' % (session.meeting.number, session.docname_token())
-                    title = 'Agenda %s' % (session.meeting.number, )
+                    name = 'agenda-{}-{}'.format(session.meeting.number, session.docname_token())
+                    title = 'Agenda {}'.format(session.meeting.number)
                     if sess_time:
-                        title += ': %s' % (sess_time.strftime("%a %H:%M"),)
+                        title += ': {}'.format(sess_time.strftime("%a %H:%M"))
                 if Document.objects.filter(name=name).exists():
                     doc = Document.objects.get(name=name)
                     doc.rev = '%02d' % (int(doc.rev)+1)
@@ -2580,12 +2579,12 @@ def upload_session_slides(request, session_id, num, name):
             else:
                 title = form.cleaned_data['title']
                 if session.meeting.type_id=='ietf':
-                    name = 'slides-%s-%s' % (session.meeting.number, 
+                    name = 'slides-{}-{}'.format(session.meeting.number, 
                                              session.group.acronym) 
                     if not apply_to_all:
-                        name += '-%s' % (session.docname_token(),)
+                        name += '-{}'.format(session.docname_token())
                 else:
-                    name = 'slides-%s-%s' % (session.meeting.number, session.docname_token())
+                    name = 'slides-{}-{}'.format(session.meeting.number, session.docname_token())
                 name = name + '-' + slugify(title).replace('_', '-')[:128]
                 if Document.objects.filter(name=name).exists():
                    doc = Document.objects.get(name=name)
@@ -2666,15 +2665,15 @@ def propose_session_slides(request, session_id, num):
             submission = SlideSubmission.objects.create(session = session, title = title, filename = '', apply_to_all = apply_to_all, submitter=request.user.person)
 
             if session.meeting.type_id=='ietf':
-                name = 'slides-%s-%s' % (session.meeting.number, 
+                name = 'slides-{}-{}'.format(session.meeting.number, 
                                          session.group.acronym) 
                 if not apply_to_all:
-                    name += '-%s' % (session.docname_token(),)
+                    name += '-{}'.format(session.docname_token())
             else:
-                name = 'slides-%s-%s' % (session.meeting.number, session.docname_token())
+                name = 'slides-{}-{}'.format(session.meeting.number, session.docname_token())
             name = name + '-' + slugify(title).replace('_', '-')[:128]
             filename = '%s-ss%d%s'% (name, submission.id, ext)
-            destination = io.open(os.path.join(settings.SLIDE_STAGING_PATH, filename),'wb+')
+            destination = open(os.path.join(settings.SLIDE_STAGING_PATH, filename),'wb+')
             for chunk in file.chunks():
                 destination.write(chunk)
             destination.close()
@@ -2936,9 +2935,9 @@ def ajax_get_utc(request):
     # calculate utc day offset
     naive_utc_dt = utc_dt.replace(tzinfo=None)
     utc_day_offset = (naive_utc_dt.date() - dt.date()).days
-    html = "<span>{utc} UTC</span>".format(utc=utc)
+    html = f"<span>{utc} UTC</span>"
     if utc_day_offset != 0:
-        html = html + '<span class="day-offset"> {0:+d} Day</span>'.format(utc_day_offset)
+        html = html + f'<span class="day-offset"> {utc_day_offset:+d} Day</span>'
     context_data = {'timezone': timezone, 
                     'time': time, 
                     'utc': utc, 
@@ -3537,7 +3536,7 @@ def proceedings(request, num=None):
     ietf_areas = []
     for area, sessions in itertools.groupby(sorted(ietf, key=lambda s: (s.group.parent.acronym, s.group.acronym)), key=lambda s: s.group.parent):
         sessions = list(sessions)
-        meeting_groups = set(s.group_id for s in sessions if s.current_status != 'notmeet')
+        meeting_groups = {s.group_id for s in sessions if s.current_status != 'notmeet'}
         meeting_sessions = []
         not_meeting_sessions = []
         for s in sessions:
@@ -3671,39 +3670,39 @@ def api_set_session_video_url(request):
         number = request.POST.get('meeting')
         sessions = Session.objects.filter(meeting__number=number)
         if not sessions.exists():
-            return err(400, "No sessions found for meeting '%s'" % (number, ))
+            return err(400, "No sessions found for meeting '{}'".format(number))
         acronym = request.POST.get('group')
         sessions = sessions.filter(group__acronym=acronym)
         if not sessions.exists():
-            return err(400, "No sessions found in meeting '%s' for group '%s'" % (number, acronym))
+            return err(400, "No sessions found in meeting '{}' for group '{}'".format(number, acronym))
         session_times = [ (s.official_timeslotassignment().timeslot.time, s.id, s) for s in sessions if s.official_timeslotassignment() ]
         session_times.sort()
         item = request.POST.get('item')
         if not item.isdigit():
-            return err(400, "Expected a numeric value for 'item', found '%s'" % (item, ))
+            return err(400, "Expected a numeric value for 'item', found '{}'".format(item))
         n = int(item)-1              # change 1-based to 0-based
         try:
             time, __, session = session_times[n]
         except IndexError:
-            return err(400, "No item '%s' found in list of sessions for group" % (item, ))
+            return err(400, "No item '{}' found in list of sessions for group".format(item))
         url = request.POST.get('url')
         try:
             URLValidator()(url)
         except ValidationError:
-            return err(400, "Invalid url value: '%s'" % (url, ))
+            return err(400, "Invalid url value: '{}'".format(url))
         recordings = [ (r.name, r.title, r) for r in session.recordings() if 'video' in r.title.lower() ]
         if recordings:
             r = recordings[-1][-1]
             if r.external_url != url:
                 e = DocEvent.objects.create(doc=r, rev=r.rev, type="added_comment", by=request.user.person,
-                    desc="External url changed from %s to %s" % (r.external_url, url))
+                    desc="External url changed from {} to {}".format(r.external_url, url))
                 r.external_url = url
                 r.save_with_history([e])
             else:
                 return err(400, "URL is the same")
         else:
             time = session.official_timeslotassignment().timeslot.time
-            title = 'Video recording for %s on %s at %s' % (acronym, time.date(), time.time())
+            title = 'Video recording for {} on {} at {}'.format(acronym, time.date(), time.time())
             create_recording(session, url, title=title, user=user)
     else:
         return err(405, "Method not allowed")
@@ -3733,26 +3732,26 @@ def api_upload_bluesheet(request):
         number = request.POST.get('meeting')
         sessions = Session.objects.filter(meeting__number=number)
         if not sessions.exists():
-            return err(400, "No sessions found for meeting '%s'" % (number, ))
+            return err(400, "No sessions found for meeting '{}'".format(number))
         acronym = request.POST.get('group')
         sessions = sessions.filter(group__acronym=acronym)
         if not sessions.exists():
-            return err(400, "No sessions found in meeting '%s' for group '%s'" % (number, acronym))
+            return err(400, "No sessions found in meeting '{}' for group '{}'".format(number, acronym))
         session_times = [ (s.official_timeslotassignment().timeslot.time, s.id, s) for s in sessions if s.official_timeslotassignment() ]
         session_times.sort()
         item = request.POST.get('item')
         if not item.isdigit():
-            return err(400, "Expected a numeric value for 'item', found '%s'" % (item, ))
+            return err(400, "Expected a numeric value for 'item', found '{}'".format(item))
         n = int(item)-1              # change 1-based to 0-based
         try:
             time, __, session = session_times[n]
         except IndexError:
-            return err(400, "No item '%s' found in list of sessions for group" % (item, ))
+            return err(400, "No item '{}' found in list of sessions for group".format(item))
         bjson = request.POST.get('bluesheet')
         try:
             data = json.loads(bjson)
         except json.decoder.JSONDecodeError:
-            return err(400, "Invalid json value: '%s'" % (bjson, ))
+            return err(400, "Invalid json value: '{}'".format(bjson))
 
         text = render_to_string('meeting/bluesheet.txt', {
                 'data': data,
@@ -3951,7 +3950,7 @@ class ApproveSlidesForm(forms.Form):
     apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=False,required=False)
 
     def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
-        super(ApproveSlidesForm, self).__init__(*args, **kwargs )
+        super().__init__(*args, **kwargs )
         if not show_apply_to_all_checkbox:
             self.fields.pop('apply_to_all')
             
@@ -4010,7 +4009,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                             max_order = other_session.sessionpresentation_set.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
                             other_session.sessionpresentation_set.create(document=doc,rev=doc.rev,order=max_order+1)
                 sub_name, sub_ext = os.path.splitext(submission.filename)
-                target_filename = '%s-%s%s' % (sub_name[:sub_name.rfind('-ss')],doc.rev,sub_ext)
+                target_filename = '{}-{}{}'.format(sub_name[:sub_name.rfind('-ss')],doc.rev,sub_ext)
                 doc.uploaded_filename = target_filename
                 e = NewRevisionDocEvent.objects.create(doc=doc,by=submission.submitter,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
                 doc.save_with_history([e])

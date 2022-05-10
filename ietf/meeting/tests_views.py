@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2009-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 import datetime
 import io
 import json
@@ -12,7 +11,7 @@ import requests.exceptions
 import requests_mock
 
 from unittest import skipIf
-from mock import patch, PropertyMock
+from unittest.mock import patch, PropertyMock
 from pyquery import PyQuery
 from lxml.etree import tostring
 from io import StringIO, BytesIO
@@ -121,7 +120,7 @@ class BaseMeetingTestCase(TestCase):
         super().tearDown()
 
     def write_materials_file(self, meeting, doc, content):
-        path = os.path.join(self.materials_dir, "%s/%s/%s" % (meeting.number, doc.type_id, doc.uploaded_filename))
+        path = os.path.join(self.materials_dir, "{}/{}/{}".format(meeting.number, doc.type_id, doc.uploaded_filename))
 
         dirname = os.path.dirname(path)
         if not os.path.exists(dirname):
@@ -129,7 +128,7 @@ class BaseMeetingTestCase(TestCase):
 
         if isinstance(content, str):
             content = content.encode()
-        with io.open(path, "wb") as f:
+        with open(path, "wb") as f:
             f.write(content)
 
     def write_materials_files(self, meeting, session):
@@ -163,7 +162,7 @@ class MeetingTests(BaseMeetingTestCase):
         registration_text = "Registration"
 
         # utc
-        time_interval = r"%s<span.*/span>-%s" % (slot.utc_start_time().strftime("%H:%M").lstrip("0"), (slot.utc_start_time() + slot.duration).strftime("%H:%M").lstrip("0"))
+        time_interval = r"{}<span.*/span>-{}".format(slot.utc_start_time().strftime("%H:%M").lstrip("0"), (slot.utc_start_time() + slot.duration).strftime("%H:%M").lstrip("0"))
 
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number,utc='-utc')))
         self.assertEqual(r.status_code, 200)
@@ -180,7 +179,7 @@ class MeetingTests(BaseMeetingTestCase):
                              'Time zone indicator should be in nav sidebar')
 
         # plain
-        time_interval = r"%s<span.*/span>-%s" % (slot.time.strftime("%H:%M").lstrip("0"), (slot.time + slot.duration).strftime("%H:%M").lstrip("0"))
+        time_interval = r"{}<span.*/span>-{}".format(slot.time.strftime("%H:%M").lstrip("0"), (slot.time + slot.duration).strftime("%H:%M").lstrip("0"))
 
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
@@ -209,7 +208,7 @@ class MeetingTests(BaseMeetingTestCase):
 
         # text
         # the rest of the results don't have as nicely formatted times
-        time_interval = "%s-%s" % (slot.time.strftime("%H%M").lstrip("0"), (slot.time + slot.duration).strftime("%H%M").lstrip("0"))
+        time_interval = "{}-{}".format(slot.time.strftime("%H%M").lstrip("0"), (slot.time + slot.duration).strftime("%H%M").lstrip("0"))
 
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number, ext=".txt")))
         self.assertContains(r, session.group.acronym)
@@ -463,11 +462,11 @@ class MeetingTests(BaseMeetingTestCase):
                 schedule__in=[meeting.schedule, meeting.schedule.base],
                 session__on_agenda=True,
         ):
-            row = q('#row-{}'.format(assignment.slug()))
-            self.assertIsNotNone(row, 'No row for assignment {}'.format(assignment))
+            row = q(f'#row-{assignment.slug()}')
+            self.assertIsNotNone(row, f'No row for assignment {assignment}')
             checkboxes = row('input[type="checkbox"][name="selected-sessions"]')
             self.assertEqual(len(checkboxes), 1,
-                             'Row for assignment {} does not have a checkbox input'.format(assignment))
+                             f'Row for assignment {assignment} does not have a checkbox input')
             checkbox = checkboxes.eq(0)
             kw_token = assignment.session.docname_token_only_for_multiple()
             self.assertEqual(
@@ -797,7 +796,7 @@ class MeetingTests(BaseMeetingTestCase):
         groups = [a.session.group for a in assignments if a.session is not None]
         for g in groups:
             if g.parent_id is not None:
-                self.assertIn('%s?show=%s' % (ical_url, g.parent.acronym.lower()), content)
+                self.assertIn('{}?show={}'.format(ical_url, g.parent.acronym.lower()), content)
 
         # The 'non-area events' are those whose keywords are in the last column of buttons
         na_col = q('#customize .col-1:last')  # find the column
@@ -806,7 +805,7 @@ class MeetingTests(BaseMeetingTestCase):
         assert len(non_area_labels) > 0  # test setup must produce at least one label for this test
 
         # Should be a 'non-area events' link showing appropriate types
-        self.assertIn('%s?show=%s' % (ical_url, ','.join(non_area_labels).lower()), content)
+        self.assertIn('{}?show={}'.format(ical_url, ','.join(non_area_labels).lower()), content)
 
     def test_parse_agenda_filter_params(self):
         def _r(show=(), hide=(), showtypes=(), hidetypes=()):
@@ -874,7 +873,7 @@ class MeetingTests(BaseMeetingTestCase):
         draft1 = WgDraftFactory(group=session.group)
         session.sessionpresentation_set.create(document=draft1)
         draft2 = WgDraftFactory(group=session.group)
-        agenda = DocumentFactory(type_id='agenda',group=session.group, uploaded_filename='agenda-%s-%s' % (session.meeting.number,session.group.acronym), states=[('agenda','active')])
+        agenda = DocumentFactory(type_id='agenda',group=session.group, uploaded_filename='agenda-{}-{}'.format(session.meeting.number,session.group.acronym), states=[('agenda','active')])
         session.sessionpresentation_set.create(document=agenda)
         self.write_materials_file(session.meeting, session.materials.get(type="agenda"),
                                   "1. WG status (15 minutes)\n\n2. Status of %s\n\n" % draft2.name)
@@ -882,7 +881,7 @@ class MeetingTests(BaseMeetingTestCase):
         for d in (draft1, draft2):
             file,_ = submission_file(name_in_doc=f'{d.name}-00',name_in_post=f'{d.name}-00.txt',templatename='test_submission.txt',group=session.group)
             filename = os.path.join(d.get_file_path(),file.name)
-            with io.open(filename,'w') as draftbits:
+            with open(filename,'w') as draftbits:
                 draftbits.write(file.getvalue())
             filenames.append(filename)
         self.assertEqual( len(session_draft_list(session.meeting.number,session.group.acronym)), 2)
@@ -1110,10 +1109,10 @@ class EditMeetingScheduleTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         q = PyQuery(r.content)
-        self.assertEqual(len(q('#session{} .bof-tag'.format(non_bof_session.pk))), 0,
+        self.assertEqual(len(q(f'#session{non_bof_session.pk} .bof-tag')), 0,
                          'Non-BOF session should not be tagged as a BOF session')
 
-        bof_tags = q('#session{} .bof-tag'.format(bof_session.pk))
+        bof_tags = q(f'#session{bof_session.pk} .bof-tag')
         self.assertEqual(len(bof_tags), 1,
                          'BOF session should have one BOF session tag')
         self.assertIn('BOF', bof_tags.eq(0).text(),
@@ -1194,9 +1193,9 @@ class EditMeetingScheduleTests(TestCase):
         for index, room in enumerate(room_groups[0]):
             timeslots = list(room.timeslot_set.all())
             self.assertEqual(timeslots[0].session.name, str(timeslots[-1].pk),
-                             'Session from last timeslot in room (0, {}) should now be in first'.format(index))
+                             f'Session from last timeslot in room (0, {index}) should now be in first')
             self.assertEqual(timeslots[-1].session.name, str(timeslots[0].pk),
-                             'Session from first timeslot in room (0, {}) should now be in last'.format(index))
+                             f'Session from first timeslot in room (0, {index}) should now be in last')
             self.assertEqual(
                 [ts.session.name for ts in timeslots[1:-1]],
                 [str(ts.pk) for ts in timeslots[1:-1]],
@@ -1374,9 +1373,9 @@ class EditMeetingScheduleTests(TestCase):
                 )
             else:
                 self.assertEqual(timeslots[0].session.name, str(timeslots[-1].pk),
-                                 'Session from last timeslot in room (0, {}) should now be in first'.format(index))
+                                 f'Session from last timeslot in room (0, {index}) should now be in first')
                 self.assertEqual(timeslots[-1].session.name, str(timeslots[0].pk),
-                                 'Session from first timeslot in room (0, {}) should now be in last'.format(index))
+                                 f'Session from first timeslot in room (0, {index}) should now be in last')
                 self.assertEqual(
                     [ts.session.name for ts in timeslots[1:-1]],
                     [str(ts.pk) for ts in timeslots[1:-1]],
@@ -1477,7 +1476,7 @@ class EditMeetingScheduleTests(TestCase):
         try:
             return json.loads(r.content.decode())
         except json.JSONDecodeError as err:
-            self.fail('Response was not valid JSON: {}'.format(err))
+            self.fail(f'Response was not valid JSON: {err}')
 
     @staticmethod
     def _right_now_in(tzname):
@@ -1788,7 +1787,7 @@ class EditMeetingScheduleTests(TestCase):
 class EditTimeslotsTests(TestCase):
     def login(self, username='secretary'):
         """Log in with permission to edit timeslots"""
-        self.client.login(username=username, password='{}+password'.format(username))
+        self.client.login(username=username, password=f'{username}+password')
 
     @staticmethod
     def edit_timeslots_url(meeting):
@@ -1874,7 +1873,7 @@ class EditTimeslotsTests(TestCase):
                 )
             r = self.client.get(url)  # confirm secretary can retrieve the page
             self.assertEqual(r.status_code, 200,
-                             'secretary should be able to access the edit timeslots page {}'.format(comment))
+                             f'secretary should be able to access the edit timeslots page {comment}')
 
         # Actual tests here
         _assert_permissions('without schedule')  # first test without a meeting schedule
@@ -1896,7 +1895,7 @@ class EditTimeslotsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(
-            len(q('a[href="{}"]'.format(self.edit_timeslots_url(meeting)))),
+            len(q(f'a[href="{self.edit_timeslots_url(meeting)}"]')),
             0,
             'User who cannot edit timeslots should not see a link to the edit timeslots page'
         )
@@ -1907,7 +1906,7 @@ class EditTimeslotsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertGreaterEqual(
-            len(q('a[href="{}"]'.format(self.edit_timeslots_url(meeting)))),
+            len(q(f'a[href="{self.edit_timeslots_url(meeting)}"]')),
             1,
             'Must be at least one link from the agenda list page to the edit timeslots page'
         )
@@ -1915,7 +1914,7 @@ class EditTimeslotsTests(TestCase):
     def assert_helpful_url(self, response, helpful_url, message):
         q = PyQuery(response.content)
         self.assertGreaterEqual(
-            len(q('.timeslot-edit a[href="{}"]'.format(helpful_url))),
+            len(q(f'.timeslot-edit a[href="{helpful_url}"]')),
             1,
             message,
         )
@@ -1971,7 +1970,7 @@ class EditTimeslotsTests(TestCase):
         """Assert that required links on the editor page are present"""
         q = PyQuery(response.content)
         self.assertGreaterEqual(
-            len(q('a[href="{}"]'.format(self.create_timeslots_url(meeting)))),
+            len(q(f'a[href="{self.create_timeslots_url(meeting)}"]')),
             1,
             'Timeslot edit page should have a link to create timeslots'
         )
@@ -2043,9 +2042,9 @@ class EditTimeslotsTests(TestCase):
         next_col = _col_index(day_headings.eq(0))  # find column of the first day
         for day, heading in zip(days, day_headings.items()):
             self.assertIn(day.strftime('%a'), heading.text(),
-                          'Weekday abbrev for {} not found in heading'.format(day))
+                          f'Weekday abbrev for {day} not found in heading')
             self.assertIn(day.strftime('%Y-%m-%d'), heading.text(),
-                          'Numeric date for {} not found in heading'.format(day))
+                          f'Numeric date for {day} not found in heading')
             cols = int(heading.attr('colspan'))  # columns spanned by day header
             day_columns[day] = range(next_col, next_col + cols)
             next_col += cols
@@ -2059,40 +2058,40 @@ class EditTimeslotsTests(TestCase):
             headings = time_headings.filter(
                 # selector for children in any of the day's columns
                 ','.join(
-                    ':nth-child({})'.format(col)
+                    f':nth-child({col})'
                     for col in columns
                 )
             )
             expected_columns[day] = dict()
             for time, heading in zip(times, headings.items()):
                 self.assertIn(time.strftime('%H:%M'), heading.text(),
-                              'Timeslot start {} not found for day {}'.format(time, day))
+                              f'Timeslot start {time} not found for day {day}')
                 expected_columns[day][time] = _col_index(heading)
 
         # check that the expected timeslots are shown with expected info / ui features
         timeslot_elts = table.find('.timeslot')
         self.assertEqual(len(timeslot_elts), len(timeslots), 'Unexpected or missing timeslot elements')
         for ts in timeslots:
-            pk_elts = timeslot_elts.filter('#timeslot{}'.format(ts.pk))
+            pk_elts = timeslot_elts.filter(f'#timeslot{ts.pk}')
             self.assertEqual(len(pk_elts), 1, 'Expect exactly one element for each timeslot')
             elt = pk_elts.eq(0)
-            self.assertIn(ts.name, elt.text(), 'Timeslot name should appear in the element for {}'.format(ts))
-            self.assertIn(str(ts.type), elt.text(), 'Timeslot type should appear in the element for {}'.format(ts))
+            self.assertIn(ts.name, elt.text(), f'Timeslot name should appear in the element for {ts}')
+            self.assertIn(str(ts.type), elt.text(), f'Timeslot type should appear in the element for {ts}')
             self.assertEqual(_col_index(elt), expected_columns[ts.time.date()][ts.time.time()],
-                             'Timeslot {} is in the wrong column'.format(ts))
+                             f'Timeslot {ts} is in the wrong column')
             delete_btn = elt.find('.delete-button[data-delete-scope="timeslot"]')
             self.assertEqual(len(delete_btn), 1,
-                             'Timeslot {} should have one delete button'.format(ts))
+                             f'Timeslot {ts} should have one delete button')
             edit_btn = elt.find('a[href="{}"]'.format(
                 urlreverse('ietf.meeting.views.edit_timeslot',
                            kwargs=dict(num=meeting.number, slot_id=ts.pk))
             ))
             self.assertEqual(len(edit_btn), 1,
-                             'Timeslot {} should have one edit button'.format(ts))
+                             f'Timeslot {ts} should have one edit button')
             # find the room heading for the row
             tr = elt.closest('tr')
             self.assertIn(ts.location.name, tr.children('th').eq(0).text(),
-                          'Timeslot {} is not shown in the correct row'.format(ts))
+                          f'Timeslot {ts} is not shown in the correct row')
 
     def test_bulk_delete_buttons_exist(self):
         """Delete buttons for days and columns should be shown"""
@@ -2125,13 +2124,13 @@ class EditTimeslotsTests(TestCase):
         self.assertEqual(len(days), meeting.days, 'Wrong number of day labels')
         for day_label in days.items():
             self.assertEqual(len(day_label.find('.delete-button[data-delete-scope="day"]')), 1,
-                             'No delete button for day {}'.format(day_label.text()))
+                             f'No delete button for day {day_label.text()}')
 
         slots = table.find('.time-label')
         self.assertEqual(len(slots), 2 * meeting.days, 'Wrong number of slot labels')
         for slot_label in slots.items():
             self.assertEqual(len(slot_label.find('.delete-button[data-delete-scope="column"]')), 1,
-                             'No delete button for slot {}'.format(slot_label.text()))
+                             f'No delete button for slot {slot_label.text()}')
 
     def test_timeslot_collision_flag(self):
         """Overlapping timeslots in a room should be flagged
@@ -2159,7 +2158,7 @@ class EditTimeslotsTests(TestCase):
         self.assertEqual(len(collision), 1, 'Wrong number of timeslot collisions flagged')
         self.assertEqual(len(no_collision), 3, 'Wrong number of non-colliding timeslots')
         # check that the cell containing t1 is the one flagged as a conflict
-        self.assertEqual(len(collision.find('#timeslot{}'.format(t1.pk))), 1,
+        self.assertEqual(len(collision.find(f'#timeslot{t1.pk}')), 1,
                          'Wrong timeslot cell flagged as having a collision')
 
     def test_timeslot_in_use_flag(self):
@@ -2187,9 +2186,9 @@ class EditTimeslotsTests(TestCase):
 
         # now check that all timeslots appear, flagged appropriately
         q = PyQuery(r.content)
-        empty_elt = q('#timeslot{}'.format(empty.pk))
-        has_official_elt = q('#timeslot{}'.format(has_official.pk))
-        has_other_elt = q('#timeslot{}'.format(has_other.pk))
+        empty_elt = q(f'#timeslot{empty.pk}')
+        has_official_elt = q(f'#timeslot{has_official.pk}')
+        has_other_elt = q(f'#timeslot{has_other.pk}')
 
         self.assertEqual(empty_elt.attr('data-unofficial-use'), 'false', 'Unused timeslot should not be in use')
         self.assertEqual(empty_elt.attr('data-official-use'), 'false', 'Unused timeslot should not be in use')
@@ -2386,7 +2385,7 @@ class EditTimeslotsTests(TestCase):
     def test_create_single_timeslot(self):
         """Creating a single timeslot should work"""
         meeting = self.create_meeting()
-        timeslots_before = set(ts.pk for ts in meeting.timeslot_set.all())
+        timeslots_before = {ts.pk for ts in meeting.timeslot_set.all()}
 
         post_data = dict(
             name='some name',
@@ -2419,7 +2418,7 @@ class EditTimeslotsTests(TestCase):
     def test_create_single_timeslot_outside_meeting_days(self):
         """Creating a single timeslot outside the official meeting days should work"""
         meeting = self.create_meeting()
-        timeslots_before = set(ts.pk for ts in meeting.timeslot_set.all())
+        timeslots_before = {ts.pk for ts in meeting.timeslot_set.all()}
         other_date = meeting.get_meeting_date(-7).date()
         post_data = dict(
             name='some name',
@@ -2657,7 +2656,7 @@ class EditTimeslotsTests(TestCase):
     def test_create_bulk_timeslots(self):
         """Creating multiple timeslots should work"""
         meeting = self.create_meeting()
-        timeslots_before = set(ts.pk for ts in meeting.timeslot_set.all())
+        timeslots_before = {ts.pk for ts in meeting.timeslot_set.all()}
         days = [meeting.get_meeting_date(n).date() for n in range(meeting.days)]
         other_date = meeting.get_meeting_date(-1).date()  # date before start of meeting
         self.assertNotIn(other_date, days)
@@ -2685,7 +2684,7 @@ class EditTimeslotsTests(TestCase):
         new_slot_count = len(days) * len(locations)
         self.assertEqual(meeting.timeslot_set.count(), len(timeslots_before) + new_slot_count)
 
-        day_locs = set((day, loc) for day in days for loc in locations)  # cartesian product
+        day_locs = {(day, loc) for day in days for loc in locations}  # cartesian product
         for ts in meeting.timeslot_set.exclude(pk__in=timeslots_before):
             self.assertEqual(ts.name, post_data['name'])
             self.assertEqual(ts.type_id, post_data['type'])
@@ -2713,8 +2712,8 @@ class EditTimeslotsTests(TestCase):
             )
         )
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, 'Deleted TimeSlot {}'.format(ts_to_del.pk))
-        self.assertNotContains(r, 'Deleted TimeSlot {}'.format(ts_to_keep.pk))
+        self.assertContains(r, f'Deleted TimeSlot {ts_to_del.pk}')
+        self.assertNotContains(r, f'Deleted TimeSlot {ts_to_keep.pk}')
         self.assertEqual(meeting.timeslot_set.filter(pk=ts_to_del.pk).count(), 0,
                          'Timeslot not deleted')
         self.assertEqual(meeting.timeslot_set.filter(pk=ts_to_keep.pk).count(), 1,
@@ -2736,8 +2735,8 @@ class EditTimeslotsTests(TestCase):
         )
         self.assertEqual(r.status_code, 200)
         for ts in ts_to_del:
-            self.assertContains(r, 'Deleted TimeSlot {}'.format(ts.pk))
-        self.assertNotContains(r, 'Deleted TimeSlot {}'.format(ts_to_keep.pk))
+            self.assertContains(r, f'Deleted TimeSlot {ts.pk}')
+        self.assertNotContains(r, f'Deleted TimeSlot {ts_to_keep.pk}')
         self.assertEqual(
             meeting.timeslot_set.filter(pk__in=(ts.pk for ts in ts_to_del)).count(),
             0,
@@ -2799,7 +2798,7 @@ class EditTimeslotsTests(TestCase):
             self.edit_timeslots_url(meeting),
             data=dict(
                 action='delete',
-                slot_id='{}, not an id'.format(ts.pk),
+                slot_id=f'{ts.pk}, not an id',
             )
         )
         self.assertEqual(r.status_code, 400, 'Invalid slot_id not handled in bulk')
@@ -2818,7 +2817,7 @@ class EditTimeslotsTests(TestCase):
             self.edit_timeslots_url(meeting),
             data=dict(
                 action='delete',
-                slot_id='{},{}'.format(nonexistent_id, ts.pk),
+                slot_id=f'{nonexistent_id},{ts.pk}',
             )
         )
         self.assertEqual(r.status_code, 404, 'Nonexistent slot_id not handled in bulk')
@@ -3265,13 +3264,13 @@ class EditTests(TestCase):
         r = self.client.get(url)
         q = PyQuery(r.content)
 
-        self.assertTrue(q(".room-name:contains(\"{}\")".format(room.name)))
-        self.assertTrue(q(".room-name:contains(\"{}\")".format(room.capacity)))
+        self.assertTrue(q(f".room-name:contains(\"{room.name}\")"))
+        self.assertTrue(q(f".room-name:contains(\"{room.capacity}\")"))
 
-        self.assertTrue(q("#timeslot{}".format(timeslots[0].pk)))
+        self.assertTrue(q(f"#timeslot{timeslots[0].pk}"))
 
         for s in [s1, s2]:
-            e = q("#session{}".format(s.pk))
+            e = q(f"#session{s.pk}")
 
             # info in the item representing the session that can be moved around
             self.assertIn(s.group.acronym, e.find(".session-label").text())
@@ -3279,7 +3278,7 @@ class EditTests(TestCase):
                 self.assertTrue(e.find(".comments"))
             if s.attendees is not None:
                 self.assertIn(str(s.attendees), e.find(".attendees").text())
-            self.assertTrue(e.hasClass("parent-{}".format(s.group.parent.acronym)))
+            self.assertTrue(e.hasClass(f"parent-{s.group.parent.acronym}"))
 
             constraints = e.find(".constraints > span")
             s_other = s2 if s == s1 else s1
@@ -3296,19 +3295,19 @@ class EditTests(TestCase):
 
             event = SchedulingEvent.objects.filter(session=s).order_by("id").first()
             if event:
-                self.assertTrue(e.find("div:contains(\"{}\")".format(event.by.name)))
+                self.assertTrue(e.find(f"div:contains(\"{event.by.name}\")"))
 
             if s.comments:
                 self.assertIn(s.comments, e.find(".comments").text())
 
-        formatted_constraints1 = q("#session{} .session-info .formatted-constraints > *".format(s1.pk))
+        formatted_constraints1 = q(f"#session{s1.pk} .session-info .formatted-constraints > *")
         self.assertIn(s2.group.acronym, formatted_constraints1.eq(0).html())
         self.assertIn(p.name, formatted_constraints1.eq(1).html())
 
-        formatted_constraints2 = q("#session{} .session-info .formatted-constraints > *".format(s2.pk))
+        formatted_constraints2 = q(f"#session{s2.pk} .session-info .formatted-constraints > *")
         self.assertIn(p.name, formatted_constraints2.eq(0).html())
 
-        self.assertEqual(len(q("#session{}.readonly".format(base_session.pk))), 1)
+        self.assertEqual(len(q(f"#session{base_session.pk}.readonly")), 1)
 
         self.assertTrue(q(".alert:contains(\"You can't edit this schedule\")"))
 
@@ -3378,7 +3377,7 @@ class EditTests(TestCase):
         self.assertEqual(tombstone_event.status_id, 'resched')
 
         self.assertEqual(SchedTimeSessAssignment.objects.get(schedule=schedule, session=s_tombstone).timeslot, timeslots[1])
-        self.assertTrue(PyQuery(json_content['tombstone'])("#session{}.readonly".format(s_tombstone.pk)).html())
+        self.assertTrue(PyQuery(json_content['tombstone'])(f"#session{s_tombstone.pk}.readonly").html())
 
         # unassign
         r = self.client.post(url, {
@@ -3435,17 +3434,17 @@ class EditTests(TestCase):
         reg_room = Room.objects.get(meeting=meeting, name="Registration Area")
 
         for i in range(meeting.days):
-            self.assertTrue(q("[data-day=\"{}\"]".format((meeting.date + datetime.timedelta(days=i)).isoformat())))
+            self.assertTrue(q(f"[data-day=\"{(meeting.date + datetime.timedelta(days=i)).isoformat()}\"]"))
 
-        self.assertTrue(q(".room-label:contains(\"{}\")".format(breakfast_room.name)))
-        self.assertTrue(q(".room-label:contains(\"{}\")".format(break_room.name)))
-        self.assertTrue(q(".room-label:contains(\"{}\")".format(reg_room.name)))
+        self.assertTrue(q(f".room-label:contains(\"{breakfast_room.name}\")"))
+        self.assertTrue(q(f".room-label:contains(\"{break_room.name}\")"))
+        self.assertTrue(q(f".room-label:contains(\"{reg_room.name}\")"))
 
         break_slot = TimeSlot.objects.get(location=break_room, type='break')
 
-        room_row = q(".room-row[data-day=\"{}\"][data-room=\"{}\"]".format(break_slot.time.date().isoformat(), break_slot.location_id))
+        room_row = q(f".room-row[data-day=\"{break_slot.time.date().isoformat()}\"][data-room=\"{break_slot.location_id}\"]")
         self.assertTrue(room_row)
-        self.assertTrue(room_row.find("#timeslot{}".format(break_slot.pk)))
+        self.assertTrue(room_row.find(f"#timeslot{break_slot.pk}"))
 
         self.assertTrue(q(".timeslot-form"))
 
@@ -3616,8 +3615,8 @@ class EditTests(TestCase):
         r = self.client.get(url)
         q = PyQuery(r.content)
 
-        self.assertEqual(len(q('#session{} span.constraints > span'.format(s1.pk))), 0)
-        self.assertEqual(len(q('#session{} span.constraints > span'.format(s2.pk))), 0)
+        self.assertEqual(len(q(f'#session{s1.pk} span.constraints > span')), 0)
+        self.assertEqual(len(q(f'#session{s2.pk} span.constraints > span')), 0)
 
         # Now enable the 'chair_conflict' constraint only
         chair_conflict = ConstraintName.objects.get(slug='chair_conflict')
@@ -3644,8 +3643,8 @@ class EditTests(TestCase):
         # For simplicity, this test is tied to the current values of editor_label.
         # It also assumes the order of constraints will be constant.
         # If those change, the test will need to be updated.
-        s1_constraints = q('#session{} span.constraints > span'.format(s1.pk))
-        s2_constraints = q('#session{} span.constraints > span'.format(s2.pk))
+        s1_constraints = q(f'#session{s1.pk} span.constraints > span')
+        s2_constraints = q(f'#session{s2.pk} span.constraints > span')
 
         # Check the forward constraint
         self.assertEqual(len(s1_constraints), 1)
@@ -3667,8 +3666,8 @@ class EditTests(TestCase):
         r = self.client.get(url)
         q = PyQuery(r.content)
 
-        s1_constraints = q('#session{} span.constraints > span'.format(s1.pk))
-        s2_constraints = q('#session{} span.constraints > span'.format(s2.pk))
+        s1_constraints = q(f'#session{s1.pk} span.constraints > span')
+        s2_constraints = q(f'#session{s2.pk} span.constraints > span')
 
         # Check the forward constraint
         self.assertEqual(len(s1_constraints), 2)
@@ -4331,7 +4330,7 @@ class InterimTests(TestCase):
                 timeslot = sess.official_timeslotassignment().timeslot
                 self.assertIn(timeslot.time.strftime('%Y-%m-%d'), announcement_text)
                 self.assertIn(
-                    '(%s to %s UTC)' % (
+                    '({} to {} UTC)'.format(
                         timeslot.utc_start_time().strftime('%H:%M'),timeslot.utc_end_time().strftime('%H:%M')
                     ), announcement_text)
         # Count number of sessions listed
@@ -4673,7 +4672,7 @@ class InterimTests(TestCase):
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year, group.acronym, next_num))
+        self.assertEqual(meeting.number,'interim-{}-{}-{}'.format(date.year, group.acronym, next_num))
         self.assertEqual(meeting.city,'')
         self.assertEqual(meeting.country,'')
         self.assertEqual(meeting.time_zone,'UTC')
@@ -4744,7 +4743,7 @@ class InterimTests(TestCase):
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year, group.acronym, next_num))
+        self.assertEqual(meeting.number,'interim-{}-{}-{}'.format(date.year, group.acronym, next_num))
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
@@ -4801,7 +4800,7 @@ class InterimTests(TestCase):
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year, group.acronym, next_num))
+        self.assertEqual(meeting.number,'interim-{}-{}-{}'.format(date.year, group.acronym, next_num))
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
@@ -4942,7 +4941,7 @@ class InterimTests(TestCase):
         meeting = meetings[1]
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year, group.acronym, next_num))
+        self.assertEqual(meeting.number,'interim-{}-{}-{}'.format(date.year, group.acronym, next_num))
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
@@ -4957,7 +4956,7 @@ class InterimTests(TestCase):
         meeting = meetings[0]
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date2)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date2.year, group.acronym, next_num2))
+        self.assertEqual(meeting.number,'interim-{}-{}-{}'.format(date2.year, group.acronym, next_num2))
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
@@ -5892,7 +5891,7 @@ class MaterialsTests(TestCase):
             self.assertTrue(session2.sessionpresentation_set.filter(document__type_id=doctype))
 
             # Test bad encoding
-            test_file = BytesIO('<html><h1>Title</h1><section>Some\x93text</section></html>'.encode('latin1'))
+            test_file = BytesIO(b'<html><h1>Title</h1><section>Some\x93text</section></html>')
             test_file.name = "some.html"
             r = self.client.post(url,dict(file=test_file))
             self.assertContains(r, 'Could not identify the file encoding')
@@ -5974,7 +5973,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(session1.sessionpresentation_set.count(),1) 
         self.assertEqual(session2.sessionpresentation_set.count(),1) 
         sp = session2.sessionpresentation_set.first()
-        self.assertEqual(sp.document.name, 'slides-%s-%s-a-test-slide-file' % (session1.meeting.number,session1.group.acronym ) )
+        self.assertEqual(sp.document.name, 'slides-{}-{}-a-test-slide-file'.format(session1.meeting.number,session1.group.acronym ) )
         self.assertEqual(sp.order,1)
 
         url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session2.meeting.number,'session_id':session2.id})
@@ -6223,7 +6222,7 @@ class MaterialsTests(TestCase):
         path = os.path.join(submission.session.meeting.get_materials_path(),'slides')
         filename = os.path.join(path,session.sessionpresentation_set.first().document.name+'-01.txt')
         self.assertTrue(os.path.exists(filename))
-        contents = io.open(filename,'r').read()
+        contents = open(filename,'r').read()
         self.assertIn('third version', contents)
 
 
@@ -6477,7 +6476,7 @@ class HasMeetingsTests(TestCase):
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year, group.acronym, next_num))
+        self.assertEqual(meeting.number,'interim-{}-{}-{}'.format(date.year, group.acronym, next_num))
         self.assertTrue(len(outbox)>0)
         self.assertIn('interim approved',outbox[0]["Subject"])
         self.assertIn(user.person.email().address,outbox[0]["To"])

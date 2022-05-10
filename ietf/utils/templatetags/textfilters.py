@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import re
@@ -87,7 +86,7 @@ def first_url(value):
 @register.filter
 @stringfilter
 def conference_url(value):
-    conf_re = r"http[s]?://\S*(%s)/" % ('|'.join(settings.UTILS_MEETING_CONFERENCE_DOMAINS), )
+    conf_re = r"http[s]?://\S*({})/".format('|'.join(settings.UTILS_MEETING_CONFERENCE_DOMAINS))
     return value if re.match(conf_re, value) else None
 
 

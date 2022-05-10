@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 #
 # Portion Copyright (C) 2008 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -52,7 +51,7 @@ class TelechatAgendaItem(models.Model):
 
     def __str__(self):
         type_name = self.TYPE_CHOICES_DICT.get(self.type, str(self.type))
-        return "%s: %s" % (type_name, self.title or "")
+        return "{}: {}".format(type_name, self.title or "")
 
 class Telechat(models.Model):
     telechat_id = models.IntegerField(primary_key=True)

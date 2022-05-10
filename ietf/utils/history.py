@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import debug                            # pyflakes:ignore
@@ -77,7 +76,7 @@ def get_history_object_for(obj):
     h = history_model()
 
     # copy attributes shared between history and obj
-    history_field_names = set(f.name for f in history_model._meta.fields)
+    history_field_names = {f.name for f in history_model._meta.fields}
 
     for field in obj._meta.fields:
         if field is not obj._meta.pk and field.name in history_field_names:

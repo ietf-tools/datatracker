@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 from django.core.exceptions import PermissionDenied
 from django.utils.safestring import mark_safe

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 # utilities for constructing agendas for IESG telechats
@@ -146,9 +145,9 @@ def fill_in_agenda_administrivia(date, sections):
 
     for s, key, filename in extra_info_files:
         try:
-            with io.open(filename, 'r', encoding='utf-8', errors='replace') as f:
+            with open(filename, 'r', encoding='utf-8', errors='replace') as f:
                 t = f.read().strip()
-        except IOError:
+        except OSError:
             t = "(Error reading %s)" % filename
 
         sections[s]["text"] = t

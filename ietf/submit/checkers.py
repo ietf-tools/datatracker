@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import io
@@ -19,7 +18,7 @@ from ietf.utils.models import VersionInfo
 from ietf.utils.pipe import pipe
 from ietf.utils.test_runner import set_coverage_checking
 
-class DraftSubmissionChecker(object):
+class DraftSubmissionChecker:
     name = ""
 
     def check_file_txt(self, text):
@@ -39,7 +38,7 @@ class DraftSubmissionChecker(object):
         raise NotImplementedError
 
 
-class DraftIdnitsChecker(object):
+class DraftIdnitsChecker:
     """
     Draft checker class for idnits.  Idnits can only handle whole text files,
     so only check_file_txt() is defined; check_file_xml and check_fragment_*
@@ -79,7 +78,7 @@ class DraftIdnitsChecker(object):
         warnstart = ['  == ', '  -- ']
         
 
-        cmd = "%s %s %s" % (settings.IDSUBMIT_IDNITS_BINARY, self.options, path)
+        cmd = "{} {} {}".format(settings.IDSUBMIT_IDNITS_BINARY, self.options, path)
         code, out, err = pipe(cmd)
         out = out.decode('utf-8')
         err = err.decode('utf-8')
@@ -107,7 +106,7 @@ class DraftIdnitsChecker(object):
                 elif item[:5] in warnstart:
                     warnings += 1
                 else:
-                    raise RuntimeError("Unexpected state in idnits checker: item: %s, line: %s" % (item, line))
+                    raise RuntimeError("Unexpected state in idnits checker: item: {}, line: {}".format(item, line))
                 item = ""
             elif item and line.strip() != "":
                 item += " " + line.strip()
@@ -117,7 +116,7 @@ class DraftIdnitsChecker(object):
 
         return passed, message, errors, warnings, info
 
-class DraftYangChecker(object):
+class DraftYangChecker:
 
     name = "yang validation"
     symbol = '<i class="bi bi-yin-yang"></i>'
@@ -155,7 +154,7 @@ class DraftYangChecker(object):
             except Exception as exc:
                 sys.stdout = saved_stdout
                 sys.stderr = saved_stderr
-                msg = "Exception when running xym on %s: %s" % (name, exc)
+                msg = "Exception when running xym on {}: {}".format(name, exc)
                 log(msg)
                 raise
                 return None, msg, 0, 0, info
@@ -178,7 +177,7 @@ class DraftYangChecker(object):
 
         command = "xym"
         cmd_version = VersionInfo.objects.get(command=command).version
-        message = "%s:\n%s\n\n" % (cmd_version, out.replace('\n\n','\n').strip() if code == 0 else err)
+        message = "{}:\n{}\n\n".format(cmd_version, out.replace('\n\n','\n').strip() if code == 0 else err)
 
         results.append({
             "name": name,
@@ -204,7 +203,7 @@ class DraftYangChecker(object):
                                 settings.SUBMIT_YANG_CATALOG_MODEL_DIR,
                             ])
             if os.path.exists(path):
-                with io.open(path) as file:
+                with open(path) as file:
                     text = file.readlines()
                 # pyang
                 cmd_template = settings.SUBMIT_PYANG_COMMAND
@@ -238,7 +237,7 @@ class DraftYangChecker(object):
                             except ValueError:
                                 pass
                 #passed = passed and code == 0 # For the submission tool.  Yang checks always pass
-                message += "%s: %s:\n%s\n" % (cmd_version, cmd_template, out+"No validation errors\n" if (code == 0 and len(err) == 0) else out+err)
+                message += "{}: {}:\n{}\n".format(cmd_version, cmd_template, out+"No validation errors\n" if (code == 0 and len(err) == 0) else out+err)
 
                 # yanglint
                 set_coverage_checking(False) # we can't count the following as it may or may not be run, depending on setup
@@ -264,7 +263,7 @@ class DraftYangChecker(object):
                                 except ValueError:
                                     pass
                     #passed = passed and code == 0 # For the submission tool.  Yang checks always pass
-                    message += "%s: %s:\n%s\n" % (cmd_version, cmd_template, out+"No validation errors\n" if (code == 0 and len(err) == 0) else out+err)
+                    message += "{}: {}:\n{}\n".format(cmd_version, cmd_template, out+"No validation errors\n" if (code == 0 and len(err) == 0) else out+err)
                 set_coverage_checking(True)
             else:
                 errors += 1

@@ -129,7 +129,7 @@ class ScheduleGeneratorTest(TestCase):
         violations, cost = generator.run()
 
         expected_violations = self.fixed_violations + [
-            '{}: scheduled in too small room'.format(base_session.group.acronym),
+            f'{base_session.group.acronym}: scheduled in too small room',
         ]
         expected_cost = sum([
             self.fixed_cost,
@@ -229,7 +229,7 @@ class ScheduleGeneratorTest(TestCase):
         violations, cost = handler.schedule.calculate_dynamic_cost()
         self.assertCountEqual(
             violations,
-            ['{}: group conflict with {}'.format(base_session.group.acronym, self.wg1.acronym)]
+            [f'{base_session.group.acronym}: group conflict with {self.wg1.acronym}']
         )
         self.assertEqual(
             cost,
@@ -241,9 +241,9 @@ class ScheduleGeneratorTest(TestCase):
         self.assertCountEqual(
             violations,
             [
-                '{}: group conflict with {}'.format(base_session.group.acronym, self.wg1.acronym),
-                '{}: missing adjacency with {}, adjacents are: '.format(base_session.group.acronym, self.wg2.acronym),
-                '{}: scheduled in too small room'.format(base_session.group.acronym),
+                f'{base_session.group.acronym}: group conflict with {self.wg1.acronym}',
+                f'{base_session.group.acronym}: missing adjacency with {self.wg2.acronym}, adjacents are: ',
+                f'{base_session.group.acronym}: scheduled in too small room',
             ]
         )
         self.assertEqual(

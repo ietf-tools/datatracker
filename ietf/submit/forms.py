@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import io
@@ -45,7 +44,7 @@ class SubmissionBaseUploadForm(forms.Form):
     xml = forms.FileField(label='.xml format', required=True)
 
     def __init__(self, request, *args, **kwargs):
-        super(SubmissionBaseUploadForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.remote_ip = remote_ip(request)
 
@@ -94,15 +93,15 @@ class SubmissionBaseUploadForm(forms.Form):
 
         if cutoff_00 == cutoff_01:
             if now.date() >= (cutoff_00.date() - meeting.idsubmit_cutoff_warning_days) and now.date() < cutoff_00.date():
-                self.cutoff_warning = ( 'The last submission time for Internet-Drafts before %s is %s.<br><br>' % (meeting, cutoff_00_str))
+                self.cutoff_warning = ( 'The last submission time for Internet-Drafts before {} is {}.<br><br>'.format(meeting, cutoff_00_str))
             elif now <= cutoff_00:
                 self.cutoff_warning = (
                     'The last submission time for new Internet-Drafts before the meeting is %s.<br>'
                     'After that, you will not be able to submit drafts until after %s (IETF-meeting local time)' % (cutoff_00_str, reopen_str, ))
         else:
             if now.date() >= (cutoff_00.date() - meeting.idsubmit_cutoff_warning_days) and now.date() < cutoff_00.date():
-                self.cutoff_warning = ( 'The last submission time for new documents (i.e., version -00 Internet-Drafts) before %s is %s.<br><br>' % (meeting, cutoff_00_str) +
-                                        'The last submission time for revisions to existing documents before %s is %s.<br>' % (meeting, cutoff_01_str) )
+                self.cutoff_warning = ( 'The last submission time for new documents (i.e., version -00 Internet-Drafts) before {} is {}.<br><br>'.format(meeting, cutoff_00_str) +
+                                        'The last submission time for revisions to existing documents before {} is {}.<br>'.format(meeting, cutoff_01_str) )
             elif now.date() >= cutoff_00.date() and now <= cutoff_01:
                 # We are in the first_cut_off
                 if now < cutoff_00:
@@ -147,7 +146,7 @@ class SubmissionBaseUploadForm(forms.Form):
                 typ, val, tb = sys.exc_info()
                 m = traceback.format_exception(typ, val, tb)
                 m = [ l.replace('\n ', ':\n ') for l in m ]
-            msgs = [s for s in (["Error from xml2rfc (%s):" % (where,)] + m + out +  err) if s]
+            msgs = [s for s in (["Error from xml2rfc ({}):".format(where)] + m + out +  err) if s]
             return msgs
 
         if self.shutdown and not has_role(self.request.user, "Secretariat"):
@@ -160,7 +159,7 @@ class SubmissionBaseUploadForm(forms.Form):
             self.file_types.append('.%s' % ext)
         if not ('.txt' in self.file_types or '.xml' in self.file_types):
             if not self.errors:
-                raise forms.ValidationError('Unexpected submission file types; found %s, but %s is required' % (', '.join(self.file_types), ' or '.join(self.base_formats)))
+                raise forms.ValidationError('Unexpected submission file types; found {}, but {} is required'.format(', '.join(self.file_types), ' or '.join(self.base_formats)))
 
         #debug.show('self.cleaned_data["xml"]')
         if self.cleaned_data.get('xml'):
@@ -241,7 +240,7 @@ class SubmissionBaseUploadForm(forms.Form):
                             self.authors.append(info)
 
                         # --- Prep the xml ---
-                        file_name['xml'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (self.filename, self.revision, ext))
+                        file_name['xml'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '{}-{}{}'.format(self.filename, self.revision, ext))
                         try:
                             prep = xml2rfc.PrepToolWriter(self.xmltree, quiet=True, liberal=True, keep_pis=[xml2rfc.V3_PI_TARGET])
                             prep.options.accept_prepped = True
@@ -254,7 +253,7 @@ class SubmissionBaseUploadForm(forms.Form):
 
                         # --- Convert to txt ---
                         if not ('txt' in self.cleaned_data and self.cleaned_data['txt']):
-                            file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (self.filename, self.revision))
+                            file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '{}-{}.txt'.format(self.filename, self.revision))
                             try:
                                 writer = xml2rfc.TextWriter(self.xmltree, quiet=True)
                                 writer.options.accept_prepped = True
@@ -272,7 +271,7 @@ class SubmissionBaseUploadForm(forms.Form):
 
                         # --- Convert to html ---
                         try:
-                            file_name['html'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.html' % (self.filename, self.revision))
+                            file_name['html'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '{}-{}.html'.format(self.filename, self.revision))
                             writer = xml2rfc.HtmlWriter(self.xmltree, quiet=True)
                             writer.write(file_name['html'])
                             self.file_types.append('.html')
@@ -312,15 +311,15 @@ class SubmissionBaseUploadForm(forms.Form):
                 if self.filename == None:
                     self.filename = self.parsed_draft.filename
                 elif self.filename != self.parsed_draft.filename:
-                    self.add_error('txt', "Inconsistent name information: xml:%s, txt:%s" % (self.filename, self.parsed_draft.filename))
+                    self.add_error('txt', "Inconsistent name information: xml:{}, txt:{}".format(self.filename, self.parsed_draft.filename))
                 if self.revision == None:
                     self.revision = self.parsed_draft.revision
                 elif self.revision != self.parsed_draft.revision:
-                    self.add_error('txt', "Inconsistent revision information: xml:%s, txt:%s" % (self.revision, self.parsed_draft.revision))
+                    self.add_error('txt', "Inconsistent revision information: xml:{}, txt:{}".format(self.revision, self.parsed_draft.revision))
                 if self.title == None:
                     self.title = self.parsed_draft.get_title()
                 elif self.title != self.parsed_draft.get_title():
-                    self.add_error('txt', "Inconsistent title information: xml:%s, txt:%s" % (self.title, self.parsed_draft.get_title()))
+                    self.add_error('txt', "Inconsistent title information: xml:{}, txt:{}".format(self.title, self.parsed_draft.get_title()))
             except (UnicodeDecodeError, LookupError) as e:
                 self.add_error('txt', 'Failed decoding the uploaded file: "%s"' % str(e))
 
@@ -390,15 +389,15 @@ class SubmissionBaseUploadForm(forms.Form):
                 settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS, settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE,
             )
 
-        return super(SubmissionBaseUploadForm, self).clean()
+        return super().clean()
 
     def check_submissions_tresholds(self, which, filter_kwargs, max_amount, max_size):
         submissions = Submission.objects.filter(**filter_kwargs)
 
         if len(submissions) > max_amount:
-            raise forms.ValidationError("Max submissions %s has been reached for today (maximum is %s submissions)." % (which, max_amount))
+            raise forms.ValidationError("Max submissions {} has been reached for today (maximum is {} submissions).".format(which, max_amount))
         if sum(s.file_size for s in submissions if s.file_size) > max_size * 1024 * 1024:
-            raise forms.ValidationError("Max uploaded amount %s has been reached for today (maximum is %s MB)." % (which, max_size))
+            raise forms.ValidationError("Max uploaded amount {} has been reached for today (maximum is {} MB).".format(which, max_size))
 
     def deduce_group(self):
         """Figure out group from name or previously submitted draft, returns None if individual."""
@@ -424,7 +423,7 @@ class SubmissionBaseUploadForm(forms.Form):
 
                 # first check groups with dashes
                 for g in Group.objects.filter(acronym__contains="-", type=group_type):
-                    if name.startswith('draft-%s-%s-' % (name_parts[1], g.acronym)):
+                    if name.startswith('draft-{}-{}-'.format(name_parts[1], g.acronym)):
                         return g
 
                 try:
@@ -457,7 +456,7 @@ class SubmissionManualUploadForm(SubmissionBaseUploadForm):
     pdf = forms.FileField(label='.pdf format', required=False)
 
     def __init__(self, request, *args, **kwargs):
-        super(SubmissionManualUploadForm, self).__init__(request, *args, **kwargs)
+        super().__init__(request, *args, **kwargs)
         self.formats = settings.IDSUBMIT_FILE_TYPES
         self.base_formats = ['txt', 'xml', ]
 
@@ -471,7 +470,7 @@ class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
     user = forms.EmailField(required=True)
 
     def __init__(self, request, *args, **kwargs):
-        super(SubmissionAutoUploadForm, self).__init__(request, *args, **kwargs)
+        super().__init__(request, *args, **kwargs)
         self.formats = ['xml', ]
         self.base_formats = ['xml', ]
 
@@ -480,7 +479,7 @@ class NameEmailForm(forms.Form):
     email = forms.EmailField(label='Email address', required=True)
 
     def __init__(self, *args, **kwargs):
-        super(NameEmailForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.fields["name"].widget.attrs["class"] = "name"
         self.fields["email"].widget.attrs["class"] = "email"
@@ -496,7 +495,7 @@ class AuthorForm(NameEmailForm):
     country = forms.CharField(max_length=255, required=False)
 
     def __init__(self, *args, **kwargs):
-        super(AuthorForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 class SubmitterForm(NameEmailForm):
     #Fields for secretariat only
@@ -514,7 +513,7 @@ class ReplacesForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         self.name = kwargs.pop("name")
-        super(ReplacesForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def clean_replaces(self):
         for alias in self.cleaned_data['replaces']:
@@ -605,7 +604,7 @@ class SubmissionEmailForm(forms.Form):
     #in_reply_to = MessageModelChoiceField(queryset=Message.objects,label="In Reply To",required=False)
 
     def __init__(self, *args, **kwargs):
-        super(SubmissionEmailForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def clean_message(self):
         '''Returns a ietf.message.models.Message object'''
@@ -618,7 +617,7 @@ class SubmissionEmailForm(forms.Form):
             
         for field in ('to','from','subject','date'):
             if not message[field]:
-                raise forms.ValidationError('Error parsing email: {} field not found.'.format(field))
+                raise forms.ValidationError(f'Error parsing email: {field} field not found.')
         date = utc_from_string(message['date'])
         if not isinstance(date,datetime.datetime):
             raise forms.ValidationError('Error parsing email date field')
@@ -627,12 +626,12 @@ class SubmissionEmailForm(forms.Form):
     def clean(self):
         if any(self.errors):
             return self.cleaned_data
-        super(SubmissionEmailForm, self).clean()
+        super().clean()
         name = self.cleaned_data['name']
         match = re.search(r"(draft-[a-z0-9-]*)-(\d\d)", name)
         if not match:
             self.add_error('name', 
-                           "Submission name {} must start with 'draft-' and only contain digits, lowercase letters and dash characters and end with revision.".format(name))
+                           f"Submission name {name} must start with 'draft-' and only contain digits, lowercase letters and dash characters and end with revision.")
         else:
             self.draft_name = match.group(1)    
             self.revision = match.group(2)
@@ -665,7 +664,7 @@ class MessageModelForm(forms.ModelForm):
         exclude = ['time','by','content_type','related_groups','related_docs']
 
     def __init__(self, *args, **kwargs):
-        super(MessageModelForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['frm'].label='From'
         self.fields['frm'].widget.attrs['readonly'] = True
         self.fields['reply_to'].widget.attrs['readonly'] = True

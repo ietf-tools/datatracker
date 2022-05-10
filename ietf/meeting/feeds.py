@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import os
@@ -37,7 +36,7 @@ class LatestMeetingMaterialFeed(Feed):
         return "Meeting Materials Activity"
 
     def item_title(self, item):
-        return "%s: %s" % (item["group_acronym"], escape(item["title"]))
+        return "{}: {}".format(item["group_acronym"], escape(item["title"]))
 
     def item_description(self, item):
         return ""

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand, CommandError
@@ -25,12 +24,12 @@ class Command(BaseCommand):
             return '{} {}{}'.format(count, unit, ('' if count == 1 else 's'))
 
         if keep_days < 0:
-            raise CommandError('Negative keep_days not allowed ({} was specified)'.format(keep_days))
+            raise CommandError(f'Negative keep_days not allowed ({keep_days} was specified)')
 
         if dry_run:
             self.stdout.write('Dry run requested, records will not be deleted\n')
 
-        self.stdout.write('Finding events older than {}\n'.format(_format_count(keep_days)))
+        self.stdout.write(f'Finding events older than {_format_count(keep_days)}\n')
         self.stdout.flush()
 
         now = datetime.now()
@@ -41,7 +40,7 @@ class Command(BaseCommand):
         stats = old_events.aggregate(Min('time'), Max('time'))
         old_count = old_events.count()
         if old_count == 0:
-            self.stdout.write('No events older than {} found\n'.format(_format_count(keep_days)))
+            self.stdout.write(f'No events older than {_format_count(keep_days)} found\n')
             return
 
         oldest_date = stats['time__min']
@@ -51,8 +50,8 @@ class Command(BaseCommand):
 
         action_fmt = 'Would delete {}\n' if dry_run else 'Deleting {}\n'
         self.stdout.write(action_fmt.format(_format_count(old_count, 'event')))
-        self.stdout.write('    Oldest at {} ({} ago)\n'.format(oldest_date, _format_count(oldest_ago.days)))
-        self.stdout.write('    Most recent at {} ({} ago)\n'.format(newest_date, _format_count(newest_ago.days)))
+        self.stdout.write(f'    Oldest at {oldest_date} ({_format_count(oldest_ago.days)} ago)\n')
+        self.stdout.write(f'    Most recent at {newest_date} ({_format_count(newest_ago.days)} ago)\n')
         self.stdout.flush()
 
         if not dry_run:

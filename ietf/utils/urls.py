@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import debug                            # pyflakes:ignore
@@ -12,7 +11,7 @@ from django.utils.encoding import force_str
 
 def url(regex, view, kwargs=None, name=None):
     if callable(view) and hasattr(view, '__name__'):
-        view_name = "%s.%s" % (view.__module__, view.__name__)
+        view_name = "{}.{}".format(view.__module__, view.__name__)
     else:
         view_name = regex
 
@@ -32,7 +31,7 @@ def url(regex, view, kwargs=None, name=None):
         branch = 'class'
     else:
         branch = 'notimpl'
-        raise NotImplementedError("Auto-named url from view of type %s: %s" % (type(view), view))
+        raise NotImplementedError("Auto-named url from view of type {}: {}".format(type(view), view))
     if branch == 'name':
         # List explicit url names with accompanying view dotted-path:
         #debug.say("%s %s" % (view_name, name))

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2015-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import json
@@ -8,7 +7,7 @@ import os
 import sys
 
 from importlib import import_module
-from mock import patch
+from unittest.mock import patch
 
 from django.apps import apps
 from django.conf import settings
@@ -389,7 +388,7 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
                 models_path = os.path.join(os.path.dirname(app.__file__), "models.py")
                 if os.path.exists(models_path):
                     self.apps[name] = app_name
-        super(TastypieApiTestCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def test_api_top_level(self):
         client = Client(Accept='application/json')

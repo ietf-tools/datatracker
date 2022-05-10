@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2015-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from typing import Dict, List       # pyflakes:ignore
@@ -17,7 +16,7 @@ class CcSelectForm(forms.Form):
                 )
 
     def __init__(self, mailtrigger_slug, mailtrigger_context, *args, **kwargs):
-        super(CcSelectForm,self).__init__(*args,**kwargs)
+        super().__init__(*args,**kwargs)
         mailtrigger = MailTrigger.objects.get(slug=mailtrigger_slug) 
         
         for r in mailtrigger.cc.all():

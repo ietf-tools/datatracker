@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2015-2022, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 from django.views.generic import RedirectView, TemplateView

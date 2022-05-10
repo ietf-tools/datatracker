@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 # Django settings for ietf project.
@@ -13,18 +12,18 @@ import warnings
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
 warnings.simplefilter("always", DeprecationWarning)
-warnings.filterwarnings("ignore", message="The logout\(\) view is superseded by")
+warnings.filterwarnings("ignore", message=r"The logout\(\) view is superseded by")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
 warnings.filterwarnings("ignore", message="{% load staticfiles %} is deprecated")
 warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated", module="bleach")
 
 try:
     import syslog
-    syslog.openlog(str("datatracker"), syslog.LOG_PID, syslog.LOG_USER)
+    syslog.openlog("datatracker", syslog.LOG_PID, syslog.LOG_USER)
 except ImportError:
     pass
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(__file__)
 sys.path.append(os.path.abspath(BASE_DIR + "/.."))
 
 from ietf import __version__
@@ -317,7 +316,7 @@ LOGGING = {
 # other) custom log settings are wanted.  Use "ietf/manage.py showloggers -l"
 # to show registered loggers.  The content here should match the levels above
 # and is shown as an example:
-UTILS_LOGGER_LEVELS: Dict[str, str] = {
+UTILS_LOGGER_LEVELS: dict[str, str] = {
 #    'django':           'INFO',
 #    'django.server':    'INFO',
 }
@@ -1265,4 +1264,3 @@ if SERVER_MODE != 'production':
     CSRF_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_SAMESITE = 'Lax'
-    

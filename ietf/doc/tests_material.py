@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import os
@@ -111,7 +110,7 @@ class GroupMaterialTests(TestCase):
         self.assertEqual(doc.title, "Test File - with fancy title")
         self.assertEqual(doc.get_state_slug(), "active")
 
-        with io.open(os.path.join(self.materials_dir, "slides", doc.name + "-" + doc.rev + ".pdf")) as f:
+        with open(os.path.join(self.materials_dir, "slides", doc.name + "-" + doc.rev + ".pdf")) as f:
             self.assertEqual(f.read(), content)
 
         # check that posting same name is prevented
@@ -182,6 +181,6 @@ class GroupMaterialTests(TestCase):
         self.assertEqual(doc.title, "New title")
         self.assertEqual(doc.get_state_slug(), "active")
 
-        with io.open(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + ".txt")) as f:
+        with open(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + ".txt")) as f:
             self.assertEqual(f.read(), content)
 

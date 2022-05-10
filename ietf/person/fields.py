@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import json
@@ -23,10 +22,10 @@ from ietf.utils.fields import SearchableField
 
 def select2_id_name(objs):
     def format_email(e):
-        return escape("%s <%s>" % (e.person.name, e.address))
+        return escape("{} <{}>".format(e.person.name, e.address))
     def format_person(p):
         if p.name_count > 1:
-            return escape('%s (%s)' % (p.name,p.email().address if p.email() else 'no email address'))
+            return escape('{} ({})'.format(p.name,p.email().address if p.email() else 'no email address'))
         else:
             return escape(p.name)
 
@@ -70,7 +69,7 @@ class SearchablePersonsField(SearchableField):
                  all_emails=False, # select only active email addresses
                  extra_prefetch=None, # extra data records to include in prefetch
                  *args, **kwargs):
-        super(SearchablePersonsField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.only_users = only_users
         self.all_emails = all_emails
         self.extra_prefetch = extra_prefetch or []
@@ -137,7 +136,7 @@ class PersonEmailChoiceField(forms.ModelChoiceField):
 
         self.label_with = kwargs.pop("label_with", None)
 
-        super(PersonEmailChoiceField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def label_from_instance(self, email):
         if self.label_with == "person":
@@ -145,4 +144,4 @@ class PersonEmailChoiceField(forms.ModelChoiceField):
         elif self.label_with == "email":
             return email.address
         else:
-            return "{} <{}>".format(email.person, email.address)
+            return f"{email.person} <{email.address}>"

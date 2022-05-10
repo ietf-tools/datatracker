@@ -51,7 +51,7 @@ def get_times(meeting,day):
     else:
         room = None
     slots = TimeSlot.objects.filter(meeting=meeting,time__week_day=day,location=room).order_by('time')
-    choices = [ (t.time.strftime('%H%M'), '%s-%s' % (t.time.strftime('%H%M'), t.end_time().strftime('%H%M'))) for t in slots ]
+    choices = [ (t.time.strftime('%H%M'), '{}-{}'.format(t.time.strftime('%H%M'), t.end_time().strftime('%H%M'))) for t in slots ]
     return choices
 
 #----------------------------------------------------------
@@ -73,7 +73,7 @@ class TimeSlotModelChoiceField(forms.ModelChoiceField):
     '''
     def label_from_instance(self, obj):
         
-        return "%s %s - %s" % (obj.time.strftime('%a %H:%M'),obj.name,obj.location)
+        return "{} {} - {}".format(obj.time.strftime('%a %H:%M'),obj.name,obj.location)
         
 class TimeChoiceField(forms.ChoiceField):
     '''
@@ -91,7 +91,7 @@ class MeetingSelectForm(forms.Form):
 
     def __init__(self,*args,**kwargs):
         choices = kwargs.pop('choices')
-        super(MeetingSelectForm, self).__init__(*args,**kwargs)
+        super().__init__(*args,**kwargs)
         self.fields['meeting'].widget.choices = choices
 
 class MeetingModelForm(forms.ModelForm):
@@ -105,7 +105,7 @@ class MeetingModelForm(forms.ModelForm):
         }
 
     def __init__(self,*args,**kwargs):
-        super(MeetingModelForm, self).__init__(*args,**kwargs)
+        super().__init__(*args,**kwargs)
         if 'instance' in kwargs:
             for f in [ 'idsubmit_cutoff_warning_days', 'idsubmit_cutoff_time_utc', ]:
                 self.fields[f].help_text = kwargs['instance']._meta.get_field(f).help_text
@@ -117,7 +117,7 @@ class MeetingModelForm(forms.ModelForm):
         return number
         
     def save(self, force_insert=False, force_update=False, commit=True):
-        meeting = super(MeetingModelForm, self).save(commit=False)
+        meeting = super().save(commit=False)
         meeting.type_id = 'ietf'
         if commit:
             meeting.save()
@@ -147,7 +147,7 @@ class TimeSlotForm(forms.Form):
     def __init__(self,*args,**kwargs):
         if 'meeting' in kwargs:
             self.meeting = kwargs.pop('meeting')
-        super(TimeSlotForm, self).__init__(*args,**kwargs)
+        super().__init__(*args,**kwargs)
         self.fields["time"].widget.attrs["placeholder"] = "HH:MM"
         self.fields["duration"].widget.attrs["placeholder"] = "HH:MM"
         self.fields["day"].choices = self.get_day_choices()
@@ -156,7 +156,7 @@ class TimeSlotForm(forms.Form):
         '''Limit to HH:MM format'''
         duration = self.data['duration']
         if not SESSION_DURATION_RE.match(duration):
-            raise forms.ValidationError('{} value has an invalid format. It must be in HH:MM format'.format(duration))
+            raise forms.ValidationError(f'{duration} value has an invalid format. It must be in HH:MM format')
         return self.cleaned_data['duration']
 
     def get_day_choices(self):
@@ -200,14 +200,14 @@ class MiscSessionForm(TimeSlotForm):
             self.session = kwargs.pop('session')
         initial = kwargs.setdefault('initial', dict())
         initial['purpose'] = (initial.pop('purpose', ''), initial.pop('type', ''))
-        super(MiscSessionForm, self).__init__(*args,**kwargs)
+        super().__init__(*args,**kwargs)
         self.fields['location'].queryset = Room.objects.filter(meeting=self.meeting)
         self.fields['purpose'].purpose_queryset = SessionPurposeName.objects.filter(
             used=True).exclude(slug='session').order_by('name')
         self.fields['purpose'].type_queryset = TimeSlotTypeName.objects.filter(used=True)
 
     def clean(self):
-        super(MiscSessionForm, self).clean()
+        super().clean()
         if any(self.errors):
             return
         cleaned_data = self.cleaned_data

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import re
@@ -80,7 +79,7 @@ def upload_submission(request):
                 # Don't add an "Uploaded new revision doevent yet, in case of cancellation
 
                 return redirect("ietf.submit.views.submission_status", submission_id=submission.pk, access_token=submission.access_token())
-        except IOError as e:
+        except OSError as e:
             if "read error" in str(e): # The server got an IOError when trying to read POST data
                 form = SubmissionManualUploadForm(request=request)
                 form._errors = {}
@@ -178,11 +177,11 @@ def api_submit(request):
                 sent_to = accept_submission(request, submission)
 
                 return HttpResponse(
-                    "Upload of %s OK, confirmation requests sent to:\n  %s" % (submission.name, ',\n  '.join(sent_to)),
+                    "Upload of {} OK, confirmation requests sent to:\n  {}".format(submission.name, ',\n  '.join(sent_to)),
                     content_type="text/plain")
             else:
                 raise ValidationError(form.errors)
-        except IOError as e:
+        except OSError as e:
             exception = e
             return err(500, "IO Error: %s" % str(e))
         except ValidationError as e:
@@ -700,7 +699,7 @@ def cancel_waiting_for_draft(request):
             # Add a doc event
             docevent_from_submission(request, 
                                      submission,
-                                     "Cancelled submission for rev {}".format(submission.rev))
+                                     f"Cancelled submission for rev {submission.rev}")
     
     return redirect("ietf.submit.views.manualpost")
 
@@ -766,7 +765,7 @@ def add_manualpost_email(request, submission_id=None, access_token=None):
 
         if (submission_id != None):
             submission = get_submission_or_404(submission_id, access_token)
-            initial['name'] = "{}-{}".format(submission.name, submission.rev)
+            initial['name'] = f"{submission.name}-{submission.rev}"
             initial['direction'] = 'incoming'
             initial['submission_pk'] = submission.pk
         else:
@@ -841,7 +840,7 @@ def send_submission_email(request, submission_id, message_id=None):
             addrs = gather_address_lists('sub_confirmation_requested',submission=submission).as_strings(compact=False)
             to_email = addrs.to
             cc = addrs.cc
-            subject = 'Regarding {}'.format(submission.name)
+            subject = f'Regarding {submission.name}'
         else:
             try:
                 submitEmail = SubmissionEmailEvent.objects.get(id=message_id)
@@ -850,15 +849,15 @@ def send_submission_email(request, submission_id, message_id=None):
                 if msg:
                     to_email = msg.frm
                     cc = msg.cc
-                    subject = 'Re:{}'.format(msg.subject)
+                    subject = f'Re:{msg.subject}'
                 else:
                     to_email = None
                     cc = None
-                    subject = 'Regarding {}'.format(submission.name)
+                    subject = f'Regarding {submission.name}'
             except Message.DoesNotExist:
                 to_email = None
                 cc = None
-                subject = 'Regarding {}'.format(submission.name)
+                subject = f'Regarding {submission.name}'
 
         initial = {
             'to': to_email,

@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2010-2021, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -287,7 +286,7 @@ class GroupURL(models.Model):
     url = models.URLField()
 
     def __str__(self):
-        return u"%s (%s)" % (self.url, self.name)
+        return "{} ({})".format(self.url, self.name)
 
 class GroupExtResource(models.Model):
     group = ForeignKey(Group) # Should this really be to GroupInfo?
@@ -296,7 +295,7 @@ class GroupExtResource(models.Model):
     value = models.CharField(max_length=2083) # 2083 is the maximum legal URL length
     def __str__(self):
         priority = self.display_name or self.name.name
-        return u"%s (%s) %s" % (priority, self.name.slug, self.value)
+        return "{} ({}) {}".format(priority, self.name.slug, self.value)
         
 class GroupMilestoneInfo(models.Model):
     group = ForeignKey(Group)
@@ -333,7 +332,7 @@ class GroupStateTransitions(models.Model):
     next_states = models.ManyToManyField('doc.State', related_name='previous_groupstatetransitions_states')
 
     def __str__(self):
-        return u'%s "%s" -> %s' % (self.group.acronym, self.state.name, [s.name for s in self.next_states.all()])
+        return '{} "{}" -> {}'.format(self.group.acronym, self.state.name, [s.name for s in self.next_states.all()])
 
 GROUP_EVENT_CHOICES = [
     ("changed_state", "Changed state"),
@@ -354,7 +353,7 @@ class GroupEvent(models.Model):
     desc = models.TextField()
 
     def __str__(self):
-        return u"%s %s at %s" % (self.by.plain_name(), self.get_type_display().lower(), self.time)
+        return "{} {} at {}".format(self.by.plain_name(), self.get_type_display().lower(), self.time)
 
     class Meta:
         ordering = ['-time', 'id']
@@ -374,7 +373,7 @@ class Role(models.Model):
     person = ForeignKey(Person)
     email = ForeignKey(Email, help_text="Email address used by person for this role.")
     def __str__(self):
-        return u"%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym or self.group.name)
+        return "{} is {} in {}".format(self.person.plain_name(), self.name.name, self.group.acronym or self.group.name)
 
     def formatted_ascii_email(self):
         return email.utils.formataddr((self.person.plain_ascii(), self.email.address))
@@ -395,7 +394,7 @@ class RoleHistory(models.Model):
     person = ForeignKey(Person)
     email = ForeignKey(Email, help_text="Email address used by person for this role.")
     def __str__(self):
-        return u"%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym)
+        return "{} is {} in {}".format(self.person.plain_name(), self.name.name, self.group.acronym)
 
     class Meta:
         verbose_name_plural = "role histories"
@@ -415,16 +414,16 @@ def notify_rfceditor_of_group_name_change(sender, instance=None, **kwargs):
             msg = """
 This is an automated notification of a group name change:
 
-  acronym:  %s
-  old name: %s
-  new name: %s
+  acronym:  {}
+  old name: {}
+  new name: {}
 
   Regards,
 
     The datatracker
-""" % (current.acronym, current.name, instance.name, )
+""".format(current.acronym, current.name, instance.name)
             send_mail_text(None, to=addr, frm=None, subject="Group '%s' name change"%instance.acronym, txt=msg)
-            log.log("Sent notification email: %s: '%s' --> '%s' to %s" % (current.acronym, current.name, instance.name, addr))
+            log.log("Sent notification email: {}: '{}' --> '{}' to {}".format(current.acronym, current.name, instance.name, addr))
 
             
 ## Keep this code as a worked and tested example of sending signed notifies

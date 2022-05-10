@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -352,7 +351,7 @@ def email_reviewer_availability_change(request, team, reviewer_role, msg, by):
     )
 
     if to or cc:
-        subject = "Reviewer availability of {} changed in {}".format(reviewer_role.person, team.acronym)
+        subject = f"Reviewer availability of {reviewer_role.person} changed in {team.acronym}"
     
         url = urlreverse("ietf.group.views.reviewer_overview", kwargs={ "group_type": team.type_id, "acronym": team.acronym })
         url = request.build_absolute_uri(url)
@@ -429,7 +428,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
 
     email_review_request_change(
         request, review_req,
-        "%s %s assignment: %s" % (review_req.team.acronym.capitalize(), review_req.type.name,review_req.doc.name),
+        "{} {} assignment: {}".format(review_req.team.acronym.capitalize(), review_req.type.name,review_req.doc.name),
         msg ,
         by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=False)
 
@@ -467,17 +466,17 @@ def close_review_request(request, review_req, close_state, close_comment=''):
                 doc=review_req.doc,
                 rev=review_req.doc.rev,
                 by=request.user.person,
-                desc="Request closed, assignment withdrawn: {} {} {} review".format(assignment.reviewer.person.plain_name(), assignment.review_request.type.name, assignment.review_request.team.acronym.upper()),
+                desc=f"Request closed, assignment withdrawn: {assignment.reviewer.person.plain_name()} {assignment.review_request.type.name} {assignment.review_request.team.acronym.upper()} review",
                 review_assignment=assignment,
                 state=assignment.state,
             )
 
-        msg = "Review request has been closed by {}.".format(request.user.person)
+        msg = f"Review request has been closed by {request.user.person}."
         if close_comment:
-            msg += "\nComment: {}".format(close_comment)
+            msg += f"\nComment: {close_comment}"
         email_review_request_change(
             request, review_req,
-            "Closed review request for {}: {}".format(review_req.doc.name, close_state.name),
+            f"Closed review request for {review_req.doc.name}: {close_state.name}",
             msg=msg, by=request.user.person, notify_secretary=True,
             notify_reviewer=True, notify_requested_by=True)
 
@@ -605,7 +604,7 @@ def extract_revision_ordered_review_assignments_for_documents_and_replaced(revie
     replaces = extract_complete_replaces_ancestor_mapping_for_docs(names)
 
     assignments_for_each_doc = defaultdict(list)
-    replacement_name_set = set(e for l in replaces.values() for e in l) | names
+    replacement_name_set = {e for l in replaces.values() for e in l} | names
     for r in ( review_assignment_queryset.filter(review_request__doc__name__in=replacement_name_set)
                                         .order_by("-reviewed_rev","-assigned_on", "-id").iterator()):
         assignments_for_each_doc[r.review_request.doc.name].append(r)
@@ -653,7 +652,7 @@ def extract_revision_ordered_review_requests_for_documents_and_replaced(review_r
     replaces = extract_complete_replaces_ancestor_mapping_for_docs(names)
 
     requests_for_each_doc = defaultdict(list)
-    for r in review_request_queryset.filter(doc__name__in=set(e for l in replaces.values() for e in l) | names).order_by("-time", "-id").iterator():
+    for r in review_request_queryset.filter(doc__name__in={e for l in replaces.values() for e in l} | names).order_by("-time", "-id").iterator():
         requests_for_each_doc[r.doc.name].append(r)
 
     # now collect in breadth-first order to keep the revision order intact
@@ -697,9 +696,9 @@ def get_default_filter_re(person):
         person = Person.objects.get(id=person)
     groups_to_avoid =  [ r.group for r in person.role_set.all() if r.name in r.group.features.groupman_roles and r.group.features.acts_like_wg ]
     if not groups_to_avoid:
-        return '^draft-%s-.*$' % ( person.last_name().lower(), )
+        return '^draft-{}-.*$'.format( person.last_name().lower())
     else:
-        return '^draft-(%s|%s)-.*$' % ( person.last_name().lower(), '|'.join(['ietf-%s' % g.acronym for g in groups_to_avoid]))
+        return '^draft-({}|{})-.*$'.format( person.last_name().lower(), '|'.join(['ietf-%s' % g.acronym for g in groups_to_avoid]))
 
 
 def send_unavailability_period_ending_reminder(remind_date):
@@ -713,9 +712,9 @@ def send_unavailability_period_ending_reminder(remind_date):
         domain = Site.objects.get_current().domain
         url = urlreverse("ietf.group.views.reviewer_overview", kwargs={ "group_type": period.team.type_id, "acronym": period.team.acronym })
         
-        subject = "Reminder: unavailability period of {} is ending soon".format(period.person)
+        subject = f"Reminder: unavailability period of {period.person} is ending soon"
         send_mail(None, to, None, subject, "review/reviewer_unavailability_ending.txt", {
-            "reviewer_overview_url": "https://{}{}".format(domain, url),
+            "reviewer_overview_url": f"https://{domain}{url}",
             "reviewer": period.person,
             "team": period.team,
             "reminder_days": reminder_days,
@@ -777,7 +776,7 @@ def send_reminder_all_open_reviews(remind_date):
             continue
 
         to = reviewer_settings.person.formatted_email()
-        subject = "Reminder: you have {} open review assignment{}".format(len(assignments), pluralize(len(assignments)))
+        subject = f"Reminder: you have {len(assignments)} open review assignment{pluralize(len(assignments))}"
 
         domain = Site.objects.get_current().domain
         url = urlreverse("ietf.group.views.reviewer_overview",
@@ -785,12 +784,12 @@ def send_reminder_all_open_reviews(remind_date):
                                  "acronym": reviewer_settings.team.acronym})
 
         send_mail(None, to, None, subject, "review/reviewer_reminder_all_open_reviews.txt", {
-            "reviewer_overview_url": "https://{}{}".format(domain, url),
+            "reviewer_overview_url": f"https://{domain}{url}",
             "assignments": assignments,
             "team": reviewer_settings.team,
             "remind_days": reviewer_settings.remind_days_open_reviews,
         })
-        log.append("Emailed reminder to {} of their {} open reviews".format(to, len(assignments)))
+        log.append(f"Emailed reminder to {to} of their {len(assignments)} open reviews")
 
     return log
 
@@ -834,13 +833,13 @@ def send_reminder_unconfirmed_assignments(remind_date):
                 subject=subject,
                 template="review/reviewer_reminder_unconfirmed_assignments.txt",
                 context={
-                    "review_request_url": "https://{}{}".format(domain, review_request_url),
+                    "review_request_url": f"https://{domain}{review_request_url}",
                     "assignment": assignment,
                     "team": assignment.review_request.team,
                     "remind_days": review_team_settings.remind_days_unconfirmed_assignments,
                 },
             )
-            log.append("Emailed reminder to {} about not accepted/rejected review assignment {}".format(to, assignment.pk))
+            log.append(f"Emailed reminder to {to} about not accepted/rejected review assignment {assignment.pk}")
 
     return log
 
@@ -869,7 +868,7 @@ def email_reviewer_reminder(assignment):
 
     deadline_days = (review_request.deadline - datetime.date.today()).days
 
-    subject = "Reminder: deadline for review of {} in {} is {}".format(review_request.doc.name, team.acronym, review_request.deadline.isoformat())
+    subject = f"Reminder: deadline for review of {review_request.doc.name} in {team.acronym} is {review_request.deadline.isoformat()}"
 
     import ietf.ietfauth.views
     overview_url = urlreverse(ietf.ietfauth.views.review_overview)
@@ -882,8 +881,8 @@ def email_reviewer_reminder(assignment):
     remind_days = settings.remind_days_before_deadline if settings else 0
 
     send_mail(None, [assignment.reviewer.formatted_email()], None, subject, "review/reviewer_reminder.txt", {
-        "reviewer_overview_url": "https://{}{}".format(domain, overview_url),
-        "review_request_url": "https://{}{}".format(domain, request_url),
+        "reviewer_overview_url": f"https://{domain}{overview_url}",
+        "review_request_url": f"https://{domain}{request_url}",
         "review_request": review_request,
         "deadline_days": deadline_days,
         "remind_days": remind_days,
@@ -935,7 +934,7 @@ def email_secretary_reminder(assignment, secretary_role):
 
     deadline_days = (review_request.deadline - datetime.date.today()).days
 
-    subject = "Reminder: deadline for review of {} in {} is {}".format(review_request.doc.name, team.acronym, review_request.deadline.isoformat())
+    subject = f"Reminder: deadline for review of {review_request.doc.name} in {team.acronym} is {review_request.deadline.isoformat()}"
 
     import ietf.group.views
     settings_url = urlreverse(ietf.group.views.change_review_secretary_settings, kwargs={ "acronym": team.acronym, "group_type": team.type_id })
@@ -948,8 +947,8 @@ def email_secretary_reminder(assignment, secretary_role):
     remind_days = settings.remind_days_before_deadline if settings else 0
 
     send_mail(None, [secretary_role.email.formatted_email()], None, subject, "review/secretary_reminder.txt", {
-        "review_request_url": "https://{}{}".format(domain, request_url),
-        "settings_url": "https://{}{}".format(domain, settings_url),
+        "review_request_url": f"https://{domain}{request_url}",
+        "settings_url": f"https://{domain}{settings_url}",
         "review_request": review_request,
         "deadline_days": deadline_days,
         "remind_days": remind_days,

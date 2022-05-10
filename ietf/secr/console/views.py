@@ -1,4 +1,3 @@
-
 from django.shortcuts import render
 
 from ietf.doc.models import DocEvent

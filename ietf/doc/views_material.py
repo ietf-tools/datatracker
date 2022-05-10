@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 # views for managing group materials (slides, ...)
@@ -42,7 +41,7 @@ class UploadMaterialForm(forms.Form):
     material = forms.FileField(label='File')
 
     def __init__(self, doc_type, action, group, doc, *args, **kwargs):
-        super(UploadMaterialForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.fields["state"].queryset = self.fields["state"].queryset.filter(type__slug=doc_type.slug)
 
@@ -73,20 +72,20 @@ class UploadMaterialForm(forms.Form):
             del self.fields['abstract']
 
     def _default_name(self):
-        return "%s-%s-" % (self.doc_type.slug, self.group.acronym)
+        return "{}-{}-".format(self.doc_type.slug, self.group.acronym)
 
     def clean_name(self):
         name = self.cleaned_data["name"].strip().rstrip("-")
 
         check_common_doc_name_rules(name)
 
-        if not re.search("^%s-%s-[a-z0-9]+" % (self.doc_type.slug, self.group.acronym), name):
-            raise forms.ValidationError("The name must start with %s-%s- followed by descriptive dash-separated words." % (self.doc_type.slug, self.group.acronym))
+        if not re.search("^{}-{}-[a-z0-9]+".format(self.doc_type.slug, self.group.acronym), name):
+            raise forms.ValidationError("The name must start with {}-{}- followed by descriptive dash-separated words.".format(self.doc_type.slug, self.group.acronym))
 
         existing = Document.objects.filter(type=self.doc_type, name=name)
         if existing:
             url = urlreverse('ietf.doc.views_material.edit_material', kwargs={ 'name': existing[0].name, 'action': 'revise' })
-            raise forms.ValidationError(mark_safe("Can't upload: %s with name %s already exists. Choose another title and name for what you're uploading or <a href=\"%s\">revise the existing %s</a>." % (self.doc_type.name, name, url, name)))
+            raise forms.ValidationError(mark_safe("Can't upload: {} with name {} already exists. Choose another title and name for what you're uploading or <a href=\"{}\">revise the existing {}</a>.".format(self.doc_type.name, name, url, name)))
 
         return name
 
@@ -152,7 +151,7 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                 f = form.cleaned_data["material"]
                 file_ext = os.path.splitext(f.name)[1]
 
-                with io.open(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + file_ext), 'wb+') as dest:
+                with open(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + file_ext), 'wb+') as dest:
                     for chunk in f.chunks():
                         dest.write(chunk)
 
@@ -163,7 +162,7 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
             if prev_rev != doc.rev:
                 e = NewRevisionDocEvent(type="new_revision", doc=doc, rev=doc.rev)
                 e.by = request.user.person
-                e.desc = "New version available: <b>%s-%s</b>" % (doc.name, doc.rev)
+                e.desc = "New version available: <b>{}-{}</b>".format(doc.name, doc.rev)
                 e.save()
                 events.append(e)
 

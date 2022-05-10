@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import datetime
@@ -101,7 +100,7 @@ def get_user_email(user):
     return user._email_cache
 
 def get_hash_nominee_position(date, nominee_position_id):
-    return hashlib.md5(('%s%s%s' % (settings.SECRET_KEY, date, nominee_position_id)).encode('utf-8')).hexdigest()
+    return hashlib.md5(('{}{}{}'.format(settings.SECRET_KEY, date, nominee_position_id)).encode('utf-8')).hexdigest()
 
 
 def initialize_templates_for_group(group):

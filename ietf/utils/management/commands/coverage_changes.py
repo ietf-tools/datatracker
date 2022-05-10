@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2015-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import gzip
@@ -16,29 +15,29 @@ import debug                            # pyflakes:ignore
 
 class Command(BaseCommand):
     name, _ = os.path.splitext(os.path.basename(__file__))
-    help = ("Show coverage info for the latest test run.  By default, the difference in \n"
-            "coverage compared with the latest available release data is shown.\n"
-            "\n"
-            "Examples:\n"
-            "\n"
-            "    Show the coverage difference from the previous release:\n"
-            "        $ manage.py {name}\n"
-            "\n"
-            "    Show the coverage difference with another release:\n"
-            "        $ manage.py {name} --release=6.0.0\n"
-            "\n"
-            "    Show the coverage difference for a provided data-file:\n"
-            "        $ manage.py {name} release-coverage.json.gz beeblebrox.json\n"
-            "\n"
-            "    List URLs which are not covered:\n"
-            "        $ manage.py {name} --absolute --sections=url | grep False\n"
-            "\n".format(**locals())
+    help = (f"Show coverage info for the latest test run.  By default, the difference in \n"
+            f"coverage compared with the latest available release data is shown.\n"
+            f"\n"
+            f"Examples:\n"
+            f"\n"
+            f"    Show the coverage difference from the previous release:\n"
+            f"        $ manage.py {name}\n"
+            f"\n"
+            f"    Show the coverage difference with another release:\n"
+            f"        $ manage.py {name} --release=6.0.0\n"
+            f"\n"
+            f"    Show the coverage difference for a provided data-file:\n"
+            f"        $ manage.py {name} release-coverage.json.gz beeblebrox.json\n"
+            f"\n"
+            f"    List URLs which are not covered:\n"
+            f"        $ manage.py {name} --absolute --sections=url | grep False\n"
+            f"\n"
         )
     args = "[[master_json] latest_json]"
 
     def create_parser(self, prog_name, subcommand):
         import argparse
-        parser = super(Command, self).create_parser(prog_name, subcommand)
+        parser = super().create_parser(prog_name, subcommand)
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
         return parser
 
@@ -63,8 +62,8 @@ class Command(BaseCommand):
                 if filename.endswith(".gz"):
                     file = gzip.open(filename, "rb")
                 else:
-                    file = io.open(filename, "r", encoding="utf-8")
-            except IOError as e:
+                    file = open(filename, "r", encoding="utf-8")
+            except OSError as e:
                 self.stderr.write("%s" % e)
                 exit(1)
         else:
@@ -72,16 +71,16 @@ class Command(BaseCommand):
         try:
             data = json.load(file)
         except ValueError as e:
-            raise CommandError("Failure to read json data from %s: %s" % (filename, e))
+            raise CommandError("Failure to read json data from {}: {}".format(filename, e))
         version = version or data["version"]
         if not version in data:
-            raise CommandError("There is no data for version %s available in %s" % (version, filename))
+            raise CommandError("There is no data for version {} available in {}".format(version, filename))
         return data[version], version
 
     def coverage_diff(self, master, latest, sections, release=None, **options):
         master_coverage, mversion = self.read_coverage(master, release)
         latest_coverage, lversion = self.read_coverage(latest)
-        self.stdout.write("\nShowing coverage differeces between %s and %s:\n" % (mversion, lversion))
+        self.stdout.write("\nShowing coverage differeces between {} and {}:\n".format(mversion, lversion))
         for section in sections:
             mcoverage = master_coverage[section]["covered"]
             mformat   = master_coverage[section].get("format", 1)
@@ -159,7 +158,7 @@ class Command(BaseCommand):
                         if prefix in ['+', '-']:
                             if not n in [p, p+1]:
                                 self.stdout.write('\n')
-                            self.stdout.write("%s" % (line, ))
+                            self.stdout.write("{}".format(line))
                         p = n
                     self.stdout.write('\n')
             lkey_set = set(lkeys)
@@ -177,7 +176,7 @@ class Command(BaseCommand):
 
     def coverage_list(self, latest, sections, **options):
         latest_coverage, lversion = self.read_coverage(latest)
-        self.stdout.write("\nShowing coverage for %s:\n" % (lversion, ))
+        self.stdout.write("\nShowing coverage for {}:\n".format(lversion))
         for section in sections:
             lcoverage = latest_coverage[section]["covered"]
             lformat   = latest_coverage[section].get("format", 1)

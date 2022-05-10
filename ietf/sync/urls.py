@@ -1,4 +1,3 @@
-
 from ietf.sync import views
 from ietf.utils.urls import url
 

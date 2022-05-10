@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 from ietf.ipr.models import IprDocRel
 
@@ -14,7 +13,7 @@ def get_ipr_summary(disclosure):
     names = []
     for doc in disclosure.docs.all():
         if doc.name.startswith('rfc'):
-            names.append('RFC {}'.format(doc.name[3:]))
+            names.append(f'RFC {doc.name[3:]}')
         else:
             names.append(doc.name)
     
@@ -39,7 +38,7 @@ def iprs_from_docs(aliases,**kwargs):
         for document in alias.docs.all():
             if document.ipr(**kwargs):
                 iprdocrels += document.ipr(**kwargs)
-    return list(set([i.disclosure for i in iprdocrels]))
+    return list({i.disclosure for i in iprdocrels})
     
 def related_docs(alias, relationship=('replaces', 'obs')):
     """Returns list of related documents"""

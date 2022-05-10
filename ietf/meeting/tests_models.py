@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
-# -*- coding: utf-8 -*-
 """Tests of models in the Meeting application"""
 from ietf.meeting.factories import MeetingFactory
 from ietf.stats.factories import MeetingRegistrationFactory
