@@ -566,6 +566,7 @@ class SubmissionBaseUploadForm(forms.Form):
             if not self.errors:
                 raise forms.ValidationError('Unexpected submission file types; found %s, but %s is required' % (', '.join(self.file_types), ' or '.join(self.base_formats)))
 
+        # Determine the draft name and revision. Try XML first.
         if self.cleaned_data.get('xml'):
             xml_file = self.cleaned_data.get('xml')
             tfn = None
@@ -610,32 +611,17 @@ class SubmissionBaseUploadForm(forms.Form):
                     else:
                         self.revision = None
                         self.filename = draftname
-                    self.authors = xml_draft.get_author_list()
-                    self.title = xml_draft.get_title()
-
-        # The following errors are likely noise if we have previous field
-        # errors:
-        if self.errors:
-            raise forms.ValidationError('')
-
-        if self.cleaned_data.get('txt'):
+        elif self.cleaned_data.get('txt'):
+            # no XML available, extract from the text if we have it
             # try to parse it
             txt_file = self.cleaned_data['txt']
             txt_file.seek(0)
             bytes = txt_file.read()
-            txt_file.seek(0)
             try:
                 text = bytes.decode(self.file_info['txt'].charset)
-            #
                 self.parsed_draft = PlaintextDraft(text, txt_file.name)
-                if self.filename == None:
-                    self.filename = self.parsed_draft.filename
-                elif self.filename != self.parsed_draft.filename:
-                    self.add_error('txt', "Inconsistent name information: xml:%s, txt:%s" % (self.filename, self.parsed_draft.filename))
-                if self.revision == None:
-                    self.revision = self.parsed_draft.revision
-                elif self.revision != self.parsed_draft.revision:
-                    self.add_error('txt', "Inconsistent revision information: xml:%s, txt:%s" % (self.revision, self.parsed_draft.revision))
+                self.filename = self.parsed_draft.filename
+                self.revision = self.parsed_draft.revision
             except (UnicodeDecodeError, LookupError) as e:
                 self.add_error('txt', 'Failed decoding the uploaded file: "%s"' % str(e))
 
@@ -663,9 +649,6 @@ class SubmissionBaseUploadForm(forms.Form):
                 "first page.  In an xml upload, please make sure that the top-level <rfc/> "
                 "element has a docName attribute which provides the full draft name including "
                 "revision number.")
-
-        if not self.title:
-            raise forms.ValidationError("Could not extract a valid title from the upload")
 
         if self.cleaned_data.get('txt') or self.cleaned_data.get('xml'):
             # check group
