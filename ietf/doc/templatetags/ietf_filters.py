@@ -196,7 +196,7 @@ def doc_canonical_name(name):
         if not found:
             exact = DocAlias.objects.filter(name=n).first()
             found = exact.name if exact else "_"
-            cache.set(key, found)
+            cache.set(key, found, timeout=60*60*24)  # cache for one day
         return None if found == "_" else found
 
     # chop away extension
