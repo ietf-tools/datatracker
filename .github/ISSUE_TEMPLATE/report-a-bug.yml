@@ -10,20 +10,10 @@ body:
     id: description
     attributes:
       label: Describe the issue
-      description: Include as much info as possible, including the current behavior, expected behavior, screenshots, etc.
+      description: Include as much info as possible, including the current behavior, expected behavior, screenshots, etc. If this is a display / UX issue, make sure to list the browser(s) you're experiencing the issue on.
       placeholder: Description
     validations:
       required: true
-  - type: dropdown
-    id: browsers
-    attributes:
-      label: What browser(s) are you seeing the problem on?
-      multiple: true
-      options:
-        - Google Chrome / Microsoft Edge
-        - Mozilla Firefox
-        - Apple Safari
-        - Not Applicable
   - type: checkboxes
     id: terms
     attributes:
