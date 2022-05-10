@@ -126,6 +126,11 @@ http = urllib3.PoolManager(retries=urllib3.Retry(99, redirect=False))
 
 def vnu_validate(html, content_type="text/html", port=8888):
     "Pass the HTML to the vnu server running on the indicated port"
+    if "** No value found for " in html.decode():
+        return json.dumps(
+            {"messages": [{"message": '"** No value found for" in source'}]}
+        )
+
     gzippeddata = gzip.compress(html)
     try:
         req = http.request(
@@ -183,8 +188,7 @@ def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
     if filter_test_issues and re.search(
         r"""Ceci\ n'est\ pas\ une\ URL|
             ^The\ '\w+'\ attribute\ on\ the\ '\w+'\ element\ is\ obsolete|
-            ^Section\ lacks\ heading|
-            is\ not\ in\ Unicode\ Normalization\ Form\ C""",
+            ^Section\ lacks\ heading""",
         msg["message"],
         flags=re.VERBOSE,
     ):
@@ -193,7 +197,8 @@ def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
     return re.search(
         r"""document\ is\ not\ mappable\ to\ XML\ 1|
             ^Attribute\ 'required'\ not\ allowed\ on\ element\ 'div'|
-            ^The\ 'type'\ attribute\ is\ unnecessary\ for\ JavaScript""",
+            ^The\ 'type'\ attribute\ is\ unnecessary\ for\ JavaScript|
+            is\ not\ in\ Unicode\ Normalization\ Form\ C""",
         msg["message"],
         flags=re.VERBOSE,
     )

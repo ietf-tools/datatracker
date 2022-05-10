@@ -5,7 +5,7 @@
 {% block title %}IPR Details - {{ ipr.title }}{% endblock %}
 {% block pagehead %}
     <meta name="description"
-          content="IPR disclosure #{{ ipr.ipr_id }}: {{ ipr.title }} ({{ ipr.time|date:'Y' }})">
+          content="IPR disclosure{% if ipr.ipr_id %} #{{ ipr.ipr_id }}{% endif %}: {{ ipr.title }} ({{ ipr.time|date:'Y' }})">
 {% endblock %}
 {% block content %}
     {% origin %}
@@ -170,7 +170,13 @@
         {% endif %}
         <tbody>
             <tr>
-                {% if prev %}<td class="ipr-prev">{{ prev.holder_legal_name }}</td>{% endif %}
+                {% if prev %}
+                    <td class="ipr-prev">
+                        {% if prev.holder_legal_name %}
+                            {{ prev.holder_legal_name }}
+                        {% endif %}
+                    </td>
+                {% endif %}
                 <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">Holder legal name</th>
                 <td class="ipr-this">{{ ipr.holder_legal_name }}</td>
             </tr>
@@ -207,7 +213,9 @@
                 <tr>
                     {% if prev %}
                         <td class="ipr-prev">
-                            {{ prev.holder_contact_name }}
+                            {% if prev.holder_contact_name %}
+                                {{ prev.holder_contact_name }}
+                            {% endif %}
                         </td>
                     {% endif %}
                     <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
@@ -220,7 +228,9 @@
                 <tr>
                     {% if prev %}
                         <td class="ipr-prev">
-                            {{ prev.holder_contact_email|linkify }}
+                            {% if prev.holder_contact_email %}
+                                {{ prev.holder_contact_email|linkify }}
+                            {% endif %}
                         </td>
                     {% endif %}
                     <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
@@ -233,14 +243,16 @@
                 <tr>
                     {% if prev %}
                         <td class="ipr-prev">
-                            {{ prev.holder_contact_info|linebreaks }}
+                            {% if prev.holder_contact_info %}
+                                {{ prev.holder_contact_info|linkify|linebreaks }}
+                            {% endif %}
                         </td>
                     {% endif %}
                     <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Holder contact info
                     </th>
                     <td class="ipr-this">
-                        {% if ipr.holder_contact_info %}{{ ipr.holder_contact_info|linebreaks }}{% endif %}
+                        {% if ipr.holder_contact_info %}{{ ipr.holder_contact_info|linkify|linebreaks }}{% endif %}
                     </td>
                 </tr>
             </tbody>
@@ -282,7 +294,9 @@
                 <tr>
                     {% if prev %}
                         <td class="ipr-prev">
-                            {{ prev.ietfer_name }}
+                            {% if prev.ietfer_name %}
+                                {{ prev.ietfer_name }}
+                            {% endif %}
                         </td>
                     {% endif %}
                     <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
@@ -295,7 +309,9 @@
                 <tr>
                     {% if prev %}
                         <td class="ipr-prev">
-                            {{ prev.ietfer_contact_email|linkify }}
+                            {% if prev.ietfer_contact_email %}
+                                {{ prev.ietfer_contact_email|linkify }}
+                            {% endif %}
                         </td>
                     {% endif %}
                     <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
@@ -308,14 +324,16 @@
                 <tr>
                     {% if prev %}
                         <td class="ipr-prev">
-                            {{ prev.ietfer_contact_info|linebreaks }}
+                            {% if prev.ietfer_contact_info %}
+                                {{ prev.ietfer_contact_info|linkify|linebreaks }}
+                            {% endif %}
                         </td>
                     {% endif %}
                     <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Other info
                     </th>
                     <td class="ipr-this">
-                        {{ ipr.ietfer_contact_info|linebreaks }}
+                        {{ ipr.ietfer_contact_info|linkify|linebreaks }}
                     </td>
                 </tr>
             </tbody>
@@ -474,7 +492,9 @@
                 <tr>
                     {% if prev %}
                         <td class="ipr-prev">
-                            {{ prev.patent_info|linebreaks }}
+                            {% if prev.patent_info %}
+                                {{ prev.patent_info|urlize_ietf_docs|linkify|linebreaks }}
+                            {% endif %}
                         </td>
                     {% endif %}
                     <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
@@ -483,7 +503,7 @@
                         or Application/File number(s)
                     </th>
                     <td class="ipr-this">
-                        {{ ipr.patent_info|linebreaks }}
+                        {{ ipr.patent_info|urlize_ietf_docs|linkify|linebreaks }}
                     </td>
                 </tr>
             </tbody>
@@ -523,7 +543,9 @@
                 <tr>
                     {% if prev %}
                         <td class="ipr-prev">
-                            {{ prev.has_patent_pending|yesno:"Yes,No" }}
+                            {% if prev.has_patent_pending %}
+                                {{ prev.has_patent_pending|yesno:"Yes,No" }}
+                            {% endif %}
                         </td>
                     {% endif %}
                     <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
@@ -592,10 +614,12 @@
                 <tr>
                     {% if prev %}
                         <td class="ipr-prev">
-                            {% if prev.licensing.slug == "provided-later" %}
-                                {{ prev.licensing.desc|slice:"2:"|slice:":117" }})
-                            {% else %}
-                                {{ prev.licensing.desc|slice:"2:" }}
+                            {% if prev.licensing.slug %}
+                                {% if prev.licensing.slug == "provided-later" %}
+                                    {{ prev.licensing.desc|slice:"2:"|slice:":117" }})
+                                {% else %}
+                                    {{ prev.licensing.desc|slice:"2:" }}
+                                {% endif %}
                             {% endif %}
                         </td>
                     {% endif %}
@@ -613,7 +637,9 @@
                 <tr>
                     {% if prev %}
                         <td class="ipr-prev">
-                            {{ prev.licensing_comments|default:"(No information submitted)"|linebreaks }}
+                            {% if prev.licensing_comments %}
+                                {{ prev.licensing_comments|default:"(No information submitted)"|urlize_ietf_docs|linkify|linebreaks }}
+                            {% endif %}
                         </td>
                     {% endif %}
                     <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
@@ -666,14 +692,16 @@
                 <tr>
                     {% if prev %}
                         <td class="ipr-prev">
-                            {{ prev.statement|linebreaks }}
+                            {% if prev.statement %}
+                                {{ prev.statement|urlize_ietf_docs|linkify|linebreaks }}
+                            {% endif %}
                         </td>
                     {% endif %}
                     <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
                         Statement
                     </th>
                     <td class="ipr-this">
-                        {{ ipr.statement|linebreaks }}
+                        {{ ipr.statement|urlize_ietf_docs|linkify|linebreaks }}
                     </td>
                 </tr>
             </tbody>
@@ -714,7 +742,9 @@
             <tr>
                 {% if prev %}
                     <td class="ipr-prev">
-                        {{ prev.submitter_name }}
+                        {% if prev.submitter_name %}
+                            {{ prev.submitter_name }}
+                        {% endif %}
                     </td>
                 {% endif %}
                 <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
@@ -727,7 +757,9 @@
             <tr>
                 {% if prev %}
                     <td class="ipr-prev">
-                        {{ prev.submitter_email|linkify }}
+                        {% if prev.submitter_email %}
+                            {{ prev.submitter_email|linkify }}
+                        {% endif %}
                     </td>
                 {% endif %}
                 <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">
@@ -775,7 +807,9 @@
                 <tr>
                     {% if prev %}
                         <td class="ipr-prev">
-                            {{ prev.notes|urlize_ietf_docs|linkify|linebreaks }}
+                            {% if prev.notes %}
+                                {{ prev.notes|urlize_ietf_docs|linkify|linebreaks }}
+                            {% endif %}
                         </td>
                     {% endif %}
                     <th scope="row" class="ipr-label {% if prev %}text-center table-secondary{% endif %}">

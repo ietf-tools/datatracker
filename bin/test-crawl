@@ -44,7 +44,6 @@ args = parser.parse_args()
 
 # Import Django, call setup()
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", args.settings or "ietf.settings_testcrawl")
-os.environ["DJANGO_URLIZE_IETF_DOCS_PRODUCTION"] = "1"
 
 import django
 import django.test
@@ -175,7 +174,7 @@ def check_html_valid(url, response, args):
             assert ret
             for m in json.loads(ret)["messages"]:
                 if "lastLine" not in m:
-                    tag = m  # just dump the raw JSON for now
+                    tag = m["message"]
                 else:
                     tag = vnu_fmt_message(url, m, content.decode())
                 # disregard some HTML issues that are (usually) due to invalid
@@ -211,7 +210,7 @@ def skip_url(url):
             r"^/wg/[a-z0-9-]+/deps/svg/",
             # Skip other bad urls
             r"^/dir/tsvdir/reviews/",
-            r"^/ipr/\d{,3}/history/",
+            # r"^/ipr/\d{,3}/history/",
             # Skip most html conversions, not worth the time
             r"^/doc/html/draft-[0-9ac-z]",
             r"^/doc/html/draft-b[0-9b-z]",
