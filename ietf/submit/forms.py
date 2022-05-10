@@ -669,7 +669,7 @@ class SubmissionBaseUploadForm(forms.Form):
 
         if self.cleaned_data.get('txt') or self.cleaned_data.get('xml'):
             # check group
-            self.group = self.deduce_group()
+            self.group = self.deduce_group(self.filename)
             # check existing
             existing = Submission.objects.filter(name=self.filename, rev=self.revision).exclude(state__in=("posted", "cancel", "waiting-for-draft"))
             if existing:
@@ -712,9 +712,9 @@ class SubmissionBaseUploadForm(forms.Form):
         if sum(s.file_size for s in submissions if s.file_size) > max_size * 1024 * 1024:
             raise forms.ValidationError("Max uploaded amount %s has been reached for today (maximum is %s MB)." % (which, max_size))
 
-    def deduce_group(self):
+    @staticmethod
+    def deduce_group(name):
         """Figure out group from name or previously submitted draft, returns None if individual."""
-        name = self.filename
         existing_draft = Document.objects.filter(name=name, type="draft")
         if existing_draft:
             group = existing_draft[0].group
