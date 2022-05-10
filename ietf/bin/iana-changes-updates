@@ -52,7 +52,7 @@ syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 
 from ietf.sync.iana import fetch_changes_json, parse_changes_json, update_history_with_changes
 
-syslog.syslog("Updating history log with new changes from IANA from %s, period %s - %s" % (settings.IANA_SYNC_CHANGES_URL, start, end))
+syslog.syslog(f"Updating history log with new changes from IANA from {settings.IANA_SYNC_CHANGES_URL}, period {start} - {end}")
 
 t = start
 while t < end:
@@ -67,7 +67,7 @@ while t < end:
     added_events, warnings = update_history_with_changes(changes, send_email=options.send_email)
 
     for e in added_events:
-        syslog.syslog("Added event for %s %s: %s (parsed json: %s)" % (e.doc_id, e.time, e.desc, e.json))
+        syslog.syslog(f"Added event for {e.doc_id} {e.time}: {e.desc} (parsed json: {e.json})")
 
     for w in warnings:
         syslog.syslog("WARNING: %s" % w)

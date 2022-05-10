@@ -51,9 +51,9 @@ if len(args) < 3:
     sys.exit(1)
 
 draft = args[0]
-if re.search("\.txt$", draft):
+if re.search(r"\.txt$", draft):
     draft = draft[:-4]
-if re.search("-\d\d$", draft):
+if re.search(r"-\d\d$", draft):
     draft = draft[:-3]
 
 if len(args) == 1:

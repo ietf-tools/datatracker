@@ -25,4 +25,4 @@ system = Person.objects.get(name="(System)")
 for sub in expirable_submissions(older_than_days=30):
     expire_submission(sub, system)
 
-    syslog.syslog("Expired submission %s of %s-%s" % (sub.pk, sub.name, sub.rev))
+    syslog.syslog(f"Expired submission {sub.pk} of {sub.name}-{sub.rev}")

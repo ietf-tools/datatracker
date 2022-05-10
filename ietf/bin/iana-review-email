@@ -24,7 +24,7 @@ msg = sys.stdin.read()
 
 doc_name, review_time, by, comment = parse_review_email(msg)
 
-syslog.syslog(u"Read IANA review email for %s at %s by %s" % (doc_name, review_time, by))
+syslog.syslog(f"Read IANA review email for {doc_name} at {review_time} by {by}")
 
 if by.name == "(System)":
     syslog.syslog("WARNING: person responsible for email does not have a IANA role")

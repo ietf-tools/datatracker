@@ -45,7 +45,7 @@ try:
                     and doc.expires < datetime.datetime.today() + datetime.timedelta(1)):
                 send_expire_notice_for_draft(doc)
                 expire_draft(doc)
-                syslog.syslog("  Expired draft %s-%s" % (doc.name, doc.rev))
+                syslog.syslog(f"  Expired draft {doc.name}-{doc.rev}")
 
     syslog.syslog("Cleaning up draft files")
     clean_up_draft_files()

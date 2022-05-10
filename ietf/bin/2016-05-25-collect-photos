@@ -95,38 +95,38 @@ fix_missing_surnames(old_images)
 interesting_persons = set(Person.objects.all())
 
 name_alias = {
-    u"andy":     [u"andrew", ],
-    u"ben":      [u"benjamin", ],
-    u"bill":     [u"william", ],
-    u"bob":      [u"robert", ],
-    u"chris":    [u"christopher", u"christian"],
-    u"dan":      [u"daniel", ],
-    u"dave":     [u"david", ],
-    u"dick":     [u"richard", ],
-    u"fred":     [u"alfred", ],
-    u"geoff":    [u"geoffrey", ],
-    u"jake":     [u"jacob", ],
-    u"jerry":    [u"gerald", ],
-    u"jim":      [u"james", ],
-    u"joe":      [u"joseph", ],
-    u"jon":      [u"jonathan", ],
-    u"mike":     [u"michael", ],
-    u"ned":      [u"edward", ],
-    u"pete":     [u"peter", ],
-    u"ron":      [u"ronald", ],
-    u"russ":     [u"russel", ],
-    u"steve":    [u"stephen", ],
-    u"ted":      [u"edward", ],
-    u"terry":    [u"terence", ],
-    u"tom":      [u"thomas", ],
-    u"wes":      [u"wesley", ],
-    u"will":     [u"william", ],
+    "andy":     ["andrew", ],
+    "ben":      ["benjamin", ],
+    "bill":     ["william", ],
+    "bob":      ["robert", ],
+    "chris":    ["christopher", "christian"],
+    "dan":      ["daniel", ],
+    "dave":     ["david", ],
+    "dick":     ["richard", ],
+    "fred":     ["alfred", ],
+    "geoff":    ["geoffrey", ],
+    "jake":     ["jacob", ],
+    "jerry":    ["gerald", ],
+    "jim":      ["james", ],
+    "joe":      ["joseph", ],
+    "jon":      ["jonathan", ],
+    "mike":     ["michael", ],
+    "ned":      ["edward", ],
+    "pete":     ["peter", ],
+    "ron":      ["ronald", ],
+    "russ":     ["russel", ],
+    "steve":    ["stephen", ],
+    "ted":      ["edward", ],
+    "terry":    ["terence", ],
+    "tom":      ["thomas", ],
+    "wes":      ["wesley", ],
+    "will":     ["william", ],
 
-    u"beth":     [u"elizabeth", ],
-    u"liz":      [u"elizabeth", ],
-    u"lynn":     [u"carolyn", ],
-    u"pat":      [u"patricia", u"patrick", ],
-    u"sue":      [u"susan", ],
+    "beth":     ["elizabeth", ],
+    "liz":      ["elizabeth", ],
+    "lynn":     ["carolyn", ],
+    "pat":      ["patricia", "patrick", ],
+    "sue":      ["susan", ],
 }
 # Add lookups from long to short, from the initial set
 for key,value in name_alias.items():
@@ -175,7 +175,7 @@ for person in sorted(list(interesting_persons),key=lambda x:x.last_name()+x.asci
     first = first.lower()
     last  = last. lower()
     if not substr_pattern:
-        substr_pattern = slugify("%s %s" % (last, first))
+        substr_pattern = slugify(f"{last} {first}")
 
     if first in ['', '<>'] or last in ['', '<>']:
         continue
@@ -184,21 +184,21 @@ for person in sorted(list(interesting_persons),key=lambda x:x.last_name()+x.asci
 
     candidates = [x for x in old_images if x.name.lower().startswith(substr_pattern)]
     # Also check the reverse the name order (necessary for Deng Hui, for instance)
-    substr_pattern = slugify("%s %s" % (first, last))
+    substr_pattern = slugify(f"{first} {last}")
     #debug.show('2, substr_pattern')
     prev_len = len(candidates)
     candidates += [x for x in old_images if x.name.lower().startswith(substr_pattern)]
     if prev_len < len(candidates) :
-        print("   Found match with '%s %s' for '%s %s'" % (last, first, first, last, ))
+        print(f"   Found match with '{last} {first}' for '{first} {last}'")
     # If no joy, try a short name
     if first in name_alias:
         prev_len = len(candidates)
         for alias in name_alias[first]:
-            substr_pattern = slugify("%s %s" % (last, alias))
+            substr_pattern = slugify(f"{last} {alias}")
             #debug.show('3, substr_pattern')
             candidates += [x for x in old_images if x.name.lower().startswith(substr_pattern)]
         if prev_len < len(candidates):
-            print("   Found match with '%s %s' for '%s %s'" % (alias, last, first, last, ))
+            print(f"   Found match with '{alias} {last}' for '{first} {last}'")
 
 
 #     # If still no joy, try with Person.plain_name() (necessary for Donald Eastlake)
@@ -291,6 +291,6 @@ for file in old_image_files:
     ):
         if not str(file).decode('utf8') in processed_files:
             not_processed += 1
-            print(u"Not processed: "+str(file).decode('utf8'))
+            print("Not processed: "+str(file).decode('utf8'))
 print("")
 print("Not processed: %s files" % not_processed)

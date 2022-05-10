@@ -8213,9 +8213,9 @@ def _main():
             else:
                 if len(unknown_emails)==1 and len(tracker_persons-rfced_persons)==1:
                     p = list(tracker_persons-rfced_persons)[0]
-                    probable_email_match.add(u"%s is probably %s (%s) : %s "%(list(unknown_emails)[0], p, p.pk, rfc_num))
+                    probable_email_match.add("%s is probably %s (%s) : %s "%(list(unknown_emails)[0], p, p.pk, rfc_num))
                 elif len(unknown_emails)==len(unknown_persons):
-                    probable_email_match.add(u"%s are probably %s : %s"%(unknown_emails,[(p.ascii,p.pk) for p in unknown_persons],rfc_num))
+                    probable_email_match.add("%s are probably %s : %s"%(unknown_emails,[(p.ascii,p.pk) for p in unknown_persons],rfc_num))
                 else:
                     probable_duplicates.append((tracker_persons^rfced_persons,rfc_num))
     
@@ -8276,7 +8276,7 @@ def _main():
                         if email_found:    
                             probable_duplicates.append((set([p,email_found.person]),rfc_num))
                         else:
-                            probable_email_match.add(u"%s is probably %s (%s) : %s"%(email_candidate, p, p.pk, rfc_num))
+                            probable_email_match.add("%s is probably %s (%s) : %s"%(email_candidate, p, p.pk, rfc_num))
              
         if args.verbose:
             if use_rfc_data:

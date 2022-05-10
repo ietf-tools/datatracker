@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # -*- Python -*-
 #
 '''
@@ -39,7 +38,7 @@ def permission_names_to_objects(names):
             result.append(Permission.objects.get(content_type__app_label=app_label,
                                                  codename=codename))
         except Permission.DoesNotExist:
-            print ("NO SUCH PERMISSION: %s, %s" % (app_label, codename))
+            print (f"NO SUCH PERMISSION: {app_label}, {codename}")
             raise
 
     return result

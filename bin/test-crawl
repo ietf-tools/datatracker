@@ -188,7 +188,7 @@ def check_html_valid(url, response, args):
             except Exception as e:
                 for err in parser.errors:
                     pos, _, _ = err
-                    tags.append("WARN invalid html at line, pos {}: {}".format(pos, e))
+                    tags.append(f"WARN invalid html at line, pos {pos}: {e}")
                 warnings += 1
 
 def skip_extract_from(url):
@@ -408,7 +408,7 @@ if __name__ == "__main__":
                         log("=============")
 
             else:
-                tags.append("FAIL  (from {})".format(referrer))
+                tags.append(f"FAIL  (from {referrer})")
                 if not url.startswith("/person/"):  # FIXME: those fail sometimes
                     errors += 1
 

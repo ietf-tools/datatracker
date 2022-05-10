@@ -45,12 +45,12 @@ charterdir = Path(settings.CHARTER_PATH)
 for file in charterdir.files("charter-ietf-*.txt"):
     fname = file.name
     ftime = Datetime.fromtimestamp(file.mtime)
-    match = re.search("^(?P<name>[a-z0-9-]+)-(?P<rev>\d\d-\d\d)\.txt$", fname)
+    match = re.search(r"^(?P<name>[a-z0-9-]+)-(?P<rev>\d\d-\d\d)\.txt$", fname)
     if match:
         name = match.group("name")
         rev = match.group("rev")
     else:
-        match = re.search("^(?P<name>[a-z0-9-]+)-(?P<rev>\d\d)\.txt$", fname)
+        match = re.search(r"^(?P<name>[a-z0-9-]+)-(?P<rev>\d\d)\.txt$", fname)
         if match:
             name = match.group("name")
             rev = match.group("rev")

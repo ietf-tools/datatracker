@@ -30,7 +30,7 @@ except requests.Timeout as exc:
     sys.exit(1)
 drafts, warnings = parse_queue(io.StringIO(response.text))
 for w in warnings:
-    log(u"Warning: %s" % w)
+    log("Warning: %s" % w)
 
 if len(drafts) < MIN_QUEUE_RESULTS:
     log("Not enough results, only %s" % len(drafts))
@@ -38,7 +38,7 @@ if len(drafts) < MIN_QUEUE_RESULTS:
 
 changed, warnings = update_drafts_from_queue(drafts)
 for w in warnings:
-    log(u"Warning: %s" % w)
+    log("Warning: %s" % w)
 
 for c in changed:
-    log(u"Updated %s" % c)
+    log("Updated %s" % c)

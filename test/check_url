@@ -51,4 +51,3 @@ for url in sys.argv[1:]:
         else:
             print "\nNo difference found"
 
-        

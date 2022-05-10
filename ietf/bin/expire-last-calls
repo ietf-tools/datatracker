@@ -29,6 +29,6 @@ drafts = get_expired_last_calls()
 for doc in drafts:
     try:
         expire_last_call(doc)
-        syslog.syslog("Expired last call for %s (id=%s)" % (doc.file_tag(), doc.pk))
+        syslog.syslog(f"Expired last call for {doc.file_tag()} (id={doc.pk})")
     except Exception as e:
-        syslog.syslog(syslog.LOG_ERR, "ERROR: Failed to expire last call for %s (id=%s)" % (doc.file_tag(), doc.pk))
+        syslog.syslog(syslog.LOG_ERR, f"ERROR: Failed to expire last call for {doc.file_tag()} (id={doc.pk})")
