@@ -16,6 +16,7 @@ datatracker.sublime-workspace
 /env
 /ghostdriver.log
 /htmlcov
+/ietf/static/dist-neue
 /latest-coverage.json
 /media
 /node_modules
