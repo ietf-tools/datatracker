@@ -40,7 +40,6 @@ import debug     # pyflakes: ignore
 
 import datetime
 import getopt
-import io
 import os
 import os.path
 import re

@@ -4,7 +4,7 @@
 # It was turned into a management command by Russ Housley <housley@vigisec.com>.
 
 import datetime
-import io
+
 import os
 import re
 import shutil

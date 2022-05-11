@@ -2,7 +2,6 @@
 
 
 import datetime
-import io
 import logging                          # pyflakes:ignore
 import os
 import re

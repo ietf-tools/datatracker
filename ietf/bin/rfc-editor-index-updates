@@ -4,7 +4,6 @@
 # invoked before start
 
 import datetime
-import io
 import os
 import requests
 import sys

@@ -2,7 +2,6 @@
 
 
 import flufl.bounce
-import io
 import mailbox
 import sys
 

@@ -3,7 +3,6 @@
 
 import datetime
 import email
-import io
 import os
 import re
 import sys

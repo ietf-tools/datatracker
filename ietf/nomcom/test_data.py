@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
 
 
-import io
 import tempfile
 import os
 

@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
 
 
-import io
 import os.path
 import shutil
 import types

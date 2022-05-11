@@ -3,7 +3,7 @@
 # -*- coding: utf-8 -*-
 
 
-import io
+
 import sys
 import os
 import os.path

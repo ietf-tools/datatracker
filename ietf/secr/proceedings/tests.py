@@ -2,7 +2,6 @@
 
 
 import debug                            # pyflakes:ignore
-import io
 import json
 import os
 

@@ -2,7 +2,6 @@
 
 
 # Python imports
-import io
 import os
 
 # Django imports

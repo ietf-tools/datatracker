@@ -2,7 +2,6 @@
 
 import collections
 import gzip
-import io
 import re
 import sys
 

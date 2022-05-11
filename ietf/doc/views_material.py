@@ -2,7 +2,7 @@
 
 
 # views for managing group materials (slides, ...)
-import io
+
 import os
 import re
 

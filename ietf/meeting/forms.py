@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
 
 
-import io
 import os
 import datetime
 import json

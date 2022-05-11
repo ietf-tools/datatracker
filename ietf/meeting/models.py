@@ -4,7 +4,6 @@
 # old meeting models can be found in ../proceedings/models.py
 
 import datetime
-import io
 import os
 import pytz
 import random

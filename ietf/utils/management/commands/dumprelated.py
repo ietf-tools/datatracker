@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2018-2020, All Rights Reserved
 
 
-import io
 import warnings
 from collections import OrderedDict
 

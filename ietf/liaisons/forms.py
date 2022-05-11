@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
 
 
-import io
+
 import datetime, os
 import operator
 

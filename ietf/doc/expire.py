@@ -18,7 +18,7 @@ from ietf.doc.utils import add_state_change_event, update_action_holders
 from ietf.mailtrigger.utils import gather_address_lists
 
 
-nonexpirable_states: Optional[list[State]] = None
+nonexpirable_states: Optional[List[State]] = None
 
 def expirable_drafts(queryset=None):
     """Return a queryset with expirable drafts."""

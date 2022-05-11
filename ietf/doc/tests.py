@@ -1827,8 +1827,7 @@ class DocTestCase(TestCase):
         self.assertNotContains(r, "Request publication")
 
     def _parse_bibtex_response(self, response) -> dict:
-        parser = bibtexparser.bparser.BibTexParser()
-        parser.homogenise_fields = False  # do not modify field names (e.g., turns "url" into "link" by default)
+        parser = bibtexparser.bparser.BibTexParser(common_strings=True)
         return bibtexparser.loads(response.content.decode(), parser=parser).get_entry_dict()
 
     @override_settings(RFC_EDITOR_INFO_BASE_URL='https://www.rfc-editor.ietf.org/info/')
@@ -1849,7 +1848,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['number'],   num)
         self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     '2010')
-        self.assertEqual(entry['month'],    'oct')
+        self.assertEqual(entry['month'],    'October')
         self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
         #
         self.assertNotIn('day', entry)
@@ -1871,7 +1870,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['number'],   num)
         self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     '1990')
-        self.assertEqual(entry['month'],    'apr')
+        self.assertEqual(entry['month'],    'April')
         self.assertEqual(entry['day'],      '1')
         self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
 
@@ -1884,7 +1883,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['note'],     'Work in Progress')
         self.assertEqual(entry['number'],   docname)
         self.assertEqual(entry['year'],     str(draft.pub_date().year))
-        self.assertEqual(entry['month'],    draft.pub_date().strftime('%b').lower())
+        self.assertEqual(entry['month'],    draft.pub_date().strftime('%b'))
         self.assertEqual(entry['day'],      str(draft.pub_date().day))
         self.assertEqual(entry['url'],      f'https://datatracker.ietf.org/doc/html/{docname}')
         #

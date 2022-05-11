@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2015-2020, All Rights Reserved
 
 
-import io
 import re
 
 def pdf_pages(filename):

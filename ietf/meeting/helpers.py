@@ -3,7 +3,6 @@
 
 from collections import defaultdict
 import datetime
-import io
 import os
 import re
 from tempfile import mkstemp

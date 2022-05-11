@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
 
 
-import io
 import subprocess, hashlib
 from django.utils.encoding import force_bytes
 

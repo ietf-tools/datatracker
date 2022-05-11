@@ -3,7 +3,6 @@ import os
 import sys
 import time as timeutils
 import inspect
-import six
 from typing import Callable
 
 try:

@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
 
 
-import io
+
 import os
 
 import debug    # pyflakes:ignore

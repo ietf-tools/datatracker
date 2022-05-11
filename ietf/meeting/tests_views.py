@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2009-2020, All Rights Reserved
 import datetime
-import io
 import json
 import os
 import random

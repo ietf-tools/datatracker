@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
 
 
-import io
 
 from django.conf import settings
 from django.utils.encoding import force_bytes

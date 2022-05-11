@@ -2,7 +2,6 @@
 
 
 import ast
-import io
 import os
 from pyflakes import checker, messages
 import sys

@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
 
 
-import io
 import sys
 from textwrap import dedent
 

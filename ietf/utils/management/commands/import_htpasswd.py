@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
-import io
 import sys
 
 from textwrap import dedent

@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2012-2021, All Rights Reserved
 
 
-import io
 import os
 
 from django.db.models import Q

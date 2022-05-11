@@ -3,7 +3,6 @@
 
 # utilities for constructing agendas for IESG telechats
 
-import io
 import datetime
 from collections import OrderedDict
 

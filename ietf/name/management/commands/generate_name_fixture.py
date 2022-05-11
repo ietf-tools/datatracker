@@ -4,7 +4,7 @@
 # simple script for exporting name related base data for the tests
 
 import inspect
-import io
+
 import os, sys
 
 from typing import Any, List        # pyflakes:ignore
