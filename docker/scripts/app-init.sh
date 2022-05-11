@@ -2,11 +2,11 @@
 
 WORKSPACEDIR="/workspace"
 
-service rsyslog start
+sudo service rsyslog start
 
 # fix permissions for npm-related paths
 WORKSPACE_UID_GID=$(stat --format="%u:%g" "$WORKSPACEDIR")
-chown -R "$WORKSPACE_UID_GID" "$WORKSPACEDIR/.parcel-cache"
+sudo chown -R "$WORKSPACE_UID_GID" "$WORKSPACEDIR/.parcel-cache"
 
 # Build node packages that requrie native compilation
 echo "Compiling native node packages..."
@@ -71,7 +71,8 @@ fi
 
 # Run memcached
 
-/usr/bin/memcached -u root -d
+echo "Starting memcached..."
+/usr/bin/memcached -u vscode -d
 
 # Initial checks
 
@@ -99,6 +100,6 @@ if [ -z "$EDITOR_VSCODE" ]; then
         bash -c "$*"
         CODE=$?
     fi
-    service rsyslog stop
+    sudo service rsyslog stop
     exit $CODE
 fi
