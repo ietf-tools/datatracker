@@ -89,8 +89,8 @@ def make_immutable_base_data():
     iana = create_group(name="IANA", acronym="iana", type_id="iana")
     create_person(iana, "auth", name="Iña Iana", username="iana", email_address="iana@ia.na")
 
-    rfc_editor = create_group(name="RFC Editor", acronym="rfceditor", type_id="rfcedtyp")
-    create_person(rfc_editor, "auth", name="Rfc Editor", username="rfc", email_address="rfc@edit.or")
+    rpc = create_group(name="RFC Production Center", acronym="rpc", type_id="rfcedtyp")
+    create_person(rpc, "auth", name="Rfc Editor", username="rfc", email_address="rfc@edit.or")
 
     iesg = create_group(name="Internet Engineering Steering Group", acronym="iesg", type_id="ietf", parent=ietf) # pyflakes:ignore
     irsg = create_group(name="Internet Research Steering Group", acronym="irsg", type_id="irtf", parent=irtf) # pyflakes:ignore
