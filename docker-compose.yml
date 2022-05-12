@@ -75,6 +75,7 @@ services:
             UPDATE_REQUIREMENTS: 1
         command:
             - '--loglevel=INFO'
+        network_mode: 'service:mq'
 
 volumes:
     mariadb-data:

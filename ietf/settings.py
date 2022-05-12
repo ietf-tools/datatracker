@@ -1171,7 +1171,7 @@ DEFAULT_REQUESTS_TIMEOUT = 20  # seconds
 
 # Celery configuration
 CELERY_TIMEZONE = 'UTC'
-CELERY_BROKER_URL = 'amqp://mq/'
+CELERY_BROKER_URL = 'amqp:///'
 CELERY_ACKS_LATE = True  # failed tasks will be retried; keep tasks idempotent or disable per-task
 
 
