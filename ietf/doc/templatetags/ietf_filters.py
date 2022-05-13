@@ -729,10 +729,10 @@ def action_holder_badge(action_holder):
     age_limit = settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS
     age = (datetime.datetime.now() - action_holder.time_added).days
     if age > age_limit:
-        return mark_safe('<span class="badge bg-danger" title="Goal is &lt;%d days">for %d day%s</span>' % (
-            age_limit,
+        return mark_safe('<span class="text-danger"><i class="bi bi-hourglass-split" title="In state for %d day%s; goal is &lt;%d days."></i></span>' % (
             age,
-            's' if age != 1 else ''))
+            's' if age != 1 else '',
+            age_limit))
     else:
         return ''  # no alert needed
 
