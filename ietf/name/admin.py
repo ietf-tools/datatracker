@@ -18,7 +18,7 @@ from ietf.name.models import (
 from ietf.stats.models import CountryAlias
 
 class NameAdmin(admin.ModelAdmin):
-    list_display = ["slug", "name", "desc", "used"]
+    list_display = ["slug", "name", "desc", "used", "order"]
     search_fields = ["slug", "name"]
     prepopulate_from = { "slug": ("name",) }
 
