@@ -86,162 +86,155 @@
                 span {{lnk.label}}
 </template>
 
-<script>
+<script setup>
 import { computed, toRefs } from 'vue'
 import { DateTime } from 'luxon'
 import sortBy from 'lodash/sortBy'
 import reduce from 'lodash/reduce'
 import {
   NCheckbox,
-  NCheckboxGroup,
   NPopover
 } from 'naive-ui'
 
-export default {
-  components: {
-    NCheckbox,
-    NCheckboxGroup,
-    NPopover
+// PROPS
+
+const props = defineProps({
+  events: {
+    type: Array,
+    required: true
   },
-  props: {
-    events: {
-      type: Array,
-      required: true
-    },
-    meetingNumber: {
-      type: String,
-      required: true
-    },
-    pickerMode: {
-      type: Boolean,
-      default: false
-    },
-    useCodiMd: {
-      type: Boolean,
-      default: false
+  meetingNumber: {
+    type: String,
+    required: true
+  },
+  pickerMode: {
+    type: Boolean,
+    default: false
+  },
+  useCodiMd: {
+    type: Boolean,
+    default: false
+  }
+})
+
+const { events, meetingNumber, pickerMode, useCodiMd } = toRefs(props)
+
+// COMPUTED
+
+const meetingEvents = computed(() => {
+  return reduce(sortBy(events.value, 'adjustedStartDate'), (acc, item) => {
+    const itemTimeSlot = `${item.adjustedStart.toFormat('HH:mm')} - ${item.adjustedEnd.toFormat('HH:mm')}`
+
+    // -> Add date row
+    const itemDate = DateTime.fromISO(item.adjustedStartDate)
+    if (itemDate.toISODate() !== acc.lastDate) {
+      acc.result.push({
+        id: item.id,
+        key: `day-${itemDate.toISODate()}`,
+        displayType: 'day',
+        date: itemDate.toLocaleString(DateTime.DATE_HUGE),
+        cssClasses: 'agenda-table-display-day'
+      })
     }
-  },
-  setup (props) {
-    const { events, meetingNumber, pickerMode, useCodiMd } = toRefs(props)
+    acc.lastDate = itemDate.toISODate()
 
-    const meetingEvents = computed(() => {
-      return reduce(sortBy(events.value, 'adjustedStartDate'), (acc, item) => {
-        const itemTimeSlot = `${item.adjustedStart.toFormat('HH:mm')} - ${item.adjustedEnd.toFormat('HH:mm')}`
+    // -> Add session header row
+    if (item.type === 'regular' && acc.lastTypeName !== `${item.type}-${item.name}`) {
+      acc.result.push({
+        key: `sesshd-${item.id}`,
+        displayType: 'session-head',
+        timeslot: itemTimeSlot,
+        name: `${item.adjustedStart.toFormat('cccc')} ${item.name}`,
+        cssClasses: 'agenda-table-display-session-head'
+      })
+    }
+    acc.lastTypeName = `${item.type}-${item.name}`
 
-        // -> Add date row
-        const itemDate = DateTime.fromISO(item.adjustedStartDate)
-        if (itemDate.toISODate() !== acc.lastDate) {
-          acc.result.push({
-            id: item.id,
-            key: `day-${itemDate.toISODate()}`,
-            displayType: 'day',
-            date: itemDate.toLocaleString(DateTime.DATE_HUGE),
-            cssClasses: 'agenda-table-display-day'
-          })
-        }
-        acc.lastDate = itemDate.toISODate()
-
-        // -> Add session header row
-        if (item.type === 'regular' && acc.lastTypeName !== `${item.type}-${item.name}`) {
-          acc.result.push({
-            key: `sesshd-${item.id}`,
-            displayType: 'session-head',
-            timeslot: itemTimeSlot,
-            name: `${item.adjustedStart.toFormat('cccc')} ${item.name}`,
-            cssClasses: 'agenda-table-display-session-head'
-          })
-        }
-        acc.lastTypeName = `${item.type}-${item.name}`
-
-        // -> Populate event links
-        const links = []
-        if (item.showAgenda) {
-          links.push({
-            id: `lnk-${item.id}-tar`,
-            label: 'Download meeting materials as .tar archive',
-            icon: 'file-zip',
-            href: `/meeting/${meetingNumber.value}/agenda/${item.acronym}-drafts.tgz`
-          })
-          links.push({
-            id: `lnk-${item.id}-pdf`,
-            label: 'Download meeting materials as PDF file',
-            icon: 'file-pdf',
-            href: `/meeting/${meetingNumber.value}/agenda/${item.acronym}-drafts.pdf`
-          })
-          if (useCodiMd) {
-            links.push({
-              id: `lnk-${item.id}-note`,
-              label: 'Notepad for note-takers',
-              icon: 'journal-text',
-              href: `https://notes.ietf.org/notes-ietf-${meetingNumber.value}-${item.type === 'plenary' ? 'plenary' : item.acronym}`
-            })
-          }
-          links.push({
-            id: `lnk-${item.id}-logs`,
-            label: `Chat logs for ${item.acronym}`,
-            icon: 'chat-left-text'
-          })
-          links.push({
-            id: `lnk-${item.id}-audio`,
-            label: `Audio recording for ${item.adjustedStart.toFormat('ff')}`,
-            icon: 'soundwave'
-          })
-          links.push({
-            id: `lnk-${item.id}-video`,
-            label: `Video recording for ${item.adjustedStart.toFormat('ff')}`,
-            icon: 'file-play'
-          })
-          links.push({
-            id: `lnk-${item.id}-rec`,
-            label: 'Session recording',
-            icon: 'film'
-          })
-        }
-
-        // -> Add event item
-        acc.result.push({
-          key: item.id,
-          timeslot: itemTimeSlot,
-          start: item.adjustedStart,
-          end: item.adjustedEnd,
-          name: item.name,
-          sessionName: item.sessionName,
-          room: item.room,
-          location: item.location,
-          acronym: item.acronym,
-          groupAcronym: item.groupParent?.acronym,
-          groupParentName: item.groupParent?.name,
-          groupParentDescription: item.groupParent?.description,
-          groupName: item.groupName,
-          isBoF: item.isBoF,
-          type: item.type,
-          isSessionEvent: item.type === 'regular',
-          status: item.status,
-          links,
-          displayType: 'event',
-          cssClasses: [
-            `agenda-table-display-event`,
-            `agenda-table-status-${item.status}`,
-            `agenda-table-type-${item.type}`
-          ].join(' ')
+    // -> Populate event links
+    const links = []
+    if (item.showAgenda) {
+      links.push({
+        id: `lnk-${item.id}-tar`,
+        label: 'Download meeting materials as .tar archive',
+        icon: 'file-zip',
+        href: `/meeting/${meetingNumber.value}/agenda/${item.acronym}-drafts.tgz`
+      })
+      links.push({
+        id: `lnk-${item.id}-pdf`,
+        label: 'Download meeting materials as PDF file',
+        icon: 'file-pdf',
+        href: `/meeting/${meetingNumber.value}/agenda/${item.acronym}-drafts.pdf`
+      })
+      if (useCodiMd) {
+        links.push({
+          id: `lnk-${item.id}-note`,
+          label: 'Notepad for note-takers',
+          icon: 'journal-text',
+          href: `https://notes.ietf.org/notes-ietf-${meetingNumber.value}-${item.type === 'plenary' ? 'plenary' : item.acronym}`
         })
+      }
+      links.push({
+        id: `lnk-${item.id}-logs`,
+        label: `Chat logs for ${item.acronym}`,
+        icon: 'chat-left-text'
+      })
+      links.push({
+        id: `lnk-${item.id}-audio`,
+        label: `Audio recording for ${item.adjustedStart.toFormat('ff')}`,
+        icon: 'soundwave'
+      })
+      links.push({
+        id: `lnk-${item.id}-video`,
+        label: `Video recording for ${item.adjustedStart.toFormat('ff')}`,
+        icon: 'file-play'
+      })
+      links.push({
+        id: `lnk-${item.id}-rec`,
+        label: 'Session recording',
+        icon: 'film'
+      })
+    }
 
-        return acc
-      }, {
-        lastDate: null,
-        lastTypeName: null,
-        result: []
-      }).result
+    // -> Add event item
+    acc.result.push({
+      key: item.id,
+      timeslot: itemTimeSlot,
+      start: item.adjustedStart,
+      end: item.adjustedEnd,
+      name: item.name,
+      sessionName: item.sessionName,
+      room: item.room,
+      location: item.location,
+      acronym: item.acronym,
+      groupAcronym: item.groupParent?.acronym,
+      groupParentName: item.groupParent?.name,
+      groupParentDescription: item.groupParent?.description,
+      groupName: item.groupName,
+      isBoF: item.isBoF,
+      type: item.type,
+      isSessionEvent: item.type === 'regular',
+      status: item.status,
+      links,
+      displayType: 'event',
+      cssClasses: [
+        `agenda-table-display-event`,
+        `agenda-table-status-${item.status}`,
+        `agenda-table-type-${item.type}`
+      ].join(' ')
     })
 
-    const showMaterials = item => {}
+    return acc
+  }, {
+    lastDate: null,
+    lastTypeName: null,
+    result: []
+  }).result
+})
 
-    return {
-      meetingEvents,
-      showMaterials
-    }
-  }
-}
+// METHODS
+
+const showMaterials = item => {}
+
 </script>
 
 <style lang="scss">

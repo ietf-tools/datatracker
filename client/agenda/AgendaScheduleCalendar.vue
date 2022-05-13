@@ -40,6 +40,64 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='drawerHeight')
       full-calendar(
         :options='calendarOptions'
         )
+      n-modal(v-model:show='state.showEventDetails')
+        n-card.agenda-calendar-eventdetails(
+          :bordered='false'
+          segmented
+          role='dialog'
+          aria-modal='true'
+          v-if='state.eventDetails'
+          )
+          template(#header-extra)
+            .detail-header
+              i.bi.bi-clock-history
+              strong {{state.eventDetails.start}} - {{state.eventDetails.end}}
+              n-button.ms-4.detail-close(
+                ghost
+                color='gray'
+                strong
+                @click='state.showEventDetails = false'
+                )
+                i.bi.bi-x
+          template(#header)
+            .detail-header
+              i.bi.bi-calendar-check
+              span {{state.eventDetails.day}}
+          template(#action)
+            .detail-action
+              n-button.me-2(
+                ghost
+                color='gray'
+                strong 
+                )
+                i.bi.bi-collection.me-2
+                span Meeting Materials
+              n-button.me-2(
+                ghost
+                color='gray'
+                strong 
+                )
+                i.bi.bi-journal-text.me-2 
+                span Notepad
+          .detail-content
+            .detail-title
+              h6
+                i.bi.bi-arrow-right-square
+                span {{state.eventDetails.title}}
+              .detail-location
+                i.bi.bi-geo-alt-fill
+                n-popover(
+                  v-if='state.eventDetails.locationName'
+                  trigger='hover'
+                  )
+                  template(#trigger)
+                    span.badge {{state.eventDetails.locationShort}}
+                  span {{state.eventDetails.locationName}}
+                span {{state.eventDetails.room}}
+            .detail-text
+              iframe(
+                src='/meeting/106/materials/agenda-106-wpack-06'
+                )
 </template>
 
 <script setup>
@@ -48,9 +106,12 @@ import { DateTime } from 'luxon'
 import {
   NButton,
   NButtonGroup,
+  NCard,
   NDivider,
   NDrawer,
   NDrawerContent,
+  NModal,
+  NPopover,
   useMessage
 } from 'naive-ui'
 
@@ -90,6 +151,13 @@ const emit = defineEmits(['update:shown', 'update:timezone', 'toggleFilterDrawer
 // STATE
 
 const isShown = ref(props.shown)
+const state = reactive({
+  showEventDetails: false,
+  eventDetails: {
+    start: '00:00',
+    end: '00:00'
+  }
+})
 const calendarOptions = reactive({
   plugins: [ bootstrap5Plugin, timeGridPlugin, interactionPlugin, luxonPlugin ],
   initialView: 'timeGridWeek',
@@ -106,6 +174,26 @@ const calendarOptions = reactive({
   validRange: {
     start: null,
     end: null
+  },
+  expandRows: true,
+  height: 'auto',
+  eventTimeFormat: {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  },
+  eventClick: (info) => {
+    const ev = info.event.extendedProps
+    state.eventDetails = {
+      start: ev.adjustedStart.toFormat('T'),
+      end: ev.adjustedEnd.toFormat('T'),
+      day: ev.adjustedStart.toFormat('DDDD'),
+      locationShort: ev.location?.short,
+      locationName: ev.location?.name,
+      room: ev.room,
+      title: info.event.title
+    }
+    state.showEventDetails = true
   }
 })
 const drawerHeight = Math.round(window.innerHeight * .8)
@@ -147,7 +235,6 @@ function refreshData () {
   let nowDate = DateTime.now()
 
   calendarOptions.events = props.events.map(ev => {
-    console.info(ev)
     // -> Determine boundaries
     if (ev.adjustedStart.hour < earliestHour) {
       earliestHour = ev.adjustedStart.hour
@@ -166,8 +253,9 @@ function refreshData () {
       id: ev.id,
       start: ev.adjustedStart.toJSDate(),
       end: ev.adjustedEnd.toJSDate(),
-      title: ev.name,
-      classNames: [`event-area-${ev.groupParent.acronym}`]
+      title: ev.type === 'regular' ? `${ev.groupName} (${ev.acronym})` : ev.name,
+      classNames: [`event-area-${ev.groupParent.acronym}`],
+      extendedProps: ev
     }
   })
 
@@ -228,12 +316,102 @@ function close () {
     }
   }
 
+  &-content {
+    height: 100%;
+  }
+
+  &-eventdetails {
+    width: 90vw;
+    max-width: 1000px;
+
+    .bi {
+      font-size: 20px;
+      color: $indigo;
+    }
+
+    .detail-header {
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+
+      > .bi {
+        margin-right: 12px;
+      }
+    }
+
+    .detail-title {
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      .bi {
+        margin-right: 12px;
+      }
+
+      h6 {
+        display: flex;
+        align-items: center;
+      }
+    }
+
+    .detail-close .bi {
+      font-size: 20px;
+      color: inherit;
+    }
+
+    .detail-location {
+      display: flex;
+      align-items: center;
+      background-color: rgba($indigo, .05);
+      padding: 5px 12px;
+      border-radius: 5px;
+
+      .badge {
+        width: 30px;
+        font-size: .7em;
+        background-color: $yellow-200;
+        border-bottom: 1px solid $yellow-500;
+        border-right: 1px solid $yellow-500;
+        color: $yellow-900;
+        text-transform: uppercase;
+        font-weight: 700;
+        margin-right: 10px;
+        text-shadow: 1px 1px $yellow-100;
+      }
+    }
+
+    .detail-text {
+      padding: 12px;
+      background-color: #333940;
+      color: #FFF;
+      margin-top: 12px;
+      border-radius: 5px;
+
+      > iframe {
+        width: 100%;
+        min-height: 300px;
+        background-color: #333940;
+        overflow: auto;
+        border: none;
+      }
+    }
+
+    .detail-action {
+      .bi {
+        color: inherit;
+        font-size: 16px;
+      }
+    }
+  }
+
   .fc-v-event {
     background-color: #333940;
     border: 1px solid #333940;
     border-left-width: 5px;
     background-image: linear-gradient(to top, #333940, #525a62);
     padding-left: 5px;
+    cursor: pointer;
   }
 
   .event-area-art {

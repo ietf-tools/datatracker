@@ -185,19 +185,9 @@ import {
   NBadge,
   NButtonGroup,
   NButton,
-  NCheckbox,
-  NCheckboxGroup,
-  NDataTable,
   NDivider,
-  NDrawer,
-  NDrawerContent,
   NDropdown,
-  NIcon,
-  NInput,
-  NPopover,
   NSelect,
-  NTabPane,
-  NTabs,
   useMessage
 } from 'naive-ui'
 import AgendaFilter from './AgendaFilter.vue'
