@@ -719,20 +719,20 @@ def action_holder_badge(action_holder):
     ''
 
     >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=16)))
-    '<span class="badge bg-danger" title="Goal is &lt;15 days">for 16 days</span>'
+    '<span class="text-danger"><i class="bi bi-hourglass-split" title="In state for 16 days; goal is &lt;15 days."></i></span>'
 
     >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=30)))
-    '<span class="badge bg-danger" title="Goal is &lt;15 days">for 30 days</span>'
+    '<span class="text-danger"><i class="bi bi-hourglass-split" title="In state for 30 days; goal is &lt;15 days."></i></span>'
 
     >>> settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS = old_limit
     """
     age_limit = settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS
     age = (datetime.datetime.now() - action_holder.time_added).days
     if age > age_limit:
-        return mark_safe('<span class="badge bg-danger" title="Goal is &lt;%d days">for %d day%s</span>' % (
-            age_limit,
+        return mark_safe('<span class="text-danger"><i class="bi bi-hourglass-split" title="In state for %d day%s; goal is &lt;%d days."></i></span>' % (
             age,
-            's' if age != 1 else ''))
+            's' if age != 1 else '',
+            age_limit))
     else:
         return ''  # no alert needed
 
