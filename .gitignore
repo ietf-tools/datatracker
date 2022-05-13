@@ -53,8 +53,9 @@ datatracker.sublime-workspace
 /share
 /static
 /testresult
+/.testresult
 /tmp
-/tmp-nomcom-public-keys-dir
+/tmp-*
 /trunk27
 /trunk36
 /trunk37
