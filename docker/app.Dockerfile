@@ -136,7 +136,7 @@ USER vscode:vscode
 
 # Install current datatracker python dependencies
 COPY requirements.txt /tmp/pip-tmp/
-RUN pip3 --disable-pip-version-check --no-cache-dir install --user -r /tmp/pip-tmp/requirements.txt
+RUN pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location -r /tmp/pip-tmp/requirements.txt
 RUN sudo rm -rf /tmp/pip-tmp
 
 # ENTRYPOINT [ "/docker-init.sh" ]

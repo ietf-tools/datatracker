@@ -422,8 +422,7 @@ def save_test_results(failures, test_labels):
     # Record the test result in a file, in order to be able to check the
     # results and avoid re-running tests if we've alread run them with OK
     # result after the latest code changes:
-    topdir = os.path.dirname(os.path.dirname(settings.BASE_DIR))
-    tfile = io.open(os.path.join(topdir,".testresult"), "a", encoding='utf-8')
+    tfile = io.open(".testresult", "a", encoding='utf-8')
     timestr = time.strftime("%Y-%m-%d %H:%M:%S")
     if failures:
         tfile.write("%s FAILED (failures=%s)\n" % (timestr, failures))
@@ -929,7 +928,7 @@ class IetfTestRunner(DiscoverRunner):
         testcase = TestCase()
         cwd = pathlib.Path.cwd()
         tmpdir = tempfile.TemporaryDirectory(prefix="html-validate-")
-        Path(tmpdir.name).chmod(0o655)
+        Path(tmpdir.name).chmod(0o777)
         for (name, content, fingerprint) in self.batches[kind]:
             path = pathlib.Path(tmpdir.name).joinpath(
                 hex(fingerprint)[2:],
