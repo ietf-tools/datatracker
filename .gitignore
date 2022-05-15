@@ -12,7 +12,9 @@ datatracker.sublime-workspace
 /.tmp
 /data
 /docker/docker-compose.extend-custom.yml
+/env
 /ghostdriver.log
+/htmlcov
 /latest-coverage.json
 /media
 /node_modules
