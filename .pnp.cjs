@@ -53,6 +53,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["jquery-ui-dist", "npm:1.13.1"],\
             ["js-cookie", "npm:3.0.1"],\
             ["list.js", "npm:2.3.1"],\
+            ["lodash", "npm:4.17.21"],\
             ["moment", "npm:2.29.3"],\
             ["moment-timezone", "npm:0.5.34"],\
             ["parcel", "npm:2.5.0"],\
@@ -4166,15 +4167,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
-      ["lodash.debounce", [\
-        ["npm:4.0.8", {\
-          "packageLocation": "./.yarn/cache/lodash.debounce-npm-4.0.8-f1d6e09799-a3f527d22c.zip/node_modules/lodash.debounce/",\
-          "packageDependencies": [\
-            ["lodash.debounce", "npm:4.0.8"]\
-          ],\
-          "linkType": "HARD"\
-        }]\
-      ]],\
       ["lodash.merge", [\
         ["npm:4.6.2", {\
           "packageLocation": "./.yarn/cache/lodash.merge-npm-4.6.2-77cb4416bf-ad580b4bdb.zip/node_modules/lodash.merge/",\
@@ -5171,6 +5163,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["jquery-ui-dist", "npm:1.13.1"],\
             ["js-cookie", "npm:3.0.1"],\
             ["list.js", "npm:2.3.1"],\
+            ["lodash", "npm:4.17.21"],\
             ["moment", "npm:2.29.3"],\
             ["moment-timezone", "npm:0.5.34"],\
             ["parcel", "npm:2.5.0"],\

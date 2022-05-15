@@ -24,7 +24,7 @@ if (!process.env.BUILD_DEPLOY) {
 
 import Cookies from "js-cookie";
 
-var debounce = require('lodash.debounce');
+import debounce from "lodash/debounce";
 
 // setup CSRF protection using jQuery
 function csrfSafeMethod(method) {
@@ -254,9 +254,9 @@ $(function () {
                         .find(".active")
                         .last();
                     if (item.length) {
-                        item[0].scrollIntoView({ block: "center" });
+                        item[0].scrollIntoView({ block: "center", behavior: "smooth" });
                     }
-                }, 20));
+                }, 100));
 
             // offset the scrollspy to account for the menu bar
             const contentOffset = contentElement ? contentElement.offset().top : 0;
