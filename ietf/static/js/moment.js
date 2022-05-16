@@ -2,4 +2,4 @@
  * Moment.js are eliminated. When that happens, can import moment in the js files
  * that need it. */
 import moment from "moment-timezone/builds/moment-timezone-with-data-10-year-range";
-global.moment = moment;
+window.moment = moment;
