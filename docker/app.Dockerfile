@@ -87,6 +87,9 @@ RUN sed -i 's/\r$//' /tmp/app-install-chromedriver.sh && \
     chmod +x /tmp/app-install-chromedriver.sh
 RUN /tmp/app-install-chromedriver.sh
 
+# Fix /dev/shm permissions for chromedriver
+RUN chmod 1777 /dev/shm
+
 # Get rid of installation files we don't need in the image, to reduce size
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
