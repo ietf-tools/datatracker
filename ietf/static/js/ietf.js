@@ -186,7 +186,7 @@ $(function () {
                  <div class="col-xl-2 ps-0 small">
                      <div id="righthand-panel" class="position-fixed col-xl-2 bg-light d-flex flex-column justify-content-between align-items-start">
                          <nav id="righthand-nav" class="navbar navbar-light w-100 overflow-auto align-items-start flex-fill"></nav>
-                     </div></div>
+                     </div>
                  </div>
                  `));
 
