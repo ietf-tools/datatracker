@@ -176,7 +176,16 @@ table tbody.meta {
 #righthand-nav {
     height: 70vh;
     width: inherit;
+
+    -ms-overflow-style: none; // Hide scrollbar for IE and Edge and Firefox
+    scrollbar-width: none; // Hide scrollbar for Firefox
 }
+
+// Hide scrollbar for Chrome, Safari and Opera
+#righthand-nav::-webkit-scrollbar {
+    display: none;
+}
+
 
 // Add some padding when there are multiple buttons in a line than can wrap
 .buttonlist .btn {
