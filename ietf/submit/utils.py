@@ -1,5 +1,5 @@
-# Copyright The IETF Trust 2011-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2011-2020, All Rights Reserved
 
 
 import datetime
@@ -11,6 +11,7 @@ import time
 import xml2rfc
 
 from typing import Optional  # pyflakes:ignore
+from unidecode import unidecode
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -44,7 +45,8 @@ from ietf.utils import log
 from ietf.utils.accesstoken import generate_random_key
 from ietf.utils.draft import PlaintextDraft
 from ietf.utils.mail import is_valid_email
-from ietf.utils.text import parse_unicode
+from ietf.utils.text import parse_unicode, normalize_text
+from ietf.utils.xmldraft import XMLDraft
 from ietf.person.name import unidecode_name
 
 
@@ -859,7 +861,6 @@ def fill_in_submission(form, submission, authors, abstract, file_size):
     submission.xml_version = form.xml_version
     submission.submission_date = datetime.date.today()
     submission.replaces = ""
-    # todo think through whether to do this
     if form.parsed_draft is not None:
         submission.pages = form.parsed_draft.get_pagecount()
         submission.words = form.parsed_draft.get_wordcount()
@@ -1125,3 +1126,80 @@ def remote_ip(request):
     else:
         remote_ip = request.META.get('REMOTE_ADDR', None)
     return remote_ip
+
+
+def _normalize_title(title):
+    if isinstance(title, str):
+        title = unidecode(title)  # replace unicode with best-match ascii
+    return normalize_text(title)  # normalize whitespace
+
+
+def process_submission_xml(submission):
+    """Validate and extract info from an uploaded submission"""
+    xml_path = staging_path(submission.name, submission.rev, '.xml')
+    xml_draft = XMLDraft(xml_path)
+
+    if submission.name != xml_draft.filename:
+        raise ValueError('XML draft filename disagrees with submission filename')
+    if submission.rev != xml_draft.revision:
+        raise ValueError('XML draft revision disagrees with submission revision')
+
+    authors = xml_draft.get_author_list()
+    for a in authors:
+        if not a['email']:
+            raise ValueError(f'Missing email address for author {a}')
+
+    author_emails = [a['email'].lower() for a in authors]
+    submitter = get_person_from_name_email(**submission.submitter_parsed())  # the ** expands dict into kwargs
+    if not any(
+            email.address.lower() in author_emails
+            for email in submitter.email_set.filter(active=True)
+    ):
+        raise ValueError(f'Submitter ({submitter}) is not one of the document authors')
+
+    # Fill in the submission data
+    submission.title = _normalize_title(xml_draft.get_title())
+    if not submission.title:
+        raise ValueError('Could not extract a valid title from the XML')
+    submission.authors = [
+        {key: auth[key] for key in ('name', 'email', 'affiliation', 'country')}
+        for auth in authors
+    ]
+    submission.xml_version = xml_draft.xml_version
+    submission.save()
+
+
+def process_submission_text(submission):
+    # todo adapt for possibility that txt was uploaded (this assumes it came from xml)
+    text_path = staging_path(submission.name, submission.rev, '.txt')
+    text_draft = PlaintextDraft.from_file(text_path)
+
+    if submission.name != text_draft.filename:
+        raise ValueError('Text draft filename disagrees with submission filename')
+    if submission.rev != text_draft.revision:
+        raise ValueError('Text draft revision disagrees with submission revision')
+    if not _normalize_title(text_draft.get_title()):
+        raise ValueError('Could not extract a valid title from the text')
+
+    # extract authors?
+
+    submission.abstract = text_draft.get_abstract()  # todo allow for possibility of abstract from XML?
+    submission.document_date = text_draft.get_creation_date()
+    submission.pages = text_draft.get_pagecount()
+    submission.words = text_draft.get_wordcount()
+    submission.first_two_pages = ''.join(text_draft.pages[:2])
+    submission.file_size = os.stat(text_path).st_size
+    submission.save()
+
+    submission.formal_languages.set(
+        FormalLanguageName.objects.filter(
+            slug__in=text_draft.get_formal_languages()
+        )
+    )
+
+
+def process_uploaded_submission(submission):
+    process_submission_xml(submission)
+    render_missing_formats(submission)
+    process_submission_text(submission)
+    set_extresources_from_existing_draft(submission)

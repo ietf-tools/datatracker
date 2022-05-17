@@ -55,9 +55,9 @@ def check_and_accept_submission(submission_id):
 
 
 @shared_task
-def render_missing_formats(submission_id):
+def process_uploaded_submission(submission_id):
     submission = Submission.objects.get(pk=submission_id)
-    utils.render_missing_formats(submission)
+    utils.process_uploaded_submission(submission)
 
 
 @shared_task(bind=True)

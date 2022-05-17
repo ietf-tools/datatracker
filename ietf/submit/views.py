@@ -34,7 +34,7 @@ from ietf.submit.forms import ( SubmissionManualUploadForm, SubmissionAutoUpload
 from ietf.submit.mail import send_full_url, send_manual_post_request, add_submission_email, get_reply_to
 from ietf.submit.models import (Submission, Preapproval, SubmissionExtResource,
     DraftSubmissionStateName, SubmissionEmailEvent )
-from ietf.submit.tasks import poke
+from ietf.submit.tasks import check_and_accept_submission, process_uploaded_submission, poke
 from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
     recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
     post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
@@ -163,9 +163,8 @@ def api_upload(request):
                 submission.save()
                 create_submission_event(request, submission, desc="Uploaded submission through API")
 
-                from .tasks import check_and_accept_submission, render_missing_formats
                 (
-                        render_missing_formats.si(submission.pk)
+                        process_uploaded_submission.si(submission.pk)
                         | check_and_accept_submission(submission.pk)
                 ).delay()
 
