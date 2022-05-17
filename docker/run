@@ -37,20 +37,38 @@ while getopts "hp:r" opt; do
     esac
 done
 
+# Remove mounted temp directories
+rm -rf .parcel-cache __pycache__
+
+# Create extended docker-compose definition
 cp docker-compose.extend.yml docker-compose.extend-custom.yml
 sed -i -r -e "s/CUSTOM_PORT/$CUSTOM_PORT/" docker-compose.extend-custom.yml
 cd ..
+
+# Output build args
+echo "Will use the following user/group mapping:"
+echo "USER ID: $(id -u)"
+echo "GROUP ID: $(id -g)"
+
+# Build / Rebuild Containers
 if [ $FORCE_REBUILD ==  1 ]; then
     docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml down
     docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml rm -f
     docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml build --no-cache --pull --build-arg USER_UID=$(id -u) --build-arg USER_GID=$(id -g)
     docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml up -d --force-recreate
 else
+    docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml build --build-arg USER_UID=$(id -u) --build-arg USER_GID=$(id -g)
     docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml up -d
 fi
+
+# Output database port
 echo "Database exposed on port:"
 docker-compose port db 3306
-docker-compose exec app /bin/sh /docker-init.sh
+
+# Start init script
+docker-compose exec app /bin/zsh /docker-init.sh
+
+# Exit scripts
 docker-compose stop
 cd docker
 rm -f docker-compose.extend-custom.yml

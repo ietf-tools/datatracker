@@ -94,11 +94,11 @@ if [ -z "$EDITOR_VSCODE" ]; then
         echo
         echo "to start a development instance of the Datatracker."
         echo
-        bash
+        zsh
     else
         echo "Executing \"$*\" and stopping container."
         echo
-        bash -c "$*"
+        zsh -c "$*"
         CODE=$?
     fi
     sudo service rsyslog stop
