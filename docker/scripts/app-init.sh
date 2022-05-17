@@ -4,9 +4,10 @@ WORKSPACEDIR="/workspace"
 
 sudo service rsyslog start
 
-# fix permissions for npm-related paths
-WORKSPACE_UID_GID=$(stat --format="%u:%g" "$WORKSPACEDIR")
-sudo chown -R "$WORKSPACE_UID_GID" "$WORKSPACEDIR/.parcel-cache"
+# Fix ownership of volumes
+echo "Fixing volumes ownership..."
+sudo chown -R vscode:vscode "$WORKSPACEDIR/.parcel-cache"
+sudo chown -R vscode:vscode "$WORKSPACEDIR/__pycache__"
 
 # Build node packages that requrie native compilation
 echo "Compiling native node packages..."
