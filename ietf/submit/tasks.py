@@ -8,6 +8,7 @@ from pathlib import Path
 from django.conf import settings
 from django.utils.module_loading import import_string
 
+from ietf.name.models import DraftSubmissionStateName
 from ietf.submit.models import Submission
 from ietf.submit import utils
 from ietf.utils import log
@@ -36,6 +37,9 @@ def apply_checker(checker_path, submission_id):
 @shared_task
 def accept_submission(submission_id):
     submission = Submission.objects.get(pk=submission_id)
+    submission.state = DraftSubmissionStateName.objects.get(slug='uploaded')
+    utils.create_submission_event(None, submission, desc="Completed submission validation checks")
+
     errors = [c.message for c in submission.checks.filter(passed__isnull=False) if not c.passed]
     if errors:
         # utils.remove_submission_files(submission)

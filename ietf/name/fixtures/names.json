@@ -10407,6 +10407,21 @@
   },
   {
     "fields": {
+      "desc": "Running validation checks on received submission",
+      "name": "Validating Submitted Draft",
+      "next_states": [
+        "uploaded",
+        "manual",
+        "cancel"
+      ],
+      "order": 10,
+      "used": true
+    },
+    "model": "name.draftsubmissionstatename",
+    "pk": "validating"
+  },
+  {
+    "fields": {
       "desc": "",
       "name": "Manual Post Waiting for Draft",
       "next_states": [

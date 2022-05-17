@@ -152,7 +152,7 @@ def api_upload(request):
                 save_files(form)
 
                 submission = get_submission(form)
-                submission.state = DraftSubmissionStateName.objects.get(slug="uploaded")
+                submission.state = DraftSubmissionStateName.objects.get(slug="validating")
                 submission.remote_ip = form.remote_ip
                 submission.file_types = ','.join(form.file_types)
                 submission.submission_date = datetime.date.today()
