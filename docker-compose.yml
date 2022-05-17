@@ -75,7 +75,7 @@ services:
             UPDATE_REQUIREMENTS: 1
         command:
             - '--loglevel=INFO'
-        network_mode: 'service:mq'
+        restart: unless-stopped
 
 volumes:
     mariadb-data:
