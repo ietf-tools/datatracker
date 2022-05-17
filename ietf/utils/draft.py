@@ -170,9 +170,6 @@ class Draft:
     def get_creation_date(self):
         raise NotImplementedError
 
-    def get_draftname(self):
-        raise NotImplementedError
-
     def get_formal_languages(self):
         raise NotImplementedError
 
@@ -375,10 +372,6 @@ class PlaintextDraft(Draft):
         pages, page, newpage = begpage(pages, page, newpage)
         _debug('pages: %s' % len(pages))
         return stripped, pages
-
-    # ----------------------------------------------------------------------
-    def get_draftname(self):
-        return self.filename
 
     # ----------------------------------------------------------------------
     def get_pagecount(self):

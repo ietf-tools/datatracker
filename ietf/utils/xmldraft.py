@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import io
 import os
+import re
 import xml2rfc
 
 import debug  # pyflakes: ignore
@@ -26,11 +27,17 @@ class XMLDraft(Draft):
         """
         super().__init__()
         # cast xml_file to str so, e.g., this will work with a Path
-        self.xmltree = self.parse_xml(str(xml_file))
+        self.xmltree, self.xml_version = self.parse_xml(str(xml_file))
         self.xmlroot = self.xmltree.getroot()
+        self.filename, self.revision = self._parse_docname()
 
     @staticmethod
     def parse_xml(filename):
+        """Parse XML draft
+
+        Converts to xml2rfc v3 schema, then returns the root of the v3 tree and the original
+        xml version.
+        """
         orig_write_out = xml2rfc.log.write_out
         orig_write_err = xml2rfc.log.write_err
         orig_xml_library = os.environ.get('XML_LIBRARY', None)
@@ -60,7 +67,7 @@ class XMLDraft(Draft):
             if xml_version == '2':
                 v2v3 = xml2rfc.V2v3XmlWriter(tree)
                 tree.tree = v2v3.convert2to3()
-        return tree
+        return tree, xml_version
 
     def _document_name(self, anchor):
         """Guess document name from reference anchor
@@ -90,15 +97,35 @@ class XMLDraft(Draft):
             section_name = section_elt.get('title')  # fall back to title if we have it
         return section_name
 
-    def get_draftname(self):
-        return self.xmlroot.attrib.get('docName')
+    def _parse_docname(self):
+        docname = self.xmlroot.attrib.get('docName')
+        revmatch = re.match(
+            r'^(?P<filename>.+?)(?:-(?P<rev>[0-9][0-9]))?$',
+            docname,
+
+        )
+        if revmatch is None:
+            raise ValueError('Unable to parse docName')
+        # If a group had no match it is None
+        return revmatch.group('filename'), revmatch.group('rev')
 
     def get_title(self):
         return self.xmlroot.findtext('front/title').strip()
 
-    def get_abstract(self):
-        abstract = self.xmlroot.findtext('front/abstract')
-        return abstract.strip() if abstract else ''
+    # todo fix the implementation of XMLDraft.get_abstract()
+    #
+    # This code was pulled from ietf.submit.forms where it existed for some time.
+    # It does not work, at least with modern xml2rfc. This assumes that the abstract
+    # is simply text in the front/abstract node, but the XML schema wraps the actual
+    # abstract text in <t> elements (and allows <dl>, <ol>, and <ul> as well). As a
+    # result, this method normally returns an empty string, which is later replaced by
+    # the abstract parsed from the rendered text. For now, I a commenting this out
+    # and making it explicit that the abstract always comes from the text format.
+    #
+    # def get_abstract(self):
+    #     """Extract the abstract"""
+    #     abstract = self.xmlroot.findtext('front/abstract')
+    #     return abstract.strip() if abstract else ''
 
     def get_author_list(self):
         """Get detailed author list

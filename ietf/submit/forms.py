@@ -597,20 +597,8 @@ class SubmissionBaseUploadForm(forms.Form):
                     self.add_error('xml', msgs)
                 # todo other error handling???
 
-                draftname = xml_draft.get_draftname()
-                if draftname is None:
-                    self.add_error('xml', "No docName attribute found in the xml root element")
-                name_error = validate_submission_name(draftname)
-                if name_error:
-                    self.add_error('xml', name_error) # This is a critical and immediate failure - do not proceed with other validation.
-                else:
-                    revmatch = re.search("-[0-9][0-9]$", draftname)
-                    if revmatch:
-                        self.revision = draftname[-2:]
-                        self.filename = draftname[:-3]
-                    else:
-                        self.revision = None
-                        self.filename = draftname
+                self.filename = xml_draft.filename
+                self.revision = xml_draft.revision
         elif self.cleaned_data.get('txt'):
             # no XML available, extract from the text if we have it
             # try to parse it
