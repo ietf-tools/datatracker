@@ -6,7 +6,7 @@ from django.db import migrations
 def forward(apps, schema_editor):
     '''Split records that have 2 reg_types into two separate records'''
     MeetingRegistration = apps.get_model('stats', 'MeetingRegistration')
-    meetings = [108, 109, 110, 111, 112, 113]
+    meetings = [108, 109, 110, 111, 112, 113, 114]
     for reg in MeetingRegistration.objects.filter(meeting__number__in=meetings):
         reg_types = reg.reg_type.split()
         if len(reg_types) == 2:
