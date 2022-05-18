@@ -88,7 +88,6 @@
         "ietf/static/js/manage-community-list.js",
         "ietf/static/js/manage-review-requests.js",
         "ietf/static/js/meeting-interim-request.js",
-        "ietf/static/js/moment-timezone-with-data-10-year-range.js",
         "ietf/static/js/moment.js",
         "ietf/static/js/password_strength.js",
         "ietf/static/js/review-stats.js",

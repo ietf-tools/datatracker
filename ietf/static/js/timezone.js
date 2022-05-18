@@ -10,6 +10,7 @@
  */
 (function () {
     'use strict';
+
     // Callback for timezone change - called after current_timezone is updated
     let timezone_change_callback;
     let current_timezone;
