@@ -53,6 +53,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["jquery-ui-dist", "npm:1.13.1"],\
             ["js-cookie", "npm:3.0.1"],\
             ["list.js", "npm:2.3.1"],\
+            ["lodash", "npm:4.17.21"],\
             ["moment", "npm:2.29.3"],\
             ["moment-timezone", "npm:0.5.34"],\
             ["parcel", "npm:2.5.0"],\
@@ -5162,6 +5163,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["jquery-ui-dist", "npm:1.13.1"],\
             ["js-cookie", "npm:3.0.1"],\
             ["list.js", "npm:2.3.1"],\
+            ["lodash", "npm:4.17.21"],\
             ["moment", "npm:2.29.3"],\
             ["moment-timezone", "npm:0.5.34"],\
             ["parcel", "npm:2.5.0"],\

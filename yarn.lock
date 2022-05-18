@@ -3409,7 +3409,7 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"lodash@npm:^4.17.21":
+"lodash@npm:4.17.21, lodash@npm:^4.17.21":
   version: 4.17.21
   resolution: "lodash@npm:4.17.21"
   checksum: eb835a2e51d381e561e508ce932ea50a8e5a68f4ebdd771ea240d3048244a8d13658acbd502cd4829768c56f2e16bdd4340b9ea141297d472517b83868e677f7
@@ -4284,6 +4284,7 @@ browserlist@latest:
     jquery-ui-dist: 1.13.1
     js-cookie: 3.0.1
     list.js: 2.3.1
+    lodash: 4.17.21
     moment: 2.29.3
     moment-timezone: 0.5.34
     parcel: 2.5.0
