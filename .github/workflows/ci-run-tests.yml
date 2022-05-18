@@ -6,6 +6,8 @@ on:
       - 'main'
     paths:
       - 'ietf/**'
+      - 'requirements.txt'
+      - 'package.json'
 
 jobs:
   tests:
