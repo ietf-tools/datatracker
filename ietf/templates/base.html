@@ -110,51 +110,51 @@
                     {% block content_end %}{% endblock %}
                 </div>
             </div>
-            <hr>
-            {% block footer %}
-                <footer class="col-md-12 col-sm-12 text-center">
-                    <a href="https://www.ietf.org/" class="p-3">IETF</a>
-                    <a href="https://www.ietf.org/iesg/" class="p-3">IESG</a>
-                    <a href="https://www.iab.org/" class="p-3">IAB</a>
-                    <a href="https://www.irtf.org/" class="p-3">IRTF</a>
-                    <a href="https://www.ietf.org/llc/" class="p-3">IETF&nbsp;LLC</a>
-                    <a href="https://trustee.ietf.org/" class="p-3">IETF&nbsp;Trust</a>
-                    <a href="https://www.rfc-editor.org/" class="p-3">RFC&nbsp;Editor</a>
-                    <a href="https://www.iana.org/" class="p-3">IANA</a>
-                    <a href="https://www.ietf.org/privacy-statement/" class="p-3">Privacy&nbsp;Statement</a>
-                    <div class="small text-muted py-3">
-                        {% if version_num %}
-                            <a class="mx-2" href="/release/about">About IETF Datatracker</a>
-                            <span class="mx-2">
-                                {% if server_mode and server_mode == "production" %}
-                                    <a href="https://github.com/ietf-tools/datatracker/releases/tag/{{version_num}}">
-                                {% endif %}
-                                Version {{ version_num }}{% if patch %}{{patch}}{% endif %}
-                                {% if branch %}({{ branch }} - {{ git_hash|slice:":7" }}){% endif %}
-                                {% if server_mode and server_mode == "production" %}
-                                    </a>
-                                {% endif %}
-                            </span>
-                        {% endif %}
-                        <span class="mx-2 text-danger">
-                            <i class="bi bi-bug"></i>
-                            Report a bug:
-                            <a class="text-reset" href="https://github.com/ietf-tools/datatracker/issues/new/choose">GitHub</a>
-                            {% if bugreport_email %}
-                                <a class="text-reset" href="mailto:{{ bugreport_email }}">Email</a>
+        </div>
+        {% block footer %}
+            <footer class="col-md-12 col-sm-12 bg-white text-center">
+                <hr class="mx-3">
+                <a href="https://www.ietf.org/" class="p-3">IETF</a>
+                <a href="https://www.ietf.org/iesg/" class="p-3">IESG</a>
+                <a href="https://www.iab.org/" class="p-3">IAB</a>
+                <a href="https://www.irtf.org/" class="p-3">IRTF</a>
+                <a href="https://www.ietf.org/llc/" class="p-3 text-nowrap">IETF LLC</a>
+                <a href="https://trustee.ietf.org/" class="p-3 text-nowrap">IETF Trust</a>
+                <a href="https://www.rfc-editor.org/" class="p-3 text-nowrap">RFC Editor</a>
+                <a href="https://www.iana.org/" class="p-3">IANA</a>
+                <a href="https://www.ietf.org/privacy-statement/" class="p-3 text-nowrap">Privacy Statement</a>
+                <div class="small text-muted py-3">
+                    {% if version_num %}
+                        <a class="mx-2" href="/release/about">About IETF Datatracker</a>
+                        <span class="mx-2">
+                            {% if server_mode and server_mode == "production" %}
+                                <a href="https://github.com/ietf-tools/datatracker/releases/tag/{{version_num}}">
+                            {% endif %}
+                            Version {{ version_num }}{% if patch %}{{patch}}{% endif %}
+                            {% if branch %}({{ branch }} - {{ git_hash|slice:":7" }}){% endif %}
+                            {% if server_mode and server_mode == "production" %}
+                                </a>
                             {% endif %}
                         </span>
-                        {% if server_mode and server_mode != "production" %}
-                            <br>
-                            {% if python_version %}Python {{ python_version }}{% endif %}
-                            {% if django_version %}Django {{ django_version }}{% endif %}
-                            <br>
-                            {% include "debug.html" %}
+                    {% endif %}
+                    <span class="mx-2 text-danger">
+                        <i class="bi bi-bug"></i>
+                        Report a bug:
+                        <a class="text-reset" href="https://github.com/ietf-tools/datatracker/issues/new/choose">GitHub</a>
+                        {% if bugreport_email %}
+                            <a class="text-reset" href="mailto:{{ bugreport_email }}">Email</a>
                         {% endif %}
-                    </div>
-                </footer>
-            {% endblock %}
-        </div>
+                    </span>
+                    {% if server_mode and server_mode != "production" %}
+                        <br>
+                        {% if python_version %}Python {{ python_version }}{% endif %}
+                        {% if django_version %}Django {{ django_version }}{% endif %}
+                        <br>
+                        {% include "debug.html" %}
+                    {% endif %}
+                </div>
+            </footer>
+        {% endblock %}
         {% block js %}
         {% endblock %}
         <script src="{% static 'ietf/js/select2.js' %}"></script>
@@ -163,6 +163,6 @@
                 window.location.href = e.params.data.url;
             });
         </script>
-      {% analytical_body_bottom %}  
+      {% analytical_body_bottom %}
     </body>
 </html>
