@@ -50,9 +50,10 @@ NEW_UID=$(id -u)
 NEW_GID=$(id -g)
 if [ $NEW_UID -gt 0 ]; then
     echo "Will use the following user/group mapping:"
-    echo "USER ID: $(id -u)"
-    echo "GROUP ID: $(id -g)"
+    echo "USER ID: $NEW_UID"
+    echo "GROUP ID: $NEW_GID"
 else
+    echo "Running as root, will use default user/group mapping..."
     NEW_UID=1000
     NEW_GID=1000
 fi
