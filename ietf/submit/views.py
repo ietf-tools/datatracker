@@ -156,9 +156,6 @@ def api_upload(request):
                 submission.remote_ip = form.remote_ip
                 submission.file_types = ','.join(form.file_types)
                 submission.submission_date = datetime.date.today()
-                if check_submission_revision_consistency(submission):
-                    return err( 409, "Submission failed due to a document revision inconsistency error "
-                                     "in the database. Please contact the secretariat for assistance.")
                 submission.submitter = user.person.formatted_email()
                 submission.save()
                 create_submission_event(request, submission, desc="Uploaded submission through API")
