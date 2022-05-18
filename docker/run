@@ -45,19 +45,26 @@ cp docker-compose.extend.yml docker-compose.extend-custom.yml
 sed -i -r -e "s/CUSTOM_PORT/$CUSTOM_PORT/" docker-compose.extend-custom.yml
 cd ..
 
-# Output build args
-echo "Will use the following user/group mapping:"
-echo "USER ID: $(id -u)"
-echo "GROUP ID: $(id -g)"
+# Set UID/GID mappings
+NEW_UID=$(id -u)
+NEW_GID=$(id -g)
+if [ $NEW_UID > 0 ]; then
+    echo "Will use the following user/group mapping:"
+    echo "USER ID: $(id -u)"
+    echo "GROUP ID: $(id -g)"
+else
+    NEW_UID=1000
+    NEW_GID=1000
+fi
 
 # Build / Rebuild Containers
 if [ $FORCE_REBUILD ==  1 ]; then
     docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml down
     docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml rm -f
-    docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml build --no-cache --pull --build-arg USER_UID=$(id -u) --build-arg USER_GID=$(id -g)
+    docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml build --no-cache --pull --build-arg USER_UID=$NEW_UID --build-arg USER_GID=$NEW_GID
     docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml up -d --force-recreate
 else
-    docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml build --build-arg USER_UID=$(id -u) --build-arg USER_GID=$(id -g)
+    docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml build --build-arg USER_UID=$NEW_UID --build-arg USER_GID=$NEW_GID
     docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml up -d
 fi
 
