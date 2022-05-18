@@ -917,19 +917,22 @@ def accept_submission_requires_group_approval(submission):
 
 
 class SubmissionError(Exception):
+    """Exception for errors during submission processing"""
     pass
 
 
 def staging_path(filename, revision, ext):
+    if len(ext) > 0 and ext[0] != '.':
+        ext = f'.{ext}'
     return pathlib.Path(settings.IDSUBMIT_STAGING_PATH) / f'{filename}-{revision}{ext}'
 
 
 def render_missing_formats(submission):
     """Generate txt and html formats from xml draft
 
-    todo allow for forms that have already been uploaded
+    If a txt file already exists, leaves it in place. Overwrites an existing html file
+    if there is one.
     """
-    # todo check timestamps??
     xml2rfc.log.write_out = io.StringIO()   # open(os.devnull, "w")
     xml2rfc.log.write_err = io.StringIO()   # open(os.devnull, "w")
     os.environ["XML_LIBRARY"] = settings.XML_LIBRARY
@@ -1134,25 +1137,20 @@ def _normalize_title(title):
     return normalize_text(title)  # normalize whitespace
 
 
-class SubmissionValidationError(Exception):
-    """Error class for submission validation checks"""
-    pass
-
-
 def process_submission_xml(submission):
     """Validate and extract info from an uploaded submission"""
     xml_path = staging_path(submission.name, submission.rev, '.xml')
     xml_draft = XMLDraft(xml_path)
 
     if submission.name != xml_draft.filename:
-        raise SubmissionValidationError('XML draft filename disagrees with submission filename')
+        raise SubmissionError('XML draft filename disagrees with submission filename')
     if submission.rev != xml_draft.revision:
-        raise SubmissionValidationError('XML draft revision disagrees with submission revision')
+        raise SubmissionError('XML draft revision disagrees with submission revision')
 
     authors = xml_draft.get_author_list()
     for a in authors:
         if not a['email']:
-            raise SubmissionValidationError(f'Missing email address for author {a}')
+            raise SubmissionError(f'Missing email address for author {a}')
 
     author_emails = [a['email'].lower() for a in authors]
     submitter = get_person_from_name_email(**submission.submitter_parsed())  # the ** expands dict into kwargs
@@ -1160,12 +1158,12 @@ def process_submission_xml(submission):
             email.address.lower() in author_emails
             for email in submitter.email_set.filter(active=True)
     ):
-        raise SubmissionValidationError(f'Submitter ({submitter}) is not one of the document authors')
+        raise SubmissionError(f'Submitter ({submitter}) is not one of the document authors')
 
     # Fill in the submission data
     submission.title = _normalize_title(xml_draft.get_title())
     if not submission.title:
-        raise SubmissionValidationError('Could not extract a valid title from the XML')
+        raise SubmissionError('Could not extract a valid title from the XML')
     submission.authors = [
         {key: auth[key] for key in ('name', 'email', 'affiliation', 'country')}
         for auth in authors
@@ -1186,13 +1184,13 @@ def process_submission_text(submission):
     text_draft = PlaintextDraft.from_file(text_path)
 
     if submission.name != text_draft.filename:
-        raise SubmissionValidationError('Text draft filename disagrees with submission filename')
+        raise SubmissionError('Text draft filename disagrees with submission filename')
     if submission.rev != text_draft.revision:
-        raise SubmissionValidationError('Text draft revision disagrees with submission revision')
+        raise SubmissionError('Text draft revision disagrees with submission revision')
     if not _normalize_title(text_draft.get_title()):
-        raise SubmissionValidationError('Could not extract a valid title from the text')
+        raise SubmissionError('Could not extract a valid title from the text')
 
-    submission.abstract = text_draft.get_abstract()  # todo allow for possibility of abstract from XML?
+    submission.abstract = text_draft.get_abstract()
     submission.document_date = text_draft.get_creation_date()
     submission.pages = text_draft.get_pagecount()
     submission.words = text_draft.get_wordcount()
@@ -1220,15 +1218,31 @@ def process_uploaded_submission(submission):
     try:
         process_submission_xml(submission)
         if check_submission_revision_consistency(submission):
-            raise SubmissionValidationError(
+            raise SubmissionError(
                 'Document revision inconsistency error in the database. '
                 'Please contact the secretariat for assistance.'
             )
         render_missing_formats(submission)
         process_submission_text(submission)
         set_extresources_from_existing_draft(submission)
-    except SubmissionValidationError as err:
+        apply_checkers(
+            submission,
+            {
+                ext: staging_path(submission.name, submission.rev, ext)
+                for ext in ['xml', 'txt', 'html']
+            }
+        )
+        errors = [c.message for c in submission.checks.filter(passed__isnull=False) if not c.passed]
+        if len(errors) > 0:
+            raise SubmissionError('Checks failed: ' + ' / '.join(errors))
+    except SubmissionError as err:
         abort_submission(str(err))
     except Exception as err:
         abort_submission('An error occurred during validation. Please contact the secretariat for assistance.')
         log.log(f'Exception while validating submission {submission.pk}: {err}')
+
+
+    submission.state = DraftSubmissionStateName.objects.get(slug='uploaded')
+    submission.save()
+    create_submission_event(None, submission, desc="Completed submission validation checks")
+    accept_submission(submission)

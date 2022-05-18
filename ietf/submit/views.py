@@ -11,7 +11,7 @@ from typing import Optional, cast         # pyflakes:ignore
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.db import DataError
+from django.db import DataError, transaction
 from django.urls import reverse as urlreverse
 from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponse
@@ -34,7 +34,7 @@ from ietf.submit.forms import ( SubmissionManualUploadForm, SubmissionAutoUpload
 from ietf.submit.mail import send_full_url, send_manual_post_request, add_submission_email, get_reply_to
 from ietf.submit.models import (Submission, Preapproval, SubmissionExtResource,
     DraftSubmissionStateName, SubmissionEmailEvent )
-from ietf.submit.tasks import check_and_accept_submission, process_uploaded_submission, poke
+from ietf.submit.tasks import process_uploaded_submission, poke
 from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
     recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
     post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
@@ -160,11 +160,10 @@ def api_upload(request):
                 submission.save()
                 create_submission_event(request, submission, desc="Uploaded submission through API")
 
-                (
-                        process_uploaded_submission.si(submission.pk)
-                        | check_and_accept_submission(submission.pk)
-                ).delay()
-
+                # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
+                transaction.on_commit(
+                    lambda: process_uploaded_submission.delay(submission.pk)
+                )
                 return HttpResponse(
                     f'Upload of {submission.name} OK, validation and acceptance pending',
                     content_type="text/plain")
