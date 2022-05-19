@@ -111,8 +111,11 @@ def upload_submission(request):
 
 @csrf_exempt
 def api_upload(request):
-    def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+    def err(code, error, messages=None):
+        data = {'error': error}
+        if messages is not None:
+            data['messages'] = [messages] if isinstance(messages, str) else messages
+        return JsonResponse(data, status=code)
 
     if request.method == 'GET':
         return render(request, 'submit/api_submit_info.html')
@@ -165,17 +168,25 @@ def api_upload(request):
                 transaction.on_commit(
                     lambda: process_uploaded_submission.delay(submission.pk)
                 )
-                return HttpResponse(
-                    f'Upload of {submission.name} OK, validation and acceptance pending',
-                    content_type="text/plain")
+                return JsonResponse(
+                    {
+                        'id': str(submission.pk),
+                        'name': submission.name,
+                        'rev': submission.rev,
+                        'status_url': urljoin(
+                            settings.IDTRACKER_BASE_URL,
+                            urlreverse(api_submission_status, kwargs={'submission_id': submission.pk}),
+                        ),
+                    }
+                )
             else:
                 raise ValidationError(form.errors)
         except IOError as e:
             exception = e
-            return err(500, "IO Error: %s" % str(e))
+            return err(500, 'IO Error', str(e))
         except ValidationError as e:
             exception = e
-            return err(400, "Validation Error: %s" % str(e))
+            return err(400, 'Validation Error', e.messages)
         except Exception as e:
             exception = e
             raise
