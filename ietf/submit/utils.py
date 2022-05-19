@@ -645,7 +645,6 @@ def update_authors(draft, submission):
 def cancel_submission(submission):
     submission.state = DraftSubmissionStateName.objects.get(slug="cancel")
     submission.save()
-
     remove_submission_files(submission)
 
 def rename_submission_files(submission, prev_rev, new_rev):
@@ -1207,9 +1206,7 @@ def process_submission_text(submission):
 
 def process_uploaded_submission(submission):
     def abort_submission(error_message):
-        remove_submission_files(submission)
-        submission.state_id = 'cancel'
-        submission.save()
+        cancel_submission(submission)
         create_submission_event(None, submission, f'Submission rejected: {error_message}')
 
     if submission.file_types != '.xml':
