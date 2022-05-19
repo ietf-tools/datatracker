@@ -62,7 +62,7 @@
                         {% for p in doc.blocking_positions %}
                             {% if p.is_old_pos %}<span class="text-muted">{% endif %}
                             {% person_link p.balloter %}
-                            ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }} days ago{% endif %}{% if doc.get_state_url != "rfc" and p.rev != doc.rev %}for -{{ p.rev }}{% endif %})
+                            ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }} days ago{% endif %}{% if doc.get_state_url != "rfc" and p.rev != doc.rev %} for -{{ p.rev }}{% endif %})
                             <br>
                             {% if p.is_old_pos %}</span>{% endif %}
                         {% endfor %}

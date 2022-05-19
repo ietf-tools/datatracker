@@ -114,11 +114,6 @@ ENV LC_ALL en_US.UTF-8
 ADD https://raw.githubusercontent.com/ietf-tools/idnits-mirror/main/idnits /usr/local/bin/
 RUN chmod +rx /usr/local/bin/idnits
 
-# Install current datatracker python dependencies
-COPY requirements.txt /tmp/pip-tmp/
-RUN pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requirements.txt \
-    && rm -rf /tmp/pip-tmp
-
 # Turn off rsyslog kernel logging (doesn't work in Docker)
 RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 
@@ -136,5 +131,12 @@ RUN sed -i 's/\r$//' /docker-init.sh && \
 # Create workspace
 RUN mkdir -p /workspace
 WORKDIR /workspace
+
+USER vscode:vscode
+
+# Install current datatracker python dependencies
+COPY requirements.txt /tmp/pip-tmp/
+RUN pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location -r /tmp/pip-tmp/requirements.txt
+RUN sudo rm -rf /tmp/pip-tmp
 
 # ENTRYPOINT [ "/docker-init.sh" ]

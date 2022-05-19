@@ -57,7 +57,7 @@ def index(request):
         else:
             nomcom.url = None
         if year >= 2002:
-            nomcom.ann_url = "/nomcom/ann/#%4d" % year
+            nomcom.ann_url = "/nomcom/ann/#nomcom-%4d" % year
         else:
             nomcom.ann_url = None
     return render(request, 'nomcom/index.html',
