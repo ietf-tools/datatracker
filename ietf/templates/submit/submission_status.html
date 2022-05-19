@@ -35,75 +35,77 @@
             Please fix errors in the form below.
         </p>
     {% endif %}
-    <h2 class="mt-5">Submission checks</h2>
-    <p class="alert {% if passes_checks %}alert-success{% else %}alert-warning{% endif %} my-3">
-        {% if passes_checks %}
-            Your draft has been verified to pass the submission checks.
-        {% else %}
-            Your draft has <b>NOT</b> been verified to pass the submission checks.
-        {% endif %}
-    </p>
-    {% if submission.authors|length > 5 %}
-        <p class="alert alert-danger my-3">
-            <b>
-                This document has more than five authors listed, which is considered excessive
-            under normal circumstances.</b> If you plan to request publication as an RFC, this
-            will require additional consideration by the stream manager (for example, the
-            IESG), and publication may be declined unless sufficient justification is
-            provided. See
-            <a href="https://datatracker.ietf.org/doc/html/rfc7322#section-4.1.1">RFC 7322, section 4.1.1</a>
-            for details.
+    {% if submission.state_id != 'validating' %}
+        <h2 class="mt-5">Submission checks</h2>
+        <p class="alert {% if passes_checks %}alert-success{% else %}alert-warning{% endif %} my-3">
+            {% if passes_checks %}
+                Your draft has been verified to pass the submission checks.
+            {% else %}
+                Your draft has <b>NOT</b> been verified to pass the submission checks.
+            {% endif %}
         </p>
-    {% endif %}
-    {% for check in submission.latest_checks %}
-        {% if check.errors %}
-            <p class="alert alert-warning my-3">
-                The {{ check.checker }} returned {{ check.errors }} error{{ check.errors|pluralize }}
-                and {{ check.warnings }} warning{{ check.warnings|pluralize }}; click the button
-                below to see details.  Please fix those, and resubmit.
-            </p>
-        {% elif check.warnings %}
-            <p class="alert alert-warning my-3">
-                The {{ check.checker }} returned {{ check.warnings }} warning{{ check.warnings|pluralize }}.
+        {% if submission.authors|length > 5 %}
+            <p class="alert alert-danger my-3">
+                <b>
+                    This document has more than five authors listed, which is considered excessive
+                under normal circumstances.</b> If you plan to request publication as an RFC, this
+                will require additional consideration by the stream manager (for example, the
+                IESG), and publication may be declined unless sufficient justification is
+                provided. See
+                <a href="https://datatracker.ietf.org/doc/html/rfc7322#section-4.1.1">RFC 7322, section 4.1.1</a>
+                for details.
             </p>
         {% endif %}
-    {% endfor %}
-    {% for check in submission.latest_checks %}
-        {% if check.passed != None %}
-            <button class="btn btn-{% if check.passed %}{% if check.warnings %}warning{% elif check.errors %}danger{% else %}success{% endif %}{% else %}danger{% endif %}"
-                    type="button"
-                    data-bs-toggle="modal"
-                    data-bs-target="#check-{{ check.pk }}">
-                View {{ check.checker }}
-            </button>
-            <div class="modal fade"
-                 id="check-{{ check.pk }}"
-                 tabindex="-1"
-                 role="dialog"
-                 aria-labelledby="check-{{ check.pk }}"
-                 aria-hidden="true">
-                <div class="modal-dialog modal-dialog-scrollable modal-xl">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <p class="h5 modal-title" id="{{ check.checker|slugify }}-label">
-                                {{ check.checker|title }} for {{ submission.name }}-{{ submission.rev }}
-                            </p>
-                            <button type="button"
-                                    class="btn-close"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body" id="{{ check.checker|slugify }}-message">
-                            <pre>{{ check.message|linkify|urlize_ietf_docs }}</pre>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        {% for check in submission.latest_checks %}
+            {% if check.errors %}
+                <p class="alert alert-warning my-3">
+                    The {{ check.checker }} returned {{ check.errors }} error{{ check.errors|pluralize }}
+                    and {{ check.warnings }} warning{{ check.warnings|pluralize }}; click the button
+                    below to see details.  Please fix those, and resubmit.
+                </p>
+            {% elif check.warnings %}
+                <p class="alert alert-warning my-3">
+                    The {{ check.checker }} returned {{ check.warnings }} warning{{ check.warnings|pluralize }}.
+                </p>
+            {% endif %}
+        {% endfor %}
+        {% for check in submission.latest_checks %}
+            {% if check.passed != None %}
+                <button class="btn btn-{% if check.passed %}{% if check.warnings %}warning{% elif check.errors %}danger{% else %}success{% endif %}{% else %}danger{% endif %}"
+                        type="button"
+                        data-bs-toggle="modal"
+                        data-bs-target="#check-{{ check.pk }}">
+                    View {{ check.checker }}
+                </button>
+                <div class="modal fade"
+                     id="check-{{ check.pk }}"
+                     tabindex="-1"
+                     role="dialog"
+                     aria-labelledby="check-{{ check.pk }}"
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-scrollable modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <p class="h5 modal-title" id="{{ check.checker|slugify }}-label">
+                                    {{ check.checker|title }} for {{ submission.name }}-{{ submission.rev }}
+                                </p>
+                                <button type="button"
+                                        class="btn-close"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body" id="{{ check.checker|slugify }}-message">
+                                <pre>{{ check.message|linkify|urlize_ietf_docs }}</pre>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        {% endif %}
-    {% endfor %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
     <div class="modal fade"
          id="twopages"
          tabindex="-1"
@@ -129,6 +131,11 @@
     {% if submission.state_id == "waiting-for-draft" %}
         <p class="alert alert-warning my-3">
             This submission is awaiting the first draft upload.
+        </p>
+    {% elif submission.state_id == 'validating' %}
+        <p class="alert alert-warning my-3">
+            This submission is still being processed and validated. This normally takes a few minutes after
+            submission. Please contact the secretariat if it has been more than an hour.
         </p>
     {% else %}
         <h2 class="mt-5">Meta-data from the submission</h2>
@@ -172,12 +179,14 @@
                 {% else %}
                     {{ submission.name }}
                 {% endif %}
-                <button class="btn btn-primary btn-sm float-end ms-1"
-                        type="button"
-                        data-bs-toggle="modal"
-                        data-bs-target="#twopages">
-                    View first two pages
-                </button>
+                {% if submission.first_two_pages %}
+                    <button class="btn btn-primary btn-sm float-end ms-1"
+                            type="button"
+                            data-bs-toggle="modal"
+                            data-bs-target="#twopages">
+                        View first two pages
+                    </button>
+                {% endif %}
                 {% show_submission_files submission %}
                 {% if errors.files %}
                     <p class="mt-1 mb-0 text-danger">
@@ -215,159 +224,141 @@
                 {% endif %}
             </td>
         </tr>
-        <tr>
-            <th scope="row">Document date</th>
-            <td>
-                {{ submission.document_date }}
-                {% if errors.document_date %}
-                    <p class="mt-1 mb-0 text-danger">
-                        {{ errors.document_date }}
-                    </p>
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <th scope="row">Submission date</th>
-            <td>{{ submission.submission_date }}</td>
-        </tr>
-        <tr>
-            <th scope="row">Title</th>
-            <td>
-                {{ submission.title|default:"" }}
-                {% if errors.title %}
-                    <p class="mt-1 mb-0 text-danger">
-                        {{ errors.title }}
-                    </p>
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <th scope="row">Author count</th>
-            <td>
-                {{ submission.authors|length }} author{{ submission.authors|pluralize }}
-                {% if errors.authors %}
-                    <p class="mt-1 mb-0 text-danger">
-                        {{ errors.authors|safe }}
-                    </p>
-                {% endif %}
-            </td>
-        </tr>
-        {% for author in submission.authors %}
+        {% if submission.state_id != 'validating' %}
             <tr>
-                <th scope="row">Author {{ forloop.counter }}</th>
+                <th scope="row">Document date</th>
                 <td>
-                    {{ author.name }}
-                    {% if author.email %}&lt;{{ author.email|linkify }}&gt;{% endif %}
-                    <br>
-                    {% if author.affiliation %}
-                        {{ author.affiliation }}
-                    {% else %}
-                        <i>unknown affiliation</i>
-                    {% endif %}
-                    <br>
-                    {% if author.country %}
-                        {{ author.country }}
-                        {% if author.cleaned_country and author.country != author.cleaned_country %}
-                            <span class="text-muted">(understood to be {{ author.cleaned_country }})</span>
-                        {% endif %}
-                    {% else %}
-                        <i>unknown country</i>
-                    {% endif %}
-                    {% if author.country and not author.cleaned_country %}
-                        <br>
-                        <span class="text-warning">Unrecognized country: "{{ author.country }}"</span>: See
-                        <a href="{% url "ietf.stats.views.known_countries_list" %}">
-                            recognized country names
-                        </a>.
-                    {% endif %}
-                    {% for auth_err in author.errors %}
+                    {{ submission.document_date }}
+                    {% if errors.document_date %}
                         <p class="mt-1 mb-0 text-danger">
-                            {{ auth_err }}
+                            {{ errors.document_date }}
                         </p>
-                    {% endfor %}
+                    {% endif %}
                 </td>
             </tr>
-        {% endfor %}
-        <tr>
-            <th scope="row">
-                Abstract
-            </th>
-            <td>
-                {{ submission.abstract|urlize_ietf_docs|linkify|linebreaksbr }}
-                {% if errors.abstract %}
-                    <p class="mt-1 mb-0 text-danger">
-                        {{ errors.abstract }}
-                    </p>
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <th scope="row">
-                Page count
-            </th>
-            <td>
-                {{ submission.pages }}
-                {% if errors.pages %}
-                    <p class="mt-1 mb-0 text-danger">
-                        {{ errors.pages }}
-                    </p>
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <th scope="row">
-                File size
-            </th>
-            <td>
-                {{ submission.file_size|filesizeformat }}
-            </td>
-        </tr>
-        <tr>
-            <th scope="row">
-                Formal languages used
-            </th>
-            <td>
-                {% for l in submission.formal_languages.all %}
-                    {{ l.name }}{% if not forloop.last %},{% endif %}
-                {% empty %}None recognized
-                {% endfor %}
-                {% if errors.formal_languages %}
-                    <p class="mt-1 mb-0 text-danger">
-                        {{ errors.formal_languages }}
-                    </p>
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <th scope="row">
-                Submission additional resources
-            </th>
-            <td>
-                {% for r in external_resources.current %}
-                    {% with res=r.res added=r.added %}
-                        <div>
-                            {{ res.name.name }}: {{ res.value }}
-                            {% if res.display_name %}(as &quot;{{ res.display_name }}&quot;){% endif %}
-                            {% if external_resources.show_changes and added %}<span class="badge bg-success">New</span>{% endif %}
-                        </div>
-                    {% endwith %}
-                {% empty %}
-                    None
-                {% endfor %}
-            </td>
-        </tr>
-        {% if external_resources.show_changes %}
+            <tr>
+                <th scope="row">Submission date</th>
+                <td>{{ submission.submission_date }}</td>
+            </tr>
+            <tr>
+                <th scope="row">Title</th>
+                <td>
+                    {{ submission.title|default:"" }}
+                    {% if errors.title %}
+                        <p class="mt-1 mb-0 text-danger">
+                            {{ errors.title }}
+                        </p>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">Author count</th>
+                <td>
+                    {{ submission.authors|length }} author{{ submission.authors|pluralize }}
+                    {% if errors.authors %}
+                        <p class="mt-1 mb-0 text-danger">
+                            {{ errors.authors|safe }}
+                        </p>
+                    {% endif %}
+                </td>
+            </tr>
+            {% for author in submission.authors %}
+                <tr>
+                    <th scope="row">Author {{ forloop.counter }}</th>
+                    <td>
+                        {{ author.name }}
+                        {% if author.email %}&lt;{{ author.email|linkify }}&gt;{% endif %}
+                        <br>
+                        {% if author.affiliation %}
+                            {{ author.affiliation }}
+                        {% else %}
+                            <i>unknown affiliation</i>
+                        {% endif %}
+                        <br>
+                        {% if author.country %}
+                            {{ author.country }}
+                            {% if author.cleaned_country and author.country != author.cleaned_country %}
+                                <span class="text-muted">(understood to be {{ author.cleaned_country }})</span>
+                            {% endif %}
+                        {% else %}
+                            <i>unknown country</i>
+                        {% endif %}
+                        {% if author.country and not author.cleaned_country %}
+                            <br>
+                            <span class="text-warning">Unrecognized country: "{{ author.country }}"</span>: See
+                            <a href="{% url "ietf.stats.views.known_countries_list" %}">
+                                recognized country names
+                            </a>.
+                        {% endif %}
+                        {% for auth_err in author.errors %}
+                            <p class="mt-1 mb-0 text-danger">
+                                {{ auth_err }}
+                            </p>
+                        {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
             <tr>
                 <th scope="row">
-                    Current document additional resources
+                    Abstract
                 </th>
                 <td>
-                    {% for r in external_resources.previous %}
-                        {% with res=r.res removed=r.removed %}
+                    {{ submission.abstract|urlize_ietf_docs|linkify|linebreaksbr }}
+                    {% if errors.abstract %}
+                        <p class="mt-1 mb-0 text-danger">
+                            {{ errors.abstract }}
+                        </p>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    Page count
+                </th>
+                <td>
+                    {{ submission.pages }}
+                    {% if errors.pages %}
+                        <p class="mt-1 mb-0 text-danger">
+                            {{ errors.pages }}
+                        </p>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    File size
+                </th>
+                <td>
+                    {{ submission.file_size|filesizeformat }}
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    Formal languages used
+                </th>
+                <td>
+                    {% for l in submission.formal_languages.all %}
+                        {{ l.name }}{% if not forloop.last %},{% endif %}
+                    {% empty %}None recognized
+                    {% endfor %}
+                    {% if errors.formal_languages %}
+                        <p class="mt-1 mb-0 text-danger">
+                            {{ errors.formal_languages }}
+                        </p>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    Submission additional resources
+                </th>
+                <td>
+                    {% for r in external_resources.current %}
+                        {% with res=r.res added=r.added %}
                             <div>
                                 {{ res.name.name }}: {{ res.value }}
                                 {% if res.display_name %}(as &quot;{{ res.display_name }}&quot;){% endif %}
-                                {% if removed %}<span class="badge bg-warning">Removed</span>{% endif %}
+                                {% if external_resources.show_changes and added %}<span class="badge bg-success">New</span>{% endif %}
                             </div>
                         {% endwith %}
                     {% empty %}
@@ -375,6 +366,26 @@
                     {% endfor %}
                 </td>
             </tr>
+            {% if external_resources.show_changes %}
+                <tr>
+                    <th scope="row">
+                        Current document additional resources
+                    </th>
+                    <td>
+                        {% for r in external_resources.previous %}
+                            {% with res=r.res removed=r.removed %}
+                                <div>
+                                    {{ res.name.name }}: {{ res.value }}
+                                    {% if res.display_name %}(as &quot;{{ res.display_name }}&quot;){% endif %}
+                                    {% if removed %}<span class="badge bg-warning">Removed</span>{% endif %}
+                                </div>
+                            {% endwith %}
+                        {% empty %}
+                            None
+                        {% endfor %}
+                    </td>
+                </tr>
+            {% endif %}
         {% endif %}
         </tbody>
     </table>
