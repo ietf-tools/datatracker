@@ -82,7 +82,9 @@ echo "Running initial checks..."
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check --settings=settings_local
 # /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local
 
+echo "-----------------------------------------------------------------"
 echo "Done!"
+echo "-----------------------------------------------------------------"
 
 if [ -z "$EDITOR_VSCODE" ]; then
     CODE=0
@@ -94,6 +96,10 @@ if [ -z "$EDITOR_VSCODE" ]; then
         echo "    ietf/manage.py check && ietf/manage.py runserver 0.0.0.0:8000"
         echo
         echo "to start a development instance of the Datatracker."
+        echo
+        echo "    ietf/manage.py test --settings=settings_sqlitetest"
+        echo
+        echo "to run all the tests."
         echo
         zsh
     else

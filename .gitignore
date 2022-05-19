@@ -19,9 +19,8 @@ datatracker.sublime-workspace
 /media
 /node_modules
 /release-coverage.json
-/tmp
-/tmp-nomcom-public-keys-dir
-/tmp-storage-meetinghosttests-dir
+/tmp-*
+/.testresult
 *.pyc
 __pycache__
 .yarn/*
