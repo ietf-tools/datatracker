@@ -15,10 +15,11 @@ from contextlib import ExitStack
 
 from email.utils import formataddr
 from unidecode import unidecode
+from urllib.parse import urljoin
 
 from django import forms
 from django.conf import settings
-from django.utils.html import mark_safe # type:ignore
+from django.utils.html import mark_safe, format_html # type:ignore
 from django.urls import reverse as urlreverse
 from django.utils.encoding import force_str
 
@@ -644,7 +645,15 @@ class SubmissionBaseUploadForm(forms.Form):
             # check existing
             existing = Submission.objects.filter(name=self.filename, rev=self.revision).exclude(state__in=("posted", "cancel", "waiting-for-draft"))
             if existing:
-                raise forms.ValidationError(mark_safe('A submission with same name and revision is currently being processed. <a href="%s">Check the status here.</a>' % urlreverse("ietf.submit.views.submission_status", kwargs={ 'submission_id': existing[0].pk })))
+                raise forms.ValidationError(
+                    format_html(
+                        'A submission with same name and revision is currently being processed. <a href="{}">Check the status here.</a>',
+                        urljoin(
+                            settings.IDTRACKER_BASE_URL,
+                            urlreverse("ietf.submit.views.submission_status", kwargs={'submission_id': existing[0].pk}),
+                        )
+                    )
+                )
 
             # cut-off
             if self.revision == '00' and self.in_first_cut_off:

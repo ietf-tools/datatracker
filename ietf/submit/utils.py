@@ -1232,11 +1232,8 @@ def process_uploaded_submission(submission):
         errors = [c.message for c in submission.checks.filter(passed__isnull=False) if not c.passed]
         if len(errors) > 0:
             raise SubmissionError('Checks failed: ' + ' / '.join(errors))
-    except SubmissionError as err:
-        abort_submission(str(err))
     except Exception as err:
-        abort_submission('An error occurred during validation. Please contact the secretariat for assistance.')
-        log.log(f'Exception while validating submission {submission.pk}: {err}')
+        abort_submission(str(err))
 
 
     submission.state = DraftSubmissionStateName.objects.get(slug='uploaded')
