@@ -348,7 +348,10 @@ def submission_status(request, submission_id, access_token=None):
     is_ad = area and area.has_role(request.user, "ad")
 
     can_edit = can_edit_submission(request.user, submission, access_token) and submission.state_id == "uploaded"
-    can_cancel = (key_matched or is_secretariat) and submission.state.next_states.filter(slug="cancel")
+    # disallow cancellation of 'validating' submissions until the async validation process is abortable
+    can_cancel = ((key_matched or is_secretariat)
+                  and submission.state_id != 'validating'
+                  and submission.state.next_states.filter(slug="cancel"))
     can_group_approve = (is_secretariat or is_ad or is_chair) and submission.state_id == "grp-appr"
     can_ad_approve = (is_secretariat or is_ad) and submission.state_id == "ad-appr"
 
