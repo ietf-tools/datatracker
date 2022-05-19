@@ -24,6 +24,8 @@ if (!process.env.BUILD_DEPLOY) {
 
 import Cookies from "js-cookie";
 
+import debounce from "lodash/debounce";
+
 // setup CSRF protection using jQuery
 function csrfSafeMethod(method) {
     // these HTTP methods do not require CSRF protection
@@ -186,7 +188,7 @@ $(function () {
                  <div class="col-xl-2 ps-0 small">
                      <div id="righthand-panel" class="position-fixed col-xl-2 bg-light d-flex flex-column justify-content-between align-items-start">
                          <nav id="righthand-nav" class="navbar navbar-light w-100 overflow-auto align-items-start flex-fill"></nav>
-                     </div></div>
+                     </div>
                  </div>
                  `));
 
@@ -244,15 +246,17 @@ $(function () {
                 extraNav.remove();
             }
 
-            $(window)
-                .on("scroll", function () {
+            $(document)
+                // Chrome apparently wants this debounced to something >10ms,
+                // otherwise the main view doesn't scroll?
+                .on("scroll", debounce(function () {
                     const item = $('#righthand-nav')
                         .find(".active")
                         .last();
                     if (item.length) {
-                        item[0].scrollIntoView({ block: "center" });
+                        item[0].scrollIntoView({ block: "center", behavior: "smooth" });
                     }
-                });
+                }, 100));
 
             // offset the scrollspy to account for the menu bar
             const contentOffset = contentElement ? contentElement.offset().top : 0;

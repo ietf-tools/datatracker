@@ -177,6 +177,7 @@ def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
     "True if the vnu message is a known false positive"
     if filter_db_issues and re.search(
         r"""^Forbidden\ code\ point\ U\+|
+             Illegal\ character\ in\ query:\ '\['|
             'href'\ on\ element\ 'a':\ Percentage\ \("%"\)\ is\ not\ followed|
             ^Saw\ U\+\d+\ in\ stream|
             ^Document\ uses\ the\ Unicode\ Private\ Use\ Area""",
