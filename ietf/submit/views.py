@@ -7,6 +7,7 @@ import base64
 import datetime
 
 from typing import Optional, cast         # pyflakes:ignore
+from urllib.parse import urljoin
 
 from django.conf import settings
 from django.contrib import messages
@@ -14,7 +15,7 @@ from django.contrib.auth.models import User
 from django.db import DataError, transaction
 from django.urls import reverse as urlreverse
 from django.core.exceptions import ValidationError
-from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponse
+from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponse, JsonResponse
 from django.http import HttpRequest     # pyflakes:ignore
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
@@ -184,6 +185,18 @@ def api_upload(request):
                 submission.delete()
     else:
         return err(405, "Method not allowed")
+
+
+@csrf_exempt
+def api_submission_status(request, submission_id):
+    submission = get_submission_or_404(submission_id)
+    return JsonResponse(
+        {
+            'id': str(submission.pk),
+            'state': submission.state.slug,
+        }
+    )
+
 
 @csrf_exempt
 def api_submit(request):
