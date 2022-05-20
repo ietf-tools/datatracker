@@ -122,7 +122,6 @@ def api_upload(request):
         exception = None
         submission = None
         try:
-            debug.mark()
             form = SubmissionAutoUploadForm(request, data=request.POST, files=request.FILES)
             if form.is_valid():
                 log('got valid submission form for %s' % form.filename)
