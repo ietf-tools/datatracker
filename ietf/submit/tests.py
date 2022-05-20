@@ -16,6 +16,7 @@ from pyquery import PyQuery
 from pathlib import Path
 
 from django.conf import settings
+from django.db import transaction
 from django.test import override_settings
 from django.test.client import RequestFactory
 from django.urls import reverse as urlreverse
@@ -2721,6 +2722,133 @@ Subject: test
             self.assertEqual(submission.submitter, email.utils.formataddr((submitter_name, submitter_email)))
 
         return r
+
+
+# Transaction.on_commit() requires use of TransactionTestCase, but that has a performance penalty. Replace it
+# with a no-op for testing purposes.
+@mock.patch.object(transaction, 'on_commit', lambda x: x())
+@override_settings(IDTRACKER_BASE_URL='https://datatracker.example.com')
+class ApiUploadTests(BaseSubmitTestCase):
+    def test_upload_draft(self):
+        """api_upload accepts a submission and queues it for processing"""
+        url = urlreverse('ietf.submit.views.api_upload')
+        xml, author = submission_file('draft-somebody-test-00', 'draft-somebody-test-00.xml', None, 'test_submission.xml')
+        data = {
+            'xml': xml,
+            'user': author.user.username,
+        }
+        with mock.patch('ietf.submit.views.process_uploaded_submission') as mock_task:
+            r = self.client.post(url, data)
+        self.assertEqual(r.status_code, 200)
+        response = r.json()
+        self.assertCountEqual(
+            response.keys(),
+            ['id', 'name', 'rev', 'status_url'],
+        )
+        submission_id = int(response['id'])
+        self.assertEqual(response['name'], 'draft-somebody-test')
+        self.assertEqual(response['rev'], '00')
+        self.assertEqual(
+            response['status_url'],
+            'https://datatracker.example.com' + urlreverse(
+                'ietf.submit.views.api_submission_status',
+                kwargs={'submission_id': submission_id},
+            ),
+        )
+        self.assertEqual(mock_task.delay.call_count, 1)
+        self.assertEqual(mock_task.delay.call_args.args, (submission_id,))
+        submission = Submission.objects.get(pk=submission_id)
+        self.assertEqual(submission.name, 'draft-somebody-test')
+        self.assertEqual(submission.rev, '00')
+        self.assertEqual(submission.submitter, author.formatted_email())
+        self.assertEqual(submission.state_id, 'validating')
+
+    def test_rejects_broken_upload(self):
+        """api_upload immediately rejects a submission with serious problems"""
+        orig_submission_count = Submission.objects.count()
+        url = urlreverse('ietf.submit.views.api_upload')
+
+        # invalid submitter
+        xml, author = submission_file('draft-somebody-test-00', 'draft-somebody-test-00.xml', None, 'test_submission.xml')
+        data = {
+            'xml': xml,
+            'user': 'i.dont.exist@nowhere.example.com',
+        }
+        with mock.patch('ietf.submit.views.process_uploaded_submission') as mock_task:
+            r = self.client.post(url, data)
+        self.assertEqual(r.status_code, 400)
+        response = r.json()
+        self.assertIn('No such user: ', response['error'])
+        self.assertFalse(mock_task.delay.called)
+        self.assertEqual(Submission.objects.count(), orig_submission_count)
+
+        # missing name
+        xml, _ = submission_file('', 'draft-somebody-test-00.xml', None, 'test_submission.xml', author=author)
+        data = {
+            'xml': xml,
+            'user': author.user.username,
+        }
+        with mock.patch('ietf.submit.views.process_uploaded_submission') as mock_task:
+            r = self.client.post(url, data)
+        self.assertEqual(r.status_code, 400)
+        response = r.json()
+        self.assertEqual(response['error'], 'Validation Error')
+        self.assertFalse(mock_task.delay.called)
+        self.assertEqual(Submission.objects.count(), orig_submission_count)
+
+        # missing rev
+        xml, _ = submission_file('draft-somebody-test', 'draft-somebody-test-00.xml', None, 'test_submission.xml', author=author)
+        data = {
+            'xml': xml,
+            'user': author.user.username,
+        }
+        with mock.patch('ietf.submit.views.process_uploaded_submission') as mock_task:
+            r = self.client.post(url, data)
+        self.assertEqual(r.status_code, 400)
+        response = r.json()
+        self.assertEqual(response['error'], 'Validation Error')
+        self.assertFalse(mock_task.delay.called)
+        self.assertEqual(Submission.objects.count(), orig_submission_count)
+
+        # in-process submission
+        SubmissionFactory(name='draft-somebody-test', rev='00')  # create an already-in-progress submission
+        orig_submission_count += 1  # keep this up to date
+        xml, _ = submission_file('draft-somebody-test-00', 'draft-somebody-test-00.xml', None, 'test_submission.xml', author=author)
+        data = {
+            'xml': xml,
+            'user': author.user.username,
+        }
+        with mock.patch('ietf.submit.views.process_uploaded_submission') as mock_task:
+            r = self.client.post(url, data)
+        self.assertEqual(r.status_code, 400)
+        response = r.json()
+        self.assertEqual(response['error'], 'Validation Error')
+        self.assertFalse(mock_task.delay.called)
+        self.assertEqual(Submission.objects.count(), orig_submission_count)
+
+    def test_submission_status(self):
+        s = SubmissionFactory(state_id='validating')
+        url = urlreverse('ietf.submit.views.api_submission_status', kwargs={'submission_id': s.pk})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(
+            r.json(),
+            {'id': str(s.pk), 'state': 'validating'},
+        )
+
+        s.state_id = 'uploaded'
+        s.save()
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(
+            r.json(),
+            {'id': str(s.pk), 'state': 'uploaded'},
+        )
+
+        # try an invalid one
+        r = self.client.get(urlreverse('ietf.submit.views.api_submission_status', kwargs={'submission_id': '999999'}))
+        self.assertEqual(r.status_code, 404)
+
 
 class ApiSubmitTests(BaseSubmitTestCase):
     def setUp(self):
