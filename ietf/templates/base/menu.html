@@ -208,6 +208,12 @@
             ISE
         </a>
     </li>
+    <li>
+        <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
+           href="{% url "ietf.group.views.stream_documents" acronym="editorial" %}">
+            Editorial
+        </a>
+    </li>
     {% if flavor == 'top' %}
     </ul>
 </li>

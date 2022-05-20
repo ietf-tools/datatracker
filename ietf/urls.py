@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2022, All Rights Reserved
 
 from django.conf import settings
 from django.conf.urls import include
@@ -67,7 +67,7 @@ urlpatterns = [
     url(r'^submit/', include('ietf.submit.urls')),
     url(r'^sync/', include('ietf.sync.urls')),
     url(r'^templates/', include('ietf.dbtemplate.urls')),
-    url(r'^(?P<group_type>(wg|rg|ag|rag|team|dir|review|area|program|iabasg|adhoc|ise|adm))/', include(grouptype_urls)),
+    url(r'^(?P<group_type>(wg|rg|ag|rag|team|dir|review|area|program|iabasg|adhoc|ise|adm|rfcedtyp))/', include(grouptype_urls)),
 
     # Redirects
     url(r'^(?P<path>public)/', include('ietf.redirects.urls')),
