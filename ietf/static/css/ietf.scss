@@ -171,11 +171,13 @@ table tbody.meta {
 // Style the righthand navigation panel
 #righthand-panel {
     max-height: 80vh;
+    z-index: -1;
 }
 
 #righthand-nav {
     height: 70vh;
     width: inherit;
+    overscroll-behavior-y: none; // Prevent overscrolling from scrolling the main content
 }
 
 // Add some padding when there are multiple buttons in a line than can wrap

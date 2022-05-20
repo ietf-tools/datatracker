@@ -140,13 +140,13 @@
                                 {% if item.session_keyword %}
                                     <label class="d-none"
                                            aria-label="Select session"
-                                           for="{{ item.session_keyword }}">
+                                           for="{{ item.session_keyword }}-{{ item.slug }}">
                                    </label>
                                     <input type="checkbox"
                                            class="pickview form-check-input"
                                            title="Select session"
                                            name="selected-sessions"
-                                           id="{{ item.session_keyword }}"
+                                           id="{{ item.session_keyword }}-{{ item.slug }}"
                                            value="{{ item.session_keyword }}"
                                            data-filter-keywords="{{ item.filter_keywords|join:',' }}"
                                            data-filter-item="{{ item.session_keyword }}">
@@ -268,7 +268,9 @@
                     {% endif %}
                 </td>
                 <td>
-                    <div class="d-none d-sm-block">{{ item.session.historic_group.historic_parent.acronym }}</div>
+                    {% if item.session.historic_group.historic_parent.acronym %}
+                        <div class="d-none d-sm-block">{{ item.session.historic_group.historic_parent.acronym }}</div>
+                    {% endif %}
                 </td>
                 <td>
                     {% if item.session.historic_group %}
@@ -425,8 +427,6 @@
     <script src="{% static 'ietf/js/list.js' %}">
     </script>
     <script src="{% static 'ietf/js/moment.js' %}">
-    </script>
-    <script src="{% static 'ietf/js/moment-timezone-with-data-10-year-range.js' %}">
     </script>
     <script src="{% static 'ietf/js/timezone.js' %}">
     </script>

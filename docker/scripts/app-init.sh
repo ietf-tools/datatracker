@@ -2,11 +2,13 @@
 
 WORKSPACEDIR="/workspace"
 
-service rsyslog start
+sudo service rsyslog start
 
-# fix permissions for npm-related paths
-WORKSPACE_UID_GID=$(stat --format="%u:%g" "$WORKSPACEDIR")
-chown -R "$WORKSPACE_UID_GID" "$WORKSPACEDIR/.parcel-cache"
+# Fix ownership of volumes
+echo "Fixing volumes ownership..."
+sudo chown -R vscode:vscode "$WORKSPACEDIR/.parcel-cache"
+sudo chown -R vscode:vscode "$WORKSPACEDIR/__pycache__"
+sudo chown -R vscode:vscode "$WORKSPACEDIR"
 
 # Build node packages that requrie native compilation
 echo "Compiling native node packages..."
@@ -71,7 +73,8 @@ fi
 
 # Run memcached
 
-/usr/bin/memcached -u root -d
+echo "Starting memcached..."
+/usr/bin/memcached -u vscode -d
 
 # Initial checks
 
@@ -79,7 +82,9 @@ echo "Running initial checks..."
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check --settings=settings_local
 # /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local
 
+echo "-----------------------------------------------------------------"
 echo "Done!"
+echo "-----------------------------------------------------------------"
 
 if [ -z "$EDITOR_VSCODE" ]; then
     CODE=0
@@ -92,13 +97,17 @@ if [ -z "$EDITOR_VSCODE" ]; then
         echo
         echo "to start a development instance of the Datatracker."
         echo
-        bash
+        echo "    ietf/manage.py test --settings=settings_sqlitetest"
+        echo
+        echo "to run all the tests."
+        echo
+        zsh
     else
         echo "Executing \"$*\" and stopping container."
         echo
-        bash -c "$*"
+        zsh -c "$*"
         CODE=$?
     fi
-    service rsyslog stop
+    sudo service rsyslog stop
     exit $CODE
 fi

@@ -25,7 +25,13 @@
                         <td></td>
                         <th scope="row">State</th>
                         <td class="edit"></td>
-                        <td>{{ doc.get_state.name }}</td>
+                        <td>
+                            {% if doc.get_state.name %}
+                                {{ doc.get_state.name }}
+                            {% else %}
+                                <span class="text-muted">(None)</span>
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endif %}
                 {% if other_reviews %}

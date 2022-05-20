@@ -95,8 +95,8 @@ def de_gfm(source: str):
     Calls de-gfm from the kramdown-rfc2629 gem.
     """
     result = subprocess.run(
-        [settings.DE_GFM_BINARY,],
-        stdout=subprocess.PIPE,  # post-Python 3.7, this can be replaced with capture_output=True
+        [settings.DE_GFM_BINARY, "-4"],
+        capture_output=True,
         input=source,
         encoding='utf8',
         check=True,

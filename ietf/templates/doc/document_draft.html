@@ -366,7 +366,7 @@
                             {% if resources or doc.group and doc.group.list_archive %}
                                 {% for resource in resources|dictsort:"display_name" %}
                                     {% if resource.name.type.slug == 'url' or resource.name.type.slug == 'email' %}
-                                        <a href="{{ resource.value|urlencode }}" title="{{ resource.name.name }}">
+                                        <a href="{{ resource.value }}" title="{{ resource.name.name }}">
                                             {% firstof resource.display_name resource.name.name %}
                                         </a>
                                         <br>

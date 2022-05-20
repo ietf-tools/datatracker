@@ -126,6 +126,11 @@ http = urllib3.PoolManager(retries=urllib3.Retry(99, redirect=False))
 
 def vnu_validate(html, content_type="text/html", port=8888):
     "Pass the HTML to the vnu server running on the indicated port"
+    if "** No value found for " in html.decode():
+        return json.dumps(
+            {"messages": [{"message": '"** No value found for" in source'}]}
+        )
+
     gzippeddata = gzip.compress(html)
     try:
         req = http.request(
@@ -172,6 +177,7 @@ def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
     "True if the vnu message is a known false positive"
     if filter_db_issues and re.search(
         r"""^Forbidden\ code\ point\ U\+|
+             Illegal\ character\ in\ query:\ '\['|
             'href'\ on\ element\ 'a':\ Percentage\ \("%"\)\ is\ not\ followed|
             ^Saw\ U\+\d+\ in\ stream|
             ^Document\ uses\ the\ Unicode\ Private\ Use\ Area""",
@@ -183,8 +189,7 @@ def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
     if filter_test_issues and re.search(
         r"""Ceci\ n'est\ pas\ une\ URL|
             ^The\ '\w+'\ attribute\ on\ the\ '\w+'\ element\ is\ obsolete|
-            ^Section\ lacks\ heading|
-            is\ not\ in\ Unicode\ Normalization\ Form\ C""",
+            ^Section\ lacks\ heading""",
         msg["message"],
         flags=re.VERBOSE,
     ):
@@ -193,7 +198,8 @@ def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
     return re.search(
         r"""document\ is\ not\ mappable\ to\ XML\ 1|
             ^Attribute\ 'required'\ not\ allowed\ on\ element\ 'div'|
-            ^The\ 'type'\ attribute\ is\ unnecessary\ for\ JavaScript""",
+            ^The\ 'type'\ attribute\ is\ unnecessary\ for\ JavaScript|
+            is\ not\ in\ Unicode\ Normalization\ Form\ C""",
         msg["message"],
         flags=re.VERBOSE,
     )
@@ -417,8 +423,7 @@ def save_test_results(failures, test_labels):
     # Record the test result in a file, in order to be able to check the
     # results and avoid re-running tests if we've alread run them with OK
     # result after the latest code changes:
-    topdir = os.path.dirname(os.path.dirname(settings.BASE_DIR))
-    tfile = io.open(os.path.join(topdir,".testresult"), "a", encoding='utf-8')
+    tfile = io.open(".testresult", "a", encoding='utf-8')
     timestr = time.strftime("%Y-%m-%d %H:%M:%S")
     if failures:
         tfile.write("%s FAILED (failures=%s)\n" % (timestr, failures))
@@ -924,7 +929,7 @@ class IetfTestRunner(DiscoverRunner):
         testcase = TestCase()
         cwd = pathlib.Path.cwd()
         tmpdir = tempfile.TemporaryDirectory(prefix="html-validate-")
-        Path(tmpdir.name).chmod(0o655)
+        Path(tmpdir.name).chmod(0o777)
         for (name, content, fingerprint) in self.batches[kind]:
             path = pathlib.Path(tmpdir.name).joinpath(
                 hex(fingerprint)[2:],

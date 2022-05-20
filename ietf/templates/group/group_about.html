@@ -68,7 +68,9 @@
                         {% if group.charter %}
                             <a href="{% url "ietf.doc.views_doc.document_main" name=group.charter.name %}">
                                 {{ group.charter.name }}-{{ group.charter.rev }}</a>
-                            <span class="badge bg-info">{{ group.charter.get_state.name }}</span>
+                            {% if group.charter.get_state.name %}
+                                <span class="badge bg-info">{{ group.charter.get_state.name }}</span>
+                            {% endif %}
                         {% else %}
                             <span class="text-muted">(None)</span>
                             {% if user|has_role:"Area Director,Secretariat" %}
@@ -148,7 +150,7 @@
                                 {% for resource in resources|dictsort:"display_name" %}
                                     {# Maybe make how a resource displays itself a method on the class so templates aren't doing this switching #}
                                     {% if resource.name.type.slug == 'url' or resource.name.type.slug == 'email' %}
-                                        <a href="{{ resource.value|urlencode }}" title="{{ resource.name.name }}">
+                                        <a href="{{ resource.value }}" title="{{ resource.name.name }}">
                                             {% firstof resource.display_name resource.name.name %}</a>{% else %}
                                         <span title="{{ resource.name.name }}">
                                             {% firstof resource.display_name resource.name.name %}: {{ resource.value|escape }}

@@ -797,7 +797,7 @@ def meetings(request, acronym=None, group_type=None):
 def chair_photos(request, group_type=None):
     roles = sorted(Role.objects.filter(group__type=group_type, group__state='active', name_id='chair'),key=lambda x: x.person.last_name()+x.person.name+x.group.acronym)
     for role in roles:
-        role.last_initial = role.person.last_name()[0]
+        role.last_initial = role.person.last_name()[0].upper()
     return render(request, 'group/all_photos.html', {'group_type': group_type, 'role': 'Chair', 'roles': roles })
 
 def reorder_roles(roles, role_names):
@@ -813,7 +813,7 @@ def group_photos(request, group_type=None, acronym=None):
 
     roles = reorder_roles(roles, group.features.role_order)
     for role in roles:
-        role.last_initial = role.person.last_name()[0]
+        role.last_initial = role.person.last_name()[0].upper()
     return render(request, 'group/group_photos.html',
                   construct_group_menu_context(request, group, "photos", group_type, {
                       'group_type': group_type,

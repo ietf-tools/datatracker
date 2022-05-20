@@ -40,3 +40,10 @@ indent_size = 2
 
 [cypress/**]
 indent_size = 2
+
+# Settings for HTML templates
+# ---------------------------------------------------------
+# HTML should not have final newlines, because that causes visible whitespace when includes are rendered
+
+[ietf/**.html]
+insert_final_newline = false

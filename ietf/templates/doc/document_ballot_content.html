@@ -105,7 +105,7 @@
                             <div class="card-header bg-danger text-light">
                                 <div>
                                     <b>{{ p.pos.name }}</b>
-                                    ({{ p.discuss_time|date:"Y-m-d" }}{% if not p.for_current_revision %}{% if p.discuss_time %} {% endif %}for -{{ p.get_dochistory.rev }}{% endif %})
+                                    ({{ p.discuss_time|date:"Y-m-d" }}{% if not p.for_current_revision and p.get_dochistory.rev %}{% if p.discuss_time %} {% endif %}for -{{ p.get_dochistory.rev }}{% endif %})
                                     {% if p.send_email %}
                                         <i class="bi bi-envelope float-end"
                                               title="Email requested to be sent for this discuss"></i>
@@ -122,7 +122,7 @@
                                 </div>
                             </div>
                             <div class="card-body">
-                                <pre class="ballot pasted">{{ p.discuss|urlize_ietf_docs|linkify }}</pre>
+                                <pre class="ballot pasted">{{ p.discuss|escape|urlize_ietf_docs|linkify }}</pre>
                             </div>
                         </div>
                     {% endif %}
@@ -131,7 +131,7 @@
                             <div class="card-header {{ p.pos|pos_to_label_format }}">
                                 <div>
                                     <b>Comment</b>
-                                    ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision %}{% if p.comment_time %} {% endif %}for -{{ p.get_dochistory.rev }}{% endif %})
+                                    ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision and p.get_dochistory.rev %}{% if p.comment_time %} {% endif %}for -{{ p.get_dochistory.rev }}{% endif %})
                                     {% if p.send_email %}
                                         <i class="bi bi-envelope-check float-end"
                                               title="Email requested to be sent for this comment"></i>
@@ -148,7 +148,7 @@
                                 </div>
                             </div>
                             <div class="card-body">
-                                <pre class="ballot pasted">{{ p.comment|urlize_ietf_docs|linkify }}</pre>
+                                <pre class="ballot pasted">{{ p.comment|escape|urlize_ietf_docs|linkify }}</pre>
                             </div>
                         </div>
                     {% endif %}
@@ -178,9 +178,9 @@
                                 <b>{{ p.pos.name }} </b>
                                 {% if p.pos.blocking and p.discuss %}
                                     <b>[Treat as non-blocking comment]</b>
-                                    ({{ p.discuss_time|date:"Y-m-d" }}{% if not p.for_current_revision %}{% if p.discuss_time %} {% endif %}for -{{ p.get_dochistory.rev }}{% endif %})
+                                    ({{ p.discuss_time|date:"Y-m-d" }}{% if not p.for_current_revision and p.get_dochistory.rev %}{% if p.discuss_time %} {% endif %}for -{{ p.get_dochistory.rev }}{% endif %})
                                 {% else %}
-                                    ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision %}{% if p.comment_time %} {% endif %}for -{{ p.get_dochistory.rev }}{% endif %})
+                                    ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision and p.get_dochistory.rev %}{% if p.comment_time %} {% endif %}for -{{ p.get_dochistory.rev }}{% endif %})
                                 {% endif %}
                                 {% if p.send_email %}
                                     <i class="bi bi-envelope float-end"
@@ -199,11 +199,11 @@
                         </div>
                         {% if p.pos.blocking and p.discuss %}
                             <div class="card-body">
-                                <pre class="ballot pasted">{{ p.discuss|urlize_ietf_docs|linkify }}</pre>
+                                <pre class="ballot pasted">{{ p.discuss|escape|urlize_ietf_docs|linkify }}</pre>
                             </div>
                         {% else %}
                             <div class="card-body">
-                                <pre class="ballot pasted">{{ p.comment|urlize_ietf_docs|linkify }}</pre>
+                                <pre class="ballot pasted">{{ p.comment|escape|urlize_ietf_docs|linkify }}</pre>
                             </div>
                         {% endif %}
                     </div>
