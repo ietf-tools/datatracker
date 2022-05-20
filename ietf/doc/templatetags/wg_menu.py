@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2009-2022, All Rights Reserved
+
 # Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #

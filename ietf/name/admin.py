@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2020, All Rights Reserved
+# Copyright The IETF Trust 2010-2022, All Rights Reserved
 from django.contrib import admin
 
 from ietf.name.models import (
