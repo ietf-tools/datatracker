@@ -54,7 +54,6 @@ def upload_submission(request):
             form = SubmissionManualUploadForm(request, data=request.POST, files=request.FILES)
             if form.is_valid():
                 log('got valid submission form for %s' % form.filename)
-                clear_existing_files(form)
                 saved_files = save_files(form)
                 authors, abstract, file_name, file_size = get_draft_meta(form, saved_files)
 
@@ -249,7 +248,6 @@ def api_submit(request):
                 if not hasattr(user, 'person'):
                     return err(400, "No person with username %s" % username)
 
-                clear_existing_files(form)
                 saved_files = save_files(form)
                 authors, abstract, file_name, file_size = get_draft_meta(form, saved_files)
                 for a in authors:

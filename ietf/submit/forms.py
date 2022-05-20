@@ -761,7 +761,7 @@ class SubmissionManualUploadForm(DeprecatedSubmissionBaseUploadForm):
     def clean_pdf(self):
         return self.clean_file("pdf", PDFParser)
 
-class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
+class SubmissionAutoUploadForm(DeprecatedSubmissionBaseUploadForm):
     user = forms.EmailField(required=True)
 
     def __init__(self, request, *args, **kwargs):
