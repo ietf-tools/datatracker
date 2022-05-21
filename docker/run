@@ -54,6 +54,7 @@ if [ $NEW_UID -gt 0 ]; then
     echo "GROUP ID: $NEW_GID"
 else
     echo "Running as root, will use default user/group mapping..."
+    echo "NOT RECOMMENDED - You may experience permission issues."
     NEW_UID=1000
     NEW_GID=1000
 fi

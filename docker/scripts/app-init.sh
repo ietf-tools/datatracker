@@ -8,7 +8,6 @@ sudo service rsyslog start
 echo "Fixing volumes ownership..."
 sudo chown -R vscode:vscode "$WORKSPACEDIR/.parcel-cache"
 sudo chown -R vscode:vscode "$WORKSPACEDIR/__pycache__"
-sudo chown -R vscode:vscode "$WORKSPACEDIR"
 
 # Build node packages that requrie native compilation
 echo "Compiling native node packages..."
