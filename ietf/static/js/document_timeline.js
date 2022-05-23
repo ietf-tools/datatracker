@@ -113,13 +113,14 @@ function update_timeline() {
 }
 
 function draw_timeline() {
+    console.log(width);
     bar_height = parseFloat($("body")
         .css("line-height"));
 
     var div = $("#timeline");
     div.addClass("my-3");
     if (div.is(":empty")) {
-        div.append("<svg xmlns:xlink='http://www.w3.org/1999/xlink'></svg>");
+        div.append("<svg></svg>");
     }
     var chart = d3.select("#timeline svg")
         .attr("width", width);
@@ -127,6 +128,7 @@ function draw_timeline() {
     var defs = chart.append("defs");
     var fade = defs.append("linearGradient")
         .attr("id", "maskGradient");
+    console.log(fade);
     fade.append("stop")
         .attr({
             offset: 0.9,
@@ -140,12 +142,13 @@ function draw_timeline() {
             "stop-opacity": 0
         });
 
+    console.log(defs);
     defs.append("mask")
         .attr({
             id: "fade",
             maskContentUnits: "objectBoundingBox"
-        })
-        .append("rect")
+        });
+    defs.append("rect")
         .attr({
             height: 1,
             width: 1,
@@ -181,7 +184,10 @@ function draw_timeline() {
     // re-order data by document name, for CSS background color alternation
     var ndata = [];
     y_labels.forEach(function (l) {
-        ndata = ndata.concat(data.filter(function (d) { return d.name === l; }));
+        ndata = ndata.concat(data.filter(function (d) {
+            return d.name ===
+                l;
+        }));
     });
     data = ndata;
 

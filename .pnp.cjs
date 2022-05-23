@@ -43,7 +43,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["caniuse-lite", "npm:1.0.30001340"],\
             ["cypress", "npm:9.6.1"],\
             ["cypress-real-events", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:1.7.0"],\
-            ["d3", "npm:3.5.17"],\
+            ["d3", "npm:4.13.0"],\
             ["eslint", "npm:8.15.0"],\
             ["flot", "npm:4.2.2"],\
             ["highcharts", "npm:10.1.0"],\
@@ -2560,10 +2560,477 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["d3", [\
-        ["npm:3.5.17", {\
-          "packageLocation": "./.yarn/cache/d3-npm-3.5.17-27ea43ba08-79b59275c3.zip/node_modules/d3/",\
+        ["npm:4.13.0", {\
+          "packageLocation": "./.yarn/cache/d3-npm-4.13.0-f6595b1c00-7b30f91b0c.zip/node_modules/d3/",\
           "packageDependencies": [\
-            ["d3", "npm:3.5.17"]\
+            ["d3", "npm:4.13.0"],\
+            ["d3-array", "npm:1.2.1"],\
+            ["d3-axis", "npm:1.0.8"],\
+            ["d3-brush", "npm:1.0.4"],\
+            ["d3-chord", "npm:1.0.4"],\
+            ["d3-collection", "npm:1.0.4"],\
+            ["d3-color", "npm:1.0.3"],\
+            ["d3-dispatch", "npm:1.0.3"],\
+            ["d3-drag", "npm:1.2.1"],\
+            ["d3-dsv", "npm:1.0.8"],\
+            ["d3-ease", "npm:1.0.3"],\
+            ["d3-force", "npm:1.1.0"],\
+            ["d3-format", "npm:1.2.2"],\
+            ["d3-geo", "npm:1.9.1"],\
+            ["d3-hierarchy", "npm:1.1.5"],\
+            ["d3-interpolate", "npm:1.1.6"],\
+            ["d3-path", "npm:1.0.5"],\
+            ["d3-polygon", "npm:1.0.3"],\
+            ["d3-quadtree", "npm:1.0.3"],\
+            ["d3-queue", "npm:3.0.7"],\
+            ["d3-random", "npm:1.1.0"],\
+            ["d3-request", "npm:1.0.6"],\
+            ["d3-scale", "npm:1.0.7"],\
+            ["d3-selection", "npm:1.3.0"],\
+            ["d3-shape", "npm:1.2.0"],\
+            ["d3-time", "npm:1.0.8"],\
+            ["d3-time-format", "npm:2.1.1"],\
+            ["d3-timer", "npm:1.0.7"],\
+            ["d3-transition", "npm:1.1.1"],\
+            ["d3-voronoi", "npm:1.1.2"],\
+            ["d3-zoom", "npm:1.7.1"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-array", [\
+        ["npm:1.2.1", {\
+          "packageLocation": "./.yarn/cache/d3-array-npm-1.2.1-a460c488f1-356994324a.zip/node_modules/d3-array/",\
+          "packageDependencies": [\
+            ["d3-array", "npm:1.2.1"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:1.2.4", {\
+          "packageLocation": "./.yarn/cache/d3-array-npm-1.2.4-37b8938a64-d0be1fa7d7.zip/node_modules/d3-array/",\
+          "packageDependencies": [\
+            ["d3-array", "npm:1.2.4"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-axis", [\
+        ["npm:1.0.8", {\
+          "packageLocation": "./.yarn/cache/d3-axis-npm-1.0.8-6d54e70ba2-ffdcba9fc2.zip/node_modules/d3-axis/",\
+          "packageDependencies": [\
+            ["d3-axis", "npm:1.0.8"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-brush", [\
+        ["npm:1.0.4", {\
+          "packageLocation": "./.yarn/cache/d3-brush-npm-1.0.4-905f354056-89f1e64bb1.zip/node_modules/d3-brush/",\
+          "packageDependencies": [\
+            ["d3-brush", "npm:1.0.4"],\
+            ["d3-dispatch", "npm:1.0.6"],\
+            ["d3-drag", "npm:1.2.5"],\
+            ["d3-interpolate", "npm:1.4.0"],\
+            ["d3-selection", "npm:1.4.2"],\
+            ["d3-transition", "npm:1.3.2"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-chord", [\
+        ["npm:1.0.4", {\
+          "packageLocation": "./.yarn/cache/d3-chord-npm-1.0.4-cbcd782753-bce80473c3.zip/node_modules/d3-chord/",\
+          "packageDependencies": [\
+            ["d3-chord", "npm:1.0.4"],\
+            ["d3-array", "npm:1.2.4"],\
+            ["d3-path", "npm:1.0.9"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-collection", [\
+        ["npm:1.0.4", {\
+          "packageLocation": "./.yarn/cache/d3-collection-npm-1.0.4-2128d9012d-ef8efc1cae.zip/node_modules/d3-collection/",\
+          "packageDependencies": [\
+            ["d3-collection", "npm:1.0.4"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:1.0.7", {\
+          "packageLocation": "./.yarn/cache/d3-collection-npm-1.0.7-3c04196100-9c6b910a9d.zip/node_modules/d3-collection/",\
+          "packageDependencies": [\
+            ["d3-collection", "npm:1.0.7"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-color", [\
+        ["npm:1.0.3", {\
+          "packageLocation": "./.yarn/cache/d3-color-npm-1.0.3-97243143b3-04f11356c1.zip/node_modules/d3-color/",\
+          "packageDependencies": [\
+            ["d3-color", "npm:1.0.3"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:1.4.1", {\
+          "packageLocation": "./.yarn/cache/d3-color-npm-1.4.1-cd6dccad72-a214b61458.zip/node_modules/d3-color/",\
+          "packageDependencies": [\
+            ["d3-color", "npm:1.4.1"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-dispatch", [\
+        ["npm:1.0.3", {\
+          "packageLocation": "./.yarn/cache/d3-dispatch-npm-1.0.3-e4c11d50d8-e4a6756f5e.zip/node_modules/d3-dispatch/",\
+          "packageDependencies": [\
+            ["d3-dispatch", "npm:1.0.3"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:1.0.6", {\
+          "packageLocation": "./.yarn/cache/d3-dispatch-npm-1.0.6-afea222924-b4ecb016b6.zip/node_modules/d3-dispatch/",\
+          "packageDependencies": [\
+            ["d3-dispatch", "npm:1.0.6"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-drag", [\
+        ["npm:1.2.1", {\
+          "packageLocation": "./.yarn/cache/d3-drag-npm-1.2.1-8cf01fecec-477a4e3179.zip/node_modules/d3-drag/",\
+          "packageDependencies": [\
+            ["d3-drag", "npm:1.2.1"],\
+            ["d3-dispatch", "npm:1.0.6"],\
+            ["d3-selection", "npm:1.4.2"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:1.2.5", {\
+          "packageLocation": "./.yarn/cache/d3-drag-npm-1.2.5-79f667b0ea-6e86e89aa8.zip/node_modules/d3-drag/",\
+          "packageDependencies": [\
+            ["d3-drag", "npm:1.2.5"],\
+            ["d3-dispatch", "npm:1.0.6"],\
+            ["d3-selection", "npm:1.4.2"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-dsv", [\
+        ["npm:1.0.8", {\
+          "packageLocation": "./.yarn/cache/d3-dsv-npm-1.0.8-fc1b0a126a-aac186e0d9.zip/node_modules/d3-dsv/",\
+          "packageDependencies": [\
+            ["d3-dsv", "npm:1.0.8"],\
+            ["commander", "npm:2.20.3"],\
+            ["iconv-lite", "npm:0.4.24"],\
+            ["rw", "npm:1.3.3"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:1.2.0", {\
+          "packageLocation": "./.yarn/cache/d3-dsv-npm-1.2.0-8721ea23bf-96c6e3d5ca.zip/node_modules/d3-dsv/",\
+          "packageDependencies": [\
+            ["d3-dsv", "npm:1.2.0"],\
+            ["commander", "npm:2.20.3"],\
+            ["iconv-lite", "npm:0.4.24"],\
+            ["rw", "npm:1.3.3"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-ease", [\
+        ["npm:1.0.3", {\
+          "packageLocation": "./.yarn/cache/d3-ease-npm-1.0.3-11e55a163d-dfbe70b85a.zip/node_modules/d3-ease/",\
+          "packageDependencies": [\
+            ["d3-ease", "npm:1.0.3"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:1.0.7", {\
+          "packageLocation": "./.yarn/cache/d3-ease-npm-1.0.7-756ddc480a-117811d51d.zip/node_modules/d3-ease/",\
+          "packageDependencies": [\
+            ["d3-ease", "npm:1.0.7"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-force", [\
+        ["npm:1.1.0", {\
+          "packageLocation": "./.yarn/cache/d3-force-npm-1.1.0-9465bb6d0c-df2d438ad0.zip/node_modules/d3-force/",\
+          "packageDependencies": [\
+            ["d3-force", "npm:1.1.0"],\
+            ["d3-collection", "npm:1.0.7"],\
+            ["d3-dispatch", "npm:1.0.6"],\
+            ["d3-quadtree", "npm:1.0.7"],\
+            ["d3-timer", "npm:1.0.10"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-format", [\
+        ["npm:1.2.2", {\
+          "packageLocation": "./.yarn/cache/d3-format-npm-1.2.2-e796822f22-f8b3c9afc7.zip/node_modules/d3-format/",\
+          "packageDependencies": [\
+            ["d3-format", "npm:1.2.2"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:1.4.5", {\
+          "packageLocation": "./.yarn/cache/d3-format-npm-1.4.5-a17fc8af8f-1b8b2c0bca.zip/node_modules/d3-format/",\
+          "packageDependencies": [\
+            ["d3-format", "npm:1.4.5"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-geo", [\
+        ["npm:1.9.1", {\
+          "packageLocation": "./.yarn/cache/d3-geo-npm-1.9.1-c8d924f958-34aeed22cc.zip/node_modules/d3-geo/",\
+          "packageDependencies": [\
+            ["d3-geo", "npm:1.9.1"],\
+            ["d3-array", "npm:1.2.4"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-hierarchy", [\
+        ["npm:1.1.5", {\
+          "packageLocation": "./.yarn/cache/d3-hierarchy-npm-1.1.5-f2217973be-9558665f02.zip/node_modules/d3-hierarchy/",\
+          "packageDependencies": [\
+            ["d3-hierarchy", "npm:1.1.5"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-interpolate", [\
+        ["npm:1.1.6", {\
+          "packageLocation": "./.yarn/cache/d3-interpolate-npm-1.1.6-97799ba601-8902cd26c2.zip/node_modules/d3-interpolate/",\
+          "packageDependencies": [\
+            ["d3-interpolate", "npm:1.1.6"],\
+            ["d3-color", "npm:1.4.1"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:1.4.0", {\
+          "packageLocation": "./.yarn/cache/d3-interpolate-npm-1.4.0-694efcdd27-d98988bd1e.zip/node_modules/d3-interpolate/",\
+          "packageDependencies": [\
+            ["d3-interpolate", "npm:1.4.0"],\
+            ["d3-color", "npm:1.4.1"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-path", [\
+        ["npm:1.0.5", {\
+          "packageLocation": "./.yarn/cache/d3-path-npm-1.0.5-f8b3005f08-8090798b74.zip/node_modules/d3-path/",\
+          "packageDependencies": [\
+            ["d3-path", "npm:1.0.5"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:1.0.9", {\
+          "packageLocation": "./.yarn/cache/d3-path-npm-1.0.9-84bf428111-d4382573ba.zip/node_modules/d3-path/",\
+          "packageDependencies": [\
+            ["d3-path", "npm:1.0.9"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-polygon", [\
+        ["npm:1.0.3", {\
+          "packageLocation": "./.yarn/cache/d3-polygon-npm-1.0.3-104805ad52-c9e0a31998.zip/node_modules/d3-polygon/",\
+          "packageDependencies": [\
+            ["d3-polygon", "npm:1.0.3"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-quadtree", [\
+        ["npm:1.0.3", {\
+          "packageLocation": "./.yarn/cache/d3-quadtree-npm-1.0.3-3bcf4d2c1c-2e185ce697.zip/node_modules/d3-quadtree/",\
+          "packageDependencies": [\
+            ["d3-quadtree", "npm:1.0.3"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:1.0.7", {\
+          "packageLocation": "./.yarn/cache/d3-quadtree-npm-1.0.7-131ab23658-32181f578c.zip/node_modules/d3-quadtree/",\
+          "packageDependencies": [\
+            ["d3-quadtree", "npm:1.0.7"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-queue", [\
+        ["npm:3.0.7", {\
+          "packageLocation": "./.yarn/cache/d3-queue-npm-3.0.7-4f18d038ae-04d084dc0f.zip/node_modules/d3-queue/",\
+          "packageDependencies": [\
+            ["d3-queue", "npm:3.0.7"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-random", [\
+        ["npm:1.1.0", {\
+          "packageLocation": "./.yarn/cache/d3-random-npm-1.1.0-fa3745e5f6-227e3dc81f.zip/node_modules/d3-random/",\
+          "packageDependencies": [\
+            ["d3-random", "npm:1.1.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-request", [\
+        ["npm:1.0.6", {\
+          "packageLocation": "./.yarn/cache/d3-request-npm-1.0.6-d58900c025-a5019c975f.zip/node_modules/d3-request/",\
+          "packageDependencies": [\
+            ["d3-request", "npm:1.0.6"],\
+            ["d3-collection", "npm:1.0.7"],\
+            ["d3-dispatch", "npm:1.0.6"],\
+            ["d3-dsv", "npm:1.2.0"],\
+            ["xmlhttprequest", "npm:1.8.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-scale", [\
+        ["npm:1.0.7", {\
+          "packageLocation": "./.yarn/cache/d3-scale-npm-1.0.7-deefe151cf-c889c510aa.zip/node_modules/d3-scale/",\
+          "packageDependencies": [\
+            ["d3-scale", "npm:1.0.7"],\
+            ["d3-array", "npm:1.2.4"],\
+            ["d3-collection", "npm:1.0.7"],\
+            ["d3-color", "npm:1.4.1"],\
+            ["d3-format", "npm:1.4.5"],\
+            ["d3-interpolate", "npm:1.4.0"],\
+            ["d3-time", "npm:1.1.0"],\
+            ["d3-time-format", "npm:2.3.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-selection", [\
+        ["npm:1.3.0", {\
+          "packageLocation": "./.yarn/cache/d3-selection-npm-1.3.0-b584cd3243-15394edd49.zip/node_modules/d3-selection/",\
+          "packageDependencies": [\
+            ["d3-selection", "npm:1.3.0"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:1.4.2", {\
+          "packageLocation": "./.yarn/cache/d3-selection-npm-1.4.2-7dcf4c89d3-2484b39225.zip/node_modules/d3-selection/",\
+          "packageDependencies": [\
+            ["d3-selection", "npm:1.4.2"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-shape", [\
+        ["npm:1.2.0", {\
+          "packageLocation": "./.yarn/cache/d3-shape-npm-1.2.0-8efaa8724b-0848e3605b.zip/node_modules/d3-shape/",\
+          "packageDependencies": [\
+            ["d3-shape", "npm:1.2.0"],\
+            ["d3-path", "npm:1.0.9"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-time", [\
+        ["npm:1.0.8", {\
+          "packageLocation": "./.yarn/cache/d3-time-npm-1.0.8-1eb63ac18b-53e341af0b.zip/node_modules/d3-time/",\
+          "packageDependencies": [\
+            ["d3-time", "npm:1.0.8"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:1.1.0", {\
+          "packageLocation": "./.yarn/cache/d3-time-npm-1.1.0-5df1aeb229-33fcfff94f.zip/node_modules/d3-time/",\
+          "packageDependencies": [\
+            ["d3-time", "npm:1.1.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-time-format", [\
+        ["npm:2.1.1", {\
+          "packageLocation": "./.yarn/cache/d3-time-format-npm-2.1.1-4bfe801248-99cd6279e0.zip/node_modules/d3-time-format/",\
+          "packageDependencies": [\
+            ["d3-time-format", "npm:2.1.1"],\
+            ["d3-time", "npm:1.1.0"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:2.3.0", {\
+          "packageLocation": "./.yarn/cache/d3-time-format-npm-2.3.0-df09741a0b-5445eaaf2b.zip/node_modules/d3-time-format/",\
+          "packageDependencies": [\
+            ["d3-time-format", "npm:2.3.0"],\
+            ["d3-time", "npm:1.1.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-timer", [\
+        ["npm:1.0.10", {\
+          "packageLocation": "./.yarn/cache/d3-timer-npm-1.0.10-af1ad28ff9-f704095367.zip/node_modules/d3-timer/",\
+          "packageDependencies": [\
+            ["d3-timer", "npm:1.0.10"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:1.0.7", {\
+          "packageLocation": "./.yarn/cache/d3-timer-npm-1.0.7-493df18f64-755c56614a.zip/node_modules/d3-timer/",\
+          "packageDependencies": [\
+            ["d3-timer", "npm:1.0.7"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-transition", [\
+        ["npm:1.1.1", {\
+          "packageLocation": "./.yarn/cache/d3-transition-npm-1.1.1-2293c11e64-355397cb77.zip/node_modules/d3-transition/",\
+          "packageDependencies": [\
+            ["d3-transition", "npm:1.1.1"],\
+            ["d3-color", "npm:1.4.1"],\
+            ["d3-dispatch", "npm:1.0.6"],\
+            ["d3-ease", "npm:1.0.7"],\
+            ["d3-interpolate", "npm:1.4.0"],\
+            ["d3-selection", "npm:1.4.2"],\
+            ["d3-timer", "npm:1.0.10"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:1.3.2", {\
+          "packageLocation": "./.yarn/cache/d3-transition-npm-1.3.2-f851312368-1b4a0cfa7a.zip/node_modules/d3-transition/",\
+          "packageDependencies": [\
+            ["d3-transition", "npm:1.3.2"],\
+            ["d3-color", "npm:1.4.1"],\
+            ["d3-dispatch", "npm:1.0.6"],\
+            ["d3-ease", "npm:1.0.7"],\
+            ["d3-interpolate", "npm:1.4.0"],\
+            ["d3-selection", "npm:1.4.2"],\
+            ["d3-timer", "npm:1.0.10"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-voronoi", [\
+        ["npm:1.1.2", {\
+          "packageLocation": "./.yarn/cache/d3-voronoi-npm-1.1.2-d7efda5f96-a456c215c5.zip/node_modules/d3-voronoi/",\
+          "packageDependencies": [\
+            ["d3-voronoi", "npm:1.1.2"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["d3-zoom", [\
+        ["npm:1.7.1", {\
+          "packageLocation": "./.yarn/cache/d3-zoom-npm-1.7.1-cd8fc568e0-e16d023a50.zip/node_modules/d3-zoom/",\
+          "packageDependencies": [\
+            ["d3-zoom", "npm:1.7.1"],\
+            ["d3-dispatch", "npm:1.0.6"],\
+            ["d3-drag", "npm:1.2.5"],\
+            ["d3-interpolate", "npm:1.4.0"],\
+            ["d3-selection", "npm:1.4.2"],\
+            ["d3-transition", "npm:1.3.2"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -3625,6 +4092,14 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["iconv-lite", [\
+        ["npm:0.4.24", {\
+          "packageLocation": "./.yarn/cache/iconv-lite-npm-0.4.24-c5c4ac6695-bd9f120f5a.zip/node_modules/iconv-lite/",\
+          "packageDependencies": [\
+            ["iconv-lite", "npm:0.4.24"],\
+            ["safer-buffer", "npm:2.1.2"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
         ["npm:0.6.3", {\
           "packageLocation": "./.yarn/cache/iconv-lite-npm-0.6.3-24b8aae27e-3f60d47a5c.zip/node_modules/iconv-lite/",\
           "packageDependencies": [\
@@ -5153,7 +5628,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["caniuse-lite", "npm:1.0.30001340"],\
             ["cypress", "npm:9.6.1"],\
             ["cypress-real-events", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:1.7.0"],\
-            ["d3", "npm:3.5.17"],\
+            ["d3", "npm:4.13.0"],\
             ["eslint", "npm:8.15.0"],\
             ["flot", "npm:4.2.2"],\
             ["highcharts", "npm:10.1.0"],\
@@ -5173,6 +5648,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["zxcvbn", "npm:4.4.2"]\
           ],\
           "linkType": "SOFT"\
+        }]\
+      ]],\
+      ["rw", [\
+        ["npm:1.3.3", {\
+          "packageLocation": "./.yarn/cache/rw-npm-1.3.3-2197930a8d-c20d82421f.zip/node_modules/rw/",\
+          "packageDependencies": [\
+            ["rw", "npm:1.3.3"]\
+          ],\
+          "linkType": "HARD"\
         }]\
       ]],\
       ["rxjs", [\
@@ -5854,6 +6338,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/wrappy-npm-1.0.2-916de4d4b3-159da4805f.zip/node_modules/wrappy/",\
           "packageDependencies": [\
             ["wrappy", "npm:1.0.2"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["xmlhttprequest", [\
+        ["npm:1.8.0", {\
+          "packageLocation": "./.yarn/cache/xmlhttprequest-npm-1.8.0-7ac1c8e494-c891cf0d78.zip/node_modules/xmlhttprequest/",\
+          "packageDependencies": [\
+            ["xmlhttprequest", "npm:1.8.0"]\
           ],\
           "linkType": "HARD"\
         }]\
