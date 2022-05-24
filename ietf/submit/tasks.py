@@ -11,8 +11,12 @@ from ietf.utils import log
 
 @shared_task
 def process_uploaded_submission_task(submission_id):
-    submission = Submission.objects.get(pk=submission_id)
-    process_uploaded_submission(submission)
+    try:
+        submission = Submission.objects.get(pk=submission_id)
+    except Submission.DoesNotExist:
+        log.log(f'process_uploaded_submission_task called for missing submission_id={submission_id}')
+    else:
+        process_uploaded_submission(submission)
 
 
 @shared_task(bind=True)
