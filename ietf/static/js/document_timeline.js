@@ -48,11 +48,8 @@ function bar_width(d, i) {
 }
 
 function scale_x() {
-    width = $("#timeline")
-        .width();
-
     // scale data to width of container minus y label width
-    x_scale = d3.time.scale()
+    x_scale = d3.scaleTime()
         .domain([
             d3.min(data, function (d) { return d.published; }),
             d3.max(data, function (d) { return d.published; })
@@ -65,7 +62,7 @@ function scale_x() {
     if (tv[tv.length - 1].published > now) { tv.push(new Date(now)); }
 
     // x label format
-    var format = d3.time.format("%b %Y");
+    var format = d3.timeFormat("%b %Y");
 
     // resort data by publication time to suppress some ticks if they are closer
     // than 12px and have a different label from the one before; and don't add a
@@ -80,14 +77,12 @@ function scale_x() {
         })
         .filter(function (d) { return d !== undefined; });
 
-    x_axis = d3.svg.axis()
-        .scale(x_scale)
+    x_axis = d3.axisBottom(x_scale)
         .tickValues(tv)
         .tickFormat(function (d) {
             if (d.getTime() < now) { return format(d); }
             return "Now";
-        })
-        .orient("bottom");
+        });
 }
 
 function update_x_axis() {
@@ -119,7 +114,7 @@ function draw_timeline() {
     var div = $("#timeline");
     div.addClass("my-3");
     if (div.is(":empty")) {
-        div.append("<svg xmlns:xlink='http://www.w3.org/1999/xlink'></svg>");
+        div.append("<svg></svg>");
     }
     var chart = d3.select("#timeline svg")
         .attr("width", width);
@@ -128,29 +123,21 @@ function draw_timeline() {
     var fade = defs.append("linearGradient")
         .attr("id", "maskGradient");
     fade.append("stop")
-        .attr({
-            offset: 0.9,
-            "stop-color": "white",
-            "stop-opacity": 1
-        });
+        .attr("offset", 0.9)
+        .attr("stop-color", "white")
+        .attr("stop-opacity", 1);
     fade.append("stop")
-        .attr({
-            offset: 1,
-            "stop-color": "white",
-            "stop-opacity": 0
-        });
+        .attr("offset", 1)
+        .attr("stop-color", "white")
+        .attr("stop-opacity", 0);
 
-    defs.append("mask")
-        .attr({
-            id: "fade",
-            maskContentUnits: "objectBoundingBox"
-        })
-        .append("rect")
-        .attr({
-            height: 1,
-            width: 1,
-            fill: "url(#maskGradient)"
-        });
+    var mask = defs.append("mask")
+        .attr("id", "fade")
+        .attr("maskContentUnits", "objectBoundingBox");
+    mask.append("rect")
+        .attr("height", 1)
+        .attr("width", 1)
+        .attr("fill", "url(#maskGradient)");
 
     var y_labels = data
         .map(function (d) { return d.name; })
@@ -160,11 +147,11 @@ function draw_timeline() {
     // and measuring the bounding boxes
     y_label_width = 10 + d3.max(y_labels, function (l) {
         var lw;
-        chart.append("text")
-            .attr({
-                class: "y axis",
-                transform: "translate(0, " + -bar_height + ")"
-            })
+        var text = chart.append("text");
+        text
+            .attr("class", "y axis")
+            .attr("transform", "translate(0, " + -bar_height + ")");
+        text
             .text(l)
             .each(function () {
                 lw = this.getBBox()
@@ -181,7 +168,10 @@ function draw_timeline() {
     // re-order data by document name, for CSS background color alternation
     var ndata = [];
     y_labels.forEach(function (l) {
-        ndata = ndata.concat(data.filter(function (d) { return d.name === l; }));
+        ndata = ndata.concat(data.filter(function (d) {
+            return d.name ===
+                l;
+        }));
     });
     data = ndata;
 
@@ -189,57 +179,47 @@ function draw_timeline() {
     var bar = chart.selectAll("g")
         .data(data.slice(0, -1));
     var g = bar.enter()
-        .append("g")
-        .attr({
-            class: "bar",
-            transform: offset
-        });
-    g.append("a")
-        .attr("xlink:href", function (d) { return d.url; })
-        .append("rect")
-        .attr({
-            height: bar_height,
-            width: bar_width,
-            class: "btn",
-            type: "button",
-            mask: function (d, i) {
-                // apply gradient if the document is a draft and expired
-                if (d.name.match(/^draft-/) &&
-                    bar_width(d, i) >= x_scale(expiration_date(d)) -
-                    x_scale(d.published)) {
-                    return "url(#fade)";
-                }
+        .append("g");
+    g.attr("class", "bar")
+        .attr("transform", offset);
+    var a = g.append("a");
+    a.attr("xlink:href", function (d) { return d.url; });
+    var rect = g.append("rect")
+        .attr("height", bar_height)
+        .attr("width", bar_width)
+        .attr("class", "btn")
+        .attr("type", "button")
+        .attr("mask", function (d, i) {
+            // apply gradient if the document is a draft and expired
+            if (d.name.match(/^draft-/) &&
+                bar_width(d, i) >= x_scale(expiration_date(d)) -
+                x_scale(d.published)) {
+                return "url(#fade)";
             }
         });
 
-    g.append("text")
-        .attr({
-            x: 3,
-            y: bar_height / 2
-        })
-        .text(function (d) { return d.rev; });
+    var text = g.append("text");
+    text.attr("x", 3)
+        .attr("y", bar_height / 2);
+    text.text(function (d) { return d.rev; });
 
-    var y_scale = d3.scale.ordinal()
+    var y_scale = d3.scalePoint()
         .domain(y_labels)
-        .rangePoints([0, max(bar_y) + bar_height]);
+        .range([0, max(bar_y) + bar_height]);
 
-    var y_axis = d3.svg.axis()
-        .scale(y_scale)
-        .tickValues(y_labels)
-        .orient("left");
+    var y_axis = d3.axisLeft(y_scale)
+        .tickValues(y_labels);
 
     chart.append("g")
-        .attr({
-            class: "x axis",
-            transform: "translate(0, " + (max(bar_y) + bar_height) + ")"
-        });
+        .attr("class", "x axis")
+        .attr("transform", "translate(0, " + (max(bar_y) + bar_height) + ")");
     update_x_axis();
 
-    chart.append("g")
-        .attr({
-            class: "y axis",
-            transform: "translate(10, " + bar_height / 2 + ")"
-        })
+    var g = chart.append("g");
+    g
+        .attr("class", "y axis")
+        .attr("transform", "translate(10, " + bar_height / 2 + ")");
+    g
         .call(y_axis)
         .selectAll("text")
         .style("text-anchor", "start");
@@ -254,27 +234,36 @@ function draw_timeline() {
     chart.attr("height", max(bar_y) + bar_height + x_label_height);
 }
 
-d3.json("doc.json", function (error, json) {
-    if (error) { return; }
-    data = json.rev_history;
+d3.json("doc.json")
+    .then(function (json) {
+        data = json.rev_history;
 
-    if (data.length) {
-        // make js dates out of publication dates
-        data.forEach(function (d) { d.published = new Date(d.published); });
+        if (data.length) {
+            // make js dates out of publication dates
+            data.forEach(function (d) { d.published = new Date(d.published); });
 
-        // add pseudo entry when the ID will expire
-        data.push({
-            name: "",
-            rev: "",
-            published: expiration_date(data[data.length - 1])
-        });
-        draw_timeline();
-    }
-});
+            // add pseudo entry when the ID will expire
+            data.push({
+                name: "",
+                rev: "",
+                published: expiration_date(data[data.length - 1])
+            });
+
+            width = $("#timeline")
+                .width();
+            draw_timeline();
+        }
+    });
 
 $(window)
     .on({
         resize: function () {
+            var g = $("#timeline svg");
+            g.remove();
+            width = $("#timeline")
+                .width();
+            $("#timeline")
+                .append(g);
             update_timeline();
         }
     });
