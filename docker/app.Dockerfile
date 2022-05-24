@@ -96,6 +96,7 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     ruby-rubygems \
 	subversion \
 	unzip \
+	watchman \
 	wget \
     xauth \
     xvfb \
