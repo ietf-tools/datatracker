@@ -129,9 +129,7 @@
             <td>
                 {% for a in review_req.all_completed_assignments_for_doc %}
                     {% if a.review %}
-                        <a href="{% url "ietf.doc.views_doc.document_main" name=a.review.name %}">
-                            {{ a.review_request.team.acronym|capfirst }} {{ a.review_request.type.name }} review of -{{ a.reviewed_rev|default:"??" }}
-                        </a>
+                        <a href="{% url "ietf.doc.views_doc.document_main" name=a.review.name %}">{{ a.review_request.team.acronym|capfirst }} {{ a.review_request.type.name }} review of -{{ a.reviewed_rev|default:"??" }}</a>
                         by {% person_link a.reviewer.person %}
                     {% else %}
                         {{ a.review_request.team.acronym|capfirst }} {{ a.review_request.type.name }} review of -{{ a.reviewed_rev|default:"??" }} by {% person_link a.reviewer.person %}
