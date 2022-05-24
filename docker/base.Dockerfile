@@ -118,11 +118,6 @@ RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 # Colorize the bash shell
 RUN sed -i 's/#force_color_prompt=/force_color_prompt=/' /root/.bashrc
 
-# Install current datatracker python dependencies
-COPY requirements.txt /tmp/pip-tmp/
-RUN pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requirements.txt \
-    && rm -rf /tmp/pip-tmp
-
 # Turn off rsyslog kernel logging (doesn't work in Docker)
 RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 
