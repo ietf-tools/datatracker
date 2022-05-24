@@ -368,23 +368,23 @@ tr.position-moretime-row,
 tr.position-notready-row,
 tr.position-discuss-row,
 tr.position-block-row {
-    background-color: tint-color($color-discuss, 90%);
+    background-color: tint-color($color-discuss, 85%);
 }
 
 tr.position-yes-row {
-    background-color: tint-color($color-yes, 90%);
+    background-color: tint-color($color-yes, 75%);
 }
 
 tr.position-noobj-row {
-    background-color: tint-color($color-noobj, 90%);
+    background-color: tint-color($color-noobj, 50%);
 }
 
 tr.position-abstain-row {
-    background-color: tint-color($color-abstain, 90%);
+    background-color: tint-color($color-abstain, 85%);
 }
 
 tr.position-recuse-row {
-    background-color: tint-color($color-recuse, 90%);
+    background-color: tint-color($color-recuse, 85%);
 }
 
 
