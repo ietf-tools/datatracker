@@ -42,6 +42,7 @@ from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
 from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactory
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
 from ietf.submit.mail import add_submission_email, process_response_email
+from ietf.submit.tasks import process_uploaded_submission_task
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.models import VersionInfo
@@ -2737,7 +2738,7 @@ class ApiUploadTests(BaseSubmitTestCase):
             'xml': xml,
             'user': author.user.username,
         }
-        with mock.patch('ietf.submit.views.process_uploaded_submission') as mock_task:
+        with mock.patch('ietf.submit.views.process_uploaded_submission_task') as mock_task:
             r = self.client.post(url, data)
         self.assertEqual(r.status_code, 200)
         response = r.json()
@@ -2774,7 +2775,7 @@ class ApiUploadTests(BaseSubmitTestCase):
             'xml': xml,
             'user': 'i.dont.exist@nowhere.example.com',
         }
-        with mock.patch('ietf.submit.views.process_uploaded_submission') as mock_task:
+        with mock.patch('ietf.submit.views.process_uploaded_submission_task') as mock_task:
             r = self.client.post(url, data)
         self.assertEqual(r.status_code, 400)
         response = r.json()
@@ -2788,7 +2789,7 @@ class ApiUploadTests(BaseSubmitTestCase):
             'xml': xml,
             'user': author.user.username,
         }
-        with mock.patch('ietf.submit.views.process_uploaded_submission') as mock_task:
+        with mock.patch('ietf.submit.views.process_uploaded_submission_task') as mock_task:
             r = self.client.post(url, data)
         self.assertEqual(r.status_code, 400)
         response = r.json()
@@ -2802,7 +2803,7 @@ class ApiUploadTests(BaseSubmitTestCase):
             'xml': xml,
             'user': author.user.username,
         }
-        with mock.patch('ietf.submit.views.process_uploaded_submission') as mock_task:
+        with mock.patch('ietf.submit.views.process_uploaded_submission_task') as mock_task:
             r = self.client.post(url, data)
         self.assertEqual(r.status_code, 400)
         response = r.json()
@@ -2818,7 +2819,7 @@ class ApiUploadTests(BaseSubmitTestCase):
             'xml': xml,
             'user': author.user.username,
         }
-        with mock.patch('ietf.submit.views.process_uploaded_submission') as mock_task:
+        with mock.patch('ietf.submit.views.process_uploaded_submission_task') as mock_task:
             r = self.client.post(url, data)
         self.assertEqual(r.status_code, 400)
         response = r.json()
@@ -2848,6 +2849,32 @@ class ApiUploadTests(BaseSubmitTestCase):
         # try an invalid one
         r = self.client.get(urlreverse('ietf.submit.views.api_submission_status', kwargs={'submission_id': '999999'}))
         self.assertEqual(r.status_code, 404)
+
+
+class AsyncSubmissionTests(BaseSubmitTestCase):
+    """Tests of async submission-related tasks"""
+    def test_process_uploaded_submission(self):
+        """process_uploaded_submission should properly process a submission"""
+        pass  # todo fill this in!!
+
+    def test_process_uploaded_invalid_submission(self):
+        """process_uploaded_submission should properly process an invalid submission"""
+        pass  # todo fill this in!!
+
+    @mock.patch('ietf.submit.tasks.process_uploaded_submission')
+    def test_process_uploaded_submission_task(self, mock_method):
+        """process_uploaded_submission_task task should properly call its method"""
+        s = SubmissionFactory()
+        process_uploaded_submission_task(s.pk)
+        self.assertEqual(mock_method.call_count, 1)
+        self.assertEqual(mock_method.call_args.args, (s,))
+
+    @mock.patch('ietf.submit.tasks.process_uploaded_submission')
+    def test_process_uploaded_submission_task_ignores_invalid_id(self, mock_method):
+        """process_uploaded_submission_task should ignore an invalid submission_id"""
+        s = SubmissionFactory()
+        process_uploaded_submission_task(9876)
+        self.assertEqual(mock_method.call_count, 0)
 
 
 class ApiSubmitTests(BaseSubmitTestCase):

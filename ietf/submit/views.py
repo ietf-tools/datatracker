@@ -35,7 +35,7 @@ from ietf.submit.forms import ( SubmissionManualUploadForm, SubmissionAutoUpload
 from ietf.submit.mail import send_full_url, send_manual_post_request, add_submission_email, get_reply_to
 from ietf.submit.models import (Submission, Preapproval, SubmissionExtResource,
     DraftSubmissionStateName, SubmissionEmailEvent )
-from ietf.submit.tasks import process_uploaded_submission, poke
+from ietf.submit.tasks import process_uploaded_submission_task, poke
 from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
     recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
     post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
@@ -164,7 +164,7 @@ def api_upload(request):
 
                 # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
                 transaction.on_commit(
-                    lambda: process_uploaded_submission.delay(submission.pk)
+                    lambda: process_uploaded_submission_task.delay(submission.pk)
                 )
                 return JsonResponse(
                     {

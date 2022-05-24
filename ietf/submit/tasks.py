@@ -5,14 +5,14 @@
 from celery import shared_task
 
 from ietf.submit.models import Submission
-from ietf.submit import utils
+from ietf.submit.utils import process_uploaded_submission
 from ietf.utils import log
 
 
 @shared_task
-def process_uploaded_submission(submission_id):
+def process_uploaded_submission_task(submission_id):
     submission = Submission.objects.get(pk=submission_id)
-    utils.process_uploaded_submission(submission)
+    process_uploaded_submission(submission)
 
 
 @shared_task(bind=True)
