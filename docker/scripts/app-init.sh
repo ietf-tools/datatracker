@@ -9,6 +9,9 @@ echo "Fixing volumes ownership..."
 sudo chown -R dev:dev "$WORKSPACEDIR/.parcel-cache"
 sudo chown -R dev:dev "$WORKSPACEDIR/__pycache__"
 
+echo "Fix chromedriver /dev/shm permissions..."
+sudo chmod 1777 /dev/shm
+
 # Build node packages that requrie native compilation
 echo "Compiling native node packages..."
 yarn rebuild
