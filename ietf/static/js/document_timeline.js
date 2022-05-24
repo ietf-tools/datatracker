@@ -234,26 +234,26 @@ function draw_timeline() {
     chart.attr("height", max(bar_y) + bar_height + x_label_height);
 }
 
-d3.json("doc.json", function (error, json) {
-    if (error) { return; }
-    data = json.rev_history;
+d3.json("doc.json")
+    .then(function (json) {
+        data = json.rev_history;
 
-    if (data.length) {
-        // make js dates out of publication dates
-        data.forEach(function (d) { d.published = new Date(d.published); });
+        if (data.length) {
+            // make js dates out of publication dates
+            data.forEach(function (d) { d.published = new Date(d.published); });
 
-        // add pseudo entry when the ID will expire
-        data.push({
-            name: "",
-            rev: "",
-            published: expiration_date(data[data.length - 1])
-        });
+            // add pseudo entry when the ID will expire
+            data.push({
+                name: "",
+                rev: "",
+                published: expiration_date(data[data.length - 1])
+            });
 
-        width = $("#timeline")
-            .width();
-        draw_timeline();
-    }
-});
+            width = $("#timeline")
+                .width();
+            draw_timeline();
+        }
+    });
 
 $(window)
     .on({
