@@ -77,7 +77,7 @@
                                 <td>
                                     <a class="interim-meeting-link"
                                        href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=group.acronym %}">
-                                        {{ meeting.number }}
+                                        {% firstof session.name meeting.number %}
                                     </a>
                                 </td>
                                 {% if session.current_status == 'canceled' %}
@@ -130,7 +130,7 @@
                   {% else %} {# if it's not a Meeting, it's a Session #}
                       {% with session=entry %}
                           {
-                              group: '{% if session.group %}{{session.group.acronym}}{% endif %}',
+                              group: '{% if session.group %}{{session.group.acronym}}{% endif %}{% if session.name %} - {{session.name}}{% endif %}',
                               filter_keywords: ["{{ session.filter_keywords|join:'","' }}"],
                               start_moment: moment.utc('{{session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}}'),
                               end_moment: moment.utc('{{session.official_timeslotassignment.timeslot.utc_end_time | date:"Y-m-d H:i"}}'),
