@@ -99,7 +99,7 @@ jobs:
     if: ${{ github.event.inputs.skiptests == 'false' }}
     needs: [prepare]
     runs-on: ubuntu-latest
-    container: ghcr.io/ietf-tools/datatracker-test-base:latest
+    container: ghcr.io/ietf-tools/datatracker-app-base:latest
     
     services:
       db:
