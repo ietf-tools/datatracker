@@ -1,4 +1,4 @@
-name: Build Base Test Docker Image
+name: Build Base App Docker Image
 
 on:
   push:
@@ -7,13 +7,13 @@ on:
     paths:
       - 'package.json'
       - 'requirements.txt'
-      - 'dev/tests/Dockerfile'
+      - 'docker/base.Dockerfile'
 
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: datatracker-test-base
+  IMAGE_NAME: datatracker-app-base
 
 jobs:
   publish:
@@ -25,12 +25,12 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Docker Build & Push Action
+    - name: Docker Build & Push
       uses: mr-smithers-excellent/docker-build-push@v5.6
       with:
         image: ${{ env.IMAGE_NAME }}
         tags: latest
         registry: ${{ env.REGISTRY }}
-        dockerfile: dev/tests/Dockerfile
+        dockerfile: docker/base.Dockerfile
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
