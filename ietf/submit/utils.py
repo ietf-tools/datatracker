@@ -1211,6 +1211,7 @@ def process_uploaded_submission(submission):
 
     if submission.state_id != 'validating':
         log.log(f'Submission {submission.pk} is not in "validating" state, skipping.')
+        return  # do nothing
 
     if submission.file_types != '.xml':
         abort_submission('Only XML draft submissions can be processed.')
@@ -1240,7 +1241,7 @@ def process_uploaded_submission(submission):
 
     # if we get here and are still "validating", accept the draft
     if submission.state_id == 'validating':
-        submission.state = DraftSubmissionStateName.objects.get(slug='uploaded')
+        submission.state_id = 'uploaded'
         submission.save()
         create_submission_event(None, submission, desc="Completed submission validation checks")
         accept_submission(submission)
