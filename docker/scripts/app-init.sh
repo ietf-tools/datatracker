@@ -6,8 +6,8 @@ sudo service rsyslog start
 
 # Fix ownership of volumes
 echo "Fixing volumes ownership..."
-sudo chown -R vscode:vscode "$WORKSPACEDIR/.parcel-cache"
-sudo chown -R vscode:vscode "$WORKSPACEDIR/__pycache__"
+sudo chown -R dev:dev "$WORKSPACEDIR/.parcel-cache"
+sudo chown -R dev:dev "$WORKSPACEDIR/__pycache__"
 
 # Build node packages that requrie native compilation
 echo "Compiling native node packages..."
@@ -73,7 +73,7 @@ fi
 # Run memcached
 
 echo "Starting memcached..."
-/usr/bin/memcached -u vscode -d
+/usr/bin/memcached -u dev -d
 
 # Initial checks
 
