@@ -215,6 +215,7 @@
                         {{ group.list_email|linkify }}
                     </td>
                 </tr>
+                {% if group.list_subscribe %}
                 <tr>
                     <td>
                     </td>
@@ -233,6 +234,7 @@
                         {{ group.list_subscribe|linkify }}
                     </td>
                 </tr>
+                {% endif %}
                 <tr>
                     <td>
                     </td>
