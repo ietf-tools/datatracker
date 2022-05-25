@@ -2897,7 +2897,6 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
 
     def test_process_uploaded_submission_invalid(self):
         """process_uploaded_submission should properly process an invalid submission"""
-        _today = datetime.date.today()
         xml, author = submission_file('draft-somebody-test-00', 'draft-somebody-test-00.xml', None, 'test_submission.xml')
         xml_data = xml.read()
         xml.close()
@@ -3060,9 +3059,19 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
     @mock.patch('ietf.submit.tasks.process_uploaded_submission')
     def test_process_uploaded_submission_task_ignores_invalid_id(self, mock_method):
         """process_uploaded_submission_task should ignore an invalid submission_id"""
-        s = SubmissionFactory()
-        process_uploaded_submission_task(9876)
+        SubmissionFactory()  # be sure there is a Submission
+        bad_pk = 9876
+        self.assertEqual(Submission.objects.filter(pk=bad_pk).count(), 0)
+        process_uploaded_submission_task(bad_pk)
         self.assertEqual(mock_method.call_count, 0)
+
+    def test_status_of_validating_submission(self):
+        s = SubmissionFactory(state_id='validating')
+        url = urlreverse('ietf.submit.views.submission_status', kwargs={'submission_id': s.pk})
+        r = self.client.get(url)
+        self.assertContains(r, s.name)
+        self.assertContains(r, 'still being processed and validated', status_code=200)
+
 
 
 class ApiSubmitTests(BaseSubmitTestCase):
