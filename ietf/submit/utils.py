@@ -994,15 +994,15 @@ def accept_submission(submission: Submission, request: Optional[HttpRequest] = N
     curr_authors = [ get_person_from_name_email(author["name"], author.get("email"))
                      for author in submission.authors ]
     # Is the user authenticated as an author who can approve this submission?
-    user_is_author = (
-        request is not None
-        and request.user.is_authenticated
-        and request.user.person in (prev_authors if submission.rev != '00' else curr_authors) # type: ignore
-    )
+    requester = None
+    requester_is_author = False
+    if request is not None and request.user.is_authenticated:
+        requester = request.user.person
+        requester_is_author = requester in (prev_authors if submission.rev != '00' else curr_authors)
 
     # If "who" is None, docevent_from_submission will pull it out of submission
     docevent_from_submission(submission, desc="Uploaded new revision",
-                             who=request.user.person if user_is_author else None)
+                             who=requester if requester_is_author else None)
 
     replaces = DocAlias.objects.filter(name__in=submission.replaces_names)
     pretty_replaces = '(none)' if not replaces else (
@@ -1025,6 +1025,7 @@ def accept_submission(submission: Submission, request: Optional[HttpRequest] = N
 
     # Partial message for submission event
     sub_event_desc = 'Set submitter to \"%s\", replaces to %s' % (parse_unicode(submission.submitter), pretty_replaces)
+    create_event = True  # Indicates whether still need to create an event
     docevent_desc = None
     address_list = []
     if requires_ad_approval or requires_prev_ad_approval:
@@ -1061,11 +1062,11 @@ def accept_submission(submission: Submission, request: Optional[HttpRequest] = N
         sent_to = ', '.join(address_list)
         sub_event_desc += ' and sent approval email to group chairs: %s' % sent_to
         docevent_desc = "Request for posting approval emailed to group chairs: %s" % sent_to
-    elif user_is_author and autopost:
+    elif requester_is_author and autopost:
         # go directly to posting submission
-        sub_event_desc = "New version accepted (logged-in submitter: %s)" % request.user.person # type: ignore
+        sub_event_desc = f'New version accepted (logged-in submitter: {requester})'
         post_submission(request, submission, sub_event_desc, sub_event_desc)
-        sub_event_desc = None  # do not create submission event below, post_submission() handles it
+        create_event = False  # do not create submission event below, post_submission() handled it
     else:
         submission.auth_key = generate_random_key()
         if requires_prev_authors_approval:
@@ -1094,7 +1095,7 @@ def accept_submission(submission: Submission, request: Optional[HttpRequest] = N
             sub_event_desc += " and sent confirmation email to submitter and authors: %s" % sent_to
             docevent_desc = "Request for posting confirmation emailed to submitter and authors: %s" % sent_to
 
-    if sub_event_desc:
+    if create_event:
         create_submission_event(request, submission, sub_event_desc)
     if docevent_desc:
         docevent_from_submission(submission, docevent_desc, who=Person.objects.get(name="(System)"))
