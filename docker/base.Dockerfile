@@ -64,7 +64,6 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     ruby \
     ruby-rubygems \
 	unzip \
-    watchman \
 	wget \
     xauth \
     xvfb \
@@ -125,6 +124,9 @@ RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 # Fetch wait-for utility
 ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
 RUN chmod +rx /usr/local/bin/wait-for
+
+# Create assets directory
+RUN mkdir -p /assets
 
 # Create workspace
 RUN mkdir -p /workspace
