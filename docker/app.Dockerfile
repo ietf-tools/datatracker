@@ -42,9 +42,11 @@ RUN groupmod --gid $USER_GID $USERNAME \
     && chown -R $USER_UID:$USER_GID /home/$USERNAME \
     || exit 0
 
+# Switch to local dev user
 USER dev:dev
 
 # Install current datatracker python dependencies
 COPY requirements.txt /tmp/pip-tmp/
 RUN pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location -r /tmp/pip-tmp/requirements.txt
+RUN pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location pylint pylint-common pylint-django
 RUN sudo rm -rf /tmp/pip-tmp
