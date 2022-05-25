@@ -1,0 +1,35 @@
+name: Debug - Dev DB Image ARM64
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v2
+        
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker Build & Push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: docker/db.Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ghcr.io/ietf-tools/datatracker-db-arm64:latest
