@@ -351,6 +351,17 @@ class GroupPagesTests(TestCase):
             for role in group.role_set.all():
                 self.assertContains(r, escape(role.person.name))
 
+    def test_group_about_nosubscribe(self):
+        group = GroupFactory()
+        self.assertEqual(group.list_subscribe, '')
+        url = urlreverse('ietf.group.views.group_about', kwargs=dict(acronym=group.acronym))
+        r = self.client.get(url)
+        self.assertNotContains(r,'To subscribe')
+        group.list_subscribe='foo@example.com'
+        group.save()
+        r = self.client.get(url)
+        self.assertContains(r,'To subscribe')
+
     def test_materials(self):
         group = GroupFactory(type_id="team", acronym="testteam", name="Test Team", state_id="active")
 
