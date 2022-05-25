@@ -75,7 +75,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@eslint/eslintrc@npm:^1.2.3":
+"@eslint/eslintrc@npm:^1.3.0":
   version: 1.3.0
   resolution: "@eslint/eslintrc@npm:1.3.0"
   dependencies:
@@ -129,13 +129,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@html-validate/stylish@npm:^2.0.0":
-  version: 2.0.1
-  resolution: "@html-validate/stylish@npm:2.0.1"
+"@html-validate/stylish@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@html-validate/stylish@npm:3.0.0"
   dependencies:
     kleur: ^4.0.0
-    text-table: ^0.2.0
-  checksum: 82974eaba46008ad4029d695bf0a8470d3ed8c22470a627ac8b041e032600063cf0d3e4cd5d456df0624e083cb5ef28f40142f0500a1ef5073e354e3486c2cd0
+  checksum: 818efd25ac4bd2fcc6728710edb064c0214d0c959a380b2026ae9d6a7d8e8bd153dad13a939aa042fa1fdf7e61cdde5eb13cc2031a7190a4e07e6c30ebb44a41
   languageName: node
   linkType: hard
 
@@ -1027,15 +1026,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sidvind/better-ajv-errors@npm:^1.1.1":
-  version: 1.1.1
-  resolution: "@sidvind/better-ajv-errors@npm:1.1.1"
+"@sidvind/better-ajv-errors@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@sidvind/better-ajv-errors@npm:2.0.0"
   dependencies:
     "@babel/code-frame": ^7.16.0
     chalk: ^4.1.0
   peerDependencies:
     ajv: 4.11.8 - 8
-  checksum: 56f1ef7537465087e5ef5ddd9b67fbe3fdfc7194e43857b9b7ea09caee075f6764280cb03b14fb589913ed958c5f595f10b8e9e613dbf66fc3d1d778a22439ff
+  checksum: 12b0d87855737d1f36e869f9a55c706fa9eb232dfebaca5209c21d8d5caf7fa25671238064d68e619492c68591a73b6f49fcc1dff182fd77d2370e277033bd60
   languageName: node
   linkType: hard
 
@@ -1392,10 +1391,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bootstrap-icons@npm:1.8.1":
-  version: 1.8.1
-  resolution: "bootstrap-icons@npm:1.8.1"
-  checksum: 2151c0312d74dced74abc6ac14e69640e1af08e85224868bf2c0161b73ec9e0c1fda03e8585069c4164e2fb9633db881f8c2d812f11cfdbaf1139849c0d30e6a
+"bootstrap-icons@npm:1.8.2":
+  version: 1.8.2
+  resolution: "bootstrap-icons@npm:1.8.2"
+  checksum: 2262e8999c7cea8fe926affe08f21f1fdd9924f9aaa8bd1b76f41016870ea94653b5bd2d7c66e3909d340f12e1799bb7eca303710fb1fc32bf5a0004f2d67099
   languageName: node
   linkType: hard
 
@@ -1526,7 +1525,14 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"caniuse-lite@npm:1.0.30001340, caniuse-lite@npm:^1.0.30001332":
+"caniuse-lite@npm:1.0.30001342":
+  version: 1.0.30001342
+  resolution: "caniuse-lite@npm:1.0.30001342"
+  checksum: 9ad47aec82e85017c59aaa0acee8027d910a715c7481cf66c9b4e296f3d10cc5d96df86d3c3033326b0110f5792b3f117a1dc935e3299abf2139fa345bb326f1
+  languageName: node
+  linkType: hard
+
+"caniuse-lite@npm:^1.0.30001332":
   version: 1.0.30001340
   resolution: "caniuse-lite@npm:1.0.30001340"
   checksum: 5b419c93cb5a67568ffe8c84520d149146e5b84056ce41ee509c89d2bd036e4ce6d87485e25dfee2bb8a818d46e0734e93cacbef6b9b911c20166b943b36b78c
@@ -1832,9 +1838,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"cypress@npm:9.6.1":
-  version: 9.6.1
-  resolution: "cypress@npm:9.6.1"
+"cypress@npm:9.7.0":
+  version: 9.7.0
+  resolution: "cypress@npm:9.7.0"
   dependencies:
     "@cypress/request": ^2.88.10
     "@cypress/xvfb": ^1.2.4
@@ -1880,7 +1886,7 @@ browserlist@latest:
     yauzl: ^2.10.0
   bin:
     cypress: bin/cypress
-  checksum: 3d464346f30b164c10947e332e5c8095c1f53b946d378c18a09e7591b0aadb331062d880505a228ff1d996d37c9e7b4e8a9f2308871a00442d9171a1718f7fa4
+  checksum: 45df7c85bc7ec2e187153ff2b98bf5106d2313d70e2367a5742b5269a9e82d3fdd730d5bbc32ac8da72aeb120a52f9384c2ba4e2fc86b532f68440f22d700fc9
   languageName: node
   linkType: hard
 
@@ -2497,11 +2503,11 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"eslint@npm:8.15.0":
-  version: 8.15.0
-  resolution: "eslint@npm:8.15.0"
+"eslint@npm:8.16.0":
+  version: 8.16.0
+  resolution: "eslint@npm:8.16.0"
   dependencies:
-    "@eslint/eslintrc": ^1.2.3
+    "@eslint/eslintrc": ^1.3.0
     "@humanwhocodes/config-array": ^0.9.2
     ajv: ^6.10.0
     chalk: ^4.0.0
@@ -2519,7 +2525,7 @@ browserlist@latest:
     file-entry-cache: ^6.0.1
     functional-red-black-tree: ^1.0.1
     glob-parent: ^6.0.1
-    globals: ^13.6.0
+    globals: ^13.15.0
     ignore: ^5.2.0
     import-fresh: ^3.0.0
     imurmurhash: ^0.1.4
@@ -2538,7 +2544,7 @@ browserlist@latest:
     v8-compile-cache: ^2.0.3
   bin:
     eslint: bin/eslint.js
-  checksum: d8896393832e154e1381a21041cfe4d12a73a76fac26ea27cabbc0e5fdac87918ad651f07f804ef6faacd3868572de3c1ec5d96edf5502bc999eff0c423638f7
+  checksum: 654a0200b49dc07280673fee13cdfb04326466790e031dfa9660b69fba3b1cf766a51504328f9de56bd18e6b5eb7578985cf29dc7f016c5ec851220ff9db95eb
   languageName: node
   linkType: hard
 
@@ -2906,7 +2912,7 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"globals@npm:^13.15.0, globals@npm:^13.2.0, globals@npm:^13.6.0":
+"globals@npm:^13.15.0, globals@npm:^13.2.0":
   version: 13.15.0
   resolution: "globals@npm:13.15.0"
   dependencies:
@@ -2950,13 +2956,13 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"html-validate@npm:7.0.0":
-  version: 7.0.0
-  resolution: "html-validate@npm:7.0.0"
+"html-validate@npm:7.1.1":
+  version: 7.1.1
+  resolution: "html-validate@npm:7.1.1"
   dependencies:
     "@babel/code-frame": ^7.10.0
-    "@html-validate/stylish": ^2.0.0
-    "@sidvind/better-ajv-errors": ^1.1.1
+    "@html-validate/stylish": ^3.0.0
+    "@sidvind/better-ajv-errors": ^2.0.0
     acorn-walk: ^8.0.0
     ajv: ^8.0.0
     deepmerge: ^4.2.0
@@ -2980,7 +2986,7 @@ browserlist@latest:
       optional: true
   bin:
     html-validate: bin/html-validate.js
-  checksum: 80cf7adb5b3795af1fa9ad2ca7fb1cf8d14f70e2c8fe23618861954dab9ff31f343ecb4d329e189616b87682bbce35bb207e458ae7e87376c7ac85219c528bb7
+  checksum: 7f049f11f2cfba66cc8d4fcc410d365863ce8775f3359d5480f394242c752729a65cc3332b5b3f42516994811c0724dc5f1981ec5b41f84f94c6f2da7b022164
   languageName: node
   linkType: hard
 
@@ -4364,16 +4370,16 @@ browserlist@latest:
     "@parcel/transformer-sass": 2.5.0
     "@popperjs/core": 2.11.5
     bootstrap: 5.1.3
-    bootstrap-icons: 1.8.1
+    bootstrap-icons: 1.8.2
     browserlist: latest
-    caniuse-lite: 1.0.30001340
-    cypress: 9.6.1
+    caniuse-lite: 1.0.30001342
+    cypress: 9.7.0
     cypress-real-events: 1.7.0
     d3: 7.4.4
-    eslint: 8.15.0
+    eslint: 8.16.0
     flot: 4.2.2
     highcharts: 10.1.0
-    html-validate: 7.0.0
+    html-validate: 7.1.1
     jquery: 3.6.0
     jquery-migrate: 3.4.0
     jquery-ui-dist: 1.13.1

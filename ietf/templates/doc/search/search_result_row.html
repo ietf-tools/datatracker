@@ -48,13 +48,7 @@
     <td class="doc">
         {% if doc.pages %}<small class="float-end text-muted d-none d-sm-block">{{ doc.pages }} page{{ doc.pages|pluralize }}</small>{% endif %}
         <div>
-            <a href="{{ doc.get_absolute_url }}">
-                {% if doc.get_state_slug == "rfc" %}
-                    RFC {{ doc.rfc_number }}
-                {% else %}
-                    {{ doc.name }}-{{ doc.rev }}
-                {% endif %}
-            </a>
+            <a href="{{ doc.get_absolute_url }}">{% if doc.get_state_slug == "rfc" %}RFC {{ doc.rfc_number }}{% else %}{{ doc.name }}-{{ doc.rev }}{% endif %}</a>
             {% if doc.get_state_slug == "rfc" and "draft" in doc.name %}<i class="text-muted">(was {{ doc.name }})</i>{% endif %}
             <br>
             {% comment %}
