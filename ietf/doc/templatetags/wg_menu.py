@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2009-2022, All Rights Reserved
+
 # Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -50,7 +52,8 @@ parents = Group.objects.filter(
     models.Q(type="area")
     | models.Q(type="irtf", acronym="irtf")
     | models.Q(acronym="iab")
-    | models.Q(acronym="ietfadminllc"),
+    | models.Q(acronym="ietfadminllc")
+    | models.Q(acronym="rfceditor"),
     state="active",
 ).order_by("type__order", "type_id", "acronym")
 
@@ -72,6 +75,8 @@ def wg_menu(flavor):
             p.menu_url = "/program/"
         elif p.acronym == "ietfadminllc":
             p.menu_url = "/adm/"
+        elif p.acronym == "rfceditor":
+            p.menu_url = "/rfcedtyp/"
 
     return render_to_string(
         "base/menu_wg.html", {"parents": parents, "flavor": flavor}

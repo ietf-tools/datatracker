@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load ietf_filters %}
+{% load ietf_filters textfilters %}
 {% block pagehead %}<link rel="alternate" type="application/atom+xml" href="/feed/iesg-agenda/">{% endblock %}
 {% block title %}IESG agenda: {{ date }}{% endblock %}
 {% block content %}
@@ -20,7 +20,7 @@
         {% elif num|sectionlevel == 3 %}
             <h4 class="mt-3" id="sec-{{ num|slugify }}">{{ num }} {{ section.title|safe }}</h4>
         {% endif %}
-        {% if num == "1.4" %}<pre>{{ section.text }}</pre>{% endif %}
+        {% if num == "1.4" %}<pre>{{ section.text|urlize_ietf_docs|linkify }}</pre>{% endif %}
         {% if num >= "2" and num < "5" %}
             {% if num == "2" %}
                 <p class="alert alert-info my-3">
@@ -107,7 +107,7 @@
             {% endif %}
         {% endif %}
         {% if num|startswith:"6." and user|has_role:"Area Director,IAB Chair,Secretariat" %}
-            <pre class="border p-3">{{ section.text|wordwrap:"80" }}</pre>
+            <pre class="border p-3">{{ section.text|maybewordwrap|urlize_ietf_docs|linkify }}</pre>
         {% endif %}
     {% endfor %}
 {% endblock %}

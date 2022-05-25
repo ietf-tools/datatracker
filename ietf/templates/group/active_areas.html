@@ -50,7 +50,7 @@
         </h2>
         {% if area.description %}
             <p>
-                {{ area.description|linkify|urlize_ietf_docs|safe }}
+                {{ area.description|urlize_ietf_docs|linkify|safe }}
             </p>
         {% endif %}
     {% endfor %}

@@ -9,12 +9,12 @@
 {% block content %}
     {% origin %}
     <h1>
-        {{ group.name }} ({{ group.acronym }})
         {% if group.state_id == "dormant" or group.state_id == "conclude" %}
-            <span class="badge bg-warning float-end">Concluded {{ group.type.name }}</span>
+            <span class="badge bg-warning float-end ms-3">Concluded {{ group.type.name }}</span>
         {% endif %}
-        {% if group.state_id == "replaced" %}<span class="badge bg-warning float-end">Replaced {{ group.type.name }}</span>{% endif %}
-        {% if group.state_id == "proposed" %}<span class="badge bg-info float-end">Proposed {{ group.type.name }}</span>{% endif %}
+        {% if group.state_id == "replaced" %}<span class="badge bg-warning float-end ms-3">Replaced {{ group.type.name }}</span>{% endif %}
+        {% if group.state_id == "proposed" %}<span class="badge bg-info float-end ms-3">Proposed {{ group.type.name }}</span>{% endif %}
+        {{ group.name }} ({{ group.acronym }})
     </h1>
     <ul class="nav nav-tabs my-3">
         {% for name, url in menu_entries %}

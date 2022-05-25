@@ -17,15 +17,17 @@ from django.utils.html import strip_tags
 from django.utils.encoding import force_text
 from django.utils.encoding import force_str # pyflakes:ignore force_str is used in the doctests
 from django.urls import reverse as urlreverse
+from django.core.cache import cache
+from django.core.exceptions import ValidationError
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import BallotDocEvent
+from ietf.doc.models import BallotDocEvent, DocAlias
 from ietf.doc.models import ConsensusDocEvent
 from ietf.utils.html import sanitize_fragment
 from ietf.utils import log
 from ietf.doc.utils import prettify_std_name
-from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped, bleach_linker
+from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped, bleach_linker, bleach_cleaner, validate_url
 
 register = template.Library()
 
@@ -184,49 +186,128 @@ def rfceditor_info_url(rfcnum : str):
     """Link to the RFC editor info page for an RFC"""
     return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f'rfc{rfcnum}')
 
-def link_non_charter_doc_match(match):
-    if len(match[3])==2 and match[3].isdigit():
-        return f'<a href="/doc/{match[2][:-1]}/{match[3]}/">{match[0]}</a>'
-    else:
-        return f'<a href="/doc/{match[2]}{match[3]}/">{match[0]}</a>'
 
-@register.filter(name='urlize_ietf_docs', is_safe=True, needs_autoescape=True)
+def doc_canonical_name(name):
+    """Check whether a given document exists, and return its canonical name"""
+
+    def find_unique(n):
+        key = hash(n)
+        found = cache.get(key)
+        if not found:
+            exact = DocAlias.objects.filter(name=n).first()
+            found = exact.name if exact else "_"
+            cache.set(key, found, timeout=60*60*24)  # cache for one day
+        return None if found == "_" else found
+
+    # chop away extension
+    extension_split = re.search(r"^(.+)\.(txt|ps|pdf|html)$", name)
+    if extension_split:
+        name = extension_split.group(1)
+
+    if find_unique(name):
+        return name
+
+    # check for embedded rev - this may be ambiguous, so don't
+    # chop it off if we don't find a match
+    rev_split = re.search(r"^(charter-.+)-(\d{2}-\d{2})$", name) or re.search(
+        r"^(.+)-(\d{2}|[1-9]\d{2,})$", name
+    )
+    if rev_split:
+        name = rev_split.group(1)
+        if find_unique(name):
+            return name
+
+    return ""
+
+
+def link_charter_doc_match1(match):
+    if not doc_canonical_name(match[0]):
+        return match[0]
+    return f'<a href="/doc/{match[1][:-1]}/{match[2]}/">{match[0]}</a>'
+
+
+def link_charter_doc_match2(match):
+    if not doc_canonical_name(match[0]):
+        return match[0]
+    return f'<a href="/doc/{match[1][:-1]}/{match[2]}/">{match[0]}</a>'
+
+
+def link_non_charter_doc_match(match):
+    name = match[0]
+    cname = doc_canonical_name(name)
+    if not cname:
+        return match[0]
+    if name == cname:
+        return f'<a href="/doc/{cname}/">{match[0]}</a>'
+
+    # if we get here, the name probably has a version number and/or extension at the end
+    rev_split = re.search(r"^(" + re.escape(cname) + r")-(\d{2,})", name)
+    if rev_split:
+        name = rev_split.group(1)
+    else:
+        return f'<a href="/doc/{cname}/">{match[0]}</a>'
+
+    cname = doc_canonical_name(name)
+    if not cname:
+        return match[0]
+    if name == cname:
+        return f'<a href="/doc/{cname}/{rev_split.group(2)}/">{match[0]}</a>'
+
+    # if we get here, we can't linkify
+    return match[0]
+
+
+def link_other_doc_match(match):
+    doc = match[2].strip().lower()
+    rev = match[3]
+    if not doc_canonical_name(doc + rev):
+        return match[0]
+    return f'<a href="/doc/{doc}{rev}/">{match[1]}</a>'
+
+
+@register.filter(name="urlize_ietf_docs", is_safe=True, needs_autoescape=True)
 def urlize_ietf_docs(string, autoescape=None):
     """
     Make occurrences of RFC NNNN and draft-foo-bar links to /doc/.
     """
     if autoescape and not isinstance(string, SafeData):
-        string = escape(string)
-    exp1 = r"\b(charter-(?:[\d\w\.+]+-)*)(\d\d-\d\d)(\.txt)?\b"
-    exp2 = r"\b(charter-(?:[\d\w\.+]+-)*)(\d\d)(\.txt)?\b"
+        if "<" in string:
+            string = escape(string)
+        else:
+            string = mark_safe(string)
+    exp1 = r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d{2}-\d{2})(\.(?:txt|ps|pdf|html))?\b"
+    exp2 = r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d{2})(\.(?:txt|ps|pdf|html))?\b"
     if re.search(exp1, string):
         string = re.sub(
             exp1,
-            lambda x: f'<a href="/doc/{x[1][:-1]}/{x[2]}/">{x[0]}</a>',
+            link_charter_doc_match1,
             string,
             flags=re.IGNORECASE | re.ASCII,
         )
-    elif re.search(exp2, string): 
+    elif re.search(exp2, string):
         string = re.sub(
             exp2,
-            lambda x: f'<a href="/doc/{x[1][:-1]}/{x[2]}/">{x[0]}</a>',
+            link_charter_doc_match2,
             string,
             flags=re.IGNORECASE | re.ASCII,
         )
     string = re.sub(
-        r"\b(?<![/-])(((?:draft-|bofreq-|conflict-review-|status-change-)(?:[\d\w\.+]+-)*)([\d\w\.+]+?)(\.txt)?)\b",
+        r"\b(?<![/\-:=#])((?:draft-|bofreq-|conflict-review-|status-change-)[\d\w\.+-]+(?![-@]))",
+        # r"\b(?<![/\-:=#])(((?:draft-|bofreq-|conflict-review-|status-change-)(?:[\d\w\.+]+-)*)([\d\w\.+]+?)(\.(?:txt|ps|pdf|html))?)\b(?![-@])",
         link_non_charter_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
     string = re.sub(
         # r"\b((RFC|BCP|STD|FYI|(?:draft-|bofreq-|conflict-review-|status-change-|charter-)[-\d\w.+]+)\s*0*(\d+))\b",
-        r"\b(?<!-)((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
-        lambda x: f'<a href="/doc/{x[2].strip().lower()}{x[3]}/">{x[1]}</a>',
+        r"\b(?<![/\-:=#])((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
+        link_other_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
     return mark_safe(string)
+
+
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
 @register.filter(name='urlize_related_source_list', is_safe=True, needs_autoescape=True)
@@ -424,10 +505,8 @@ def ad_area(user):
 @register.filter
 def format_history_text(text, trunc_words=25):
     """Run history text through some cleaning and add ellipsis if it's too long."""
-    full = mark_safe(text)
-    if "</a>" not in full:
-        full = urlize_ietf_docs(full)
-    full = bleach_linker.linkify(full)
+    full = mark_safe(bleach_cleaner.clean(text))
+    full = bleach_linker.linkify(urlize_ietf_docs(full))
 
     return format_snippet(full, trunc_words)
 
@@ -444,7 +523,7 @@ def format_snippet(text, trunc_words=25):
 @register.simple_tag
 def doc_edit_button(url_name, *args, **kwargs):
     """Given URL name/args/kwargs, looks up the URL just like "url" tag and returns a properly formatted button for the document material tables."""
-    return mark_safe('<a class="btn btn-primary btn-sm" type="button" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
+    return mark_safe('<a class="btn btn-primary btn-sm" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
 
 @register.filter
 def textify(text):
@@ -640,20 +719,20 @@ def action_holder_badge(action_holder):
     ''
 
     >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=16)))
-    '<span class="badge bg-danger" title="Goal is &lt;15 days">for 16 days</span>'
+    '<span class="text-danger"><i class="bi bi-hourglass-split" title="In state for 16 days; goal is &lt;15 days."></i></span>'
 
     >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=30)))
-    '<span class="badge bg-danger" title="Goal is &lt;15 days">for 30 days</span>'
+    '<span class="text-danger"><i class="bi bi-hourglass-split" title="In state for 30 days; goal is &lt;15 days."></i></span>'
 
     >>> settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS = old_limit
     """
     age_limit = settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS
     age = (datetime.datetime.now() - action_holder.time_added).days
     if age > age_limit:
-        return mark_safe('<span class="badge bg-danger" title="Goal is &lt;%d days">for %d day%s</span>' % (
-            age_limit,
+        return mark_safe('<span class="text-danger"><i class="bi bi-hourglass-split" title="In state for %d day%s; goal is &lt;%d days."></i></span>' % (
             age,
-            's' if age != 1 else ''))
+            's' if age != 1 else '',
+            age_limit))
     else:
         return ''  # no alert needed
 
@@ -765,3 +844,15 @@ def absurl(viewname, **kwargs):
     Uses settings.IDTRACKER_BASE_URL as the base.
     """
     return urljoin(settings.IDTRACKER_BASE_URL, urlreverse(viewname, kwargs=kwargs))
+
+
+@register.filter
+def is_valid_url(url):
+    """
+    Check if the given URL is syntactically valid
+    """
+    try:
+        validate_url(url)
+    except ValidationError:
+        return False
+    return True

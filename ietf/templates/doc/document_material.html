@@ -3,7 +3,7 @@
 {% load origin %}
 {% load static %}
 {% load ietf_filters textfilters %}
-{% block title %}{{ doc.title }}{% endblock %}
+{% block title %}{{ doc.title|default:"Untitled" }}{% endblock %}
 {% block content %}
     {% origin %}
     {{ top|safe }}
@@ -36,7 +36,7 @@
                         {% doc_edit_button 'ietf.doc.views_material.edit_material' name=doc.name action="title" %}
                     {% endif %}
                 </td>
-                <th scope="row">{{ doc.title }}</th>
+                <th scope="row">{{ doc.title|default:'<span class="text-muted">(None)</span>' }}</th>
             </tr>
             {% if doc.abstract or doc.type_id == 'slides' and can_manage_material and not snapshot %}
                 <tr>
@@ -56,7 +56,13 @@
                         {% doc_edit_button 'ietf.doc.views_material.edit_material' name=doc.name action="state" %}
                     {% endif %}
                 </td>
-                <td>{{ doc.get_state.name }}</td>
+                <td>
+                    {% if doc.get_state.name %}
+                        {{ doc.get_state.name }}
+                    {% else %}
+                        <span class="text-muted">(None)</span>
+                    {% endif %}
+                </td>
             </tr>
             {% if other_types %}
                 <tr>
@@ -122,7 +128,7 @@
                 {% if content_is_html %}
                     {{ content|sanitize|safe }}
                 {% else %}
-                    <pre>{{ content|maybewordwrap|linkify|urlize_ietf_docs }}</pre>
+                    <pre>{{ content|maybewordwrap|urlize_ietf_docs|linkify }}</pre>
                 {% endif %}
             {% else %}
                 Not available as plain text.

@@ -113,7 +113,7 @@
                                         <br>
                                         {# Maybe make how a resource displays itself a method on the class so templates aren't doing this switching #}
                                     {% else %}
-                                        <span title="{{ resource.name.name }}">{% firstof resource.display_name resource.name.name %}: {{ resource.value }}</span>
+                                        <span title="{{ resource.name.name }}">{% firstof resource.display_name resource.name.name %}: {{ resource.value|escape }}</span>
                                         <br>
                                     {% endif %}
                                 {% endfor %}

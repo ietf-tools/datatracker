@@ -68,7 +68,9 @@
                         {% if group.charter %}
                             <a href="{% url "ietf.doc.views_doc.document_main" name=group.charter.name %}">
                                 {{ group.charter.name }}-{{ group.charter.rev }}</a>
-                            <span class="badge bg-info">{{ group.charter.get_state.name }}</span>
+                            {% if group.charter.get_state.name %}
+                                <span class="badge bg-info">{{ group.charter.get_state.name }}</span>
+                            {% endif %}
                         {% else %}
                             <span class="text-muted">(None)</span>
                             {% if user|has_role:"Area Director,Secretariat" %}
@@ -151,7 +153,7 @@
                                         <a href="{{ resource.value }}" title="{{ resource.name.name }}">
                                             {% firstof resource.display_name resource.name.name %}</a>{% else %}
                                         <span title="{{ resource.name.name }}">
-                                            {% firstof resource.display_name resource.name.name %}: {{ resource.value }}
+                                            {% firstof resource.display_name resource.name.name %}: {{ resource.value|escape }}
                                         </span>{% endif %}{% if not forloop.last %}{% if resource.display_name|length < 15 and resource.name.name|length < 15 and resources|length <= 3 %},{% else %}<br>{% endif %}{% endif %}
                                 {% endfor %}
                             {% endif %}
@@ -309,7 +311,7 @@
             {{ group.type.desc.title }}
         </h2>
         {# the linebreaks filter adds <p>, no surrounding <p> necessary: #}
-        {{ group.charter_text|linkify|urlize_ietf_docs|linebreaks }}
+        {{ group.charter_text|urlize_ietf_docs|linkify|linebreaks }}
     {% else %}
         <h2 class="mt-3">
             {% if requested_close or group.state_id == "conclude" %}Final{% endif %}

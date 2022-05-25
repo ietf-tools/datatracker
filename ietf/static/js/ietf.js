@@ -24,6 +24,8 @@ if (!process.env.BUILD_DEPLOY) {
 
 import Cookies from "js-cookie";
 
+import debounce from "lodash/debounce";
+
 // setup CSRF protection using jQuery
 function csrfSafeMethod(method) {
     // these HTTP methods do not require CSRF protection
@@ -184,14 +186,14 @@ $(function () {
                 .attr("tabindex", 0)
                 .after($(`
                  <div class="col-xl-2 ps-0 small">
-                     <div id="righthand-panel" class="position-fixed d-flex flex-column justify-content-between align-items-start">
-                         <nav id="righthand-nav" class="navbar navbar-light bg-light overflow-auto align-items-start flex-fill"></nav>
-                     </div></div>
+                     <div id="righthand-panel" class="position-fixed col-xl-2 bg-light d-flex flex-column justify-content-between align-items-start">
+                         <nav id="righthand-nav" class="navbar navbar-light w-100 overflow-auto align-items-start flex-fill"></nav>
+                     </div>
                  </div>
                  `));
 
             const nav = $("#righthand-nav")
-                .append(`<nav class="nav nav-pills flex-column px-2">`)
+                .append(`<nav class="nav nav-pills flex-column w-100 px-2">`)
                 .children()
                 .last();
 
@@ -199,12 +201,15 @@ $(function () {
                 .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible, .nav-heading:visible")
                 .not(".navskip")
                 .each(function () {
-                    // Some headings have complex HTML in them - only use first part in that case.
-                    const text = $(this)
+                    // Some headings have line breaks in them - only use first line in that case.
+                    const frag = $(this)
                         .html()
-                        .split("<")
-                        .shift()
-                        .trim();
+                        .split("<br")
+                        .shift();
+                    const text = $.parseHTML(frag)
+                        .map(x => $(x)
+                            .text())
+                        .join(" ");
 
                     if (text === undefined || text === "") {
                         // Nothing to do for empty headings.
@@ -236,20 +241,22 @@ $(function () {
                 });
 
             if (haveExtraNav) {
-                $('#righthand-panel').append('<div id="righthand-extra" class="py-3"></div>');
+                $('#righthand-panel').append('<div id="righthand-extra" class="w-100 py-3"></div>');
                 extraNav.children().appendTo('#righthand-extra');
                 extraNav.remove();
             }
 
-            $(window)
-                .on("scroll", function () {
+            $(document)
+                // Chrome apparently wants this debounced to something >10ms,
+                // otherwise the main view doesn't scroll?
+                .on("scroll", debounce(function () {
                     const item = $('#righthand-nav')
                         .find(".active")
                         .last();
                     if (item.length) {
-                        item[0].scrollIntoView({ block: "center" });
+                        item[0].scrollIntoView({ block: "center", behavior: "smooth" });
                     }
-                });
+                }, 100));
 
             // offset the scrollspy to account for the menu bar
             const contentOffset = contentElement ? contentElement.offset().top : 0;

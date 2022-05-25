@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2020, All Rights Reserved
+# Copyright The IETF Trust 2009-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -68,7 +68,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, group.name)
         self.assertContains(r, escape(group.ad_role().person.name))
 
-        for t in ('rg','area','ag', 'rag', 'dir','review','team','program','iabasg','adm'):
+        for t in ('rg','area','ag', 'rag', 'dir','review','team','program','iabasg','adm','rfcedtyp'):
             g = GroupFactory.create(type_id=t,state_id='active') 
             if t in ['dir','review']:
                 g.parent = GroupFactory.create(type_id='area',state_id='active')
@@ -84,7 +84,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, "Directorate")
         self.assertContains(r, "AG")
 
-        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','rag','area','dir','review','team','program','adhoc','ise','adm','iabasg']).values_list('slug',flat=True):
+        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','rag','area','dir','review','team','program','adhoc','ise','adm','iabasg','rfcedtyp']).values_list('slug',flat=True):
             with self.assertRaises(NoReverseMatch):
                 url=urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type=slug))
 

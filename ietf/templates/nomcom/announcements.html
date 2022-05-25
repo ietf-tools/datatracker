@@ -14,7 +14,7 @@
         {% person_link curr_chair.person %}
     </p>
     {% for regime in regimes %}
-        <h2 class="mt-5" id="{{ regime.group.start_year }}">
+        <h2 class="mt-5" id="nomcom-{{ regime.group.start_year }}">
             Messages from {{ regime.group.start_year }}/{{ regime.group.end_year }}
         </h2>
         {# use person email address here rather than the generic nomcom-chair@ietf.org #}

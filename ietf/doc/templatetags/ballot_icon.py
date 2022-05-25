@@ -204,18 +204,18 @@ def state_age_colored(doc):
             goal1 = 14
             goal2 = 28
         if days > goal2:
-            class_name = "badge bg-danger"
+            class_name = "text-danger"
         elif days > goal1:
-            class_name = "badge bg-warning"
+            class_name = "text-warning"
         else:
-            class_name = "badge bg-success"
+            # don't show a badge when things are in the green; clutters display
+            # class_name = "text-success"
+            return ""
         if days > goal1:
-            title = ' title="Goal is &lt;%d days"' % (goal1,)
+            title = ' title="In state for %d day%s; goal is &lt;%d days."' % (days, 's' if days != 1 else '', goal1,)
         else:
             title = ''
-        return mark_safe('<span class="%s"%s>for %d day%s</span>' % (
-                class_name, title, days,
-                's' if days != 1 else ''))
+        return mark_safe('<span class="%s"><i class="bi bi-hourglass-split"%s></i></span>' % (class_name, title))
     else:
         return ""
 

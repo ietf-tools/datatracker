@@ -29,7 +29,7 @@
             {% endfor %}
         </div>
     {% endif %}
-    {% include 'meeting/tz-display.html' with meeting_timezone=None only %}
+    {% include 'meeting/tz-display.html' with id_suffix="" meeting_timezone=None only %}
     {% include 'meeting/agenda_filter.html' with filter_categories=filter_categories customize_button_text="Customize the meeting list..." only %}
     {% cache 600 upcoming-meetings entries.count %}
     {% if entries %}
@@ -77,7 +77,7 @@
                                 <td>
                                     <a class="interim-meeting-link"
                                        href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=group.acronym %}">
-                                        {{ meeting.number }}
+                                        {% firstof session.name meeting.number %}
                                     </a>
                                 </td>
                                 {% if session.current_status == 'canceled' %}
@@ -112,7 +112,6 @@
     <script src="{% static 'ietf/js/list.js' %}"></script>
     <script src="{% static 'ietf/js/fullcalendar.js' %}"></script>
     <script src="{% static 'ietf/js/moment.js' %}"></script>
-    <script src="{% static 'ietf/js/moment-timezone-with-data-10-year-range.js' %}"></script>
     <script src="{% static 'ietf/js/agenda_filter.js' %}"></script>
     <script src="{% static 'ietf/js/agenda_materials.js' %}"></script>
     <script src="{% static 'ietf/js/timezone.js' %}"></script>
@@ -131,7 +130,7 @@
                   {% else %} {# if it's not a Meeting, it's a Session #}
                       {% with session=entry %}
                           {
-                              group: '{% if session.group %}{{session.group.acronym}}{% endif %}',
+                              group: '{% if session.group %}{{session.group.acronym}}{% endif %}{% if session.name %} - {{session.name}}{% endif %}',
                               filter_keywords: ["{{ session.filter_keywords|join:'","' }}"],
                               start_moment: moment.utc('{{session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}}'),
                               end_moment: moment.utc('{{session.official_timeslotassignment.timeslot.utc_end_time | date:"Y-m-d H:i"}}'),

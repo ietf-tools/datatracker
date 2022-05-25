@@ -51,6 +51,8 @@ import subprocess
 import tempfile
 import copy
 import factory.random
+import urllib3
+from urllib.parse import urlencode
 
 from fnmatch import fnmatch
 from pathlib import Path
@@ -94,6 +96,114 @@ old_create = None
 template_coverage_collection = None
 code_coverage_collection = None
 url_coverage_collection = None
+
+
+def start_vnu_server(port=8888):
+    "Start a vnu validation server on the indicated port"
+    vnu = subprocess.Popen(
+        [
+            "java",
+            "-Dnu.validator.servlet.bind-address=127.0.0.1",
+            "-Dnu.validator.servlet.max-file-size=16777216",
+            "-cp",
+            "bin/vnu.jar",
+            "nu.validator.servlet.Main",
+            f"{port}",
+        ],
+        stdout=subprocess.DEVNULL,
+    )
+
+    print("     Waiting for vnu server to start up...", end="")
+    while vnu_validate(b"", content_type="", port=port) is None:
+        print(".", end="")
+        time.sleep(1)
+    print()
+    return vnu
+
+
+http = urllib3.PoolManager(retries=urllib3.Retry(99, redirect=False))
+
+
+def vnu_validate(html, content_type="text/html", port=8888):
+    "Pass the HTML to the vnu server running on the indicated port"
+    if "** No value found for " in html.decode():
+        return json.dumps(
+            {"messages": [{"message": '"** No value found for" in source'}]}
+        )
+
+    gzippeddata = gzip.compress(html)
+    try:
+        req = http.request(
+            "POST",
+            f"http://127.0.0.1:{port}/?"
+            + urlencode({"out": "json", "asciiquotes": "yes"}),
+            headers={
+                "Content-Type": content_type,
+                "Accept-Encoding": "gzip",
+                "Content-Encoding": "gzip",
+                "Content-Length": str(len(gzippeddata)),
+            },
+            body=gzippeddata,
+        )
+    except (
+        urllib3.exceptions.NewConnectionError,
+        urllib3.exceptions.MaxRetryError,
+        ConnectionRefusedError,
+    ):
+        return None
+
+    assert req.status == 200
+    return req.data.decode("utf-8")
+
+
+def vnu_fmt_message(file, msg, content):
+    "Convert a vnu JSON message into a printable string"
+    ret = f"\n{file}:\n"
+    if "extract" in msg:
+        ret += msg["extract"].replace("\n", " ") + "\n"
+        ret += " " * msg["hiliteStart"]
+        ret += "^" * msg["hiliteLength"] + "\n"
+        ret += " " * msg["hiliteStart"]
+    ret += f"{msg['type']}: {msg['message']}\n"
+    if "firstLine" in msg and "lastLine" in msg:
+        ret += f'Source snippet, lines {msg["firstLine"]-5} to {msg["lastLine"]+4}:\n'
+        lines = content.splitlines()
+        for line in range(msg["firstLine"] - 5, msg["lastLine"] + 5):
+            ret += f"{line}: {lines[line]}\n"
+    return ret
+
+
+def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
+    "True if the vnu message is a known false positive"
+    if filter_db_issues and re.search(
+        r"""^Forbidden\ code\ point\ U\+|
+             Illegal\ character\ in\ query:\ '\['|
+            'href'\ on\ element\ 'a':\ Percentage\ \("%"\)\ is\ not\ followed|
+            ^Saw\ U\+\d+\ in\ stream|
+            ^Document\ uses\ the\ Unicode\ Private\ Use\ Area""",
+        msg["message"],
+        flags=re.VERBOSE,
+    ):
+        return True
+
+    if filter_test_issues and re.search(
+        r"""Ceci\ n'est\ pas\ une\ URL|
+            ^The\ '\w+'\ attribute\ on\ the\ '\w+'\ element\ is\ obsolete|
+            ^Section\ lacks\ heading""",
+        msg["message"],
+        flags=re.VERBOSE,
+    ):
+        return True
+
+    return re.search(
+        r"""document\ is\ not\ mappable\ to\ XML\ 1|
+            ^Attribute\ 'required'\ not\ allowed\ on\ element\ 'div'|
+            ^The\ 'type'\ attribute\ is\ unnecessary\ for\ JavaScript|
+            is\ not\ in\ Unicode\ Normalization\ Form\ C""",
+        msg["message"],
+        flags=re.VERBOSE,
+    )
+
 
 def load_and_run_fixtures(verbosity):
     loadable = [f for f in settings.GLOBAL_TEST_FIXTURES if "." not in f]
@@ -196,7 +306,7 @@ class ValidatingTemplate(Template):
             return content
 
         fingerprint = hash(content) + sys.maxsize + 1  # make hash positive
-        if fingerprint in self.backend.validation_cache:
+        if not settings.validate_html_harder and fingerprint in self.backend.validation_cache:
             # already validated this HTML fragment, skip it
             # as an optimization, make page a bit smaller by not returning HTML for the menus
             # FIXME: figure out why this still includes base/menu.html
@@ -313,8 +423,7 @@ def save_test_results(failures, test_labels):
     # Record the test result in a file, in order to be able to check the
     # results and avoid re-running tests if we've alread run them with OK
     # result after the latest code changes:
-    topdir = os.path.dirname(os.path.dirname(settings.BASE_DIR))
-    tfile = io.open(os.path.join(topdir,".testresult"), "a", encoding='utf-8')
+    tfile = io.open(".testresult", "a", encoding='utf-8')
     timestr = time.strftime("%Y-%m-%d %H:%M:%S")
     if failures:
         tfile.write("%s FAILED (failures=%s)\n" % (timestr, failures))
@@ -590,8 +699,11 @@ class IetfTestRunner(DiscoverRunner):
         parser.add_argument('--no-validate-html',
             action='store_false', dest="validate_html", default=True,
             help='Do not validate all generated HTML with html-validate.org')
+        parser.add_argument('--validate-html-harder',
+            action='store_true', dest="validate_html_harder", default=False,
+            help='Validate all generated HTML with additional validators (slow)')
 
-    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, **kwargs):
+    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, validate_html_harder=None, **kwargs):
         #
         self.check_coverage = not skip_coverage
         self.save_version_coverage = save_version_coverage
@@ -599,6 +711,7 @@ class IetfTestRunner(DiscoverRunner):
         self.permit_mixed_migrations = permit_mixed_migrations
         self.show_logging = show_logging
         settings.validate_html = self if validate_html else None
+        settings.validate_html_harder = self if validate_html and validate_html_harder else None
         settings.show_logging = show_logging
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
@@ -718,7 +831,7 @@ class IetfTestRunner(DiscoverRunner):
             print("     Not validating any generated HTML; "
                   "please do so at least once before committing changes")
         else:
-            print("     Validating all HTML generated during the tests")
+            print("     Validating all HTML generated during the tests", end="")
             self.batches = {"doc": [], "frag": []}
 
             # keep the html-validate configs here, so they can be kept in sync easily
@@ -768,6 +881,13 @@ class IetfTestRunner(DiscoverRunner):
                 self.config_file[kind].flush()
                 Path(self.config_file[kind].name).chmod(0o644)
 
+            if not settings.validate_html_harder:
+                print("")
+                self.vnu = None
+            else:
+                print(" (extra pedantically)")
+                self.vnu = start_vnu_server()
+
         super(IetfTestRunner, self).setup_test_environment(**kwargs)
 
     def teardown_test_environment(self, **kwargs):
@@ -789,12 +909,18 @@ class IetfTestRunner(DiscoverRunner):
                 else:
                     with open(self.coverage_file, "w") as file:
                         json.dump(self.coverage_master, file, indent=2, sort_keys=True)
-        super(IetfTestRunner, self).teardown_test_environment(**kwargs)
 
         if settings.validate_html:
             for kind in self.batches:
-                self.validate(kind)
+                try:
+                    self.validate(kind)
+                except Exception:
+                    pass
                 self.config_file[kind].close()
+            if self.vnu:
+                self.vnu.terminate()
+
+        super(IetfTestRunner, self).teardown_test_environment(**kwargs)
 
     def validate(self, kind):
         if not self.batches[kind]:
@@ -803,7 +929,7 @@ class IetfTestRunner(DiscoverRunner):
         testcase = TestCase()
         cwd = pathlib.Path.cwd()
         tmpdir = tempfile.TemporaryDirectory(prefix="html-validate-")
-        Path(tmpdir.name).chmod(0o655)
+        Path(tmpdir.name).chmod(0o777)
         for (name, content, fingerprint) in self.batches[kind]:
             path = pathlib.Path(tmpdir.name).joinpath(
                 hex(fingerprint)[2:],
@@ -843,9 +969,10 @@ class IetfTestRunner(DiscoverRunner):
                 errors += (
                     f'\n{result["filePath"]}:\n'
                     + "".join(source_lines[line - 5 : line])
-                    + "-" * (msg["column"] - 1)
-                    + "^" * msg["size"]
-                    + f' {msg["ruleId"]}: {msg["message"]} '
+                    + " " * (msg["column"] - 1)
+                    + "^" * msg["size"] + "\n"
+                    + " " * (msg["column"] - 1)
+                    + f'{msg["ruleId"]}: {msg["message"]} '
                     + f'on line {line}:{msg["column"]}\n'
                     + "".join(source_lines[line : line + 5])
                     + "\n"
@@ -853,6 +980,28 @@ class IetfTestRunner(DiscoverRunner):
 
         if errors:
             testcase.fail(errors)
+
+        if settings.validate_html_harder:
+            if kind == "frag":
+                return
+            files = [
+                os.path.join(d, f)
+                for d, dirs, files in os.walk(tmpdir.name)
+                for f in files
+            ]
+            for file in files:
+                with open(file, "rb") as f:
+                    content = f.read()
+                    result = vnu_validate(content)
+                    assert result
+                    for msg in json.loads(result)["messages"]:
+                        if vnu_filter_message(msg, False, True):
+                            continue
+                        errors = vnu_fmt_message(file, msg, content)
+
+            if errors:
+                testcase.fail(errors)
+
         tmpdir.cleanup()
 
     def get_test_paths(self, test_labels):

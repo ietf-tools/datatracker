@@ -13,7 +13,7 @@
     {% origin %}
     {% if persons|length > 1 %}
         <p class="alert alert-warning my-3">
-            More than one person with this name has been found.  Showing all:
+            More than one person with this name has been found.  Showing all.
         </p>
     {% endif %}
     {% for person in persons %}
@@ -29,15 +29,18 @@
             {% if person.photo %}
                 <div class="float-end ms-3 mb-3">{% include "person/photo.html" with person=person %}</div>
             {% endif %}
-            {{ person.biography|linkify|urlize_ietf_docs|apply_markup:"restructuredtext" }}
+            {{ person.biography|apply_markup:"restructuredtext"|urlize_ietf_docs|linkify }}
         </div>
         {% if person.role_set.exists %}
-            <h2 class="mt-5" id="roles">Roles</h2>
+            <h2 class="mt-5" id="roles-{{ forloop.counter }}">Roles</h2>
+            {% if person.role_set.all|active_roles %}
             <table class="table table-sm table-striped tablesorter">
                 <thead>
-                    <th scope="col" data-sort="role">Role</th>
-                    <th scope="col" data-sort="group">Group</th>
-                    <th scope="col" data-sort="email">Email</th>
+                    <tr>
+                        <th scope="col" data-sort="role">Role</th>
+                        <th scope="col" data-sort="group">Group</th>
+                        <th scope="col" data-sort="email">Email</th>
+                    </tr>
                 </thead>
                 <tbody>
                     {% for role in person.role_set.all|active_roles %}
@@ -51,18 +54,21 @@
                                 <a href="mailto:{{ role.email.address }}">{{ role.email.address }}</a>
                             </td>
                         </tr>
-                    {% empty %}
-                        {{ person.first_name }} has no active roles as of {{ today }}.
                     {% endfor %}
                 </tbody>
             </table>
+            {% else %}
+                <p>{{ person.first_name }} has no active roles as of {{ today }}.</p>
+            {% endif %}
         {% endif %}
         {% if person.personextresource_set.exists %}
-            <h2 class="mt-5" id="extresources">External Resources</h2>
+            <h2 class="mt-5" id="extresources-{{ forloop.counter }}">External Resources</h2>
             <table class="table table-sm table-striped tablesorter">
                 <thead>
-                    <th scope="col" data-sort="name">Name</th>
-                    <th scope="col" data-sort="value">Value</th>
+                    <tr>
+                        <th scope="col" data-sort="name">Name</th>
+                        <th scope="col" data-sort="value">Value</th>
+                    </tr>
                 </thead>
                 <tbody>
                     {% for extres in person.personextresource_set.all %}
@@ -76,16 +82,18 @@
                 </tbody>
             </table>
         {% endif %}
-        <h2 class="mt-5" id="rfcs">
+        <h2 class="mt-5" id="rfcs-{{ forloop.counter }}">
             RFCs <small class="text-muted">({{ person.rfcs|length }})</small>
         </h2>
         {% if person.rfcs %}
             <table class="table table-sm table-striped tablesorter">
                 <thead>
-                    <th scope="col" data-sort="rfc">RFC</th>
-                    <th scope="col" data-sort="date">Date</th>
-                    <th scope="col" data-sort="title">Title</th>
-                    <th scope="col" data-sort="citedby">Cited by</th>
+                    <tr>
+                        <th scope="col" data-sort="rfc">RFC</th>
+                        <th scope="col" data-sort="date">Date</th>
+                        <th scope="col" data-sort="title">Title</th>
+                        <th scope="col" data-sort="citedby">Cited by</th>
+                    </tr>
                 </thead>
                 <tbody>
                     {% for doc in person.rfcs  %}
@@ -113,7 +121,7 @@
         {% else %}
             {{ person.first_name }} has no RFCs as of {{ today }}.
         {% endif %}
-        <h2 class="mt-5" id="drafts">
+        <h2 class="mt-5" id="drafts-{{ forloop.counter }}">
             Active Drafts <small class="text-muted">({{ person.active_drafts|length }})</small>
         </h2>
         {% if person.active_drafts.exists %}
@@ -146,11 +154,11 @@
         {% else %}
             {{ person.first_name }} has no expired drafts as of {{ today }}.
         {% endif %}
-        {% if persons|length == 1 and person.has_drafts %}
+        {% if person.has_drafts %}
             <h2 class="mt-5">
                 Draft Activity
             </h2>
-            <div id="chart">
+            <div id="chart-{{ forloop.counter }}">
             </div>
         {% endif %}
     {% endfor %}
@@ -161,15 +169,17 @@
     <script src="{% static 'ietf/js/highcharts-exporting.js' %}"></script>
     <script>
             $(function () {
-                $.getJSON('{% url "ietf.doc.views_stats.chart_conf_person_drafts" id=persons.0.id %}', function (conf) {
-                    // Create the chart
-                    chart = Highcharts.stockChart('chart', conf);
-                    chart.showLoading();
-                    $.getJSON('{% url "ietf.doc.views_stats.chart_data_person_drafts" id=persons.0.id %}', function (data) {
-                        chart.series[0].setData(data);
-                        chart.hideLoading();
+                {% for person in persons %}
+                    $.getJSON('{% url "ietf.doc.views_stats.chart_conf_person_drafts" id=person.id %}', function (conf) {
+                        // Create the chart
+                        chart = Highcharts.stockChart('chart-{{ forloop.counter }}', conf);
+                        chart.showLoading();
+                        $.getJSON('{% url "ietf.doc.views_stats.chart_data_person_drafts" id=person.id %}', function (data) {
+                            chart.series[0].setData(data);
+                            chart.hideLoading();
+                        });
                     });
-                });
+                {% endfor %}
             });
     </script>
 {% endblock %}

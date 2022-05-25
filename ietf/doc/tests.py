@@ -356,8 +356,8 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('td.doc')),3)
-        self.assertEqual(q('td.status span.badge.bg-warning').text(),"for 15 days")
-        self.assertEqual(q('td.status span.badge.bg-danger').text(),"for 29 days")
+        self.assertTrue(q('td.status span.text-warning *[title*="%s"]' % "for 15 days"))
+        self.assertTrue(q('td.status span.text-danger *[title*="%s"]' % "for 29 days"))
         for ah in [draft.action_holders.first() for draft in drafts]:
             self.assertContains(r, escape(ah.name))
 
@@ -1297,8 +1297,8 @@ Man                    Expires September 22, 2015               [Page 3]
     @staticmethod
     def _pyquery_select_action_holder_string(q, s):
         """Helper to use PyQuery to find an action holder in the draft HTML"""
-        # selector grabs the action holders heading and finds siblings with a div containing the search string
-        return q('th:contains("Action Holder") ~ td>div:contains("%s")' % s)
+        # selector grabs the action holders heading and finds siblings with a div containing the search string (also in any title attribute)
+        return q('th:contains("Action Holder") ~ td>div:contains("%s"), th:contains("Action Holder") ~ td>div *[title*="%s"]' % (s, s))
 
     @mock.patch.object(Document, 'action_holders_enabled', return_value=False, new_callable=mock.PropertyMock)
     def test_document_draft_hides_action_holders(self, mock_method):

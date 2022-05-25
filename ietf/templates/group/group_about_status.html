@@ -28,7 +28,7 @@
             </p>
         </div>
     {% endif %}
-    <pre class="border p-3 my-3 pasted">{{ status_update.desc|default:"(none)"|linkify|urlize_ietf_docs }}</pre>
+    <pre class="border p-3 my-3 pasted">{{ status_update.desc|default:"(none)"|urlize_ietf_docs|linkify }}</pre>
     {% if can_provide_status_update %}
         <a id="edit_button"
            class="btn btn-primary"

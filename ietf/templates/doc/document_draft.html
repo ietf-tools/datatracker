@@ -373,16 +373,23 @@
                                         {# Maybe make how a resource displays itself a method on the class so templates aren't doing this switching #}
                                     {% else %}
                                         <span title="{{ resource.name.name }}">
-                                            {% firstof resource.display_name resource.name.name %}: {{ resource.value }}
+                                            {% firstof resource.display_name resource.name.name %}: {{ resource.value|escape }}
                                         </span>
                                         <br>
                                     {% endif %}
                                 {% endfor %}
                                 {% if doc.group and doc.group.list_archive %}
-                                    <a href="{{ doc.group.list_archive }}?q={{ doc.name }}">
-                                        Mailing list discussion
-                                    </a>
-                                    <br>
+                                    {% if doc.group.list_archive|startswith:settings.MAILING_LIST_ARCHIVE_URL %}
+                                        <a href="{{ doc.group.list_archive }}?q={{ doc.name }}">
+                                            Mailing list discussion
+                                        </a>
+                                    {% elif doc.group.list_archive|is_valid_url %}
+                                        <a href="{{ doc.group.list_archive }}">
+                                            Mailing list discussion
+                                        </a>
+                                    {% else %}
+                                        {{ doc.group.list_archive|urlencode }}
+                                    {% endif %}
                                 {% endif %}
                             {% endif %}
                         </td>

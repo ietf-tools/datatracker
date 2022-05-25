@@ -32,8 +32,8 @@
             <input id="subject" class="form-control" type="text" placeholder="{{ subject }}" disabled>
         </div>
         <div class="mb-3">
-            <label class="form-label" for="body">Body</label>
-            <pre id="body" class="border p-3">{{ body|maybewordwrap }}</pre>
+            <p class="form-label">Body</p>
+            <pre class="border p-3">{{ body|maybewordwrap }}</pre>
         </div>
         <button type="submit" class="btn btn-danger">Send</button>
         <a class="btn btn-secondary float-end"

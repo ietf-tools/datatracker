@@ -19,7 +19,7 @@
         </tr>
         <tr>
             <td></td>
-            <th scope="row">Requested rev.</th>
+            <th scope="row">Requested revision</th>
             <td>
                 {% if review_req.requested_rev %}
                     {{ review_req.requested_rev }}
@@ -129,9 +129,7 @@
             <td>
                 {% for a in review_req.all_completed_assignments_for_doc %}
                     {% if a.review %}
-                        <a href="{% url "ietf.doc.views_doc.document_main" name=a.review.name %}">
-                            {{ a.review_request.team.acronym|capfirst }} {{ a.review_request.type.name }} review of -{{ a.reviewed_rev|default:"??" }}
-                        </a>
+                        <a href="{% url "ietf.doc.views_doc.document_main" name=a.review.name %}">{{ a.review_request.team.acronym|capfirst }} {{ a.review_request.type.name }} review of -{{ a.reviewed_rev|default:"??" }}</a>
                         by {% person_link a.reviewer.person %}
                     {% else %}
                         {{ a.review_request.team.acronym|capfirst }} {{ a.review_request.type.name }} review of -{{ a.reviewed_rev|default:"??" }} by {% person_link a.reviewer.person %}
@@ -299,12 +297,10 @@
                     <th scope="row">
                     </th>
                     <th scope="row">
-                        Reviewed rev.
+                        Reviewed revision
                     </th>
                     <td>
-                        <a href="{% url "ietf.doc.views_doc.document_main" name=review_req.doc.name rev=assignment.reviewed_rev %}">
-                            {{ assignment.reviewed_rev }}
-                        </a>
+                        <a href="{% url "ietf.doc.views_doc.document_main" name=review_req.doc.name rev=assignment.reviewed_rev %}">{{ assignment.reviewed_rev }}</a>
                         {% if assignment.reviewed_rev != review_req.doc.rev %}(document currently at {{ review_req.doc.rev }}){% endif %}
                     </td>
                 </tr>
@@ -314,7 +310,7 @@
                     <th scope="row">
                     </th>
                     <th scope="row">
-                        Review result
+                        Result
                     </th>
                     <td class="{% if assignment.result.name|slice:5 == 'Ready' %}text-success{% else %}text-danger{% endif %}">
                         {{ assignment.result.name }}
@@ -326,7 +322,7 @@
                     <th scope="row">
                     </th>
                     <th scope="row">
-                        Review completed:
+                        Completed
                     </th>
                     <td>
                         {{ assignment.completed_on|date:"Y-m-d" }}

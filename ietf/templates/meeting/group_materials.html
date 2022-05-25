@@ -17,7 +17,7 @@
         {% endif %}
     </td>
     {% if session.all_meeting_sessions_cancelled %}
-        <td colspan="{% if user|has_role:'Secretariat' or user_groups %}7{% else %}6{% endif %}">
+        <td colspan="{% if user|has_role:'Secretariat' or user_groups %}6{% else %}5{% endif %}">
             <span class="badge bg-danger">Session cancelled</span>
         </td>
     {% else %}

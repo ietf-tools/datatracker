@@ -2,7 +2,7 @@
 
 cd ..
 echo "Shutting down any instance still running and purge images..."
-docker-compose down -v --rmi all
+docker compose down -v --rmi all
 echo "Purging dangling images..."
 docker image prune
 cd docker

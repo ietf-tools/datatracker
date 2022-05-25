@@ -35,7 +35,7 @@ from ietf.utils.validators import ( validate_file_size, validate_mime_type,
 
 # need to insert empty option for use in ChoiceField
 # countries.insert(0, ('', '-'*9 ))
-countries.insert(0, ('', ''))
+countries.insert(0, ('', '-' * 9))
 timezones.insert(0, ('', '-' * 9))
 
 # -------------------------------------------------

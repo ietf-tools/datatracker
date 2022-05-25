@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2009-2020, All Rights Reserved
+# Copyright The IETF Trust 2009-2022, All Rights Reserved
 #
 # Portion Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -295,6 +295,8 @@ def active_groups(request, group_type=None):
         return active_iab(request)
     elif group_type == "adm":
         return active_adm(request)
+    elif group_type == "rfcedtyp":
+        return active_rfced(request)
     else:
         raise Http404
 
@@ -331,6 +333,11 @@ def active_iab(request):
 def active_adm(request):
     adm = Group.objects.filter(type="adm", state="active").order_by("parent","name")
     return render(request, 'group/active_adm.html', {'adm' : adm })
+
+def active_rfced(request):
+    rfced = Group.objects.filter(type="rfcedtyp", state="active").order_by("parent", "name")
+    return render(request, 'group/active_rfced.html', {'rfced' : rfced})
+
 
 def active_areas(request):
         areas = Group.objects.filter(type="area", state="active").order_by("name")  
@@ -790,7 +797,7 @@ def meetings(request, acronym=None, group_type=None):
 def chair_photos(request, group_type=None):
     roles = sorted(Role.objects.filter(group__type=group_type, group__state='active', name_id='chair'),key=lambda x: x.person.last_name()+x.person.name+x.group.acronym)
     for role in roles:
-        role.last_initial = role.person.last_name()[0]
+        role.last_initial = role.person.last_name()[0].upper()
     return render(request, 'group/all_photos.html', {'group_type': group_type, 'role': 'Chair', 'roles': roles })
 
 def reorder_roles(roles, role_names):
@@ -806,7 +813,7 @@ def group_photos(request, group_type=None, acronym=None):
 
     roles = reorder_roles(roles, group.features.role_order)
     for role in roles:
-        role.last_initial = role.person.last_name()[0]
+        role.last_initial = role.person.last_name()[0].upper()
     return render(request, 'group/group_photos.html',
                   construct_group_menu_context(request, group, "photos", group_type, {
                       'group_type': group_type,
@@ -1293,7 +1300,7 @@ def stream_edit(request, acronym):
 @cache_control(public=True, max_age=30*60)
 @cache_page(30 * 60)
 def group_menu_data(request):
-    groups = Group.objects.filter(state="active", parent__state="active").filter(Q(type__features__acts_like_wg=True)|Q(type_id__in=['program','iabasg'])|Q(parent__acronym='ietfadminllc')).order_by("-type_id","acronym")
+    groups = Group.objects.filter(state="active", parent__state="active").filter(Q(type__features__acts_like_wg=True)|Q(type_id__in=['program','iabasg'])|Q(parent__acronym='ietfadminllc')|Q(parent__acronym='rfceditor')).order_by("-type_id","acronym")
 
     groups_by_parent = defaultdict(list)
     for g in groups:

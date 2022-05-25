@@ -25,7 +25,7 @@
                 .utc();
             item.end_ts = moment.unix(this.getAttribute("data-end-time"))
                 .utc();
-            if (this.hasAttribute("weekday")) {
+            if (this.hasAttribute("data-weekday")) {
                 item.format = 2;
             } else {
                 item.format = 1;
@@ -177,7 +177,7 @@
     // Update times on the agenda based on the selected timezone
     function update_times(newtz) {
         $('.current-tz')
-            .html(newtz);
+            .html(newtz.replaceAll("_", " ").replaceAll("/", " / "));
         $('.time')
             .each(function () {
                 if (this.format === 4) {
@@ -226,7 +226,7 @@
         } else {
             // No sessions in the future - meeting has apparently ended
             links_to_update.attr('href', '#');
-            links_to_update.addClass('text-muted text-decoration-line-through'); // mark link
+            links_to_update.addClass('disabled'); // mark link
         }
     }
 

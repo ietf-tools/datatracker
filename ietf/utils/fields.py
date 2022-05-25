@@ -264,10 +264,7 @@ class SearchableField(forms.MultipleChoiceField):
                 value = value[0]
             else:
                 if not isinstance(value[0], self.model):
-                    qs = self.get_model_instances(value[0])
-                    for val in value[1:]:
-                        qs = qs.union(self.get_model_instances(val))
-                    value = qs
+                    value = self.get_model_instances(value)
         if isinstance(value, int):
             value = str(value)
         if isinstance(value, str):

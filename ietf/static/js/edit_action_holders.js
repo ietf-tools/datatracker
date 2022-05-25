@@ -1,5 +1,5 @@
 local_js = function () {
-    let select2_elem = $('.select2-field');
+    let select2_elem = $('#id_action_holders');
     let role_ids = select2_elem.data('role-ids');
 
     function update_selection(elem, entries, selected) {

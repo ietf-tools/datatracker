@@ -95,7 +95,7 @@
                                         aria-label="Close"></button>
                             </div>
                             <div class="modal-body" id="{{ check.checker|slugify }}-message">
-                                <pre>{{ check.message|linkify|urlize_ietf_docs }}</pre>
+                            <pre>{{ check.message|urlize_ietf_docs|linkify }}</pre>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

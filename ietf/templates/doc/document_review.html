@@ -25,7 +25,13 @@
                         <td></td>
                         <th scope="row">State</th>
                         <td class="edit"></td>
-                        <td>{{ doc.get_state.name }}</td>
+                        <td>
+                            {% if doc.get_state.name %}
+                                {{ doc.get_state.name }}
+                            {% else %}
+                                <span class="text-muted">(None)</span>
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endif %}
                 {% if other_reviews %}
@@ -47,7 +53,7 @@
         <div class="card mt-5">
             <div class="card-header">{{ doc.name }}-{{ doc.rev }}</div>
             <div class="card-body">
-                <pre class="pasted">{{ content|maybewordwrap|linkify|urlize_ietf_docs }}</pre>
+                <pre class="pasted">{{ content|maybewordwrap|urlize_ietf_docs|linkify }}</pre>
             </div>
         </div>
     {% endif %}

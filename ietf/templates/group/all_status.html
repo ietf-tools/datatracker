@@ -22,7 +22,7 @@
                     {{ rpt.time|date:"Y-m-d" }}
                 </div>
                 <div class="card-body">
-                    <pre class="pasted">{{ rpt.desc|default:"(none)"|linkify|urlize_ietf_docs }}</pre>
+                    <pre class="pasted">{{ rpt.desc|default:"(none)"|urlize_ietf_docs|linkify }}</pre>
                 </div>
             </div>
         {% endfor %}
@@ -38,7 +38,7 @@
                 {{ rpt.time|date:"Y-m-d" }}
             </div>
             <div class="card-body">
-                <pre class="pasted">{{ rpt.desc|default:"(none)"|linkify|urlize_ietf_docs }}</pre>
+                <pre class="pasted">{{ rpt.desc|default:"(none)"|urlize_ietf_docs|linkify }}</pre>
             </div>
         </div>
     {% endfor %}

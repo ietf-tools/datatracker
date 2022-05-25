@@ -58,6 +58,7 @@ function compute_swimlanes(items) {
             si < items.length &&
             start_map[si].start_time < end_map[ei].end_time) {
             overlap++;
+            // Set item.lane - the lane in which it is located (cf. item.lanes)
             if (next_lane.length > 0) {
                 items[start_map[si].index].lane = next_lane.shift();
             } else {
@@ -81,6 +82,7 @@ function compute_swimlanes(items) {
             ei++;
         }
         if (overlap == 0) {
+            // set item.lanes - the number of lanes it covers when expanded (cf. item.lane)
             for (var i = start_overlap; i < si; i++) {
                 items[start_map[i].index].lanes = max_lanes;
             }
@@ -507,7 +509,16 @@ function get_first_item(items, type) {
 //===========================================================================
 //
 window.prepare_items = function (items, timezone_name) {
-    function make_display_item(item) {
+    /**
+     * @param item item to render
+     * @param day day of meeting
+     * @param start_time starting time in minutes since start-of-day
+     * @param duration duration in minutes
+     * @param formatted_time time label for rendered event
+     * @param dayname day name label for rendered event
+     * @returns {{area, end_time: *, type, agenda, room, start_time, dayname, name, time, filter_keywords: ([string]|*), day, key, group}}
+     */
+    function make_display_item(item, day, start_time, duration, formatted_time, dayname) {
         return {
             name: item.name,
             group: item.group,
@@ -516,9 +527,14 @@ window.prepare_items = function (items, timezone_name) {
             agenda: item.agenda,
             key: item.key,
             type: item.type,
-            filter_keywords: item.filter_keywords
+            filter_keywords: item.filter_keywords,
+            day: day,
+            start_time: start_time,
+            end_time: start_time + duration,
+            time: formatted_time,
+            dayname: dayname
         }
-    };
+    }
 
     /* Ported from Django view, which had the following comment:
      *    Only show assignments from the traditional meeting "week" (Sat-Fri).
@@ -564,46 +580,57 @@ window.prepare_items = function (items, timezone_name) {
         var start_day = start_moment.diff(saturday_before, 'days') - 1; // shift so sunday = 0
         var end_day = just_before_end_moment.diff(saturday_before, 'days') - 1; // shift so sunday = 0
 
-        // Generate display items - create multiple if item ends on different day than starts
-        for (var day = start_day; day <= end_day; day++) {
-            var display_item = make_display_item(this_item);
-            display_item.day = day;
-            if (day === start_day) {
-                // First day of session - compute start time
-                display_item.start_time = start_moment.diff(
-                    start_moment.clone()
-                    .startOf('day'),
-                    'minutes'
-                );
-            } else {
-                // Not first day, start at midnight
-                display_item.start_time = 0;
-                display_item.name += " - continued";
+        /* Generate display item or items
+         *
+         * Around DST switchover, days may be 23 or 25 hours long instead of 24 hours, and events
+         * may end at a clock time that is before they started. To prevent problems, do not do
+         * direct math between start_moment and end_moment.
+         */
+        const formatted_time = start_moment.format('HHmm') + '-' + end_moment.format('HHmm');
+        const dayname = start_moment.format('dddd, ')
+          .toUpperCase() +
+          start_moment.format('MMMM D, Y');
+        if (start_day === end_day) {
+            // one day - add a single display item
+            const start_of_day = start_moment.clone().startOf('day');
+            display_items.push(make_display_item(
+              this_item,
+              start_day,
+              start_moment.diff(start_of_day, 'minutes'),
+              this_item.duration / 60,
+              formatted_time,
+              dayname
+            ));
+        } else {
+            // split across days - add multiple items
+            for (var day = start_day; day <= end_day; day++) {
+                let start_time;
+                let duration;
+                if (day === start_day) {
+                    // First day of session - start at correct start time position
+                    const start_of_day = start_moment.clone().startOf('day');
+                    const end_of_day = start_moment.clone().endOf('day');
+                    start_time = start_moment.diff(start_of_day, 'minutes');
+                    duration = end_of_day.diff(start_moment, 'minutes');
+                } else {
+                    // Not the first day of session
+                    const start_of_day = just_before_end_moment.clone().startOf('day');
+                    start_time = 0;
+                    if (day === end_day) {
+                        // Last day of session - end at correct end time position
+                        duration = just_before_end_moment.diff(start_of_day, 'minutes');
+                    } else {
+                        // Not the last day of the session - end at the end of the day
+                        const end_of_day = just_before_end_moment.clone().endOf('day');
+                        duration = end_of_day.clone().diff(start_of_day, 'minutes');
+                    }
+                }
+                const display_item = make_display_item(this_item, day, start_time, duration, formatted_time, dayname);
+                if (day !== start_day) {
+                    display_item.name += " - continued";
+                }
+                display_items.push(display_item);
             }
-            if (day === end_day) {
-                // Last day of session - compute end time
-                display_item.end_time = end_moment.diff(
-                    just_before_end_moment.clone()
-                    .startOf('day'),
-                    'minutes'
-                );
-            } else {
-                /* Not last day, use full day. Calculate this on the fly to account for
-                 * daylight savings shifts, when a calendar day is not 24*60 minutes long. */
-                display_item.end_time = just_before_end_moment.clone()
-                    .endOf('day')
-                    .diff(
-                        just_before_end_moment.clone()
-                        .startOf('day'),
-                        'minutes'
-                    );
-            }
-
-            display_item.time = start_moment.format('HHmm') + '-' + end_moment.format('HHmm');
-            display_item.dayname = start_moment.format('dddd, ')
-                .toUpperCase() +
-                start_moment.format('MMMM D, Y');
-            display_items.push(display_item);
         }
     }
     return display_items;

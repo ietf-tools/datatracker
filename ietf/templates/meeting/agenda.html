@@ -25,15 +25,15 @@
     {% endif %}
     {# the contents of #extra-nav will be moved into the RH nav panel #}
     <div id="extra-nav" class="d-none">
-        <div class="d-flex flex-column">
+        <div class="d-flex flex-column px-2">
           {% if now.date <= schedule.meeting.end_date %}
-              <a class="nav-link now-link" href="#">Current session</a>
+              <a class="btn btn-sm btn-primary my-3 now-link" href="#">Jump to current session</a>
           {% endif %}
-          <div class="px-3">
-            Showing <span class="current-tz">{{ timezone }}</span> time
-          </div>
-          <div class="align-self-center">
+          <div class="d-flex">
             {% include 'meeting/tz-display.html' with id_suffix="-rh" meeting_timezone=timezone minimal=True only %}
+          </div>
+          <div class="small text-muted">
+            Showing <span class="current-tz">{{ timezone|split:"_"|join:" "|split:"/"|join:" / " }}</span> time
           </div>
         </div>
     </div>
@@ -57,7 +57,7 @@
             {{ schedule.meeting.agenda_info_note|removetags:"h1"|safe }}
         </p>
     {% endif %}
-    {% include 'meeting/tz-display.html' with meeting_timezone=timezone only %}
+    {% include 'meeting/tz-display.html' with id_suffix="" meeting_timezone=timezone only %}
     {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Filter this agenda view..." always_show=personalize %}
     {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting personalize=personalize only %}
     <div class="input-group mb-3">
@@ -84,7 +84,7 @@
             {% endfor %}
         </ul>
         <a class="btn btn-outline-primary {% if non_area_keywords|length == 0 %}disabled{% endif %}"
-           href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{ non_area_keywords|join:',' }}">
+           href="{% if non_area_keywords %}{% url 'ietf.meeting.views.agenda_ical' num=schedule.meeting.number %}?show={{ non_area_keywords|join:',' }}{% else %}#{% endif %}">
             Download non-area events
         </a>
     </div>
@@ -140,13 +140,13 @@
                                 {% if item.session_keyword %}
                                     <label class="d-none"
                                            aria-label="Select session"
-                                           for="{{ item.session_keyword }}">
+                                           for="{{ item.session_keyword }}-{{ item.slug }}">
                                    </label>
                                     <input type="checkbox"
                                            class="pickview form-check-input"
                                            title="Select session"
                                            name="selected-sessions"
-                                           id="{{ item.session_keyword }}"
+                                           id="{{ item.session_keyword }}-{{ item.slug }}"
                                            value="{{ item.session_keyword }}"
                                            data-filter-keywords="{{ item.filter_keywords|join:',' }}"
                                            data-filter-item="{{ item.session_keyword }}">
@@ -181,18 +181,20 @@
                     {% if item.session.current_status == 'canceled' %}
                         <span class="badge bg-danger float-end">CANCELLED</span>
                     {% else %}
-                        <div class="float-end ps-2">
-                            {% if item.slot_type.slug == 'other' %}
-                                {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
-                                    {% include "meeting/session_buttons_include.html" with show_agenda=True item=item schedule=schedule %}
-                                {% else %}
-                                    {% for slide in item.session.slides %}
-                                        <a href="{{ slide.get_href }}">{{ slide.title|clean_whitespace }}</a>
-                                        <br>
-                                    {% endfor %}
-                                {% endif %}
+                        {% if item.slot_type.slug == 'other' %}
+                            {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
+                            <div class="float-end ps-2">
+                                {% include "meeting/session_buttons_include.html" with show_agenda=True item=item schedule=schedule %}
+                            </div>
+                            {% else %}
+                                <div>
+                                {% for slide in item.session.slides %}
+                                    <a href="{{ slide.get_href }}">{{ slide.title|clean_whitespace }}</a>
+                                    <br>
+                                {% endfor %}
+                                </div>
                             {% endif %}
-                        </div>
+                        {% endif %}
                     {% endif %}
                 </td>
             </tr>
@@ -266,7 +268,9 @@
                     {% endif %}
                 </td>
                 <td>
-                    <div class="d-none d-sm-block">{{ item.session.historic_group.historic_parent.acronym }}</div>
+                    {% if item.session.historic_group.historic_parent.acronym %}
+                        <div class="d-none d-sm-block">{{ item.session.historic_group.historic_parent.acronym }}</div>
+                    {% endif %}
                 </td>
                 <td>
                     {% if item.session.historic_group %}
@@ -300,7 +304,7 @@
                         <div class="timetooltip reschedtimetooltip">
                             <div data-start-time="{{ item.session.rescheduled_to.utc_start_time|date:"U" }}"
                                  data-end-time="{{ item.session.rescheduled_to.utc_end_time|date:"U" }}"
-                                 {% if item.timeslot.time|date:"l" != item.session.rescheduled_to.time|date:"l" %} weekday="1"{% endif %}>
+                                 {% if item.timeslot.time|date:"l" != item.session.rescheduled_to.time|date:"l" %} data-weekday="1"{% endif %}>
                                 {% if "-utc" in request.path %}
                                     {{ item.session.rescheduled_to.utc_start_time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.utc_end_time|date:"G:i" }}
                                 {% else %}
@@ -313,7 +317,7 @@
             {% endif %}
             {% if item.session.agenda_note|first_url|conference_url %}
                 <br>
-                <a href={{ item.session.agenda_note|first_url }}>{{ item.session.agenda_note|slice:":23" }}
+                <a href="{{ item.session.agenda_note|first_url }}">{{ item.session.agenda_note|slice:":23" }}
                 </a>
             {% elif item.session.agenda_note %}
                 <br>
@@ -423,8 +427,6 @@
     <script src="{% static 'ietf/js/list.js' %}">
     </script>
     <script src="{% static 'ietf/js/moment.js' %}">
-    </script>
-    <script src="{% static 'ietf/js/moment-timezone-with-data-10-year-range.js' %}">
     </script>
     <script src="{% static 'ietf/js/timezone.js' %}">
     </script>
