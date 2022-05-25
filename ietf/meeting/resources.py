@@ -14,7 +14,7 @@ from ietf import api
 from ietf.meeting.models import ( Meeting, ResourceAssociation, Constraint, Room, Schedule, Session,
                                 TimeSlot, SchedTimeSessAssignment, SessionPresentation, FloorPlan,
                                 UrlResource, ImportantDate, SlideSubmission, SchedulingEvent,
-                                BusinessConstraint, ProceedingsMaterial, MeetingHost)
+                                BusinessConstraint, ProceedingsMaterial, MeetingHost, Attended)
 
 from ietf.name.resources import MeetingTypeNameResource
 class MeetingResource(ModelResource):
@@ -414,3 +414,21 @@ class MeetingHostResource(ModelResource):
             "meeting": ALL_WITH_RELATIONS,
         }
 api.meeting.register(MeetingHostResource())
+
+
+from ietf.person.resources import PersonResource
+class AttendedResource(ModelResource):
+    person           = ToOneField(PersonResource, 'person')
+    session          = ToOneField(SessionResource, 'session')
+    class Meta:
+        queryset = Attended.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'attended'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "person": ALL_WITH_RELATIONS,
+            "session": ALL_WITH_RELATIONS,
+        }
+api.meeting.register(AttendedResource())

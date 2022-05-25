@@ -1380,3 +1380,10 @@ class MeetingHost(models.Model):
     class Meta:
         unique_together = (('meeting', 'name'),)
         ordering = ('pk',)
+
+class Attended(models.Model):
+    person = ForeignKey(Person)
+    session = ForeignKey(Session)
+
+    def __str__(self):
+        return f'{self.person} at {self.session}'
