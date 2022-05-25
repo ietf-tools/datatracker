@@ -64,7 +64,6 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     ruby \
     ruby-rubygems \
 	unzip \
-    watchman \
 	wget \
     xauth \
     xvfb \
