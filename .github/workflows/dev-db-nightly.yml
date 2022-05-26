@@ -32,10 +32,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - platform: linux/arm64
-            docker: arm64
-          - platform: linux/amd64
-            docker: x64
+          - platform: "linux/arm64"
+            docker: "arm64"
+          - platform: "linux/amd64"
+            docker: "x64"
     steps:
       - uses: actions/checkout@v2
         
