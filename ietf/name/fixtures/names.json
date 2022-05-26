@@ -10411,7 +10411,6 @@
       "name": "Validating Submitted Draft",
       "next_states": [
         "uploaded",
-        "manual",
         "cancel"
       ],
       "order": 10,

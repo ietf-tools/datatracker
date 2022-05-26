@@ -14,7 +14,7 @@ def forward(apps, schema_editor):
     )
     new_state.next_states.set(
         DraftSubmissionStateName.objects.filter(
-            slug__in=['cancel', 'manual', 'uploaded'],
+            slug__in=['cancel', 'uploaded'],
         )
     )
 
