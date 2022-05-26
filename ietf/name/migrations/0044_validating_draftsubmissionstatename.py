@@ -31,7 +31,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0040_remove_constraintname_editor_label'),
+        ('name', '0043_editorial_stream_grouptype'),
         ('submit', '0001_initial'),  # ensure Submission model exists
     ]
 
