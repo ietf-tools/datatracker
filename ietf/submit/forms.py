@@ -43,11 +43,12 @@ from ietf.utils.draft import PlaintextDraft
 from ietf.utils.text import normalize_text
 from ietf.utils.xmldraft import XMLDraft, XMLParseError
 
-class DeprecatedSubmissionBaseUploadForm(forms.Form):
+
+class SubmissionBaseUploadForm(forms.Form):
     xml = forms.FileField(label='.xml format', required=True)
 
     def __init__(self, request, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(SubmissionBaseUploadForm, self).__init__(*args, **kwargs)
 
         self.remote_ip = remote_ip(request)
 
@@ -131,12 +132,213 @@ class DeprecatedSubmissionBaseUploadForm(forms.Form):
         self.file_info[field_name] = parser_class(f).critical_parse()
         if self.file_info[field_name].errors:
             raise forms.ValidationError(self.file_info[field_name].errors)
-
         return f
 
     def clean_xml(self):
         return self.clean_file("xml", XMLParser)
 
+    def clean(self):
+        def format_messages(where, e, log_msgs):
+            m = str(e)
+            if m:
+                m = [m]
+            else:
+                import traceback
+                typ, val, tb = sys.exc_info()
+                m = traceback.format_exception(typ, val, tb)
+                m = [ l.replace('\n ', ':\n ') for l in m ]
+            msgs = [s for s in (["Error from xml2rfc (%s):" % (where,)] + m + log_msgs) if s]
+            return msgs
+
+        if self.shutdown and not has_role(self.request.user, "Secretariat"):
+            raise forms.ValidationError('The submission tool is currently shut down')
+
+        for ext in self.formats:
+            f = self.cleaned_data.get(ext, None)
+            if not f:
+                continue
+            self.file_types.append('.%s' % ext)
+        if not ('.txt' in self.file_types or '.xml' in self.file_types):
+            if not self.errors:
+                raise forms.ValidationError('Unexpected submission file types; found %s, but %s is required' % (', '.join(self.file_types), ' or '.join(self.base_formats)))
+
+        # Determine the draft name and revision. Try XML first.
+        if self.cleaned_data.get('xml'):
+            xml_file = self.cleaned_data.get('xml')
+            tfn = None
+            with ExitStack() as stack:
+                @stack.callback
+                def cleanup():  # called when context exited, even in case of exception
+                    if tfn is not None:
+                        os.unlink(tfn)
+
+                # We need to write the xml file to disk in order to hand it
+                # over to the xml parser.  XXX FIXME: investigate updating
+                # xml2rfc to be able to work with file handles to in-memory
+                # files.
+                name, ext = os.path.splitext(os.path.basename(xml_file.name))
+                with tempfile.NamedTemporaryFile(prefix=name+'-',
+                                                 suffix='.xml',
+                                                 mode='wb+',
+                                                 delete=False) as tf:
+                    tfn = tf.name
+                    for chunk in xml_file.chunks():
+                        tf.write(chunk)
+
+                try:
+                    xml_draft = XMLDraft(tfn)
+                except XMLParseError as e:
+                    msgs = format_messages('xml', e, e.parser_msgs())
+                    self.add_error('xml', msgs)
+                    return
+                except Exception as e:
+                    self.add_error('xml', f'Error parsing XML draft: {e}')
+                    return
+
+                self.filename = xml_draft.filename
+                self.revision = xml_draft.revision
+        elif self.cleaned_data.get('txt'):
+            # no XML available, extract from the text if we have it
+            # n.b., this code path is unused until a subclass with a 'txt' field is created.
+            txt_file = self.cleaned_data['txt']
+            txt_file.seek(0)
+            bytes = txt_file.read()
+            try:
+                text = bytes.decode(self.file_info['txt'].charset)
+                self.parsed_draft = PlaintextDraft(text, txt_file.name)
+                self.filename = self.parsed_draft.filename
+                self.revision = self.parsed_draft.revision
+            except (UnicodeDecodeError, LookupError) as e:
+                self.add_error('txt', 'Failed decoding the uploaded file: "%s"' % str(e))
+
+        rev_error = validate_submission_rev(self.filename, self.revision)
+        if rev_error:
+            raise forms.ValidationError(rev_error)
+
+        # The following errors are likely noise if we have previous field
+        # errors:
+        if self.errors:
+            raise forms.ValidationError('')
+
+        if not self.filename:
+            raise forms.ValidationError("Could not extract a valid draft name from the upload.  "
+                "To fix this in a text upload, please make sure that the full draft name including "
+                "revision number appears centered on its own line below the document title on the "
+                "first page.  In an xml upload, please make sure that the top-level <rfc/> "
+                "element has a docName attribute which provides the full draft name including "
+                "revision number.")
+
+        if not self.revision:
+            raise forms.ValidationError("Could not extract a valid draft revision from the upload.  "
+                "To fix this in a text upload, please make sure that the full draft name including "
+                "revision number appears centered on its own line below the document title on the "
+                "first page.  In an xml upload, please make sure that the top-level <rfc/> "
+                "element has a docName attribute which provides the full draft name including "
+                "revision number.")
+
+        if self.cleaned_data.get('txt') or self.cleaned_data.get('xml'):
+            # check group
+            self.group = self.deduce_group(self.filename)
+            # check existing
+            existing = Submission.objects.filter(name=self.filename, rev=self.revision).exclude(state__in=("posted", "cancel", "waiting-for-draft"))
+            if existing:
+                raise forms.ValidationError(
+                    format_html(
+                        'A submission with same name and revision is currently being processed. <a href="{}">Check the status here.</a>',
+                        urljoin(
+                            settings.IDTRACKER_BASE_URL,
+                            urlreverse("ietf.submit.views.submission_status", kwargs={'submission_id': existing[0].pk}),
+                        )
+                    )
+                )
+
+            # cut-off
+            if self.revision == '00' and self.in_first_cut_off:
+                raise forms.ValidationError(mark_safe(self.cutoff_warning))
+            # check thresholds
+            today = datetime.date.today()
+
+            self.check_submissions_thresholds(
+                "for the draft %s" % self.filename,
+                dict(name=self.filename, rev=self.revision, submission_date=today),
+                settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME, settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME_SIZE,
+            )
+            self.check_submissions_thresholds(
+                "for the same submitter",
+                dict(remote_ip=self.remote_ip, submission_date=today),
+                settings.IDSUBMIT_MAX_DAILY_SAME_SUBMITTER, settings.IDSUBMIT_MAX_DAILY_SAME_SUBMITTER_SIZE,
+            )
+            if self.group:
+                self.check_submissions_thresholds(
+                    "for the group \"%s\"" % (self.group.acronym),
+                    dict(group=self.group, submission_date=today),
+                    settings.IDSUBMIT_MAX_DAILY_SAME_GROUP, settings.IDSUBMIT_MAX_DAILY_SAME_GROUP_SIZE,
+                )
+            self.check_submissions_thresholds(
+                "across all submitters",
+                dict(submission_date=today),
+                settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS, settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE,
+            )
+        return super().clean()
+
+    def check_submissions_thresholds(self, which, filter_kwargs, max_amount, max_size):
+        submissions = Submission.objects.filter(**filter_kwargs)
+
+        if len(submissions) > max_amount:
+            raise forms.ValidationError("Max submissions %s has been reached for today (maximum is %s submissions)." % (which, max_amount))
+        if sum(s.file_size for s in submissions if s.file_size) > max_size * 1024 * 1024:
+            raise forms.ValidationError("Max uploaded amount %s has been reached for today (maximum is %s MB)." % (which, max_size))
+
+    @staticmethod
+    def deduce_group(name):
+        """Figure out group from name or previously submitted draft, returns None if individual."""
+        existing_draft = Document.objects.filter(name=name, type="draft")
+        if existing_draft:
+            group = existing_draft[0].group
+            if group and group.type_id not in ("individ", "area"):
+                return group
+            else:
+                return None
+        else:
+            name_parts = name.split("-")
+            if len(name_parts) < 3:
+                raise forms.ValidationError("The draft name \"%s\" is missing a third part, please rename it" % name)
+
+            if name.startswith('draft-ietf-') or name.startswith("draft-irtf-"):
+                if name_parts[1] == "ietf":
+                    group_type = "wg"
+                elif name_parts[1] == "irtf":
+                    group_type = "rg"
+                else:
+                    group_type = None
+
+                # first check groups with dashes
+                for g in Group.objects.filter(acronym__contains="-", type=group_type):
+                    if name.startswith('draft-%s-%s-' % (name_parts[1], g.acronym)):
+                        return g
+
+                try:
+                    return Group.objects.get(acronym=name_parts[2], type=group_type)
+                except Group.DoesNotExist:
+                    raise forms.ValidationError('There is no active group with acronym \'%s\', please rename your draft' % name_parts[2])
+
+            elif name.startswith("draft-rfc-"):
+                return Group.objects.get(acronym="iesg")
+            elif name.startswith("draft-rfc-editor-") or name.startswith("draft-rfced-") or name.startswith("draft-rfceditor-"):
+                return Group.objects.get(acronym="rfceditor")
+            else:
+                ntype = name_parts[1].lower()
+                # This covers group types iesg, iana, iab, ise, and others:
+                if GroupTypeName.objects.filter(slug=ntype).exists():
+                    group = Group.objects.filter(acronym=ntype).first()
+                    if group:
+                        return group
+                    else:
+                        raise forms.ValidationError('Draft names starting with draft-%s- are restricted, please pick a differen name' % ntype)
+            return None
+
+
+class DeprecatedSubmissionBaseUploadForm(SubmissionBaseUploadForm):
     def clean(self):
         def format_messages(where, e, log):
             out = log.write_out.getvalue().splitlines()
@@ -370,299 +572,6 @@ class DeprecatedSubmissionBaseUploadForm(forms.Form):
             # check thresholds
             today = datetime.date.today()
 
-            self.check_submissions_tresholds(
-                "for the draft %s" % self.filename,
-                dict(name=self.filename, rev=self.revision, submission_date=today),
-                settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME, settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME_SIZE,
-            )
-            self.check_submissions_tresholds(
-                "for the same submitter",
-                dict(remote_ip=self.remote_ip, submission_date=today),
-                settings.IDSUBMIT_MAX_DAILY_SAME_SUBMITTER, settings.IDSUBMIT_MAX_DAILY_SAME_SUBMITTER_SIZE,
-            )
-            if self.group:
-                self.check_submissions_tresholds(
-                    "for the group \"%s\"" % (self.group.acronym),
-                    dict(group=self.group, submission_date=today),
-                    settings.IDSUBMIT_MAX_DAILY_SAME_GROUP, settings.IDSUBMIT_MAX_DAILY_SAME_GROUP_SIZE,
-                )
-            self.check_submissions_tresholds(
-                "across all submitters",
-                dict(submission_date=today),
-                settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS, settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE,
-            )
-
-        return super().clean()
-
-    def check_submissions_tresholds(self, which, filter_kwargs, max_amount, max_size):
-        submissions = Submission.objects.filter(**filter_kwargs)
-
-        if len(submissions) > max_amount:
-            raise forms.ValidationError("Max submissions %s has been reached for today (maximum is %s submissions)." % (which, max_amount))
-        if sum(s.file_size for s in submissions if s.file_size) > max_size * 1024 * 1024:
-            raise forms.ValidationError("Max uploaded amount %s has been reached for today (maximum is %s MB)." % (which, max_size))
-
-    def deduce_group(self):
-        """Figure out group from name or previously submitted draft, returns None if individual."""
-        name = self.filename
-        existing_draft = Document.objects.filter(name=name, type="draft")
-        if existing_draft:
-            group = existing_draft[0].group
-            if group and group.type_id not in ("individ", "area"):
-                return group
-            else:
-                return None
-        else:
-            name_parts = name.split("-")
-            if len(name_parts) < 3:
-                raise forms.ValidationError("The draft name \"%s\" is missing a third part, please rename it" % name)
-
-            if name.startswith('draft-ietf-') or name.startswith("draft-irtf-"):
-
-                if name_parts[1] == "ietf":
-                    group_type = "wg"
-                elif name_parts[1] == "irtf":
-                    group_type = "rg"
-
-                # first check groups with dashes
-                for g in Group.objects.filter(acronym__contains="-", type=group_type):
-                    if name.startswith('draft-%s-%s-' % (name_parts[1], g.acronym)):
-                        return g
-
-                try:
-                    return Group.objects.get(acronym=name_parts[2], type=group_type)
-                except Group.DoesNotExist:
-                    raise forms.ValidationError('There is no active group with acronym \'%s\', please rename your draft' % name_parts[2])
-
-            elif name.startswith("draft-rfc-"):
-                return Group.objects.get(acronym="iesg")
-            elif name.startswith("draft-rfc-editor-") or name.startswith("draft-rfced-") or name.startswith("draft-rfceditor-"):
-                return Group.objects.get(acronym="rfceditor")
-            else:
-                ntype = name_parts[1].lower()
-                # This covers group types iesg, iana, iab, ise, and others:
-                if GroupTypeName.objects.filter(slug=ntype).exists():
-                    group = Group.objects.filter(acronym=ntype).first()
-                    if group:
-                        return group
-                    else:
-                        raise forms.ValidationError('Draft names starting with draft-%s- are restricted, please pick a differen name' % ntype)
-            return None
-
-class SubmissionBaseUploadForm(forms.Form):
-    xml = forms.FileField(label='.xml format', required=True)
-
-    def __init__(self, request, *args, **kwargs):
-        super(SubmissionBaseUploadForm, self).__init__(*args, **kwargs)
-
-        self.remote_ip = remote_ip(request)
-
-        self.request = request
-        self.in_first_cut_off = False
-        self.cutoff_warning = ""
-        self.shutdown = False
-        self.set_cutoff_warnings()
-
-        self.group = None
-        self.filename = None
-        self.revision = None
-        self.title = None
-        self.abstract = None
-        self.authors = []
-        self.parsed_draft = None
-        self.file_types = []
-        self.file_info = {}             # indexed by file field name, e.g., 'txt', 'xml', ...
-        self.xml_version = None
-        # No code currently (14 Sep 2017) uses this class directly; it is
-        # only used through its subclasses.  The two assignments below are
-        # set to trigger an exception if it is used directly only to make
-        # sure that adequate consideration is made if it is decided to use it
-        # directly in the future.  Feel free to set these appropriately to
-        # avoid the exceptions in that case:
-        self.formats = None             # None will raise an exception in clean() if this isn't changed in a subclass
-        self.base_formats = None        # None will raise an exception in clean() if this isn't changed in a subclass
-
-    def set_cutoff_warnings(self):
-        now = datetime.datetime.now(pytz.utc)
-        meeting = Meeting.get_current_meeting()
-        if not meeting:
-            return
-        #
-        cutoff_00 = meeting.get_00_cutoff()
-        cutoff_01 = meeting.get_01_cutoff()
-        reopen    = meeting.get_reopen_time()
-        #
-        cutoff_00_str = cutoff_00.strftime("%Y-%m-%d %H:%M %Z")
-        cutoff_01_str = cutoff_01.strftime("%Y-%m-%d %H:%M %Z")
-        reopen_str    = reopen.strftime("%Y-%m-%d %H:%M %Z")
-
-        # Workaround for IETF107. This would be better handled by a refactor that allowed meetings to have no cutoff period.
-        if cutoff_01 >= reopen:
-            return
-
-        if cutoff_00 == cutoff_01:
-            if now.date() >= (cutoff_00.date() - meeting.idsubmit_cutoff_warning_days) and now.date() < cutoff_00.date():
-                self.cutoff_warning = ( 'The last submission time for Internet-Drafts before %s is %s.<br><br>' % (meeting, cutoff_00_str))
-            elif now <= cutoff_00:
-                self.cutoff_warning = (
-                    'The last submission time for new Internet-Drafts before the meeting is %s.<br>'
-                    'After that, you will not be able to submit drafts until after %s (IETF-meeting local time)' % (cutoff_00_str, reopen_str, ))
-        else:
-            if now.date() >= (cutoff_00.date() - meeting.idsubmit_cutoff_warning_days) and now.date() < cutoff_00.date():
-                self.cutoff_warning = ( 'The last submission time for new documents (i.e., version -00 Internet-Drafts) before %s is %s.<br><br>' % (meeting, cutoff_00_str) +
-                                        'The last submission time for revisions to existing documents before %s is %s.<br>' % (meeting, cutoff_01_str) )
-            elif now.date() >= cutoff_00.date() and now <= cutoff_01:
-                # We are in the first_cut_off
-                if now < cutoff_00:
-                    self.cutoff_warning = (
-                        'The last submission time for new documents (i.e., version -00 Internet-Drafts) before the meeting is %s.<br>'
-                        'After that, you will not be able to submit a new document until after %s (IETF-meeting local time)' % (cutoff_00_str, reopen_str, ))
-                else:  # No 00 version allowed
-                    self.cutoff_warning = (
-                        'The last submission time for new documents (i.e., version -00 Internet-Drafts) was %s.<br>'
-                        'You will not be able to submit a new document until after %s (IETF-meeting local time).<br><br>'
-                        'You can still submit a version -01 or higher Internet-Draft until %s' % (cutoff_00_str, reopen_str, cutoff_01_str, ))
-                    self.in_first_cut_off = True
-        if now > cutoff_01 and now < reopen:
-            self.cutoff_warning = (
-                'The last submission time for the I-D submission was %s.<br><br>'
-                'The I-D submission tool will be reopened after %s (IETF-meeting local time).' % (cutoff_01_str, reopen_str))
-            self.shutdown = True
-
-    def clean_file(self, field_name, parser_class):
-        f = self.cleaned_data[field_name]
-        if not f:
-            return f
-
-        self.file_info[field_name] = parser_class(f).critical_parse()
-        if self.file_info[field_name].errors:
-            raise forms.ValidationError(self.file_info[field_name].errors)
-        return f
-
-    def clean_xml(self):
-        return self.clean_file("xml", XMLParser)
-
-    def clean(self):
-        def format_messages(where, e, log_msgs):
-            m = str(e)
-            if m:
-                m = [m]
-            else:
-                import traceback
-                typ, val, tb = sys.exc_info()
-                m = traceback.format_exception(typ, val, tb)
-                m = [ l.replace('\n ', ':\n ') for l in m ]
-            msgs = [s for s in (["Error from xml2rfc (%s):" % (where,)] + m + log_msgs) if s]
-            return msgs
-
-        if self.shutdown and not has_role(self.request.user, "Secretariat"):
-            raise forms.ValidationError('The submission tool is currently shut down')
-
-        for ext in self.formats:
-            f = self.cleaned_data.get(ext, None)
-            if not f:
-                continue
-            self.file_types.append('.%s' % ext)
-        if not ('.txt' in self.file_types or '.xml' in self.file_types):
-            if not self.errors:
-                raise forms.ValidationError('Unexpected submission file types; found %s, but %s is required' % (', '.join(self.file_types), ' or '.join(self.base_formats)))
-
-        # Determine the draft name and revision. Try XML first.
-        if self.cleaned_data.get('xml'):
-            xml_file = self.cleaned_data.get('xml')
-            tfn = None
-            with ExitStack() as stack:
-                @stack.callback
-                def cleanup():  # called when context exited, even in case of exception
-                    if tfn is not None:
-                        os.unlink(tfn)
-
-                # We need to write the xml file to disk in order to hand it
-                # over to the xml parser.  XXX FIXME: investigate updating
-                # xml2rfc to be able to work with file handles to in-memory
-                # files.
-                name, ext = os.path.splitext(os.path.basename(xml_file.name))
-                with tempfile.NamedTemporaryFile(prefix=name+'-',
-                                                 suffix='.xml',
-                                                 mode='wb+',
-                                                 delete=False) as tf:
-                    tfn = tf.name
-                    for chunk in xml_file.chunks():
-                        tf.write(chunk)
-
-                try:
-                    xml_draft = XMLDraft(tfn)
-                except XMLParseError as e:
-                    msgs = format_messages('xml', e, e.parser_msgs())
-                    self.add_error('xml', msgs)
-                    return
-                except Exception as e:
-                    self.add_error('xml', f'Error parsing XML draft: {e}')
-                    return
-
-                self.filename = xml_draft.filename
-                self.revision = xml_draft.revision
-        elif self.cleaned_data.get('txt'):
-            # no XML available, extract from the text if we have it
-            # try to parse it
-            txt_file = self.cleaned_data['txt']
-            txt_file.seek(0)
-            bytes = txt_file.read()
-            try:
-                text = bytes.decode(self.file_info['txt'].charset)
-                self.parsed_draft = PlaintextDraft(text, txt_file.name)
-                self.filename = self.parsed_draft.filename
-                self.revision = self.parsed_draft.revision
-            except (UnicodeDecodeError, LookupError) as e:
-                self.add_error('txt', 'Failed decoding the uploaded file: "%s"' % str(e))
-
-        rev_error = validate_submission_rev(self.filename, self.revision)
-        if rev_error:
-            raise forms.ValidationError(rev_error)
-
-        # The following errors are likely noise if we have previous field
-        # errors:
-        if self.errors:
-            raise forms.ValidationError('')
-
-        if not self.filename:
-            raise forms.ValidationError("Could not extract a valid draft name from the upload.  "
-                "To fix this in a text upload, please make sure that the full draft name including "
-                "revision number appears centered on its own line below the document title on the "
-                "first page.  In an xml upload, please make sure that the top-level <rfc/> "
-                "element has a docName attribute which provides the full draft name including "
-                "revision number.")
-
-        if not self.revision:
-            raise forms.ValidationError("Could not extract a valid draft revision from the upload.  "
-                "To fix this in a text upload, please make sure that the full draft name including "
-                "revision number appears centered on its own line below the document title on the "
-                "first page.  In an xml upload, please make sure that the top-level <rfc/> "
-                "element has a docName attribute which provides the full draft name including "
-                "revision number.")
-
-        if self.cleaned_data.get('txt') or self.cleaned_data.get('xml'):
-            # check group
-            self.group = self.deduce_group(self.filename)
-            # check existing
-            existing = Submission.objects.filter(name=self.filename, rev=self.revision).exclude(state__in=("posted", "cancel", "waiting-for-draft"))
-            if existing:
-                raise forms.ValidationError(
-                    format_html(
-                        'A submission with same name and revision is currently being processed. <a href="{}">Check the status here.</a>',
-                        urljoin(
-                            settings.IDTRACKER_BASE_URL,
-                            urlreverse("ietf.submit.views.submission_status", kwargs={'submission_id': existing[0].pk}),
-                        )
-                    )
-                )
-
-            # cut-off
-            if self.revision == '00' and self.in_first_cut_off:
-                raise forms.ValidationError(mark_safe(self.cutoff_warning))
-            # check thresholds
-            today = datetime.date.today()
-
             self.check_submissions_thresholds(
                 "for the draft %s" % self.filename,
                 dict(name=self.filename, rev=self.revision, submission_date=today),
@@ -684,63 +593,8 @@ class SubmissionBaseUploadForm(forms.Form):
                 dict(submission_date=today),
                 settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS, settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE,
             )
+
         return super().clean()
-
-    def check_submissions_thresholds(self, which, filter_kwargs, max_amount, max_size):
-        submissions = Submission.objects.filter(**filter_kwargs)
-
-        if len(submissions) > max_amount:
-            raise forms.ValidationError("Max submissions %s has been reached for today (maximum is %s submissions)." % (which, max_amount))
-        if sum(s.file_size for s in submissions if s.file_size) > max_size * 1024 * 1024:
-            raise forms.ValidationError("Max uploaded amount %s has been reached for today (maximum is %s MB)." % (which, max_size))
-
-    @staticmethod
-    def deduce_group(name):
-        """Figure out group from name or previously submitted draft, returns None if individual."""
-        existing_draft = Document.objects.filter(name=name, type="draft")
-        if existing_draft:
-            group = existing_draft[0].group
-            if group and group.type_id not in ("individ", "area"):
-                return group
-            else:
-                return None
-        else:
-            name_parts = name.split("-")
-            if len(name_parts) < 3:
-                raise forms.ValidationError("The draft name \"%s\" is missing a third part, please rename it" % name)
-
-            if name.startswith('draft-ietf-') or name.startswith("draft-irtf-"):
-                if name_parts[1] == "ietf":
-                    group_type = "wg"
-                elif name_parts[1] == "irtf":
-                    group_type = "rg"
-                else:
-                    group_type = None
-
-                # first check groups with dashes
-                for g in Group.objects.filter(acronym__contains="-", type=group_type):
-                    if name.startswith('draft-%s-%s-' % (name_parts[1], g.acronym)):
-                        return g
-
-                try:
-                    return Group.objects.get(acronym=name_parts[2], type=group_type)
-                except Group.DoesNotExist:
-                    raise forms.ValidationError('There is no active group with acronym \'%s\', please rename your draft' % name_parts[2])
-
-            elif name.startswith("draft-rfc-"):
-                return Group.objects.get(acronym="iesg")
-            elif name.startswith("draft-rfc-editor-") or name.startswith("draft-rfced-") or name.startswith("draft-rfceditor-"):
-                return Group.objects.get(acronym="rfceditor")
-            else:
-                ntype = name_parts[1].lower()
-                # This covers group types iesg, iana, iab, ise, and others:
-                if GroupTypeName.objects.filter(slug=ntype).exists():
-                    group = Group.objects.filter(acronym=ntype).first()
-                    if group:
-                        return group
-                    else:
-                        raise forms.ValidationError('Draft names starting with draft-%s- are restricted, please pick a differen name' % ntype)
-            return None
 
 
 class SubmissionManualUploadForm(DeprecatedSubmissionBaseUploadForm):
