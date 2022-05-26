@@ -59,7 +59,7 @@ jobs:
           file: docker/db.Dockerfile
           platforms: ${{ matrix.platform }}
           push: true
-          tags: ghcr.io/ietf-tools/datatracker-db:latest-${{ matrix.platform }}
+          tags: ghcr.io/ietf-tools/datatracker-db:latest-${{ matrix.docker }}
           
   combine:
     name: Create Docker Manifests
