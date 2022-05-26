@@ -3710,6 +3710,38 @@ def api_set_session_video_url(request):
 
     return HttpResponse("Done", status=200, content_type='text/plain')
 
+@require_api_key
+@role_required('Recording Manager') # TODO : Rework how Meetecho interacts via APIs. There may be better paths to pursue than Personal API keys as they are currently defined.
+@csrf_exempt
+def api_add_session_attendees(request):
+
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+
+    if request.method != 'POST':
+        return err(405, "Method not allowed")
+    attended_post = request.POST.get('attended')
+    if not attended_post:
+        return err(400, "Missing attended parameter")
+    try:
+        attended = json.loads(attended_post)
+    except json.decoder.JSONDecodeError:
+        return err(400, "Malformed post") 
+    if not ( 'session_id' in attended and type(attended['session_id'])==int ):
+        return err(400, "Malformed post")
+    session_id = attended['session_id']
+    if not ( 'attendees' in attended and type(attended['attendees'])==list and all([type(el)==int for el in attended['attendees']]) ):
+        return err(400, "Malformed post")
+    session = Session.objects.filter(pk=session_id).first()
+    if not session:
+        return err(400, "Invalid session")
+    persons = Person.objects.filter(pk__in=attended['attendees'])
+    if persons.count() != len(attended['attendees']):
+        return err(400, "Invalid attendee")
+    for person in persons:
+        session.attended_set.get_or_create(person=person)
+    return HttpResponse("Done", status=200, content_type='text/plain')  
+
 
 @require_api_key
 @role_required('Recording Manager', 'Secretariat')

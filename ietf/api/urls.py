@@ -31,6 +31,8 @@ urlpatterns = [
     url(r'^notify/meeting/import_recordings/(?P<number>[a-z0-9-]+)/?$', meeting_views.api_import_recordings),
     # Let MeetEcho upload bluesheets
     url(r'^notify/meeting/bluesheet/?$', meeting_views.api_upload_bluesheet),
+    # Let MeetEcho tell us about session attendees
+    url(r'^notify/session/attendees/?$', meeting_views.api_add_session_attendees),
     # Let the registration system notify us about registrations
     url(r'^notify/meeting/registration/?', api_views.api_new_meeting_registration),
     # OpenID authentication provider
