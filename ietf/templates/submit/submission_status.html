@@ -557,7 +557,7 @@
                 {% for e in submission.submissionevent_set.all %}
                     <tr>
                         <td class="text-nowrap">
-                            {{ e.time|date:"Y-m-d" }}
+                          <span title="{{ e.time }}">{{ e.time|date:"Y-m-d" }}</span>
                         </td>
                         <td>
                             {% if e.by %}
