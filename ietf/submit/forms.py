@@ -593,10 +593,12 @@ class SubmissionBaseUploadForm(forms.Form):
                 try:
                     xml_draft = XMLDraft(tfn)
                 except XMLParseError as e:
-                    msgs = format_messages('txt', e, e.parser_msgs())
-                    log.log('\n'.join(msgs))
+                    msgs = format_messages('xml', e, e.parser_msgs())
                     self.add_error('xml', msgs)
-                # todo other error handling???
+                    return
+                except Exception as e:
+                    self.add_error('xml', f'Error parsing XML draft: {e}')
+                    return
 
                 self.filename = xml_draft.filename
                 self.revision = xml_draft.revision
@@ -761,11 +763,20 @@ class SubmissionManualUploadForm(DeprecatedSubmissionBaseUploadForm):
     def clean_pdf(self):
         return self.clean_file("pdf", PDFParser)
 
-class SubmissionAutoUploadForm(DeprecatedSubmissionBaseUploadForm):
+class DeprecatedSubmissionAutoUploadForm(DeprecatedSubmissionBaseUploadForm):
+    """Full-service upload form, replaced by the asynchronous version"""
     user = forms.EmailField(required=True)
 
     def __init__(self, request, *args, **kwargs):
-        super(SubmissionAutoUploadForm, self).__init__(request, *args, **kwargs)
+        super(DeprecatedSubmissionAutoUploadForm, self).__init__(request, *args, **kwargs)
+        self.formats = ['xml', ]
+        self.base_formats = ['xml', ]
+
+class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
+    user = forms.EmailField(required=True)
+
+    def __init__(self, request, *args, **kwargs):
+        super().__init__(request, *args, **kwargs)
         self.formats = ['xml', ]
         self.base_formats = ['xml', ]
 

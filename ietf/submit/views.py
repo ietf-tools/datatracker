@@ -31,7 +31,8 @@ from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message, MessageAttachment
 from ietf.person.models import Email
 from ietf.submit.forms import ( SubmissionManualUploadForm, SubmissionAutoUploadForm, AuthorForm,
-    SubmitterForm, EditSubmissionForm, PreapprovalForm, ReplacesForm, SubmissionEmailForm, MessageModelForm )
+    SubmitterForm, EditSubmissionForm, PreapprovalForm, ReplacesForm, SubmissionEmailForm, MessageModelForm,
+    DeprecatedSubmissionAutoUploadForm )
 from ietf.submit.mail import send_full_url, send_manual_post_request, add_submission_email, get_reply_to
 from ietf.submit.models import (Submission, Preapproval, SubmissionExtResource,
     DraftSubmissionStateName, SubmissionEmailEvent )
@@ -219,7 +220,7 @@ def api_submit(request):
     elif request.method == 'POST':
         exception = None
         try:
-            form = SubmissionAutoUploadForm(request, data=request.POST, files=request.FILES)
+            form = DeprecatedSubmissionAutoUploadForm(request, data=request.POST, files=request.FILES)
             if form.is_valid():
                 log('got valid submission form for %s' % form.filename)
                 username = form.cleaned_data['user']
