@@ -135,7 +135,13 @@
     {% elif submission.state_id == 'validating' %}
         <p class="alert alert-warning my-3">
             This submission is still being processed and validated. This normally takes a few minutes after
-            submission. Please contact the secretariat if it has been more than an hour.
+            submission.
+            {% with earliest_event=submission.submissionevent_set.last %}
+                {% if earliest_event %}
+                    It has been {{ earliest_event.time|timesince }} since submission.
+                {% endif %}
+            {% endwith %}
+            Please contact the secretariat for assistance if it has been more than an hour.
         </p>
     {% else %}
         <h2 class="mt-5">Meta-data from the submission</h2>
