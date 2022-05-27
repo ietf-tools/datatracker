@@ -50,7 +50,7 @@ from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocAlias
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
-from ietf.person.models import Person
+from ietf.person.models import Person, User
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
@@ -3735,11 +3735,11 @@ def api_add_session_attendees(request):
     session = Session.objects.filter(pk=session_id).first()
     if not session:
         return err(400, "Invalid session")
-    persons = Person.objects.filter(pk__in=attended['attendees'])
-    if persons.count() != len(attended['attendees']):
+    users = User.objects.filter(pk__in=attended['attendees'])
+    if users.count() != len(attended['attendees']):
         return err(400, "Invalid attendee")
-    for person in persons:
-        session.attended_set.get_or_create(person=person)
+    for user in users:
+        session.attended_set.get_or_create(person=user.person)
     return HttpResponse("Done", status=200, content_type='text/plain')  
 
 

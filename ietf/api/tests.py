@@ -26,7 +26,7 @@ from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.meeting.models import Session
 from ietf.person.factories import PersonFactory, random_faker
-from ietf.person.models import Person
+from ietf.person.models import User
 from ietf.person.models import PersonalApiKey
 from ietf.stats.models import MeetingRegistration
 from ietf.utils.mail import outbox, get_payload_text
@@ -196,12 +196,12 @@ class CustomApiTests(TestCase):
         bad_session_id = Session.objects.order_by('-pk').first().pk + 1
         r = self.client.post(url, {'apikey': apikey.hash(), 'attended': f'{{"session_id":{bad_session_id},"attendees":[]}}'})
         self.assertContains(r, "Invalid session", status_code=400)
-        bad_person_id = Person.objects.order_by('-pk').first().pk + 1
-        r = self.client.post(url, {'apikey': apikey.hash(), 'attended': f'{{"session_id":{session.pk},"attendees":[{bad_person_id}]}}'})
+        bad_user_id = User.objects.order_by('-pk').first().pk + 1
+        r = self.client.post(url, {'apikey': apikey.hash(), 'attended': f'{{"session_id":{session.pk},"attendees":[{bad_user_id}]}}'})
         self.assertContains(r, "Invalid attendee", status_code=400)
 
         # Reasonable request
-        r = self.client.post(url, {'apikey':apikey.hash(), 'attended': f'{{"session_id":{session.pk},"attendees":[{recman.pk}, {otherperson.pk}]}}'})
+        r = self.client.post(url, {'apikey':apikey.hash(), 'attended': f'{{"session_id":{session.pk},"attendees":[{recman.user.pk}, {otherperson.user.pk}]}}'})
 
         self.assertEqual(session.attended_set.count(),2)
         self.assertTrue(session.attended_set.filter(person=recman).exists())
