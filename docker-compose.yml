@@ -66,7 +66,6 @@ services:
         image: ghcr.io/painless-security/datatracker-celery:latest
         environment:
             CELERY_APP: ietf
-            UPDATE_REQUIREMENTS: 1
         command:
             - '--loglevel=INFO'
         restart: unless-stopped
