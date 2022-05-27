@@ -8,6 +8,7 @@ import os
 import pathlib
 import re
 import time
+import traceback
 import xml2rfc
 
 from typing import Optional  # pyflakes:ignore
@@ -1193,7 +1194,7 @@ def process_submission_text(submission):
     text_title = _normalize_title(text_draft.get_title())
     if not text_title:
         raise SubmissionError('Could not extract a valid title from the text')
-    if text_title != submission.title():
+    if text_title != submission.title:
         raise SubmissionError(
             f'Text draft title ({text_title}) disagrees with submission title ({submission.title})')
 
@@ -1213,9 +1214,9 @@ def process_submission_text(submission):
 
 
 def process_uploaded_submission(submission):
-    def abort_submission(error_message):
+    def abort_submission(error):
         cancel_submission(submission)
-        create_submission_event(None, submission, f'Submission rejected: {error_message}')
+        create_submission_event(None, submission, f'Submission rejected: {error}')
 
     if submission.state_id != 'validating':
         log.log(f'Submission {submission.pk} is not in "validating" state, skipping.')
@@ -1244,8 +1245,12 @@ def process_uploaded_submission(submission):
         errors = [c.message for c in submission.checks.filter(passed__isnull=False) if not c.passed]
         if len(errors) > 0:
             raise SubmissionError('Checks failed: ' + ' / '.join(errors))
+    except SubmissionError as err:
+        abort_submission(err)
     except Exception as err:
-        abort_submission(str(err))
+        log.log(f'Unexpected exception while processing submission {submission.pk}.')
+        log.log(traceback.format_exc())
+        abort_submission('A system error occurred while processing the submission.')
 
     # if we get here and are still "validating", accept the draft
     if submission.state_id == 'validating':
