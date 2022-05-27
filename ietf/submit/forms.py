@@ -153,6 +153,19 @@ class SubmissionBaseUploadForm(forms.Form):
         if self.shutdown and not has_role(self.request.user, "Secretariat"):
             raise forms.ValidationError('The submission tool is currently shut down')
 
+        # check general submission rate thresholds before doing any more work
+        today = datetime.date.today()
+        self.check_submissions_thresholds(
+            "for the same submitter",
+            dict(remote_ip=self.remote_ip, submission_date=today),
+            settings.IDSUBMIT_MAX_DAILY_SAME_SUBMITTER, settings.IDSUBMIT_MAX_DAILY_SAME_SUBMITTER_SIZE,
+        )
+        self.check_submissions_thresholds(
+            "across all submitters",
+            dict(submission_date=today),
+            settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS, settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE,
+        )
+
         for ext in self.formats:
             f = self.cleaned_data.get(ext, None)
             if not f:
@@ -255,18 +268,11 @@ class SubmissionBaseUploadForm(forms.Form):
             # cut-off
             if self.revision == '00' and self.in_first_cut_off:
                 raise forms.ValidationError(mark_safe(self.cutoff_warning))
-            # check thresholds
-            today = datetime.date.today()
-
+            # check thresholds that depend on the draft / group
             self.check_submissions_thresholds(
                 "for the draft %s" % self.filename,
                 dict(name=self.filename, rev=self.revision, submission_date=today),
                 settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME, settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME_SIZE,
-            )
-            self.check_submissions_thresholds(
-                "for the same submitter",
-                dict(remote_ip=self.remote_ip, submission_date=today),
-                settings.IDSUBMIT_MAX_DAILY_SAME_SUBMITTER, settings.IDSUBMIT_MAX_DAILY_SAME_SUBMITTER_SIZE,
             )
             if self.group:
                 self.check_submissions_thresholds(
@@ -274,11 +280,6 @@ class SubmissionBaseUploadForm(forms.Form):
                     dict(group=self.group, submission_date=today),
                     settings.IDSUBMIT_MAX_DAILY_SAME_GROUP, settings.IDSUBMIT_MAX_DAILY_SAME_GROUP_SIZE,
                 )
-            self.check_submissions_thresholds(
-                "across all submitters",
-                dict(submission_date=today),
-                settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS, settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE,
-            )
         return super().clean()
 
     def check_submissions_thresholds(self, which, filter_kwargs, max_amount, max_size):
