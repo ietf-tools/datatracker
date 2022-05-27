@@ -1172,8 +1172,8 @@ DEFAULT_REQUESTS_TIMEOUT = 20  # seconds
 # Celery configuration
 CELERY_TIMEZONE = 'UTC'
 CELERY_BROKER_URL = 'amqp://mq/'
-CELERY_ACKS_LATE = True  # failed tasks will be retried; keep tasks idempotent or disable per-task
-
+CELERY_ACKS_LATE = True  # tasks aborted due to worker failure will retry; keep tasks idempotent or disable per-task
+# (CELERY_ACKS_LATE does not retry a task that fails, including due to a clean worker shutdown)
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests

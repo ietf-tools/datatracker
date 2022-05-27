@@ -17,8 +17,7 @@ from .draft import Draft
 class XMLDraft(Draft):
     """Draft from XML source
 
-    Currently just a holding place for get_refs() for an XML file. Can eventually expand
-    to implement the other public methods of Draft as need arises.
+    Not all methods from the superclass are implemented yet.
     """
     def __init__(self, xml_file):
         """Initialize XMLDraft instance

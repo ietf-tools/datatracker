@@ -1184,11 +1184,18 @@ def process_submission_text(submission):
     text_draft = PlaintextDraft.from_file(text_path)
 
     if submission.name != text_draft.filename:
-        raise SubmissionError('Text draft filename disagrees with submission filename')
+        raise SubmissionError(
+            f'Text draft filename ({text_draft.filename}) disagrees with submission filename ({submission.name})'
+        )
     if submission.rev != text_draft.revision:
-        raise SubmissionError('Text draft revision disagrees with submission revision')
-    if not _normalize_title(text_draft.get_title()):
+        raise SubmissionError(
+            f'Text draft revision ({text_draft.revision}) disagrees with submission revision ({submission.rev})')
+    text_title = _normalize_title(text_draft.get_title())
+    if not text_title:
         raise SubmissionError('Could not extract a valid title from the text')
+    if text_title != submission.title():
+        raise SubmissionError(
+            f'Text draft title ({text_title}) disagrees with submission title ({submission.title})')
 
     submission.abstract = text_draft.get_abstract()
     submission.document_date = text_draft.get_creation_date()
