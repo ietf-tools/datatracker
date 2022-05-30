@@ -274,11 +274,10 @@
             <h2>
                 Counts per month
             </h2>
-            <div class="stats-time-graph">
+            <div id="stats-time-graph">
             </div>
             <script>
             var timeSeriesData = {{ data|safe }};
-            console.log(timeSeriesData);
             var timeSeriesOptions = {
                 xaxis: {
                     mode: "time",
@@ -333,9 +332,41 @@ href="{{ t.reviewer_stats_url }}">
         <script src="{% static 'ietf/js/datepicker.js' %}">
         </script>
         {% if stats_type == "time" %}
-            <script src="{% static 'ietf/js/flot.js' %}">
-            </script>
-            <script src="{% static 'ietf/js/review-stats.js' %}">
-            </script>
+        <script src="{% static 'ietf/js/highcharts.js' %}"></script>
+        <script>
+            $(document)
+                .ready(function () {
+                    if (window.timeSeriesData) {
+                        console.log(window.timeSeriesData);
+                        series = window.timeSeriesData.map(({label, data, color}) => ({
+                                name: label,
+                                data: data,
+                                color: color,
+                                type: "column"
+                        }));
+                        console.log(series);
+                        Highcharts.chart("stats-time-graph", {
+                            xAxis: {
+                                type: 'datetime',
+                            },
+                            yAxis: {
+                                title: undefined,
+                            },
+                            credits: {
+                                enabled: false,
+                            },
+                            title: {
+                                text: undefined,
+                            },
+                            plotOptions: {
+                                column: {
+                                    stacking: 'normal',
+                                }
+                            },
+                            series: series
+                        });
+                    }
+                });
+        </script>
         {% endif %}
     {% endblock %}
