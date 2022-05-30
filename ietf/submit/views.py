@@ -151,9 +151,12 @@ def api_upload(request):
                 if not hasattr(user, 'person'):
                     return err(400, "No person with username %s" % username)
 
-                clear_existing_files(form)
-                save_files(form)
-
+                # There is a race condition here: creating the Submission with the name/rev
+                # of this draft is meant to prevent another submission from occurring. However,
+                # if two submissions occur at the same time, both may decide that they are the
+                # only submission in progress. This may result in a Submission being posted with
+                # the wrong files. The window for this is short, though, so it's probably
+                # tolerable risk.
                 submission = get_submission(form)
                 submission.state = DraftSubmissionStateName.objects.get(slug="validating")
                 submission.remote_ip = form.remote_ip
@@ -161,6 +164,8 @@ def api_upload(request):
                 submission.submission_date = datetime.date.today()
                 submission.submitter = user.person.formatted_email()
                 submission.save()
+                clear_existing_files(form)
+                save_files(form)
                 create_submission_event(request, submission, desc="Uploaded submission through API")
 
                 # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
