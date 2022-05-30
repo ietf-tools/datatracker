@@ -1247,7 +1247,7 @@ def process_uploaded_submission(submission):
             raise SubmissionError('Checks failed: ' + ' / '.join(errors))
     except SubmissionError as err:
         abort_submission(err)
-    except Exception as err:
+    except Exception:
         log.log(f'Unexpected exception while processing submission {submission.pk}.')
         log.log(traceback.format_exc())
         abort_submission('A system error occurred while processing the submission.')
