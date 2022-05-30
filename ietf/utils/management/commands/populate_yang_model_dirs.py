@@ -7,7 +7,7 @@ import os
 import sys
 import time
 
-from pathlib2 import Path
+from pathlib import Path
 from textwrap import dedent
 from xym import xym
 
