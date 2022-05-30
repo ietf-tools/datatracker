@@ -559,7 +559,7 @@ class DeprecatedSubmissionBaseUploadForm(SubmissionBaseUploadForm):
 
         if self.cleaned_data.get('txt') or self.cleaned_data.get('xml'):
             # check group
-            self.group = self.deduce_group()
+            self.group = self.deduce_group(self.filename)
 
             # check existing
             existing = Submission.objects.filter(name=self.filename, rev=self.revision).exclude(state__in=("posted", "cancel", "waiting-for-draft"))
