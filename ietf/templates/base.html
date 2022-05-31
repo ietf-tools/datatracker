@@ -21,18 +21,9 @@
         <link rel="stylesheet" href="{% static 'ietf/css/select2.css' %}">
         <style>
             {% block morecss %}{% endblock %}
-            .leftmenu { width: 13em; }
         </style>
         {% block pagehead %}{% endblock %}
-        {% if server_mode and server_mode == "production" %}
-            <link rel="shortcut icon"
-                  href="{% static 'ietf/images/ietf-icon-blue3.png' %}">
-        {% else %}
-            <link rel="shortcut icon"
-                  href="{% static 'ietf/images/ietf-icon-red3.png' %}">
-        {% endif %}
-        <link rel="apple-touch-icon"
-              href="{% static 'ietf/images/apple-touch-icon.png' %}">
+        {% include "base/icons.html" %}
         <script src="{% static 'ietf/js/ietf.js' %}"></script>
         {% analytical_head_bottom %}
     </head>
@@ -43,8 +34,8 @@
         <nav class="navbar navbar-expand-lg {% if server_mode and server_mode != "production" %} navbar-light bg-warning {% else %} navbar-dark bg-secondary {% endif %}  {% if navbar_mode %} {{ navbar_mode }} {% else %} fixed-top {% endif %}">
             <div class="container-fluid">
                 <a class="navbar-brand" href="/">
-                    <img alt="IETF Logo"
-                         src="{% static 'ietf/images/ietflogo-small-transparent.png' %}">
+                    <img alt="IETF Logo" class="me-1"
+                         src="{% static 'ietf/images/ietf-logo-nor.svg' %}">
                     Datatracker
                     {% if server_mode and server_mode != "production" %}Dev Mode{% endif %}
                 </a>
