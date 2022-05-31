@@ -4,8 +4,9 @@ LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Update system packages
-RUN apt-get update
-RUN apt-get -qy upgrade
+RUN apt-get update \
+    && apt-get -qy upgrade \
+    && apt-get -y install --no-install-recommends apt-utils dialog 2>&1
 
 # Add Node.js Source
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
@@ -19,7 +20,6 @@ RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/d
 RUN apt-get update --fix-missing && apt-get install -qy \
 	apache2-utils \
 	apt-file \
-	apt-utils \
 	bash \
 	build-essential \
 	curl \
