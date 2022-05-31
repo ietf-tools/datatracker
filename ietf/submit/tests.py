@@ -26,7 +26,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
                                post_submission, validate_submission_name, validate_submission_rev,
-                               process_uploaded_submission)
+                               process_uploaded_submission, SubmissionError, process_submission_text)
 from ietf.doc.factories import DocumentFactory, WgDraftFactory, IndividualDraftFactory, IndividualRfcFactory
 from ietf.doc.models import ( Document, DocAlias, DocEvent, State,
     BallotPositionDocEvent, DocumentAuthor, SubmissionDocEvent )
@@ -3064,6 +3064,51 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertEqual(Submission.objects.filter(pk=bad_pk).count(), 0)
         process_uploaded_submission_task(bad_pk)
         self.assertEqual(mock_method.call_count, 0)
+
+    def test_process_submission_text_consistency_checks(self):
+        """process_submission_text should check draft metadata against submission"""
+        submission = SubmissionFactory(
+            name='draft-somebody-test',
+            rev='00',
+            title='Correct Draft Title',
+        )
+        txt_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.txt'
+
+        # name mismatch
+        txt, _ = submission_file(
+            'draft-somebody-wrong-name-00',  # name that appears in the file
+            'draft-somebody-test-00.xml',
+            None,
+            'test_submission.txt',
+            title='Correct Draft Title',
+        )
+        txt_path.open('w').write(txt.read())
+        with self.assertRaisesMessage(SubmissionError, 'disagrees with submission filename'):
+            process_submission_text(submission)
+
+        # rev mismatch
+        txt, _ = submission_file(
+            'draft-somebody-test-01',  # name that appears in the file
+            'draft-somebody-test-00.xml',
+            None,
+            'test_submission.txt',
+            title='Correct Draft Title',
+        )
+        txt_path.open('w').write(txt.read())
+        with self.assertRaisesMessage(SubmissionError, 'disagrees with submission revision'):
+            process_submission_text(submission)
+
+        # title mismatch
+        txt, _ = submission_file(
+            'draft-somebody-test-00',  # name that appears in the file
+            'draft-somebody-test-00.xml',
+            None,
+            'test_submission.txt',
+            title='Not Correct Draft Title',
+        )
+        txt_path.open('w').write(txt.read())
+        with self.assertRaisesMessage(SubmissionError, 'disagrees with submission title'):
+            process_submission_text(submission)
 
     def test_status_of_validating_submission(self):
         s = SubmissionFactory(state_id='validating')
