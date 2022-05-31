@@ -125,6 +125,9 @@ RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
 RUN chmod +rx /usr/local/bin/wait-for
 
+# Create assets directory
+RUN mkdir -p /assets
+
 # Create workspace
 RUN mkdir -p /workspace
 WORKDIR /workspace

@@ -2,12 +2,13 @@
 
 WORKSPACEDIR="/workspace"
 
-sudo service rsyslog start
+sudo service rsyslog start &>/dev/null
 
 # Fix ownership of volumes
 echo "Fixing volumes ownership..."
 sudo chown -R dev:dev "$WORKSPACEDIR/.parcel-cache"
 sudo chown -R dev:dev "$WORKSPACEDIR/__pycache__"
+sudo chown dev:dev "/assets"
 
 echo "Fix chromedriver /dev/shm permissions..."
 sudo chmod 1777 /dev/shm

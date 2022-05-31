@@ -60,3 +60,4 @@ services:
 
 volumes:
     mariadb-data:
+    app-assets:
