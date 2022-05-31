@@ -41,6 +41,7 @@ import io
 import math
 import os
 import re
+import json
 
 from tempfile import mkstemp
 from collections import OrderedDict, defaultdict
@@ -750,6 +751,50 @@ def dependencies(request, acronym, group_type=None, output_type="pdf"):
     elif (output_type == "svg"):
         output_type = "image/svg+xml"
     return HttpResponse(out, content_type=output_type)
+
+
+@cache_page(60 * 60)
+def dependencies_json(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_documents:
+        raise Http404
+
+    references = Q(
+        source__group=group, source__type="draft", relationship__slug__startswith="ref"
+    )
+    # both_rfcs = Q(source__states__slug="rfc", target__docs__states__slug="rfc")
+    # inactive = Q(source__states__slug__in=["expired", "repl"])
+    # removed = Q(source__states__slug__in=["auth-rm", "ietf-rm"])
+    # relations = (
+    #     RelatedDocument.objects.filter(references)
+    #     .exclude(both_rfcs)
+    #     .exclude(inactive)
+    #     .exclude(removed)
+    # )
+    relations = RelatedDocument.objects.filter(references)
+
+    edges = set()
+    for x in relations:
+        # target_state = x.target.document.get_state_slug('draft')
+        edges.add(x)
+
+    # replacements = RelatedDocument.objects.filter(
+    #     relationship__slug="replaces",
+    #     target__docs__in=[x.target.document for x in edges],
+    # )
+
+    # for x in replacements:
+    #     edges.add(x)
+
+    nodes = set([x.source for x in edges]).union([x.target.document for x in edges])
+
+    graph = {
+        "nodes": [{"id": x.name} for x in nodes],
+        "edges": [{"source": x.source.name, "target": x.target.name}],
+    }
+    print(graph)
+
+    return HttpResponse(json.dumps(graph), content_type="application/json")
 
 def email_aliases(request, acronym=None, group_type=None):
     group = get_group_or_404(acronym,group_type) if acronym else None

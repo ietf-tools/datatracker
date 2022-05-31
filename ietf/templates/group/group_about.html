@@ -1,7 +1,7 @@
 {% extends "group/group_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load ietf_filters %}
+{% load static ietf_filters %}
 {% load markup_tags %}
 {% load textfilters group_filters %}
 {% block group_content %}
@@ -126,6 +126,33 @@
                            href="{% url 'ietf.group.views.dependencies' group_type=group.type_id acronym=group.acronym output_type='svg' %}">
                             SVG <i class="bi bi-diagram-3"></i>
                         </a>
+                        <button data-href="{% url 'ietf.group.views.dependencies_json' group_type=group.type_id acronym=group.acronym %}"
+                           type="button"
+                           class="btn btn-primary btn-sm"
+                           data-bs-toggle="modal"
+                           data-bs-target="#deps-modal">
+                            Modal <i class="bi bi-diagram-3"></i>
+                        </button>
+                        <div class="modal fade" id="deps-modal" tabindex="-1" aria-labelledby="deps-modal-label" aria-hidden="true">
+                          <div class="modal-dialog modal-xl">
+                            <div class="modal-content">
+                              <div class="modal-header">
+                                <h5 class="modal-title" id="deps-modal-label">Document dependencies</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <div class="modal-body">
+                                <div class="d-flex justify-content-center">
+                                  <div class="spinner-border m-5" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                     </td>
                 </tr>
             {% endif %}
@@ -339,4 +366,52 @@
             </p>
         {% endif %}
     {% endif %}
+{% endblock %}
+{% block js %}
+<script src="{% static 'ietf/js/d3.js' %}"></script>
+<script>
+// Fill modal with content from link href
+$("#deps-modal")
+    .on("show.bs.modal", function (e) {
+        var link = $(e.relatedTarget)
+            .data("href");
+        var target = $(this)
+            .find(".modal-body");
+        if (link && target) {
+            d3.json(link)
+                .then((data) => {
+                    console.log(data);
+                    target.html("<svg></svg>");
+                    const svg = d3.select(".modal-body svg");
+                    const link = svg.append("g")
+                        .attr("stroke", "#999")
+                        .selectAll("line")
+                        .data(data.edges)
+                        .join("line");
+                    const node = svg.append("g")
+                        .attr("stroke", "#000")
+                        .selectAll("circle")
+                        .data(data.nodes)
+                        .join("circle");
+
+                    const sim = d3.forceSimulation(node)
+                        // .force("link", d3.forceLink(link).id(d => d.id).distance(0).strength(1))
+                        .force("charge", d3.forceManyBody().strength(-50))
+                        .force("center",  d3.forceCenter())
+                        .on("tick", () => {
+                        link
+                            .attr("x1", d => d.source.x)
+                            .attr("y1", d => d.source.y)
+                            .attr("x2", d => d.target.x)
+                            .attr("y2", d => d.target.y);
+
+                        node
+                            .attr("cx", d => d.x)
+                            .attr("cy", d => d.y);
+                    });
+
+                });
+        }
+    });
+</script>
 {% endblock %}
