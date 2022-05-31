@@ -118,7 +118,7 @@ def api_upload(request):
         return JsonResponse(data, status=code)
 
     if request.method == 'GET':
-        return render(request, 'submit/api_submit_info.html')
+        return render(request, 'submit/api_submission_info.html')
     elif request.method == 'POST':
         exception = None
         submission = None

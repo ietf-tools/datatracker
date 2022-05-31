@@ -1,13 +1,19 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
+{% load origin ietf_filters %}
 {% block title %}Draft submission API instructions{% endblock %}
 {% block content %}
     {% origin %}
     <h1 class="mb-3">Draft submission API instructions</h1>
     <p>
+        Note: API endpoint described here is known to have a slow response time or to fail
+        due to timeout for some draft submissions, particularly those with large file sizes.
+        It is recommended to use the <a href="{% url 'ietf.submit.views.api_upload' %}">new API endpoint</a>
+        instead for increased reliability.
+    </p>
+    <p>
         A simplified draft submission interface, intended for automation,
-        is available at <code>{% url 'ietf.submit.views.api_submit' %}</code>.
+        is available at <code>{% absurl 'ietf.submit.views.api_submit' %}</code>.
     </p>
     <p>
         The interface accepts only XML uploads that can be processed on the server, and
@@ -44,7 +50,7 @@
         Here is an example:
     </p>
     <pre class="border p-3">
-$ curl -S -F "user=user.name@example.com" -F "xml=@~/draft-user-example.xml" https://datatracker.ietf.org/api/submit
+$ curl -S -F "user=user.name@example.com" -F "xml=@~/draft-user-example.xml" {% absurl 'ietf.submit.views.api_submit' %}
 Upload of draft-user-example OK, confirmation requests sent to:
 User Name &lt;user.name@example.com&gt;</pre>
 {% endblock %}
