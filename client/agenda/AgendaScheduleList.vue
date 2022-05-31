@@ -76,13 +76,17 @@
             span.badge.is-cancelled(v-if='item.status === `canceled`') Cancelled
             span.badge.is-rescheduled(v-else-if='item.status === `resched`') Rescheduled
             .agenda-table-cell-links-buttons(v-else-if='item.links && item.links.length > 0')
-              n-popover
-                template(#trigger)
-                  i.bi.bi-collection(@click='showMaterials(item)')
-                span Show meeting materials
+              template(v-if='item.flags.agenda')
+                n-popover
+                  template(#trigger)
+                    i.bi.bi-collection(@click='showMaterials(item)')
+                  span Show meeting materials
               n-popover(v-for='lnk of item.links', :key='lnk.id')
                 template(#trigger)
-                  a(:href='lnk.href'): i.bi(:class='`bi-` + lnk.icon')
+                  a(
+                    :href='lnk.href'
+                    :aria-label='lnk.label'
+                    ): i.bi(:class='`bi-` + lnk.icon')
                 span {{lnk.label}}
 </template>
 
@@ -152,19 +156,21 @@ const meetingEvents = computed(() => {
 
     // -> Populate event links
     const links = []
-    if (item.showAgenda) {
-      links.push({
-        id: `lnk-${item.id}-tar`,
-        label: 'Download meeting materials as .tar archive',
-        icon: 'file-zip',
-        href: `/meeting/${meetingNumber.value}/agenda/${item.acronym}-drafts.tgz`
-      })
-      links.push({
-        id: `lnk-${item.id}-pdf`,
-        label: 'Download meeting materials as PDF file',
-        icon: 'file-pdf',
-        href: `/meeting/${meetingNumber.value}/agenda/${item.acronym}-drafts.pdf`
-      })
+    if (item.flags.showAgenda) {
+      if (item.flags.agenda) {
+        links.push({
+          id: `lnk-${item.id}-tar`,
+          label: 'Download meeting materials as .tar archive',
+          icon: 'file-zip',
+          href: `/meeting/${meetingNumber.value}/agenda/${item.acronym}-drafts.tgz`
+        })
+        links.push({
+          id: `lnk-${item.id}-pdf`,
+          label: 'Download meeting materials as PDF file',
+          icon: 'file-pdf',
+          href: `/meeting/${meetingNumber.value}/agenda/${item.acronym}-drafts.pdf`
+        })
+      }
       if (useCodiMd) {
         links.push({
           id: `lnk-${item.id}-note`,
@@ -220,7 +226,8 @@ const meetingEvents = computed(() => {
         `agenda-table-display-event`,
         `agenda-table-status-${item.status}`,
         `agenda-table-type-${item.type}`
-      ].join(' ')
+      ].join(' '),
+      flags: item.flags
     })
 
     return acc

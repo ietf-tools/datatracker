@@ -1606,7 +1606,10 @@ def agenda_extract_shedule (item):
             "name": item.session.historic_group.parent.name,
             "description": item.session.historic_group.parent.description
         } if item.session.historic_group.parent else {},
-        "showAgenda": True if (item.session.agenda or item.session.remote_instructions or item.session.agenda_note) else False
+        "flags": {
+            "agenda": True if item.session.agenda() is not None else False,
+            "showAgenda": True if (item.session.agenda() is not None or item.session.remote_instructions or item.session.agenda_note) else False
+        }
         # "slotType": {
         #     "slug": item.slot_type.slug
         # }
