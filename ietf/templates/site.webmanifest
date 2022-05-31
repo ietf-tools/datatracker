@@ -4,15 +4,27 @@
     "short_name": "Datatracker",
     "icons": [
     {
-        "src": "{% static 'ietf/images/ietf-logo-nor-192.png' %}",
+        {% if server_mode and server_mode == "production" %}
+            "src": "{% static 'ietf/images/ietf-logo-nor-192.png' %}",
+        {% else %}
+            "src": "{% static 'ietf/images/ietf-logo-nor-192-dev.png' %}",
+        {% endif %}
         "sizes": "192x192",
         "type": "image/png"
     },
     {
-        "src": "{% static 'ietf/images/ietf-logo-nor-512.png' %}",
+        {% if server_mode and server_mode == "production" %}
+            "src": "{% static 'ietf/images/ietf-logo-nor-512.png' %}",
+        {% else %}
+            "src": "{% static 'ietf/images/ietf-logo-nor-512-dev.png' %}",
+        {% endif %}
         "sizes": "512x512",
         "type": "image/png"
     }],
     "theme_color": "#ffffff",
-    "background_color": "#ffffff"
+    {% if server_mode and server_mode == "production" %}
+        "background_color": "#ffffff"
+    {% else %}
+        "background_color": "#ffc4c4"
+    {% endif %}
 }
