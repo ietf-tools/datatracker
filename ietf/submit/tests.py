@@ -2731,10 +2731,10 @@ Subject: test
 # with a no-op for testing purposes.
 @mock.patch.object(transaction, 'on_commit', lambda x: x())
 @override_settings(IDTRACKER_BASE_URL='https://datatracker.example.com')
-class ApiUploadTests(BaseSubmitTestCase):
+class ApiSubmissionTests(BaseSubmitTestCase):
     def test_upload_draft(self):
-        """api_upload accepts a submission and queues it for processing"""
-        url = urlreverse('ietf.submit.views.api_upload')
+        """api_submission accepts a submission and queues it for processing"""
+        url = urlreverse('ietf.submit.views.api_submission')
         xml, author = submission_file('draft-somebody-test-00', 'draft-somebody-test-00.xml', None, 'test_submission.xml')
         data = {
             'xml': xml,
@@ -2768,9 +2768,9 @@ class ApiUploadTests(BaseSubmitTestCase):
         self.assertIn('Uploaded submission through API', submission.submissionevent_set.last().desc)
 
     def test_rejects_broken_upload(self):
-        """api_upload immediately rejects a submission with serious problems"""
+        """api_submission immediately rejects a submission with serious problems"""
         orig_submission_count = Submission.objects.count()
-        url = urlreverse('ietf.submit.views.api_upload')
+        url = urlreverse('ietf.submit.views.api_submission')
 
         # invalid submitter
         xml, author = submission_file('draft-somebody-test-00', 'draft-somebody-test-00.xml', None, 'test_submission.xml')

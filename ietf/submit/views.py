@@ -110,7 +110,7 @@ def upload_submission(request):
                                'form': form})
 
 @csrf_exempt
-def api_upload(request):
+def api_submission(request):
     def err(code, error, messages=None):
         data = {'error': error}
         if messages is not None:
