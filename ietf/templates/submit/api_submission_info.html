@@ -7,7 +7,7 @@
     <h1 class="mb-3">Draft submission API instructions</h1>
     <p>
         A simplified draft submission interface, intended for automation,
-        is available at <code>{% url 'ietf.submit.views.api_upload' %}</code>.
+        is available at <code>{% url 'ietf.submit.views.api_submission' %}</code>.
     </p>
     <p>
         The interface accepts only XML uploads that can be processed on the server, and
@@ -82,7 +82,7 @@
         Here is an example of submitting a draft and polling its status through the API:
     </p>
     <pre class="border p-3">
-$ curl -s -F "user=user.name@example.com" -F "xml=@~/draft-user-example.xml" {% absurl 'ietf.submit.views.api_upload' %} | jq
+$ curl -s -F "user=user.name@example.com" -F "xml=@~/draft-user-example.xml" {% absurl 'ietf.submit.views.api_submission' %} | jq
 {
   "id": "126375",
   "name": "draft-user-example",
