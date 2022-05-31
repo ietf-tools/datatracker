@@ -209,7 +209,7 @@ class StatisticsTests(TestCase):
             {"label": "late", "color": "#b42222", "data": [[expected_js_timestamp, 0]]}
         ])
         q = PyQuery(r.content)
-        self.assertTrue(q('.stats-time-graph'))
+        self.assertTrue(q('#stats-time-graph'))
 
         # check non-stacked chart
         url = urlreverse(ietf.stats.views.review_stats, kwargs={ "stats_type": "time" })
@@ -219,7 +219,7 @@ class StatisticsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(json.loads(r.context['data']), [{"color": "#3d22b3", "data": [[expected_js_timestamp, 0]]}])
         q = PyQuery(r.content)
-        self.assertTrue(q('.stats-time-graph'))
+        self.assertTrue(q('#stats-time-graph'))
 
         # check reviewer level
         url = urlreverse(ietf.stats.views.review_stats, kwargs={ "stats_type": "completion", "acronym": review_req.team.acronym })

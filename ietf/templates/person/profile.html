@@ -165,11 +165,11 @@
 {% endblock %}
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
-    <script src="{% static 'ietf/js/highcharts-highstock.js' %}"></script>
-    <script src="{% static 'ietf/js/highcharts-exporting.js' %}"></script>
+    <script src="{% static 'ietf/js/highstock.js' %}"></script>
     <script>
-            $(function () {
-                {% for person in persons %}
+        $(function () {
+            {% for person in persons %}
+                {% if person.has_drafts %}
                     $.getJSON('{% url "ietf.doc.views_stats.chart_conf_person_drafts" id=person.id %}', function (conf) {
                         // Create the chart
                         chart = Highcharts.stockChart('chart-{{ forloop.counter }}', conf);
@@ -179,7 +179,8 @@
                             chart.hideLoading();
                         });
                     });
-                {% endfor %}
-            });
+                {% endif %}
+            {% endfor %}
+        });
     </script>
 {% endblock %}
