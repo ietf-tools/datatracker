@@ -337,14 +337,12 @@ href="{{ t.reviewer_stats_url }}">
             $(document)
                 .ready(function () {
                     if (window.timeSeriesData) {
-                        console.log(window.timeSeriesData);
                         series = window.timeSeriesData.map(({label, data, color}) => ({
                                 name: label,
                                 data: data,
                                 color: color,
                                 type: "column"
                         }));
-                        console.log(series);
                         Highcharts.chart("stats-time-graph", {
                             xAxis: {
                                 type: 'datetime',
