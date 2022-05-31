@@ -282,7 +282,8 @@ class SubmissionBaseUploadForm(forms.Form):
                 )
         return super().clean()
 
-    def check_submissions_thresholds(self, which, filter_kwargs, max_amount, max_size):
+    @staticmethod
+    def check_submissions_thresholds(which, filter_kwargs, max_amount, max_size):
         submissions = Submission.objects.filter(**filter_kwargs)
 
         if len(submissions) > max_amount:

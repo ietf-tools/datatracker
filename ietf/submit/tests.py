@@ -17,6 +17,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.db import transaction
+from django.forms import ValidationError
 from django.test import override_settings
 from django.test.client import RequestFactory
 from django.urls import reverse as urlreverse
@@ -41,6 +42,7 @@ from ietf.name.models import FormalLanguageName
 from ietf.person.models import Person
 from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
 from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactory
+from ietf.submit.forms import SubmissionBaseUploadForm
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
 from ietf.submit.mail import add_submission_email, process_response_email
 from ietf.submit.tasks import process_uploaded_submission_task
@@ -2830,6 +2832,13 @@ class ApiSubmissionTests(BaseSubmitTestCase):
         self.assertFalse(mock_task.delay.called)
         self.assertEqual(Submission.objects.count(), orig_submission_count)
 
+    @override_settings(IDTRACKER_BASE_URL='http://baseurl.example.com')
+    def test_get_documentation(self):
+        """A GET to the submission endpoint retrieves documentation"""
+        r = self.client.get(urlreverse('ietf.submit.views.api_submission'))
+        self.assertTemplateUsed(r, 'submit/api_submission_info.html')
+        self.assertContains(r, 'http://baseurl.example.com', status_code=200)
+
     def test_submission_status(self):
         s = SubmissionFactory(state_id='validating')
         url = urlreverse('ietf.submit.views.api_submission_status', kwargs={'submission_id': s.pk})
@@ -2852,6 +2861,116 @@ class ApiSubmissionTests(BaseSubmitTestCase):
         # try an invalid one
         r = self.client.get(urlreverse('ietf.submit.views.api_submission_status', kwargs={'submission_id': '999999'}))
         self.assertEqual(r.status_code, 404)
+
+
+class SubmissionUploadFormTests(BaseSubmitTestCase):
+    def test_check_submission_thresholds(self):
+        today = datetime.date.today()
+        yesterday = today - datetime.timedelta(days=1)
+        (this_group, that_group) = GroupFactory.create_batch(2, type_id='wg')
+        this_ip = '10.0.0.1'
+        that_ip = '192.168.42.42'
+        one_mb = 1024 * 1024
+        this_draft = 'draft-this-draft'
+        that_draft = 'draft-different-draft'
+        SubmissionFactory(group=this_group, name=this_draft, rev='00', submission_date=yesterday, remote_ip=this_ip, file_size=one_mb)
+        SubmissionFactory(group=this_group, name=that_draft, rev='00', submission_date=yesterday, remote_ip=this_ip, file_size=one_mb)
+        SubmissionFactory(group=this_group, name=this_draft, rev='00', submission_date=today, remote_ip=this_ip, file_size=one_mb)
+        SubmissionFactory(group=this_group, name=that_draft, rev='00', submission_date=today, remote_ip=this_ip, file_size=one_mb)
+        SubmissionFactory(group=that_group, name=this_draft, rev='00', submission_date=yesterday, remote_ip=that_ip, file_size=one_mb)
+        SubmissionFactory(group=that_group, name=that_draft, rev='00', submission_date=yesterday, remote_ip=that_ip, file_size=one_mb)
+        SubmissionFactory(group=that_group, name=this_draft, rev='00', submission_date=today, remote_ip=that_ip, file_size=one_mb)
+        SubmissionFactory(group=that_group, name=that_draft, rev='00', submission_date=today, remote_ip=that_ip, file_size=one_mb)
+        SubmissionFactory(group=that_group, name=that_draft, rev='01', submission_date=today, remote_ip=that_ip, file_size=one_mb)
+
+        # Tests aim to cover the permutations of DB filters that are used by the clean() method
+        #   - all IP addresses, today
+        SubmissionBaseUploadForm.check_submissions_thresholds(
+            'valid today, all submitters',
+            dict(submission_date=today),
+            max_amount=5,
+            max_size=5,  # megabytes
+        )
+        with self.assertRaisesMessage(ValidationError, 'Max submissions'):
+            SubmissionBaseUploadForm.check_submissions_thresholds(
+                'too many today, all submitters',
+                dict(submission_date=today),
+                max_amount=4,
+                max_size=5,  # megabytes
+            )
+        with self.assertRaisesMessage(ValidationError, 'Max uploaded amount'):
+            SubmissionBaseUploadForm.check_submissions_thresholds(
+                'too much today, all submitters',
+                dict(submission_date=today),
+                max_amount=5,
+                max_size=4,  # megabytes
+            )
+
+        #   - one IP address, today
+        SubmissionBaseUploadForm.check_submissions_thresholds(
+            'valid today, one submitter',
+            dict(remote_ip=this_ip, submission_date=today),
+            max_amount=2,
+            max_size=2,  # megabytes
+        )
+        with self.assertRaisesMessage(ValidationError, 'Max submissions'):
+            SubmissionBaseUploadForm.check_submissions_thresholds(
+                'too many today, one submitter',
+                dict(remote_ip=this_ip, submission_date=today),
+                max_amount=1,
+                max_size=2,  # megabytes
+            )
+        with self.assertRaisesMessage(ValidationError, 'Max uploaded amount'):
+            SubmissionBaseUploadForm.check_submissions_thresholds(
+                'too much today, one submitter',
+                dict(remote_ip=this_ip, submission_date=today),
+                max_amount=2,
+                max_size=1,  # megabytes
+            )
+
+        #   - single draft/rev, today
+        SubmissionBaseUploadForm.check_submissions_thresholds(
+            'valid today, one draft',
+            dict(name=this_draft, rev='00', submission_date=today),
+            max_amount=2,
+            max_size=2,  # megabytes
+        )
+        with self.assertRaisesMessage(ValidationError, 'Max submissions'):
+            SubmissionBaseUploadForm.check_submissions_thresholds(
+                'too many today, one draft',
+                dict(name=this_draft, rev='00', submission_date=today),
+                max_amount=1,
+                max_size=2,  # megabytes
+            )
+        with self.assertRaisesMessage(ValidationError, 'Max uploaded amount'):
+            SubmissionBaseUploadForm.check_submissions_thresholds(
+                'too much today, one draft',
+                dict(name=this_draft, rev='00', submission_date=today),
+                max_amount=2,
+                max_size=1,  # megabytes
+            )
+
+        #   - one group, today
+        SubmissionBaseUploadForm.check_submissions_thresholds(
+            'valid today, one group',
+            dict(group=this_group, submission_date=today),
+            max_amount=2,
+            max_size=2,  # megabytes
+        )
+        with self.assertRaisesMessage(ValidationError, 'Max submissions'):
+            SubmissionBaseUploadForm.check_submissions_thresholds(
+                'too many today, one group',
+                dict(group=this_group, submission_date=today),
+                max_amount=1,
+                max_size=2,  # megabytes
+            )
+        with self.assertRaisesMessage(ValidationError, 'Max uploaded amount'):
+            SubmissionBaseUploadForm.check_submissions_thresholds(
+                'too much today, one group',
+                dict(group=this_group, submission_date=today),
+                max_amount=2,
+                max_size=1,  # megabytes
+            )
 
 
 class AsyncSubmissionTests(BaseSubmitTestCase):
