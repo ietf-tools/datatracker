@@ -82,6 +82,12 @@ pre {
     margin-bottom: 0;
 }
 
+// Size the navbar brand image.
+.navbar-brand img {
+    height: auto;
+    width: 60px;
+}
+
 // Make the font size choice cascade down into group menu dropdowns.
 .leftmenu li>ul {
     font-size: inherit;

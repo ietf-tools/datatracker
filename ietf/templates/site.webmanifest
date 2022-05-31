@@ -1,0 +1,18 @@
+{% load static %}
+{
+    "name": "IETF Datatracker",
+    "short_name": "Datatracker",
+    "icons": [
+    {
+        "src": "{% static 'ietf/images/ietf-logo-nor-192.png' %}",
+        "sizes": "192x192",
+        "type": "image/png"
+    },
+    {
+        "src": "{% static 'ietf/images/ietf-logo-nor-512.png' %}",
+        "sizes": "512x512",
+        "type": "image/png"
+    }],
+    "theme_color": "#ffffff",
+    "background_color": "#ffffff"
+}
