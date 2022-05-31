@@ -4,7 +4,7 @@
 import datetime
 import os
 import sys
-from pathlib2 import Path
+from pathlib import Path
 from contextlib import closing
 
 os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
