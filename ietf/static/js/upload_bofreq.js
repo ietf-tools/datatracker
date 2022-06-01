@@ -18,7 +18,6 @@ $(document)
                         var row = form.find(selector);
                         if (!row.is(".row"))
                             row = row.closest(".row");
-                        console.log("!");
                         if ($.inArray(selector, shouldBeVisible[val]) != -1)
                             row.show();
                         else

@@ -4,8 +4,9 @@ LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Update system packages
-RUN apt-get update
-RUN apt-get -qy upgrade
+RUN apt-get update \
+    && apt-get -qy upgrade \
+    && apt-get -y install --no-install-recommends apt-utils dialog 2>&1
 
 # Add Node.js Source
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
@@ -19,7 +20,6 @@ RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/d
 RUN apt-get update --fix-missing && apt-get install -qy \
 	apache2-utils \
 	apt-file \
-	apt-utils \
 	bash \
 	build-essential \
 	curl \
@@ -124,6 +124,9 @@ RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 # Fetch wait-for utility
 ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
 RUN chmod +rx /usr/local/bin/wait-for
+
+# Create assets directory
+RUN mkdir -p /assets
 
 # Create workspace
 RUN mkdir -p /workspace

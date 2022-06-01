@@ -56,7 +56,7 @@ INTERNET_DRAFT_ARCHIVE_DIR = "test/archive/"
 INTERNET_ALL_DRAFTS_ARCHIVE_DIR = "test/archive/"
 RFC_PATH = "test/rfc/"
 
-AGENDA_PATH = 'data/developers/www6s/proceedings/'
+AGENDA_PATH = '/assets/www6s/proceedings/'
 MEETINGHOST_LOGO_PATH = AGENDA_PATH
 
 USING_DEBUG_EMAIL_SERVER=True
@@ -70,12 +70,12 @@ MEDIA_URL = '/media/'
 PHOTOS_DIRNAME = 'photo'
 PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 
-DOCUMENT_PATH_PATTERN = 'data/developers/ietf-ftp/{doc.type_id}/'
+DOCUMENT_PATH_PATTERN = '/assets/ietf-ftp/{doc.type_id}/'
 
-SUBMIT_YANG_CATALOG_MODEL_DIR = 'data/developers/ietf-ftp/yang/catalogmod/'
-SUBMIT_YANG_DRAFT_MODEL_DIR = 'data/developers/ietf-ftp/yang/draftmod/'
-SUBMIT_YANG_INVAL_MODEL_DIR = 'data/developers/ietf-ftp/yang/invalmod/'
-SUBMIT_YANG_IANA_MODEL_DIR = 'data/developers/ietf-ftp/yang/ianamod/'
-SUBMIT_YANG_RFC_MODEL_DIR   = 'data/developers/ietf-ftp/yang/rfcmod/'
+SUBMIT_YANG_CATALOG_MODEL_DIR = '/assets/ietf-ftp/yang/catalogmod/'
+SUBMIT_YANG_DRAFT_MODEL_DIR = '/assets/ietf-ftp/yang/draftmod/'
+SUBMIT_YANG_INVAL_MODEL_DIR = '/assets/ietf-ftp/yang/invalmod/'
+SUBMIT_YANG_IANA_MODEL_DIR = '/assets/ietf-ftp/yang/ianamod/'
+SUBMIT_YANG_RFC_MODEL_DIR   = '/assets/ietf-ftp/yang/rfcmod/'
 
 DE_GFM_BINARY = '/usr/local/bin/de-gfm'

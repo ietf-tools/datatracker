@@ -3,9 +3,7 @@ import os
 import sys
 import time as timeutils
 import inspect
-import six
-if six.PY3:
-    from typing import Callable
+from typing import Callable
 
 try:
     import syslog
