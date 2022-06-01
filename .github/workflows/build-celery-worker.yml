@@ -5,6 +5,7 @@ on:
     branches:
       - 'main'
       - 'jennifer/celery'
+      - 'jennifer/subimt-async'
     paths:
       - 'requirements.txt'
       - 'dev/celery/Dockerfile'
