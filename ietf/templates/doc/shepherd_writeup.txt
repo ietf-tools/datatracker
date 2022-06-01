@@ -82,7 +82,7 @@ to answer all of them.
     five, please provide a justification.
 
 14. Document any remaining I-D nits in this document. Simply running the [idnits
-    tool][9] is not enough; please review the ["Content Guide" pages on
+    tool][9] is not enough; please review the ["Content Guidelines" on
     authors.ietf.org][16]. (Also note that the current idnits tool generates
     some incorrect warnings; a rewrite is underway.)
 
@@ -133,7 +133,7 @@ to answer all of them.
 [13]: https://www.rfc-editor.org/rfc/rfc2026.html#section-5
 [14]: https://www.rfc-editor.org/rfc/rfc2026.html#section-4.1
 [15]: https://www.rfc-editor.org/rfc/rfc2026.html#section-4.2
-[16]: https://authors.ietf.org/
+[16]: https://authors.ietf.org/en/content-guidelines-overview
 [17]: https://www.ietf.org/about/groups/iesg/statements/normative-informative-references/
 {% else %}There is no default shepherd writeup template for the {{doc.stream}} stream.
 {% endif %}{% else %}There is no stream set for this document (thus, no default shepherd writeup template).{% endif %}
