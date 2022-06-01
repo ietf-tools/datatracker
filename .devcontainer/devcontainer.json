@@ -70,7 +70,7 @@
         "dbaeumer.vscode-eslint",
 		"eamodio.gitlens",
 		"editorconfig.editorconfig",
-		"johnsoncodehk.volar",
+		"vue.volar",
 		"mrmlnc.vscode-duplicate",
 		"ms-azuretools.vscode-docker",
 		"ms-python.python",

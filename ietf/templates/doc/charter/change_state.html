@@ -61,7 +61,6 @@
         $(document).ready(function () {
             function stateChanged() {
                 var v = $(this).val();
-                console.log(v);
                 $("#id_message").val(info_msg[v] || "");
 
                 if ($.inArray(+v, statesForBallotWoExtern) != -1)

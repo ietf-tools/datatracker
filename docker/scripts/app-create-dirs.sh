@@ -8,26 +8,26 @@ for sub in \
     test/media \
     test/wiki/ietf \
     data/nomcom_keys/public_keys \
-    data/developers/ietf-ftp \
-    data/developers/ietf-ftp/bofreq \
-    data/developers/ietf-ftp/charter \
-    data/developers/ietf-ftp/conflict-reviews \
-    data/developers/ietf-ftp/internet-drafts \
-    data/developers/ietf-ftp/rfc \
-    data/developers/ietf-ftp/status-changes \
-    data/developers/ietf-ftp/yang/catalogmod \
-    data/developers/ietf-ftp/yang/draftmod \
-    data/developers/ietf-ftp/yang/ianamod \
-    data/developers/ietf-ftp/yang/invalmod \
-    data/developers/ietf-ftp/yang/rfcmod \
-    data/developers/www6s \
-    data/developers/www6s/staging \
-    data/developers/www6s/wg-descriptions \
-    data/developers/www6s/proceedings \
-    data/developers/www6/ \
-    data/developers/www6/iesg \
-    data/developers/www6/iesg/evaluation \
-    data/developers/media/photo \
+    /assets/ietf-ftp \
+    /assets/ietf-ftp/bofreq \
+    /assets/ietf-ftp/charter \
+    /assets/ietf-ftp/conflict-reviews \
+    /assets/ietf-ftp/internet-drafts \
+    /assets/ietf-ftp/rfc \
+    /assets/ietf-ftp/status-changes \
+    /assets/ietf-ftp/yang/catalogmod \
+    /assets/ietf-ftp/yang/draftmod \
+    /assets/ietf-ftp/yang/ianamod \
+    /assets/ietf-ftp/yang/invalmod \
+    /assets/ietf-ftp/yang/rfcmod \
+    /assets/www6s \
+    /assets/www6s/staging \
+    /assets/www6s/wg-descriptions \
+    /assets/www6s/proceedings \
+    /assets/www6/ \
+    /assets/www6/iesg \
+    /assets/www6/iesg/evaluation \
+    /assets/media/photo \
     ; do
     if [ ! -d "$sub"  ]; then
         echo "Creating dir $sub"
