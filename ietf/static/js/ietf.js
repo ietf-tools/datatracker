@@ -16,9 +16,6 @@ import "bootstrap/js/dist/tooltip";
 
 import jquery from "jquery";
 
-// Make the bootstrap icons available. Yes, we require CSS in JS, parcel wants this.
-require("bootstrap-icons/font/bootstrap-icons.css");
-
 window.$ = window.jQuery = jquery;
 if (!process.env.BUILD_DEPLOY) {
     // get warnings for using deprecated jquery features
