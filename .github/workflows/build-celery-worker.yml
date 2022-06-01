@@ -9,7 +9,7 @@ on:
       - 'requirements.txt'
       - 'dev/celery/Dockerfile'
 
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 env:
   REGISTRY: ghcr.io
