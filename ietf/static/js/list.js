@@ -88,7 +88,7 @@ $(document)
                 if (enable_search) {
                     // HTML for the search widget
                     var searcher = $.parseHTML(`
-                        <div class="input-group input-group-sm my-3">
+                        <div class="input-group input-group-sm">
                             <input type="search" class="search form-control" placeholder="Search"/>
                             <button class="btn btn-outline-secondary search-reset" type="button">
                                 <i class="bi bi-x"></i>
