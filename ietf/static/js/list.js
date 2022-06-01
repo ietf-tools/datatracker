@@ -83,31 +83,36 @@ $(document)
                     header_row.addClass("d-none");
                 }
 
-                // HTML for the search widget
-                var searcher = $.parseHTML(`
-                    <div class="input-group input-group-sm my-3">
-                        <input type="search" class="search form-control" placeholder="Search"/>
-                        <button class="btn btn-outline-secondary search-reset" type="button">
-                            <i class="bi bi-x"></i>
-                        </button>
-                    </div>`);
+                // only add a search box if the table length warrants it
+                var enable_search = $(table).find("tr").length > 5;
+                if (enable_search) {
+                    // HTML for the search widget
+                    var searcher = $.parseHTML(`
+                        <div class="input-group input-group-sm">
+                            <input type="search" class="search form-control" placeholder="Search"/>
+                            <button class="btn btn-outline-secondary search-reset" type="button">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>`);
 
-                $(table)
-                    .before(searcher);
+                    $(table)
+                        .before(searcher);
 
-                var search_field = $(searcher)
-                    .children("input.search");
+                    var search_field = $(searcher)
+                        .children("input.search");
 
-                var reset_search = $(searcher)
-                    .children("button.search-reset");
+                    var reset_search = $(searcher)
+                        .children("button.search-reset");
+                }
 
-                var pager = $.parseHTML(`
-                    <nav aria-label="Pagination control" class="d-none">
-                        <ul class="pagination d-flex flex-wrap text-center"></ul>
-                    </nav>`);
+                // TODO: The pager functionality is not working yet
+                // var pager = $.parseHTML(`
+                //     <nav aria-label="Pagination control" class="d-none">
+                //         <ul class="pagination d-flex flex-wrap text-center"></ul>
+                //     </nav>`);
 
-                $(table)
-                    .before(pager);
+                // $(table)
+                //     .before(pager);
 
                 var list_instance = [];
                 var internal_table = [];
@@ -194,23 +199,25 @@ $(document)
                             }));
                     });
 
-                reset_search.on("click", function () {
-                    search_field.val("");
-                    $.each(list_instance, (i, e) => {
-                        e.search();
-                    });
-                });
-
-                search_field.on("keyup", function (event) {
-                    if (event.key == "Escape") {
-                        reset_search.trigger("click");
-                    } else {
+                if (enable_search) {
+                    reset_search.on("click", function () {
+                        search_field.val("");
                         $.each(list_instance, (i, e) => {
-                            e.search($(this)
-                                .val());
+                            e.search();
                         });
-                    }
-                });
+                    });
+
+                    search_field.on("keyup", function (event) {
+                        if (event.key == "Escape") {
+                            reset_search.trigger("click");
+                        } else {
+                            $.each(list_instance, (i, e) => {
+                                e.search($(this)
+                                    .val());
+                            });
+                        }
+                    });
+                }
 
                 $(table)
                     .find(".sort")
@@ -279,4 +286,10 @@ $(document)
                 $(table)[0]
                     .dispatchEvent(new Event("tablesorter:done"));
             });
+
+        // if the URL contains a #, scroll to it again, since we modified the DOM
+        var id = window.location.hash;
+        if (id) {
+            $(id)[0].scrollIntoView();
+        }
     });
