@@ -63,7 +63,7 @@ services:
         restart: unless-stopped
 
     celery:
-        image: ghcr.io/painless-security/datatracker-celery:latest
+        image: ghcr.io/ietf-tools/datatracker-celery:latest
         environment:
             CELERY_APP: ietf
         command:

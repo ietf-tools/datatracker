@@ -29,7 +29,7 @@ services:
 #        syslog-address: "tcp://ietfa.amsl.com:514"
 
   celery:
-    image: ghcr.io/painless-security/datatracker-celery:latest
+    image: ghcr.io/ietf-tools/datatracker-celery:latest
     environment:
       CELERY_APP: ietf
       # UPDATE_REQUIREMENTS: 1  # uncomment to update Python requirements on startup
