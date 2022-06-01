@@ -77,9 +77,9 @@ to answer all of them.
     conclusion regarding the intellectual property rights (IPR) disclosures,
     including links to relevant emails.
 
-13. Has each author or editor shown their willingness to be listed as such? If
-    the total number of authors and editors on the front page is greater than
-    five, please provide a justification.
+13. Has each author, editor and contributor shown their willingness to be listed
+    as such? If the total number of authors and editors on the front page is
+    greater than five, please provide a justification.
 
 14. Document any remaining I-D nits in this document. Simply running the [idnits
     tool][9] is not enough; please review the ["Content Guidelines" on
