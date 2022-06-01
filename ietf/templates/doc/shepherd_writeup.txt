@@ -1,13 +1,13 @@
-{# Keep in sync with https://github.com/ietf-chairs/chairs.ietf.org/blob/main/documents/qa-style-writeup-template.md #}{% if doc.stream %}{% if doc.stream.slug == 'ietf' %}# Document Shepherd Writeup
+{# Keep in sync with https://github.com/ietf-chairs/chairs.ietf.org/blob/main/documents/qa-style-writeup-template.md #}{% if doc.stream %}{% if doc.stream.slug == 'ietf' %}# Document Shepherd Write-Up
 
 *This version is dated 1 June 2022.*
 
 Thank you for your service as a document shepherd. Among the responsibilities is
-answering the questions in this writeup to give helpful context to Last Call and
-Internet Engineering Steering Group ([IESG][1]) reviewers, and your diligence in
-completing it, is appreciated. The full role of the shepherd is further
-described in [RFC 4858][2]. You will need the cooperation of authors to complete
-these checks.
+answering the questions in this write-up to give helpful context to Last Call
+and Internet Engineering Steering Group ([IESG][1]) reviewers, and your
+diligence in completing it is appreciated. The full role of the shepherd is
+further described in [RFC 4858][2]. You will need the cooperation of the authors
+and editors to complete these checks.
 
 Note that some numbered items contain multiple related questions; please be sure
 to answer all of them.
@@ -40,7 +40,7 @@ to answer all of them.
 ### Additional Reviews
 
 5. Does this document closely relate to work in other IETF working groups or
-   external organizations and would it hence benefit from their review? Have
+   external organizations, and would it hence benefit from their review? Have
    those reviews occurred?
 
 6. Describe how the document meets any required formal expert review criteria,
@@ -135,5 +135,5 @@ to answer all of them.
 [15]: https://www.rfc-editor.org/rfc/rfc2026.html#section-4.2
 [16]: https://authors.ietf.org/en/content-guidelines-overview
 [17]: https://www.ietf.org/about/groups/iesg/statements/normative-informative-references/
-{% else %}There is no default shepherd writeup template for the {{doc.stream}} stream.
-{% endif %}{% else %}There is no stream set for this document (thus, no default shepherd writeup template).{% endif %}
+{% else %}There is no default shepherd write-up template for the {{doc.stream}} stream.
+{% endif %}{% else %}There is no stream set for this document (thus, no default shepherd write-up template).{% endif %}
