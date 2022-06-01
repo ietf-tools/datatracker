@@ -279,4 +279,10 @@ $(document)
                 $(table)[0]
                     .dispatchEvent(new Event("tablesorter:done"));
             });
+
+        // if the URL contains a #, scroll to it again, since we modified the DOM
+        const id = window.location.hash;
+        if (id) {
+            $(id)[0].scrollIntoView();
+        }
     });
