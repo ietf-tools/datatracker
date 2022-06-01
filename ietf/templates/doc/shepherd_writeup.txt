@@ -6,8 +6,8 @@ Thank you for your service as a document shepherd. Among the responsibilities is
 answering the questions in this writeup to give helpful context to Last Call and
 Internet Engineering Steering Group ([IESG][1]) reviewers, and your diligence in
 completing it, is appreciated. The full role of the shepherd is further
-described in [RFC 4858][2], and informally. You will need the cooperation of
-authors to complete these checks.
+described in [RFC 4858][2]. You will need the cooperation of authors to complete
+these checks.
 
 Note that some numbered items contain multiple related questions; please be sure
 to answer all of them.
