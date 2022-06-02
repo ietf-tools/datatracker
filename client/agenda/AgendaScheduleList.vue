@@ -79,7 +79,7 @@
               template(v-if='item.flags.agenda')
                 n-popover
                   template(#trigger)
-                    i.bi.bi-collection(@click='showMaterials(item)')
+                    i.bi.bi-collection(@click='showMaterials(item.key)')
                   span Show meeting materials
               n-popover(v-for='lnk of item.links', :key='lnk.id')
                 template(#trigger)
@@ -88,17 +88,25 @@
                     :aria-label='lnk.label'
                     ): i.bi(:class='`bi-` + lnk.icon')
                 span {{lnk.label}}
+
+  agenda-details-modal(
+    v-model:shown='state.showEventDetails'
+    :event='state.eventDetails'
+  )
 </template>
 
 <script setup>
-import { computed, toRefs } from 'vue'
+import { computed, reactive, toRefs } from 'vue'
 import { DateTime } from 'luxon'
+import find from 'lodash/find'
 import sortBy from 'lodash/sortBy'
 import reduce from 'lodash/reduce'
 import {
   NCheckbox,
   NPopover
 } from 'naive-ui'
+
+import AgendaDetailsModal from './AgendaDetailsModal.vue'
 
 // PROPS
 
@@ -122,6 +130,13 @@ const props = defineProps({
 })
 
 const { events, meetingNumber, pickerMode, useCodiMd } = toRefs(props)
+
+// DATA
+
+const state = reactive({
+  showEventDetails: false,
+  eventDetails: {}
+})
 
 // COMPUTED
 
@@ -227,7 +242,8 @@ const meetingEvents = computed(() => {
         `agenda-table-status-${item.status}`,
         `agenda-table-type-${item.type}`
       ].join(' '),
-      flags: item.flags
+      flags: item.flags,
+      agenda: item.agenda
     })
 
     return acc
@@ -240,7 +256,10 @@ const meetingEvents = computed(() => {
 
 // METHODS
 
-const showMaterials = item => {}
+function showMaterials (eventId) {
+  state.eventDetails = find(events.value, ['id', eventId])
+  state.showEventDetails = true
+}
 
 </script>
 

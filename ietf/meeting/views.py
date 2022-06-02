@@ -1609,6 +1609,11 @@ def agenda_extract_shedule (item):
         "flags": {
             "agenda": True if item.session.agenda() is not None else False,
             "showAgenda": True if (item.session.agenda() is not None or item.session.remote_instructions or item.session.agenda_note) else False
+        },
+        "agenda": {
+            "url": item.session.agenda().get_href()
+        } if item.session.agenda() is not None else {
+            "url": None
         }
         # "slotType": {
         #     "slug": item.slot_type.slug
