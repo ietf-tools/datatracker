@@ -76,7 +76,7 @@ urlpatterns = [
     url(r'^googlea30ad1dacffb5e5b.html', TemplateView.as_view(template_name='googlea30ad1dacffb5e5b.html')),
 
     # Android webmanifest
-    url(r'^site.webmanifest', TemplateView.as_view(template_name='site.webmanifest')),
+    url(r'^site.webmanifest', TemplateView.as_view(template_name='site.webmanifest'), name='site.webmanifest'),
 ]
 
 # This is needed to serve files during testing
