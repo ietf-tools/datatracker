@@ -14,8 +14,7 @@ RUN sed -i 's/\r$//' /docker-init.sh && \
 
 # Install current datatracker python dependencies
 COPY requirements.txt /tmp/pip-tmp/
-RUN pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location -r /tmp/pip-tmp/requirements.txt
-RUN pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location pylint pylint-common pylint-django
-RUN sudo rm -rf /tmp/pip-tmp
+RUN pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requirements.txt
+RUN rm -rf /tmp/pip-tmp
 
 ENTRYPOINT [ "/docker-init.sh" ]
