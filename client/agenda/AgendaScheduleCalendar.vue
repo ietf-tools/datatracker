@@ -194,6 +194,7 @@ watch(() => props.events, () => {
 })
 watch(() => props.timezone, (newValue) => {
   calendarOptions.timeZone = newValue
+  state.hoverMessage = ''
 })
 
 // METHODS
