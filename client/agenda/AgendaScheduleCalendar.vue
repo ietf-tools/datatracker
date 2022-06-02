@@ -37,6 +37,25 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='drawerHeight')
           i.bi.bi-x-square.me-2
           span Close
     .agenda-calendar-content
+      .agenda-calendar-hint
+        template(v-if='state.hoverMessage')
+          div
+            i.bi.bi-arrow-right-square.me-2
+            span {{state.hoverMessage}}
+          div(v-if='state.hoverLocationRoom')
+            i.bi.bi-geo-alt-fill.me-2
+            n-popover(
+              v-if='state.hoverLocationName'
+              trigger='hover'
+              )
+              template(#trigger)
+                span.badge.me-2 {{state.hoverLocationShort}}
+              span {{state.hoverLocationName}}
+            span {{state.hoverLocationRoom}}
+          div
+            i.bi.bi-clock-history.me-2
+            span {{state.hoverTime}}
+        span(v-else) #[strong Mouse over] a session to display quick info or #[strong click] to view the meeting materials and details.
       full-calendar(
         :options='calendarOptions'
         )
@@ -55,7 +74,8 @@ import {
   NButtonGroup,
   NDivider,
   NDrawer,
-  NDrawerContent
+  NDrawerContent,
+  NPopover
 } from 'naive-ui'
 
 import '@fullcalendar/core/vdom' // solves problem with Vite
@@ -97,6 +117,11 @@ const emit = defineEmits(['update:shown', 'update:timezone', 'toggleFilterDrawer
 
 const isShown = ref(props.shown)
 const state = reactive({
+  hoverMessage: '',
+  hoverTime: '',
+  hoverLocationRoom: '',
+  hoverLocationName: '',
+  hoverLocationShort: '',
   showEventDetails: false,
   eventDetails: {
     start: '00:00',
@@ -121,7 +146,7 @@ const calendarOptions = reactive({
     end: null
   },
   expandRows: true,
-  height: 'auto',
+  height: '100%',
   eventTimeFormat: {
     hour: '2-digit',
     minute: '2-digit',
@@ -130,6 +155,16 @@ const calendarOptions = reactive({
   eventClick: (info) => {
     state.eventDetails = info.event.extendedProps
     state.showEventDetails = true
+  },
+  eventMouseEnter: (info) => {
+    const timeStart = info.event.extendedProps.adjustedStart?.toFormat('T')
+    const timeEnd = info.event.extendedProps.adjustedEnd?.toFormat('T')
+    const timeDay = info.event.extendedProps.adjustedStart?.toFormat('DDDD')
+    state.hoverMessage = info.event.title
+    state.hoverTime = `${timeDay} from ${timeStart} to ${timeEnd}`
+    state.hoverLocationShort = info.event.extendedProps.location?.short
+    state.hoverLocationName = info.event.extendedProps.location?.name
+    state.hoverLocationRoom = info.event.extendedProps.room
   }
 })
 const drawerHeight = Math.round(window.innerHeight * .8)
@@ -231,6 +266,7 @@ function toggleFilterDrawer () {
 function close () {
   emit('update:shown', false)
   isShown.value = false
+  state.hoverMessage = ''
 }
 
 </script>
@@ -254,6 +290,40 @@ function close () {
 
   &-content {
     height: 100%;
+    padding-bottom: 15px;
+  }
+
+  &-hint {
+    position: absolute;
+    display: block;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(0,0,0,.7);
+    color: #FFF;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 25px;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+
+    > div {
+      flex: 1 1 33%;
+    }
+
+    > span strong {
+      color: $blue-200;
+    }
+
+    .badge {
+      width: 30px;
+      font-size: .7em;
+      border: 1px solid #CCC;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-right: 10px;
+    }
   }
 
   .fc-v-event {

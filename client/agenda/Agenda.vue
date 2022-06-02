@@ -220,6 +220,10 @@ const props = defineProps({
   }
 })
 
+// MESSAGE PROVIDER
+
+const message = useMessage()
+
 // DATA
 
 const state = reactive({
@@ -262,7 +266,6 @@ const state = reactive({
     }
   ]
 })
-const message = useMessage()
 
 // COMPUTED
 
