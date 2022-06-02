@@ -39,9 +39,10 @@ to answer all of them.
 
 ### Additional Reviews
 
-5. Does this document closely relate to work in other IETF working groups or
-   external organizations, and would it hence benefit from their review? Have
-   those reviews occurred?
+5. Do the contents of this document closely interact with technologies in other
+   IETF working groups or external organizations, and would it hence benefit
+   from their review? Have those reviews occurred? If yes, describe which
+   reviews took place.
 
 6. Describe how the document meets any required formal expert review criteria,
    such as the MIB Doctor, YANG Doctor, media type, and URI type reviews.
