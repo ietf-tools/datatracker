@@ -232,7 +232,7 @@ const meetingEvents = computed(() => {
     let icon = null
     switch (item.type) {
       case 'break':
-        icon = 'bi-cup-straw bi-brown'
+        icon = 'bi-cup-straw'
         break
       case 'plenary':
         icon = 'bi-flower3 bi-green'
@@ -448,7 +448,7 @@ function xslugify (str) {
 
       .bi {
         &.bi-brown {
-          color: $orange-600;
+          color: $indigo-500;
         }
         &.bi-green {
           color: $green-500;
@@ -496,9 +496,33 @@ function xslugify (str) {
   // -> Row BG Color Highlight
   &-status-canceled td {
     background-color: rgba($red, .15) !important;
+
+    &:last-child {
+      background: linear-gradient(to right, rgba($red, 0), rgba($red, .5));
+    }
   }
   &-status-resched td {
     background-color: rgba($orange, .15) !important;
+
+    &:last-child {
+      background: linear-gradient(to right, rgba($orange, 0), rgba($orange, .5));
+    }
+  }
+  &-type-break td {
+    background-color: rgba($indigo, .1) !important;
+
+    &.agenda-table-cell-ts {
+      background: linear-gradient(to right, lighten($indigo-100, 8%), lighten($indigo-100, 5%));
+      color: $indigo-700;
+    }
+
+    &.agenda-table-cell-name {
+      color: $indigo-700;
+    }
+
+    &.agenda-table-cell-links {
+      background: linear-gradient(to left, lighten($indigo-100, 8%), lighten($indigo-100, 5%));
+    }
   }
   &-type-plenary td {
     background-color: rgba($teal, .15) !important;
