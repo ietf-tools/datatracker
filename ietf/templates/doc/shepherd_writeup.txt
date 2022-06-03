@@ -40,7 +40,7 @@ to answer all of them.
 ### Additional Reviews
 
 5. Do the contents of this document closely interact with technologies in other
-   IETF working groups or external organizations, and would it hence benefit
+   IETF working groups or external organizations, and would it therefore benefit
    from their review? Have those reviews occurred? If yes, describe which
    reviews took place.
 
@@ -78,7 +78,7 @@ to answer all of them.
     conclusion regarding the intellectual property rights (IPR) disclosures,
     including links to relevant emails.
 
-13. Has each author, editor and contributor shown their willingness to be listed
+13. Has each author, editor, and contributor shown their willingness to be listed
     as such? If the total number of authors and editors on the front page is
     greater than five, please provide a justification.
 
@@ -99,7 +99,7 @@ to answer all of them.
 
 18. Are there normative references to documents that are not ready to be
     submitted to the IESG for publication or are otherwise in an unclear state?
-    If they exist, what is the plan for their completion?
+    If so, what is the plan for their completion?
 
 19. Will publication of this document change the status of any existing RFCs? If
     so, does the Datatracker metadata correctly reflect this and are those RFCs
