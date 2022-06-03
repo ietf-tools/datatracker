@@ -314,7 +314,10 @@ def get_meeting_registration_data(meeting):
                     pass
     else:
         raise RuntimeError("Bad response from registrations API: %s, '%s'" % (response.status_code, response.content))
-    num_total = MeetingRegistration.objects.filter(meeting_id=meeting.pk).count()
+    num_total = MeetingRegistration.objects.filter(
+        meeting_id=meeting.pk,
+        attended=True,
+        reg_type__in=['onsite', 'remote']).count()
     if meeting.attendees is None or num_total > meeting.attendees:
         meeting.attendees = num_total
         meeting.save()
