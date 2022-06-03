@@ -24,6 +24,10 @@
                 <br>
                 <small class="text-muted">({{ person.ascii }})</small>
             {% endif %}
+            {% if person.pronouns %}
+                <br>
+                <small class="text-muted">({{person.pronouns}})</small>
+            {% endif %}
         </h1>
         <div class="bio-text">
             {% if person.photo %}
