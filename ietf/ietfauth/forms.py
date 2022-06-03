@@ -103,7 +103,7 @@ class ListTextWidget(forms.TextInput):
         text_html = super(ListTextWidget, self).render(name, value, attrs=attrs)
         data_list = '<datalist id="list__%s">' % self._name
         for item in self._list:
-            data_list += '<option value="%s">' % item
+            data_list += '<option value="%s"></option>' % item
         data_list += '</datalist>'
 
         return mark_safe(text_html + data_list)
