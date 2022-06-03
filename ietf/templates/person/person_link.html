@@ -1,7 +1,4 @@
-{% if email and email == "system@datatracker.ietf.org" or name and name == "(System)" %}
-    <span class="text-muted">(System)</span>
-{% else %}
-<span {% if class %}class="{{ class }}"
+{% if email and email == "system@datatracker.ietf.org" or name and name == "(System)" %}<span class="text-muted">(System)</span>{% else %}<span {% if class %}class="{{ class }}"
       {% endif %}>{% if email or name %}<a {% if class %}class="text-reset"{% endif %}
            title="{% if title %}{{ title }}{% else %}Datatracker profile of {{ name }}.{% endif %}"
            {% if email %} href="{% url 'ietf.person.views.profile' email_or_name=email %}" {% else %} href="{% url 'ietf.person.views.profile' email_or_name=name %}" {% endif %}>{{ name }}</a>{% if email and with_email %} <a {% if class %}class="text-reset"{% endif %}
