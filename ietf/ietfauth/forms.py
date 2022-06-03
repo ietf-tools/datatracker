@@ -91,6 +91,23 @@ class PersonPasswordForm(forms.ModelForm, PasswordForm):
 
         return ascii
 
+# ListTextWidget based on https://stackoverflow.com/questions/24783275/django-form-with-choices-but-also-with-freetext-option
+class ListTextWidget(forms.TextInput):
+    def __init__(self, data_list, name, *args, **kwargs):
+        super(ListTextWidget, self).__init__(*args, **kwargs)
+        self._name = name
+        self._list = data_list
+        self.attrs.update({'list':'list__%s' % self._name})
+
+    def render(self, name, value, attrs=None, renderer=None):
+        text_html = super(ListTextWidget, self).render(name, value, attrs=attrs)
+        data_list = '<datalist id="list__%s">' % self._name
+        for item in self._list:
+            data_list += '<option value="%s">' % item
+        data_list += '</datalist>'
+
+        return mark_safe(text_html + data_list)
+
 def get_person_form(*args, **kwargs):
 
     exclude_list = ['time', 'user', 'photo_thumb', 'photo', ]
@@ -121,6 +138,8 @@ def get_person_form(*args, **kwargs):
             for f in ['name', 'ascii', 'ascii_short', 'biography', 'photo', 'photo_thumb', 'pronouns']:
                 if f in self.fields:
                     self.fields[f].label = mark_safe(self.fields[f].label + ' <a href="#pi" aria-label="!"><i class="bi bi-exclamation-circle"></i></a>')
+
+            self.fields['pronouns'].widget = ListTextWidget(data_list=('he/him', 'she/her', 'they/them'), name='pronouns-list')
 
             self.unidecoded_ascii = False
 
@@ -153,7 +172,7 @@ def get_person_form(*args, **kwargs):
             return ascii_cleaner(name)
 
         def clean_pronouns(self):
-            pronouns = self.cleaned_data.get("pronouns")
+            pronouns = self.cleaned_data.get("pronouns") or ""
             pronouns = pronouns.strip()
             return pronouns
 
