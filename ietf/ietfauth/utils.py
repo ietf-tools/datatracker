@@ -229,7 +229,6 @@ def openid_userinfo(claims, user):
             'name':         person.plain_name(),
             'given_name':   person.first_name(),
             'family_name':  person.last_name(),
-            'pronouns':     person.pronouns,
             'nickname':     '-',
             'email':        email.address if email else '',
             'picture':      photo_url,
@@ -258,6 +257,9 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
     def scope_dots(self):
         dots = get_dots(self.user.person)
         return { 'dots': dots }
+
+    def scope_pronouns(self):
+        return { 'pronouns': self.user.person.pronouns }
 
     info_registration = (
             "IETF Meeting Registration Info",

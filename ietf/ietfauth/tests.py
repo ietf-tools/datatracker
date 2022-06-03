@@ -248,6 +248,7 @@ class IetfAuthTests(TestCase):
             "plain": "",
             "ascii": "Test Name",
             "ascii_short": "T. Name",
+            "pronouns": "foo/bar",
             "affiliation": "Test Org",
             "active_emails": email_address,
             "consent": True,
@@ -318,6 +319,18 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('[name="action"][value="confirm"]')), 0)
+
+        pronoundish = base_data.copy()
+        pronoundish["pronouns"] = "baz/boom"
+        r = self.client.post(url, pronoundish)
+        self.assertEqual(r.status_code, 200)
+        person = Person.objects.get(user__username=username)
+        self.assertEqual(person.pronouns,"baz/boom")       
+        pronoundish["pronouns"]=""
+        r = self.client.post(url, pronoundish)
+        self.assertEqual(r.status_code, 200)
+        person = Person.objects.get(user__username=username)
+        self.assertEqual(person.pronouns,"")
 
         # change role email
         role = Role.objects.create(
@@ -854,7 +867,7 @@ class OpenIDConnectTests(TestCase):
             client.store_registration_info(client_reg)
 
             # Get a user for which we want to get access
-            person = PersonFactory(with_bio=True)
+            person = PersonFactory(with_bio=True, pronouns="foo/bar")
             active_group = RoleFactory(name_id='chair', person=person).group
             closed_group = RoleFactory(name_id='chair', person=person, group__state_id='conclude').group
             # an additional email
@@ -872,7 +885,7 @@ class OpenIDConnectTests(TestCase):
             session["nonce"] = rndstr()
             args = {
                 "response_type": "code",
-                "scope": ['openid', 'profile', 'email', 'roles', 'registration', 'dots' ],
+                "scope": ['openid', 'profile', 'email', 'roles', 'registration', 'dots', 'pronouns' ],
                 "nonce": session["nonce"],
                 "redirect_uri": redirect_uris[0],
                 "state": session["state"]
@@ -920,7 +933,7 @@ class OpenIDConnectTests(TestCase):
 
             # Get userinfo, check keys present
             userinfo = client.do_user_info_request(state=params["state"], scope=args['scope'])
-            for key in [ 'email', 'family_name', 'given_name', 'meeting', 'name', 'roles',
+            for key in [ 'email', 'family_name', 'given_name', 'meeting', 'name', 'pronouns', 'roles',
                          'ticket_type', 'reg_type', 'affiliation', 'picture', 'dots', ]:
                 self.assertIn(key, userinfo)
                 self.assertTrue(userinfo[key])
