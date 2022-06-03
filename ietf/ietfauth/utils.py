@@ -229,6 +229,7 @@ def openid_userinfo(claims, user):
             'name':         person.plain_name(),
             'given_name':   person.first_name(),
             'family_name':  person.last_name(),
+            'pronouns':     person.pronouns,
             'nickname':     '-',
             'email':        email.address if email else '',
             'picture':      photo_url,
