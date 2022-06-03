@@ -62,6 +62,7 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='drawerHeight')
       agenda-details-modal(
         v-model:shown='state.showEventDetails'
         :event='state.eventDetails'
+        :meeting-number='props.meetingNumber'
       )
       
 </template>
@@ -100,6 +101,10 @@ const props = defineProps({
     required: true
   },
   timezone: {
+    type: String,
+    required: true
+  },
+  meetingNumber: {
     type: String,
     required: true
   },

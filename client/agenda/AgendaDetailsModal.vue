@@ -28,21 +28,30 @@ n-modal(v-model:show='modalShown')
           n-button.me-2(
             ghost
             color='gray'
-            strong 
+            strong
+            :href='eventDetails.tarUrl'
+            tag='a'
+            aria-label='Download as tarball'
             )
             i.bi.bi-file-zip.me-2
             span Download as tarball
           n-button.me-2(
             ghost
             color='gray'
-            strong 
+            strong
+            :href='eventDetails.pdfUrl'
+            tag='a'
+            aria-label='Download as PDF'
             )
             i.bi.bi-file-pdf.me-2
             span Download as PDF
         n-button.me-2(
           ghost
           color='gray'
-          strong 
+          strong
+          :href='eventDetails.notepadUrl'
+          tag='a'
+          aria-label='Notepad'
           )
           i.bi.bi-journal-text.me-2 
           span Notepad
@@ -87,6 +96,10 @@ const props = defineProps({
   event: {
     type: Object,
     required: true
+  },
+  meetingNumber: {
+    type: String,
+    required: true
   }
 })
 
@@ -111,7 +124,10 @@ const eventDetails = computed(() => {
     room: props.event.room,
     title: props.event.type === 'regular' ? `${props.event.groupName} (${props.event.acronym})` : props.event.name,
     showAgenda: props.event.flags.showAgenda,
-    materialsUrl: materialsUrl
+    materialsUrl: materialsUrl,
+    tarUrl: `/meeting/${props.meetingNumber}/agenda/${props.event.acronym}-drafts.tgz`,
+    pdfUrl: `/meeting/${props.meetingNumber}/agenda/${props.event.acronym}-drafts.pdf`,
+    notepadUrl: `https://notes.ietf.org/notes-ietf-${props.meetingNumber}-${props.event.type === 'plenary' ? 'plenary' : props.event.acronym}`
   }
 })
 

@@ -62,6 +62,7 @@
         v-model:shown='state.calendarShown'
         v-model:timezone='state.timezone'
         :events='scheduleAdjusted'
+        :meeting-number='props.meeting.number'
         :meeting-timezone='props.meeting.timezone'
         @toggle-filter-drawer='showFilter'
         )

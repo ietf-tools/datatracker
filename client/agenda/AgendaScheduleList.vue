@@ -38,14 +38,18 @@
             span(v-else) {{item.timeslot}}
           //- CELL - ROOM ---------------------------
           td.agenda-table-cell-room
-            n-popover(
-              v-if='item.location'
-              trigger='hover'
-              )
-              template(#trigger)
-                span.badge {{item.location.short}}
-              span {{item.location.name}}
-            span {{item.room}}
+            template(v-if='item.location && item.location.short')
+              n-popover(
+                trigger='hover'
+                )
+                template(#trigger)
+                  span.badge {{item.location.short}}
+                span {{item.location.name}}
+              a.discreet(
+                :href='`/meeting/` + props.meetingNumber + `/floor-plan?room=` + xslugify(item.room)'
+                :aria-label='item.room'
+                ) {{item.room}}
+            span(v-else) {{item.room}}
           //- CELL - GROUP --------------------------
           td.agenda-table-cell-group(v-if='item.type === `regular`')
             n-popover(
@@ -57,12 +61,18 @@
               .agenda-table-cell-group-hover
                 strong {{item.groupParentName}}
                 span {{item.groupParentDescription}}
-            a(:href='`/group/` + item.acronym + `/about/`') {{item.acronym}}
+            a.discreet(:href='`/group/` + item.acronym + `/about/`') {{item.acronym}}
           //- CELL - NAME ---------------------------
           td.agenda-table-cell-name(
             :colspan='!item.isSessionEvent ? 2 : 1'
             )
-            span {{item.isSessionEvent ? item.groupName : item.name}}
+            i.bi.me-2(v-if='item.icon', :class='item.icon')
+            a.discreet(
+              v-if='item.flags.agenda'
+              :href='item.agenda.url'
+              :aria-label='item.isSessionEvent ? item.groupName : item.name'
+              ) {{item.isSessionEvent ? item.groupName : item.name}}
+            span(v-else) {{item.isSessionEvent ? item.groupName : item.name}}
             n-popover(
               v-if='item.isBoF'
               trigger='hover'
@@ -92,6 +102,7 @@
   agenda-details-modal(
     v-model:shown='state.showEventDetails'
     :event='state.eventDetails'
+    :meeting-number='props.meetingNumber'
   )
 </template>
 
@@ -101,6 +112,7 @@ import { DateTime } from 'luxon'
 import find from 'lodash/find'
 import sortBy from 'lodash/sortBy'
 import reduce from 'lodash/reduce'
+import slugify from 'slugify'
 import {
   NCheckbox,
   NPopover
@@ -216,6 +228,17 @@ const meetingEvents = computed(() => {
       })
     }
 
+    // Event icon
+    let icon = null
+    switch (item.type) {
+      case 'break':
+        icon = 'bi-cup-straw bi-brown'
+        break
+      case 'plenary':
+        icon = 'bi-flower3 bi-green'
+        break
+    }
+
     // -> Add event item
     acc.result.push({
       key: item.id,
@@ -243,7 +266,8 @@ const meetingEvents = computed(() => {
         `agenda-table-type-${item.type}`
       ].join(' '),
       flags: item.flags,
-      agenda: item.agenda
+      agenda: item.agenda,
+      icon
     })
 
     return acc
@@ -259,6 +283,10 @@ const meetingEvents = computed(() => {
 function showMaterials (eventId) {
   state.eventDetails = find(events.value, ['id', eventId])
   state.showEventDetails = true
+}
+
+function xslugify (str) {
+  return slugify(str.replace('/', '-'), { lower: true })
 }
 
 </script>
@@ -288,7 +316,8 @@ function showMaterials (eventId) {
     line-height: 0.9rem;
     border: 0;
     text-align: center;
-    background: linear-gradient(to bottom, desaturate($blue-700, 50%), desaturate($blue-500, 65%));
+    // background: linear-gradient(to bottom, desaturate($blue-700, 50%), desaturate($blue-500, 65%));
+    background: linear-gradient(to bottom, lighten($gray-800, 8%), lighten($gray-600, 4%));
     color: #FFF;
     border: 0;
     border-bottom: 1px solid #FFF;
@@ -416,6 +445,15 @@ function showMaterials (eventId) {
         background-color: $teal-500;
         margin: 0 8px;
       }
+
+      .bi {
+        &.bi-brown {
+          color: $orange-600;
+        }
+        &.bi-green {
+          color: $green-500;
+        }
+      }
     }
 
     &.agenda-table-cell-links {
@@ -495,6 +533,20 @@ function showMaterials (eventId) {
 
   .badge {
     transform: translateY(-2px);
+  }
+
+  a.discreet {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover, &:focus {
+      color: $blue-500;
+      text-decoration: underline;
+    }
+
+    &:active {
+      color: $indigo-500;
+    }
   }
 }
 </style>
