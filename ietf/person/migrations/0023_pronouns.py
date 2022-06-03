@@ -20,4 +20,14 @@ class Migration(migrations.Migration):
             name='pronouns',
             field=models.CharField(blank=True, help_text='Optionally provide your personal pronouns. These will be displayed on your public profile page and alongside your name in Meetecho and, in future, other systems.', max_length=20, null=True, verbose_name='Pronouns'),
         ),
+        migrations.AlterField(
+            model_name='historicalperson',
+            name='consent',
+            field=models.BooleanField(default=None, null=True, verbose_name='I hereby give my consent to the use of the personal details I have provided (photo, bio, name, pronouns, email) within the IETF Datatracker'),
+        ),
+        migrations.AlterField(
+            model_name='person',
+            name='consent',
+            field=models.BooleanField(default=None, null=True, verbose_name='I hereby give my consent to the use of the personal details I have provided (photo, bio, name, pronouns, email) within the IETF Datatracker'),
+        ),
     ]

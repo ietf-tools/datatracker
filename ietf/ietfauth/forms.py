@@ -118,9 +118,9 @@ def get_person_form(*args, **kwargs):
             if self.initial.get("ascii") == self.initial.get("name"):
                 self.initial["ascii"] = ""
 
-            for f in ['name', 'ascii', 'ascii_short', 'biography', 'photo', 'photo_thumb', ]:
+            for f in ['name', 'ascii', 'ascii_short', 'biography', 'photo', 'photo_thumb', 'pronouns']:
                 if f in self.fields:
-                    self.fields[f].label += ' \u2020'
+                    self.fields[f].label = mark_safe(self.fields[f].label + ' <a href="#pi" aria-label="!"><i class="bi bi-exclamation-circle"></i></a>')
 
             self.unidecoded_ascii = False
 
@@ -158,6 +158,7 @@ def get_person_form(*args, **kwargs):
                 self.cleaned_data.get('name') != person.name_from_draft
                 or self.cleaned_data.get('ascii') != person.name_from_draft
                 or self.cleaned_data.get('biography')
+                or self.cleaned_data.get('pronouns')
             )
             if consent == False and require_consent:
                 raise forms.ValidationError("In order to modify your profile with data that require consent, you must permit the IETF to use the uploaded data.")
