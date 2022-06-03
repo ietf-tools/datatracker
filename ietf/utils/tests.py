@@ -3,6 +3,7 @@
 
 
 import io
+import json
 import os.path
 import shutil
 import types
@@ -36,7 +37,7 @@ from ietf.utils.draft import PlaintextDraft, getmeta
 from ietf.utils.log import unreachable, assertion
 from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox, get_payload_text
 from ietf.utils.test_runner import get_template_paths, set_coverage_checking
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.text import parse_unicode
 from ietf.utils.xmldraft import XMLDraft
 
@@ -467,3 +468,11 @@ class TestRFC2047Strings(TestCase):
             )
         for encoded_str, unicode in names: 
             self.assertEqual(unicode, parse_unicode(encoded_str))
+
+class TestAndroidSiteManifest(TestCase):
+    def test_manifest(self):
+        r = self.client.get(urlreverse('site.webmanifest'))
+        self.assertEqual(r.status_code, 200)
+        manifest = json.loads(unicontent(r))
+        self.assertTrue('name' in manifest)
+        self.assertTrue('theme_color' in manifest)
