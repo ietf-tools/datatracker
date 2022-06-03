@@ -152,6 +152,11 @@ def get_person_form(*args, **kwargs):
             prevent_system_name(name)
             return ascii_cleaner(name)
 
+        def clean_pronouns(self):
+            pronouns = self.cleaned_data.get("pronouns")
+            pronouns = pronouns.strip()
+            return pronouns
+
         def clean_consent(self):
             consent = self.cleaned_data.get('consent')
             require_consent = (
