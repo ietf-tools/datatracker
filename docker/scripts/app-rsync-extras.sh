@@ -109,3 +109,8 @@ dest="$DEST_ROOT/archive/id"
 mkdir -p "$dest"
 echo "Fetching $dest ..."
 rsync -auz --info=progress2 rsync.ietf.org::id-archive/ $dest/
+
+dest="$DEST_ROOT/www6s/proceedings"
+mkdir -p "$dest"
+echo "Fetching $dest ..."
+rsync -auz --info=progress2 rsync.ietf.org::proceedings/ $dest/
