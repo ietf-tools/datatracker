@@ -558,6 +558,40 @@ def group_about(request, acronym, group_type=None):
                       "closing_note": e,
                   }))
 
+def group_deps(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+
+    # fill_in_charter_info(group)
+
+    # e = group.latest_event(type__in=("changed_state", "requested_close",))
+    # requested_close = group.state_id != "conclude" and e and e.type == "requested_close"
+
+    # e = None
+    # if group.state_id == "conclude":
+    #     e = group.latest_event(type='closing_note')
+
+    # can_manage = can_manage_all_groups_of_type(request.user, group.type_id)
+    # charter_submit_url = ""
+    # if group.features.has_chartering_process:
+    #     charter_submit_url = urlreverse('ietf.doc.views_charter.submit', kwargs={ "name": charter_name_for_group(group) })
+
+    # can_provide_update = can_provide_status_update(request.user, group)
+    # status_update = group.latest_event(type="status_update")
+
+
+    return render(request, 'group/group_deps.html',
+                  construct_group_menu_context(request, group, "deps", group_type, {
+                  #     "milestones_in_review": group.groupmilestone_set.filter(state="review"),
+                  #     "milestone_reviewer": milestone_reviewer_for_group_type(group_type),
+                  #     "requested_close": requested_close,
+                  #     "can_manage": can_manage,
+                  #     "can_provide_status_update": can_provide_update,
+                  #     "status_update": status_update,
+                  #     "charter_submit_url": charter_submit_url,
+                  #     "editable_roles": group.used_roles or group.features.default_used_roles,
+                  #     "closing_note": e,
+                  }))
+
 def all_status(request):
     wgs = Group.objects.filter(type='wg',state__in=['active','bof'])
     rgs = Group.objects.filter(type='rg',state__in=['active','proposed'])
@@ -762,39 +796,53 @@ def dependencies_json(request, acronym, group_type=None):
     references = Q(
         source__group=group, source__type="draft", relationship__slug__startswith="ref"
     )
-    # both_rfcs = Q(source__states__slug="rfc", target__docs__states__slug="rfc")
-    # inactive = Q(source__states__slug__in=["expired", "repl"])
-    # removed = Q(source__states__slug__in=["auth-rm", "ietf-rm"])
-    # relations = (
-    #     RelatedDocument.objects.filter(references)
-    #     .exclude(both_rfcs)
-    #     .exclude(inactive)
-    #     .exclude(removed)
-    # )
-    relations = RelatedDocument.objects.filter(references)
+    both_rfcs = Q(source__states__slug="rfc", target__docs__states__slug="rfc")
+    inactive = Q(source__states__slug__in=["expired", "repl"])
+    # attractor = Q(target__name__in=["rfc5000", "rfc5741"])
+    removed = Q(source__states__slug__in=["auth-rm", "ietf-rm"])
+    relations = (
+        RelatedDocument.objects.filter(references)
+        .exclude(both_rfcs)
+        .exclude(inactive)
+        # .exclude(attractor)
+        .exclude(removed)
+    )
 
     edges = set()
     for x in relations:
-        # target_state = x.target.document.get_state_slug('draft')
+        target_state = x.target.document.get_state_slug("draft")
+        if target_state != "rfc" or x.is_downref():
+            edges.add(x)
+
+    replacements = RelatedDocument.objects.filter(
+        relationship__slug="replaces",
+        target__docs__in=[x.target.document for x in edges],
+    )
+
+    for x in replacements:
         edges.add(x)
-
-    # replacements = RelatedDocument.objects.filter(
-    #     relationship__slug="replaces",
-    #     target__docs__in=[x.target.document for x in edges],
-    # )
-
-    # for x in replacements:
-    #     edges.add(x)
 
     nodes = set([x.source for x in edges]).union([x.target.document for x in edges])
 
     graph = {
-        "nodes": [{"id": x.name} for x in nodes],
-        "edges": [{"source": x.source.name, "target": x.target.name}],
+        "nodes": [
+            {
+                "id": x.name,
+                "rfc": x.get_state("draft").slug == "rfc",
+                "dead": not x.get_state("draft-iesg").slug
+                in ["idexists", "watching", "dead"],
+                "expired": x.get_state("draft").slug == "expired",
+                "replaced": x.get_state("draft").slug == "repl",
+            }
+            for x in nodes
+        ],
+        "edges": [{"source": x.source.name, "target": x.target.name} for x in edges],
     }
     print(graph)
 
     return HttpResponse(json.dumps(graph), content_type="application/json")
+
+
 
 def email_aliases(request, acronym=None, group_type=None):
     group = get_group_or_404(acronym,group_type) if acronym else None

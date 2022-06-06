@@ -1,0 +1,185 @@
+{% extends "group/group_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin static %}
+{% block morecss %}
+#deps-modal .modal-body {
+height: 100vh;
+}
+{% endblock %}
+{% block group_content %}
+{% origin %}
+<button id="show-deps" data-href="{% url 'ietf.group.views.dependencies_json' group_type=group.type_id acronym=group.acronym %}"
+    type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+    data-bs-target="#deps-modal">
+    Modal <i class="bi bi-diagram-3"></i>
+</button>
+<div class="modal fade" id="deps-modal" tabindex="-1" aria-labelledby="deps-modal-label"
+    aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deps-modal-label">Document
+                    dependencies</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-center">
+                    <div class="spinner-border m-5" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block js %}
+<script src="{% static 'ietf/js/d3.js' %}"></script>
+<script>
+$(document)
+    .ready(() => {
+        $("#show-deps")
+            .trigger("click");
+    });
+
+// code adapated from https://observablehq.com/@mbostock/fit-text-to-circle
+
+const line_height = 16; // FIXME: get from bs5
+const font = `${line_height - 2}px sans-serif`;
+
+function lines(text) {
+    let line;
+    let line_width_0 = Infinity;
+    const lines = [];
+    const words = text.trim()
+        .split(/-/g)
+        .map((x, i, a) => i < a.length - 1 ? x + "-" : x);
+    const target_width = Math.sqrt(measure_width(text.trim()) *
+        line_height);
+    for (let i = 0, n = words.length; i < n; ++i) {
+        let line_text = (line ? line.text : "") + words[i];
+        let line_width = measure_width(line_text);
+        if ((line_width_0 + line_width) / 2 < target_width) {
+            line.width = line_width_0 = line_width;
+            line.text = line_text;
+        } else {
+            line_width_0 = measure_width(words[i]);
+            line = { width: line_width_0, text: words[i] };
+            lines.push(line);
+        }
+    }
+    return lines;
+}
+
+function measure_width(text) {
+    const context = document.createElement("canvas")
+        .getContext("2d");
+    context.font = font;
+    return context.measureText(text)
+        .width;
+}
+
+function text_radius(lines) {
+    let radius = 0;
+    for (let i = 0, n = lines.length; i < n; ++i) {
+        const dy = (Math.abs(i - n / 2 + 0.5) + 0.5) * line_height;
+        const dx = lines[i].width / 2;
+        radius = Math.max(radius, Math.sqrt(dx ** 2 + dy ** 2));
+    }
+    return radius;
+}
+
+// Fill modal with content from link href
+$("#deps-modal")
+    .on("show.bs.modal", function (e) {
+        var link = $(e.relatedTarget)
+            .data("href");
+        var target = $(this)
+            .find(".modal-body");
+        if (link && target) {
+            d3.json(link)
+                .then((data) => {
+                    console.log(data);
+
+                    target.html("<svg></svg>");
+
+                    const width = target.width();
+                    const height = target.height();
+
+                    const svg = d3.select(".modal-body svg")
+                        .style("font", font)
+                        .style("max-width", "100%")
+                        .style("height", "auto")
+                        .attr("text-anchor", "middle")
+                        .attr("dominant-baseline", "central")
+                        .attr("viewBox", [-width / 2, -height / 2,
+                            width, height
+                        ]);
+
+                    const link = svg.append("g")
+                        .selectAll("line")
+                        .data(data.edges)
+                        .join("line")
+                        .attr("stroke-width", 2)
+                        .attr("stroke", "black");
+
+                    const node = svg.append("g")
+                        .selectAll("g")
+                        .data(data.nodes)
+                        .join("g");
+
+                    var max_r = 0;
+                    node.append("text")
+                        .each(d => {
+                            d.lines = lines(d.id);
+                            d.r = text_radius(d.lines);
+                            max_r = Math.max(d.r, max_r);
+                        })
+                        .selectAll("tspan")
+                        .data(d => d.lines)
+                        .enter()
+                        .append("tspan")
+                        .attr("x", 0)
+                        .attr("y", (d, i, x) => ((i - x.length / 2) +
+                            0.5) * line_height)
+                        .text(d => d.text);
+
+                    node.insert("circle")
+                        .attr("fill", "none")
+                        .attr("stroke", "black")
+                        // .attr("stroke-width", 1.5)
+                        .attr("r", d => d.r);
+
+                    const simulation = d3
+                        .forceSimulation()
+                        .nodes(data.nodes)
+                        .force("link", d3.forceLink(data.edges)
+                            .id(d => d.id)
+                        )
+                        // .force("charge", d3.forceManyBody()
+                        //     .strength(-500))
+                        .force('collision', d3.forceCollide(max_r))
+                        .force("x", d3.forceX())
+                        .force("y", d3.forceY())
+                        .on("tick", () => {
+                            link
+                                .attr("x1", d => d.source.x)
+                                .attr("y1", d => d.source.y)
+                                .attr("x2", d => d.target.x)
+                                .attr("y2", d => d.target.y);
+
+                            node.attr("transform", d =>
+                                `translate(${d.x},${d.y})`
+                            );
+                        });
+
+                });
+        }
+    });
+
+</script>
+{% endblock %}
