@@ -138,7 +138,8 @@ function text_radius(lines) {
 }
 
 function format_node(node) {
-    return node.append("g")
+    return node.append("svg")
+        .attr("overflow", "visible")
         .attr("class", d => ["dead", "expired", "replaced", "rfc", "individual",
                 "group"
             ].filter(c =>
@@ -174,15 +175,25 @@ $("#deps-modal")
                         .attr("dominant-baseline", "central")
                         .attr("viewBox", [-width / 2, -height / 2,
                             width, height
-                        ]);
+                        ])
+                        .call(d3.zoom()
+                            .extent([
+                                [0, 0],
+                                [width, height]
+                            ])
+                            .scaleExtent([.5, 2])
+                            .on("zoom", zoomed)
+                        );
 
-                    const link = svg.append("g")
+                    const link = svg.append("svg")
+                        .attr("overflow", "visible")
                         .selectAll("line")
                         .data(data.edges)
                         .join(format_edge);
 
-                    const node = svg.append("g")
-                        .selectAll("g")
+                    const node = svg.append("svg")
+                        .attr("overflow", "visible")
+                        .selectAll("svg")
                         .data(data.nodes)
                         .join(format_node);
 
@@ -206,6 +217,22 @@ $("#deps-modal")
                         .attr("r", d => d.r)
                         .lower();
 
+                    function ticked() {
+                        link
+                            .attr("x1", d => d.source.x)
+                            .attr("y1", d => d.source.y)
+                            .attr("x2", d => d.target.x)
+                            .attr("y2", d => d.target.y);
+                        node
+                            .attr("x", d => d.x)
+                            .attr("y", d => d.y);
+                    }
+
+                    function zoomed({ transform }) {
+                        link.attr("transform", transform);
+                        node.attr("transform", transform);
+                    }
+
                     const simulation = d3
                         .forceSimulation()
                         .nodes(data.nodes)
@@ -216,21 +243,11 @@ $("#deps-modal")
                         )
                         .force("charge", d3.forceManyBody()
                             .strength(-10 * max_r))
-                        .force('collision', d3.forceCollide(max_r))
+                        .force('collision', d3.forceCollide(1.25 *
+                            max_r))
                         .force("x", d3.forceX())
                         .force("y", d3.forceY())
-                        .on("tick", () => {
-                            link
-                                .attr("x1", d => d.source.x)
-                                .attr("y1", d => d.source.y)
-                                .attr("x2", d => d.target.x)
-                                .attr("y2", d => d.target.y);
-
-                            node.attr("transform", d =>
-                                `translate(${d.x},${d.y})`
-                            );
-                        });
-
+                        .on("tick", ticked);
                 });
         }
     });
