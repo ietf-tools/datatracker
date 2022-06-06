@@ -3,12 +3,10 @@
 {% load origin %}
 {% load static %}
 {% block title %}IPR search{% endblock %}
-
 {% block content %}
-  {% origin %}
-  {% include "ipr/search_form.html" %}
+    {% origin %}
+    {% include "ipr/search_form.html" %}
 {% endblock %}
-
 {% block js %}
-  <script type="text/javascript" src="{% static 'ietf/js/ipr-search.js' %}"></script>
+    <script src="{% static 'ietf/js/ipr-search.js' %}"></script>
 {% endblock %}

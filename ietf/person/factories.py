@@ -50,7 +50,7 @@ class UserFactory(factory.django.DjangoModelFactory):
     first_name = factory.LazyAttribute(lambda o: o.faker.first_name())
     last_name = factory.LazyAttribute(lambda o: o.faker.last_name())
     email = factory.LazyAttributeSequence(lambda u, n: '%s.%s_%d@%s'%( slugify(unidecode(u.first_name)),
-                                                slugify(unidecode(u.last_name)), n, fake.domain_name()))
+                                                slugify(unidecode(u.last_name)), n, fake.domain_name())) # type: ignore
     username = factory.LazyAttribute(lambda u: u.email)
 
     @factory.post_generation
@@ -66,7 +66,7 @@ class PersonFactory(factory.django.DjangoModelFactory):
     ascii = factory.LazyAttribute(lambda p: force_text(unidecode_name(p.name)))
 
     class Params:
-        with_bio = factory.Trait(biography = "\n\n".join(fake.paragraphs()))
+        with_bio = factory.Trait(biography = "\n\n".join(fake.paragraphs())) # type: ignore
 
     @factory.post_generation
     def default_aliases(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument

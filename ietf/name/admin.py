@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2020, All Rights Reserved
+# Copyright The IETF Trust 2010-2022, All Rights Reserved
 from django.contrib import admin
 
 from ietf.name.models import (
@@ -18,7 +18,7 @@ from ietf.name.models import (
 from ietf.stats.models import CountryAlias
 
 class NameAdmin(admin.ModelAdmin):
-    list_display = ["slug", "name", "desc", "used"]
+    list_display = ["slug", "name", "desc", "used", "order"]
     search_fields = ["slug", "name"]
     prepopulate_from = { "slug": ("name",) }
 

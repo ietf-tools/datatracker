@@ -1,82 +1,102 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
-{% load bootstrap3 %}
-
-{% block title %}
-  Publication request for {{doc.name}}-{{doc.rev}}
-{% endblock %}
-
+{% load django_bootstrap5 person_filters %}
+{% block title %}Publication request for {{ doc.name }}-{{ doc.rev }}{% endblock %}
 {% block content %}
-  {% origin %}
-  <h1>Publication request<br><small>{{doc.name}}-{{doc.rev}}</small></h1>
-
-  <p>
-    Please verify the following information:
-  </p>
-
-  <table class="table table-condensed">
-    <tr {% if warn.intended_std_level %}class="warning"{% endif %}>
-      <th class="text-nowrap">Intended status level</th>
-      <td>{% if warn.intended_std_level %}<span class="fa fa-warning"></span>{% endif %}</td>
-      <td>{{doc.intended_std_level}}</td>
-    </tr>
-
-    <tr>
-      <th class="text-nowrap">Responsible AD</th>
-      <td></td>
-      <td>{{ad}}</td>
-    </tr>
-
-    <tr {% if warn.shepherd %}class="warning"{% endif %}>
-      <th class="text-nowrap">Document shepherd</th>
-      <td>{% if warn.shepherd %}<span class="fa fa-warning"></span>{% endif %}</td>
-      <td>{% if doc.shepherd %}{{ doc.shepherd.person }}{% endif %}</td>
-    </tr>
-
-    <tr {% if warn.shepherd_writeup %}class="warning"{% endif %}>
-      <th class="text-nowrap">Shepherd write-up exists</th>
-      <td>{% if warn.shepherd_writeup %}<span class="fa fa-warning"></span>{% endif %}</td>
-      <td>{%if shepherd_writeup %}Yes{%else%}No{%endif%}</td>
-    </tr>
-
-    <tr>
-      <th class="text-nowrap">Also notify</th>
-      <td></td>
-      <td>{% if notify %}{{notify}}{%else%}(None){%endif%}</td>
-    </tr>
-
-    <tr {% if warn.tags %}class="warning"{% endif %}>
-      <th class="text-nowrap">Annotation tags</th>
-      <td>{% if warn.tags %}<span class="fa fa-warning"></span>{% endif %}</td>
-      <td>{% if not tags %}(None){%else%}{% for tag in tags %}{{ tag }}{% if not forloop.last%}, {%endif%}{% endfor %}{% endif %}</td>
-    </tr>
-  </table>
-
-  {% if warn %}
-    <p class="alert alert-warning"><span class="fa fa-warning"></span> indicates the document might not be ready for submission. Please check each instance carefully to see if changes need to be made to the document's state before submitting.</p>
-  {% endif %}
-
-  <p>
-    Upon submission:
-    <ul>
-      <li> the document will be placed into the IESG '{{target_state.iesg}}' state</li>
-      <li> the document will be placed into the working group '{{target_state.wg}}' state</li>
-      {% if not ad == doc.ad %}<li> the responsible AD will be set as above </li>{% endif %}
-      {% if not notify == doc.notify %}<li> the document's state change notification list will be set as above </li>{% endif %}
-      <li> an entry will be made noting the publication request in the document's history</li>
-      <li> an email message will be sent to the working group chairs, the secretariat, and everyone listed above</li>
-    </ul>
-  </p>
-
-  <form method="post">
-    {% csrf_token %}
-    {% buttons %}
-      <input type="submit" class="btn btn-warning" name="confirm" value="Request publication">
-      <input type="submit" class="btn btn-default pull-right" name="cancel" value="Back">
-    {% endbuttons %}
-  </form>
-
-
+    {% origin %}
+    <h1>
+        Publication request
+        <br>
+        <small class="text-muted">{{ doc.name }}-{{ doc.rev }}</small>
+    </h1>
+    <p class="my-3">
+        Please verify the following information:
+    </p>
+    <table class="table table-sm table-borderless">
+        <tbody>
+            <tr {% if warn.intended_std_level %}class="table-warning"{% endif %}>
+                <th scope="row">Intended status level</th>
+                <td {% if warn.intended_std_level %}class="text-danger"{% endif %}>
+                    {% if warn.intended_std_level %}<i class="bi bi-exclamation-circle"></i>{% endif %}
+                    {{ doc.intended_std_level }}
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">Responsible AD</th>
+                <td>{% person_link ad %}</td>
+            </tr>
+            <tr {% if warn.shepherd %}class="table-warning"{% endif %}>
+                <th scope="row">Document shepherd</th>
+                <td {% if warn.shepherd %}class="text-danger"{% endif %}>
+                    {% if warn.shepherd %}<i class="bi bi-exclamation-circle"></i>{% endif %}
+                    {% if doc.shepherd %}
+                        {% person_link doc.shepherd.person %}
+                    {% else %}
+                        (None)
+                    {% endif %}
+                </td>
+            </tr>
+            <tr {% if warn.shepherd_writeup %}class="table-warning"{% endif %}>
+                <th scope="row">Shepherd write-up exists</th>
+                <td {% if warn.shepherd_writeup %}class="text-danger"{% endif %}>
+                    {% if warn.shepherd_writeup %}<i class="bi bi-exclamation-circle"></i>{% endif %}
+                    {% if shepherd_writeup %}
+                        Yes
+                    {% else %}
+                        No
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">Also notify</th>
+                <td>
+                    {% if notify %}
+                        {{ notify }}
+                    {% else %}
+                        (None)
+                    {% endif %}
+                </td>
+            </tr>
+            <tr {% if warn.tags %}class="table-warning"{% endif %}>
+                <th scope="row">Annotation tags</th>
+                <td {% if warn.tags %}class="text-danger"{% endif %}>
+                    {% if warn.tags %}<i class="bi bi-exclamation-circle"></i>{% endif %}
+                    {% if not tags %}
+                        (None)
+                    {% else %}
+                        {% for tag in tags %}
+                            {{ tag }}{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    {% if warn %}
+        <p class="alert alert-warning my-3">
+            <i class="bi bi-exclamation-circle"></i>
+            indicates the document might not be ready for submission. Please check each instance carefully to see if changes need to be made to the document's state before submitting.
+        </p>
+    {% endif %}
+        Upon submission:
+        <ul>
+            <li>the document will be placed into the IESG '{{ target_state.iesg }}' state</li>
+            <li>the document will be placed into the working group '{{ target_state.wg }}' state</li>
+            {% if not ad == doc.ad %}<li>the responsible AD will be set as above</li>{% endif %}
+            {% if not notify == doc.notify %}<li>the document's state change notification list will be set as above</li>{% endif %}
+            <li>an entry will be made noting the publication request in the document's history</li>
+            <li>an email message will be sent to the working group chairs, the secretariat, and everyone listed above</li>
+        </ul>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit"
+               class="btn btn-warning"
+               name="confirm" value="confirm">
+               Request publication</button>
+        <button type="submit"
+               class="btn btn-secondary float-end"
+               name="cancel">
+               Back</button>
+    </form>
 {% endblock %}

@@ -3,27 +3,25 @@
 {% load static %}
 {% block title %}404 Not Found{% endblock %}
 {% block content %}
-
-<h1>Request for Permission</h1>
-
-<p>Client <strong>{{ client.name }}</strong> would like to access this information
-from your IETF database records ...</p>
-
-<form method="post" action="{% url 'oidc_provider:authorize' %}">
-
-    {% csrf_token %}
-
-    {{ hidden_inputs }}
-
-    <ul>
-    {% for scope in scopes %}
-        <li><strong>{{ scope.name }}</strong><br><i>{{ scope.description }}</i></li>
-    {% endfor %}
-    </ul>
-
-    <input type="submit" value="Decline" />
-    <input name="allow" type="submit" value="Authorize" />
-
-</form>
-
+    <h1>Request for Permission</h1>
+    <p class="my-3">
+        Client <strong>{{ client.name }}</strong> would like to access this information
+        from your IETF database records:
+    </p>
+    <form method="post" action="{% url 'oidc_provider:authorize' %}">
+        {% csrf_token %}
+        <!-- [html-validate-disable-block void-style -- FIXME: django-oidc-provider uses outdated HTML] -->
+        {{ hidden_inputs }}
+        <ul>
+            {% for scope in scopes %}
+                <li>
+                    <strong>{{ scope.name }}</strong>
+                    <br>
+                    <i>{{ scope.description }}</i>
+                </li>
+            {% endfor %}
+        </ul>
+        <button class="btn btn-primary" name="allow" type="submit" value="Authorize">Authorize</button>
+        <button class="btn btn-secondary float-end" type="submit">Decline</button>
+    </form>
 {% endblock %}

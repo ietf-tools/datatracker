@@ -1,52 +1,45 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015-2020, All Rights Reserved #}
 {% load origin %}
-{% load ietf_filters static %}
-
+{% load ietf_filters static person_filters %}
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-
 {% block title %}NomComs{% endblock %}
-
 {% block content %}
-  {% origin %}
-  <h1>NomComs</h1>
-
-  <table class="table table-condensed table-striped tablesorter">
-    <thead>
-      <tr>
-        <th>Year</th>
-        <th>Chair</th>
-        <th>Announcements</th>
-        <th>Pages</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for nomcom in nomcom_list|dictsortreversed:"label" %}
-        <tr>
-          <td><a href="{% url 'ietf.group.views.group_home' acronym=nomcom.acronym  %}">{{ nomcom.label }}</a></td>
-          <td >
-	    {% with nomcom.get_chair as role %}
-	      <a href="mailto:{{role.person.email_address}}">{{role.person}}</a>
-	    {% endwith %}
-          </td>
-          <td>
-	    {% if nomcom.ann_url %}
-	      <a href="{{ nomcom.ann_url }}">Announcements</a>
-	    {% endif %}
-          </td>
-          <td>
-	    {% if nomcom.url %}
-	      <a href="{{ nomcom.url }}">Pages</a>
-	    {% endif %}
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    {% origin %}
+    <h1>NomComs</h1>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="year">Year</th>
+                <th scope="col" data-sort="chair">Chair</th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for nomcom in nomcom_list|dictsortreversed:"label" %}
+                <tr>
+                    <td>
+                        <a href="{% url 'ietf.group.views.group_home' acronym=nomcom.acronym  %}">{{ nomcom.label }}</a>
+                    </td>
+                    <td >
+                        {% with nomcom.get_chair as role %}
+                            {% person_link role.person %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% if nomcom.ann_url %}
+                            <a class="btn btn-primary btn-sm float-end ms-1"
+                               href="{{ nomcom.ann_url }}">Announcements</a>
+                        {% endif %}
+                        {% if nomcom.url %}<a class="btn btn-primary btn-sm float-end ms-1" href="{{ nomcom.url }}">Pages</a>{% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
-
 {% block js %}
-<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

@@ -1,8 +1,25 @@
 #!/bin/bash
 
-WORKSPACEDIR="/root/src"
+WORKSPACEDIR="/workspace"
 
-service rsyslog start
+sudo service rsyslog start &>/dev/null
+
+# Fix ownership of volumes
+echo "Fixing volumes ownership..."
+sudo chown -R dev:dev "$WORKSPACEDIR/.parcel-cache"
+sudo chown -R dev:dev "$WORKSPACEDIR/__pycache__"
+sudo chown dev:dev "/assets"
+
+echo "Fix chromedriver /dev/shm permissions..."
+sudo chmod 1777 /dev/shm
+
+# Build node packages that requrie native compilation
+echo "Compiling native node packages..."
+yarn rebuild
+
+# Generate static assets
+echo "Building static assets... (this could take a minute or two)"
+yarn build
 
 # Copy config files if needed
 
@@ -39,48 +56,28 @@ else
     fi
 fi
 
-# Create assets directories
+# Create data directories
 
-for sub in					\
-    test/id \
-    test/staging \
-    test/archive \
-    test/rfc \
-    test/media \
-    test/wiki/ietf \
-	data/nomcom_keys/public_keys			\
-	data/developers/ietf-ftp			\
-	data/developers/ietf-ftp/bofreq		\
-	data/developers/ietf-ftp/charter		\
-	data/developers/ietf-ftp/conflict-reviews	\
-	data/developers/ietf-ftp/internet-drafts	\
-	data/developers/ietf-ftp/rfc			\
-	data/developers/ietf-ftp/status-changes	\
-	data/developers/ietf-ftp/yang/catalogmod	\
-	data/developers/ietf-ftp/yang/draftmod	\
-	data/developers/ietf-ftp/yang/ianamod	\
-	data/developers/ietf-ftp/yang/invalmod	\
-	data/developers/ietf-ftp/yang/rfcmod		\
-	data/developers/www6s			\
-	data/developers/www6s/staging		\
-	data/developers/www6s/wg-descriptions	\
-	data/developers/www6s/proceedings		\
-	data/developers/www6/			\
-	data/developers/www6/iesg			\
-	data/developers/www6/iesg/evaluation		\
-	; do
-    dir="/root/src/$sub"
-    if [ ! -d "$dir"  ]; then
-    	echo "Creating dir $dir"
-	    mkdir -p "$dir";
-    fi
-done
+echo "Creating data directories..."
+chmod +x ./docker/scripts/app-create-dirs.sh
+./docker/scripts/app-create-dirs.sh
+
+# Download latest coverage results file
+
+echo "Downloading latest coverage results file..."
+curl -fsSL https://github.com/ietf-tools/datatracker/releases/latest/download/coverage.json -o release-coverage.json
 
 # Wait for DB container
+
 if [ -n "$EDITOR_VSCODE" ]; then
     echo "Waiting for DB container to come online ..."
-    wget -qO- https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for | sh -s -- localhost:3306 -- echo "DB ready"
+    /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
 fi
+
+# Run memcached
+
+echo "Starting memcached..."
+/usr/bin/memcached -u dev -d
 
 # Initial checks
 
@@ -88,9 +85,12 @@ echo "Running initial checks..."
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check --settings=settings_local
 # /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local
 
+echo "-----------------------------------------------------------------"
 echo "Done!"
+echo "-----------------------------------------------------------------"
 
 if [ -z "$EDITOR_VSCODE" ]; then
+    CODE=0
     python -m smtpd -n -c DebuggingServer localhost:2025 &
     if [ -z "$*" ]; then
         echo
@@ -100,11 +100,17 @@ if [ -z "$EDITOR_VSCODE" ]; then
         echo
         echo "to start a development instance of the Datatracker."
         echo
-        bash
+        echo "    ietf/manage.py test --settings=settings_sqlitetest"
+        echo
+        echo "to run all the tests."
+        echo
+        zsh
     else
         echo "Executing \"$*\" and stopping container."
         echo
-        bash -c "$*"
+        zsh -c "$*"
+        CODE=$?
     fi
-    service rsyslog stop
+    sudo service rsyslog stop
+    exit $CODE
 fi

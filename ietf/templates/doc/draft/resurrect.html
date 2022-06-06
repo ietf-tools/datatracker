@@ -1,29 +1,26 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
-{% load bootstrap3 %}
-
+{% load django_bootstrap5 %}
 {% block title %}Resurrect {{ doc }}{% endblock %}
-
 {% block content %}
-  {% origin %}
-
-  <h1>Resurrect<br><small>{{ doc }}</small></h1>
-
-  <p>Resurrect {{ doc }}?</p>
-
-  <p>
-    This will change the status to Active{% if resurrect_requested_by %} and email a notice to {{ resurrect_requested_by }}{% endif %}.
-  </p>
-
-  <form method="post">
-    {% csrf_token %}
-
-    {% buttons %}
-      <button class="btn btn-primary" type="submit">Resurrect</button>
-      <a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
-    {% endbuttons %}
-  </form>
-
+    {% origin %}
+    <h1>
+        Resurrect
+        <br>
+        <small class="text-muted">{{ doc }}</small>
+    </h1>
+    <p>
+        Resurrect <b>{{ doc }}</b>?
+    </p>
+    <p>
+        This will change the status to <b>Active</b>
+        {% if resurrect_requested_by %}and email a notice to {{ resurrect_requested_by }}{% endif %}
+        .
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn btn-primary" type="submit">Resurrect</button>
+        <a class="btn btn-secondary float-end" href="{{ back_url }}">Back</a>
+    </form>
 {% endblock %}

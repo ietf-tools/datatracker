@@ -35,7 +35,7 @@ from ietf.utils.validators import ( validate_file_size, validate_mime_type,
 
 # need to insert empty option for use in ChoiceField
 # countries.insert(0, ('', '-'*9 ))
-countries.insert(0, ('', ''))
+countries.insert(0, ('', '-' * 9))
 timezones.insert(0, ('', '-' * 9))
 
 # -------------------------------------------------
@@ -105,16 +105,48 @@ class InterimSessionInlineFormSet(BaseInlineFormSet):
         return                          # formset doesn't have cleaned_data
 
 class InterimMeetingModelForm(forms.ModelForm):
-    group = GroupModelChoiceField(queryset=Group.objects.filter(type_id__in=GroupFeatures.objects.filter(has_meetings=True).values_list('type_id',flat=True), state__in=('active', 'proposed', 'bof')).order_by('acronym'), required=False)
+    group = GroupModelChoiceField(
+        queryset=Group.objects.filter(
+            type_id__in=GroupFeatures.objects.filter(
+                has_meetings=True
+            ).values_list('type_id',flat=True),
+            state__in=('active', 'proposed', 'bof')
+        ).order_by('acronym'),
+        required=False,
+        empty_label="Click to select",
+    )
+    group.widget.attrs['data-max-entries'] = 1
+    group.widget.attrs['data-minimum-input-length'] = 0
     in_person = forms.BooleanField(required=False)
-    meeting_type = forms.ChoiceField(choices=(
-        ("single", "Single"),
-        ("multi-day", "Multi-Day"),
-        ('series', 'Series')), required=False, initial='single', widget=forms.RadioSelect)
+    meeting_type = forms.ChoiceField(
+        choices=(
+            ("single", "Single"),
+            ("multi-day", "Multi-Day"),
+            ('series', 'Series')
+        ),
+        required=False,
+        initial='single',
+        widget=forms.RadioSelect,
+        help_text='''
+            Use <b>Multi-Day</b> for a single meeting that spans more than one contiguous
+            workday. Do not use Multi-Day for a series of separate meetings (such as
+            periodic interim calls). Use Series instead.
+            Use <b>Series</b> for a series of separate meetings, such as periodic interim calls.
+            Use Multi-Day for a single meeting that spans more than one contiguous
+            workday.''',
+    )
     approved = forms.BooleanField(required=False)
     city = forms.CharField(max_length=255, required=False)
+    city.widget.attrs['placeholder'] = "City"
     country = forms.ChoiceField(choices=countries, required=False)
+    country.widget.attrs['class'] = "select2-field"
+    country.widget.attrs['data-max-entries'] = 1
+    country.widget.attrs['data-placeholder'] = "Country"
+    country.widget.attrs['data-minimum-input-length'] = 0
     time_zone = forms.ChoiceField(choices=timezones)
+    time_zone.widget.attrs['class'] = "select2-field"
+    time_zone.widget.attrs['data-max-entries'] = 1
+    time_zone.widget.attrs['data-minimum-input-length'] = 0
 
     class Meta:
         model = Meeting
@@ -205,13 +237,24 @@ class InterimMeetingModelForm(forms.ModelForm):
 
 class InterimSessionModelForm(forms.ModelForm):
     date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1"}, label='Date', required=False)
-    time = forms.TimeField(widget=forms.TimeInput(format='%H:%M'), required=True)
+    time = forms.TimeField(widget=forms.TimeInput(format='%H:%M'), required=True, help_text="Local time")
+    time.widget.attrs['placeholder'] = "HH:MM"
     requested_duration = CustomDurationField(required=True)
-    end_time = forms.TimeField(required=False)
+    end_time = forms.TimeField(required=False, help_text="Local time")
+    end_time.widget.attrs['placeholder'] = "HH:MM"
     remote_participation = forms.ChoiceField(choices=(), required=False)
-    remote_instructions = forms.CharField(max_length=1024, required=False)
+    remote_instructions = forms.CharField(
+        max_length=1024,
+        required=False,
+        help_text='''
+            For virtual interims, a conference link <b>should be provided in the original request</b> in all but the most unusual circumstances.
+            Otherwise, "Remote participation is not supported" or "Remote participation information will be obtained at the time of approval" are acceptable values.
+            See <a href="https://www.ietf.org/forms/wg-webex-account-request/">here</a> for more on remote participation support.
+        ''',
+    )
     agenda = forms.CharField(required=False, widget=forms.Textarea, strip=False)
-    agenda_note = forms.CharField(max_length=255, required=False)
+    agenda.widget.attrs['placeholder'] = "Paste agenda here"
+    agenda_note = forms.CharField(max_length=255, required=False, label=" Additional information")
 
     class Meta:
         model = Session
@@ -242,6 +285,10 @@ class InterimSessionModelForm(forms.ModelForm):
             choices.append(('meetecho', 'Automatically create Meetecho conference'))
         choices.append(('manual', 'Manually specify remote instructions...'))
         self.fields['remote_participation'].choices = choices
+        # put remote_participation ahead of remote_instructions
+        field_order = [field for field in self.fields if field != 'remote_participation']
+        field_order.insert(field_order.index('remote_instructions'), 'remote_participation')
+        self.order_fields(field_order)
 
     def clean_date(self):
         '''Date field validator.  We can't use required on the input because
@@ -705,7 +752,7 @@ class SessionDetailsForm(forms.ModelForm):
         self.fields['purpose'].queryset = SessionPurposeName.objects.filter(pk__in=session_purposes)
         if not group.features.acts_like_wg:
             self.fields['requested_duration'].durations = [datetime.timedelta(minutes=m) for m in range(30, 241, 30)]
-        
+
     class Meta:
         model = Session
         fields = (
@@ -728,7 +775,7 @@ class SessionDetailsForm(forms.ModelForm):
         return self.cleaned_data
 
     class Media:
-        js = ('ietf/js/meeting/session_details_form.js',)
+        js = ('ietf/js/session_details_form.js',)
 
 
 class SessionEditForm(SessionDetailsForm):

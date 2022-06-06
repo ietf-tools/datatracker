@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2022, All Rights Reserved #}
+{% load origin static person_filters %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
+{% block title %}Active RFC Editor Groups{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>Active RFC Editor Groups</h1>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="team">Group</th>
+                <th scope="col" data-sort="name">Name</th>
+            </tr>
+        </thead>
+        {% regroup rfced by parent as grouped_groups %}
+        {% for grouptype in grouped_groups %}
+            <tbody>
+                <tr>
+                    <th scope="col" colspan="2" class="table-info">
+                        Active {% firstof grouptype.grouper.verbose_name grouptype.grouper.name 'Top-level Organization' %} Groups
+                    </th>
+                </tr>
+            </tbody>
+            <tbody>
+                {% for group in grouptype.list %}
+                    <tr>
+                        <td>
+                            <a href="{% url "ietf.group.views.group_home" acronym=group.acronym %}">{{ group.acronym }}</a>
+                        </td>
+                        <td>{{ group.name }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        {% endfor %}
+    </table>
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
+{% endblock %}

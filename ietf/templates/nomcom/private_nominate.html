@@ -2,34 +2,19 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load static %}
-
-{% load bootstrap3 %}
+{% load django_bootstrap5 %}
 {% load nomcom_tags %}
-
-{% block pagehead %}
-  {{ form.media.css }}
-{% endblock %}
-
-{% block subtitle %} - Nominate{% endblock %}
-
+{% block pagehead %}{{ form.media.css }}{% endblock %}
+{% block subtitle %}- Nominate{% endblock %}
 {% block nomcom_content %}
-  {% origin %}
-  <h2>Candidate nomination</h2>
-
-  {% if form %}
-
-    <form id="nominate-form" method="post">
-      {% csrf_token %}
-      {% bootstrap_form form %}
-      {% buttons %}
-        <button class="btn btn-primary" type="submit" name="save" value="Save">Save</button>
-      {% endbuttons %}
-    </form>
-
-  {% endif %}
-
+    {% origin %}
+    <h2 class="mt-3">Candidate nomination</h2>
+    {% if form %}
+        <form id="nominate-form" method="post" class="my-3">
+            {% csrf_token %}
+            {% bootstrap_form form %}
+            <button class="btn btn-primary" type="submit" name="save" value="Save">Save</button>
+        </form>
+    {% endif %}
 {% endblock %}
-
-{% block js %}
-  {{ form.media.js }}
-{% endblock %}
+{% block js %}{{ form.media.js }}{% endblock %}

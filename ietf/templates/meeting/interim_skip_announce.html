@@ -1,23 +1,19 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load static bootstrap3 widget_tweaks %}
-
+{% load static django_bootstrap5 widget_tweaks %}
 {% block title %}Interim Meetings Skip Announcement{% endblock %}
-
-
 {% block content %}
-  {% origin %}
-  <h1>Interim Meetings Skip Announcement</h1>
-
-  <p>You are requesting to complete scheduling of the interim meeting for {{ meeting.session_set.first.group.acronym|upper }} on {{ meeting.date }} without sending an announcemnt.</p>
-
-  <form action="" method="post">{% csrf_token %}
-  <input class="btn btn btn-danger" type="submit" value="Continue">
-  <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_announce' %}">Cancel</a>
-  </form>
-
+    {% origin %}
+    <h1>Interim Meetings Skip Announcement</h1>
+    <p class="alert alert-info my-3">
+        You are requesting to complete scheduling of the interim meeting for <b>{{ meeting.session_set.first.group.acronym|upper }}</b> on <b>{{ meeting.date }}</b> without sending an announcement.
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn btn-danger" type="submit">Continue</button>
+        <a class="btn btn-secondary float-end"
+           href="{% url 'ietf.meeting.views.interim_announce' %}">Back</a>
+    </form>
 {% endblock %}
-
-{% block js %}
-{% endblock %}
+{% block js %}{% endblock %}

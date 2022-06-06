@@ -13,7 +13,6 @@ import warnings
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
 warnings.simplefilter("always", DeprecationWarning)
-warnings.filterwarnings("ignore", message="Add the `renderer` argument to the render\(\) method of", module="bootstrap3")
 warnings.filterwarnings("ignore", message="The logout\(\) view is superseded by")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
 warnings.filterwarnings("ignore", message="{% load staticfiles %} is deprecated")
@@ -163,16 +162,11 @@ else:
     STATIC_URL = "https://www.ietf.org/lib/dt/%s/"%__version__
     STATIC_ROOT = "/a/www/www6s/lib/dt/%s/"%__version__
 
-# Destination for components handled by djangobower
-COMPONENT_ROOT = BASE_DIR + "/externals/static/"
-COMPONENT_URL  = STATIC_URL
-
 # List of finder classes that know how to find static files in
 # various locations.
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'ietf.utils.bower_storage.BowerStorageFinder',
 )
 
 WSGI_APPLICATION = "ietf.wsgi.application"
@@ -332,7 +326,7 @@ UTILS_LOGGER_LEVELS: Dict[str, str] = {
 # ------------------------------------------------------------------------
 
 
-X_FRAME_OPTIONS = 'ALLOW-FROM ietf.org *.ietf.org meetecho.com *.meetecho.com gather.town *.gather.town'
+X_FRAME_OPTIONS = 'SAMEORIGIN'
 CSRF_TRUSTED_ORIGINS = ['ietf.org', '*.ietf.org', 'meetecho.com', '*.meetecho.com', 'gather.town', '*.gather.town', ]
 CSRF_COOKIE_SAMESITE = 'None'
 CSRF_COOKIE_SECURE = True
@@ -418,9 +412,8 @@ ROOT_URLCONF = 'ietf.urls'
 
 # Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static'),
-    os.path.join(BASE_DIR, 'secr/static'),
-    os.path.join(BASE_DIR, 'externals/static'),
+    os.path.join(BASE_DIR, 'static/dist'),
+    os.path.join(BASE_DIR, 'secr/static/dist'),
 )
 
 INSTALLED_APPS = [
@@ -436,11 +429,11 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.staticfiles',
     # External apps 
-    'bootstrap3',
+    'analytical',
+    'django_bootstrap5',
     'corsheaders',
     'django_markup',
     'django_password_strength',
-    'djangobwr',
     'form_utils',
     'oidc_provider',
     'simple_history',
@@ -489,32 +482,28 @@ try:
 except ImportError:
     pass
 
-# Settings for django-bootstrap3
-# See http://django-bootstrap3.readthedocs.org/en/latest/settings.html
-BOOTSTRAP3 = {
+# Settings for django-bootstrap5
+# See https://django-bootstrap5.readthedocs.io/en/latest/settings.html
+BOOTSTRAP5 = {
     # Label class to use in horizontal forms
-    'horizontal_label_class': 'col-md-2',
+    'horizontal_label_class': 'col-md-2 fw-bold',
 
     # Field class to use in horiozntal forms
     'horizontal_field_class': 'col-md-10',
 
-    # Set HTML required attribute on required fields
-    'set_required': True,
+    # Field class used for horizontal fields withut a label.
+    'horizontal_field_offset_class': 'offset-md-2',
 
     # Set placeholder attributes to label if no placeholder is provided
     'set_placeholder': False,
 
-    # Class to indicate required
-    'form_required_class': 'bootstrap3-required',
-
-    # Class to indicate error
-    'form_error_class': 'bootstrap3-error',
+    'required_css_class': 'required',
+    'error_css_class': 'is-invalid',
+    'success_css_class': 'is-valid',
 
     'field_renderers': {
         'default': 'ietf.utils.bootstrap.SeparateErrorsFromHelpTextFieldRenderer',
-        'inline': 'bootstrap3.renderers.InlineFieldRenderer',
     },
-    
 }
 
 # CORS settings
@@ -527,7 +516,7 @@ CORS_URLS_REGEX = r'^(/api/.*|.*\.json|.*/json/?)$'
 REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # Content security policy configuration (django-csp)
-CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", "data: https://datatracker.ietf.org/ https://www.ietf.org/")
+CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", "data: https://datatracker.ietf.org/ https://www.ietf.org/ https://analytics.ietf.org/")
 
 # django.middleware.security.SecurityMiddleware 
 SECURE_BROWSER_XSS_FILTER       = True
@@ -613,7 +602,7 @@ TEST_TEMPLATE_IGNORE = [
     "500.html"                        # isn't loaded by regular loader, but checked by test_500_page()
 ]
 
-TEST_COVERAGE_MASTER_FILE = os.path.join(BASE_DIR, "../release-coverage.json.gz")
+TEST_COVERAGE_MASTER_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
 TEST_COVERAGE_LATEST_FILE = os.path.join(BASE_DIR, "../latest-coverage.json")
 
 TEST_CODE_COVERAGE_CHECKER = None
@@ -1019,7 +1008,6 @@ BIBXML_BASE_PATH = '/a/ietfdata/derived/bibxml'
 
 # Timezone files for iCalendar
 TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
-CHANGELOG_PATH =  BASE_DIR + '/../changelog'
 
 SECR_BLUE_SHEET_PATH = '/a/www/ietf-datatracker/documents/blue_sheet.rtf'
 SECR_BLUE_SHEET_URL = '//datatracker.ietf.org/documents/blue_sheet.rtf'
@@ -1027,7 +1015,6 @@ SECR_INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
 SECR_MAX_UPLOAD_SIZE = 40960000
 SECR_PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
 SECR_PPT2PDF_COMMAND = ['/usr/bin/soffice','--headless','--convert-to','pdf:writer_globaldocument_pdf_Export','--outdir']
-SECR_VIRTUAL_MEETINGS = ['108']
 STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
 PROCEEDINGS_VERSION_CHANGES = [
     0,   # version 1
@@ -1107,61 +1094,6 @@ USER_PREFERENCE_DEFAULTS = {
     "left_menu"     : "off",
 }
 
-TRAC_MASTER_DIR = "/a/www/trac-setup/"
-TRAC_WIKI_DIR_PATTERN = "/a/www/www6s/trac/%s"
-TRAC_WIKI_URL_PATTERN = "https://trac.ietf.org/trac/%s/wiki"
-TRAC_ISSUE_URL_PATTERN = "https://trac.ietf.org/trac/%s/report/1"
-TRAC_SVN_DIR_PATTERN = "/a/svn/group/%s"
-#TRAC_SVN_URL_PATTERN = "https://svn.ietf.org/svn/group/%s/"
-
-# The group types setting was replaced by a group feature entry 10 Jan 2019
-#TRAC_CREATE_GROUP_TYPES = ['wg', 'rg', 'area', 'team', 'dir', 'review', 'ag', 'nomcom', ]
-TRAC_CREATE_GROUP_STATES = ['bof', 'active', ]
-TRAC_CREATE_GROUP_ACRONYMS = ['iesg', 'iaoc', 'ietf', ]
-
-# This is overridden in production's settings-local.  Make sure to update it.
-TRAC_CREATE_ADHOC_WIKIS = [
-    # admin group acronym, name, sub-path
-    # A trailing fileglob wildcard is supported on group acronyms
-    ('iesg', 'Meeting', "ietf/meeting"),
-    ('nomcom*', 'NomCom', 'nomcom'),
-]
-
-SVN_PACKAGES = [
-    "/usr/lib/python/dist-packages/svn",
-    "/usr/lib/python3.6/dist-packages/libsvn",
-]
-
-TRAC_ENV_OPTIONS = [
-    ('project', 'name', "{name} Wiki"),
-    ('trac', 'database', 'sqlite:db/trac.db' ),
-    ('trac', 'repository_type', 'svn'),
-    ('trac', 'repository_dir', "{svn_dir}"),
-    ('inherit', 'file', "/a/www/trac-setup/conf/trac.ini"),
-    ('components', 'tracopt.versioncontrol.svn.*', 'enabled'),
-]
-
-TRAC_WIKI_PAGES_TEMPLATES = [
-    "utils/wiki/IetfSpecificFeatures",
-    "utils/wiki/InterMapTxt",
-    "utils/wiki/SvnTracHooks",
-    "utils/wiki/ThisTracInstallation",
-    "utils/wiki/TrainingMaterials",
-    "utils/wiki/WikiStart",
-]
-
-TRAC_ISSUE_SEVERITY_ADD = [
-    "-",
-    "Candidate WG Document",
-    "Active WG Document",
-    "Waiting for Expert Review",
-    "In WG Last Call",
-    "Waiting for Shepherd Writeup",
-    "Submitted WG Document",
-    "Dead WG Document",
-]
-
-SVN_ADMIN_COMMAND = "/usr/bin/svnadmin"
 
 # Email addresses people attempt to set for their account will be checked
 # against the following list of regex expressions with re.search(pat, addr):
@@ -1195,7 +1127,6 @@ SILENCED_SYSTEM_CHECKS = [
 ]
 
 CHECKS_LIBRARY_PATCHES_TO_APPLY = [
-    'patch/fix-unidecode-argument-warning.patch',
     'patch/change-oidc-provider-field-sizes-228.patch',
     'patch/fix-oidc-access-token-post.patch',
     'patch/fix-jwkest-jwt-logging.patch',

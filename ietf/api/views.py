@@ -207,7 +207,6 @@ def version(request):
     return HttpResponse(
             json.dumps({
                         'version': ietf.__version__+ietf.__patch__,
-                        'date': ietf.__date__[7:-2],
                         'dumptime': dumptime,
                     }),
                 content_type='application/json',

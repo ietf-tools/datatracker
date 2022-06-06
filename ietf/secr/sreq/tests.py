@@ -1,10 +1,9 @@
-# Copyright The IETF Trust 2013-2020, All Rights Reserved
+# Copyright The IETF Trust 2013-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 import datetime
 
-from django.test import override_settings
 from django.urls import reverse
 
 import debug                            # pyflakes:ignore
@@ -77,7 +76,6 @@ class SessionRequestTestCase(TestCase):
         self.assertRedirects(r,reverse('ietf.secr.sreq.views.main'))
         self.assertEqual(SchedulingEvent.objects.filter(session=session).order_by('-id')[0].status_id, 'deleted')
 
-    @override_settings(SECR_VIRTUAL_MEETINGS=tuple())  # ensure not unexpectedly testing a virtual meeting session
     def test_edit(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
         mars = RoleFactory(name_id='chair', person__user__username='marschairman', group__acronym='mars').group
@@ -243,7 +241,6 @@ class SessionRequestTestCase(TestCase):
         self.assertContains(r, 'First session with: {}'.format(group2.acronym))
 
 
-    @override_settings(SECR_VIRTUAL_MEETINGS=tuple())  # ensure not unexpectedly testing a virtual meeting session
     def test_edit_constraint_bethere(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
         mars = RoleFactory(name_id='chair', person__user__username='marschairman', group__acronym='mars').group

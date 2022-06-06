@@ -250,10 +250,8 @@ def parse_review_email(text):
     name, __ = parseaddr(msg["From"])
     if name.endswith(" via RT"):
         name = name[:-len(" via RT")]
-    try:
-        by = Person.objects.get(alias__name=name, role__group__acronym="iana")
-    except Person.DoesNotExist:
-        pass
+        
+    by = Person.objects.filter(alias__name=name, role__group__acronym="iana").first()
 
     if not by:
         by = Person.objects.get(name="(System)")

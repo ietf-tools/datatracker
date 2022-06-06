@@ -2,30 +2,26 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load static %}
-{% load bootstrap3 %}
-
+{% load django_bootstrap5 %}
 {% block title %}Email submitter of {{ ipr.title }}{% endblock %}
-
 {% block pagehead %}
-  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+    <link rel="stylesheet" href="{% static 'ietf/css/datepicker.css' %}">
 {% endblock %}
-
 {% block content %}
-  {% origin %}
-  <h1>Email submitter<br><small>{{ ipr.title }}</small></h1>
-
-  <form method="post" class="show-required">
-    {% csrf_token %}
-
-    {% bootstrap_form form %}
-
-    {% buttons %}
-      <button type="submit" class="btn btn-primary">Send Email</button>
-      <a class="btn btn-default pull-right" href="{% url "ietf.ipr.views.history" id=ipr.id %}">Back</a>
-    {% endbuttons %}
-  </form>
+    {% origin %}
+    <h1>
+        Email submitter
+        <br>
+        <small class="text-muted">{{ ipr.title }}</small>
+    </h1>
+    <form method="post" class="my-3 show-required">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <button type="submit" class="btn btn-primary">Send Email</button>
+        <a class="btn btn-secondary float-end"
+           href="{% url "ietf.ipr.views.history" id=ipr.id %}">Back</a>
+    </form>
 {% endblock %}
-
 {% block js %}
-  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+    <script src="{% static 'ietf/js/datepicker.js' %}"></script>
 {% endblock %}

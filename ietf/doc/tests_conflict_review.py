@@ -50,13 +50,13 @@ class ConflictReviewTests(TestCase):
         r = self.client.post(url,dict(create_in_state=""))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         self.assertEqual(Document.objects.filter(name='conflict-review-imaginary-independent-submission').count() , 0)
 
         r = self.client.post(url,dict(ad=""))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         self.assertEqual(Document.objects.filter(name='conflict-review-imaginary-independent-submission').count() , 0)
       
         # successful review start
@@ -147,7 +147,7 @@ class ConflictReviewTests(TestCase):
         r = self.client.post(url,dict(review_state=""))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # successful change to AD Review
         adrev_pk = str(State.objects.get(used=True, slug='adrev',type__slug='conflrev').pk)

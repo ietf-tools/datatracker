@@ -2,25 +2,28 @@
 
 {% block title %}Rolodex - Add{% endblock %}
 
-{% block breadcrumbs %}{{ block.super }} 
-  &raquo; <a href="../">Rolodex</a>
-  &raquo; Add
+{% block breadcrumbs %}{{ block.super }}
+    &raquo; <a href="../">Rolodex</a>
+    &raquo; Add
 {% endblock %}
 
 {% block content %}
-<h1>Adding {{ name }}</h1>
+    <h2>Adding {{ name }}</h2>
 
-<form action="" method="post" id="rolodex-add-form">{% csrf_token %}
-<div class="module">
-<h2>Rolodex - Add</h2>
-  <table class="full-width amstable">
-    {{ form.as_table }}
-  </table>
-</div> <!-- module -->
+    <form method="post" id="rolodex-add-form">{% csrf_token %}
+        <div class="module">
+            <h3>Rolodex - Add</h3>
+            <table class="full-width amstable">
+                <tbody>
+                <!-- [html-validate-disable-block element-required-attributes -- FIXME: as_table renders without scope] -->
+                {{ form.as_table }}
+                </tbody>
+            </table>
+        </div> <!-- module -->
 
 
-{% include "includes/buttons_submit.html" %}
+        {% include "includes/buttons_submit.html" %}
 
-</form>
+    </form>
 
 {% endblock %}

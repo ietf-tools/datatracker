@@ -9,6 +9,7 @@ from ietf.doc.models import Document, DocAlias, RelatedDocument, DocEvent, Telec
 from ietf.doc.expire import expirable_drafts
 from ietf.doc.utils import augment_docs_and_user_with_user_info
 from ietf.meeting.models import SessionPresentation, Meeting, Session
+from ietf.review.utils import review_assignments_to_list_for_docs
 
 def wrap_value(v):
     return lambda: v
@@ -112,7 +113,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
 
         if d.get_state_slug() != "rfc":
             d.milestones = [ m for (t, s, v, m) in sorted(((m.time, m.state.slug, m.desc, m) for m in d.groupmilestone_set.all() if m.state_id == "active")) ]
-            d.reviewed_by_teams = sorted(set(r.team.acronym for r in d.reviewrequest_set.filter(state__in=["assigned","accepted","part-completed","completed"]).distinct().select_related('team')))
+            d.review_assignments = review_assignments_to_list_for_docs([d]).get(d.name, [])
 
         e = d.latest_event_cache.get('started_iesg_process', None)
         d.balloting_started = e.time if e else datetime.datetime.min
@@ -144,7 +145,17 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         l.append(rel_rfc_aliases[rel.source_id])
         l.sort()
 
+def augment_docs_with_related_docs_info(docs):
+    """Augment all documents with related documents information.
+    At first, it handles only conflict review document page count to mirror the original document page count."""
 
+    for d in docs:
+        if d.type_id == 'conflrev':
+            if len(d.related_that_doc('conflrev')) != 1:
+                continue
+            originalDoc = d.related_that_doc('conflrev')[0].document
+            d.pages = originalDoc.pages
+            
 def prepare_document_table(request, docs, query=None, max_results=200):
     """Take a queryset of documents and a QueryDict with sorting info
     and return list of documents with attributes filled in for
@@ -164,6 +175,7 @@ def prepare_document_table(request, docs, query=None, max_results=200):
 
     fill_in_document_table_attributes(docs)
     augment_docs_and_user_with_user_info(docs, request.user)
+    augment_docs_with_related_docs_info(docs)
 
     meta = {}
 

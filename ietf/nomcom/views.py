@@ -57,7 +57,7 @@ def index(request):
         else:
             nomcom.url = None
         if year >= 2002:
-            nomcom.ann_url = "/nomcom/ann/#%4d" % year
+            nomcom.ann_url = "/nomcom/ann/#nomcom-%4d" % year
         else:
             nomcom.ann_url = None
     return render(request, 'nomcom/index.html',
@@ -1302,6 +1302,7 @@ def eligible(request, year, public=False):
     return render(request, 'nomcom/eligible.html',
                              {'nomcom':nomcom,
                               'year':year,
+                              'public':public,
                               'eligible_persons':eligible_persons,
                              })
 
@@ -1324,4 +1325,3 @@ def volunteers(request, year, public=False):
     decorate_volunteers_with_qualifications(volunteers,nomcom=nomcom)
     volunteers = sorted(volunteers,key=lambda v:(not v.eligible,v.person.last_name()))
     return render(request, 'nomcom/volunteers.html', dict(year=year, nomcom=nomcom, volunteers=volunteers, public=public))
-

@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'
+      - '*'
 
   workflow_dispatch:
     inputs:
@@ -11,18 +11,43 @@ on:
         description: 'Create Production Release'
         required: true
         type: boolean
+      skiptests:
+        description: 'Skip Tests'
+        required: true
+        type: boolean
+      dryrun:
+        description: 'Dry Run'
+        required: true
+        type: boolean
+      summary:
+        description: 'Summary'
+        required: false
+        type: string
+        default: ''
 
 jobs:
-  publish:
+  # -----------------------------------------------------------------
+  # PREPARE
+  # -----------------------------------------------------------------
+  prepare:
+    name: Prepare Release
     runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.buildvars.outputs.should_deploy }}
+      pkg_version: ${{ steps.buildvars.outputs.pkg_version }}
 
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
         
+    - name: Dry Run Notify
+      if: ${{ github.event.inputs.dryrun == 'true' }}
+      run: |
+        echo "::notice::This is a DRY RUN of a production release. No release will be created."
+
     - name: Get Next Version
-      if: ${{ github.event.inputs.publish == 'true' }}
+      if: ${{ github.event.inputs.publish == 'true' || github.event.inputs.dryrun == 'true' }}
       id: semver
       uses: ietf-tools/semver-action@v1
       with:
@@ -30,15 +55,13 @@ jobs:
         branch: main
         
     - name: Set Next Version Env Var
-      if: ${{ github.event.inputs.publish == 'true' }}
-      env:
-        NEXT_VERSION: ${{ steps.semver.outputs.next }}
+      if: ${{ github.event.inputs.publish == 'true' || github.event.inputs.dryrun == 'true' }}
       run: |
-        echo "NEXT_VERSION=$next" >> $GITHUB_ENV
+        echo "NEXT_VERSION=$nextStrict" >> $GITHUB_ENV
         
     - name: Create Draft Release
       uses: ncipollo/release-action@v1
-      if: ${{ github.event.inputs.publish == 'true' }}
+      if: ${{ github.event.inputs.publish == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         prerelease: true
         draft: false
@@ -49,26 +72,106 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Set Build Variables
+      id: buildvars
       run: |
         if [[ $NEXT_VERSION ]]; then
           echo "Using AUTO SEMVER mode: $NEXT_VERSION"
-          echo "SHOULD_DEPLOY=true" >> $GITHUB_ENV
-          echo "PKG_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
-          echo "PKG_VERSION_STRICT=${NEXT_VERSION#?}" >> $GITHUB_ENV
-          echo "::notice::Release created using branch $GITHUB_REF_NAME"
-        elif [[ "$GITHUB_REF" =~ ^refs/tags/v* ]]; then
+          echo "::set-output name=should_deploy::true"
+          echo "::set-output name=pkg_version::$NEXT_VERSION"
+          echo "::notice::Release $NEXT_VERSION created using branch $GITHUB_REF_NAME"
+        elif [[ "$GITHUB_REF" =~ ^refs/tags/* ]]; then
           echo "Using TAG mode: $GITHUB_REF_NAME"
-          echo "SHOULD_DEPLOY=true" >> $GITHUB_ENV
-          echo "PKG_VERSION=$GITHUB_REF_NAME" >> $GITHUB_ENV
-          echo "PKG_VERSION_STRICT=${GITHUB_REF_NAME#?}" >> $GITHUB_ENV
-          echo "::notice::Release created using tag $GITHUB_REF_NAME"
+          echo "::set-output name=should_deploy::true"
+          echo "::set-output name=pkg_version::$GITHUB_REF_NAME"
+          echo "::notice::Release $GITHUB_REF_NAME created using tag $GITHUB_REF_NAME"
         else
-          echo "Using TEST mode: v7.0.0-dev.$GITHUB_RUN_NUMBER"
-          echo "SHOULD_DEPLOY=false" >> $GITHUB_ENV
-          echo "PKG_VERSION=v3.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
-          echo "PKG_VERSION_STRICT=3.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
-          echo "::notice::Non-production build created using branch $GITHUB_REF_NAME"
+          echo "Using TEST mode: 8.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "::set-output name=should_deploy::false"
+          echo "::set-output name=pkg_version::8.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "::notice::Non-production build 8.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
         fi
+
+  # -----------------------------------------------------------------
+  # TESTS
+  # -----------------------------------------------------------------
+  tests:
+    name: Run Tests
+    if: ${{ github.event.inputs.skiptests == 'false' }}
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    
+    services:
+      db:
+        image: ghcr.io/ietf-tools/datatracker-db:latest
+        volumes:
+            - mariadb-data:/var/lib/mysql
+        env:
+            MYSQL_ROOT_PASSWORD: ietf
+            MYSQL_DATABASE: ietf_utf8
+            MYSQL_USER: django
+            MYSQL_PASSWORD: RkTkDPFnKpko
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Prepare for tests
+      run: |
+        chmod +x ./dev/tests/prepare.sh
+        sh ./dev/tests/prepare.sh
+        
+    - name: Ensure DB is ready
+      run: |
+        /usr/local/bin/wait-for db:3306 -- echo "DB ready"
+        
+    - name: Run all tests
+      run: |
+        echo "Running checks..."
+        ./ietf/manage.py check
+        echo "Validating migrations..."
+        MSG=$(ietf/manage.py makemigrations 2>&1)
+        if ! ( echo ${MSG} | grep -q "^No changes detected$") ; then
+          echo "Model changes without migrations found."
+          echo ${MSG}
+          exit 1
+        fi
+        echo "Running tests..."
+        ./ietf/manage.py test --settings=settings_sqlitetest
+        coverage xml
+
+    - name: Upload Coverage Results to Codecov
+      uses: codecov/codecov-action@v2.1.0
+      with:
+        files: coverage.xml
+        
+    - name: Convert Coverage Results
+      if: ${{ always() }}
+      run: |
+        mv latest-coverage.json coverage.json
+        
+    - name: Upload Coverage Results as Build Artifact
+      uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
+      with:
+        name: coverage
+        path: coverage.json
+        
+  # -----------------------------------------------------------------
+  # RELEASE
+  # -----------------------------------------------------------------
+  release:
+    name: Make Release
+    if: ${{ always() }}
+    needs: [tests, prepare]
+    runs-on: ubuntu-latest
+    env:
+      SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
+      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
         
     - name: Setup Node.js
       uses: actions/setup-node@v3.0.0
@@ -80,21 +183,37 @@ jobs:
       with:
         python-version: '3.x'
         
+    - name: Download a Coverage Results
+      if: ${{ github.event.inputs.skiptests == 'false' }}
+      uses: actions/download-artifact@v3.0.0
+      with:
+        name: coverage
+
     - name: Make Release Build
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        echo "Installing NPM dependencies..."
-        npm install --force
-        npm install -g grunt-cli
-        cd bootstrap
-        npm install
-        echo "Generating bootstrap files..."
-        grunt dist
-        cp -r dist/. ../ietf/static/ietf/bootstrap/
-        cd ..
-        echo "Setting version $PKG_VERSION_STRICT..."
-        sed -i -r -e "s/^__version__ += '.*'$/__version__ = '$PKG_VERSION_STRICT'/" ietf/__init__.py
+        echo "PKG_VERSION: $PKG_VERSION"
+        echo "GITHUB_SHA: $GITHUB_SHA"
+        echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
+        echo "Running build script..."
+        chmod +x ./dev/deploy/build.sh
+        sh ./dev/deploy/build.sh
+        echo "Setting version $PKG_VERSION..."
+        sed -i -r -e "s|^__version__ += '.*'$|__version__ = '$PKG_VERSION'|" ietf/__init__.py
+        sed -i -r -e "s|^__release_hash__ += '.*'$|__release_hash__ = '$GITHUB_SHA'|" ietf/__init__.py
+        sed -i -r -e "s|^__release_branch__ += '.*'$|__release_branch__ = '$GITHUB_REF_NAME'|" ietf/__init__.py
+
+    - name: Set Production Flags
+      if: ${{ env.SHOULD_DEPLOY == 'true' }}
+      run: |
+        echo "Setting production flags in settings.py..."
+        sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = False/' -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'production'/" ietf/settings.py
+        
+    - name: Make Release Tarball
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
         echo "Build release tarball..."
         mkdir -p /home/runner/work/release
         tar -czf /home/runner/work/release/release.tar.gz -X dev/deploy/exclude-patterns.txt .
@@ -102,27 +221,46 @@ jobs:
     - name: Update CHANGELOG
       id: changelog
       uses: Requarks/changelog-action@v1
-      if: env.SHOULD_DEPLOY == 'true'
+      if: ${{ env.SHOULD_DEPLOY == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         token: ${{ github.token }}
         tag: ${{ env.PKG_VERSION }}
         writeToFile: false
+
+    - name: Prepare Coverage Action
+      if: ${{ github.event.inputs.skiptests == 'false' }}
+      working-directory: ./dev/coverage-action
+      run: npm install
+        
+    - name: Process Coverage Stats + Chart
+      id: covprocess
+      uses: ./dev/coverage-action/
+      if: ${{ github.event.inputs.skiptests == 'false' }}
+      with:
+        token: ${{ github.token }}
+        tokenCommon: ${{ secrets.GH_COMMON_TOKEN }}
+        repoCommon: common
+        version: ${{needs.prepare.outputs.pkg_version}}
+        changelog: ${{ steps.changelog.outputs.changes }}
+        summary: ${{ github.event.inputs.summary }}
+        coverageResultsPath: coverage.json
+        histCoveragePath: historical-coverage.json
         
     - name: Create Release
       uses: ncipollo/release-action@v1
-      if: env.SHOULD_DEPLOY == 'true'
+      if: ${{ env.SHOULD_DEPLOY == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         allowUpdates: true
         draft: false
         tag: ${{ env.PKG_VERSION }}
         name: ${{ env.PKG_VERSION }}
-        body: ${{ steps.changelog.outputs.changes }}
-        artifacts: "/home/runner/work/release/release.tar.gz"
+        body: ${{ steps.covprocess.outputs.changelog }}
+        artifacts: "/home/runner/work/release/release.tar.gz,coverage.json,historical-coverage.json"
         token: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v2.3.1
-      if: env.SHOULD_DEPLOY == 'false'
+      if: ${{ env.SHOULD_DEPLOY == 'false' || github.event.inputs.dryrun == 'true' }}
       with:
         name: release
         path: /home/runner/work/release/release.tar.gz

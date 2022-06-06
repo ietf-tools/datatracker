@@ -27,7 +27,7 @@ This project includes a devcontainer configuration which automates the setup of 
 ### Initial Setup
         
 1. Launch [VS Code](https://code.visualstudio.com/)
-2. Under the **Extensions** tab, install the **Remote - Containers** ([ms-vscode-remote.remote-containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)) extension installed. On Windows, you also need the **Remote - WSL** ([ms-vscode-remote.remote-wsl](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl)) extension to take advantage of the WSL 2 *(Windows Subsystem for Linux)* native integration.
+2. Under the **Extensions** tab, ensure you have the **Remote - Containers** ([ms-vscode-remote.remote-containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)) extension installed. On Windows, you also need the **Remote - WSL** ([ms-vscode-remote.remote-wsl](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl)) extension to take advantage of the WSL 2 *(Windows Subsystem for Linux)* native integration.
 2. Open the top-level directory of the datatracker code you fetched above.
 3. A prompt inviting you to reopen the project in containers will appear in the bottom-right corner. Click the **Reopen in Container** button. If you missed the prompt, you can press `F1`, start typing `reopen in container` task and launch it.
 4. VS Code will relaunch in the dev environment and create the containers automatically.
@@ -37,7 +37,7 @@ This project includes a devcontainer configuration which automates the setup of 
 
 To return to your dev environment created above, simply open **VS Code** and select **File** > **Open Recent** and select the datatracker folder with the `[Dev Container]` suffix.
 
-You can also open the datatracker project folder and click the **Reopen in container** button when prompted. f you missed the prompt, you can press `F1`, start typing `reopen in container` task and launch it.
+You can also open the datatracker project folder and click the **Reopen in container** button when prompted. If you missed the prompt, you can press `F1`, start typing `reopen in container` task and launch it.
 
 ### Usage
 
@@ -87,10 +87,11 @@ You can also open the datatracker project folder and click the **Reopen in conta
     run
     ```
 
-    On Windows:
+    On Windows *(using Powershell)*:
     ```sh
-    cd docker
-    docker-compose -f docker-compose.yml -f docker-compose.extend.yml up -d
+    Copy-Item "docker/docker-compose.extend.yml" -Destination "docker/docker-compose.extend-custom.yml"
+    (Get-Content -path docker/docker-compose.extend-custom.yml -Raw) -replace 'CUSTOM_PORT','8000' | Set-Content -Path docker/docker-compose.extend-custom.yml
+    docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml up -d
     docker-compose exec app /bin/sh /docker-init.sh
     ```
 
@@ -112,7 +113,7 @@ To exit the dev environment, simply enter command `exit` in the shell.
 
 The containers will automatically be shut down on Linux / macOS.
 
-On Windows, type the command (from the `docker/` directory)
+On Windows, type the command
 
 ```sh
 docker-compose down
@@ -133,7 +134,6 @@ cleandb
 
 On Windows:
 ```sh
-cd docker
 docker-compose down -v
 docker-compose pull db
 docker-compose build --no-cache db
@@ -152,7 +152,6 @@ cleanall
 
 On Windows:
 ```sh
-cd docker
 docker-compose down -v --rmi all
 docker image prune 
 ```
@@ -165,6 +164,14 @@ docker-compose port db 3306
 ```
 
 ## Notes / Troubleshooting
+
+### Slow zsh prompt inside Docker
+
+On Windows, the zsh prompt can become incredibly slow because of the git status check displayed as part of the prompt. To remove this delay, run the command:
+
+```sh
+git config oh-my-zsh.hide-info 1
+```
 
 ### Windows .ics files incorrectly linked
 

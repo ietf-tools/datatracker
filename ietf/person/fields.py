@@ -85,7 +85,8 @@ class SearchablePersonsField(SearchableField):
     def make_select2_data(self, model_instances):
         # Include records needed by the initial value of the field plus any added 
         # via the extra_prefetch property.
-        prefetch_set = set(model_instances).union(set(self.extra_prefetch))  # eliminate duplicates 
+        prefetch_set = set(model_instances) if model_instances else set()
+        prefetch_set = prefetch_set.union(set(self.extra_prefetch))  # eliminate duplicates
         return select2_id_name(list(prefetch_set))
 
     def ajax_url(self):
@@ -145,4 +146,3 @@ class PersonEmailChoiceField(forms.ModelChoiceField):
             return email.address
         else:
             return "{} <{}>".format(email.person, email.address)
-

@@ -1,13 +1,3 @@
-  {% for field in replaces_form %}
-  <h3>Replacement information</h3>
-  <tr{% if field.errors %} class="error"{% endif %}>
-    <th>{{ field.label_tag }}</th>
-    <td>
-      {{ field }}
-      {% if field.help_text %}
-      <div class="helptext">{{ field.help_text }}</div>
-      {% endif %}
-      {{ field.errors }}
-    </td>
-  </tr>
-  {% endfor %}
+{% load django_bootstrap5 %}
+<h3 class="mt-5 mb-3">Replacement information</h3>
+{% bootstrap_form replaces_form %}

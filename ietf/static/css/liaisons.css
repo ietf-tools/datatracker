@@ -1,0 +1,27 @@
+/* TODO: this should use bs5 styling and ideally be integrated into the code */
+
+#id_purpose_text {
+    height: 100px;
+}
+
+#id_body {
+    height: 300px;
+}
+
+th.sort {
+    background-repeat: no-repeat;
+    background-position: right center;
+    cursor: pointer;
+}
+
+.noActionTaken, .actionTaken { padding: 2px 5px; }
+.actionTaken { border: 1px solid green; background-color: #ccffbb; }
+.noActionTaken { border: 1px solid red; background-color: #ffccbb; }
+
+input[id$='DELETE'] {
+    display: none;
+}
+
+.liaison-group-col {
+    min-width: 10em;
+}

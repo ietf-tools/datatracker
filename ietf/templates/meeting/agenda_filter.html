@@ -7,87 +7,77 @@ Optional parameters:
   customize_button_text - text to show on the "Customize" button (defaults to "Customize...")
 {% endcomment %}
 {% load agenda_filter_tags %}
-<div class="panel-group" id="accordion">
-    <div class="panel panel-default">
-      {% if not always_show %}
-      <div class="panel-heading">
-            <h4 class="panel-title">
-                <a data-toggle="collapse" data-parent="#accordion" href="#customize" id="agenda-filter-customize">
-                    <span class="fa fa-caret-down"></span> {% firstof customize_button_text "Customize..."%} 
-                </a>
-            </h4>
-        </div>
-      {% endif %}
-        <div id="customize" class="{% if not always_show %}panel-collapse collapse{% endif %}">
-            <span hidden {# options to pass to the JS - correspond to keys in opts object #}
-                  id="agenda-filter-options"
-                  data-always-show="{% firstof always_show False %}">
-            </span>
-            <div class="panel-body">
-
-                <p>
-                    You can customize the agenda view to show only selected sessions,
-                    by clicking on groups and areas in the table below.
-                    To be able to return to the customized view later, bookmark the resulting URL.
-                </p>
-
-                {% if filter_categories|length %}
-                    <p>Groups displayed in <b><i>italics</i></b> are BOFs.</p>
-
-                    {% with spacer_scale=5 %}
-                        {% with width_scale=filter_categories|agenda_width_scale:spacer_scale %}
-                            <table class="table table-condensed">
-                                <thead>
-                                <tr>
-                                    {% for fc in filter_categories %}
-                                        {% if not forloop.first %}
-                                            <th style="width:{% widthratio 1 width_scale 100 %}%"></th>
-                                        {% endif %}
-                                        {% for area in fc %}
-                                            <th style="width:{% widthratio spacer_scale width_scale 100 %}%">
-                                                {% if area.keyword %}
-                                                    <button class="agenda-filter-areaselectbtn btn btn-default btn-block pickview {{ area.keyword }}"
-                                                            data-filter-item="{{ area.keyword }}">
-                                                        {% firstof area.label area.keyword %}
-                                                    </button>
-                                                {% endif %}
-                                            </th>
-                                        {% endfor %}
-                                    {% endfor %}
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <tr>
-                                    {% for fc in filter_categories %}
-                                        {% if not forloop.first %} <td></td> {% endif %}
-                                        {% for p in fc %}
-                                            <td class="view{% if p.keyword %} {{ p.keyword }}{% endif %}">
-                                                <div class="btn-group-vertical btn-block">
-                                                    {% for button in p.children %}
-                                                        <div class="btn-group btn-group-xs btn-group-justified">
-                                                            <button class="agenda-filter-groupselectbtn btn btn-default pickview {{ button.keyword }}"
-                                                                    {% if button.toggled_by %}data-filter-keywords="{{ button.toggled_by|join:"," }}"{% endif %}
-                                                                    data-filter-item="{{ button.keyword }}">
-                                                                {% if button.is_bof %}
-                                                                    <i>{{ button.label }}</i>
-                                                                {% else %}
-                                                                    {{ button.label }}
-                                                                {% endif %}
-                                                            </button>
-                                                        </div>
-                                                    {% endfor %}
-                                                </div>
-                                            </td>                                       
-                                        {% endfor %}
-                                    {% endfor %}
-                                </tr>
-                                </tbody>
-                            </table>
-                        {% endwith %}
-                    {% endwith %}
+<div class="accordion mb-3" id="accordion">
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="heading">
+            <button class="accordion-button {% if not always_show %}collapsed{% endif %}"
+                    type="button"
+                    id="agenda-filter-customize"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#customize"
+                    aria-expanded="{% if not always_show %}false{% else %}true{% endif %}"
+                    aria-controls="customize">
+                {% firstof customize_button_text "Customize..." %}
+            </button>
+        </h2>
+        <div id="customize"
+             class="accordion-collapse collapse{% if always_show %} show{% endif %}"
+             aria-labelledby="heading"
+             data-bs-parent="#accordion">
+            <div class="accordion-body">
+                {# options to pass to the JS - correspond to keys in opts object #}
+                <span hidden
+                      id="agenda-filter-options"
+                      data-always-show="{% firstof always_show False %}"></span>
+                {% if filter_categories|length >= 1 and filter_categories|first and filter_categories|first|first %}
+                    <p>
+                        You can customize the agenda view to show only selected sessions,
+                        by clicking on groups and areas in the table below.
+                        To be able to return to the customized view later, bookmark the resulting URL.
+                    </p>
+                    <p>
+                        Groups in <i>italics</i> are BOFs.
+                    </p>
+                    <div class="row">
+                        {% for fc in filter_categories %}
+                            {% for area in fc %}
+                                <div class="col-1 ms-1">
+                                    <div class="row">
+                                        <button type="button"
+                                                class="agenda-filter-areaselectbtn btn btn-sm btn-outline-primary {% if area.label or area.keyword %}pickview {{ area.keyword }}{% endif %}"
+                                                data-filter-item="{{ area.keyword }}"
+                                                {% if not area.label and not area.keyword %}disabled{% endif %}>
+                                            {% if area.label or area.keyword %}
+                                                {% firstof area.label area.keyword %}
+                                            {% else %}
+                                                Other
+                                            {% endif %}
+                                        </button>
+                                    </div>
+                                    <div class="row view{% if p.keyword %} {{ p.keyword }}{% endif %}">
+                                        <div class="m-0 p-0 btn-group-vertical btn-group-sm"
+                                             role="group"
+                                             aria-label="{% firstof area.label area.keyword %}">
+                                            {% for group in area.children %}
+                                                <button type="button"
+                                                        class="agenda-filter-groupselectbtn overflow-hidden btn btn-sm btn-outline-secondary pickview {{ group.keyword }}"
+                                                        {% if group.toggled_by %}data-filter-keywords="{{ group.toggled_by|join:"," }}"{% endif %}
+                                                        data-filter-item="{{ group.keyword }}">
+                                                    {% if group.is_bof %}
+                                                        <i>{{ group.label|truncatewords:"3"|default:"Plenary" }}</i>
+                                                    {% else %}
+                                                        {{ group.label|truncatewords:"3"|default:"Plenary" }}
+                                                    {% endif %}
+                                                </button>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
                 {% else %}
-                    <blockquote><i>No WG / RG data available -- no WG / RG sessions have been scheduled yet.</i>
-                    </blockquote>
+                    <span class="text-danger">No session data available – no sessions have been scheduled yet.</span>
                 {% endif %}
             </div>
         </div>

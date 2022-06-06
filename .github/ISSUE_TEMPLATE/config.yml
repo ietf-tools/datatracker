@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Help / Questions
+    url: https://github.com/ietf-tools/datatracker/discussions/categories/help-questions
+    about: Need help? Have a question on setting up the project or its usage?
+  - name: Discuss New Ideas
+    url: https://github.com/ietf-tools/datatracker/discussions/categories/ideas
+    about: Submit ideas for new features or improvements to be discussed.

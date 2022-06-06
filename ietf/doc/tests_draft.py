@@ -106,14 +106,14 @@ class ChangeStateTests(TestCase):
         self.assertEqual(len(q('form select[name=state]')), 1)
         
         if next_states:
-            self.assertEqual(len(q('[type=submit][value="%s"]' % next_states[0].name)), 1)
+            self.assertEqual(len(q('[type=submit]:contains("%s")' % next_states[0].name)), 1)
 
             
         # faulty post
         r = self.client.post(url, dict(state=State.objects.get(used=True, type="draft", slug="active").pk))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state("draft-iesg"), first_state)
         self.assertCountEqual(draft.action_holders.all(), [ad])
@@ -148,7 +148,7 @@ class ChangeStateTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form [type=submit][value="%s"]' % first_state.name)), 1)
+        self.assertEqual(len(q('form [type=submit]:contains("%s")' % first_state.name)), 1)
 
     def test_pull_from_rfc_queue(self):
         ad = Person.objects.get(user__username="ad")
@@ -208,7 +208,7 @@ class ChangeStateTests(TestCase):
         r = self.client.post(url, dict(state="foobarbaz"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state("draft-iana-review"), first_state)
 
@@ -325,7 +325,7 @@ class EditInfoTests(TestCase):
         r = self.client.post(url, dict(ad="123456789"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.ad, prev_ad)
 
@@ -959,7 +959,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.post(url,dict(intended_std_level=""))
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         
         # change intended status level
         messages_before = len(outbox)
@@ -1043,7 +1043,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.post(url,dict())
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertTrue(q('.has-error'))
+        self.assertTrue(q('.is-invalid'))
 
         doc.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
         r = self.client.post(url,dict())
@@ -1093,7 +1093,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[id=id_shepherd]')),1)
+        self.assertEqual(len(q('form select[id=id_shepherd]')),1)
 
         # change the shepherd
         plain_email = Email.objects.get(person__name="Plain Man")
@@ -1115,7 +1115,7 @@ class IndividualInfoFormsTests(TestCase):
         self.assertTrue(any(['no changes have been made' in m.message for m in r.context['messages']]))
 
         # Remove the shepherd
-        r = self.client.post(url, dict(shepherd=''))
+        r = self.client.post(url, dict(shepherd=[]))
         self.assertEqual(r.status_code, 302)
         doc = Document.objects.get(name=self.docname)
         self.assertTrue(any(['Document shepherd changed to (None)' in x.desc for x in doc.docevent_set.filter(time=doc.time,type='added_comment')]))
@@ -1126,7 +1126,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.post(url, dict(shepherd=two_answers))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
     def test_doc_change_shepherd_email(self):
         doc = Document.objects.get(name=self.docname)
@@ -1215,7 +1215,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.post(url,dict(txt=test_file,reset_text="1"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(q('textarea')[0].text.strip().startswith("As required by RFC 4858"))
+        self.assertTrue(q('textarea')[0].text.strip().startswith("# Document Shepherd Writeup")) # TODO: This is a poor test of whether the reset did anything
 
     def test_edit_doc_extresources(self):
         url = urlreverse('ietf.doc.views_draft.edit_doc_extresources', kwargs=dict(name=self.docname))
@@ -1239,7 +1239,7 @@ class IndividualInfoFormsTests(TestCase):
             r = self.client.post(url, dict(resources=line, submit="1"))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue(q('.alert-danger'))
+            self.assertTrue(q('.invalid-feedback'))
 
         goodlines = """
             github_repo https://github.com/some/repo Some display text
@@ -1271,14 +1271,13 @@ class IndividualInfoFormsTests(TestCase):
         RoleFactory(name_id='secr', person=PersonFactory(), group=doc.group)
         
         url = urlreverse('ietf.doc.views_doc.edit_action_holders', kwargs=dict(name=doc.name))
-        
         login_testing_unauthorized(self, username, url)
         
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form input[id=id_reason]')), 1)
-        self.assertEqual(len(q('form input[id=id_action_holders]')), 1)
+        self.assertEqual(len(q('form select[id=id_action_holders]')), 1)
         for role_name in [
             'Author',
             'Responsible AD',
@@ -1296,7 +1295,7 @@ class IndividualInfoFormsTests(TestCase):
         def _test_changing_ah(action_holders, reason):
             r = self.client.post(url, dict(
                 reason=reason,
-                action_holders=','.join([str(p.pk) for p in action_holders]),
+                action_holders=[str(p.pk) for p in action_holders],
             ))
             self.assertEqual(r.status_code, 302)
             doc = Document.objects.get(name=self.docname)
@@ -1333,7 +1332,7 @@ class IndividualInfoFormsTests(TestCase):
         self.assertEqual(len(q('form textarea[id=id_note]')), 1)
         self.assertEqual(len(q('button:contains("Send")')), 1)
         for ah in doc.action_holders.all():
-            self.assertContains(r, escape(ah.plain_name()))
+            self.assertContains(r, escape(ah.name))
 
         empty_outbox()
         r = self.client.post(url, dict(note='this is my note'))  # note should be < 78 chars to avoid wrapping
@@ -1384,7 +1383,7 @@ class SubmitToIesgTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code,200)
             q = PyQuery(r.content)
-            self.assertEqual(len(q('form input[name="confirm"]')),1) 
+            self.assertEqual(len(q('form button[name="confirm"]')),1)
 
         url = urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=self.docname))
 
@@ -1783,7 +1782,7 @@ class ChangeStreamStateTests(TestCase):
                                   ))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
 class ChangeReplacesTests(TestCase):
     def setUp(self):
@@ -1838,7 +1837,6 @@ class ChangeReplacesTests(TestCase):
 
 
     def test_change_replaces(self):
-
         url = urlreverse('ietf.doc.views_draft.replaces', kwargs=dict(name=self.replacea.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -1867,7 +1865,7 @@ class ChangeReplacesTests(TestCase):
         # Post that says replaceboth replaces both base a and base b
         url = urlreverse('ietf.doc.views_draft.replaces', kwargs=dict(name=self.replaceboth.name))
         self.assertEqual(self.baseb.get_state().slug,'expired')
-        r = self.client.post(url, dict(replaces='%s,%s' % (self.basea.pk, self.baseb.pk)))
+        r = self.client.post(url, dict(replaces=[self.basea.pk, self.baseb.pk]))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
         self.assertEqual(Document.objects.get(name='draft-test-base-b').get_state().slug,'repl')
@@ -1878,7 +1876,7 @@ class ChangeReplacesTests(TestCase):
 
         # Post that undoes replaceboth
         empty_outbox()
-        r = self.client.post(url, dict(replaces=""))
+        r = self.client.post(url, dict(replaces=[]))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl') # Because A is still also replaced by replacea
         self.assertEqual(Document.objects.get(name='draft-test-base-b').get_state().slug,'expired')
@@ -1890,7 +1888,7 @@ class ChangeReplacesTests(TestCase):
         # Post that undoes replacea
         empty_outbox()
         url = urlreverse('ietf.doc.views_draft.replaces', kwargs=dict(name=self.replacea.name))
-        r = self.client.post(url, dict(replaces=""))
+        r = self.client.post(url, dict(replaces=[]))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'active')
         self.assertTrue('basea_author@' in outbox[-1]['To'])

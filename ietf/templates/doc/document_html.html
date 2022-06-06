@@ -3,99 +3,90 @@
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
-
 {% block pagehead %}
-  <link rel="alternate" type="application/atom+xml" title="Document changes" href="/feed/document-changes/{{ doc.name }}/">
-  <meta name="description" content="{{ doc.title }} {% if doc.get_state_slug == "rfc" %}(RFC {{ rfc_number }}{% if published %}, {{ published.time|date:"F Y" }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:", " }}{% endif %}){% else %}(Internet-Draft, {{ doc.time|date:"Y" }}){% endif %}">
+    <link rel="alternate"
+          type="application/atom+xml"
+          title="Document changes"
+          href="/feed/document-changes/{{ doc.name }}/">
+    <meta name="description"
+          {% if doc.get_state_slug == "rfc" %}
+              content="{{ doc.title }} (RFC {{ doc.rfc_number }}{% if published %}, {{ published.time|date:"F Y" }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:", " }}{% endif %})"
+          {% else %}
+              content="{{ doc.title }} (Internet-Draft, {{ doc.time|date:"Y" }})"
+          {% endif %}>
 {% endblock %}
-
 {% block morecss %}
-
-.bgwhite  { background-color: white; }
-.bgred    { background-color: #F44; }
-.bggrey   { background-color: #666; }
-.bgbrown  { background-color: #840; }            
-.bgorange { background-color: #FA0; }
-.bgyellow { background-color: #EE0; }
-.bgmagenta{ background-color: #F4F; }
-.bgblue   { background-color: #66F; }
-.bgcyan   { background-color: #4DD; }
-.bggreen  { background-color: #4F4; }
-
-.draftcontent { margin-top:0px !important;}
-
+    .bgwhite  { background-color: white; }
+    .bgred    { background-color: #F44; }
+    .bggrey   { background-color: #666; }
+    .bgbrown  { background-color: #840; }
+    .bgorange { background-color: #FA0; }
+    .bgyellow { background-color: #EE0; }
+    .bgmagenta{ background-color: #F4F; }
+    .bgblue   { background-color: #66F; }
+    .bgcyan   { background-color: #4DD; }
+    .bggreen  { background-color: #4F4; }
+    .draftcontent { margin-top:1em;}
 {% endblock %}
-
 {% block title %}
-  {% if doc.get_state_slug == "rfc" %}
-    RFC {{ doc.rfc_number }} - {{ doc.title }}
-  {% else %}
-    {{ doc.name }}-{{ doc.rev }}
-  {% endif %}
-{% endblock %}
-
-{% block bodyAttrs %}style="padding-top: 0;"{% endblock %}
-
-{% block content %}
-  {% origin %}
- 
-  <div class="rfcmarkup">
-    <div class="noprint" style="height: 6px;">
-      <div onmouseover="this.style.cursor='pointer';"
-         onclick="showLegend();"
-         onmouseout="hideLegend()"
-         style="height: 6px; min-height: 6px; width: 96ex; position: absolute; margin-top:0; "
-         class="meta-info {{doccolor}}"
-         title="Click for colour legend." >&nbsp;</div>
-      <div id="legend"
-           class="meta-info noprint pre legend"
-           style="position:absolute; top: 4px; left: 4ex; visibility:hidden; background-color: white; padding: 4px 9px 5px 7px; border: solid #345 1px; "
-           onmouseover="showLegend();"
-           onmouseout="hideLegend();">
-      </div>
-    </div>
-
-    {% if doc.meta %}
-      <div class="noprint">
-	 <pre class="pre meta-info">{{ doc.supermeta|safe }}
-
-{{ doc.meta|safe }}</pre>
-      </div>
+    {% if doc.get_state_slug == "rfc" %}
+        RFC {{ doc.rfc_number }} - {{ doc.title }}
+    {% else %}
+        {{ doc.name }}-{{ doc.rev }}
     {% endif %}
-
-    <div class="draftcontent">
-    {{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}
-    </div>
-
-  </div>
-
 {% endblock %}
-
+{% block content %}
+<!-- [html-validate-disable-block no-inline-style, attr-quotes, void-style -- FIXME: it's everywhere in this old code] -->
+    {% origin %}
+    <div class="rfcmarkup">
+        <div class="noprint" style="height: .5em;">
+            <div onmouseover="this.style.cursor='pointer';"
+                 onclick="showLegend();"
+                 onmouseout="hideLegend()"
+                 style="height: .5em; min-height: .5em; width: 96ex; "
+                 class="meta-info {{ doccolor }}"
+                 title="Click for color legend.">
+            </div>
+            <div id="legend"
+                 class="meta-info noprint pre legend"
+                 style="position:absolute; top: 4px; left: 4ex; visibility:hidden; background-color: white; padding: 4px 9px 5px 7px; border: solid #345 1px; "
+                 onmouseover="showLegend();"
+                 onmouseout="hideLegend();">
+            </div>
+        </div>
+        {% if doc.meta %}
+            <div class="noprint">
+                <pre class="pre meta-info">{{ doc.supermeta|safe }}
+{{ doc.meta|safe }}</pre>
+            </div>
+        {% endif %}
+        <div class="draftcontent">{{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}</div>
+    </div>
+{% endblock %}
 {% block js %}
-    <script type="text/javascript"><!--
-    var legend_html = "Colour legend:<br /> \
-     <table> \
-        <tr><td>Unknown:</td>                   <td><span class='cplate bgwhite'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Draft:</td>                     <td><span class='cplate bgred'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Informational:</td>             <td><span class='cplate bgorange'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Experimental:</td>              <td><span class='cplate bgyellow'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Best Common Practice:</td>      <td><span class='cplate bgmagenta'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Proposed Standard:</td>         <td><span class='cplate bgblue'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Draft Standard (old designation):</td> <td><span class='cplate bgcyan'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Internet Standard:</td>         <td><span class='cplate bggreen'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Historic:</td>                  <td><span class='cplate bggrey'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Obsolete:</td>                  <td><span class='cplate bgbrown'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-    </table>";
-    function showLegend() {
-        var elem = document.getElementById('legend');
-        elem.innerHTML = legend_html
-        elem.style.visibility='visible';
-    }
-    function hideLegend() {
-        var elem = document.getElementById('legend');
-        elem.style.visibility='hidden';
-        elem.innerHTML = "";
-    }
-    // -->
+    <script>
+        var legend_html = 'Color legend:<br> \
+        <table> \
+        <tr><td>Unknown:</td>                   <td><span class="bgwhite">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Draft:</td>                     <td><span class="bgred">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Informational:</td>             <td><span class="bgorange">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Experimental:</td>              <td><span class="bgyellow">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Best Common Practice:</td>      <td><span class="bgmagenta">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Proposed Standard:</td>         <td><span class="bgblue">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Draft Standard (old designation):</td> <td><span class="bgcyan">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Internet Standard:</td>         <td><span class="bggreen">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Historic:</td>                  <td><span class="bggrey">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Obsolete:</td>                  <td><span class="bgbrown">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        </table>';
+        function showLegend() {
+            var elem = document.getElementById('legend');
+            elem.innerHTML = legend_html
+            elem.style.visibility='visible';
+        }
+        function hideLegend() {
+            var elem = document.getElementById('legend');
+            elem.style.visibility='hidden';
+            elem.innerHTML = "";
+        }
     </script>
 {% endblock %}

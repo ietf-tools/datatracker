@@ -1,0 +1,44 @@
+<ul class="nav nav-tabs my-3">
+    <li class="nav-item">
+        <a class="nav-link
+                  {% if active == 'agenda' %}
+                      active
+                  {% endif %}"
+           href="{% url 'ietf.iesg.views.agenda' %}">
+            IESG Agenda
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link
+                  {% if active == 'agenda_documents' %}
+                      active
+                  {% endif %}"
+           href="{% url 'ietf.iesg.views.agenda_documents' %}">
+            Docs on future agendas
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link
+            {% if active == 'discusses' %}active{% endif %}"
+            href="{% url 'ietf.iesg.views.discusses' %}">DISCUSS positions
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link
+                  {% if active == 'past_documents' %}
+                      active
+                  {% endif %}"
+           href="{% url 'ietf.iesg.views.past_documents' %}">
+            Docs on recent agendas
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link
+                  {% if active == 'photos' %}
+                      active
+                  {% endif %}"
+           href="{% url 'ietf.iesg.views.photos' %}">
+            IESG Photos
+        </a>
+    </li>
+</ul>

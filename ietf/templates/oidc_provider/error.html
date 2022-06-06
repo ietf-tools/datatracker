@@ -3,11 +3,14 @@
 {% load static %}
 {% block title %}404 Not Found{% endblock %}
 {% block content %}
-
-  <img class="ietflogo" src="{% static 'ietf/images/ietflogo.png' %}" alt="IETF" style="width: 10em">
-  <div class='alert'>
-
-<h3>{{ error }}</h3>
-<p>{{ description }}</p>
-
+    <img class="col-2 mb-5"
+         src="{% static 'ietf/images/ietf-logo.svg' %}"
+         alt="IETF">
+    <div class="alert alert-warning my-3">
+        <h2>{{ error }}</h2>
+        <hr>
+        <p class="mb-0">
+            {{ description }}
+        </p>
+    </div>
 {% endblock %}

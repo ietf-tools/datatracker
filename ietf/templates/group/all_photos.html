@@ -1,66 +1,20 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin static %}
-
-{% block morecss %}
-.well { max-width: 150px;}
-{% endblock %}
-
-{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
-
-{% block title %}Chair Photos{% endblock %}
-
+{% block title %}{{ group_type | upper }} {{ role }} photos{% endblock %}
 {% block content %}
-  {% origin %}
-  {% load ietf_filters %}
-
-  <h1>{{ group_type | upper }} {{ role }} Photos</h1>
-
-  {% regroup roles by last_initial as alphabet_blocks %}
-  <div class="col-md-11">
-  {% for letter in alphabet_blocks %}
-   <div class="row anchor-target" id="{{letter.grouper}}">
-    <div class="panel panel-default">
-      <div class="panel-heading">{{letter.grouper}}</div>
-      <div class="panel-body">
-        <ul class="list-inline">
+    {% origin %}
+    {% load ietf_filters %}
+    <h1>{{ group_type | upper }} {{ role }} photos</h1>
+    {% regroup roles|dictsort:"last_initial" by last_initial as alphabet_blocks %}
+    {% for letter in alphabet_blocks %}
+        <h2 class="mt-4" {% if letter.grouper|slugify %}id="{{ letter.grouper|slugify }}"{% endif %}>{{ letter.grouper }}</h2>
         {% regroup letter.list by person as person_groups %}
-        {% for person_with_groups in person_groups %}
-         <li>
-         <div class="well photo-thumbnail">
-	   <a href="{% url 'ietf.person.views.profile' email_or_name=person_with_groups.grouper.name %}">
-	     <div>
-	     {% if person_with_groups.grouper.photo_thumb %}
-	       <img width=100 src="{{person_with_groups.grouper.photo_thumb.url}}" alt="Photo of {{person_with_groups.grouper.name}}"/>
-	     {% else %}
-	       <img width=100 src="{{ MEDIA_URL }}photo/nopictureavailable.jpg" alt="No picture available"/>
-	     {% endif %}
-	     </div>
-	     <div class="photo-name">
-	       <strong>{{person_with_groups.grouper.plain_name}}</strong>
-	     </div>
-	   </a>
-           <div class="photo-role-list">
-           {% for role in person_with_groups.list %}   
-	     <a href="{% url 'ietf.group.views.group_home' acronym=role.group.acronym %}">{{role.group.acronym}}</a>
-           {% endfor %}
-           </div>
-         </div>
-         </li>
-        {% endfor %}
-        </ul>
-      </div>
-    </div>
-   </div>
-  {% endfor %}
-  </div>
-
-  <div class="col-md-1 hidden-print bs-docs-sidebar" id="affix">
-    <ul class="nav nav-pills nav-stacked small fixed" data-spy="affix">
-      {% for letter in alphabet_blocks %}
-        <li><a href="#{{letter.grouper}}">{{letter.grouper}}</a></li>
-      {% endfor %}
-    </ul>
-  </div>
-
+        {# keep in sync with group_photos.html #}
+        <div class="mt-0 row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-4 row-cols-xxl-5 g-2">
+            {% for person_with_groups in person_groups %}
+                <div class="col">{% include "person/photo.html" with person=person_with_groups.grouper groups=person_with_groups.list%}</div>
+            {% endfor %}
+        </div>
+    {% endfor %}
 {% endblock %}

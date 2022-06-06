@@ -1,0 +1,19 @@
+{# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
+{% load static %}
+<link rel="apple-touch-icon"
+      sizes="180x180"
+      href="{% if server_mode and server_mode == 'production' %}{% static 'ietf/images/ietf-logo-nor-180.png' %}{% else %}{% static 'ietf/images/ietf-logo-nor-180-dev.png' %}{% endif %} ">
+<link rel="icon"
+      sizes="32x32"
+      href="{% if server_mode and server_mode == 'production' %}{% static 'ietf/images/ietf-logo-nor-32.png' %}{% else %}{% static 'ietf/images/ietf-logo-nor-32-dev.png' %}{% endif %} ">
+<link rel="icon"
+      sizes="16x16"
+      href="{% if server_mode and server_mode == 'production' %}{% static 'ietf/images/ietf-logo-nor-16.png' %}{% else %}{% static 'ietf/images/ietf-logo-nor-16-dev.png' %}{% endif %} ">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon"
+      href="{% static 'ietf/images/ietf-logo-nor-mask.svg' %}"
+      {% if server_mode and server_mode == 'production' %}color="#ffffff"{% else %}color="#ffc4c4"{% endif %}>
+<meta name="msapplication-TileColor"
+      {% if server_mode and server_mode == 'production' %}content="#ffffff"{% else %}color="#ffc4c4"{% endif %}>
+<meta name="theme-color"
+      {% if server_mode and server_mode == 'production' %}content="#ffffff"{% else %}color="#ffc4c4"{% endif %}>

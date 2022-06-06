@@ -14,7 +14,7 @@ from django.template.defaultfilters import striptags
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.views.decorators.csrf import csrf_exempt
-
+from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 
@@ -527,7 +527,7 @@ def lastcalltext(request, name):
     if not existing:
         existing = generate_last_call_announcement(request, doc)
         
-    form = LastCallTextForm(initial=dict(last_call_text=existing.text))
+    form = LastCallTextForm(initial=dict(last_call_text=escape(existing.text)))
 
     if request.method == 'POST':
         if "save_last_call_text" in request.POST or "send_last_call_request" in request.POST:
@@ -574,7 +574,7 @@ def lastcalltext(request, name):
             e.save()
 
             # make sure form has the updated text
-            form = LastCallTextForm(initial=dict(last_call_text=e.text))
+            form = LastCallTextForm(initial=dict(last_call_text=escape(e.text)))
 
 
     s = doc.get_state("draft-iesg")
@@ -612,7 +612,7 @@ def ballot_writeupnotes(request, name):
     if not existing:
         existing = generate_ballot_writeup(request, doc)
         
-    form = BallotWriteupForm(initial=dict(ballot_writeup=existing.text))
+    form = BallotWriteupForm(initial=dict(ballot_writeup=escape(existing.text)))
 
     if request.method == 'POST' and "save_ballot_writeup" in request.POST or "issue_ballot" in request.POST:
         form = BallotWriteupForm(request.POST)
@@ -727,7 +727,7 @@ def ballot_rfceditornote(request, name):
     if not existing or (existing.text == ""):
         existing = generate_ballot_rfceditornote(request, doc)
 
-    form = BallotRfcEditorNoteForm(auto_id=False, initial=dict(rfc_editor_note=existing.text))
+    form = BallotRfcEditorNoteForm(auto_id=False, initial=dict(rfc_editor_note=escape(existing.text)))
 
     if request.method == 'POST' and "save_ballot_rfceditornote" in request.POST:
         form = BallotRfcEditorNoteForm(request.POST)
@@ -791,7 +791,7 @@ def ballot_approvaltext(request, name):
     if not existing:
         existing = generate_approval_mail(request, doc)
 
-    form = ApprovalTextForm(initial=dict(approval_text=existing.text))
+    form = ApprovalTextForm(initial=dict(approval_text=escape(existing.text)))
 
     if request.method == 'POST':
         if "save_approval_text" in request.POST:
@@ -813,7 +813,7 @@ def ballot_approvaltext(request, name):
             e.save()
 
             # make sure form has the updated text
-            form = ApprovalTextForm(initial=dict(approval_text=e.text))
+            form = ApprovalTextForm(initial=dict(approval_text=escape(e.text)))
 
     can_announce = doc.get_state("draft-iesg").order > 19
     need_intended_status = ""

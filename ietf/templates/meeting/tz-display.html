@@ -1,0 +1,48 @@
+{% comment %}
+Include this to display a timezone select widget. Must also include timezone.js as a script.
+  {% import "meeting/tz-display.html" with meeting_timezone="America/Halifax" id_suffix="" minimal=False only %}
+
+Must provide the meeting_timezone option, which is the timezone to be used when the "Meeting" radio is
+selected. If id_suffix is given, it is appended to the element IDs and radio input names to differentiate
+multiple instances of the widget. If minimal is True, only the Meeting/Local/UTC radios are shown and no
+arbitrary timezone select input is included in the widget.
+
+As long as id_suffix is different, should allow for as many copies of the widget on a page as you'd like.
+{% endcomment %}
+{% load origin %}
+{% origin %}
+{% firstof id_suffix "" as suffix %}
+<div class="tz-display flex-fill {% if minimal %}btn-group btn-group-sm my-2{% else %}input-group my-3{% endif %} flex-wrap">
+    {% if not minimal %}<label class="input-group-text border-primary bg-white fw-bold">Time zone:</label>{% endif %}
+    {% if meeting_timezone is not None %}
+        <input type="radio"
+               name="tzradio{{ suffix }}"
+               class="btn-check tz-select"
+               id="meeting-timezone{{ suffix }}"
+               value="{{ meeting_timezone }}">
+        <label class="btn btn-outline-primary" for="meeting-timezone{{ suffix }}">Meeting</label>
+    {% endif %}
+    <input type="radio"
+           name="tzradio{{ suffix }}"
+           class="btn-check tz-select"
+           id="local-timezone{{ suffix }}"
+           value="local">
+    <label class="btn btn-outline-primary" for="local-timezone{{ suffix }}">Local</label>
+    <input type="radio"
+           name="tzradio{{ suffix }}"
+           class="btn-check tz-select"
+           id="utc-timezone{{ suffix }}"
+           value="UTC">
+    <label class="btn btn-outline-primary" for="utc-timezone{{ suffix }}">UTC</label>
+    {% if not minimal %}
+        <label aria-label="Select timezone" class="d-none" for="timezone-select{{ id_suffix }}"></label>
+        <select id="timezone-select{{ suffix }}"
+                class="tz-select select2-field form-select border-primary"
+                data-max-entries="1" data-minimum-input-length="0">
+            {# Avoid blank while loading. JavaScript replaces the option list after init. #}
+            <option selected>
+                {{ meeting_timezone }}
+            </option>
+        </select>
+    {% endif %}
+</div>

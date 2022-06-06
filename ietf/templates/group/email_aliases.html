@@ -1,23 +1,50 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
-
-{% block morecss %}
-td.aliasname { white-space:nowrap;}
+{% load origin textfilters static %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-
-{% block title %}Group email aliases{% if group %} for {{group.acronym}}{% endif %}{% endblock %}
-
+{% block title %}
+    Group email aliases
+    {% if group %}for {{ group.acronym }}{% endif %}
+{% endblock %}
 {% block content %}
-  {% origin %}
-<h1>Group email aliases{% if group %} for {{group.acronym}}{% endif %}</h1>
-{% regroup aliases|dictsort:"acronym" by acronym as alias_list %}
-<table class="ietf-table">
-{% for alias in alias_list %}
-  {% cycle 'evenrow' 'oddrow' as alternator silent %}
-  {% for item in alias.list %}
-    <tr class={{alternator}}><td class="aliasname">{{alias.grouper}}{{item.alias_type|default:''}}@{{ietf_domain}}</td><td>{{item.expansion}}</td></tr>
-  {% endfor %}
-{% endfor %}
-</table>
+    {% origin %}
+    <h1>
+        Group email aliases
+        {% if group %}
+            <br>
+            <span class="text-muted">{{ group.acronym }}</span>
+        {% endif %}
+    </h1>
+    {% regroup aliases|dictsort:"acronym" by acronym as alias_list %}
+    <table class="table table-striped table-sm tablesorter my-3">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="alias">Alias</th>
+                <th scope="col" data-sort="expansion">Expansion</th>
+            </tr>
+        </thead>
+        {% if alias_list %}
+            <tbody>
+                {% for alias in alias_list %}
+                    {% for item in alias.list %}
+                        <tr>
+                            <td>
+                                {% with alias.grouper|add:item.alias_type|default:'' as x %}
+                                    {% with x|add:"@"|add:ietf_domain as email %}
+                                        {{ email|linkify }}
+                                    {% endwith %}
+                                {% endwith %}
+                            </td>
+                            <td>{{ item.expansion|linkify }}</td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        {% endif %}
+    </table>
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2020, All Rights Reserved
+# Copyright The IETF Trust 2009-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -66,9 +66,9 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, group.parent.name)
         self.assertContains(r, group.acronym)
         self.assertContains(r, group.name)
-        self.assertContains(r, escape(group.ad_role().person.plain_name()))
+        self.assertContains(r, escape(group.ad_role().person.name))
 
-        for t in ('rg','area','ag', 'rag', 'dir','review','team','program','iabasg','adm'):
+        for t in ('rg','area','ag', 'rag', 'dir','review','team','program','iabasg','adm','rfcedtyp'):
             g = GroupFactory.create(type_id=t,state_id='active') 
             if t in ['dir','review']:
                 g.parent = GroupFactory.create(type_id='area',state_id='active')
@@ -84,7 +84,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, "Directorate")
         self.assertContains(r, "AG")
 
-        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','rag','area','dir','review','team','program','adhoc','ise','adm','iabasg']).values_list('slug',flat=True):
+        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','rag','area','dir','review','team','program','adhoc','ise','adm','iabasg','rfcedtyp']).values_list('slug',flat=True):
             with self.assertRaises(NoReverseMatch):
                 url=urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type=slug))
 
@@ -137,7 +137,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, group.acronym)
         self.assertContains(r, group.name)
-        self.assertContains(r, escape(group.ad_role().person.plain_name()))
+        self.assertContains(r, group.ad_role().person.plain_name())
         self.assertContains(r, chair.address)
         self.assertContains(r, "This is a charter.")
 
@@ -146,7 +146,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, group.acronym)
         self.assertContains(r, group.name)
-        self.assertContains(r, escape(group.ad_role().person.plain_name()))
+        self.assertContains(r, group.ad_role().person.plain_name())
         self.assertContains(r, chair.address)
         self.assertContains(r, "This is a charter.")
 
@@ -226,7 +226,7 @@ class GroupPagesTests(TestCase):
             self.assertContains(r, draft2.name)
             self.assertContains(r, draft3.name)
             for ah in draft3.action_holders.all():
-                self.assertContains(r, escape(ah.plain_name()))
+                self.assertContains(r, escape(ah.name))
             self.assertContains(r, 'for 173 days', count=1)  # the old_dah should be tagged
 
         # Make sure that a logged in user is presented with an opportunity to add results to their community list
@@ -347,9 +347,20 @@ class GroupPagesTests(TestCase):
         for url in [group.about_url(),] + group_urlreverse_list(group, 'ietf.group.views.group_about'):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            
+
             for role in group.role_set.all():
-                self.assertContains(r, escape(role.person.plain_name()))
+                self.assertContains(r, escape(role.person.name))
+
+    def test_group_about_nosubscribe(self):
+        group = GroupFactory()
+        self.assertEqual(group.list_subscribe, '')
+        url = urlreverse('ietf.group.views.group_about', kwargs=dict(acronym=group.acronym))
+        r = self.client.get(url)
+        self.assertNotContains(r,'To subscribe')
+        group.list_subscribe='foo@example.com'
+        group.save()
+        r = self.client.get(url)
+        self.assertContains(r,'To subscribe')
 
     def test_materials(self):
         group = GroupFactory(type_id="team", acronym="testteam", name="Test Team", state_id="active")
@@ -422,7 +433,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         chairs = Role.objects.filter(group__type='wg', group__state='active', name_id='chair')
-        self.assertEqual(len(q('div.photo-thumbnail img')), chairs.count())
+        self.assertEqual(len(q('.photo')), chairs.count())
 
     def test_wg_photos(self):
         GroupFactory(acronym='mars')
@@ -433,7 +444,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         roles = Role.objects.filter(group__acronym='mars')
-        self.assertEqual(len(q('div.photo-thumbnail img')), roles.count())
+        self.assertEqual(len(q('.photo')), roles.count())
 
     def test_group_photos(self):
         url = urlreverse("ietf.group.views.group_photos", kwargs={'acronym':'iab'})
@@ -441,7 +452,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         roles = Role.objects.filter(group__acronym='iab')
-        self.assertEqual(len(q('div.photo-thumbnail img')), roles.count())
+        self.assertEqual(len(q('.photo')), roles.count())
 
     def test_nonactive_group_badges(self):
         concluded_group = GroupFactory(state_id='conclude')
@@ -449,13 +460,13 @@ class GroupPagesTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(q('.label-warning').text(),"Concluded WG")
+        self.assertEqual(q('.badge.bg-warning').text(),"Concluded WG")
         replaced_group = GroupFactory(state_id='replaced')
         url = urlreverse("ietf.group.views.history",kwargs={'acronym':replaced_group.acronym})
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(q('.label-warning').text(),"Replaced WG")
+        self.assertEqual(q('.badge.bg-warning').text(),"Replaced WG")
 
 
 class GroupEditTests(TestCase):
@@ -487,33 +498,33 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(acronym="foobarbaz")) # No name
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         self.assertEqual(len(Group.objects.filter(type="wg")), num_wgs)
 
         # acronym contains non-alphanumeric
         r = self.client.post(url, dict(acronym="test...", name="Testing WG", state=bof_state.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # acronym contains hyphen
         r = self.client.post(url, dict(acronym="test-wg", name="Testing WG", state=bof_state.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # acronym too short
         r = self.client.post(url, dict(acronym="t", name="Testing WG", state=bof_state.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # acronym doesn't start with an alpha character
         r = self.client.post(url, dict(acronym="1startwithalpha", name="Testing WG", state=bof_state.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # no parent group given
         r = self.client.post(url, dict(acronym="testwg", name="Testing WG", state=bof_state.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # Ok creation
         r = self.client.post(
@@ -564,7 +575,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(name="Test", acronym=group.parent.acronym))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # try elevating BOF to WG
         group.state_id = "bof"
@@ -573,7 +584,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(name="Test", acronym=group.acronym))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         self.assertEqual(Group.objects.get(acronym=group.acronym).state_id, "bof")
 
@@ -622,14 +633,14 @@ class GroupEditTests(TestCase):
         self.assertEqual(len(q('form select[name=parent]')), 1)
         self.assertEqual(len(q('form input[name=acronym]')), 1)
         for role_slug in group.used_roles or group.features.default_used_roles:
-            self.assertEqual(len(q('form input[name=%s_roles]'%role_slug)),1)
+            self.assertEqual(len(q('form select[name=%s_roles]'%role_slug)),1)
 
         # faulty post
         Group.objects.create(name="Collision Test Group", acronym="collide")
         r = self.client.post(url, dict(acronym="collide"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # create old acronym
         group.acronym = "oldmars"
@@ -642,7 +653,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(acronym="oldmars"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         
         # edit info
         with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
@@ -658,12 +669,12 @@ class GroupEditTests(TestCase):
                                   ad=ad.pk,
                                   state=state.pk,
                                   ad_roles=ad.email().address,
-                                  chair_roles="aread@example.org, ad1@example.org",
-                                  secr_roles="aread@example.org, ad1@example.org, ad2@example.org",
-                                  liaison_contact_roles="ad1@example.org",
-                                  liaison_cc_contact_roles="aread@example.org, ad2@example.org",
-                                  techadv_roles="aread@example.org",
-                                  delegate_roles="ad2@example.org",
+                                  chair_roles=["aread@example.org", "ad1@example.org"],
+                                  secr_roles=["aread@example.org", "ad1@example.org", "ad2@example.org"],
+                                  liaison_contact_roles=["ad1@example.org"],
+                                  liaison_cc_contact_roles=["aread@example.org", "ad2@example.org"],
+                                  techadv_roles=["aread@example.org"],
+                                  delegate_roles=["ad2@example.org"],
                                   list_email="mars@mail",
                                   list_subscribe="subscribe.mars",
                                   list_archive="archive.mars",
@@ -720,7 +731,7 @@ class GroupEditTests(TestCase):
             r = self.client.post(url, dict(resources=line, submit="1"))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue(q('.alert-danger'))
+            self.assertTrue(q('.is-invalid'))
 
         goodlines = """
             github_repo https://github.com/some/repo Some display text
@@ -757,9 +768,9 @@ class GroupEditTests(TestCase):
             self.assertEqual(r.status_code, 200)
 
             q = PyQuery(r.content)
-            self.assertEqual(len(q('div#content > form input[name=%s]' % field_name)), 1)
+            self.assertEqual(len(q('div#content > form input[name=%s], div#content > form select[name=%s]' % (field_name, field_name))), 1)
             for prohibited_name in prohibited_form_names:
-                self.assertEqual(len(q('div#content > form input[name=%s]' % prohibited_name)), 0)
+                self.assertEqual(len(q('div#content > form input[name=%s], div#content > form select[name=%s]' % (prohibited_name, prohibited_name))), 0)
 
             # edit info
             r = self.client.post(url, {field_name: field_content})
@@ -770,7 +781,7 @@ class GroupEditTests(TestCase):
             if field_name.endswith('_roles'):
                 role_name = field_name[:-len('_roles')]
                 self.assertSetEqual(
-                    {fc.strip() for fc in field_content.split(',')},
+                    {fc.strip() for fc in field_content},
                     set(group.role_set.filter(name=role_name).values_list('email', flat=True))
                 )
             else:
@@ -784,8 +795,8 @@ class GroupEditTests(TestCase):
         # Test various fields
         _test_field(group, 'name', 'Mars Not Special Interest Group', ['acronym'])
         _test_field(group, 'list_email', 'mars@mail', ['name'])
-        _test_field(group, 'liaison_contact_roles', 'user@example.com, other_user@example.com', ['list_email'])
-        _test_field(group, 'liaison_cc_contact_roles', 'user@example.com, other_user@example.com', ['liaison_contact'])
+        _test_field(group, 'liaison_contact_roles', ['user@example.com', 'other_user@example.com'], ['list_email'])
+        _test_field(group, 'liaison_cc_contact_roles', ['user@example.com', 'other_user@example.com'], ['liaison_contact'])
 
     def test_edit_reviewers(self):
         group=GroupFactory(type_id='review',parent=GroupFactory(type_id='area'))
@@ -808,7 +819,7 @@ class GroupEditTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=reviewer_roles]')), 1)
+        self.assertEqual(len(q('form select[name=reviewer_roles]')), 1)
 
         # set reviewers
         empty_outbox()
@@ -943,7 +954,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(instructions="")) # No instructions
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
 
         # request conclusion
         mailbox_before = len(outbox)
@@ -1018,16 +1029,15 @@ class GroupFormTests(TestCase):
         )
         # fill in original values
         for rslug in group.get_used_roles():
-            data['{}_roles'.format(rslug)] = ','.join(
-                group.role_set.filter(name_id=rslug).values_list('email__address', flat=True),
-            )
+            data['{}_roles'.format(rslug)] = list(group.role_set.filter(name_id=rslug).values_list('email__address', flat=True).all())
+
         return data
 
     def _assert_cleaned_data_equal(self, cleaned_data, post_data):
         for attr, expected in post_data.items():
             value = cleaned_data[attr]
             if attr.endswith('_roles'):
-                actual = ','.join(value.values_list('address', flat=True))
+                actual = list(value.values_list('address', flat=True).all())
             elif attr == 'resources':
                 # must handle resources specially
                 actual = '\n'.join(self._format_resource(r) for r in value)
@@ -1049,7 +1059,7 @@ class GroupFormTests(TestCase):
         for rslug in group.get_used_roles():
             data = orig_data.copy()
             edit_field = '{}_roles'.format(rslug)
-            data[edit_field] = new_email.address  # comma-separated list of addresses with only one
+            data[edit_field] = [new_email.address]
 
             form = GroupForm(data, group=group, group_type=group.type_id, field=None)
 
@@ -1170,7 +1180,6 @@ class MilestoneTests(TestCase):
                                            resolved="",
                                            state_id="charter")
         m2.docs.set([draft])
-
         return (m1, m2, group)
 
     def last_day_of_month(self, d):
@@ -1219,12 +1228,12 @@ class MilestoneTests(TestCase):
                                     'm-1-desc': "", # no description
                                     'm-1-due': due.strftime("%B %Y"),
                                     'm-1-resolved': "",
-                                    'm-1-docs': ",".join(doc_pks),
+                                    'm-1-docs': doc_pks,
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         self.assertEqual(GroupMilestone.objects.count(), milestones_before)
 
         # add
@@ -1234,7 +1243,7 @@ class MilestoneTests(TestCase):
                                     'm-1-desc': "Test 3",
                                     'm-1-due': due.strftime("%B %Y"),
                                     'm-1-resolved': "",
-                                    'm-1-docs': ",".join(doc_pks),
+                                    'm-1-docs': doc_pks,
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)
@@ -1276,7 +1285,6 @@ class MilestoneTests(TestCase):
                                     'm-1-desc': "Test 3",
                                     'm-1-due': due.strftime("%B %Y"),
                                     'm-1-resolved': "",
-                                    'm-1-docs': "",
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)
@@ -1311,7 +1319,7 @@ class MilestoneTests(TestCase):
                                     'm1-desc': m1.desc,
                                     'm1-due': m1.due.strftime("%B %Y"),
                                     'm1-resolved': m1.resolved,
-                                    'm1-docs': ",".join(pklist(m1.docs)),
+                                    'm1-docs': pklist(m1.docs),
                                     'm1-review': "accept",
                                     'action': "save",
                                     })
@@ -1337,7 +1345,7 @@ class MilestoneTests(TestCase):
                                     'm1-desc': m1.desc,
                                     'm1-due': m1.due.strftime("%B %Y"),
                                     'm1-resolved': "",
-                                    'm1-docs': ",".join(pklist(m1.docs)),
+                                    'm1-docs': pklist(m1.docs),
                                     'm1-delete': "checked",
                                     'action': "save",
                                     })
@@ -1367,12 +1375,12 @@ class MilestoneTests(TestCase):
                                     'm1-desc': "", # no description
                                     'm1-due': due.strftime("%B %Y"),
                                     'm1-resolved': "",
-                                    'm1-docs': ",".join(doc_pks),
+                                    'm1-docs': doc_pks,
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form .is-invalid')) > 0)
         m = GroupMilestone.objects.get(pk=m1.pk)
         self.assertEqual(GroupMilestone.objects.count(), milestones_before)
         self.assertEqual(m.due, m1.due)
@@ -1385,7 +1393,7 @@ class MilestoneTests(TestCase):
                                     'm1-due': due.strftime("%B %Y"),
                                     'm1-resolved': "Done",
                                     'm1-resolved_checkbox': "checked",
-                                    'm1-docs': ",".join(doc_pks),
+                                    'm1-docs': doc_pks,
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)
@@ -1453,7 +1461,7 @@ class DatelessMilestoneTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('#switch-date-use-form')),0)
+        self.assertEqual(len(q('button[value="switch"]:submit')),0)
 
         r = self.client.post(url, dict(action="switch"))
         self.assertEqual(r.status_code, 403)
@@ -1513,7 +1521,6 @@ class DatelessMilestoneTests(TestCase):
                                     'm-1-desc': "Test 3",
                                     'm-1-order': 1,
                                     'm-1-resolved': "",
-                                    'm-1-docs': "",
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)
@@ -1531,7 +1538,7 @@ class DatelessMilestoneTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(q('#switch-date-use-form button').attr('style'), 'display:none;')     
+        self.assertTrue(q('#switch-date-use-form button').hasClass('d-none'))
 
         ms.group.charter.rev='00-00'
         ms.group.charter.save()
@@ -1558,7 +1565,7 @@ class DatelessMilestoneTests(TestCase):
             post_data['%s-id' % prefix] = ms.id
             post_data['%s-desc' % prefix] = ms.desc
             post_data['%s-order' % prefix] = ms.order
-            post_data['%s-docs' % prefix] = ""
+            post_data['%s-docs' % prefix] = []
 
         post_data['prefix'] = prefixes
         post_data['action'] = 'review'
@@ -1572,7 +1579,7 @@ class DatelessMilestoneTests(TestCase):
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('.label:contains("Changed")')), 2)
+        self.assertEqual(len(q('span.badge:contains("Changed")')), 2)
 
         post_data['action'] = 'save'
         r = self.client.post(url, post_data)
@@ -1822,7 +1829,7 @@ class StatusUpdateTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code,200)
             q=PyQuery(response.content)
-            self.assertTrue(bleach.linkify(escape(event.desc)) in str(q('pre')))
+            self.assertTrue(bleach.linkify(escape(event.desc), parse_email=True) in str(q('pre')))
             self.assertFalse(q('a#edit_button'))
             self.client.login(username=chair.person.user.username,password='%s+password'%chair.person.user.username)
             response = self.client.get(url)
@@ -1957,4 +1964,3 @@ class AcronymValidationTests(TestCase):
         wg = GroupFactory(acronym='bad-idea', type_id='wg') 
         form = GroupForm({'acronym':wg.acronym,'name':wg.name,'state':wg.state_id},group=wg, group_type=wg.type_id)
         self.assertTrue(form.is_valid())
-

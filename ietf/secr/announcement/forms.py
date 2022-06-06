@@ -73,7 +73,7 @@ def get_to_choices():
 
 class AnnounceForm(forms.ModelForm):
     nomcom = forms.ModelChoiceField(queryset=Group.objects.filter(acronym__startswith='nomcom',type='nomcom',state='active'),required=False)
-    to_custom = MultiEmailField(required=False,label='')
+    to_custom = MultiEmailField(required=False)
 
     class Meta:
         model = Message

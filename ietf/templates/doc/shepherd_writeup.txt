@@ -1,119 +1,133 @@
-{% if doc.stream %}{% if doc.stream.slug == 'ietf' %}{% if doc.group.type.slug == 'individ' %}As required by RFC 4858, this is the current template for the Document 
-Shepherd Write-Up. Changes are expected over time. 
+{# Keep in sync with https://github.com/ietf-chairs/chairs.ietf.org/blob/main/documents/qa-style-writeup-template.md #}{% if doc.stream %}{% if doc.stream.slug == 'ietf' %}# Document Shepherd Writeup
 
-This version is dated 1 November 2019. 
+*This version is dated 8 April 2022.*
 
-(1) What type of RFC is being requested (BCP, Proposed Standard, Internet Standard, Informational, Experimental, or Historic)? Why is this the proper type of RFC? Is this type of RFC indicated in the title page header? 
+Thank you for your service as a document shepherd. Among the responsibilities is
+answering the questions in this writeup to give helpful context to Last Call and
+Internet Engineering Steering Group ([IESG][1]) reviewers, and your diligence in
+completing it, is appreciated. The full role of the shepherd is further
+described in [RFC 4858][2], and informally. You will need the cooperation of
+authors to complete these checks.
 
-(2) The IESG approval announcement includes a Document Announcement Write-Up. Please provide such a Document Announcement Write-Up. Recent examples can be found in the "Action" announcements for approved documents. The approval announcement contains the following sections: 
+Note that some numbered items contain multiple related questions; please be sure
+to answer all of them.
 
-Technical Summary 
+## Document History
+{% if doc.group.type.slug == 'individ' %}
+1. Was the document considered in any WG, and if so, why was it not adopted as a
+   work item there?
 
-Relevant content can frequently be found in the abstract and/or introduction of the document. If not, this may be an indication that there are deficiencies in the abstract or introduction. 
+2. Was there controversy about particular points that caused the WG to not adopt
+   the document?
+{% else %}
+1. Does the working group (WG) consensus represent the strong concurrence of a
+   few individuals, with others being silent, or did it reach broad agreement?
 
-Working Group Summary 
-
-Was the document considered in any WG, and if so, why was it not adopted as a work item there? Was there controversy about particular points that caused the WG to not adopt the document? 
-
-Document Quality 
-
-Are there existing implementations of the protocol? Have a significant number of vendors indicated their plan to implement the specification? Are there any reviewers that merit special mention as having done a thorough review, e.g., one that resulted in important changes or a conclusion that the document had no substantive issues? If there was a MIB Doctor, YANG Doctor, Media Type or other expert review, what was its course (briefly)? In the case of a Media Type review, on what date was the request posted? Personnel Who is the Document Shepherd? Who is the Responsible Area Director? 
-
-(3) Briefly describe the review of this document that was performed by the Document Shepherd. If this version of the document is not ready for publication, please explain why the document is being forwarded to the IESG.
-
-(4) Does the document Shepherd have any concerns about the depth or breadth of the reviews that have been performed? 
-
-(5) Do portions of the document need review from a particular or from broader perspective, e.g., security, operational complexity, AAA, DNS, DHCP, XML, or internationalization? If so, describe the review that took place. 
-
-(6) Describe any specific concerns or issues that the Document Shepherd has with this document that the Responsible Area Director and/or the IESG should be aware of? For example, perhaps he or she is uncomfortable with certain parts of the document, or has concerns whether there really is a need for it. In any event, if the interested community has discussed those issues and has indicated that it still wishes to advance the document, detail those concerns here. 
-
-(7) Has each author confirmed that any and all appropriate IPR disclosures required for full conformance with the provisions of BCP 78 and BCP 79 have already been filed. If not, explain why. 
-
-(8) Has an IPR disclosure been filed that references this document? If so, summarize any discussion and conclusion regarding the IPR disclosures. 
-
-(9) How solid is the consensus of the interested community behind this document? Does it represent the strong concurrence of a few individuals, with others being silent, or does the interested community as a whole understand and agree with it? 
-
-(10) Has anyone threatened an appeal or otherwise indicated extreme discontent? If so, please summarise the areas of conflict in separate email messages to the Responsible Area Director. (It should be in a separate email because this questionnaire is publicly available.) 
-
-(11) Identify any ID nits the Document Shepherd has found in this document. (See http://www.ietf.org/tools/idnits/ and the Internet-Drafts Checklist). Boilerplate checks are not enough; this check needs to be thorough. 
-
-(12) Describe how the document meets any required formal review criteria, such as the MIB Doctor, YANG Doctor, media type, and URI type reviews. 
-
-(13) Have all references within this document been identified as either normative or informative? 
-
-(14) Are there normative references to documents that are not ready for advancement or are otherwise in an unclear state? If such normative references exist, what is the plan for their completion? 
-
-(15) Are there downward normative references (see RFC 3967)? If so, list these downward references to support the Area Director in the Last Call procedure. 
-
-(16) Will publication of this document change the status of any existing RFCs? Are those RFCs listed on the title page header, listed in the abstract, and discussed in the introduction? If the RFCs are not listed in the Abstract and Introduction, explain why, and point to the part of the document where the relationship of this document to the other RFCs is discussed. If this information is not in the document, explain why the interested community considers it unnecessary. 
-
-(17) Describe the Document Shepherd's review of the IANA considerations section, especially with regard to its consistency with the body of the document. Confirm that all protocol extensions that the document makes are associated with the appropriate reservations in IANA registries. Confirm that any referenced IANA registries have been clearly identified. Confirm that newly created IANA registries include a detailed specification of the initial contents for the registry, that allocations procedures for future registrations are defined, and a reasonable name for the new registry has been suggested (see RFC 8126). 
-
-(18) List any new IANA registries that require Expert Review for future allocations. Provide any public guidance that the IESG would find useful in selecting the IANA Experts for these new registries. 
-
-(19) Describe reviews and automated checks performed by to validate sections of the document written in a formal language, such as XML code, BNF rules, MIB definitions, YANG modules, etc.
-
-(20) If the document contains a YANG module, has the module been checked with any of the recommended validation tools (https://trac.ietf.org/trac/ops/wiki/yang-review-tools) for syntax and formatting validation? If there are any resulting errors or warnings, what is the justification for not fixing them at this time? Does the YANG module comply with the Network Management Datastore Architecture (NMDA) as specified in RFC8342?
-{% else %}As required by RFC 4858, this is the current template for the Document 
-Shepherd Write-Up. Changes are expected over time. 
-
-This version is dated 1 November 2019.
-
-(1) What type of RFC is being requested (BCP, Proposed Standard, Internet Standard, Informational, Experimental, or Historic)? Why is this the proper type of RFC? Is this type of RFC indicated in the title page header? 
-
-(2) The IESG approval announcement includes a Document Announcement Write-Up. Please provide such a Document Announcement Write-Up. Recent examples can be found in the "Action" announcements for approved documents. The approval announcement contains the following sections: 
-
-Technical Summary:
-
-Relevant content can frequently be found in the abstract and/or introduction of the document. If not, this may be an indication that there are deficiencies in the abstract or introduction. 
-
-Working Group Summary:
-
-Was there anything in WG process that is worth noting? For example, was there controversy about particular points or were there decisions where the consensus was particularly rough? 
-
-Document Quality:
-
-Are there existing implementations of the protocol? Have a significant number of vendors indicated their plan to implement the specification? Are there any reviewers that merit special mention as having done a thorough review, e.g., one that resulted in important changes or a conclusion that the document had no substantive issues? If there was a MIB Doctor, YANG Doctor, Media Type or other expert review, what was its course (briefly)? In the case of a Media Type review, on what date was the request posted? 
-
-Personnel:
-
-Who is the Document Shepherd? Who is the Responsible Area Director? 
-
-(3) Briefly describe the review of this document that was performed by the Document Shepherd. If this version of the document is not ready for publication, please explain why the document is being forwarded to the IESG. 
-
-(4) Does the document Shepherd have any concerns about the depth or breadth of the reviews that have been performed? 
-
-(5) Do portions of the document need review from a particular or from broader perspective, e.g., security, operational complexity, AAA, DNS, DHCP, XML, or internationalization? If so, describe the review that took place. 
-
-(6) Describe any specific concerns or issues that the Document Shepherd has with this document that the Responsible Area Director and/or the IESG should be aware of? For example, perhaps he or she is uncomfortable with certain parts of the document, or has concerns whether there really is a need for it. In any event, if the WG has discussed those issues and has indicated that it still wishes to advance the document, detail those concerns here. 
-
-(7) Has each author confirmed that any and all appropriate IPR disclosures required for full conformance with the provisions of BCP 78 and BCP 79 have already been filed. If not, explain why?
-
-(8) Has an IPR disclosure been filed that references this document? If so, summarize any WG discussion and conclusion regarding the IPR disclosures. 
-
-(9) How solid is the WG consensus behind this document? Does it represent the strong concurrence of a few individuals, with others being silent, or does the WG as a whole understand and agree with it? 
-
-(10) Has anyone threatened an appeal or otherwise indicated extreme discontent? If so, please summarise the areas of conflict in separate email messages to the Responsible Area Director. (It should be in a separate email because this questionnaire is publicly available.) 
-
-(11) Identify any ID nits the Document Shepherd has found in this document. (See http://www.ietf.org/tools/idnits/ and the Internet-Drafts Checklist). Boilerplate checks are not enough; this check needs to be thorough. 
-
-(12) Describe how the document meets any required formal review criteria, such as the MIB Doctor, YANG Doctor, media type, and URI type reviews. 
-
-(13) Have all references within this document been identified as either normative or informative? 
-
-(14) Are there normative references to documents that are not ready for advancement or are otherwise in an unclear state? If such normative references exist, what is the plan for their completion? 
-
-(15) Are there downward normative references (see RFC 3967)? If so, list these downward references to support the Area Director in the Last Call procedure. 
-
-(16) Will publication of this document change the status of any existing RFCs? Are those RFCs listed on the title page header, listed in the abstract, and discussed in the introduction? If the RFCs are not listed in the Abstract and Introduction, explain why, and point to the part of the document where the relationship of this document to the other RFCs is discussed. If this information is not in the document, explain why the WG considers it unnecessary. 
-
-(17) Describe the Document Shepherd's review of the IANA considerations section, especially with regard to its consistency with the body of the document. Confirm that all protocol extensions that the document makes are associated with the appropriate reservations in IANA registries. Confirm that any referenced IANA registries have been clearly identified. Confirm that newly created IANA registries include a detailed specification of the initial contents for the registry, that allocations procedures for future registrations are defined, and a reasonable name for the new registry has been suggested (see RFC 8126). 
-
-(18) List any new IANA registries that require Expert Review for future allocations. Provide any public guidance that the IESG would find useful in selecting the IANA Experts for these new registries. 
-
-(19) Describe reviews and automated checks performed by the Document Shepherd to validate sections of the document written in a formal language, such as XML code, BNF rules, MIB definitions, YANG modules, etc.
-
-(20) If the document contains a YANG module, has the module been checked with any of the recommended validation tools (https://trac.ietf.org/trac/ops/wiki/yang-review-tools) for syntax and formatting validation? If there are any resulting errors or warnings, what is the justification for not fixing them at this time? Does the YANG module comply with the Network Management Datastore Architecture (NMDA) as specified in RFC8342?
-{% endif %}{% else %}There is no default shepherd writeup template for the {{doc.stream}} stream
-{% endif %}{% else %}There is no stream set for this document (thus, no default shepherd writeup template)
+2. Was there controversy about particular points, or were there decisions where
+   the consensus was particularly rough?
 {% endif %}
+3. Has anyone threatened an appeal or otherwise indicated extreme discontent? If
+   so, please summarize the areas of conflict in separate email messages to the
+   responsible Area Director. (It should be in a separate email because this
+   questionnaire is publicly available.)
+
+4. For protocol documents, are there existing implementations of the contents of
+   the document? Have a significant number of potential implementers indicated
+   plans to implement? Are any existing implementations reported somewhere,
+   either in the document itself (as [RFC 7942][3] recommends) or elsewhere
+   (where)?
+
+### Additional Reviews
+
+5. Does this document need review from other IETF working groups or external
+   organizations? Have those reviews occurred?
+
+6. Describe how the document meets any required formal expert review criteria,
+   such as the MIB Doctor, YANG Doctor, media type, and URI type reviews.
+
+7. If the document contains a YANG module, has the final version of the module
+   been checked with any of the [recommended validation tools][4] for syntax and
+   formatting validation? If there are any resulting errors or warnings, what is
+   the justification for not fixing them at this time? Does the YANG module
+   comply with the Network Management Datastore Architecture (NMDA) as specified
+   in [RFC 8342][5]?
+
+8. Describe reviews and automated checks performed to validate sections of the
+   final version of the document written in a formal language, such as XML code,
+   BNF rules, MIB definitions, CBOR's CDDL, etc.
+
+### Document Shepherd Checks
+
+9. Based on the shepherd's review of the document, is it their opinion that this
+   document is needed, clearly written, complete, correctly designed, and ready
+   to be handed off to the responsible Area Director?
+
+10. Several IETF Areas have assembled [lists of common issues that their
+    reviewers encounter][6]. Do any such issues remain that would merit specific
+    attention from subsequent reviews?
+
+11. What type of RFC publication is being requested on the IETF stream (Best
+    Current Practice, Proposed Standard, Internet Standard, Informational,
+    Experimental, or Historic)? Why is this the proper type of RFC? Do all
+    Datatracker state attributes correctly reflect this intent?
+
+12. Has the interested community confirmed that any and all appropriate IPR
+    disclosures required by [BCP 78][7] and [BCP 79][8] have been filed? If not,
+    explain why. If yes, summarize any discussion and conclusion regarding the
+    intellectual property rights (IPR) disclosures, including links to relevant
+    emails.
+
+13. Has each Author or Contributor confirmed their willingness to be listed as
+    such? If the number of Authors/Editors on the front page is greater than 5,
+    please provide a justification.
+
+14. Identify any remaining I-D nits in this document. (See [the idnits tool][9]
+    and the checkbox items found in Guidelines to Authors of Internet-Drafts).
+    Simply running the idnits tool is not enough; please review the entire
+    guidelines document.
+
+15. Should any informative references be normative or vice-versa?
+
+16. List any normative references that are not freely available to anyone. Did
+    the community have sufficient access to review any such normative
+    references?
+
+17. Are there any normative downward references (see [RFC 3967][10],
+    [BCP 97][11])? If so, list them.
+
+18. Are there normative references to documents that are not ready for
+    advancement or are otherwise in an unclear state? If they exist, what is the
+    plan for their completion?
+
+19. Will publication of this document change the status of any existing RFCs? If
+    so, does the Datatracker metadata correctly reflect this and are those RFCs
+    listed on the title page, in the abstract, and discussed in the
+    introduction? If not, explain why and point to the part of the document
+    where the relationship of this document to these other RFCs is discussed.
+
+20. Describe the document shepherd's review of the IANA considerations section,
+    especially with regard to its consistency with the body of the document.
+    Confirm that all aspects of the document requiring IANA assignments are
+    associated with the appropriate reservations in IANA registries. Confirm
+    that any referenced IANA registries have been clearly identified. Confirm
+    that each newly created IANA registry specifies its initial contents,
+    allocations procedures, and a reasonable name (see [RFC 8126][12]).
+
+21. List any new IANA registries that require Designated Expert Review for
+    future allocations. Are the instructions to the Designated Expert clear?
+    Please include suggestions of designated experts, if appropriate.
+
+[1]: https://www.ietf.org/about/groups/iesg/
+[2]: https://www.rfc-editor.org/rfc/rfc4858.html
+[3]: https://www.rfc-editor.org/rfc/rfc7942.html
+[4]: https://trac.ietf.org/trac/ops/wiki/yang-review-tools
+[5]: https://www.rfc-editor.org/rfc/rfc8342.html
+[6]: https://trac.ietf.org/trac/iesg/wiki/ExpertTopics
+[7]: https://www.rfc-editor.org/info/bcp78
+[8]: https://www.rfc-editor.org/info/bcp79
+[9]: https://www.ietf.org/tools/idnits/
+[10]: https://www.rfc-editor.org/rfc/rfc3967.html
+[11]: https://www.rfc-editor.org/info/bcp97
+[12]: https://www.rfc-editor.org/rfc/rfc8126.html
+{% else %}There is no default shepherd writeup template for the {{doc.stream}} stream.
+{% endif %}{% else %}There is no stream set for this document (thus, no default shepherd writeup template).{% endif %}

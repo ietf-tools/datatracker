@@ -18,21 +18,21 @@ constraint_names_to_add = [
         slug='chair_conflict',
         name='Chair conflict',
         desc='Indicates other WGs the chairs also lead or will be active participants in',
-        editor_label='<i class="fa fa-gavel"></i>',
+        editor_label='<i class="bi bi-person-plus"></i>',
     ),
     ConstraintInfo(
         replaces='conflic2',
         slug='tech_overlap',
         name='Technology overlap',
         desc='Indicates WGs with a related technology or a closely related charter',
-        editor_label='<i class="fa fa-rocket"></i>',
+        editor_label='<i class="bi bi-link"></i>',
     ),
     ConstraintInfo(
         replaces='conflic3',
         slug='key_participant',
         name='Key participant conflict',
         desc='Indicates WGs with which key participants (presenter, secretary, etc.)  may overlap',
-        editor_label='<i class="fa fa-key"></i>',
+        editor_label='<i class="bi bi-key"></i>',
     )
 ]
 

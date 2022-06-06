@@ -365,7 +365,7 @@ def add_links_in_new_revision_events(doc, events, diff_revisions):
             links += ""
 
         if prev != None:
-            links += ' (<a href="%s?url1=%s&url2=%s">diff from previous</a>)' % (settings.RFCDIFF_BASE_URL, quote(prev, safe="~"), quote(diff_url, safe="~"))
+            links += ' (<a href="%s?url1=%s&amp;url2=%s">diff from previous</a>)' % (settings.RFCDIFF_BASE_URL, quote(prev, safe="~"), quote(diff_url, safe="~"))
 
         # replace the bold filename part
         e.desc = re.sub(r"<b>(.+-[0-9][0-9].txt)</b>", links, e.desc)
@@ -1094,7 +1094,7 @@ def build_doc_supermeta_block(doc):
         items.append(f'[<a href="{urlreverse("ietf.group.views.group_home",kwargs=dict(acronym=doc.group.acronym))}" title="The working group handling this document">WG</a>]')
     items.append(f'[<a href="mailto:{doc.name}@ietf.org?subject={doc.name}" title="Send email to the document authors">Email</a>]')
     if doc.rev != "00":
-        items.append(f'[<a href="{settings.RFCDIFF_BASE_URL}?difftype=--hwdiff&url2={doc.name}-{doc.rev}.txt" title="Inline diff (wdiff)">Diff1</a>]')
+        items.append(f'[<a href="{settings.RFCDIFF_BASE_URL}?difftype=--hwdiff&amp;url2={doc.name}-{doc.rev}.txt" title="Inline diff (wdiff)">Diff1</a>]')
         items.append(f'[<a href="{settings.RFCDIFF_BASE_URL}?url2={doc.name}-{doc.rev}.txt" title="Side-by-side diff">Diff2</a>]')
     items.append(f'[<a href="{settings.IDNITS_BASE_URL}?url={settings.IETF_ID_ARCHIVE_URL}{doc.name}-{doc.rev}.txt" title="Run an idnits check of this document">Nits</a>]')
 

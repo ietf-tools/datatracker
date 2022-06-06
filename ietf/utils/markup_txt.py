@@ -66,4 +66,4 @@ def markup(content, width=None):
 
     content = re.sub(r"\n\n([0-9]+\\.|[A-Z]\\.[0-9]|Appendix|Status of|Abstract|Table of|Full Copyright|Copyright|Intellectual Property|Acknowled|Author|Index)(.*)(?=\n\n)", r"""\n\n<span class="m_h">\g<1>\g<2></span>""", content)
 
-    return "<pre>" + content + "</pre>\n"
+    return content

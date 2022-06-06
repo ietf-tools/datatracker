@@ -162,8 +162,8 @@ class IprTests(TestCase):
         r = self.client.get(url + "?submit=holder&holder=%s" % ipr.holder_legal_name)
         self.assertContains(r, ipr.title)
         
-        # find by patent infoj
-        r = self.client.get(url + "?submit=patent&patent=%s" % quote(ipr.patent_info))
+        # find by patent info
+        r = self.client.get(url + "?submit=patent&patent=%s" % quote(ipr.patent_info.partition("\n")[0]))
         self.assertContains(r, ipr.title)
 
         r = self.client.get(url + "?submit=patent&patent=US12345")
@@ -210,7 +210,7 @@ class IprTests(TestCase):
             })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .has-error")) > 0)
+        self.assertTrue(len(q("form .is-invalid")) > 0)
 
         # successful post
         empty_outbox()
@@ -253,7 +253,7 @@ class IprTests(TestCase):
             "ietfer_contact_info": "555-555-0101",
             "iprdocrel_set-TOTAL_FORMS": 2,
             "iprdocrel_set-INITIAL_FORMS": 0,
-            "iprdocrel_set-0-document": "%s" % draft.docalias.first().pk,
+            "iprdocrel_set-0-document": draft.docalias.first().pk,
             "iprdocrel_set-0-revisions": '00',
             "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
             "patent_number": "SE12345678901",
@@ -309,7 +309,7 @@ class IprTests(TestCase):
             "ietfer_contact_info": "555-555-0101",
             "iprdocrel_set-TOTAL_FORMS": 2,
             "iprdocrel_set-INITIAL_FORMS": 0,
-            "iprdocrel_set-0-document": "%s" % draft.docalias.first().pk,
+            "iprdocrel_set-0-document": draft.docalias.first().pk,
             "iprdocrel_set-0-revisions": '00',
             "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
             "patent_number": "SE12345678901",
@@ -356,7 +356,7 @@ class IprTests(TestCase):
             "holder_legal_name": "Test Legal",
             "ietfer_contact_info": "555-555-0101",
             "ietfer_name": "Test Participant",
-            "iprdocrel_set-0-document": "%s" % draft.docalias.first().pk,
+            "iprdocrel_set-0-document": draft.docalias.first().pk,
             "iprdocrel_set-0-revisions": '00',
             "iprdocrel_set-INITIAL_FORMS": 0,
             "iprdocrel_set-TOTAL_FORMS": 1,
@@ -367,7 +367,7 @@ class IprTests(TestCase):
             "patent_title": "A method of transfering bits",
             "submitter_email": "test@holder.com",
             "submitter_name": "Test Holder",
-            "updates": "",
+            "updates": [],
         }
         r = self.client.post(url, post_data, follow=True)
         self.assertContains(r, "Disclosure modified")
@@ -396,7 +396,7 @@ class IprTests(TestCase):
         # successful post
         empty_outbox()
         r = self.client.post(url, {
-            "updates": str(original_ipr.pk),
+            "updates": [original_ipr.pk],
             "holder_legal_name": "Test Legal",
             "holder_contact_name": "Test Holder",
             "holder_contact_email": "test@holder.com",
@@ -405,7 +405,7 @@ class IprTests(TestCase):
             "ietfer_contact_info": "555-555-0101",
             "iprdocrel_set-TOTAL_FORMS": 2,
             "iprdocrel_set-INITIAL_FORMS": 0,
-            "iprdocrel_set-0-document": "%s" % draft.docalias.first().pk,
+            "iprdocrel_set-0-document": draft.docalias.first().pk,
             "iprdocrel_set-0-revisions": '00',
             "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
             "patent_number": "SE12345678901",
@@ -436,13 +436,13 @@ class IprTests(TestCase):
 
         empty_outbox()
         r = self.client.post(url, {
-            "updates": "this is supposed to be an integer",
+            "updates": "this is supposed to be an array of integers",
             "holder_legal_name": "Test Legal",
             "holder_contact_name": "Test Holder",
             "holder_contact_email": "test@holder.com",
             "iprdocrel_set-TOTAL_FORMS": 1,
             "iprdocrel_set-INITIAL_FORMS": 0,
-            "iprdocrel_set-0-document": "%s" % draft.docalias.first().pk,
+            "iprdocrel_set-0-document": draft.docalias.first().pk,
             "iprdocrel_set-0-revisions": '00',
             "patent_number": "SE12345678901",
             "patent_inventor": "A. Nonymous",
@@ -455,7 +455,7 @@ class IprTests(TestCase):
             })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(q("#id_updates").parents(".form-group").hasClass("has-error"))
+        self.assertTrue(q("#id_updates").parents(".row").hasClass("is-invalid"))
 
     def test_addcomment(self):
         ipr = HolderIprDisclosureFactory()
@@ -696,7 +696,7 @@ Subject: test
         self.assertEqual(response.status_code,200)
         post_data = {
             'iprdocrel_set-TOTAL_FORMS' : 1,
-            'iprdocrel_set-INITIAL_FORMS' : 1,
+            'iprdocrel_set-INITIAL_FORMS' : 0,
             'iprdocrel_set-0-id': disclosure.pk,
             "iprdocrel_set-0-document": disclosure.docs.first().pk,
             "iprdocrel_set-0-revisions": disclosure.docs.first().document.rev,

@@ -12,6 +12,7 @@ from django.http import HttpResponseRedirect, Http404
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.conf import settings
+from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 
@@ -215,7 +216,7 @@ def submit(request, name):
 
         elif "reset_text" in request.POST:
 
-            init = { "content": render_to_string("doc/conflict_review/review_choices.txt",dict())}
+            init = { "content": escape(render_to_string("doc/conflict_review/review_choices.txt",dict()))}
             form = UploadForm(initial=init)
 
         # Protect against handcrufted malicious posts
@@ -229,9 +230,9 @@ def submit(request, name):
         init = { "content": ""}
 
         if not_uploaded_yet:
-            init["content"] = render_to_string("doc/conflict_review/review_choices.txt",
+            init["content"] = escape(render_to_string("doc/conflict_review/review_choices.txt",
                                                 dict(),
-                                              )
+                                              ))
         else:
             filename = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.canonical_name(), review.rev))
             try:
@@ -358,7 +359,7 @@ def approve_conflict_review(request, name):
 
     else:
 
-        init = { "announcement_text" : default_approval_text(review) }
+        init = { "announcement_text" : escape(default_approval_text(review)) }
         form = AnnouncementForm(initial=init)
     
     return render(request, 'doc/conflict_review/approve.html',

@@ -4,266 +4,337 @@
 {% load ietf_filters %}
 {% load markup_tags %}
 {% load textfilters group_filters %}
-
 {% block group_content %}
-  {% origin %}
-  {% if group.state_id == "conclude" %}
-    <p class="alert alert-warning"><b>Note:</b> The data for concluded {{ group.type.name }}s is occasionally incorrect.</p>
-  {% endif %}
-
-  <table class="table table-condensed">
-    <thead><tr><th colspan="4"></th></tr></thead>
-    <tbody class="meta">
-      <tr>
-	<th>{{ group.type.name }}</th>
-	<th>Name</th>
-	<td class="edit">
-	  {% if can_edit_group %}
-	    <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='name' %}">Edit</a>
-	  {% endif %}
-	</td>
-	<td>{{ group.name }}</td>
-      </tr>
-
-      <tr>
-	<td></td>
-	<th>Acronym</th>
-	<td class="edit"></td>
-	<td>{{ group.acronym }}</td>
-      </tr>
-
-      <tr>
-	<td></td>
-	{% if group.parent and group.parent.type_id == "area" %}
-	  <th>{{ group.parent.type.name }}</th>
-	  <td class="edit"></td>
-	  <td>{{ group.parent.name }} ({{ group.parent.acronym }})</td>
-	{% else %}
-	  <th></th>
-	  <td class="edit"></td>
-	  <td></td>
-	{% endif %}
-      </tr>
-
-      <tr>
-      <td></td> 
-      <th>State</th> 
-      <td class="edit">
-	  {% if can_edit_group %}
-	    <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='state' %}">Edit</a>
-	  {% endif %}
-      </td>
-      <td> 
-	{{ group.state.name }} 
-	{% if requested_close %} 
-	<div class="label label-info">In the process of being closed</div> 
-	{% endif %} 
-      </td> 
-      </tr>
-
-      {% if group.features.has_chartering_process %}
-	<tr>
-	  <td></td>
-	  <th>Charter</th>
-	  <td class="edit"></td>
-	  <td>
-	    {% if group.charter %}
-	      <a href="{% url "ietf.doc.views_doc.document_main" name=group.charter.name %}">{{ group.charter.name }}-{{ group.charter.rev }}</a>
-	      <span class="label label-info">{{ group.charter.get_state.name }}</span>
-	    {% else %}
-	      (None)
-	      {% if user|has_role:"Area Director,Secretariat" %}
-		<a class="btn btn-warning btn-xs" href="{{ charter_submit_url }}">Submit charter</a>
-	      {% endif %}
-	    {% endif %}
-	  </td>
-	</tr>
-      {% endif %}
-
-      {% if can_provide_status_update or status_update %}
-	<tr id='status_update'>
-	  <td></td>
-	  <th>Status Update</th>
-	  <td class="edit">
-	     {% if can_provide_status_update %}
-	       <a class="btn btn-default btn-xs" href="{% url "ietf.group.views.group_about_status_edit" acronym=group.acronym %}">Edit</a>
-	     {% endif %}
-	  </td>
-	  <td>
-	     {% if status_update %}
-		<a href="{% url "ietf.group.views.group_about_status" acronym=group.acronym %}">Show update</a>
-		(last changed {{status_update.time|date:"Y-m-d"}})
-	     {% else %}
-		(None)
-	     {% endif %}
-
-	  </td>
-	</tr>
-      {% endif %}
-
-      {% if group.features.has_documents %}
-	<tr id='dependency_graph'>
-	  <td></td>
-	  <th>Dependencies</th>
-	  <td class="edit"></td>
-	  <td>
-	     <a href="{% url 'ietf.group.views.dependencies' group_type=group.type_id acronym=group.acronym output_type='svg' %}">
-		Document dependency graph (SVG)
-	     </a>
-	  </td>
-	</tr>
-      {% endif %}
-
-       {% with group.groupextresource_set.all as resources %}
-        {% if resources or can_edit_group %}
-          <tr>
-            <td></td>
-            <th>Additional Resources</th>
-            <td class="edit">
-              {% if can_edit_group %}
-                <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='resources' %}">Edit</a>
-              {% endif %}
-            </td>
-            <td>
-              {% if resources %}
-                <table class="col-md-12 col-sm-12 col-xs-12">
-                  <tbody>
-                    {% for resource in resources|dictsort:"display_name" %}
-                      {% if resource.name.type.slug == 'url' or resource.name.type.slug == 'email' %}
-                        <tr><td> - <a href="{{ resource.value }}" title="{{resource.name.name}}">{% firstof resource.display_name resource.name.name %}</a></td></tr> 
-                        {# Maybe make how a resource displays itself a method on the class so templates aren't doing this switching #}
-                      {% else %}
-                        <tr><td> - <span title="{{resource.name.name}}">{% firstof resource.display_name resource.name.name %}: {{resource.value}}</span></td></tr>
-                      {% endif %}
-                    {% endfor %}
-                  </tbody>
-                </table>
-              {% endif %}
-            </td>
-          </tr>
+    {% origin %}
+    {% if group.state_id == "conclude" %}
+        <p class="alert alert-warning my-3">
+            <b>Note:</b> The data for concluded {{ group.type.name }}s is occasionally incorrect.
+        </p>
+    {% endif %}
+    <table class="my-3 table table-sm table-borderless">
+        <tbody class="meta border-top">
+            <tr>
+                <th scope="row">{{ group.type.name }}</th>
+                <th scope="row">Name</th>
+                <td class="edit">
+                    {% if can_edit_group %}
+                        <a class="btn btn-primary btn-sm"
+                           href="{% url 'ietf.group.views.edit' acronym=group.acronym field='name' %}">Edit</a>
+                    {% endif %}
+                </td>
+                <th scope="row">{{ group.name }}</th>
+            </tr>
+            <tr>
+                <td></td>
+                <th scope="row">Acronym</th>
+                <td class="edit"></td>
+                <td>{{ group.acronym }}</td>
+            </tr>
+            <tr>
+                <td></td>
+                {% if group.parent and group.parent.type_id == "area" %}
+                    <th scope="row">{{ group.parent.type.name }}</th>
+                    <td class="edit"></td>
+                    <td>
+                        {{ group.parent.name }}
+                        <a href="{% url "ietf.group.views.group_home" acronym=group.parent.acronym %}">({{ group.parent.acronym }})</a>
+                    </td>
+                {% else %}
+                    <td></td>
+                    <td class="edit"></td>
+                    <td></td>
+                {% endif %}
+            </tr>
+            <tr>
+                <td></td>
+                <th scope="row">State</th>
+                <td class="edit">
+                    {% if can_edit_group %}
+                        <a class="btn btn-primary btn-sm"
+                           href="{% url 'ietf.group.views.edit' acronym=group.acronym field='state' %}">Edit</a>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="{% if group.state.name|slugify == 'active' %}text-success{% elif group.state.name|slugify == 'concluded' %}text-danger{% endif %}">{{ group.state.name }}</span>
+                    {% if requested_close %}<div class="badge bg-info">Being closed</div>{% endif %}
+                </td>
+            </tr>
+            {% if group.features.has_chartering_process %}
+                <tr>
+                    <td></td>
+                    <th scope="row">Charter</th>
+                    <td class="edit"></td>
+                    <td>
+                        {% if group.charter %}
+                            <a href="{% url "ietf.doc.views_doc.document_main" name=group.charter.name %}">
+                                {{ group.charter.name }}-{{ group.charter.rev }}</a>
+                            {% if group.charter.get_state.name %}
+                                <span class="badge bg-info">{{ group.charter.get_state.name }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">(None)</span>
+                            {% if user|has_role:"Area Director,Secretariat" %}
+                                <a class="btn btn-warning btn-sm" href="{{ charter_submit_url }}">Submit charter</a>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endif %}
+            {% if can_provide_status_update or status_update %}
+                <tr id="status_update">
+                    <td>
+                    </td>
+                    <th scope="row">
+                        Status update
+                    </th>
+                    <td class="edit">
+                        {% if can_provide_status_update %}
+                            <a class="btn btn-primary btn-sm"
+                               href="{% url "ietf.group.views.group_about_status_edit" acronym=group.acronym %}">
+                                Edit
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if status_update %}
+                            <a class="btn btn-primary btn-sm"
+                               href="{% url "ietf.group.views.group_about_status" acronym=group.acronym %}">
+                                Show
+                            </a>
+                            <span class="badge bg-secondary">
+                                Changed {{ status_update.time|date:"Y-m-d" }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted">
+                                (None)
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endif %}
+            {% if group.features.has_documents %}
+                <tr id="dependency_graph">
+                    <td>
+                    </td>
+                    <th scope="row">
+                        Document dependencies
+                    </th>
+                    <td class="edit">
+                    </td>
+                    <td>
+                        <a class="btn btn-primary btn-sm"
+                           href="{% url 'ietf.group.views.dependencies' group_type=group.type_id acronym=group.acronym output_type='svg' %}">
+                            SVG <i class="bi bi-diagram-3"></i>
+                        </a>
+                    </td>
+                </tr>
+            {% endif %}
+            {% with group.groupextresource_set.all as resources %}
+                {% if resources or can_edit_group %}
+                    <tr>
+                        <td>
+                        </td>
+                        <th scope="row">
+                            Additional resources
+                        </th>
+                        <td class="edit">
+                            {% if can_edit_group %}
+                                <a class="btn btn-primary btn-sm"
+                                   href="{% url 'ietf.group.views.edit' acronym=group.acronym field='resources' %}">
+                                    Edit
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if resources %}
+                                {% for resource in resources|dictsort:"display_name" %}
+                                    {# Maybe make how a resource displays itself a method on the class so templates aren't doing this switching #}
+                                    {% if resource.name.type.slug == 'url' or resource.name.type.slug == 'email' %}
+                                        <a href="{{ resource.value }}" title="{{ resource.name.name }}">
+                                            {% firstof resource.display_name resource.name.name %}</a>{% else %}
+                                        <span title="{{ resource.name.name }}">
+                                            {% firstof resource.display_name resource.name.name %}: {{ resource.value|escape }}
+                                        </span>{% endif %}{% if not forloop.last %}{% if resource.display_name|length < 15 and resource.name.name|length < 15 and resources|length <= 3 %},{% else %}<br>{% endif %}{% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endif %}
+            {% endwith %}
+        </tbody>
+        {% if group.personnel %}
+        <tbody class="meta border-top">
+            {% for slug, label, roles in group.personnel %}
+                <tr>
+                    {% if forloop.first %}
+                        <th scope="row">
+                            Personnel
+                        </th>
+                    {% else %}
+                        <td>
+                        </td>
+                    {% endif %}
+                    <th scope="row">
+                        {{ label }}
+                    </th>
+                    <td class="edit">
+                        {% if can_edit_group and slug in editable_roles %}
+                            <a class="btn btn-primary btn-sm"
+                               href="{% url 'ietf.group.views.edit' acronym=group.acronym field=slug %}">
+                                Edit
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% for r in roles %}
+                            {% role_person_link r %}{% if not forloop.last %}{% if roles|length > 3%}<br>{% else %},{% endif %}{% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
         {% endif %}
-      {% endwith %}     
-    </tbody>
-
-    <tbody class="meta">
-      {% for slug, label, roles in group.personnel %}
-        <tr>
-	  {% if forloop.first %}
-	    <th>Personnel</th>
-	  {% else %}
-	    <td></td>
-	  {% endif %}
-	  <th>{{ label }}</th>
-	  <td class="edit">
-	    {% if can_edit_group and slug in editable_roles %}
-	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field=slug %}">Edit</a>
-	    {% endif %}
-	  </td>
-	  <td>
-	    {% for r in roles %}
-	      {% role_person_link r %}
-	      <br>
-	    {% endfor %}
-	  </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-
-    {% if group.list_email %}
-    <tbody class="meta">
-      <tr>
-	 <th>Mailing list</th>
-	 <th>Address</th>
-	 <td class="edit">
-	    {% if can_edit_group %}
-	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='list_email' %}">Edit</a>
-	    {% endif %}
-	 </td>
-	 <td>{{ group.list_email|linkify }}</td>
-      </tr>
-      <tr>
-	 <td></td>
-	 <th>To subscribe</th>
-	 <td class="edit">
-	    {% if can_edit_group %}
-	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='list_subscribe' %}">Edit</a>
-	    {% endif %}
-	 </td>
-	 <td>{{ group.list_subscribe|linkify }}</td>
-      </tr>
-      <tr>
-	 <td></td>
-	 <th>Archive</th>
-	 <td class="edit">
-	    {% if can_edit_group %}
-	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='list_archive' %}">Edit</a>
-	    {% endif %}
-	 </td>
-	 <td>{{ group.list_archive|linkify }}</td>
-      </tr>
-    </tbody>
+        {% if group.list_email %}
+            <tbody class="meta border-top">
+                <tr>
+                    <th scope="row">
+                        Mailing list
+                    </th>
+                    <th scope="row">
+                        Address
+                    </th>
+                    <td class="edit">
+                        {% if can_edit_group %}
+                            <a class="btn btn-primary btn-sm"
+                               href="{% url 'ietf.group.views.edit' acronym=group.acronym field='list_email' %}">
+                                Edit
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ group.list_email|linkify }}
+                    </td>
+                </tr>
+                {% if group.list_subscribe %}
+                <tr>
+                    <td>
+                    </td>
+                    <th scope="row">
+                        To subscribe
+                    </th>
+                    <td class="edit">
+                        {% if can_edit_group %}
+                            <a class="btn btn-primary btn-sm"
+                               href="{% url 'ietf.group.views.edit' acronym=group.acronym field='list_subscribe' %}">
+                                Edit
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ group.list_subscribe|linkify }}
+                    </td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td>
+                    </td>
+                    <th scope="row">
+                        Archive
+                    </th>
+                    <td class="edit">
+                        {% if can_edit_group %}
+                            <a class="btn btn-primary btn-sm"
+                               href="{% url 'ietf.group.views.edit' acronym=group.acronym field='list_archive' %}">
+                                Edit
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ group.list_archive|linkify }}
+                    </td>
+                </tr>
+            </tbody>
+        {% endif %}
+        {% if group.state_id != "conclude" and group.features.has_default_jabber %}
+            <tbody class="meta border-top">
+                <tr>
+                    <th scope="row">
+                        Jabber chat
+                    </th>
+                    <th scope="row">
+                        Room address
+                    </th>
+                    <td class="edit">
+                    </td>
+                    <td>
+                        <a href="xmpp:{{ group.acronym }}@jabber.ietf.org?join">
+                            xmpp:{{ group.acronym }}@jabber.ietf.org?join
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                    </td>
+                    <th scope="row">
+                        Logs
+                    </th>
+                    <td class="edit">
+                    </td>
+                    <td>
+                        <a href="https://jabber.ietf.org/jabber/logs/{{ group.acronym }}/">
+                            https://jabber.ietf.org/jabber/logs/{{ group.acronym }}/
+                        </a>
+                    </td>
+                </tr>
+            </tbody>
+        {% endif %}
+    </table>
+    {% if requested_close or group.state_id == "conclude" %}
+        {% if closing_note and closing_note.desc != "(Closing note deleted)" %}
+            <div class="my-3 alert alert-info">
+                <h2>
+                    Closing note for {{ group.type.desc.title|default:group.acronym }}
+                </h2>
+                {{ closing_note.desc }}
+            </div>
+        {% endif %}
+        {% if user|has_role:"Secretariat" %}
+            <a class="btn btn-primary mb-3"
+               href="{% url 'ietf.group.views.edit' acronym=group.acronym field='closing_note' %}">
+                Edit closing note
+            </a>
+        {% endif %}
     {% endif %}
-
-    {% if group.state_id != "conclude" and group.features.has_default_jabber %}
-    <tbody class="meta">
-      <tr>
-	 <th>Jabber chat</th>
-	 <th>Room address</th>
-	 <td class="edit"></td>
-	 <td><a href="xmpp:{{ group.acronym }}@jabber.ietf.org?join">xmpp:{{ group.acronym }}@jabber.ietf.org?join</a></td>
-      </tr>
-
-      <tr>
-        <td></td>
-        <th>Logs</th>
-	<td class="edit"></td>
-        <td><a href="https://jabber.ietf.org/logs/{{ group.acronym }}/">https://jabber.ietf.org/logs/{{ group.acronym }}/</a></td>
-      </tr>
-    </tbody>
-    {% endif %}
-  </table>
-
-  {% if requested_close or group.state_id == "conclude" %}
-    {% if user|has_role:"Secretariat" %}
-      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='closing_note' %}">Edit</a>&nbsp;
-      <label>Closing note for {{ group.type.desc.title|default:group.acronym }}:</label>
-
-      {% if closing_note and closing_note.desc != "(Closing note deleted)" %}
-       {{ closing_note.desc }}
-      {% endif %}
+    {% if group.features.has_chartering_process %}
+        <h2 class="mt-3">
+            {% if requested_close or group.state_id == "conclude" %}Final{% endif %}
+            Charter for
+            {% if group.state_id == "proposed" %}proposed{% endif %}
+            {{ group.type.desc.title }}
+        </h2>
+        {# the linebreaks filter adds <p>, no surrounding <p> necessary: #}
+        {{ group.charter_text|urlize_ietf_docs|linkify|linebreaks }}
     {% else %}
-
-     {% if closing_note and closing_note.desc != "(Closing note deleted)" %}
-       <h2>Closing note for {{ group.type.desc.title }}</h2>
-       {{ closing_note.desc }}
-  
-      {% endif %}
+        <h2 class="mt-3">
+            {% if requested_close or group.state_id == "conclude" %}Final{% endif %}
+            Group description
+        </h2>
+        {% comment %}{{ group.description|default:"No description yet."|linebreaks }}{% endcomment %}
+        {{ group.description|default:"No description yet."| apply_markup:"restructuredtext" }}
+        {% if can_edit_group %}
+            <a class="btn btn-primary mb-3"
+               href="{% url 'ietf.group.views.edit' acronym=group.acronym field='description' %}">
+                Edit group description
+            </a>
+        {% endif %}
     {% endif %}
-  {% endif %}
-
-  {% if group.features.has_chartering_process %}
-    <h2>Charter for {% if group.state_id == "proposed" %}proposed{% endif %} {{ group.type.desc.title }}</h2>
-    {# the linebreaks filter adds <p/>, no surrounding <p/> necessary: #}
-    {{ group.charter_text|linebreaks }}
-  {% else %}
-    <h2>
-      About
-      {% if can_edit_group %}
-        <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='description' %}">Edit</a>&nbsp;
-      {% endif %}
-    </h2>
-    {% comment %}{{ group.description|default:"No description yet."|linebreaks }}{% endcomment %}
-    {{ group.description|default:"No description yet."| apply_markup:"restructuredtext" }}
-  {% endif %}
-
-  {% if group.features.has_milestones %}
-
-    {% include "group/milestones.html" with milestones=group.milestones %}
-
-    {% if milestones_in_review %}
-      <p>{{ milestones_in_review|length }} new milestone{{ milestones_in_review|pluralize }}
-        currently in {{ milestone_reviewer }} review.</p>
+    {% if group.features.has_milestones %}
+        {% include "group/milestones.html" with milestones=group.milestones heading=True %}
+        {% if milestones_in_review %}
+            <p>
+                {{ milestones_in_review|length }} new milestone{{ milestones_in_review|pluralize }}
+                currently in {{ milestone_reviewer }} review.
+            </p>
+        {% endif %}
     {% endif %}
-  {% endif %}
-
 {% endblock %}

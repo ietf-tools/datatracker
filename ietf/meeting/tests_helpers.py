@@ -1,5 +1,7 @@
 # Copyright The IETF Trust 2020, All Rights Reserved
 # -*- coding: utf-8 -*-
+import datetime
+
 from unittest.mock import patch, Mock
 
 from django.conf import settings
@@ -11,7 +13,7 @@ from ietf.group.models import Group
 from ietf.meeting.factories import SessionFactory, MeetingFactory, TimeSlotFactory
 from ietf.meeting.helpers import (AgendaFilterOrganizer, AgendaKeywordTagger,
     delete_interim_session_conferences, sessions_post_save, sessions_post_cancel,
-    create_interim_session_conferences)
+    create_interim_session_conferences, get_ietf_meeting)
 from ietf.meeting.models import SchedTimeSessAssignment, Session
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.utils.meetecho import Conference
@@ -615,3 +617,18 @@ class InterimTests(TestCase):
         msgs = [str(msg) for msg in messages]
         self.assertEqual(len(msgs), 1)
         self.assertIn('An error occurred', msgs[0])
+
+
+class HelperTests(TestCase):
+    def test_get_ietf_meeting(self):
+        """get_ietf_meeting() should only return IETF meetings"""
+        # put the IETF far in the past so it's not "current"
+        ietf = MeetingFactory(type_id='ietf', date=datetime.date.today() - datetime.timedelta(days=5 * 365))
+        # put the interim meeting now so it will be picked up as "current" if there's a bug
+        interim = MeetingFactory(type_id='interim', date=datetime.date.today())
+        self.assertEqual(get_ietf_meeting(ietf.number), ietf, 'Return IETF meeting by number')
+        self.assertIsNone(get_ietf_meeting(interim.number), 'Ignore non-IETF meetings')
+        self.assertIsNone(get_ietf_meeting(), 'Return None if there is no current IETF meeting')
+        ietf.date = datetime.date.today()
+        ietf.save()
+        self.assertEqual(get_ietf_meeting(), ietf, 'Return current meeting if there is one')

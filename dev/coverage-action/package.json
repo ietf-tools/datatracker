@@ -1,0 +1,23 @@
+{
+  "name": "coverage-action",
+  "version": "1.0.0",
+  "description": "Parse and generate coverage and changelog files for Datatracker releases",
+  "main": "index.js",
+  "author": "IETF Trust",
+  "license": "BSD-3-Clause",
+  "dependencies": {
+    "@actions/core": "1.6.0",
+    "@actions/github": "5.0.0",
+    "chart.js": "3.7.1",
+    "chartjs-node-canvas": "4.1.6",
+    "lodash": "4.17.21",
+    "luxon": "2.3.1"
+  },
+  "devDependencies": {
+    "eslint": "7.32.0",
+    "eslint-config-standard": "16.0.3",
+    "eslint-plugin-import": "2.25.4",
+    "eslint-plugin-node": "11.1.0",
+    "eslint-plugin-promise": "5.2.0"
+  }
+}

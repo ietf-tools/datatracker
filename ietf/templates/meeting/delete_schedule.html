@@ -3,26 +3,24 @@
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
-{% load bootstrap3 %}
-
-{% block title %}Delete IETF {{ meeting.number }} Meeting Agenda: {{schedule.owner}} / {{ schedule.name }}{% endblock %}
-
+{% load django_bootstrap5 %}
+{% block title %}
+    Delete IETF {{ meeting.number }} Meeting Agenda: {{ schedule.owner }} / {{ schedule.name }}
+{% endblock %}
 {% block content %}
-  {% origin %}
-
-<h1>Delete IETF {{meeting.number}} Schedule: {{schedule.owner}}/{{schedule.name}} </h1>
-
-<div>
-
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {# Null Form #}
-    {% buttons %}
-        <input class="btn btn-primary" type="submit" value="Delete schedule" name="save">
-        <a href="{% url 'ietf.meeting.views.list_schedules' num=meeting.number %}" class="btn btn-default">Cancel</a>
-    {% endbuttons %}
-  </form>
-
-</div>
-
+    {% origin %}
+    <h1>
+        Delete IETF {{ meeting.number }} Schedule
+        <br>
+        <small class="text-muted">{{ schedule.owner }}/{{ schedule.name }}</small>
+    </h1>
+    <form method="post" class="my-3" enctype="multipart/form-data">
+        {% csrf_token %}
+        {# Null Form #}
+        <button class="btn btn-danger"
+               type="submit"
+               name="save">Delete schedule</button>
+        <a href="{% url 'ietf.meeting.views.list_schedules' num=meeting.number %}"
+           class="btn btn-secondary float-end">Back</a>
+    </form>
 {% endblock %}

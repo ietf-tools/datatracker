@@ -109,19 +109,21 @@ def ballot_icon(context, doc):
     else:
         typename = "IESG"
 
-    res = ['<a %s href="%s" data-toggle="modal" data-target="#modal-%d" title="%s positions (click to show more)" class="ballot-icon"><table' % (
+    res = ['<a %s href="%s" data-bs-toggle="modal" data-bs-target="#modal-%d" aria-label="%s positions" title="%s positions (click to show more)" class="ballot-icon"><table' % (
             right_click_string,
             urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)),
             ballot.pk,
+            typename,
             typename,)]
     if my_blocking:
         res.append(' class="is-blocking" ')
-    res.append('>')
+    res.append('><tbody>')
 
     res.append("<tr>")
 
     for i, (ad, pos) in enumerate(positions):
-        if i > 0 and i % 5 == 0:
+        # The IRSG has many more members than the IESG, so make the table wider
+        if i > 0 and i % (5 if len(positions) <= 15 else 10) == 0:
             res.append("</tr><tr>")
 
         c = "position-%s" % (pos.pos.slug if pos else "norecord")
@@ -133,13 +135,11 @@ def ballot_icon(context, doc):
 
     # add sufficient table calls to last row to avoid HTML validation warning
     while (i + 1) % 5 != 0:
-        res.append('<td class="empty"></td>')
+        res.append('<td class="position-empty"></td>')
         i = i + 1
 
-    res.append("</tr></table></a>")
-    # XXX FACELIFT: Loading via href will go away in bootstrap 4.
-    # See http://getbootstrap.com/javascript/#modals-usage
-    res.append('<div id="modal-%d" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true"><div class="modal-dialog modal-lg"><div class="modal-content"></div></div></div>' % ballot.pk)
+    res.append("</tr></tbody></table></a>")
+    res.append('<div id="modal-%d" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable modal-xl"><div class="modal-content"></div></div></div>' % ballot.pk)
 
     return mark_safe("".join(res))
 
@@ -204,18 +204,18 @@ def state_age_colored(doc):
             goal1 = 14
             goal2 = 28
         if days > goal2:
-            class_name = "label label-danger"
+            class_name = "text-danger"
         elif days > goal1:
-            class_name = "label label-warning"
+            class_name = "text-warning"
         else:
-            class_name = "ietf-small"
+            # don't show a badge when things are in the green; clutters display
+            # class_name = "text-success"
+            return ""
         if days > goal1:
-            title = ' title="Goal is &lt;%d days"' % (goal1,)
+            title = ' title="In state for %d day%s; goal is &lt;%d days."' % (days, 's' if days != 1 else '', goal1,)
         else:
             title = ''
-        return mark_safe('<span class="%s"%s>for %d day%s</span>' % (
-                class_name, title, days,
-                's' if days != 1 else ''))
+        return mark_safe('<span class="%s"><i class="bi bi-hourglass-split"%s></i></span>' % (class_name, title))
     else:
         return ""
 
@@ -231,6 +231,6 @@ def auth48_alert_badge(doc):
 
     rfced_state = doc.get_state_slug('draft-rfceditor')
     if rfced_state == 'auth48':
-        return mark_safe('<span class="label label-info" title="AUTH48">AUTH48</span>')
+        return mark_safe('<span class="badge bg-info" title="AUTH48">AUTH48</span>')
 
     return ''

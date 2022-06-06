@@ -273,7 +273,7 @@ class StatusChangeFactory(BaseDocumentFactory):
             return
         if extracted:
             for (rel, target) in extracted:
-                obj.relateddocument_set.create(relationship_id=rel,target=extracted)
+                obj.relateddocument_set.create(relationship_id=rel,target=target)
         else:
             obj.relateddocument_set.create(relationship_id='tobcp', target=WgRfcFactory().docalias.first())
 

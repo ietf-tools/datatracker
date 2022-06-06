@@ -1,29 +1,35 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin static ietf_filters %}
 {% load cache %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
 {% block title %}Non-Working Group email lists{% endblock %}
-
 {% block content %}
-  {% origin %}
-  <h1>Non-Working Group email lists</h1>
-
-  {% cache 900 nonwglisttable %}
-  <table class="table table-condensed table-striped">
-    <thead>
-      <tr>
-        <th>Name</th><th>Description</th><th>List Info</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for list in lists %}
-        <tr>
-          <td>{{ list.name.lower }}</td>
-          <td>{{ list.description }}</td>
-          <td><a href="{{ list.info_url }}">{{ list.info_url.lower }}</a></td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% endcache %}
+    {% origin %}
+    <h1>Non-Working Group email lists</h1>
+    {% cache 900 nonwglisttable %}
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="name">Name</th>
+                <th scope="col" data-sort="description">Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for list in lists %}
+                <tr>
+                    <td>
+                        <a href="{{ list.info_url }}">{{ list.name.lower }}</a>
+                    </td>
+                    <td>{{ list.description|urlize_ietf_docs }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endcache %}
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

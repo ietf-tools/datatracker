@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2022, All Rights Reserved
 
 import re
 
@@ -15,7 +15,7 @@ def groups(request):
     return render(request, "mailinglists/group_archives.html", { "groups": groups } )
 
 def nonwg(request):
-    groups = Group.objects.filter(type__features__acts_like_wg=True).exclude(state__in=['bof', 'conclude']).order_by("acronym")
+    groups = Group.objects.filter(type__features__acts_like_wg=True).exclude(state__in=['bof']).order_by("acronym")
 
     #urls = [ g.list_archive for g in groups if '.ietf.org' in g.list_archive ]
 

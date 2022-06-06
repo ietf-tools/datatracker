@@ -3,18 +3,27 @@
 {% load static %}
 {% block title %}401 Unauthorized{% endblock %}
 {% block content %}
-
-  <img class="ietflogo" src="{% static 'ietf/images/ietflogo.png' %}" alt="IETF" style="width: 10em">
-
-  <h2>Authentication Required</h2>
-
-  <p>The server could not verify that you are authorized to view this page using
-    the username and password you provided. You can now:</p>
-
-  <ul>
-    <li><a href="/accounts/login/">Attempt to login again</a></li>
-    <li><a href="/accounts/reset/">Request a password reset</a></li>
-  </ul>
-
-  <p>If you think this is a server error, please contact <a href="mailto:webtools@ietf.org">webtools@ietf.org</a>.</p>
+    <img class="col-2 mb-5"
+         src="{% static 'ietf/images/ietf-logo.svg' %}"
+         alt="IETF">
+    <div class="alert alert-warning my-3">
+        <h1>Authentication Required</h1>
+        <hr>
+        <p>
+            The server could not verify that you are authorized to view this page using
+            the username and password you provided. You can now:
+        </p>
+        <ul>
+            <li>
+                <a href="/accounts/login/">Attempt to login again</a>
+            </li>
+            <li>
+                <a href="/accounts/reset/">Request a password reset</a>
+            </li>
+        </ul>
+        <p class="mb-0">
+            If you think this is a server error, please contact
+            <a href="mailto:webtools@ietf.org">webtools@ietf.org</a>.
+        </p>
+    </div>
 {% endblock %}

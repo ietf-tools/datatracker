@@ -1,28 +1,28 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
-{% load bootstrap3 %}
-
-{% block title %}Change revision for session{% endblock %}
-
+{% load django_bootstrap5 %}
+{% block title %}Change document revision for session {{ sp.document.name }}{% endblock %}
 {% block content %}
-  {% origin %}
-  <h1>Change document revision for session<br><small>{{sp.document.name}}<br>{{sp.document.title}}<br>at {{sp.session}}</small></h1>
-
-  {% if sp.session.is_material_submission_cutoff %}
-    <p class="alert alert-warning">The deadline for submission corrections has passed. This may affect published proceedings.</p>
-  {% endif %}
-
-  <form method="post">
-    {% csrf_token %}
-
-    {% bootstrap_form form %}
-
-    {% buttons %}
-      <button class="btn btn-primary" type="submit" name="save">Save</button>
-      <a class="btn btn-default" href="{% url 'ietf.doc.views_doc.all_presentations' name=sp.document.name %}">Cancel</a>
-    {% endbuttons %}
-
-  </form>
-{% endblock content %}
+    {% origin %}
+    <h1>
+        Change document revision for session
+        <br>
+        <small class="text-muted">{{ sp.document.name }}</small>
+    </h1>
+    <h2 class="mt-3">{{ sp.document.title }} at {{ sp.session }}</h2>
+    {% if sp.session.is_material_submission_cutoff %}
+        <p class="my-3 alert alert-warning">
+            The deadline for submission corrections has passed. This may affect published proceedings.
+        </p>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <button class="btn btn-primary" type="submit" name="save">Save</button>
+        <a class="btn btn-secondary float-end"
+           href="{% url 'ietf.doc.views_doc.all_presentations' name=sp.document.name %}">
+            Back
+        </a>
+    </form>
+{% endblock %}

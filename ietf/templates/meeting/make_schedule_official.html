@@ -3,27 +3,22 @@
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
-{% load bootstrap3 %}
-
-{% block title %}IETF {{ meeting.number }} : Make {{schedule.owner}} / {{ schedule.name }} Official{% endblock %}
-
+{% load django_bootstrap5 %}
+{% block title %}IETF {{ meeting.number }} : Make {{ schedule.owner }} / {{ schedule.name }} Official{% endblock %}
 {% block content %}
-  {% origin %}
-
-<h1>IETF {{meeting.number}}</h1>
-<h2>Make Schedule: {{schedule.owner}}/{{schedule.name}} Official
-
-<div>
-
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {# Null Form #}
-    {% buttons %}
-        <input class="btn btn-primary" type="submit" value="Make this schedule official" name="save">
-        <a href="{% url 'ietf.meeting.views.list_schedules' num=meeting.number %}" class="btn btn-default">Cancel</a>
-    {% endbuttons %}
-  </form>
-
-</div>
-
+    {% origin %}
+    <h1>
+        Make IETF {{ meeting.number }} Schedule Official
+        <br>
+        <small class="text-muted">{{ schedule.owner }}/{{ schedule.name }}</small>
+    </h1>
+    <form method="post" enctype="multipart/form-data" class="my-3">
+        {% csrf_token %}
+        {# Null Form #}
+        <button class="btn btn-warning"
+               type="submit"
+               name="save">Make this schedule official</button>
+        <a href="{% url 'ietf.meeting.views.list_schedules' num=meeting.number %}"
+           class="btn btn-secondary float-end">Back</a>
+    </form>
 {% endblock %}

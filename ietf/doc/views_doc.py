@@ -348,9 +348,17 @@ def document_main(request, name, rev=None):
         # conflict reviews
         conflict_reviews = [r.source.name for r in interesting_relations_that.filter(relationship="conflrev")]
 
-        status_change_docs = interesting_relations_that.filter(relationship__in=STATUSCHANGE_RELATIONS)
-        status_changes = [ r.source for r in status_change_docs  if r.source.get_state_slug() in ('appr-sent','appr-pend')]
-        proposed_status_changes = [ r.source for r in status_change_docs  if r.source.get_state_slug() in ('needshep','adrev','iesgeval','defer','appr-pr')]
+        # status changes
+        status_changes = []
+        proposed_status_changes = []
+        for r in interesting_relations_that.filter(relationship__in=STATUSCHANGE_RELATIONS):
+            state_slug = r.source.get_state_slug()
+            if state_slug in ('appr-sent', 'appr-pend'):
+                status_changes.append(r)
+            elif state_slug in ('needshep','adrev','iesgeval','defer','appr-pr'):
+                proposed_status_changes.append(r)
+            else:
+                pass
 
         presentations = doc.future_presentations()
 
@@ -360,9 +368,9 @@ def document_main(request, name, rev=None):
         if can_adopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"] and not snapshot:
             if doc.group and doc.group.acronym != 'none': # individual submission
                 # already adopted in one group
-                button_text = "Change Document Adoption to other Group (now in %s)" % doc.group.acronym
+                button_text = "Switch adoption"
             else:
-                button_text = "Manage Document Adoption in Group"
+                button_text = "Manage adoption"
             actions.append((button_text, urlreverse('ietf.doc.views_draft.adopt_draft', kwargs=dict(name=doc.name))))
 
         if can_unadopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"] and not snapshot:
@@ -718,6 +726,7 @@ def document_main(request, name, rev=None):
 
     raise Http404("Document not found: %s" % (name + ("-%s"%rev if rev else "")))
 
+
 def document_raw_id(request, name, rev=None, ext=None):
     if not name.startswith('draft-'):
         raise Http404
@@ -748,7 +757,7 @@ def document_raw_id(request, name, rev=None, ext=None):
     if not ext in found_types:
         raise Http404('dont have the file for that extension')
     mimetypes = {'txt':'text/plain','html':'text/html','xml':'application/xml'}
-    try:    
+    try:
         with open(found_types[ext],'rb') as f:
             blob = f.read()
             return HttpResponse(blob,content_type=f'{mimetypes[ext]};charset=utf-8')
@@ -768,7 +777,6 @@ def document_html(request, name, rev=None):
          return redirect('ietf.doc.views_doc.document_html', name=found.matched_name)
 
     doc = found.documents.get()
-
 
     if found.matched_rev or found.matched_name.startswith('rfc'):
         rev = found.matched_rev
@@ -935,7 +943,6 @@ def document_history(request, name):
                 person__user=request.user)))
     else:
         can_add_comment = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair"))
-
     return render(request, "doc/document_history.html",
                               dict(doc=doc,
                                    top=top,
@@ -1551,7 +1558,7 @@ def edit_action_holders(request, name):
     
     if request.method == 'POST':
         form = ActionHoldersForm(request.POST)
-        if form.is_valid() and 'action_holders' in request.POST:
+        if form.is_valid():
             new_action_holders = form.cleaned_data['action_holders']  # Person queryset
             prev_action_holders = list(doc.action_holders.all())
             

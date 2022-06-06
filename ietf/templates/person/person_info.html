@@ -1,16 +1,44 @@
-    <div class="person-info">
-        <div class="row">
-          <div class="col-md-2">Name:</div><div class="col-md-10">{{ person.name }}</div>
-        </div>
-        <div class="row">
-          <div class="col-md-2">Login:</div><div class="col-md-10">{% if person.user %}{{ person.user }} (last used: {% if person.user.last_login %}{{ person.user.last_login|date:"Y-m-d" }}{% else %}never{% endif %}){% endif %}</div>
-        </div>
-        {% for email in person.email_set.all %}
-        <div class="row">
-          <div class="col-md-2">{% if forloop.first %}Email{{ person.email_set.count|pluralize }}:{% endif %}</div><div class="col-md-10">{{ email.address }}</div>
-        </div>
-        {% endfor %}
-        <div class="row">
-          <div class="col-md-2">Role{{ person.role_set.count|pluralize }}:</div><div class="col-md-10">{% for role in person.role_set.all %}{{ role.name }} {{ role.group.acronym }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
-        </div>
-    </div>
+{% load textfilters person_filters %}
+<dl class="row person-info">
+    <dt class="col-md-3">
+        Name:
+    </dt>
+    <dd class="col-md-9">
+        {% person_link person %}
+    </dd>
+    <dt class="col-md-3">
+        Login:
+    </dt>
+    <dd class="col-md-9">
+        {% if person.user %}
+            {{ person.user }} <span class="badge bg-info"> Last login
+            {% if person.user.last_login %}
+                {{ person.user.last_login|date:"Y-m-d" }}
+            {% else %}
+                never
+            {% endif %}
+        </span>
+    {% else %}
+        never
+    {% endif %}
+</dd>
+<dt class="col-md-3">
+    Email{{ person.email_set.count|pluralize }}:
+</dt>
+<dd class="col-md-9">
+    {% for email in person.email_set.all %}
+        {{ email.address|linkify }}
+        <br>
+    {% endfor %}
+</dd>
+<dt class="col-md-3">
+    Role{{ person.role_set.count|pluralize }}:
+</dt>
+<dd class="col-md-9">
+    {% for role in person.role_set.all %}
+        {{ role.name }}
+        <a href="{{ role.group.about_url }}">{{ role.group.acronym }}</a>
+        <br>
+    {% endfor %}
+</dd>
+</dl>

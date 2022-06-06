@@ -81,6 +81,8 @@ class State(models.Model):
         ordering = ["type", "order"]
 
 IESG_BALLOT_ACTIVE_STATES = ("lc", "writeupw", "goaheadw", "iesg-eva", "defer")
+IESG_CHARTER_ACTIVE_STATES = ("intrev", "extrev", "iesgrev")
+IESG_STATCHG_CONFLREV_ACTIVE_STATES = ("iesgeval", "defer")
 IESG_SUBSTATE_TAGS = ('ad-f-up', 'need-rev', 'extpty')
 
 class DocumentInfo(models.Model):

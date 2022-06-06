@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-import bleach
 import datetime
 import re
 from urllib.parse import urljoin
@@ -18,15 +17,17 @@ from django.utils.html import strip_tags
 from django.utils.encoding import force_text
 from django.utils.encoding import force_str # pyflakes:ignore force_str is used in the doctests
 from django.urls import reverse as urlreverse
+from django.core.cache import cache
+from django.core.exceptions import ValidationError
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import BallotDocEvent
+from ietf.doc.models import BallotDocEvent, DocAlias
 from ietf.doc.models import ConsensusDocEvent
 from ietf.utils.html import sanitize_fragment
 from ietf.utils import log
 from ietf.doc.utils import prettify_std_name
-from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped
+from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped, bleach_linker, bleach_cleaner, validate_url
 
 register = template.Library()
 
@@ -45,45 +46,6 @@ def indent(value, numspaces=2):
 def unindent(value):
     """Remove indentation from string."""
     return re.sub("\n +", "\n", value)
-
-@register.filter(name='parse_email_list')
-def parse_email_list(value):
-    """
-    Parse a list of comma-seperated email addresses into
-    a list of mailto: links.
-
-    Splitting a string of email addresses should return a list:
-
-    >>> force_str(parse_email_list('joe@example.org, fred@example.com'))
-    '<a href="mailto:joe@example.org">joe@example.org</a>, <a href="mailto:fred@example.com">fred@example.com</a>'
-
-    Parsing a non-string should return the input value, rather than fail:
-
-    >>> [ force_str(e) for e in parse_email_list(['joe@example.org', 'fred@example.com']) ]
-    ['joe@example.org', 'fred@example.com']
-
-    Null input values should pass through silently:
-
-    >>> force_str(parse_email_list(''))
-    ''
-
-    >>> parse_email_list(None)
-
-
-    """
-    if value and isinstance(value, str): # testing for 'value' being true isn't necessary; it's a fast-out route
-        addrs = re.split(", ?", value)
-        ret = []
-        for addr in addrs:
-            (name, email) = parseaddr(addr)
-            if not(name):
-                name = email
-            ret.append('<a href="mailto:%s">%s</a>' % ( email.replace('&', '&amp;'), escape(name) ))
-        return mark_safe(", ".join(ret))
-    elif value and isinstance(value, bytes):
-        log.assertion('isinstance(value, str)')        
-    else:
-        return value
 
 @register.filter
 def strip_email(value):
@@ -224,30 +186,143 @@ def rfceditor_info_url(rfcnum : str):
     """Link to the RFC editor info page for an RFC"""
     return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f'rfc{rfcnum}')
 
-@register.filter(name='urlize_ietf_docs', is_safe=True, needs_autoescape=True)
+
+def doc_canonical_name(name):
+    """Check whether a given document exists, and return its canonical name"""
+
+    def find_unique(n):
+        key = hash(n)
+        found = cache.get(key)
+        if not found:
+            exact = DocAlias.objects.filter(name=n).first()
+            found = exact.name if exact else "_"
+            cache.set(key, found, timeout=60*60*24)  # cache for one day
+        return None if found == "_" else found
+
+    # chop away extension
+    extension_split = re.search(r"^(.+)\.(txt|ps|pdf|html)$", name)
+    if extension_split:
+        name = extension_split.group(1)
+
+    if find_unique(name):
+        return name
+
+    # check for embedded rev - this may be ambiguous, so don't
+    # chop it off if we don't find a match
+    rev_split = re.search(r"^(charter-.+)-(\d{2}-\d{2})$", name) or re.search(
+        r"^(.+)-(\d{2}|[1-9]\d{2,})$", name
+    )
+    if rev_split:
+        name = rev_split.group(1)
+        if find_unique(name):
+            return name
+
+    return ""
+
+
+def link_charter_doc_match1(match):
+    if not doc_canonical_name(match[0]):
+        return match[0]
+    return f'<a href="/doc/{match[1][:-1]}/{match[2]}/">{match[0]}</a>'
+
+
+def link_charter_doc_match2(match):
+    if not doc_canonical_name(match[0]):
+        return match[0]
+    return f'<a href="/doc/{match[1][:-1]}/{match[2]}/">{match[0]}</a>'
+
+
+def link_non_charter_doc_match(match):
+    name = match[0]
+    cname = doc_canonical_name(name)
+    if not cname:
+        return match[0]
+    if name == cname:
+        return f'<a href="/doc/{cname}/">{match[0]}</a>'
+
+    # if we get here, the name probably has a version number and/or extension at the end
+    rev_split = re.search(r"^(" + re.escape(cname) + r")-(\d{2,})", name)
+    if rev_split:
+        name = rev_split.group(1)
+    else:
+        return f'<a href="/doc/{cname}/">{match[0]}</a>'
+
+    cname = doc_canonical_name(name)
+    if not cname:
+        return match[0]
+    if name == cname:
+        return f'<a href="/doc/{cname}/{rev_split.group(2)}/">{match[0]}</a>'
+
+    # if we get here, we can't linkify
+    return match[0]
+
+
+def link_other_doc_match(match):
+    doc = match[2].strip().lower()
+    rev = match[3]
+    if not doc_canonical_name(doc + rev):
+        return match[0]
+    return f'<a href="/doc/{doc}{rev}/">{match[1]}</a>'
+
+
+@register.filter(name="urlize_ietf_docs", is_safe=True, needs_autoescape=True)
 def urlize_ietf_docs(string, autoescape=None):
     """
     Make occurrences of RFC NNNN and draft-foo-bar links to /doc/.
     """
     if autoescape and not isinstance(string, SafeData):
-        string = escape(string)
-    string = re.sub(r"(?<!>)(RFC ?)0{0,3}(\d+)", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string)
-    string = re.sub(r"(?<!>)(BCP ?)0{0,3}(\d+)", "<a href=\"/doc/bcp\\2/\">\\1\\2</a>", string)
-    string = re.sub(r"(?<!>)(STD ?)0{0,3}(\d+)", "<a href=\"/doc/std\\2/\">\\1\\2</a>", string)
-    string = re.sub(r"(?<!>)(FYI ?)0{0,3}(\d+)", "<a href=\"/doc/fyi\\2/\">\\1\\2</a>", string)
-    string = re.sub(r"(?<!>)(draft-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
-    string = re.sub(r"(?<!>)(conflict-review-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
-    string = re.sub(r"(?<!>)(status-change-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
+        if "<" in string:
+            string = escape(string)
+        else:
+            string = mark_safe(string)
+    exp1 = r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d{2}-\d{2})(\.(?:txt|ps|pdf|html))?\b"
+    exp2 = r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d{2})(\.(?:txt|ps|pdf|html))?\b"
+    if re.search(exp1, string):
+        string = re.sub(
+            exp1,
+            link_charter_doc_match1,
+            string,
+            flags=re.IGNORECASE | re.ASCII,
+        )
+    elif re.search(exp2, string):
+        string = re.sub(
+            exp2,
+            link_charter_doc_match2,
+            string,
+            flags=re.IGNORECASE | re.ASCII,
+        )
+    string = re.sub(
+        r"\b(?<![/\-:=#])((?:draft-|bofreq-|conflict-review-|status-change-)[\d\w\.+-]+(?![-@]))",
+        # r"\b(?<![/\-:=#])(((?:draft-|bofreq-|conflict-review-|status-change-)(?:[\d\w\.+]+-)*)([\d\w\.+]+?)(\.(?:txt|ps|pdf|html))?)\b(?![-@])",
+        link_non_charter_doc_match,
+        string,
+        flags=re.IGNORECASE | re.ASCII,
+    )
+    string = re.sub(
+        # r"\b((RFC|BCP|STD|FYI|(?:draft-|bofreq-|conflict-review-|status-change-|charter-)[-\d\w.+]+)\s*0*(\d+))\b",
+        r"\b(?<![/\-:=#])((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
+        link_other_doc_match,
+        string,
+        flags=re.IGNORECASE | re.ASCII,
+    )
     return mark_safe(string)
+
+
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
 @register.filter(name='urlize_related_source_list', is_safe=True, needs_autoescape=True)
 def urlize_related_source_list(related, autoescape=None):
-    """Convert a list of DocumentRelations into list of links using the source document's canonical name"""
+    """Convert a list of RelatedDocuments into list of links using the source document's canonical name"""
     links = []
+    names = set()
+    titles = set()
     for rel in related:
         name=rel.source.canonical_name()
         title = rel.source.title
+        if name in names and title in titles:
+            continue
+        names.add(name)
+        titles.add(title)
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=name))
         if autoescape:
             name = escape(name)
@@ -261,7 +336,7 @@ def urlize_related_source_list(related, autoescape=None):
         
 @register.filter(name='urlize_related_target_list', is_safe=True, needs_autoescape=True)
 def urlize_related_target_list(related, autoescape=None):
-    """Convert a list of DocumentRelations into list of links using the source document's canonical name"""
+    """Convert a list of RelatedDocuments into list of links using the target document's canonical name"""
     links = []
     for rel in related:
         name=rel.target.document.canonical_name()
@@ -430,31 +505,25 @@ def ad_area(user):
 @register.filter
 def format_history_text(text, trunc_words=25):
     """Run history text through some cleaning and add ellipsis if it's too long."""
-    full = mark_safe(text)
-
-    if text.startswith("This was part of a ballot set with:"):
-        full = urlize_ietf_docs(full)
+    full = mark_safe(bleach_cleaner.clean(text))
+    full = bleach_linker.linkify(urlize_ietf_docs(full))
 
     return format_snippet(full, trunc_words)
 
 @register.filter
 def format_snippet(text, trunc_words=25): 
     # urlize if there aren't already links present
-    if not 'href=' in text:
-        # django's urlize() cannot handle adjacent parentheszised
-        # expressions, for instance [REF](http://example.com/foo)
-        # Use bleach.linkify instead
-        text = bleach.linkify(text)
+    text = bleach_linker.linkify(text)
     full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_fragment(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
-        return mark_safe('<div class="snippet">%s<button class="btn btn-xs btn-default show-all"><span class="fa fa-caret-down"></span></button></div><div class="hidden full">%s</div>' % (snippet, full))
-    return full
+        return mark_safe('<div class="snippet">%s<button type="button" aria-label="Expand" class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="d-none full">%s</div>' % (snippet, full))
+    return mark_safe(full)
 
 @register.simple_tag
 def doc_edit_button(url_name, *args, **kwargs):
     """Given URL name/args/kwargs, looks up the URL just like "url" tag and returns a properly formatted button for the document material tables."""
-    return mark_safe('<a class="btn btn-default btn-xs" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
+    return mark_safe('<a class="btn btn-primary btn-sm" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
 
 @register.filter
 def textify(text):
@@ -515,18 +584,32 @@ def consensus(doc):
         return "Unknown"
 
 @register.filter
-def pos_to_label(text):
-    """Return a valid Bootstrap3 label type for a ballot position."""
+def pos_to_label_format(text):
+    """Returns valid Bootstrap classes to label a ballot position."""
     return {
-        'Yes':          'success',
-        'No Objection': 'pass',
-        'Abstain':      'warning',
-        'Discuss':      'danger',
-        'Block':        'danger',
-        'Recuse':       'primary',
-        'Not Ready':    'danger',
-        'Need More Time': 'danger',
-    }.get(str(text), 'blank')
+        'Yes':          'bg-yes text-light',
+        'No Objection': 'bg-noobj text-dark',
+        'Abstain':      'bg-abstain text-light',
+        'Discuss':      'bg-discuss text-light',
+        'Block':        'bg-discuss text-light',
+        'Recuse':       'bg-recuse text-light',
+        'Not Ready':    'bg-discuss text-light',
+        'Need More Time': 'bg-discuss text-light',
+    }.get(str(text), 'bg-norecord text-dark')
+
+@register.filter
+def pos_to_border_format(text):
+    """Returns valid Bootstrap classes to label a ballot position border."""
+    return {
+        'Yes':          'border-yes',
+        'No Objection': 'border-noobj',
+        'Abstain':      'border-abstain',
+        'Discuss':      'border-discuss',
+        'Block':        'border-discuss',
+        'Recuse':       'border-recuse',
+        'Not Ready':    'border-discuss',
+        'Need More Time': 'border-discuss',
+    }.get(str(text), 'border-norecord')
 
 @register.filter
 def capfirst_allcaps(text):
@@ -636,20 +719,20 @@ def action_holder_badge(action_holder):
     ''
 
     >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=16)))
-    '<span class="label label-danger" title="Goal is &lt;15 days">for 16 days</span>'
+    '<span class="text-danger"><i class="bi bi-hourglass-split" title="In state for 16 days; goal is &lt;15 days."></i></span>'
 
     >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=30)))
-    '<span class="label label-danger" title="Goal is &lt;15 days">for 30 days</span>'
+    '<span class="text-danger"><i class="bi bi-hourglass-split" title="In state for 30 days; goal is &lt;15 days."></i></span>'
 
     >>> settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS = old_limit
     """
     age_limit = settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS
     age = (datetime.datetime.now() - action_holder.time_added).days
     if age > age_limit:
-        return mark_safe('<span class="label label-danger" title="Goal is &lt;%d days">for %d day%s</span>' % (
-            age_limit,
+        return mark_safe('<span class="text-danger"><i class="bi bi-hourglass-split" title="In state for %d day%s; goal is &lt;%d days."></i></span>' % (
             age,
-            's' if age != 1 else ''))
+            's' if age != 1 else '',
+            age_limit))
     else:
         return ''  # no alert needed
 
@@ -761,3 +844,15 @@ def absurl(viewname, **kwargs):
     Uses settings.IDTRACKER_BASE_URL as the base.
     """
     return urljoin(settings.IDTRACKER_BASE_URL, urlreverse(viewname, kwargs=kwargs))
+
+
+@register.filter
+def is_valid_url(url):
+    """
+    Check if the given URL is syntactically valid
+    """
+    try:
+        validate_url(url)
+    except ValidationError:
+        return False
+    return True

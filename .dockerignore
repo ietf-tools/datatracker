@@ -1,0 +1,7 @@
+# Files to be excluded from the docker build context
+
+/.git
+/.github
+/svn-history
+/data
+/tmp-*

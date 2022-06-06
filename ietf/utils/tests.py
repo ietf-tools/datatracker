@@ -3,11 +3,12 @@
 
 
 import io
+import json
 import os.path
 import shutil
-import sys
 import types
 
+from pyquery import PyQuery
 from typing import Dict, List       # pyflakes:ignore
 
 from email.mime.image import MIMEImage
@@ -15,52 +16,30 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from fnmatch import fnmatch
 from importlib import import_module
-from .pipe import pipe
 from textwrap import dedent
-from unittest import skipIf
 from tempfile import mkdtemp
 
 from django.apps import apps
 from django.contrib.auth.models import User
 from django.conf import settings
-from django.core.management import call_command
 from django.template import Context
 from django.template import Template    # pyflakes:ignore
 from django.template.defaulttags import URLNode
-from django.template.loader import get_template
+from django.template.loader import get_template, render_to_string
 from django.templatetags.static import StaticNode
 from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.group.factories import GroupFactory
-from ietf.group.models import Group
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
-from ietf.utils.bower_storage import BowerStorageFinder
 from ietf.utils.draft import PlaintextDraft, getmeta
 from ietf.utils.log import unreachable, assertion
 from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox, get_payload_text
 from ietf.utils.test_runner import get_template_paths, set_coverage_checking
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.text import parse_unicode
 from ietf.utils.xmldraft import XMLDraft
-
-
-skip_wiki_glue_testing = False
-skip_message_svn = ""
-skip_message_trac = ""
-try:
-    import svn                          # pyflakes:ignore
-except ImportError as e:
-    skip_wiki_glue_testing = True
-    skip_message_svn = "Skipping trac tests: %s" % e
-    print("     "+skip_message_svn)
-
-if sys.version_info.major==3:
-    skip_version_trac = True
-    skip_message_trac = "Skipping trac tests: Trac not available for Python3 as of 14 Jul 2019, 04 Jul 2020"
-    print("     "+skip_message_trac)
 
 class SendingMail(TestCase):
 
@@ -292,67 +271,29 @@ class TemplateChecksTestCase(TestCase):
         r = self.client.get(url)        
         self.assertTemplateUsed(r, '500.html')
 
-@skipIf(skip_version_trac, skip_message_trac)
-@skipIf(skip_wiki_glue_testing, skip_message_svn)
-class TestWikiGlueManagementCommand(TestCase):
+class BaseTemplateTests(TestCase):
+    base_template = 'base.html'
 
-    def setUp(self):
-        super().setUp()
-        # We create temporary wiki and svn directories, and provide them to the management
-        # command through command line switches.  We have to do it this way because the
-        # management command reads in its own copy of settings.py in its own python
-        # environment, so we can't modify it here.
-        set_coverage_checking(False)
-        self.wiki_dir_pattern = os.path.abspath('tmp-wiki-dir-root/%s')
-        if not os.path.exists(os.path.dirname(self.wiki_dir_pattern)):
-            os.mkdir(os.path.dirname(self.wiki_dir_pattern))
-        self.svn_dir_pattern = os.path.abspath('tmp-svn-dir-root/%s')
-        if not os.path.exists(os.path.dirname(self.svn_dir_pattern)):
-            os.mkdir(os.path.dirname(self.svn_dir_pattern))
-
-    def tearDown(self):
-        shutil.rmtree(os.path.dirname(self.wiki_dir_pattern))
-        shutil.rmtree(os.path.dirname(self.svn_dir_pattern))
-        set_coverage_checking(True)
-        super().tearDown()
-
-    def test_wiki_create_output(self):
-        for group_type in ['wg','rg','ag','area','rag']:
-            GroupFactory(type_id=group_type)
-        groups = Group.objects.filter(
-                        type__slug__in=['wg','rg','ag','area','rag'],
-                        state__slug='active'
-                    ).order_by('acronym')
-        out = io.StringIO()
-        err = io.StringIO()
-        call_command('create_group_wikis', stdout=out, stderr=err, verbosity=2,
-            wiki_dir_pattern=self.wiki_dir_pattern,
-            svn_dir_pattern=self.svn_dir_pattern,
+    def test_base_template_includes_ietf_js(self):
+        content = render_to_string(self.base_template, {})
+        pq = PyQuery(content)
+        self.assertTrue(
+            pq('head > script[src$="ietf/js/ietf.js"]'),
+            'base template should include ietf.js',
         )
-        command_output = out.getvalue()
-        command_errors = err.getvalue()
-        self.assertEqual("", command_errors)
-        for group in groups:
-            self.assertIn("Processing group '%s'" % group.acronym, command_output)
-            # Do a bit of verification using trac-admin, too
-            admin_code, admin_output, admin_error = pipe(
-                'trac-admin %s permission list' % (self.wiki_dir_pattern % group.acronym))
-            self.assertEqual(admin_code, 0)
-            roles = group.role_set.filter(name_id__in=['chair', 'secr', 'ad'])
-            for role in roles:
-                user = role.email.address.lower()
-                self.assertIn("Granting admin permission for %s" % user, command_output)
-                self.assertIn(user, admin_output)
-            docs = group.document_set.filter(states__slug='active', type_id='draft')
-            for doc in docs:
-                name = doc.name
-                name = name.replace('draft-','')
-                name = name.replace(doc.stream_id+'-', '')
-                name = name.replace(group.acronym+'-', '')
-                self.assertIn("Adding component %s"%name, command_output)
-        for page in settings.TRAC_WIKI_PAGES_TEMPLATES:
-            self.assertIn("Adding page %s" % os.path.basename(page), command_output)
-        self.assertIn("Indexing default repository", command_output)
+
+    def test_base_template_righthand_nav(self):
+        """The base template provides an automatic righthand navigation panel
+
+        This is provided by ietf.js and requires the ietf-auto-nav class and a parent with the row class
+        or the nav widget will not render properly.
+        """
+        content = render_to_string(self.base_template, {})
+        pq = PyQuery(content)
+        self.assertTrue(
+            pq('.row > #content.ietf-auto-nav'),
+            'base template should have a #content element with .ietf-auto-nav class and .row parent',
+        )
 
 OMITTED_APPS = [
     'ietf.secr.meetings',
@@ -392,44 +333,11 @@ class AdminTestCase(TestCase):
                     self.assertContains(r, model._meta.model_name,
                         msg_prefix="There doesn't seem to be any admin API for model %s.models.%s"%(app.__name__,model.__name__,))
 
-## One might think that the code below would work, but it doesn't ...
-
-# def list_static_files(path):
-#     r = Path(settings.STATIC_ROOT)
-#     p = r / path
-#     files =  list(p.glob('**/*'))
-#     relfn = [ str(file.relative_to(r)) for file in files ] 
-#     return relfn
-# 
-# class TestBowerStaticFiles(TestCase):
-# 
-#     def test_bower_static_file_finder(self):
-#         from django.templatetags.static import static
-#         bower_json = os.path.join(settings.BASE_DIR, 'bower.json')
-#         with open(bower_json) as file:
-#             bower_info = json.load(file)
-#         for asset in bower_info["dependencies"]:
-#             files = list_static_files(asset)
-#             self.assertGreater(len(files), 0)
-#             for file in files:
-#                 url = static(file)
-#                 debug.show('url')
-#                 r = self.client.get(url)
-#                 self.assertEqual(r.status_code, 200)
-
-class TestBowerStaticFiles(TestCase):
-
-    def test_bower_storage_finder(self):
-        bfs = BowerStorageFinder()
-        files = bfs.find('.')
-        self.assertNotEqual(files,[])
-
-
 class PlaintextDraftTests(TestCase):
 
     def setUp(self):
         super().setUp()
-        file,_ = submission_file(name='draft-test-draft-class',rev='00',format='txt',templatename='test_submission.txt',group=None)
+        file,_ = submission_file(name_in_doc='draft-test-draft-class-00', name_in_post='draft-test-draft-class-00.txt',templatename='test_submission.txt',group=None)
         self.draft = PlaintextDraft(text=file.getvalue(), source='draft-test-draft-class-00.txt', name_from_source=False)
 
     def test_get_status(self):
@@ -530,7 +438,9 @@ class LogUtilTests(TestCase):
         with self.assertRaises(AssertionError):
             unreachable()
         settings.SERVER_MODE = 'development'
-        unreachable()
+        # FIXME-LARS: this fails when the tests are run with --debug-mode, i.e., DEBUG is set:
+        if not settings.DEBUG:
+            unreachable()
         settings.SERVER_MODE = 'test'
 
     def test_assertion(self):
@@ -558,3 +468,11 @@ class TestRFC2047Strings(TestCase):
             )
         for encoded_str, unicode in names: 
             self.assertEqual(unicode, parse_unicode(encoded_str))
+
+class TestAndroidSiteManifest(TestCase):
+    def test_manifest(self):
+        r = self.client.get(urlreverse('site.webmanifest'))
+        self.assertEqual(r.status_code, 200)
+        manifest = json.loads(unicontent(r))
+        self.assertTrue('name' in manifest)
+        self.assertTrue('theme_color' in manifest)

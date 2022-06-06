@@ -1,0 +1,30 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin static person_filters %}
+<div class="card shadow-sm mb-3 text-center photo">
+    {% if name or email %}
+        <a title="Datatracker profile of {{ person.name }}."
+           href="{% if name %}{% url 'ietf.person.views.profile' email_or_name=name %}{% else %}{% url 'ietf.person.views.profile' email_or_name=email %}{% endif %}">
+    {% endif %}
+    {% if person.photo_thumb %}
+        <img class="card-img-top"
+             src="{{ person.photo_thumb.url }}"
+             alt="Photo of {{ person.name }}">
+    {% else %}
+        <div class="photo-placeholder">
+            <i class="bi bi-person"></i>
+        </div>
+    {% endif %}
+    {% if name or email %}</a>{% endif %}
+    <div class="card-body">
+        <p class="mb-1">
+            {% person_link person with_email=False %}
+        </p>
+        {% for role in groups %}
+            <a title="{{ role.group.name }} {{ role.group.type | upper }}"
+               class="small"
+               href="{% url 'ietf.group.views.group_home' acronym=role.group.acronym %}">
+                {{ role.group.acronym }}
+            </a>
+        {% endfor %}
+    </div>
+</div>

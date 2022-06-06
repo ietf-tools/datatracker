@@ -211,13 +211,15 @@ class CustomModelMultipleChoiceField(forms.ModelMultipleChoiceField):
 
 class LiaisonModelForm(BetterModelForm):
     '''Specify fields which require a custom widget or that are not part of the model.
-    NOTE: from_groups and to_groups are marked as not required because select2 has
-    a problem with validating
     '''
     from_groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(),label='Groups',required=False)
+    from_groups.widget.attrs["class"] = "select2-field"
+    from_groups.widget.attrs['data-minimum-input-length'] = 0
     from_contact = forms.EmailField()   # type: Union[forms.EmailField, SearchableEmailField]
     to_contacts = forms.CharField(label="Contacts", widget=forms.Textarea(attrs={'rows':'3', }), strip=False)
     to_groups = forms.ModelMultipleChoiceField(queryset=Group.objects,label='Groups',required=False)
+    to_groups.widget.attrs["class"] = "select2-field"
+    to_groups.widget.attrs['data-minimum-input-length'] = 0
     deadline = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Deadline', required=True)
     related_to = SearchableLiaisonStatementsField(label='Related Liaison Statement', required=False)
     submitted_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Submission date', required=True, initial=datetime.date.today())
@@ -247,8 +249,8 @@ class LiaisonModelForm(BetterModelForm):
         self.person = get_person_for_user(user)
         self.is_new = not self.instance.pk
 
-        self.fields["from_groups"].widget.attrs["placeholder"] = "Type in name to search for group"
-        self.fields["to_groups"].widget.attrs["placeholder"] = "Type in name to search for group"
+        self.fields["from_groups"].widget.attrs["data-placeholder"] = "Type in name to search for group"
+        self.fields["to_groups"].widget.attrs["data-placeholder"] = "Type in name to search for group"
         self.fields["to_contacts"].label = 'Contacts'
         self.fields["other_identifiers"].widget.attrs["rows"] = 2
         
@@ -449,7 +451,7 @@ class IncomingLiaisonForm(LiaisonModelForm):
         else:
             queryset = Group.objects.filter(type="sdo", state="active", role__person=self.person, role__name__in=("liaiman", "auth")).distinct().order_by('name')
             self.fields['from_contact'].initial = self.person.role_set.filter(group=queryset[0]).first().email.address
-            self.fields['from_contact'].widget.attrs['readonly'] = True
+            self.fields['from_contact'].widget.attrs['disabled'] = True
         self.fields['from_groups'].queryset = queryset
         self.fields['from_groups'].widget.submitter = str(self.person)
 
@@ -504,7 +506,7 @@ class OutgoingLiaisonForm(LiaisonModelForm):
         else:
             email = self.person.email_address()
         self.fields['from_contact'].initial = email
-        self.fields['from_contact'].widget.attrs['readonly'] = True
+        self.fields['from_contact'].widget.attrs['disabled'] = True
 
     def set_to_fields(self):
         '''Set to_groups and to_contacts options and initial value based on user
@@ -551,7 +553,7 @@ class EditLiaisonForm(LiaisonModelForm):
                 queryset = Group.objects.filter(type="sdo").order_by('name')
             else:
                 queryset = Group.objects.filter(type="sdo", role__person=self.person, role__name__in=("liaiman", "auth")).distinct().order_by('name')
-                self.fields['from_contact'].widget.attrs['readonly'] = True
+                self.fields['from_contact'].widget.attrs['disabled'] = True
             self.fields['from_groups'].queryset = queryset
 
     def set_to_fields(self):
@@ -572,4 +574,3 @@ class EditLiaisonForm(LiaisonModelForm):
 
 class EditAttachmentForm(forms.Form):
     title = forms.CharField(max_length=255)
-

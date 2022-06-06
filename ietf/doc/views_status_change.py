@@ -16,6 +16,7 @@ from django.urls import reverse
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils.encoding import force_text
+from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 from ietf.doc.mails import email_ad_approved_status_change
@@ -396,7 +397,7 @@ def approve(request, name):
 
         init = []
         for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
-            init.append({"announcement_text" : default_approval_text(status_change,rel),
+            init.append({"announcement_text" : escape(default_approval_text(status_change,rel)),
                          "label": "Announcement text for %s to %s"%(rel.target.document.canonical_name(),newstatus(rel)),
                        })
         formset = AnnouncementFormSet(initial=init)
@@ -674,7 +675,7 @@ def last_call(request, name):
     if not last_call_event:
         last_call_event = generate_last_call_text(request, status_change)
 
-    form = LastCallTextForm(initial=dict(last_call_text=last_call_event.text))
+    form = LastCallTextForm(initial=dict(last_call_text=escape(last_call_event.text)))
 
     if request.method == 'POST':
         if "save_last_call_text" in request.POST or "send_last_call_request" in request.POST:
@@ -715,7 +716,7 @@ def last_call(request, name):
 
         if "regenerate_last_call_text" in request.POST:
             e = generate_last_call_text(request,status_change)
-            form = LastCallTextForm(initial=dict(last_call_text=e.text))
+            form = LastCallTextForm(initial=dict(last_call_text=escape(e.text)))
             
     return render(request, 'doc/status_change/last_call.html',
                                dict(doc=status_change,

@@ -1,35 +1,33 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2021, All Rights Reserved #}
 {% load origin %}
-{% load bootstrap3 %}
-
-{% block pagehead %}
-  {{ form.media.css }}
-{% endblock %}
-
+{% load django_bootstrap5 %}
+{% block pagehead %}{{ form.media.css }}{% endblock %}
 {% block title %}Edit timeslot "{{ timeslot.name }}" for {{ timeslot.meeting }}{% endblock %}
-
 {% block content %}
-  {% origin %}
-  <h1>Edit timeslot "{{ timeslot.name }}" for {{ timeslot.meeting }}</h1>
-  {% if sessions %}
-    <div class="alert alert-warning">
-      This timeslot currently has the following sessions assigned to it:
-      {% for s in sessions %}
-        <div>{{s}}</div>
-      {% endfor %}
-    </div>
-  {% endif %}
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-    {% buttons %}
-      <button type="submit" class="btn btn-primary">Save</button>
-      <a class="btn btn-default" href="{% url 'ietf.meeting.views.edit_timeslots' num=timeslot.meeting.number %}">Cancel</a>
-    {% endbuttons %}
-  </form>
+    {% origin %}
+    <h1>
+        Edit {{ timeslot.meeting }} timeslot
+        <br>
+        <small class="text-muted">{{ timeslot.name }}</small>
+    </h1>
+    {% if sessions %}
+        <div class="alert alert-warning my-3">
+            This timeslot currently has the following sessions assigned to it:
+            <ul class="mb-0">
+                {% for s in sessions %}<li>{{s }}</li>{% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    <form method="post" class="my-3">
+        {% csrf_token %}
+        <!-- [html-validate-disable-block input-missing-label -- FIXME: django_bootstrap5 uses outdated HTML] -->
+        {% bootstrap_form form %}
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a class="btn btn-secondary float-end"
+           href="{% url 'ietf.meeting.views.edit_timeslots' num=timeslot.meeting.number %}">
+            Back
+        </a>
+    </form>
 {% endblock %}
-
-{% block js %}
-  {{ form.media.js }}
-{% endblock %}
+{% block js %}{{ form.media.js }}{% endblock %}

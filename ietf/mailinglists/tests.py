@@ -32,7 +32,13 @@ class MailingListTests(TestCase):
 
 
     def test_nonwg(self):
+        groups = list()
+        groups.append(GroupFactory(type_id='wg', acronym='mars', list_archive='https://ietf.org/mars'))
+        groups.append(GroupFactory(type_id='wg', acronym='ames', state_id='conclude', list_archive='https://ietf.org/ames'))
+        groups.append(GroupFactory(type_id='wg', acronym='newstuff', state_id='bof', list_archive='https://ietf.org/newstuff'))
+        groups.append(GroupFactory(type_id='rg', acronym='research', list_archive='https://irtf.org/research'))
         lists = ListFactory.create_batch(7)
+
         url = urlreverse("ietf.mailinglists.views.nonwg")
 
         r = self.client.get(url)
@@ -43,3 +49,6 @@ class MailingListTests(TestCase):
             else:
                 self.assertNotContains(r, l.name, html=True)
                 self.assertNotContains(r, l.description, html=True)
+
+        for g in groups:
+            self.assertNotContains(r, g.acronym, html=True)

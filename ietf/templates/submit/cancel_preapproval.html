@@ -1,28 +1,20 @@
 {% extends "submit/submit_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
-
-{% load bootstrap3 %}
-
+{% load origin person_filters %}
+{% load django_bootstrap5 %}
 {% block title %}Cancel pre-approval{% endblock %}
-
 {% block submit_content %}
-  {% origin %}
-  <h2>Cancel pre-approval</h2>
-
-  <p>
-    Pre-approval of <b>{{ preapproval.name }}</b> by <b>{{ preapproval.by }}</b>
-    on <b>{{ preapproval.time }}</b>.
-  </p>
-
-  <form class="actions" method="post">
-    {% csrf_token %}
-    <input type="hidden" name="action" value="cancel">
-
-    {% buttons %}
-      <button type="submit" class="btn btn-danger">Cancel pre-approval</button>
-      <a class="btn btn-default pull-right" href="{% url "ietf.submit.views.approvals" %}#preapprovals">Back</a>
-    {% endbuttons %}
-  </form>
-
+    {% origin %}
+    <h2>Cancel pre-approval</h2>
+    <p class="alert alert-info my-3">
+        Pre-approval of <b>{{ preapproval.name }}</b> by <b>{% person_link preapproval.by %}</b>
+        on <b>{{ preapproval.time }}</b>.
+    </p>
+    <form class="actions" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="cancel">
+        <button type="submit" class="btn btn-danger">Cancel pre-approval</button>
+        <a class="btn btn-secondary float-end"
+           href="{% url "ietf.submit.views.approvals" %}#preapprovals">Back</a>
+    </form>
 {% endblock %}

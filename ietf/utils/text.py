@@ -2,17 +2,50 @@
 # -*- coding: utf-8 -*-
 
 
+import bleach  # type: ignore
+import copy
 import email
 import re
 import textwrap
+import tlds
 import unicodedata
 
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
 from django.utils.functional import keep_lazy
 from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
 from .texescape import init as texescape_init, tex_escape_map
+
+tlds_sorted = sorted(tlds.tld_set, key=len, reverse=True)
+protocols = copy.copy(bleach.sanitizer.ALLOWED_PROTOCOLS)
+protocols.append("ftp")  # we still have some ftp links
+validate_url = URLValidator()
+
+
+def check_url_validity(attrs, new=False):
+    url = attrs[(None, 'href')]
+    try:
+        if url.startswith("http"):
+            validate_url(url)
+    except ValidationError:
+        return None
+    return attrs
+
+
+bleach_linker = bleach.Linker(
+    callbacks=[check_url_validity],
+    url_re=bleach.linkifier.build_url_re(tlds=tlds_sorted, protocols=protocols),
+    email_re=bleach.linkifier.build_email_re(tlds=tlds_sorted), # type: ignore
+    parse_email=True
+)
+
+tags = copy.copy(bleach.sanitizer.ALLOWED_TAGS)
+tags.remove("a")
+bleach_cleaner = bleach.sanitizer.Cleaner(tags=tags, protocols=protocols)
+
 
 @keep_lazy(str)
 def xslugify(value):

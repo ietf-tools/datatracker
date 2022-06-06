@@ -527,7 +527,7 @@ class FloorPlan(models.Model):
 class TimeSlot(models.Model):
     """
     Everything that would appear on the meeting agenda of a meeting is
-    mapped to a time slot, including breaks. Sessions are connected to
+    mapped to a timeslot, including breaks. Sessions are connected to
     TimeSlots during scheduling.
     """
     meeting = ForeignKey(Meeting)
@@ -622,30 +622,29 @@ class TimeSlot(models.Model):
             return self.tz().tzname(self.time)
         else:
             return ""
+
     def utc_start_time(self):
         if self.tz():
             local_start_time = self.tz().localize(self.time)
             return local_start_time.astimezone(pytz.utc)
         else:
             return None
+
     def utc_end_time(self):
-        if self.tz():
-            local_end_time = self.tz().localize(self.end_time())
-            return local_end_time.astimezone(pytz.utc)
-        else:
-            return None
+        utc_start = self.utc_start_time()
+        # Add duration after converting start time, otherwise errors creep in around DST change
+        return None if utc_start is None else utc_start + self.duration
+
     def local_start_time(self):
         if self.tz():
-            local_start_time = self.tz().localize(self.time)
-            return local_start_time
+            return self.tz().localize(self.time)
         else:
             return None
+
     def local_end_time(self):
-        if self.tz():
-            local_end_time = self.tz().localize(self.end_time())
-            return local_end_time
-        else:
-            return None
+        local_start = self.local_start_time()
+        # Add duration after converting start time, otherwise errors creep in around DST change
+        return None if local_start is None else local_start + self.duration
 
     @property
     def js_identifier(self):
@@ -734,11 +733,7 @@ class Schedule(models.Model):
 #         return self.url_edit("")
 
     def owner_email(self):
-        email = self.owner.email_set.all().order_by('primary').first()
-        if email:
-            return email.address
-        else:
-            return "noemail"
+        return self.owner.email_address() or "noemail"
 
     @property
     def is_official(self):
@@ -883,7 +878,12 @@ class Constraint(models.Model):
     - time_relation: preference for a time difference between sessions
     - wg_adjacent: request for source WG to be adjacent (directly before or after,
       no breaks, same room) the target WG
-      
+
+    In the schedule editor, run-time, a couple non-persistent ConstraintName instances
+    are created for rendering purposes. This is done in
+    meeting.utils.preprocess_constraints_for_meeting_schedule_editor(). This adds:
+    - joint_with_groups
+    - responsible_ad
     """
     TIME_RELATION_CHOICES = (
         ('subsequent-days', 'Schedule the sessions on subsequent days'),

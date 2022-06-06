@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
-
+from django.utils.html import escape
 
 from ietf.doc.mails import (email_bofreq_title_changed, email_bofreq_editors_changed, 
     email_bofreq_new_revision, email_bofreq_responsible_changed)
@@ -178,7 +178,7 @@ def new_bof_request(request):
             return redirect('ietf.doc.views_doc.document_main', name=bofreq.name)
 
     else:
-        init = {'bofreq_content':render_to_string('doc/bofreq/bofreq_template.md',{}),
+        init = {'bofreq_content':escape(render_to_string('doc/bofreq/bofreq_template.md',{})),
                 'bofreq_submission':'enter',
                }
         form = NewBofreqForm(request.user.person, initial=init)

@@ -1,0 +1,24 @@
+name: Report a Bug
+description: Something isn't right? File a bug report
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report.
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the issue
+      description: Include as much info as possible, including the current behavior, expected behavior, screenshots, etc. If this is a display / UX issue, make sure to list the browser(s) you're experiencing the issue on.
+      placeholder: Description
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/ietf-tools/.github/blob/main/CODE_OF_CONDUCT.md)
+      options:
+        - label: I agree to follow the [IETF's Code of Conduct](https://github.com/ietf-tools/.github/blob/main/CODE_OF_CONDUCT.md)
+          required: true

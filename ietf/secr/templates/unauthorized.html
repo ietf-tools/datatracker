@@ -4,14 +4,14 @@
 
 {% block content %}
 
-<H2>Unauthorized</h2>
+    <H2>Unauthorized</h2>
 
-<h3>
-{% if user_name %}
-    Sorry, {{ user_name }}, you are not authorized{% if group_name %} to access Group: {{ group_name }}{% else %} to access this page.{% endif %}
-{% else %}
-    <p>Login invalid</p>
-{% endif %}
-</h3>
+    <h3>
+        {% if user_name %}
+            Sorry, {{ user_name }}, you are not authorized{% if group_name %} to access Group: {{ group_name }}{% else %} to access this page.{% endif %}
+        {% else %}
+            <p>Login invalid</p>
+        {% endif %}
+    </h3>
 
 {% endblock %}

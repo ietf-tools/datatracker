@@ -240,7 +240,7 @@ class IetfAuthTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('.form-control-static:contains("%s")' % username)), 1)
+        self.assertEqual(len(q('.form-control-plaintext:contains("%s")' % username)), 1)
         self.assertEqual(len(q('[name="active_emails"][value="%s"][checked]' % email_address)), 1)
 
         base_data = {
@@ -259,7 +259,7 @@ class IetfAuthTests(TestCase):
         r = self.client.post(url, faulty_ascii)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .has-error")) == 1)
+        self.assertTrue(len(q("form .invalid-feedback")) == 1)
 
         # edit details - blank ASCII
         blank_ascii = base_data.copy()
@@ -267,7 +267,7 @@ class IetfAuthTests(TestCase):
         r = self.client.post(url, blank_ascii)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form div.has-error ")) == 1) # we get a warning about reconstructed name
+        self.assertTrue(len(q("form div.invalid-feedback")) == 1) # we get a warning about reconstructed name
         self.assertEqual(q("input[name=ascii]").val(), base_data["ascii"])
 
         # edit details
@@ -390,7 +390,7 @@ class IetfAuthTests(TestCase):
         r = self.client.post(url, { 'username': "nobody@example.com" })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .has-error")) > 0)
+        self.assertTrue(len(q("form .is-invalid")) > 0)
 
         # ask for reset
         empty_outbox()
@@ -407,13 +407,13 @@ class IetfAuthTests(TestCase):
         r = self.client.post(confirm_url, { 'password': 'secret', 'password_confirmation': 'nosecret' })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .has-error")) > 0)
+        self.assertTrue(len(q("form .is-invalid")) > 0)
 
         # confirm
         r = self.client.post(confirm_url, { 'password': 'secret', 'password_confirmation': 'secret' })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q("form .has-error")), 0)
+        self.assertEqual(len(q("form .is-invalid")), 0)
         self.assertTrue(self.username_in_htpasswd_file(user.username))
 
         # reuse reset url
@@ -613,7 +613,7 @@ class IetfAuthTests(TestCase):
 
         # Check api key list content
         r = self.client.get(url)
-        self.assertContains(r, 'Personal API keys')
+        self.assertContains(r, 'API keys')
         self.assertContains(r, 'Get a new personal API key')
 
         # Check the add key form content
@@ -634,7 +634,7 @@ class IetfAuthTests(TestCase):
         for endpoint, display in endpoints:
             self.assertContains(r, endpoint)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('td code')), len(endpoints)) # hash
+        self.assertEqual(len(q('td code')), len(endpoints) * 2) # hash and endpoint
         self.assertEqual(len(q('td a:contains("Disable")')), len(endpoints))
 
         # Get one of the keys
@@ -655,7 +655,7 @@ class IetfAuthTests(TestCase):
         url = urlreverse('ietf.ietfauth.views.apikey_index')
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('td code')), len(endpoints)) # key hash
+        self.assertEqual(len(q('td code')), len(endpoints) * 2) # key hash and endpoint
         self.assertEqual(len(q('td a:contains("Disable")')), len(endpoints)-1)
 
     def test_apikey_errors(self):
@@ -782,7 +782,7 @@ class IetfAuthTests(TestCase):
             r = self.client.post(url, dict(resources=line, submit="1"))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue(q('.alert-danger'))
+            self.assertTrue(q('.invalid-feedback'))
 
         goodlines = """
             github_repo https://github.com/some/repo Some display text
@@ -958,4 +958,3 @@ class OpenIDConnectTests(TestCase):
             # handler, causing later logging to become visible even if that wasn't intended.
             # Fail here if that happens.
             self.assertEqual(logging.root.handlers, [])
-

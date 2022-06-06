@@ -33,7 +33,7 @@ from ietf.meeting.models import Meeting
 from ietf.message.models import Message
 from ietf.name.models import FormalLanguageName, GroupTypeName
 from ietf.submit.models import Submission, Preapproval
-from ietf.submit.utils import validate_submission_name, validate_submission_rev, validate_submission_document_date
+from ietf.submit.utils import validate_submission_name, validate_submission_rev, validate_submission_document_date, remote_ip
 from ietf.submit.parsers.pdf_parser import PDFParser
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.xml_parser import XMLParser
@@ -47,7 +47,7 @@ class SubmissionBaseUploadForm(forms.Form):
     def __init__(self, request, *args, **kwargs):
         super(SubmissionBaseUploadForm, self).__init__(*args, **kwargs)
 
-        self.remote_ip = request.META.get('REMOTE_ADDR', None)
+        self.remote_ip = remote_ip(request)
 
         self.request = request
         self.in_first_cut_off = False
@@ -94,30 +94,30 @@ class SubmissionBaseUploadForm(forms.Form):
 
         if cutoff_00 == cutoff_01:
             if now.date() >= (cutoff_00.date() - meeting.idsubmit_cutoff_warning_days) and now.date() < cutoff_00.date():
-                self.cutoff_warning = ( 'The last submission time for Internet-Drafts before %s is %s.<br/><br/>' % (meeting, cutoff_00_str))
+                self.cutoff_warning = ( 'The last submission time for Internet-Drafts before %s is %s.<br><br>' % (meeting, cutoff_00_str))
             elif now <= cutoff_00:
                 self.cutoff_warning = (
-                    'The last submission time for new Internet-Drafts before the meeting is %s.<br/>'
+                    'The last submission time for new Internet-Drafts before the meeting is %s.<br>'
                     'After that, you will not be able to submit drafts until after %s (IETF-meeting local time)' % (cutoff_00_str, reopen_str, ))
         else:
             if now.date() >= (cutoff_00.date() - meeting.idsubmit_cutoff_warning_days) and now.date() < cutoff_00.date():
-                self.cutoff_warning = ( 'The last submission time for new documents (i.e., version -00 Internet-Drafts) before %s is %s.<br/><br/>' % (meeting, cutoff_00_str) +
-                                        'The last submission time for revisions to existing documents before %s is %s.<br/>' % (meeting, cutoff_01_str) )
+                self.cutoff_warning = ( 'The last submission time for new documents (i.e., version -00 Internet-Drafts) before %s is %s.<br><br>' % (meeting, cutoff_00_str) +
+                                        'The last submission time for revisions to existing documents before %s is %s.<br>' % (meeting, cutoff_01_str) )
             elif now.date() >= cutoff_00.date() and now <= cutoff_01:
                 # We are in the first_cut_off
                 if now < cutoff_00:
                     self.cutoff_warning = (
-                        'The last submission time for new documents (i.e., version -00 Internet-Drafts) before the meeting is %s.<br/>'
+                        'The last submission time for new documents (i.e., version -00 Internet-Drafts) before the meeting is %s.<br>'
                         'After that, you will not be able to submit a new document until after %s (IETF-meeting local time)' % (cutoff_00_str, reopen_str, ))
                 else:  # No 00 version allowed
                     self.cutoff_warning = (
-                        'The last submission time for new documents (i.e., version -00 Internet-Drafts) was %s.<br/>'
-                        'You will not be able to submit a new document until after %s (IETF-meeting local time).<br/><br>'
+                        'The last submission time for new documents (i.e., version -00 Internet-Drafts) was %s.<br>'
+                        'You will not be able to submit a new document until after %s (IETF-meeting local time).<br><br>'
                         'You can still submit a version -01 or higher Internet-Draft until %s' % (cutoff_00_str, reopen_str, cutoff_01_str, ))
                     self.in_first_cut_off = True
         if now > cutoff_01 and now < reopen:
             self.cutoff_warning = (
-                'The last submission time for the I-D submission was %s.<br/><br>'
+                'The last submission time for the I-D submission was %s.<br><br>'
                 'The I-D submission tool will be reopened after %s (IETF-meeting local time).' % (cutoff_01_str, reopen_str))
             self.shutdown = True
 
@@ -207,83 +207,84 @@ class SubmissionBaseUploadForm(forms.Form):
                         self.add_error('xml', "No docName attribute found in the xml root element")
                     name_error = validate_submission_name(draftname)
                     if name_error:
-                        self.add_error('xml', name_error)
-                    revmatch = re.search("-[0-9][0-9]$", draftname)
-                    if revmatch:
-                        self.revision = draftname[-2:]
-                        self.filename = draftname[:-3]
+                        self.add_error('xml', name_error) # This is a critical and immediate failure - do not proceed with other validation.
                     else:
-                        self.revision = None
-                        self.filename = draftname
-                    self.title = self.xmlroot.findtext('front/title').strip()
-                    if type(self.title) is str:
-                        self.title = unidecode(self.title)
-                    self.title = normalize_text(self.title)
-                    self.abstract = (self.xmlroot.findtext('front/abstract') or '').strip()
-                    if type(self.abstract) is str:
-                        self.abstract = unidecode(self.abstract)
-                    author_info = self.xmlroot.findall('front/author')
-                    for author in author_info:
-                        info = {
-                            "name": author.attrib.get('fullname'),
-                            "email": author.findtext('address/email'),
-                            "affiliation": author.findtext('organization'),
-                        }
-                        elem = author.find('address/postal/country')
-                        if elem != None:
-                            ascii_country = elem.get('ascii', None)
-                            info['country'] = ascii_country if ascii_country else elem.text
+                        revmatch = re.search("-[0-9][0-9]$", draftname)
+                        if revmatch:
+                            self.revision = draftname[-2:]
+                            self.filename = draftname[:-3]
+                        else:
+                            self.revision = None
+                            self.filename = draftname
+                        self.title = self.xmlroot.findtext('front/title').strip()
+                        if type(self.title) is str:
+                            self.title = unidecode(self.title)
+                        self.title = normalize_text(self.title)
+                        self.abstract = (self.xmlroot.findtext('front/abstract') or '').strip()
+                        if type(self.abstract) is str:
+                            self.abstract = unidecode(self.abstract)
+                        author_info = self.xmlroot.findall('front/author')
+                        for author in author_info:
+                            info = {
+                                "name": author.attrib.get('fullname'),
+                                "email": author.findtext('address/email'),
+                                "affiliation": author.findtext('organization'),
+                            }
+                            elem = author.find('address/postal/country')
+                            if elem != None:
+                                ascii_country = elem.get('ascii', None)
+                                info['country'] = ascii_country if ascii_country else elem.text
 
-                        for item in info:
-                            if info[item]:
-                                info[item] = info[item].strip()
-                        self.authors.append(info)
+                            for item in info:
+                                if info[item]:
+                                    info[item] = info[item].strip()
+                            self.authors.append(info)
 
-                    # --- Prep the xml ---
-                    file_name['xml'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (self.filename, self.revision, ext))
-                    try:
-                        prep = xml2rfc.PrepToolWriter(self.xmltree, quiet=True, liberal=True, keep_pis=[xml2rfc.V3_PI_TARGET])
-                        prep.options.accept_prepped = True
-                        self.xmltree.tree = prep.prep()
-                        if self.xmltree.tree == None:
-                            self.add_error('xml', "Error from xml2rfc (prep): %s" % prep.errors)
-                    except Exception as e:
-                            msgs = format_messages('prep', e, xml2rfc.log)
-                            self.add_error('xml', msgs)
-
-                    # --- Convert to txt ---
-                    if not ('txt' in self.cleaned_data and self.cleaned_data['txt']):
-                        file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (self.filename, self.revision))
+                        # --- Prep the xml ---
+                        file_name['xml'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (self.filename, self.revision, ext))
                         try:
-                            writer = xml2rfc.TextWriter(self.xmltree, quiet=True)
-                            writer.options.accept_prepped = True
-                            writer.write(file_name['txt'])
-                            log.log("In %s: xml2rfc %s generated %s from %s (version %s)" %
-                                    (   os.path.dirname(file_name['xml']),
-                                        xml2rfc.__version__,
-                                        os.path.basename(file_name['txt']),
-                                        os.path.basename(file_name['xml']),
-                                        self.xml_version))
+                            prep = xml2rfc.PrepToolWriter(self.xmltree, quiet=True, liberal=True, keep_pis=[xml2rfc.V3_PI_TARGET])
+                            prep.options.accept_prepped = True
+                            self.xmltree.tree = prep.prep()
+                            if self.xmltree.tree == None:
+                                self.add_error('xml', "Error from xml2rfc (prep): %s" % prep.errors)
                         except Exception as e:
-                            msgs = format_messages('txt', e, xml2rfc.log)
-                            log.log('\n'.join(msgs))
-                            self.add_error('xml', msgs)
+                                msgs = format_messages('prep', e, xml2rfc.log)
+                                self.add_error('xml', msgs)
 
-                    # --- Convert to html ---
-                    try:
-                        file_name['html'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.html' % (self.filename, self.revision))
-                        writer = xml2rfc.HtmlWriter(self.xmltree, quiet=True)
-                        writer.write(file_name['html'])
-                        self.file_types.append('.html')
-                        log.log("In %s: xml2rfc %s generated %s from %s (version %s)" %
-                            (   os.path.dirname(file_name['xml']),
-                                xml2rfc.__version__,
-                                os.path.basename(file_name['html']),
-                                os.path.basename(file_name['xml']),
-                                self.xml_version))
-                    except Exception as e:
-                        msgs = format_messages('html', e, xml2rfc.log)
-                        self.add_error('xml', msgs)
+                        # --- Convert to txt ---
+                        if not ('txt' in self.cleaned_data and self.cleaned_data['txt']):
+                            file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (self.filename, self.revision))
+                            try:
+                                writer = xml2rfc.TextWriter(self.xmltree, quiet=True)
+                                writer.options.accept_prepped = True
+                                writer.write(file_name['txt'])
+                                log.log("In %s: xml2rfc %s generated %s from %s (version %s)" %
+                                        (   os.path.dirname(file_name['xml']),
+                                            xml2rfc.__version__,
+                                            os.path.basename(file_name['txt']),
+                                            os.path.basename(file_name['xml']),
+                                            self.xml_version))
+                            except Exception as e:
+                                msgs = format_messages('txt', e, xml2rfc.log)
+                                log.log('\n'.join(msgs))
+                                self.add_error('xml', msgs)
+
+                        # --- Convert to html ---
+                        try:
+                            file_name['html'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.html' % (self.filename, self.revision))
+                            writer = xml2rfc.HtmlWriter(self.xmltree, quiet=True)
+                            writer.write(file_name['html'])
+                            self.file_types.append('.html')
+                            log.log("In %s: xml2rfc %s generated %s from %s (version %s)" %
+                                (   os.path.dirname(file_name['xml']),
+                                    xml2rfc.__version__,
+                                    os.path.basename(file_name['html']),
+                                    os.path.basename(file_name['xml']),
+                                    self.xml_version))
+                        except Exception as e:
+                            msgs = format_messages('html', e, xml2rfc.log)
+                            self.add_error('xml', msgs)
 
                 except Exception as e:
                     try:
@@ -292,6 +293,11 @@ class SubmissionBaseUploadForm(forms.Form):
                         self.add_error('xml', msgs)
                     except Exception:
                         self.add_error('xml', "An exception occurred when trying to process the XML file: %s" % e)
+
+        # The following errors are likely noise if we have previous field
+        # errors:
+        if self.errors:
+            raise forms.ValidationError('')
 
         if self.cleaned_data.get('txt'):
             # try to parse it
@@ -561,19 +567,15 @@ class PreapprovalForm(forms.Form):
 
     def clean_name(self):
         n = self.cleaned_data['name'].strip().lower()
-
-        if not n.startswith("draft-"):
-            raise forms.ValidationError("Name doesn't start with \"draft-\".")
-        if len(n.split(".")) > 1 and len(n.split(".")[-1]) == 3:
-            raise forms.ValidationError("Name appears to end with a file extension .%s - do not include an extension." % n.split(".")[-1])
+        error_msg = validate_submission_name(n)
+        if error_msg:
+            raise forms.ValidationError(error_msg)
 
         components = n.split("-")
         if components[-1] == "00":
             raise forms.ValidationError("Name appears to end with a revision number -00 - do not include the revision.")
         if len(components) < 4:
             raise forms.ValidationError("Name has less than four dash-delimited components - can't form a valid group draft name.")
-        if not components[-1]:
-            raise forms.ValidationError("Name ends with a dash.")
         acronym = components[2]
         if acronym not in [ g.acronym for g in self.groups ]:
             raise forms.ValidationError("Group acronym not recognized as one you can approve drafts for.")
@@ -665,5 +667,5 @@ class MessageModelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(MessageModelForm, self).__init__(*args, **kwargs)
         self.fields['frm'].label='From'
-        self.fields['frm'].widget.attrs['readonly'] = 'True'
-        self.fields['reply_to'].widget.attrs['readonly'] = 'True'
+        self.fields['frm'].widget.attrs['readonly'] = True
+        self.fields['reply_to'].widget.attrs['readonly'] = True

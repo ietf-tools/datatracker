@@ -1,8 +1,10 @@
 #!/bin/bash
 
 echo "Shutting down any instance still running..."
-docker-compose down -v
+cd ..
+docker compose down -v
 echo "Rebuilding the DB image..."
-docker-compose pull db
-docker-compose build --no-cache db
+docker compose pull db
+docker compose build --no-cache db
+cd docker
 echo "Done!"

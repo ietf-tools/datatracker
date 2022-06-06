@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2009-2022, All Rights Reserved
+
 # Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -39,26 +41,31 @@ from ietf.group.models import Group
 register = template.Library()
 
 parent_short_names = {
-    'ops':'Ops & Mgmt',
-    'rai':'RAI',
-    'iab':'IAB',
-    'art':'Apps & Realtime',
-    'ietfadminllc' : 'IETF LLC',
-    }
+    "ops": "Ops & Management",
+    "rai": "RAI",
+    "iab": "IAB",
+    "art": "Apps & Realtime",
+    "ietfadminllc": "IETF LLC",
+}
 
 parents = Group.objects.filter(
-                models.Q(type="area") | models.Q(type="irtf", acronym="irtf") | models.Q(acronym='iab') | models.Q(acronym='ietfadminllc'),
-                state="active"
-            ).order_by('type__order','type_id', 'acronym')
+    models.Q(type="area")
+    | models.Q(type="irtf", acronym="irtf")
+    | models.Q(acronym="iab")
+    | models.Q(acronym="ietfadminllc")
+    | models.Q(acronym="rfceditor"),
+    state="active",
+).order_by("type__order", "type_id", "acronym")
+
 
 @register.simple_tag
-def wg_menu():
+def wg_menu(flavor):
     global parents
 
     for p in parents:
         p.short_name = parent_short_names.get(p.acronym) or p.name
         if p.short_name.endswith(" Area"):
-            p.short_name = p.short_name[:-len(" Area")]
+            p.short_name = p.short_name[: -len(" Area")]
 
         if p.type_id == "area":
             p.menu_url = "/wg/#" + p.acronym
@@ -66,7 +73,11 @@ def wg_menu():
             p.menu_url = "/rg/"
         elif p.acronym == "iab":
             p.menu_url = "/program/"
-        elif p.acronym == 'ietfadminllc':
+        elif p.acronym == "ietfadminllc":
             p.menu_url = "/adm/"
+        elif p.acronym == "rfceditor":
+            p.menu_url = "/rfcedtyp/"
 
-    return render_to_string('base/menu_wg.html', { 'parents': parents })
+    return render_to_string(
+        "base/menu_wg.html", {"parents": parents, "flavor": flavor}
+    )

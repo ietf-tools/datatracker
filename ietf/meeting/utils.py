@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import datetime
 import itertools
-import re
 import requests
 import subprocess
 
@@ -14,8 +13,6 @@ from django.conf import settings
 from django.contrib import messages
 from django.template.loader import render_to_string
 from django.utils.encoding import smart_text
-from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
@@ -291,14 +288,6 @@ def data_for_meetings_overview(meetings, interim_status=None):
 
     return meetings
 
-def reverse_editor_label(label):
-    reverse_sign = "-"
-
-    m = re.match(r"(<[^>]+>)([^<].*)", label)
-    if m:
-        return m.groups()[0] + reverse_sign + m.groups()[1]
-    else:
-        return reverse_sign + label
 
 def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
     # process constraint names - we synthesize extra names to be able
@@ -308,7 +297,6 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
     joint_with_groups_constraint_name = ConstraintName(
         slug='joint_with_groups',
         name="Joint session with",
-        editor_label="<i class=\"fa fa-clone\"></i>",
         order=8,
     )
     constraint_names[joint_with_groups_constraint_name.slug] = joint_with_groups_constraint_name
@@ -316,7 +304,6 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
     ad_constraint_name = ConstraintName(
         slug='responsible_ad',
         name="Responsible AD",
-        editor_label="<span class=\"encircled\">AD</span>",
         order=9,
     )
     constraint_names[ad_constraint_name.slug] = ad_constraint_name
@@ -327,11 +314,7 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
             slug=n.slug + "-reversed",
             name="{} - reversed".format(n.name),
         )
-        reverse_n.formatted_editor_label = mark_safe(reverse_editor_label(n.editor_label))
         constraint_names[reverse_n.slug] = reverse_n
-
-        n.formatted_editor_label = mark_safe(n.editor_label)
-        n.countless_formatted_editor_label = format_html(n.formatted_editor_label, count="") if "{count}" in n.formatted_editor_label else n.formatted_editor_label
 
     # convert human-readable rules in the database to constraints on actual sessions
     constraints = list(meeting.enabled_constraints().prefetch_related('target', 'person', 'timeranges'))

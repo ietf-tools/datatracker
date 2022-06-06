@@ -1,28 +1,29 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2021, All Rights Reserved #}
-{% load origin bootstrap3 static textfilters %}
-
+{% load origin django_bootstrap5 static textfilters %}
 {% block title %}Start a new BOF Request{% endblock %}
-
 {% block content %}
-  {% origin %}
-  <h1>Start a new BOF Request</h1>
-
-<p>Choose a short descriptive title for your request. Take time to choose a good initial title - it will be used to make the filename for your request's content. The title can be changed later, but the filename will not change.</p>
-<p>For example, a request with a title of "A new important bit" will be saved as "bofreq-{{ user.person.last_name|xslugify|slice:"64" }}-a-new-important-bit-00.md".</p>
-  <form class="upload-content form-horizontal" method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-
-    {% bootstrap_form form layout="horizontal" %}
-
-    {% buttons %}
-      <a class="btn btn-default" href="{{ doc.get_absolute_url }}">Cancel</a>
-      <button type="submit" class="btn btn-primary">Submit</button>
-    {% endbuttons %}
-  </form>
+    {% origin %}
+    <h1>Start a new BOF Request</h1>
+    <p>
+        The IAB will also attempt to provide BoF Shepherds as described in their document on the subject only on request from the IESG. If you feel that your BoF would benefit from an IAB BoF Shepherd, please discuss this with your Area Director.
+    </p>
+    <p>
+        Choose a short descriptive title for your request. Take time to choose a good initial title - it will be used to make the filename for your request's content. The title can be changed later, but the filename will not change.
+    </p>
+    <p>
+        For example, a request with a title of "A new important bit" will be saved as <code>bofreq-{{ user.person.last_name|xslugify|slice:"64" }}-a-new-important-bit-00.md</code>.
+    </p>
+    <p>All the items in the template MUST be filed in.</p>
+    <form class="upload-content form-horizontal"
+          method="post"
+          enctype="multipart/form-data">
+        {% csrf_token %}
+        {% bootstrap_form form layout="horizontal" %}
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <a class="btn btn-secondary float-end" href="{% url "ietf.doc.views_bofreq.bof_requests" %}">Back</a>
+    </form>
 {% endblock %}
-
 {% block js %}
-  <script src="{% static 'ietf/js/upload_bofreq.js' %}"></script>
+    <script src="{% static 'ietf/js/upload_bofreq.js' %}"></script>
 {% endblock %}
-

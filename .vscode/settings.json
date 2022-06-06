@@ -20,7 +20,7 @@
     "**/third_party/**",
     "**/vendor/**",
     "**/work/**",
-    "/root/src/bootstrap/nuget/MyGet.ps1"
+    "/workspace/bootstrap/nuget/MyGet.ps1"
   ],
   "taskExplorer.enableAnt": false,
   "taskExplorer.enableAppPublisher": false,
@@ -41,5 +41,10 @@
   "taskExplorer.enableTsc": false,
   "taskExplorer.enableWorkspace": true,
   "taskExplorer.enableExplorerView": false,
-  "taskExplorer.enableSideBar": true
+  "taskExplorer.enableSideBar": true,
+  "search.exclude": {
+    "**/.yarn": true,
+    "**/.pnp.*": true
+  },
+  "eslint.nodePath": ".yarn/sdks"
 }

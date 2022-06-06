@@ -25,6 +25,7 @@ from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.doc.factories import DocumentFactory
 from ietf.group.factories import RoleFactory, ReviewTeamFactory, GroupFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
+from django.utils.html import escape
 
 class ReviewTests(TestCase):
     def test_review_requests(self):
@@ -37,7 +38,7 @@ class ReviewTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             self.assertContains(r, review_req.doc.name)
-            self.assertContains(r, str(assignment.reviewer.person).encode('utf-8'))
+            self.assertContains(r, assignment.reviewer.person.name)
 
         url = urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym })
 
@@ -179,7 +180,7 @@ class ReviewTests(TestCase):
                     urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })]:
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            self.assertContains(r, str(reviewer))
+            self.assertContains(r, reviewer.name)
             self.assertContains(r, review_req1.doc.name)
             # without a login, reason for being unavailable should not be seen
             self.assertNotContains(r, "Availability")
@@ -351,8 +352,6 @@ class ReviewTests(TestCase):
         self.assertContains(r, review_req4.doc.name)
         self.assertNotContains(r, review_req5.doc.name)
 
-        # print(r.content)
-
     def test_manage_review_requests(self):
         group = ReviewTeamFactory()
         RoleFactory(name_id='reviewer',group=group,person__user__username='reviewer').person
@@ -377,8 +376,8 @@ class ReviewTests(TestCase):
         # get
         r = self.client.get(unassigned_url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, review_req1.doc.name)
-        self.assertContains(r, doc_author.plain_name())
+        self.assertContains(r, escape(review_req1.doc.name))
+        self.assertContains(r, escape(doc_author.name))
 
         # Test that conflicts are detected
         r = self.client.post(unassigned_url, {
@@ -784,4 +783,3 @@ class ResetNextReviewerInTeamTests(TestCase):
             self.assertEqual(NextReviewerInTeam.objects.get(team=group).next_reviewer, reviewers[target_index].person)
             self.client.logout()
             target_index += 2
-

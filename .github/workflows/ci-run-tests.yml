@@ -1,0 +1,71 @@
+name: Run All Tests
+
+on:
+  pull_request:
+    branches:
+      - 'main'
+    paths:
+      - 'ietf/**'
+      - 'requirements.txt'
+      - 'package.json'
+
+jobs:
+  tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    
+    services:
+      db:
+        image: ghcr.io/ietf-tools/datatracker-db:latest
+        volumes:
+            - mariadb-data:/var/lib/mysql
+        env:
+            MYSQL_ROOT_PASSWORD: ietf
+            MYSQL_DATABASE: ietf_utf8
+            MYSQL_USER: django
+            MYSQL_PASSWORD: RkTkDPFnKpko
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Prepare for tests
+      run: |
+        chmod +x ./dev/tests/prepare.sh
+        sh ./dev/tests/prepare.sh
+        
+    - name: Ensure DB is ready
+      run: |
+        /usr/local/bin/wait-for db:3306 -- echo "DB ready"
+        
+    - name: Run all tests
+      run: |
+        echo "Running checks..."
+        ./ietf/manage.py check
+        echo "Validating migrations..."
+        MSG=$(ietf/manage.py makemigrations 2>&1)
+        if ! ( echo ${MSG} | grep -q "^No changes detected$") ; then
+          echo "Model changes without migrations found."
+          echo ${MSG}
+          exit 1
+        fi
+        echo "Running tests..."
+        ./ietf/manage.py test --settings=settings_sqlitetest
+        coverage xml
+
+    - name: Upload Coverage Results to Codecov
+      uses: codecov/codecov-action@v2.1.0
+      with:
+        files: coverage.xml
+        
+    - name: Convert Coverage Results
+      if: ${{ always() }}
+      run: |
+        mv latest-coverage.json coverage.json
+        
+    - name: Upload Coverage Results as Build Artifact
+      uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
+      with:
+        name: coverage
+        path: coverage.json

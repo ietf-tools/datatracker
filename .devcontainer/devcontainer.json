@@ -2,13 +2,20 @@
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.202.5/containers/python-3
 {
     "name": "IETF Datatracker",
-    "dockerComposeFile": ["../docker/docker-compose.yml", "docker-compose.extend.yml"],
+    "dockerComposeFile": ["../docker-compose.yml", "docker-compose.extend.yml"],
     "service": "app",
-    "workspaceFolder": "/root/src",
+    "workspaceFolder": "/workspace",
     "shutdownAction": "stopCompose",
     "postCreateCommand": "/docker-init.sh",
     "containerEnv": {
         "EDITOR_VSCODE": "true"
+    },
+
+    "features": {
+        "docker-in-docker": {
+            "version": "latest"
+        },
+        "github-cli": "latest"
     },
     
     // Set *default* container specific settings.json values on container create.
@@ -58,18 +65,23 @@
     
     // Add the IDs of extensions you want installed when the container is created.
     "extensions": [
+		"arcanis.vscode-zipfs",
+		"batisteo.vscode-django",
+        "dbaeumer.vscode-eslint",
+		"eamodio.gitlens",
+		"editorconfig.editorconfig",
+		"vue.volar",
+		"mrmlnc.vscode-duplicate",
+		"ms-azuretools.vscode-docker",
 		"ms-python.python",
 		"ms-python.vscode-pylance",
-		"ms-azuretools.vscode-docker",
-		"editorconfig.editorconfig",
-		"redhat.vscode-yaml",
-		"visualstudioexptteam.vscodeintellicode",
-		"batisteo.vscode-django",
-		"mutantdino.resourcemonitor",
-		"spmeesseman.vscode-taskexplorer",
-		"mtxr.sqltools",
 		"mtxr.sqltools-driver-mysql",
-		"mrmlnc.vscode-duplicate"
+		"mtxr.sqltools",
+		"mutantdino.resourcemonitor",
+		"oderwat.indent-rainbow",
+		"redhat.vscode-yaml",
+		"spmeesseman.vscode-taskexplorer",
+		"visualstudioexptteam.vscodeintellicode"
 	],
     
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
@@ -84,11 +96,11 @@
             "label": "MariaDB",
             "onAutoForward": "silent"
         }
-    }
+    },
     
     // Use 'postCreateCommand' to run commands after the container is created.
     // "postCreateCommand": "sh /docker-init.sh",
     
     // Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-    // "remoteUser": "django"
+    "remoteUser": "dev"
 }
