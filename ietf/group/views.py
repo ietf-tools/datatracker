@@ -833,12 +833,22 @@ def dependencies_json(request, acronym, group_type=None):
                 in ["idexists", "watching", "dead"],
                 "expired": x.get_state("draft").slug == "expired",
                 "replaced": x.get_state("draft").slug == "repl",
+                "individual": x.group.acronym == "none",
+                "group": x.group == group,
             }
             for x in nodes
         ],
-        "edges": [{"source": x.source.name, "target": x.target.name} for x in edges],
+        "edges": [
+            {
+                "source": x.source.name,
+                "target": x.target.document.name,
+                "rel": "downref"
+                if x.is_downref()
+                else x.relationship.slug,
+            }
+            for x in edges
+        ],
     }
-    print(graph)
 
     return HttpResponse(json.dumps(graph), content_type="application/json")
 

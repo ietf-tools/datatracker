@@ -5,6 +5,50 @@
 #deps-modal .modal-body {
 height: 100vh;
 }
+circle {
+fill: white;
+stroke: black;
+stroke-width: 2;
+}
+
+.replaced circle {
+fill: orange;
+}
+
+.dead circle {
+fill: grey;
+}
+
+.expired circle {
+fill: lightgrey;
+}
+
+.individual circle {
+stroke-dasharray: 5;
+}
+
+.group circle {
+stroke-width: 4;
+}
+
+line {
+stroke: black;
+stroke-width: 2;
+}
+
+line.refinfo {
+stroke-dasharray: 5;
+}
+
+line.replaces {
+stroke: orange;
+}
+
+line.downref {
+stroke: red;
+stroke-width: 4;
+}
+
 {% endblock %}
 {% block group_content %}
 {% origin %}
@@ -86,11 +130,25 @@ function measure_width(text) {
 function text_radius(lines) {
     let radius = 0;
     for (let i = 0, n = lines.length; i < n; ++i) {
-        const dy = (Math.abs(i - n / 2 + 0.5) + 0.5) * line_height;
+        const dy = (Math.abs(i - n / 2) + 0.5) * line_height;
         const dx = lines[i].width / 2;
         radius = Math.max(radius, Math.sqrt(dx ** 2 + dy ** 2));
     }
-    return radius;
+    return radius * 1.1;
+}
+
+function format_node(node) {
+    return node.append("g")
+        .attr("class", d => ["dead", "expired", "replaced", "rfc", "individual",
+                "group"
+            ].filter(c =>
+                d[c])
+            .join(" "));
+}
+
+function format_edge(edge) {
+    return edge.append("line")
+        .attr("class", d => d["rel"]);
 }
 
 // Fill modal with content from link href
@@ -112,8 +170,6 @@ $("#deps-modal")
 
                     const svg = d3.select(".modal-body svg")
                         .style("font", font)
-                        .style("max-width", "100%")
-                        .style("height", "auto")
                         .attr("text-anchor", "middle")
                         .attr("dominant-baseline", "central")
                         .attr("viewBox", [-width / 2, -height / 2,
@@ -123,14 +179,12 @@ $("#deps-modal")
                     const link = svg.append("g")
                         .selectAll("line")
                         .data(data.edges)
-                        .join("line")
-                        .attr("stroke-width", 2)
-                        .attr("stroke", "black");
+                        .join(format_edge);
 
                     const node = svg.append("g")
                         .selectAll("g")
                         .data(data.nodes)
-                        .join("g");
+                        .join(format_node);
 
                     var max_r = 0;
                     node.append("text")
@@ -149,19 +203,19 @@ $("#deps-modal")
                         .text(d => d.text);
 
                     node.insert("circle")
-                        .attr("fill", "none")
-                        .attr("stroke", "black")
-                        // .attr("stroke-width", 1.5)
-                        .attr("r", d => d.r);
+                        .attr("r", d => d.r)
+                        .lower();
 
                     const simulation = d3
                         .forceSimulation()
                         .nodes(data.nodes)
                         .force("link", d3.forceLink(data.edges)
                             .id(d => d.id)
+                            .distance(0)
+                            .strength(1)
                         )
-                        // .force("charge", d3.forceManyBody()
-                        //     .strength(-500))
+                        .force("charge", d3.forceManyBody()
+                            .strength(-10 * max_r))
                         .force('collision', d3.forceCollide(max_r))
                         .force("x", d3.forceX())
                         .force("y", d3.forceY())
