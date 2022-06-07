@@ -11,7 +11,6 @@ from django import forms
 
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
-from django.core import validators
 from django.core.management import load_command_class
 from django.http import Http404
 from django.shortcuts import render
