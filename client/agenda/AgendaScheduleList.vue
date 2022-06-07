@@ -81,6 +81,7 @@
               template(#trigger)
                 span.badge.is-bof BoF
               span #[a(href='https://www.ietf.org/how/bofs/', target='_blank') Birds of a Feather] sessions (BoFs) are initial discussions about a particular topic of interest to the IETF community.
+            .agenda-table-note(v-if='item.note') {{item.note}}
           //- CELL - LINKS --------------------------
           td.agenda-table-cell-links
             span.badge.is-cancelled(v-if='item.status === `canceled`') Cancelled
@@ -242,32 +243,34 @@ const meetingEvents = computed(() => {
     // -> Add event item
     acc.result.push({
       key: item.id,
-      timeslot: itemTimeSlot,
-      start: item.adjustedStart,
-      end: item.adjustedEnd,
-      name: item.name,
-      sessionName: item.sessionName,
-      room: item.room,
-      location: item.location,
       acronym: item.acronym,
-      groupAcronym: item.groupParent?.acronym,
-      groupParentName: item.groupParent?.name,
-      groupParentDescription: item.groupParent?.description,
-      groupName: item.groupName,
-      isBoF: item.isBoF,
-      type: item.type,
-      isSessionEvent: item.type === 'regular',
-      status: item.status,
-      links,
-      displayType: 'event',
       cssClasses: [
         `agenda-table-display-event`,
         `agenda-table-status-${item.status}`,
-        `agenda-table-type-${item.type}`
+        `agenda-table-type-${item.type}`,
+        item.note ? 'agenda-table-has-note' : ''
       ].join(' '),
-      flags: item.flags,
       agenda: item.agenda,
-      icon
+      displayType: 'event',
+      end: item.adjustedEnd,
+      flags: item.flags,
+      groupAcronym: item.groupParent?.acronym,
+      groupName: item.groupName,
+      groupParentDescription: item.groupParent?.description,
+      groupParentName: item.groupParent?.name,
+      icon,
+      isBoF: item.isBoF,
+      isSessionEvent: item.type === 'regular',
+      links,
+      location: item.location,
+      name: item.name,
+      note: item.note,
+      room: item.room,
+      sessionName: item.sessionName,
+      start: item.adjustedStart,
+      status: item.status,
+      timeslot: itemTimeSlot,
+      type: item.type
     })
 
     return acc
@@ -405,6 +408,7 @@ function xslugify (str) {
 
     &.agenda-table-cell-ts.is-session-event {
       background: linear-gradient(to right, lighten($blue-100, 8%), lighten($blue-100, 5%));
+      border-right: 1px solid $blue-200 !important;
       color: $blue-200;
       border-bottom: 1px solid #FFF;
     }
@@ -486,8 +490,7 @@ function xslugify (str) {
   }
 
   &-cell-ts {
-    border-right: 1px solid $gray-500 !important;
-    // font-family: 'Roboto Mono', monospace;
+    border-right: 1px solid $gray-300 !important;
     font-size: 1rem;
     font-weight: 700;
     text-align: right;
@@ -518,10 +521,11 @@ function xslugify (str) {
 
     &.agenda-table-cell-name {
       color: $indigo-700;
+      font-style: italic;
     }
 
     &.agenda-table-cell-links {
-      background: linear-gradient(to left, lighten($indigo-100, 8%), lighten($indigo-100, 5%));
+      background: linear-gradient(to right, lighten($indigo-100, 5%), lighten($indigo-100, 8%));
     }
   }
   &-type-plenary td {
@@ -535,6 +539,22 @@ function xslugify (str) {
     &.agenda-table-cell-name {
       font-weight: 600;
       color: $teal-700;
+    }
+
+    &.agenda-table-cell-links {
+      background: linear-gradient(to right, rgba(lighten($teal, 54%), 0), lighten($teal, 54%));
+    }
+  }
+
+  &-has-note td {
+    &.agenda-table-cell-name {
+      padding: 7px 12px;
+
+      .agenda-table-note {
+        font-weight: 600;
+        font-size: .95em;
+        color: $pink-500;
+      }
     }
   }
 
