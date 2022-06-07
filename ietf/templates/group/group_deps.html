@@ -5,50 +5,6 @@
 #deps-modal .modal-body {
 height: 100vh;
 }
-circle {
-fill: white;
-stroke: black;
-stroke-width: 2;
-}
-
-.replaced circle {
-fill: orange;
-}
-
-.dead circle {
-fill: grey;
-}
-
-.expired circle {
-fill: lightgrey;
-}
-
-.individual circle {
-stroke-dasharray: 5;
-}
-
-.group circle {
-stroke-width: 4;
-}
-
-line {
-stroke: black;
-stroke-width: 2;
-}
-
-line.refinfo {
-stroke-dasharray: 5;
-}
-
-line.replaces {
-stroke: orange;
-}
-
-line.downref {
-stroke: red;
-stroke-width: 4;
-}
-
 {% endblock %}
 {% block group_content %}
 {% origin %}
@@ -76,10 +32,8 @@ stroke-width: 4;
             </div>
             <div class="modal-footer">
                 <div class="btn-group me-auto" role="group" aria-label="Pan and zoom the diagram">
-                    <button type="button" class="btn btn-outline-primary"><i
-                            class="bi bi-zoom-in"></i></button>
-                    <button type="button" class="btn btn-outline-primary"><i
-                            class="bi bi-zoom-out"></i></button>
+                    <small class="text-muted">Pan and zoom the dependency
+                        graph.</small>
                 </div>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
@@ -100,6 +54,25 @@ $(document)
 
 const line_height = 16; // FIXME: get from bs5
 const font = `${line_height - 2}px sans-serif`;
+
+const link_color = {
+    refinfo: "green",
+    refnorm: "pink",
+    replaces: "blue",
+    refunk: "pink",
+    downref: "red"
+};
+
+const node_color = {
+    replaced: "orange",
+    dead: "grey",
+    expired: "lightgrey"
+};
+
+const node_stroke = {
+    individual: 1,
+    group: 4
+};
 
 function lines(text) {
     let line;
@@ -151,30 +124,32 @@ function text_radius(lines) {
 function format_node(node) {
     return node.append("svg")
         .attr("overflow", "visible")
-        .attr("class", d => ["dead", "expired", "replaced", "rfc", "individual",
-                "group"
-            ].filter(c =>
-                d[c])
-            .join(" "));
+        .attr("fill", d =>
+            node_color[Object.keys(node_color)
+                .filter(c => d[c])[0]])
+        .attr("stroke-width", d =>
+            node_stroke[Object.keys(node_stroke)
+                .filter(c => d[c])[0]]);
 }
 
 function format_link(link) {
-    return link.append("line")
-        .attr("class", d => d["rel"]);
+    return link.append("path")
+        .attr("marker-end", d => `url(#marker-${d.rel})`)
+        .attr("stroke", d => link_color[d.rel])
+        .attr("class", d => d.rel);
 }
 
 // Fill modal with content from link href
 $("#deps-modal")
     .on("show.bs.modal", function (e) {
-        var link = $(e.relatedTarget)
+        const link = $(e.relatedTarget)
             .data("href");
-        var target = $(this)
+        const target = $(this)
             .find(".modal-body");
         if (link && target) {
             d3.json(link)
                 .then((data) => {
-                    console.log(data);
-
+                    // console.log(data);
                     target.html("<svg></svg>");
 
                     const width = target.width();
@@ -193,8 +168,24 @@ $("#deps-modal")
                         )
                         .call(zoom);
 
+                    svg.append("defs")
+                        .selectAll("marker")
+                        .data(new Set(data.links.map(d => d.rel)))
+                        .join("marker")
+                        .attr("id", d => `marker-${d}`)
+                        .attr("viewBox", "0 -5 10 10")
+                        .attr("refX", 9)
+                        .attr("markerWidth", 5)
+                        .attr("markerHeight", 5)
+                        .attr("orient", "auto")
+                        .attr("fill", d => link_color[d])
+                        .append("path")
+                        .attr("d", "M0,-5L10,0L0,5");
+
                     const link = svg.append("g")
-                        .selectAll("line")
+                        .attr("fill", "none")
+                        .attr("stroke-width", 4)
+                        .selectAll("path")
                         .data(data.links)
                         .join(format_link);
 
@@ -206,6 +197,7 @@ $("#deps-modal")
 
                     var max_r = 0;
                     node.append("text")
+                        .attr("fill", "black")
                         .each(d => {
                             d.lines = lines(d.id);
                             d.r = text_radius(d.lines);
@@ -222,18 +214,56 @@ $("#deps-modal")
 
                     node.insert("circle")
                         .attr("r", d => d.r)
+                        .attr("stroke", "black")
                         .lower();
 
                     function ticked() {
-                        link
-                            .attr("x1", d => d.source.x)
-                            .attr("y1", d => d.source.y)
-                            .attr("x2", d => d.target.x)
-                            .attr("y2", d => d.target.y);
+                        // link.attr("d", function (d) {
+                        //     const dx = d.target.x - d.source.x;
+                        //     const dy = d.target.y - d.source.y;
+
+                        //     const path_len = Math.sqrt((dx * dx) +
+                        //         (dy * dy));
+
+                        //     const offx = (dx * d.target.r) /
+                        //         path_len;
+                        //     const offy = (dy * d.target.r) /
+                        //         path_len;
+                        //     return `
+                        //         M${d.source.x},${d.source.y}
+                        //         L${d.target.x - offx},${d.target.y - offy}
+                        //     `;
+                        // });
+
+                        link.attr("d", d => {
+                            const r = Math.hypot(d.target.x - d
+                                .source.x, d
+                                .target.y - d.source.y);
+                            return `
+                                M${d.source.x},${d.source.y}
+                                A${r},${r} 0 0,1 ${d.target.x},${d.target.y}
+                            `;
+                        });
+                        link.attr("d", function (d) {
+                            const pl = this.getTotalLength();
+                            const r = (d.target.r);
+                            const m = this.getPointAtLength(pl -
+                                r);
+                            const dx = m.x - d.source.x;
+                            const dy = m.y - d.source.y;
+                            const dr = Math.sqrt(dx * dx + dy *
+                                dy);
+                            return `
+                                M${d.source.x},${d.source.y}
+                                A${dr},${dr} 0 0,1 ${m.x},${m.y}
+                            `;
+                        });
+
                         node
                             .attr("x", d => d.x)
                             .attr("y", d => d.y);
 
+                        // auto pan and zoom during simulation
                         var bbox = svg.node()
                             .getBBox();
                         const kx = width / bbox.width;
