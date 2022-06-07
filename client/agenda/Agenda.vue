@@ -9,8 +9,7 @@
     li.nav-item(v-for='tab of state.tabs')
       a.nav-link.agenda-link.filterable(
         :class='{ active: tab.key === state.currentTab }'
-        @click.prevent='switchTab(tab.key)'
-        :href='tab.key'
+        :href='tab.href'
         )
         i.bi.me-2(:class='tab.icon')
         span {{tab.title}}
@@ -235,8 +234,8 @@ const state = reactive({
   tabs: [
     { key: 'agenda', title: 'Agenda', icon: 'bi-calendar3' },
     // { key: 'personalize', title: 'Personalize Agenda', icon: 'bi-calendar2-check' },
-    { key: 'floorplan', title: 'Floor plan', icon: 'bi-pin-map' },
-    { key: 'plaintext', title: 'Plaintext', icon: 'bi-file-text' }
+    { key: 'floorplan', href: 'floor-plan', title: 'Floor plan', icon: 'bi-pin-map' },
+    { key: 'plaintext', href: 'agenda.txt', title: 'Plaintext', icon: 'bi-file-text' }
   ],
   searchText: '',
   calendarShown: false,
