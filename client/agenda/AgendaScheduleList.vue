@@ -81,7 +81,9 @@
               template(#trigger)
                 span.badge.is-bof BoF
               span #[a(href='https://www.ietf.org/how/bofs/', target='_blank') Birds of a Feather] sessions (BoFs) are initial discussions about a particular topic of interest to the IETF community.
-            .agenda-table-note(v-if='item.note') {{item.note}}
+            .agenda-table-note(v-if='item.note')
+              i.bi.bi-arrow-return-right.me-1
+              span {{item.note}}
           //- CELL - LINKS --------------------------
           td.agenda-table-cell-links
             span.badge.is-cancelled(v-if='item.status === `canceled`') Cancelled
@@ -237,6 +239,13 @@ const meetingEvents = computed(() => {
         break
       case 'plenary':
         icon = 'bi-flower3 bi-green'
+        break
+      case 'other':
+        if (item.name.toLowerCase().indexOf('office hours') >= 0) {
+          icon = 'bi-building'
+        } else if (item.name.toLowerCase().indexOf('hackathon') >= 0) {
+          icon = 'bi-command bi-pink'
+        }
         break
     }
 
@@ -456,6 +465,9 @@ function xslugify (str) {
         }
         &.bi-green {
           color: $green-500;
+        }
+        &.bi-pink {
+          color: $pink-500;
         }
       }
     }
