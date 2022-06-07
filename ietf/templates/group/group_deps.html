@@ -8,7 +8,7 @@ height: 100vh;
 {% endblock %}
 {% block group_content %}
 {% origin %}
-<button id="show-deps" data-href="{% url 'ietf.group.views.dependencies_json' group_type=group.type_id acronym=group.acronym %}"
+<button id="show-deps" data-href="{% url 'ietf.group.views.dependencies' group_type=group.type_id acronym=group.acronym %}"
     type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
     data-bs-target="#deps-modal">
     Modal <i class="bi bi-diagram-3"></i>
@@ -33,7 +33,7 @@ height: 100vh;
             <div class="modal-footer">
                 <div class="btn-group me-auto" role="group" aria-label="Pan and zoom the diagram">
                     <small class="text-muted">Pan and zoom the dependency
-                        graph.</small>
+                        graph after the layout settles.</small>
                 </div>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
@@ -57,21 +57,10 @@ const font = `${line_height - 2}px sans-serif`;
 
 const link_color = {
     refinfo: "green",
-    refnorm: "pink",
-    replaces: "blue",
+    refnorm: "blue",
+    replaces: "black",
     refunk: "pink",
     downref: "red"
-};
-
-const node_color = {
-    replaced: "orange",
-    dead: "grey",
-    expired: "lightgrey"
-};
-
-const node_stroke = {
-    individual: 1,
-    group: 4
 };
 
 function lines(text) {
@@ -121,24 +110,6 @@ function text_radius(lines) {
     return radius * 1.1;
 }
 
-function format_node(node) {
-    return node.append("svg")
-        .attr("overflow", "visible")
-        .attr("fill", d =>
-            node_color[Object.keys(node_color)
-                .filter(c => d[c])[0]])
-        .attr("stroke-width", d =>
-            node_stroke[Object.keys(node_stroke)
-                .filter(c => d[c])[0]]);
-}
-
-function format_link(link) {
-    return link.append("path")
-        .attr("marker-end", d => `url(#marker-${d.rel})`)
-        .attr("stroke", d => link_color[d.rel])
-        .attr("class", d => d.rel);
-}
-
 // Fill modal with content from link href
 $("#deps-modal")
     .on("show.bs.modal", function (e) {
@@ -149,7 +120,7 @@ $("#deps-modal")
         if (link && target) {
             d3.json(link)
                 .then((data) => {
-                    // console.log(data);
+                    console.log(data);
                     target.html("<svg></svg>");
 
                     const width = target.width();
@@ -187,13 +158,21 @@ $("#deps-modal")
                         .attr("stroke-width", 4)
                         .selectAll("path")
                         .data(data.links)
-                        .join(format_link);
+                        .join("path")
+                        .attr("title", d => d.rel)
+                        .attr("marker-end", d =>
+                            `url(#marker-${d.rel})`)
+                        .attr("stroke", d => link_color[d.rel])
+                        .attr("class", d => d.rel);
 
-                    const node = svg.append("svg")
-                        .attr("overflow", "visible")
-                        .selectAll("svg")
+                    const node = svg.append("g")
+                        .selectAll("g")
                         .data(data.nodes)
-                        .join(format_node);
+                        .join("a")
+                        .attr("xlink:href", d => d.url)
+                        .attr("title", d => d.id)
+                        .append("svg")
+                        .attr("overflow", "visible")
 
                     var max_r = 0;
                     node.append("text")
@@ -212,12 +191,33 @@ $("#deps-modal")
                             0.5) * line_height)
                         .text(d => d.text);
 
-                    node.insert("circle")
+                    node
+                        .append("circle")
                         .attr("r", d => d.r)
                         .attr("stroke", "black")
-                        .lower();
+                        .lower()
+                        .attr("fill", d => {
+                            if (d.replaced) { return "orange"; }
+                            if (d.dead) { return "grey"; }
+                            if (d.expired) { return "lightgrey"; }
+                            if (d.group) { return "lightblue"; }
+                            return "white";
+                        })
+                        .attr("stroke-width", d => {
+                            if (d.individual) { return 1; }
+                            return 3; // adopted in this or other group
+                        })
+                        .attr("stroke-dasharray", d => {
+                            if (d.group) { return 0; }
+                            return 3;
+                        });
 
                     function ticked() {
+                        // don't animate each tick
+                        for (let i = 0; i < 3; i++) {
+                            simulation.tick();
+                        }
+
                         // link.attr("d", function (d) {
                         //     const dx = d.target.x - d.source.x;
                         //     const dy = d.target.y - d.source.y;
@@ -236,7 +236,8 @@ $("#deps-modal")
                         // });
 
                         link.attr("d", d => {
-                            const r = Math.hypot(d.target.x - d
+                            const r = Math.hypot(d.target.x -
+                                d
                                 .source.x, d
                                 .target.y - d.source.y);
                             return `
@@ -247,11 +248,13 @@ $("#deps-modal")
                         link.attr("d", function (d) {
                             const pl = this.getTotalLength();
                             const r = (d.target.r);
-                            const m = this.getPointAtLength(pl -
+                            const m = this.getPointAtLength(
+                                pl -
                                 r);
                             const dx = m.x - d.source.x;
                             const dy = m.y - d.source.y;
-                            const dr = Math.sqrt(dx * dx + dy *
+                            const dr = Math.sqrt(dx * dx +
+                                dy *
                                 dy);
                             return `
                                 M${d.source.x},${d.source.y}
@@ -273,7 +276,6 @@ $("#deps-modal")
                         const ty = -bbox.height / 2 - bbox.y;
                         zoom.translateBy(svg, tx, ty);
                         zoom.scaleBy(svg, k);
-
                     }
 
                     function zoomed({ transform }) {
@@ -295,7 +297,12 @@ $("#deps-modal")
                             max_r))
                         .force("x", d3.forceX())
                         .force("y", d3.forceY())
-                        .on("tick", ticked);
+                        .on("tick", ticked)
+                        .on("end", function () {
+                            console.log("end");
+                            // $('svg [title][title!=""]')
+                            //     .tooltip("update");
+                        });
                 });
         }
     });

@@ -39,11 +39,9 @@ import datetime
 import itertools
 import io
 import math
-import os
 import re
 import json
 
-from tempfile import mkstemp
 from collections import OrderedDict, defaultdict
 from simple_history.utils import update_change_reason
 
@@ -68,7 +66,6 @@ from ietf.doc.utils import get_chartering_type, get_tags_for_stream_id
 from ietf.doc.utils_charter import charter_name_for_group, replace_charter_of_replaced_group
 from ietf.doc.utils_search import prepare_document_table
 #
-from ietf.group.dot import make_dot
 from ietf.group.forms import (GroupForm, StatusUpdateForm, ConcludeGroupForm, StreamEditForm,
                               ManageReviewRequestForm, EmailOpenAssignmentsForm, ReviewerSettingsForm,
                               AddUnavailablePeriodForm, EndUnavailablePeriodForm, ReviewSecretarySettingsForm, )
@@ -118,7 +115,6 @@ from ietf.dbtemplate.models import DBTemplate
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.mailtrigger.models import Recipient
 from ietf.settings import MAILING_LIST_INFO_URL
-from ietf.utils.pipe import pipe
 from ietf.utils.response import permission_denied
 from ietf.utils.text import strip_suffix
 from ietf.utils import markdown
@@ -747,64 +743,29 @@ def materials(request, acronym, group_type=None):
                       "can_manage_materials": can_manage_materials(request.user, group)
                   }))
 
-@cache_page(60 * 60)
-def dependencies(request, acronym, group_type=None, output_type="pdf"):
-    group = get_group_or_404(acronym, group_type)
-    if not group.features.has_documents or output_type not in ["dot", "pdf", "svg"]:
-        raise Http404
-
-    dothandle, dotname = mkstemp()
-    os.close(dothandle)
-    dotfile = io.open(dotname, "w")
-    dotfile.write(make_dot(group))
-    dotfile.close()
-
-    if (output_type == "dot"):
-        return HttpResponse(make_dot(group),
-                            content_type='text/plain; charset=UTF-8'
-                            )
-
-    unflathandle, unflatname = mkstemp()
-    os.close(unflathandle)
-    outhandle, outname = mkstemp()
-    os.close(outhandle)
-
-    pipe("%s -f -l 10 -o %s %s" % (settings.UNFLATTEN_BINARY, unflatname, dotname))
-    pipe("%s -T%s -o %s %s" % (settings.DOT_BINARY, output_type, outname, unflatname))
-
-    outhandle = io.open(outname, "rb")
-    out = outhandle.read()
-    outhandle.close()
-
-    os.unlink(outname)
-    os.unlink(unflatname)
-    os.unlink(dotname)
-
-    if (output_type == "pdf"):
-        output_type = "application/pdf"
-    elif (output_type == "svg"):
-        output_type = "image/svg+xml"
-    return HttpResponse(out, content_type=output_type)
-
 
 @cache_page(60 * 60)
-def dependencies_json(request, acronym, group_type=None):
+def dependencies(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
     if not group.features.has_documents:
         raise Http404
 
+    clist = group.communitylist_set.first()
+    tracked = set(docs_tracked_by_community_list(clist))
+
     references = Q(
         source__group=group, source__type="draft", relationship__slug__startswith="ref"
     )
-    both_rfcs = Q(source__states__slug="rfc", target__docs__states__slug="rfc")
+
     inactive = Q(source__states__slug__in=["expired", "repl"])
-    # attractor = Q(target__name__in=["rfc5000", "rfc5741"])
     removed = Q(source__states__slug__in=["auth-rm", "ietf-rm"])
+    is_rfc = Q(source__states__slug="rfc")
+    tracked_docs = Q(source__name__in=[d.name for d in tracked])
     relations = (
         RelatedDocument.objects.filter(references)
-        .exclude(both_rfcs)
+        .filter(tracked_docs)
+        .exclude(is_rfc)
         .exclude(inactive)
-        # .exclude(attractor)
         .exclude(removed)
     )
 
@@ -822,36 +783,36 @@ def dependencies_json(request, acronym, group_type=None):
     for x in replacements:
         links.add(x)
 
-    nodes = set([x.source for x in links]).union([x.target.document for x in links])
-
+    nodes = (
+        set([x.source for x in links])
+        .union([x.target.document for x in links])
+        .union([d for d in tracked if not d.canonical_name().startswith("rfc")])
+    )
     graph = {
         "nodes": [
             {
-                "id": x.name,
+                "id": x.canonical_name(),
                 "rfc": x.get_state("draft").slug == "rfc",
-                "dead": not x.get_state("draft-iesg").slug
-                in ["idexists", "watching", "dead"],
+                # "dead": x.get_state("draft-iesg").slug in ["idexists", "watching", "dead"],
                 "expired": x.get_state("draft").slug == "expired",
                 "replaced": x.get_state("draft").slug == "repl",
                 "individual": x.group.acronym == "none",
                 "group": x.group == group,
+                "url": x.get_absolute_url(),
             }
             for x in nodes
         ],
         "links": [
             {
-                "source": x.source.name,
-                "target": x.target.document.name,
-                "rel": "downref"
-                if x.is_downref()
-                else x.relationship.slug,
+                "source": x.source.canonical_name(),
+                "target": x.target.document.canonical_name(),
+                "rel": "downref" if x.is_downref() else x.relationship.slug,
             }
             for x in links
         ],
     }
 
     return HttpResponse(json.dumps(graph), content_type="application/json")
-
 
 
 def email_aliases(request, acronym=None, group_type=None):

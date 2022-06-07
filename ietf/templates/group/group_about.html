@@ -122,16 +122,12 @@
                     <td class="edit">
                     </td>
                     <td>
-                        <a class="btn btn-primary btn-sm"
-                           href="{% url 'ietf.group.views.dependencies' group_type=group.type_id acronym=group.acronym output_type='svg' %}">
-                            SVG <i class="bi bi-diagram-3"></i>
-                        </a>
-                        <button data-href="{% url 'ietf.group.views.dependencies_json' group_type=group.type_id acronym=group.acronym %}"
+                        <button data-href="{% url 'ietf.group.views.dependencies' group_type=group.type_id acronym=group.acronym %}"
                            type="button"
                            class="btn btn-primary btn-sm"
                            data-bs-toggle="modal"
                            data-bs-target="#deps-modal">
-                            Modal <i class="bi bi-diagram-3"></i>
+                            <i class="bi bi-diagram-3"></i>
                         </button>
                         <div class="modal fade" id="deps-modal" tabindex="-1" aria-labelledby="deps-modal-label" aria-hidden="true">
                           <div class="modal-dialog modal-xl">
