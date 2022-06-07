@@ -808,21 +808,21 @@ def dependencies_json(request, acronym, group_type=None):
         .exclude(removed)
     )
 
-    edges = set()
+    links = set()
     for x in relations:
         target_state = x.target.document.get_state_slug("draft")
         if target_state != "rfc" or x.is_downref():
-            edges.add(x)
+            links.add(x)
 
     replacements = RelatedDocument.objects.filter(
         relationship__slug="replaces",
-        target__docs__in=[x.target.document for x in edges],
+        target__docs__in=[x.target.document for x in links],
     )
 
     for x in replacements:
-        edges.add(x)
+        links.add(x)
 
-    nodes = set([x.source for x in edges]).union([x.target.document for x in edges])
+    nodes = set([x.source for x in links]).union([x.target.document for x in links])
 
     graph = {
         "nodes": [
@@ -838,7 +838,7 @@ def dependencies_json(request, acronym, group_type=None):
             }
             for x in nodes
         ],
-        "edges": [
+        "links": [
             {
                 "source": x.source.name,
                 "target": x.target.document.name,
@@ -846,7 +846,7 @@ def dependencies_json(request, acronym, group_type=None):
                 if x.is_downref()
                 else x.relationship.slug,
             }
-            for x in edges
+            for x in links
         ],
     }
 

@@ -75,6 +75,12 @@ stroke-width: 4;
                 </div>
             </div>
             <div class="modal-footer">
+                <div class="btn-group me-auto" role="group" aria-label="Pan and zoom the diagram">
+                    <button type="button" class="btn btn-outline-primary"><i
+                            class="bi bi-zoom-in"></i></button>
+                    <button type="button" class="btn btn-outline-primary"><i
+                            class="bi bi-zoom-out"></i></button>
+                </div>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -99,9 +105,14 @@ function lines(text) {
     let line;
     let line_width_0 = Infinity;
     const lines = [];
-    const words = text.trim()
+    var words = text.trim()
         .split(/-/g)
         .map((x, i, a) => i < a.length - 1 ? x + "-" : x);
+    if (words.length == 1) {
+        words = text.trim()
+            .split(/rfc/g)
+            .map((x, i, a) => i < a.length - 1 ? x + "RFC" : x);
+    }
     const target_width = Math.sqrt(measure_width(text.trim()) *
         line_height);
     for (let i = 0, n = words.length; i < n; ++i) {
@@ -147,8 +158,8 @@ function format_node(node) {
             .join(" "));
 }
 
-function format_edge(edge) {
-    return edge.append("line")
+function format_link(link) {
+    return link.append("line")
         .attr("class", d => d["rel"]);
 }
 
@@ -169,27 +180,23 @@ $("#deps-modal")
                     const width = target.width();
                     const height = target.height();
 
+                    const zoom = d3.zoom()
+                        .scaleExtent([1 / 4, 4])
+                        .on("zoom", zoomed);
+
                     const svg = d3.select(".modal-body svg")
                         .style("font", font)
                         .attr("text-anchor", "middle")
                         .attr("dominant-baseline", "central")
-                        .attr("viewBox", [-width / 2, -height / 2,
-                            width, height
-                        ])
-                        .call(d3.zoom()
-                            .extent([
-                                [0, 0],
-                                [width, height]
-                            ])
-                            .scaleExtent([.5, 2])
-                            .on("zoom", zoomed)
-                        );
+                        .attr("viewBox",
+                            `${-width/2} ${-height/2} ${width} ${height}`
+                        )
+                        .call(zoom);
 
-                    const link = svg.append("svg")
-                        .attr("overflow", "visible")
+                    const link = svg.append("g")
                         .selectAll("line")
-                        .data(data.edges)
-                        .join(format_edge);
+                        .data(data.links)
+                        .join(format_link);
 
                     const node = svg.append("svg")
                         .attr("overflow", "visible")
@@ -226,6 +233,17 @@ $("#deps-modal")
                         node
                             .attr("x", d => d.x)
                             .attr("y", d => d.y);
+
+                        var bbox = svg.node()
+                            .getBBox();
+                        const kx = width / bbox.width;
+                        const ky = height / bbox.height;
+                        const k = Math.min(kx, ky);
+                        const tx = -bbox.width / 2 - bbox.x;
+                        const ty = -bbox.height / 2 - bbox.y;
+                        zoom.translateBy(svg, tx, ty);
+                        zoom.scaleBy(svg, k);
+
                     }
 
                     function zoomed({ transform }) {
@@ -236,13 +254,13 @@ $("#deps-modal")
                     const simulation = d3
                         .forceSimulation()
                         .nodes(data.nodes)
-                        .force("link", d3.forceLink(data.edges)
+                        .force("link", d3.forceLink(data.links)
                             .id(d => d.id)
                             .distance(0)
-                            .strength(1)
+                            // .strength(1)
                         )
                         .force("charge", d3.forceManyBody()
-                            .strength(-10 * max_r))
+                            .strength(-5 * max_r))
                         .force('collision', d3.forceCollide(1.25 *
                             max_r))
                         .force("x", d3.forceX())
