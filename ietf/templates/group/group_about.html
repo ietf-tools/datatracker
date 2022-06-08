@@ -4,6 +4,11 @@
 {% load static ietf_filters %}
 {% load markup_tags %}
 {% load textfilters group_filters %}
+{% block morecss %}
+#deps-modal .modal-body {
+height: 100vh;
+}
+{% endblock %}
 {% block group_content %}
     {% origin %}
     {% if group.state_id == "conclude" %}
@@ -124,7 +129,7 @@
                     <td>
                         <button id="show-deps" data-href="{% url 'ietf.group.views.dependencies' group_type=group.type_id acronym=group.acronym %}"
                             type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                            data-bs-target="#deps-modal">
+                            data-bs-target="#deps-modal" data-group="{{ group.acronym }}">
                             <i class="bi bi-bounding-box-circles"></i> Show
                         </button>
                         <div class="modal fade" id="deps-modal" tabindex="-1" aria-labelledby="deps-modal-label"
@@ -137,13 +142,7 @@
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"
                                             aria-label="Close"></button>
                                     </div>
-                                    <div class="modal-body">
-                                        <div class="d-flex justify-content-center">
-                                            <div class="spinner-border m-5" role="status">
-                                                <span class="visually-hidden">Loading...</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <div class="modal-body"></div>
                                     <div class="modal-footer">
                                         <div class="btn-group me-auto" role="group" aria-label="Pan and zoom the diagram">
                                             <small class="text-muted">Pan and zoom the dependency
@@ -369,6 +368,16 @@
 {% endblock %}
 {% block js %}
 <script src="{% static 'ietf/js/d3.js' %}"></script>
+<script src="{% static 'ietf/js/document_relations.js' %}"></script>
 <script>
+$(document)
+    .ready(() => {
+        $("#show-deps")
+            .trigger("click");
+    });
+
+
+
+
 </script>
 {% endblock %}

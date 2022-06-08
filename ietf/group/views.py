@@ -554,40 +554,6 @@ def group_about(request, acronym, group_type=None):
                       "closing_note": e,
                   }))
 
-def group_deps(request, acronym, group_type=None):
-    group = get_group_or_404(acronym, group_type)
-
-    # fill_in_charter_info(group)
-
-    # e = group.latest_event(type__in=("changed_state", "requested_close",))
-    # requested_close = group.state_id != "conclude" and e and e.type == "requested_close"
-
-    # e = None
-    # if group.state_id == "conclude":
-    #     e = group.latest_event(type='closing_note')
-
-    # can_manage = can_manage_all_groups_of_type(request.user, group.type_id)
-    # charter_submit_url = ""
-    # if group.features.has_chartering_process:
-    #     charter_submit_url = urlreverse('ietf.doc.views_charter.submit', kwargs={ "name": charter_name_for_group(group) })
-
-    # can_provide_update = can_provide_status_update(request.user, group)
-    # status_update = group.latest_event(type="status_update")
-
-
-    return render(request, 'group/group_deps.html',
-                  construct_group_menu_context(request, group, "deps", group_type, {
-                  #     "milestones_in_review": group.groupmilestone_set.filter(state="review"),
-                  #     "milestone_reviewer": milestone_reviewer_for_group_type(group_type),
-                  #     "requested_close": requested_close,
-                  #     "can_manage": can_manage,
-                  #     "can_provide_status_update": can_provide_update,
-                  #     "status_update": status_update,
-                  #     "charter_submit_url": charter_submit_url,
-                  #     "editable_roles": group.used_roles or group.features.default_used_roles,
-                  #     "closing_note": e,
-                  }))
-
 def all_status(request):
     wgs = Group.objects.filter(type='wg',state__in=['active','bof'])
     rgs = Group.objects.filter(type='rg',state__in=['active','proposed'])
@@ -793,12 +759,15 @@ def dependencies(request, acronym, group_type=None):
             {
                 "id": x.canonical_name(),
                 "rfc": x.get_state("draft").slug == "rfc",
-                # "dead": x.get_state("draft-iesg").slug in ["idexists", "watching", "dead"],
                 "expired": x.get_state("draft").slug == "expired",
                 "replaced": x.get_state("draft").slug == "repl",
-                "individual": x.group.acronym == "none",
-                "group": x.group == group,
+                "group": x.group.acronym if x.group.acronym != "none" else "",
                 "url": x.get_absolute_url(),
+                "level": x.intended_std_level.name
+                if x.intended_std_level
+                else x.std_level.name
+                if x.std_level
+                else "",
             }
             for x in nodes
         ],

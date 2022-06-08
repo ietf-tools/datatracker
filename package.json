@@ -105,6 +105,7 @@
         "ietf/static/js/d3.js",
         "ietf/static/js/datepicker.js",
         "ietf/static/js/doc-search.js",
+        "ietf/static/js/document_relations.js",
         "ietf/static/js/document_timeline.js",
         "ietf/static/js/draft-submit.js",
         "ietf/static/js/edit-meeting-schedule.js",
