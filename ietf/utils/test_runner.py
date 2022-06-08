@@ -997,10 +997,9 @@ class IetfTestRunner(DiscoverRunner):
                     for msg in json.loads(result)["messages"]:
                         if vnu_filter_message(msg, False, True):
                             continue
-                        errors = vnu_fmt_message(file, msg, content)
-
-            if errors:
-                testcase.fail(errors)
+                        errors = vnu_fmt_message(file, msg, content.decode("utf-8"))
+                        if errors:
+                            testcase.fail(errors)
 
         tmpdir.cleanup()
 
