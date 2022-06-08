@@ -2137,9 +2137,10 @@ def agenda_json(request, num=None):
 
 def meeting_requests(request, num=None):
     meeting = get_meeting(num)
+    groups_to_show = Group.objects.filter(state='Active', type__features__has_meetings=True)
     sessions = Session.objects.requests().filter(
         meeting__number=meeting.number,
-        group__parent__isnull=False
+        group__in=groups_to_show,
     ).with_current_status().with_requested_by().exclude(
         requested_by=0
     ).order_by(
@@ -2155,7 +2156,12 @@ def meeting_requests(request, num=None):
         s.current_status_name = status_names.get(s.current_status, s.current_status)
         s.requested_by_person = session_requesters.get(s.requested_by)
 
-    groups_not_meeting = Group.objects.filter(state='Active',type__in=['wg','rg','ag','rag','bof','program']).exclude(acronym__in = [session.group.acronym for session in sessions]).order_by("parent__acronym","acronym").prefetch_related("parent")
+    groups_not_meeting = groups_to_show.exclude(
+        acronym__in = [session.group.acronym for session in sessions]
+    ).order_by(
+        "parent__acronym",
+        "acronym",
+    ).prefetch_related("parent")
 
     return render(request, "meeting/requests.html",
         {"meeting": meeting, "sessions":sessions,
