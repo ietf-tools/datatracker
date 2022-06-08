@@ -369,15 +369,4 @@ height: 100vh;
 {% block js %}
 <script src="{% static 'ietf/js/d3.js' %}"></script>
 <script src="{% static 'ietf/js/document_relations.js' %}"></script>
-<script>
-$(document)
-    .ready(() => {
-        $("#show-deps")
-            .trigger("click");
-    });
-
-
-
-
-</script>
 {% endblock %}

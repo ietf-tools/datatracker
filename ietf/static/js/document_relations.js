@@ -13,11 +13,11 @@
   };
 
   const ref_type = {
-      refinfo: "Informative reference",
-      refnorm: "Normative reference",
-      replaces: "Replaces other document",
-      refunk: "Unknown reference type",
-      downref: "Downward reference (DOWNREF)"
+      refinfo: "has an Informative reference to",
+      refnorm: "has a Normative reference to",
+      replaces: "replaces",
+      refunk: "has an Unknown type of reference to",
+      downref: "has a downward reference (DOWNREF) to"
   };
 
   function lines(text) {
@@ -135,7 +135,7 @@
                           .selectAll("path")
                           .data(data.links)
                           .join("path")
-                          .attr("title", d => ref_type[d.rel])
+                          .attr("title", d => `${d.source} ${ref_type[d.rel]} ${d.target}`)
                           .attr("marker-end", d =>
                               `url(#marker-${d.rel})`)
                           .attr("stroke", d => link_color[d.rel])
