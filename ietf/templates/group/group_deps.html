@@ -283,6 +283,12 @@ $("#deps-modal")
                         node.attr("transform", transform);
                     }
 
+                    // $('svg [title][title!=""]')
+                    //     .on('show.bs.tooltip', () => {
+                    //         console.log(this);
+                    //     })
+                    //     .tooltip({ position: { my: "left+15 center", at: "right center" } });
+
                     const simulation = d3
                         .forceSimulation()
                         .nodes(data.nodes)
@@ -300,8 +306,6 @@ $("#deps-modal")
                         .on("tick", ticked)
                         .on("end", function () {
                             console.log("end");
-                            // $('svg [title][title!=""]')
-                            //     .tooltip("update");
                         });
                 });
         }
