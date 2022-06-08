@@ -4,17 +4,20 @@
 import io
 import os
 import datetime
+import json
 
 from tempfile import NamedTemporaryFile
 
 from django.core.management import call_command
 from django.conf import settings
 from django.urls import reverse as urlreverse
+from django.db.models import Q
+from django.test import Client
 
 import debug                             # pyflakes:ignore
 
-from ietf.doc.factories import DocumentFactory
-from ietf.doc.models import DocEvent
+from ietf.doc.factories import DocumentFactory, WgDraftFactory
+from ietf.doc.models import DocEvent, RelatedDocument
 from ietf.group.models import Role, Group
 from ietf.group.utils import get_group_role_emails, get_child_group_role_emails, get_group_ad_emails
 from ietf.group.factories import GroupFactory, RoleFactory
@@ -52,6 +55,44 @@ class StreamTests(TestCase):
         r = self.client.post(url, dict(delegates="ad2@ietf.org"))
         self.assertEqual(r.status_code, 302)
         self.assertTrue(Role.objects.filter(name="delegate", group__acronym=stream_acronym, email__address="ad2@ietf.org"))
+
+
+class GroupDocDependencyTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        a = WgDraftFactory()
+        b = WgDraftFactory()
+        RelatedDocument.objects.create(
+            source=a, target=b.docalias.first(), relationship_id="refnorm"
+        )
+
+    def test_group_document_dependencies(self):
+        for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
+            client = Client(Accept="application/json")
+            for url in [
+                urlreverse(
+                    "ietf.group.views.dependencies", kwargs=dict(acronym=group.acronym)
+                ),
+                urlreverse(
+                    "ietf.group.views.dependencies",
+                    kwargs=dict(acronym=group.acronym, group_type=group.type_id),
+                ),
+            ]:
+                r = client.get(url)
+                self.assertTrue(
+                    r.status_code == 200,
+                    "Failed to receive a group document dependencies for group: %s"
+                    % group.acronym,
+                )
+                self.assertGreater(
+                    len(r.content),
+                    0,
+                    "Document dependencies for group %s has no content" % group.acronym,
+                )
+                try:
+                    json.loads(r.content)
+                except Exception as e:
+                    self.fail("JSON load failed: %s" % e)
 
 
 class GenerateGroupAliasesTests(TestCase):

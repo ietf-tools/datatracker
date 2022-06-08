@@ -716,9 +716,6 @@ def dependencies(request, acronym, group_type=None):
     if not group.features.has_documents:
         raise Http404
 
-    clist = group.communitylist_set.first()
-    tracked = set(docs_tracked_by_community_list(clist))
-
     references = Q(
         source__group=group, source__type="draft", relationship__slug__startswith="ref"
     )
@@ -726,14 +723,20 @@ def dependencies(request, acronym, group_type=None):
     inactive = Q(source__states__slug__in=["expired", "repl"])
     removed = Q(source__states__slug__in=["auth-rm", "ietf-rm"])
     is_rfc = Q(source__states__slug="rfc")
-    tracked_docs = Q(source__name__in=[d.name for d in tracked])
     relations = (
         RelatedDocument.objects.filter(references)
-        .filter(tracked_docs)
         .exclude(is_rfc)
         .exclude(inactive)
         .exclude(removed)
     )
+
+    clist = group.communitylist_set.first()
+    if clist:
+        tracked = set(docs_tracked_by_community_list(clist))
+        tracked_docs = Q(source__name__in=[d.name for d in tracked])
+        relations = relations.filter(tracked_docs)
+    else:
+        tracked = set()
 
     links = set()
     for x in relations:
