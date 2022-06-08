@@ -12,7 +12,7 @@
 <link rel="manifest" href="/site.webmanifest">
 <link rel="mask-icon"
       href="{% static 'ietf/images/ietf-logo-nor-mask.svg' %}"
-      content="{% if server_mode and server_mode == 'production' %}#ffffff{% else %}#ffc4c4{% endif %}">
+      color="{% if server_mode and server_mode == 'production' %}#ffffff{% else %}#ffc4c4{% endif %}">
 <meta name="msapplication-TileColor"
       content="{% if server_mode and server_mode == 'production' %}#ffffff{% else %}#ffc4c4{% endif %}">
 <meta name="theme-color"
