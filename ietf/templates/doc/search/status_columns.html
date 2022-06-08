@@ -77,7 +77,7 @@
             <br>
             Action Holder{{ doc.documentactionholder_set.all|pluralize }}:
             {% for action_holder in doc.documentactionholder_set.all %}
-                {% person_link action_holder.person title=action_holder.role_for_doc %}{% if action_holder|action_holder_badge %} {{ action_holder|action_holder_badge }}{% endif %}{% if not forloop.last %},{% endif %}
+                {% person_link action_holder.person title=action_holder.role_for_doc %}{% if forloop.last %}{% if action_holder|action_holder_badge %} {{ action_holder|action_holder_badge }}{% endif %}{% else %},{% endif %}
             {% endfor %}
         {% endif %}
     {% else %}

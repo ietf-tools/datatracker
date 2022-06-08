@@ -162,23 +162,27 @@ def ballotposition(doc, user):
 
 @register.filter
 def state_age_colored(doc):
-    if doc.type_id == 'draft':
+    if doc.type_id == "draft":
         if not doc.get_state_slug() in ["active", "rfc"]:
             # Don't show anything for expired/withdrawn/replaced drafts
             return ""
-        iesg_state = doc.get_state_slug('draft-iesg')
+        iesg_state = doc.get_state_slug("draft-iesg")
         if not iesg_state:
             return ""
 
         if iesg_state in ["dead", "watching", "pub", "idexists"]:
             return ""
         try:
-            state_date = doc.docevent_set.filter(
-                              Q(type="started_iesg_process")|
-                              Q(type="changed_state", statedocevent__state_type="draft-iesg")
-            ).order_by('-time')[0].time.date()
+            state_date = (
+                doc.docevent_set.filter(
+                    Q(type="started_iesg_process")
+                    | Q(type="changed_state", statedocevent__state_type="draft-iesg")
+                )
+                .order_by("-time")[0]
+                .time.date()
+            )
         except IndexError:
-            state_date = datetime.date(1990,1,1)
+            state_date = datetime.date(1990, 1, 1)
         days = (datetime.date.today() - state_date).days
         # loosely based on
         # https://trac.ietf.org/trac/iesg/wiki/PublishPath
@@ -191,7 +195,7 @@ def state_age_colored(doc):
         elif iesg_state in ["lc-req", "ann"]:
             goal1 = 4
             goal2 = 7
-        elif 'need-rev' in [x.slug for x in doc.tags.all()]:
+        elif "need-rev" in [x.slug for x in doc.tags.all()]:
             goal1 = 14
             goal2 = 28
         elif iesg_state == "pub-req":
@@ -204,20 +208,28 @@ def state_age_colored(doc):
             goal1 = 14
             goal2 = 28
         if days > goal2:
-            class_name = "text-danger"
+            class_name = "bg-danger"
         elif days > goal1:
-            class_name = "text-warning"
+            class_name = "bg-warning"
         else:
             # don't show a badge when things are in the green; clutters display
             # class_name = "text-success"
             return ""
         if days > goal1:
-            title = ' title="In state for %d day%s; goal is &lt;%d days."' % (days, 's' if days != 1 else '', goal1,)
+            title = ' title="In state for %d day%s; goal is &lt;%d days."' % (
+                days,
+                "s" if days != 1 else "",
+                goal1,
+            )
         else:
-            title = ''
-        return mark_safe('<span class="%s"><i class="bi bi-hourglass-split"%s></i></span>' % (class_name, title))
+            title = ""
+        return mark_safe(
+            '<span class="badge %s" %s><i class="bi bi-clock-fill"></i> %d day%s</span>'
+            % (class_name, title, days, "s" if days != 1 else "")
+        )
     else:
         return ""
+
 
 @register.filter
 def auth48_alert_badge(doc):
