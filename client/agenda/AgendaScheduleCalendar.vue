@@ -8,15 +8,15 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='drawerHeight')
         small.me-2: strong Timezone:
         n-button-group
           n-button(
-            :type='isTimezoneMeeting ? `primary` : `default`'
+            :type='agendaStore.isTimezoneMeeting ? `primary` : `default`'
             @click='setTimezone(`meeting`)'
             ) Meeting
           n-button(
-            :type='isTimezoneLocal ? `primary` : `default`'
+            :type='agendaStore.isTimezoneLocal ? `primary` : `default`'
             @click='setTimezone(`local`)'
             ) Local
           n-button(
-            :type='props.timezone === `UTC` ? `primary` : `default`'
+            :type='agendaStore.timezone === `UTC` ? `primary` : `default`'
             @click='setTimezone(`UTC`)'
             ) UTC
         n-divider(vertical)
@@ -62,7 +62,6 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='drawerHeight')
       agenda-details-modal(
         v-model:shown='state.showEventDetails'
         :event='state.eventDetails'
-        :meeting-number='props.meetingNumber'
       )
       
 </template>
@@ -88,39 +87,15 @@ import bootstrap5Plugin from '@fullcalendar/bootstrap5'
 
 import AgendaDetailsModal from './AgendaDetailsModal.vue'
 
-// PROPS
+import { useAgendaStore } from './store'
 
-const props = defineProps({
-  shown: {
-    type: Boolean,
-    required: true,
-    default: false
-  },
-  events: {
-    type: Array,
-    required: true
-  },
-  timezone: {
-    type: String,
-    required: true
-  },
-  meetingNumber: {
-    type: String,
-    required: true
-  },
-  meetingTimezone: {
-    type: String,
-    required: true
-  }
-})
+// STORES
 
-// EMITS
-
-const emit = defineEmits(['update:shown', 'update:timezone', 'toggleFilterDrawer'])
+const agendaStore = useAgendaStore()
 
 // STATE
 
-const isShown = ref(props.shown)
+const isShown = ref(false)
 const state = reactive({
   hoverMessage: '',
   hoverTime: '',
@@ -137,7 +112,7 @@ const calendarOptions = reactive({
   plugins: [ bootstrap5Plugin, timeGridPlugin, interactionPlugin, luxonPlugin ],
   initialView: 'timeGridWeek',
   themeSystem: 'bootstrap5',
-  timeZone: props.timezone,
+  timeZone: agendaStore.timezone,
   slotEventOverlap: false,
   nowIndicator: true,
   headerToolbar: {
@@ -174,30 +149,21 @@ const calendarOptions = reactive({
 })
 const drawerHeight = Math.round(window.innerHeight * .8)
 
-// COMPUTED
-
-const isTimezoneLocal = computed(() => {
-  return props.timezone === DateTime.local().zoneName
-})
-const isTimezoneMeeting = computed(() => {
-  return props.timezone === props.meetingTimezone
-})
-
 // WATCHERS
 
-watch(() => props.shown, (newValue) => {
+watch(() => agendaStore.calendarShown, (newValue) => {
   isShown.value = newValue
   if (newValue) {
     refreshData()
   }
 })
 watch(isShown, (newValue) => {
-  emit('update:shown', newValue)
+  agendaStore.$patch({ agendaStore: newValue })
 })
-watch(() => props.events, () => {
+watch(() => agendaStore.scheduleAdjusted, () => {
   refreshData()
 })
-watch(() => props.timezone, (newValue) => {
+watch(() => agendaStore.timezone, (newValue) => {
   calendarOptions.timeZone = newValue
   state.hoverMessage = ''
 })
@@ -211,7 +177,7 @@ function refreshData () {
   let latestDate = DateTime.fromISO('1990-01-01')
   let nowDate = DateTime.now()
 
-  calendarOptions.events = props.events.map(ev => {
+  calendarOptions.events = agendaStore.scheduleAdjusted.map(ev => {
     // -> Determine boundaries
     if (ev.adjustedStart.hour < earliestHour) {
       earliestHour = ev.adjustedStart.hour
@@ -254,23 +220,22 @@ function refreshData () {
 function setTimezone (tz) {
   switch (tz) {
     case 'meeting':
-      emit('update:timezone', props.meetingTimezone)
+      agendaStore.$patch({ timezone: agendaStore.meeting.timezone })
       break
     case 'local':
-      emit('update:timezone', DateTime.local().zoneName)
+      agendaStore.$patch({ timezone: DateTime.local().zoneName })
       break
     default:
-      emit('update:timezone', tz)
+      agendaStore.$patch({ timezone: tz })
       break
   }
 }
 
 function toggleFilterDrawer () {
-  emit('toggleFilterDrawer')
+  agendaStore.$patch({ filterShown: true })
 }
 
 function close () {
-  emit('update:shown', false)
   isShown.value = false
   state.hoverMessage = ''
 }

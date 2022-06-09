@@ -3,7 +3,7 @@
   table
     thead
       tr
-        th.agenda-table-head-check(v-if='pickerMode') &nbsp;
+        th.agenda-table-head-check(v-if='agendaStore.pickerMode') &nbsp;
         th.agenda-table-head-time Time
         th.agenda-table-head-location Location
         th.agenda-table-head-event(colspan='3') Event
@@ -15,17 +15,17 @@
         )
         //- ROW - DAY HEADING -----------------------
         template(v-if='item.displayType === `day`')
-          td(:id='`agenda-day-` + item.id', :colspan='pickerMode ? 6 : 5') {{item.date}}
+          td(:id='`agenda-day-` + item.id', :colspan='agendaStore.pickerMode ? 6 : 5') {{item.date}}
         //- ROW - SESSION HEADING -------------------
         template(v-else-if='item.displayType === `session-head`')
-          td.agenda-table-cell-check(v-if='pickerMode') &nbsp;
+          td.agenda-table-cell-check(v-if='agendaStore.pickerMode') &nbsp;
           td.agenda-table-cell-ts {{item.timeslot}}
           td.agenda-table-cell-name(colspan='4') {{item.name}}
         //- ROW - EVENT -----------------------------
         template(v-else-if='item.displayType === `event`')
           //- CELL - CHECKBOX -----------------------
           td.agenda-table-cell-check(
-            v-if='pickerMode'
+            v-if='agendaStore.pickerMode'
             )
             n-checkbox(
               :value='item.key'
@@ -46,7 +46,7 @@
                   span.badge {{item.location.short}}
                 span {{item.location.name}}
               a.discreet(
-                :href='`/meeting/` + props.meetingNumber + `/floor-plan?room=` + xslugify(item.room)'
+                :href='`/meeting/` + agendaStore.meeting.number + `/floor-plan?room=` + xslugify(item.room)'
                 :aria-label='item.room'
                 ) {{item.room}}
             span(v-else) {{item.room}}
@@ -105,12 +105,12 @@
   agenda-details-modal(
     v-model:shown='state.showEventDetails'
     :event='state.eventDetails'
-    :meeting-number='props.meetingNumber'
+    :meeting-number='agendaStore.meeting.number'
   )
 </template>
 
 <script setup>
-import { computed, reactive, toRefs } from 'vue'
+import { computed, reactive } from 'vue'
 import { DateTime } from 'luxon'
 import find from 'lodash/find'
 import sortBy from 'lodash/sortBy'
@@ -123,28 +123,11 @@ import {
 
 import AgendaDetailsModal from './AgendaDetailsModal.vue'
 
-// PROPS
+import { useAgendaStore } from './store'
 
-const props = defineProps({
-  events: {
-    type: Array,
-    required: true
-  },
-  meetingNumber: {
-    type: String,
-    required: true
-  },
-  pickerMode: {
-    type: Boolean,
-    default: false
-  },
-  useCodiMd: {
-    type: Boolean,
-    default: false
-  }
-})
+// STORES
 
-const { events, meetingNumber, pickerMode, useCodiMd } = toRefs(props)
+const agendaStore = useAgendaStore()
 
 // DATA
 
@@ -156,7 +139,7 @@ const state = reactive({
 // COMPUTED
 
 const meetingEvents = computed(() => {
-  return reduce(sortBy(events.value, 'adjustedStartDate'), (acc, item) => {
+  return reduce(sortBy(agendaStore.scheduleAdjusted, 'adjustedStartDate'), (acc, item) => {
     const itemTimeSlot = `${item.adjustedStart.toFormat('HH:mm')} - ${item.adjustedEnd.toFormat('HH:mm')}`
 
     // -> Add date row
@@ -192,21 +175,21 @@ const meetingEvents = computed(() => {
           id: `lnk-${item.id}-tar`,
           label: 'Download meeting materials as .tar archive',
           icon: 'file-zip',
-          href: `/meeting/${meetingNumber.value}/agenda/${item.acronym}-drafts.tgz`
+          href: `/meeting/${agendaStore.meeting.number}/agenda/${item.acronym}-drafts.tgz`
         })
         links.push({
           id: `lnk-${item.id}-pdf`,
           label: 'Download meeting materials as PDF file',
           icon: 'file-pdf',
-          href: `/meeting/${meetingNumber.value}/agenda/${item.acronym}-drafts.pdf`
+          href: `/meeting/${agendaStore.meeting.number}/agenda/${item.acronym}-drafts.pdf`
         })
       }
-      if (useCodiMd) {
+      if (agendaStore.useCodiMd) {
         links.push({
           id: `lnk-${item.id}-note`,
           label: 'Notepad for note-takers',
           icon: 'journal-text',
-          href: `https://notes.ietf.org/notes-ietf-${meetingNumber.value}-${item.type === 'plenary' ? 'plenary' : item.acronym}`
+          href: `https://notes.ietf.org/notes-ietf-${agendaStore.meeting.number}-${item.type === 'plenary' ? 'plenary' : item.acronym}`
         })
       }
       links.push({
@@ -293,7 +276,7 @@ const meetingEvents = computed(() => {
 // METHODS
 
 function showMaterials (eventId) {
-  state.eventDetails = find(events.value, ['id', eventId])
+  state.eventDetails = find(agendaStore.scheduleAdjusted, ['id', eventId])
   state.showEventDetails = true
 }
 

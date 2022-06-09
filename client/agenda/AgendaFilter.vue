@@ -30,7 +30,7 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='650')
           span Apply
     .agenda-personalize-content
       .agenda-personalize-category(
-        v-for='(cat, idx) of categories'
+        v-for='(cat, idx) of agendaStore.categories'
         :key='`cat-` + idx'
         :class='{ "col-auto": (cat.length <= 2) }'
         )
@@ -76,52 +76,39 @@ import {
   useMessage
 } from 'naive-ui'
 
-// PROPS
+import { useAgendaStore } from './store'
 
-const props = defineProps({
-  shown: {
-    type: Boolean,
-    required: true,
-    default: false
-  },
-  selection: {
-    type: Array,
-    required: true
-  },
-  categories: {
-    type: Array,
-    required: true
-  }
-})
+// STORES
 
-// EMITS
-
-const emit = defineEmits(['update:shown', 'update:selection'])
+const agendaStore = useAgendaStore()
 
 // STATE
 
-const isShown = ref(props.shown)
-const pendingSelection = ref(props.selection)
+const isShown = ref(false)
+const pendingSelection = ref([])
 const message = useMessage()
 
 // WATCHERS
 
-watch(() => props.shown, (newValue) => {
+watch(() => agendaStore.filterShown, (newValue) => {
+  if (newValue) {
+    pendingSelection.value = unref(agendaStore.selectedCatSubs)
+  }
   isShown.value = newValue
 })
 watch(isShown, (newValue) => {
-  emit('update:shown', newValue)
+  agendaStore.$patch({ filterShown: newValue })
 })
 
 // METHODS
 
 function cancelFilter () {
   isShown.value = false
-  pendingSelection.value = unref(props.selection)
+  pendingSelection.value = unref(agendaStore.selectedCatSubs)
 }
 
 function saveFilter () {
-  emit('update:selection', pendingSelection.value)
+  agendaStore.$patch({ selectedCatSubs: pendingSelection.value })
   isShown.value = false
 }
 
@@ -133,7 +120,7 @@ function toggleFilterArea (areaKeyword) {
   const affectedGroups = []
   let isAlreadySelected = false
   // -> Find affected categories / subs
-  for (const cat of props.categories) {
+  for (const cat of agendaStore.categories) {
     for (const area of cat) {
       if (area.keyword === areaKeyword) {
         isAlreadySelected = intersection(area.children.map(s => s.keyword), pendingSelection.value).length === area.children.length
@@ -152,7 +139,7 @@ function toggleFilterArea (areaKeyword) {
 function toggleFilterGroup (key) {
   pendingSelection.value = pendingSelection.value.includes(key) ? pendingSelection.value.filter(k => k !== key) : [...pendingSelection.value, key]
   const affectedGroups = []
-  for (const cat of props.categories) {
+  for (const cat of agendaStore.categories) {
     for (const area of cat) {
       for (const group of area.children) {
         if (group.toggled_by.includes(key)) {

@@ -2,7 +2,7 @@
 .agenda
   h1 {{title}}
   h4
-    span {{props.meeting.city}}, {{ meetingDate }}
+    span {{agendaStore.meeting.city}}, {{ meetingDate }}
     h6.float-end(v-if='meetingUpdated') #[span.text-muted Updated:] {{ meetingUpdated }}
 
   ul.nav.nav-tabs.my-3
@@ -25,306 +25,113 @@
           h2 {{ state.currentTab === 'personalize' ? 'Session Selection' : 'Schedule'}}
         .col-auto.d-flex.align-items-center
           i.bi.bi-globe.me-2
-          small.me-2: strong Timezone:
+          small.me-2.d-none.d-lg-inline: strong Timezone:
           n-button-group.me-2
             n-button(
-              :type='isTimezoneMeeting ? `primary` : `default`'
+              :type='agendaStore.isTimezoneMeeting ? `primary` : `default`'
               @click='setTimezone(`meeting`)'
               ) Meeting
             n-button(
-              :type='isTimezoneLocal ? `primary` : `default`'
+              :type='agendaStore.isTimezoneLocal ? `primary` : `default`'
               @click='setTimezone(`local`)'
               ) Local
             n-button(
-              :type='state.timezone === `UTC` ? `primary` : `default`'
+              :type='agendaStore.timezone === `UTC` ? `primary` : `default`'
               @click='setTimezone(`UTC`)'
               ) UTC
           n-select.agenda-timezone-ddn(
-            v-model:value='state.timezone'
+            v-model:value='agendaStore.timezone'
             :options='timezones'
             placeholder='Select Time Zone'
             filterable
             )
 
-      .alert.alert-warning.mt-3(v-if='props.isCurrentMeeting || true') #[strong Note:] IETF agendas are subject to change, up to and during a meeting.
-      .agenda-infonote.my-3(v-if='props.meeting.infoNote', v-html='props.meeting.infoNote')
+      .alert.alert-warning.mt-3(v-if='agendaStore.isCurrentMeeting') #[strong Note:] IETF agendas are subject to change, up to and during a meeting.
+      .agenda-infonote.my-3(v-if='agendaStore.meeting.infoNote', v-html='agendaStore.meeting.infoNote')
 
       // -----------------------------------
       // -> Drawers
       // -----------------------------------
-      agenda-filter(
-        v-model:shown='state.filterShown'
-        v-model:selection='state.selectedCatSubs'
-        :categories='props.categories'
-        )
-      agenda-schedule-calendar(
-        v-model:shown='state.calendarShown'
-        v-model:timezone='state.timezone'
-        :events='scheduleAdjusted'
-        :meeting-number='props.meeting.number'
-        :meeting-timezone='props.meeting.timezone'
-        @toggle-filter-drawer='showFilter'
-        )
+      agenda-filter
+      agenda-schedule-calendar
 
       // -----------------------------------
       // -> SCHEDULE LIST
       // -----------------------------------
-      agenda-schedule-list(
-        :events='scheduleAdjusted'
-        :picker-mode='state.pickerMode'
-        :meeting-number='props.meeting.number'
-        :use-codi-md='props.useCodiMd'
-        )
+      agenda-schedule-list(ref='schdList')
 
     // -----------------------------------
     // -> Anchored Day Quick Access Menu
     // -----------------------------------
-    .col-auto.d-print-none
-      .agenda-quickaccess
-        n-affix(:top='240')
-          .card.shadow-sm
-            .card-body
-              n-button(
-                block
-                type='success'
-                size='large'
-                strong
-                @click='showFilter'
-                )
-                n-badge.me-2(:value='state.selectedCatSubs.length', processing)
-                i.bi.bi-funnel.me-2
-                span Filter Areas + Groups...
-              n-button.mt-2(
-                v-if='!state.pickerMode'
-                block
-                secondary
-                type='success'
-                size='large'
-                strong
-                @click='state.pickerMode = true'
-                )
-                i.bi.bi-ui-checks.me-2
-                span Pick Sessions...
-              .agenda-quickaccess-btnrow(v-else)
-                .agenda-quickaccess-btnrow-title Session Selection
-                n-button.me-1(
-                  v-if='!state.pickerModeView'
-                  type='success'
-                  size='large'
-                  strong
-                  @click='state.pickerModeView = true'
-                  )
-                  i.bi.bi-check2-square.me-2
-                  span Apply
-                n-button.me-1(
-                  v-else
-                  color='#6f42c1'
-                  size='large'
-                  strong
-                  @click='state.pickerModeView = false'
-                  )
-                  i.bi.bi-pencil-square.me-2
-                  span Modify
-                n-button.ms-1(
-                  secondary
-                  color='#666'
-                  size='large'
-                  strong
-                  @click='state.pickerMode = false'
-                  )
-                  i.bi.bi-x-square.me-2
-                  span Discard
-              n-divider: small.text-muted Calendar
-              n-button.mt-2(
-                block
-                color='#6c757d'
-                size='large'
-                strong
-                @click='state.calendarShown = true'
-                )
-                i.bi.bi-calendar3.me-2
-                span Calendar View
-              n-dropdown(
-                :options='downloadIcsOptions'
-                size='large'
-                :show-arrow='true'
-                trigger='click'
-                @select='downloadIcs'
-                )
-                n-button.mt-2(
-                  block
-                  secondary
-                  color='#6c757d'
-                  size='large'
-                  strong
-                  )
-                  i.bi.bi-calendar-check.me-2
-                  span Add to your calendar...
-              n-divider: small.text-muted Jump to...
-              ul.nav.nav-pills.flex-column.small
-                li.nav-item
-                  a.nav-link(href='#now')
-                    i.bi.bi-arrow-right-short.me-2
-                    span Now
-                li.nav-item(v-for='day of meetingDays')
-                  a.nav-link(
-                    :class='state.dayIntersectId === day.slug ? `active` : ``'
-                    :href='`#slot-` + day.slug'
-                    @click='scrollToDay(day.slug, $event)'
-                    )
-                    i.bi.bi-arrow-right-short.me-2
-                    span {{day.label}}
+    .col-auto.d-print-none(v-if='!agendaStore.mobileMode')
+      agenda-quick-access
 </template>
 
 <script setup>
 import { computed, h, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import uniqBy from 'lodash/uniqBy'
 import { DateTime } from 'luxon'
+
 import {
-  NAffix,
-  NBadge,
   NButtonGroup,
   NButton,
-  NDivider,
-  NDropdown,
   NSelect,
   useMessage
 } from 'naive-ui'
 import AgendaFilter from './AgendaFilter.vue'
 import AgendaScheduleList from './AgendaScheduleList.vue'
 import AgendaScheduleCalendar from './AgendaScheduleCalendar.vue'
+import AgendaQuickAccess from './AgendaQuickAccess.vue'
+
 import timezones from '../shared/timezones'
 
-// PROPS
-
-const props = defineProps({
-  meeting: {
-    type: Object,
-    default: () => ({})
-  },
-  categories: {
-    type: Array,
-    default: () => ([])
-  },
-  isCurrentMeeting: {
-    type: Boolean,
-    default: false
-  },
-  useCodiMd: {
-    type: Boolean,
-    default: false
-  },
-  schedule: {
-    type: Array,
-    default: () => ([])
-  }
-})
+import { useAgendaStore } from './store'
 
 // MESSAGE PROVIDER
 
 const message = useMessage()
 
+// STORES
+
+const agendaStore = useAgendaStore()
+
 // DATA
 
 const state = reactive({
-  dayIntersectId: '',
-  visibleDays: [],
   currentTab: 'agenda',
-  timezone: DateTime.local().zoneName,
   tabs: [
     { key: 'agenda', title: 'Agenda', icon: 'bi-calendar3' },
-    // { key: 'personalize', title: 'Personalize Agenda', icon: 'bi-calendar2-check' },
     { key: 'floorplan', href: 'floor-plan', title: 'Floor plan', icon: 'bi-pin-map' },
     { key: 'plaintext', href: 'agenda.txt', title: 'Plaintext', icon: 'bi-file-text' }
-  ],
-  searchText: '',
-  calendarShown: false,
-  downloadIcsShown: false,
-  filterShown: false,
-  pickerMode: false,
-  pickerModeView: false,
-  selectedCatSubs: [],
-  downloadOptions: [
-    {
-      label: 'Current Selection...',
-      key: 'current',
-      icon () {
-        return h('i', { class: 'bi bi-calendar2-check' })
-      }
-    },
-    {
-      type: 'divider',
-      key: 'd1'
-    },
-    {
-      label: 'ART',
-      key: 'art'
-    },
-    {
-      label: 'GEN',
-      key: 'gen'
-    }
   ]
 })
 
+// REFS
+
+const schdList = ref(null)
+
 // COMPUTED
 
-const isTimezoneLocal = computed(() => {
-  return state.timezone === DateTime.local().zoneName
-})
-const isTimezoneMeeting = computed(() => {
-  return state.timezone === props.meeting.timezone
-})
 const title = computed(() => {
-  let title = `IETF ${props.meeting.number} Meeting Agenda`
-  if (state.timezone === 'UTC') {
+  let title = `IETF ${agendaStore.meeting.number} Meeting Agenda`
+  if (agendaStore.timezone === 'UTC') {
     title = `${title} (UTC)`
   }
-  if (state.currentTab === 'personalize') {
+  if (agendaStore.currentTab === 'personalize') {
     title = `${title} Personalization`
   }
   return title
 })
 const meetingDate = computed(() => {
-  const start = DateTime.fromISO(props.meeting.startDate).setZone(state.timezone)
-  const end = DateTime.fromISO(props.meeting.endDate).setZone(state.timezone)
+  const start = DateTime.fromISO(agendaStore.meeting.startDate).setZone(agendaStore.timezone)
+  const end = DateTime.fromISO(agendaStore.meeting.endDate).setZone(agendaStore.timezone)
   if (start.month === end.month) {
     return `${start.toFormat('MMMM d')} - ${end.toFormat('d, y')}`
   } else {
     return `${start.toFormat('MMMM d')} - ${end.toFormat('MMMM d, y')}`
   }
 })
-const scheduleAdjusted = computed(() => {
-  return props.schedule.filter(s => {
-    // -> Apply filters
-    if (state.selectedCatSubs.length > 0 && !s.filterKeywords.some(k => state.selectedCatSubs.includes(k))) {
-      return false
-    }
-    if (s.type === 'lead') { return false }
-    return true
-  }).map(s => {
-    // -> Adjust times to selected timezone
-    const eventStartDate = DateTime.fromISO(s.startDateTime, { zone: props.meeting.timezone }).setZone(state.timezone)
-    const eventEndDate = eventStartDate.plus({ seconds: s.duration })
-    return {
-      ...s,
-      adjustedStart: eventStartDate,
-      adjustedEnd: eventEndDate,
-      adjustedStartDate: eventStartDate.toISODate(),
-      adjustedStartDateTime: eventStartDate.toISO(),
-      adjustedEndDateTime: eventEndDate.toISO()
-    }
-  })
-})
-const meetingDays = computed(() => {
-  return uniqBy(scheduleAdjusted.value, 'adjustedStartDate').sort().map(s => ({
-    slug: s.id.toString(),
-    ts: s.adjustedStartDate,
-    label: DateTime.fromISO(s.adjustedStartDate).toLocaleString(DateTime.DATE_HUGE)
-  }))
-})
 const meetingUpdated = computed(() => {
-  return props.meeting.updated ? DateTime.fromISO(props.meeting.updated).setZone(state.timezone).toFormat(`DD 'at' tt ZZZZ`) : false
+  return agendaStore.meeting.updated ? DateTime.fromISO(agendaStore.meeting.updated).setZone(agendaStore.timezone).toFormat(`DD 'at' tt ZZZZ`) : false
 })
 
 // METHODS
@@ -333,57 +140,42 @@ function switchTab (key) {
   state.currentTab = key
   window.history.pushState({}, '', key)
 }
+
 function setTimezone (tz) {
   switch (tz) {
     case 'meeting':
-      state.timezone = props.meeting.timezone
+      agendaStore.$patch({ timezone: agendaStore.meeting.timezone })
       break
     case 'local':
-      state.timezone = DateTime.local().zoneName
+      agendaStore.$patch({ timezone: DateTime.local().zoneName })
       break
     default:
-      state.timezone = tz
+      agendaStore.$patch({ timezone: tz })
       break
   }
 }
-function showFilter () {
-  state.filterShown = true
-}
 
-function downloadIcs (key) {
-  message.loading('Generating calendar file... Download will begin shortly.')
-  let icsUrl = ''
-  if (state.selectedCatSubs.length > 0) {
-    icsUrl = `/meeting/${props.meeting.number}/agenda.ics?show=${state.selectedCatSubs.join(',')}`
-  } else {
-    icsUrl = `/meeting/${props.meeting.number}/agenda.ics`
-  }
-  if (key === 'subscribe') {
-    window.location.assign(`webcal://${window.location.host}${icsUrl}`)
-  } else {
-    window.location.assign(icsUrl)
-  }
-}
+// Handle browser resize
 
-// Download Ics Options
+const resizeObserver = new ResizeObserver(entries => {
+  agendaStore.$patch({ mobileMode: window.innerWidth < 1400 })
+  // for (const entry of entries) {
+    // const newWidth = entry.contentBoxSize ? entry.contentBoxSize[0].inlineSize : entry.contentRect.width
+  // }
+})
 
-const downloadIcsOptions = [
-  {
-    label: 'Subscribe... (webcal)',
-    key: 'subscribe',
-    icon: () => h('i', { class: 'bi bi-calendar-week text-blue' })
-  },
-  {
-    label: 'Download... (.ics)',
-    key: 'download',
-    icon: () => h('i', { class: 'bi bi-arrow-down-square' })
-  }
-]
+onMounted(() => {
+  resizeObserver.observe(schdList.value.$el)
+})
+
+onBeforeUnmount(() => {
+  resizeObserver.unobserve(schdList.value.$el)
+})
 
 // Handle day indicator / scroll
 
 const visibleDays = []
-const observer = new IntersectionObserver((entries) => {
+const scrollObserver = new IntersectionObserver(entries => {
   for (const entry of entries) {
     if (entry.isIntersecting) {
       if (!visibleDays.some(e => e.id === entry.target.dataset.dayId)) {
@@ -400,7 +192,7 @@ const observer = new IntersectionObserver((entries) => {
     }
   }
 
-  let finalDayId = state.dayIntersectId
+  let finalDayId = agendaStore.dayIntersectId
   let earliestTs = '9'
   for (const day of visibleDays) {
     if (day.ts < earliestTs) {
@@ -409,7 +201,7 @@ const observer = new IntersectionObserver((entries) => {
     }
   }
 
-  state.dayIntersectId = finalDayId.toString()
+  agendaStore.$patch({ dayIntersectId: finalDayId.toString() })
 }, {
   root: null,
   rootMargin: '0px',
@@ -417,32 +209,27 @@ const observer = new IntersectionObserver((entries) => {
 })
 
 onMounted(() => {
-  for (const mDay of meetingDays.value) {
+  for (const mDay of agendaStore.meetingDays) {
     const el = document.getElementById(`agenda-day-${mDay.slug}`)
     el.dataset.dayId = mDay.slug.toString()
     el.dataset.dayTs = mDay.ts
-    observer.observe(el)
+    scrollObserver.observe(el)
   }
 })
 
 onBeforeUnmount(() => {
-  for (const mDay of meetingDays.value) {
-    observer.unobserve(document.getElementById(`agenda-day-${mDay.slug}`))
+  for (const mDay of agendaStore.meetingDays) {
+    scrollObserver.unobserve(document.getElementById(`agenda-day-${mDay.slug}`))
   }
 })
-
-function scrollToDay (dayId, ev) {
-  ev.preventDefault()
-  document.getElementById(`agenda-day-${dayId}`)?.scrollIntoView(true)
-}
 
 // CREATED
 
 // -> Handle loading tab directly based on URL
 if (window.location.pathname.indexOf('-utc') >= 0) {
-  state.timezone = 'UTC'
+  agendaStore.$patch({ timezone: 'UTC' })
 } else if (window.location.pathname.indexOf('personalize') >= 0) {
-  state.currentTab = 'personalize'
+  // state.currentTab = 'personalize'
 }
 
 </script>

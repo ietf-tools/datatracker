@@ -85,6 +85,8 @@ import {
   NPopover
 } from 'naive-ui'
 
+import { useAgendaStore } from './store'
+
 // PROPS
 
 const props = defineProps({
@@ -96,12 +98,12 @@ const props = defineProps({
   event: {
     type: Object,
     required: true
-  },
-  meetingNumber: {
-    type: String,
-    required: true
   }
 })
+
+// STORES
+
+const agendaStore = useAgendaStore()
 
 // EMIT
 
@@ -125,9 +127,9 @@ const eventDetails = computed(() => {
     title: props.event.type === 'regular' ? `${props.event.groupName} (${props.event.acronym})` : props.event.name,
     showAgenda: props.event.flags.showAgenda,
     materialsUrl: materialsUrl,
-    tarUrl: `/meeting/${props.meetingNumber}/agenda/${props.event.acronym}-drafts.tgz`,
-    pdfUrl: `/meeting/${props.meetingNumber}/agenda/${props.event.acronym}-drafts.pdf`,
-    notepadUrl: `https://notes.ietf.org/notes-ietf-${props.meetingNumber}-${props.event.type === 'plenary' ? 'plenary' : props.event.acronym}`
+    tarUrl: `/meeting/${agendaStore.meeting.number}/agenda/${props.event.acronym}-drafts.tgz`,
+    pdfUrl: `/meeting/${agendaStore.meeting.number}/agenda/${props.event.acronym}-drafts.pdf`,
+    notepadUrl: `https://notes.ietf.org/notes-ietf-${agendaStore.meeting.number}-${props.event.type === 'plenary' ? 'plenary' : props.event.acronym}`
   }
 })
 
