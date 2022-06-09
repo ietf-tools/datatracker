@@ -50,6 +50,24 @@
       .alert.alert-warning.mt-3(v-if='agendaStore.isCurrentMeeting') #[strong Note:] IETF agendas are subject to change, up to and during a meeting.
       .agenda-infonote.my-3(v-if='agendaStore.meeting.infoNote', v-html='agendaStore.meeting.infoNote')
 
+      .agenda-search.mb-3(v-if='agendaStore.searchVisible')
+        n-input-group
+          n-input(
+            v-model:value='state.searchText'
+            ref='searchIpt'
+            type='text'
+            placeholder='Search...'
+            @keyup.esc='closeSearch'
+            )
+            template(#prefix)
+              i.bi.bi-search.me-1
+          n-button(
+            type='primary'
+            ghost
+            @click='state.searchText = ``'
+            )
+            i.bi.bi-x-lg
+
       // -----------------------------------
       // -> Drawers
       // -----------------------------------
@@ -69,12 +87,15 @@
 </template>
 
 <script setup>
-import { computed, h, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { DateTime } from 'luxon'
+import debounce from 'lodash/debounce'
 
 import {
   NButtonGroup,
   NButton,
+  NInputGroup,
+  NInput,
   NSelect,
   useMessage
 } from 'naive-ui'
@@ -98,6 +119,7 @@ const agendaStore = useAgendaStore()
 // DATA
 
 const state = reactive({
+  searchText: '',
   currentTab: 'agenda',
   tabs: [
     { key: 'agenda', title: 'Agenda', icon: 'bi-calendar3' },
@@ -109,6 +131,24 @@ const state = reactive({
 // REFS
 
 const schdList = ref(null)
+const searchIpt = ref(null)
+
+// WATCHERS
+
+watch(() => agendaStore.searchVisible, (newValue) => {
+  state.searchText = agendaStore.searchText
+  if (newValue) {
+    nextTick(() => {
+      searchIpt.value?.focus()
+    })
+  }
+})
+
+watch(() => state.searchText, debounce((newValue) => {
+  agendaStore.$patch({
+    searchText: newValue.toLowerCase()
+  })
+}, 500))
 
 // COMPUTED
 
@@ -154,6 +194,13 @@ function setTimezone (tz) {
       agendaStore.$patch({ timezone: tz })
       break
   }
+}
+
+function closeSearch () {
+  agendaStore.$patch({
+    searchText: '',
+    searchVisible: false
+  })
 }
 
 // Handle browser resize
@@ -254,40 +301,8 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
     color: $blue-700;
   }
 
-  &-quickaccess {
-    width: 300px;
-
-    .card {
-      width: 300px;
-    }
-
-    &-btnrow {
-      border: 1px solid #CCC;
-      padding: 8px 6px 6px 6px;
-      border-radius: 5px;
-      display: flex;
-      justify-content: stretch;
-      position: relative;
-      text-align: center;
-      margin-top: 12px;
-
-      &-title {
-        position: absolute;
-        top: -8px;
-        font-size: 9px;
-        font-weight: 600;
-        color: #999;
-        left: 50%;
-        padding: 0 5px;
-        background-color: #FFF;
-        transform: translate(-50%, 0);
-        text-transform: uppercase;
-      }
-
-      button {
-        flex: 1;
-      }
-    }
+  &-search {
+    
   }
 }
 </style>

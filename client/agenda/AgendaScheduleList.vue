@@ -103,6 +103,13 @@
                     ): i.bi(:class='`bi-` + lnk.icon')
                 span {{lnk.label}}
 
+  .agenda-table-search
+    n-popover
+      template(#trigger)
+        button(@click='toggleSearch')
+          i.bi.bi-search
+      span {{ agendaStore.searchVisible ? 'Close Search' : 'Search Events' }}
+
   agenda-details-modal(
     v-model:shown='state.showEventDetails'
     :event='state.eventDetails'
@@ -140,7 +147,13 @@ const state = reactive({
 // COMPUTED
 
 const meetingEvents = computed(() => {
-  return reduce(sortBy(agendaStore.scheduleAdjusted, 'adjustedStartDate'), (acc, item) => {
+  // -> Filter by search text if present
+  const events = agendaStore.searchText ? agendaStore.scheduleAdjusted.filter(s => {
+    return s.name.toLowerCase().indexOf(agendaStore.searchText) >= 0 ||
+      s.groupName.toLowerCase().indexOf(agendaStore.searchText) >= 0
+  }) : agendaStore.scheduleAdjusted
+
+  return reduce(sortBy(events, 'adjustedStartDate'), (acc, item) => {
     const itemTimeSlot = `${item.adjustedStart.toFormat('HH:mm')} - ${item.adjustedEnd.toFormat('HH:mm')}`
 
     // -> Add date row
@@ -276,6 +289,13 @@ const meetingEvents = computed(() => {
 
 // METHODS
 
+function toggleSearch () {
+  agendaStore.$patch({
+    searchText: '',
+    searchVisible: !agendaStore.searchVisible
+  })
+}
+
 function showMaterials (eventId) {
   state.eventDetails = find(agendaStore.scheduleAdjusted, ['id', eventId])
   state.showEventDetails = true
@@ -295,6 +315,8 @@ function xslugify (str) {
   border: 1px solid $gray-600;
   border-radius: 5px;
   font-size: 0.9rem;
+  overflow: hidden;
+  position: relative;
 
   table {
     width: 100%;
@@ -586,6 +608,38 @@ function xslugify (str) {
 
     &:active {
       color: $indigo-500;
+    }
+  }
+
+  &-search {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    align-items: center;
+
+    > button {
+      border: 1px solid #FFF;
+      border-radius: 5px;
+      background-color: lighten($gray-600, 6%);
+      background-image: linear-gradient(to bottom, lighten($gray-600, 6%), darken($gray-600, 6%));
+      height: 40px;
+      width: 40px;
+      color: #FFF;
+
+      &:hover {
+        background-color: lighten($gray-600, 8%);
+        background-image: linear-gradient(to bottom, lighten($gray-600, 8%), darken($gray-600, 0%));
+      }
+
+      &:focus {
+        box-shadow: 0 0 0 5px rgba(255,255,255,.1);
+      }
+
+      &:active {
+        background-color: $gray-600;
+        background-image: none;
+      }
     }
   }
 }

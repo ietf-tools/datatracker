@@ -15,6 +15,7 @@ export const useAgendaStore = defineStore('agenda', {
     pickerModeView: false,
     schedule: [],
     searchText: '',
+    searchVisible: false,
     selectedCatSubs: [],
     timezone: DateTime.local().zoneName,
     useCodiMd: false,

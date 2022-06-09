@@ -185,5 +185,39 @@ function scrollToNow (ev) {
 </script>
 
 <style lang="scss">
+.agenda-quickaccess {
+    width: 300px;
 
+    .card {
+      width: 300px;
+    }
+
+    &-btnrow {
+      border: 1px solid #CCC;
+      padding: 8px 6px 6px 6px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: stretch;
+      position: relative;
+      text-align: center;
+      margin-top: 12px;
+
+      &-title {
+        position: absolute;
+        top: -8px;
+        font-size: 9px;
+        font-weight: 600;
+        color: #999;
+        left: 50%;
+        padding: 0 5px;
+        background-color: #FFF;
+        transform: translate(-50%, 0);
+        text-transform: uppercase;
+      }
+
+      button {
+        flex: 1;
+      }
+    }
+  }
 </style>
