@@ -8,6 +8,13 @@
         th.agenda-table-head-location Location
         th.agenda-table-head-event(colspan='3') Event
     tbody
+      tr.agenda-table-display-noresult(
+        v-if='!meetingEvents || meetingEvents.length < 1'
+        )
+        td(:colspan='agendaStore.pickerMode ? 6 : 5')
+          i.bi.bi-exclamation-triangle.me-2
+          span(v-if='agendaStore.searchVisible') No event matching your search query.
+          span(v-else) Nothing to display
       tr(
         v-for='item of meetingEvents'
         :key='item.key'
@@ -106,7 +113,10 @@
   .agenda-table-search
     n-popover
       template(#trigger)
-        button(@click='toggleSearch')
+        button(
+          @click='toggleSearch'
+          :aria-label='agendaStore.searchVisible ? `Close Search` : `Search Events`'
+          )
           i.bi.bi-search
       span {{ agendaStore.searchVisible ? 'Close Search' : 'Search Events' }}
 
@@ -147,13 +157,7 @@ const state = reactive({
 // COMPUTED
 
 const meetingEvents = computed(() => {
-  // -> Filter by search text if present
-  const events = agendaStore.searchText ? agendaStore.scheduleAdjusted.filter(s => {
-    return s.name.toLowerCase().indexOf(agendaStore.searchText) >= 0 ||
-      s.groupName.toLowerCase().indexOf(agendaStore.searchText) >= 0
-  }) : agendaStore.scheduleAdjusted
-
-  return reduce(sortBy(events, 'adjustedStartDate'), (acc, item) => {
+  return reduce(sortBy(agendaStore.scheduleAdjusted, 'adjustedStartDate'), (acc, item) => {
     const itemTimeSlot = `${item.adjustedStart.toFormat('HH:mm')} - ${item.adjustedEnd.toFormat('HH:mm')}`
 
     // -> Add date row
@@ -380,6 +384,15 @@ function xslugify (str) {
 
   tr:nth-child(odd) td {
     background-color: #F9F9F9;
+  }
+
+  &-display-noresult > td {
+    background: linear-gradient(to bottom, $gray-400, $gray-100);
+    height: 60px;
+    padding: 0 12px;
+    color: $gray-800;
+    text-shadow: 1px 1px 0 #FFF;
+    font-weight: 600;
   }
 
   &-display-day > td {

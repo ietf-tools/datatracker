@@ -61,12 +61,17 @@
             )
             template(#prefix)
               i.bi.bi-search.me-1
-          n-button(
-            type='primary'
-            ghost
-            @click='state.searchText = ``'
-            )
-            i.bi.bi-x-lg
+          n-popover
+            template(#trigger)
+              n-button(
+                type='primary'
+                ghost
+                @click='state.searchText = ``'
+                aria-label='Clear Search'
+                )
+                i.bi.bi-x-lg
+            span Clear Search
+          
 
       // -----------------------------------
       // -> Drawers
@@ -96,6 +101,7 @@ import {
   NButton,
   NInputGroup,
   NInput,
+  NPopover,
   NSelect,
   useMessage
 } from 'naive-ui'

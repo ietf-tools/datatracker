@@ -30,11 +30,19 @@ export const useAgendaStore = defineStore('agenda', {
     },
     scheduleAdjusted (state) {
       return state.schedule.filter(s => {
-        // -> Apply filters
+        // -> Apply category filters
         if (state.selectedCatSubs.length > 0 && !s.filterKeywords.some(k => state.selectedCatSubs.includes(k))) {
           return false
         }
+        // -> Don't show events of type lead
         if (s.type === 'lead') { return false }
+        // -> Filter by search text if present
+        if (state.searchVisible && state.searchText) {
+          const searchStr = `${s.name} ${s.groupName} ${s.room} ${s.note}`
+          if (searchStr.toLowerCase().indexOf(state.searchText) < 0) {
+            return false
+          }
+        }
         return true
       }).map(s => {
         // -> Adjust times to selected timezone
