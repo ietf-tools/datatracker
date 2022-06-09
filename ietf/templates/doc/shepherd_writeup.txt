@@ -73,9 +73,10 @@ to answer all of them.
     [Informational, Experimental or Historic][15])? Why is this the proper type
     of RFC? Do all Datatracker state attributes correctly reflect this intent?
 
-12. Have the authors, editors and contributors confirmed that any and all
+12. Have the authors and editors confirmed that any and all
     appropriate IPR disclosures required by [BCP 78][7] and [BCP 79][8] have
-    been filed? If not, explain why. If yes, summarize any discussion and
+    been filed; and have all contributors been reminded of this obligation?
+    If not, explain why. If yes, summarize any discussion and
     conclusion regarding the intellectual property rights (IPR) disclosures,
     including links to relevant emails.
 
