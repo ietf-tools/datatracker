@@ -231,6 +231,6 @@ def auth48_alert_badge(doc):
 
     rfced_state = doc.get_state_slug('draft-rfceditor')
     if rfced_state == 'auth48':
-        return mark_safe('<span class="badge bg-info" title="AUTH48">AUTH48</span>')
+        return mark_safe('<span class="badge rounded-pill bg-info" title="AUTH48">AUTH48</span>')
 
     return ''
