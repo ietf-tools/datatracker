@@ -3,7 +3,7 @@
   h1 {{title}}
   h4
     span {{agendaStore.meeting.city}}, {{ meetingDate }}
-    h6.float-end(v-if='meetingUpdated') #[span.text-muted Updated:] {{ meetingUpdated }}
+    h6.float-end.d-none.d-lg-inline(v-if='meetingUpdated') #[span.text-muted Updated:] {{ meetingUpdated }}
 
   ul.nav.nav-tabs.my-3
     li.nav-item(v-for='tab of state.tabs')
@@ -25,7 +25,7 @@
           h2 {{ state.currentTab === 'personalize' ? 'Session Selection' : 'Schedule'}}
         .col-auto.d-flex.align-items-center
           i.bi.bi-globe.me-2
-          small.me-2.d-none.d-lg-inline: strong Timezone:
+          small.me-2.d-none.d-md-inline: strong Timezone:
           n-button-group.me-2
             n-button(
               :type='agendaStore.isTimezoneMeeting ? `primary` : `default`'
@@ -40,6 +40,7 @@
               @click='setTimezone(`UTC`)'
               ) UTC
           n-select.agenda-timezone-ddn(
+            v-if='!agendaStore.mobileMode'
             v-model:value='agendaStore.timezone'
             :options='timezones'
             placeholder='Select Time Zone'

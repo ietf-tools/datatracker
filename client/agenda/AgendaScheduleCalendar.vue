@@ -158,7 +158,7 @@ watch(() => agendaStore.calendarShown, (newValue) => {
   }
 })
 watch(isShown, (newValue) => {
-  agendaStore.$patch({ agendaStore: newValue })
+  agendaStore.$patch({ calendarShown: newValue })
 })
 watch(() => agendaStore.scheduleAdjusted, () => {
   refreshData()
