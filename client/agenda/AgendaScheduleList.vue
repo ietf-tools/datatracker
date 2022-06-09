@@ -11,6 +11,7 @@
       tr(
         v-for='item of meetingEvents'
         :key='item.key'
+        :id='`agenda-rowid-` + item.key'
         :class='item.cssClasses'
         )
         //- ROW - DAY HEADING -----------------------

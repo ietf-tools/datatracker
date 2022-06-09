@@ -81,8 +81,11 @@
             span Add to your calendar...
         n-divider: small.text-muted Jump to...
         ul.nav.nav-pills.flex-column.small
-          li.nav-item
-            a.nav-link(href='#now')
+          li.nav-item(v-if='agendaStore.isMeetingLive')
+            a.nav-link(
+              href='#now'
+              @click='scrollToNow'
+              )
               i.bi.bi-arrow-right-short.me-2
               span Now
           li.nav-item(v-for='day of agendaStore.meetingDays')
@@ -97,6 +100,7 @@
 
 <script setup>
 import { h } from 'vue'
+import { DateTime } from 'luxon'
 import {
   NAffix,
   NBadge,
@@ -155,6 +159,27 @@ function showFilter () {
 function scrollToDay (dayId, ev) {
   ev.preventDefault()
   document.getElementById(`agenda-day-${dayId}`)?.scrollIntoView(true)
+}
+
+function scrollToNow (ev) {
+  ev.preventDefault()
+
+  const current = DateTime.local().setZone(agendaStore.timezone)
+
+  // -> Find last event to be before current time
+  let lastEventId = null
+  for(const sh of agendaStore.scheduleAdjusted) {
+    if (sh.adjustedStart <= current) {
+      lastEventId = sh.id
+    }
+    if (sh.adjustedEnd > current) {
+      break
+    }
+  }
+
+  if (lastEventId) {
+    document.getElementById(`agenda-rowid-${lastEventId}`)?.scrollIntoView(true)
+  }
 }
 
 </script>
