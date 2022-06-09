@@ -97,7 +97,7 @@ to answer all of them.
     references?
 
 17. Are there any normative downward references (see [RFC 3967][10],
-    [BCP 97][11])? If so, list them.
+    [BCP 97][11], and the [DOWNREF registry][18])? If so, list them.
 
 18. Are there normative references to documents that are not ready to be
     submitted to the IESG for publication or are otherwise in an unclear state?
@@ -138,5 +138,6 @@ to answer all of them.
 [15]: https://www.rfc-editor.org/rfc/rfc2026.html#section-4.2
 [16]: https://authors.ietf.org/en/content-guidelines-overview
 [17]: https://www.ietf.org/about/groups/iesg/statements/normative-informative-references/
+[18]: https://datatracker.ietf.org/doc/downref/
 {% else %}There is no default shepherd write-up template for the {{doc.stream}} stream.
 {% endif %}{% else %}There is no stream set for this document (thus, no default shepherd write-up template).{% endif %}
