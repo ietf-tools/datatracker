@@ -78,7 +78,7 @@ to answer all of them.
     been filed; and have all contributors been reminded of this obligation?
     If not, explain why. If yes, summarize any discussion and
     conclusion regarding the intellectual property rights (IPR) disclosures,
-    including links to relevant emails.
+    include links to any relevant public email discussion.
 
 13. Has each author, editor, and contributor shown their willingness to be listed
     as such? If the total number of authors and editors on the front page is
