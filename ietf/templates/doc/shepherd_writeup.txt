@@ -65,7 +65,8 @@ to answer all of them.
    to be handed off to the responsible Area Director?
 
 10. Several IETF Areas have assembled [lists of common issues that their
-    reviewers encounter][6]. Are any such issues still present in the document?
+    reviewers encounter][6]. For which areas have such issues been identified and addressed?
+    For which does this still need to happen in subsequent reviews?
 
 11. What type of RFC publication is being requested on the IETF stream ([Best
     Current Practice][13], [Proposed Standard, Internet Standard][14],
