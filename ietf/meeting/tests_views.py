@@ -6406,17 +6406,47 @@ class SessionTests(TestCase):
 
     def test_meeting_requests(self):
         meeting = MeetingFactory(type_id='ietf')
+
+        # a couple non-wg group types, confirm that their has_meetings features are as expected
+        group_type_with_meetings = 'adhoc'
+        self.assertTrue(GroupFeatures.objects.get(pk=group_type_with_meetings).has_meetings)
+        group_type_without_meetings = 'editorial'
+        self.assertFalse(GroupFeatures.objects.get(pk=group_type_without_meetings).has_meetings)
+
         area = GroupFactory(type_id='area')
         requested_session = SessionFactory(meeting=meeting,group__parent=area,status_id='schedw',add_to_schedule=False)
         conflicting_session = SessionFactory(meeting=meeting,group__parent=area,status_id='schedw',add_to_schedule=False)
         ConstraintFactory(name_id='key_participant',meeting=meeting,source=requested_session.group,target=conflicting_session.group)
         not_meeting = SessionFactory(meeting=meeting,group__parent=area,status_id='notmeet',add_to_schedule=False)
+        has_meetings = SessionFactory(
+            meeting=meeting,
+            group__type_id=group_type_with_meetings,
+            status_id='schedw',
+            add_to_schedule=False,
+        )
+        has_meetings_not_meeting = SessionFactory(
+            meeting=meeting,
+            group__type_id=group_type_with_meetings,
+            status_id='notmeet',
+            add_to_schedule=False,
+        )
+        not_has_meetings = SessionFactory(
+            meeting=meeting,
+            group__type_id=group_type_without_meetings,
+            status_id='schedw',
+            add_to_schedule=False,
+        )
+
         url = urlreverse('ietf.meeting.views.meeting_requests',kwargs={'num':meeting.number})
         r = self.client.get(url)
+        print(r.content.decode())
         self.assertContains(r, requested_session.group.acronym)
         self.assertContains(r, not_meeting.group.acronym)
         self.assertContains(r, requested_session.constraints().first().name)
         self.assertContains(r, conflicting_session.group.acronym)
+        self.assertContains(r, has_meetings.group.acronym)
+        self.assertContains(r, has_meetings_not_meeting.group.acronym)
+        self.assertNotContains(r, not_has_meetings.group.acronym)
 
     def test_request_minutes(self):
         meeting = MeetingFactory(type_id='ietf')
