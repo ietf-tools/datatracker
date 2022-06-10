@@ -201,8 +201,13 @@ class InterimMeetingModelForm(forms.ModelForm):
             q_objects.add(Q(type="rg", state__in=("active", "proposed"), role__person=self.person, role__name="chair"), Q.OR)
         if has_role(self.user, "Program Lead") or has_role(self.user, "Program Chair"):
             q_objects.add(Q(type="program", state__in=("active", "proposed"), role__person=self.person, role__name__in=["chair", "lead"]), Q.OR)
-        
-        queryset = Group.objects.filter(q_objects).distinct().order_by('acronym')
+
+        # Only apply q_objects if it is not empty, otherwise filter(Q()) passes everything through!
+        if q_objects:
+            queryset = Group.objects.filter(q_objects).distinct().order_by('acronym')
+        else:
+            queryset = Group.objects.none()
+
         self.fields['group'].queryset = queryset
 
         # if there's only one possibility make it the default
