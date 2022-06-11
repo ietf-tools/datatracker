@@ -76,6 +76,10 @@ export const useAgendaStore = defineStore('agenda', {
     fetch () {
       const agendaData = JSON.parse(document.getElementById('agenda-data').textContent)
 
+      // -> Switch to meeting timezone
+      this.timezone = agendaData.meeting.timezone
+
+      // -> Load meeting data
       this.categories = agendaData.categories
       this.isCurrentMeeting = agendaData.isCurrentMeeting
       this.meeting = agendaData.meeting
