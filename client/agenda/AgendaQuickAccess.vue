@@ -79,23 +79,24 @@
             )
             i.bi.bi-calendar-check.me-2
             span Add to your calendar...
-        n-divider: small.text-muted Jump to...
-        ul.nav.nav-pills.flex-column.small
-          li.nav-item(v-if='agendaStore.isMeetingLive')
-            a.nav-link(
-              href='#now'
-              @click='scrollToNow'
-              )
-              i.bi.bi-arrow-right-short.me-2
-              span Now
-          li.nav-item(v-for='day of agendaStore.meetingDays')
-            a.nav-link(
-              :class='agendaStore.dayIntersectId === day.slug ? `active` : ``'
-              :href='`#slot-` + day.slug'
-              @click='scrollToDay(day.slug, $event)'
-              )
-              i.bi.bi-arrow-right-short.me-2
-              span {{day.label}}
+        template(v-if='agendaStore.meetingDays.length > 0')
+          n-divider: small.text-muted Jump to...
+          ul.nav.nav-pills.flex-column.small
+            li.nav-item(v-if='agendaStore.isMeetingLive')
+              a.nav-link(
+                href='#now'
+                @click='scrollToNow'
+                )
+                i.bi.bi-arrow-right-short.me-2
+                span Now
+            li.nav-item(v-for='day of agendaStore.meetingDays')
+              a.nav-link(
+                :class='agendaStore.dayIntersectId === day.slug ? `active` : ``'
+                :href='`#slot-` + day.slug'
+                @click='scrollToDay(day.slug, $event)'
+                )
+                i.bi.bi-arrow-right-short.me-2
+                span {{day.label}}
 </template>
 
 <script setup>

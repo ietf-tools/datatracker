@@ -157,6 +157,9 @@ const state = reactive({
 // COMPUTED
 
 const meetingEvents = computed(() => {
+  const meetingNumberInt = parseInt(agendaStore.meeting.number)
+  const current = DateTime.local().setZone(agendaStore.timezone)
+
   return reduce(sortBy(agendaStore.scheduleAdjusted, 'adjustedStartDate'), (acc, item) => {
     const itemTimeSlot = `${item.adjustedStart.toFormat('HH:mm')} - ${item.adjustedEnd.toFormat('HH:mm')}`
 
@@ -202,7 +205,7 @@ const meetingEvents = computed(() => {
           href: `/meeting/${agendaStore.meeting.number}/agenda/${item.acronym}-drafts.pdf`
         })
       }
-      if (agendaStore.useCodiMd) {
+      if (agendaStore.useHedgeDoc) {
         links.push({
           id: `lnk-${item.id}-note`,
           label: 'Notepad for note-takers',
@@ -210,26 +213,55 @@ const meetingEvents = computed(() => {
           href: `https://notes.ietf.org/notes-ietf-${agendaStore.meeting.number}-${item.type === 'plenary' ? 'plenary' : item.acronym}`
         })
       }
-      links.push({
-        id: `lnk-${item.id}-logs`,
-        label: `Chat logs for ${item.acronym}`,
-        icon: 'chat-left-text'
-      })
-      links.push({
-        id: `lnk-${item.id}-audio`,
-        label: `Audio recording for ${item.adjustedStart.toFormat('ff')}`,
-        icon: 'soundwave'
-      })
-      links.push({
-        id: `lnk-${item.id}-video`,
-        label: `Video recording for ${item.adjustedStart.toFormat('ff')}`,
-        icon: 'file-play'
-      })
-      links.push({
-        id: `lnk-${item.id}-rec`,
-        label: 'Session recording',
-        icon: 'film'
-      })
+      if (item.adjustedEnd > current) {
+        // -> Pre/live event
+
+      } else {
+        // -> Post event
+        if (meetingNumberInt >= 60) {
+          // -> Jabber logs
+          links.push({
+            id: `lnk-${item.id}-logs`,
+            label: `Chat logs for ${item.acronym}`,
+            icon: 'chat-left-text',
+            href: `https://www.ietf.org/jabber/logs/${item.type === 'plenary' ? 'plenary' : item.acronym}?C=M;O=D`
+          })
+        }
+        if (meetingNumberInt >= 80) {
+          for (const rec of item.links.recordings) {
+            if (rec.url.indexOf('audio') > 0) {
+              links.push({
+                id: `lnk-${item.id}-audio-${rec.id}`,
+                label: rec.title,
+                icon: 'soundwave',
+                href: rec.url
+              })
+            } else if (rec.url.indexOf('youtu') > 0) {
+              links.push({
+                id: `lnk-${item.id}-youtube-${rec.id}`,
+                label: rec.title,
+                icon: 'youtube',
+                href: rec.url
+              })
+            } else {
+              links.push({
+                id: `lnk-${item.id}-video-${rec.id}`,
+                label: rec.title,
+                icon: 'file-play',
+                href: rec.url
+              })
+            }
+          }
+          if (item.links.videoStream) {
+            links.push({
+              id: `lnk-${item.id}-rec`,
+              label: 'Session recording',
+              icon: 'film',
+              href: `https://www.meetecho.com/ietf${agendaStore.meeting.number}/recordings#${item.acronym.toUpperCase()}`
+            })
+          }
+        }
+      }
     }
 
     // Event icon
@@ -530,6 +562,17 @@ function xslugify (str) {
   // -> Row BG Color Highlight
   &-status-canceled td {
     background-color: rgba($red, .15) !important;
+    border-top: 1px solid darken($red-100, 5%);
+    border-bottom: 1px solid darken($red-100, 5%);
+
+    &:first-child {
+      border-top: none;
+      border-bottom: none;
+    }
+
+    &.agenda-table-cell-room {
+      border-right: 1px solid darken($red-100, 5%) !important;
+    }
 
     &:last-child {
       background: linear-gradient(to right, rgba($red, 0), rgba($red, .5));
@@ -537,6 +580,17 @@ function xslugify (str) {
   }
   &-status-resched td {
     background-color: rgba($orange, .15) !important;
+    border-top: 1px solid darken($orange-100, 5%);
+    border-bottom: 1px solid darken($orange-100, 5%);
+
+    &:first-child {
+      border-top: none;
+      border-bottom: none;
+    }
+
+    &.agenda-table-cell-room {
+      border-right: 1px solid darken($orange-100, 5%) !important;
+    }
 
     &:last-child {
       background: linear-gradient(to right, rgba($orange, 0), rgba($orange, .5));
@@ -544,10 +598,17 @@ function xslugify (str) {
   }
   &-type-break td {
     background-color: rgba($indigo, .1) !important;
+    border-top: 1px solid darken($indigo-100, 5%);
+    border-bottom: 1px solid darken($indigo-100, 5%);
 
     &.agenda-table-cell-ts {
       background: linear-gradient(to right, lighten($indigo-100, 8%), lighten($indigo-100, 5%));
       color: $indigo-700;
+      border-right: 1px solid $indigo-100 !important;
+    }
+
+    &.agenda-table-cell-room {
+      border-right: 1px solid $indigo-100 !important;
     }
 
     &.agenda-table-cell-name {
@@ -562,9 +623,16 @@ function xslugify (str) {
   &-type-plenary td {
     background-color: rgba($teal, .15) !important;
     color: $teal-800;
+    border-top: 1px solid darken($teal-100, 5%);
+    border-bottom: 1px solid darken($teal-100, 5%);
 
     &.agenda-table-cell-ts {
       background: linear-gradient(to right, lighten($teal-100, 8%), lighten($teal-100, 2%));
+      border-right: 1px solid $teal-200 !important;
+    }
+
+    &.agenda-table-cell-room {
+      border-right: 1px solid $teal-200 !important;
     }
 
     &.agenda-table-cell-name {

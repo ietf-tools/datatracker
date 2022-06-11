@@ -18,7 +18,7 @@ export const useAgendaStore = defineStore('agenda', {
     searchVisible: false,
     selectedCatSubs: [],
     timezone: DateTime.local().zoneName,
-    useCodiMd: false,
+    useHedgeDoc: false,
     visibleDays: []
   }),
   getters: {
@@ -80,7 +80,7 @@ export const useAgendaStore = defineStore('agenda', {
       this.isCurrentMeeting = agendaData.isCurrentMeeting
       this.meeting = agendaData.meeting
       this.schedule = agendaData.schedule
-      this.useCodiMd = agendaData.useCodiMd
+      this.useHedgeDoc = agendaData.useHedgeDoc
     }
   }
 })

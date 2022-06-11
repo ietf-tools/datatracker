@@ -1566,7 +1566,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
             },
             "categories": filter_organizer.get_filter_categories(),
             "isCurrentMeeting": is_current_meeting,
-            "useCodiMd": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
+            "useHedgeDoc": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
             "schedule": list(map(agenda_extract_shedule, filtered_assignments))
         },
         "personalize": False,
@@ -1600,6 +1600,7 @@ def agenda_extract_shedule (item):
         "type": item.session.type.slug,
         "isBoF": item.session.historic_group.state_id == "bof",
         "filterKeywords": item.filter_keywords,
+        "groupAcronym": item.session.historic_group.acronym if item.session.historic_group else item.session.group.acronym,
         "groupName": item.session.historic_group.name,
         "groupParent": {
             "acronym": item.session.historic_group.parent.acronym,
@@ -1615,10 +1616,26 @@ def agenda_extract_shedule (item):
             "url": item.session.agenda().get_href()
         } if item.session.agenda() is not None else {
             "url": None
+        },
+        "links": {
+            # "jabber": item.session.jabber_room_name
+            "recordings": list(map(agenda_extract_recording, item.session.recordings())),
+            "videoStream": item.timeslot.location.video_stream_url() if item.timeslot.location else "",
+            "audioStream": item.timeslot.location.audio_stream_url() if item.timeslot.location else "",
+            "webex": item.timeslot.location.webex_url() if item.timeslot.location else "",
+            "onsiteTool": item.timeslot.location.onsite_tool_url() if item.timeslot.location else ""
         }
         # "slotType": {
         #     "slug": item.slot_type.slug
         # }
+    }
+
+def agenda_extract_recording (item):
+    return {
+        "id": item.id,
+        "name": item.name,
+        "title": item.title,
+        "url": item.external_url
     }
 
 def agenda_csv(schedule, filtered_assignments):

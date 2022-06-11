@@ -293,6 +293,8 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
 @import "bootstrap/scss/variables";
 
 .agenda {
+  min-height: 500px;
+
   &-timezone-ddn {
     min-width: 350px;
   }
