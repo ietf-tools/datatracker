@@ -35,6 +35,7 @@ echo "Using destination $DEST_ROOT"
 
 EXCLUDE="$(mktemp)"
 cat << EOF > "$EXCLUDE"
+<<<<<<< HEAD
 *#
 *%
 *.1
@@ -75,6 +76,16 @@ rfc[0-9][0-9][0-9][0-9]
 EOF
 
 OPTS="-asz --no-owner --no-group --partial ${PROGRESS:+--info=progress2} --exclude-from=$EXCLUDE --del --delete-excluded"
+=======
+*.html
+*.xml
+*.pdf
+*.json
+*.p7s
+EOF
+
+OPTS="-as --no-owner --no-group --partial ${PROGRESS:+--info=progress2} --exclude-from=$EXCLUDE --del --delete-excluded"
+>>>>>>> f64d7c67c (Interim commit)
 
 for dir in bofreq; do
     dest="$DEST_ROOT/ietf-ftp/$dir"
@@ -83,7 +94,7 @@ for dir in bofreq; do
     rsync $OPTS rsync.ietf.org::$dir/ $dest/
 done
 
-for dir in charter conflict-reviews internet-drafts review rfc slides status-changes yang; do
+for dir in internet-drafts charter conflict-reviews internet-drafts review rfc slides status-changes yang; do
     dest="$DEST_ROOT/ietf-ftp/$dir"
     mkdir -p "$dest"
     echo "Fetching $dest ..."
