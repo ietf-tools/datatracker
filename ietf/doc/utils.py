@@ -1034,8 +1034,8 @@ def build_file_urls(doc):
         if "txt" in found_types:
             file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=name))))
             if doc.tags.filter(slug="verified-errata").exists():
-                file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
-        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=name))))
+                file_urls.append(("+errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
+        file_urls.append(("cite", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=name))))
     else:
         base_path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".")
         possible_types = settings.IDSUBMIT_FILE_TYPES
@@ -1055,7 +1055,7 @@ def build_file_urls(doc):
 
 def build_doc_supermeta_block(doc):
     items = []
-    items.append(f'[<a href="{ settings.IDTRACKER_BASE_URL }" title="Document search and retrieval page">Search</a>]')
+    button_len = 0
 
     file_urls, found_types = build_file_urls(doc)
     file_urls = [('txt',url) if label=='plain text' else (label,url) for label,url in file_urls]
@@ -1075,18 +1075,26 @@ def build_doc_supermeta_block(doc):
                 title_attribute = f' title="{file_label}"' if file_label else ''
                 partstring = f'<a href="{url}"{title_attribute}>{label}</a>' 
                 parts.append(partstring)
+                button_len += len(label)
         items.append('[' + '|'.join(parts) + ']')
+        button_len += 2 + len(parts) - 1
 
-    items.append(f'[<a href="{ urlreverse("ietf.doc.views_doc.document_main",kwargs=dict(name=doc.canonical_name())) }" title="Datatracker information for this document">Tracker</a>]')
     if doc.group.acronym != 'none':
         items.append(f'[<a href="{urlreverse("ietf.group.views.group_home",kwargs=dict(acronym=doc.group.acronym))}" title="The working group handling this document">WG</a>]')
+        button_len += 2 + 2
     items.append(f'[<a href="mailto:{doc.name}@ietf.org?subject={doc.name}" title="Send email to the document authors">Email</a>]')
+    button_len += 2 + 5
     if doc.rev != "00":
-        items.append(f'[<a href="{settings.RFCDIFF_BASE_URL}?difftype=--hwdiff&amp;url2={doc.name}-{doc.rev}.txt" title="Inline diff (wdiff)">Diff1</a>]')
-        items.append(f'[<a href="{settings.RFCDIFF_BASE_URL}?url2={doc.name}-{doc.rev}.txt" title="Side-by-side diff">Diff2</a>]')
+        items.append(f'[<a href="{settings.RFCDIFF_BASE_URL}?difftype=--hwdiff&amp;url2={doc.name}-{doc.rev}.txt" title="Inline diff (wdiff)">WDiff</a>|'
+                     f'<a href="{settings.RFCDIFF_BASE_URL}?url2={doc.name}-{doc.rev}.txt" title="Side-by-side diff">Diff</a>]')
+        button_len += 2 + 1 + 5 + 4
     items.append(f'[<a href="{settings.IDNITS_BASE_URL}?url={settings.IETF_ID_ARCHIVE_URL}{doc.name}-{doc.rev}.txt" title="Run an idnits check of this document">Nits</a>]')
+    button_len += 2 + 4
 
-    return ' '.join(items)
+    info = f'[<a href="{ urlreverse("ietf.doc.views_doc.document_main",kwargs=dict(name=doc.canonical_name())) }" title="Datatracker information for this document">Info</a>]'
+    button_len += len(items) - 1
+
+    return f'{info}{" " * (72 - button_len - 6)}{" ".join(items)}'
 
 def build_doc_meta_block(doc, path):
     def add_markup(path, doc, lines):
@@ -1109,11 +1117,11 @@ def build_doc_meta_block(doc, path):
             line = re.sub(r' ([0-9]{2})\b', r' <a href="%s/%s-\g<1>">\g<1></a>'%(path, name, ), line)
             if rfcnum:
                 # add errata link
-                line = re.sub(r'Errata exist', r'<a class="text-warning" href="%s">Errata exist</a>'%(errata_url, ), line)
+                line = re.sub(r'Errata exist', r'<a class="text-danger" href="%s">Errata exist</a>'%(errata_url, ), line)
             if is_hst or not rfcnum:
                 # make current draft rev bold
                 line = re.sub(r'>(%s)<'%rev, r'><b>\g<1></b><', line)
-            line = re.sub(r'IPR declarations', r'<a class="text-warning" href="%s">IPR declarations</a>'%(ipr_url, ), line)
+            line = re.sub(r'IPR declarations', r'<a class="text-danger" href="%s">IPR declarations</a>'%(ipr_url, ), line)
             line = line.replace(r'[txt]', r'[<a href="%s">txt</a>]' % doc.get_href())
             lines[i] = line
         return lines

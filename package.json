@@ -83,6 +83,7 @@
       "distDir": "ietf/static/dist/ietf",
       "source": [
         "ietf/static/css/datepicker.scss",
+        "ietf/static/css/document_html.scss",
         "ietf/static/css/ietf.scss",
         "ietf/static/css/jquery-ui.scss",
         "ietf/static/css/liaisons.css",
