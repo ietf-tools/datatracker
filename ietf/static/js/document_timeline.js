@@ -184,7 +184,7 @@ function draw_timeline() {
         .attr("transform", offset);
     var a = g.append("a");
     a.attr("xlink:href", function (d) { return d.url; });
-    var rect = g.append("rect")
+    var rect = a.append("rect")
         .attr("height", bar_height)
         .attr("width", bar_width)
         .attr("class", "btn")
