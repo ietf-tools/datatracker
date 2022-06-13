@@ -20,7 +20,7 @@
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th scope="col" data-sort="num">
+                <th scope="col"{% if group.uses_milestone_dates %} data-sort="num"{% endif %}>
                     {% if group.uses_milestone_dates %}
                         Date
                     {% else %}
