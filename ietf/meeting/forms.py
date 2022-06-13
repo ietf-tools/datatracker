@@ -106,10 +106,7 @@ class InterimSessionInlineFormSet(BaseInlineFormSet):
 
 class InterimMeetingModelForm(forms.ModelForm):
     group = GroupModelChoiceField(
-        queryset=Group.objects.filter(
-            type_id__in=GroupFeatures.objects.filter(
-                has_meetings=True
-            ).values_list('type_id',flat=True),
+        queryset=Group.objects.with_meetings().filter(
             state__in=('active', 'proposed', 'bof')
         ).order_by('acronym'),
         required=False,
