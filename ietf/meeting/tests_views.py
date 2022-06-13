@@ -4612,8 +4612,8 @@ class InterimTests(TestCase):
         r = self.client.get("/meeting/interim/request/")
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        Group.objects.has_meetings().filter(state__in=('active', 'proposed', 'bof'))
-        self.assertEqual(Group.objects.has_meetings().filter(state__in=('active', 'proposed', 'bof')).count(),
+        Group.objects.with_meetings().filter(state__in=('active', 'proposed', 'bof'))
+        self.assertEqual(Group.objects.with_meetings().filter(state__in=('active', 'proposed', 'bof')).count(),
             len(q("#id_group option")) - 1)  # -1 for options placeholder
         self.client.logout()
 
@@ -6504,8 +6504,10 @@ class HasMeetingsTests(TestCase):
 
         url = urlreverse('ietf.meeting.views.interim_request')
         for gf in GroupFeatures.objects.filter(has_meetings=True):
+            debug.show('gf')
             meeting_count = 0
             for role in gf.groupman_roles:
+                debug.show('role')
                 role = RoleFactory(group__type_id=gf.type_id, name_id=role)
                 self.do_request_interim(url, role.group, role.person.user, meeting_count)
             for authrole in gf.groupman_authroles:
