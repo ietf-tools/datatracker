@@ -63,7 +63,7 @@ from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_wit
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content, build_doc_meta_block,
     augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event,
-    build_doc_supermeta_block, build_file_urls, update_documentauthors, fuzzy_find_documents)
+    build_file_urls, update_documentauthors, fuzzy_find_documents)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_all_groups_of_type, can_manage_materials, group_features_role_filter
@@ -138,6 +138,15 @@ def interesting_doc_relations(doc):
 
     return interesting_relations_that, interesting_relations_that_doc
 
+def document_revisions(doc):
+    revisions = []
+    for h in doc.history_set.order_by("time", "id"):
+        if h.rev and not h.rev in revisions:
+            revisions.append(h.rev)
+    if not doc.rev in revisions:
+        revisions.append(doc.rev)
+    return revisions
+
 def document_main(request, name, rev=None):
     doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
 
@@ -148,12 +157,7 @@ def document_main(request, name, rev=None):
             if a.startswith("rfc"):
                 return redirect("ietf.doc.views_doc.document_main", name=a)
     
-    revisions = []
-    for h in doc.history_set.order_by("time", "id"):
-        if h.rev and not h.rev in revisions:
-            revisions.append(h.rev)
-    if not doc.rev in revisions:
-        revisions.append(doc.rev)
+    revisions = document_revisions(doc)
     latest_rev = doc.rev
 
     snapshot = False
@@ -773,12 +777,12 @@ def document_html(request, name, rev=None):
     if num_found > 1:
         raise Http404("Multiple documents matched: %s" % name)
 
-    if found.matched_name.startswith('rfc') and name != found.matched_name:
-         return redirect('ietf.doc.views_doc.document_html', name=found.matched_name)
+    if found.matched_name.startswith("rfc") and name != found.matched_name:
+        return redirect("ietf.doc.views_doc.document_html", name=found.matched_name)
 
     doc = found.documents.get()
 
-    if found.matched_rev or found.matched_name.startswith('rfc'):
+    if found.matched_rev or found.matched_name.startswith("rfc"):
         rev = found.matched_rev
     else:
         rev = doc.rev
@@ -788,30 +792,32 @@ def document_html(request, name, rev=None):
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
-    if doc.type_id in ['draft',]:
-        doc.supermeta = build_doc_supermeta_block(doc)
-        doc.meta = build_doc_meta_block(doc, settings.HTMLIZER_URL_PREFIX)
+    file_urls, found_types = build_file_urls(doc)
 
-    doccolor = 'bgwhite' # Unknown
-    if doc.type_id=='draft':
-        if doc.is_rfc():
-            if doc.related_that('obs'):
-                doccolor = 'bgbrown'
-            else:
-                doccolor = {
-                    'ps'   : 'bgblue',
-                    'exp'  : 'bgyellow',
-                    'inf'  : 'bgorange',
-                    'ds'   : 'bgcyan',
-                    'hist' : 'bggrey',
-                    'std'  : 'bggreen',
-                    'bcp'  : 'bgmagenta',
-                    'unkn' : 'bgwhite',
-                }.get(doc.std_level_id, 'bgwhite')
-        else:
-            doccolor = 'bgred' # Draft
+    if doc.is_dochistory():
+        doc = doc.doc
+    return render(
+        request,
+        "doc/document_html.html",
+        {
+            "doc": doc,
+            "file_urls": file_urls,
+            "revisions": document_revisions(doc),
+            "has_errata": doc.tags.filter(slug="errata"),
+            "obsoletedby": [
+                document.rfc_number()
+                for alias in doc.related_that("obs")
+                for document in alias.docs.all()
+            ].sort(),
+            "updatedby": [
+                document.rfc_number()
+                for alias in doc.related_that("updates")
+                for document in alias.docs.all()
+            ].sort(),
+            "stdstatus": doc.std_level.name if doc.std_level else "",
+        },
+    )
 
-    return render(request, "doc/document_html.html", {"doc":doc, "doccolor":doccolor })
 
 def document_pdfized(request, name, rev=None, ext=None):
 

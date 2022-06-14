@@ -983,15 +983,12 @@ def label_wrap(label, items, joiner=',', max=50):
     lines = []
     if not items:
         return lines
-    line = '%s: %s' % (label, items[0])
-    for item in items[1:]:
-        if len(line)+len(joiner+' ')+len(item) > max:
-            lines.append(line+joiner)
-            line = ' '*(len(label)+len(': ')) + item
-        else:
-            line += joiner+' '+item
+    line = '<div><label>%s:</label><ul class="pagination pagination-sm flex-wrap">' % (label)
+    for item in items:
+        line += f'<li class="page-item">{item}</li>'
     if line:
         lines.append(line)
+    lines.append('</ul></div>')
     return lines
 
 def join_justified(left, right, width=72):
@@ -1015,6 +1012,14 @@ def join_justified(left, right, width=72):
     return lines
 
 def build_file_urls(doc):
+    titles = {
+        'txt' : 'Plaintext version of this document',
+        'xml' : 'XML source for this document',
+        'pdf' : 'PDF version of this document',
+        'html' : 'HTML version of this document',
+        'bibtex' : 'BibTex entry for this document',
+    }
+
     if isinstance(doc,Document) and doc.get_state_slug() == "rfc":
         name = doc.canonical_name()
         base_path = os.path.join(settings.RFC_PATH, name + ".")
@@ -1025,17 +1030,17 @@ def build_file_urls(doc):
 
         file_urls = []
         for t in found_types:
-            label = "plain text" if t == "txt" else t
-            file_urls.append((label, base + name + "." + t))
+            label = "text" if t == "txt" else t
+            file_urls.append((label, base + name + "." + t, titles[t]))
 
         if "pdf" not in found_types and "txt" in found_types:
-            file_urls.append(("pdf", base + "pdfrfc/" + name + ".txt.pdf"))
+            file_urls.append(("pdf", base + "pdfrfc/" + name + ".txt.pdf", titles["pdf"]))
 
         if "txt" in found_types:
-            file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=name))))
+            file_urls.append(("html", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=name)), titles["html"]))
             if doc.tags.filter(slug="verified-errata").exists():
-                file_urls.append(("+errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
-        file_urls.append(("cite", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=name))))
+                file_urls.append(("w/errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number()), titles[t]))
+        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=name)), titles["bibtex"]))
     else:
         base_path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".")
         possible_types = settings.IDSUBMIT_FILE_TYPES
@@ -1043,58 +1048,15 @@ def build_file_urls(doc):
         base = settings.IETF_ID_ARCHIVE_URL
         file_urls = []
         for t in found_types:
-            label = "plain text" if t == "txt" else t
-            file_urls.append((label, base + doc.name + "-" + doc.rev + "." + t))
+            label = "text" if t == "txt" else t
+            file_urls.append((label, base + doc.name + "-" + doc.rev + "." + t, titles[t]))
 
         if doc.text():
-            file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev))))
-            file_urls.append(("pdfized", urlreverse('ietf.doc.views_doc.document_pdfized', kwargs=dict(name=doc.name, rev=doc.rev))))
-        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name,rev=doc.rev))))
+            file_urls.append(("html", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev)), titles["html"]))
+            file_urls.append(("pdf", urlreverse('ietf.doc.views_doc.document_pdfized', kwargs=dict(name=doc.name, rev=doc.rev)), titles["pdf"]))
+        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name,rev=doc.rev)), titles["bibtex"]))
 
     return file_urls, found_types
-
-def build_doc_supermeta_block(doc):
-    items = []
-    button_len = 0
-
-    file_urls, found_types = build_file_urls(doc)
-    file_urls = [('txt',url) if label=='plain text' else (label,url) for label,url in file_urls]
-
-    if file_urls:
-        file_labels = {
-            'txt' : 'Plaintext version of this document',
-            'xml' : 'XML source for this document',
-            'pdf' : 'PDF version of this document',
-            'html' : 'HTML version of this document, from XML2RFC',
-            'bibtex' : 'BibTex entry for this document',
-        }
-        parts=[]
-        for label,url in file_urls:
-            if 'htmlized' not in label:
-                file_label=file_labels.get(label,'')
-                title_attribute = f' title="{file_label}"' if file_label else ''
-                partstring = f'<a href="{url}"{title_attribute}>{label}</a>' 
-                parts.append(partstring)
-                button_len += len(label)
-        items.append('[' + '|'.join(parts) + ']')
-        button_len += 2 + len(parts) - 1
-
-    if doc.group.acronym != 'none':
-        items.append(f'[<a href="{urlreverse("ietf.group.views.group_home",kwargs=dict(acronym=doc.group.acronym))}" title="The working group handling this document">WG</a>]')
-        button_len += 2 + 2
-    items.append(f'[<a href="mailto:{doc.name}@ietf.org?subject={doc.name}" title="Send email to the document authors">Email</a>]')
-    button_len += 2 + 5
-    if doc.rev != "00":
-        items.append(f'[<a href="{settings.RFCDIFF_BASE_URL}?difftype=--hwdiff&amp;url2={doc.name}-{doc.rev}.txt" title="Inline diff (wdiff)">WDiff</a>|'
-                     f'<a href="{settings.RFCDIFF_BASE_URL}?url2={doc.name}-{doc.rev}.txt" title="Side-by-side diff">Diff</a>]')
-        button_len += 2 + 1 + 5 + 4
-    items.append(f'[<a href="{settings.IDNITS_BASE_URL}?url={settings.IETF_ID_ARCHIVE_URL}{doc.name}-{doc.rev}.txt" title="Run an idnits check of this document">Nits</a>]')
-    button_len += 2 + 4
-
-    info = f'[<a href="{ urlreverse("ietf.doc.views_doc.document_main",kwargs=dict(name=doc.canonical_name())) }" title="Datatracker information for this document">Info</a>]'
-    button_len += len(items) - 1
-
-    return f'{info}{" " * (72 - button_len - 6)}{" ".join(items)}'
 
 def build_doc_meta_block(doc, path):
     def add_markup(path, doc, lines):
@@ -1114,7 +1076,7 @@ def build_doc_meta_block(doc, path):
             # add XXXX to RFC links
             line = re.sub(r' ([0-9]{3,5})\b', r' <a href="%s/rfc\g<1>">\g<1></a>'%(path, ), line)
             # add draft revision links
-            line = re.sub(r' ([0-9]{2})\b', r' <a href="%s/%s-\g<1>">\g<1></a>'%(path, name, ), line)
+            line = re.sub(r'>([0-9]{2})<', r'><a class="page-link" href="%s/%s-\g<1>">\g<1></a><'%(path, name, ), line)
             if rfcnum:
                 # add errata link
                 line = re.sub(r'Errata exist', r'<a class="text-danger" href="%s">Errata exist</a>'%(errata_url, ), line)
@@ -1128,7 +1090,6 @@ def build_doc_meta_block(doc, path):
     #
     now = datetime.datetime.now()
     draft_state = doc.get_state('draft')
-    block = ''
     meta = {}
     if doc.type_id == 'draft':
         revisions = []
@@ -1167,27 +1128,37 @@ def build_doc_meta_block(doc, path):
     elif doc.type_id == 'charter':
         meta['versions'] = doc.revisions()
     #
+    vers = ""
     # Add markup to items that needs it.
     if 'versions' in meta:
-        meta['versions'] = label_wrap('Versions', meta['versions'], joiner="")
-    for label in ['Obsoleted by', 'Updated by', 'From' ]:
-        item = label.replace(' ','').lower()
-        if item in meta and meta[item]:
-            meta[item] = label_wrap(label, meta[item])
+        is_hst = doc.is_dochistory()
+        if is_hst:
+            doc = doc.doc
+        name = doc.name
+        rfcnum = doc.rfc_number()
+
+        vers = '<div><label>Versions:</label><ul class="pagination pagination-sm flex-wrap">'
+        for v in meta['versions']:
+            vers += '<li class="page-item'
+            if v == doc.rev:
+                vers += ' active'
+            vers += f'"><a class="page-link" href="{path}/{name}-{v}">{v}</a>'
+        vers += '</ul></div>'
+
+        # vers = label_wrap('Versions', vers, joiner="")
+    # for label in ['Obsoleted by', 'Updated by', 'From' ]:
+    #     item = label.replace(' ','').lower()
+    #     if item in meta and meta[item]:
+    #         meta[item] = label_wrap(label, meta[item])
     #
-    left = []
-    right = []
-    #right = [ '[txt]']
-    for item in [ 'from', 'versions', 'obsoletedby', 'updatedby', ]:
-        if item in meta and meta[item]:
-            left += meta[item]
-    for item in ['stdstatus', 'active', 'state', 'ipr', 'errata', ]:
-        if item in meta and meta[item]:
-            right += meta[item]
-    lines = join_justified(left, right)
-    block = '\n'.join(add_markup(path, doc, lines))
-    #
-    return block
+
+    # for item in [ 'from', 'versions', 'obsoletedby', 'updatedby', ]:
+    #     if item in meta and meta[item]:
+    #         left += meta[item]
+    # for item in ['stdstatus', 'active', 'state', 'ipr', 'errata', ]:
+    #     if item in meta and meta[item]:
+    #         right += meta[item]
+    return vers
 
 
 def augment_docs_and_user_with_user_info(docs, user):

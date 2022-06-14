@@ -3,6 +3,9 @@
 // Disable responsive font sizing.
 $enable-rfs: false;
 
+// Only import what we need:
+// https://getbootstrap.com/docs/5.1/customize/optimize/
+
 // Configuration
 @import "bootstrap/scss/functions";
 @import "bootstrap/scss/variables";
@@ -13,9 +16,46 @@ $enable-rfs: false;
 @import "bootstrap/scss/root";
 @import "bootstrap/scss/reboot";
 @import "bootstrap/scss/type";
+// @import "bootstrap/scss/images";
+@import "bootstrap/scss/containers";
+@import "bootstrap/scss/grid";
+// @import "bootstrap/scss/tables";
+// @import "bootstrap/scss/forms";
+@import "bootstrap/scss/buttons";
+// @import "bootstrap/scss/transitions";
+// @import "bootstrap/scss/dropdown";
+@import "bootstrap/scss/button-group";
+// @import "bootstrap/scss/nav";
+// @import "bootstrap/scss/navbar";
+// @import "bootstrap/scss/card";
+// @import "bootstrap/scss/accordion";
+// @import "bootstrap/scss/breadcrumb";
+@import "bootstrap/scss/pagination";
+@import "bootstrap/scss/badge";
+// @import "bootstrap/scss/alert";
+// @import "bootstrap/scss/progress";
+// @import "bootstrap/scss/list-group";
+// @import "bootstrap/scss/close";
+// @import "bootstrap/scss/toasts";
+// @import "bootstrap/scss/modal";
+// @import "bootstrap/scss/tooltip";
+// @import "bootstrap/scss/popover";
+// @import "bootstrap/scss/carousel";
+// @import "bootstrap/scss/spinners";
+// @import "bootstrap/scss/offcanvas";
+// @import "bootstrap/scss/placeholders";
+
+// Helpers
+// @import "bootstrap/scss/helpers";
 
 // Utilities
 @import "bootstrap/scss/utilities/api";
+
+// Make the bootstrap icons available.
+$bootstrap-icons-font-src: url("npm:bootstrap-icons/font/fonts/bootstrap-icons.woff2") format("woff2"),
+url("npm:bootstrap-icons/font/fonts/bootstrap-icons.woff") format("woff");
+@import "bootstrap-icons/font/bootstrap-icons";
+
 
 @media screen {
     @include media-breakpoint-only(xs) {
@@ -58,16 +98,22 @@ h6,
     font-size: 1em;
 }
 
-.meta-info {
-    background: $gray-200;
+pre {
+    // width: 72ch;
+    font-size: 1em;
+}
+
+.htmlized {
+    font-family: var(--bs-font-monospace);
     width: 72ch;
-    overflow: visible;
-    padding-top: .5em;
-    padding-bottom: .5em;
+    font-size: .875em;
+}
+
+.grey {
+    color: $gray-500;
 }
 
 @media print {
-
     body {
         margin: 0;
         padding: 0;
