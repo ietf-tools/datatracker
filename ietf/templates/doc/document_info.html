@@ -20,13 +20,13 @@
                 {% endif %}
                 {% if document_html %}<br>{% endif %}
                 {% if has_verified_errata or has_errata %}
-                    <a class="{% if document_html %}btn btn-danger btn-sm my-1{% else %}badge bg-danger text-decoration-none text-light{% endif %}"
+                    <a class="{% if document_html %}btn btn-{% if document_html %}outline-{% endif %}danger btn-sm my-1{% else %}badge bg-danger text-decoration-none text-light{% endif %}"
                        href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}" title="Click to view errata." rel="nofollow">
                         Errata
                     </a>
                 {% endif %}
                 {% if doc.related_ipr %}
-                    <a title="Click to view IPR declarations." class="{% if document_html %}btn btn-warning btn-sm my-1{% else %}badge bg-warning text-decoration-none text-light{% endif %}" href="{% url 'ietf.ipr.views.search' %}?submit=draft&amp;id={{ doc.name }}">IPR</a>
+                    <a title="Click to view IPR declarations." class="{% if document_html %}btn btn-{% if document_html %}outline-{% endif %}warning btn-sm my-1{% else %}badge bg-warning text-decoration-none text-light{% endif %}" href="{% url 'ietf.ipr.views.search' %}?submit=draft&amp;id={{ doc.name }}">IPR</a>
                 {% endif %}
                 {% if obsoleted_by %}<div>Obsoleted by {{ obsoleted_by|urlize_related_source_list|join:", " }}</div>{% endif %}
                 {% if updated_by %}<div>Updated by {{ updated_by|urlize_related_source_list|join:", " }}</div>{% endif %}
@@ -50,40 +50,45 @@
                 {% if snapshot and doc.doc.get_state_slug == 'rfc' %}
                    <span>This is an older version of an Internet-Draft that was ultimately published as an RFC.</span>
                 {% elif snapshot and doc.rev != latest_rev  %}
-                    <span>This is an older version of an Internet-Draft whose latest revision is {{ doc.doc.get_state }}</span>
+                    <span>This is an older version of an Internet-Draft whose latest revision is {{ doc.doc.get_state }}.</span>
                  {% else %}
                     <span class="{% if doc.get_state_slug == 'active' %}text-success{% elif doc.get_state_slug == 'expired' or doc.get_state_slug == 'repl' %}text-danger{% endif %}">{% if snapshot and doc.rev == latest_rev %}{{ doc.doc.get_state }}{% else %}{{ doc.get_state }}{% endif %} Internet-Draft</span>
                     {% if submission %}({{ submission|safe }}){% endif %}
                     {% if resurrected_by %}- resurrect requested by {{ resurrected_by }}{% endif %}
                 {% endif %}
             {% endif %}
+            {% if doc.get_state_slug != "active" and doc.get_state_slug != "rfc" %}
+                <div class="badge bg-warning{% if not document_html %} float-end{% endif %}">
+                    Expired &amp; archived
+                </div>
+            {% endif %}
         </td>
     </tr>
     {% if document_html %}
     <tr>
         <td></td>
-        <th scope="roe">Revisions</td>
+        <th scope="roe">Versions</td>
         <td class="edit"></td>
         <td>
             {% include "doc/revisions_list.html" with document_html=document_html %}
             {% if doc.rev != "00" %}
                 <div class="my-2">
-                        <a class="btn btn-primary btn-sm" href="{{ settings.RFCDIFF_BASE_URL }}?difftype=--hwdiff&amp;url2={{ doc.name }}-{{ doc.rev }}.txt" title="Inline diff (wdiff)"> Wdiff</a>
-                        <a class="btn btn-primary btn-sm" href="{{ settings.RFCDIFF_BASE_URL }}?url2={{ doc.name }}-{{ doc.rev }}.txt" title="Side-by-side diff">Diff</a>
+                        <a class="btn btn-{% if document_html %}outline-{% endif %}primary btn-sm" href="{{ settings.RFCDIFF_BASE_URL }}?difftype=--hwdiff&amp;url2={{ doc.name }}-{{ doc.rev }}.txt" title="Inline diff (wdiff)"> Wdiff</a>
+                        <a class="btn btn-{% if document_html %}outline-{% endif %}primary btn-sm" href="{{ settings.RFCDIFF_BASE_URL }}?url2={{ doc.name }}-{{ doc.rev }}.txt" title="Side-by-side diff">Diff</a>
 
-                    <a class="btn btn-primary btn-sm" href="{settings.IDNITS_BASE_URL}?url={settings.IETF_ID_ARCHIVE_URL}{doc.name}-{doc.rev}.txt" title="Run an idnits check of this document">Nits</a>
+                    <a class="btn btn-{% if document_html %}outline-{% endif %}primary btn-sm" href="{settings.IDNITS_BASE_URL}?url={settings.IETF_ID_ARCHIVE_URL}{doc.name}-{doc.rev}.txt" title="Run an idnits check of this document">Nits</a>
 
                 </div>
             {% endif %}
         </td>
     </tr>
+    {% endif %}
     <tr>
-        {% endif %}
         <td></td>
         <th scope="row">Author{{ doc.authors|pluralize }}</th>
         <td class="edit">
             {% if can_edit_authors %}
-                <a class="btn btn-primary btn-sm"
+                <a class="btn btn-{% if document_html %}outline-{% endif %}primary btn-sm"
                    href="{%  url 'ietf.doc.views_doc.edit_authors' name=doc.name %}">Edit</a>
             {% endif %}
         </td>
@@ -94,7 +99,7 @@
             {% endfor %}
             {% if document_html %}
                 <br>
-                <a class="btn btn-primary btn-sm mt-1" href="mailto:{{ doc.name }}@ietf.org?subject={{ doc.name}}" title="Send email to the document authors">Email authors</a>
+                <a class="btn btn-{% if document_html %}outline-{% endif %}primary btn-sm mt-1" href="mailto:{{ doc.name }}@ietf.org?subject={{ doc.name}}" title="Send email to the document authors">Email authors</a>
             {% endif %}
         </td>
     </tr>
@@ -118,7 +123,7 @@
             <th scope="row">Replaces</th>
             <td class="edit">
                 {% if can_edit_stream_info and not snapshot %}
-                    <a class="btn btn-primary btn-sm"
+                    <a class="btn btn-{% if document_html %}outline-{% endif %}primary btn-sm"
                        href="{% url 'ietf.doc.views_draft.replaces' name=doc.name %}">Edit</a>
                 {% endif %}
             </td>
@@ -153,7 +158,7 @@
                 </th>
                 <td class="edit">
                     {% if can_edit_replaces and not snapshot %}
-                        <a class="btn btn-primary btn-sm"
+                        <a class="btn btn-{% if document_html %}outline-{% endif %}primary btn-sm"
                            href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">
                             Edit
                         </a>
@@ -172,7 +177,7 @@
                 </th>
                 <td class="edit">
                     {% if can_edit_replaces and not snapshot %}
-                        {% comment %}<a class="btn btn-primary btn-sm"
+                        {% comment %}<a class="btn btn-{% if document_html %}outline-{% endif %}primary btn-sm"
 href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">Edit</a>{% endcomment %}
                     {% endif %}
                 </td>
@@ -189,7 +194,7 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
         </th>
         <td class="edit">
             {% if can_change_stream and not snapshot %}
-                <a class="btn btn-primary btn-sm"
+                <a class="btn btn-{% if document_html %}outline-{% endif %}primary btn-sm"
                    href="{% url 'ietf.doc.views_draft.change_stream' name=doc.name %}">
                     Edit
                 </a>
@@ -211,7 +216,7 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
             </th>
             <td class="edit">
                 {% if can_edit_stream_info and not snapshot %}
-                    <a class="btn btn-primary btn-sm"
+                    <a class="btn btn-{% if document_html %}outline-{% endif %}primary btn-sm"
                        href="{% url 'ietf.doc.views_draft.change_intention' name=doc.name %}">
                         Edit
                     </a>
@@ -236,15 +241,10 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
         <td class="edit">
         </td>
         <td>
-            {% if doc.get_state_slug != "active" and doc.get_state_slug != "rfc" %}
-                <div class="float-end badge bg-warning">
-                    Expired &amp; archived
-                </div>
-            {% endif %}
             {% if file_urls %}
                 <div class="buttonlist">
                 {% for label, url in file_urls %}
-                    <a class="btn btn-primary btn-sm" href="{{ url }}">
+                    <a class="btn btn-{% if document_html %}outline-{% endif %}primary btn-sm" href="{{ url }}">
                         {% if label == 'pdf' or label == 'pdfized' %}
                             <i class="bi bi-file-pdf"></i> pdf
                         {% elif label == 'xml' or label == 'html' %}
@@ -324,7 +324,7 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                 {% if can_request_review or can_submit_unsolicited_review_for_teams %}
                     <div class="mt-3">
                         {% if can_request_review %}
-                        <a class="btn btn-primary btn-sm"
+                        <a class="btn btn-{% if document_html %}outline-{% endif %}primary btn-sm"
                            href="{% url "ietf.doc.views_review.request_review" doc.name %}">
                             <i class="bi bi-check-circle">
                             </i>
@@ -332,14 +332,14 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                         </a>
                         {% endif %}
                         {% if can_submit_unsolicited_review_for_teams|length == 1 %}
-                            <a class="btn btn-primary btn-sm"
+                            <a class="btn btn-{% if document_html %}outline-{% endif %}primary btn-sm"
                                href="{% url "ietf.doc.views_review.complete_review" doc.name can_submit_unsolicited_review_for_teams.0.acronym %}">
                                 <i class="bi bi-pencil-square">
                                 </i>
                                 Submit unsolicited review
                             </a>
                         {% elif can_submit_unsolicited_review_for_teams %}
-                            <a class="btn btn-primary btn-sm"
+                            <a class="btn btn-{% if document_html %}outline-{% endif %}primary btn-sm"
                                href="{% url "ietf.doc.views_review.submit_unsolicited_review_choose_team" doc.name %}">
                                 <i class="bi bi-pencil-square">
                                 </i>
@@ -376,7 +376,7 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                 </th>
                 <td class="edit">
                     {% if can_edit_stream_info or can_edit_individual %}
-                        <a class="btn btn-primary btn-sm"
+                        <a class="btn btn-{% if document_html %}outline-{% endif %}primary btn-sm"
                            href="{% url 'ietf.doc.views_draft.edit_doc_extresources' name=doc.name %}">
                             Edit
                         </a>
