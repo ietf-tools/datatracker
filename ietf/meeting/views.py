@@ -1608,6 +1608,7 @@ def agenda_extract_shedule (item):
             "description": item.session.historic_group.parent.description
         } if item.session.historic_group.parent else {},
         "note": item.session.agenda_note,
+        "remoteInstructions": item.session.remote_instructions,
         "flags": {
             "agenda": True if item.session.agenda() is not None else False,
             "showAgenda": True if (item.session.agenda() is not None or item.session.remote_instructions or item.session.agenda_note) else False
@@ -1617,13 +1618,16 @@ def agenda_extract_shedule (item):
         } if item.session.agenda() is not None else {
             "url": None
         },
+        "orderInMeeting": item.session.order_in_meeting(),
+        "short": item.session.short if item.session.short else item.session.short_name,
         "links": {
             # "jabber": item.session.jabber_room_name
             "recordings": list(map(agenda_extract_recording, item.session.recordings())),
             "videoStream": item.timeslot.location.video_stream_url() if item.timeslot.location else "",
             "audioStream": item.timeslot.location.audio_stream_url() if item.timeslot.location else "",
             "webex": item.timeslot.location.webex_url() if item.timeslot.location else "",
-            "onsiteTool": item.timeslot.location.onsite_tool_url() if item.timeslot.location else ""
+            "onsiteTool": item.timeslot.location.onsite_tool_url() if item.timeslot.location else "",
+            "calendar": reverse('ietf.meeting.views.agenda_ical', kwargs={'num': item.schedule.meeting.number, 'session_id': item.session.id, })
         }
         # "slotType": {
         #     "slug": item.slot_type.slug

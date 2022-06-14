@@ -215,7 +215,58 @@ const meetingEvents = computed(() => {
       }
       if (item.adjustedEnd > current) {
         // -> Pre/live event
-
+        // -> Jabber logs
+        links.push({
+          id: `lnk-${item.id}-logs`,
+          label: `Chat logs for ${item.acronym}`,
+          icon: 'chat-left-text',
+          href: `xmpp:${item.type === 'plenary' ? 'plenary' : item.acronym}@jabber.ietf.org?join`
+        })
+        // -> Video stream
+        if (item.links.videoStream) {
+          links.push({
+            id: `lnk-${item.id}-video`,
+            label: 'Video stream',
+            icon: 'camera-video',
+            href: item.links.videoStream
+          })
+        }
+        // -> Onsite tool
+        if (item.links.onsiteTool) {
+          links.push({
+            id: `lnk-${item.id}-onsitetool`,
+            label: 'Onsite tool',
+            icon: 'telephone-outbound',
+            href: item.links.onsiteTool
+          })
+        }
+        // -> Audio stream
+        if (item.links.audioStream) {
+          links.push({
+            id: `lnk-${item.id}-audio`,
+            label: 'Audio stream',
+            icon: 'headphones',
+            href: item.links.audioStream
+          })
+        }
+        // -> Remote call-in
+        if (item.links.remoteCallIn) {
+          links.push({
+            id: `lnk-${item.id}-remotecallin`,
+            label: 'Online conference',
+            icon: 'people',
+            href: item.links.remoteCallIn
+          })
+        }
+        // -> Calendar item
+        if (item.links.calendar) {
+          links.push({
+            id: `lnk-${item.id}-calendar`,
+            label: `Calendar (.ics) entry for ${item.acronym} session on ${item.adjustedStart.toFormat('fff')}`,
+            icon: 'calendar-check',
+            href: item.links.calendar
+          })
+        }
       } else {
         // -> Post event
         if (meetingNumberInt >= 60) {
@@ -228,8 +279,10 @@ const meetingEvents = computed(() => {
           })
         }
         if (meetingNumberInt >= 80) {
+          // -> Recordings
           for (const rec of item.links.recordings) {
             if (rec.url.indexOf('audio') > 0) {
+              // -> Audio
               links.push({
                 id: `lnk-${item.id}-audio-${rec.id}`,
                 label: rec.title,
@@ -237,6 +290,7 @@ const meetingEvents = computed(() => {
                 href: rec.url
               })
             } else if (rec.url.indexOf('youtu') > 0) {
+              // -> Youtube
               links.push({
                 id: `lnk-${item.id}-youtube-${rec.id}`,
                 label: rec.title,
@@ -244,6 +298,7 @@ const meetingEvents = computed(() => {
                 href: rec.url
               })
             } else {
+              // -> Others
               links.push({
                 id: `lnk-${item.id}-video-${rec.id}`,
                 label: rec.title,
