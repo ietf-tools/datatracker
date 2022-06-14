@@ -983,12 +983,15 @@ def label_wrap(label, items, joiner=',', max=50):
     lines = []
     if not items:
         return lines
-    line = '<div><label>%s:</label><ul class="pagination pagination-sm flex-wrap">' % (label)
-    for item in items:
-        line += f'<li class="page-item">{item}</li>'
+    line = '%s: %s' % (label, items[0])
+    for item in items[1:]:
+        if len(line)+len(joiner+' ')+len(item) > max:
+            lines.append(line+joiner)
+            line = ' '*(len(label)+len(': ')) + item
+        else:
+            line += joiner+' '+item
     if line:
         lines.append(line)
-    lines.append('</ul></div>')
     return lines
 
 def join_justified(left, right, width=72):
@@ -1012,14 +1015,6 @@ def join_justified(left, right, width=72):
     return lines
 
 def build_file_urls(doc):
-    titles = {
-        'txt' : 'Plaintext version of this document',
-        'xml' : 'XML source for this document',
-        'pdf' : 'PDF version of this document',
-        'html' : 'HTML version of this document',
-        'bibtex' : 'BibTex entry for this document',
-    }
-
     if isinstance(doc,Document) and doc.get_state_slug() == "rfc":
         name = doc.canonical_name()
         base_path = os.path.join(settings.RFC_PATH, name + ".")
@@ -1030,17 +1025,17 @@ def build_file_urls(doc):
 
         file_urls = []
         for t in found_types:
-            label = "text" if t == "txt" else t
-            file_urls.append((label, base + name + "." + t, titles[t]))
+            label = "plain text" if t == "txt" else t
+            file_urls.append((label, base + name + "." + t))
 
         if "pdf" not in found_types and "txt" in found_types:
-            file_urls.append(("pdf", base + "pdfrfc/" + name + ".txt.pdf", titles["pdf"]))
+            file_urls.append(("pdf", base + "pdfrfc/" + name + ".txt.pdf"))
 
         if "txt" in found_types:
-            file_urls.append(("html", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=name)), titles["html"]))
+            file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=name))))
             if doc.tags.filter(slug="verified-errata").exists():
-                file_urls.append(("w/errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number()), titles[t]))
-        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=name)), titles["bibtex"]))
+                file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
+        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=name))))
     else:
         base_path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".")
         possible_types = settings.IDSUBMIT_FILE_TYPES
@@ -1048,118 +1043,15 @@ def build_file_urls(doc):
         base = settings.IETF_ID_ARCHIVE_URL
         file_urls = []
         for t in found_types:
-            label = "text" if t == "txt" else t
-            file_urls.append((label, base + doc.name + "-" + doc.rev + "." + t, titles[t]))
+            label = "plain text" if t == "txt" else t
+            file_urls.append((label, base + doc.name + "-" + doc.rev + "." + t))
 
         if doc.text():
-            file_urls.append(("html", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev)), titles["html"]))
-            file_urls.append(("pdf", urlreverse('ietf.doc.views_doc.document_pdfized', kwargs=dict(name=doc.name, rev=doc.rev)), titles["pdf"]))
-        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name,rev=doc.rev)), titles["bibtex"]))
+            file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev))))
+            file_urls.append(("pdfized", urlreverse('ietf.doc.views_doc.document_pdfized', kwargs=dict(name=doc.name, rev=doc.rev))))
+        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name,rev=doc.rev))))
 
     return file_urls, found_types
-
-def build_doc_meta_block(doc, path):
-    def add_markup(path, doc, lines):
-        is_hst = doc.is_dochistory()
-        rev = doc.rev
-        if is_hst:
-            doc = doc.doc
-        name = doc.name
-        rfcnum = doc.rfc_number()
-        errata_url = settings.RFC_EDITOR_ERRATA_URL.format(rfc_number=rfcnum) if not is_hst else ""
-        ipr_url = "%s?submit=draft&amp;id=%s" % (urlreverse('ietf.ipr.views.search'), name)
-        for i, line in enumerate(lines):
-            # add draft links
-            line = re.sub(r'\b(draft-[-a-z0-9]+)\b', r'<a href="%s/\g<1>">\g<1></a>'%(path, ), line)
-            # add rfcXXXX to RFC links
-            line = re.sub(r' (rfc[0-9]+)\b', r' <a href="%s/\g<1>">\g<1></a>'%(path, ), line)
-            # add XXXX to RFC links
-            line = re.sub(r' ([0-9]{3,5})\b', r' <a href="%s/rfc\g<1>">\g<1></a>'%(path, ), line)
-            # add draft revision links
-            line = re.sub(r'>([0-9]{2})<', r'><a class="page-link" href="%s/%s-\g<1>">\g<1></a><'%(path, name, ), line)
-            if rfcnum:
-                # add errata link
-                line = re.sub(r'Errata exist', r'<a class="text-danger" href="%s">Errata exist</a>'%(errata_url, ), line)
-            if is_hst or not rfcnum:
-                # make current draft rev bold
-                line = re.sub(r'>(%s)<'%rev, r'><b>\g<1></b><', line)
-            line = re.sub(r'IPR declarations', r'<a class="text-danger" href="%s">IPR declarations</a>'%(ipr_url, ), line)
-            line = line.replace(r'[txt]', r'[<a href="%s">txt</a>]' % doc.get_href())
-            lines[i] = line
-        return lines
-    #
-    now = datetime.datetime.now()
-    draft_state = doc.get_state('draft')
-    meta = {}
-    if doc.type_id == 'draft':
-        revisions = []
-        ipr = doc.related_ipr()
-        if ipr:
-            meta['ipr'] = [ "IPR declarations" ]
-        if doc.is_rfc() and not doc.is_dochistory():
-            if not doc.name.startswith('rfc'):
-                meta['from'] = [ "%s-%s"%(doc.name, doc.rev) ]
-            meta['errata'] = [ "Errata exist" ] if doc.tags.filter(slug='errata').exists() else []
-            
-            meta['obsoletedby'] = [ document.rfc_number() for alias in doc.related_that('obs') for document in alias.docs.all() ]
-            meta['obsoletedby'].sort()
-            meta['updatedby'] = [ document.rfc_number() for alias in doc.related_that('updates') for document in alias.docs.all() ]
-            meta['updatedby'].sort()
-            meta['stdstatus'] = [ doc.std_level.name ]
-        else:
-            dd = doc.doc if doc.is_dochistory() else doc
-            revisions += [ '(%s)%s'%(d.name, ' '*(2-((len(d.name)-1)%3))) for d in dd.replaces() ]
-            revisions += doc.revisions()
-            if doc.is_dochistory() and doc.doc.is_rfc():
-                revisions += [ doc.doc.canonical_name() ]
-            else:
-                revisions += [ d.name for d in doc.replaced_by() ]
-            meta['versions'] = revisions
-            if not doc.is_dochistory and draft_state.slug == 'active' and now > doc.expires:
-                # Active past expiration date
-                meta['active'] = [ 'Document is active' ]
-                meta['state' ] = [ doc.friendly_state() ]
-            intended_std = doc.intended_std_level if doc.intended_std_level else None
-            if intended_std:
-                if intended_std.slug in ['ps', 'ds', 'std']:
-                    meta['stdstatus'] = [ "Standards Track" ]
-                else:
-                    meta['stdstatus'] = [ intended_std.name ]
-    elif doc.type_id == 'charter':
-        meta['versions'] = doc.revisions()
-    #
-    vers = ""
-    # Add markup to items that needs it.
-    if 'versions' in meta:
-        is_hst = doc.is_dochistory()
-        if is_hst:
-            doc = doc.doc
-        name = doc.name
-        rfcnum = doc.rfc_number()
-
-        vers = '<div><label>Versions:</label><ul class="pagination pagination-sm flex-wrap">'
-        for v in meta['versions']:
-            vers += '<li class="page-item'
-            if v == doc.rev:
-                vers += ' active'
-            vers += f'"><a class="page-link" href="{path}/{name}-{v}">{v}</a>'
-        vers += '</ul></div>'
-
-        # vers = label_wrap('Versions', vers, joiner="")
-    # for label in ['Obsoleted by', 'Updated by', 'From' ]:
-    #     item = label.replace(' ','').lower()
-    #     if item in meta and meta[item]:
-    #         meta[item] = label_wrap(label, meta[item])
-    #
-
-    # for item in [ 'from', 'versions', 'obsoletedby', 'updatedby', ]:
-    #     if item in meta and meta[item]:
-    #         left += meta[item]
-    # for item in ['stdstatus', 'active', 'state', 'ipr', 'errata', ]:
-    #     if item in meta and meta[item]:
-    #         right += meta[item]
-    return vers
-
 
 def augment_docs_and_user_with_user_info(docs, user):
     """Add attribute to each document with whether the document is tracked

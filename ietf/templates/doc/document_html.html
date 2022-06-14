@@ -38,84 +38,11 @@
             {{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}
         </div>
         <div class="meta-info noprint col">
-            <div class="position-fixed border-start p-3">
-                {% include "doc/document_draft.html" with sidebar=True %}
-{% comment %}
-                <hr>
-                <div class="mb-3 small fw-bold">
-                    {% if doc.get_state_slug == "rfc" %}
-                        RFC {{ doc.rfc_number }}
-                    {% else %}
-                       {{ doc.name }}-{{ doc.rev }}
-                    {% endif %}
-                    <p>{{ doc.title }}</p>
-                </div>
-                <div class="mb-3">
-                    <a class="btn btn-outline-primary btn-sm" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}" title="Datatracker information for this document">Datatracker</a>
-                    {% if has_errata %}
-                        <a class="btn btn-outline-danger btn-sm" href="{{ settings.RFC_EDITOR_ERRATA_URL }}rfc{{ doc.rfc_number }}">Errata exist</a>
-                    {% endif %}
-                    {% if doc.related_ipr %}
-                        <a class="btn btn-outline-primary btn-sm" href="{% url 'ietf.ipr.views.search' %}?submit=draft&amp;id={{ doc.name }}">IPR declarations</a>
-                    {% endif %}
-                </div>
-                {% if obsoleted_by %}
-                    <div class="mb-3">
-                        <p class="my-1 fw-bold small">Obsoleted by:</p>
-                        {% for oby in obsoleted_by %}
-                        {{oby}}
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                {% if updated_by %}
-                    <div class="mb-3">
-                        <p class="my-1 fw-bold small">Updated by:</p>
-                        {% for uby in updated_by %}
-                        {{uby}}
-                        {% endfor %}
-                    </div>
-                {% endif %}
-
-
-
-                {% if file_urls %}
-                    <div class="mb-3">
-                        <p class="my-1 fw-bold small">Formats:</p>
-                        <div class="btn-group btn-group-sm">
-                        {% for label, url, title in file_urls %}
-                            <a class="btn btn-outline-primary btn-sm" href="{{ url }}" title="{{ title }}">
-                                <i class="bi bi-file-{% if label == 'pdf' or label == 'pdfized' %}pdf{% elif label == 'xml' or label == 'htmlized' or label == 'html' %}code{% elif label == 'bibtex' %}ruled{% elif label == 'text' %}text{% elif label == 'w/errata' %}diff{% endif %}">
-                                </i>
-                                {{ label }}
-                            </a>
-                        {% endfor %}
-                        </div>
-                    </div>
-                {% else %}
-                    (not online)
-                {% endif %}
-                {% if doc.group.acronym != 'none' %}
-                    <div class="mb-3">
-                        <a class="btn btn-outline-primary btn-sm" href="{% url 'ietf.group.views.group_home' acronym=doc.group.acronym %}" title="The working group handling this document">{{ doc.group.acronym|upper }} group</a>
-                    </div>
-                {% endif %}
-                <div class="mb-3">
-                    <a class="btn btn-outline-primary btn-sm" href="mailto:{{ doc.name }}@ietf.org?subject={{ doc.name}}" title="Send email to the document authors">Email authors</a>
-                </div>
-                {% if doc.rev != "00" %}
-                    <div class="mb-3">
-                        <div class="btn-group btn-group-sm">
-                            <a class="btn btn-outline-primary" href="{{ settings.RFCDIFF_BASE_URL }}?difftype=--hwdiff&amp;url2={{ doc.name }}-{{ doc.rev }}.txt" title="Inline diff (wdiff)">Inline wdiff</a>
-                            <a class="btn btn-outline-primary" href="{{ settings.RFCDIFF_BASE_URL }}?url2={{ doc.name }}-{{ doc.rev }}.txt" title="Side-by-side diff">Diff</a>
-                        </div>
-                    </div>
-                {% endif %}
-                <div class="mb-3">
-                    <a class="btn btn-outline-primary btn-sm" href="{settings.IDNITS_BASE_URL}?url={settings.IETF_ID_ARCHIVE_URL}{doc.name}-{doc.rev}.txt" title="Run an idnits check of this document">Nits</a>
-                </div>
-                <small>{% include "doc/revisions_list.html" %}</small>
-            </div>
-{% endcomment %}
+            <div class="position-fixed border-start px-3">
+                    <a class="btn btn-primary btn-sm mb-3" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}" title="Datatracker information for this document">Datatracker page</a>
+                <table class="table table-sm table-borderless">
+                    {% include "doc/document_info.html" with sidebar=True %}
+                </table>
         </div>
     </div>
 </body>

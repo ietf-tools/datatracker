@@ -1,9 +1,11 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% origin %}
-<label class="my-1 fw-bold">Versions:</label>
-<nav class="mb-3">
-    <ul class="pagination pagination-sm flex-wrap">
+{% if not document_html %}
+    <label class="my-1 fw-bold">Versions:</label>
+    <nav class="mb-3">
+{% endif %}
+    <ul class="pagination pagination-sm flex-wrap{% if document_html %} my-0{% endif %}">
         {% for rev in revisions %}
             <li class="page-item {% if rev == doc.rev %}{% if snapshot or doc.get_state_slug != 'rfc' %}active{% endif %}{% endif %}">
                 <a class="page-link"
@@ -18,4 +20,6 @@
             </li>
         {% endfor %}
     </ul>
-</nav>
+{% if not document_html %}
+    </nav>
+{% endif %}
