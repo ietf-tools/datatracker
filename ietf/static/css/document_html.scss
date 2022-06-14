@@ -28,7 +28,7 @@
 // @import "bootstrap/scss/accordion";
 // @import "bootstrap/scss/breadcrumb";
 @import "bootstrap/scss/pagination";
-// @import "bootstrap/scss/badge";
+@import "bootstrap/scss/badge";
 // @import "bootstrap/scss/alert";
 // @import "bootstrap/scss/progress";
 // @import "bootstrap/scss/list-group";
@@ -56,19 +56,19 @@ url("npm:bootstrap-icons/font/fonts/bootstrap-icons.woff") format("woff");
 
 @media screen {
     @include media-breakpoint-only(xs) {
-        .htmlized {
+        .rfcmarkup {
             font-size: 8.25pt;
         }
     }
 
     @include media-breakpoint-up(sm) {
-        .htmlized {
+        .rfcmarkup {
             font-size: 11pt;
         }
     }
 
     @include media-breakpoint-up(lg) {
-        .htmlized {
+        .rfcmarkup {
             font-size: 12pt;
         }
     }
@@ -93,7 +93,7 @@ h6,
     font-size: 1em;
 }
 
-.htmlized {
+.rfcmarkup {
     font-family: var(--bs-font-monospace);
     width: 72ch;
 }

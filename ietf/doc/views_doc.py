@@ -766,7 +766,29 @@ def document_raw_id(request, name, rev=None, ext=None):
         raise Http404
 
 def document_html(request, name, rev=None):
-    return document_main(request, name, rev=None, document_html=True)
+    found = fuzzy_find_documents(name, rev)
+    num_found = found.documents.count()
+    if num_found == 0:
+        raise Http404("Document not found: %s" % name)
+    if num_found > 1:
+        raise Http404("Multiple documents matched: %s" % name)
+
+    if found.matched_name.startswith('rfc') and name != found.matched_name:
+         return redirect('ietf.doc.views_doc.document_html', name=found.matched_name)
+
+    doc = found.documents.get()
+
+    if found.matched_rev or found.matched_name.startswith('rfc'):
+        rev = found.matched_rev
+    else:
+        rev = doc.rev
+    if rev:
+        doc = doc.history_set.filter(rev=rev).first() or doc.fake_history_obj(rev)
+
+    if not os.path.exists(doc.get_file_name()):
+        raise Http404("File not found: %s" % doc.get_file_name())
+
+    return document_main(request, name, rev=rev, document_html=True)
 
 def document_pdfized(request, name, rev=None, ext=None):
 
