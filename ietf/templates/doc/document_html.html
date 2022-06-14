@@ -17,6 +17,7 @@
         </title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="{% static 'ietf/css/document_html.css' %}">
+        <script src="{% static 'ietf/js/document_html.js' %}"></script>
         <style>
             {#  TODO: we want I-Ds to be standalone; include instead of linking #}
         </style>
@@ -33,16 +34,54 @@
         {% include "base/icons.html" %}
 </head>
 <body {% block bodyAttrs %}{% endblock %}>
+
+    <nav class="navbar navbar-light bg-light px-4 fixed-top d-print-none d-md-none">
+      <div class="container-fluid">
+
+        <a class="nav-link ps-1 small" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">
+            {% if doc.get_state_slug == "rfc" %}
+                RFC {{ doc.rfc_number }}
+            {% else %}
+                {{ doc.name }}-{{ doc.rev }}
+            {% endif %}
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#docinfo" aria-controls="docinfo" aria-expanded="false" aria-label="Show document information">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+
+        <div class="collapse overflow-scroll w-100" id="docinfo">
+          <div class="bg-light p-0 overflow-scroll">
+
+            <table class="table table-sm table-borderless small">
+                <tbody class="meta">
+                    <tr>
+                        <th scope="row"></th>
+                        <th scope="row">Title</th>
+                        <td class="edit"></td>
+                        <td>{{ doc.title }}</td>
+                    </tr>
+                </tbody>
+                {% include "doc/document_info.html" with sidebar=False %}
+            </table>
+
+          </div>
+        </div>
+      </div>
+    </nav>
+
     <div class="row justify-content-start g-0">
-        <div class="htmlized col me-3">
+        <div class="htmlized col pt-5 mt-4 pt-md-0 mt-md-2 m-2 m-lg-4 me-3 lh-sm">
             {{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}
         </div>
-        <div class="meta-info noprint col">
-            <div class="position-fixed border-start px-3">
-                    <a class="btn btn-primary btn-sm mb-3" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}" title="Datatracker information for this document">Datatracker page</a>
+        <div class="d-print-none col d-none d-md-block">
+            <div class="position-fixed border-start pt-2 pt-lg-4 px-3 sidebar overflow-scroll">
+                <a class="btn btn-primary btn-sm mb-3" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}" title="Datatracker information for this document">Datatracker page</a>
                 <table class="table table-sm table-borderless">
                     {% include "doc/document_info.html" with sidebar=True %}
                 </table>
+            </div>
         </div>
     </div>
 </body>
