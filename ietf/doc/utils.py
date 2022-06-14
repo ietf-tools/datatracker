@@ -979,41 +979,6 @@ def get_search_cache_key(params):
     key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode('utf-8')).hexdigest()
     return key
     
-def label_wrap(label, items, joiner=',', max=50):
-    lines = []
-    if not items:
-        return lines
-    line = '%s: %s' % (label, items[0])
-    for item in items[1:]:
-        if len(line)+len(joiner+' ')+len(item) > max:
-            lines.append(line+joiner)
-            line = ' '*(len(label)+len(': ')) + item
-        else:
-            line += joiner+' '+item
-    if line:
-        lines.append(line)
-    return lines
-
-def join_justified(left, right, width=72):
-    count = max(len(left), len(right))
-    left = left + ['']*(count-len(left))
-    right = right + ['']*(count-len(right))
-    lines = []
-    i = 0
-    while True:
-        l = left[i]
-        r = right[i]
-        if len(l)+1+len(r) > width:
-            left = left + ['']
-            right = right[:i] + [''] + right[i:]
-            r = right[i]
-            count += 1
-        lines.append( l + ' ' + r.rjust(width-len(l)-1) )
-        i += 1
-        if i >= count:
-            break
-    return lines
-
 def build_file_urls(doc):
     if isinstance(doc,Document) and doc.get_state_slug() == "rfc":
         name = doc.canonical_name()
