@@ -1,15 +1,9 @@
-// Only import what we need:
-// https://getbootstrap.com/docs/5.1/customize/optimize/
+import { Tooltip as Tooltip, Button as Button, Collapse as Collapse } from 'bootstrap';
 
-// import "bootstrap/js/dist/alert";
-import "bootstrap/js/dist/button";
-// import "bootstrap/js/dist/carousel";
-import "bootstrap/js/dist/collapse";
-// import "bootstrap/js/dist/dropdown";
-// import "bootstrap/js/dist/modal";
-// import "bootstrap/js/dist/offcanvas";
-// import "bootstrap/js/dist/popover";
-// import "bootstrap/js/dist/scrollspy";
-// import "bootstrap/js/dist/tab";
-// import "bootstrap/js/dist/toast";
-import "bootstrap/js/dist/tooltip";
+// Use the Bootstrap tooltip plugin for all elements with a title attribute
+document.addEventListener("DOMContentLoaded", function (event) {
+    const tooltipTriggerList = document.querySelectorAll(
+        '[title]:not([title=""])');
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl =>
+        new Tooltip(tooltipTriggerEl));
+});
