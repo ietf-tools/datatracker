@@ -113,6 +113,29 @@ pre {
     color: $gray-500;
 }
 
+tbody.meta tr {
+
+    td:first-child,
+    th:first-child,
+    td.edit {
+        display: none;
+    }
+
+    th,
+    td {
+        display: block;
+    }
+
+    td {
+        margin-bottom: map.get($spacers, 2);
+    }
+}
+
+// Add some padding when there are multiple buttons in a line than can wrap
+.buttonlist .btn {
+    margin-bottom: map.get($spacers, 1);
+}
+
 @media print {
     body {
         margin: 0;
