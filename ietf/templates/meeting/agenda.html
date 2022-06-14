@@ -9,17 +9,60 @@
 
 {% block title %}
     IETF {{ schedule.meeting.number }} Meeting Agenda
-    {% if "-utc" in request.path %}(UTC){% endif %}
-    {% if personalize %}Personalization{% endif %}
 {% endblock %}
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
     <!-- AGENDA VUE COMPONENT -->
     {{ schedule_json|json_script:"agenda-data" }}
     {% vite_asset 'client/agenda/main.js' %}
 {% endblock %}
-{% block morecss %}#weekview iframe { height: 25em; }{% endblock %}
+{% block morecss %}
+@keyframes initspinner {
+    to { transform: rotate(360deg); }
+}
+
+#app-agenda-loading {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 60px);
+    background-color: rgba(255,255,255,.75);
+    z-index: 2000000000;
+    backdrop-filter: blur(10px);
+}
+
+#app-agenda-loading:before {
+    content: '';
+    box-sizing: border-box;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 50px;
+    height: 50px;
+    margin-top: -25px;
+    margin-left: -25px;
+    border-radius: 50%;
+    border-top: 2px solid #999;
+    border-right: 2px solid transparent;
+    animation: initspinner .6s linear infinite;
+    z-index: 2000000000;
+}
+
+#app-agenda-loading:after {
+    content: 'Loading agenda...';
+    position: absolute;
+    text-align: center;
+    top: 50%;
+    margin-top: -100px;
+    left: 0;
+    right: 0;
+    font-weight: 500;
+    color: #999;
+    z-index: 2000000000;
+}
+{% endblock %}
 {% block content %}
     {% origin %}
     <div id="app-agenda"></div>
+    <div id="app-agenda-loading"></div>
 {% endblock %}

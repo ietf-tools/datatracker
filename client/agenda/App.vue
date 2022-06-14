@@ -5,6 +5,7 @@ n-theme
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
 import { NMessageProvider } from 'naive-ui'
 
 import { useAgendaStore } from './store'
@@ -19,5 +20,9 @@ const agendaStore = useAgendaStore()
 // INIT
 
 agendaStore.fetch()
+
+onMounted(() => {
+  document.querySelector('#app-agenda-loading').remove()
+})
 
 </script>
