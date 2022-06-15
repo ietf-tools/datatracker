@@ -125,16 +125,8 @@
 
             {% block morecss %}{% endblock %}
         </style>
-        {% block pagehead %}{% endblock %}
-        {% if server_mode and server_mode == "production" %}
-            <link rel="shortcut icon"
-                  href="{% static 'ietf/images/ietf-icon-blue3.png' %}">
-        {% else %}
-            <link rel="shortcut icon"
-                  href="{% static 'ietf/images/ietf-icon-red3.png' %}">
-        {% endif %}
-        <link rel="apple-touch-icon"
-              href="{% static 'ietf/images/apple-touch-icon.png' %}">
+        {% block pagehead %}{% endblock %}\
+        {% include "base/icons.html" %}
     </head>
     <body {% block bodyAttrs %}{% endblock %}>
         <div class="content" id="content">

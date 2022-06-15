@@ -57,8 +57,8 @@ $popover-max-width: 100%;
 @import "bootstrap/scss/utilities/api";
 
 // Make the bootstrap icons available.
-$bootstrap-icons-font-src: url("npm:bootstrap-icons/font/fonts/bootstrap-icons.woff2?a97b3594ad416896e15824f6787370e0") format("woff2"),
-url("npm:bootstrap-icons/font/fonts/bootstrap-icons.woff?a97b3594ad416896e15824f6787370e0") format("woff") !default;
+$bootstrap-icons-font-src: url("npm:bootstrap-icons/font/fonts/bootstrap-icons.woff2") format("woff2"),
+url("npm:bootstrap-icons/font/fonts/bootstrap-icons.woff") format("woff");
 @import "bootstrap-icons/font/bootstrap-icons";
 
 // Leave room for fixed-top navbar...
@@ -82,9 +82,18 @@ pre {
     margin-bottom: 0;
 }
 
-// Make the font size choice cascade down into group menu dropdowns.
-.leftmenu li>ul {
-    font-size: inherit;
+// Size the navbar brand image.
+.navbar-brand img {
+    height: auto;
+    width: 60px;
+}
+
+.leftmenu {
+    width: 13em;
+
+    li>ul {
+        font-size: inherit; // Make the font size choice cascade down into group menu dropdowns.
+    }
 }
 
 // Use fixed lengths for the first three columns of "meta" tables.
@@ -100,7 +109,7 @@ table tbody.meta {
         width: 7em;
     }
 
-    // See https://getbootstrap.com/docs/5.0/layout/breakpoints/#media-queries
+    // See https://getbootstrap.com/docs/5.1/layout/breakpoints/#media-queries
     @include media-breakpoint-up(md) {
 
         th:first-child,
@@ -171,7 +180,6 @@ table tbody.meta {
 // Style the righthand navigation panel
 #righthand-panel {
     max-height: 80vh;
-    z-index: -1;
 }
 
 #righthand-nav {
@@ -251,7 +259,7 @@ table tbody.meta {
     border: 2 * $table-border-width solid #000;
 }
 
-// See https://getbootstrap.com/docs/5.0/customize/color/#all-colors
+// See https://getbootstrap.com/docs/5.1/customize/color/#all-colors
 $color-discuss: $red-500;
 $color-yes: $green-500;
 $color-noobj: $green-100;

@@ -3651,13 +3651,6 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"flot@npm:4.2.2":
-  version: 4.2.2
-  resolution: "flot@npm:4.2.2"
-  checksum: 81910f7bc2b3808bcfc914c25d8c8119254b4401ce638ecef68568b29975bb22e25230f01cab9751c6a282b0b659b2a6d06d65f4b4d79257c47f2e966629f8b4
-  languageName: node
-  linkType: hard
-
 "forever-agent@npm:~0.6.1":
   version: 0.6.1
   resolution: "forever-agent@npm:0.6.1"
@@ -5972,7 +5965,6 @@ browserlist@latest:
     eslint-plugin-node: 11.1.0
     eslint-plugin-promise: 6.0.0
     eslint-plugin-vue: 8.6.0
-    flot: 4.2.2
     highcharts: 10.1.0
     html-validate: 7.1.1
     jquery: 3.6.0

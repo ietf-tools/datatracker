@@ -11,12 +11,12 @@
             <div id="{{ session.group.acronym }}">
                 <a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{ session.group.acronym }}</a>
             </div>
-            {% if session.group.state_id == "bof" %}<span class="badge bg-success">BOF</span>{% endif %}
+            {% if session.group.state_id == "bof" %}<span class="badge rounded-pill bg-success">BOF</span>{% endif %}
         {% endif %}
     </td>
     {% if session.all_meeting_sessions_cancelled %}
         <td colspan="4">
-            <span class="badge bg-danger">Session cancelled</span>
+            <span class="badge rounded-pill bg-danger">Session cancelled</span>
         </td>
     {% else %}
         <td>
@@ -34,7 +34,7 @@
                 {% endif %}
             {% else %}
                 {% if show_agenda == "True" and not meeting.proceedings_final %}
-                    <span class="badge bg-warning">No agenda</span>
+                    <span class="badge rounded-pill bg-warning">No agenda</span>
                     <br>
                 {% endif %}
             {% endif %}
@@ -52,7 +52,7 @@
                 {% endif %}
             {% else %}
                 {% if show_agenda == "True" and not meeting.proceedings_final %}
-                    <span class="badge bg-warning">No minutes</span>
+                    <span class="badge rounded-pill bg-warning">No minutes</span>
                     <br>
                 {% endif %}
             {% endif %}
@@ -97,7 +97,7 @@
                     <a href="{{ slide|meeting_href:meeting }}">{{ slide.title|clean_whitespace }}</a>
                     <br>
                 {% empty %}
-                    {% if not meeting.proceedings_final %}<span class="badge bg-warning">No slides</span>{% endif %}
+                    {% if not meeting.proceedings_final %}<span class="badge rounded-pill bg-warning">No slides</span>{% endif %}
                 {% endfor %}
             {% endwith %}
         </td>
@@ -107,7 +107,7 @@
                     <a href="{% url "ietf.doc.views_doc.document_main" name=draft.canonical_name %}">{{ draft.canonical_name }}</a>
                     <br>
                 {% empty %}
-                    {% if not meeting.proceedings_final %}<span class="badge bg-warning">No drafts</span>{% endif %}
+                    {% if not meeting.proceedings_final %}<span class="badge rounded-pill bg-warning">No drafts</span>{% endif %}
                 {% endfor %}
             {% endwith %}
         </td>
