@@ -224,8 +224,8 @@ def state_age_colored(doc):
         else:
             title = ""
         return mark_safe(
-            '<span class="badge %s" %s><i class="bi bi-clock-fill"></i> %d day%s</span>'
-            % (class_name, title, days, "s" if days != 1 else "")
+            '<span class="badge %s" %s><i class="bi bi-clock-fill"></i> %d</span>'
+            % (class_name, title, days)
         )
     else:
         return ""
