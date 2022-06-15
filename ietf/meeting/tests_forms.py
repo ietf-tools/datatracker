@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings, RequestFactory
 
-from ietf.group.factories import GroupFactory, RoleFactory
+from ietf.group.factories import GroupFactory
 from ietf.meeting.forms import (FileUploadForm, ApplyToAllFileUploadForm, InterimSessionModelForm,
                                 InterimMeetingModelForm)
 from ietf.person.factories import PersonFactory

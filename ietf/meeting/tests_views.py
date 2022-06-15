@@ -6504,10 +6504,8 @@ class HasMeetingsTests(TestCase):
 
         url = urlreverse('ietf.meeting.views.interim_request')
         for gf in GroupFeatures.objects.filter(has_meetings=True):
-            debug.show('gf')
             meeting_count = 0
             for role in gf.groupman_roles:
-                debug.show('role')
                 role = RoleFactory(group__type_id=gf.type_id, name_id=role)
                 self.do_request_interim(url, role.group, role.person.user, meeting_count)
             for authrole in gf.groupman_authroles:
