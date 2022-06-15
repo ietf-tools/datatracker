@@ -410,8 +410,13 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'ietf.urls'
 
+DJANGO_VITE_ASSETS_PATH = os.path.join(BASE_DIR, 'static/dist-neue')
+if DEBUG:
+    DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, 'static/dist-neue/manifest.json')
+
 # Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (
+    DJANGO_VITE_ASSETS_PATH,
     os.path.join(BASE_DIR, 'static/dist'),
     os.path.join(BASE_DIR, 'secr/static/dist'),
 )
@@ -430,6 +435,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # External apps 
     'analytical',
+    'django_vite',
     'django_bootstrap5',
     'corsheaders',
     'django_markup',

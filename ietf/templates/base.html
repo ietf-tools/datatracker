@@ -5,6 +5,7 @@
 {% load origin %}
 {% origin %}
 {% load django_bootstrap5 %}
+{% load django_vite %}
 <html lang="en">
     <head>
         {% analytical_head_top %}
@@ -22,6 +23,7 @@
         <style>
             {% block morecss %}{% endblock %}
         </style>
+        {% vite_hmr_client %}
         {% block pagehead %}{% endblock %}
         {% include "base/icons.html" %}
         <script src="{% static 'ietf/js/ietf.js' %}"></script>

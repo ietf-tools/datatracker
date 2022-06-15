@@ -1554,6 +1554,21 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
     rendered_page = render(request, "meeting/"+base+ext, {
+        "schedule_json": {
+            "meeting": {
+                "number": schedule.meeting.number,
+                "city": schedule.meeting.city,
+                "startDate": schedule.meeting.date.isoformat(),
+                "endDate": schedule.meeting.end_date().isoformat(),
+                "updated": updated,
+                "timezone": meeting.time_zone,
+                "infoNote": schedule.meeting.agenda_info_note
+            },
+            "categories": filter_organizer.get_filter_categories(),
+            "isCurrentMeeting": is_current_meeting,
+            "useHedgeDoc": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
+            "schedule": list(map(agenda_extract_shedule, filtered_assignments))
+        },
         "personalize": False,
         "schedule": schedule,
         "filtered_assignments": filtered_assignments,
@@ -1568,6 +1583,65 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
     }, content_type=mimetype[ext])
 
     return rendered_page
+
+def agenda_extract_shedule (item):
+    return {
+        "id": item.id,
+        "room": item.room_name,
+        "location": {
+            "short": item.timeslot.location.floorplan.short,
+            "name": item.timeslot.location.floorplan.name,
+        } if (item.timeslot.location and item.timeslot.location.floorplan) else {},
+        "acronym": item.acronym,
+        "duration": item.timeslot.duration.seconds,
+        "name": item.timeslot.name,
+        "startDateTime": item.timeslot.time.isoformat(),
+        "status": item.session.current_status,
+        "type": item.session.type.slug,
+        "isBoF": item.session.historic_group.state_id == "bof",
+        "filterKeywords": item.filter_keywords,
+        "groupAcronym": item.session.historic_group.acronym if item.session.historic_group else item.session.group.acronym,
+        "groupName": item.session.historic_group.name,
+        "groupParent": {
+            "acronym": item.session.historic_group.parent.acronym,
+            "name": item.session.historic_group.parent.name,
+            "description": item.session.historic_group.parent.description
+        } if item.session.historic_group.parent else {},
+        "note": item.session.agenda_note,
+        "remoteInstructions": item.session.remote_instructions,
+        "flags": {
+            "agenda": True if item.session.agenda() is not None else False,
+            "showAgenda": True if (item.session.agenda() is not None or item.session.remote_instructions or item.session.agenda_note) else False
+        },
+        "agenda": {
+            "url": item.session.agenda().get_href()
+        } if item.session.agenda() is not None else {
+            "url": None
+        },
+        "orderInMeeting": item.session.order_in_meeting(),
+        "short": item.session.short if item.session.short else item.session.short_name,
+        "sessionToken": item.session.docname_token_only_for_multiple(),
+        "links": {
+            # "jabber": item.session.jabber_room_name
+            "recordings": list(map(agenda_extract_recording, item.session.recordings())),
+            "videoStream": item.timeslot.location.video_stream_url() if item.timeslot.location else "",
+            "audioStream": item.timeslot.location.audio_stream_url() if item.timeslot.location else "",
+            "webex": item.timeslot.location.webex_url() if item.timeslot.location else "",
+            "onsiteTool": item.timeslot.location.onsite_tool_url() if item.timeslot.location else "",
+            "calendar": reverse('ietf.meeting.views.agenda_ical', kwargs={'num': item.schedule.meeting.number, 'session_id': item.session.id, })
+        }
+        # "slotType": {
+        #     "slug": item.slot_type.slug
+        # }
+    }
+
+def agenda_extract_recording (item):
+    return {
+        "id": item.id,
+        "name": item.name,
+        "title": item.title,
+        "url": item.external_url
+    }
 
 def agenda_csv(schedule, filtered_assignments):
     response = HttpResponse(content_type="text/csv; charset=%s"%settings.DEFAULT_CHARSET)
