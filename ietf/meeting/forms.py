@@ -14,15 +14,14 @@ from django import forms
 from django.conf import settings
 from django.core import validators
 from django.core.exceptions import ValidationError
-from django.db.models import Q
 from django.forms import BaseInlineFormSet
 from django.utils.functional import cached_property
 
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
-from ietf.group.models import Group, GroupFeatures
-from ietf.ietfauth.utils import has_role
+from ietf.group.models import Group
+from ietf.group.utils import groups_managed_by
 from ietf.meeting.models import Session, Meeting, Schedule, countries, timezones, TimeSlot, Room
 from ietf.meeting.helpers import get_next_interim_number, make_materials_directories
 from ietf.meeting.helpers import is_interim_meeting_approved, get_next_agenda_name
@@ -184,29 +183,14 @@ class InterimMeetingModelForm(forms.ModelForm):
             return True
 
     def set_group_options(self):
-        '''Set group options based on user accessing the form'''
-        if has_role(self.user, "Secretariat"):
-            return  # don't reduce group options
-        q_objects = Q()
-        if has_role(self.user, "Area Director"):
-            q_objects.add(Q(type__in=["wg", "ag", "team"], state__in=("active", "proposed", "bof")), Q.OR)
-        if has_role(self.user, "IRTF Chair"):
-            q_objects.add(Q(type__in=["rg", "rag"], state__in=("active", "proposed")), Q.OR)
-        if has_role(self.user, "WG Chair"):
-            q_objects.add(Q(type="wg", state__in=("active", "proposed", "bof"), role__person=self.person, role__name="chair"), Q.OR)
-        if has_role(self.user, "RG Chair"):
-            q_objects.add(Q(type="rg", state__in=("active", "proposed"), role__person=self.person, role__name="chair"), Q.OR)
-        if has_role(self.user, "Program Lead") or has_role(self.user, "Program Chair"):
-            q_objects.add(Q(type="program", state__in=("active", "proposed"), role__person=self.person, role__name__in=["chair", "lead"]), Q.OR)
-
-        # Only apply q_objects if it is not empty, otherwise filter(Q()) passes everything through!
-        if q_objects:
-            queryset = Group.objects.filter(q_objects).distinct().order_by('acronym')
-        else:
-            queryset = Group.objects.none()
-
+        """Set group options based on user accessing the form"""
+        queryset = groups_managed_by(
+            self.user,
+            Group.objects.with_meetings(),
+        ).filter(
+            state_id__in=['active', 'proposed', 'bof']
+        ).order_by('acronym')
         self.fields['group'].queryset = queryset
-
         # if there's only one possibility make it the default
         if len(queryset) == 1:
             self.fields['group'].initial = queryset[0]
