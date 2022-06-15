@@ -48,9 +48,13 @@
             )
 
       .alert.alert-warning.mt-3(v-if='agendaStore.isCurrentMeeting') #[strong Note:] IETF agendas are subject to change, up to and during a meeting.
-      .agenda-infonote.my-3(v-if='agendaStore.meeting.infoNote', v-html='agendaStore.meeting.infoNote')
+      .agenda-infonote.mt-3(v-if='agendaStore.meeting.infoNote', v-html='agendaStore.meeting.infoNote')
 
-      .agenda-search.mb-3(v-if='agendaStore.searchVisible')
+      // -----------------------------------
+      // -> Search Bar
+      // -----------------------------------
+
+      .agenda-search.mt-3(v-if='agendaStore.searchVisible')
         n-input-group
           n-input(
             v-model:value='state.searchText'
@@ -80,9 +84,9 @@
       agenda-schedule-calendar
 
       // -----------------------------------
-      // -> SCHEDULE LIST
+      // -> Schedule List
       // -----------------------------------
-      agenda-schedule-list(ref='schdList')
+      agenda-schedule-list.mt-3(ref='schdList')
 
     // -----------------------------------
     // -> Anchored Day Quick Access Menu
