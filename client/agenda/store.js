@@ -16,6 +16,7 @@ export const useAgendaStore = defineStore('agenda', {
     mobileMode: window.innerWidth < 1400,
     pickerMode: false,
     pickerModeView: false,
+    pickedEvents: [],
     schedule: [],
     searchText: '',
     searchVisible: false,
@@ -37,8 +38,15 @@ export const useAgendaStore = defineStore('agenda', {
         if (state.selectedCatSubs.length > 0 && !s.filterKeywords.some(k => state.selectedCatSubs.includes(k))) {
           return false
         }
+
         // -> Don't show events of type lead
         if (s.type === 'lead') { return false }
+
+        // -> Filter individual events if picker mode active
+        if (state.pickerMode && state.pickerModeView && !state.pickedEvents.includes(s.id)) {
+          return false
+        }
+
         // -> Filter by search text if present
         if (state.searchVisible && state.searchText) {
           const searchStr = `${s.name} ${s.groupName} ${s.room} ${s.note}`
@@ -78,7 +86,8 @@ export const useAgendaStore = defineStore('agenda', {
             audioStream: formatLinkUrl(s.links.audioStream, s, state.meeting.number),
             remoteCallIn: remoteCallInUrl,
             calendar: s.links.calendar
-          }
+          },
+          sessionKeyword: s.sessionToken ? `${s.groupAcronym}-${s.sessionToken}` : s.groupAcronym
         }
       })
     },
@@ -128,6 +137,12 @@ function formatLinkUrl (url, session, meetingNumber) {
     .replace('{order_number}', session.orderInMeeting) : url
 }
 
+/**
+ * Find the first URL in text matching a conference domain
+ * 
+ * @param {String} txt 
+ * @returns First URL found
+ */
 function findFirstConferenceUrl (txt) {
   try {
     const fUrl = txt.match(urlRe)

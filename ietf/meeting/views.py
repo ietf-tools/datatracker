@@ -1620,6 +1620,7 @@ def agenda_extract_shedule (item):
         },
         "orderInMeeting": item.session.order_in_meeting(),
         "short": item.session.short if item.session.short else item.session.short_name,
+        "sessionToken": item.session.docname_token_only_for_multiple(),
         "links": {
             # "jabber": item.session.jabber_room_name
             "recordings": list(map(agenda_extract_recording, item.session.recordings())),

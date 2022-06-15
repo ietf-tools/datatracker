@@ -141,7 +141,10 @@ const downloadIcsOptions = [
 function downloadIcs (key) {
   message.loading('Generating calendar file... Download will begin shortly.')
   let icsUrl = ''
-  if (agendaStore.selectedCatSubs.length > 0) {
+  if (agendaStore.pickerMode) {
+    const sessionKeywords = agendaStore.scheduleAdjusted.map(s => s.sessionKeyword)
+    icsUrl = `/meeting/${agendaStore.meeting.number}/agenda.ics?show=${sessionKeywords.join(',')}`
+  } else if (agendaStore.selectedCatSubs.length > 0) {
     icsUrl = `/meeting/${agendaStore.meeting.number}/agenda.ics?show=${agendaStore.selectedCatSubs.join(',')}`
   } else {
     icsUrl = `/meeting/${agendaStore.meeting.number}/agenda.ics`
@@ -167,7 +170,7 @@ function scrollToNow (ev) {
 
   const current = DateTime.local().setZone(agendaStore.timezone)
 
-  // -> Find last event to be before current time
+  // -> Find last event before current time
   let lastEventId = null
   for(const sh of agendaStore.scheduleAdjusted) {
     if (sh.adjustedStart <= current) {

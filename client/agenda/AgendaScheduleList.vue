@@ -1,114 +1,115 @@
 <template lang="pug">
 .agenda-table.mb-3
-  table
-    thead
-      tr
-        th.agenda-table-head-check(v-if='agendaStore.pickerMode') &nbsp;
-        th.agenda-table-head-time Time
-        th.agenda-table-head-location Location
-        th.agenda-table-head-event(colspan='3') Event
-    tbody
-      tr.agenda-table-display-noresult(
-        v-if='!meetingEvents || meetingEvents.length < 1'
-        )
-        td(:colspan='agendaStore.pickerMode ? 6 : 5')
-          i.bi.bi-exclamation-triangle.me-2
-          span(v-if='agendaStore.searchVisible') No event matching your search query.
-          span(v-else) Nothing to display
-      tr(
-        v-for='item of meetingEvents'
-        :key='item.key'
-        :id='`agenda-rowid-` + item.key'
-        :class='item.cssClasses'
-        )
-        //- ROW - DAY HEADING -----------------------
-        template(v-if='item.displayType === `day`')
-          td(:id='`agenda-day-` + item.id', :colspan='agendaStore.pickerMode ? 6 : 5') {{item.date}}
-        //- ROW - SESSION HEADING -------------------
-        template(v-else-if='item.displayType === `session-head`')
-          td.agenda-table-cell-check(v-if='agendaStore.pickerMode') &nbsp;
-          td.agenda-table-cell-ts {{item.timeslot}}
-          td.agenda-table-cell-name(colspan='4') {{item.name}}
-        //- ROW - EVENT -----------------------------
-        template(v-else-if='item.displayType === `event`')
-          //- CELL - CHECKBOX -----------------------
-          td.agenda-table-cell-check(
-            v-if='agendaStore.pickerMode'
-            )
-            n-checkbox(
-              :value='item.key'
+  n-checkbox-group(v-model:value='pickedEvents')
+    table
+      thead
+        tr
+          th.agenda-table-head-check(v-if='pickerModeActive') &nbsp;
+          th.agenda-table-head-time Time
+          th.agenda-table-head-location Location
+          th.agenda-table-head-event(colspan='3') Event
+      tbody
+        tr.agenda-table-display-noresult(
+          v-if='!meetingEvents || meetingEvents.length < 1'
+          )
+          td(:colspan='pickerModeActive ? 6 : 5')
+            i.bi.bi-exclamation-triangle.me-2
+            span(v-if='agendaStore.searchVisible') No event matching your search query.
+            span(v-else) Nothing to display
+        tr(
+          v-for='item of meetingEvents'
+          :key='item.key'
+          :id='`agenda-rowid-` + item.key'
+          :class='item.cssClasses'
+          )
+          //- ROW - DAY HEADING -----------------------
+          template(v-if='item.displayType === `day`')
+            td(:id='`agenda-day-` + item.id', :colspan='pickerModeActive ? 6 : 5') {{item.date}}
+          //- ROW - SESSION HEADING -------------------
+          template(v-else-if='item.displayType === `session-head`')
+            td.agenda-table-cell-check(v-if='pickerModeActive') &nbsp;
+            td.agenda-table-cell-ts {{item.timeslot}}
+            td.agenda-table-cell-name(colspan='4') {{item.name}}
+          //- ROW - EVENT -----------------------------
+          template(v-else-if='item.displayType === `event`')
+            //- CELL - CHECKBOX -----------------------
+            td.agenda-table-cell-check(
+              v-if='pickerModeActive'
               )
-          //- CELL - TIME ---------------------------
-          td.agenda-table-cell-ts(
-            :class='{ "is-session-event": item.isSessionEvent }'
-            )
-            span(v-if='item.isSessionEvent') &mdash;
-            span(v-else) {{item.timeslot}}
-          //- CELL - ROOM ---------------------------
-          td.agenda-table-cell-room
-            template(v-if='item.location && item.location.short')
+              n-checkbox(
+                :value='item.key'
+                )
+            //- CELL - TIME ---------------------------
+            td.agenda-table-cell-ts(
+              :class='{ "is-session-event": item.isSessionEvent }'
+              )
+              span(v-if='item.isSessionEvent') &mdash;
+              span(v-else) {{item.timeslot}}
+            //- CELL - ROOM ---------------------------
+            td.agenda-table-cell-room
+              template(v-if='item.location && item.location.short')
+                n-popover(
+                  trigger='hover'
+                  )
+                  template(#trigger)
+                    span.badge {{item.location.short}}
+                  span {{item.location.name}}
+                a.discreet(
+                  :href='`/meeting/` + agendaStore.meeting.number + `/floor-plan?room=` + xslugify(item.room)'
+                  :aria-label='item.room'
+                  ) {{item.room}}
+              span(v-else) {{item.room}}
+            //- CELL - GROUP --------------------------
+            td.agenda-table-cell-group(v-if='item.type === `regular`')
               n-popover(
                 trigger='hover'
+                :width='250'
                 )
                 template(#trigger)
-                  span.badge {{item.location.short}}
-                span {{item.location.name}}
+                  span.badge {{item.groupAcronym}}
+                .agenda-table-cell-group-hover
+                  strong {{item.groupParentName}}
+                  span {{item.groupParentDescription}}
+              a.discreet(:href='`/group/` + item.acronym + `/about/`') {{item.acronym}}
+            //- CELL - NAME ---------------------------
+            td.agenda-table-cell-name(
+              :colspan='!item.isSessionEvent ? 2 : 1'
+              )
+              i.bi.me-2(v-if='item.icon', :class='item.icon')
               a.discreet(
-                :href='`/meeting/` + agendaStore.meeting.number + `/floor-plan?room=` + xslugify(item.room)'
-                :aria-label='item.room'
-                ) {{item.room}}
-            span(v-else) {{item.room}}
-          //- CELL - GROUP --------------------------
-          td.agenda-table-cell-group(v-if='item.type === `regular`')
-            n-popover(
-              trigger='hover'
-              :width='250'
-              )
-              template(#trigger)
-                span.badge {{item.groupAcronym}}
-              .agenda-table-cell-group-hover
-                strong {{item.groupParentName}}
-                span {{item.groupParentDescription}}
-            a.discreet(:href='`/group/` + item.acronym + `/about/`') {{item.acronym}}
-          //- CELL - NAME ---------------------------
-          td.agenda-table-cell-name(
-            :colspan='!item.isSessionEvent ? 2 : 1'
-            )
-            i.bi.me-2(v-if='item.icon', :class='item.icon')
-            a.discreet(
-              v-if='item.flags.agenda'
-              :href='item.agenda.url'
-              :aria-label='item.isSessionEvent ? item.groupName : item.name'
-              ) {{item.isSessionEvent ? item.groupName : item.name}}
-            span(v-else) {{item.isSessionEvent ? item.groupName : item.name}}
-            n-popover(
-              v-if='item.isBoF'
-              trigger='hover'
-              :width='250'
-              )
-              template(#trigger)
-                span.badge.is-bof BoF
-              span #[a(href='https://www.ietf.org/how/bofs/', target='_blank') Birds of a Feather] sessions (BoFs) are initial discussions about a particular topic of interest to the IETF community.
-            .agenda-table-note(v-if='item.note')
-              i.bi.bi-arrow-return-right.me-1
-              span {{item.note}}
-          //- CELL - LINKS --------------------------
-          td.agenda-table-cell-links
-            span.badge.is-cancelled(v-if='item.status === `canceled`') Cancelled
-            span.badge.is-rescheduled(v-else-if='item.status === `resched`') Rescheduled
-            .agenda-table-cell-links-buttons(v-else-if='item.links && item.links.length > 0')
-              template(v-if='item.flags.agenda')
-                n-popover
-                  template(#trigger)
-                    i.bi.bi-collection(@click='showMaterials(item.key)')
-                  span Show meeting materials
-              n-popover(v-for='lnk of item.links', :key='lnk.id')
+                v-if='item.flags.agenda'
+                :href='item.agenda.url'
+                :aria-label='item.isSessionEvent ? item.groupName : item.name'
+                ) {{item.isSessionEvent ? item.groupName : item.name}}
+              span(v-else) {{item.isSessionEvent ? item.groupName : item.name}}
+              n-popover(
+                v-if='item.isBoF'
+                trigger='hover'
+                :width='250'
+                )
                 template(#trigger)
-                  a(
-                    :href='lnk.href'
-                    :aria-label='lnk.label'
-                    ): i.bi(:class='`bi-` + lnk.icon')
-                span {{lnk.label}}
+                  span.badge.is-bof BoF
+                span #[a(href='https://www.ietf.org/how/bofs/', target='_blank') Birds of a Feather] sessions (BoFs) are initial discussions about a particular topic of interest to the IETF community.
+              .agenda-table-note(v-if='item.note')
+                i.bi.bi-arrow-return-right.me-1
+                span {{item.note}}
+            //- CELL - LINKS --------------------------
+            td.agenda-table-cell-links
+              span.badge.is-cancelled(v-if='item.status === `canceled`') Cancelled
+              span.badge.is-rescheduled(v-else-if='item.status === `resched`') Rescheduled
+              .agenda-table-cell-links-buttons(v-else-if='item.links && item.links.length > 0')
+                template(v-if='item.flags.agenda')
+                  n-popover
+                    template(#trigger)
+                      i.bi.bi-collection(@click='showMaterials(item.key)')
+                    span Show meeting materials
+                n-popover(v-for='lnk of item.links', :key='lnk.id')
+                  template(#trigger)
+                    a(
+                      :href='lnk.href'
+                      :aria-label='lnk.label'
+                      ): i.bi(:class='`bi-` + lnk.icon')
+                  span {{lnk.label}}
 
   .agenda-table-search
     n-popover
@@ -136,6 +137,7 @@ import reduce from 'lodash/reduce'
 import slugify from 'slugify'
 import {
   NCheckbox,
+  NCheckboxGroup,
   NPopover
 } from 'naive-ui'
 
@@ -155,6 +157,10 @@ const state = reactive({
 })
 
 // COMPUTED
+
+const pickerModeActive = computed(() => {
+  return agendaStore.pickerMode && !agendaStore.pickerModeView
+})
 
 const meetingEvents = computed(() => {
   const meetingNumberInt = parseInt(agendaStore.meeting.number)
@@ -376,6 +382,17 @@ const meetingEvents = computed(() => {
     lastTypeName: null,
     result: []
   }).result
+})
+
+const pickedEvents = computed({
+  get () {
+    return agendaStore.pickedEvents
+  },
+  set (newValue) {
+    agendaStore.$patch({
+      pickedEvents: newValue
+    })
+  }
 })
 
 // METHODS

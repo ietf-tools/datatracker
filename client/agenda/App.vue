@@ -21,8 +21,14 @@ const agendaStore = useAgendaStore()
 
 agendaStore.fetch()
 
+// MOUNTED
+
 onMounted(() => {
-  document.querySelector('#app-agenda-loading').remove()
+  // -> Hide loading screen
+  const loadingRef = document.querySelector('#app-agenda-loading')
+  if (loadingRef) {
+    loadingRef.remove()
+  }
 })
 
 </script>
