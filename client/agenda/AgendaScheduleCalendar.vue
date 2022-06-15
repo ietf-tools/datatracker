@@ -28,6 +28,7 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='drawerHeight')
           )
           i.bi.bi-funnel.me-2
           span Filter Areas + Groups...
+          n-badge.ms-2(:value='agendaStore.selectedCatSubs.length', processing)
         n-button(
           ghost
           color='gray'
@@ -70,6 +71,7 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='drawerHeight')
 import { computed, reactive, ref, watch } from 'vue'
 import { DateTime } from 'luxon'
 import {
+  NBadge,
   NButton,
   NButtonGroup,
   NDivider,

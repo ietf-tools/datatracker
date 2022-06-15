@@ -10,9 +10,9 @@
           strong
           @click='showFilter'
           )
-          n-badge.me-2(:value='agendaStore.selectedCatSubs.length', processing)
           i.bi.bi-funnel.me-2
           span Filter Areas + Groups...
+          n-badge.ms-2(:value='agendaStore.selectedCatSubs.length', processing)
         n-button.mt-2(
           v-if='!agendaStore.pickerMode'
           block
@@ -190,38 +190,38 @@ function scrollToNow (ev) {
 
 <style lang="scss">
 .agenda-quickaccess {
-    width: 300px;
+  width: 300px;
 
-    .card {
-      width: 300px;
+  .card {
+    width: 300px;
+  }
+
+  &-btnrow {
+    border: 1px solid #CCC;
+    padding: 8px 6px 6px 6px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: stretch;
+    position: relative;
+    text-align: center;
+    margin-top: 12px;
+
+    &-title {
+      position: absolute;
+      top: -8px;
+      font-size: 9px;
+      font-weight: 600;
+      color: #999;
+      left: 50%;
+      padding: 0 5px;
+      background-color: #FFF;
+      transform: translate(-50%, 0);
+      text-transform: uppercase;
     }
 
-    &-btnrow {
-      border: 1px solid #CCC;
-      padding: 8px 6px 6px 6px;
-      border-radius: 5px;
-      display: flex;
-      justify-content: stretch;
-      position: relative;
-      text-align: center;
-      margin-top: 12px;
-
-      &-title {
-        position: absolute;
-        top: -8px;
-        font-size: 9px;
-        font-weight: 600;
-        color: #999;
-        left: 50%;
-        padding: 0 5px;
-        background-color: #FFF;
-        transform: translate(-50%, 0);
-        text-transform: uppercase;
-      }
-
-      button {
-        flex: 1;
-      }
+    button {
+      flex: 1;
     }
   }
+}
 </style>

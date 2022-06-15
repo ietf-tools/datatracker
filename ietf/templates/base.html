@@ -5,6 +5,7 @@
 {% load origin %}
 {% origin %}
 {% load django_bootstrap5 %}
+{% load django_vite %}
 <html lang="en">
     <head>
         {% analytical_head_top %}
@@ -23,6 +24,7 @@
             {% block morecss %}{% endblock %}
             .leftmenu { width: 13em; }
         </style>
+        {% vite_hmr_client %}
         {% block pagehead %}{% endblock %}
         {% if server_mode and server_mode == "production" %}
             <link rel="shortcut icon"
