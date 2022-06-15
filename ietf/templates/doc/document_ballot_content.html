@@ -7,7 +7,7 @@
     <div class="col-md-2 d-none d-md-block d-sm-block d-lg-block d-xl-block d-xxl-block">
         {% for n, positions in position_groups %}
             <p class="h5">
-                <span class="badge {{ n|pos_to_label_format }}">{{ n.name }}</span>
+                <span class="badge rounded-pill {{ n|pos_to_label_format }}">{{ n.name }}</span>
             </p>
             {% for p in positions %}
                 <div class="balloter-name mb-2">
@@ -90,7 +90,7 @@
                         {{ p.balloter.plain_name }}
                         <span class="float-end">
                             {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
-                            <span class="badge {{ p.pos|pos_to_label_format }}">{{ p.pos }}</span>
+                            <span class="badge rounded-pill {{ p.pos|pos_to_label_format }}">{{ p.pos }}</span>
                             {% if user|has_role:"Secretariat" %}
                                 <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}"
                                    title="Click to edit the position of {{ p.balloter.plain_name }}"
@@ -162,7 +162,7 @@
                         <span class="text-muted">({{ p.balloter.plain_name }}; former steering group member)</span>
                         <span class="float-end">
                             {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
-                            <span class="badge {{ p.pos|pos_to_label_format }}">{{ p.pos }}</span>
+                            <span class="badge rounded-pill {{ p.pos|pos_to_label_format }}">{{ p.pos }}</span>
                             {% if user|has_role:"Secretariat" %}
                                 <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}"
                                    title="Click to edit the position of {{ p.balloter.plain_name }}"

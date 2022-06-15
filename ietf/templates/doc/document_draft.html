@@ -50,12 +50,12 @@
                             (Publication date unknown)
                         {% endif %}
                         {% if has_verified_errata %}
-                            <a class="badge bg-danger text-decoration-none text-light"
+                            <a class="badge rounded-pill bg-danger text-decoration-none text-light"
                                href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}" title="Click to view errata." rel="nofollow">
                                 Errata
                             </a>
                         {% elif has_errata %}
-                            <a class="badge bg-warning text-decoration-none text-light"
+                            <a class="badge rounded-pill bg-warning text-decoration-none text-light"
                                href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}" title="Click to view errata." rel="nofollow">
                                 Errata
                             </a>
@@ -588,7 +588,7 @@
                                    href="{% url 'ietf.doc.views_doc.document_shepherd_writeup' name=doc.name %}">
                                     Show
                                 </a>
-                                <span class="badge bg-secondary">Last changed {{ shepherd_writeup.time|date:"Y-m-d" }}</span>
+                                <span class="badge rounded-pill bg-secondary">Last changed {{ shepherd_writeup.time|date:"Y-m-d" }}</span>
                             {% else %}
                                 <span class="text-muted">
                                     (None)
@@ -1008,7 +1008,7 @@
                 </i>
                 IPR
                 {% if doc.related_ipr %}
-                    <span class="badge">
+                    <span class="badge rounded-pill">
                         {{ doc.related_ipr|length }}
                     </span>
                 {% endif %}
