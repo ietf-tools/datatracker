@@ -143,7 +143,7 @@ def document_main(request, name, rev=None, document_html=False):
 
     # take care of possible redirections
     aliases = DocAlias.objects.filter(docs=doc).values_list("name", flat=True)
-    if rev==None and doc.type_id == "draft" and not name.startswith("rfc"):
+    if document_html is False and rev==None and doc.type_id == "draft" and not name.startswith("rfc"):
         for a in aliases:
             if a.startswith("rfc"):
                 return redirect("ietf.doc.views_doc.document_main", name=a)
@@ -167,7 +167,7 @@ def document_main(request, name, rev=None, document_html=False):
                 doc = h
                 break
 
-        if not snapshot:
+        if not snapshot and document_html is False:
             return redirect('ietf.doc.views_doc.document_main', name=name)
 
         if doc.type_id == "charter":

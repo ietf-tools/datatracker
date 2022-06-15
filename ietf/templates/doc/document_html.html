@@ -73,6 +73,7 @@
 
     <div class="row justify-content-start g-0">
         <div class="rfcmarkup col pt-5 mt-4 pt-md-0 mt-md-2 m-2 m-lg-4 me-3 lh-sm">
+             <!-- [html-validate-disable-block attr-quotes, void-style -- FIXME: rfcmarkup generates HTML with issues] -->
             {{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}
         </div>
         <div class="d-print-none col d-none d-md-block bg-light">
