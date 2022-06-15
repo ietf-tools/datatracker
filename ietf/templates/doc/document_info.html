@@ -28,21 +28,21 @@
                 {% if doc.related_ipr %}
                     <a title="Click to view IPR declarations." class="{% if document_html %}btn btn-{% if document_html %}outline-{% endif %}warning btn-sm my-1{% else %}badge bg-warning text-decoration-none text-light{% endif %}" href="{% url 'ietf.ipr.views.search' %}?submit=draft&amp;id={{ doc.name }}">IPR</a>
                 {% endif %}
-                {% if obsoleted_by %}<div>Obsoleted by {{ obsoleted_by|urlize_related_source_list|join:", " }}</div>{% endif %}
-                {% if updated_by %}<div>Updated by {{ updated_by|urlize_related_source_list|join:", " }}</div>{% endif %}
-                {% if obsoletes %}<div>Obsoletes {{ obsoletes|urlize_related_target_list|join:", " }}</div>{% endif %}
-                {% if updates %}<div>Updates {{ updates|urlize_related_target_list|join:", " }}</div>{% endif %}
+                {% if obsoleted_by %}<div>Obsoleted by {{ obsoleted_by|urlize_related_source_list:document_html|join:", " }}</div>{% endif %}
+                {% if updated_by %}<div>Updated by {{ updated_by|urlize_related_source_list:document_html|join:", " }}</div>{% endif %}
+                {% if obsoletes %}<div>Obsoletes {{ obsoletes|urlize_related_target_list:document_html|join:", " }}</div>{% endif %}
+                {% if updates %}<div>Updates {{ updates|urlize_related_target_list:document_html|join:", " }}</div>{% endif %}
                 {% if status_changes %}
-                    <div>Status changed by {{ status_changes|urlize_related_source_list|join:", " }}</div>
+                    <div>Status changed by {{ status_changes|urlize_related_source_list:document_html|join:", " }}</div>
                 {% endif %}
                 {% if proposed_status_changes %}
-                    <div>Proposed status changed by {{ proposed_status_changes|urlize_related_source_list|join:", " }}</div>
+                    <div>Proposed status changed by {{ proposed_status_changes|urlize_related_source_list:document_html|join:", " }}</div>
                 {% endif %}
                 {% if rfc_aliases %}<div>Also known as {{ rfc_aliases|join:", "|urlize_ietf_docs }}</div>{% endif %}
                 {% if draft_name %}
                     <div>
                         Was
-                        <a href="/doc/{{ draft_name }}/">{{ draft_name }}</a>
+                        <a href="/doc/{% if document_html %}html/{% endif %}{{ draft_name }}/">{{ draft_name }}</a>
                         {% if submission %}({{ submission|safe }}){% endif %}
                     </div>
                 {% endif %}
@@ -129,7 +129,7 @@
             </td>
             <td>
                 {% if replaces %}
-                    {{ replaces|urlize_related_target_list|join:", " }}
+                    {{ replaces|urlize_related_target_list:document_html|join:", " }}
                 {% else %}
                     <span class="text-muted">(None)</span>
                 {% endif %}
@@ -145,7 +145,7 @@
             <td class="edit">
             </td>
             <td>
-                {{ replaced_by|urlize_related_source_list|join:", " }}
+                {{ replaced_by|urlize_related_source_list:document_html|join:", " }}
             </td>
         </tr>
     {% endif %}
@@ -165,7 +165,7 @@
                     {% endif %}
                 </td>
                 <td>
-                    {{ possibly_replaces|urlize_related_target_list|join:", " }}
+                    {{ possibly_replaces|urlize_related_target_list:document_html|join:", " }}
                 </td>
             </tr>
         {% endif %}
@@ -182,7 +182,7 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                     {% endif %}
                 </td>
                 <td>
-                    {{ possibly_replaced_by|urlize_related_source_list|join:", " }}
+                    {{ possibly_replaced_by|urlize_related_source_list:document_html|join:", " }}
                 </td>
             </tr>
         {% endif %}
@@ -262,7 +262,7 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                 {% endfor %}
             </div>
             {% else %}
-                (not online)
+                <span class="text-muted">(not online)</span>
             {% endif %}
         </td>
     </tr>
