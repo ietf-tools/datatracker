@@ -34,31 +34,50 @@ class GroupURLInline(admin.TabularInline):
     model = GroupURL
 
 class GroupForm(forms.ModelForm):
+    # Use CharField with our own validation instead of default SlugField. The real check is in the clean() method.
+    acronym = forms.CharField(min_length=2, max_length=40)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['type'].required = True  # require this even though the model field can nominally be null
+
     class Meta:
         model = Group
         fields = '__all__'
-
-    def clean_acronym(self):
-        ''' Constrain the acronym form. Note that this doesn't look for collisions.
-            See ietf.group.forms.GroupForm.clean_acronym()
-        '''
-        acronym = self.cleaned_data['acronym'].strip().lower()
-        if not self.instance.pk:
-            type = self.cleaned_data['type']
-            if GroupFeatures.objects.get(type=type).has_documents:
-                if not re.match(r'^[a-z][a-z0-9]+$', acronym):
-                    raise forms.ValidationError("Acronym is invalid, for groups that create documents, the acronym must be at least two characters and only contain lowercase letters and numbers starting with a letter.")
-            else:
-                if not re.match(r'^[a-z][a-z0-9-]*[a-z0-9]$', acronym):
-                    raise forms.ValidationError("Acronym is invalid, must be at least two characters and only contain lowercase letters and numbers starting with a letter. It may contain hyphens, but that is discouraged.")
-        return acronym
 
     def clean_used_roles(self):
         data = self.cleaned_data['used_roles']
         if data is None or data == '':
             raise forms.ValidationError("Must contain a valid json expression. To use the defaults prove an empty list: []")
         return data
-            
+
+    def clean(self):
+        """Clean parts of the form that involve multiple fields"""
+        # Constrain the acronym form. Note that this doesn't look for collisions.
+        # See ietf.group.forms.GroupForm.clean_acronym()
+        if 'acronym' in self.cleaned_data:
+            acronym = self.cleaned_data['acronym'].strip().lower()
+            self.cleaned_data['acronym'] = acronym
+            if 'type' in self.cleaned_data and not self.instance.pk:
+                features = GroupFeatures.objects.get(type=self.cleaned_data['type'])
+                new_and_has_documents = features.has_documents if features else False
+            else:
+                new_and_has_documents = False
+            if new_and_has_documents:
+                valid_re = r'^[a-z][a-z0-9]+$'
+                error_msg = (
+                    'Acronym is invalid. For groups that create documents, the acronym must be at least '
+                    'two characters and only contain lowercase letters and numbers starting with a letter.'
+                )
+            else:
+                valid_re = r'^[a-z][a-z0-9-]*[a-z0-9]$'
+                error_msg = (
+                    'Acronym is invalid. It must be at least two characters and only contain lowercase '
+                    'letters and numbers starting with a letter. It may contain hyphens, but that is discouraged.'
+                )
+            if not re.match(valid_re, acronym):
+                self.add_error('acronym', error_msg)
+
 
 class GroupAdmin(admin.ModelAdmin):
     form = GroupForm
