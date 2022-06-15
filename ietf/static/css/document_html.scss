@@ -96,10 +96,14 @@ h6,
 .rfcmarkup {
     font-family: var(--bs-font-monospace);
     width: 72ch;
-}
 
-.grey {
-    color: $gray-500;
+    .grey {
+        color: $gray-500;
+    }
+
+    .noprint {
+        display: none;
+    }
 }
 
 tbody.meta tr {

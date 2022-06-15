@@ -67,7 +67,7 @@
     {% if document_html %}
     <tr>
         <td></td>
-        <th scope="roe">Versions</td>
+        <th scope="row">Versions</th>
         <td class="edit"></td>
         <td>
             {% include "doc/revisions_list.html" with document_html=document_html %}
@@ -258,7 +258,6 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                         {% elif label == 'with errata' %}
                             <i class="bi bi-file-diff"></i> w/errata
                         {% endif %}
-                        </i>
                     </a>
                 {% endfor %}
             </div>
