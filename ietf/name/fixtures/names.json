@@ -2757,7 +2757,7 @@
       "default_used_roles": "[\n    \"ad\",\n    \"chair\",\n    \"reviewer\",\n    \"secr\",\n    \"delegate\"\n]",
       "docman_roles": "[\n    \"chair\"\n]",
       "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"ad\",\n    \"secr\",\n    \"delegate\"\n]",
+      "groupman_roles": "[\n    \"ad\",\n    \"secr\",\n    \"delegate\",\n    \"chair\"\n]",
       "has_chartering_process": false,
       "has_default_jabber": false,
       "has_documents": false,
