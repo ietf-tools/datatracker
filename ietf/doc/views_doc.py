@@ -162,7 +162,7 @@ def document_main(request, name, rev=None, document_html=False):
     if rev != None:
         # find the entry in the history
         for h in doc.history_set.order_by("-time"):
-            if rev == h.rev:
+            if rev == h.rev and not document_html:
                 snapshot = True
                 doc = h
                 break
@@ -181,7 +181,6 @@ def document_main(request, name, rev=None, document_html=False):
         group = doc.group
 
     top = render_document_top(request, doc, "status", name)
-
 
     telechat = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
     if telechat and (not telechat.telechat_date or telechat.telechat_date < datetime.date.today()):

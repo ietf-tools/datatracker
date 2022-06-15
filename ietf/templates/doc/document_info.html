@@ -48,9 +48,9 @@
                 {% endif %}
             {% else %}
                 {% if snapshot and doc.doc.get_state_slug == 'rfc' %}
-                   <span>This is an older version of an Internet-Draft that was ultimately published as an RFC.</span>
+                   <div{% if document_html %} class="alert alert-warning"{% endif %}>This is an older version of an Internet-Draft that was ultimately published as an RFC.</div>
                 {% elif snapshot and doc.rev != latest_rev  %}
-                    <span>This is an older version of an Internet-Draft whose latest revision is {{ doc.doc.get_state }}.</span>
+                    <div{% if document_html %} class="alert alert-warning"{% endif %}>This is an older version of an Internet-Draft whose latest revision state is "{{ doc.doc.get_state }}".</div>
                  {% else %}
                     <span class="{% if doc.get_state_slug == 'active' %}text-success{% elif doc.get_state_slug == 'expired' or doc.get_state_slug == 'repl' %}text-danger{% endif %}">{% if snapshot and doc.rev == latest_rev %}{{ doc.doc.get_state }}{% else %}{{ doc.get_state }}{% endif %} Internet-Draft</span>
                     {% if submission %}({{ submission|safe }}){% endif %}
@@ -145,7 +145,11 @@
             <td class="edit">
             </td>
             <td>
-                {{ replaced_by|urlize_related_source_list:document_html|join:", " }}
+                {% if document_html %}
+                    {{ replaced_by|urlize_related_source_list:document_html|join:"<br>" }}
+                {% else %}
+                    {{ replaced_by|urlize_related_source_list:document_html|join:", " }}
+                {% endif %}
             </td>
         </tr>
     {% endif %}
@@ -165,7 +169,11 @@
                     {% endif %}
                 </td>
                 <td>
-                    {{ possibly_replaces|urlize_related_target_list:document_html|join:", " }}
+                    {% if document_html %}
+                        {{ possibly_replaces|urlize_related_target_list:document_html|join:"<br>" }}
+                    {% else %}
+                        {{ possibly_replaces|urlize_related_target_list:document_html|join:", " }}
+                    {% endif %}
                 </td>
             </tr>
         {% endif %}
