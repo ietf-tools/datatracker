@@ -616,6 +616,8 @@ def new_three_of_five_eligible(previous_five, queryset=None):
     """ Return a list of Person records who attended at least 
         3 of the 5 type_id='ietf' meetings before the given
         date. Does not disqualify anyone based on held roles.
+        This 'new' variant bases the calculation on the Meeting.Session model rather than Stats.MeetingRegistration
+        Leadership will have to create a new RFC specifying eligibility (RFC8989 is timing out) before it can be used.
     """
     if not queryset:
         queryset = Person.objects.all()
