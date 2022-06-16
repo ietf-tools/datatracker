@@ -79,9 +79,15 @@
                             </div>
                         {% endif %}
                     {% else %}
-                        <span class="{% if doc.get_state_slug == 'active' %}text-success{% elif doc.get_state_slug == 'expired' %}text-danger{% endif %}">{{ doc.get_state }} Internet-Draft</span>
-                        {% if submission %}({{ submission|safe }}){% endif %}
-                        {% if resurrected_by %}- resurrect requested by {{ resurrected_by }}{% endif %}
+                        {% if snapshot and doc.doc.get_state_slug == 'rfc' %}
+                           <span>This is an older version of an Internet-Draft that was ultimately published as an RFC.</span> 
+                        {% elif snapshot and doc.rev != latest_rev  %}
+                            <span>This is an older version of an Internet-Draft whose latest revision is {{ doc.doc.get_state }}</span> 
+                         {% else %}
+                            <span class="{% if doc.get_state_slug == 'active' %}text-success{% elif doc.get_state_slug == 'expired' %}text-danger{% endif %}">{% if snapshot and doc.rev == latest_rev %}{{ doc.doc.get_state }}{% else %}{{ doc.get_state }}{% endif %} Internet-Draft</span>
+                            {% if submission %}({{ submission|safe }}){% endif %}
+                            {% if resurrected_by %}- resurrect requested by {{ resurrected_by }}{% endif %}
+                        {% endif %}
                     {% endif %}
                 </td>
             </tr>

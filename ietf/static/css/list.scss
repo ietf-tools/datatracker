@@ -1,8 +1,6 @@
 // Import bootstrap helpers
 @import "bootstrap/scss/functions";
 @import "bootstrap/scss/variables";
-// @import "bootstrap/scss/mixins";
-// @import "bootstrap/scss/utilities";
 
 table .sort {
     cursor: pointer;
@@ -14,12 +12,9 @@ table .sort:hover {
 }
 
 table .sort:after {
-    white-space: nowrap;
     font-family: 'bootstrap-icons';
-    font-size: larger;
-    color: $secondary;
     content: '\f283'; // chevron-expand
-    float: right;
+    padding-left: .25em;
     padding-right: .25em;
 }
 
