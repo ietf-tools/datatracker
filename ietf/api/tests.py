@@ -279,23 +279,23 @@ class CustomApiTests(TestCase):
     def test_api_new_meeting_registration(self):
         meeting = MeetingFactory(type_id='ietf')
         reg = {
-                'apikey': 'invalid',
-                'affiliation': "Alguma Corporação",
-                'country_code': 'PT',
-                'email': 'foo@example.pt',
-                'first_name': 'Foo',
-                'last_name': 'Bar',
-                'meeting': meeting.number,
-                'reg_type': 'hackathon',
-                'ticket_type': '',
-            }
+            'apikey': 'invalid',
+            'affiliation': "Alguma Corporação",
+            'country_code': 'PT',
+            'email': 'foo@example.pt',
+            'first_name': 'Foo',
+            'last_name': 'Bar',
+            'meeting': meeting.number,
+            'reg_type': 'hackathon',
+            'ticket_type': '',
+        }
         url = urlreverse('ietf.api.views.api_new_meeting_registration')
         r = self.client.post(url, reg)
         self.assertContains(r, 'Invalid apikey', status_code=403)
         oidcp = PersonFactory(user__is_staff=True)
         # Make sure 'oidcp' has an acceptable role
         RoleFactory(name_id='robot', person=oidcp, email=oidcp.email(), group__acronym='secretariat')
-        key  = PersonalApiKey.objects.create(person=oidcp, endpoint=url)
+        key = PersonalApiKey.objects.create(person=oidcp, endpoint=url)
         reg['apikey'] = key.hash()
         #
         # Test valid POST
@@ -313,7 +313,7 @@ class CustomApiTests(TestCase):
         #
         # Check record
         obj = MeetingRegistration.objects.get(email=reg['email'], meeting__number=reg['meeting'])
-        for key in [ 'affiliation', 'country_code', 'first_name', 'last_name', 'person', 'reg_type', 'ticket_type', ]:
+        for key in ['affiliation', 'country_code', 'first_name', 'last_name', 'person', 'reg_type', 'ticket_type']:
             self.assertEqual(getattr(obj, key), reg.get(key), "Bad data for field '%s'" % key)
         #
         # Test with existing user
@@ -328,15 +328,15 @@ class CustomApiTests(TestCase):
         # There should be no new outgoing mail
         self.assertEqual(len(outbox), old_len + 1)
         #
-        # Test combination of reg types
+        # Test multiple reg types
         reg['reg_type'] = 'remote'
         reg['ticket_type'] = 'full_week_pass'
         r = self.client.post(url, reg)
-        self.assertContains(r, "Accepted, Updated registration", status_code=202)
-        obj = MeetingRegistration.objects.get(email=reg['email'], meeting__number=reg['meeting'])
-        self.assertIn('hackathon', set(obj.reg_type.split()))
-        self.assertIn('remote', set(obj.reg_type.split()))
-        self.assertIn('full_week_pass', set(obj.ticket_type.split()))
+        self.assertContains(r, "Accepted, New registration", status_code=202)
+        objs = MeetingRegistration.objects.filter(email=reg['email'], meeting__number=reg['meeting'])
+        self.assertEqual(len(objs), 2)
+        self.assertEqual(objs.filter(reg_type='hackathon').count(), 1)
+        self.assertEqual(objs.filter(reg_type='remote', ticket_type='full_week_pass').count(), 1)
         self.assertEqual(len(outbox), old_len + 1)
         #
         # Test incomplete POST
@@ -346,7 +346,7 @@ class CustomApiTests(TestCase):
         r = self.client.post(url, reg)        
         self.assertContains(r, 'Missing parameters:', status_code=400)
         err, fields = r.content.decode().split(':', 1)
-        missing_fields = [ f.strip() for f in fields.split(',') ]
+        missing_fields = [f.strip() for f in fields.split(',')]
         self.assertEqual(set(missing_fields), set(drop_fields))
 
     def test_api_version(self):
