@@ -13,7 +13,6 @@ from requests import Response
 import debug    # pyflakes:ignore
 
 from django.urls import reverse as urlreverse
-from django.contrib.auth.models import User
 
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 import ietf.stats.views

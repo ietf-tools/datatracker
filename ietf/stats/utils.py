@@ -7,14 +7,12 @@ import requests
 from collections import defaultdict
 
 from django.conf import settings
-from django.contrib.auth.models import User
 
 import debug                            # pyflakes:ignore
 
 from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, CountryAlias, MeetingRegistration
 from ietf.name.models import CountryName
-from ietf.person.models import Person, Email, Alias
-from ietf.person.name import unidecode_name
+from ietf.person.models import Person, Email
 from ietf.utils.log import log
 
 import logging
