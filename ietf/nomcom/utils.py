@@ -608,7 +608,7 @@ def three_of_five_eligible(previous_five, queryset=None):
         3 of the 5 type_id='ietf' meetings before the given
         date. Does not disqualify anyone based on held roles.
     """
-    if not queryset:
+    if queryset is None:
         queryset = Person.objects.all()
     return queryset.filter(meetingregistration__meeting__in=list(previous_five),meetingregistration__attended=True).annotate(mtg_count=Count('meetingregistration')).filter(mtg_count__gte=3)
 
@@ -619,7 +619,7 @@ def new_three_of_five_eligible(previous_five, queryset=None):
         This 'new' variant bases the calculation on the Meeting.Session model rather than Stats.MeetingRegistration
         Leadership will have to create a new RFC specifying eligibility (RFC8989 is timing out) before it can be used.
     """
-    if not queryset:
+    if queryset is None:
         queryset = Person.objects.all()
     return queryset.filter(
         Q(attended__session__meeting__in=list(previous_five)), 
