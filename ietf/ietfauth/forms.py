@@ -91,22 +91,30 @@ class PersonPasswordForm(forms.ModelForm, PasswordForm):
 
         return ascii
 
-# ListTextWidget based on https://stackoverflow.com/questions/24783275/django-form-with-choices-but-also-with-freetext-option
-class ListTextWidget(forms.TextInput):
-    def __init__(self, data_list, name, *args, **kwargs):
-        super(ListTextWidget, self).__init__(*args, **kwargs)
-        self._name = name
-        self._list = data_list
-        self.attrs.update({'list':'list__%s' % self._name})
+class PronounsWidget(forms.MultiWidget):
+    def __init__(self, attrs=None):
+        self.suggested_options = ["he/him", "she/her", "they/them"]
+        choices = [(option, option) for option in self.suggested_options]
+        widgets = [forms.CheckboxSelectMultiple(attrs=attrs, choices=choices), forms.TextInput]
+        super().__init__(widgets, attrs)
 
-    def render(self, name, value, attrs=None, renderer=None):
-        text_html = super(ListTextWidget, self).render(name, value, attrs=attrs)
-        data_list = '<datalist id="list__%s">' % self._name
-        for item in self._list:
-            data_list += '<option value="%s"></option>' % item
-        data_list += '</datalist>'
+    def decompress(self, value):
+        if value is None or not type(value) is str:
+            return [ [], "" ]
+        else:
+            options = value.split(', ')
+            all_suggested = all([opt in self.suggested_options for opt in options])
+            if all_suggested:
+                return [ options, ""]
+            else:
+                return [ [], value ]
 
-        return mark_safe(text_html + data_list)
+    def value_from_datadict(self, data, files, names):
+        options, text = super().value_from_datadict(data, files, names)
+        if text:
+            options += [text]
+        return ", ".join(options)
+
 
 def get_person_form(*args, **kwargs):
 
@@ -117,12 +125,14 @@ def get_person_form(*args, **kwargs):
     if not roles:
         exclude_list += ['biography', 'photo', ]
 
+
     class PersonForm(forms.ModelForm):
         class Meta:
             model = Person
             exclude = exclude_list
             widgets = {
                 'consent': forms.widgets.CheckboxInput,
+                'pronouns': PronounsWidget,
             }            
 
         def __init__(self, *args, **kwargs):
@@ -139,7 +149,7 @@ def get_person_form(*args, **kwargs):
                 if f in self.fields:
                     self.fields[f].label = mark_safe(self.fields[f].label + ' <a href="#pi" aria-label="!"><i class="bi bi-exclamation-circle"></i></a>')
 
-            self.fields['pronouns'].widget = ListTextWidget(data_list=('he/him', 'she/her', 'they/them'), name='pronouns-list')
+            #self.fields['pronouns'].widget = ListTextWidget(data_list=('he/him', 'she/her', 'they/them'), name='pronouns-list')
 
             self.unidecoded_ascii = False
 
