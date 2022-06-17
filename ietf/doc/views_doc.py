@@ -162,7 +162,7 @@ def document_main(request, name, rev=None, document_html=False):
     if rev != None:
         # find the entry in the history
         for h in doc.history_set.order_by("-time"):
-            if rev == h.rev and not document_html:
+            if rev == h.rev:
                 snapshot = True
                 doc = h
                 break

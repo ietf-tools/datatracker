@@ -116,7 +116,7 @@ tbody.meta tr {
     }
 
     td {
-        margin-bottom: map.get($spacers, 2);
+        margin-bottom: map.get($spacers, 3);
     }
 }
 
@@ -128,6 +128,57 @@ tbody.meta tr {
 #docinfo {
     max-height: 70vh;
     z-index: -1;
+}
+
+
+.badge-obs {
+    color: white;
+    background-color: $orange-800;
+}
+
+.badge-ps {
+    color: black;
+    background-color: $blue-300;
+}
+
+.badge-exp {
+    color: black;
+    background-color: $yellow-200;
+}
+
+.badge-inf {
+    color: white;
+    background-color: $orange;
+}
+
+.badge-ds {
+    color: black;
+    background-color: $cyan-200;
+}
+
+.badge-hist {
+    color: white;
+    background-color: $gray-700;
+}
+
+.badge-std {
+    color: black;
+    background-color: $teal-200;
+}
+
+.badge-bcp {
+    color: white;
+    background-color: $pink-500;
+}
+
+.badge-unkn {
+    color: black;
+    background-color: $gray-300;
+}
+
+.badge-draft {
+    color: white;
+    background-color: $danger;
 }
 
 @media print {
