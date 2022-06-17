@@ -1385,5 +1385,8 @@ class Attended(models.Model):
     person = ForeignKey(Person)
     session = ForeignKey(Session)
 
+    class Meta:
+        unique_together = (('person', 'session'),)
+
     def __str__(self):
         return f'{self.person} at {self.session}'
