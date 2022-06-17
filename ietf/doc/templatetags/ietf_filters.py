@@ -511,6 +511,19 @@ def consensus(doc):
     else:
         return "Unknown"
 
+
+@register.filter
+def std_level_to_label_format(doc):
+    """Returns valid Bootstrap classes to label a status level badge."""
+    if doc.is_rfc():
+        if doc.related_that("obs"):
+            return "obs"
+        else:
+            return doc.std_level_id
+    else:
+        return "draft"
+
+
 @register.filter
 def pos_to_label_format(text):
     """Returns valid Bootstrap classes to label a ballot position."""

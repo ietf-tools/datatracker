@@ -9,7 +9,7 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <title>
-            {% if doc.get_state_slug == "rfc" %}
+            {% if not snapshot and doc.get_state_slug == "rfc" %}
                 RFC {{ doc.rfc_number }} - {{ doc.title }}
             {% else %}
                 {{ doc.name }}-{{ doc.rev }}
@@ -26,7 +26,7 @@
           title="Document changes"
           href="/feed/document-changes/{{ doc.name }}/">
     <meta name="description"
-          {% if doc.get_state_slug == "rfc" %}
+          {% if not snapshot and doc.get_state_slug == "rfc" %}
               content="{{ doc.title }} (RFC {{ doc.rfc_number }}{% if published %}, {{ published.time|date:"F Y" }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:", " }}{% endif %})"
           {% else %}
               content="{{ doc.title }} (Internet-Draft, {{ doc.time|date:"Y" }})"
@@ -34,16 +34,16 @@
         {% include "base/icons.html" %}
 </head>
 <body {% block bodyAttrs %}{% endblock %}>
-
     <nav class="navbar navbar-light bg-light px-4 fixed-top d-print-none d-md-none">
       <div class="container-fluid">
 
-        <a class="nav-link ps-1 small" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">
-            {% if doc.get_state_slug == "rfc" %}
+        <a class="nav-link ps-1" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">
+            {% if not snapshot and doc.get_state_slug == "rfc" %}
                 RFC {{ doc.rfc_number }}
             {% else %}
                 {{ doc.name }}-{{ doc.rev }}
             {% endif %}
+            <span class="ms-3 badge rounded-pill badge-{% if not snapshot %}{{ doc|std_level_to_label_format }}{% else %}draft{% endif %}">{% if not snapshot %}{{ doc.std_level }}{% else %}Internet-Draft{% endif %}</span>
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#docinfo" aria-controls="docinfo" aria-expanded="false" aria-label="Show document information">
@@ -70,17 +70,16 @@
         </div>
       </div>
     </nav>
-
     <div class="row g-0">
         <div class="col d-flex justify-content-center pt-5 mt-4 pt-md-0 mt-md-2 m-2 m-lg-4 me-3 lh-sm">
-        <div class="rfcmarkup">
-             <!-- [html-validate-disable-block attr-quotes, void-style -- FIXME: rfcmarkup generates HTML with issues] -->
-            {{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}
-        </div>
+            <div class="rfcmarkup">
+                 <!-- [html-validate-disable-block attr-quotes, void-style -- FIXME: rfcmarkup generates HTML with issues] -->
+                {{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}
+            </div>
         </div>
         <div class="d-print-none col-3 d-none d-md-block bg-light">
             <div class="position-fixed border-start pt-2 pt-lg-4 px-3 sidebar overflow-scroll">
-                <a class="btn btn-outline-primary btn-sm mb-3" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}" title="Datatracker information for this document">Datatracker page</a>
+                <a class="btn btn-primary btn-sm mb-3" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}" title="Datatracker information for this document">Datatracker page</a>
                 <table class="table table-sm table-borderless">
                     {% include "doc/document_info.html" with sidebar=True %}
                 </table>
