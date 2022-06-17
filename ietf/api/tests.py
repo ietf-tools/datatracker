@@ -193,7 +193,7 @@ class CustomApiTests(TestCase):
             '{"session_id":"Not an integer;drop table"}',
             f'{{"session_id":{session.pk},"attendees":"not a list;drop table"}}',
             f'{{"session_id":{session.pk},"attendees":"not a list;drop table"}}',
-            f'{{"session_id":{session.pk},"attendees":[1,2,"not an int;droptable",4]}}',
+            f'{{"session_id":{session.pk},"attendees":[1,2,"not an int;drop table",4]}}',
         ):
             r = self.client.post(url, {'apikey': apikey.hash(), 'attended': baddict})
             self.assertContains(r, "Malformed post", status_code=400)

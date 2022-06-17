@@ -6,9 +6,7 @@ from tqdm import tqdm
 
 from django.core.management.base import BaseCommand
 
-#from ietf.meeting.models import Meeting, Session
 from ietf.meeting.models import Session
-#from ietf.meeting.helpers import get_schedule
 from ietf.meeting.utils import sort_sessions
 from ietf.person.models import Person, Email
 

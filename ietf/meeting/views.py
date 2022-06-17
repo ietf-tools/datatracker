@@ -3727,10 +3727,10 @@ def api_add_session_attendees(request):
         attended = json.loads(attended_post)
     except json.decoder.JSONDecodeError:
         return err(400, "Malformed post") 
-    if not ( 'session_id' in attended and type(attended['session_id'])==int ):
+    if not ( 'session_id' in attended and type(attended['session_id']) is int ):
         return err(400, "Malformed post")
     session_id = attended['session_id']
-    if not ( 'attendees' in attended and type(attended['attendees'])==list and all([type(el)==int for el in attended['attendees']]) ):
+    if not ( 'attendees' in attended and type(attended['attendees']) is list and all([type(el) is int for el in attended['attendees']]) ):
         return err(400, "Malformed post")
     session = Session.objects.filter(pk=session_id).first()
     if not session:
