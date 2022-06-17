@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2015-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
+import datetime
 import json
 import html
 import os
@@ -169,9 +169,14 @@ class CustomApiTests(TestCase):
 
         r = self.client.post(url, {'apikey': apikey.hash()} )
         self.assertContains(r, "Too long since last regular login", status_code=400)
+
+        recman.user.last_login = timezone.now()-datetime.timedelta(days=365)
+        recman.user.save()        
+        r = self.client.post(url, {'apikey': apikey.hash()} )
+        self.assertContains(r, "Too long since last regular login", status_code=400)
+
         recman.user.last_login = timezone.now()
         recman.user.save()
-
         r = self.client.get(url, {'apikey': apikey.hash()} )
         self.assertContains(r, "Method not allowed", status_code=405)
 
