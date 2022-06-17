@@ -71,12 +71,14 @@
       </div>
     </nav>
 
-    <div class="row justify-content-start g-0">
-        <div class="rfcmarkup col pt-5 mt-4 pt-md-0 mt-md-2 m-2 m-lg-4 me-3 lh-sm">
+    <div class="row g-0">
+        <div class="col d-flex justify-content-center pt-5 mt-4 pt-md-0 mt-md-2 m-2 m-lg-4 me-3 lh-sm">
+        <div class="rfcmarkup">
              <!-- [html-validate-disable-block attr-quotes, void-style -- FIXME: rfcmarkup generates HTML with issues] -->
             {{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}
         </div>
-        <div class="d-print-none col d-none d-md-block bg-light">
+        </div>
+        <div class="d-print-none col-3 d-none d-md-block bg-light">
             <div class="position-fixed border-start pt-2 pt-lg-4 px-3 sidebar overflow-scroll">
                 <a class="btn btn-outline-primary btn-sm mb-3" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}" title="Datatracker information for this document">Datatracker page</a>
                 <table class="table table-sm table-borderless">
