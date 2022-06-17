@@ -96,13 +96,12 @@
               d3.json(link)
                   .then((data) => {
                       // console.log(data);
-                      target.html("<svg></svg>");
-
-                      const width = target.width();
-                      const height = target.height();
+                      target.html('<svg class="w-100 h-100"></svg>');
+                      const width = 1000;
+                      const height = 1000;
 
                       const zoom = d3.zoom()
-                          .scaleExtent([1 / 4, 4])
+                          .scaleExtent([1 / 8, 8])
                           .on("zoom", zoomed);
 
                       const svg = d3.select(".modal-body svg")
@@ -110,8 +109,7 @@
                           .attr("text-anchor", "middle")
                           .attr("dominant-baseline", "central")
                           .attr("viewBox",
-                              `${-width/2} ${-height/2} ${width} ${height}`
-                          )
+                              [-width / 2, -height / 2, width, height])
                           .call(zoom);
 
                       svg.append("defs")
@@ -135,7 +133,9 @@
                           .selectAll("path")
                           .data(data.links)
                           .join("path")
-                          .attr("title", d => `${d.source} ${ref_type[d.rel]} ${d.target}`)
+                          .attr("title", d =>
+                              `${d.source} ${ref_type[d.rel]} ${d.target}`
+                          )
                           .attr("marker-end", d =>
                               `url(#marker-${d.rel})`)
                           .attr("stroke", d => link_color[d.rel])
@@ -144,29 +144,11 @@
                       const node = svg.append("g")
                           .selectAll("g")
                           .data(data.nodes)
-                          .join("a")
-                          .attr("xlink:href", d => d.url)
-                          .append("svg")
-                          .attr("overflow", "visible");
+                          .join("g");
 
                       var max_r = 0;
-                      node.append("text")
-                          .attr("fill", "black")
-                          .each(d => {
-                              d.lines = lines(d.id);
-                              d.r = text_radius(d.lines);
-                              max_r = Math.max(d.r, max_r);
-                          })
-                          .selectAll("tspan")
-                          .data(d => d.lines)
-                          .join("tspan")
-                          .attr("x", 0)
-                          .attr("y", (d, i, x) => ((i - x.length / 2) +
-                              0.5) * line_height)
-                          .text(d => d.text);
-
-                      node
-                          .append("circle")
+                      const a = node.append("a")
+                          .attr("xlink:href", d => d.url)
                           .attr("title", d => {
                               var type = ["replaced", "dead",
                                       "expired"
@@ -188,7 +170,26 @@
                                   d
                                   .id.toUpperCase() : d.id;
                               return `${name} is a${"aeiou".includes(type[0].toLowerCase()) ? "n" : ""} ${type}`
+                          });
+
+                      a
+                          .append("text")
+                          .attr("fill", "black")
+                          .each(d => {
+                              d.lines = lines(d.id);
+                              d.r = text_radius(d.lines);
+                              max_r = Math.max(d.r, max_r);
                           })
+                          .selectAll("tspan")
+                          .data(d => d.lines)
+                          .join("tspan")
+                          .attr("x", 0)
+                          .attr("y", (d, i, x) => ((i - x.length / 2) +
+                              0.5) * line_height)
+                          .text(d => d.text);
+
+                      a
+                          .append("circle")
                           .attr("r", d => d.r)
                           .attr("stroke", "black")
                           .lower()
@@ -273,20 +274,21 @@
                             `;
                           });
 
-                          node
-                              .attr("x", d => d.x)
-                              .attr("y", d => d.y);
+                          node.selectAll("circle, text")
+                              .attr("transform", d =>
+                                  `translate(${d.x}, ${d.y})`)
 
                           // auto pan and zoom during simulation
-                          var bbox = svg.node()
+                          const bbox = svg.node()
                               .getBBox();
-                          const kx = width / bbox.width;
-                          const ky = height / bbox.height;
-                          const k = Math.min(kx, ky);
-                          const tx = -bbox.width / 2 - bbox.x;
-                          const ty = -bbox.height / 2 - bbox.y;
-                          zoom.translateBy(svg, tx, ty);
-                          zoom.scaleBy(svg, k);
+                          const max_stroke = 4;
+                          svg.attr("viewBox",
+                              [bbox.x - max_stroke,
+                                  bbox.y - max_stroke,
+                                  bbox.width + 2 * max_stroke,
+                                  bbox.height + 2 * max_stroke
+                              ]
+                          );
                       }
 
                       function zoomed({ transform }) {
