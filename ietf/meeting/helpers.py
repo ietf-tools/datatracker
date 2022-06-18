@@ -139,7 +139,7 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
     parent_id_set = set()
     for a in assignments:
         if a.session and a.session.group:
-            a.session.historic_group = group_replacements.get(a.session.group_id)
+            #a.session.historic_group = group_replacements.get(a.session.group_id)
 
             if a.session.historic_group:
                 a.session.historic_group.historic_parent = None

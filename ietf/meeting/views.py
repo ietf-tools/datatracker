@@ -2186,12 +2186,6 @@ def session_details(request, num, acronym):
     status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
     for session in sessions:
 
-        session.historic_group = None 
-        if session.group: 
-            session.historic_group = group_replacements.get(session.group_id) 
-            if session.historic_group: 
-                session.historic_group.historic_parent = None 
-
         session.type_counter = Counter()
         ss = session.timeslotassignments.filter(schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None]).order_by('timeslot__time')
         if ss:
