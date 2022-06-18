@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2014-2020, All Rights Reserved
+# Copyright The IETF Trust 2014-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -80,7 +80,7 @@ class PersonTests(TestCase):
         self.assertTrue(primary.address in person.formatted_email())
 
     def test_person_profile(self):
-        person = PersonFactory(with_bio=True,pronouns="foo/bar")
+        person = PersonFactory(with_bio=True,pronouns_freetext="foo/bar")
         
         self.assertTrue(person.photo is not None)
         self.assertTrue(person.photo.name is not None)

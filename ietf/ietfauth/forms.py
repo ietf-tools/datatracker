@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2020, All Rights Reserved
+# Copyright The IETF Trust 2011-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -91,31 +91,6 @@ class PersonPasswordForm(forms.ModelForm, PasswordForm):
 
         return ascii
 
-class PronounsWidget(forms.MultiWidget):
-    def __init__(self, attrs=None):
-        self.suggested_options = ["he/him", "she/her", "they/them"]
-        choices = [(option, option) for option in self.suggested_options]
-        widgets = [forms.CheckboxSelectMultiple(attrs=attrs, choices=choices), forms.TextInput]
-        super().__init__(widgets, attrs)
-
-    def decompress(self, value):
-        if value is None or not type(value) is str:
-            return [ [], "" ]
-        else:
-            options = value.split(', ')
-            all_suggested = all([opt in self.suggested_options for opt in options])
-            if all_suggested:
-                return [ options, ""]
-            else:
-                return [ [], value ]
-
-    def value_from_datadict(self, data, files, names):
-        options, text = super().value_from_datadict(data, files, names)
-        if text:
-            options += [text]
-        return ", ".join(options)
-
-
 def get_person_form(*args, **kwargs):
 
     exclude_list = ['time', 'user', 'photo_thumb', 'photo', ]
@@ -125,14 +100,12 @@ def get_person_form(*args, **kwargs):
     if not roles:
         exclude_list += ['biography', 'photo', ]
 
-
     class PersonForm(forms.ModelForm):
         class Meta:
             model = Person
             exclude = exclude_list
             widgets = {
                 'consent': forms.widgets.CheckboxInput,
-                'pronouns': PronounsWidget,
             }            
 
         def __init__(self, *args, **kwargs):
@@ -145,11 +118,11 @@ def get_person_form(*args, **kwargs):
             if self.initial.get("ascii") == self.initial.get("name"):
                 self.initial["ascii"] = ""
 
-            for f in ['name', 'ascii', 'ascii_short', 'biography', 'photo', 'photo_thumb', 'pronouns']:
+            self.fields['pronouns_selectable'] = forms.MultipleChoiceField(label='Pronouns', choices = [(option, option) for option in ["he/him", "she/her", "they/them"]], widget=forms.CheckboxSelectMultiple, required=False)
+
+            for f in ['name', 'ascii', 'ascii_short', 'biography', 'photo', 'photo_thumb', 'pronouns_selectable']:
                 if f in self.fields:
                     self.fields[f].label = mark_safe(self.fields[f].label + ' <a href="#pi" aria-label="!"><i class="bi bi-exclamation-circle"></i></a>')
-
-            #self.fields['pronouns'].widget = ListTextWidget(data_list=('he/him', 'she/her', 'they/them'), name='pronouns-list')
 
             self.unidecoded_ascii = False
 
@@ -159,6 +132,7 @@ def get_person_form(*args, **kwargs):
                 reconstructed_name = unidecode(name)
                 self.data["ascii"] = reconstructed_name
                 self.unidecoded_ascii = name != reconstructed_name
+
 
         def clean_name(self):
             name = self.cleaned_data.get("name") or ""
@@ -181,22 +155,22 @@ def get_person_form(*args, **kwargs):
             prevent_system_name(name)
             return ascii_cleaner(name)
 
-        def clean_pronouns(self):
-            pronouns = self.cleaned_data.get("pronouns") or ""
-            pronouns = pronouns.strip()
-            return pronouns
-
         def clean_consent(self):
             consent = self.cleaned_data.get('consent')
             require_consent = (
                 self.cleaned_data.get('name') != person.name_from_draft
                 or self.cleaned_data.get('ascii') != person.name_from_draft
                 or self.cleaned_data.get('biography')
-                or self.cleaned_data.get('pronouns')
+                or self.cleaned_data.get('pronouns_selectable')
+                or self.cleaned_data.get('pronouns_freetext')
             )
             if consent == False and require_consent:
                 raise forms.ValidationError("In order to modify your profile with data that require consent, you must permit the IETF to use the uploaded data.")
             return consent
+
+        def clean(self):
+            if self.cleaned_data.get("pronouns_selectable") and self.cleaned_data.get("pronouns_freetext"):
+                self.add_error("pronouns_freetext", "Either select from the pronoun checkboxes or provide a custom value, but not both")
 
     return PersonForm(*args, **kwargs)
 

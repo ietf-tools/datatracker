@@ -248,7 +248,7 @@ class IetfAuthTests(TestCase):
             "plain": "",
             "ascii": "Test Name",
             "ascii_short": "T. Name",
-            "pronouns": "foo/bar",
+            "pronouns_freetext": "foo/bar",
             "affiliation": "Test Org",
             "active_emails": email_address,
             "consent": True,
@@ -321,16 +321,38 @@ class IetfAuthTests(TestCase):
         self.assertEqual(len(q('[name="action"][value="confirm"]')), 0)
 
         pronoundish = base_data.copy()
-        pronoundish["pronouns"] = "baz/boom"
+        pronoundish["pronouns_freetext"] = "baz/boom"
         r = self.client.post(url, pronoundish)
         self.assertEqual(r.status_code, 200)
         person = Person.objects.get(user__username=username)
-        self.assertEqual(person.pronouns,"baz/boom")       
-        pronoundish["pronouns"]=""
+        self.assertEqual(person.pronouns_freetext,"baz/boom")       
+        pronoundish["pronouns_freetext"]=""
         r = self.client.post(url, pronoundish)
         self.assertEqual(r.status_code, 200)
         person = Person.objects.get(user__username=username)
-        self.assertEqual(person.pronouns,"")
+        self.assertEqual(person.pronouns_freetext, None)
+
+        pronoundish = base_data.copy()
+        del pronoundish["pronouns_freetext"]
+        pronoundish["pronouns_selectable"] = []
+        r = self.client.post(url, pronoundish)
+        self.assertEqual(r.status_code, 200)
+        person = Person.objects.get(user__username=username)
+        self.assertEqual(person.pronouns_selectable,[])
+        pronoundish["pronouns_selectable"] = ['he/him','she/her']
+        r = self.client.post(url, pronoundish)
+        self.assertEqual(r.status_code, 200)
+        person = Person.objects.get(user__username=username)
+        self.assertEqual(person.pronouns_selectable,['he/him','she/her'])
+        self.assertEqual(person.pronouns(),"he/him, she/her")
+
+        # Can't have both selectables and freetext
+        pronoundish["pronouns_freetext"] = "foo/bar/baz"
+        r = self.client.post(url, pronoundish)
+        self.assertContains(r, 'but not both' ,status_code=200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q("form div.invalid-feedback")) == 1)
+
 
         # change role email
         role = Role.objects.create(
@@ -867,7 +889,7 @@ class OpenIDConnectTests(TestCase):
             client.store_registration_info(client_reg)
 
             # Get a user for which we want to get access
-            person = PersonFactory(with_bio=True, pronouns="foo/bar")
+            person = PersonFactory(with_bio=True, pronouns_freetext="foo/bar")
             active_group = RoleFactory(name_id='chair', person=person).group
             closed_group = RoleFactory(name_id='chair', person=person, group__state_id='conclude').group
             # an additional email

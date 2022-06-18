@@ -1,10 +1,11 @@
-# Copyright The IETF Trust 2010-2020, All Rights Reserved
+# Copyright The IETF Trust 2010-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 import datetime
 import email.utils
 import email.header
+import jsonfield
 import uuid
 
 from hashids import Hashids
@@ -46,7 +47,8 @@ class Person(models.Model):
     ascii = models.CharField("Full Name (ASCII)", max_length=255, help_text="Name as rendered in ASCII (Latin, unaccented) characters.")
     # The short ascii-form of the name.  Also in alias table if non-null
     ascii_short = models.CharField("Abbreviated Name (ASCII)", max_length=32, null=True, blank=True, help_text="Example: A. Nonymous.  Fill in this with initials and surname only if taking the initials and surname of the ASCII name above produces an incorrect initials-only form. (Blank is OK).")
-    pronouns = models.CharField("Pronouns", max_length=30, null=True, blank=True, help_text="Optionally provide your personal pronouns. These will be displayed on your public profile page and alongside your name in Meetecho and, in future, other systems. Select any number of the checkboxes OR provide a custom string up to 30 characters.")
+    pronouns_selectable = jsonfield.JSONCharField("Pronouns", max_length=120, blank=True, null=True, default=list )
+    pronouns_freetext = models.CharField(" ", max_length=30, null=True, blank=True, help_text="Optionally provide your personal pronouns. These will be displayed on your public profile page and alongside your name in Meetecho and, in future, other systems. Select any number of the checkboxes OR provide a custom string up to 30 characters.")
     biography = models.TextField(blank=True, help_text="Short biography for use on leadership pages. Use plain text or reStructuredText markup.")
     photo = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
     photo_thumb = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
@@ -107,6 +109,13 @@ class Person(models.Model):
         return name_parts(self.name)[1]
     def aliases(self):
         return [ str(a) for a in self.alias_set.all() ]
+
+    def pronouns(self):
+        if self.pronouns_selectable:
+            return ", ".join(self.pronouns_selectable)
+        else:
+            return self.pronouns_freetext
+
     def role_email(self, role_name, group=None):
         """Lookup email for role for person, optionally on group which
         may be an object or the group acronym."""
@@ -203,7 +212,7 @@ class Person(models.Model):
             if not email.origin.split(':')[0] in ['author', 'role', 'reviewer', 'liaison', 'shepherd', ]:
                 needs_consent.append("email address(es)")
                 break
-        if self.pronouns:
+        if self.pronouns_freetext or self.pronouns_selectable:
             needs_consent.append("pronouns")
         return needs_consent
 

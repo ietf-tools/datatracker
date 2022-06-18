@@ -259,7 +259,7 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
         return { 'dots': dots }
 
     def scope_pronouns(self):
-        return { 'pronouns': self.user.person.pronouns }
+        return { 'pronouns': self.user.person.pronouns() }
 
     info_registration = (
             "IETF Meeting Registration Info",
