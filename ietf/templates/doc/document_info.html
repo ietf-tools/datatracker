@@ -135,7 +135,11 @@
             </td>
             <td>
                 {% if replaces %}
-                    {{ replaces|urlize_related_target_list:document_html|join:", " }}
+                    {% if document_html %}
+                        {{ replaces|urlize_related_target_list:document_html|join:"<br>" }}
+                    {% else %}
+                        {{ replaces|urlize_related_target_list:document_html|join:", " }}
+                    {% endif %}
                 {% else %}
                     <span class="text-muted">(None)</span>
                 {% endif %}
@@ -196,7 +200,11 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                     {% endif %}
                 </td>
                 <td>
-                    {{ possibly_replaced_by|urlize_related_source_list:document_html|join:", " }}
+                    {% if document_html %}
+                        {{ possibly_replaced_by|urlize_related_source_list:document_html|join:"<br>" }}
+                    {% else %}
+                        {{ possibly_replaced_by|urlize_related_source_list:document_html|join:", " }}
+                    {% endif %}
                 </td>
             </tr>
         {% endif %}
