@@ -3154,13 +3154,6 @@ class ReorderSlidesTests(TestCase):
 
 class EditTests(TestCase):
     """Test schedule edit operations"""
-    def setUp(self):
-        super().setUp()
-        # make sure we have the colors of the area
-        from ietf.group.colors import fg_group_colors, bg_group_colors
-        area_upper = "FARFUT"
-        fg_group_colors[area_upper] = "#333"
-        bg_group_colors[area_upper] = "#aaa"
 
     def test_official_record_schedule_is_read_only(self):
         def _set_date_offset_and_retrieve_page(meeting, days_offset, client):
