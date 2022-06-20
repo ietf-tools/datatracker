@@ -126,9 +126,9 @@ def bracketpos(pos,posslug):
 register.filter('fill', fill)
 
 @register.filter
-def prettystdname(string):
+def prettystdname(string, space=" "):
     from ietf.doc.utils import prettify_std_name
-    return prettify_std_name(force_text(string or ""))
+    return prettify_std_name(force_text(string or ""), space)
 
 @register.filter
 def rfceditor_info_url(rfcnum : str):
