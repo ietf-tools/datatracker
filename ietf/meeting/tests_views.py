@@ -3154,9 +3154,6 @@ class ReorderSlidesTests(TestCase):
 
 class EditTests(TestCase):
     """Test schedule edit operations"""
-    def setUp(self):
-        super().setUp()
-        # make sure we have the colors of the area
 
     def test_official_record_schedule_is_read_only(self):
         def _set_date_offset_and_retrieve_page(meeting, days_offset, client):
