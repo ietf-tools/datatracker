@@ -4,7 +4,7 @@
 
 from django.contrib import admin
 
-from ietf.meeting.models import (Meeting, Room, Session, TimeSlot, Constraint, Schedule,
+from ietf.meeting.models import (Attended, Meeting, Room, Session, TimeSlot, Constraint, Schedule,
     SchedTimeSessAssignment, ResourceAssociation, FloorPlan, UrlResource,
     SessionPresentation, ImportantDate, SlideSubmission, SchedulingEvent, BusinessConstraint,
     ProceedingsMaterial, MeetingHost)
@@ -204,3 +204,8 @@ class MeetingHostAdmin(admin.ModelAdmin):
     list_display = ['name', 'meeting']
     raw_id_fields = ['meeting']
 admin.site.register(MeetingHost, MeetingHostAdmin)
+
+class AttendedAdmin(admin.ModelAdmin):
+    model = Attended
+    search_fields = ["person__name", "session__group__acronym", "session__meeting__number"]
+admin.site.register(Attended, AttendedAdmin)
