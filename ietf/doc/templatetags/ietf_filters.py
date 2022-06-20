@@ -6,8 +6,6 @@ import datetime
 import re
 from urllib.parse import urljoin
 
-from email.utils import parseaddr
-
 from django import template
 from django.conf import settings
 from django.utils.html import escape
@@ -46,21 +44,6 @@ def indent(value, numspaces=2):
 def unindent(value):
     """Remove indentation from string."""
     return re.sub("\n +", "\n", value)
-
-@register.filter
-def strip_email(value):
-    """Get rid of email part of name/email string like 'Some Name <email@example.com>'."""
-    if not value:
-        return ""
-    if "@" not in value:
-        return value
-    return parseaddr(value)[0]
-
-@register.filter(name='fix_angle_quotes')
-def fix_angle_quotes(value):
-    if "<" in value:
-        value = re.sub(r"<([\w\-\.]+@[\w\-\.]+)>", "&lt;\1&gt;", value)
-    return value
 
 # there's an "ahref -> a href" in GEN_UTIL
 # but let's wait until we understand what that's for.
@@ -142,44 +125,10 @@ def bracketpos(pos,posslug):
 
 register.filter('fill', fill)
 
-@register.filter(name='rfcspace')
-def rfcspace(string):
-    """
-    If the string is an RFC designation, and doesn't have
-    a space between 'RFC' and the rfc-number, a space is
-    added
-    """
-    string = str(string)
-    if string[:3].lower() == "rfc" and string[3] != " ":
-        return string[:3].upper() + " " + string[3:]
-    else:
-        return string
-
-@register.filter(name='rfcnospace')
-def rfcnospace(string):
-    """
-    If the string is an RFC designation, and does have
-    a space between 'RFC' and the rfc-number, remove it.
-    """
-    string = str(string)
-    if string[:3].lower() == "rfc" and string[3] == " ":
-        return string[:3] + string[4:]
-    else:
-        return string
-
 @register.filter
 def prettystdname(string):
     from ietf.doc.utils import prettify_std_name
     return prettify_std_name(force_text(string or ""))
-
-@register.filter(name='rfcurl')
-def rfclink(string):
-    """
-    This takes just the RFC number, and turns it into the
-    URL for that RFC.
-    """
-    string = str(string);
-    return "https://datatracker.ietf.org/doc/html/rfc" + string;
 
 @register.filter
 def rfceditor_info_url(rfcnum : str):
@@ -365,11 +314,6 @@ def underline(string):
     """Return string with an extra line underneath of dashes, for plain text underlining."""
     return string + "\n" + ("-" * len(string))
 
-@register.filter(name='lstrip')
-def lstripw(string, chars):
-    """Strip matching leading characters from words in string"""
-    return " ".join([word.lstrip(chars) for word in string.split()])
-
 @register.filter(name='timesince_days')
 def timesince_days(date):
     """Returns the number of days since 'date' (relative to now)"""
@@ -377,14 +321,6 @@ def timesince_days(date):
         date = datetime.datetime(date.year, date.month, date.day)
     delta = datetime.datetime.now() - date
     return delta.days
-
-@register.filter(name='truncate_ellipsis')
-def truncate_ellipsis(text, arg):
-    num = int(arg)
-    if len(text) > num:
-        return escape(text[:num-1])+"&hellip;"
-    else:
-        return escape(text)
 
 @register.filter
 def split(text, splitter=None):
@@ -397,11 +333,6 @@ register.filter("wordwrap", stringfilter(wordwrap))
 @register.filter(name="compress_empty_lines")
 def compress_empty_lines(text):
     text = re.sub("( *\n){3,}", "\n\n", text)
-    return text
-
-@register.filter(name="remove_empty_lines")
-def remove_empty_lines(text):
-    text = re.sub("( *\n){2,}", "\n", text)
     return text
 
 @register.filter(name='linebreaks_crlf')
@@ -635,11 +566,6 @@ def lower_allcaps(text):
     return result
 
 @register.filter
-def emailwrap(email):
-    email = str(email)
-    return mark_safe(email.replace('@', '<wbr>@'))
-
-@register.filter
 def document_content(doc):
     if doc is None:
         return None
@@ -652,10 +578,6 @@ def format_timedelta(timedelta):
     hours, remainder = divmod(s, 3600)
     minutes, seconds = divmod(remainder, 60)
     return '{hours:02d}:{minutes:02d}'.format(hours=hours,minutes=minutes)
-
-@register.filter()
-def nbsp(value):
-    return mark_safe("&nbsp;".join(value.split(' ')))
 
 @register.filter()
 def comma_separated_list(seq, end_word="and"):
