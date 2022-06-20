@@ -92,9 +92,14 @@ h6,
     font-size: 1em;
 }
 
-.rfcmarkup .grey {
-    color: $gray-500;
+.rfcmarkup {
 
+    .header,
+    .footer,
+    .divider {
+        opacity: $hr-opacity;
+
+    }
 }
 
 tbody.meta tr {
