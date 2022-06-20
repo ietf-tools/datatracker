@@ -16,7 +16,6 @@ from django.dispatch import receiver
 
 import debug                            # pyflakes:ignore
 
-from ietf.group.colors import fg_group_colors, bg_group_colors
 from ietf.name.models import (GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName,
                               AgendaTypeName, AgendaFilterTypeName, ExtResourceName, SessionPurposeName)
 from ietf.person.models import Email, Person
@@ -156,14 +155,6 @@ class Group(GroupInfo):
     @property
     def upcase_acronym(self):
         return self.acronym.upper()
-
-    @property
-    def fg_color(self):
-        return fg_group_colors[self.upcase_acronym]
-
-    @property
-    def bg_color(self):
-        return bg_group_colors[self.upcase_acronym]
 
     def liaison_approvers(self):
         '''Returns roles that have liaison statement approval authority for group'''
