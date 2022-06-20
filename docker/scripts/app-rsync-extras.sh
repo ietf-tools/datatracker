@@ -55,6 +55,7 @@ cat << EOF > "$EXCLUDE"
 *.Z
 *.zip
 *~
+/09nov
 /10[0-9]
 /[0-9][0-9]
 /bcp
@@ -62,7 +63,7 @@ cat << EOF > "$EXCLUDE"
 /fyi
 /ien
 /inline-errata
-/interim-201[0-9]-*
+/interim-20[01][0-9]-*
 /pending-errata
 /prerelease
 /std
