@@ -3,13 +3,16 @@
 # Build the database dev docker image with the latest database dump every night
 # so that developers don't have to manually build it themselves.
 
+# DB dump becomes available at around 0700 UTC, so schedule is set to 0800 UTC
+# to account for variations.
+
 name: Nightly Dev DB Image
 
 # Controls when the workflow will run
 on:
   # Run every night
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 8 * * *'
 
   # Run on db.Dockerfile changes
   push:
