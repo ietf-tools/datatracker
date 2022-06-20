@@ -5,9 +5,9 @@ Contents:
 1. Roll Call and Dial-In Instructions
    {{ roll_call_url }}
 2. Agenda
-   https://datatracker.ietf.org/iesg/agenda/
+   {{ settings.IDTRACKER_BASE_URL }}/iesg/agenda/
 3. Management Item Details
-   https://datatracker.ietf.org/iesg/agenda/#6
+   {{ settings.IDTRACKER_BASE_URL }}/iesg/agenda/#6
 4. Previous minutes
    {{ minutes_url }}
 

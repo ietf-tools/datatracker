@@ -7,7 +7,7 @@ Dear {{ to_name }}:
 
 A generic IPR disclosure was submitted to the IETF Secretariat on {{ ipr.get_latest_event_submitted.time|date:"Y-m-d" }}
 and has been posted on the "IETF Page of Intellectual Property Rights Disclosures"
-(https://datatracker.ietf.org/ipr/).  The title of the IPR disclosure is
+({{ settings.IDTRACKER_BASE_URL }}/ipr/).  The title of the IPR disclosure is
 {{ ipr.title }}.
 
 Thank you
