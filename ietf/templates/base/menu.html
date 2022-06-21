@@ -334,7 +334,7 @@
     {% endif %}
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/ipr/">
+           href="{% url 'ietf.ipr.views.showlist' %}">
             IPR disclosures
         </a>
     </li>
