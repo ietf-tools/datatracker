@@ -236,19 +236,19 @@
     {% endif %}
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/meeting/agenda/">
+           href="{% url 'ietf.meeting.views.agenda' %}">
             Agenda
         </a>
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/meeting/materials/">
+           href="{% url 'ietf.meeting.views.materials' %}">
             Materials
         </a>
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/meeting/floor-plan/">
+           href="{% url 'ietf.meeting.views.floor_plan' %}/">
             Floor plan
         </a>
     </li>
@@ -272,7 +272,7 @@
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/meeting/requests">
+           href="{% url 'ietf.meeting.views.meeting_requests' %}">
             Session requests
         </a>
     </li>
@@ -287,7 +287,7 @@
     {% endif %}
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/meeting/upcoming">
+           href="{% url 'ietf.meeting.views.upcoming' %}">
             Upcoming meetings
         </a>
     </li>
@@ -302,7 +302,7 @@
     {% endif %}
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/meeting/past">
+           href="{% url 'ietf.meeting.views.past' %}">
             Past meetings
         </a>
     </li>
@@ -346,7 +346,7 @@
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="{% url "ietf.iesg.views.agenda" %}">
+           href="{% url 'ietf.iesg.views.agenda' %}">
             IESG agenda
         </a>
     </li>
