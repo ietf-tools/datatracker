@@ -25,10 +25,10 @@
     </p>
     <ul>
         <li>
-            <a href="/doc/html/rfc4052">RFC 4052 (BCP 102), "IAB Processes for Management of IETF Liaison Relationships"</a>
+            <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc4052' %}">RFC 4052 (BCP 102), "IAB Processes for Management of IETF Liaison Relationships"</a>
         </li>
         <li>
-            <a href="/doc/html/rfc4053">RFC 4053 (BCP 103), "Procedures for Handling Liaison Statements to and from the IETF"</a>
+            <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc4053' %}">RFC 4053 (BCP 103), "Procedures for Handling Liaison Statements to and from the IETF"</a>
         </li>
     </ul>
     <table class="table table-sm table-striped tablesorter">
@@ -114,7 +114,7 @@
 <p>
     <sup><small>(1)</small></sup> Please see Section 4., "Approval and Transmission of Liaison Statements,"
     of
-    <a href="/doc/html/rfc4052">
+    <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc4052' %}">
         RFC 4052
     </a>
     for information on who may submit a liaison statement on behalf of an IETF entity, and who should be copied.
