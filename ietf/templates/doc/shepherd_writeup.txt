@@ -69,35 +69,34 @@ to answer all of them.
     For which does this still need to happen in subsequent reviews?
 
 11. What type of RFC publication is being requested on the IETF stream ([Best
-    Current Practice][13], [Proposed Standard, Internet Standard][14],
-    [Informational, Experimental or Historic][15])? Why is this the proper type
+    Current Practice][12], [Proposed Standard, Internet Standard][13],
+    [Informational, Experimental or Historic][14])? Why is this the proper type
     of RFC? Do all Datatracker state attributes correctly reflect this intent?
 
-12. Have the authors and editors confirmed that any and all
-    appropriate IPR disclosures required by [BCP 78][7] and [BCP 79][8] have
-    been filed; and have all contributors been reminded of this obligation?
-    If not, explain why. If yes, summarize any discussion and
-    conclusion regarding the intellectual property rights (IPR) disclosures,
-    and include links to any relevant public email discussion.
+12. Have reasonable efforts been made to remind all authors of the intellectual 
+    property rights (IPR) disclosure obligations described in [BCP 79][8]?
+    To the best of your knowledge, have all required disclosures been filed?
+    If not, explain why. If yes, summarize any relevant discussion, including
+    links to publicly-available messages when applicable.
 
 13. Has each author, editor, and contributor shown their willingness to be listed
     as such? If the total number of authors and editors on the front page is
     greater than five, please provide a justification.
 
 14. Document any remaining I-D nits in this document. Simply running the [idnits
-    tool][9] is not enough; please review the ["Content Guidelines" on
-    authors.ietf.org][16]. (Also note that the current idnits tool generates
+    tool][8] is not enough; please review the ["Content Guidelines" on
+    authors.ietf.org][15]. (Also note that the current idnits tool generates
     some incorrect warnings; a rewrite is underway.)
 
 15. Should any informative references be normative or vice-versa? See the [IESG
-    Statement on Normative and Informative References][17].
+    Statement on Normative and Informative References][16].
 
 16. List any normative references that are not freely available to anyone. Did
     the community have sufficient access to review any such normative
     references?
 
-17. Are there any normative downward references (see [RFC 3967][10],
-    [BCP 97][11], and the [DOWNREF registry][18])? If so, list them.
+17. Are there any normative downward references (see [RFC 3967][9],
+    [BCP 97][10], and the [DOWNREF registry][17])? If so, list them.
 
 18. Are there normative references to documents that are not ready to be
     submitted to the IESG for publication or are otherwise in an unclear state?
@@ -115,7 +114,7 @@ to answer all of them.
     associated with the appropriate reservations in IANA registries. Confirm
     that any referenced IANA registries have been clearly identified. Confirm
     that each newly created IANA registry specifies its initial contents,
-    allocations procedures, and a reasonable name (see [RFC 8126][12]).
+    allocations procedures, and a reasonable name (see [RFC 8126][11]).
 
 21. List any new IANA registries that require Designated Expert Review for
     future allocations. Are the instructions to the Designated Expert clear?
@@ -127,17 +126,16 @@ to answer all of them.
 [4]: https://trac.ietf.org/trac/ops/wiki/yang-review-tools
 [5]: https://www.rfc-editor.org/rfc/rfc8342.html
 [6]: https://trac.ietf.org/trac/iesg/wiki/ExpertTopics
-[7]: https://www.rfc-editor.org/info/bcp78
-[8]: https://www.rfc-editor.org/info/bcp79
-[9]: https://www.ietf.org/tools/idnits/
-[10]: https://www.rfc-editor.org/rfc/rfc3967.html
-[11]: https://www.rfc-editor.org/info/bcp97
-[12]: https://www.rfc-editor.org/rfc/rfc8126.html
-[13]: https://www.rfc-editor.org/rfc/rfc2026.html#section-5
-[14]: https://www.rfc-editor.org/rfc/rfc2026.html#section-4.1
-[15]: https://www.rfc-editor.org/rfc/rfc2026.html#section-4.2
-[16]: https://authors.ietf.org/en/content-guidelines-overview
-[17]: https://www.ietf.org/about/groups/iesg/statements/normative-informative-references/
-[18]: https://datatracker.ietf.org/doc/downref/
+[7]: https://www.rfc-editor.org/info/bcp79
+[8]: https://www.ietf.org/tools/idnits/
+[9]: https://www.rfc-editor.org/rfc/rfc3967.html
+[10]: https://www.rfc-editor.org/info/bcp97
+[11]: https://www.rfc-editor.org/rfc/rfc8126.html
+[12]: https://www.rfc-editor.org/rfc/rfc2026.html#section-5
+[13]: https://www.rfc-editor.org/rfc/rfc2026.html#section-4.1
+[14]: https://www.rfc-editor.org/rfc/rfc2026.html#section-4.2
+[15]: https://authors.ietf.org/en/content-guidelines-overview
+[16]: https://www.ietf.org/about/groups/iesg/statements/normative-informative-references/
+[17]: https://datatracker.ietf.org/doc/downref/
 {% else %}There is no default shepherd write-up template for the {{doc.stream}} stream.
 {% endif %}{% else %}There is no stream set for this document (thus, no default shepherd write-up template).{% endif %}
