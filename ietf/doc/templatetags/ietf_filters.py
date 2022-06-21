@@ -172,7 +172,10 @@ def doc_canonical_name(name):
 def link_charter_doc_match(match):
     if not doc_canonical_name(match[0]):
         return match[0]
-    url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=match[1][:-1], rev=match[2]))
+    url = urlreverse(
+        "ietf.doc.views_doc.document_main",
+        kwargs=dict(name=match[1][:-1], rev=match[2]),
+    )
     return f'<a href="{url}">{match[0]}</a>'
 
 
@@ -182,7 +185,7 @@ def link_non_charter_doc_match(match):
     if not cname:
         return match[0]
     if name == cname:
-        url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=cname))
+        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=cname))
         return f'<a href="{url}">{match[0]}</a>'
 
     # if we get here, the name probably has a version number and/or extension at the end
@@ -190,14 +193,17 @@ def link_non_charter_doc_match(match):
     if rev_split:
         name = rev_split.group(1)
     else:
-        url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=cname))
+        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=cname))
         return f'<a href="{url}">{match[0]}</a>'
 
     cname = doc_canonical_name(name)
     if not cname:
         return match[0]
     if name == cname:
-        url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=cname, rev=rev_split.group(2)))
+        url = urlreverse(
+            "ietf.doc.views_doc.document_main",
+            kwargs=dict(name=cname, rev=rev_split.group(2)),
+        )
         return f'<a href="{url}">{match[0]}</a>'
 
     # if we get here, we can't linkify
@@ -209,7 +215,7 @@ def link_other_doc_match(match):
     rev = match[3]
     if not doc_canonical_name(doc + rev):
         return match[0]
-    url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=doc, rev=rev))
+    url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc + rev))
     return f'<a href="{url}">{match[1]}</a>'
 
 
@@ -223,31 +229,19 @@ def urlize_ietf_docs(string, autoescape=None):
             string = escape(string)
         else:
             string = mark_safe(string)
-    exp1 = r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d{2}-\d{2})(\.(?:txt|ps|pdf|html))?\b"
-    exp2 = r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d{2})(\.(?:txt|ps|pdf|html))?\b"
-    if re.search(exp1, string):
-        string = re.sub(
-            exp1,
-            link_charter_doc_match,
-            string,
-            flags=re.IGNORECASE | re.ASCII,
-        )
-    elif re.search(exp2, string):
-        string = re.sub(
-            exp2,
-            link_charter_doc_match,
-            string,
-            flags=re.IGNORECASE | re.ASCII,
-        )
+    string = re.sub(
+        r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d{2}(?:-\d{2}))(\.(?:txt|ps|pdf|html))?\b",
+        link_charter_doc_match,
+        string,
+        flags=re.IGNORECASE | re.ASCII,
+    )
     string = re.sub(
         r"\b(?<![/\-:=#])((?:draft-|bofreq-|conflict-review-|status-change-)[\d\w\.+-]+(?![-@]))",
-        # r"\b(?<![/\-:=#])(((?:draft-|bofreq-|conflict-review-|status-change-)(?:[\d\w\.+]+-)*)([\d\w\.+]+?)(\.(?:txt|ps|pdf|html))?)\b(?![-@])",
         link_non_charter_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
     string = re.sub(
-        # r"\b((RFC|BCP|STD|FYI|(?:draft-|bofreq-|conflict-review-|status-change-|charter-)[-\d\w.+]+)\s*0*(\d+))\b",
         r"\b(?<![/\-:=#])((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
         link_other_doc_match,
         string,

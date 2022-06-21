@@ -1887,7 +1887,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['year'],     str(draft.pub_date().year))
         self.assertEqual(entry['month'],    draft.pub_date().strftime('%b').lower())
         self.assertEqual(entry['day'],      str(draft.pub_date().day))
-        self.assertEqual(entry['url'],      f'https://datatracker.ietf.org/doc/html/{docname}')
+        self.assertEqual(entry['url'],      f'{settings.IDTRACKER_BASE_URL}/doc/{draft.name}/{draft.rev}/')
         #
         self.assertNotIn('doi', entry)
 

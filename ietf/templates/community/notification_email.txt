@@ -4,7 +4,7 @@ Hello,
 This is a notification from the {{ clist.long_name }}.
 
 Document: {{ event.doc }},
-{% url 'ietf.doc.views_doc.document_main' name=event.doc.name %}
+{{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.doc.views_doc.document_main' name=event.doc.name %}
 
 Change by {{ event.by }} on {{ event.time }}:
 

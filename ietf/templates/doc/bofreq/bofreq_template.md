@@ -33,6 +33,6 @@ To allow evaluation of your proposal, please include the following items:
    - Draft charter: {{ settings.IDTRACKER_BASE_URL }}/doc/charter-ietf-EXAMPLE/
    - Relevant drafts:
       - Use Cases:
-         - {{ settings.IDTRACKER_BASE_URL }}/html/draft-blah-uses
+         - {{ settings.IDTRACKER_BASE_URL }}/doc/draft-blah-uses
       - Solutions
-         - {{ settings.IDTRACKER_BASE_URL }}/html/draft-blah-soln
+         - {{ settings.IDTRACKER_BASE_URL }}/doc/draft-blah-soln
