@@ -266,7 +266,7 @@
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/secr/sreq/">
+           href="{% url 'ietf.secr.sreq.views.main' %}">
             Request a session
         </a>
     </li>
@@ -340,7 +340,7 @@
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/liaison/">
+           href="{% url 'ietf.liaisons.views.liaison_list' %}">
             Liaison statements
         </a>
     </li>
@@ -392,13 +392,13 @@
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/group/edu/materials/">
+           href="{% url "ietf.group.views.materials" acronym='edu' %}">
             Tutorials
         </a>
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/api/">
+           href="{% url 'ietf.api.views.api_help' %}">
             API Help
         </a>
     </li>

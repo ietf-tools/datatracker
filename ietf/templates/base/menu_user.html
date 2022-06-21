@@ -20,11 +20,12 @@
             <span class="fw-bolder">User</span>
         </li>
     {% endif %}
-    {% if request.get_full_path == "/accounts/logout/" %}
+    {% url 'django.contrib.auth.views.logout' as logout_url %}
+    {% if request.get_full_path == logout_url %}
         <li>
             <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
                rel="nofollow"
-               href="{% url 'ietf.ietfauth.views.login' %}{% if '/accounts/logout/' not in request.get_full_path %}/?next={{ request.get_full_path|urlencode }}{% endif %}">
+               href="{% url 'ietf.ietfauth.views.login' %}{% if logout_url not in request.get_full_path %}/?next={{ request.get_full_path|urlencode }}{% endif %}">
                 Sign in
             </a>
         </li>
@@ -33,7 +34,7 @@
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
                    rel="nofollow"
-                   href="/accounts/logout/"> {# FIXME: figure out how to use URL resolver here #}
+                   href="{% url 'django.contrib.auth.views.logout' %}">
                     Sign out
                 </a>
             </li>
@@ -46,7 +47,7 @@
             </li>
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
-                   href="/person/{{ user.person.name|urlencode }}">
+                   href="{% url 'ietf.person.views.profile' email_or_name=user.person.name %}">
                     Public profile page
                 </a>
             </li>
@@ -165,13 +166,13 @@
         </li>
         <li>
             <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
-               href="/admin/iesg/telechatdate/">
+               href="{% url 'admin:iesg_telechatdate_changelist' %}">
                 Telechat dates
             </a>
         </li>
         <li>
             <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
-               href="/admin/iesg/telechatagendaitem/">
+               href="{% url 'admin:iesg_telechatagendaitem_changelist' %}">
                 Management items
             </a>
         </li>
