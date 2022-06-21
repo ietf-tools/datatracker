@@ -69,9 +69,11 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["luxon", "npm:2.4.0"],\
             ["moment", "npm:2.29.3"],\
             ["moment-timezone", "npm:0.5.34"],\
+            ["murmurhash-js", "npm:1.0.0"],\
             ["naive-ui", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.30.4"],\
             ["parcel", "npm:2.5.0"],\
             ["pinia", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.0.14"],\
+            ["pinia-plugin-persist", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:1.0.0"],\
             ["pug", "npm:3.0.2"],\
             ["sass", "npm:1.52.3"],\
             ["select2", "npm:4.1.0-rc.0"],\
@@ -6158,6 +6160,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
+      ["murmurhash-js", [\
+        ["npm:1.0.0", {\
+          "packageLocation": "./.yarn/cache/murmurhash-js-npm-1.0.0-b1fa804bc0-083cea92a1.zip/node_modules/murmurhash-js/",\
+          "packageDependencies": [\
+            ["murmurhash-js", "npm:1.0.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
       ["naive-ui", [\
         ["npm:2.30.4", {\
           "packageLocation": "./.yarn/cache/naive-ui-npm-2.30.4-6393fb5ec6-b4032aecb0.zip/node_modules/naive-ui/",\
@@ -6665,6 +6676,37 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             "@types/vue__composition-api",\
             "@vue/composition-api",\
             "typescript",\
+            "vue"\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["pinia-plugin-persist", [\
+        ["npm:1.0.0", {\
+          "packageLocation": "./.yarn/cache/pinia-plugin-persist-npm-1.0.0-b6b3a94cc9-49335d7207.zip/node_modules/pinia-plugin-persist/",\
+          "packageDependencies": [\
+            ["pinia-plugin-persist", "npm:1.0.0"]\
+          ],\
+          "linkType": "SOFT"\
+        }],\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:1.0.0", {\
+          "packageLocation": "./.yarn/__virtual__/pinia-plugin-persist-virtual-f56fcf19bb/0/cache/pinia-plugin-persist-npm-1.0.0-b6b3a94cc9-49335d7207.zip/node_modules/pinia-plugin-persist/",\
+          "packageDependencies": [\
+            ["pinia-plugin-persist", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:1.0.0"],\
+            ["@types/pinia", null],\
+            ["@types/vue", null],\
+            ["@types/vue__composition-api", null],\
+            ["@vue/composition-api", null],\
+            ["pinia", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.0.14"],\
+            ["vue", "npm:3.2.37"],\
+            ["vue-demi", "virtual:f56fcf19bbebc2ada1b28955da8cc216b1e9a569a1a7337d2d1926c1ebd1bc7a5bd91aedae1d05c15c8562f33caf7c59bd3020a667340f6bdc6a7b13fc2ba847#npm:0.12.5"]\
+          ],\
+          "packagePeers": [\
+            "@types/pinia",\
+            "@types/vue",\
+            "@types/vue__composition-api",\
+            "@vue/composition-api",\
+            "pinia",\
             "vue"\
           ],\
           "linkType": "HARD"\
@@ -7230,9 +7272,11 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["luxon", "npm:2.4.0"],\
             ["moment", "npm:2.29.3"],\
             ["moment-timezone", "npm:0.5.34"],\
+            ["murmurhash-js", "npm:1.0.0"],\
             ["naive-ui", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.30.4"],\
             ["parcel", "npm:2.5.0"],\
             ["pinia", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.0.14"],\
+            ["pinia-plugin-persist", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:1.0.0"],\
             ["pug", "npm:3.0.2"],\
             ["sass", "npm:1.52.3"],\
             ["select2", "npm:4.1.0-rc.0"],\
@@ -8143,6 +8187,13 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["vue-demi", [\
+        ["npm:0.12.5", {\
+          "packageLocation": "./.yarn/unplugged/vue-demi-virtual-f447b32deb/node_modules/vue-demi/",\
+          "packageDependencies": [\
+            ["vue-demi", "npm:0.12.5"]\
+          ],\
+          "linkType": "SOFT"\
+        }],\
         ["npm:0.13.1", {\
           "packageLocation": "./.yarn/unplugged/vue-demi-virtual-ba8c01d80c/node_modules/vue-demi/",\
           "packageDependencies": [\
@@ -8154,6 +8205,23 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/unplugged/vue-demi-virtual-ba8c01d80c/node_modules/vue-demi/",\
           "packageDependencies": [\
             ["vue-demi", "virtual:c91ee19e9ab385d675be1db71e9c8c0e5f8a8806567125fc214e94085a13261211e9f08e13a3185c8bcc0904c618a017c6986366dd7cb5413d456c7c20f9f4b7#npm:0.13.1"],\
+            ["@types/vue", null],\
+            ["@types/vue__composition-api", null],\
+            ["@vue/composition-api", null],\
+            ["vue", "npm:3.2.37"]\
+          ],\
+          "packagePeers": [\
+            "@types/vue",\
+            "@types/vue__composition-api",\
+            "@vue/composition-api",\
+            "vue"\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["virtual:f56fcf19bbebc2ada1b28955da8cc216b1e9a569a1a7337d2d1926c1ebd1bc7a5bd91aedae1d05c15c8562f33caf7c59bd3020a667340f6bdc6a7b13fc2ba847#npm:0.12.5", {\
+          "packageLocation": "./.yarn/unplugged/vue-demi-virtual-f447b32deb/node_modules/vue-demi/",\
+          "packageDependencies": [\
+            ["vue-demi", "virtual:f56fcf19bbebc2ada1b28955da8cc216b1e9a569a1a7337d2d1926c1ebd1bc7a5bd91aedae1d05c15c8562f33caf7c59bd3020a667340f6bdc6a7b13fc2ba847#npm:0.12.5"],\
             ["@types/vue", null],\
             ["@types/vue__composition-api", null],\
             ["@vue/composition-api", null],\

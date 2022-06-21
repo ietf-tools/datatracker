@@ -1,6 +1,6 @@
 <template lang="pug">
 .agenda-quickaccess
-  n-affix(:top='240')
+  n-affix(:trigger-top='82')
     .card.shadow-sm
       .card-body
         n-button(

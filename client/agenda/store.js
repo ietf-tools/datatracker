@@ -1,26 +1,35 @@
 import { defineStore } from 'pinia'
 import { DateTime } from 'luxon'
 import uniqBy from 'lodash/uniqBy'
+import murmur from 'murmurhash-js/murmurhash3_gc'
 
 const urlRe = /http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+/
 const conferenceDomains = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 'gather.town']
 
 export const useAgendaStore = defineStore('agenda', {
   state: () => ({
+    areaIndicatorsShown: true,
     calendarShown: false,
     categories: [],
+    currentDateTime: DateTime.local(),
     dayIntersectId: '',
     filterShown: false,
+    floorIndicatorsShown: true,
+    infoNoteShown: true,
     isCurrentMeeting: false,
+    listDayCollapse: false,
     meeting: {},
+    infoNoteHash: '',
     mobileMode: window.innerWidth < 1400,
     pickerMode: false,
     pickerModeView: false,
     pickedEvents: [],
+    redhandShown: true,
     schedule: [],
     searchText: '',
     searchVisible: false,
     selectedCatSubs: [],
+    settingsShown: false,
     timezone: DateTime.local().zoneName,
     useHedgeDoc: false,
     visibleDays: []
@@ -118,7 +127,33 @@ export const useAgendaStore = defineStore('agenda', {
       this.meeting = agendaData.meeting
       this.schedule = agendaData.schedule
       this.useHedgeDoc = agendaData.useHedgeDoc
+
+      this.infoNoteHash = murmur(agendaData.meeting.infoNote, 0).toString()
+
+      // -> Load meeting-specific preferences
+      this.infoNoteShown = !(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.hideInfo`) === this.infoNoteHash)
+    },
+    persistMeetingPreferences () {
+      if (this.infoNoteShown) {
+        window.localStorage.removeItem(`agenda.${this.meeting.number}.hideInfo`)
+      } else {
+        window.localStorage.setItem(`agenda.${this.meeting.number}.hideInfo`, this.infoNoteHash)
+      }
     }
+  },
+  persist: {
+    enabled: true,
+    strategies: [
+      {
+        storage: localStorage,
+        paths: [
+          'areaIndicatorsShown',
+          'floorIndicatorsShown',
+          'listDayCollapse',
+          'redhandShown'
+        ]
+      }
+    ]
   }
 })
 

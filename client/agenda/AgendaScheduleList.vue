@@ -6,8 +6,8 @@
         tr
           th.agenda-table-head-check(v-if='pickerModeActive') &nbsp;
           th.agenda-table-head-time Time
-          th.agenda-table-head-location Location
-          th.agenda-table-head-event(colspan='3') Event
+          th.agenda-table-head-location(colspan='2') Location
+          th.agenda-table-head-event(colspan='2') {{ agendaStore.mobileMode ? '' : 'Event' }}
       tbody
         tr.agenda-table-display-noresult(
           v-if='!meetingEvents || meetingEvents.length < 1'
@@ -46,10 +46,13 @@
               span(v-if='item.isSessionEvent') &mdash;
               span(v-else) {{item.timeslot}}
             //- CELL - ROOM ---------------------------
-            td.agenda-table-cell-room
+            td.agenda-table-cell-room(
+              :colspan='!item.isSessionEvent ? 2 : 1'
+              )
               template(v-if='item.location && item.location.short')
                 n-popover(
                   trigger='hover'
+                  v-if='agendaStore.floorIndicatorsShown'
                   )
                   template(#trigger)
                     span.badge {{item.location.short}}
@@ -64,6 +67,7 @@
               n-popover(
                 trigger='hover'
                 :width='250'
+                v-if='agendaStore.areaIndicatorsShown'
                 )
                 template(#trigger)
                   span.badge {{item.groupAcronym}}
@@ -72,9 +76,7 @@
                   span {{item.groupParentDescription}}
               a.discreet(:href='`/group/` + item.acronym + `/about/`') {{item.acronym}}
             //- CELL - NAME ---------------------------
-            td.agenda-table-cell-name(
-              :colspan='!item.isSessionEvent ? 2 : 1'
-              )
+            td.agenda-table-cell-name
               i.bi.me-2(v-if='item.icon', :class='item.icon')
               a.discreet(
                 v-if='item.flags.agenda'
@@ -120,6 +122,8 @@
           )
           i.bi.bi-search
       span {{ agendaStore.searchVisible ? 'Close Search' : 'Search Events' }}
+
+  .agenda-table-redhand(v-if='agendaStore.redhandShown')
 
   agenda-details-modal(
     v-model:shown='state.showEventDetails'
@@ -426,6 +430,28 @@ function xslugify (str) {
   overflow: hidden;
   position: relative;
 
+  &-redhand {
+    position: absolute;
+    top: 307px;
+    content: "";
+    width: 100%;
+    height: 2px;
+    background-color: #F00;
+    box-shadow: 0 0 5px 0 #F00;
+    transition: top 1s ease;
+
+    &::after {
+      content: '';
+      display: block;
+      width: 0;
+      height: 0;
+      border-top: 7px solid transparent;
+      border-bottom: 7px solid transparent;
+      border-left: 7px solid #F00;
+      transform: translate(0,-6px);
+    }
+  }
+
   table {
     width: 100%;
     border: 1px solid #FFF;
@@ -482,9 +508,9 @@ function xslugify (str) {
   }
 
   // -> Column Sizes
-  tr td:nth-child(3) {
-    width: 200px;
-  }
+  // tr td:nth-child(3) {
+  //   width: 200px;
+  // }
 
   tr:nth-child(odd) td {
     background-color: #F9F9F9;
@@ -565,6 +591,7 @@ function xslugify (str) {
 
     &.agenda-table-cell-group {
       color: $gray-700;
+      border-right: 1px solid $gray-300 !important;
 
       .badge {
         width: 40px;
@@ -629,6 +656,7 @@ function xslugify (str) {
     font-size: 1rem;
     font-weight: 700;
     text-align: right;
+    white-space: nowrap;
   }
 
   // -> Row BG Color Highlight

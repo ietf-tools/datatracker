@@ -8,7 +8,7 @@ module.exports = {
     'vue/setup-compiler-macros': true
   },
   extends: [
-    'plugin:vue/vue3-essential', // Priority A: Essential (Error Prevention)
+    // 'plugin:vue/vue3-essential', // Priority A: Essential (Error Prevention)
     'plugin:vue/vue3-strongly-recommended', // Priority B: Strongly Recommended (Improving Readability)
     'plugin:cypress/recommended'
   ],
@@ -23,6 +23,7 @@ module.exports = {
     'vue'
   ],
   rules: {
-    'vue/script-setup-uses-vars': 'error'
+    'vue/script-setup-uses-vars': 'error',
+    'vue/multi-word-component-names': 'off'
   }
 }

@@ -5,14 +5,22 @@
     span {{agendaStore.meeting.city}}, {{ meetingDate }}
     h6.float-end.d-none.d-lg-inline(v-if='meetingUpdated') #[span.text-muted Updated:] {{ meetingUpdated }}
 
-  ul.nav.nav-tabs.my-3
-    li.nav-item(v-for='tab of state.tabs')
-      a.nav-link.agenda-link.filterable(
-        :class='{ active: tab.key === state.currentTab }'
-        :href='tab.href'
-        )
-        i.bi.me-2(:class='tab.icon')
-        span {{tab.title}}
+  .agenda-topnav.my-3
+    ul.nav.nav-tabs
+      li.nav-item(v-for='tab of state.tabs')
+        a.nav-link.agenda-link.filterable(
+          :class='{ active: tab.key === state.currentTab }'
+          :href='tab.href'
+          )
+          i.bi.me-2(:class='tab.icon')
+          span {{tab.title}}
+    n-button(
+      quaternary
+      @click='toggleSettings'
+      )
+      template(#icon)
+        i.bi.bi-gear
+      span Settings
 
   .row
     .col
@@ -21,8 +29,14 @@
       // -> Subtitle + Timezone Bar
       // ----------------------------
       .row
-        .col
-          h2 {{ state.currentTab === 'personalize' ? 'Session Selection' : 'Schedule'}}
+        .col.d-flex.align-items-center
+          h2 {{ agendaStore.pickerMode ? 'Session Selection' : 'Schedule'}}
+
+          n-popover(v-if='!agendaStore.infoNoteShown')
+            template(#trigger)
+              n-button.ms-2(text, @click='toggleInfoNote')
+                i.bi.bi-info-circle.text-muted
+            span Show Info Note
         .col-auto.d-flex.align-items-center
           i.bi.bi-globe.me-2
           small.me-2.d-none.d-md-inline: strong Timezone:
@@ -48,7 +62,17 @@
             )
 
       .alert.alert-warning.mt-3(v-if='agendaStore.isCurrentMeeting') #[strong Note:] IETF agendas are subject to change, up to and during a meeting.
-      .agenda-infonote.mt-3(v-if='agendaStore.meeting.infoNote', v-html='agendaStore.meeting.infoNote')
+      .agenda-infonote.mt-3(v-if='agendaStore.meeting.infoNote && agendaStore.infoNoteShown')
+        n-popover
+          template(#trigger)
+            n-button(
+              text
+              aria-label='Close Info Note'
+              @click='toggleInfoNote'
+              )
+              i.bi.bi-x-square
+          span Hide Info Note
+        div(v-html='agendaStore.meeting.infoNote')
 
       // -----------------------------------
       // -> Search Bar
@@ -82,6 +106,7 @@
       // -----------------------------------
       agenda-filter
       agenda-schedule-calendar
+      agenda-settings
 
       // -----------------------------------
       // -> Schedule List
@@ -93,6 +118,15 @@
     // -----------------------------------
     .col-auto.d-print-none(v-if='!agendaStore.mobileMode')
       agenda-quick-access
+
+  .agenda-mobile-btn-l(v-if='agendaStore.mobileMode')
+    button(@click='showFilter')
+      i.bi.bi-filter-square-fill.me-2
+      span Filters
+  .agenda-mobile-btn-r(v-if='agendaStore.mobileMode')
+    button
+      i.bi.bi-calendar3.me-2
+      span Calendar
 </template>
 
 <script setup>
@@ -113,6 +147,7 @@ import AgendaFilter from './AgendaFilter.vue'
 import AgendaScheduleList from './AgendaScheduleList.vue'
 import AgendaScheduleCalendar from './AgendaScheduleCalendar.vue'
 import AgendaQuickAccess from './AgendaQuickAccess.vue'
+import AgendaSettings from './AgendaSettings.vue'
 
 import timezones from '../shared/timezones'
 
@@ -213,6 +248,21 @@ function closeSearch () {
   })
 }
 
+function showFilter () {
+  agendaStore.$patch({ filterShown: true })
+}
+
+function toggleInfoNote () {
+  agendaStore.$patch({ infoNoteShown: !agendaStore.infoNoteShown })
+  agendaStore.persistMeetingPreferences()
+}
+
+function toggleSettings () {
+  agendaStore.$patch({
+    settingsShown: !agendaStore.settingsShown
+  })
+}
+
 // Handle browser resize
 
 const resizeObserver = new ResizeObserver(entries => {
@@ -299,6 +349,26 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
 .agenda {
   min-height: 500px;
 
+  &-topnav {
+    position: relative;
+
+    > button {
+      position: absolute;
+      top: 5px;
+      right: 0;
+
+      .bi {
+        transition: transform 1s ease;
+      }
+
+      &:hover {
+        .bi {
+          transform: rotate(180deg);
+        }
+      }
+    }
+  }
+
   &-timezone-ddn {
     min-width: 350px;
   }
@@ -308,13 +378,81 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
     border-radius: .25rem;
     background: linear-gradient(to top, lighten($blue-100, 2%), lighten($blue-100, 5%));
     box-shadow: inset 0 0 0 1px #FFF;
-    padding: 1rem;
+    padding: 16px 50px 16px 16px;
     font-size: .9rem;
     color: $blue-700;
+    position: relative;
+
+    > button {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-size: 1.2em;
+      color: $blue-400;
+    }
   }
 
-  &-search {
-    
+  &-mobile-btn-l, &-mobile-btn-r {
+    position: fixed;
+    bottom: 0;
+
+    button {
+      height: 40px;
+      box-shadow: 0px 0 8px 0px rgba(0, 0, 0, 0.5);
+      border: none;
+      background-color: $blue;
+      color: #FFF;
+      padding: 0 15px;
+      transition: all .4s ease;
+
+      i.bi {
+        font-size: 1.2em;
+      }
+
+      &:hover {
+        background-color: $blue-400;
+      }
+      &:active {
+        background-color: $blue-700;
+      }
+    }
   }
+
+  &-mobile-btn-l {
+    left: 0;
+
+    button {
+      border-radius: 0 15px 0 0;
+      background-color: $green;
+
+      &:hover {
+        background-color: $green-400;
+      }
+      &:active {
+        background-color: $green-700;
+      }
+    }
+  }
+
+  &-mobile-btn-r {
+    right: 0;
+
+    button {
+      border-radius: 15px 0 0 0;
+      background-color: $blue;
+
+      &:hover {
+        background-color: $blue-400;
+      }
+      &:active {
+        background-color: $blue-700;
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  from { transform:rotate(0deg); }
+  to { transform:rotate(360deg); }
 }
 </style>
