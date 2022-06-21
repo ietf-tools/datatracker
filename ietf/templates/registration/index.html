@@ -14,8 +14,8 @@
                href="{% url 'ietf.ietfauth.views.login' %}"
                rel="nofollow">Sign in</a>
         {% endif %}
-        <a class="btn btn-info" href="{% url 'ietf.ietfauth.views.create' %}">New account</a>
-        <a class="btn btn-warning" href="{% url 'ietf.ietfauth.views.reset' %}">Reset password</a>
-        <a class="btn btn-primary" href="{% url 'ietf.ietfauth.views.settings' %}">Change browser preferences</a>
+        <a class="btn btn-info" href="{% url 'ietf.ietfauth.views.create_account' %}">New account</a>
+        <a class="btn btn-warning" href="{% url 'ietf.ietfauth.views.password_reset' %}">Reset password</a>
+        <a class="btn btn-primary" href="{% url 'ietf.cookies.views.preferences' %}">Change browser preferences</a>
     </div>
 {% endblock %}
