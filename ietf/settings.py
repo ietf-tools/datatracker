@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -73,7 +73,7 @@ SERVER_EMAIL = 'Django Server <django-project@' + IETF_DOMAIN + '>'
 
 DEFAULT_FROM_EMAIL = 'IETF Secretariat <ietf-secretariat-reply@' + IETF_DOMAIN + '>'
 UTILS_ON_BEHALF_EMAIL = 'noreply@' + IETF_DOMAIN
-UTILS_FROM_EMAIL_DOMAINS = [ 'ietf.org', 'iab.org', 'tools.ietf.org', ]
+UTILS_FROM_EMAIL_DOMAINS = [ 'ietf.org', 'iab.org', ]
 
 MANAGERS = ADMINS
 
@@ -539,7 +539,6 @@ INTERNAL_IPS = (
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://www.ietf.org/rfcdiff"
 IDNITS_BASE_URL = "https://www.ietf.org/tools/idnits"
-XML2RFC_BASE_URL = "https://xml2rfc.tools.ietf.org/experimental.html"
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
@@ -867,7 +866,6 @@ IDSUBMIT_MAX_DAILY_SAME_GROUP_SIZE = 450 # in MB
 IDSUBMIT_MAX_DAILY_SUBMISSIONS = 1000
 IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE = 2000 # in MB
 
-XML_LIBRARY = "/www/tools.ietf.org/tools/xml2rfc/web/public/rfc/"
 
 # === Meeting Related Settings =================================================
 
