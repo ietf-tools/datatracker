@@ -16,7 +16,7 @@ Emails:
 {% if changes %}Changes of special note:
 {{ changes }}{% endif %}
 
-You can make changes to your profile here: {{ settings.IDTRACKER_BASE_URL }}/accounts/profile/
+You can make changes to your profile here: {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.ietfauth.views.profile' %}
 
 Reply to this message if this merge should not have happened, or if it produced an incorrect result that you cannot correct by editing your profile.
 

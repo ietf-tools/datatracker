@@ -24,7 +24,7 @@
         <li>
             <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
                rel="nofollow"
-               href="/accounts/login {% if "/accounts/logout/" not in request.get_full_path %} /?next={{ request.get_full_path|urlencode }}{% endif %}">
+               href="{% url 'ietf.ietfauth.views.login' %}{% if '/accounts/logout/' not in request.get_full_path %}/?next={{ request.get_full_path|urlencode }}{% endif %}">
                 Sign in
             </a>
         </li>
@@ -33,14 +33,14 @@
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
                    rel="nofollow"
-                   href="/accounts/logout/">
+                   href="/accounts/logout/"> {# FIXME: figure out how to use URL resolver here #}
                     Sign out
                 </a>
             </li>
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
                    rel="nofollow"
-                   href="/accounts/profile/">
+                   href="{% url 'ietf.ietfauth.views.profile' %}">
                     Account info
                 </a>
             </li>
@@ -67,14 +67,14 @@
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
                    rel="nofollow"
-                   href="/accounts/password/">
+                   href="{% url 'ietf.ietfauth.views.change_password' %}/">
                     Change password
                 </a>
             </li>
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
                    rel="nofollow"
-                   href="/accounts/username/">
+                   href="{% url 'ietf.ietfauth.views.change_username' %}/">
                     Change username
                 </a>
             </li>
@@ -82,14 +82,14 @@
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
                    rel="nofollow"
-                   href="/accounts/login/?next={{ request.get_full_path|urlencode }}">
+                   href="{% url 'ietf.ietfauth.views.login' %}/?next={{ request.get_full_path|urlencode }}">
                     Sign in
                 </a>
             </li>
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
                    rel="nofollow"
-                   href="/accounts/reset/">
+                   href="{% url 'ietf.ietfauth.views.password_reset' %}/">
                     Password reset
                 </a>
             </li>
