@@ -51,6 +51,14 @@ $(document)
                 var header_row = $(table)
                     .find("thead > tr:first");
 
+                // we need to strip the trailing whitespace, so the sort chevron doesn't wrap
+                $(header_row)
+                    .find("th, td")
+                    .each(function () {
+                        const html = $(this).html().trim();
+                        $(this).html(html);
+                    });
+
                 // get field classes from first thead row
                 var fields = $(header_row)
                     .find("th, td")
