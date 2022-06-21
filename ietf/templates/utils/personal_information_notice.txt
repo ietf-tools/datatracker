@@ -19,7 +19,7 @@ continued maintenance and use of your information by checking the 'Consent'
 checkbox found at the bottom of the page, and then submit the form.
 
 For information on how personal information is handled in the datatracker, please see
-{{ settings.IDTRACKER_BASE_URL }}/help/personal-information.
+{{ settings.IDTRACKER_BASE_URL }}{% url 'personal-information' %}.
 
 In case you prefer to not follow any email links, due to phishing
 considerations, please just go to the datatracker and use the menu
