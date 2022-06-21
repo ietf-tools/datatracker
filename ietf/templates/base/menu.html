@@ -346,7 +346,7 @@
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/iesg/agenda/">
+           href="{% url "ietf.iesg.views.agenda" %}">
             IESG agenda
         </a>
     </li>
