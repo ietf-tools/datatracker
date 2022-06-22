@@ -515,8 +515,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         capped_max_d = min(max_duration, datetime.timedelta(hours=4))
         capped_timedelta = min(max(capped_min_d, timedelta), capped_max_d)
 
-        min_d_css_rems = 4
-        max_d_css_rems = 6
+        min_d_css_rems = 5
+        max_d_css_rems = 7
         # interpolate
         scale = (capped_timedelta - capped_min_d) / (capped_max_d - capped_min_d) if capped_min_d != capped_max_d else 1
         return min_d_css_rems + (max_d_css_rems - min_d_css_rems) * scale
