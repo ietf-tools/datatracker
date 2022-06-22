@@ -79,10 +79,10 @@ class GroupForm(forms.Form):
             self.used_roles = self.group.used_roles or group_features.default_used_roles
         else:
             group_features = GroupFeatures.objects.filter(type_id=self.group_type).first()
+            self.used_roles = group_features.default_used_roles
 
         log.assertion('group_features is not None')
         if group_features is not None:
-            self.used_roles = group_features.default_used_roles
             parent_types = group_features.parent_types.all()
             need_parent = group_features.need_parent
             default_parent = group_features.default_parent
