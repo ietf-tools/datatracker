@@ -16,6 +16,7 @@ from tempfile import NamedTemporaryFile
 import debug                            # pyflakes:ignore
 
 from django.conf import settings
+from django.test import RequestFactory
 from django.urls import reverse as urlreverse
 from django.urls import NoReverseMatch
 from django.utils import timezone
@@ -1085,6 +1086,16 @@ class GroupFormTests(TestCase):
                 for rslug in group.get_used_roles():
                     RoleFactory(name_id=rslug, group=group, person=PersonFactory())
                 self.do_edit_roles_test(group)
+
+    def test_used_roles_overrides_default(self):
+        """A group's used_roles should override the GroupFeatures default"""
+        request_factory = RequestFactory()
+        group = GroupFactory(type_id='wg')
+        self.assertEqual(GroupForm(request_factory.get('/some/url'), group=group).used_roles, group.features.default_used_roles)
+        group.used_roles = ['ad', 'chair']
+        group.save()
+        self.assertNotEqual(group.used_roles, group.features.default_used_roles)
+        self.assertEqual(GroupForm(request_factory.get('/some/url'), group=group).used_roles, group.used_roles)
 
     def test_need_parent(self):
         """GroupForm should enforce non-null parent when required"""
