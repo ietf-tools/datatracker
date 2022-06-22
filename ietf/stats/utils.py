@@ -7,15 +7,16 @@ import requests
 from collections import defaultdict
 
 from django.conf import settings
-from django.contrib.auth.models import User
 
 import debug                            # pyflakes:ignore
 
 from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, CountryAlias, MeetingRegistration
 from ietf.name.models import CountryName
-from ietf.person.models import Person, Email, Alias
-from ietf.person.name import unidecode_name
+from ietf.person.models import Person, Email
 from ietf.utils.log import log
+
+import logging
+logger = logging.getLogger('django')
 
 
 def compile_affiliation_ending_stripping_regexp():
@@ -250,7 +251,7 @@ def get_meeting_registration_data(meeting):
                 raise RuntimeError("Could not decode response from registrations API: '%s...'" % (response.content[:64], ))
 
         records = MeetingRegistration.objects.filter(meeting_id=meeting.pk).select_related('person')
-        meeting_registrations = {r.email:r for r in records}
+        meeting_registrations = {(r.email, r.reg_type):r for r in records}
         for registration in decoded:
             person = None
             # capture the stripped registration values for later use
@@ -259,11 +260,15 @@ def get_meeting_registration_data(meeting):
             affiliation     = registration['Company'].strip()
             country_code    = registration['Country'].strip()
             address         = registration['Email'].strip()
-            if address in meeting_registrations:
-                object = meeting_registrations[address]
+            reg_type        = registration['RegType'].strip()
+            if (address, reg_type) in meeting_registrations:
+                object = meeting_registrations.pop((address, reg_type))
                 created = False
             else:
-                object = MeetingRegistration.objects.create(meeting_id=meeting.pk, email=address)
+                object = MeetingRegistration.objects.create(
+                    meeting_id=meeting.pk,
+                    email=address,
+                    reg_type=reg_type)
                 created = True
             
             if (object.first_name != first_name[:200] or
@@ -286,65 +291,7 @@ def get_meeting_registration_data(meeting):
                     person = emails.first().person
                 # Create a new Person object
                 else:
-                  try:
-                    # Normalize all-caps or all-lower entries.  Don't touch
-                    # others, there might be names properly spelled with
-                    # internal uppercase letters.
-                    if ( ( first_name == first_name.upper() or first_name == first_name.lower() )
-                        and ( last_name == last_name.upper() or last_name == last_name.lower() ) ):
-                            first_name = first_name.capitalize()
-                            last_name = last_name.capitalize()
-                    regname = "%s %s" % (first_name, last_name)
-                    # if there are any unicode characters decode the string to ascii
-                    ascii_name = unidecode_name(regname)
-
-                    # Create a new user object if it does not exist already
-                    # if the user already exists do not try to create a new one
-                    users = User.objects.filter(username=address)
-                    if users.exists():
-                        user = users.first()
-                    else:
-                        # Create a new user.
-                        user = User.objects.create(
-                            first_name=first_name[:30],
-                            last_name=last_name[:30],
-                            username=address,
-                            email=address,
-                        )
-
-                    try:
-                        person = user.person
-                    except Person.DoesNotExist:
-                        aliases = Alias.objects.filter(name=regname)
-                        if aliases.exists():
-                            person = aliases.first().person
-                        else:
-                            # Create the new Person object.
-                            person = Person.objects.create(
-                                name=regname,
-                                ascii=ascii_name,
-                                user=user,
-                            )
-
-                    # Create an associated Email address for this Person
-                    try:
-                        email = Email.objects.get(person=person, address=address[:64])
-                    except Email.DoesNotExist:
-                        email = Email.objects.create(person=person, address=address[:64], origin='registration: ietf-%s'%meeting.number)
-
-                    # If this is the only email address, set primary to true.
-                    # If the person already existed (found through Alias) and
-                    # had email addresses, we don't do this.
-                    if Email.objects.filter(person=person).count() == 1:
-                        email.primary = True
-                        email.save()
-                  except:
-                      debug.show('first_name')
-                      debug.show('last_name')
-                      debug.show('regname')
-                      debug.show('user')
-                      debug.show('aliases')
-                      raise
+                    logger.error("No Person record for registration. email={}".format(address))
                 # update the person object to an actual value
                 object.person = person
                 object.save()
@@ -352,9 +299,23 @@ def get_meeting_registration_data(meeting):
             if created:
                 num_created += 1
             num_processed += 1
+
+        # handle deleted registrations, if count is reasonable
+        # any registrations left in meeting_registrations no longer exist in reg
+        # so must have been deleted
+        if  0 < len(meeting_registrations) < 5:
+            for r in meeting_registrations:
+                try:
+                    MeetingRegistration.objects.get(meeting=meeting,email=r[0],reg_type=r[1]).delete()
+                    logger.info('Removing deleted registration. email={}, reg_type={}'.format(r[0], r[1]))
+                except MeetingRegistration.DoesNotExist:
+                    pass
     else:
         raise RuntimeError("Bad response from registrations API: %s, '%s'" % (response.status_code, response.content))
-    num_total = MeetingRegistration.objects.filter(meeting_id=meeting.pk).count()
+    num_total = MeetingRegistration.objects.filter(
+        meeting_id=meeting.pk,
+        attended=True,
+        reg_type__in=['onsite', 'remote']).count()
     if meeting.attendees is None or num_total > meeting.attendees:
         meeting.attendees = num_total
         meeting.save()

@@ -1,8 +1,11 @@
 #!/bin/bash
 
-echo "Shutting down any instance still running..."
 cd ..
-docker compose down -v
+echo "Shutting down any instance still running..."
+docker compose down
+echo "Removing DB volume..."
+PROJNAME=$(basename $PWD)
+docker volume rm -f "${PROJNAME}_mariadb-data"
 echo "Rebuilding the DB image..."
 docker compose pull db
 docker compose build --no-cache db

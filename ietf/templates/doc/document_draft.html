@@ -50,12 +50,12 @@
                             (Publication date unknown)
                         {% endif %}
                         {% if has_verified_errata %}
-                            <a class="badge bg-danger text-decoration-none text-light"
+                            <a class="badge rounded-pill bg-danger text-decoration-none text-light"
                                href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}" title="Click to view errata." rel="nofollow">
                                 Errata
                             </a>
                         {% elif has_errata %}
-                            <a class="badge bg-warning text-decoration-none text-light"
+                            <a class="badge rounded-pill bg-warning text-decoration-none text-light"
                                href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}" title="Click to view errata." rel="nofollow">
                                 Errata
                             </a>
@@ -79,9 +79,15 @@
                             </div>
                         {% endif %}
                     {% else %}
-                        <span class="{% if doc.get_state_slug == 'active' %}text-success{% elif doc.get_state_slug == 'expired' %}text-danger{% endif %}">{{ doc.get_state }} Internet-Draft</span>
-                        {% if submission %}({{ submission|safe }}){% endif %}
-                        {% if resurrected_by %}- resurrect requested by {{ resurrected_by }}{% endif %}
+                        {% if snapshot and doc.doc.get_state_slug == 'rfc' %}
+                           <span>This is an older version of an Internet-Draft that was ultimately published as an RFC.</span> 
+                        {% elif snapshot and doc.rev != latest_rev  %}
+                            <span>This is an older version of an Internet-Draft whose latest revision is {{ doc.doc.get_state }}</span> 
+                         {% else %}
+                            <span class="{% if doc.get_state_slug == 'active' %}text-success{% elif doc.get_state_slug == 'expired' %}text-danger{% endif %}">{% if snapshot and doc.rev == latest_rev %}{{ doc.doc.get_state }}{% else %}{{ doc.get_state }}{% endif %} Internet-Draft</span>
+                            {% if submission %}({{ submission|safe }}){% endif %}
+                            {% if resurrected_by %}- resurrect requested by {{ resurrected_by }}{% endif %}
+                        {% endif %}
                     {% endif %}
                 </td>
             </tr>
@@ -238,6 +244,7 @@
                         </div>
                     {% endif %}
                     {% if file_urls %}
+                        <div class="buttonlist">
                         {% for label, url in file_urls %}
                             <a class="btn btn-primary btn-sm" href="{{ url }}">
                                 <i class="bi bi-file-{% if label == 'pdf' %}pdf{% elif label == 'xml' or label == 'htmlized' or label == 'html' %}code{% elif label == 'bibtex' %}ruled{% elif label == 'plain text' %}text{% endif %}">
@@ -245,6 +252,7 @@
                                 {{ label }}
                             </a>
                         {% endfor %}
+                        </div>
                     {% else %}
                         (not online)
                     {% endif %}
@@ -304,7 +312,7 @@
                             will not review this version
                         {% endif %}
                         {% if can_request_review or can_submit_unsolicited_review_for_teams %}
-                            <div class="mt-3">
+                            <div {% if review_assignments or no_review_from_teams %} class="mt-3"{% endif %}>
                                 {% if can_request_review %}
                                 <a class="btn btn-primary btn-sm"
                                    href="{% url "ietf.doc.views_review.request_review" doc.name %}">
@@ -582,7 +590,7 @@
                                    href="{% url 'ietf.doc.views_doc.document_shepherd_writeup' name=doc.name %}">
                                     Show
                                 </a>
-                                <span class="badge bg-secondary">Last changed {{ shepherd_writeup.time|date:"Y-m-d" }}</span>
+                                <span class="badge rounded-pill bg-secondary">Last changed {{ shepherd_writeup.time|date:"Y-m-d" }}</span>
                             {% else %}
                                 <span class="text-muted">
                                     (None)
@@ -1002,7 +1010,7 @@
                 </i>
                 IPR
                 {% if doc.related_ipr %}
-                    <span class="badge">
+                    <span class="badge rounded-pill">
                         {{ doc.related_ipr|length }}
                     </span>
                 {% endif %}

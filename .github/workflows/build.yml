@@ -262,5 +262,5 @@ jobs:
       uses: actions/upload-artifact@v2.3.1
       if: ${{ env.SHOULD_DEPLOY == 'false' || github.event.inputs.dryrun == 'true' }}
       with:
-        name: release
+        name: release-${{ env.PKG_VERSION }}
         path: /home/runner/work/release/release.tar.gz

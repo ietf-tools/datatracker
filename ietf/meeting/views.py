@@ -50,7 +50,7 @@ from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocAlias
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
-from ietf.person.models import Person
+from ietf.person.models import Person, User
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
@@ -515,8 +515,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         capped_max_d = min(max_duration, datetime.timedelta(hours=4))
         capped_timedelta = min(max(capped_min_d, timedelta), capped_max_d)
 
-        min_d_css_rems = 8
-        max_d_css_rems = 10
+        min_d_css_rems = 4
+        max_d_css_rems = 6
         # interpolate
         scale = (capped_timedelta - capped_min_d) / (capped_max_d - capped_min_d) if capped_min_d != capped_max_d else 1
         return min_d_css_rems + (max_d_css_rems - min_d_css_rems) * scale
@@ -3709,6 +3709,38 @@ def api_set_session_video_url(request):
         return err(405, "Method not allowed")
 
     return HttpResponse("Done", status=200, content_type='text/plain')
+
+@require_api_key
+@role_required('Recording Manager') # TODO : Rework how Meetecho interacts via APIs. There may be better paths to pursue than Personal API keys as they are currently defined.
+@csrf_exempt
+def api_add_session_attendees(request):
+
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+
+    if request.method != 'POST':
+        return err(405, "Method not allowed")
+    attended_post = request.POST.get('attended')
+    if not attended_post:
+        return err(400, "Missing attended parameter")
+    try:
+        attended = json.loads(attended_post)
+    except json.decoder.JSONDecodeError:
+        return err(400, "Malformed post") 
+    if not ( 'session_id' in attended and type(attended['session_id']) is int ):
+        return err(400, "Malformed post")
+    session_id = attended['session_id']
+    if not ( 'attendees' in attended and type(attended['attendees']) is list and all([type(el) is int for el in attended['attendees']]) ):
+        return err(400, "Malformed post")
+    session = Session.objects.filter(pk=session_id).first()
+    if not session:
+        return err(400, "Invalid session")
+    users = User.objects.filter(pk__in=attended['attendees'])
+    if users.count() != len(attended['attendees']):
+        return err(400, "Invalid attendee")
+    for user in users:
+        session.attended_set.get_or_create(person=user.person)
+    return HttpResponse("Done", status=200, content_type='text/plain')  
 
 
 @require_api_key

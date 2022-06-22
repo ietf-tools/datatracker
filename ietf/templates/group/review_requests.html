@@ -48,13 +48,13 @@
                                 {% if r.pk %}
                                     {{ r.time|date:"Y-m-d" }} by {% person_link r.requested_by %}
                                 {% else %}
-                                    <span class="badge bg-info">Auto-suggested</span>
+                                    <span class="badge rounded-pill bg-info">Auto-suggested</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {{ r.deadline|date:"Y-m-d" }}
                                 {% if r.due %}
-                                    <span class="badge bg-warning"
+                                    <span class="badge rounded-pill bg-warning"
                                           title="{{ r.due }} day{{ r.due|pluralize }} past deadline">{{ r.due }} day{{ r.due|pluralize }}</span>
                                 {% endif %}
                             </td>
@@ -96,14 +96,14 @@
                             <td>
                                 {{ a.review_request.deadline|date:"Y-m-d" }}
                                 {% if a.due %}
-                                    <span class="badge bg-warning"
+                                    <span class="badge rounded-pill bg-warning"
                                           title="{{ a.due }} day{{ a.due|pluralize }} past deadline">{{ a.due }} day{{ a.due|pluralize }}</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% person_link a.reviewer.person %}
-                                {% if a.state_id == "accepted" %}<span class="badge bg-success">Accepted</span>{% endif %}
-                                {% if a.reviewer_unavailable %}<span class="badge bg-danger">Unavailable</span>{% endif %}
+                                {% if a.state_id == "accepted" %}<span class="badge rounded-pill bg-success">Accepted</span>{% endif %}
+                                {% if a.reviewer_unavailable %}<span class="badge rounded-pill bg-danger">Unavailable</span>{% endif %}
                             </td>
                             <td>{{ a.review_request.doc.friendly_state }}</td>
                             <td>
