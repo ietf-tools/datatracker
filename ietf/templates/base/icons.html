@@ -9,7 +9,7 @@
 <link rel="icon"
       sizes="16x16"
       href="{% if server_mode and server_mode == 'production' %}{% static 'ietf/images/ietf-logo-nor-16.png' %}{% else %}{% static 'ietf/images/ietf-logo-nor-16-dev.png' %}{% endif %}">
-<link rel="manifest" href="/site.webmanifest">
+<link rel="manifest" href="{% url 'site.webmanifest' %}">
 <link rel="mask-icon"
       href="{% static 'ietf/images/ietf-logo-nor-mask.svg' %}"
       color="{% if server_mode and server_mode == 'production' %}#ffffff{% else %}#ffc4c4{% endif %}">

@@ -515,9 +515,6 @@ CORS_URLS_REGEX = r'^(/api/.*|.*\.json|.*/json/?)$'
 # Setting for django_referrer_policy.middleware.ReferrerPolicyMiddleware
 REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
-# Content security policy configuration (django-csp)
-CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", "data: https://datatracker.ietf.org/ https://www.ietf.org/ https://analytics.ietf.org/")
-
 # django.middleware.security.SecurityMiddleware 
 SECURE_BROWSER_XSS_FILTER       = True
 SECURE_CONTENT_TYPE_NOSNIFF     = True
@@ -540,6 +537,9 @@ IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://www.ietf.org/rfcdiff"
 IDNITS_BASE_URL = "https://www.ietf.org/tools/idnits"
 XML2RFC_BASE_URL = "https://xml2rfc.tools.ietf.org/experimental.html"
+
+# Content security policy configuration (django-csp)
+CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", f"data: {IDTRACKER_BASE_URL} https://www.ietf.org/ https://analytics.ietf.org/")
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
@@ -1010,7 +1010,7 @@ BIBXML_BASE_PATH = '/a/ietfdata/derived/bibxml'
 TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
 
 SECR_BLUE_SHEET_PATH = '/a/www/ietf-datatracker/documents/blue_sheet.rtf'
-SECR_BLUE_SHEET_URL = '//datatracker.ietf.org/documents/blue_sheet.rtf'
+SECR_BLUE_SHEET_URL = IDTRACKER_BASE_URL + '/documents/blue_sheet.rtf'
 SECR_INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
 SECR_MAX_UPLOAD_SIZE = 40960000
 SECR_PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'

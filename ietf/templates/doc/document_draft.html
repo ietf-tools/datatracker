@@ -74,7 +74,7 @@
                         {% if draft_name %}
                             <div>
                                 Was
-                                <a href="/doc/{{ draft_name }}/">{{ draft_name }}</a>
+                                <a href="{% url 'ietf.doc.views_doc.document_main' name=draft_name %}">{{ draft_name }}</a>
                                 {% if submission %}({{ submission|safe }}){% endif %}
                             </div>
                         {% endif %}

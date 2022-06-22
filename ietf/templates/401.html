@@ -15,10 +15,10 @@
         </p>
         <ul>
             <li>
-                <a href="/accounts/login/">Attempt to login again</a>
+                <a href="{% url 'ietf.ietfauth.views.login' %}">Attempt to login again</a>
             </li>
             <li>
-                <a href="/accounts/reset/">Request a password reset</a>
+                <a href="{% url 'ietf.ietfauth.views.password_reset' %}">Request a password reset</a>
             </li>
         </ul>
         <p class="mb-0">
