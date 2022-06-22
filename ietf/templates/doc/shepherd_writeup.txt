@@ -95,8 +95,9 @@ to answer all of them.
     the community have sufficient access to review any such normative
     references?
 
-17. Are there any normative downward references (see [RFC 3967][9],
-    [BCP 97][10], and the [DOWNREF registry][17])? If so, list them.
+17. Are there any normative downward references (see [RFC 3967][9] and
+    [BCP 97][10]) that are not already listed in the [DOWNREF registry][17]?
+    If so, list them.
 
 18. Are there normative references to documents that are not ready to be
     submitted to the IESG for publication or are otherwise in an unclear state?
