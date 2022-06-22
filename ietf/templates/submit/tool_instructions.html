@@ -30,7 +30,7 @@
     </p>
     <p>
         An API for automated draft submission is available as an alternative to this webpage at
-        <a href="{{ settings.IDTRACKER_BASE_URL }}/api/submit/">{{ settings.IDTRACKER_BASE_URL }}/api/submit/</a>.
+        <a href="{{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.submit.views.api_submit' %}">{{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.submit.views.api_submit' %}</a>.
     </p>
     <p>
         The specification for this tool can be found in

@@ -13,7 +13,7 @@
         {% for meeting in meetings %}
             <tr class="{% cycle 'row1' 'row2' %}">
                 <td class="text-start text-nowrap">{{ meeting.date }}</td>
-                <td><a href="{{ settings.IDTRACKER_BASE_URL }}/wg/{{ meeting.group.acronym }}">{{ meeting.group.acronym }}</a></td>
+                <td><a href="{% url 'ietf.group.views.group_home' acronym=meeting.group.acronym %}">{{ meeting.group.acronym }}</a></td>
                 {% if meeting.schedule %}
                     <td class="text-center"><a href="{{ meeting.schedule.get_absolute_url }}">Agenda</a></td>
                 {% else %}

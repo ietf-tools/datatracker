@@ -44,7 +44,7 @@
         Here is an example:
     </p>
     <pre class="border p-3">
-$ curl -S -F "user=user.name@example.com" -F "xml=@~/draft-user-example.xml" {{ settings.IDTRACKER_BASE_URL }}/api/submit
+$ curl -S -F "user=user.name@example.com" -F "xml=@~/draft-user-example.xml" {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.submit.views.api_submit' %}
 Upload of draft-user-example OK, confirmation requests sent to:
 User Name &lt;user.name@example.com&gt;</pre>
 {% endblock %}

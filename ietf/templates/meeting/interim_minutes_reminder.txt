@@ -9,7 +9,7 @@ be provided within 10 days of the event.
 At your earliest convenience, please upload meeting minutes, as 
 well as any presentations from your sessions by using the Meeting
 Materials Manager found here:
-{{ settings.IDTRACKER_BASE_URL }}/secr/proceedings/.
+{{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.secr.proceedings.views.main'/secr/proceedings/.
 Alternatively, you are welcome to send them to proceedings@ietf.org
 for manual posting.
 
