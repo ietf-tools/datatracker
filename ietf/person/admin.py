@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2022, All Rights Reserved
 from django.contrib import admin
 import simple_history
 
@@ -35,7 +36,7 @@ class PersonAdmin(simple_history.admin.SimpleHistoryAdmin):
             prefix, first, middle, last, suffix = name_parts(obj.name)
             return "%s %s" % (first, last)
     list_display = ["name", "short", "plain_name", "time", "user", ]
-    fields = ("user", "time", "name", "plain", "name_from_draft", "ascii", "ascii_short", "biography", "photo", "photo_thumb", "consent",)
+    fields = ("user", "time", "name", "plain", "name_from_draft", "ascii", "ascii_short", "pronouns_selectable", "pronouns_freetext", "biography", "photo", "photo_thumb", "consent",)
     readonly_fields = ("name_from_draft", )
     search_fields = ["name", "ascii"]
     raw_id_fields = ["user"]

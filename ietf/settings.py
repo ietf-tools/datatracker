@@ -538,8 +538,7 @@ INTERNAL_IPS = (
 # no slash at end
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://www.ietf.org/rfcdiff"
-IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
-
+IDNITS_BASE_URL = "https://www.ietf.org/tools/idnits"
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'

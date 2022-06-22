@@ -6593,29 +6593,6 @@ class HasMeetingsTests(TestCase):
 
 class AgendaFilterTests(TestCase):
     """Tests for the AgendaFilter template"""
-    def test_agenda_width_scale_filter(self):
-        """Test calculation of UI column width by agenda_width_scale filter"""
-        template = Template('{% load agenda_filter_tags %}{{ categories|agenda_width_scale:spacing }}')
-
-        # Should get '1' as min value when input is empty
-        context = Context({'categories': [], 'spacing': 7})
-        self.assertEqual(template.render(context), '1')
-
-        # 3 columns, no spacers
-        context = Context({'categories': [range(3)], 'spacing': 7})
-        self.assertEqual(template.render(context), '21')
-
-        # 6 columns, 1 spacer
-        context = Context({'categories': [range(3), range(3)], 'spacing': 7})
-        self.assertEqual(template.render(context), '43')
-
-        # 10 columns, 2 spacers
-        context = Context({'categories': [range(3), range(3), range(4)], 'spacing': 7})
-        self.assertEqual(template.render(context), '72')
-
-        # 10 columns, 2 spacers, different spacer scale
-        context = Context({'categories': [range(3), range(3), range(4)], 'spacing': 5})
-        self.assertEqual(template.render(context), '52')
 
     def test_agenda_filter_template(self):
         """Test rendering of input data by the agenda filter template"""

@@ -13,7 +13,7 @@
         {% bootstrap_label form.draft.label label_for=form.draft.id_for_label label_class="form-label" %}
         <div class="input-group">
             {% render_field form.draft class="form-control" placeholder="draft-..." %}
-            <button class="btn btn-primary" type="submit" name="submit" value="draft">
+            <button class="btn btn-primary" type="submit" value="draft">
                 <i class="bi bi-search"></i> Search
             </button>
         </div>
@@ -22,7 +22,7 @@
         {% bootstrap_label form.rfc.label label_for=form.rfc.id_for_label label_class="form-label" %}
         <div class="input-group">
             {% render_field form.rfc class="form-control" placeholder="123..." %}
-            <button class="btn btn-primary" type="submit" name="submit" value="rfc">
+            <button class="btn btn-primary" type="submit" value="rfc">
                 <i class="bi bi-search"></i> Search
             </button>
         </div>
@@ -31,7 +31,7 @@
         {% bootstrap_label form.doctitle.label|cut:":" label_for=form.doctitle.id_for_label label_class="form-label" %}
         <div class="input-group">
             {% render_field form.doctitle class="form-control" placeholder="protocol..." %}
-            <button class="btn btn-primary" type="submit" name="submit" value="doctitle">
+            <button class="btn btn-primary" type="submit" value="doctitle">
                 <i class="bi bi-search"></i> Search
             </button>
         </div>
@@ -42,7 +42,6 @@
             {% render_field form.group class="form-select" %}
             <button class="btn btn-primary btn-block"
                     type="submit"
-                    name="submit"
                     value="group">
                 <i class="bi bi-search"></i> Search
             </button>
@@ -53,7 +52,7 @@
         {% bootstrap_label form.holder.label|cut:":" label_for=form.holder.id_for_label label_class="form-label" %}
         <div class="input-group">
             {% render_field form.holder class="form-control" placeholder="John Doe..." %}
-            <button class="btn btn-primary" type="submit" name="submit" value="holder">
+            <button class="btn btn-primary" type="submit" value="holder">
                 <i class="bi bi-search"></i> Search
             </button>
         </div>
@@ -62,7 +61,7 @@
         {% bootstrap_label form.iprtitle.label|cut:":" label_for=form.iprtitle.id_for_label label_class="form-label" %}
         <div class="input-group">
             {% render_field form.iprtitle class="form-control" placeholder="protocol..." %}
-            <button class="btn btn-primary" type="submit" name="submit" value="iprtitle">
+            <button class="btn btn-primary" type="submit" value="iprtitle">
                 <i class="bi bi-search"></i> Search
             </button>
         </div>
@@ -71,7 +70,7 @@
         {% bootstrap_label form.patent.label|cut:":" label_for=form.patent.id_for_label label_class="form-label" %}
         <div class="input-group">
             {% render_field form.patent class="form-control" %}
-            <button class="btn btn-primary" type="submit" name="submit" value="patent">
+            <button class="btn btn-primary" type="submit" value="patent">
                 <i class="bi bi-search"></i> Search
             </button>
         </div>
@@ -81,6 +80,7 @@
             please enter the entire string, or as much of it as possible.
         </div>
     </div>
+    <input type="hidden" name="submit">
 </form>
 <p class="alert alert-info my-3">
     The material posted as IPR disclosures should be viewed as originating

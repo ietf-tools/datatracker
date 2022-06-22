@@ -258,6 +258,9 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
         dots = get_dots(self.user.person)
         return { 'dots': dots }
 
+    def scope_pronouns(self):
+        return { 'pronouns': self.user.person.pronouns() }
+
     info_registration = (
             "IETF Meeting Registration Info",
             "Access to public IETF meeting registration information for the current meeting. "
