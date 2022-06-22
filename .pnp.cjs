@@ -46,6 +46,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@vitejs/plugin-vue", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.3.3"],\
             ["bootstrap", "virtual:10122bfbcba1a448fa8cd209500287123cf7dd2abe325c6afac0050500c2a7843d4fa38428d3ef45d200d480f092839e6533b4c96c028b4d6e4e1d970111b151#npm:5.1.3"],\
             ["bootstrap-icons", "npm:1.8.3"],\
+            ["browser-fs-access", "npm:0.30.1"],\
             ["browserlist", "npm:1.0.1"],\
             ["caniuse-lite", "npm:1.0.30001354"],\
             ["cypress", "npm:9.7.0"],\
@@ -58,6 +59,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["eslint-plugin-node", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:11.1.0"],\
             ["eslint-plugin-promise", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.0.0"],\
             ["eslint-plugin-vue", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.7.1"],\
+            ["file-saver", "npm:2.0.5"],\
             ["highcharts", "npm:10.1.0"],\
             ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:7.1.1"],\
             ["jquery", "npm:3.6.0"],\
@@ -2258,6 +2260,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["braces", "npm:3.0.2"],\
             ["fill-range", "npm:7.0.1"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["browser-fs-access", [\
+        ["npm:0.30.1", {\
+          "packageLocation": "./.yarn/cache/browser-fs-access-npm-0.30.1-df8b81044d-e8bbc718a3.zip/node_modules/browser-fs-access/",\
+          "packageDependencies": [\
+            ["browser-fs-access", "npm:0.30.1"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -4497,6 +4508,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["file-entry-cache", "npm:6.0.1"],\
             ["flat-cache", "npm:3.0.4"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["file-saver", [\
+        ["npm:2.0.5", {\
+          "packageLocation": "./.yarn/cache/file-saver-npm-2.0.5-2c3bc40d53-c62d96e5ce.zip/node_modules/file-saver/",\
+          "packageDependencies": [\
+            ["file-saver", "npm:2.0.5"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -7249,6 +7269,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@vitejs/plugin-vue", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.3.3"],\
             ["bootstrap", "virtual:10122bfbcba1a448fa8cd209500287123cf7dd2abe325c6afac0050500c2a7843d4fa38428d3ef45d200d480f092839e6533b4c96c028b4d6e4e1d970111b151#npm:5.1.3"],\
             ["bootstrap-icons", "npm:1.8.3"],\
+            ["browser-fs-access", "npm:0.30.1"],\
             ["browserlist", "npm:1.0.1"],\
             ["caniuse-lite", "npm:1.0.30001354"],\
             ["cypress", "npm:9.7.0"],\
@@ -7261,6 +7282,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["eslint-plugin-node", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:11.1.0"],\
             ["eslint-plugin-promise", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.0.0"],\
             ["eslint-plugin-vue", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.7.1"],\
+            ["file-saver", "npm:2.0.5"],\
             ["highcharts", "npm:10.1.0"],\
             ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:7.1.1"],\
             ["jquery", "npm:3.6.0"],\

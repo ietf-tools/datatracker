@@ -1791,6 +1791,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"browser-fs-access@npm:0.30.1":
+  version: 0.30.1
+  resolution: "browser-fs-access@npm:0.30.1"
+  checksum: e8bbc718a3106f3737cec5679edb93fffd91a0842fb65dbd6af2282cfb6c944599f3218b2d2175d288e46abbaa7f99ba98270c2c48d6fdda1b32bce5a8edfd11
+  languageName: node
+  linkType: hard
+
 browserlist@latest:
   version: 1.0.1
   resolution: "browserlist@npm:1.0.1"
@@ -3624,6 +3631,13 @@ browserlist@latest:
   dependencies:
     flat-cache: ^3.0.4
   checksum: f49701feaa6314c8127c3c2f6173cfefff17612f5ed2daaafc6da13b5c91fd43e3b2a58fd0d63f9f94478a501b167615931e7200e31485e320f74a33885a9c74
+  languageName: node
+  linkType: hard
+
+"file-saver@npm:2.0.5":
+  version: 2.0.5
+  resolution: "file-saver@npm:2.0.5"
+  checksum: c62d96e5cebc58b4bdf3ae8a60d5cf9607ad82f75f798c33a4ee63435ac2203002584d5256a2a780eda7feb5e19dc3b6351c2212e58b3f529e63d265a7cc79f7
   languageName: node
   linkType: hard
 
@@ -6016,6 +6030,7 @@ browserlist@latest:
     "@vitejs/plugin-vue": 2.3.3
     bootstrap: 5.1.3
     bootstrap-icons: 1.8.3
+    browser-fs-access: 0.30.1
     browserlist: latest
     caniuse-lite: 1.0.30001354
     cypress: 9.7.0
@@ -6028,6 +6043,7 @@ browserlist@latest:
     eslint-plugin-node: 11.1.0
     eslint-plugin-promise: 6.0.0
     eslint-plugin-vue: 8.7.1
+    file-saver: 2.0.5
     highcharts: 10.1.0
     html-validate: 7.1.1
     jquery: 3.6.0

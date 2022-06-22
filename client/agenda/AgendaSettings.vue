@@ -3,7 +3,20 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
   n-drawer-content.agenda-settings
     template(#header)
       span Agenda Settings
-      div
+      .d-flex.justify-content-end
+        n-dropdown(
+          :options='actionOptions'
+          size='large'
+          :show-arrow='true'
+          trigger='click'
+          @select='actionClick'
+          )
+          n-button.me-2(
+            ghost
+            color='#6c757d'
+            strong
+            )
+            i.bi.bi-three-dots-vertical
         n-button(
           ghost
           color='gray'
@@ -65,8 +78,25 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
         span.small Display Realtime Red Line
 
       n-divider(title-placement='left')
+        i.bi.bi-palette.me-2
+        small Custom Colors / Tags
+      .d-flex.align-items-center.mt-3(v-for='cl of state.colors')
+        n-color-picker.me-3(
+          :modes='[`hex`]'
+          :render-label='() => {}'
+          :show-alpha='false'
+          size='small'
+          :swatches='swatches'
+          v-model:value='cl.hex'
+        )
+        n-input(
+          type='text'
+          v-model:value='cl.tag'
+        )
+
+      n-divider(title-placement='left')
         i.bi.bi-clock-history.me-2
-        small Override Current Local DateTime
+        small Override Local DateTime
       n-date-picker(
         v-model:value='state.currentDateTime'
         type='datetime'
@@ -77,15 +107,22 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue'
+import { h, onMounted, ref, reactive, watch } from 'vue'
 import { DateTime } from 'luxon'
+import cloneDeep from 'lodash/cloneDeep'
+import debounce from 'lodash/debounce'
+import { fileOpen } from 'browser-fs-access'
+import FileSaver from 'file-saver'
 import {
   NButton,
   NButtonGroup,
+  NColorPicker,
   NDatePicker,
   NDivider,
   NDrawer,
   NDrawerContent,
+  NDropdown,
+  NInput,
   NPopover,
   NSelect,
   NSwitch,
@@ -95,6 +132,10 @@ import {
 import { useAgendaStore } from './store'
 import timezones from '../shared/timezones'
 
+// MESSAGE PROVIDER
+
+const message = useMessage()
+
 // STORES
 
 const agendaStore = useAgendaStore()
@@ -103,9 +144,35 @@ const agendaStore = useAgendaStore()
 
 const isShown = ref(false)
 const state = reactive({
-  currentDateTime: agendaStore.currentDateTime.toMillis()
+  currentDateTime: agendaStore.currentDateTime.toMillis(),
+  colors: []
 })
-const message = useMessage()
+const swatches = [
+  '#0d6efd',
+  '#6610f2',
+  '#6f42c1',
+  '#d63384',
+  '#dc3545',
+  '#fd7e14',
+  '#ffc107',
+  '#198754',
+  '#20c997',
+  '#0dcaf0',
+  '#adb5bd',
+  '#000000'
+]
+const actionOptions = [
+  {
+    label: 'Export Configuration...',
+    key: 'export',
+    icon: () => h('i', { class: 'bi bi-box-arrow-down' })
+  },
+  {
+    label: 'Import Configuration...',
+    key: 'import',
+    icon: () => h('i', { class: 'bi bi-box-arrow-in-down' })
+  }
+]
 
 // WATCHERS
 
@@ -118,11 +185,70 @@ watch(isShown, (newValue) => {
 watch(() => agendaStore.infoNoteShown, () => {
   agendaStore.persistMeetingPreferences()
 })
+watch(() => state.colors, debounce(() => {
+  agendaStore.$patch({
+    colors: cloneDeep(state.colors)
+  })
+}, 1000), { deep: true })
 
 // METHODS
 
 function close () {
   isShown.value = false
+}
+
+async function actionClick (key) {
+  switch (key) {
+    case 'export': {
+      try {
+        const configBlob = new Blob([
+          JSON.stringify({
+            areaIndicatorsShown: agendaStore.areaIndicatorsShown,
+            colors: agendaStore.colors,
+            floorIndicatorsShown: agendaStore.floorIndicatorsShown,
+            listDayCollapse: agendaStore.listDayCollapse,
+            redhandShown: agendaStore.redhandShown
+          }, null, 2)
+        ], {
+          type: 'application/json;charset=utf-8'
+        })
+        FileSaver.saveAs(configBlob, 'agenda-settings.json')
+      } catch (err) {
+        console.warn(err)
+        message.error('Failed to generate JSON config for download.')
+      }
+      break
+    }
+    case 'import': {
+      try {
+        const blob = await fileOpen({
+          mimeTypes: ['application/json'],
+          extensions: ['.json'],
+          startIn: 'downloads',
+          excludeAcceptAllOption: true
+        })
+        const configRaw = await blob.text()
+        const configJson = JSON.parse(configRaw)
+        if (!Array.isArray(configJson.colors) || configJson.colors.length !== agendaStore.colors.length) {
+          throw new Error('Config contains invalid colors array.')
+        }
+        agendaStore.$patch({
+          areaIndicatorsShown: configJson.areaIndicatorsShown === true,
+          colors: configJson.colors.map(c => ({
+            hex: c.hex || '#FF0000',
+            tag: c.tag || 'Unknown Color'
+          })),
+          floorIndicatorsShown: configJson.floorIndicatorsShown === true,
+          listDayCollapse: configJson.listDayCollapse === true,
+          redhandShown: configJson.redhandShown === true
+        })
+        state.colors = cloneDeep(agendaStore.colors)
+      } catch (err) {
+        console.warn(err)
+        message.error('Failed to import JSON config.')
+      }
+    }
+  }
 }
 
 function setTimezone (tz) {
@@ -138,6 +264,13 @@ function setTimezone (tz) {
       break
   }
 }
+
+// MOUNTED
+
+onMounted(() => {
+  state.currentDateTime = agendaStore.currentDateTime.toMillis()
+  state.colors = cloneDeep(agendaStore.colors)
+})
 
 </script>
 
@@ -165,6 +298,10 @@ function setTimezone (tz) {
     &:first-child {
       margin-top: 0;
     }
+  }
+
+  .n-color-picker {
+    width: 40px;
   }
 }
 </style>

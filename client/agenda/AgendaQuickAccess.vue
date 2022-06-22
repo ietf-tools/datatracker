@@ -223,5 +223,10 @@ function scrollToNow (ev) {
       flex: 1;
     }
   }
+
+  .n-divider {
+    margin-top: 15px;
+    margin-bottom: 15px;
+  }
 }
 </style>

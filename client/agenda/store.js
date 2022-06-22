@@ -11,6 +11,13 @@ export const useAgendaStore = defineStore('agenda', {
     areaIndicatorsShown: true,
     calendarShown: false,
     categories: [],
+    colors: [
+      { hex: '#0d6efd', tag: 'Color 1' },
+      { hex: '#6f42c1', tag: 'Color 2' },
+      { hex: '#d63384', tag: 'Color 3' },
+      { hex: '#ffc107', tag: 'Color 4' },
+      { hex: '#20c997', tag: 'Color 5' }
+    ],
     currentDateTime: DateTime.local(),
     dayIntersectId: '',
     filterShown: false,
@@ -148,6 +155,7 @@ export const useAgendaStore = defineStore('agenda', {
         storage: localStorage,
         paths: [
           'areaIndicatorsShown',
+          'colors',
           'floorIndicatorsShown',
           'listDayCollapse',
           'redhandShown'
