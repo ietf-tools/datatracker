@@ -102,6 +102,11 @@
     <h2 class="mt-3">
         {% if personalize %}Personalize{% endif %}
         Detailed Agenda
+        {% if schedule.meeting.agenda_warning_note %}
+            <span class="badge rounded-pill bg-danger">
+              {{ schedule.meeting.agenda_warning_note|removetags:"h1" |safe }}
+            </span>
+        {% endif %}
     </h2>
     {% if personalize %}
         <p>
