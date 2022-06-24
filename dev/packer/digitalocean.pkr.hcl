@@ -53,10 +53,15 @@ build {
     source = "scripts/001-onboot.sh"
   }
 
+  provisioner "file" {
+    destination = "/rsync-assets.sh"
+    source = "../../docker/scripts/app-rsync-extras.sh"
+  }
+
   provisioner "shell" {
     inline = [
       "chmod +x /var/lib/cloud/scripts/per-instance/001-onboot.sh",
-      "chmod +x /etc/update-motd.d/099-one-click"
+      "chmod +x /rsync-assets.sh"
     ]
   }
 
@@ -83,7 +88,7 @@ build {
       "LC_CTYPE=en_US.UTF-8"
     ]
     scripts = [
-      "scripts/010-docker.sh",
+      "scripts/010-app.sh",
       "scripts/012-grub-opts.sh",
       "scripts/013-docker-dns.sh",
       "scripts/014-ufw-docker.sh",
