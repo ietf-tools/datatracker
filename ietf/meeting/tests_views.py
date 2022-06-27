@@ -6422,6 +6422,23 @@ class SessionTests(TestCase):
             status_id='notmeet',
             add_to_schedule=False,
         )
+        # admin and social sessions are not to be shown on the requests page
+        has_meetings_admin_session = SessionFactory(
+            meeting=meeting,
+            group__type_id=group_type_with_meetings,
+            status_id='schedw',
+            purpose_id='admin',
+            type_id='other',
+            add_to_schedule=False,
+        )
+        has_meetings_social_session = SessionFactory(
+            meeting=meeting,
+            group__type_id=group_type_with_meetings,
+            status_id='schedw',
+            purpose_id='social',
+            type_id='break',
+            add_to_schedule=False,
+        )
         not_has_meetings = SessionFactory(
             meeting=meeting,
             group__type_id=group_type_without_meetings,
@@ -6429,10 +6446,28 @@ class SessionTests(TestCase):
             add_to_schedule=False,
         )
 
+        def _sreq_edit_link(sess):
+            return urlreverse(
+                'ietf.secr.sreq.views.edit',
+                kwargs={
+                    'num': meeting.number,
+                    'acronym': sess.group.acronym,
+                },
+            )
+
         url = urlreverse('ietf.meeting.views.meeting_requests',kwargs={'num':meeting.number})
         r = self.client.get(url)
+        # requested_session group should be listed with a link to the request
         self.assertContains(r, requested_session.group.acronym)
+        self.assertContains(r, _sreq_edit_link(requested_session))  # link to the session request
         self.assertContains(r, not_meeting.group.acronym)
+        # the admin/social session groups should be listed under "no timeslot request received"; it's easier
+        # to check that the group is listed but that there is no link to the session request than to try to
+        # parse the HTML
+        self.assertContains(r, has_meetings_admin_session.group.acronym)
+        self.assertNotContains(r, _sreq_edit_link(has_meetings_admin_session))  # no link to the session request
+        self.assertContains(r, has_meetings_social_session.group.acronym)
+        self.assertNotContains(r, _sreq_edit_link(has_meetings_social_session))  # no link to the session request
         self.assertContains(r, requested_session.constraints().first().name)
         self.assertContains(r, conflicting_session.group.acronym)
         self.assertContains(r, has_meetings.group.acronym)
