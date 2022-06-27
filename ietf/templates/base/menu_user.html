@@ -25,7 +25,7 @@
         <li>
             <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
                rel="nofollow"
-               href="{% url 'ietf.ietfauth.views.login' %}{% if logout_url not in request.get_full_path %}/?next={{ request.get_full_path|urlencode }}{% endif %}">
+               href="{% url 'ietf.ietfauth.views.login' %}">
                 Sign in
             </a>
         </li>
@@ -83,7 +83,7 @@
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
                    rel="nofollow"
-                   href="{% url 'ietf.ietfauth.views.login' %}/?next={{ request.get_full_path|urlencode }}">
+                   href="{% url 'ietf.ietfauth.views.login' %}?next={{ request.get_full_path|urlencode }}">
                     Sign in
                 </a>
             </li>
