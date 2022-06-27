@@ -2141,6 +2141,8 @@ def meeting_requests(request, num=None):
     sessions = Session.objects.requests().filter(
         meeting__number=meeting.number,
         group__in=groups_to_show,
+    ).exclude(
+        purpose__in=('admin', 'social'),
     ).with_current_status().with_requested_by().exclude(
         requested_by=0
     ).order_by(
