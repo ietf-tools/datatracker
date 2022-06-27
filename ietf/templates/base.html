@@ -47,7 +47,7 @@
                 {% if not user.is_authenticated %}
                     <a class="d-none d-sm-block mx-5 btn {% if server_mode and server_mode == "production" %} btn-warning {% else %} btn-info {% endif %}"
                        rel="nofollow"
-                       href="/accounts/login/?next={{ request.get_full_path|removesuffix:"accounts/logout/"|urlencode }}">
+                       href="{% url 'ietf.ietfauth.views.login' %}?next={{ request.get_full_path|removesuffix:'accounts/logout/'|urlencode }}">
                         Sign
                         in
                     </a>

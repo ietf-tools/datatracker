@@ -24,9 +24,9 @@
                 <tbody>
                     <tr class="table-info">
                         <th scope="col" colspan="3">
-                            IPR related to {{ alias.name|rfcspace|lstrip:"0"|urlize_ietf_docs }} ("{{ alias.document.title }}")
+                            IPR related to {{ alias.name|prettystdname|urlize_ietf_docs }} ("{{ alias.document.title }}")
                             {% if alias.related %}
-                                that was {{ alias.relation|lower }} {{ alias.related.source|rfcspace|lstrip:"0"|urlize_ietf_docs  }} ("{{ alias.related.source.title|escape }}")
+                                that was {{ alias.relation|lower }} {{ alias.related.source|prettystdname|urlize_ietf_docs  }} ("{{ alias.related.source.title|escape }}")
                             {% endif %}
                             {% if alias.product_of_this_wg %}, a product of the {{ q }} WG{% endif %}
                             :
@@ -57,7 +57,7 @@
                             <td></td>
                             <td></td>
                             <td>
-                                No IPR disclosures related to <i>{{ alias.name|rfcspace|lstrip:"0" }}</i> have been submitted.
+                                No IPR disclosures related to <i>{{ alias.name|prettystdname|urlize_ietf_docs }}</i> have been submitted.
                             </td>
                         </tr>
                     {% endif %}

@@ -51,7 +51,7 @@
                         <td>{{ r.review_request.type.name }}</td>
                         <td>
                             {{ r.review_request.deadline|date:"Y-m-d" }}
-                            {% if r.due %}<span class="badge bg-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
+                            {% if r.due %}<span class="badge rounded-pill bg-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
                         </td>
                     </tr>
                 {% endfor %}
@@ -98,7 +98,7 @@
                         <td>{{ r.review_request.type.name }}</td>
                         <td>
                             {{ r.review_request.deadline|date:"Y-m-d" }}
-                            {% if r.due %}<span class="badge bg-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
+                            {% if r.due %}<span class="badge rounded-pill bg-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
                         </td>
                         <td>
                             <span class="{% if r.state_id == "completed" or r.state_id == "part-completed" %}bg-success{% endif %}">{{ r.state.name }}</span>

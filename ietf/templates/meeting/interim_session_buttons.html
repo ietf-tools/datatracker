@@ -18,14 +18,14 @@
             </a>
             {# materials tar file #}
             <a class="btn btn-outline-primary"
-               href="/meeting/{{ meeting.number }}/agenda/{{ acronym }}-drafts.tgz"
+               href="{% url 'ietf.meeting.views.session_draft_tarfile' num=meeting.number acronym=acronym %}"
                aria-label="Download meeting materials as .tar archive"
                title="Download meeting materials as .tar archive">
                 <i class="bi bi-file-zip"></i>
             </a>
             {# materials PDF file #}
             <a class="btn btn-outline-primary"
-               href="/meeting/{{ meeting.number }}/agenda/{{ acronym }}-drafts.pdf"
+               href="{% url 'ietf.meeting.views.session_draft_pdf' num=meeting.number acronym=acronym %}"
                aria-label="Download meeting materials as PDF file"
                title="Download meeting materials as PDF file">
                 <i class="bi bi-file-pdf"></i>

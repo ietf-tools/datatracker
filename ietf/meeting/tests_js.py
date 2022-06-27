@@ -23,7 +23,6 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.factories import DocumentFactory
 from ietf.doc.models import State
-from ietf.group import colors
 from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
@@ -859,8 +858,6 @@ class ScheduleEditTests(IetfSeleniumTestCase):
     def testUnschedule(self):
 
         meeting = make_meeting_test_data()
-        colors.fg_group_colors['FARFUT'] = 'blue'
-        colors.bg_group_colors['FARFUT'] = 'white'
         
         self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting=meeting, session__group__acronym='mars', schedule__name='test-schedule').count(),1)
 

@@ -11,7 +11,7 @@
     {% origin %}
     <h1>
         NomCom {{ year }}
-        {% if nomcom.group.state_id == 'conclude' %}<span class="badge bg-info">Concluded</span>{% endif %}
+        {% if nomcom.group.state_id == 'conclude' %}<span class="badge rounded-pill bg-info">Concluded</span>{% endif %}
         <br>
         <small class="text-muted">Private area
             {% if is_chair_task %}- Chair/Advisors only{% endif %}
@@ -55,7 +55,7 @@
                 <a class="nav-link {% if selected == "feedback_pending" %}active{% endif %}"
                    href="{% url 'ietf.nomcom.views.view_feedback_pending' year %}">
                     Pending emails
-                    {% if nomcom.pending_email_count %}<span class="badge bg-primary">{{ nomcom.pending_email_count }}</span>{% endif %}
+                    {% if nomcom.pending_email_count %}<span class="badge rounded-pill bg-primary">{{ nomcom.pending_email_count }}</span>{% endif %}
                 </a>
             </li>
             <li class="nav-item dropdown">

@@ -120,6 +120,28 @@ def can_manage_group(user, group):
         return True
     return group.has_role(user, group.features.groupman_roles)
 
+def groups_managed_by(user, group_queryset=None):
+    """Find groups user can manage"""
+    if group_queryset is None:
+        group_queryset = Group.objects.all()
+    query_terms = Q(pk__in=[])  # ensure empty set is returned if no other terms are added
+    if user.is_authenticated or user.person:
+        # find the GroupTypes entirely managed by this user based on groupman_authroles
+        types_can_manage = []
+        for type_id, groupman_authroles in GroupFeatures.objects.values_list('type_id', 'groupman_authroles'):
+            if has_role(user, groupman_authroles):
+                types_can_manage.append(type_id)
+        query_terms |= Q(type_id__in=types_can_manage)
+        # find the Groups managed by this user based on groupman_roles
+        groups_can_manage = []
+        for group_id, role_name, groupman_roles in user.person.role_set.values_list(
+                'group_id', 'name_id', 'group__type__features__groupman_roles'
+        ):
+            if role_name in groupman_roles:
+                groups_can_manage.append(group_id)
+        query_terms |= Q(pk__in=groups_can_manage)
+    return group_queryset.filter(query_terms)
+
 def milestone_reviewer_for_group_type(group_type):
     if group_type == "rg":
         return "IRTF Chair"

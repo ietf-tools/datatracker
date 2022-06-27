@@ -1,9 +1,12 @@
 #!/bin/bash
 
-cd ..
-echo "Shutting down any instance still running and purge images..."
-docker compose down -v --rmi all
-echo "Purging dangling images..."
-docker image prune
-cd docker
-echo "Done!"
+read -p "Stop and remove all containers, volumes and images for this project? [y/N] " -n 1 -r
+echo 
+if [[ $REPLY =~ ^[Yy]$ ]]
+then
+    cd ..
+    echo "Shutting down any instance still running and purge images..."
+    docker compose down -v --rmi all
+    cd docker
+    echo "Done!"
+fi

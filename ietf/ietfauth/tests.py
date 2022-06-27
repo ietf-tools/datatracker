@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2020, All Rights Reserved
+# Copyright The IETF Trust 2009-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -248,6 +248,7 @@ class IetfAuthTests(TestCase):
             "plain": "",
             "ascii": "Test Name",
             "ascii_short": "T. Name",
+            "pronouns_freetext": "foo/bar",
             "affiliation": "Test Org",
             "active_emails": email_address,
             "consent": True,
@@ -318,6 +319,40 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('[name="action"][value="confirm"]')), 0)
+
+        pronoundish = base_data.copy()
+        pronoundish["pronouns_freetext"] = "baz/boom"
+        r = self.client.post(url, pronoundish)
+        self.assertEqual(r.status_code, 200)
+        person = Person.objects.get(user__username=username)
+        self.assertEqual(person.pronouns_freetext,"baz/boom")       
+        pronoundish["pronouns_freetext"]=""
+        r = self.client.post(url, pronoundish)
+        self.assertEqual(r.status_code, 200)
+        person = Person.objects.get(user__username=username)
+        self.assertEqual(person.pronouns_freetext, None)
+
+        pronoundish = base_data.copy()
+        del pronoundish["pronouns_freetext"]
+        pronoundish["pronouns_selectable"] = []
+        r = self.client.post(url, pronoundish)
+        self.assertEqual(r.status_code, 200)
+        person = Person.objects.get(user__username=username)
+        self.assertEqual(person.pronouns_selectable,[])
+        pronoundish["pronouns_selectable"] = ['he/him','she/her']
+        r = self.client.post(url, pronoundish)
+        self.assertEqual(r.status_code, 200)
+        person = Person.objects.get(user__username=username)
+        self.assertEqual(person.pronouns_selectable,['he/him','she/her'])
+        self.assertEqual(person.pronouns(),"he/him, she/her")
+
+        # Can't have both selectables and freetext
+        pronoundish["pronouns_freetext"] = "foo/bar/baz"
+        r = self.client.post(url, pronoundish)
+        self.assertContains(r, 'but not both' ,status_code=200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q("form div.invalid-feedback")) == 1)
+
 
         # change role email
         role = Role.objects.create(
@@ -854,7 +889,7 @@ class OpenIDConnectTests(TestCase):
             client.store_registration_info(client_reg)
 
             # Get a user for which we want to get access
-            person = PersonFactory(with_bio=True)
+            person = PersonFactory(with_bio=True, pronouns_freetext="foo/bar")
             active_group = RoleFactory(name_id='chair', person=person).group
             closed_group = RoleFactory(name_id='chair', person=person, group__state_id='conclude').group
             # an additional email
@@ -872,7 +907,7 @@ class OpenIDConnectTests(TestCase):
             session["nonce"] = rndstr()
             args = {
                 "response_type": "code",
-                "scope": ['openid', 'profile', 'email', 'roles', 'registration', 'dots' ],
+                "scope": ['openid', 'profile', 'email', 'roles', 'registration', 'dots', 'pronouns' ],
                 "nonce": session["nonce"],
                 "redirect_uri": redirect_uris[0],
                 "state": session["state"]
@@ -920,7 +955,7 @@ class OpenIDConnectTests(TestCase):
 
             # Get userinfo, check keys present
             userinfo = client.do_user_info_request(state=params["state"], scope=args['scope'])
-            for key in [ 'email', 'family_name', 'given_name', 'meeting', 'name', 'roles',
+            for key in [ 'email', 'family_name', 'given_name', 'meeting', 'name', 'pronouns', 'roles',
                          'ticket_type', 'reg_type', 'affiliation', 'picture', 'dots', ]:
                 self.assertIn(key, userinfo)
                 self.assertTrue(userinfo[key])

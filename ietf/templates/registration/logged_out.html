@@ -5,7 +5,7 @@
 {% block content %}
     {% origin %}
     <h1>You have been signed out</h1>
-    <a class="btn btn-primary my-3" href="/accounts/login/" rel="nofollow">Sign in</a>
+    <a class="btn btn-primary my-3" href="{% url 'ietf.ietfauth.views.login' %}" rel="nofollow">Sign in</a>
 {% endblock %}
 {% block js %}
     {% if request.META.HTTP_REFERER %}

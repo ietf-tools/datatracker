@@ -3154,13 +3154,6 @@ class ReorderSlidesTests(TestCase):
 
 class EditTests(TestCase):
     """Test schedule edit operations"""
-    def setUp(self):
-        super().setUp()
-        # make sure we have the colors of the area
-        from ietf.group.colors import fg_group_colors, bg_group_colors
-        area_upper = "FARFUT"
-        fg_group_colors[area_upper] = "#333"
-        bg_group_colors[area_upper] = "#aaa"
 
     def test_official_record_schedule_is_read_only(self):
         def _set_date_offset_and_retrieve_page(meeting, days_offset, client):
@@ -4612,8 +4605,7 @@ class InterimTests(TestCase):
         r = self.client.get("/meeting/interim/request/")
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        Group.objects.filter(type_id__in=GroupFeatures.objects.filter(has_meetings=True).values_list('type_id',flat=True), state__in=('active', 'proposed', 'bof'))
-        self.assertEqual(Group.objects.filter(type_id__in=GroupFeatures.objects.filter(has_meetings=True).values_list('type_id',flat=True), state__in=('active', 'proposed', 'bof')).count(),
+        self.assertEqual(Group.objects.with_meetings().filter(state__in=('active', 'proposed', 'bof')).count(),
             len(q("#id_group option")) - 1)  # -1 for options placeholder
         self.client.logout()
 
@@ -6630,29 +6622,6 @@ class HasMeetingsTests(TestCase):
 
 class AgendaFilterTests(TestCase):
     """Tests for the AgendaFilter template"""
-    def test_agenda_width_scale_filter(self):
-        """Test calculation of UI column width by agenda_width_scale filter"""
-        template = Template('{% load agenda_filter_tags %}{{ categories|agenda_width_scale:spacing }}')
-
-        # Should get '1' as min value when input is empty
-        context = Context({'categories': [], 'spacing': 7})
-        self.assertEqual(template.render(context), '1')
-
-        # 3 columns, no spacers
-        context = Context({'categories': [range(3)], 'spacing': 7})
-        self.assertEqual(template.render(context), '21')
-
-        # 6 columns, 1 spacer
-        context = Context({'categories': [range(3), range(3)], 'spacing': 7})
-        self.assertEqual(template.render(context), '43')
-
-        # 10 columns, 2 spacers
-        context = Context({'categories': [range(3), range(3), range(4)], 'spacing': 7})
-        self.assertEqual(template.render(context), '72')
-
-        # 10 columns, 2 spacers, different spacer scale
-        context = Context({'categories': [range(3), range(3), range(4)], 'spacing': 5})
-        self.assertEqual(template.render(context), '52')
 
     def test_agenda_filter_template(self):
         """Test rendering of input data by the agenda filter template"""
