@@ -6431,7 +6431,6 @@ class SessionTests(TestCase):
 
         url = urlreverse('ietf.meeting.views.meeting_requests',kwargs={'num':meeting.number})
         r = self.client.get(url)
-        print(r.content.decode())
         self.assertContains(r, requested_session.group.acronym)
         self.assertContains(r, not_meeting.group.acronym)
         self.assertContains(r, requested_session.constraints().first().name)
