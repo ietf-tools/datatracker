@@ -43,7 +43,7 @@
                 </tr>
             </thead>
             {% for session in area.list %}
-                {% ifchanged %}
+                {% ifchanged session.current_status_name %}
                     {% if not forloop.first %}</tbody>{% endif %}
                     <tbody>
                         <tr>
