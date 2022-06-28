@@ -6461,18 +6461,23 @@ class SessionTests(TestCase):
         self.assertContains(r, requested_session.group.acronym)
         self.assertContains(r, _sreq_edit_link(requested_session))  # link to the session request
         self.assertContains(r, not_meeting.group.acronym)
-        # the admin/social session groups should be listed under "no timeslot request received"; it's easier
+        # The admin/social session groups should be listed under "no timeslot request received"; it's easier
         # to check that the group is listed but that there is no link to the session request than to try to
-        # parse the HTML
+        # parse the HTML. If the view is changed to link to the "no timeslot request received" session requests,
+        # then need to revisit.
         self.assertContains(r, has_meetings_admin_session.group.acronym)
         self.assertNotContains(r, _sreq_edit_link(has_meetings_admin_session))  # no link to the session request
         self.assertContains(r, has_meetings_social_session.group.acronym)
         self.assertNotContains(r, _sreq_edit_link(has_meetings_social_session))  # no link to the session request
         self.assertContains(r, requested_session.constraints().first().name)
         self.assertContains(r, conflicting_session.group.acronym)
+        self.assertContains(r, _sreq_edit_link(conflicting_session))  # link to the session request
         self.assertContains(r, has_meetings.group.acronym)
+        self.assertContains(r, _sreq_edit_link(has_meetings))  # link to the session request
         self.assertContains(r, has_meetings_not_meeting.group.acronym)
+        self.assertContains(r, _sreq_edit_link(has_meetings_not_meeting))  # link to the session request
         self.assertNotContains(r, not_has_meetings.group.acronym)
+        self.assertNotContains(r, _sreq_edit_link(not_has_meetings))  # no link to the session request
 
     def test_request_minutes(self):
         meeting = MeetingFactory(type_id='ietf')
