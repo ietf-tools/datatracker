@@ -6398,17 +6398,86 @@ class SessionTests(TestCase):
 
     def test_meeting_requests(self):
         meeting = MeetingFactory(type_id='ietf')
+
+        # a couple non-wg group types, confirm that their has_meetings features are as expected
+        group_type_with_meetings = 'adhoc'
+        self.assertTrue(GroupFeatures.objects.get(pk=group_type_with_meetings).has_meetings)
+        group_type_without_meetings = 'editorial'
+        self.assertFalse(GroupFeatures.objects.get(pk=group_type_without_meetings).has_meetings)
+
         area = GroupFactory(type_id='area')
         requested_session = SessionFactory(meeting=meeting,group__parent=area,status_id='schedw',add_to_schedule=False)
         conflicting_session = SessionFactory(meeting=meeting,group__parent=area,status_id='schedw',add_to_schedule=False)
         ConstraintFactory(name_id='key_participant',meeting=meeting,source=requested_session.group,target=conflicting_session.group)
         not_meeting = SessionFactory(meeting=meeting,group__parent=area,status_id='notmeet',add_to_schedule=False)
+        has_meetings = SessionFactory(
+            meeting=meeting,
+            group__type_id=group_type_with_meetings,
+            status_id='schedw',
+            add_to_schedule=False,
+        )
+        has_meetings_not_meeting = SessionFactory(
+            meeting=meeting,
+            group__type_id=group_type_with_meetings,
+            status_id='notmeet',
+            add_to_schedule=False,
+        )
+        # admin and social sessions are not to be shown on the requests page
+        has_meetings_admin_session = SessionFactory(
+            meeting=meeting,
+            group__type_id=group_type_with_meetings,
+            status_id='schedw',
+            purpose_id='admin',
+            type_id='other',
+            add_to_schedule=False,
+        )
+        has_meetings_social_session = SessionFactory(
+            meeting=meeting,
+            group__type_id=group_type_with_meetings,
+            status_id='schedw',
+            purpose_id='social',
+            type_id='break',
+            add_to_schedule=False,
+        )
+        not_has_meetings = SessionFactory(
+            meeting=meeting,
+            group__type_id=group_type_without_meetings,
+            status_id='schedw',
+            add_to_schedule=False,
+        )
+
+        def _sreq_edit_link(sess):
+            return urlreverse(
+                'ietf.secr.sreq.views.edit',
+                kwargs={
+                    'num': meeting.number,
+                    'acronym': sess.group.acronym,
+                },
+            )
+
         url = urlreverse('ietf.meeting.views.meeting_requests',kwargs={'num':meeting.number})
         r = self.client.get(url)
+        # requested_session group should be listed with a link to the request
         self.assertContains(r, requested_session.group.acronym)
+        self.assertContains(r, _sreq_edit_link(requested_session))  # link to the session request
         self.assertContains(r, not_meeting.group.acronym)
+        # The admin/social session groups should be listed under "no timeslot request received"; it's easier
+        # to check that the group is listed but that there is no link to the session request than to try to
+        # parse the HTML. If the view is changed to link to the "no timeslot request received" session requests,
+        # then need to revisit.
+        self.assertContains(r, has_meetings_admin_session.group.acronym)
+        self.assertNotContains(r, _sreq_edit_link(has_meetings_admin_session))  # no link to the session request
+        self.assertContains(r, has_meetings_social_session.group.acronym)
+        self.assertNotContains(r, _sreq_edit_link(has_meetings_social_session))  # no link to the session request
         self.assertContains(r, requested_session.constraints().first().name)
         self.assertContains(r, conflicting_session.group.acronym)
+        self.assertContains(r, _sreq_edit_link(conflicting_session))  # link to the session request
+        self.assertContains(r, has_meetings.group.acronym)
+        self.assertContains(r, _sreq_edit_link(has_meetings))  # link to the session request
+        self.assertContains(r, has_meetings_not_meeting.group.acronym)
+        self.assertContains(r, _sreq_edit_link(has_meetings_not_meeting))  # link to the session request
+        self.assertNotContains(r, not_has_meetings.group.acronym)
+        self.assertNotContains(r, _sreq_edit_link(not_has_meetings))  # no link to the session request
 
     def test_request_minutes(self):
         meeting = MeetingFactory(type_id='ietf')
