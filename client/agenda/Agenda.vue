@@ -1,6 +1,8 @@
 <template lang="pug">
 .agenda
-  h1 {{title}}
+  h1
+    span #[strong IETF {{agendaStore.meeting.number}}] Meeting Agenda {{titleExtra}}
+    span.agenda-beta BETA
   h4
     span {{agendaStore.meeting.city}}, {{ meetingDate }}
     h6.float-end.d-none.d-lg-inline(v-if='meetingUpdated') #[span.text-muted Updated:] {{ meetingUpdated }}
@@ -191,13 +193,10 @@ watch(() => state.searchText, debounce((newValue) => {
 
 // COMPUTED
 
-const title = computed(() => {
-  let title = `IETF ${agendaStore.meeting.number} Meeting Agenda`
+const titleExtra = computed(() => {
+  let title = ''
   if (agendaStore.timezone === 'UTC') {
     title = `${title} (UTC)`
-  }
-  if (agendaStore.currentTab === 'personalize') {
-    title = `${title} Personalization`
   }
   return title
 })
@@ -339,6 +338,20 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
 .agenda {
   min-height: 500px;
 
+  > h1 {
+    font-weight: 500;
+    color: $gray-700;
+
+    strong {
+      font-weight: 500;
+      background: linear-gradient(220deg, $blue-500 20%, $purple-500 70%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      box-decoration-break: clone;
+    }
+  }
+
   &-topnav {
     position: relative;
 
@@ -380,6 +393,18 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
       font-size: 1.2em;
       color: $blue-400;
     }
+  }
+
+  &-beta {
+    position: absolute;
+    right: 1.5rem;
+    font-size: 13px;
+    font-weight: 700;
+    background-color: $pink-500;
+    box-shadow: 0 0 5px 0 rgba($pink-500, .5);
+    color: #FFF;
+    padding: 5px 8px;
+    border-radius: 6px;
   }
 }
 

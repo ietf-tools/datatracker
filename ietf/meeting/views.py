@@ -1636,6 +1636,11 @@ def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, u
             "isCurrentMeeting": is_current_meeting,
             "useHedgeDoc": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
             "schedule": list(map(agenda_extract_shedule, filtered_assignments))
+        },
+        "schedule": {
+            "meeting": {
+                "number": schedule.meeting.number,
+            }
         }
     }, content_type=mimetype[ext])
 

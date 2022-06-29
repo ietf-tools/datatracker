@@ -33,7 +33,7 @@ export const useAgendaStore = defineStore('agenda', {
     pickerMode: false,
     pickerModeView: false,
     pickedEvents: [],
-    redhandShown: false,
+    redhandShown: true,
     schedule: [],
     searchText: '',
     searchVisible: false,
