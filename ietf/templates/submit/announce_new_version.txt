@@ -7,7 +7,7 @@ A new version (-{{ submission.rev }}) has been submitted for {{ submission.name 
 {% endif %}
 
 The IETF datatracker page for this Internet-Draft is:
-https://datatracker.ietf.org/doc/{{ submission.name }}/
+{{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.doc.views_doc.document_main' name=submission.name %}
 
 Diff from previous version:
 {{rfcdiff_base_url}}?url2={{ submission.name }}-{{ submission.rev }}

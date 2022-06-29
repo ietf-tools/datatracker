@@ -547,7 +547,7 @@ def index_all_drafts(request):
 
         names.sort(key=lambda t: t[1])
 
-        names = ['<a href="/doc/' + n + '/">' + n +'</a>'
+        names = [f'<a href=\"{urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=n))}\">{n}</a>'
                  for n, __ in names if n not in names_to_skip]
 
         categories.append((state,

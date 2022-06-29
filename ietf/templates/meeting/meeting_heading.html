@@ -3,11 +3,16 @@
 {% origin %}
 {# assumes meeting is in context #}
 {% load origin %}
-{% load ietf_filters %}
+{% load ietf_filters htmlfilters %}
 {% origin %}
 <h1>
     IETF {{ meeting.number }} meeting agenda
     {% if personalize %}personalization{% endif %}
+    {% if schedule.meeting.agenda_warning_note %}
+        <span class="badge rounded-pill bg-danger">
+          {{ schedule.meeting.agenda_warning_note|removetags:"h1" |safe }}
+        </span>
+    {% endif %}
     {% if title_extra %}
         <br>
         <small class="text-muted">{{ title_extra }}</small>

@@ -49,7 +49,7 @@
                         {% for ipr in conflictdoc.ipr %}
                             {% if ipr.disclosure.state_id == "posted" %}
                                 <div>
-                                    <a href="/ipr/{{ ipr.disclosure.id }}/">{{ ipr.disclosure.title }}</a>
+                                    <a href="{% url 'ietf.ipr.views.show' id=ipr.disclosure.id %}">{{ ipr.disclosure.title }}</a>
                                 </div>
                             {% endif %}
                         {% endfor %}

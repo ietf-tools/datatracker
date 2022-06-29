@@ -8,7 +8,7 @@
     <p class="alert alert-info my-3">
         <b>Tool URL:</b>
         <a href="{% url "ietf.submit.views.upload_submission" %}">
-            https://datatracker.ietf.org{% url "ietf.submit.views.upload_submission" %}
+            {{ settings.IDTRACKER_BASE_URL }}{% url "ietf.submit.views.upload_submission" %}
         </a>
     </p>
     <p>
@@ -30,7 +30,7 @@
     </p>
     <p>
         An API for automated draft submission is available as an alternative to this webpage at
-        <a href="https://datatracker.ietf.org/api/submit/">https://datatracker.ietf.org/api/submit/</a>.
+        <a href="{{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.submit.views.api_submit' %}">{{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.submit.views.api_submit' %}</a>.
     </p>
     <p>
         The specification for this tool can be found in
