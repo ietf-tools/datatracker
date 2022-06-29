@@ -535,7 +535,7 @@ INTERNAL_IPS = (
 # no slash at end
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://www.ietf.org/rfcdiff"
-IDNITS_BASE_URL = "https://www.ietf.org/tools/idnits"
+IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
 
 # Content security policy configuration (django-csp)
 CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", f"data: {IDTRACKER_BASE_URL} https://www.ietf.org/ https://analytics.ietf.org/")
