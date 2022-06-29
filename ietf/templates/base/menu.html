@@ -236,25 +236,25 @@
     {% endif %}
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/meeting/agenda-neue">
+           href="{% url 'ietf.meeting.views.agenda_neue' %}">
             Agenda (New)
         </a>
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/meeting/agenda/">
+           href="{% url 'ietf.meeting.views.agenda' %}">
             Agenda
         </a>
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/meeting/materials/">
+           href="{% url 'ietf.meeting.views.materials' %}">
             Materials
         </a>
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/meeting/floor-plan/">
+           href="{% url 'ietf.meeting.views.floor_plan' %}">
             Floor plan
         </a>
     </li>
@@ -272,13 +272,13 @@
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/secr/sreq/">
+           href="{% url 'ietf.secr.sreq.views.main' %}">
             Request a session
         </a>
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/meeting/requests">
+           href="{% url 'ietf.meeting.views.meeting_requests' %}">
             Session requests
         </a>
     </li>
@@ -293,7 +293,7 @@
     {% endif %}
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/meeting/upcoming">
+           href="{% url 'ietf.meeting.views.upcoming' %}">
             Upcoming meetings
         </a>
     </li>
@@ -308,7 +308,7 @@
     {% endif %}
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/meeting/past">
+           href="{% url 'ietf.meeting.views.past' %}">
             Past meetings
         </a>
     </li>
@@ -340,19 +340,19 @@
     {% endif %}
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/ipr/">
+           href="{% url 'ietf.ipr.views.showlist' %}">
             IPR disclosures
         </a>
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/liaison/">
+           href="{% url 'ietf.liaisons.views.liaison_list' %}">
             Liaison statements
         </a>
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/iesg/agenda/">
+           href="{% url 'ietf.iesg.views.agenda' %}">
             IESG agenda
         </a>
     </li>
@@ -364,7 +364,7 @@
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/doc/downref/">
+           href="{% url 'ietf.doc.views_downref.downref_registry' %}">
             Downref registry
         </a>
     </li>
@@ -398,13 +398,13 @@
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/group/edu/materials/">
+           href="{% url "ietf.group.views.materials" acronym='edu' %}">
             Tutorials
         </a>
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/api/">
+           href="{% url 'ietf.api.views.api_help' %}">
             API Help
         </a>
     </li>
