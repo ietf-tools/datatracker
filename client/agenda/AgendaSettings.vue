@@ -57,34 +57,50 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
       n-divider(title-placement='left')
         i.bi.bi-sliders.me-2
         small Display
+      //- .d-flex.align-items-center.mt-3
+      //-   n-switch.me-3(v-model:value='agendaStore.listDayCollapse', disabled)
+      //-   span.small Collapse Days by Default
       .d-flex.align-items-center.mt-3
-        n-switch.me-3(v-model:value='agendaStore.listDayCollapse', disabled)
-        span.small Collapse Days by Default
-      .d-flex.align-items-center.mt-3
-        n-switch.me-3(v-model:value='agendaStore.areaIndicatorsShown')
+        n-switch.me-3(
+          v-model:value='agendaStore.areaIndicatorsShown'
+          aria-label='Display Group Area Indicators'
+          )
         span.small.me-2 Display Group Area Indicators
         n-popover
           template(#trigger)
             i.bi.bi-info-circle
           span Will not be shown on smaller screens, regardless of this setting.
       .d-flex.align-items-center.mt-3
-        n-switch.me-3(v-model:value='agendaStore.infoNoteShown')
+        n-switch.me-3(
+          v-model:value='agendaStore.infoNoteShown'
+          aria-label='Display Current Meeting Info Note'
+          )
         span.small.me-2 Display Current Meeting Info Note
         n-popover
           template(#trigger)
             i.bi.bi-info-circle
           span Any update to the note will result in this setting being turned back on.
       .d-flex.align-items-center.mt-3
-        n-switch.me-3(v-model:value='agendaStore.floorIndicatorsShown')
+        n-switch.me-3(
+          v-model:value='agendaStore.floorIndicatorsShown'
+          aria-label='Display Floor Indicators'
+          )
         span.small Display Floor Indicators
       .d-flex.align-items-center.mt-3
-        n-switch.me-3(v-model:value='agendaStore.redhandShown')
-        span.small Display Realtime Red Line
+        n-switch.me-3(
+          v-model:value='agendaStore.redhandShown'
+          aria-label='Display Realtime Red Line'
+          )
+        span.small.me-2 Display Realtime Red Line
+        n-popover
+          template(#trigger)
+            i.bi.bi-info-circle
+          span Only shown during live events. Updated every 5 seconds.
 
       n-divider(title-placement='left')
         i.bi.bi-palette.me-2
         small Custom Colors / Tags
-      .d-flex.align-items-center.mt-3(v-for='cl of state.colors')
+      .d-flex.align-items-center.mt-3(v-for='(cl, idx) of state.colors')
         n-color-picker.me-3(
           :modes='[`hex`]'
           :render-label='() => {}'
@@ -92,10 +108,13 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
           size='small'
           :swatches='swatches'
           v-model:value='cl.hex'
+          :aria-label='"Color for " + cl.tag'
         )
         n-input(
           type='text'
           v-model:value='cl.tag'
+          :placeholder='"Color " + (idx + 1)'
+          :aria-label='"Color Name " + (idx + 1)'
         )
 
       n-divider(title-placement='left')
@@ -105,6 +124,7 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
         v-model:value='state.currentDateTime'
         type='datetime'
         style='width: 100%;'
+        aria-label='Override Local DateTime'
         )
         template(#date-icon)
           i.bi.bi-calendar-check
