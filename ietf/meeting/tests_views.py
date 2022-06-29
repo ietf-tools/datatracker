@@ -494,7 +494,7 @@ class MeetingTests(BaseMeetingTestCase):
         nav_tab_anchors = q('ul.nav.nav-tabs > li > a')
         for anchor in nav_tab_anchors.items():
             text = anchor.text().strip()
-            if text in ['Agenda', 'UTC agenda', 'Personalize agenda']:
+            if text in ['Agenda (New)', 'Agenda', 'UTC agenda', 'Personalize agenda']:
                 expected_elements.append(anchor)
         for btn in q('.buttonlist a.btn').items():
             text = btn.text().strip()
