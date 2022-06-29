@@ -11,6 +11,7 @@ export const useAgendaStore = defineStore('agenda', {
     areaIndicatorsShown: true,
     calendarShown: false,
     categories: [],
+    colorPickerVisible: false,
     colors: [
       { hex: '#0d6efd', tag: 'Color 1' },
       { hex: '#6f42c1', tag: 'Color 2' },
@@ -18,20 +19,22 @@ export const useAgendaStore = defineStore('agenda', {
       { hex: '#ffc107', tag: 'Color 4' },
       { hex: '#20c997', tag: 'Color 5' }
     ],
+    colorAssignments: {},
     currentDateTime: DateTime.local(),
     dayIntersectId: '',
     filterShown: false,
     floorIndicatorsShown: true,
     infoNoteShown: true,
     isCurrentMeeting: false,
+    isMobile: /Mobi/i.test(navigator.userAgent),
     listDayCollapse: false,
     meeting: {},
     infoNoteHash: '',
-    mobileMode: window.innerWidth < 1400,
+    viewport: Math.round(window.innerWidth),
     pickerMode: false,
     pickerModeView: false,
     pickedEvents: [],
-    redhandShown: true,
+    redhandShown: false,
     schedule: [],
     searchText: '',
     searchVisible: false,
@@ -65,7 +68,7 @@ export const useAgendaStore = defineStore('agenda', {
 
         // -> Filter by search text if present
         if (state.searchVisible && state.searchText) {
-          const searchStr = `${s.name} ${s.groupName} ${s.room} ${s.note}`
+          const searchStr = `${s.name} ${s.groupName} ${s.acronym} ${s.room} ${s.note}`
           if (searchStr.toLowerCase().indexOf(state.searchText) < 0) {
             return false
           }
@@ -111,7 +114,7 @@ export const useAgendaStore = defineStore('agenda', {
       return uniqBy(this.scheduleAdjusted, 'adjustedStartDate').sort().map(s => ({
         slug: s.id.toString(),
         ts: s.adjustedStartDate,
-        label: DateTime.fromISO(s.adjustedStartDate).toLocaleString(DateTime.DATE_HUGE)
+        label: this.viewport < 1350 ? DateTime.fromISO(s.adjustedStartDate).toFormat('ccc LLL d') : DateTime.fromISO(s.adjustedStartDate).toLocaleString(DateTime.DATE_HUGE)
       }))
     },
     isMeetingLive (state) {
@@ -139,6 +142,7 @@ export const useAgendaStore = defineStore('agenda', {
 
       // -> Load meeting-specific preferences
       this.infoNoteShown = !(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.hideInfo`) === this.infoNoteHash)
+      this.colorAssignments = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.colorAssignments`) || '{}')
     },
     persistMeetingPreferences () {
       if (this.infoNoteShown) {
@@ -146,6 +150,7 @@ export const useAgendaStore = defineStore('agenda', {
       } else {
         window.localStorage.setItem(`agenda.${this.meeting.number}.hideInfo`, this.infoNoteHash)
       }
+      window.localStorage.setItem(`agenda.${this.meeting.number}.colorAssignments`, JSON.stringify(this.colorAssignments))
     }
   },
   persist: {

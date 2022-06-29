@@ -7,7 +7,7 @@
           th.agenda-table-head-check(v-if='pickerModeActive') &nbsp;
           th.agenda-table-head-time Time
           th.agenda-table-head-location(colspan='2') Location
-          th.agenda-table-head-event(colspan='2') {{ agendaStore.mobileMode ? '' : 'Event' }}
+          th.agenda-table-head-event(colspan='2') {{ agendaStore.viewport < 990 ? '' : 'Event' }}
       tbody
         tr.agenda-table-display-noresult(
           v-if='!meetingEvents || meetingEvents.length < 1'
@@ -67,7 +67,7 @@
               n-popover(
                 trigger='hover'
                 :width='250'
-                v-if='agendaStore.areaIndicatorsShown'
+                v-if='agendaStore.areaIndicatorsShown && agendaStore.viewport > 1200'
                 )
                 template(#trigger)
                   span.badge {{item.groupAcronym}}
@@ -97,21 +97,52 @@
                 span {{item.note}}
             //- CELL - LINKS --------------------------
             td.agenda-table-cell-links
-              span.badge.is-cancelled(v-if='item.status === `canceled`') Cancelled
-              span.badge.is-rescheduled(v-else-if='item.status === `resched`') Rescheduled
-              .agenda-table-cell-links-buttons(v-else-if='item.links && item.links.length > 0')
-                template(v-if='item.flags.agenda')
-                  n-popover
-                    template(#trigger)
-                      i.bi.bi-collection(@click='showMaterials(item.key)')
-                    span Show meeting materials
-                n-popover(v-for='lnk of item.links', :key='lnk.id')
-                  template(#trigger)
-                    a(
-                      :href='lnk.href'
-                      :aria-label='lnk.label'
-                      ): i.bi(:class='`bi-` + lnk.icon')
-                  span {{lnk.label}}
+              template(v-if='state.selectedColorPicker === item.key')
+                .agenda-table-colorchoices
+                  .agenda-table-colorchoice(
+                    @click='setEventColor(item.key, null)'
+                    )
+                    i.bi.bi-x
+                  .agenda-table-colorchoice(
+                    v-for='(color, idx) in agendaStore.colors'
+                    :key='idx'
+                    :style='{ "color": color.hex }'
+                    @click='setEventColor(item.key, idx)'
+                    )
+              template(v-else)
+                span.badge.is-cancelled(v-if='item.status === `canceled`') Cancelled
+                span.badge.is-rescheduled(v-else-if='item.status === `resched`') Rescheduled
+                .agenda-table-cell-links-buttons(v-else-if='agendaStore.viewport < 1200 && item.links && item.links.length > 0')
+                  n-dropdown(
+                    trigger='click'
+                    :options='item.links'
+                    key-field='id'
+                    :render-icon='renderLinkIcon'
+                    v-if='!agendaStore.colorPickerVisible'
+                    )
+                    n-button(size='tiny')
+                      i.bi.bi-three-dots
+                .agenda-table-cell-links-buttons(v-else-if='item.links && item.links.length > 0')
+                    template(v-if='item.flags.agenda')
+                      n-popover
+                        template(#trigger)
+                          i.bi.bi-collection(@click='showMaterials(item.key)')
+                        span Show meeting materials
+                    n-popover(v-for='lnk of item.links', :key='lnk.id')
+                      template(#trigger)
+                        a(
+                          :href='lnk.href'
+                          :aria-label='lnk.label'
+                          :class='`text-` + lnk.color'
+                          ): i.bi(:class='`bi-` + lnk.icon')
+                      span {{lnk.label}}
+                    
+              .agenda-table-colorindicator(
+                v-if='agendaStore.colorPickerVisible || getEventColor(item.key)'
+                @click='agendaStore.colorPickerVisible && openColorPicker(item.key)'
+                :class='{ "is-active": agendaStore.colorPickerVisible }'
+                :style='{ "color": getEventColor(item.key) }'
+                )
 
   .agenda-table-search
     n-popover
@@ -123,6 +154,16 @@
           i.bi.bi-search
       span {{ agendaStore.searchVisible ? 'Close Search' : 'Search Events' }}
 
+  .agenda-table-colorpicker
+    n-popover
+      template(#trigger)
+        button(
+          @click='toggleColorPicker'
+          :aria-label='agendaStore.colorPickerVisible ? `Exit Colors Assignment Mode` : `Assign Colors to Events`'
+          )
+          i.bi.bi-palette
+      span {{ agendaStore.colorPickerVisible ? 'Exit Colors Assignment Mode' : 'Assign Colors to Events' }}
+
   .agenda-table-redhand(v-if='agendaStore.redhandShown')
 
   agenda-details-modal(
@@ -133,15 +174,17 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, h, reactive } from 'vue'
 import { DateTime } from 'luxon'
 import find from 'lodash/find'
 import sortBy from 'lodash/sortBy'
 import reduce from 'lodash/reduce'
 import slugify from 'slugify'
 import {
+  NButton,
   NCheckbox,
   NCheckboxGroup,
+  NDropdown,
   NPopover
 } from 'naive-ui'
 
@@ -157,7 +200,8 @@ const agendaStore = useAgendaStore()
 
 const state = reactive({
   showEventDetails: false,
-  eventDetails: {}
+  eventDetails: {},
+  selectedColorPicker: null
 })
 
 // COMPUTED
@@ -171,7 +215,9 @@ const meetingEvents = computed(() => {
   const current = DateTime.local().setZone(agendaStore.timezone)
 
   return reduce(sortBy(agendaStore.scheduleAdjusted, 'adjustedStartDate'), (acc, item) => {
-    const itemTimeSlot = `${item.adjustedStart.toFormat('HH:mm')} - ${item.adjustedEnd.toFormat('HH:mm')}`
+    const itemTimeSlot = agendaStore.viewport > 600 ?
+      `${item.adjustedStart.toFormat('HH:mm')} - ${item.adjustedEnd.toFormat('HH:mm')}` :
+      `${item.adjustedStart.toFormat('HH:mm')} ${item.adjustedEnd.toFormat('HH:mm')}`
 
     // -> Add date row
     const itemDate = DateTime.fromISO(item.adjustedStartDate)
@@ -206,13 +252,15 @@ const meetingEvents = computed(() => {
           id: `lnk-${item.id}-tar`,
           label: 'Download meeting materials as .tar archive',
           icon: 'file-zip',
-          href: `/meeting/${agendaStore.meeting.number}/agenda/${item.acronym}-drafts.tgz`
+          href: `/meeting/${agendaStore.meeting.number}/agenda/${item.acronym}-drafts.tgz`,
+          color: 'brown'
         })
         links.push({
           id: `lnk-${item.id}-pdf`,
           label: 'Download meeting materials as PDF file',
           icon: 'file-pdf',
-          href: `/meeting/${agendaStore.meeting.number}/agenda/${item.acronym}-drafts.pdf`
+          href: `/meeting/${agendaStore.meeting.number}/agenda/${item.acronym}-drafts.pdf`,
+          color: 'red'
         })
       }
       if (agendaStore.useHedgeDoc) {
@@ -220,7 +268,8 @@ const meetingEvents = computed(() => {
           id: `lnk-${item.id}-note`,
           label: 'Notepad for note-takers',
           icon: 'journal-text',
-          href: `https://notes.ietf.org/notes-ietf-${agendaStore.meeting.number}-${item.type === 'plenary' ? 'plenary' : item.acronym}`
+          href: `https://notes.ietf.org/notes-ietf-${agendaStore.meeting.number}-${item.type === 'plenary' ? 'plenary' : item.acronym}`,
+          color: 'blue'
         })
       }
       if (item.adjustedEnd > current) {
@@ -285,7 +334,8 @@ const meetingEvents = computed(() => {
             id: `lnk-${item.id}-logs`,
             label: `Chat logs for ${item.acronym}`,
             icon: 'chat-left-text',
-            href: `https://www.ietf.org/jabber/logs/${item.type === 'plenary' ? 'plenary' : item.acronym}?C=M;O=D`
+            href: `https://www.ietf.org/jabber/logs/${item.type === 'plenary' ? 'plenary' : item.acronym}?C=M;O=D`,
+            color: 'green'
           })
         }
         if (meetingNumberInt >= 80) {
@@ -305,7 +355,8 @@ const meetingEvents = computed(() => {
                 id: `lnk-${item.id}-youtube-${rec.id}`,
                 label: rec.title,
                 icon: 'youtube',
-                href: rec.url
+                href: rec.url,
+                color: 'red'
               })
             } else {
               // -> Others
@@ -313,7 +364,8 @@ const meetingEvents = computed(() => {
                 id: `lnk-${item.id}-video-${rec.id}`,
                 label: rec.title,
                 icon: 'file-play',
-                href: rec.url
+                href: rec.url,
+                color: 'purple'
               })
             }
           }
@@ -322,7 +374,8 @@ const meetingEvents = computed(() => {
               id: `lnk-${item.id}-rec`,
               label: 'Session recording',
               icon: 'film',
-              href: `https://www.meetecho.com/ietf${agendaStore.meeting.number}/recordings#${item.acronym.toUpperCase()}`
+              href: `https://www.meetecho.com/ietf${agendaStore.meeting.number}/recordings#${item.acronym.toUpperCase()}`,
+              color: 'purple'
             })
           }
         }
@@ -408,6 +461,13 @@ function toggleSearch () {
   })
 }
 
+function toggleColorPicker () {
+  state.selectedColorPicker = null
+  agendaStore.$patch({
+    colorPickerVisible: !agendaStore.colorPickerVisible
+  })
+}
+
 function showMaterials (eventId) {
   state.eventDetails = find(agendaStore.scheduleAdjusted, ['id', eventId])
   state.showEventDetails = true
@@ -415,6 +475,34 @@ function showMaterials (eventId) {
 
 function xslugify (str) {
   return slugify(str.replace('/', '-'), { lower: true })
+}
+
+function openColorPicker (itemKey) {
+  state.selectedColorPicker = (state.selectedColorPicker === itemKey) ? null : itemKey
+}
+
+function setEventColor (itemKey, colorIdx) {
+  agendaStore.$patch({
+    colorAssignments: {
+      ...agendaStore.colorAssignments,
+      [itemKey]: colorIdx
+    }
+  })
+  state.selectedColorPicker = null
+  agendaStore.persistMeetingPreferences()
+}
+
+function getEventColor (itemKey) {
+  const clIdx = agendaStore.colorAssignments[itemKey]
+  if (clIdx || clIdx === 0) {
+    return agendaStore.colors[clIdx]?.hex
+  } else {
+    return null
+  }
+}
+
+function renderLinkIcon (opt) {
+  return h('i', { class: `bi bi-${opt.icon} text-${opt.color}` })
 }
 
 </script>
@@ -427,7 +515,6 @@ function xslugify (str) {
   border: 1px solid $gray-600;
   border-radius: 5px;
   font-size: 0.9rem;
-  overflow: hidden;
   position: relative;
 
   &-redhand {
@@ -486,6 +573,10 @@ function xslugify (str) {
     }
     &.agenda-table-head-time {
       width: 125px;
+
+      @media screen and (max-width: 1300px) {
+        width: 100px;
+      }
     }
     &.agenda-table-head-location {
       width: 250px;
@@ -564,16 +655,27 @@ function xslugify (str) {
       padding-bottom: 2px;
     }
 
-    &.agenda-table-cell-ts.is-session-event {
-      background: linear-gradient(to right, lighten($blue-100, 8%), lighten($blue-100, 5%));
-      border-right: 1px solid $blue-200 !important;
-      color: $blue-200;
-      border-bottom: 1px solid #FFF;
+    &.agenda-table-cell-ts {
+      &.is-session-event {
+        background: linear-gradient(to right, lighten($blue-100, 8%), lighten($blue-100, 5%));
+        border-right: 1px solid $blue-200 !important;
+        color: $blue-200;
+        border-bottom: 1px solid #FFF;
+      }
     }
 
     &.agenda-table-cell-room {
       color: $gray-700;
       border-right: 1px solid $gray-300 !important;
+      white-space: nowrap;
+
+      @media screen and (max-width: 1300px) {
+        font-size: .85rem;
+      }
+
+      @media screen and (max-width: 600px) {
+        white-space: initial;
+      }
 
       .badge {
         width: 30px;
@@ -586,12 +688,20 @@ function xslugify (str) {
         font-weight: 700;
         margin-right: 10px;
         text-shadow: 1px 1px $yellow-100;
+
+        @media screen and (max-width: 1300px) {
+          margin-left: -12px;
+          border-top-left-radius: 0;
+          border-bottom-left-radius: 0;
+          margin-right: 6px;
+        }
       }
     }
 
     &.agenda-table-cell-group {
       color: $gray-700;
       border-right: 1px solid $gray-300 !important;
+      white-space: nowrap;
 
       .badge {
         width: 40px;
@@ -624,6 +734,7 @@ function xslugify (str) {
 
     &.agenda-table-cell-links {
       text-align: right;
+      position: relative;
 
       .badge.is-cancelled {
         background-color: $red-500;
@@ -638,13 +749,60 @@ function xslugify (str) {
       }
 
       .agenda-table-cell-links-buttons {
+        white-space: nowrap;
+
         > a, > i {
-          margin-left: 5px;
+          margin-left: 3px;
           color: #666;
           cursor: pointer;
+          background-color: rgba(255, 255, 255, .8);
+          border-radius: 3px;
+          padding: 2px 3px;
+          transition: background-color .6s ease;
 
           &:hover, &:focus {
             color: $blue;
+          }
+
+          &.text-red {
+            color: $red-500;
+            background-color: rgba($red-500, .1);
+
+            &:hover, &:focus {
+              background-color: rgba($red-500, .3);
+            }
+          }
+          &.text-brown {
+            color: $orange-700;
+            background-color: rgba($orange-500, .1);
+
+            &:hover, &:focus {
+              background-color: rgba($orange-500, .3);
+            }
+          }
+          &.text-blue {
+            color: $blue-600;
+            background-color: rgba($blue-300, .1);
+
+            &:hover, &:focus {
+              background-color: rgba($blue-300, .3);
+            }
+          }
+          &.text-green {
+            color: $green-500;
+            background-color: rgba($green-300, .1);
+
+            &:hover, &:focus {
+              background-color: rgba($green-300, .3);
+            }
+          }
+          &.text-purple {
+            color: $purple-500;
+            background-color: rgba($purple-400, .1);
+
+            &:hover, &:focus {
+              background-color: rgba($purple-400, .3);
+            }
           }
         }
       }
@@ -657,6 +815,14 @@ function xslugify (str) {
     font-weight: 700;
     text-align: right;
     white-space: nowrap;
+
+    @media screen and (max-width: 1300px) {
+      font-size: .9rem;
+    }
+
+    @media screen and (max-width: 600px) {
+      white-space: initial;
+    }
   }
 
   // -> Row BG Color Highlight
@@ -792,11 +958,12 @@ function xslugify (str) {
     }
   }
 
-  &-search {
+  // -> TOP RIGHT BUTTONS
+
+  &-search, &-colorpicker {
     position: absolute;
-    top: 15px;
-    right: 15px;
     display: flex;
+    top: 15px;
     align-items: center;
 
     > button {
@@ -823,5 +990,91 @@ function xslugify (str) {
       }
     }
   }
+
+  &-search {
+    right: 15px;
+  }
+
+  &-colorpicker {
+    right: 70px;
+  }
+
+  // -> COLOR PICKER
+
+  &-colorindicator {
+    color: #999;
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    right: -9px;
+    content: '';
+    width: 15px;
+    height: 15px;
+    margin: auto 0;
+    background-color: currentColor;
+    border: 6px solid currentColor;
+    border-radius: 7px;
+    animation: fadeInAnim 1s ease;
+    box-shadow: 0 0 6px 1px currentcolor;
+    transition: all .4s ease;
+
+    &.is-active {
+      background-color: #FFF;
+      cursor: pointer;
+
+      &:hover {
+        border-width: 2px;
+      }
+    }
+  }
+
+  &-colorchoices {
+    display: flex;
+    align-items: center;
+    justify-content: end;
+  }
+
+  &-colorchoice {
+    width: 22px;
+    height: 22px;
+    content: '';
+    background-color: currentColor;
+    border-radius: 5px;
+    margin-left: 3px;
+    animation: fadeInAnim .4s ease forwards;
+    opacity: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    > .bi {
+      color: #FFF;
+    }
+
+    &:hover {
+      border: 3px solid rgba(0,0,0,.25);
+    }
+
+    &:first-child {
+      margin-left: 0;
+    }
+
+    @for $i from 1 through 5 {
+      &:nth-child(#{$i}) {
+        animation-delay: #{(5 - $i) * .05}s;
+      }
+    }
+  }
 }
+
+@keyframes fadeInAnim {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 </style>

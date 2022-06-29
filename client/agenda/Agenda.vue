@@ -54,7 +54,7 @@
               @click='setTimezone(`UTC`)'
               ) UTC
           n-select.agenda-timezone-ddn(
-            v-if='!agendaStore.mobileMode'
+            v-if='agendaStore.viewport > 1250'
             v-model:value='agendaStore.timezone'
             :options='timezones'
             placeholder='Select Time Zone'
@@ -116,17 +116,10 @@
     // -----------------------------------
     // -> Anchored Day Quick Access Menu
     // -----------------------------------
-    .col-auto.d-print-none(v-if='!agendaStore.mobileMode')
+    .col-auto.d-print-none(v-if='agendaStore.viewport >= 990')
       agenda-quick-access
 
-  .agenda-mobile-btn-l(v-if='agendaStore.mobileMode')
-    button(@click='showFilter')
-      i.bi.bi-filter-square-fill.me-2
-      span Filters
-  .agenda-mobile-btn-r(v-if='agendaStore.mobileMode')
-    button
-      i.bi.bi-calendar3.me-2
-      span Calendar
+  agenda-mobile-bar
 </template>
 
 <script setup>
@@ -148,6 +141,7 @@ import AgendaScheduleList from './AgendaScheduleList.vue'
 import AgendaScheduleCalendar from './AgendaScheduleCalendar.vue'
 import AgendaQuickAccess from './AgendaQuickAccess.vue'
 import AgendaSettings from './AgendaSettings.vue'
+import AgendaMobileBar from './AgendaMobileBar.vue'
 
 import timezones from '../shared/timezones'
 
@@ -248,10 +242,6 @@ function closeSearch () {
   })
 }
 
-function showFilter () {
-  agendaStore.$patch({ filterShown: true })
-}
-
 function toggleInfoNote () {
   agendaStore.$patch({ infoNoteShown: !agendaStore.infoNoteShown })
   agendaStore.persistMeetingPreferences()
@@ -266,7 +256,7 @@ function toggleSettings () {
 // Handle browser resize
 
 const resizeObserver = new ResizeObserver(entries => {
-  agendaStore.$patch({ mobileMode: window.innerWidth < 1400 })
+  agendaStore.$patch({ viewport: Math.round(window.innerWidth) })
   // for (const entry of entries) {
     // const newWidth = entry.contentBoxSize ? entry.contentBoxSize[0].inlineSize : entry.contentRect.width
   // }
@@ -391,63 +381,23 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
       color: $blue-400;
     }
   }
+}
 
-  &-mobile-btn-l, &-mobile-btn-r {
-    position: fixed;
-    bottom: 0;
-
-    button {
-      height: 40px;
-      box-shadow: 0px 0 8px 0px rgba(0, 0, 0, 0.5);
-      border: none;
-      background-color: $blue;
-      color: #FFF;
-      padding: 0 15px;
-      transition: all .4s ease;
-
-      i.bi {
-        font-size: 1.2em;
-      }
-
-      &:hover {
-        background-color: $blue-400;
-      }
-      &:active {
-        background-color: $blue-700;
-      }
-    }
+.n-dropdown-option {
+  .text-red {
+    color: $red-500;
   }
-
-  &-mobile-btn-l {
-    left: 0;
-
-    button {
-      border-radius: 0 15px 0 0;
-      background-color: $green;
-
-      &:hover {
-        background-color: $green-400;
-      }
-      &:active {
-        background-color: $green-700;
-      }
-    }
+  .text-brown {
+    color: $orange-700;
   }
-
-  &-mobile-btn-r {
-    right: 0;
-
-    button {
-      border-radius: 15px 0 0 0;
-      background-color: $blue;
-
-      &:hover {
-        background-color: $blue-400;
-      }
-      &:active {
-        background-color: $blue-700;
-      }
-    }
+  .text-blue {
+    color: $blue-600;
+  }
+  .text-green {
+    color: $green-500;
+  }
+  .text-purple {
+    color: $purple-500;
   }
 }
 

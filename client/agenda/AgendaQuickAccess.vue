@@ -8,10 +8,10 @@
           type='success'
           size='large'
           strong
-          @click='showFilter'
+          @click='agendaStore.$patch({ filterShown: true })'
           )
           i.bi.bi-funnel.me-2
-          span Filter Areas + Groups...
+          span {{ shortMode ? 'Filter...' : 'Filter Areas + Groups...' }}
           n-badge.ms-2(:value='agendaStore.selectedCatSubs.length', processing)
         n-button.mt-2(
           v-if='!agendaStore.pickerMode'
@@ -23,9 +23,9 @@
           @click='agendaStore.$patch({ pickerMode: true })'
           )
           i.bi.bi-ui-checks.me-2
-          span Pick Sessions...
+          span {{ shortMode ? 'Pick...' : 'Pick Sessions...' }}
         .agenda-quickaccess-btnrow(v-else)
-          .agenda-quickaccess-btnrow-title Session Selection
+          .agenda-quickaccess-btnrow-title {{ shortMode ? 'Sess. Pick' : 'Session Selection' }}
           n-button.me-1(
             v-if='!agendaStore.pickerModeView'
             type='success'
@@ -62,7 +62,7 @@
           @click='agendaStore.$patch({ calendarShown: true })'
           )
           i.bi.bi-calendar3.me-2
-          span Calendar View
+          span {{ shortMode ? 'Cal View' : 'Calendar View' }}
         n-dropdown(
           :options='downloadIcsOptions'
           size='large'
@@ -78,7 +78,7 @@
             strong
             )
             i.bi.bi-calendar-check.me-2
-            span Add to your calendar...
+            span {{ shortMode ? '.ics' : 'Add to your calendar...' }}
         template(v-if='agendaStore.meetingDays.length > 0')
           n-divider: small.text-muted Jump to...
           ul.nav.nav-pills.flex-column.small
@@ -100,7 +100,7 @@
 </template>
 
 <script setup>
-import { h } from 'vue'
+import { computed, h } from 'vue'
 import { DateTime } from 'luxon'
 import {
   NAffix,
@@ -136,6 +136,12 @@ const downloadIcsOptions = [
   }
 ]
 
+// COMPUTED
+
+const shortMode = computed(() => {
+  return agendaStore.viewport < 1350
+})
+
 // METHODS
 
 function downloadIcs (key) {
@@ -154,10 +160,6 @@ function downloadIcs (key) {
   } else {
     window.location.assign(icsUrl)
   }
-}
-
-function showFilter () {
-  agendaStore.$patch({ filterShown: true })
 }
 
 function scrollToDay (dayId, ev) {
@@ -192,8 +194,20 @@ function scrollToNow (ev) {
 .agenda-quickaccess {
   width: 300px;
 
+  @media screen and (max-width: 1350px) {
+    width: 150px !important;
+  }
+
   .card {
     width: 300px;
+
+    @media screen and (max-width: 1350px) {
+      width: 150px;
+
+      .card-body {
+        padding: .5rem;
+      }
+    }
   }
 
   &-btnrow {
@@ -205,6 +219,10 @@ function scrollToNow (ev) {
     position: relative;
     text-align: center;
     margin-top: 12px;
+
+    @media screen and (max-width: 1350px) {
+      flex-direction: column;
+    }
 
     &-title {
       position: absolute;
@@ -221,6 +239,16 @@ function scrollToNow (ev) {
 
     button {
       flex: 1;
+
+      @media screen and (max-width: 1350px) {
+        padding: 12px 0;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+
+        & + button {
+          margin-top: 6px;
+        }
+      }
     }
   }
 

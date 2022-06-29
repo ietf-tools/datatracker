@@ -4,22 +4,23 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='drawerHeight')
     template(#header)
       span Calendar View
       div
-        i.bi.bi-globe.me-2
-        small.me-2: strong Timezone:
-        n-button-group
-          n-button(
-            :type='agendaStore.isTimezoneMeeting ? `primary` : `default`'
-            @click='setTimezone(`meeting`)'
-            ) Meeting
-          n-button(
-            :type='agendaStore.isTimezoneLocal ? `primary` : `default`'
-            @click='setTimezone(`local`)'
-            ) Local
-          n-button(
-            :type='agendaStore.timezone === `UTC` ? `primary` : `default`'
-            @click='setTimezone(`UTC`)'
-            ) UTC
-        n-divider(vertical)
+        template(v-if='agendaStore.viewport > 990')
+          i.bi.bi-globe.me-2
+          small.me-2: strong Timezone:
+          n-button-group
+            n-button(
+              :type='agendaStore.isTimezoneMeeting ? `primary` : `default`'
+              @click='setTimezone(`meeting`)'
+              ) Meeting
+            n-button(
+              :type='agendaStore.isTimezoneLocal ? `primary` : `default`'
+              @click='setTimezone(`local`)'
+              ) Local
+            n-button(
+              :type='agendaStore.timezone === `UTC` ? `primary` : `default`'
+              @click='setTimezone(`UTC`)'
+              ) UTC
+          n-divider(vertical)
         n-button.me-2(
           ghost
           type='success'
@@ -38,7 +39,7 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='drawerHeight')
           i.bi.bi-x-square.me-2
           span Close
     .agenda-calendar-content
-      .agenda-calendar-hint
+      .agenda-calendar-hint(v-if='!agendaStore.isMobile')
         template(v-if='state.hoverMessage')
           div
             i.bi.bi-arrow-right-square.me-2

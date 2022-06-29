@@ -62,7 +62,11 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
         span.small Collapse Days by Default
       .d-flex.align-items-center.mt-3
         n-switch.me-3(v-model:value='agendaStore.areaIndicatorsShown')
-        span.small Display Group Area Indicators
+        span.small.me-2 Display Group Area Indicators
+        n-popover
+          template(#trigger)
+            i.bi.bi-info-circle
+          span Will not be shown on smaller screens, regardless of this setting.
       .d-flex.align-items-center.mt-3
         n-switch.me-3(v-model:value='agendaStore.infoNoteShown')
         span.small.me-2 Display Current Meeting Info Note
@@ -74,7 +78,7 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
         n-switch.me-3(v-model:value='agendaStore.floorIndicatorsShown')
         span.small Display Floor Indicators
       .d-flex.align-items-center.mt-3
-        n-switch.me-3(v-model:value='agendaStore.redhandShown')
+        n-switch.me-3(v-model:value='agendaStore.redhandShown', disabled)
         span.small Display Realtime Red Line
 
       n-divider(title-placement='left')
@@ -171,6 +175,15 @@ const actionOptions = [
     label: 'Import Configuration...',
     key: 'import',
     icon: () => h('i', { class: 'bi bi-box-arrow-in-down' })
+  },
+  {
+    type: 'divider',
+    key: 'divider1'
+  },
+  {
+    label: 'Clear Color Assignments',
+    key: 'clearColors',
+    icon: () => h('i', { class: 'bi bi-palette' })
   }
 ]
 
@@ -247,6 +260,13 @@ async function actionClick (key) {
         console.warn(err)
         message.error('Failed to import JSON config.')
       }
+      break
+    }
+    case 'clearColors': {
+      agendaStore.colorAssignments = {}
+      agendaStore.persistMeetingPreferences()
+      message.info('All color assignments cleared.')
+      close()
     }
   }
 }
