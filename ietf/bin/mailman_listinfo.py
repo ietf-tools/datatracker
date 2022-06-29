@@ -44,7 +44,7 @@ def main():
             members = mlist.getRegularMemberKeys() + mlist.getDigestMemberKeys()
             members = set([ m for m in members if mlist.getDeliveryStatus(m) == MemberAdaptor.ENABLED ])
             result[name]['members'] = list(members)
-    sys.stdout.write(json.dumps(result))
+    json.dump(result, sys.stdout)
 
 if __name__ == "__main__":
     main()

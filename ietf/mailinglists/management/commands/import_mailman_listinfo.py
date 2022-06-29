@@ -17,7 +17,6 @@ from django.core.exceptions import MultipleObjectsReturned
 
 from ietf.mailinglists.models import List, Subscribed
 from ietf.utils.log import log
-from ietf.utils.text import decode
 
 mark = time.time()
 
