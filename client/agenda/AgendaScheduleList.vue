@@ -164,7 +164,10 @@
           i.bi.bi-palette
       span {{ agendaStore.colorPickerVisible ? 'Exit Colors Assignment Mode' : 'Assign Colors to Events' }}
 
-  .agenda-table-redhand(v-if='agendaStore.redhandShown')
+  .agenda-table-redhand(
+    v-if='agendaStore.redhandShown && state.redhandOffset > 0'
+    :style='{ "top": state.redhandOffset + "px" }'
+    )
 
   agenda-details-modal(
     v-model:shown='state.showEventDetails'
@@ -174,7 +177,7 @@
 </template>
 
 <script setup>
-import { computed, h, reactive } from 'vue'
+import { computed, h, onBeforeUnmount, onMounted, reactive } from 'vue'
 import { DateTime } from 'luxon'
 import find from 'lodash/find'
 import sortBy from 'lodash/sortBy'
@@ -201,8 +204,10 @@ const agendaStore = useAgendaStore()
 const state = reactive({
   showEventDetails: false,
   eventDetails: {},
-  selectedColorPicker: null
+  selectedColorPicker: null,
+  redhandOffset: 0
 })
+let redhandScheduler = null
 
 // COMPUTED
 
@@ -505,6 +510,27 @@ function renderLinkIcon (opt) {
   return h('i', { class: `bi bi-${opt.icon} text-${opt.color}` })
 }
 
+// MOUNTED
+
+onMounted(() => {
+  // -> Update Redhand Position
+  redhandScheduler = setInterval(() => {
+    const lastEventId = agendaStore.findCurrentEventId()
+
+    if (lastEventId) {
+      state.redhandOffset = document.getElementById(`agenda-rowid-${lastEventId}`)?.offsetTop || 0
+    } else {
+      state.redhandOffset = 0
+    }
+  }, 5000)
+})
+
+// BEFORE UNMOUNT
+
+onBeforeUnmount(() => {
+  clearInterval(redhandScheduler)
+})
+
 </script>
 
 <style lang="scss">
@@ -519,7 +545,7 @@ function renderLinkIcon (opt) {
 
   &-redhand {
     position: absolute;
-    top: 307px;
+    top: 0;
     content: "";
     width: 100%;
     height: 2px;

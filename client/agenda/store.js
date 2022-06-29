@@ -20,17 +20,16 @@ export const useAgendaStore = defineStore('agenda', {
       { hex: '#20c997', tag: 'Color 5' }
     ],
     colorAssignments: {},
-    currentDateTime: DateTime.local(),
     dayIntersectId: '',
     filterShown: false,
     floorIndicatorsShown: true,
+    infoNoteHash: '',
     infoNoteShown: true,
     isCurrentMeeting: false,
     isMobile: /Mobi/i.test(navigator.userAgent),
     listDayCollapse: false,
     meeting: {},
-    infoNoteHash: '',
-    viewport: Math.round(window.innerWidth),
+    nowDebugDiff: null,
     pickerMode: false,
     pickerModeView: false,
     pickedEvents: [],
@@ -42,6 +41,7 @@ export const useAgendaStore = defineStore('agenda', {
     settingsShown: false,
     timezone: DateTime.local().zoneName,
     useHedgeDoc: false,
+    viewport: Math.round(window.innerWidth),
     visibleDays: []
   }),
   getters: {
@@ -118,7 +118,7 @@ export const useAgendaStore = defineStore('agenda', {
       }))
     },
     isMeetingLive (state) {
-      const current = DateTime.local().setZone(state.timezone)
+      const current = (state.nowDebugDiff ? DateTime.local().minus(state.nowDebugDiff) : DateTime.local()).setZone(state.timezone)
       const isAfterStart = this.scheduleAdjusted.some(s => s.adjustedStart < current)
       const isBeforeEnd = this.scheduleAdjusted.some(s => s.adjustedEnd > current)
       return isAfterStart && isBeforeEnd
@@ -151,6 +151,32 @@ export const useAgendaStore = defineStore('agenda', {
         window.localStorage.setItem(`agenda.${this.meeting.number}.hideInfo`, this.infoNoteHash)
       }
       window.localStorage.setItem(`agenda.${this.meeting.number}.colorAssignments`, JSON.stringify(this.colorAssignments))
+    },
+    findCurrentEventId () {
+      const current = (this.nowDebugDiff ? DateTime.local().minus(this.nowDebugDiff) : DateTime.local()).setZone(this.timezone)
+
+      // -> Find last event before current time
+      let lastEvent = {}
+      for(const sh of this.scheduleAdjusted) {
+        if (sh.adjustedStart <= current && sh.adjustedEnd > current) {
+          // -> Use the first event of multiple events having identical times
+          if (lastEvent.start === sh.adjustedStart.toMillis() && lastEvent.end === sh.adjustedEnd.toMillis()) {
+            continue
+          } else {
+            lastEvent = {
+              id: sh.id,
+              start: sh.adjustedStart.toMillis(),
+              end: sh.adjustedEnd.toMillis()
+            }
+          }
+        }
+        // -> Skip future events
+        if (sh.adjustedStart > current) {
+          break
+        }
+      }
+
+      return lastEvent.id || null
     }
   },
   persist: {

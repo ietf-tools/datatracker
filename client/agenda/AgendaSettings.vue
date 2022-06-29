@@ -78,7 +78,7 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
         n-switch.me-3(v-model:value='agendaStore.floorIndicatorsShown')
         span.small Display Floor Indicators
       .d-flex.align-items-center.mt-3
-        n-switch.me-3(v-model:value='agendaStore.redhandShown', disabled)
+        n-switch.me-3(v-model:value='agendaStore.redhandShown')
         span.small Display Realtime Red Line
 
       n-divider(title-placement='left')
@@ -108,10 +108,12 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
         )
         template(#date-icon)
           i.bi.bi-calendar-check
+      .agenda-settings-calcoffset
+        span Calculated Offset: {{ calcOffset }}
 </template>
 
 <script setup>
-import { h, onMounted, ref, reactive, watch } from 'vue'
+import { computed, h, onMounted, ref, reactive, watch } from 'vue'
 import { DateTime } from 'luxon'
 import cloneDeep from 'lodash/cloneDeep'
 import debounce from 'lodash/debounce'
@@ -148,7 +150,7 @@ const agendaStore = useAgendaStore()
 
 const isShown = ref(false)
 const state = reactive({
-  currentDateTime: agendaStore.currentDateTime.toMillis(),
+  currentDateTime: null,
   colors: []
 })
 const swatches = [
@@ -187,6 +189,12 @@ const actionOptions = [
   }
 ]
 
+// COMPUTED
+
+const calcOffset = computed(() => {
+  return agendaStore.nowDebugDiff ? JSON.stringify(agendaStore.nowDebugDiff.toObject()) : 'None'
+})
+
 // WATCHERS
 
 watch(() => agendaStore.settingsShown, (newValue) => {
@@ -203,6 +211,18 @@ watch(() => state.colors, debounce(() => {
     colors: cloneDeep(state.colors)
   })
 }, 1000), { deep: true })
+watch(() => state.currentDateTime, (newValue) => {
+  if (!newValue) {
+    agendaStore.$patch({ nowDebugDiff: null })
+  } else {
+    const newDiff = DateTime.now().diff(DateTime.fromMillis(newValue))
+    if (newDiff.as('minutes') <= 2 && newDiff.as('minutes') >= -2) { // Set to 0 if almost current time
+      agendaStore.$patch({ nowDebugDiff: null })
+    } else {
+      agendaStore.$patch({ nowDebugDiff: newDiff })
+    }
+  }
+})
 
 // METHODS
 
@@ -212,6 +232,9 @@ function close () {
 
 async function actionClick (key) {
   switch (key) {
+    /**
+     * EXPORT CONFIGURATION
+     */
     case 'export': {
       try {
         const configBlob = new Blob([
@@ -232,6 +255,9 @@ async function actionClick (key) {
       }
       break
     }
+    /**
+     * IMPORT CONFIGURATION
+     */
     case 'import': {
       try {
         const blob = await fileOpen({
@@ -262,6 +288,9 @@ async function actionClick (key) {
       }
       break
     }
+    /**
+     * CLEAR COLOR ASSIGNMENTS
+     */
     case 'clearColors': {
       agendaStore.colorAssignments = {}
       agendaStore.persistMeetingPreferences()
@@ -288,7 +317,7 @@ function setTimezone (tz) {
 // MOUNTED
 
 onMounted(() => {
-  state.currentDateTime = agendaStore.currentDateTime.toMillis()
+  state.currentDateTime = (agendaStore.nowDebugDiff ? DateTime.now().minus(agendaStore.nowDebugDiff) : DateTime.now()).toMillis()
   state.colors = cloneDeep(agendaStore.colors)
 })
 
@@ -322,6 +351,11 @@ onMounted(() => {
 
   .n-color-picker {
     width: 40px;
+  }
+
+  &-calcoffset {
+    padding: 5px 0 0 12px;
+    font-size: 11px;
   }
 }
 </style>

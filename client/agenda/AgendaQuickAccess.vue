@@ -170,21 +170,12 @@ function scrollToDay (dayId, ev) {
 function scrollToNow (ev) {
   ev.preventDefault()
 
-  const current = DateTime.local().setZone(agendaStore.timezone)
-
-  // -> Find last event before current time
-  let lastEventId = null
-  for(const sh of agendaStore.scheduleAdjusted) {
-    if (sh.adjustedStart <= current) {
-      lastEventId = sh.id
-    }
-    if (sh.adjustedEnd > current) {
-      break
-    }
-  }
+  const lastEventId = agendaStore.findCurrentEventId()
 
   if (lastEventId) {
     document.getElementById(`agenda-rowid-${lastEventId}`)?.scrollIntoView(true)
+  } else {
+    message.warning('There is no event happening right now.')
   }
 }
 
