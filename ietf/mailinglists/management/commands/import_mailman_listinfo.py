@@ -1,25 +1,19 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
 
+import json
 import sys
+import subprocess
 import time
 from textwrap import dedent
 
 import debug                            # pyflakes:ignore
 
+from pathlib import Path
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.core.exceptions import MultipleObjectsReturned
 
-sys.path.append(settings.MAILMAN_LIB_DIR)
-
-have_mailman = False
-try:
-    from Mailman import Utils
-    from Mailman import MailList
-    from Mailman import MemberAdaptor
-    have_mailman = True
-except ImportError:
-    pass
 
 from ietf.mailinglists.models import List, Subscribed
 from ietf.utils.log import log
@@ -39,13 +33,16 @@ def import_mailman_listinfo(verbosity=0):
             log(msg+' (%.1fs)'% (t-mark))
             mark = t
 
-    if not have_mailman:
-        note("Could not import mailman modules -- skipping import of mailman list info")
+    cmd = str(Path(settings.BASE_DIR) / "bin" / "mailman_listinfo.py")
+    result = subprocess.run([cmd], capture_output=True)
+    if result.stderr:
+        log("Error exporting information from mailmain")
+        log(result.stderr)
         return
+    mailman_export = json.loads(result.stdout)
 
     log("Starting import of list info from Mailman")
-    names = list(Utils.list_names())
-    names.sort()
+    names = sorted(mailman_export.keys())
     log_time("Fetched list of mailman list names")
     addr_max_length = Subscribed._meta.get_field('email').max_length
     
@@ -53,37 +50,33 @@ def import_mailman_listinfo(verbosity=0):
     log_time("Computed dictionary of list members")
 
     for name in names:
-        mlist = MailList.MailList(name, lock=False)
-        note("List: %s" % mlist.internal_name())
+        note("List: %s" % mailman_export[name]['internal_name'])
         log_time("Fetched Mailman list object for %s" % name)
 
-        lists = List.objects.filter(name=mlist.real_name)
+        lists = List.objects.filter(name=mailman_export[name]['real_name'])
         if lists.count() > 1:
             # Arbitrary choice; we'll update the remaining item next
             for item in lists[1:]:
                 item.delete()
-        mmlist, created = List.objects.get_or_create(name=mlist.real_name)
+        mmlist, created = List.objects.get_or_create(name=mailman_export[name]['real_name'])
         dirty = False
-        desc = decode(mlist.description)[:256]
+        desc = mailman_export[name]['description'][:256]
         if mmlist.description != desc:
             mmlist.description = desc
             dirty = True
-        if mmlist.advertised != mlist.advertised:
-            mmlist.advertised = mlist.advertised
+        if mmlist.advertised != mailman_export[name]['advertised']:
+            mmlist.advertised = mailman_export[name]['advertised']
             dirty = True
         if dirty:
             mmlist.save()
         log_time("  Updated database List object for %s" % name)
         # The following calls return lowercased addresses
-        if mlist.advertised:
-            members = mlist.getRegularMemberKeys() + mlist.getDigestMemberKeys()
-            log_time("  Fetched list of list members")
-            members = set([ m for m in members if mlist.getDeliveryStatus(m) == MemberAdaptor.ENABLED ])
-            log_time("  Filtered list of list members")
-            if not mlist.real_name in subscribed:
-                log("Note: didn't find '%s' in the dictionary of subscriptions" % mlist.real_name)
+        if mailman_export[name]['advertised']:
+            members = set(mailman_export[name]['members'])
+            if not mailman_export[name]['real_name'] in subscribed:
+                log("Note: didn't find '%s' in the dictionary of subscriptions" % mailman_export[name]['real_name'])
                 continue
-            known = subscribed[mlist.real_name]
+            known = subscribed[mailman_export[name]['real_name']]
             log_time("  Fetched known list members from database")            
             to_remove = known - members
             to_add = members - known
