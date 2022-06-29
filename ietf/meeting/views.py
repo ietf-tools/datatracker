@@ -1554,6 +1554,74 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
     rendered_page = render(request, "meeting/"+base+ext, {
+        "personalize": False,
+        "schedule": schedule,
+        "filtered_assignments": filtered_assignments,
+        "updated": updated,
+        "filter_categories": filter_organizer.get_filter_categories(),
+        "non_area_keywords": filter_organizer.get_non_area_keywords(),
+        "now": datetime.datetime.now().astimezone(pytz.UTC),
+        "timezone": meeting.time_zone,
+        "is_current_meeting": is_current_meeting,
+        "use_codimd": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
+        "cache_time": 150 if is_current_meeting else 3600,
+    }, content_type=mimetype[ext])
+
+    return rendered_page
+
+@ensure_csrf_cookie
+def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
+    base = base if base else 'agenda'
+    ext = ext if ext else '.html'
+    mimetype = {
+        ".html":"text/html; charset=%s"%settings.DEFAULT_CHARSET,
+        ".txt": "text/plain; charset=%s"%settings.DEFAULT_CHARSET,
+        ".csv": "text/csv; charset=%s"%settings.DEFAULT_CHARSET,
+    }
+    if ext not in mimetype:
+        raise Http404('Extension not allowed')
+
+    # We do not have the appropriate data in the datatracker for IETF 64 and earlier.
+    # So that we're not producing misleading pages, redirect to their proceedings.
+    # The datatracker DB does include a Meeting instance for every IETF meeting, though,
+    # so we can use that to validate that num is a valid meeting number.
+    meeting = get_ietf_meeting(num)
+    if meeting is None:
+        raise Http404("No such full IETF meeting")
+    elif int(meeting.number) <= 64:
+        return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}')
+    else:
+        pass
+
+    # Select the schedule to show
+    if name is None:
+        schedule = get_schedule(meeting, name)
+    else:
+        person   = get_person_by_email(owner)
+        schedule = get_schedule_by_name(meeting, person, name)
+
+    if schedule == None:
+        base = base.replace("-utc", "")
+        return render(request, "meeting/no-"+base+ext, {'meeting':meeting }, content_type=mimetype[ext])
+
+    updated = meeting.updated()
+
+    # Select and prepare sessions that should be included
+    filtered_assignments = preprocess_assignments_for_agenda(
+        get_assignments_for_agenda(schedule),
+        meeting
+    )
+    AgendaKeywordTagger(assignments=filtered_assignments).apply()
+
+    # Done processing for CSV output
+    if ext == ".csv":
+        return agenda_csv(schedule, filtered_assignments)
+
+    filter_organizer = AgendaFilterOrganizer(assignments=filtered_assignments)
+
+    is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
+
+    rendered_page = render(request, "meeting/agenda-neue.html", {
         "schedule_json": {
             "meeting": {
                 "number": schedule.meeting.number,
@@ -1568,18 +1636,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
             "isCurrentMeeting": is_current_meeting,
             "useHedgeDoc": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
             "schedule": list(map(agenda_extract_shedule, filtered_assignments))
-        },
-        "personalize": False,
-        "schedule": schedule,
-        "filtered_assignments": filtered_assignments,
-        "updated": updated,
-        "filter_categories": filter_organizer.get_filter_categories(),
-        "non_area_keywords": filter_organizer.get_non_area_keywords(),
-        "now": datetime.datetime.now().astimezone(pytz.UTC),
-        "timezone": meeting.time_zone,
-        "is_current_meeting": is_current_meeting,
-        "use_codimd": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
-        "cache_time": 150 if is_current_meeting else 3600,
+        }
     }, content_type=mimetype[ext])
 
     return rendered_page

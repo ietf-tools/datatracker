@@ -67,6 +67,7 @@ type_ietf_only_patterns_id_optional = [
     url(r'^agenda(?P<utc>-utc)?(?P<ext>\.html)?/?$',     views.agenda),
     url(r'^agenda(?P<ext>\.txt)$', views.agenda),
     url(r'^agenda(?P<ext>\.csv)$', views.agenda),
+    url(r'^agenda-neue(?P<utc>-utc)?(?P<ext>\.html)?/?$',     views.agenda_neue),
     url(r'^agenda/edit$',
         RedirectView.as_view(pattern_name='ietf.meeting.views.edit_meeting_schedule', permanent=True),
         name='ietf.meeting.views.edit_meeting_schedule'),

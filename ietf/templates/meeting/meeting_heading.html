@@ -33,6 +33,12 @@
 {# a tags with the agenda-link filterable classes will be updated with show/hide parameters  #}
 <ul class="nav nav-tabs my-3">
     <li class="nav-item">
+        <a class="nav-link agenda-link filterable {% if selected == "agenda_neue" %}active{% endif %}"
+           href="{% url 'ietf.meeting.views.agenda_neue' num=meeting.number %}">
+            Agenda (New)
+        </a>
+    </li>
+    <li class="nav-item">
         <a class="nav-link agenda-link filterable {% if selected == "agenda" %}active{% endif %}"
            href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">
             Agenda
