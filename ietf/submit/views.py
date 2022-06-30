@@ -163,6 +163,7 @@ def api_submission(request):
                 submission.file_types = ','.join(form.file_types)
                 submission.submission_date = datetime.date.today()
                 submission.submitter = user.person.formatted_email()
+                submission.replaces = form.cleaned_data['replaces']
                 submission.save()
                 clear_existing_files(form)
                 save_files(form)

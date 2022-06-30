@@ -29,6 +29,7 @@ from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.doc.fields import SearchableDocAliasesField
+from ietf.doc.models import DocAlias
 from ietf.ipr.mail import utc_from_string
 from ietf.meeting.models import Meeting
 from ietf.message.models import Message
@@ -629,11 +630,55 @@ class DeprecatedSubmissionAutoUploadForm(DeprecatedSubmissionBaseUploadForm):
 
 class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
     user = forms.EmailField(required=True)
+    replaces = forms.CharField(required=False, max_length=1000, strip=True)
 
     def __init__(self, request, *args, **kwargs):
         super().__init__(request, *args, **kwargs)
         self.formats = ['xml', ]
         self.base_formats = ['xml', ]
+
+    def clean(self):
+        super().clean()
+
+        # Clean the replaces field after the rest of the cleaning so we know the name of the
+        # uploaded draft via self.filename
+        if self.cleaned_data['replaces']:
+            names_replaced = [s.strip() for s in self.cleaned_data['replaces'].split(',')]
+            self.cleaned_data['replaces'] = ','.join(names_replaced)
+            aliases_replaced = DocAlias.objects.filter(name__in=names_replaced)
+            if len(names_replaced) != len(aliases_replaced):
+                known_names = aliases_replaced.values_list('name', flat=True)
+                unknown_names = [n for n in names_replaced if n not in known_names]
+                self.add_error(
+                    'replaces',
+                    forms.ValidationError(
+                        'Unknown draft name(s): ' + ', '.join(unknown_names)
+                    ),
+                )
+            for alias in aliases_replaced:
+                if alias.document.name == self.filename:
+                    self.add_error(
+                        'replaces',
+                        forms.ValidationError("A draft cannot replace itself"),
+                    )
+                elif alias.document.type_id != "draft":
+                    self.add_error(
+                        'replaces',
+                        forms.ValidationError("A draft can only replace another draft"),
+                    )
+                elif alias.document.get_state_slug() == "rfc":
+                    self.add_error(
+                        'replaces',
+                        forms.ValidationError("A draft cannot replace an RFC"),
+                    )
+                elif alias.document.get_state_slug('draft-iesg') in ('approved', 'ann', 'rfcqueue'):
+                    self.add_error(
+                        'replaces',
+                        forms.ValidationError(
+                            alias.name + " is approved by the IESG and cannot be replaced"
+                        ),
+                    )
+
 
 class NameEmailForm(forms.Form):
     name = forms.CharField(required=True)
