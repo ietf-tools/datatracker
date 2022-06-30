@@ -16,6 +16,7 @@ from pyquery import PyQuery
 from pathlib import Path
 
 from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 from django.forms import ValidationError
 from django.test import override_settings
@@ -28,7 +29,8 @@ import debug                            # pyflakes:ignore
 from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
                                post_submission, validate_submission_name, validate_submission_rev,
                                process_uploaded_submission, SubmissionError, process_submission_text)
-from ietf.doc.factories import DocumentFactory, WgDraftFactory, IndividualDraftFactory, IndividualRfcFactory
+from ietf.doc.factories import (DocumentFactory, WgDraftFactory, IndividualDraftFactory, IndividualRfcFactory,
+                                ReviewFactory, WgRfcFactory)
 from ietf.doc.models import ( Document, DocAlias, DocEvent, State,
     BallotPositionDocEvent, DocumentAuthor, SubmissionDocEvent )
 from ietf.doc.utils import create_ballot_if_not_open, can_edit_docextresources, update_action_holders
@@ -42,7 +44,7 @@ from ietf.name.models import FormalLanguageName
 from ietf.person.models import Person
 from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
 from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactory
-from ietf.submit.forms import SubmissionBaseUploadForm
+from ietf.submit.forms import SubmissionBaseUploadForm, SubmissionAutoUploadForm
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
 from ietf.submit.mail import add_submission_email, process_response_email
 from ietf.submit.tasks import process_uploaded_submission_task
@@ -2971,6 +2973,110 @@ class SubmissionUploadFormTests(BaseSubmitTestCase):
                 max_amount=2,
                 max_size=1,  # megabytes
             )
+
+    def test_replaces_field(self):
+        """test SubmissionAutoUploadForm replaces field"""
+        request_factory = RequestFactory()
+        WgDraftFactory(name='draft-somebody-test')
+        existing_drafts = WgDraftFactory.create_batch(2)
+        xml, auth = submission_file('draft-somebody-test-01', 'draft-somebody-test-01.xml', None, 'test_submission.xml')
+        files_dict = {
+                         'xml': SimpleUploadedFile('draft-somebody-test-01.xml', xml.read().encode('utf8'),
+                                                   content_type='application/xml'),
+        }
+
+        # no replaces
+        form = SubmissionAutoUploadForm(
+            request_factory.get('/some/url'),
+            data={'user': auth.user.username, 'replaces': ''},
+            files=files_dict,
+        )
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data['replaces'], '')
+
+        # whitespace
+        form = SubmissionAutoUploadForm(
+            request_factory.get('/some/url'),
+            data={'user': auth.user.username, 'replaces': '   '},
+            files=files_dict,
+        )
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data['replaces'], '')
+
+        # one replaces
+        form = SubmissionAutoUploadForm(
+            request_factory.get('/some/url'),
+            data={'user': auth.user.username, 'replaces': existing_drafts[0].name},
+            files=files_dict,
+        )
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data['replaces'], existing_drafts[0].name)
+
+        # two replaces
+        form = SubmissionAutoUploadForm(
+            request_factory.get('/some/url'),
+            data={'user': auth.user.username, 'replaces': f'{existing_drafts[0].name},{existing_drafts[1].name}'},
+            files=files_dict,
+        )
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data['replaces'], f'{existing_drafts[0].name},{existing_drafts[1].name}')
+
+        # two replaces, extra whitespace
+        form = SubmissionAutoUploadForm(
+            request_factory.get('/some/url'),
+            data={'user': auth.user.username, 'replaces': f'   {existing_drafts[0].name} ,  {existing_drafts[1].name}'},
+            files=files_dict,
+        )
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data['replaces'], f'{existing_drafts[0].name},{existing_drafts[1].name}')
+
+        # can't replace self
+        form = SubmissionAutoUploadForm(
+            request_factory.get('/some/url'),
+            data={'user': auth.user.username, 'replaces': 'draft-somebody-test'},
+            files=files_dict,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn('A draft cannot replace itself', form.errors['replaces'])
+
+        # can't replace non-draft
+        review = ReviewFactory()
+        form = SubmissionAutoUploadForm(
+            request_factory.get('/some/url'),
+            data={'user': auth.user.username, 'replaces': review.name},
+            files=files_dict,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn('A draft can only replace another draft', form.errors['replaces'])
+
+        # can't replace RFC
+        rfc = WgRfcFactory()
+        form = SubmissionAutoUploadForm(
+            request_factory.get('/some/url'),
+            data={'user': auth.user.username, 'replaces': rfc.name},
+            files=files_dict,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn('A draft cannot replace an RFC', form.errors['replaces'])
+
+        # can't replace draft approved by iesg
+        existing_drafts[0].set_state(State.objects.get(type='draft-iesg', slug='approved'))
+        form = SubmissionAutoUploadForm(
+            request_factory.get('/some/url'),
+            data={'user': auth.user.username, 'replaces': existing_drafts[0].name},
+            files=files_dict,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn(f'{existing_drafts[0].name} is approved by the IESG and cannot be replaced',
+                      form.errors['replaces'])
+
+        # unknown draft
+        form = SubmissionAutoUploadForm(
+            request_factory.get('/some/url'),
+            data={'user': auth.user.username, 'replaces': 'fake-name'},
+            files=files_dict,
+        )
+        self.assertFalse(form.is_valid())
 
 
 class AsyncSubmissionTests(BaseSubmitTestCase):
