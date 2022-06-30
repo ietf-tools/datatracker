@@ -2771,6 +2771,24 @@ class ApiSubmissionTests(BaseSubmitTestCase):
         self.assertEqual(submission.state_id, 'validating')
         self.assertIn('Uploaded submission through API', submission.submissionevent_set.last().desc)
 
+    def test_upload_draft_with_replaces(self):
+        """api_submission accepts a submission and queues it for processing"""
+        existing_draft = WgDraftFactory()
+        url = urlreverse('ietf.submit.views.api_submission')
+        xml, author = submission_file('draft-somebody-test-00', 'draft-somebody-test-00.xml', None, 'test_submission.xml')
+        data = {
+            'xml': xml,
+            'user': author.user.username,
+            'replaces': existing_draft.name,
+        }
+        # mock out the task so we don't call to celery during testing!
+        with mock.patch('ietf.submit.views.process_uploaded_submission_task'):
+            r = self.client.post(url, data)
+        self.assertEqual(r.status_code, 200)
+        submission = Submission.objects.last()
+        self.assertEqual(submission.name, 'draft-somebody-test')
+        self.assertEqual(submission.replaces, existing_draft.name)
+
     def test_rejects_broken_upload(self):
         """api_submission immediately rejects a submission with serious problems"""
         orig_submission_count = Submission.objects.count()
