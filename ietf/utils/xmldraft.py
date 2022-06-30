@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 import io
-import os
 import re
 import xml2rfc
 
