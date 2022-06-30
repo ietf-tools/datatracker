@@ -25,7 +25,7 @@
 
             widget
                 .find(".label")
-                .addClass("badge")
+                .addClass("badge rounded-pill")
                 .removeClass("label");
 
             widget

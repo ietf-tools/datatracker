@@ -15,6 +15,9 @@ from ietf.settings import TEST_CODE_COVERAGE_CHECKER, BASE_DIR, PHOTOS_DIRNAME
 import debug                            # pyflakes:ignore
 debug.debug = True
 
+# Use a different hostname, to catch hardcoded values
+IDTRACKER_BASE_URL = "https://sqlitetest.ietf.org"
+
 # Workaround to avoid spending minutes stepping through the migrations in
 # every test run.  The result of this is to use the 'syncdb' way of creating
 # the test database instead of doing it through the migrations.  Taken from

@@ -47,7 +47,7 @@
                         </td>
                         {% for fbtype_name, fbtype_count, fbtype_newflag in fb_dict.feedback %}
                             <td>
-                                {% if fbtype_newflag %}<span class="badge bg-success">New</span>{% endif %}
+                                {% if fbtype_newflag %}<span class="badge rounded-pill bg-success">New</span>{% endif %}
                                 {{ fbtype_count }}
                             </td>
                         {% endfor %}
@@ -74,7 +74,7 @@
                     </td>
                     {% for fbtype_name, fbtype_count, fbtype_newflag in fb_dict.feedback %}
                         <td>
-                            {% if fbtype_newflag %}<span class="badge bg-success">New</span>{% endif %}
+                            {% if fbtype_newflag %}<span class="badge rounded-pill bg-success">New</span>{% endif %}
                             {{ fbtype_count }}
                         </td>
                     {% endfor %}

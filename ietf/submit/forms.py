@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2020, All Rights Reserved
+# Copyright The IETF Trust 2011-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -394,7 +394,6 @@ class DeprecatedSubmissionBaseUploadForm(SubmissionBaseUploadForm):
                     tfn = tf.name
                     for chunk in xml_file.chunks():
                         tf.write(chunk)
-                os.environ["XML_LIBRARY"] = settings.XML_LIBRARY
 
                 parser = xml2rfc.XmlRfcParser(str(tfn), quiet=True)
                 # --- Parse the xml ---

@@ -5,6 +5,7 @@ import debug    # pyflakes:ignore
 import io 
 
 from django import forms
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -57,7 +58,7 @@ class BofreqUploadForm(forms.Form):
         if submission_method == "enter":
             if require_field("bofreq_content"):
                 content = self.cleaned_data["bofreq_content"].replace("\r", "")
-                default_content = render_to_string('doc/bofreq/bofreq_template.md',{})
+                default_content = render_to_string('doc/bofreq/bofreq_template.md', {'settings': settings})
                 if content==default_content:
                     raise forms.ValidationError('The example content may not be saved. Edit it as instructed to document this BOF request.')
         elif submission_method == "upload":
@@ -178,7 +179,7 @@ def new_bof_request(request):
             return redirect('ietf.doc.views_doc.document_main', name=bofreq.name)
 
     else:
-        init = {'bofreq_content':escape(render_to_string('doc/bofreq/bofreq_template.md',{})),
+        init = {'bofreq_content':escape(render_to_string('doc/bofreq/bofreq_template.md',{'settings': settings})),
                 'bofreq_submission':'enter',
                }
         form = NewBofreqForm(request.user.person, initial=init)

@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2015-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
+import datetime
 import json
 import html
 import os
@@ -24,7 +24,9 @@ import ietf
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.test_data import make_meeting_test_data
+from ietf.meeting.models import Session
 from ietf.person.factories import PersonFactory, random_faker
+from ietf.person.models import User
 from ietf.person.models import PersonalApiKey
 from ietf.stats.models import MeetingRegistration
 from ietf.utils.mail import outbox, get_payload_text
@@ -143,6 +145,72 @@ class CustomApiTests(TestCase):
         self.assertEqual(doc.external_url, video)
         event = doc.latest_event()
         self.assertEqual(event.by, recman)
+
+    def test_api_add_session_attendees(self):
+        url = urlreverse('ietf.meeting.views.api_add_session_attendees')
+        otherperson = PersonFactory()
+        recmanrole = RoleFactory(group__type_id='ietf', name_id='recman')
+        recman = recmanrole.person
+        meeting = MeetingFactory(type_id='ietf')
+        session = SessionFactory(group__type_id='wg', meeting=meeting)  
+        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+
+        badrole  = RoleFactory(group__type_id='ietf', name_id='ad')
+        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badrole.person.user.last_login = timezone.now()
+        badrole.person.user.save()
+
+        # Improper credentials, or method
+        r = self.client.post(url, {})
+        self.assertContains(r, "Missing apikey parameter", status_code=400)
+
+        r = self.client.post(url, {'apikey': badapikey.hash()} )
+        self.assertContains(r, "Restricted to role: Recording Manager", status_code=403)
+
+        r = self.client.post(url, {'apikey': apikey.hash()} )
+        self.assertContains(r, "Too long since last regular login", status_code=400)
+
+        recman.user.last_login = timezone.now()-datetime.timedelta(days=365)
+        recman.user.save()        
+        r = self.client.post(url, {'apikey': apikey.hash()} )
+        self.assertContains(r, "Too long since last regular login", status_code=400)
+
+        recman.user.last_login = timezone.now()
+        recman.user.save()
+        r = self.client.get(url, {'apikey': apikey.hash()} )
+        self.assertContains(r, "Method not allowed", status_code=405)
+
+        recman.user.last_login = timezone.now()
+        recman.user.save()
+
+        # Malformed requests
+        r = self.client.post(url, {'apikey': apikey.hash()} )
+        self.assertContains(r, "Missing attended parameter", status_code=400)
+
+        for baddict in (
+            '{}',
+            '{"bogons;drop table":"bogons;drop table"}',
+            '{"session_id":"Not an integer;drop table"}',
+            f'{{"session_id":{session.pk},"attendees":"not a list;drop table"}}',
+            f'{{"session_id":{session.pk},"attendees":"not a list;drop table"}}',
+            f'{{"session_id":{session.pk},"attendees":[1,2,"not an int;drop table",4]}}',
+        ):
+            r = self.client.post(url, {'apikey': apikey.hash(), 'attended': baddict})
+            self.assertContains(r, "Malformed post", status_code=400)
+
+        bad_session_id = Session.objects.order_by('-pk').first().pk + 1
+        r = self.client.post(url, {'apikey': apikey.hash(), 'attended': f'{{"session_id":{bad_session_id},"attendees":[]}}'})
+        self.assertContains(r, "Invalid session", status_code=400)
+        bad_user_id = User.objects.order_by('-pk').first().pk + 1
+        r = self.client.post(url, {'apikey': apikey.hash(), 'attended': f'{{"session_id":{session.pk},"attendees":[{bad_user_id}]}}'})
+        self.assertContains(r, "Invalid attendee", status_code=400)
+
+        # Reasonable request
+        r = self.client.post(url, {'apikey':apikey.hash(), 'attended': f'{{"session_id":{session.pk},"attendees":[{recman.user.pk}, {otherperson.user.pk}]}}'})
+
+        self.assertEqual(session.attended_set.count(),2)
+        self.assertTrue(session.attended_set.filter(person=recman).exists())
+        self.assertTrue(session.attended_set.filter(person=otherperson).exists())
 
     def test_api_upload_bluesheet(self):
         url = urlreverse('ietf.meeting.views.api_upload_bluesheet')
@@ -279,23 +347,23 @@ class CustomApiTests(TestCase):
     def test_api_new_meeting_registration(self):
         meeting = MeetingFactory(type_id='ietf')
         reg = {
-                'apikey': 'invalid',
-                'affiliation': "Alguma Corporação",
-                'country_code': 'PT',
-                'email': 'foo@example.pt',
-                'first_name': 'Foo',
-                'last_name': 'Bar',
-                'meeting': meeting.number,
-                'reg_type': 'hackathon',
-                'ticket_type': '',
-            }
+            'apikey': 'invalid',
+            'affiliation': "Alguma Corporação",
+            'country_code': 'PT',
+            'email': 'foo@example.pt',
+            'first_name': 'Foo',
+            'last_name': 'Bar',
+            'meeting': meeting.number,
+            'reg_type': 'hackathon',
+            'ticket_type': '',
+        }
         url = urlreverse('ietf.api.views.api_new_meeting_registration')
         r = self.client.post(url, reg)
         self.assertContains(r, 'Invalid apikey', status_code=403)
         oidcp = PersonFactory(user__is_staff=True)
         # Make sure 'oidcp' has an acceptable role
         RoleFactory(name_id='robot', person=oidcp, email=oidcp.email(), group__acronym='secretariat')
-        key  = PersonalApiKey.objects.create(person=oidcp, endpoint=url)
+        key = PersonalApiKey.objects.create(person=oidcp, endpoint=url)
         reg['apikey'] = key.hash()
         #
         # Test valid POST
@@ -313,7 +381,7 @@ class CustomApiTests(TestCase):
         #
         # Check record
         obj = MeetingRegistration.objects.get(email=reg['email'], meeting__number=reg['meeting'])
-        for key in [ 'affiliation', 'country_code', 'first_name', 'last_name', 'person', 'reg_type', 'ticket_type', ]:
+        for key in ['affiliation', 'country_code', 'first_name', 'last_name', 'person', 'reg_type', 'ticket_type']:
             self.assertEqual(getattr(obj, key), reg.get(key), "Bad data for field '%s'" % key)
         #
         # Test with existing user
@@ -328,15 +396,15 @@ class CustomApiTests(TestCase):
         # There should be no new outgoing mail
         self.assertEqual(len(outbox), old_len + 1)
         #
-        # Test combination of reg types
+        # Test multiple reg types
         reg['reg_type'] = 'remote'
         reg['ticket_type'] = 'full_week_pass'
         r = self.client.post(url, reg)
-        self.assertContains(r, "Accepted, Updated registration", status_code=202)
-        obj = MeetingRegistration.objects.get(email=reg['email'], meeting__number=reg['meeting'])
-        self.assertIn('hackathon', set(obj.reg_type.split()))
-        self.assertIn('remote', set(obj.reg_type.split()))
-        self.assertIn('full_week_pass', set(obj.ticket_type.split()))
+        self.assertContains(r, "Accepted, New registration", status_code=202)
+        objs = MeetingRegistration.objects.filter(email=reg['email'], meeting__number=reg['meeting'])
+        self.assertEqual(len(objs), 2)
+        self.assertEqual(objs.filter(reg_type='hackathon').count(), 1)
+        self.assertEqual(objs.filter(reg_type='remote', ticket_type='full_week_pass').count(), 1)
         self.assertEqual(len(outbox), old_len + 1)
         #
         # Test incomplete POST
@@ -346,7 +414,7 @@ class CustomApiTests(TestCase):
         r = self.client.post(url, reg)        
         self.assertContains(r, 'Missing parameters:', status_code=400)
         err, fields = r.content.decode().split(':', 1)
-        missing_fields = [ f.strip() for f in fields.split(',') ]
+        missing_fields = [f.strip() for f in fields.split(',')]
         self.assertEqual(set(missing_fields), set(drop_fields))
 
     def test_api_version(self):

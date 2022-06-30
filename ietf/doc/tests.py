@@ -356,8 +356,8 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('td.doc')),3)
-        self.assertTrue(q('td.status span.text-warning *[title*="%s"]' % "for 15 days"))
-        self.assertTrue(q('td.status span.text-danger *[title*="%s"]' % "for 29 days"))
+        self.assertTrue(q('td.status span.bg-warning[title*="%s"]' % "for 15 days"))
+        self.assertTrue(q('td.status span.bg-danger[title*="%s"]' % "for 29 days"))
         for ah in [draft.action_holders.first() for draft in drafts]:
             self.assertContains(r, escape(ah.name))
 
@@ -1887,7 +1887,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['year'],     str(draft.pub_date().year))
         self.assertEqual(entry['month'],    draft.pub_date().strftime('%b').lower())
         self.assertEqual(entry['day'],      str(draft.pub_date().day))
-        self.assertEqual(entry['url'],      f'https://datatracker.ietf.org/doc/html/{docname}')
+        self.assertEqual(entry['url'],      settings.IDTRACKER_BASE_URL + urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=draft.rev)))
         #
         self.assertNotIn('doi', entry)
 

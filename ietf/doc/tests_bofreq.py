@@ -322,7 +322,7 @@ This test section has some text.
         self.assertContains(r,'Fill in the details below. Keep items in the order they appear here.',status_code=200)
         r = self.client.post(url, dict(title='default', 
                                        bofreq_submission='enter',
-                                       bofreq_content=render_to_string('doc/bofreq/bofreq_template.md',{})))
+                                       bofreq_content=render_to_string('doc/bofreq/bofreq_template.md',{'settings': settings})))
         self.assertContains(r, 'The example content may not be saved.', status_code=200)
         file = NamedTemporaryFile(delete=False,mode="w+",encoding='utf-8')
         file.write('some stuff')

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright The IETF Trust 2009-2021, All Rights Reserved
+# Copyright The IETF Trust 2009-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 # -*- python -*-
 
@@ -63,7 +63,6 @@ opt_debug = False
 opt_timestamp = False
 opt_trace = False
 opt_authorinfo = False
-opt_getauthors = False
 opt_attributes = False
 # Don't forget to add the option variable to the globals list in _main below
 
@@ -1261,28 +1260,6 @@ def getmeta(fn):
         filename = fn
         fn = os.path.basename(fn)
     else:
-        if fn.lower().startswith('rfc'):
-            filename = os.path.join("/www/tools.ietf.org/rfc", fn)
-        elif not "/" in fn:
-            filename = os.path.join("/www/tools.ietf.org/id", fn)
-            if not os.path.exists(filename):
-                fn = filename
-                while not "-00." in fn:
-                    revmatch = re.search(r"-(\d\d)\.", fn)
-                    if revmatch:
-                        rev = revmatch.group(1)
-                        prev = "%02d" % (int(rev)-1)
-                        fn = fn.replace("-%s."%rev, "-%s."%prev)
-                        if os.path.exists(fn):
-                            _warn("Using rev %s instead: '%s'" % (prev, filename))
-                            filename = fn
-                            fn = os.path.basename(fn)
-                            break
-                    else:
-                        break
-        else:
-            filename = fn
-    if not os.path.exists(filename):
         _warn("Could not find file:  '%s'" % (filename))
         return
 
@@ -1323,52 +1300,28 @@ def getmeta(fn):
 # ----------------------------------------------------------------------
 def _output(docname, fields, outfile=sys.stdout):
     global company_domain
-    if opt_getauthors:
-        # Output an (incomplete!) getauthors-compatible format.
-        # Information about security and iana sections presence is
-        # missing.
-        for full,first,middle,last,suffix,email,country,company in fields["_authorlist"]:
-            if company in company_domain:
-                company = company_domain[company]
-            else:
-                if email and '@' in email:
-                    company = email.split('@')[1]
-            if company.endswith(".com"):
-                company = company[:-4]
-            fields["name"] = full
-            fields["email"] = email
-            fields["company"] = company
-            fields["country"] = country or "UNKNOWN"
-            try:
-                year, month, day = fields["doccreationdate"].split("-")
-            except ValueError:
-                year, month, day = "UNKNOWN", "UNKNOWN", "UNKNOWN"
-            fields["day"] = day
-            fields["month"] = month_names[int(month)] if month != "UNKNOWN" else "UNKNOWN"
-            fields["year"] = year
-            print("%(doctag)s:%(name)s:%(company)s:%(email)s:%(country)s:%(docpages)s:%(month)s:%(year)s:%(day)s:" % fields)
-    else:
-        if opt_attributes:
-            def outputkey(key, fields):
-                field = fields[key]
-                if "\n" in field:
-                    field = "\n" + field.rstrip()
-                else:
-                    field = field.strip()
-                outfile.write("%-24s: %s\n" % ( key, field.replace("\\", "\\\\" ).replace("'", "\\x27" )))
-        else:
-            def outputkey(key, fields):
-                outfile.write(" %s='%s'" % ( key.lower(), fields[key].strip().replace("\\", "\\\\" ).replace("'", "\\x27" ).replace("\n", "\\n")))
-            if opt_timestamp:
-                outfile.write("%s " % (fields["eventdate"]))
-            outfile.write("%s" % (os.path.basename(docname.strip())))
 
-        keys = list(fields.keys())
-        keys.sort()
-        for key in keys:
-            if fields[key] and not key in ["eventdate", ] and not key.startswith("_"):
-                outputkey(key, fields)
-        outfile.write("\n")
+    if opt_attributes:
+        def outputkey(key, fields):
+            field = fields[key]
+            if "\n" in field:
+                field = "\n" + field.rstrip()
+            else:
+                field = field.strip()
+            outfile.write("%-24s: %s\n" % ( key, field.replace("\\", "\\\\" ).replace("'", "\\x27" )))
+    else:
+        def outputkey(key, fields):
+            outfile.write(" %s='%s'" % ( key.lower(), fields[key].strip().replace("\\", "\\\\" ).replace("'", "\\x27" ).replace("\n", "\\n")))
+        if opt_timestamp:
+            outfile.write("%s " % (fields["eventdate"]))
+        outfile.write("%s" % (os.path.basename(docname.strip())))
+
+    keys = list(fields.keys())
+    keys.sort()
+    for key in keys:
+        if fields[key] and not key in ["eventdate", ] and not key.startswith("_"):
+            outputkey(key, fields)
+    outfile.write("\n")
 
 # ----------------------------------------------------------------------
 def _printmeta(fn, outfile=sys.stdout):
@@ -1389,7 +1342,7 @@ def _printmeta(fn, outfile=sys.stdout):
 
 company_domain = {}                     # type: Dict[str, str]
 def _main(outfile=sys.stdout):
-    global opt_debug, opt_timestamp, opt_trace, opt_authorinfo, opt_getauthors, files, company_domain, opt_attributes
+    global opt_debug, opt_timestamp, opt_trace, opt_authorinfo, files, company_domain, opt_attributes
     # set default values, if any
     # ----------------------------------------------------------------------
     # Option processing
@@ -1426,8 +1379,6 @@ def _main(outfile=sys.stdout):
         elif opt in ["-v", "--version"]: # Output version information, then exit
             print(program, version)
             sys.exit(0)
-        elif opt in ["--getauthors"]:  # Output an (incomplete) getauthors-compatible format
-            opt_getauthors = True
         elif opt in ["-a", "--attribs"]: # Output key-value attribute pairs 
             opt_attributes = True
         elif opt in ["-t", ]: # Toggle leading timestamp information 
@@ -1440,15 +1391,7 @@ def _main(outfile=sys.stdout):
             opt_trace = True
 
     company_domain = {}
-    if opt_getauthors:
-        gadata = io.open("/www/tools.ietf.org/tools/getauthors/getauthors.data")
-        for line in gadata:
-            if line.startswith("company:"):
-                try:
-                    kword, name, abbrev = line.strip().split(':')
-                    company_domain[name] = abbrev
-                except ValueError:
-                    pass
+ 
     if not files:
         files = [ "-" ]
 

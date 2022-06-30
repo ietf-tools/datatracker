@@ -21,42 +21,42 @@
                   {% if new_enough ==  '7' %}
                       active
                   {% endif %}"
-           href="/accounts/settings/new_enough/7">
+           href="{% url 'ietf.cookies.views.new_enough' days=7 %}">
             7 days
         </a>
         <a class="btn btn-outline-primary
                   {% if new_enough == '14' %}
                       active
                   {% endif %}"
-           href="/accounts/settings/new_enough/14">
+           href="{% url 'ietf.cookies.views.new_enough' days=14 %}">
             14 days
         </a>
         <a class="btn btn-outline-primary
                   {% if new_enough == '21' %}
                       active
                   {% endif %}"
-           href="/accounts/settings/new_enough/21">
+           href="{% url 'ietf.cookies.views.new_enough' days=21 %}">
             21 days
         </a>
         <a class="btn btn-outline-primary
                   {% if new_enough == '30' %}
                       active
                   {% endif %}"
-           href="/accounts/settings/new_enough/30">
+           href="{% url 'ietf.cookies.views.new_enough' days=30 %}">
             30 days
         </a>
         <a class="btn btn-outline-primary
                   {% if new_enough == '60' %}
                       active
                   {% endif %}"
-           href="/accounts/settings/new_enough/60">
+           href="{% url 'ietf.cookies.views.new_enough' days=60 %}">
             60 days
         </a>
         <a class="btn btn-outline-primary
                   {% if new_enough == '90' %}
                       active
                   {% endif %}"
-           href="/accounts/settings/new_enough/90">
+           href="{% url 'ietf.cookies.views.new_enough' days=90 %}">
             90 days
         </a>
     </p>
@@ -69,42 +69,42 @@
                   {% if expires_soon ==  '7' %}
                       active
                   {% endif %}"
-           href="/accounts/settings/expires_soon/7">
+           href="{% url 'ietf.cookies.views.expires_soon' days=7 %}">
             7 days
         </a>
         <a class="btn btn-outline-primary
                   {% if expires_soon == '14' %}
                       active
                   {% endif %}"
-           href="/accounts/settings/expires_soon/14">
+           href="{% url 'ietf.cookies.views.expires_soon' days=14 %}">
             14 days
         </a>
         <a class="btn btn-outline-primary
                   {% if expires_soon == '21' %}
                       active
                   {% endif %}"
-           href="/accounts/settings/expires_soon/21">
+           href="{% url 'ietf.cookies.views.expires_soon' days=21 %}">
             21 days
         </a>
         <a class="btn btn-outline-primary
                   {% if expires_soon == '30' %}
                       active
                   {% endif %}"
-           href="/accounts/settings/expires_soon/30">
+           href="{% url 'ietf.cookies.views.expires_soon' days=30 %}">
             30 days
         </a>
         <a class="btn btn-outline-primary
                   {% if expires_soon == '60' %}
                       active
                   {% endif %}"
-           href="/accounts/settings/expires_soon/60">
+           href="{% url 'ietf.cookies.views.expires_soon' days=60 %}">
             60 days
         </a>
         <a class="btn btn-outline-primary
                   {% if expires_soon == '90' %}
                       active
                   {% endif %}"
-           href="/accounts/settings/expires_soon/90">
+           href="{% url 'ietf.cookies.views.expires_soon' days=90 %}">
             90 days
         </a>
     </p>
@@ -117,14 +117,14 @@
                   {% if full_draft == 'off' %}
                       active
                   {% endif %}"
-           href="/accounts/settings/full_draft/off">
+           href="{% url 'ietf.cookies.views.full_draft' enabled='off' %}">
             Off
         </a>
         <a class="btn btn-outline-primary
                   {% if full_draft ==  'on' %}
                       active
                   {% endif %}"
-           href="/accounts/settings/full_draft/on">
+           href="{% url 'ietf.cookies.views.full_draft' enabled='on' %}">
             On
         </a>
     </p>
@@ -137,14 +137,14 @@
                   {% if left_menu == 'off' %}
                       active
                   {% endif %}"
-           href="/accounts/settings/left_menu/off">
+           href="{% url 'ietf.cookies.views.left_menu' enabled='off' %}">
             Off
         </a>
         <a class="btn btn-outline-primary
                   {% if left_menu ==  'on' %}
                       active
                   {% endif %}"
-           href="/accounts/settings/left_menu/on">
+           href="{% url 'ietf.cookies.views.left_menu' enabled='on' %}">
             On
         </a>
     </p>

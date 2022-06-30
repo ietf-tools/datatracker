@@ -7,7 +7,7 @@
     <div class="card-body">
         <div class="row">
             <div class="col-3 text-end fw-bold">{{ doc.intended_std_level }}</div>
-            <div class="col">
+            <div class="col pe-5 me-5">
                 <b>{{ doc.title }}</b>
             </div>
         </div>
@@ -17,9 +17,7 @@
             </div>
             <div class="col">
                 {% with doc.rfc_number as rfc_number %}
-                    <a href="{% if rfc_number %} https://www.rfc-editor.org/rfc/rfc{{ rfc_number }}/ {% else %} {{ doc.get_href }} {% endif %}" aria-label="Content">
-                        <i class="bi bi-file-earmark-fill"></i>
-                    </a>
+                    <a href="{% if rfc_number %} https://www.rfc-editor.org/rfc/rfc{{ rfc_number }}/ {% else %} {{ doc.get_href }} {% endif %}" aria-label="Content"><i class="bi bi-file-earmark-fill"></i></a>
                 {% endwith %}
                 <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
                 {% if doc.has_rfc_editor_note %}
@@ -89,7 +87,7 @@
                     {% for ipr in doc.ipr %}
                         {% if ipr.disclosure.state_id == "posted" %}
                             <div>
-                                <a href="/ipr/{{ ipr.disclosure.id }}/">{{ ipr.disclosure.title }}</a>
+                                <a href="{% url 'ietf.ipr.views.show' id=ipr.disclosure.id %}">{{ ipr.disclosure.title }}</a>
                             </div>
                         {% endif %}
                     {% endfor %}

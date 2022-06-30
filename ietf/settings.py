@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -73,7 +73,7 @@ SERVER_EMAIL = 'Django Server <django-project@' + IETF_DOMAIN + '>'
 
 DEFAULT_FROM_EMAIL = 'IETF Secretariat <ietf-secretariat-reply@' + IETF_DOMAIN + '>'
 UTILS_ON_BEHALF_EMAIL = 'noreply@' + IETF_DOMAIN
-UTILS_FROM_EMAIL_DOMAINS = [ 'ietf.org', 'iab.org', 'tools.ietf.org', ]
+UTILS_FROM_EMAIL_DOMAINS = [ 'ietf.org', 'iab.org', ]
 
 MANAGERS = ADMINS
 
@@ -515,9 +515,6 @@ CORS_URLS_REGEX = r'^(/api/.*|.*\.json|.*/json/?)$'
 # Setting for django_referrer_policy.middleware.ReferrerPolicyMiddleware
 REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
-# Content security policy configuration (django-csp)
-CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", "data: https://datatracker.ietf.org/ https://www.ietf.org/ https://analytics.ietf.org/")
-
 # django.middleware.security.SecurityMiddleware 
 SECURE_BROWSER_XSS_FILTER       = True
 SECURE_CONTENT_TYPE_NOSNIFF     = True
@@ -538,8 +535,10 @@ INTERNAL_IPS = (
 # no slash at end
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://www.ietf.org/rfcdiff"
-IDNITS_BASE_URL = "https://www.ietf.org/tools/idnits"
-XML2RFC_BASE_URL = "https://xml2rfc.tools.ietf.org/experimental.html"
+IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
+
+# Content security policy configuration (django-csp)
+CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", f"data: {IDTRACKER_BASE_URL} https://www.ietf.org/ https://analytics.ietf.org/")
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
@@ -867,7 +866,6 @@ IDSUBMIT_MAX_DAILY_SAME_GROUP_SIZE = 450 # in MB
 IDSUBMIT_MAX_DAILY_SUBMISSIONS = 1000
 IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE = 2000 # in MB
 
-XML_LIBRARY = "/www/tools.ietf.org/tools/xml2rfc/web/public/rfc/"
 
 # === Meeting Related Settings =================================================
 
@@ -961,8 +959,7 @@ INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 
 FLOORPLAN_MEDIA_DIR = 'floor'
 FLOORPLAN_DIR = os.path.join(MEDIA_ROOT, FLOORPLAN_MEDIA_DIR)
-FLOORPLAN_LEGACY_BASE_URL = 'https://tools.ietf.org/agenda/{meeting.number}/venue/'
-FLOORPLAN_LAST_LEGACY_MEETING = 95  # last meeting to use FLOORPLAN_LEGACY_BASE_URL
+
 
 MEETING_USES_CODIMD_DATE = datetime.date(2020,7,6)
 MEETING_LEGACY_OFFICE_HOURS_END = 112  # last meeting to use legacy office hours representation
@@ -1010,7 +1007,7 @@ BIBXML_BASE_PATH = '/a/ietfdata/derived/bibxml'
 TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
 
 SECR_BLUE_SHEET_PATH = '/a/www/ietf-datatracker/documents/blue_sheet.rtf'
-SECR_BLUE_SHEET_URL = '//datatracker.ietf.org/documents/blue_sheet.rtf'
+SECR_BLUE_SHEET_URL = IDTRACKER_BASE_URL + '/documents/blue_sheet.rtf'
 SECR_INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
 SECR_MAX_UPLOAD_SIZE = 40960000
 SECR_PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'

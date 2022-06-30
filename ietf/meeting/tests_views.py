@@ -3154,13 +3154,6 @@ class ReorderSlidesTests(TestCase):
 
 class EditTests(TestCase):
     """Test schedule edit operations"""
-    def setUp(self):
-        super().setUp()
-        # make sure we have the colors of the area
-        from ietf.group.colors import fg_group_colors, bg_group_colors
-        area_upper = "FARFUT"
-        fg_group_colors[area_upper] = "#333"
-        bg_group_colors[area_upper] = "#aaa"
 
     def test_official_record_schedule_is_read_only(self):
         def _set_date_offset_and_retrieve_page(meeting, days_offset, client):
@@ -4612,8 +4605,7 @@ class InterimTests(TestCase):
         r = self.client.get("/meeting/interim/request/")
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        Group.objects.filter(type_id__in=GroupFeatures.objects.filter(has_meetings=True).values_list('type_id',flat=True), state__in=('active', 'proposed', 'bof'))
-        self.assertEqual(Group.objects.filter(type_id__in=GroupFeatures.objects.filter(has_meetings=True).values_list('type_id',flat=True), state__in=('active', 'proposed', 'bof')).count(),
+        self.assertEqual(Group.objects.with_meetings().filter(state__in=('active', 'proposed', 'bof')).count(),
             len(q("#id_group option")) - 1)  # -1 for options placeholder
         self.client.logout()
 
@@ -6406,17 +6398,86 @@ class SessionTests(TestCase):
 
     def test_meeting_requests(self):
         meeting = MeetingFactory(type_id='ietf')
+
+        # a couple non-wg group types, confirm that their has_meetings features are as expected
+        group_type_with_meetings = 'adhoc'
+        self.assertTrue(GroupFeatures.objects.get(pk=group_type_with_meetings).has_meetings)
+        group_type_without_meetings = 'editorial'
+        self.assertFalse(GroupFeatures.objects.get(pk=group_type_without_meetings).has_meetings)
+
         area = GroupFactory(type_id='area')
         requested_session = SessionFactory(meeting=meeting,group__parent=area,status_id='schedw',add_to_schedule=False)
         conflicting_session = SessionFactory(meeting=meeting,group__parent=area,status_id='schedw',add_to_schedule=False)
         ConstraintFactory(name_id='key_participant',meeting=meeting,source=requested_session.group,target=conflicting_session.group)
         not_meeting = SessionFactory(meeting=meeting,group__parent=area,status_id='notmeet',add_to_schedule=False)
+        has_meetings = SessionFactory(
+            meeting=meeting,
+            group__type_id=group_type_with_meetings,
+            status_id='schedw',
+            add_to_schedule=False,
+        )
+        has_meetings_not_meeting = SessionFactory(
+            meeting=meeting,
+            group__type_id=group_type_with_meetings,
+            status_id='notmeet',
+            add_to_schedule=False,
+        )
+        # admin and social sessions are not to be shown on the requests page
+        has_meetings_admin_session = SessionFactory(
+            meeting=meeting,
+            group__type_id=group_type_with_meetings,
+            status_id='schedw',
+            purpose_id='admin',
+            type_id='other',
+            add_to_schedule=False,
+        )
+        has_meetings_social_session = SessionFactory(
+            meeting=meeting,
+            group__type_id=group_type_with_meetings,
+            status_id='schedw',
+            purpose_id='social',
+            type_id='break',
+            add_to_schedule=False,
+        )
+        not_has_meetings = SessionFactory(
+            meeting=meeting,
+            group__type_id=group_type_without_meetings,
+            status_id='schedw',
+            add_to_schedule=False,
+        )
+
+        def _sreq_edit_link(sess):
+            return urlreverse(
+                'ietf.secr.sreq.views.edit',
+                kwargs={
+                    'num': meeting.number,
+                    'acronym': sess.group.acronym,
+                },
+            )
+
         url = urlreverse('ietf.meeting.views.meeting_requests',kwargs={'num':meeting.number})
         r = self.client.get(url)
+        # requested_session group should be listed with a link to the request
         self.assertContains(r, requested_session.group.acronym)
+        self.assertContains(r, _sreq_edit_link(requested_session))  # link to the session request
         self.assertContains(r, not_meeting.group.acronym)
+        # The admin/social session groups should be listed under "no timeslot request received"; it's easier
+        # to check that the group is listed but that there is no link to the session request than to try to
+        # parse the HTML. If the view is changed to link to the "no timeslot request received" session requests,
+        # then need to revisit.
+        self.assertContains(r, has_meetings_admin_session.group.acronym)
+        self.assertNotContains(r, _sreq_edit_link(has_meetings_admin_session))  # no link to the session request
+        self.assertContains(r, has_meetings_social_session.group.acronym)
+        self.assertNotContains(r, _sreq_edit_link(has_meetings_social_session))  # no link to the session request
         self.assertContains(r, requested_session.constraints().first().name)
         self.assertContains(r, conflicting_session.group.acronym)
+        self.assertContains(r, _sreq_edit_link(conflicting_session))  # link to the session request
+        self.assertContains(r, has_meetings.group.acronym)
+        self.assertContains(r, _sreq_edit_link(has_meetings))  # link to the session request
+        self.assertContains(r, has_meetings_not_meeting.group.acronym)
+        self.assertContains(r, _sreq_edit_link(has_meetings_not_meeting))  # link to the session request
+        self.assertNotContains(r, not_has_meetings.group.acronym)
+        self.assertNotContains(r, _sreq_edit_link(not_has_meetings))  # no link to the session request
 
     def test_request_minutes(self):
         meeting = MeetingFactory(type_id='ietf')
@@ -6600,29 +6661,6 @@ class HasMeetingsTests(TestCase):
 
 class AgendaFilterTests(TestCase):
     """Tests for the AgendaFilter template"""
-    def test_agenda_width_scale_filter(self):
-        """Test calculation of UI column width by agenda_width_scale filter"""
-        template = Template('{% load agenda_filter_tags %}{{ categories|agenda_width_scale:spacing }}')
-
-        # Should get '1' as min value when input is empty
-        context = Context({'categories': [], 'spacing': 7})
-        self.assertEqual(template.render(context), '1')
-
-        # 3 columns, no spacers
-        context = Context({'categories': [range(3)], 'spacing': 7})
-        self.assertEqual(template.render(context), '21')
-
-        # 6 columns, 1 spacer
-        context = Context({'categories': [range(3), range(3)], 'spacing': 7})
-        self.assertEqual(template.render(context), '43')
-
-        # 10 columns, 2 spacers
-        context = Context({'categories': [range(3), range(3), range(4)], 'spacing': 7})
-        self.assertEqual(template.render(context), '72')
-
-        # 10 columns, 2 spacers, different spacer scale
-        context = Context({'categories': [range(3), range(3), range(4)], 'spacing': 5})
-        self.assertEqual(template.render(context), '52')
 
     def test_agenda_filter_template(self):
         """Test rendering of input data by the agenda filter template"""

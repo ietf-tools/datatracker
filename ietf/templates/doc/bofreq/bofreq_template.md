@@ -30,9 +30,9 @@ To allow evaluation of your proposal, please include the following items:
 
 ## Links to the mailing list, draft charter if any, relevant Internet-Drafts, etc.
    - Mailing List: https://www.ietf.org/mailman/listinfo/example
-   - Draft charter: https://datatracker.ietf.org/doc/charter-ietf-EXAMPLE/
+   - Draft charter: {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.doc.views_doc.document_main' name='charter-ietf-EXAMPLE' %}
    - Relevant drafts:
       - Use Cases:
-         - https://datatracker.ietf.org/html/draft-blah-uses
+         - {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.doc.views_doc.document_main' name='draft-blah-uses' %}
       - Solutions
-         - https://datatracker.ietf.org/html/draft-blah-soln
+         - {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.doc.views_doc.document_main' name='draft-blah-soln' %}
