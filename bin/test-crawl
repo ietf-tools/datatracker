@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- indent-with-tabs: 0 -*-
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# Copyright The IETF Trust 2013-2022, All Rights Reserved
 
 
 import argparse
@@ -12,7 +12,6 @@ import os
 import random
 import re
 import requests
-import subprocess
 import sys
 import time
 import traceback
@@ -40,7 +39,7 @@ parser.add_argument('--logfile', help='Write to logfile')
 parser.add_argument('--no-follow', dest='follow', action='store_false', default=True,
                     help='Do not follow URLs found in fetched pages, just check the given URLs')
 parser.add_argument('--pedantic', action='store_true',
-                    help='Stop the crawl on the first HTML validation issue')
+                    help='Stop the crawl on the first error or warning')
 parser.add_argument('--random', action='store_true',
                     help='Crawl URLs randomly')
 parser.add_argument('-R', '--no-revisit', action='store_true', default=False, help="Don't revisit already visited URLs")
@@ -87,6 +86,7 @@ import debug    # pyflakes:ignore
 from ietf.name.models import DocTypeName
 from ietf.utils.html import unescape
 from ietf.utils.test_utils import unicontent
+from ietf.utils.test_runner import start_vnu_server, vnu_validate, vnu_fmt_message, vnu_filter_message
 
 # --- Constants ---
 
@@ -178,55 +178,38 @@ def check_html_valid(url, response, args):
         key = re.sub("/submit/status/nnnn/[0-9a-f]+/", "/submit/status/nnnn/bar/", key)
         key = re.sub("/team/[a-z0-9-]+/",   "/team/foo/", key)
         key = re.sub("/wg/[a-z0-9-]+/",   "/wg/foo/", key)
-        key = re.sub("\?.*$",       "", key)
+        key = re.sub(r"\?.*$",       "", key)
 
         for slug in doc_types:
             key = re.sub("/%s-.*/"%slug, "/%s-nnnn/"%slug, key)
 
     if not key in validated_urls:
         note('Validate: %-32s: %s' % (url[:32], key))
-        # These URLs have known issues, skip them until those are fixed
-        for pattern in (
-                '/secr',
-		'admin/',
-		'/doc/.*/edit/info/',
-		'rfc542$',
-		'rfc776$',
-		'draft-leroux-pce-pcecp-interarea-reqs',
-                'draft-fujiwara-dnsop-resolver-update',
-            ):
-            if re.search(pattern, url):
-                validated_urls[key] = True
-                log("%s blacklisted; skipping HTML validation" % url)
-                return
-
         if hasattr(response, "content"):
             content = response.content
         else:
             content = response.streaming_content
         validated_urls[key] = True
         if args.validator_nu:
-            v = subprocess.Popen(["java", "-jar", basedir + "/bin/vnu.jar",
-                                  "--format", "json", "-"],
-                                 stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-            for m in json.loads(v.communicate(content)[1])["messages"]:
-                t = m["subType"] if m["type"] == "info" else m["type"]
-                tags.append("\n%s\tLine %d: %s" %
-                            (t.upper(), m["lastLine"], m["message"]))
-                tags.append("\n\t%s" % m["extract"].replace('\n', ' '))
-                tags.append("\n\t%s%s" %
-                            (" " * m["hiliteStart"], "^" * m["hiliteLength"]))
+            ret = vnu_validate(content, response["Content-Type"], port=8887)
+            assert ret
+            for m in json.loads(ret)["messages"]:
+                if "lastLine" not in m:
+                    tag = m["message"]
+                else:
+                    tag = vnu_fmt_message(url, m, content.decode())
                 # disregard some HTML issues that are (usually) due to invalid
                 # database content
-                if not re.search('Forbidden code point|Bad value|seamless|The first child|Duplicate ID|The first occurrence of ID', m["message"]):
+                if not vnu_filter_message(m, True, False):
                     warnings += 1
+                    tags.append(tag)
         else:
             try:
                 parser.parse(content)
             except Exception as e:
                 for err in parser.errors:
-                    pos, code, data = err
-                    tags.append(u"WARN invalid html at line, pos %s: %s" % (pos, e))
+                    pos, _, _ = err
+                    tags.append("WARN invalid html at line, pos {}: {}".format(pos, e))
                 warnings += 1
 
 def skip_extract_from(url):
@@ -397,19 +380,19 @@ skip_patterns = [
         r"/site/ietfdhcwg/_/rsrc/1311005436000/system/app/css/overlay.css\?cb=simple100%250150goog-ws-left",
         r"/dir/tsvdir/reviews/",
         r"draft-touch-msword-template-v2\.0",
-        # Skip most html conversions, not worth the time
-        r"^/doc/html/draft-[0-9ac-z]",
-        r"^/doc/html/draft-b[0-9b-z]",
-        r"^/doc/html/charter-.*",
-        r"^/doc/html/status-.*",
-        r"^/doc/html/rfc.*",
         # There is a long list of urls that will always 404, but we include only those not excluded above
         r"^/doc/html/draft-balakrishnan-cm-03",
         r"^/doc/html/draft-ballardie-cbt-02",
         #
+        r"^/doc/html/draft-[0-9ac-z]",
+        r"^/doc/html/draft-b[0-9b-z]",
+        r"^/doc/pdf/draft-[0-9ac-z]",
+        r"^/doc/pdf/draft-b[0-9b-z]",
+        r"^/doc/html/charter-.*",
+        r"^/doc/html/status-.*",
+        r"^/doc/html/rfc.*",
         r"^/static/coverage/",
-        r"^/meeting/6[0-4]/agenda",
-        r"^https?://www.ietf.org/",
+        r"^/meeting/\d{,2}/agenda",  # no agendas < 100
     ]
 skip_patterns = [ re.compile(p) for p in skip_patterns ]
 
@@ -440,7 +423,15 @@ if args.exthost:
     extdir = './ext/'
     os.makedirs(extdir, exist_ok=True)
 
+vnu = None
+
 # --- Main ---
+
+def do_exit(code):
+    if vnu:
+        vnu.terminate()
+    sys.exit(code)
+
 
 if __name__ == "__main__":
     if (args.user):
@@ -451,7 +442,7 @@ if __name__ == "__main__":
         if (response.status_code != 200):
             log("Could not log in as %s, HTML response %d" %
                 (args.user, response.status_code))
-            sys.exit(1)
+            do_exit(1)
 
     # Run django system checks and checks from ietf.checks:
     error_list = django.core.checks.run_checks()
@@ -467,11 +458,13 @@ if __name__ == "__main__":
         for entry in error_list:
             print(entry)
 
+    if args.validator_nu:
+        vnu = start_vnu_server(port=8887)
     try:
         while urls:
             if args.random:
                 # popitem() is documented to be random, but really isn't
-                url = random.choice(urls.keys())
+                url = random.choice(list(urls.keys()))
                 referrer = urls.pop(url)
             else:
                 url, referrer = urls.popitem()
@@ -518,10 +511,10 @@ if __name__ == "__main__":
             except KeyboardInterrupt:
                 log(" ... was fetching %s" % url)
                 visited.remove(url)
-                sys.exit(1)
+                do_exit(1)
             except:
                 elapsed = datetime.datetime.now() - request_start
-                tags = [ u"FAIL  (from [ %s ])" % (",\n\t".join(get_referrers(url))) ]
+                tags = [ "FAIL  (from [ %s ])" % (",\n\t".join(get_referrers(url))) ]
                 log("%2d:%02d:%02d %7d %6d  %s %6.3fs %s %s" % (hrs,min,sec, len(visited), len(urls), 500, elapsed.total_seconds(), url, " ".join(tags)))
                 log("=============")
                 log(traceback.format_exc())
@@ -533,7 +526,7 @@ if __name__ == "__main__":
                 ctype = r["Content-Type"]
                 if r.status_code in (301, 302):
                     u = strip_url(r["Location"])
-                    if u not in visited and u not in urls:
+                    if not url.startswith("/") and u not in visited and u not in urls:
                         urls[u] = referrer # referrer is original referrer, not redirected url
                         referrers[u] = referrer
                     ctype = ''
@@ -601,8 +594,9 @@ if __name__ == "__main__":
                         except requests.exceptions.ConnectionError as e:
                             sys.exit(e)
                 else:
-                    tags.append(u"FAIL  (from %s)" % (referrer, ))
-                    errors += 1
+                    tags.append("FAIL  (from {})".format(referrer))
+                    if not url.startswith("/person/"):  # FIXME: those fail sometimes
+                        errors += 1
 
                 if elapsed.total_seconds() > slow_threshold:
                     tags.append("SLOW")
@@ -617,7 +611,7 @@ if __name__ == "__main__":
                 if ((errors or warnings) and args.pedantic):
                     log(f"Errors  : {errors}")
                     log(f"Warnings: {warnings}")
-                    sys.exit(1)
+                    do_exit(1)
 
         if logfile:
             logfile.close()
@@ -625,7 +619,7 @@ if __name__ == "__main__":
 
         if errors > 0:
             sys.stderr.write("Found %s errors, grep output for FAIL for details\n" % errors)
-            sys.exit(1)
+            do_exit(1)
         else:
             sys.stderr.write("Found no errors.\n")
         if warnings > 0:
