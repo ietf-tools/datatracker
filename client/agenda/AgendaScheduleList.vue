@@ -64,16 +64,7 @@
               span(v-else) {{item.room}}
             //- CELL - GROUP --------------------------
             td.agenda-table-cell-group(v-if='item.type === `regular`')
-              n-popover(
-                trigger='hover'
-                :width='250'
-                v-if='agendaStore.areaIndicatorsShown && agendaStore.viewport > 1200'
-                )
-                template(#trigger)
-                  span.badge {{item.groupAcronym}}
-                .agenda-table-cell-group-hover
-                  strong {{item.groupParentName}}
-                  span {{item.groupParentDescription}}
+              span.badge(v-if='agendaStore.areaIndicatorsShown && agendaStore.viewport > 1200') {{item.groupAcronym}}
               a.discreet(:href='`/group/` + item.acronym + `/about/`') {{item.acronym}}
             //- CELL - NAME ---------------------------
             td.agenda-table-cell-name
@@ -284,7 +275,8 @@ const meetingEvents = computed(() => {
           id: `lnk-${item.id}-logs`,
           label: `Chat logs for ${item.acronym}`,
           icon: 'chat-left-text',
-          href: `xmpp:${item.type === 'plenary' ? 'plenary' : item.acronym}@jabber.ietf.org?join`
+          href: `xmpp:${item.type === 'plenary' ? 'plenary' : item.acronym}@jabber.ietf.org?join`,
+          color: 'green'
         })
         // -> Video stream
         if (item.links.videoStream) {
@@ -292,7 +284,8 @@ const meetingEvents = computed(() => {
             id: `lnk-${item.id}-video`,
             label: 'Video stream',
             icon: 'camera-video',
-            href: item.links.videoStream
+            href: item.links.videoStream,
+            color: 'purple'
           })
         }
         // -> Onsite tool
@@ -301,7 +294,8 @@ const meetingEvents = computed(() => {
             id: `lnk-${item.id}-onsitetool`,
             label: 'Onsite tool',
             icon: 'telephone-outbound',
-            href: item.links.onsiteTool
+            href: item.links.onsiteTool,
+            color: 'teal'
           })
         }
         // -> Audio stream
@@ -310,7 +304,8 @@ const meetingEvents = computed(() => {
             id: `lnk-${item.id}-audio`,
             label: 'Audio stream',
             icon: 'headphones',
-            href: item.links.audioStream
+            href: item.links.audioStream,
+            color: 'teal'
           })
         }
         // -> Remote call-in
@@ -319,7 +314,8 @@ const meetingEvents = computed(() => {
             id: `lnk-${item.id}-remotecallin`,
             label: 'Online conference',
             icon: 'people',
-            href: item.links.remoteCallIn
+            href: item.links.remoteCallIn,
+            color: 'teal'
           })
         }
         // -> Calendar item
@@ -328,7 +324,8 @@ const meetingEvents = computed(() => {
             id: `lnk-${item.id}-calendar`,
             label: `Calendar (.ics) entry for ${item.acronym} session on ${item.adjustedStart.toFormat('fff')}`,
             icon: 'calendar-check',
-            href: item.links.calendar
+            href: item.links.calendar,
+            color: 'pink'
           })
         }
       } else {
@@ -421,8 +418,8 @@ const meetingEvents = computed(() => {
       flags: item.flags,
       groupAcronym: item.groupParent?.acronym,
       groupName: item.groupName,
-      groupParentDescription: item.groupParent?.description,
-      groupParentName: item.groupParent?.name,
+      // groupParentDescription: item.groupParent?.description,
+      // groupParentName: item.groupParent?.name,
       icon,
       isBoF: item.isBoF,
       isSessionEvent: item.type === 'regular',
@@ -704,8 +701,10 @@ onBeforeUnmount(() => {
       }
 
       .badge {
-        width: 30px;
-        font-size: .7em;
+        display: inline-flex;
+        min-width: 20px;
+        height: 16px;
+        font-size: .65em;
         background-color: $yellow-200;
         border-bottom: 1px solid $yellow-500;
         border-right: 1px solid $yellow-500;
@@ -714,13 +713,14 @@ onBeforeUnmount(() => {
         font-weight: 700;
         margin-right: 10px;
         text-shadow: 1px 1px $yellow-100;
+        padding: 0 4px;
+        justify-content: center;
+        align-items: center;
 
-        @media screen and (max-width: 1300px) {
-          margin-left: -12px;
-          border-top-left-radius: 0;
-          border-bottom-left-radius: 0;
-          margin-right: 6px;
-        }
+        margin-left: -12px;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        margin-right: 6px;
       }
     }
 
@@ -730,12 +730,26 @@ onBeforeUnmount(() => {
       white-space: nowrap;
 
       .badge {
-        width: 40px;
-        font-size: .7em;
-        background-color: $gray-700;
-        text-transform: uppercase;
+        display: inline-flex;
+        min-width: 32px;
+        height: 16px;
+        font-size: .65em;
         font-weight: 600;
+        background-color: $gray-300;
+        border-bottom: 1px solid $gray-500;
+        border-right: 1px solid $gray-500;
+        color: $gray-800;
+        text-transform: uppercase;
         margin-right: 10px;
+        text-shadow: 1px 1px $gray-200;
+        padding: 0 4px;
+        justify-content: center;
+        align-items: center;
+
+        margin-left: -12px;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        margin-right: 6px;
       }
     }
 
@@ -828,6 +842,22 @@ onBeforeUnmount(() => {
 
             &:hover, &:focus {
               background-color: rgba($purple-400, .3);
+            }
+          }
+          &.text-pink {
+            color: $pink-500;
+            background-color: rgba($pink-400, .1);
+
+            &:hover, &:focus {
+              background-color: rgba($pink-400, .3);
+            }
+          }
+          &.text-teal {
+            color: $teal-600;
+            background-color: rgba($teal-400, .1);
+
+            &:hover, &:focus {
+              background-color: rgba($teal-400, .3);
             }
           }
         }

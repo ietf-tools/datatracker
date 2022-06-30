@@ -9,6 +9,7 @@ const conferenceDomains = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 
 export const useAgendaStore = defineStore('agenda', {
   state: () => ({
     areaIndicatorsShown: true,
+    debugTools: false,
     calendarShown: false,
     categories: [],
     colorPickerVisible: false,

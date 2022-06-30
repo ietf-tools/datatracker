@@ -12,7 +12,7 @@
       li.nav-item(v-for='tab of state.tabs')
         a.nav-link.agenda-link.filterable(
           :class='{ active: tab.key === state.currentTab }'
-          :href='tab.href'
+          :href='tab.href ? `/meeting/` + agendaStore.meeting.number + `/` + tab.href : null'
           )
           i.bi.me-2(:class='tab.icon')
           span {{tab.title}}
@@ -163,7 +163,8 @@ const state = reactive({
   searchText: '',
   currentTab: 'agenda',
   tabs: [
-    { key: 'agenda', title: 'Agenda', icon: 'bi-calendar3' },
+    { key: 'agenda', title: 'Agenda (New)', icon: 'bi-calendar3' },
+    { key: 'agenda-legacy', href: 'agenda', title: 'Agenda', icon: 'bi-calendar2-week' },
     { key: 'floorplan', href: 'floor-plan', title: 'Floor plan', icon: 'bi-pin-map' },
     { key: 'plaintext', href: 'agenda.txt', title: 'Plaintext', icon: 'bi-file-text' }
   ]
@@ -337,13 +338,14 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
 
 .agenda {
   min-height: 500px;
+  font-weight: 460;
 
   > h1 {
     font-weight: 500;
     color: $gray-700;
 
     strong {
-      font-weight: 500;
+      font-weight: 700;
       background: linear-gradient(220deg, $blue-500 20%, $purple-500 70%);
       background-clip: text;
       -webkit-background-clip: text;

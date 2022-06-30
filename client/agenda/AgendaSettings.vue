@@ -117,19 +117,20 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
           :aria-label='"Color Name " + (idx + 1)'
         )
 
-      n-divider(title-placement='left')
-        i.bi.bi-clock-history.me-2
-        small Override Local DateTime
-      n-date-picker(
-        v-model:value='state.currentDateTime'
-        type='datetime'
-        style='width: 100%;'
-        aria-label='Override Local DateTime'
-        )
-        template(#date-icon)
-          i.bi.bi-calendar-check
-      .agenda-settings-calcoffset
-        span Calculated Offset: {{ calcOffset }}
+      .agenda-settings-debug(v-if='agendaStore.debugTools')
+        n-divider(title-placement='left')
+          i.bi.bi-clock-history.me-2
+          small Override Local DateTime
+        n-date-picker(
+          v-model:value='state.currentDateTime'
+          type='datetime'
+          style='width: 100%;'
+          aria-label='Override Local DateTime'
+          )
+          template(#date-icon)
+            i.bi.bi-calendar-check
+        .agenda-settings-calcoffset
+          span Calculated Offset: {{ calcOffset }}
 </template>
 
 <script setup>
@@ -206,6 +207,15 @@ const actionOptions = [
     label: 'Clear Color Assignments',
     key: 'clearColors',
     icon: () => h('i', { class: 'bi bi-palette' })
+  },
+  {
+    type: 'divider',
+    key: 'divider1'
+  },
+  {
+    label: 'Toggle Debugging Controls',
+    key: 'toggleDebug',
+    icon: () => h('i', { class: 'bi bi-tools' })
   }
 ]
 
@@ -316,6 +326,14 @@ async function actionClick (key) {
       agendaStore.persistMeetingPreferences()
       message.info('All color assignments cleared.')
       close()
+      break
+    }
+    /**
+     * TOGGLE DEBUG TOOLS
+     */
+    case 'toggleDebug': {
+      agendaStore.$patch({ debugTools: !agendaStore.debugTools })
+      break
     }
   }
 }
@@ -376,6 +394,27 @@ onMounted(() => {
   &-calcoffset {
     padding: 5px 0 0 12px;
     font-size: 11px;
+  }
+
+  &-debug {
+    margin-top: 25px;
+    border: 2px dotted $pink-500;
+    border-radius: 12px;
+    padding: 15px;
+    position: relative;
+
+    &::before {
+      content: 'DEBUG';
+      position: absolute;
+      background-color: $pink-500;
+      color: #FFF;
+      top: -13px;
+      right: 25px;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 12px;
+    }
   }
 }
 </style>

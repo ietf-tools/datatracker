@@ -1665,9 +1665,9 @@ def agenda_extract_shedule (item):
         "groupAcronym": item.session.historic_group.acronym if item.session.historic_group else item.session.group.acronym,
         "groupName": item.session.historic_group.name,
         "groupParent": {
-            "acronym": item.session.historic_group.parent.acronym,
-            "name": item.session.historic_group.parent.name,
-            "description": item.session.historic_group.parent.description
+            "acronym": item.session.historic_group.parent.acronym
+            # "name": item.session.historic_group.parent.name,
+            # "description": item.session.historic_group.parent.description
         } if item.session.historic_group.parent else {},
         "note": item.session.agenda_note,
         "remoteInstructions": item.session.remote_instructions,

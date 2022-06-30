@@ -3,6 +3,7 @@
   button(@click='agendaStore.$patch({ filterShown: true })')
     i.bi.bi-filter-square-fill.me-2
     span Filters
+    n-badge.ms-2(:value='agendaStore.selectedCatSubs.length', processing)
   div
     button(@click='agendaStore.$patch({ calendarShown: true })')
       i.bi.bi-calendar3.me-2
@@ -23,6 +24,7 @@
 import { h } from 'vue'
 
 import {
+  NBadge,
   NDropdown,
   useMessage
 } from 'naive-ui'
