@@ -935,7 +935,6 @@ def render_missing_formats(submission):
     """
     xml2rfc.log.write_out = io.StringIO()   # open(os.devnull, "w")
     xml2rfc.log.write_err = io.StringIO()   # open(os.devnull, "w")
-    os.environ["XML_LIBRARY"] = settings.XML_LIBRARY
     xml_path = staging_path(submission.name, submission.rev, '.xml')
     parser = xml2rfc.XmlRfcParser(str(xml_path), quiet=True)
     # --- Parse the xml ---

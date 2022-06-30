@@ -9,8 +9,6 @@ import debug  # pyflakes: ignore
 
 from contextlib import ExitStack
 
-from django.conf import settings
-
 from .draft import Draft
 
 
@@ -39,7 +37,6 @@ class XMLDraft(Draft):
         """
         orig_write_out = xml2rfc.log.write_out
         orig_write_err = xml2rfc.log.write_err
-        orig_xml_library = os.environ.get('XML_LIBRARY', None)
         parser_out = io.StringIO()
         parser_err = io.StringIO()
 
@@ -48,13 +45,9 @@ class XMLDraft(Draft):
             def cleanup():  # called when context exited, even if there's an exception
                 xml2rfc.log.write_out = orig_write_out
                 xml2rfc.log.write_err = orig_write_err
-                os.environ.pop('XML_LIBRARY')
-                if orig_xml_library is not None:
-                    os.environ['XML_LIBRARY'] = orig_xml_library
 
             xml2rfc.log.write_out = parser_out
             xml2rfc.log.write_err = parser_err
-            os.environ['XML_LIBRARY'] = settings.XML_LIBRARY
 
             parser = xml2rfc.XmlRfcParser(filename, quiet=True)
             try:
