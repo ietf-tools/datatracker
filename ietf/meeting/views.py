@@ -1630,7 +1630,8 @@ def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, u
                 "endDate": schedule.meeting.end_date().isoformat(),
                 "updated": updated,
                 "timezone": meeting.time_zone,
-                "infoNote": schedule.meeting.agenda_info_note
+                "infoNote": schedule.meeting.agenda_info_note,
+                "warningNote": schedule.meeting.agenda_warning_note
             },
             "categories": filter_organizer.get_filter_categories(),
             "isCurrentMeeting": is_current_meeting,

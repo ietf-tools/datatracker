@@ -4,7 +4,9 @@
   )
   h1
     span #[strong IETF {{agendaStore.meeting.number}}] Meeting Agenda {{titleExtra}}
-    span.agenda-beta BETA
+    .agenda-h1-badges
+      span.agenda-warning(v-if='agendaStore.meeting.warningNote') {{agendaStore.meeting.warningNote}}
+      span.agenda-beta BETA
   h4
     span {{agendaStore.meeting.city}}, {{ meetingDate }}
     h6.float-end.d-none.d-lg-inline(v-if='meetingUpdated') #[span.text-muted Updated:] {{ meetingUpdated }}
@@ -349,6 +351,9 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
   > h1 {
     font-weight: 500;
     color: $gray-700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 
     strong {
       font-weight: 700;
@@ -403,16 +408,31 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
     }
   }
 
-  &-beta {
-    position: absolute;
-    right: 1.5rem;
-    font-size: 13px;
-    font-weight: 700;
-    background-color: $pink-500;
-    box-shadow: 0 0 5px 0 rgba($pink-500, .5);
+  &-h1-badges {
+    display: flex;
+    justify-content: end;
+    align-items: center;
+
+    > span {
+      font-size: 13px;
+      font-weight: 700;
+      background-color: $pink-500;
+      box-shadow: 0 0 5px 0 rgba($pink-500, .5);
+      color: #FFF;
+      padding: 5px 8px;
+      border-radius: 6px;
+
+      & + span {
+        margin-left: 10px;
+      }
+    }
+  }
+
+  &-warning {
+    background-color: $red-500 !important;
+    box-shadow: 0 0 5px 0 rgba($red-500, .5) !important;
     color: #FFF;
-    padding: 5px 8px;
-    border-radius: 6px;
+    animation: warningBorderFlash 1s ease infinite;
   }
 }
 
@@ -437,5 +457,11 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
 @keyframes spin {
   from { transform:rotate(0deg); }
   to { transform:rotate(360deg); }
+}
+
+@keyframes warningBorderFlash {
+  10% { color: #FFF; }
+  50% { color: $red-300; }
+  90% { color: #FFF; }
 }
 </style>
