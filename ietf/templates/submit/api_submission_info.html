@@ -27,14 +27,17 @@
         </li>
     </ul>
     <p>
-        It takes two parameters:
+        It takes the following parameters:
     </p>
     <ul>
         <li>
-            <code>user</code> which is the user login
+            <code>user</code> which is the user login (required)
         </li>
         <li>
-            <code>xml</code>, which is the submitted file
+            <code>xml</code>, which is the submitted file (required)
+        </li>
+        <li>
+            <code>replaces</code>, a comma-separated list of draft names replaced by this submission (optional)
         </li>
     </ul>
     <p>
@@ -82,7 +85,7 @@
         Here is an example of submitting a draft and polling its status through the API:
     </p>
     <pre class="border p-3">
-$ curl -s -F "user=user.name@example.com" -F "xml=@~/draft-user-example.xml" {% absurl 'ietf.submit.views.api_submission' %} | jq
+$ curl -s -F "user=user.name@example.com" -F "xml=@~/draft-user-example.xml" -F "replaces=draft-user-replaced-draft"  {% absurl 'ietf.submit.views.api_submission' %} | jq
 {
   "id": "126375",
   "name": "draft-user-example",
