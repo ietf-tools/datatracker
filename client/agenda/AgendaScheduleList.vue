@@ -68,7 +68,7 @@
               a.discreet(:href='`/group/` + item.acronym + `/about/`') {{item.acronym}}
             //- CELL - NAME ---------------------------
             td.agenda-table-cell-name
-              i.bi.me-2(v-if='item.icon', :class='item.icon')
+              i.bi.me-2(v-if='item.icon && agendaStore.eventIconsShown', :class='item.icon')
               a.discreet(
                 v-if='item.flags.agenda'
                 :href='item.agenda.url'
@@ -867,6 +867,8 @@ onBeforeUnmount(() => {
 
   &-cell-ts {
     border-right: 1px solid $gray-300 !important;
+    // -> Use system font instead of Montserrat so that all digits align vertically
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     font-size: 1rem;
     font-weight: 700;
     text-align: right;

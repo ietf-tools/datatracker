@@ -82,6 +82,12 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
           span Any update to the note will result in this setting being turned back on.
       .d-flex.align-items-center.mt-3
         n-switch.me-3(
+          v-model:value='agendaStore.eventIconsShown'
+          aria-label='Display Event Icons'
+          )
+        span.small Display Event Icons
+      .d-flex.align-items-center.mt-3
+        n-switch.me-3(
           v-model:value='agendaStore.floorIndicatorsShown'
           aria-label='Display Floor Indicators'
           )
@@ -96,6 +102,12 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
           template(#trigger)
             i.bi.bi-info-circle
           span Only shown during live events. Updated every 5 seconds.
+      .d-flex.align-items-center.mt-3
+        n-switch.me-3(
+          v-model:value='agendaStore.bolderText'
+          aria-label='Use Bolder Text'
+          )
+        span.small.me-2 Use Bolder Text
 
       n-divider(title-placement='left')
         i.bi.bi-palette.me-2
@@ -270,7 +282,9 @@ async function actionClick (key) {
         const configBlob = new Blob([
           JSON.stringify({
             areaIndicatorsShown: agendaStore.areaIndicatorsShown,
+            bolderText: agendaStore.bolderText,
             colors: agendaStore.colors,
+            eventIconsShown: agendaStore.eventIconsShown,
             floorIndicatorsShown: agendaStore.floorIndicatorsShown,
             listDayCollapse: agendaStore.listDayCollapse,
             redhandShown: agendaStore.redhandShown
@@ -303,10 +317,12 @@ async function actionClick (key) {
         }
         agendaStore.$patch({
           areaIndicatorsShown: configJson.areaIndicatorsShown === true,
+          bolderText: configJson.bolderText === true,
           colors: configJson.colors.map(c => ({
             hex: c.hex || '#FF0000',
             tag: c.tag || 'Unknown Color'
           })),
+          eventIconsShown: configJson.eventIconsShown === true,
           floorIndicatorsShown: configJson.floorIndicatorsShown === true,
           listDayCollapse: configJson.listDayCollapse === true,
           redhandShown: configJson.redhandShown === true

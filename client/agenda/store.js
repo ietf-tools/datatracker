@@ -9,6 +9,7 @@ const conferenceDomains = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 
 export const useAgendaStore = defineStore('agenda', {
   state: () => ({
     areaIndicatorsShown: true,
+    bolderText: false,
     debugTools: false,
     calendarShown: false,
     categories: [],
@@ -22,6 +23,7 @@ export const useAgendaStore = defineStore('agenda', {
     ],
     colorAssignments: {},
     dayIntersectId: '',
+    eventIconsShown: true,
     filterShown: false,
     floorIndicatorsShown: true,
     infoNoteHash: '',
@@ -187,7 +189,9 @@ export const useAgendaStore = defineStore('agenda', {
         storage: localStorage,
         paths: [
           'areaIndicatorsShown',
+          'bolderText',
           'colors',
+          'eventIconsShown',
           'floorIndicatorsShown',
           'listDayCollapse',
           'redhandShown'

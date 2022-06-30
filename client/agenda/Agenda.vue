@@ -1,5 +1,7 @@
 <template lang="pug">
-.agenda
+.agenda(
+  :class='{ "bolder-text": agendaStore.bolderText }'
+  )
   h1
     span #[strong IETF {{agendaStore.meeting.number}}] Meeting Agenda {{titleExtra}}
     span.agenda-beta BETA
@@ -339,6 +341,10 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
 .agenda {
   min-height: 500px;
   font-weight: 460;
+
+  &.bolder-text {
+    font-weight: 520;
+  }
 
   > h1 {
     font-weight: 500;
