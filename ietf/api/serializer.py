@@ -226,7 +226,11 @@ class JsonExportMixin(object):
 #         content_type = 'application/json'
 #         return HttpResponse(serialize([ obj ], sort_keys=True, indent=3)[2:-2], content_type=content_type)
 
-    def json_view(self, request, filter={}, expand=[]):
+    def json_view(self, request, filter=None, expand=None):
+        if expand is None:
+            expand = []
+        if filter is None:
+            filter = {}
         qfilter, exclude = filter_from_queryargs(request)
         for k in list(qfilter.keys()):
             if k.startswith("_"):

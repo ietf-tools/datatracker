@@ -67,7 +67,7 @@ class SMTPTestServer(smtpd.SMTPServer):
             #channel = SMTPTestChannel(self, conn, addr)
             SMTPTestChannel(self, conn, addr)
 
-    def process_message(self, peer, mailfrom, rcpttos, data, mail_options=[], rcpt_options=[]):
+    def process_message(self, peer, mailfrom, rcpttos, data, mail_options=None, rcpt_options=None):
         self.inbox.append(data)
 
 

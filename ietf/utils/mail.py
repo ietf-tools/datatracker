@@ -404,8 +404,12 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
 
     return msg
 
-def parse_preformatted(preformatted, extra={}, override={}):
+def parse_preformatted(preformatted, extra=None, override=None):
     """Parse preformatted string containing mail with From:, To:, ...,"""
+    if extra is None:
+        extra = {}
+    if override is None:
+        override = {}
     assert isinstance(preformatted, str)
     msg = message_from_bytes(preformatted.encode('utf-8'))
     msg.set_charset('UTF-8')
@@ -457,19 +461,26 @@ def parse_preformatted(preformatted, extra={}, override={}):
         assertion('len(list(set(v))) == len(v)')
     return (msg, extra, bcc)
 
-def send_mail_preformatted(request, preformatted, extra={}, override={}):
+def send_mail_preformatted(request, preformatted, extra=None, override=None):
     """Parse preformatted string containing mail with From:, To:, ...,
     and send it through the standard IETF mail interface (inserting
     extra headers as needed)."""
+
+    if extra is None:
+        extra = {}
+    if override is None:
+        override = {}
 
     (msg, extra, bcc) = parse_preformatted(preformatted, extra, override)
     txt = msg.get_payload()
     send_mail_text(request, msg['To'], msg["From"], msg["Subject"], txt, extra=extra, bcc=bcc)
     return msg
 
-def send_mail_message(request, message, extra={}):
+def send_mail_message(request, message, extra=None):
     """Send a Message object."""
     # note that this doesn't handle MIME messages at the moment
+    if extra is None:
+        extra = {}
     assertion('isinstance(message.to, str) and isinstance(message.cc, str) and isinstance(message.bcc, str)')
 
     e = extra.copy()

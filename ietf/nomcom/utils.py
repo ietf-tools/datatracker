@@ -600,7 +600,9 @@ def get_eligibility_date(nomcom=None, date=None):
         else:
             return datetime.date(datetime.date.today().year,5,1)
 
-def previous_five_meetings(date = datetime.date.today()):
+def previous_five_meetings(date = None):
+    if date is None:
+        date = datetime.date.today()
     return Meeting.objects.filter(type='ietf',date__lte=date).order_by('-date')[:5]
 
 def three_of_five_eligible(previous_five, queryset=None):
