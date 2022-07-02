@@ -70,7 +70,7 @@
         "dbaeumer.vscode-eslint",
 		"eamodio.gitlens",
 		"editorconfig.editorconfig",
-		"vue.volar",
+        "hashicorp.hcl",
 		"mrmlnc.vscode-duplicate",
 		"ms-azuretools.vscode-docker",
 		"ms-python.python",
@@ -81,7 +81,8 @@
 		"oderwat.indent-rainbow",
 		"redhat.vscode-yaml",
 		"spmeesseman.vscode-taskexplorer",
-		"visualstudioexptteam.vscodeintellicode"
+		"visualstudioexptteam.vscodeintellicode",
+        "vue.volar"
 	],
     
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
