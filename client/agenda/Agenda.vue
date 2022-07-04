@@ -167,8 +167,7 @@ const state = reactive({
   searchText: '',
   currentTab: 'agenda',
   tabs: [
-    { key: 'agenda', title: 'Agenda (New)', icon: 'bi-calendar3' },
-    { key: 'agenda-legacy', href: 'agenda', title: 'Agenda', icon: 'bi-calendar2-week' },
+    { key: 'agenda', title: 'Agenda', icon: 'bi-calendar3' },
     { key: 'floorplan', href: 'floor-plan', title: 'Floor plan', icon: 'bi-pin-map' },
     { key: 'plaintext', href: 'agenda.txt', title: 'Plaintext', icon: 'bi-file-text' }
   ]
@@ -195,6 +194,14 @@ watch(() => state.searchText, debounce((newValue) => {
     searchText: newValue.toLowerCase()
   })
 }, 500))
+
+watch(() => agendaStore.meetingDays, () => {
+  nextTick(() => {
+    setTimeout(() => {
+      reconnectScrollObservers()
+    }, 100)
+  })
+})
 
 // COMPUTED
 
@@ -310,19 +317,25 @@ const scrollObserver = new IntersectionObserver(entries => {
   threshold: [0.0, 1.0]
 })
 
-onMounted(() => {
+function reconnectScrollObservers () {
+  scrollObserver.disconnect()
+  visibleDays.length = 0
   for (const mDay of agendaStore.meetingDays) {
     const el = document.getElementById(`agenda-day-${mDay.slug}`)
     el.dataset.dayId = mDay.slug.toString()
     el.dataset.dayTs = mDay.ts
     scrollObserver.observe(el)
   }
+}
+
+// MOUNTED
+
+onMounted(() => {
+  reconnectScrollObservers()
 })
 
 onBeforeUnmount(() => {
-  for (const mDay of agendaStore.meetingDays) {
-    scrollObserver.unobserve(document.getElementById(`agenda-day-${mDay.slug}`))
-  }
+  scrollObserver.disconnect()
 })
 
 // CREATED

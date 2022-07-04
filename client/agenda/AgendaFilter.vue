@@ -1,5 +1,5 @@
 <template lang="pug">
-n-drawer(v-model:show='isShown', placement='bottom', :height='650')
+n-drawer(v-model:show='state.isShown', placement='bottom', :height='state.drawerHeight')
   n-drawer-content.agenda-personalize
     template(#header)
       span Filter Areas + Groups
@@ -49,7 +49,7 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='650')
             button.agenda-personalize-group(
               v-for='group of area.children'
               :key='group.keyword'
-              :class='{"is-bof": group.is_bof, "is-checked": pendingSelection.includes(group.keyword)}'
+              :class='{"is-bof": group.is_bof, "is-checked": state.pendingSelection.includes(group.keyword)}'
               @click='toggleFilterGroup(group.keyword)'
               )
               span {{group.label}}
@@ -64,7 +64,7 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='650')
 </template>
 
 <script setup>
-import { ref, unref, watch } from 'vue'
+import { reactive, ref, unref, watch } from 'vue'
 import intersection from 'lodash/intersection'
 import difference from 'lodash/difference'
 import union from 'lodash/union'
@@ -84,36 +84,41 @@ const agendaStore = useAgendaStore()
 
 // STATE
 
-const isShown = ref(false)
-const pendingSelection = ref([])
+const state = reactive({
+  drawerHeight: 650,
+  isShown: false,
+  pendingSelection: []
+})
+
 const message = useMessage()
 
 // WATCHERS
 
 watch(() => agendaStore.filterShown, (newValue) => {
   if (newValue) {
-    pendingSelection.value = unref(agendaStore.selectedCatSubs)
+    state.drawerHeight = window.innerHeight > 700 ? 650 : window.innerHeight - 50
+    state.pendingSelection = unref(agendaStore.selectedCatSubs)
   }
-  isShown.value = newValue
+  state.isShown = newValue
 })
-watch(isShown, (newValue) => {
+watch(() => state.isShown, (newValue) => {
   agendaStore.$patch({ filterShown: newValue })
 })
 
 // METHODS
 
 function cancelFilter () {
-  isShown.value = false
-  pendingSelection.value = unref(agendaStore.selectedCatSubs)
+  state.isShown = false
+  state.pendingSelection = unref(agendaStore.selectedCatSubs)
 }
 
 function saveFilter () {
-  agendaStore.$patch({ selectedCatSubs: pendingSelection.value })
-  isShown.value = false
+  agendaStore.$patch({ selectedCatSubs: state.pendingSelection })
+  state.isShown = false
 }
 
 function clearFilter () {
-  pendingSelection.value = []
+  state.pendingSelection = []
 }
 
 function toggleFilterArea (areaKeyword) {
@@ -123,7 +128,7 @@ function toggleFilterArea (areaKeyword) {
   for (const cat of agendaStore.categories) {
     for (const area of cat) {
       if (area.keyword === areaKeyword) {
-        isAlreadySelected = intersection(area.children.map(s => s.keyword), pendingSelection.value).length === area.children.length
+        isAlreadySelected = intersection(area.children.map(s => s.keyword), state.pendingSelection).length === area.children.length
       }
       for (const group of area.children) {
         if (group.toggled_by.includes(areaKeyword)) {
@@ -133,11 +138,11 @@ function toggleFilterArea (areaKeyword) {
     }
   }
   // -> Toggle depending on current state
-  pendingSelection.value = (isAlreadySelected) ? difference(pendingSelection.value, affectedGroups) : union(pendingSelection.value, affectedGroups)
+  state.pendingSelection = (isAlreadySelected) ? difference(state.pendingSelection, affectedGroups) : union(state.pendingSelection, affectedGroups)
 }
 
 function toggleFilterGroup (key) {
-  pendingSelection.value = pendingSelection.value.includes(key) ? pendingSelection.value.filter(k => k !== key) : [...pendingSelection.value, key]
+  state.pendingSelection = state.pendingSelection.includes(key) ? state.pendingSelection.filter(k => k !== key) : [...state.pendingSelection, key]
   const affectedGroups = []
   for (const cat of agendaStore.categories) {
     for (const area of cat) {
@@ -149,7 +154,7 @@ function toggleFilterGroup (key) {
     }
   }
   if (affectedGroups.length > 0) {
-    pendingSelection.value = (!pendingSelection.value.includes(key)) ? difference(pendingSelection.value, affectedGroups) : union(pendingSelection.value, affectedGroups)
+    state.pendingSelection = (!state.pendingSelection.includes(key)) ? difference(state.pendingSelection, affectedGroups) : union(state.pendingSelection, affectedGroups)
   }
 }
 
@@ -178,16 +183,16 @@ function toggleFilterGroup (key) {
     border-radius: 10px;
 
     &:nth-child(2) {
-      background-color: $teal-100;
+      background-color: $blue-100;
 
       .agenda-personalize-areamain {
         button {
-          color: $teal-600;
+          color: $blue-600;
         }
       }
 
       .agenda-personalize-groups {
-        background-color: lighten($teal-100, 7%);
+        background-color: lighten($blue-100, 7%);
       }
     }
     &:nth-child(3) {
@@ -274,9 +279,9 @@ function toggleFilterGroup (key) {
     }
 
     &.is-bof {
-      border-top: 1px dotted $pink-300;
-      border-bottom: 2px solid $pink-300;
-      border-right: 2px solid $pink-300;
+      border-top: 1px dotted $teal-300;
+      border-bottom: 2px solid $teal-300;
+      border-right: 2px solid $teal-300;
     }
 
     &.is-checked {
@@ -286,7 +291,7 @@ function toggleFilterGroup (key) {
 
     .badge {
       font-size: 10px;
-      background-color: $pink;
+      background-color: $teal;
       margin-left: 5px;
     }
   }

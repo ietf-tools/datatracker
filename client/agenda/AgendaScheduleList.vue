@@ -196,7 +196,8 @@ const state = reactive({
   showEventDetails: false,
   eventDetails: {},
   selectedColorPicker: null,
-  redhandOffset: 0
+  redhandOffset: 0,
+  currentMinute: 0
 })
 let redhandScheduler = null
 
@@ -207,10 +208,14 @@ const pickerModeActive = computed(() => {
 })
 
 const meetingEvents = computed(() => {
+  // Dummy state ref to trigger recompute on minute change:
+  state.currentMinute
+
   const meetingNumberInt = parseInt(agendaStore.meeting.number)
-  const current = DateTime.local().setZone(agendaStore.timezone)
+  const current = (agendaStore.nowDebugDiff ? DateTime.local().minus(agendaStore.nowDebugDiff) : DateTime.local()).setZone(agendaStore.timezone)
 
   return reduce(sortBy(agendaStore.scheduleAdjusted, 'adjustedStartDate'), (acc, item) => {
+    const isLive = current >= item.adjustedStart && current < item.adjustedEnd
     const itemTimeSlot = agendaStore.viewport > 600 ?
       `${item.adjustedStart.toFormat('HH:mm')} - ${item.adjustedEnd.toFormat('HH:mm')}` :
       `${item.adjustedStart.toFormat('HH:mm')} ${item.adjustedEnd.toFormat('HH:mm')}`
@@ -235,7 +240,7 @@ const meetingEvents = computed(() => {
         displayType: 'session-head',
         timeslot: itemTimeSlot,
         name: `${item.adjustedStart.toFormat('cccc')} ${item.name}`,
-        cssClasses: 'agenda-table-display-session-head'
+        cssClasses: 'agenda-table-display-session-head' + (isLive ? ' agenda-table-live' : '')
       })
     }
     acc.lastTypeName = `${item.type}-${item.name}`
@@ -349,7 +354,8 @@ const meetingEvents = computed(() => {
                 id: `lnk-${item.id}-audio-${rec.id}`,
                 label: rec.title,
                 icon: 'soundwave',
-                href: rec.url
+                href: rec.url,
+                color: 'teal'
               })
             } else if (rec.url.indexOf('youtu') > 0) {
               // -> Youtube
@@ -410,7 +416,8 @@ const meetingEvents = computed(() => {
         `agenda-table-display-event`,
         `agenda-table-status-${item.status}`,
         `agenda-table-type-${item.type}`,
-        item.note ? 'agenda-table-has-note' : ''
+        item.note ? 'agenda-table-has-note' : '',
+        isLive ? 'agenda-table-live' : ''
       ].join(' '),
       agenda: item.agenda,
       displayType: 'event',
@@ -507,19 +514,23 @@ function renderLinkIcon (opt) {
   return h('i', { class: `bi bi-${opt.icon} text-${opt.color}` })
 }
 
+function recalculateRedLine () {
+  state.currentMinute = DateTime.local().minute
+  const lastEventId = agendaStore.findCurrentEventId()
+
+  if (lastEventId) {
+    state.redhandOffset = document.getElementById(`agenda-rowid-${lastEventId}`)?.offsetTop || 0
+  } else {
+    state.redhandOffset = 0
+  }
+}
+
 // MOUNTED
 
 onMounted(() => {
   // -> Update Redhand Position
-  redhandScheduler = setInterval(() => {
-    const lastEventId = agendaStore.findCurrentEventId()
-
-    if (lastEventId) {
-      state.redhandOffset = document.getElementById(`agenda-rowid-${lastEventId}`)?.offsetTop || 0
-    } else {
-      state.redhandOffset = 0
-    }
-  }, 5000)
+  recalculateRedLine()
+  redhandScheduler = setInterval(recalculateRedLine, 5000)
 })
 
 // BEFORE UNMOUNT
@@ -559,6 +570,60 @@ onBeforeUnmount(() => {
       border-bottom: 7px solid transparent;
       border-left: 7px solid #F00;
       transform: translate(0,-6px);
+    }
+  }
+
+  &-live {
+    td:first-child {
+      position: relative;
+
+      &::after {
+        content: '';
+        display: block;
+        position: absolute;
+        width: 6px;
+        height: calc(100% + 2px);
+        left: -4px;
+        box-shadow: 0 0 10px 0 #F00;
+        top: -1px;
+        bottom: 0;
+        background-color: #FFF;
+        border: 3px solid #F00;
+        border-bottom: 0;
+        border-radius: 3px 3px 0 0;
+      }
+    }
+
+    & + .agenda-table-live {
+      td:first-child {
+        &::after {
+          border-top: none;
+          border-top-left-radius: 0;
+          border-top-right-radius: 0;
+        }
+      }
+    }
+
+    & + :not(.agenda-table-live) {
+      td:first-child {
+        position: relative;
+
+        &::after {
+          content: '';
+          display: block;
+          position: absolute;
+          width: 6px;
+          height: 4px;
+          left: -4px;
+          box-shadow: 0 0 10px 0 #F00;
+          top: -2px;
+          bottom: 0;
+          background-color: #FFF;
+          border: 3px solid #F00;
+          border-top: 0;
+          border-radius: 0 0 3px 3px;
+        }
+      }
     }
   }
 

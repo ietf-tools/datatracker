@@ -163,7 +163,7 @@ export const useAgendaStore = defineStore('agenda', {
       for(const sh of this.scheduleAdjusted) {
         if (sh.adjustedStart <= current && sh.adjustedEnd > current) {
           // -> Use the first event of multiple events having identical times
-          if (lastEvent.start === sh.adjustedStart.toMillis() && lastEvent.end === sh.adjustedEnd.toMillis()) {
+          if (lastEvent.start === sh.adjustedStart.toMillis()) {
             continue
           } else {
             lastEvent = {

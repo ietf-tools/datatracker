@@ -12,6 +12,7 @@ datatracker.sublime-workspace
 /.tmp
 /.vite
 /data
+/dist
 /docker/docker-compose.extend-custom.yml
 /env
 /ghostdriver.log

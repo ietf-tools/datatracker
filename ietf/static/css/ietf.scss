@@ -1038,3 +1038,22 @@ tr.position-recuse-row {
 #current-time {
     display: inline-block;
 }
+
+.agenda-switch {
+    background-color: lighten($gray-600, 15%);
+    padding: 5px 10px;
+    text-align: center;
+    color: #FFF;
+    font-size: .9rem;
+    font-weight: 500;
+
+    a {
+        color: #FFF;
+        text-shadow: 1px 1px 1px rgba(0,0,0,.4);
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}

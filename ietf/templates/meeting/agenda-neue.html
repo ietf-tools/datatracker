@@ -61,6 +61,12 @@
     z-index: 2000000000;
 }
 {% endblock %}
+{% block precontent %}
+    <div class="agenda-switch">
+        <i class="bi bi-arrow-left-right me-2"></i>
+        <a href="/meeting/{{ schedule.meeting.number }}/agenda">Switch to Legacy Agenda Display</a>
+    </div>
+{% endblock %}
 {% block content %}
     {% origin %}
     <div id="app-agenda"></div>

@@ -1,5 +1,5 @@
 <template lang="pug">
-n-drawer(v-model:show='isShown', placement='bottom', :height='drawerHeight')
+n-drawer(v-model:show='isShown', placement='bottom', :height='state.drawerHeight')
   n-drawer-content.agenda-calendar
     template(#header)
       span Calendar View
@@ -100,6 +100,7 @@ const agendaStore = useAgendaStore()
 
 const isShown = ref(false)
 const state = reactive({
+  drawerHeight: Math.round(window.innerHeight * .8),
   hoverMessage: '',
   hoverTime: '',
   hoverLocationRoom: '',
@@ -150,15 +151,15 @@ const calendarOptions = reactive({
     state.hoverLocationRoom = info.event.extendedProps.room
   }
 })
-const drawerHeight = Math.round(window.innerHeight * .8)
 
 // WATCHERS
 
 watch(() => agendaStore.calendarShown, (newValue) => {
-  isShown.value = newValue
   if (newValue) {
+    state.drawerHeight = window.innerHeight > 1000 ? 960 : window.innerHeight - 30
     refreshData()
   }
+  isShown.value = newValue
 })
 watch(isShown, (newValue) => {
   agendaStore.$patch({ calendarShown: newValue })
