@@ -280,9 +280,8 @@
                         {% else %}
                             {{ item.session.historic_group.acronym }}
                         {% endif %}
-                        <br>
                         {% if item.session.historic_group.historic_parent.acronym %}
-                            <span class="text-muted">{{ item.session.historic_group.historic_parent.acronym }}</span>
+                            <br><span class="text-muted">{{ item.session.historic_group.historic_parent.acronym }}</span>
                         {% endif %}
                     </div>
                 </td>
