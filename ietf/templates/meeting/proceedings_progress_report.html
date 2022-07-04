@@ -54,7 +54,7 @@
                 {% for rfc in rfcs %}
                     <tr>
                         <td class="text-nowrap">
-                            <a href="{{ rfc.doc.get_absolute_url }}">{{ rfc.doc.canonical_name|rfcspace|upper }}</a>
+                            <a href="{{ rfc.doc.get_absolute_url }}">{{ rfc.doc.canonical_name|prettystdname }}</a>
                         </td>
                         <td class="text-nowrap">{{ rfc.doc.intended_std_level.name }}</td>
                         <td>

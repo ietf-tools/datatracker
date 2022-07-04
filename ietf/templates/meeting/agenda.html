@@ -92,7 +92,7 @@
         <h2>
             Schedule
             {% if schedule.meeting.agenda_warning_note %}
-                <span class="badge bg-danger">
+                <span class="badge rounded-pill bg-danger">
                   {{ schedule.meeting.agenda_warning_note|removetags:"h1" |safe }}
                 </span>
             {% endif %}
@@ -102,6 +102,11 @@
     <h2 class="mt-3">
         {% if personalize %}Personalize{% endif %}
         Detailed Agenda
+        {% if schedule.meeting.agenda_warning_note %}
+            <span class="badge rounded-pill bg-danger">
+              {{ schedule.meeting.agenda_warning_note|removetags:"h1" |safe }}
+            </span>
+        {% endif %}
     </h2>
     {% if personalize %}
         <p>
@@ -167,7 +172,7 @@
                                         <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#floor-{{ floor.name|xslugify }}"
                                            class="float-end"
                                            title="{{ floor.name }}">
-                                            <span class="badge bg-secondary">{{ floor.short }}</span>
+                                            <span class="badge rounded-pill bg-secondary">{{ floor.short }}</span>
                                         </a>
                                     </div>
                                 {% endif %}
@@ -179,7 +184,7 @@
                         {% assignment_display_name item %}
                     {% end_agenda_anchor %}
                     {% if item.session.current_status == 'canceled' %}
-                        <span class="badge bg-danger float-end">CANCELLED</span>
+                        <span class="badge rounded-pill bg-danger float-end">CANCELLED</span>
                     {% else %}
                         {% if item.slot_type.slug == 'other' %}
                             {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
@@ -254,7 +259,7 @@
                                     <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#floor-{{ floor.name|xslugify }}"
                                        class="float-end"
                                        title="{{ floor.name }}">
-                                        <span class="badge bg-secondary">{{ floor.short }}</span>
+                                        <span class="badge rounded-pill bg-secondary">{{ floor.short }}</span>
                                     </a>
                                 </div>
                             {% endif %}
@@ -287,17 +292,17 @@
                 {% assignment_display_name item %}
             {% end_agenda_anchor %}
             {% if item.session.current_status == 'canceled' %}
-                <span class="badge bg-danger float-end">Cancelled</span>
+                <span class="badge rounded-pill bg-danger float-end">Cancelled</span>
             {% else %}
                 <div class="float-end ps-2">
                     {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
                 </div>
             {% endif %}
             {% if item.session.historic_group.state_id == "bof" %}
-                <span class="badge bg-success float-end me-2">BOF</span>
+                <span class="badge rounded-pill bg-success float-end me-2">BOF</span>
             {% endif %}
             {% if item.session.current_status == 'resched' %}
-                <div class="badge bg-danger float-end">
+                <div class="badge rounded-pill bg-danger float-end">
                     Rescheduled
                     {% if item.session.rescheduled_to %}
                         TO

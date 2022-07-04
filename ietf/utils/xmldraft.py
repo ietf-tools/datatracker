@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2021, All Rights Reserved
+# Copyright The IETF Trust 2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 import os
 import xml2rfc
@@ -6,8 +6,6 @@ import xml2rfc
 import debug  # pyflakes: ignore
 
 from contextlib import ExitStack
-
-from django.conf import settings
 
 from .draft import Draft
 
@@ -32,20 +30,15 @@ class XMLDraft(Draft):
     def parse_xml(filename):
         orig_write_out = xml2rfc.log.write_out
         orig_write_err = xml2rfc.log.write_err
-        orig_xml_library = os.environ.get('XML_LIBRARY', None)
         tree = None
         with ExitStack() as stack:
             @stack.callback
             def cleanup():  # called when context exited, even if there's an exception
                 xml2rfc.log.write_out = orig_write_out
                 xml2rfc.log.write_err = orig_write_err
-                os.environ.pop('XML_LIBRARY')
-                if orig_xml_library is not None:
-                    os.environ['XML_LIBRARY'] = orig_xml_library
 
             xml2rfc.log.write_out = open(os.devnull, 'w')
             xml2rfc.log.write_err = open(os.devnull, 'w')
-            os.environ['XML_LIBRARY'] = settings.XML_LIBRARY
 
             parser = xml2rfc.XmlRfcParser(filename, quiet=True)
             tree = parser.parse()

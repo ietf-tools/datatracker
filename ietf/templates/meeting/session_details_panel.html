@@ -10,7 +10,7 @@
                 {% if time.tzinfo.zone != "UTC" %}<span class="small">({{ time|utc|dateformat:"H:i T" }})</span>{% endif %}
             {% endfor %}
             {% if session.cancelled %}
-                <small class="badge bg-warning">Cancelled</small>
+                <small class="badge rounded-pill bg-warning">Cancelled</small>
             {% else %}
                 {{ session.status }}
             {% endif %}

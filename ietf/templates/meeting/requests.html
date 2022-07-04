@@ -15,10 +15,14 @@
             {% if meeting.venue_name %}– {{ meeting.venue_name }}{% endif %}
         </small>
     </h1>
-    {% regroup sessions by group.parent as area_sessions %}
+    {% regroup sessions by display_area as area_sessions %}
     {% for area in area_sessions %}
-        <h2 class="mt-5" id="{{ area.grouper.acronym }}">
-            {{ area.grouper.acronym|upper }} <small class="text-muted">{{ area.grouper.name }}</small>
+        <h2 class="mt-5" id="{% firstof area.grouper.acronym "other-groups" %}">
+            {% if area.grouper is not None %}
+                {{ area.grouper.acronym|upper }} <small class="text-muted">{{ area.grouper.name }}</small>
+            {% else %}
+                Other Groups
+            {% endif %}
         </h2>
         <p class="alert alert-info my-3">
             <b>No timeslot request received for:</b>
@@ -39,7 +43,7 @@
                 </tr>
             </thead>
             {% for session in area.list %}
-                {% ifchanged %}
+                {% ifchanged session.current_status_name %}
                     {% if not forloop.first %}</tbody>{% endif %}
                     <tbody>
                         <tr>

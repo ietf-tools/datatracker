@@ -8,11 +8,9 @@
         {% with doc.conflictdoc as conflictdoc %}
             <div class="row">
                 <div class="col-3 text-end fw-bold">Conflict review</div>
-                <div class="col">
+                <div class="col pe-5 me-5">
                     <div class="fw-bold">{{ doc.title }}</div>
-                    <a href="{{ doc.get_href }}" aria-label="Content">
-                        <i class="bi bi-file-earmark-fill"></i>
-                    </a>
+                    <a href="{{ doc.get_href }}" aria-label="Content"><i class="bi bi-file-earmark-fill"></i></a>
                     <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
                 </div>
             </div>
@@ -51,7 +49,7 @@
                         {% for ipr in conflictdoc.ipr %}
                             {% if ipr.disclosure.state_id == "posted" %}
                                 <div>
-                                    <a href="/ipr/{{ ipr.disclosure.id }}/">{{ ipr.disclosure.title }}</a>
+                                    <a href="{% url 'ietf.ipr.views.show' id=ipr.disclosure.id %}">{{ ipr.disclosure.title }}</a>
                                 </div>
                             {% endif %}
                         {% endfor %}

@@ -56,7 +56,7 @@
                 </td>
                 <td>
                     <span class="{% if group.state.name|slugify == 'active' %}text-success{% elif group.state.name|slugify == 'concluded' %}text-danger{% endif %}">{{ group.state.name }}</span>
-                    {% if requested_close %}<div class="badge bg-info">Being closed</div>{% endif %}
+                    {% if requested_close %}<div class="badge rounded-pill bg-info">Being closed</div>{% endif %}
                 </td>
             </tr>
             {% if group.features.has_chartering_process %}
@@ -69,7 +69,7 @@
                             <a href="{% url "ietf.doc.views_doc.document_main" name=group.charter.name %}">
                                 {{ group.charter.name }}-{{ group.charter.rev }}</a>
                             {% if group.charter.get_state.name %}
-                                <span class="badge bg-info">{{ group.charter.get_state.name }}</span>
+                                <span class="badge rounded-pill bg-info">{{ group.charter.get_state.name }}</span>
                             {% endif %}
                         {% else %}
                             <span class="text-muted">(None)</span>
@@ -101,7 +101,7 @@
                                href="{% url "ietf.group.views.group_about_status" acronym=group.acronym %}">
                                 Show
                             </a>
-                            <span class="badge bg-secondary">
+                            <span class="badge rounded-pill bg-secondary">
                                 Changed {{ status_update.time|date:"Y-m-d" }}
                             </span>
                         {% else %}

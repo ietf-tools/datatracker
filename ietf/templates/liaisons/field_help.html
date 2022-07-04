@@ -25,7 +25,7 @@
             <a href="/liaison/help/from_ietf/">Liaison statements from the IETF: guidelines for completing the "Cc:" field</a>
         </li>
         <li>
-            <a href="/wg/">Active IETF working groups</a>
+            <a href="{% url 'ietf.group.views.active_groups' group_type='wg' %}">Active IETF working groups</a>
         </li>
         <li>
             <a href="https://www.ietf.org/liaison/managers.html">IETF liaison managers</a>
@@ -34,7 +34,7 @@
     <p>
         For definitive information on generating liaison statements, please
         see
-        <a href="{{ "4053"|rfcurl }}">RFC 4053 (BCP 103) "Procedures for Handling Liaison Statements to and from the IETF."</a>
+        <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc4053' %}">RFC 4053 (BCP 103) "Procedures for Handling Liaison Statements to and from the IETF."</a>
     </p>
     <table class="table table-sm table-striped tablesorter">
         <thead>
