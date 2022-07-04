@@ -271,13 +271,7 @@
                         {% end_location_anchor %}
                     {% endif %}
                 </td>
-{% comment %}
                 <td>
-                    {% if item.session.historic_group.historic_parent.acronym %}
-                        <div class="d-none d-sm-block">{{ item.session.historic_group.historic_parent.acronym }}</div>
-                    {% endif %}
-                </td>
-{% endcomment %}                <td>
                     <div class="d-none d-sm-block">
                         {% if item.session.historic_group %}
                             <a href="{% url 'ietf.group.views.group_about' acronym=item.session.historic_group.acronym %}">
