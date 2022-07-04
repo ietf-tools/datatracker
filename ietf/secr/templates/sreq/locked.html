@@ -12,7 +12,7 @@
 {% endblock %}
 
 {% block content %}
-    <p>&raquo; <a href="/meeting/requests">View list of timeslot requests</a></p>
+    <p>&raquo; <a href="{% url 'ietf.meeting.views.meeting_requests' %}">View list of timeslot requests</a></p>
     <div class="module interim-container">
         <h2>Sessions - Status</h2>
 

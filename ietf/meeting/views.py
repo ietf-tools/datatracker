@@ -515,8 +515,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         capped_max_d = min(max_duration, datetime.timedelta(hours=4))
         capped_timedelta = min(max(capped_min_d, timedelta), capped_max_d)
 
-        min_d_css_rems = 4
-        max_d_css_rems = 6
+        min_d_css_rems = 5
+        max_d_css_rems = 7
         # interpolate
         scale = (capped_timedelta - capped_min_d) / (capped_max_d - capped_min_d) if capped_min_d != capped_max_d else 1
         return min_d_css_rems + (max_d_css_rems - min_d_css_rems) * scale
@@ -2137,15 +2137,18 @@ def agenda_json(request, num=None):
 
 def meeting_requests(request, num=None):
     meeting = get_meeting(num)
-    sessions = Session.objects.requests().filter(
-        meeting__number=meeting.number,
-        group__parent__isnull=False
-    ).with_current_status().with_requested_by().exclude(
-        requested_by=0
-    ).order_by(
-        "group__parent__acronym", "current_status", "group__acronym"
-    ).prefetch_related(
-        "group","group__ad_role__person"
+    groups_to_show = Group.objects.filter(state_id='active', type__features__has_meetings=True)
+    sessions = list(
+        Session.objects.requests().filter(
+            meeting__number=meeting.number,
+            group__in=groups_to_show,
+        ).exclude(
+            purpose__in=('admin', 'social'),
+        ).with_current_status().with_requested_by().exclude(
+            requested_by=0
+        ).prefetch_related(
+            "group","group__ad_role__person"
+        )
     )
 
     status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
@@ -2154,12 +2157,34 @@ def meeting_requests(request, num=None):
     for s in sessions:
         s.current_status_name = status_names.get(s.current_status, s.current_status)
         s.requested_by_person = session_requesters.get(s.requested_by)
+        if s.group.parent and s.group.parent.type.slug == 'area':
+            s.display_area = s.group.parent
+        else:
+            s.display_area = None
+    sessions.sort(
+        key=lambda s: (
+            s.display_area.acronym if s.display_area is not None else 'zzzz',
+            s.current_status,
+            s.group.acronym,
+        ),
+    )
 
-    groups_not_meeting = Group.objects.filter(state='Active',type__in=['wg','rg','ag','rag','bof','program']).exclude(acronym__in = [session.group.acronym for session in sessions]).order_by("parent__acronym","acronym").prefetch_related("parent")
+    groups_not_meeting = groups_to_show.exclude(
+        acronym__in = [session.group.acronym for session in sessions]
+    ).order_by(
+        "parent__acronym",
+        "acronym",
+    ).prefetch_related("parent")
 
-    return render(request, "meeting/requests.html",
-        {"meeting": meeting, "sessions":sessions,
-         "groups_not_meeting": groups_not_meeting})
+    return render(
+        request,
+        "meeting/requests.html",
+        {
+            "meeting": meeting,
+            "sessions": sessions,
+            "groups_not_meeting": groups_not_meeting,
+        },
+    )
 
 
 def get_sessions(num, acronym):

@@ -21,7 +21,7 @@
             {% for stream in streams %}
                 <tr>
                     <td>
-                        <a href="/stream/{{ stream.acronym }}/">{{ stream.acronym }}</a>
+                        <a href="{% url 'ietf.group.views.stream_documents' acronym=stream.acronym %}">{{ stream.acronym }}</a>
                     </td>
                     <td>{{ stream.name }}</td>
                     <td>

@@ -24,13 +24,13 @@
                 <small class="text-muted">{{ t.pages }} page{{ t.pages|pluralize }}</small>
             </h2>
             <div class="buttonlist">
-                <a class="btn btn-primary" role="button" href="/iesg/agenda/">
+                <a class="btn btn-primary" role="button" href="{% url 'ietf.iesg.views.agenda' %}">
                     <i class="bi bi-list"></i>
                     Full IESG agenda
                 </a>
                 <a class="btn btn-primary"
                    role="button"
-                   href="/iesg/agenda/telechat-{{ t.date|date:'Y' }}-{{ t.date|date:'m' }}-{{ t.date|date:'d' }}-docs.tgz">
+                   href="{% url 'ietf.iesg.views.telechat_docs_tarfile' date=t.date %}">
                     <i class="bi bi-download"></i>
                     Download documents
                 </a>

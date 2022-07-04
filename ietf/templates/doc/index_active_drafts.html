@@ -38,7 +38,7 @@
                         {{ a }}{% if not forloop.last %}, {% else %}.{% endif %}
                     {% endfor %}
                     <br>
-                    <a href="/doc/{{ d.name }}/">{{ d.name }}-{{ d.rev }}</a>
+                    <a href="{% url 'ietf.doc.views_doc.document_main' name=d.name rev=d.rev %}">{{ d.name }}-{{ d.rev }}</a>
                     <br>
                     {{ d.rev_time|date:"Y-m-d" }}
                 </div>

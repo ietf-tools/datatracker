@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -460,7 +460,7 @@ def by_draft_txt(request):
 
 def by_draft_recursive_txt(request):
     """Returns machine-readable list of IPR disclosures by draft name, recursive.
-    NOTE: this view is expensive and should be removed once tools.ietf.org is retired,
+    NOTE: this view is expensive and should be removed _after_ tools.ietf.org is retired,
     including util function and management commands that generate the content for
     this view."""
 

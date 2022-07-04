@@ -456,8 +456,6 @@ class Room(models.Model):
         mtg_num = self.meeting.get_number()
         if not mtg_num:
             return None
-        elif mtg_num <= settings.FLOORPLAN_LAST_LEGACY_MEETING:
-            base_url = settings.FLOORPLAN_LEGACY_BASE_URL.format(meeting=self.meeting)
         elif self.floorplan:
             base_url = urlreverse('ietf.meeting.views.floor_plan', kwargs=dict(num=mtg_num))
         else:

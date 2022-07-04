@@ -10,9 +10,9 @@ Document date:	{{ submission.document_date|date:"Y-m-d" }}
 Group:		{{ group }}
 Pages:		{{ submission.pages }}
 URL:            {{ settings.IETF_ID_ARCHIVE_URL }}{{ submission.name }}-{{ submission.rev }}.txt
-Status:         https://datatracker.ietf.org/doc/{{ submission.name }}/{% if submission.xml_version == "3" %}
+Status:         {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.doc.views_doc.document_main' name=submission.name %}{% if submission.xml_version == "3" %}
 Html:           {{ settings.IETF_ID_ARCHIVE_URL }}{{ submission.name }}-{{ submission.rev }}.html{% endif %}
-Htmlized:       https://datatracker.ietf.org/doc/html/{{ submission.name }}
+Htmlized:       {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.doc.views_doc.document_html' name=submission.name %}
 {% if submission.rev != "00" %}Diff:           {{rfcdiff_base_url}}?url2={{ submission.name }}-{{ submission.rev }}{% endif %}
 
 Abstract:

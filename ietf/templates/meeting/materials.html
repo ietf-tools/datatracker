@@ -32,7 +32,7 @@
                     </a>
                 {% endif %}
             {% endif %}
-            <a class="btn btn-primary" href="/meeting/{{ meeting.number }}/requests">Meeting requests/conflicts</a>
+            <a class="btn btn-primary" href="{% url 'ietf.meeting.views.meeting_requests' num=meeting.number %}">Meeting requests/conflicts</a>
         </p>
         {% include 'meeting/proceedings/materials_table.html' with meeting=meeting proceedings_materials=proceedings_materials user=user only %}
         {% with "True" as show_agenda %}
