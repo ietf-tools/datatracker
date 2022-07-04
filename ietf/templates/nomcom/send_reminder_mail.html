@@ -39,13 +39,14 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <!-- [html-validate-disable-block input-missing-label -- labelled via aria-label] -->
                     {% for nominee in nominees %}
                         <tr>
                             <td>
-                                <label class="d-none" aria-label="{{ nominee.name }}" for="id-{{ nominee.id }}"></label>
                                 <input type="checkbox"
                                        class="batch-select form-check-input"
                                        id="id-{{ nominee.id }}"
+                                       aria-label="{{ nominee.name }}"
                                        value="{{ nominee.id }}"
                                        name="selected"
                                        checked>

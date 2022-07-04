@@ -8,6 +8,7 @@
       action="{% url "ietf.liaisons.views.liaison_list" state=state %}"
       method="get">
     <div class="input-group search_field my-3">
+        <!-- [html-validate-disable-block input-missing-label -- labelled via aria-label] -->
         {{ form.text|add_class:"form-control"|attr:"placeholder:Title, body, identifiers, etc."|attr:"aria-label:Liaison search" }}
         <button class="btn btn-primary" type="submit">
             <i class="bi bi-search"></i>

@@ -104,15 +104,16 @@
                                 </tr>
                             {% endif %}
                             <tr>
+                                <!-- [html-validate-disable-block input-missing-label -- labelled via aria-label] -->
                                 <td>{{ form.instance.time|date:"r" }}{{ form.id }}</td>
                                 {% for choice in form.type.field.choices %}
                                     <td class="text-center">
-                                        <label class="d-none" aria-label="{{ choice.1 }}" for="{{ choice.1|slugify }}"></label>
                                         <input type="radio"
                                                class="form-check-input"
                                                name="{{ form.type.html_name }}"
                                                value="{{ choice.0 }}"
                                                id="{{ choice.1|slugify }}"
+                                               aria-label="{{ choice.1 }}"
                                                {% if not choice.0 %}checked{% endif %}
                                                title="{{ choice.1 }}">
                                     </td>

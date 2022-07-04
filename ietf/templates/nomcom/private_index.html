@@ -171,15 +171,16 @@
                 </tr>
             </thead>
             <tbody>
+                <!-- [html-validate-disable-block input-missing-label -- labelled via aria-label] -->
                 {% for np in nominee_positions %}
                     <tr>
                         {% if is_chair and nomcom.group.state_id == 'active' %}
                             <td>
-                                <label class="d-none" aria-label="np.nominee.name" for="id-{{ np.id }}"></label>
                                 <input class="batch-select form-check-input"
                                        type="checkbox"
                                        value="{{ np.id }}"
                                        id="id-{{ np.id }}"
+                                       aria-label="np.nominee.name"
                                        name="selected">
                             </td>
                             <td class="edit">

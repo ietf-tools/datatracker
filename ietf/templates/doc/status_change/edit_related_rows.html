@@ -1,9 +1,9 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% origin %}
+ <!-- [html-validate-disable-block input-missing-label -- labelled via aria-label] -->
 {% for rfc,choice_slug in form.relations.items %}
     <div class="input-group mb-3">
-        <label for="new_relation_row_{{ rfc }}" aria-label="Enter new affected RFC"></label>
         <select class="form-control select2-field"
                 data-ajax--url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='document' doc_type='draft' %}"
                 data-max-entries="1"
@@ -11,13 +11,16 @@
                 data-result-key="text"
                 name="new_relation_row_{{ rfc }}"
                 id="new_relation_row_{{ rfc }}"
+                aria-label="Enter new affected RFC"
                 data-placeholder="Enter new affected RFC.">
             <option id="{{ rfc|upper }}" selected>
                 {{ rfc|upper }}
             </option>
         </select>
-        <label for="statchg_relation_row_{{ rfc }}" aria-label="Select proposed new status"></label>
-        <select class="form-select" name="statchg_relation_row_{{ rfc }}" id="statchg_relation_row_{{ rfc }}">
+        <select class="form-select"
+                aria-label="Select proposed new status"
+                name="statchg_relation_row_{{ rfc }}"
+                id="statchg_relation_row_{{ rfc }}">
             <option {% if choice_slug == "" %}selected{% endif %}>
                 (None)
             </option>
@@ -32,9 +35,9 @@
     </div>
 {% endfor %}
 <div class="input-group mb-3 new-relation-row">
-    <label for="new_relation_row_rfc" aria-label="Enter new affected RFC"></label>
     <select name="new_relation_row_"
             id="new_relation_row_rfc"
+            aria-label="Enter new affected RFC"
             class="form-control select2-field"
             data-ajax--url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='docalias' doc_type='draft' %}"
             data-result-key="text"
@@ -42,8 +45,10 @@
             data-width="resolve"
             data-placeholder="Enter new affected RFC.">
     </select>
-    <label for="statchg_relation_row" aria-label="Select proposed new status"></label>
-    <select id="statchg_relation_row" class="form-select" name="statchg_relation_row_">
+    <select id="statchg_relation_row"
+            class="form-select"
+            aria-label="Select proposed new status"
+            name="statchg_relation_row_">
         <option {% if choice_slug == "" %}selected{% endif %}>
             (Select proposed new status.)
         </option>

@@ -51,10 +51,11 @@
             <label id="reqtime" class="fw-bold col-sm-2 col-form-label">Request time:</label>
             <div class="col-sm-10">
                 <div class="input-group">
-                    <label class="d-none" for="from" aria-label="Request time, from"></label>
+                    <!-- [html-validate-disable-block input-missing-label -- labelled via aria-label] -->
                     <input class="form-control"
                            type="text"
                            name="from"
+                           aria-label="Request time, from"
                            id="from"
                            value="{{ from_date }}"
                            data-provide="datepicker"
@@ -64,10 +65,10 @@
                            data-date-end-date="{{ today.isoformat }}"
                            data-date-start-view="months">
                     <span class="input-group-text" id="basic-addon2">&mdash;</span>
-                    <label class="d-none" for="to" aria-label="Request time, to"></label>
                     <input class="form-control"
                            type="text"
                            name="to"
+                           aria-label="Request time, to"
                            id="to"
                            value="{{ to_date }}"
                            data-provide="datepicker"
