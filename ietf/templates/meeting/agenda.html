@@ -120,7 +120,6 @@
                 <th scope="col"></th>
                 <th scope="col" data-sort="loc"></th>
                 <th scope="col" data-sort="group"></th>
-                <th scope="col" data-sort="area"></th>
                 <th scope="col" data-sort="desc"></th>
             </tr>
         </thead>
@@ -128,7 +127,7 @@
             {% for item in filtered_assignments %}
                 {% ifchanged item.timeslot.time|date:"Y-m-d" %}
                     <tr class="table-primary show-with-children">
-                        <th scope="col" colspan="{% if personalize %}6{% else %}5{% endif %}"
+                        <th scope="col" colspan="{% if personalize %}5{% else %}4{% endif %}"
                             id="slot-{{ item.timeslot.time|slugify }}"
                             class="nav-heading">
                             {{ item.timeslot.time|date:"l, F j, Y" }}
@@ -159,7 +158,7 @@
                             </td>
                         {% endif %}
                         <td class="text-end">{% include "meeting/timeslot_start_end.html" %}</td>
-                        <td colspan="3">
+                        <td colspan="2">
                             {% if item.timeslot.show_location and item.timeslot.location %}
                                 {% location_anchor item.timeslot %}
                                 {{ item.timeslot.get_html_location }}
@@ -211,7 +210,7 @@
                         data-slot-end-ts="{{ item.end_timestamp }}">
                         {% if personalize %}<th scope="row" class="text-center"></th>{% endif %}
                         <th scope="row" class="text-end">{% include "meeting/timeslot_start_end.html" %}</th>
-                        <th scope="row" colspan="4">
+                        <th scope="row" colspan="3">
                             {{ item.timeslot.time|date:"l" }}
                             {{ item.timeslot.name|capfirst_allcaps }}
                         </th>
@@ -244,7 +243,7 @@
                     {% endif %}
                     {% if item.slot_type.slug == 'plenary' %}
                         <td class="text-end">{% include "meeting/timeslot_start_end.html" %}</td>
-                        <td colspan="3">
+                        <td colspan="2">
                             {% if item.timeslot.show_location and item.timeslot.location %}
                                 {% location_anchor item.timeslot %}
                                 {{ item.timeslot.get_html_location }}
@@ -272,25 +271,29 @@
                         {% end_location_anchor %}
                     {% endif %}
                 </td>
+{% comment %}
                 <td>
                     {% if item.session.historic_group.historic_parent.acronym %}
                         <div class="d-none d-sm-block">{{ item.session.historic_group.historic_parent.acronym }}</div>
                     {% endif %}
                 </td>
-                <td>
-                    {% if item.session.historic_group %}
-                        <a href="{% url 'ietf.group.views.group_about' acronym=item.session.historic_group.acronym %}">
+{% endcomment %}                <td>
+                    <div class="d-none d-sm-block">
+                        {% if item.session.historic_group %}
+                            <a href="{% url 'ietf.group.views.group_about' acronym=item.session.historic_group.acronym %}">
+                                {{ item.session.historic_group.acronym }}
+                            </a>
+                        {% else %}
                             {{ item.session.historic_group.acronym }}
-                        </a>
-                    {% else %}
-                        {{ item.session.historic_group.acronym }}
-                    {% endif %}
+                        {% endif %}
+                        <br>
+                        {% if item.session.historic_group.historic_parent.acronym %}
+                            <span class="text-muted">{{ item.session.historic_group.historic_parent.acronym }}</span>
+                        {% endif %}
+                    </div>
                 </td>
             {% endif %}
             <td>
-                {% agenda_anchor item.session %}
-                {% assignment_display_name item %}
-            {% end_agenda_anchor %}
             {% if item.session.current_status == 'canceled' %}
                 <span class="badge rounded-pill bg-danger float-end">Cancelled</span>
             {% else %}
@@ -298,8 +301,23 @@
                     {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
                 </div>
             {% endif %}
+                <div class="d-sm-none">
+                    {% if item.session.historic_group %}
+                        <a href="{% url 'ietf.group.views.group_about' acronym=item.session.historic_group.acronym %}">
+                            {{ item.session.historic_group.acronym }}</a>
+                    {% else %}
+                        {{ item.session.historic_group.acronym }}
+                    {% endif %}
+                    {% if item.session.historic_group.historic_parent.acronym %}
+                        <span class="text-muted">{{ item.session.historic_group.historic_parent.acronym }}</span>
+                    {% endif %}
+                </div>
+
+                {% agenda_anchor item.session %}
+                {% assignment_display_name item %}
+            {% end_agenda_anchor %}
             {% if item.session.historic_group.state_id == "bof" %}
-                <span class="badge rounded-pill bg-success float-end me-2">BOF</span>
+                <span class="badge rounded-pill bg-success float-end">BOF</span>
             {% endif %}
             {% if item.session.current_status == 'resched' %}
                 <div class="badge rounded-pill bg-danger float-end">
@@ -326,7 +344,7 @@
                 </a>
             {% elif item.session.agenda_note %}
                 <br>
-                <span class="text-danger">{{ item.session.agenda_note }}</span>
+                <span class="text-danger small">{{ item.session.agenda_note }}</span>
             {% endif %}
         </td>
     </tr>

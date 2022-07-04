@@ -35,8 +35,9 @@ As long as id_suffix is different, should allow for as many copies of the widget
            value="UTC">
     <label class="btn btn-outline-primary" for="utc-timezone{{ suffix }}">UTC</label>
     {% if not minimal %}
-        <label aria-label="Select timezone" class="d-none" for="timezone-select{{ id_suffix }}"></label>
+        <!-- [html-validate-disable-block input-missing-label -- labelled via aria-label] -->
         <select id="timezone-select{{ suffix }}"
+                aria-label="Select timezone"
                 class="tz-select select2-field form-select border-primary"
                 data-max-entries="1" data-minimum-input-length="0">
             {# Avoid blank while loading. JavaScript replaces the option list after init. #}
