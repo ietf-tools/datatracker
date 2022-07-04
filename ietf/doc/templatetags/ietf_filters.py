@@ -17,6 +17,7 @@ from django.utils.encoding import force_str # pyflakes:ignore force_str is used 
 from django.urls import reverse as urlreverse
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from django.urls import NoReverseMatch
 
 import debug                            # pyflakes:ignore
 
@@ -200,10 +201,13 @@ def link_non_charter_doc_match(match):
     if not cname:
         return match[0]
     if name == cname:
-        url = urlreverse(
-            "ietf.doc.views_doc.document_main",
-            kwargs=dict(name=cname, rev=rev_split.group(2)),
-        )
+        try:
+            url = urlreverse(
+                "ietf.doc.views_doc.document_main",
+                kwargs=dict(name=cname, rev=rev_split.group(2)),
+            )
+        except NoReverseMatch:
+            return match[0]
         return f'<a href="{url}">{match[0]}</a>'
 
     # if we get here, we can't linkify

@@ -43,7 +43,7 @@ bleach_linker = bleach.Linker(
 )
 
 tags = copy.copy(bleach.sanitizer.ALLOWED_TAGS)
-tags.remove("a")
+# tags.remove("a")
 bleach_cleaner = bleach.sanitizer.Cleaner(tags=tags, protocols=protocols)
 
 
