@@ -65,23 +65,24 @@ to answer all of them.
    to be handed off to the responsible Area Director?
 
 10. Several IETF Areas have assembled [lists of common issues that their
-    reviewers encounter][6]. For which areas have such issues been identified and addressed?
-    For which does this still need to happen in subsequent reviews?
+    reviewers encounter][6]. For which areas have such issues been identified
+    and addressed? For which does this still need to happen in subsequent
+    reviews?
 
 11. What type of RFC publication is being requested on the IETF stream ([Best
     Current Practice][12], [Proposed Standard, Internet Standard][13],
     [Informational, Experimental or Historic][14])? Why is this the proper type
     of RFC? Do all Datatracker state attributes correctly reflect this intent?
 
-12. Have reasonable efforts been made to remind all authors of the intellectual 
-    property rights (IPR) disclosure obligations described in [BCP 79][8]?
-    To the best of your knowledge, have all required disclosures been filed?
-    If not, explain why. If yes, summarize any relevant discussion, including
-    links to publicly-available messages when applicable.
+12. Have reasonable efforts been made to remind all authors of the intellectual
+    property rights (IPR) disclosure obligations described in [BCP 79][8]? To
+    the best of your knowledge, have all required disclosures been filed? If
+    not, explain why. If yes, summarize any relevant discussion, including links
+    to publicly-available messages when applicable.
 
-13. Has each author, editor, and contributor shown their willingness to be listed
-    as such? If the total number of authors and editors on the front page is
-    greater than five, please provide a justification.
+13. Has each author, editor, and contributor shown their willingness to be
+    listed as such? If the total number of authors and editors on the front page
+    is greater than five, please provide a justification.
 
 14. Document any remaining I-D nits in this document. Simply running the [idnits
     tool][8] is not enough; please review the ["Content Guidelines" on
@@ -95,9 +96,9 @@ to answer all of them.
     the community have sufficient access to review any such normative
     references?
 
-17. Are there any normative downward references (see [RFC 3967][9] and
-    [BCP 97][10]) that are not already listed in the [DOWNREF registry][17]?
-    If so, list them.
+17. Are there any normative downward references (see [RFC 3967][9] and [BCP
+    97][10]) that are not already listed in the [DOWNREF registry][17]? If so,
+    list them.
 
 18. Are there normative references to documents that are not ready to be
     submitted to the IESG for publication or are otherwise in an unclear state?
