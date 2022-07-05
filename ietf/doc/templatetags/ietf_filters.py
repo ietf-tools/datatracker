@@ -234,19 +234,19 @@ def urlize_ietf_docs(string, autoescape=None):
         else:
             string = mark_safe(string)
     string = re.sub(
-        r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d{2}(?:-\d{2}))(\.(?:txt|ps|pdf|html))?\b",
+        r"\b(?<![/\-:=#\"\'])(charter-(?:[\d\w\.+]+-)*)(\d{2}(?:-\d{2}))(\.(?:txt|ps|pdf|html))?\b",
         link_charter_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
     string = re.sub(
-        r"\b(?<![/\-:=#])((?:draft-|bofreq-|conflict-review-|status-change-)[\d\w\.+-]+(?![-@]))",
+        r"\b(?<![/\-:=#\"\'])((?:draft-|bofreq-|conflict-review-|status-change-)[\d\w\.+-]+(?![-@]))",
         link_non_charter_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
     string = re.sub(
-        r"\b(?<![/\-:=#])((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
+        r"\b(?<![/\-:=#\"\'])((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
         link_other_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,

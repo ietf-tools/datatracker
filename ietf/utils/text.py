@@ -26,6 +26,8 @@ validate_url = URLValidator()
 
 
 def check_url_validity(attrs, new=False):
+    if (None, 'href') not in attrs:
+        return None
     url = attrs[(None, 'href')]
     try:
         if url.startswith("http"):
