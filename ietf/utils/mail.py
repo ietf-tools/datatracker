@@ -183,6 +183,7 @@ def send_mail(request, to, frm, subject, template, context, *args, **kwargs):
     The body is a text/plain rendering of the template with the context.
     extra is a dict of extra headers to add.
     '''
+    context["settings"] = settings
     txt = render_to_string(template, context, request=request)
     return send_mail_text(request, to, frm, subject, txt, *args, **kwargs)
 
