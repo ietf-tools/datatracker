@@ -182,6 +182,8 @@ def link_charter_doc_match(match):
 
 def link_non_charter_doc_match(match):
     name = match[0]
+    # handle "I-D.*"" reference-style matches
+    name = re.sub(r"^i-d\.(.*)", r"draft-\1", name, flags=re.IGNORECASE)
     cname = doc_canonical_name(name)
     if not cname:
         return match[0]
@@ -240,7 +242,7 @@ def urlize_ietf_docs(string, autoescape=None):
         flags=re.IGNORECASE | re.ASCII,
     )
     string = re.sub(
-        r"\b(?<![/\-:=#\"\'])((?:draft-|bofreq-|conflict-review-|status-change-)[\d\w\.+-]+(?![-@]))",
+        r"\b(?<![/\-:=#\"\'])((?:draft-|i-d\.|bofreq-|conflict-review-|status-change-)[\d\w\.+-]+(?![-@]))",
         link_non_charter_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
