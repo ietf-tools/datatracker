@@ -126,7 +126,7 @@
         <div class="card-body">
             {% if doc.rev and content != None %}
                 {% if content_is_html %}
-                    {{ content|sanitize|safe }}
+                    {{ content }}
                 {% else %}
                     <pre>{{ content|maybewordwrap|urlize_ietf_docs|linkify }}</pre>
                 {% endif %}

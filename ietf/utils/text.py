@@ -22,6 +22,7 @@ from .texescape import init as texescape_init, tex_escape_map
 tlds_sorted = sorted(tlds.tld_set, key=len, reverse=True)
 protocols = copy.copy(bleach.sanitizer.ALLOWED_PROTOCOLS)
 protocols.append("ftp")  # we still have some ftp links
+protocols.append("xmpp")  # we still have some xmpp links
 validate_url = URLValidator()
 
 
@@ -44,9 +45,17 @@ bleach_linker = bleach.Linker(
     parse_email=True
 )
 
-tags = copy.copy(bleach.sanitizer.ALLOWED_TAGS)
-# tags.remove("a")
-bleach_cleaner = bleach.sanitizer.Cleaner(tags=tags, protocols=protocols)
+tags = (
+    'a', 'abbr', 'acronym', 'address', 'b', 'big',
+    'blockquote', 'body', 'br', 'caption', 'center', 'cite', 'code', 'col',
+    'colgroup', 'dd', 'del', 'dfn', 'dir', 'div', 'dl', 'dt', 'em', 'font',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'hr', 'html', 'i', 'ins', 'kbd',
+    'li', 'ol', 'p', 'pre', 'q', 's', 'samp', 'small', 'span', 'strike', 'style',
+    'strong', 'sub', 'sup', 'table', 'title', 'tbody', 'td', 'tfoot', 'th', 'thead',
+    'tr', 'tt', 'u', 'ul', 'var'
+)
+
+bleach_cleaner = bleach.sanitizer.Cleaner(tags=tags, protocols=protocols, strip=True)
 
 
 @keep_lazy(str)

@@ -17,14 +17,7 @@ from django import forms
 from django.utils.functional import keep_lazy
 
 from ietf.utils.mime import get_mime_type
-
-acceptable_tags = ('a', 'abbr', 'acronym', 'address', 'b', 'big',
-    'blockquote', 'body', 'br', 'caption', 'center', 'cite', 'code', 'col',
-    'colgroup', 'dd', 'del', 'dfn', 'dir', 'div', 'dl', 'dt', 'em', 'font',
-    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'hr', 'html', 'i', 'ins', 'kbd',
-    'li', 'ol', 'p', 'pre', 'q', 's', 'samp', 'small', 'span', 'strike', 'style',
-    'strong', 'sub', 'sup', 'table', 'title', 'tbody', 'td', 'tfoot', 'th', 'thead',
-    'tr', 'tt', 'u', 'ul', 'var')
+from ietf.utils.text import bleach_cleaner, tags as acceptable_tags
 
 acceptable_protocols = ['http', 'https', 'mailto', 'xmpp', ]
 
@@ -45,8 +38,6 @@ def remove_tags(html, tags):
 
 # ----------------------------------------------------------------------
 # Html fragment cleaning
-
-bleach_cleaner = bleach.sanitizer.Cleaner(tags=acceptable_tags, protocols=acceptable_protocols, strip=True)
 
 def sanitize_fragment(html):
     return bleach_cleaner.clean(html)
