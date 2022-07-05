@@ -79,24 +79,18 @@ h2,
 h3,
 h4,
 h5,
-h6,
-.h1,
-.h2,
-.h3,
-.h4,
-.h5,
-.h6 {
+h6 {
     font-weight: bold;
     white-space: pre;
     font-family: var(--bs-font-monospace);
     font-size: 1em;
+    display: inline;
 }
 
 .rfcmarkup {
 
-    .header,
-    .footer,
-    .divider {
+    .grey,
+    hr {
         opacity: $hr-opacity;
 
     }
