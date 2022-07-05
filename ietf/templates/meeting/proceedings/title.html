@@ -27,10 +27,10 @@ This renders the title block for the meeting proceedings page.
     {% with hosts=meeting.meetinghosts.all %}
         {% if hosts.exists %}
             <div class="proceedings-column">
-                <div class="proceedings-row lead">
+                <div class="proceedings-row">
                     Hosted by:
                     {% for host in hosts %}
-                        <div class="host-logo img-fluid">
+                        <div class="host-logo">
                             <img class="host{{ forloop.counter }}"
                                  src="{% url 'ietf.meeting.views_proceedings.meetinghost_logo' num=meeting.number host_id=host.pk %}"
                                  height="{{ host.logo_height }}"
