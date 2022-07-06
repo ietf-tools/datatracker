@@ -8,6 +8,9 @@
 #deps-modal .modal-body {
 height: 100vh;
 }
+#deps-modal .modal-body svg a {
+    text-decoration: none;
+}
 {% endblock %}
 {% block group_content %}
     {% origin %}
@@ -148,6 +151,7 @@ height: 100vh;
                                             <small class="text-muted">Pan and zoom the dependency
                                                 graph after the layout settles.</small>
                                         </div>
+                                        <a href="#" id="download-svg" data-group="{{ group.acronym }}" class="btn btn-primary disabled"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...</a>
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                                     </div>
                                 </div>

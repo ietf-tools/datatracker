@@ -1,6 +1,8 @@
-const line_height = 16; // FIXME: get from bs5
-const font = `${line_height - 2}px sans-serif`;
 const style = getComputedStyle(document.body);
+const font_size = parseFloat(style.fontSize);
+const line_height = font_size + 2;
+const font_family = style.getPropertyValue("--bs-body-font-family");
+const font = `${font_size}px ${font_family}`;
 
 const link_color = {
     refinfo: style.getPropertyValue("--bs-success"),
@@ -18,8 +20,9 @@ const ref_type = {
     downref: "has a downward reference (DOWNREF) to"
 };
 
+// code partially adapted from
+// https://observablehq.com/@mbostock/fit-text-to-circle
 
-// code adapated from https://observablehq.com/@mbostock/fit-text-to-circle
 function lines(text) {
     let line;
     let line_width_0 = Infinity;
@@ -64,7 +67,7 @@ function text_radius(lines) {
         const dx = lines[i].width / 2;
         radius = Math.max(radius, Math.sqrt(dx ** 2 + dy ** 2));
     }
-    return radius * 1.1;
+    return radius;
 }
 
 // Fill modal with content from link href
@@ -148,7 +151,7 @@ $("#deps-modal")
 
                     var max_r = 0;
                     const a = node.append("a")
-                        .attr("xlink:href", d => d.url)
+                        .attr("href", d => d.url)
                         .attr("title", d => {
                             var type = ["replaced", "dead",
                                     "expired"
@@ -313,7 +316,31 @@ $("#deps-modal")
                             max_r))
                         .force("x", d3.forceX())
                         .force("y", d3.forceY())
-                        .on("tick", ticked);
+                        .on("tick", ticked)
+                        .on("end", function () {
+                            $("#download-svg")
+                                .removeClass("disabled")
+                                .html(
+                                    '<i class="bi bi-download"></i> Download'
+                                );
+                        });
                 });
         }
+    });
+
+$("#download-svg")
+    .on("click", function () {
+        const html = $(".modal-body svg")
+            .attr("xmlns", "http://www.w3.org/2000/svg")
+            .attr("version", "1.1")
+            .parent()
+            .html();
+
+        const group = $(this)
+            .data("group");
+
+        $(this)
+            .attr("download", `${group}.svg`)
+            .attr("href", "data:image/svg+xml;base64,\n" + btoa(unescape(
+                encodeURIComponent(html))))
     });
