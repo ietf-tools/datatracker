@@ -68,6 +68,7 @@ class SubmissionResource(ModelResource):
             "group": ALL_WITH_RELATIONS,
             "draft": ALL_WITH_RELATIONS,
         }
+        excludes = ('first_two_pages',)
 api.submit.register(SubmissionResource())
 
 from ietf.person.resources import PersonResource
