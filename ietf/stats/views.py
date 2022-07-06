@@ -133,7 +133,9 @@ def add_labeled_top_series_from_bins(chart_data, bins, limit):
         })
 
 def document_stats(request, stats_type=None):
-    def build_document_stats_url(stats_type_override=Ellipsis, get_overrides={}):
+    def build_document_stats_url(stats_type_override=Ellipsis, get_overrides=None):
+        if get_overrides is None:
+            get_overrides={}
         kwargs = {
             "stats_type": stats_type if stats_type_override is Ellipsis else stats_type_override,
         }
@@ -762,7 +764,9 @@ def meeting_stats(request, num=None, stats_type=None):
     if num is not None:
         meeting = get_object_or_404(Meeting, number=num, type="ietf")
 
-    def build_meeting_stats_url(number=None, stats_type_override=Ellipsis, get_overrides={}):
+    def build_meeting_stats_url(number=None, stats_type_override=Ellipsis, get_overrides=None):
+        if get_overrides is None:
+            get_overrides = {}
         kwargs = {
             "stats_type": stats_type if stats_type_override is Ellipsis else stats_type_override,
         }
@@ -1009,7 +1013,9 @@ def review_stats(request, stats_type=None, acronym=None):
     # and statistics type) are incorporated directly into the URL to
     # be a bit nicer.
 
-    def build_review_stats_url(stats_type_override=Ellipsis, acronym_override=Ellipsis, get_overrides={}):
+    def build_review_stats_url(stats_type_override=Ellipsis, acronym_override=Ellipsis, get_overrides=None):
+        if get_overrides is None:
+            get_overrides = {}
         kwargs = {
             "stats_type": stats_type if stats_type_override is Ellipsis else stats_type_override,
         }

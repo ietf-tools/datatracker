@@ -157,7 +157,9 @@ class Command(DumpdataCommand):
                         yield obj
 
 
-    def handle(self, filenames=[], **options):
+    def handle(self, filenames=None, **options):
+        if filenames is None:
+            filenames = []
         self.verbosity = int(options.get('verbosity'))
         format = options['format']
         indent = options['indent']
