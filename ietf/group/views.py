@@ -723,21 +723,23 @@ def dependencies(request, acronym, group_type=None):
     docs, meta, docs_related, meta_related = prepare_group_documents(
         request, group, clist
     )
-    tracked = set(docs).union(set(docs_related))
+    cl_docs = set(docs).union(set(docs_related))
 
     references = Q(
-        source__group=group, source__type="draft", relationship__slug__startswith="ref"
+        Q(source__group=group) | Q(source__in=cl_docs),
+        source__type="draft",
+        relationship__slug__startswith="ref",
     )
-    tracked_docs = Q(source__name__in=[d.name for d in tracked])
 
+    both_rfcs = Q(source__states__slug="rfc", target__docs__states__slug="rfc")
     inactive = Q(source__states__slug__in=["expired", "repl"])
+    attractor = Q(target__name__in=["rfc5000", "rfc5741"])
     removed = Q(source__states__slug__in=["auth-rm", "ietf-rm"])
-    is_rfc = Q(source__states__slug="rfc")
     relations = (
         RelatedDocument.objects.filter(references)
-        .filter(tracked_docs)
-        .exclude(is_rfc)
+        .exclude(both_rfcs)
         .exclude(inactive)
+        .exclude(attractor)
         .exclude(removed)
     )
 
@@ -755,11 +757,7 @@ def dependencies(request, acronym, group_type=None):
     for x in replacements:
         links.add(x)
 
-    nodes = (
-        set([x.source for x in links])
-        .union([x.target.document for x in links])
-        .union([d for d in tracked if not d.canonical_name().startswith("rfc")])
-    )
+    nodes = set([x.source for x in links]).union([x.target.document for x in links])
     graph = {
         "nodes": [
             {
