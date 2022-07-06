@@ -1,9 +1,0 @@
-{% load ietf_filters %}{% autoescape off %}{% filter wordwrap:78 %}This is just a friendly reminder that you have a review assignment which you have neither accepted nor rejected.
-
-The review assignment is for {{ assignment.review_request.doc.name }} in team {{ team.acronym }}.
-You can accept or reject the assignment on:
-{{ review_request_url }}
-
-You are receiving this reminder because your team secretary has configured the Datatracker to remind you every {{ remind_days }} day{{ remind_days|pluralize }}.
-
-{% endfilter %}{% endautoescape %}

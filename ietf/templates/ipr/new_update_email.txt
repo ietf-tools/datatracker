@@ -1,6 +1,0 @@
-{% autoescape off %}A new IPR disclosure has been submitted.
-Please check it and post it.
-{{ settings.IDTRACKER_BASE_URL }}{% url "ietf.ipr.views.admin" state='pending' %}
-
-{% include "ipr/details.txt" %}
-{% endautoescape %}

@@ -1,7 +1,0 @@
-{% load ietf_filters %}{% autoescape off %}The following draft will expire soon:
-
-Filename: {{draft.filename}}
-Title:    {{draft.title|clean_whitespace}}
-State:    {{draft.idstate}}
-Expires:  {{expiration}} (in {{expiration|timeuntil}})
-{% endautoescape %}

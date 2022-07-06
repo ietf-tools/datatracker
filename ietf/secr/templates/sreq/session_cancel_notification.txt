@@ -1,4 +1,0 @@
-{% load ams_filters %}
-
-A request to cancel a meeting session has just been submitted by {{ requester }}.
-

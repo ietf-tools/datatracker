@@ -1,8 +1,0 @@
-{% load ietf_filters %}{% autoescape off %}{% filter maybewordwrap:80 %}{% if assignment.state_id == "part-completed" %}
-Review is partially done. Another assignment may be needed to complete it.
-
-{% endif %}Reviewer: {{ assignment.reviewer.person }}
-Review result: {{ assignment.result.name }}
-
-{{ content }}
-{% endfilter %}{% endautoescape %}

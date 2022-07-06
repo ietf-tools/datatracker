@@ -1,7 +1,0 @@
-Bluesheet for {{session}}
-========================================================================
-
-{{ data|length }} attendees.
-
-{% for item in data %}
-{{ item.name }}	{{ item.affiliation }}{% endfor %}

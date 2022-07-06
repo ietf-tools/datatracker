@@ -1,9 +1,0 @@
-{% load mail_filters %}{% autoescape off %}To: {{to}} {% if cc %}
-Cc: {{cc}}
-{%endif%}From: IESG Secretary <iesg-secretary@ietf.org>
-Reply-To: IESG Secretary <iesg-secretary@ietf.org>
-Subject: Evaluation: {{doc.title}}
-
-Evaluation for {{ doc.title }} can be found at <{{ doc_url }}>
-
-{% endautoescape%}

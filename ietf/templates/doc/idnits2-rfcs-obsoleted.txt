@@ -1,2 +1,0 @@
-{% load ietf_filters %}{% filter linebreaks_lf %}{% for k,l in obsitems %}{{k}} {{l|join:" "}}
-{% endfor %}{% endfilter %}

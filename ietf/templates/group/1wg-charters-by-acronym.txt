@@ -1,4 +1,0 @@
-{% autoescape off %}{% load ietf_filters %}{% for group in groups %}{{ group.acronym }}
-{% endfor %}
-
-{% for group in groups %}{% include "group/group_entry_with_charter.txt" %}{% endfor %}{% endautoescape %}

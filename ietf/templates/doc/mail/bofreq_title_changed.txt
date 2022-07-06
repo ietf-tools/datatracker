@@ -1,3 +1,0 @@
-{% autoescape off %}{{request.user.person.name}} has changed the title for {{bofreq.name}}-{{bofreq.rev}} to
-"{{bofreq.title}}"
-{% endautoescape %}

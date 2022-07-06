@@ -1,4 +1,0 @@
-{% autoescape off %}The IANA expert review state for {{event.doc.name}} has changed to {{event.state.name}}.
-
-For more information, see the document in the Datatracker at: {{ url }}
-{% endautoescape %}
