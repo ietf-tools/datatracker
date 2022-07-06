@@ -639,3 +639,15 @@ def suggest_affiliation(person):
             affiliation = recent_draft_revision.doc.documentauthor_set.filter(person=person).first().affiliation
     return affiliation
 
+def extract_volunteers(year):
+    nomcom = get_nomcom_by_year(year)
+    # pull list of volunteers
+    # get queryset of all eligible (from utils)
+    # decorate members of the list with eligibility
+    volunteers = nomcom.volunteer_set.all()
+    eligible = list_eligible(nomcom)
+    for v in volunteers:
+        v.eligible = v.person in eligible
+    decorate_volunteers_with_qualifications(volunteers,nomcom=nomcom)
+    volunteers = sorted(volunteers,key=lambda v:(not v.eligible,v.person.last_name()))
+    return nomcom, volunteers

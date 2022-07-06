@@ -5,6 +5,7 @@
 import datetime
 import re
 from collections import OrderedDict, Counter
+import csv
 
 from django.conf import settings
 from django.contrib import messages
@@ -12,7 +13,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.forms.models import modelformset_factory, inlineformset_factory 
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -37,7 +38,7 @@ from ietf.nomcom.models import (Position, NomineePosition, Nominee, Feedback, No
                                 FeedbackLastSeen, Topic, TopicFeedbackLastSeen, )
 from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key, suggest_affiliation,
                                get_hash_nominee_position, send_reminder_to_nominees, list_eligible,
-                               decorate_volunteers_with_qualifications,
+                               extract_volunteers,
                                HOME_TEMPLATE, NOMINEE_ACCEPT_REMINDER_TEMPLATE,NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE, )
 
 from ietf.ietfauth.utils import role_required
@@ -1312,16 +1313,20 @@ def public_volunteers(request, year):
 def private_volunteers(request, year):
     return volunteers(request=request, year=year, public=False)
 
+
 @role_required("Nomcom Chair", "Nomcom Advisor", "Secretariat")
 def volunteers(request, year, public=False):
-    nomcom = get_nomcom_by_year(year)
-    # pull list of volunteers
-    # get queryset of all eligible (from utils)
-    # decorate members of the list with eligibility
-    volunteers = nomcom.volunteer_set.all()
-    eligible = list_eligible(nomcom)
-    for v in volunteers:
-        v.eligible = v.person in eligible
-    decorate_volunteers_with_qualifications(volunteers,nomcom=nomcom)
-    volunteers = sorted(volunteers,key=lambda v:(not v.eligible,v.person.last_name()))
+    nomcom, volunteers = extract_volunteers(year)
     return render(request, 'nomcom/volunteers.html', dict(year=year, nomcom=nomcom, volunteers=volunteers, public=public))
+
+@role_required("Nomcom Chair", "Nomcom Advisor", "Secretariat")
+def private_volunteers_csv(request, year, public=False):
+    _, volunteers = extract_volunteers(year)
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] =  f'attachment; filename="nomcom{year}_volunteers.csv"'
+    writer = csv.writer(response, dialect=csv.excel, delimiter=str(','))
+    writer.writerow(["Last Name","First Name","Plain Name","Affiliation","Primary Email","Qualifications","Eligible"])
+    for v in volunteers:
+        writer.writerow([v.person.last_name(), v.person.first_name(), v.person.ascii_name(), v.affiliation, v.person.email(), v.qualifications, v.eligible])
+    return response
+
