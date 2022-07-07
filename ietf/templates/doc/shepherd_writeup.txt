@@ -1,13 +1,13 @@
-{# Keep in sync with https://github.com/ietf-chairs/chairs.ietf.org/blob/main/documents/qa-style-writeup-template.md #}{% if doc.stream %}{% if doc.stream.slug == 'ietf' %}# Document Shepherd Writeup
+{# Keep in sync with https://github.com/ietf-chairs/chairs.ietf.org/blob/main/documents/qa-style-writeup-template.md #}{% if doc.stream %}{% if doc.stream.slug == 'ietf' %}# Document Shepherd Write-Up
 
-*This version is dated 8 April 2022.*
+*This version is dated 1 June 2022.*
 
 Thank you for your service as a document shepherd. Among the responsibilities is
-answering the questions in this writeup to give helpful context to Last Call and
-Internet Engineering Steering Group ([IESG][1]) reviewers, and your diligence in
-completing it, is appreciated. The full role of the shepherd is further
-described in [RFC 4858][2], and informally. You will need the cooperation of
-authors to complete these checks.
+answering the questions in this write-up to give helpful context to Last Call
+and Internet Engineering Steering Group ([IESG][1]) reviewers, and your
+diligence in completing it is appreciated. The full role of the shepherd is
+further described in [RFC 4858][2]. You will need the cooperation of the authors
+and editors to complete these checks.
 
 Note that some numbered items contain multiple related questions; please be sure
 to answer all of them.
@@ -39,8 +39,10 @@ to answer all of them.
 
 ### Additional Reviews
 
-5. Does this document need review from other IETF working groups or external
-   organizations? Have those reviews occurred?
+5. Do the contents of this document closely interact with technologies in other
+   IETF working groups or external organizations, and would it therefore benefit
+   from their review? Have those reviews occurred? If yes, describe which
+   reviews took place.
 
 6. Describe how the document meets any required formal expert review criteria,
    such as the MIB Doctor, YANG Doctor, media type, and URI type reviews.
@@ -63,41 +65,44 @@ to answer all of them.
    to be handed off to the responsible Area Director?
 
 10. Several IETF Areas have assembled [lists of common issues that their
-    reviewers encounter][6]. Do any such issues remain that would merit specific
-    attention from subsequent reviews?
+    reviewers encounter][6]. For which areas have such issues been identified
+    and addressed? For which does this still need to happen in subsequent
+    reviews?
 
-11. What type of RFC publication is being requested on the IETF stream (Best
-    Current Practice, Proposed Standard, Internet Standard, Informational,
-    Experimental, or Historic)? Why is this the proper type of RFC? Do all
-    Datatracker state attributes correctly reflect this intent?
+11. What type of RFC publication is being requested on the IETF stream ([Best
+    Current Practice][12], [Proposed Standard, Internet Standard][13],
+    [Informational, Experimental or Historic][14])? Why is this the proper type
+    of RFC? Do all Datatracker state attributes correctly reflect this intent?
 
-12. Has the interested community confirmed that any and all appropriate IPR
-    disclosures required by [BCP 78][7] and [BCP 79][8] have been filed? If not,
-    explain why. If yes, summarize any discussion and conclusion regarding the
-    intellectual property rights (IPR) disclosures, including links to relevant
-    emails.
+12. Have reasonable efforts been made to remind all authors of the intellectual
+    property rights (IPR) disclosure obligations described in [BCP 79][8]? To
+    the best of your knowledge, have all required disclosures been filed? If
+    not, explain why. If yes, summarize any relevant discussion, including links
+    to publicly-available messages when applicable.
 
-13. Has each Author or Contributor confirmed their willingness to be listed as
-    such? If the number of Authors/Editors on the front page is greater than 5,
-    please provide a justification.
+13. Has each author, editor, and contributor shown their willingness to be
+    listed as such? If the total number of authors and editors on the front page
+    is greater than five, please provide a justification.
 
-14. Identify any remaining I-D nits in this document. (See [the idnits tool][9]
-    and the checkbox items found in Guidelines to Authors of Internet-Drafts).
-    Simply running the idnits tool is not enough; please review the entire
-    guidelines document.
+14. Document any remaining I-D nits in this document. Simply running the [idnits
+    tool][8] is not enough; please review the ["Content Guidelines" on
+    authors.ietf.org][15]. (Also note that the current idnits tool generates
+    some incorrect warnings; a rewrite is underway.)
 
-15. Should any informative references be normative or vice-versa?
+15. Should any informative references be normative or vice-versa? See the [IESG
+    Statement on Normative and Informative References][16].
 
 16. List any normative references that are not freely available to anyone. Did
     the community have sufficient access to review any such normative
     references?
 
-17. Are there any normative downward references (see [RFC 3967][10],
-    [BCP 97][11])? If so, list them.
+17. Are there any normative downward references (see [RFC 3967][9] and [BCP
+    97][10]) that are not already listed in the [DOWNREF registry][17]? If so,
+    list them.
 
-18. Are there normative references to documents that are not ready for
-    advancement or are otherwise in an unclear state? If they exist, what is the
-    plan for their completion?
+18. Are there normative references to documents that are not ready to be
+    submitted to the IESG for publication or are otherwise in an unclear state?
+    If so, what is the plan for their completion?
 
 19. Will publication of this document change the status of any existing RFCs? If
     so, does the Datatracker metadata correctly reflect this and are those RFCs
@@ -111,7 +116,7 @@ to answer all of them.
     associated with the appropriate reservations in IANA registries. Confirm
     that any referenced IANA registries have been clearly identified. Confirm
     that each newly created IANA registry specifies its initial contents,
-    allocations procedures, and a reasonable name (see [RFC 8126][12]).
+    allocations procedures, and a reasonable name (see [RFC 8126][11]).
 
 21. List any new IANA registries that require Designated Expert Review for
     future allocations. Are the instructions to the Designated Expert clear?
@@ -123,11 +128,16 @@ to answer all of them.
 [4]: https://trac.ietf.org/trac/ops/wiki/yang-review-tools
 [5]: https://www.rfc-editor.org/rfc/rfc8342.html
 [6]: https://trac.ietf.org/trac/iesg/wiki/ExpertTopics
-[7]: https://www.rfc-editor.org/info/bcp78
-[8]: https://www.rfc-editor.org/info/bcp79
-[9]: https://www.ietf.org/tools/idnits/
-[10]: https://www.rfc-editor.org/rfc/rfc3967.html
-[11]: https://www.rfc-editor.org/info/bcp97
-[12]: https://www.rfc-editor.org/rfc/rfc8126.html
-{% else %}There is no default shepherd writeup template for the {{doc.stream}} stream.
-{% endif %}{% else %}There is no stream set for this document (thus, no default shepherd writeup template).{% endif %}
+[7]: https://www.rfc-editor.org/info/bcp79
+[8]: https://www.ietf.org/tools/idnits/
+[9]: https://www.rfc-editor.org/rfc/rfc3967.html
+[10]: https://www.rfc-editor.org/info/bcp97
+[11]: https://www.rfc-editor.org/rfc/rfc8126.html
+[12]: https://www.rfc-editor.org/rfc/rfc2026.html#section-5
+[13]: https://www.rfc-editor.org/rfc/rfc2026.html#section-4.1
+[14]: https://www.rfc-editor.org/rfc/rfc2026.html#section-4.2
+[15]: https://authors.ietf.org/en/content-guidelines-overview
+[16]: https://www.ietf.org/about/groups/iesg/statements/normative-informative-references/
+[17]: https://datatracker.ietf.org/doc/downref/
+{% else %}There is no default shepherd write-up template for the {{doc.stream}} stream.
+{% endif %}{% else %}There is no stream set for this document (thus, no default shepherd write-up template).{% endif %}
