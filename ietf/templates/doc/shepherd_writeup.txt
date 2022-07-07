@@ -1,6 +1,6 @@
 {# Keep in sync with https://github.com/ietf-chairs/chairs.ietf.org/blob/main/documents/qa-style-writeup-template.md #}{% if doc.stream %}{% if doc.stream.slug == 'ietf' %}# Document Shepherd Write-Up
 
-*This version is dated 1 June 2022.*
+*This version is dated 4 July 2022.*
 
 Thank you for your service as a document shepherd. Among the responsibilities is
 answering the questions in this write-up to give helpful context to Last Call
