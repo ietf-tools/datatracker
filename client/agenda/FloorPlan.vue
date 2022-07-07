@@ -23,7 +23,7 @@
       span {{floor.name}}
 
   .row.mt-3
-    .col-auto
+    .col-12.col-md-auto
       .floorplan-rooms.list-group.shadow-sm
         router-link.list-group-item.list-group-item-action(
           v-for='room of floor.rooms'
@@ -135,7 +135,7 @@ watch(() => state.currentRoom, () => {
     computePlanSizeRatio()
     setTimeout(() => {
       if (state.isLoaded) {
-        document.querySelector('.floorplan-plan-pin').scrollIntoView({ behavior: 'smooth' })
+        document.querySelector('.floorplan-plan-pin')?.scrollIntoView({ behavior: 'smooth' })
       } else {
         state.awaitsPinDrop = true
       }
@@ -165,7 +165,7 @@ function planImageLoaded () {
       computePlanSizeRatio()
       if (state.awaitsPinDrop) {
         setTimeout(() => {
-          document.querySelector('.floorplan-plan-pin').scrollIntoView({ behavior: 'smooth' })
+          document.querySelector('.floorplan-plan-pin')?.scrollIntoView({ behavior: 'smooth' })
         }, 100)
       }
     })
@@ -179,8 +179,10 @@ function handleDesiredRoom () {
       if (rm) {
         state.currentFloor = fl.id
         state.currentRoom = rm.id
+        break
       }
     }
+    state.desiredRoom = null
   }
 }
 
@@ -244,6 +246,10 @@ onMounted(() => {
     font-size: .9rem;
     font-weight: 500;
 
+    @media screen and (max-width: 768px) {
+      width: 100%;
+    }
+
     a {
       cursor: pointer;
       display: flex;
@@ -296,6 +302,11 @@ onMounted(() => {
       > .bi {
         animation: pinColorAnim 1.2s ease infinite;
         text-shadow: 0 5px 10px #000;
+      }
+
+      @media screen and (max-width: 992px) {
+        font-size: 40px;
+        margin-left: 5px;
       }
     }
   }
