@@ -1723,6 +1723,7 @@ def agenda_extract_room (item):
         "id": item.id,
         "name": item.name,
         "functionalName": item.functional_name,
+        "slug": xslugify(item.name),
         "left": item.left(),
         "right": item.right(),
         "top": item.top(),

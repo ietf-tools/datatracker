@@ -57,8 +57,8 @@
                   template(#trigger)
                     span.badge {{item.location.short}}
                   span {{item.location.name}}
-                a.discreet(
-                  :href='`/meeting/` + agendaStore.meeting.number + `/floor-plan?room=` + xslugify(item.room)'
+                router-link.discreet(
+                  :to='`/meeting/` + agendaStore.meeting.number + `/floor-plan-neue?room=` + xslugify(item.room)'
                   :aria-label='item.room'
                   ) {{item.room}}
               span(v-else) {{item.room}}
@@ -173,7 +173,7 @@ import { DateTime } from 'luxon'
 import find from 'lodash/find'
 import sortBy from 'lodash/sortBy'
 import reduce from 'lodash/reduce'
-import slugify from 'slugify'
+import xslugify from '../shared/xslugify'
 import {
   NButton,
   NCheckbox,
@@ -480,10 +480,6 @@ function toggleColorPicker () {
 function showMaterials (eventId) {
   state.eventDetails = find(agendaStore.scheduleAdjusted, ['id', eventId])
   state.showEventDetails = true
-}
-
-function xslugify (str) {
-  return slugify(str.replace('/', '-'), { lower: true })
 }
 
 function openColorPicker (itemKey) {

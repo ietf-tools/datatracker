@@ -25,12 +25,13 @@
   .row.mt-3
     .col-auto
       .floorplan-rooms.list-group.shadow-sm
-        a.list-group-item.list-group-item-action(
+        router-link.list-group-item.list-group-item-action(
           v-for='room of floor.rooms'
           :key='room.id'
           :class='{ active: state.currentRoom === room.id }'
           :aria-current='state.currentRoom === room.id'
           @click='state.currentRoom = room.id'
+          :to='{ query: { room: xslugify(room.name) } }'
           )
           .badge.me-3 {{floor.short}}
           span
@@ -39,18 +40,24 @@
     .col
       .card.floorplan-plan.shadow-sm
         .floorplan-plan-pin(
-          v-if='state.currentRoom'
+          v-if='state.currentRoom && state.isLoaded'
           :style='pinPosition'
           )
           i.bi.bi-geo-alt-fill
-        img(:src='floor.image', ref='planImage')
+        img(
+          :src='floor.image'
+          ref='planImage'
+          @load='planImageLoaded'
+          )
 
 </template>
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import find from 'lodash/find'
+import xslugify from '../shared/xslugify'
 import { DateTime } from 'luxon'
+import { useRoute } from 'vue-router'
 import { useAgendaStore } from './store' 
 
 import MeetingNavigation from './MeetingNavigation.vue'
@@ -59,11 +66,18 @@ import MeetingNavigation from './MeetingNavigation.vue'
 
 const agendaStore = useAgendaStore()
 
+// ROUTER
+
+const route = useRoute()
+
 // STATE
 
 const state = reactive({
   currentFloor: null,
   currentRoom: null,
+  desiredRoom: null,
+  isLoaded: false,
+  awaitsPinDrop: false,
   xRatio: 1,
   yRatio: 1
 })
@@ -108,20 +122,23 @@ const pinPosition = computed(() => {
 // WATCHERS
 
 watch(() => agendaStore.floors, (newValue) => {
-  if (newValue && newValue.length > 0) {
+  if (newValue && newValue.length > 0 && !state.currentFloor) {
     state.currentFloor = newValue[0].id
   }
+  handleDesiredRoom()
 })
 watch(() => state.currentFloor, () => {
-  nextTick(() => {
-    computePlanSizeRatio()
-  })
+  state.isLoaded = false
 })
 watch(() => state.currentRoom, () => {
   nextTick(() => {
     computePlanSizeRatio()
     setTimeout(() => {
-      document.querySelector('.floorplan-plan-pin').scrollIntoView({ behavior: 'smooth' })
+      if (state.isLoaded) {
+        document.querySelector('.floorplan-plan-pin').scrollIntoView({ behavior: 'smooth' })
+      } else {
+        state.awaitsPinDrop = true
+      }
     }, 100)
   })
 })
@@ -139,6 +156,32 @@ function computePlanSizeRatio () {
   }
   state.xRatio = planImage.value.width / floor.value.width
   state.yRatio = planImage.value.height / floor.value.height
+}
+
+function planImageLoaded () {
+  setTimeout(() => {
+    state.isLoaded = true
+    nextTick(() => {
+      computePlanSizeRatio()
+      if (state.awaitsPinDrop) {
+        setTimeout(() => {
+          document.querySelector('.floorplan-plan-pin').scrollIntoView({ behavior: 'smooth' })
+        }, 100)
+      }
+    })
+  }, 1000)
+}
+
+function handleDesiredRoom () {
+  if (state.desiredRoom) {
+    for (const fl of agendaStore.floors) {
+      const rm = find(fl.rooms, ['slug', state.desiredRoom])
+      if (rm) {
+        state.currentFloor = fl.id
+        state.currentRoom = rm.id
+      }
+    }
+  }
 }
 
 // --------------------------------------------------------------------
@@ -163,6 +206,10 @@ onMounted(() => {
   agendaStore.hideLoadingScreen()
   if (agendaStore.floors?.length > 0) {
     state.currentFloor = agendaStore.floors[0].id
+  }
+  if (route.query.room) {
+    state.desiredRoom = route.query.room
+    handleDesiredRoom()
   }
 })
 
