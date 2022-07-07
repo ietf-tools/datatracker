@@ -78,6 +78,7 @@ type_ietf_only_patterns_id_optional = [
     url(r'^agenda.json$', views.agenda_json),
     url(r'^agenda/week-view(?:.html)?/?$', views.week_view),
     url(r'^floor-plan/?$', views.floor_plan),
+    url(r'^floor-plan-neue/?$', views.agenda_neue),
     url(r'^floor-plan/(?P<floor>[-a-z0-9_]+)/?$', views.floor_plan),
     url(r'^week-view(?:.html)?/?$', views.week_view),
     url(r'^materials(?:.html)?/?$', views.materials),

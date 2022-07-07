@@ -494,7 +494,7 @@ function setEventColor (itemKey, colorIdx) {
   agendaStore.$patch({
     colorAssignments: {
       ...agendaStore.colorAssignments,
-      [itemKey]: colorIdx
+      [`${agendaStore.meeting.number}-${itemKey}`]: colorIdx
     }
   })
   state.selectedColorPicker = null
@@ -502,7 +502,7 @@ function setEventColor (itemKey, colorIdx) {
 }
 
 function getEventColor (itemKey) {
-  const clIdx = agendaStore.colorAssignments[itemKey]
+  const clIdx = agendaStore.colorAssignments[`${agendaStore.meeting.number}-${itemKey}`]
   if (clIdx || clIdx === 0) {
     return agendaStore.colors[clIdx]?.hex
   } else {

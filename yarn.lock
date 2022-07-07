@@ -6068,6 +6068,7 @@ browserlist@latest:
     sortablejs: 1.15.0
     vite: 2.9.12
     vue: 3.2.37
+    vue-router: 4
     zxcvbn: 4.4.2
   languageName: unknown
   linkType: soft
@@ -6885,6 +6886,17 @@ browserlist@latest:
   peerDependencies:
     eslint: ">=6.0.0"
   checksum: 8cc751e9fc2bfba93664ad8945732ab1c97791f9123e703de8669b65670d1e01906d80436bf4932d7ee6fa6174ed4545e8abb059206c88f4bd71957ca6cf7ba8
+  languageName: node
+  linkType: hard
+
+"vue-router@npm:4":
+  version: 4.1.1
+  resolution: "vue-router@npm:4.1.1"
+  dependencies:
+    "@vue/devtools-api": ^6.1.4
+  peerDependencies:
+    vue: ^3.2.0
+  checksum: a521d9c8e225497ba3f0759b00fdb48fdbf5ed7a81b7f05558733aaecbc539e94180c0bbf336063c65b1c2cf5e3e93fced2ec79718dbadac082fa8150bbfb924
   languageName: node
   linkType: hard
 

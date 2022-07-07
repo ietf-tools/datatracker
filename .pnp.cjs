@@ -84,6 +84,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["sortablejs", "npm:1.15.0"],\
             ["vite", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.9.12"],\
             ["vue", "npm:3.2.37"],\
+            ["vue-router", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.1.1"],\
             ["zxcvbn", "npm:4.4.2"]\
           ],\
           "linkType": "SOFT"\
@@ -7307,6 +7308,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["sortablejs", "npm:1.15.0"],\
             ["vite", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.9.12"],\
             ["vue", "npm:3.2.37"],\
+            ["vue-router", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.1.1"],\
             ["zxcvbn", "npm:4.4.2"]\
           ],\
           "linkType": "SOFT"\
@@ -8283,6 +8285,29 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packagePeers": [\
             "@types/eslint",\
             "eslint"\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["vue-router", [\
+        ["npm:4.1.1", {\
+          "packageLocation": "./.yarn/cache/vue-router-npm-4.1.1-b947f4f193-a521d9c8e2.zip/node_modules/vue-router/",\
+          "packageDependencies": [\
+            ["vue-router", "npm:4.1.1"]\
+          ],\
+          "linkType": "SOFT"\
+        }],\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.1.1", {\
+          "packageLocation": "./.yarn/__virtual__/vue-router-virtual-66bee4d9a5/0/cache/vue-router-npm-4.1.1-b947f4f193-a521d9c8e2.zip/node_modules/vue-router/",\
+          "packageDependencies": [\
+            ["vue-router", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.1.1"],\
+            ["@types/vue", null],\
+            ["@vue/devtools-api", "npm:6.1.4"],\
+            ["vue", "npm:3.2.37"]\
+          ],\
+          "packagePeers": [\
+            "@types/vue",\
+            "vue"\
           ],\
           "linkType": "HARD"\
         }]\

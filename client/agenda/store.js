@@ -13,22 +13,26 @@ export const useAgendaStore = defineStore('agenda', {
     debugTools: false,
     calendarShown: false,
     categories: [],
+    colorLegendShown: true,
     colorPickerVisible: false,
     colors: [
-      { hex: '#0d6efd', tag: 'Color 1' },
-      { hex: '#6f42c1', tag: 'Color 2' },
-      { hex: '#d63384', tag: 'Color 3' },
-      { hex: '#ffc107', tag: 'Color 4' },
-      { hex: '#20c997', tag: 'Color 5' }
+      { hex: '#0d6efd', tag: 'Interesting' },
+      { hex: '#6f42c1', tag: 'Might Attend' },
+      { hex: '#d63384', tag: 'Important' },
+      { hex: '#ffc107', tag: 'Food' },
+      { hex: '#20c997', tag: 'Attended' }
     ],
     colorAssignments: {},
+    currentTab: 'agenda',
     dayIntersectId: '',
     eventIconsShown: true,
     filterShown: false,
     floorIndicatorsShown: true,
+    floors: [],
     infoNoteHash: '',
     infoNoteShown: true,
     isCurrentMeeting: false,
+    isLoaded: false,
     isMobile: /Mobi/i.test(navigator.userAgent),
     listDayCollapse: false,
     meeting: {},
@@ -136,16 +140,20 @@ export const useAgendaStore = defineStore('agenda', {
 
       // -> Load meeting data
       this.categories = agendaData.categories
+      this.floors = agendaData.floors
       this.isCurrentMeeting = agendaData.isCurrentMeeting
       this.meeting = agendaData.meeting
       this.schedule = agendaData.schedule
       this.useHedgeDoc = agendaData.useHedgeDoc
 
+      // -> Compute current info note hash
       this.infoNoteHash = murmur(agendaData.meeting.infoNote, 0).toString()
 
       // -> Load meeting-specific preferences
       this.infoNoteShown = !(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.hideInfo`) === this.infoNoteHash)
       this.colorAssignments = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.colorAssignments`) || '{}')
+
+      this.isLoaded = true
     },
     persistMeetingPreferences () {
       if (this.infoNoteShown) {
@@ -180,6 +188,13 @@ export const useAgendaStore = defineStore('agenda', {
       }
 
       return lastEvent.id || null
+    },
+    hideLoadingScreen () {
+      // -> Hide loading screen
+      const loadingRef = document.querySelector('#app-meeting-loading')
+      if (loadingRef) {
+        loadingRef.remove()
+      }
     }
   },
   persist: {
@@ -190,6 +205,7 @@ export const useAgendaStore = defineStore('agenda', {
         paths: [
           'areaIndicatorsShown',
           'bolderText',
+          'colorLegendShown',
           'colors',
           'eventIconsShown',
           'floorIndicatorsShown',

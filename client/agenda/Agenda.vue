@@ -4,22 +4,15 @@
   )
   h1
     span #[strong IETF {{agendaStore.meeting.number}}] Meeting Agenda {{titleExtra}}
-    .agenda-h1-badges
-      span.agenda-warning(v-if='agendaStore.meeting.warningNote') {{agendaStore.meeting.warningNote}}
-      span.agenda-beta BETA
+    .meeting-h1-badges
+      span.meeting-warning(v-if='agendaStore.meeting.warningNote') {{agendaStore.meeting.warningNote}}
+      span.meeting-beta BETA
   h4
     span {{agendaStore.meeting.city}}, {{ meetingDate }}
     h6.float-end.d-none.d-lg-inline(v-if='meetingUpdated') #[span.text-muted Updated:] {{ meetingUpdated }}
 
   .agenda-topnav.my-3
-    ul.nav.nav-tabs
-      li.nav-item(v-for='tab of state.tabs')
-        a.nav-link.agenda-link.filterable(
-          :class='{ active: tab.key === state.currentTab }'
-          :href='tab.href ? `/meeting/` + agendaStore.meeting.number + `/` + tab.href : null'
-          )
-          i.bi.me-2(:class='tab.icon')
-          span {{tab.title}}
+    meeting-navigation
     n-button(
       quaternary
       @click='toggleSettings'
@@ -79,6 +72,23 @@
               i.bi.bi-x-square
           span Hide Info Note
         div(v-html='agendaStore.meeting.infoNote')
+
+      // -----------------------------------
+      // -> Color Legend
+      // -----------------------------------
+
+      .agenda-colorlegend.mt-3(v-if='colorLegendShown')
+        div
+          i.bi.bi-palette.me-2
+          span Color Legend
+        template(v-for='(cl, idx) of agendaStore.colors')
+          div(
+            v-if='cl.tag !== ``'
+            :key='`cl` + idx'
+            :style='{ color: cl.hex }'
+            )
+            span {{cl.tag}}
+
 
       // -----------------------------------
       // -> Search Bar
@@ -148,6 +158,7 @@ import AgendaScheduleCalendar from './AgendaScheduleCalendar.vue'
 import AgendaQuickAccess from './AgendaQuickAccess.vue'
 import AgendaSettings from './AgendaSettings.vue'
 import AgendaMobileBar from './AgendaMobileBar.vue'
+import MeetingNavigation from './MeetingNavigation.vue'
 
 import timezones from '../shared/timezones'
 
@@ -165,12 +176,6 @@ const agendaStore = useAgendaStore()
 
 const state = reactive({
   searchText: '',
-  currentTab: 'agenda',
-  tabs: [
-    { key: 'agenda', title: 'Agenda', icon: 'bi-calendar3' },
-    { key: 'floorplan', href: 'floor-plan', title: 'Floor plan', icon: 'bi-pin-map' },
-    { key: 'plaintext', href: 'agenda.txt', title: 'Plaintext', icon: 'bi-file-text' }
-  ]
 })
 
 // REFS
@@ -224,6 +229,9 @@ const meetingDate = computed(() => {
 const meetingUpdated = computed(() => {
   return agendaStore.meeting.updated ? DateTime.fromISO(agendaStore.meeting.updated).setZone(agendaStore.timezone).toFormat(`DD 'at' tt ZZZZ`) : false
 })
+const colorLegendShown = computed(() => {
+  return agendaStore.colorPickerVisible || (agendaStore.colorLegendShown && Object.keys(agendaStore.colorAssignments).length > 0)
+})
 
 // METHODS
 
@@ -264,7 +272,9 @@ function toggleSettings () {
   })
 }
 
+// --------------------------------------------------------------------
 // Handle browser resize
+// --------------------------------------------------------------------
 
 const resizeObserver = new ResizeObserver(entries => {
   agendaStore.$patch({ viewport: Math.round(window.innerWidth) })
@@ -281,7 +291,9 @@ onBeforeUnmount(() => {
   resizeObserver.unobserve(schdList.value.$el)
 })
 
+// --------------------------------------------------------------------
 // Handle day indicator / scroll
+// --------------------------------------------------------------------
 
 const visibleDays = []
 const scrollObserver = new IntersectionObserver(entries => {
@@ -336,6 +348,14 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   scrollObserver.disconnect()
+})
+
+// --------------------------------------------------------------------
+
+// MOUNTED
+
+onMounted(() => {
+  agendaStore.hideLoadingScreen()
 })
 
 // CREATED
@@ -421,31 +441,48 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
     }
   }
 
-  &-h1-badges {
-    display: flex;
-    justify-content: end;
-    align-items: center;
+  &-colorlegend {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    border-radius: 5px;
+    font-size: .8rem;
+    font-weight: 600;
 
-    > span {
-      font-size: 13px;
-      font-weight: 700;
-      background-color: $pink-500;
-      box-shadow: 0 0 5px 0 rgba($pink-500, .5);
+    > div:first-child {
+      background-color: $gray-600;
+      background: linear-gradient(337deg, $gray-500 20%, $gray-600 70%);
+      padding: 5px 15px;
+      font-size: .7rem;
+      text-transform: uppercase;
       color: #FFF;
-      padding: 5px 8px;
-      border-radius: 6px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+    }
 
-      & + span {
-        margin-left: 10px;
+    > div:not(:first-child) {
+      display: flex;
+      align-items: center;
+      padding: 5px 15px;
+      justify-content: center;
+
+      &::before {
+        content: '';
+        display: block;
+        width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        border: 2px solid rgba(0,0,0,.1);
+        background-color: currentColor;
+        box-shadow: 0 0 10px 0 currentColor;
+        margin-right: 10px;
+      }
+
+      span {
+        color: currentColor;
       }
     }
-  }
-
-  &-warning {
-    background-color: $red-500 !important;
-    box-shadow: 0 0 5px 0 rgba($red-500, .5) !important;
-    color: #FFF;
-    animation: warningBorderFlash 1s ease infinite;
   }
 }
 

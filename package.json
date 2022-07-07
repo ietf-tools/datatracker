@@ -41,6 +41,7 @@
     "slugify": "1.6.5",
     "sortablejs": "1.15.0",
     "vue": "3.2.37",
+    "vue-router": "4",
     "zxcvbn": "4.4.2"
   },
   "devDependencies": {

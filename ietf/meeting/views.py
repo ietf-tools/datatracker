@@ -1621,6 +1621,9 @@ def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, u
 
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
+    # Get Floor Plans
+    floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
+
     rendered_page = render(request, "meeting/agenda-neue.html", {
         "schedule_json": {
             "meeting": {
@@ -1636,7 +1639,8 @@ def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, u
             "categories": filter_organizer.get_filter_categories(),
             "isCurrentMeeting": is_current_meeting,
             "useHedgeDoc": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
-            "schedule": list(map(agenda_extract_shedule, filtered_assignments))
+            "schedule": list(map(agenda_extract_shedule, filtered_assignments)),
+            "floors": list(map(agenda_extract_floorplan, floors))
         },
         "schedule": {
             "meeting": {
@@ -1696,6 +1700,33 @@ def agenda_extract_shedule (item):
         # "slotType": {
         #     "slug": item.slot_type.slug
         # }
+    }
+
+def agenda_extract_floorplan (item):
+    try:
+        item.image.width
+    except FileNotFoundError:
+        return {}
+
+    return {
+        "id": item.id,
+        "image": item.image.url,
+        "name": item.name,
+        "short": item.short,
+        "width": item.image.width,
+        "height": item.image.height,
+        "rooms": list(map(agenda_extract_room, item.room_set.all()))
+    }
+
+def agenda_extract_room (item):
+    return {
+        "id": item.id,
+        "name": item.name,
+        "functionalName": item.functional_name,
+        "x1": item.x1,
+        "x2": item.x2,
+        "y1": item.y1,
+        "y2": item.y2
     }
 
 def agenda_extract_recording (item):

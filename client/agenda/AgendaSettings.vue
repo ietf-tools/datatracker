@@ -62,14 +62,14 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
       //-   span.small Collapse Days by Default
       .d-flex.align-items-center.mt-3
         n-switch.me-3(
-          v-model:value='agendaStore.areaIndicatorsShown'
-          aria-label='Display Group Area Indicators'
+          v-model:value='agendaStore.colorLegendShown'
+          aria-label='Display Color Legend'
           )
-        span.small.me-2 Display Group Area Indicators
+        span.small.me-2 Display Color Legend
         n-popover
           template(#trigger)
             i.bi.bi-info-circle
-          span Will not be shown on smaller screens, regardless of this setting.
+          span Only displayed when a color is assigned to at least 1 event.
       .d-flex.align-items-center.mt-3
         n-switch.me-3(
           v-model:value='agendaStore.infoNoteShown'
@@ -92,6 +92,16 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
           aria-label='Display Floor Indicators'
           )
         span.small Display Floor Indicators
+      .d-flex.align-items-center.mt-3
+        n-switch.me-3(
+          v-model:value='agendaStore.areaIndicatorsShown'
+          aria-label='Display Group Area Indicators'
+          )
+        span.small.me-2 Display Group Area Indicators
+        n-popover
+          template(#trigger)
+            i.bi.bi-info-circle
+          span Will not be shown on smaller screens, regardless of this setting.
       .d-flex.align-items-center.mt-3
         n-switch.me-3(
           v-model:value='agendaStore.redhandShown'
@@ -128,6 +138,7 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
           :placeholder='"Color " + (idx + 1)'
           :aria-label='"Color Name " + (idx + 1)'
         )
+      .agenda-settings-note.mt-3 #[strong Note:] You can hide a color by entering an empty name.
 
       .agenda-settings-debug(v-if='agendaStore.debugTools')
         n-divider(title-placement='left')
@@ -283,6 +294,7 @@ async function actionClick (key) {
           JSON.stringify({
             areaIndicatorsShown: agendaStore.areaIndicatorsShown,
             bolderText: agendaStore.bolderText,
+            colorLegendShown: agendaStore.colorLegendShown,
             colors: agendaStore.colors,
             eventIconsShown: agendaStore.eventIconsShown,
             floorIndicatorsShown: agendaStore.floorIndicatorsShown,
@@ -318,6 +330,7 @@ async function actionClick (key) {
         agendaStore.$patch({
           areaIndicatorsShown: configJson.areaIndicatorsShown === true,
           bolderText: configJson.bolderText === true,
+          colorLegendShown: configJson.colorLegendShown === true,
           colors: configJson.colors.map(c => ({
             hex: c.hex || '#FF0000',
             tag: c.tag || 'Unknown Color'
@@ -405,6 +418,17 @@ onMounted(() => {
 
   .n-color-picker {
     width: 40px;
+  }
+
+  &-note {
+    background-color: $gray-100;
+    border-bottom: 1px solid $gray-200;
+    border-right: 1px solid $gray-200;
+    border-radius: 5px;;
+    padding: 6px 12px;
+    font-size: .8rem;
+    color: $gray-700;
+    text-shadow: 1px 1px 0 #FFF;
   }
 
   &-calcoffset {
