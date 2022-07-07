@@ -36,31 +36,56 @@ General Instructions for Deployment of a New Release
 
  6. Run system checks (which patches the just installed modules)::
 
-     ietf/manage.py check
+      ietf/manage.py check
 
- 7. Run migrations:  
+ 7. Switch to the docker directory and update async task docker image:
+
+      cd /a/docker/datatracker-cel
+      docker image tag ghcr.io/ietf-tools/datatracker-celery:latest datatracker-celery-fallback
+      docker-compose pull celery
+
+ 8. Stop async task worker (this may take a few minutes if tasks are in progress):
+
+      docker-compose stop celery
+      docker-compose rm celery
+      cd -
+
+ 9. Run migrations:
 
       ietf/manage.py migrate
 
       Take note if any migrations were executed.
  
- 8. Back out one directory level, then re-point the 'web' symlink::
+ 10. Back out one directory level, then re-point the 'web' symlink::
 
       cd ..
       rm ./web; ln -s ${releasenumber} web
 
- 9. Reload the datatracker service (it is no longer necessary to restart apache) ::
+ 11. Reload the datatracker service (it is no longer necessary to restart apache) ::
 
       exit # or CTRL-D, back to root level shell
       systemctl restart datatracker
 
- 10. Verify operation: 
+ 12. Start async task worker:
+
+      cd /a/docker/datatracker-cel && bash startcommand && cd -
+
+ 13. Verify operation:
 
       http://datatracker.ietf.org/
 
- 11. If install failed and there were no migrations at step 7, revert web symlink and repeat the restart in step 9.
-     If there were migrations at step 7, they will need to be reversed before the restart at step 9. If it's not obvious
-     what to do to reverse the migrations, contact the dev team.
+ 14. If install failed and there were no migrations at step 9, revert web symlink and docker update and repeat the
+     restart in steps 11 and 12. To revert the docker update:
+
+          cd /a/docker/datatracker-cel
+          docker-compose stop celery
+          docker-compose rm celery
+          docker image rm ghcr.io/ietf-tools/datatracker-celery:latest
+          docker image tag datatracker-celery-fallback ghcr.io/ietf-tools/datatracker-celery:latest
+          cd -
+
+     If there were migrations at step 7, they will need to be reversed before the restart at step 11.
+     If it's not obvious what to do to reverse the migrations, contact the dev team.
 
  
 Patching a Production Release
