@@ -650,10 +650,12 @@ def nice_consensus(consensus):
         }
     return mapping[consensus]
 
-def has_same_ballot(doc, date1, date2=datetime.date.today()):
+def has_same_ballot(doc, date1, date2=None):
     """ Test if the most recent ballot created before the end of date1
         is the same as the most recent ballot created before the
         end of date 2. """
+    if date2 is None:
+        date2 = datetime.date.today()
     ballot1 = doc.latest_event(BallotDocEvent,type='created_ballot',time__lt=date1+datetime.timedelta(days=1))
     ballot2 = doc.latest_event(BallotDocEvent,type='created_ballot',time__lt=date2+datetime.timedelta(days=1))
     return ballot1==ballot2
@@ -926,7 +928,9 @@ def extract_complete_replaces_ancestor_mapping_for_docs(names):
 def make_rev_history(doc):
     # return document history data for inclusion in doc.json (used by timeline)
 
-    def get_predecessors(doc, predecessors=[]):
+    def get_predecessors(doc, predecessors=None):
+        if predecessors is None:
+            predecessors = []
         if hasattr(doc, 'relateddocument_set'):
             for alias in doc.related_that_doc('replaces'):
                 for document in alias.docs.all():
@@ -935,7 +939,9 @@ def make_rev_history(doc):
                         predecessors.extend(get_predecessors(document, predecessors))
         return predecessors
 
-    def get_ancestors(doc, ancestors = []):
+    def get_ancestors(doc, ancestors = None):
+        if ancestors is None:
+            ancestors = []
         if hasattr(doc, 'relateddocument_set'):
             for alias in doc.related_that('replaces'):
                 for document in alias.docs.all():

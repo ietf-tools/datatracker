@@ -17,6 +17,7 @@ from django.utils.encoding import force_str # pyflakes:ignore force_str is used 
 from django.urls import reverse as urlreverse
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from django.urls import NoReverseMatch
 
 import debug                            # pyflakes:ignore
 
@@ -181,6 +182,8 @@ def link_charter_doc_match(match):
 
 def link_non_charter_doc_match(match):
     name = match[0]
+    # handle "I-D.*"" reference-style matches
+    name = re.sub(r"^i-d\.(.*)", r"draft-\1", name, flags=re.IGNORECASE)
     cname = doc_canonical_name(name)
     if not cname:
         return match[0]
@@ -200,10 +203,13 @@ def link_non_charter_doc_match(match):
     if not cname:
         return match[0]
     if name == cname:
-        url = urlreverse(
-            "ietf.doc.views_doc.document_main",
-            kwargs=dict(name=cname, rev=rev_split.group(2)),
-        )
+        try:
+            url = urlreverse(
+                "ietf.doc.views_doc.document_main",
+                kwargs=dict(name=cname, rev=rev_split.group(2)),
+            )
+        except NoReverseMatch:
+            return match[0]
         return f'<a href="{url}">{match[0]}</a>'
 
     # if we get here, we can't linkify
@@ -230,19 +236,19 @@ def urlize_ietf_docs(string, autoescape=None):
         else:
             string = mark_safe(string)
     string = re.sub(
-        r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d{2}(?:-\d{2}))(\.(?:txt|ps|pdf|html))?\b",
+        r"\b(?<![/\-:=#\"\'])(charter-(?:[\d\w\.+]+-)*)(\d{2}(?:-\d{2}))(\.(?:txt|ps|pdf|html))?\b",
         link_charter_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
     string = re.sub(
-        r"\b(?<![/\-:=#])((?:draft-|bofreq-|conflict-review-|status-change-)[\d\w\.+-]+(?![-@]))",
+        r"\b(?<![/\-:=#\"\'])((?:draft-|i-d\.|bofreq-|conflict-review-|status-change-)[\d\w\.+-]+(?![-@]))",
         link_non_charter_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
     string = re.sub(
-        r"\b(?<![/\-:=#])((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
+        r"\b(?<![/\-:=#\"\'])((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
         link_other_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,

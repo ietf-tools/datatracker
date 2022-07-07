@@ -13,7 +13,9 @@ register = template.Library()
 
 
 @register.filter
-def is_nomcom_eligible(person, date=datetime.date.today()):
+def is_nomcom_eligible(person, date=None):
+    if date is None:
+        date = datetime.date.today()
     return is_eligible(person=person, date=date)
 
 

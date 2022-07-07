@@ -1,5 +1,5 @@
 {% extends "base_site.html" %}
-{% load staticfiles %}
+{% load staticfiles widget_tweaks %}
 
 {% block title %}Groups - People{% endblock %}
 
@@ -51,9 +51,9 @@
                 <table class="full-width">
                     <tbody>
                     <tr>
-                        <td>{{ form.name.errors }}<label for="{{ form.name.id_for_label }}" aria-label="Name"></label>{{ form.name }}</td>
-                        <td>{{ form.person.errors }}<label for="{{ form.person.id_for_label }}" aria-label="Person"></label>{{ form.person }}{% if form.person.help_text %}<br>{{ form.person.help_text }}{% endif %}</td>
-                        <td>{{ form.email.errors }}<label for="{{ form.email.id_for_label }}" aria-label="Email"></label>{{ form.email }}{% if form.email.help_text %}<br>{{ form.email.help_text }}{% endif %}</td>
+                        <td>{{ form.name.errors }}{{ form.name|attr:"aria-label:Name" }}</td>
+                        <td>{{ form.person.errors }}{{ form.person|attr:"aria-label:Person" }}{% if form.person.help_text %}<br>{{ form.person.help_text }}{% endif %}</td>
+                        <td>{{ form.email.errors }}{{ form.email|attr:"aria-label:Email" }}{% if form.email.help_text %}<br>{{ form.email.help_text }}{% endif %}</td>
                         <td><button type="submit" name="submit">Add</button></td>
                     </tr>
                     </tbody>

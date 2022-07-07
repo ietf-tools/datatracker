@@ -99,8 +99,11 @@ window.setarrow = function (nm) {
             if (adiv) {
                 adiv.style.left = arrow_left + offsetleft + "px";
                 adiv.style.top = arrow_top + offsettop + "px";
-                adiv.style.visibility = "visible";
+                adiv.hidden = false;
                 window.location.hash = floor;
+                const url = new URL(location.href);
+                url.searchParams.set('room', nm);
+                history.pushState(null, '', url);
             }
         }
     }
@@ -116,7 +119,7 @@ window.removearrow = function (which, fl) {
             // if (verbose) console.log("adiv found");
             adiv.style.left = -500;
             adiv.style.top = -500;
-            adiv.style.visibility = "hidden";
+            adiv.hidden = true;
         }
     }
 };

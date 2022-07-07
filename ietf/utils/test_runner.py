@@ -1036,10 +1036,13 @@ class IetfTestRunner(DiscoverRunner):
         test_paths = [ os.path.join(*app.split('.')) for app in test_apps ]
         return test_apps, test_paths
 
-    def run_tests(self, test_labels, extra_tests=[], **kwargs):
+    def run_tests(self, test_labels, extra_tests=None, **kwargs):
         global old_destroy, old_create, test_database_name, template_coverage_collection, code_coverage_collection, url_coverage_collection
         from django.db import connection
         from ietf.doc.tests import TemplateTagTest
+
+        if extra_tests is None:
+            extra_tests=[]
 
         # Tests that involve switching back and forth between the real
         # database and the test database are way too dangerous to run
