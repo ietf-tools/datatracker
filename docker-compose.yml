@@ -16,6 +16,7 @@ services:
 
         depends_on:
             - db
+            - mq
 
         ipc: host
 
@@ -68,7 +69,10 @@ services:
             CELERY_APP: ietf
         command:
             - '--loglevel=INFO'
+        depends_on:
+            - db
         restart: unless-stopped
+        stop_grace_period: 1m
 
 volumes:
     mariadb-data:
