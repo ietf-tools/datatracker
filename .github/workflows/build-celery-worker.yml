@@ -8,7 +8,7 @@ on:
       - 'jennifer/submit-async'
     paths:
       - 'requirements.txt'
-      - 'dev/celery/Dockerfile'
+      - 'dev/celery/**'
 
   workflow_dispatch: 
 
