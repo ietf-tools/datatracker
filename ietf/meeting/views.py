@@ -1723,10 +1723,10 @@ def agenda_extract_room (item):
         "id": item.id,
         "name": item.name,
         "functionalName": item.functional_name,
-        "x1": item.x1,
-        "x2": item.x2,
-        "y1": item.y1,
-        "y2": item.y2
+        "left": item.left(),
+        "right": item.right(),
+        "top": item.top(),
+        "bottom": item.bottom()
     }
 
 def agenda_extract_recording (item):

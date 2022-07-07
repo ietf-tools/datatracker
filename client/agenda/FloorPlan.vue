@@ -40,14 +40,15 @@
       .card.floorplan-plan.shadow-sm
         .floorplan-plan-pin(
           v-if='state.currentRoom'
-          :style='room.styles'
+          :style='pinPosition'
           )
-        img(:src='floor.image')
+          i.bi.bi-geo-alt-fill
+        img(:src='floor.image', ref='planImage')
 
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import find from 'lodash/find'
 import { DateTime } from 'luxon'
 import { useAgendaStore } from './store' 
@@ -62,8 +63,14 @@ const agendaStore = useAgendaStore()
 
 const state = reactive({
   currentFloor: null,
-  currentRoom: null
+  currentRoom: null,
+  xRatio: 1,
+  yRatio: 1
 })
+
+// REFS
+
+const planImage = ref(null)
 
 // COMPUTED
 
@@ -81,8 +88,21 @@ const floor = computed(() => {
   return state.currentFloor ? find(agendaStore.floors, ['id', state.currentFloor]) : {}
 })
 
-const room = computed(() => {
-  return state.currentRoom ? find(floor.value?.rooms, ['id', state.currentRoom]) : {}
+const pinPosition = computed(() => {
+  if (!state.currentRoom || !floor.value.rooms?.some(r => r.id === state.currentRoom)) {
+    return {
+      display: 'none'
+    }
+  } else {
+    const room = find(floor.value.rooms, ['id', state.currentRoom])
+    const xPos = Math.round((room.left + (room.right - room.left) / 2) * state.xRatio) - 25
+    const yPos = Math.round((room.top + (room.bottom - room.top) / 2) * state.yRatio) - 40
+    return {
+      display: 'block',
+      top: `${yPos}px`,
+      left: `${xPos}px`
+    }
+  }
 })
 
 // WATCHERS
@@ -91,6 +111,50 @@ watch(() => agendaStore.floors, (newValue) => {
   if (newValue && newValue.length > 0) {
     state.currentFloor = newValue[0].id
   }
+})
+watch(() => state.currentFloor, () => {
+  nextTick(() => {
+    computePlanSizeRatio()
+  })
+})
+watch(() => state.currentRoom, () => {
+  nextTick(() => {
+    computePlanSizeRatio()
+    setTimeout(() => {
+      document.querySelector('.floorplan-plan-pin').scrollIntoView({ behavior: 'smooth' })
+    }, 100)
+  })
+})
+watch(() => agendaStore.viewport, () => {
+  nextTick(() => {
+    computePlanSizeRatio()
+  })
+})
+
+// METHODS
+
+function computePlanSizeRatio () {
+  if (!planImage.value || !state.currentFloor) {
+    return
+  }
+  state.xRatio = planImage.value.width / floor.value.width
+  state.yRatio = planImage.value.height / floor.value.height
+}
+
+// --------------------------------------------------------------------
+// Handle browser resize
+// --------------------------------------------------------------------
+
+const resizeObserver = new ResizeObserver(entries => {
+  agendaStore.$patch({ viewport: Math.round(window.innerWidth) })
+})
+
+onMounted(() => {
+  resizeObserver.observe(planImage.value)
+})
+
+onBeforeUnmount(() => {
+  resizeObserver.unobserve(planImage.value)
 })
 
 // MOUNTED
@@ -111,23 +175,6 @@ onMounted(() => {
 .floorplan {
   min-height: 500px;
   font-weight: 460;
-
-  > h1 {
-    font-weight: 500;
-    color: $gray-700;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    strong {
-      font-weight: 700;
-      background: linear-gradient(220deg, $blue-500 20%, $purple-500 70%);
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      box-decoration-break: clone;
-    }
-  }
 
   nav.floorplan-floors {
     padding: 5px;
@@ -195,7 +242,14 @@ onMounted(() => {
       left: 100px;
       width: 20px;
       height: 20px;
-      background-color: #F00;
+      color: $red-500;
+      font-size: 50px;
+      animation: pinDropAnim .6s ease-out;
+      
+      > .bi {
+        animation: pinColorAnim 1.2s ease infinite;
+        text-shadow: 0 5px 10px #000;
+      }
     }
   }
 }
@@ -208,6 +262,38 @@ onMounted(() => {
   100% {
     opacity: 1;
     transform: scale(1, 1);
+  }
+}
+
+@keyframes pinDropAnim {
+  0% {
+    opacity: 0;
+    transform: translateY(-200px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(10px);
+  }
+  80% {
+    transform: translateY(-5px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes pinColorAnim {
+  0% {
+    color: $red-500;
+  }
+  33% {
+    color: $yellow-500;
+  }
+  66% {
+    color: $blue-500;
+  }
+  100% {
+    color: $red-500;
   }
 }
 </style>

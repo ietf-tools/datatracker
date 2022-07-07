@@ -1,7 +1,7 @@
 <template lang="pug">
 n-theme
   n-message-provider
-    router-view
+    router-view.meeting
 </template>
 
 <script setup>
@@ -25,6 +25,23 @@ agendaStore.fetch()
 @import "bootstrap/scss/variables";
 
 .meeting {
+  > h1 {
+    font-weight: 500;
+    color: $gray-700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    strong {
+      font-weight: 700;
+      background: linear-gradient(220deg, $blue-500 20%, $purple-500 70%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      box-decoration-break: clone;
+    }
+  }
+
   &-h1-badges {
     display: flex;
     justify-content: end;

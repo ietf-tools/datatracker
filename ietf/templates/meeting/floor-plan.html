@@ -9,6 +9,12 @@
     {% if "-utc" in request.path %}(UTC){% endif %}
 {% endblock %}
 {% block bodyAttrs %}onload="automaticarrow(); checkParams();" onresize="checkParams();"{% endblock %}
+{% block precontent %}
+    <div class="meeting-switch">
+        <i class="bi bi-arrow-left-right me-2"></i>
+        <a href="/meeting/{{ schedule.meeting.number }}/floor-plan-neue">Switch to New Agenda Display</a>
+    </div>
+{% endblock %}
 {% block content %}
     {% origin %}
     {% include "meeting/meeting_heading.html" with selected="floor-plan" title_extra="Floor Plan" %}
