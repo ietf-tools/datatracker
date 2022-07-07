@@ -151,7 +151,13 @@ height: 100vh;
                                             <small class="text-muted">Pan and zoom the dependency
                                                 graph after the layout settles.</small>
                                         </div>
-                                        <a href="#" id="download-svg" data-group="{{ group.acronym }}" class="btn btn-primary disabled"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...</a>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="legend" disabled>
+                                            <label class="form-check-label me-3" for="legend">
+                                                Show legend
+                                            </label>
+                                        </div>
+                                        <a href="#" id="download-svg" data-group="{{ group.acronym }}" class="btn btn-primary disabled"></a>
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                                     </div>
                                 </div>

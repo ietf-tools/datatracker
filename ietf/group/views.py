@@ -763,6 +763,8 @@ def dependencies(request, acronym, group_type=None):
             {
                 "id": x.canonical_name(),
                 "rfc": x.get_state("draft").slug == "rfc",
+                "post-wg": not x.get_state("draft-iesg").slug
+                in ["idexists", "watching", "dead"],
                 "expired": x.get_state("draft").slug == "expired",
                 "replaced": x.get_state("draft").slug == "repl",
                 "group": x.group.acronym if x.group.acronym != "none" else "",

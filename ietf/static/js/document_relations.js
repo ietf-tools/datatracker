@@ -4,12 +4,24 @@ const line_height = font_size + 2;
 const font_family = style.getPropertyValue("--bs-body-font-family");
 const font = `${font_size}px ${font_family}`;
 
+const green = style.getPropertyValue("--bs-green");
+const blue = style.getPropertyValue("--bs-blue");
+const orange = style.getPropertyValue("--bs-orange");
+const cyan = style.getPropertyValue("--bs-cyan");
+const yellow = style.getPropertyValue("--bs-yellow");
+const red = style.getPropertyValue("--bs-red");
+const teal = style.getPropertyValue("--bs-teal");
+const white = style.getPropertyValue("--bs-white");
+const black = style.getPropertyValue("--bs-dark");
+const gray400 = style.getPropertyValue("--bs-gray-400");
+
 const link_color = {
-    refinfo: style.getPropertyValue("--bs-success"),
-    refnorm: style.getPropertyValue("--bs-primary"),
-    replaces: style.getPropertyValue("--bs-warning"),
-    refunk: style.getPropertyValue("--bs-info"),
-    downref: style.getPropertyValue("--bs-danger")
+    refinfo: green,
+    refnorm: blue,
+    replaces: orange,
+    refunk: cyan,
+    refold: yellow,
+    downref: red
 };
 
 const ref_type = {
@@ -17,7 +29,8 @@ const ref_type = {
     refnorm: "has a Normative reference to",
     replaces: "replaces",
     refunk: "has an Unknown type of reference to",
-    downref: "has a downward reference (DOWNREF) to"
+    refold: "has an Undefined type of reference to",
+    downref: "has a Downward reference (DOWNREF) to"
 };
 
 // code partially adapted from
@@ -27,9 +40,15 @@ function lines(text) {
     let line;
     let line_width_0 = Infinity;
     const lines = [];
+    var sep = "-";
     var words = text.trim()
-        .split(/-/g)
-        .map((x, i, a) => i < a.length - 1 ? x + "-" : x);
+        .split(/-/g);
+    if (words.length == 1) {
+        words = text.trim()
+            .split(/\s/g);
+        sep = " ";
+    }
+    words = words.map((x, i, a) => i < a.length - 1 ? x + sep : x);
     if (words.length == 1) {
         words = text.trim()
             .split(/rfc/g)
@@ -70,6 +89,23 @@ function text_radius(lines) {
     return radius;
 }
 
+function stroke(d) {
+    if (d.level == "Informational" ||
+        d.level == "Experimental" || d.level == "") {
+        return 1;
+    }
+    if (d.level == "Proposed Standard") {
+        return 4;
+    }
+    if (d.level == "Best Current Practice") {
+        return 8;
+    }
+    // all others (draft/full standards)
+    return 10;
+}
+
+var simulation;
+
 // Fill modal with content from link href
 $("#deps-modal")
     .on("show.bs.modal", function (e) {
@@ -80,7 +116,7 @@ $("#deps-modal")
             });
         const link = $(e.relatedTarget)
             .data("href");
-        const group = $(e.relatedTarget)
+        var group = $(e.relatedTarget)
             .data("group");
         const target = $(this)
             .find(".modal-body");
@@ -95,16 +131,102 @@ $("#deps-modal")
         `
         );
 
+        $("#legend")
+            .prop("disabled", true)
+            .prop("checked", false);
+        $("#download-svg")
+            .addClass("disabled")
+            .html(
+                `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...`
+            );
         if (link && target) {
-            d3.json(link)
+            const controller = new AbortController();
+            const { signal } = controller;
+
+            $(this)
+                .on("hide.bs.modal", function (e) {
+                    controller.abort();
+                    if (simulation) {
+                        simulation.stop();
+                    }
+                });
+
+            d3.json(link, { signal })
+                .catch(e => {})
                 .then((data) => {
+                    // the user may have closed the modal in the meantime
+                    if (!$(this)
+                        .hasClass("show")) {
+                        return;
+                    }
+
                     // console.log(data);
+                    const orig_data = { ...data };
+                    const legend = {
+                        nodes: [{
+                            id: "Individual submission",
+                            level: "Informational",
+                            group: ""
+                        }, {
+                            id: "Replaced",
+                            level: "Experimental",
+                            replaced: true
+                        }, {
+                            id: "IESG or RFC queue",
+                            level: "Proposed Standard",
+                            "post-wg": true
+                        }, {
+                            id: "Product of other group",
+                            level: "Best Current Practice",
+                            group: "other group"
+                        }, {
+                            id: "Expired",
+                            level: "Informational",
+                            group: "this group",
+                            expired: true
+                        }, {
+                            id: "Product of this group",
+                            level: "Proposed Standard",
+                            group: "this group"
+                        }, {
+                            id: "RFC published",
+                            level: "Draft Standard",
+                            group: "other group",
+                            rfc: true
+                        }],
+                        links: [{
+                            source: "Individual submission",
+                            target: "Replaced",
+                            rel: "replaces"
+                        }, {
+                            source: "Individual submission",
+                            target: "IESG or RFC queue",
+                            rel: "refnorm"
+                        }, {
+                            source: "Expired",
+                            target: "RFC published",
+                            rel: "refunk"
+                        }, {
+                            source: "Product of other group",
+                            target: "IESG or RFC queue",
+                            rel: "refinfo"
+                        }, {
+                            source: "Product of this group",
+                            target: "Product of other group",
+                            rel: "refold"
+                        }, {
+                            source: "Product of this group",
+                            target: "Expired",
+                            rel: "downref"
+                        }]
+                    };
+
                     target.html('<svg class="w-100 h-100"></svg>');
                     const width = 1000;
                     const height = 1000;
 
                     const zoom = d3.zoom()
-                        .scaleExtent([1 / 8, 8])
+                        .scaleExtent([1 / 32, 32])
                         .on("zoom", zoomed);
 
                     const svg = d3.select(".modal-body svg")
@@ -121,10 +243,11 @@ $("#deps-modal")
                         .join("marker")
                         .attr("id", d => `marker-${d}`)
                         .attr("viewBox", "0 -5 10 10")
-                        .attr("refX", 9)
+                        .attr("refX", 7.85)
                         .attr("markerWidth", 4)
                         .attr("markerHeight", 4)
-                        .attr("stroke-width", 0)
+                        .attr("stroke-width", 0.2)
+                        .attr("stroke", black)
                         .attr("orient", "auto")
                         .attr("fill", d => link_color[d])
                         .append("path")
@@ -163,21 +286,23 @@ $("#deps-modal")
                             if (d.level) {
                                 type += `${d.level} `
                             }
-                            if (d.group) {
+                            if (d.group != undefined && d.group !=
+                                "none" && d.group != "") {
+                                const word = d.rfc ? "from" : "in";
                                 type +=
-                                    `group document in ${d.group.toUpperCase()}`;
+                                    `group document ${word} ${d.group.toUpperCase()}`;
                             } else {
                                 type += "individual document";
                             }
-                            const name = d.id.startsWith("rfc") ?
-                                d
-                                .id.toUpperCase() : d.id;
+                            const name = d.rfc ? d.id.toUpperCase() :
+                                d.id;
                             return `${name} is a${"aeiou".includes(type[0].toLowerCase()) ? "n" : ""} ${type}`
                         });
 
                     a
                         .append("text")
-                        .attr("fill", "black")
+                        .attr("fill", d => d.rfc || d.replaced ? white :
+                            black)
                         .each(d => {
                             d.lines = lines(d.id);
                             d.r = text_radius(d.lines);
@@ -193,36 +318,42 @@ $("#deps-modal")
 
                     a
                         .append("circle")
-                        .attr("r", d => d.r)
-                        .attr("stroke", "black")
+                        .attr("stroke", black)
                         .lower()
                         .attr("fill", d => {
+                            if (d.rfc) {
+                                return green;
+                            }
                             if (d.replaced) {
-                                return style.getPropertyValue(
-                                    "--bs-teal");
+                                return orange;
                             }
                             if (d.dead) {
-                                return style.getPropertyValue(
-                                    "--bs-danger");
+                                return red;
                             }
                             if (d.expired) {
-                                return style.getPropertyValue(
-                                    "--bs-gray-300");
+                                return gray400;
                             }
-                            if (d.group == group) {
-                                return style.getPropertyValue(
-                                    "--bs-warning");
+                            if (d["post-wg"]) {
+                                return teal;
                             }
-                            return "white";
+                            if (d.group == group || d.group ==
+                                "this group") {
+                                return yellow;
+                            }
+                            if (d.group == "") {
+                                return white;
+                            }
+                            return cyan;
                         })
-                        .attr("stroke-width", d => {
-                            if (!d.group) { return 1; }
-                            return 4; // adopted in this or other group
-                        })
+                        .each(d => d.stroke = stroke(d))
+                        .attr("r", d => d.r + d.stroke / 2)
+                        .attr("stroke-width", d => d.stroke)
                         .attr("stroke-dasharray", d => {
-                            if (d.group) { return 0; }
+                            if (d.group != "" || d.rfc) { return 0; }
                             return 4;
                         });
+
+                    const adjust = stroke("something") / 2;
 
                     function ticked() {
                         // don't animate each tick
@@ -250,31 +381,24 @@ $("#deps-modal")
 
                         // code for arced links:
                         link.attr("d", d => {
-                            const r = Math.hypot(d.target.x -
-                                d
-                                .source.x, d
-                                .target.y - d.source.y);
-                            return `
-                              M${d.source.x},${d.source.y}
-                              A${r},${r} 0 0,1 ${d.target.x},${d.target.y}
-                          `;
+                            const r = Math.hypot(d.target.x - d
+                                .source.x, d.target.y - d.source
+                                .y);
+                            return `M${d.source.x},${d.source.y} A${r},${r} 0 0,1 ${d.target.x},${d.target.y}`;
                         });
                         // TODO: figure out how to combine this with above
                         link.attr("d", function (d) {
                             const pl = this.getTotalLength();
-                            const r = (d.target.r);
-                            const m = this.getPointAtLength(
-                                pl -
-                                r);
-                            const dx = m.x - d.source.x;
-                            const dy = m.y - d.source.y;
-                            const dr = Math.sqrt(dx * dx +
-                                dy *
-                                dy);
-                            return `
-                              M${d.source.x},${d.source.y}
-                              A${dr},${dr} 0 0,1 ${m.x},${m.y}
-                          `;
+                            const start = this.getPointAtLength(
+                                d.source.r + d.source.stroke
+                            );
+                            const end = this.getPointAtLength(
+                                pl - d.target.r - d.target.stroke
+                            );
+                            const r = Math.hypot(d.target.x - d
+                                .source.x, d.target.y - d.source
+                                .y);
+                            return `M${start.x},${start.y} A${r},${r} 0 0,1 ${end.x},${end.y}`;
                         });
 
                         node.selectAll("circle, text")
@@ -284,12 +408,10 @@ $("#deps-modal")
                         // auto pan and zoom during simulation
                         const bbox = svg.node()
                             .getBBox();
-                        const max_stroke = 4;
                         svg.attr("viewBox",
-                            [bbox.x - max_stroke,
-                                bbox.y - max_stroke,
-                                bbox.width + 2 * max_stroke,
-                                bbox.height + 2 * max_stroke
+                            [bbox.x - adjust, bbox.y - adjust,
+                                bbox.width + 2 * adjust,
+                                bbox.height + 2 * adjust
                             ]
                         );
                     }
@@ -301,8 +423,7 @@ $("#deps-modal")
 
                     $('svg [title][title!=""]')
                         .tooltip();
-
-                    const simulation = d3
+                    simulation = d3
                         .forceSimulation()
                         .nodes(data.nodes)
                         .force("link", d3.forceLink(data.links)
@@ -311,18 +432,47 @@ $("#deps-modal")
                             // .strength(1)
                         )
                         .force("charge", d3.forceManyBody()
-                            .strength(-5 * max_r))
+                            .strength(-max_r))
                         .force("collision", d3.forceCollide(1.25 *
                             max_r))
                         .force("x", d3.forceX())
                         .force("y", d3.forceY())
+                        // .stop();
                         .on("tick", ticked)
                         .on("end", function () {
+                            console.log("end");
+                            $("#legend")
+                                .prop("disabled", false);
                             $("#download-svg")
                                 .removeClass("disabled")
                                 .html(
                                     '<i class="bi bi-download"></i> Download'
                                 );
+                        });
+
+                    // // See https://github.com/d3/d3-force/blob/master/README.md#simulation_tick
+                    // for (var i = 0, n = Math.ceil(Math.log(simulation.alphaMin()) /
+                    //         Math.log(1 - simulation.alphaDecay())); i <
+                    //     n; ++i) {
+                    //     simulation.tick();
+                    // }
+                    // ticked();
+
+                    $("#legend")
+                        .on("click", function () {
+                            if (this.checked) {
+                                data.nodes = data.nodes.concat(
+                                    legend.nodes);
+                                data.links = data.links.concat(
+                                    legend.links);
+                            } else {
+                                console.log("0", this);
+                                data = orig_data;
+                            }
+                            console.log(data);
+                            simulation.alpha(1)
+                                .nodes(data.nodes)
+                                .restart();
                         });
                 });
         }
