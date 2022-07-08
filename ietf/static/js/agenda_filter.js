@@ -289,13 +289,13 @@ window.agenda_filter_for_testing; // methods to be accessed for automated testin
     }
 
     // Make private functions available for unit testing
-    agenda_filter_for_testing = {
+    window.agenda_filter_for_testing = {
         parse_query_params: parse_query_params,
         toggle_list_item: toggle_list_item
     };
 
     // Make public interface methods accessible
-    agenda_filter = {
+    window.agenda_filter = {
         enable: enable,
         filtering_is_enabled: filtering_is_enabled,
         get_filter_params: get_filter_params,
