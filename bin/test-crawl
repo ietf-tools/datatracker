@@ -250,8 +250,9 @@ nowtime = None
 nowstrn = None
 def nowstr():
     global nowtime, nowstrn
-    if nowtime != time.time():
-        nowtime = time.time()
+    t = time.time_ns()/(10**9)
+    if nowtime != t:
+        nowtime = t
         nowstrn = timezone.now().strftime('%H:%M:%S').encode()
     return nowstrn
 
@@ -463,7 +464,6 @@ if __name__ == "__main__":
     try:
         while urls:
             if args.random:
-                # popitem() is documented to be random, but really isn't
                 url = random.choice(list(urls.keys()))
                 referrer = urls.pop(url)
             else:
