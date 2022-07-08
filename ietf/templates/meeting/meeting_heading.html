@@ -20,13 +20,11 @@
 </h1>
 <div class="lead row">
     <div class="{% if updated %}col-6{% else %}col-12{% endif %}">
-        {{ meeting.city|default:"Location TBD" }}, {{ meeting.date|date:"F j" }} -
-        {% if meeting.date.month != meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endif %}
-        {{ meeting.end_date|date:"j, Y" }}
+        {{ meeting.city|default:"Location TBD" }}, {{ meeting.date|date:"F j" }}{% if meeting.date.month != meeting.end_date.month %} - {{ meeting.end_date|date:"F " }}{% else %}-{% endif %}{{ meeting.end_date|date:"j, Y" }}
     </div>
     {% if updated %}
         <div class="col-6 text-end">
-            Updated: {{ updated|date:"Y-m-d \a\t G:i:s (T)" }}
+            Updated {{ updated|date:"Y-m-d \a\t G:i (T)" }}
         </div>
     {% endif %}
 </div>
