@@ -1,0 +1,16 @@
+{# Copyright The IETF Trust 2016-2020, All Rights Reserved #}
+{% load origin %}
+{% load static %}
+{% origin %}
+<meta property="og:title" content="{{ doc.title }} ({% if doc.get_state_slug == 'rfc' and not snapshot %}RFC {{ rfc_number }}{% else %}{{ name }}-{{ doc.rev }}{% endif %})">
+<meta property="og:url" content="{{ settings.IDTRACKER_BASE_URL }}{{ request.path }}">
+<meta property="og:image" content="{{ settings.IDTRACKER_BASE_URL }}{% static 'ietf/images/ietf-logo-nor-512.png' %}">
+<meta property="og:image:alt" content="Logo of the IETF">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="IETF Datatracker">
+<meta property="og:article:section" content="IETF - Internet Engineering Task Force">
+<meta property="og:description" content="{% for author in doc.documentauthor_set.all %}{{ author.person.name}}{% if not forloop.last %} and {% endif %}{% endfor %}. {{ doc.title }}. {% if doc.get_state_slug == 'rfc' and not snapshot %}RFC {{ rfc_number }}, {{ published.time|date:'M Y' }}, {{doc.pages}} pages{% else %}{{ name }}-{{ doc.rev }}; work in progress{% endif %}.">
+{% if published %}<meta property="og:article:published_time" content="{{ published.time|date:'Y-m-d' }}">{% endif %}
+{% if expires %}<meta property="og:article:expiration_time" content="{{ expires.time|date:'Y-m-d' }}">{% endif %}
