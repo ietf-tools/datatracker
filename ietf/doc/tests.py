@@ -1901,7 +1901,7 @@ class DocTestCase(TestCase):
             self.assertEqual(entry.find('./front/title').text, draft.title)
             date = entry.find('./front/date')
             self.assertEqual(date.get('year'),     str(draft.pub_date().year))
-            self.assertEqual(date.get('month'.lower()[0:3]),    draft.pub_date().strftime('%B'))
+            self.assertEqual(date.get('month'),    draft.pub_date().strftime('%B'))
             self.assertEqual(date.get('day'),      str(draft.pub_date().day))
             self.assertEqual(normalize_text(entry.find('./front/abstract/t').text), normalize_text(draft.abstract))
             self.assertEqual(entry.find('./seriesInfo').get('value'), docname)
