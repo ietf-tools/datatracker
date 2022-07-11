@@ -153,6 +153,7 @@ export const useAgendaStore = defineStore('agenda', {
       // -> Load meeting-specific preferences
       this.infoNoteShown = !(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.hideInfo`) === this.infoNoteHash)
       this.colorAssignments = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.colorAssignments`) || '{}')
+      this.pickedEvents = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.pickedEvents`) || '[]')
 
       this.isLoaded = true
     },
@@ -163,6 +164,7 @@ export const useAgendaStore = defineStore('agenda', {
         window.localStorage.setItem(`agenda.${this.meeting.number}.hideInfo`, this.infoNoteHash)
       }
       window.localStorage.setItem(`agenda.${this.meeting.number}.colorAssignments`, JSON.stringify(this.colorAssignments))
+      window.localStorage.setItem(`agenda.${this.meeting.number}.pickedEvents`, JSON.stringify(this.pickedEvents))
     },
     findCurrentEventId () {
       const current = (this.nowDebugDiff ? DateTime.local().minus(this.nowDebugDiff) : DateTime.local()).setZone(this.timezone)

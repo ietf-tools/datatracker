@@ -16,6 +16,10 @@
     {% vite_asset 'client/agenda/main.js' %}
 {% endblock %}
 {% block morecss %}
+body {
+    font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
 @keyframes initspinner {
     to { transform: rotate(360deg); }
 }
@@ -49,7 +53,7 @@
 }
 
 #app-meeting-loading:after {
-    content: 'Loading meeting...';
+    content: 'Loading meeting {{ schedule.meeting.number }}...';
     position: absolute;
     text-align: center;
     top: 50%;

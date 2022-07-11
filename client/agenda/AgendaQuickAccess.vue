@@ -20,7 +20,7 @@
           type='success'
           size='large'
           strong
-          @click='agendaStore.$patch({ pickerMode: true })'
+          @click='pickerStart'
           )
           i.bi.bi-ui-checks.me-2
           span {{ shortMode ? 'Pick...' : 'Pick Sessions...' }}
@@ -31,7 +31,7 @@
             type='success'
             size='large'
             strong
-            @click='agendaStore.$patch({ pickerModeView: true })'
+            @click='pickerApply'
             )
             i.bi.bi-check2-square.me-2
             span Apply
@@ -40,7 +40,7 @@
             color='#6f42c1'
             size='large'
             strong
-            @click='agendaStore.$patch({ pickerModeView: false })'
+            @click='pickerModify'
             )
             i.bi.bi-pencil-square.me-2
             span Modify
@@ -49,7 +49,7 @@
             color='#666'
             size='large'
             strong
-            @click='agendaStore.$patch({ pickerMode: false })'
+            @click='pickerDiscard'
             )
             i.bi.bi-x-square.me-2
             span Discard
@@ -143,6 +143,20 @@ const shortMode = computed(() => {
 })
 
 // METHODS
+
+function pickerStart () {
+  agendaStore.$patch({ pickerMode: true })
+}
+function pickerApply () {
+  agendaStore.$patch({ pickerModeView: true })
+  agendaStore.persistMeetingPreferences()
+}
+function pickerModify () {
+  agendaStore.$patch({ pickerModeView: false })
+}
+function pickerDiscard () {
+  agendaStore.$patch({ pickerMode: false })
+}
 
 function downloadIcs (key) {
   message.loading('Generating calendar file... Download will begin shortly.')
