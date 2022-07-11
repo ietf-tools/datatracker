@@ -114,7 +114,7 @@ const state = reactive({
 })
 const calendarOptions = reactive({
   plugins: [ bootstrap5Plugin, timeGridPlugin, interactionPlugin, luxonPlugin ],
-  initialView: 'timeGridWeek',
+  initialView: agendaStore.defaultCalendarView === 'day' ? 'timeGridDay' : 'timeGridWeek',
   themeSystem: 'bootstrap5',
   timeZone: agendaStore.timezone,
   slotEventOverlap: false,
@@ -170,6 +170,9 @@ watch(() => agendaStore.scheduleAdjusted, () => {
 watch(() => agendaStore.timezone, (newValue) => {
   calendarOptions.timeZone = newValue
   state.hoverMessage = ''
+})
+watch(() => agendaStore.defaultCalendarView, (newValue) => {
+  calendarOptions.initialView = newValue === 'day' ? 'timeGridDay' : 'timeGridWeek'
 })
 
 // METHODS
@@ -302,49 +305,105 @@ function close () {
   }
 
   .fc-v-event {
-    background-color: #333940;
-    border: 1px solid #333940;
-    border-left-width: 5px;
-    background-image: linear-gradient(to top, #333940, #525a62);
-    padding-left: 5px;
+    background-color: $gray-100;
+    border: 1px solid #FFF;
+    border-width: 0 1px 1px 0;
+    border-radius: 0;
+    background-image: linear-gradient(to bottom, $gray-100, $gray-200);
+    padding-left: 3px;
     cursor: pointer;
+    text-shadow: 1px 1px 0 rgba(255,255,255,.25);
+    box-shadow: inset -1px -1px 0 $gray-500;
+
+    &.fc-timegrid-event-short {
+      .fc-event-title-container, .fc-event-time {
+        display: flex;
+        align-items: center;
+      }
+    }
+
+    .fc-event-main {
+      color: #333;
+
+      .fc-event-title-container {
+        font-size: .9em;
+        font-weight: 500;
+        line-height: .9em;
+      }
+    }
   }
 
   .event-area-art {
-    border-color: rgba(204, 121, 167);
-    background-image: linear-gradient(to top, rgba(204, 121, 167, .35), rgba(204, 121, 167, 0));
+    box-shadow: inset -1px -1px 0 rgba(204, 121, 167);
+    background-image: linear-gradient(to top, rgba(204, 121, 167, .3) 50%, rgba(204, 121, 167, .1));
+
+    .fc-event-main {
+      color: darken(rgba(204, 121, 167), 30%);
+    }
   }
   .event-area-gen {
-    border-color: rgba(29, 78, 17);
-    background-image: linear-gradient(to top, rgba(29, 78, 17, .35), rgba(29, 78, 17, 0));
+    box-shadow: inset -1px -1px 0 rgba(29, 78, 17);
+    background-image: linear-gradient(to top, rgba(29, 78, 17, .3) 50%, rgba(29, 78, 17, .1));
+
+    .fc-event-main {
+      color: darken(rgba(29, 78, 17), 30%);
+    }
   }
   .event-area-iab {
-    border-color: rgba(255, 165, 0);
-    background-image: linear-gradient(to top, rgba(255, 165, 0, .35), rgba(255, 165, 0, 0));
+    box-shadow: inset -1px -1px 0 rgba(255, 165, 0);
+    background-image: linear-gradient(to top, rgba(255, 165, 0, .3) 50%, rgba(255, 165, 0, .1));
+
+    .fc-event-main {
+      color: darken(rgba(255, 165, 0), 30%);
+    }
   }
   .event-area-int {
-    border-color: rgba(132, 240, 240);
-    background-image: linear-gradient(to top, rgba(132, 240, 240, .35), rgba(132, 240, 240, 0));
+    box-shadow: inset -1px -1px 0 rgba(132, 240, 240);
+    background-image: linear-gradient(to top, rgba(132, 240, 240, .3) 50%, rgba(132, 240, 240, .1));
+
+    .fc-event-main {
+      color: darken(rgba(132, 240, 240), 40%);
+    }
   }
   .event-area-irtf {
-    border-color: rgba(154, 119, 230);
-    background-image: linear-gradient(to top, rgba(154, 119, 230, .35), rgba(154, 119, 230, 0));
+    box-shadow: inset -1px -1px 0 rgba(154, 119, 230);
+    background-image: linear-gradient(to top, rgba(154, 119, 230, .3) 50%, rgba(154, 119, 230, .1));
+
+    .fc-event-main {
+      color: darken(rgba(154, 119, 230), 30%);
+    }
   }
   .event-area-ops {
-    border-color: rgba(199, 133, 129);
-    background-image: linear-gradient(to top, rgba(199, 133, 129, .35), rgba(199, 133, 129, 0));
+    box-shadow: inset -1px -1px 0 rgba(199, 133, 129);
+    background-image: linear-gradient(to top, rgba(199, 133, 129, .3) 50%, rgba(199, 133, 129, .1));
+
+    .fc-event-main {
+      color: darken(rgba(199, 133, 129), 35%);
+    }
   }
   .event-area-rtg {
-    border-color: rgba(222, 219, 124);
-    background-image: linear-gradient(to top, rgba(222, 219, 124, .35), rgba(222, 219, 124, 0));
+    box-shadow: inset -1px -1px 0 rgba(222, 219, 124);
+    background-image: linear-gradient(to top, rgba(222, 219, 124, .3) 50%, rgba(222, 219, 124, .1));
+
+    .fc-event-main {
+      color: darken(rgba(222, 219, 124), 50%);
+    }
   }
   .event-area-sec {
-    border-color: rgba(0, 114, 178);
-    background-image: linear-gradient(to top, rgba(0, 114, 178, .35), rgba(0, 114, 178, 0));
+    box-shadow: inset -1px -1px 0 rgba(0, 114, 178);
+    background-image: linear-gradient(to top, rgba(0, 114, 178, .3) 50%, rgba(0, 114, 178, .1));
+
+    .fc-event-main {
+      color: darken(rgba(0, 114, 178), 10%);
+    }
   }
   .event-area-tsv {
-    border-color: rgba(117,201,119);
-    background-image: linear-gradient(to top, rgba(117,201,119, .35), rgba(117,201,119, 0));
+    box-shadow: inset -1px -1px 0 rgba(117,201,119);
+    background-image: linear-gradient(to top, rgba(117,201,119, .3) 50%, rgba(117,201,119, .1));
+
+    .fc-event-main {
+      color: darken(rgba(117,201,119), 40%);
+    }
   }
 }
 

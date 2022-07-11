@@ -120,6 +120,23 @@ n-drawer(v-model:show='isShown', placement='right', :width='500')
         span.small.me-2 Use Bolder Text
 
       n-divider(title-placement='left')
+        i.bi.bi-calendar3.me-2
+        small Calendar View
+
+      span.small.me-2 Default View
+      n-button-group.mt-2(style='justify-content: stretch; width: 100%;')
+        n-button(
+          style='flex-grow: 1;'
+          :type='agendaStore.defaultCalendarView === `week` ? `primary` : `default`'
+          @click='agendaStore.defaultCalendarView = `week`'
+          ) Week
+        n-button(
+          style='flex-grow: 1;'
+          :type='agendaStore.defaultCalendarView === `day` ? `primary` : `default`'
+          @click='agendaStore.defaultCalendarView = `day`'
+          ) Day
+
+      n-divider(title-placement='left')
         i.bi.bi-palette.me-2
         small Custom Colors / Tags
       .d-flex.align-items-center.mt-3(v-for='(cl, idx) of state.colors')
@@ -296,6 +313,7 @@ async function actionClick (key) {
             bolderText: agendaStore.bolderText,
             colorLegendShown: agendaStore.colorLegendShown,
             colors: agendaStore.colors,
+            defaultCalendarView: agendaStore.defaultCalendarView,
             eventIconsShown: agendaStore.eventIconsShown,
             floorIndicatorsShown: agendaStore.floorIndicatorsShown,
             listDayCollapse: agendaStore.listDayCollapse,
@@ -335,6 +353,7 @@ async function actionClick (key) {
             hex: c.hex || '#FF0000',
             tag: c.tag || 'Unknown Color'
           })),
+          defaultCalendarView: configJson.defaultCalendarView === 'day' ? 'day' : 'week',
           eventIconsShown: configJson.eventIconsShown === true,
           floorIndicatorsShown: configJson.floorIndicatorsShown === true,
           listDayCollapse: configJson.listDayCollapse === true,
