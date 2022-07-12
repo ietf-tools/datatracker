@@ -86,6 +86,8 @@
               .agenda-table-note(v-if='item.note')
                 i.bi.bi-arrow-return-right.me-1
                 span {{item.note}}
+              .agenda-table-mobile-state(v-if='isMobile && item.status === `canceled`'): span.badge.is-cancelled Cancelled
+              .agenda-table-mobile-state(v-else-if='isMobile && item.status === `resched`'): span.badge.is-rescheduled Rescheduled
             //- CELL - LINKS --------------------------
             td.agenda-table-cell-links
               template(v-if='state.selectedColorPicker === item.key')
@@ -101,8 +103,8 @@
                     @click='setEventColor(item.key, idx)'
                     )
               template(v-else)
-                span.badge.is-cancelled(v-if='item.status === `canceled`') Cancelled
-                span.badge.is-rescheduled(v-else-if='item.status === `resched`') Rescheduled
+                span.badge.is-cancelled(v-if='!isMobile && item.status === `canceled`') Cancelled
+                span.badge.is-rescheduled(v-else-if='!isMobile && item.status === `resched`') Rescheduled
                 .agenda-table-cell-links-buttons(v-else-if='agendaStore.viewport < 1200 && item.links && item.links.length > 0')
                   n-dropdown(
                     trigger='click'
@@ -173,6 +175,7 @@ import { DateTime } from 'luxon'
 import find from 'lodash/find'
 import sortBy from 'lodash/sortBy'
 import reduce from 'lodash/reduce'
+import truncate from 'lodash/truncate'
 import xslugify from '../shared/xslugify'
 import {
   NButton,
@@ -327,7 +330,7 @@ const meetingEvents = computed(() => {
         if (item.links.calendar) {
           links.push({
             id: `lnk-${item.id}-calendar`,
-            label: `Calendar (.ics) entry for ${item.acronym} session on ${item.adjustedStart.toFormat('fff')}`,
+            label: isMobile.value ? `Calendar (.ics) entry for this session` : `Calendar (.ics) entry for ${item.acronym} session on ${item.adjustedStart.toFormat('fff')}`,
             icon: 'calendar-check',
             href: item.links.calendar,
             color: 'pink'
@@ -352,7 +355,7 @@ const meetingEvents = computed(() => {
               // -> Audio
               links.push({
                 id: `lnk-${item.id}-audio-${rec.id}`,
-                label: rec.title,
+                label: isMobile.value ? truncate(rec.title, 30) : rec.title,
                 icon: 'soundwave',
                 href: rec.url,
                 color: 'teal'
@@ -361,7 +364,7 @@ const meetingEvents = computed(() => {
               // -> Youtube
               links.push({
                 id: `lnk-${item.id}-youtube-${rec.id}`,
-                label: rec.title,
+                label: isMobile.value ? truncate(rec.title, 30) : rec.title,
                 icon: 'youtube',
                 href: rec.url,
                 color: 'red'
@@ -370,7 +373,7 @@ const meetingEvents = computed(() => {
               // -> Others
               links.push({
                 id: `lnk-${item.id}-video-${rec.id}`,
-                label: rec.title,
+                label: isMobile.value ? truncate(rec.title, 30) : rec.title,
                 icon: 'file-play',
                 href: rec.url,
                 color: 'purple'
@@ -461,6 +464,10 @@ const pickedEvents = computed({
   }
 })
 
+const isMobile = computed(() => {
+  return agendaStore.viewport < 576
+})
+
 // METHODS
 
 function toggleSearch () {
@@ -540,6 +547,7 @@ onBeforeUnmount(() => {
 <style lang="scss">
 @import "bootstrap/scss/functions";
 @import "bootstrap/scss/variables";
+@import "../shared/breakpoints";
 
 .agenda-table {
   border: 1px solid $gray-600;
@@ -648,6 +656,11 @@ onBeforeUnmount(() => {
     font-weight: 600;
     border-right: 1px solid #FFF;
 
+    @media screen and (max-width: $bs5-break-sm) {
+      font-size: .8em;
+      padding: 0 6px;
+    }
+
     &:first-child {
       border-top-left-radius: 5px;
     }
@@ -661,9 +674,17 @@ onBeforeUnmount(() => {
       @media screen and (max-width: 1300px) {
         width: 100px;
       }
+
+      @media screen and (max-width: $bs5-break-sm) {
+        width: 30px;
+      }
     }
     &.agenda-table-head-location {
       width: 250px;
+
+      @media screen and (max-width: $bs5-break-sm) {
+        width: auto;
+      }
     }
     // .agenda-table-head-event {
     //   width: 10px;
@@ -708,6 +729,10 @@ onBeforeUnmount(() => {
     padding: 0 12px;
     font-weight: 600;
     scroll-margin-top: 25px;
+
+    @media screen and (max-width: $bs5-break-sm) {
+      font-size: .9em;
+    }
   }
 
   &-display-session-head > td {
@@ -717,6 +742,10 @@ onBeforeUnmount(() => {
     padding: 0 12px;
     color: #333;
 
+    @media screen and (max-width: $bs5-break-sm) {
+      padding: 0 6px;
+    }
+
     &.agenda-table-cell-ts {
       border-right: 1px solid $blue-200 !important;
       color: $blue-700;
@@ -725,6 +754,10 @@ onBeforeUnmount(() => {
     &.agenda-table-cell-name {
       color: $blue-700;
       font-weight: 600;
+
+      @media screen and (max-width: $bs5-break-sm) {
+        font-size: .9em;
+      }
     }
   }
 
@@ -732,6 +765,10 @@ onBeforeUnmount(() => {
     border: 0;
     padding: 0 12px;
     color: #333;
+
+    @media screen and (max-width: $bs5-break-sm) {
+      padding: 2px 6px;
+    }
 
     &.agenda-table-cell-check {
       background-color: desaturate($blue-700, 50%) !important;
@@ -757,8 +794,11 @@ onBeforeUnmount(() => {
         font-size: .85rem;
       }
 
-      @media screen and (max-width: 600px) {
+      @media screen and (max-width: $bs5-break-sm) {
         white-space: initial;
+        word-wrap: break-word;
+        max-width: 70px;
+        font-size: .7rem;
       }
 
       .badge {
@@ -777,11 +817,14 @@ onBeforeUnmount(() => {
         padding: 0 4px;
         justify-content: center;
         align-items: center;
-
         margin-left: -12px;
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
         margin-right: 6px;
+
+        @media screen and (max-width: $bs5-break-sm) {
+          display: none;
+        }
       }
     }
 
@@ -789,6 +832,11 @@ onBeforeUnmount(() => {
       color: $gray-700;
       border-right: 1px solid $gray-300 !important;
       white-space: nowrap;
+
+      @media screen and (max-width: $bs5-break-sm) {
+        font-size: .7rem;
+        word-break: break-all;
+      }
 
       .badge {
         display: inline-flex;
@@ -815,12 +863,20 @@ onBeforeUnmount(() => {
     }
 
     &.agenda-table-cell-name {
+      @media screen and (max-width: $bs5-break-sm) {
+        font-size: .7rem;
+      }
+
       .badge.is-bof {
         background-color: $teal-500;
         margin: 0 8px;
       }
 
-      .bi {
+      > .bi {
+        @media screen and (max-width: $bs5-break-sm) {
+          display: none;
+        }
+
         &.bi-brown {
           color: $indigo-500;
         }
@@ -829,6 +885,20 @@ onBeforeUnmount(() => {
         }
         &.bi-pink {
           color: $pink-500;
+        }
+      }
+
+      .agenda-table-mobile-state {
+        padding-top: 3px;
+
+        .badge.is-cancelled {
+          background-color: $red-500;
+          text-transform: uppercase;
+        }
+
+        .badge.is-rescheduled {
+          background-color: $orange-500;
+          text-transform: uppercase;
         }
       }
     }
@@ -939,8 +1009,9 @@ onBeforeUnmount(() => {
       font-size: .9rem;
     }
 
-    @media screen and (max-width: 600px) {
+    @media screen and (max-width: $bs5-break-sm) {
       white-space: initial;
+      font-size: .7rem;
     }
   }
 
@@ -1116,6 +1187,10 @@ onBeforeUnmount(() => {
 
   &-colorpicker {
     right: 70px;
+
+    @media screen and (max-width: $bs5-break-sm) {
+      display: none;
+    }
   }
 
   // -> COLOR PICKER

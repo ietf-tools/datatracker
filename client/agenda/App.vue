@@ -23,6 +23,7 @@ agendaStore.fetch()
 <style lang="scss">
 @import "bootstrap/scss/functions";
 @import "bootstrap/scss/variables";
+@import "../shared/breakpoints";
 
 .meeting {
   > h1 {
@@ -31,6 +32,10 @@ agendaStore.fetch()
     display: flex;
     justify-content: space-between;
     align-items: center;
+
+    @media screen and (max-width: $bs5-break-sm) {
+      justify-content: center;
+    }
 
     strong {
       font-weight: 700;
@@ -67,6 +72,17 @@ agendaStore.fetch()
     box-shadow: 0 0 5px 0 rgba($red-500, .5) !important;
     color: #FFF;
     animation: warningBorderFlash 1s ease infinite;
+  }
+
+  > h4 {
+    @media screen and (max-width: $bs5-break-sm) {
+      text-align: center;
+
+      > span {
+        font-size: .8em;
+        text-align: center;
+      }
+    }
   }
 }
 </style>

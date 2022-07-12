@@ -4,7 +4,7 @@
   )
   h1
     span #[strong IETF {{agendaStore.meeting.number}}] Meeting Agenda {{titleExtra}}
-    .meeting-h1-badges
+    .meeting-h1-badges.d-none.d-sm-flex
       span.meeting-warning(v-if='agendaStore.meeting.warningNote') {{agendaStore.meeting.warningNote}}
       span.meeting-beta BETA
   h4
@@ -13,7 +13,7 @@
 
   .agenda-topnav.my-3
     meeting-navigation
-    n-button(
+    n-button.d-none.d-sm-flex(
       quaternary
       @click='toggleSettings'
       )
@@ -28,7 +28,7 @@
       // -> Subtitle + Timezone Bar
       // ----------------------------
       .row
-        .col.d-flex.align-items-center
+        .col.d-none.d-sm-flex.align-items-center
           h2 {{ agendaStore.pickerMode ? 'Session Selection' : 'Schedule'}}
 
           n-popover(v-if='!agendaStore.infoNoteShown')
@@ -36,10 +36,10 @@
               n-button.ms-2(text, @click='toggleInfoNote')
                 i.bi.bi-info-circle.text-muted
             span Show Info Note
-        .col-auto.d-flex.align-items-center
+        .col-12.col-sm-auto.d-flex.align-items-center
           i.bi.bi-globe.me-2
           small.me-2.d-none.d-md-inline: strong Timezone:
-          n-button-group.me-2
+          n-button-group.agenda-tz-selector
             n-button(
               :type='agendaStore.isTimezoneMeeting ? `primary` : `default`'
               @click='setTimezone(`meeting`)'
@@ -372,6 +372,7 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
 <style lang="scss">
 @import "bootstrap/scss/functions";
 @import "bootstrap/scss/variables";
+@import "../shared/breakpoints";
 
 .agenda {
   min-height: 500px;
@@ -397,6 +398,20 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
         .bi {
           transform: rotate(180deg);
         }
+      }
+    }
+  }
+
+  &-tz-selector {
+    margin-right: .5rem;
+
+    @media screen and (max-width: $bs5-break-sm) {
+      margin-right: 0;
+      justify-content: stretch;
+      flex: 1;
+
+      > button {
+        flex: 1;
       }
     }
   }

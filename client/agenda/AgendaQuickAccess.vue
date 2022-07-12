@@ -87,7 +87,7 @@
                 href='#now'
                 @click='scrollToNow'
                 )
-                i.bi.bi-arrow-right-short.me-2
+                i.bi.bi-arrow-right-short.d-none.d-xxl-inline.me-2
                 span Now
             li.nav-item(v-for='day of agendaStore.meetingDays')
               a.nav-link(
@@ -95,7 +95,7 @@
                 :href='`#slot-` + day.slug'
                 @click='scrollToDay(day.slug, $event)'
                 )
-                i.bi.bi-arrow-right-short.me-2
+                i.bi.bi-arrow-right-short.d-none.d-xxl-inline.me-2
                 span {{day.label}}
 </template>
 
