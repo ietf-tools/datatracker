@@ -2,7 +2,7 @@
 {% load origin %}
 {% load static %}
 {% origin %}
-<meta property="og:title" content="{{ doc.title }} ({% if doc.get_state_slug == 'rfc' and not snapshot %}RFC {{ rfc_number }}{% else %}{{ name }}-{{ doc.rev }}{% endif %})">
+<meta property="og:title" content="({% if doc.get_state_slug == 'rfc' and not snapshot %}RFC {{ rfc_number }}: {% endif %}){{ doc.title }}">
 <meta property="og:url" content="{{ settings.IDTRACKER_BASE_URL }}{{ request.path }}">
 <meta property="og:image" content="{{ settings.IDTRACKER_BASE_URL }}{% static 'ietf/images/ietf-logo-nor-512.png' %}">
 <meta property="og:image:alt" content="Logo of the IETF">
