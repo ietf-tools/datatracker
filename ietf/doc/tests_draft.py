@@ -1215,7 +1215,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.post(url,dict(txt=test_file,reset_text="1"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(q('textarea')[0].text.strip().startswith("# Document Shepherd Writeup")) # TODO: This is a poor test of whether the reset did anything
+        self.assertTrue(q('textarea')[0].text.strip().startswith("# Document Shepherd Write-Up")) # TODO: This is a poor test of whether the reset did anything
 
     def test_edit_doc_extresources(self):
         url = urlreverse('ietf.doc.views_draft.edit_doc_extresources', kwargs=dict(name=self.docname))

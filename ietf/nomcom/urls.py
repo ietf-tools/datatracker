@@ -40,6 +40,7 @@ urlpatterns = [
     url(r'^(?P<year>\d{4})/private/chair/topic/(?P<topic_id>\d+)/remove/$', views.remove_topic),
     url(r'^(?P<year>\d{4})/private/chair/eligible/$', views.private_eligible),
     url(r'^(?P<year>\d{4})/private/chair/volunteers/$', views.private_volunteers),
+    url(r'^(?P<year>\d{4})/private/chair/volunteers/csv/$', views.private_volunteers_csv),
 
     url(r'^(?P<year>\d{4})/$', views.year_index),
     url(r'^(?P<year>\d{4})/requirements/$', views.requirements),

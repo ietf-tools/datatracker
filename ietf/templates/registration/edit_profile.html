@@ -132,25 +132,24 @@
                         </tr>
                     </thead>
                     <tbody>
+                    <!-- [html-validate-disable-block input-missing-label -- labelled via aria-label] -->
                     {% for email in emails %}
                         <tr>
                             <td class="text-center">
-                                <label aria-label="Primary email">
                                 <input class="form-check-input"
                                        type="radio"
                                        name="primary_email"
+                                       aria-label="Primary email"
                                        value="{{ email.pk }}"
                                        {% if email.primary %}checked{% endif %}>
-                               </label>
                             </td>
                             <td class="text-center">
-                                <label aria-label="Active email">
                                 <input class="form-check-input"
                                        type="checkbox"
                                        name="active_emails"
                                        value="{{ email.pk }}"
+                                       aria-label="Active email"
                                        {% if email.active %}checked{% endif %}>
-                               </label>
                             </td>
                             <td>
                                 {% if email.origin == person.user.username or email.origin == '' %}

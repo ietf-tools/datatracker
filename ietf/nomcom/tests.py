@@ -1935,6 +1935,12 @@ Junk body for testing
             self.client.login(username='plain',password='plain+password')
             response = self.client.get(url)
             self.assertEqual(response.status_code, 302)
+        self.client.logout()
+        url = reverse('ietf.nomcom.views.private_volunteers_csv',kwargs={'year':year})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        response = self.client.get(url)
+        self.assertContains(response,people[-1].email(),status_code=200)
+
 
 
 

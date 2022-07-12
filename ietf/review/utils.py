@@ -140,9 +140,12 @@ ReviewAssignmentData = namedtuple("ReviewAssignmentData", [
     "request_to_assignment_days", "assignment_to_closure_days", "request_to_closure_days"])
 
 
-def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, time_to=None, ordering=[]):
+def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, time_to=None, ordering=None):
     """Yield data on each review assignment, sorted by (*ordering, assigned_on)
     for easy use with itertools.groupby. Valid entries in *ordering are "team" and "reviewer"."""
+
+    if ordering is None:
+        ordering = []
 
     filters = Q()
 

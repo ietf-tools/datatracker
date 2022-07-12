@@ -7,15 +7,13 @@
       class="form-horizontal"
       action="{% url 'ietf.doc.views_search.search' %}">
     {% csrf_token %}
+    <!-- [html-validate-disable-block input-missing-label -- labelled via aria-label] -->
     <div class="input-group search_field">
-        <label for="id_name" aria-label="Document name/title/RFC number"></label>
-        {{ form.name|add_class:"form-control"|attr:"placeholder:Document name/title/RFC number" }}
-        <span class="input-group-btn">
-            <button class="btn btn-primary" type="submit">
-                <i class="bi bi-search"></i>
-                Search
-            </button>
-        </span>
+        {{ form.name|add_class:"form-control"|attr:"placeholder:Document name/title/RFC number"|attr:"aria-label:Document name/title/RFC number" }}
+        <button class="btn btn-primary" type="submit">
+            <i class="bi bi-search"></i>
+            Search
+        </button>
     </div>
     {{ form.sort }}
     <div class="accordion pt-3" id="search-accordion">
@@ -42,15 +40,15 @@
                         <div class="col-sm-8">
                             <div class="form-check">
                                 {{ form.rfcs|add_class:"form-check-input" }}
-                                <label class="form-check-label" for="id_rfcs">RFC</label>
+                                <label class="form-check-label" for="{{ form.rfcs.id_for_label }}">RFC</label>
                             </div>
                             <div class="form-check">
                                 {{ form.activedrafts|add_class:"form-check-input" }}
-                                <label class="form-check-label" for="id_activedrafts">Internet-Draft (active)</label>
+                                <label class="form-check-label" for="{{ form.activedrafts.id_for_label }}">Internet-Draft (active)</label>
                             </div>
                             <div class="form-check">
                                 {{ form.olddrafts|add_class:"form-check-input advdoctype" }}
-                                <label class="form-check-label" for="id_olddrafts">Internet-Draft (expired, replaced or withdrawn)</label>
+                                <label class="form-check-label" for="{{ form.olddrafts.id_for_label }}">Internet-Draft (expired, replaced or withdrawn)</label>
                             </div>
                             {% for value, label in form.fields.doctypes.choices %}
                                 <div class="form-check">
@@ -74,10 +72,10 @@
                                        value="author"
                                        {% if form.by.value == "author" %}checked{% endif %}
                                        id="author">
-                                <label for="author" class="form-check-label fw-bold">Author or Affiliation Name</label>
+                                <label for="{{ form.author.id_for_label }}" class="form-check-label fw-bold">Author or Affiliation Name</label>
                             </div>
                         </div>
-                        <div class="col-sm-8"><label aria-label="Author">{{ form.author|add_class:"form-control" }}</label></div>
+                        <div class="col-sm-8">{{ form.author|add_class:"form-control" }}</div>
                     </div>
                     <div class="row mb-3 search_field">
                         <div class="col-sm-4">
@@ -88,10 +86,10 @@
                                        value="group"
                                        {% if form.by.value == "group" %}checked{% endif %}
                                        id="group">
-                                <label for="group" class="form-check-label fw-bold">WG</label>
+                                <label for="{{ form.group.id_for_label }}" class="form-check-label fw-bold">WG</label>
                             </div>
                         </div>
-                        <div class="col-sm-8"><label aria-label="Group">{{ form.group|add_class:"form-control" }}</label></div>
+                        <div class="col-sm-8">{{ form.group|add_class:"form-control" }}</div>
                     </div>
                     <div class="row mb-3 search_field">
                         <div class="col-sm-4">
@@ -102,10 +100,10 @@
                                        value="area"
                                        {% if form.by.value == "area" %}checked{% endif %}
                                        id="area">
-                                <label for="area" class="form-check-label fw-bold">Area</label>
+                                <label for="{{ form.area.id_for_label }}" class="form-check-label fw-bold">Area</label>
                             </div>
                         </div>
-                        <div class="col-sm-8"><label aria-label="Area">{{ form.area|add_class:"form-select" }}</label></div>
+                        <div class="col-sm-8">{{ form.area|add_class:"select2-field"|attr:"data-minimum-input-length:0"|attr:"data-max-entries:1"|attr:"data-minimum-results-for-search:Infinity" }}</div>
                     </div>
                     <div class="row mb-3 search_field">
                         <div class="col-sm-4">
@@ -116,10 +114,10 @@
                                        value="ad"
                                        {% if form.by.value == "ad" %}checked{% endif %}
                                        id="areadir">
-                                <label for="areadir" class="form-check-label fw-bold">AD</label>
+                                <label for="{{ form.ad.id_for_label }}" class="form-check-label fw-bold">AD</label>
                             </div>
                         </div>
-                        <div class="col-sm-8"><label aria-label="AD">{{ form.ad|add_class:"form-select" }}</label></div>
+                        <div class="col-sm-8">{{ form.ad|add_class:"select2-field"|attr:"data-minimum-input-length:0"|attr:"data-max-entries:1"|attr:"data-minimum-results-for-search:Infinity" }}</div>
                     </div>
                     <div class="row mb-3 search_field">
                         <div class="col-sm-4">
@@ -130,11 +128,11 @@
                                        value="state"
                                        {% if form.by.value == "state" %}checked{% endif %}
                                        id="state">
-                                <label for="state" class="form-check-label fw-bold">IESG State</label>
+                                <label for="{{ form.state.id_for_label }}" class="form-check-label fw-bold">IESG State</label>
                             </div>
                         </div>
-                        <div class="col-sm-4"><label aria-label="State">{{ form.state|add_class:"form-select col-sm-4" }}</label></div>
-                        <div class="col-sm-4"><label aria-label="Substate">{{ form.substate|add_class:"form-select" }}</label></div>
+                        <div class="col-sm-4">{{ form.state|add_class:"select2-field"|attr:"data-minimum-input-length:0"|attr:"data-max-entries:1"|attr:"data-minimum-results-for-search:Infinity" }}</div>
+                        <div class="col-sm-4">{{ form.substate|add_class:"select2-field"|attr:"data-minimum-input-length:0"|attr:"data-max-entries:1"|attr:"data-minimum-results-for-search:Infinity" }}</div>
                     </div>
                     <div class="row mb-3 search_field">
                         <div class="col-sm-4">
@@ -145,10 +143,10 @@
                                        value="irtfstate"
                                        {% if form.by.value == "irtfstate" %}checked{% endif %}
                                        id="irtfstate">
-                                <label for="irtfstate" class="form-check-label fw-bold">IRTF State</label>
+                                <label for="{{ form.irtfstate.id_for_label }}" class="form-check-label fw-bold">IRTF State</label>
                             </div>
                         </div>
-                        <div class="col-sm-8"><label aria-label="IRTF State">{{ form.irtfstate|add_class:"form-select" }}</label></div>
+                        <div class="col-sm-8">{{ form.irtfstate|add_class:"select2-field"|attr:"data-minimum-input-length:0"|attr:"data-max-entries:1"|attr:"data-minimum-results-for-search:Infinity" }}</div>
                     </div>
                     <div class="row mb-3 search_field">
                         <div class="col-sm-4">
@@ -159,10 +157,10 @@
                                        value="stream"
                                        {% if form.by.value == "stream" %}checked{% endif %}
                                        id="stream">
-                                <label for="stream" class="form-check-label fw-bold">Stream</label>
+                                <label for="{{ form.stream.id_for_label }}" class="form-check-label fw-bold">Stream</label>
                             </div>
                         </div>
-                        <div class="col-sm-8"><label aria-label="Stream">{{ form.stream|add_class:"form-select" }}</label></div>
+                        <div class="col-sm-8">{{ form.stream|add_class:"select2-field"|attr:"data-minimum-input-length:0"|attr:"data-max-entries:1"|attr:"data-minimum-results-for-search:Infinity" }}</div>
                     </div>
                     <div class="row mb-3 search_field">
                         <div class="col-sm-4 d-grid">
@@ -180,8 +178,7 @@
         </div>
     </div>
 </form>
-<p class="text-center pt-3">
-    <a href="https://www.ietf.org/search">Search page for www.ietf.org website</a>
-    |
-    <a href="https://mailarchive.ietf.org">Search page for IETF mail list archives</a>
+<p class="text-center pt-5">
+    <a class="btn btn-outline-primary btn-sm" href="https://www.ietf.org/search">Search page for www.ietf.org website</a>
+    <a class="btn btn-outline-primary btn-sm" href="https://mailarchive.ietf.org">Search page for IETF mail list archives</a>
 </p>

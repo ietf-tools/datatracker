@@ -284,6 +284,7 @@
                     {% endif %}
                 </td>
                 <td>
+                    <div class="d-none d-sm-block">
                     {% if item.session.historic_group %}
                         <a href="{% url 'ietf.group.views.group_about' acronym=item.session.historic_group.acronym %}">
                             {{ item.session.historic_group.acronym }}
@@ -291,21 +292,34 @@
                     {% else %}
                         {{ item.session.historic_group.acronym }}
                     {% endif %}
+                    </div>
                 </td>
             {% endif %}
             <td>
+                {% if item.session.current_status == 'canceled' %}
+                    <span class="badge rounded-pill bg-danger float-end">Cancelled</span>
+                {% else %}
+                    <div class="float-end ps-2">
+                        {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
+                    </div>
+                {% endif %}
+                <div class="d-sm-none">
+                    {% if item.session.historic_group %}
+                        <a href="{% url 'ietf.group.views.group_about' acronym=item.session.historic_group.acronym %}">
+                            {{ item.session.historic_group.acronym }}</a>
+                    {% else %}
+                        {{ item.session.historic_group.acronym }}
+                    {% endif %}
+                    {% if item.session.historic_group.historic_parent.acronym %}
+                        <span class="text-muted">{{ item.session.historic_group.historic_parent.acronym }}</span>
+                    {% endif %}
+                </div>
+
                 {% agenda_anchor item.session %}
                 {% assignment_display_name item %}
             {% end_agenda_anchor %}
-            {% if item.session.current_status == 'canceled' %}
-                <span class="badge rounded-pill bg-danger float-end">Cancelled</span>
-            {% else %}
-                <div class="float-end ps-2">
-                    {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
-                </div>
-            {% endif %}
             {% if item.session.historic_group.state_id == "bof" %}
-                <span class="badge rounded-pill bg-success float-end me-2">BOF</span>
+                <span class="badge rounded-pill bg-success float-end">BOF</span>
             {% endif %}
             {% if item.session.current_status == 'resched' %}
                 <div class="badge rounded-pill bg-danger float-end">
@@ -332,7 +346,7 @@
                 </a>
             {% elif item.session.agenda_note %}
                 <br>
-                <span class="text-danger">{{ item.session.agenda_note }}</span>
+                <span class="text-danger small">{{ item.session.agenda_note }}</span>
             {% endif %}
         </td>
     </tr>
