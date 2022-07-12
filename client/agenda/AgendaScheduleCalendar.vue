@@ -3,7 +3,7 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='state.drawerHeight
   n-drawer-content.agenda-calendar
     template(#header)
       span Calendar View
-      div
+      .agenda-calendar-actions
         template(v-if='agendaStore.viewport > 990')
           i.bi.bi-globe.me-2
           small.me-2: strong Timezone:
@@ -252,17 +252,44 @@ function close () {
 <style lang="scss">
 @import "bootstrap/scss/functions";
 @import "bootstrap/scss/variables";
+@import "../shared/breakpoints";
 
 .agenda-calendar {
   .n-drawer-header {
     padding-top: 10px !important;
     padding-bottom: 10px !important;
 
+    @media screen and (max-width: $bs5-break-sm) {
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+    }
+
     &__main {
       display: flex;
       justify-content: space-between;
       align-items: center;
       width: 100%;
+
+      @media screen and (max-width: $bs5-break-sm) {
+        justify-content: center;
+        flex-wrap: wrap;
+        font-size: .9em;
+      }
+    }
+  }
+
+  &-actions {
+    @media screen and (max-width: $bs5-break-sm) {
+      flex: 0 1 100%;
+      margin-top: .75rem;
+      display: flex;
+      justify-content: center;
+    }
+  }
+
+  .n-drawer-body-content-wrapper {
+    @media screen and (max-width: $bs5-break-sm) {
+      padding: 10px !important;
     }
   }
 
@@ -301,6 +328,22 @@ function close () {
       text-transform: uppercase;
       font-weight: 700;
       margin-right: 10px;
+    }
+  }
+
+  @media screen and (max-width: $bs5-break-sm) {
+    .fc-toolbar.fc-header-toolbar {
+      flex-wrap: wrap;
+
+      .fc-toolbar-chunk:nth-child(2) {
+        display: none;
+      }
+
+      .fc-toolbar-title {
+        font-size: 1em;
+        font-weight: 600;
+        padding: 7px 0;
+      }
     }
   }
 

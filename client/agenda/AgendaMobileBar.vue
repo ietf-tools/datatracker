@@ -4,20 +4,21 @@
     i.bi.bi-filter-square-fill.me-2
     span Filters
     n-badge.ms-2(:value='agendaStore.selectedCatSubs.length', processing)
-  div
-    button(@click='agendaStore.$patch({ calendarShown: true })')
-      i.bi.bi-calendar3.me-2
-      span Calendar
-    n-dropdown(
-      :options='downloadIcsOptions'
-      size='huge'
-      :show-arrow='true'
-      trigger='click'
-      @select='downloadIcs'
-      )
-      button
-        i.bi.bi-calendar-check.me-2
-        span .ics
+  button(@click='agendaStore.$patch({ calendarShown: true })')
+    i.bi.bi-calendar3.me-2
+    span Cal
+  n-dropdown(
+    :options='downloadIcsOptions'
+    size='huge'
+    :show-arrow='true'
+    trigger='click'
+    @select='downloadIcs'
+    )
+    button
+      i.bi.bi-calendar-check.me-2
+      span .ics
+  button(@click='agendaStore.$patch({ settingsShown: !agendaStore.settingsShown })')
+    i.bi.bi-gear
 </template>
 
 <script setup>

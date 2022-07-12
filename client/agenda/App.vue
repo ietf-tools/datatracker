@@ -35,6 +35,10 @@ agendaStore.fetch()
 
     @media screen and (max-width: $bs5-break-sm) {
       justify-content: center;
+
+      > span {
+        font-size: .95em;
+      }
     }
 
     strong {

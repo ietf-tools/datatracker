@@ -1,5 +1,5 @@
 <template lang="pug">
-n-drawer(v-model:show='isShown', placement='right', :width='500')
+n-drawer(v-model:show='isShown', placement='right', :width='panelWidth')
   n-drawer-content.agenda-settings
     template(#header)
       span Agenda Settings
@@ -263,6 +263,9 @@ const actionOptions = [
 
 const calcOffset = computed(() => {
   return agendaStore.nowDebugDiff ? JSON.stringify(agendaStore.nowDebugDiff.toObject()) : 'None'
+})
+const panelWidth = computed(() => {
+  return agendaStore.viewport > 500 ? 500 : agendaStore.viewport
 })
 
 // WATCHERS

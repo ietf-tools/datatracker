@@ -3,7 +3,7 @@ n-drawer(v-model:show='state.isShown', placement='bottom', :height='state.drawer
   n-drawer-content.agenda-personalize
     template(#header)
       span Filter Areas + Groups
-      div
+      .agenda-personalize-actions
         n-button.me-2(
           ghost
           color='gray'
@@ -43,7 +43,7 @@ n-drawer(v-model:show='state.isShown', placement='bottom', :height='state.drawer
               v-if='area.keyword'
               @click='toggleFilterArea(area.keyword)'
               )
-              i.bi.bi-diagram-3.me-2
+              i.bi.bi-diagram-3
               span {{area.label}}
           .agenda-personalize-groups
             button.agenda-personalize-group(
@@ -163,17 +163,44 @@ function toggleFilterGroup (key) {
 <style lang="scss">
 @import "bootstrap/scss/functions";
 @import "bootstrap/scss/variables";
+@import "../shared/breakpoints";
 
 .agenda-personalize {
   .n-drawer-header {
     padding-top: 10px !important;
     padding-bottom: 10px !important;
 
+    @media screen and (max-width: $bs5-break-sm) {
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+    }
+
     &__main {
       display: flex;
       justify-content: space-between;
       align-items: center;
       width: 100%;
+
+      @media screen and (max-width: $bs5-break-sm) {
+        justify-content: center;
+        flex-wrap: wrap;
+        font-size: .9em;
+      }
+    }
+  }
+
+  &-actions {
+    @media screen and (max-width: $bs5-break-sm) {
+      flex: 0 1 100%;
+      margin-top: .75rem;
+      display: flex;
+      justify-content: center;
+    }
+  }
+
+  .n-drawer-body-content-wrapper {
+    @media screen and (max-width: $bs5-break-sm) {
+      padding: 10px !important;
     }
   }
 
@@ -226,6 +253,10 @@ function toggleFilterGroup (key) {
     flex: 0 1 200px;
     padding-right: 5px;
 
+    @media screen and (max-width: $bs5-break-sm) {
+      flex-basis: 60px;
+    }
+
     button {
       width: 100%;
       height: 100%;
@@ -236,6 +267,22 @@ function toggleFilterGroup (key) {
       box-shadow: 1px 1px 0px 0px rgba(0,0,0,.1);
       transition: background-color .5s ease;
       position: relative;
+
+      > .bi {
+        margin-right: .5rem;
+      }
+
+      @media screen and (max-width: $bs5-break-sm) {
+        font-size: .8em;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+
+        > .bi {
+          margin-right: 0;
+        }
+      }
 
       &:hover {
         background-color: rgba(255,255,255,.4);
@@ -268,6 +315,10 @@ function toggleFilterGroup (key) {
     background-color: rgba(255,255,255,.7);
     color: $gray-600;
     margin-right: 0px;
+
+    @media screen and (max-width: $bs5-break-sm) {
+      font-size: .9em;
+    }
 
     &:first-child {
       border-top-left-radius: 5px;

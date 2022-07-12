@@ -2,7 +2,7 @@
 .floorplan
   h1
     span #[strong IETF {{agendaStore.meeting.number}}] Floor Plan
-    .meeting-h1-badges
+    .meeting-h1-badges.d-none.d-sm-flex
       span.meeting-warning(v-if='agendaStore.meeting.warningNote') {{agendaStore.meeting.warningNote}}
       span.meeting-beta BETA
   h4

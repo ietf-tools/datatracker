@@ -488,7 +488,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@parcel/core@npm:2.6.2":
+"@parcel/core@npm:*, @parcel/core@npm:2.6.2":
   version: 2.6.2
   resolution: "@parcel/core@npm:2.6.2"
   dependencies:
