@@ -41,7 +41,7 @@ class ReviewRequestFactory(factory.django.DjangoModelFactory):
     type_id = 'lc'
     doc = factory.SubFactory('ietf.doc.factories.DocumentFactory',type_id='draft')
     team = factory.SubFactory('ietf.group.factories.ReviewTeamFactory',type_id='review')
-    deadline = datetime.datetime.today()+datetime.timedelta(days=14)
+    deadline = timezone.now()+datetime.timedelta(days=14)
     requested_by = factory.SubFactory('ietf.person.factories.PersonFactory')
 
 class ReviewAssignmentFactory(factory.django.DjangoModelFactory):

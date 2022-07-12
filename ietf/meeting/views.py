@@ -3359,7 +3359,7 @@ def interim_request_edit(request, number):
 @cache_page(60*60)
 def past(request):
     '''List of past meetings'''
-    today = datetime.datetime.today()
+    today = timezone.now()
 
     meetings = data_for_meetings_overview(Meeting.objects.filter(date__lte=today).order_by('-date'))
 

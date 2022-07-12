@@ -52,7 +52,7 @@ def get_liaison_post_data(type='incoming'):
                 to_contacts='to_contacts@example.com',
                 purpose="info",
                 title="title",
-                submitted_date=datetime.datetime.today().strftime("%Y-%m-%d"),
+                submitted_date=timezone.now().strftime("%Y-%m-%d"),
                 body="body",
                 send="1" )
 

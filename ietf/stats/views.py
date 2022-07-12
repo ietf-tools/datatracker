@@ -18,6 +18,7 @@ from django.db.models import Count, Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 
@@ -197,7 +198,7 @@ def document_stats(request, stats_type=None):
         if "y" in time_choice:
             try:
                 y = int(time_choice.rstrip("y"))
-                from_time = datetime.datetime.today() - dateutil.relativedelta.relativedelta(years=y)
+                from_time = timezone.now() - dateutil.relativedelta.relativedelta(years=y)
             except ValueError:
                 pass
 

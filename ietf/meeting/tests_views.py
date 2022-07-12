@@ -556,7 +556,7 @@ class MeetingTests(BaseMeetingTestCase):
     def test_interim_materials(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
-        date = datetime.datetime.today() - datetime.timedelta(days=10)
+        date = timezone.now() - datetime.timedelta(days=10)
         meeting = make_interim_meeting(group=group, date=date, status='sched')
         session = meeting.session_set.first()
 
@@ -1490,7 +1490,7 @@ class EditMeetingScheduleTests(TestCase):
         """Allow assignment to future timeslots only for official schedule"""
         meeting = MeetingFactory(
             type_id='ietf',
-            date=(datetime.datetime.today() - datetime.timedelta(days=1)).date(),
+            date=(timezone.now() - datetime.timedelta(days=1)).date(),
             days=3,
         )
         right_now = self._right_now_in(meeting.time_zone)
@@ -1550,7 +1550,7 @@ class EditMeetingScheduleTests(TestCase):
         """Do not allow assignment of past sessions for official schedule"""
         meeting = MeetingFactory(
             type_id='ietf',
-            date=(datetime.datetime.today() - datetime.timedelta(days=1)).date(),
+            date=(timezone.now() - datetime.timedelta(days=1)).date(),
             days=3,
         )
         right_now = self._right_now_in(meeting.time_zone)
@@ -1685,7 +1685,7 @@ class EditMeetingScheduleTests(TestCase):
         """Allow unassignment only of future timeslots for official schedule"""
         meeting = MeetingFactory(
             type_id='ietf',
-            date=(datetime.datetime.today() - datetime.timedelta(days=1)).date(),
+            date=(timezone.now() - datetime.timedelta(days=1)).date(),
             days=3,
         )
         right_now = self._right_now_in(meeting.time_zone)
@@ -1809,7 +1809,7 @@ class EditTimeslotsTests(TestCase):
         return MeetingFactory(
             type_id='ietf',
             number=number,
-            date=datetime.datetime.today() + datetime.timedelta(days=10),
+            date=timezone.now() + datetime.timedelta(days=10),
             populate_schedule=False,
         )
 
@@ -5567,7 +5567,7 @@ class InterimTests(TestCase):
     def test_send_interim_minutes_reminder(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
-        date = datetime.datetime.today() - datetime.timedelta(days=10)
+        date = timezone.now() - datetime.timedelta(days=10)
         meeting = make_interim_meeting(group=group, date=date, status='sched')
         length_before = len(outbox)
         send_interim_minutes_reminder(meeting=meeting)
@@ -6606,7 +6606,7 @@ class HasMeetingsTests(TestCase):
             session = SessionFactory(
                 group__type_id = gf.type_id,
                 meeting__type_id='interim', 
-                meeting__date = datetime.datetime.today()+datetime.timedelta(days=30),
+                meeting__date = timezone.now()+datetime.timedelta(days=30),
                 status_id='sched',
             )
             sessions.append(session)
@@ -6622,7 +6622,7 @@ class HasMeetingsTests(TestCase):
         sessions=[]
         for gf in GroupFeatures.objects.filter(has_meetings=True):
             group = GroupFactory(type_id=gf.type_id)
-            meeting_date = datetime.datetime.today() + datetime.timedelta(days=30)
+            meeting_date = timezone.now() + datetime.timedelta(days=30)
             session = SessionFactory(
                 group=group,
                 meeting__type_id='interim', 
@@ -6643,7 +6643,7 @@ class HasMeetingsTests(TestCase):
         sessions=[]
         for gf in GroupFeatures.objects.filter(has_meetings=True):
             group = GroupFactory(type_id=gf.type_id)
-            meeting_date = datetime.datetime.today() + datetime.timedelta(days=30)
+            meeting_date = timezone.now() + datetime.timedelta(days=30)
             session = SessionFactory(
                 group=group,
                 meeting__type_id='interim', 

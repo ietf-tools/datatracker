@@ -351,7 +351,8 @@ class TelechatDocEventFactory(DocEventFactory):
     class Meta:
         model = TelechatDocEvent
 
-    telechat_date = datetime.datetime.today()+datetime.timedelta(days=14)
+    # note: this is evaluated at import time and not updated - all events will have the same telechat_date
+    telechat_date = timezone.now()+datetime.timedelta(days=14)
     type = 'scheduled_for_telechat'
 
 class NewRevisionDocEventFactory(DocEventFactory):

@@ -178,7 +178,7 @@ class Meeting(models.Model):
 
     @classmethod
     def get_current_meeting(cls, type="ietf"):
-        return cls.objects.filter(type=type, date__gte=datetime.datetime.today()-datetime.timedelta(days=7) ).order_by('date').first()
+        return cls.objects.filter(type=type, date__gte=timezone.now()-datetime.timedelta(days=7) ).order_by('date').first()
 
     def get_first_cut_off(self):
         return self.get_00_cutoff()
