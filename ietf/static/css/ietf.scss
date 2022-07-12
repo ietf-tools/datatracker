@@ -17,6 +17,13 @@ $popover-max-width: 100%;
 @import "bootstrap/scss/mixins";
 @import "bootstrap/scss/utilities";
 
+$h1-font-size: $font-size-base * 2.2;
+$h2-font-size: $font-size-base * 1.8;
+$h3-font-size: $font-size-base * 1.6;
+$h4-font-size: $font-size-base * 1.4;
+$h5-font-size: $font-size-base * 1.2;
+$h6-font-size: $font-size-base;
+
 // Layout & components
 @import "bootstrap/scss/root";
 @import "bootstrap/scss/reboot";
@@ -73,7 +80,8 @@ html {
 
 // Make textareas use a monospace font
 textarea {
-    font-family: var(--bs-font-monospace);
+    font-family: $font-family-code;
+    font-size: $code-font-size !important;
 }
 
 // Wrap long lines in preformatted text.
