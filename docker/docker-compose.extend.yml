@@ -8,6 +8,8 @@ services:
             - .:/workspace
             - /workspace/.parcel-cache
             - /workspace/__pycache__
+            - /workspace/.vite
+            - /workspace/.yarn/unplugged
             - app-assets:/assets
     db:
         ports:
