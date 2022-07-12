@@ -10,6 +10,7 @@ from urllib.parse import urljoin
 
 from django.conf import settings
 from django.test import override_settings
+from django.utils import timezone
 
 from ietf.utils.tests import TestCase
 from .meetecho import Conference, ConferenceManager, MeetechoAPI, MeetechoAPIError
@@ -249,7 +250,7 @@ class APITests(TestCase):
 
     def test_time_serialization(self):
         """Time de/serialization should be consistent"""
-        time = datetime.datetime.now(pytz.utc).replace(microsecond=0)  # cut off to 0 microseconds
+        time = timezone.now().astimezone(pytz.utc).replace(microsecond=0)  # cut off to 0 microseconds
         api = MeetechoAPI(API_BASE, CLIENT_ID, CLIENT_SECRET)
         self.assertEqual(api._deserialize_time(api._serialize_time(time)), time)
 

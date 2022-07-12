@@ -43,7 +43,6 @@ import json
 import pytz
 import importlib
 import socket
-import datetime
 import gzip
 import unittest
 import pathlib
@@ -75,6 +74,7 @@ from django.core.management import call_command
 from django.urls import URLResolver # type: ignore
 from django.template.backends.django import DjangoTemplates
 from django.template.backends.django import Template  # type: ignore[attr-defined]
+from django.utils import timezone
 # from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
@@ -748,7 +748,7 @@ class IetfTestRunner(DiscoverRunner):
                 with io.open(self.coverage_file, encoding='utf-8') as file:
                     self.coverage_master = json.load(file)
             self.coverage_data = {
-                "time": datetime.datetime.now(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "time": timezone.now().astimezone(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "template": {
                     "coverage": 0.0,
                     "covered": {},
