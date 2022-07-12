@@ -10,6 +10,7 @@ import datetime
 from typing import Optional         # pyflakes:ignore
 
 from django.conf import settings
+from django.utils import timezone
 
 from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor,
     StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent, TelechatDocEvent,
@@ -38,7 +39,7 @@ class BaseDocumentFactory(factory.django.DjangoModelFactory):
     rev = '00'
     std_level_id = None                 # type: Optional[str]
     intended_std_level_id = None
-    time = datetime.datetime.now()
+    time = timezone.now()
     expires = factory.LazyAttribute(lambda o: o.time+datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE))
     pages = factory.fuzzy.FuzzyInteger(2,400)
 
@@ -403,7 +404,7 @@ class IRSGBallotDocEventFactory(BallotDocEventFactory):
     class Meta:
         model = IRSGBallotDocEvent
 
-    duedate = datetime.datetime.now() + datetime.timedelta(days=14)
+    duedate = timezone.now() + datetime.timedelta(days=14)
     ballot_type = factory.SubFactory(BallotTypeFactory, slug='irsg-approve')
 
 class BallotPositionDocEventFactory(DocEventFactory):

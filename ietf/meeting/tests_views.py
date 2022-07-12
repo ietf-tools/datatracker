@@ -29,8 +29,8 @@ from django.test import Client, override_settings
 from django.db.models import F, Max
 from django.http import QueryDict, FileResponse
 from django.template import Context, Template
+from django.utils import timezone
 from django.utils.text import slugify
-from django.utils.timezone import now
 
 import debug           # pyflakes:ignore
 
@@ -1481,7 +1481,7 @@ class EditMeetingScheduleTests(TestCase):
 
     @staticmethod
     def _right_now_in(tzname):
-        right_now = now().astimezone(pytz.timezone(tzname))
+        right_now = timezone.now().astimezone(pytz.timezone(tzname))
         if not settings.USE_TZ:
             right_now = right_now.replace(tzinfo=None)
         return right_now
@@ -4632,7 +4632,7 @@ class InterimTests(TestCase):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
         date = datetime.date.today() + datetime.timedelta(days=30)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        time = timezone.now().time().replace(microsecond=0,second=0)
         dt = datetime.datetime.combine(date, time)
         duration = datetime.timedelta(hours=3)
         remote_instructions = 'Use webex'
@@ -4703,7 +4703,7 @@ class InterimTests(TestCase):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
         date = datetime.date.today() + datetime.timedelta(days=30)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        time = timezone.now().time().replace(microsecond=0,second=0)
         dt = datetime.datetime.combine(date, time)
         duration = datetime.timedelta(hours=3)
         city = 'San Francisco'
@@ -4751,7 +4751,7 @@ class InterimTests(TestCase):
         make_meeting_test_data()
         date = datetime.date.today() + datetime.timedelta(days=30)
         date2 = date + datetime.timedelta(days=1)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        time = timezone.now().time().replace(microsecond=0,second=0)
         dt = datetime.datetime.combine(date, time)
         dt2 = datetime.datetime.combine(date2, time)
         duration = datetime.timedelta(hours=3)
@@ -4817,7 +4817,7 @@ class InterimTests(TestCase):
         make_meeting_test_data()
         date = datetime.date.today() + datetime.timedelta(days=30)
         date2 = date + datetime.timedelta(days=2)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        time = timezone.now().time().replace(microsecond=0,second=0)
         group = Group.objects.get(acronym='mars')
         city = 'San Francisco'
         country = 'US'
@@ -4885,7 +4885,7 @@ class InterimTests(TestCase):
         if date.year != date2.year:
             date += datetime.timedelta(days=1)
             date2 += datetime.timedelta(days=1)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        time = timezone.now().time().replace(microsecond=0,second=0)
         dt = datetime.datetime.combine(date, time)
         dt2 = datetime.datetime.combine(date2, time)
         duration = datetime.timedelta(hours=3)
@@ -6510,7 +6510,7 @@ class HasMeetingsTests(TestCase):
         q = PyQuery(r.content)
         self.assertTrue(q('#id_group option[value="%d"]'%group.pk))
         date = datetime.date.today() + datetime.timedelta(days=30+meeting_count)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        time = timezone.now().time().replace(microsecond=0,second=0)
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'

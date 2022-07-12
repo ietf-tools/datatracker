@@ -14,6 +14,7 @@ import debug         # pyflakes:ignore
 
 from django.conf import settings
 from django.urls import reverse
+from django.utils import timezone
 
 from ietf.group.models import Group, GroupEvent
 from ietf.meeting.factories import MeetingFactory
@@ -212,8 +213,8 @@ class SecrMeetingTestCase(TestCase):
         self.assertEqual(q('#id_notification_list').html(),'ames, mars')
 
         # test that only changes since last notification show up
-        now = datetime.datetime.now()
-        then = datetime.datetime.now()+datetime.timedelta(hours=1)
+        now = timezone.now()
+        then = timezone.now()+datetime.timedelta(hours=1)
         person = Person.objects.get(name="(System)")
         GroupEvent.objects.create(group=mars_group,time=now,type='sent_notification',
                                   by=person,desc='sent scheduled notification for %s' % meeting)

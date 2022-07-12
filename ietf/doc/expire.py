@@ -4,6 +4,7 @@
 
 
 from django.conf import settings
+from django.utils import timezone
 
 import datetime, os, shutil, glob, re
 from pathlib import Path
@@ -62,7 +63,7 @@ def get_expired_drafts():
 
 def in_draft_expire_freeze(when=None):
     if when == None:
-        when = datetime.datetime.now()
+        when = timezone.now()
 
     meeting = Meeting.objects.filter(type='ietf', date__gte=when-datetime.timedelta(days=7)).order_by('date').first()
 

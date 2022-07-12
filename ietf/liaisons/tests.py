@@ -14,6 +14,8 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.urls import reverse as urlreverse
 from django.db.models import Q
+from django.utils import timezone
+
 from io import StringIO
 from pyquery import PyQuery
 
@@ -385,7 +387,7 @@ class LiaisonManagementTests(TestCase):
 
     def test_edit_liaison(self):
         liaison = LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
-        LiaisonStatementEventFactory(statement=liaison,type_id='submitted', time=datetime.datetime.now()-datetime.timedelta(days=1))
+        LiaisonStatementEventFactory(statement=liaison,type_id='submitted', time=timezone.now()-datetime.timedelta(days=1))
         LiaisonStatementEventFactory(statement=liaison,type_id='posted')
         from_group = liaison.from_groups.first()
         to_group = liaison.to_groups.first()

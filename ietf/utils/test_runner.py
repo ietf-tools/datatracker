@@ -569,7 +569,7 @@ class CoverageTest(unittest.TestCase):
             checker.stop()
             # Save to the .coverage file
             checker.save()
-            # Apply the configured and requested omit and include data 
+            # Apply the configured and requested omit and include data
             checker.config.from_args(ignore_errors=None, omit=settings.TEST_CODE_COVERAGE_EXCLUDE_FILES,
                 include=include, file=None)
             for pattern in settings.TEST_CODE_COVERAGE_EXCLUDE_LINES:
@@ -738,7 +738,7 @@ class IetfTestRunner(DiscoverRunner):
         print("     Datatracker %s test suite, %s:" % (ietf.__version__, time.strftime("%d %B %Y %H:%M:%S %Z")))
         print("     Python %s." % sys.version.replace('\n', ' '))
         print("     Django %s, settings '%s'" % (django.get_version(), settings.SETTINGS_MODULE))
-        
+
         settings.TEMPLATES[0]['BACKEND'] = 'ietf.utils.test_runner.ValidatingTemplates'
         if self.check_coverage:
             if self.coverage_file.endswith('.gz'):
@@ -750,17 +750,17 @@ class IetfTestRunner(DiscoverRunner):
             self.coverage_data = {
                 "time": datetime.datetime.now(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "template": {
-                    "coverage": 0.0, 
+                    "coverage": 0.0,
                     "covered": {},
                     "format": 1,        # default format, coverage data in 'covered' are just fractions
                 },
                 "url": {
-                    "coverage": 0.0, 
+                    "coverage": 0.0,
                     "covered": {},
                     "format": 4,
                 },
                 "code": {
-                    "coverage": 0.0, 
+                    "coverage": 0.0,
                     "covered": {},
                     "format": 1,
                 },
@@ -807,8 +807,8 @@ class IetfTestRunner(DiscoverRunner):
         for offset in range(10):
             try:
                 # remember the value so ietf.utils.mail.send_smtp() will use the same
-                ietf.utils.mail.SMTP_ADDR['port'] = base + offset 
-                self.smtpd_driver = SMTPTestServerDriver((ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port']),None) 
+                ietf.utils.mail.SMTP_ADDR['port'] = base + offset
+                self.smtpd_driver = SMTPTestServerDriver((ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port']),None)
                 self.smtpd_driver.start()
                 print(("     Running an SMTP test server on %(ip4)s:%(port)s to catch outgoing email." % ietf.utils.mail.SMTP_ADDR))
                 break

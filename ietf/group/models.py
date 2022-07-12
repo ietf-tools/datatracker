@@ -13,6 +13,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.deletion import CASCADE, PROTECT
 from django.dispatch import receiver
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -27,7 +28,7 @@ from ietf.utils.validators import JSONForeignKeyListValidator
 
 
 class GroupInfo(models.Model):
-    time = models.DateTimeField(default=datetime.datetime.now)
+    time = models.DateTimeField(default=timezone.now)
     name = models.CharField(max_length=80)
     state = ForeignKey(GroupStateName, null=True)
     type = ForeignKey(GroupTypeName, null=True)
@@ -343,7 +344,7 @@ GROUP_EVENT_CHOICES = [
 class GroupEvent(models.Model):
     """An occurrence for a group, used for tracking who, when and what."""
     group = ForeignKey(Group)
-    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
+    time = models.DateTimeField(default=timezone.now, help_text="When the event happened")
     type = models.CharField(max_length=50, choices=GROUP_EVENT_CHOICES)
     by = ForeignKey(Person)
     desc = models.TextField()

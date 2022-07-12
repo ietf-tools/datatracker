@@ -14,6 +14,7 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
@@ -587,7 +588,7 @@ def notify(request, id, type):
                     type_id = form.cleaned_data['type'],
                     by = request.user.person,
                     disclosure = ipr,
-                    response_due = datetime.datetime.now().date() + datetime.timedelta(days=30),
+                    response_due = timezone.now().date() + datetime.timedelta(days=30),
                     message = message,
                 )
             messages.success(request,'Notifications sent')

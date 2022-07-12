@@ -54,6 +54,7 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonRespons
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from django.utils.html import escape
 from django.views.decorators.cache import cache_page, cache_control
 
@@ -567,7 +568,7 @@ def all_status(request):
         if e:
             wg_reports.append(e)
 
-    wg_reports.sort(key=lambda x: (x.group.parent.acronym,datetime.datetime.now()-x.time))
+    wg_reports.sort(key=lambda x: (x.group.parent.acronym,timezone.now()-x.time))
 
     rg_reports = []
     for rg in rgs:
@@ -767,7 +768,7 @@ def email_aliases(request, acronym=None, group_type=None):
 def meetings(request, acronym=None, group_type=None):
     group = get_group_or_404(acronym,group_type) if acronym else None
 
-    four_years_ago = datetime.datetime.now()-datetime.timedelta(days=4*365)
+    four_years_ago = timezone.now()-datetime.timedelta(days=4*365)
 
     sessions = add_event_info_to_session_qs(
         group.session_set.filter(
@@ -931,7 +932,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                 try:
                     group = Group.objects.get(acronym=clean["acronym"])
                     save_group_in_history(group)
-                    group.time = datetime.datetime.now()
+                    group.time = timezone.now()
                     group.save()
                 except Group.DoesNotExist:
                     group = Group.objects.create(name=clean["name"],
@@ -1030,7 +1031,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                         )
                     ))
 
-            group.time = datetime.datetime.now()
+            group.time = timezone.now()
 
             if changes and not new_group:
                 for attr, new, desc in changes:
@@ -1468,7 +1469,7 @@ def reviewer_overview(request, acronym, group_type=None):
                                     int(math.ceil(d.assignment_to_closure_days)) if d.assignment_to_closure_days is not None else None))
             if d.state in ["completed", "completed_in_time", "completed_late"]:
                 if d.assigned_time is not None:
-                    delta = datetime.datetime.now() - d.assigned_time
+                    delta = timezone.now() - d.assigned_time
                     if d.assignment_to_closure_days is not None:
                         days = int(delta.days - d.assignment_to_closure_days)
                         if days_since > days: days_since = days

@@ -36,10 +36,10 @@ from django.db.models import F, Max, Q
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.encoding import force_str
 from django.utils.functional import curry
 from django.utils.text import slugify
-from django.utils.timezone import now
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
@@ -128,7 +128,7 @@ def materials(request, num=None):
     cut_off_date = meeting.get_submission_cut_off_date()
     cor_cut_off_date = meeting.get_submission_correction_date()
     now = datetime.date.today()
-    old = datetime.datetime.now() - datetime.timedelta(days=1)
+    old = timezone.now() - datetime.timedelta(days=1)
     if settings.SERVER_MODE != 'production' and '_testoverride' in request.GET:
         pass
     elif now > cor_cut_off_date:
@@ -442,7 +442,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
     lock_time = settings.MEETING_SESSION_LOCK_TIME
     def timeslot_locked(ts):
-        meeting_now = now().astimezone(pytz.timezone(meeting.time_zone))
+        meeting_now = timezone.now().astimezone(pytz.timezone(meeting.time_zone))
         if not settings.USE_TZ:
             meeting_now = meeting_now.replace(tzinfo=None)
         return schedule.is_official and (ts.time - meeting_now < lock_time)
@@ -785,7 +785,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
                         timeslot=old_timeslot,
                     )
 
-                existing_assignments.update(timeslot=timeslot, modified=datetime.datetime.now())
+                existing_assignments.update(timeslot=timeslot, modified=timezone.now())
             else:
                 SchedTimeSessAssignment.objects.create(
                     session=session,
@@ -1560,7 +1560,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         "updated": updated,
         "filter_categories": filter_organizer.get_filter_categories(),
         "non_area_keywords": filter_organizer.get_non_area_keywords(),
-        "now": datetime.datetime.now().astimezone(pytz.UTC),
+        "now": datetime.datetime.now(pytz.utc),
         "timezone": meeting.time_zone,
         "is_current_meeting": is_current_meeting,
         "use_codimd": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
@@ -2271,7 +2271,7 @@ def session_details(request, num, acronym):
                     'can_manage_materials' : can_manage,
                     'can_view_request': can_view_request,
                     'thisweek': datetime.date.today()-datetime.timedelta(days=7),
-                    'now': datetime.datetime.now(),
+                    'now': timezone.now(),
                     'use_codimd': True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
                   })
 
@@ -3432,7 +3432,7 @@ def upcoming(request):
                   'menu_actions': actions,
                   'menu_entries': menu_entries,
                   'selected_menu_entry': selected_menu_entry,
-                  'now': datetime.datetime.now(),
+                  'now': timezone.now(),
                   'use_codimd': True if datetime.date.today()>=settings.MEETING_USES_CODIMD_DATE else False,
                   })
 
