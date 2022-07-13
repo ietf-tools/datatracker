@@ -9,6 +9,9 @@ if [[ -n "${UPDATE_REQUIREMENTS}" && -r requirements.txt ]]; then
   pip install --upgrade -r requirements.txt
 fi
 
+echo "Running initial checks..."
+/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check --settings=settings_local
+
 cleanup () {
   # Cleanly terminate the celery app by sending it a TERM, then waiting for it to exit.
   if [[ -n "${celery_pid}" ]]; then
