@@ -191,10 +191,8 @@ jobs:
         echo "Running checks..."
         ./ietf/manage.py check
         echo "Starting datatracker..."
-        ./ietf/manage.py runserver 0.0.0.0:8000 --settings=settings_local
-
-    - name: Ensure Datatracker is ready
-      run: |
+        ./ietf/manage.py runserver 0.0.0.0:8000 --settings=settings_local &
+        echo "Waiting for datatracker to be ready..."
         /usr/local/bin/wait-for localhost:8000 -- echo "Datatracker ready"
 
     - name: Run all tests
