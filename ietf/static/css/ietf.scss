@@ -78,10 +78,10 @@ html {
     scroll-padding-top: 60px;
 }
 
-// Make textareas use a monospace font
-textarea {
+// Make textareas in forms use a monospace font
+textarea.form-control {
     font-family: $font-family-code;
-    font-size: $code-font-size !important;
+    font-size: $code-font-size;
 }
 
 // Wrap long lines in preformatted text.
