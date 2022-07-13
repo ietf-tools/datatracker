@@ -44,14 +44,14 @@ General Instructions for Deployment of a New Release
       docker image tag ghcr.io/ietf-tools/datatracker-celery:latest datatracker-celery-fallback
       docker-compose pull celery
 
- 8. Stop async task worker (this may take a few minutes if tasks are in progress):
+ 8. Stop and remove the async task container (this may take a few minutes if tasks are in progress):
 
       docker-compose stop celery
       docker-compose rm celery
-      cd -
 
- 9. Run migrations:
+ 9. Return to the release directory and run migrations:
 
+      cd /a/www/ietf-datatracker/${releasenumber}
       ietf/manage.py migrate
 
       Take note if any migrations were executed.
@@ -68,7 +68,8 @@ General Instructions for Deployment of a New Release
 
  12. Start async task worker:
 
-      cd /a/docker/datatracker-cel && bash startcommand && cd -
+      cd /a/docker/datatracker-cel
+      bash startcommand
 
  13. Verify operation:
 
@@ -120,8 +121,17 @@ The following process should be used:
  6. Edit ``.../ietf/__init__.py`` in the new patched release to indicate the patch
     version in the ``__patch__`` string.
 
- 7. Change the 'web' symlink, reload etc. as described in
+ 7. Stop the async task container (this may take a few minutes if tasks are in progress):
+
+      cd /a/docker/datatracker-cel
+      docker-compose stop celery
+
+ 8. Change the 'web' symlink, reload etc. as described in
     `General Instructions for Deployment of a New Release`_.
 
+ 9. Start async task worker:
+
+      cd /a/docker/datatracker-cel
+      bash startcommand
 
 
