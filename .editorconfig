@@ -31,7 +31,7 @@ indent_size = 2
 [client/**]
 indent_size = 2
 
-[{package.json,.eslintrc.js,.yarnrc.yml,vite.config.js}]
+[{package.json,.eslintrc.js,.yarnrc.yml,vite.config.js,cypress.config.js}]
 indent_size = 2
 
 # Settings for cypress tests
