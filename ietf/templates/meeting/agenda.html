@@ -14,6 +14,12 @@
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 {% block morecss %}#weekview iframe { height: 25em; }{% endblock %}
+{% block precontent %}
+    <div class="meeting-switch">
+        <i class="bi bi-arrow-left-right me-2"></i>
+        <a href="{% url 'agenda-neue' num=schedule.meeting.number %}">Switch to New Agenda Display</a>
+    </div>
+{% endblock %}
 {% block content %}
     {% origin %}
     {% if "-utc" in request.path %}

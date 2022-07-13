@@ -8,6 +8,8 @@ sudo service rsyslog start &>/dev/null
 echo "Fixing volumes ownership..."
 sudo chown -R dev:dev "$WORKSPACEDIR/.parcel-cache"
 sudo chown -R dev:dev "$WORKSPACEDIR/__pycache__"
+sudo chown -R dev:dev "$WORKSPACEDIR/.vite"
+sudo chown -R dev:dev "$WORKSPACEDIR/.yarn/unplugged"
 sudo chown dev:dev "/assets"
 
 echo "Fix chromedriver /dev/shm permissions..."
@@ -20,6 +22,7 @@ yarn rebuild
 # Generate static assets
 echo "Building static assets... (this could take a minute or two)"
 yarn build
+yarn legacy:build
 
 # Copy config files if needed
 

@@ -41,18 +41,6 @@
             Agenda
         </a>
     </li>
-    <li class="nav-item">
-        <a class="nav-link agenda-link filterable {% if selected == "agenda-utc" %}active{% endif %}"
-           href="{% url 'ietf.meeting.views.agenda' num=meeting.number utc='-utc' %}">
-            UTC agenda
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link agenda-link filterable {% if selected == "select-sessions" %}active{% endif %}"
-           href="{% url 'ietf.meeting.views.agenda_personalize' num=meeting.number %}">
-            Personalize agenda
-        </a>
-    </li>
     {% if user|has_role:"Secretariat,Area Director,IAB" %}
         {% if schedule != meeting.schedule %}
             <li class="nav-item">

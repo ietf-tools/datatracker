@@ -23,6 +23,25 @@
             "problemMatcher": []
         },
         {
+            "label": "Run Migrations",
+            "type": "shell",
+            "command": "/usr/local/bin/python",
+            "args": [
+                "${workspaceFolder}/ietf/manage.py",
+                "migrate",
+                "--settings=settings_local"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "Run All Tests",
             "type": "shell",
             "command": "/usr/local/bin/python",
