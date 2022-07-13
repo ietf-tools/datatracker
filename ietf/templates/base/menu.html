@@ -236,7 +236,7 @@
     {% endif %}
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="/meeting/agenda-neue">
+           href="{% url 'agenda-neue' %}">
             Agenda (New)
         </a>
     </li>
