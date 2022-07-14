@@ -68,7 +68,7 @@ body {
 {% block precontent %}
     <div class="meeting-switch">
         <i class="bi bi-arrow-left-right me-2"></i>
-        <a href="{% url 'agenda-neue' num=schedule.meeting.number %}">Switch to Legacy Agenda Display</a>
+        <a href="{% url 'ietf.meeting.views.agenda' num=schedule.meeting.number %}">Switch to Legacy Agenda Display</a>
     </div>
 {% endblock %}
 {% block content %}
