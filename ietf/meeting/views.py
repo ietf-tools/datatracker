@@ -1639,7 +1639,7 @@ def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, u
             "categories": filter_organizer.get_filter_categories(),
             "isCurrentMeeting": is_current_meeting,
             "useHedgeDoc": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
-            "schedule": list(map(agenda_extract_shedule, filtered_assignments)),
+            "schedule": list(map(agenda_extract_schedule, filtered_assignments)),
             "floors": list(map(agenda_extract_floorplan, floors))
         },
         "schedule": {
@@ -1651,7 +1651,7 @@ def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, u
 
     return rendered_page
 
-def agenda_extract_shedule (item):
+def agenda_extract_schedule (item):
     return {
         "id": item.id,
         "room": item.room_name,
@@ -1689,7 +1689,8 @@ def agenda_extract_shedule (item):
         "short": item.session.short if item.session.short else item.session.short_name,
         "sessionToken": item.session.docname_token_only_for_multiple(),
         "links": {
-            # "jabber": item.session.jabber_room_name
+            "chat" : item.session.chat_room_url(),
+            "chat_archive" : item.session.chat_archive_url(),
             "recordings": list(map(agenda_extract_recording, item.session.recordings())),
             "videoStream": item.timeslot.location.video_stream_url() if item.timeslot.location else "",
             "audioStream": item.timeslot.location.audio_stream_url() if item.timeslot.location else "",

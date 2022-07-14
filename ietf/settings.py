@@ -1031,6 +1031,12 @@ YOUTUBE_API_VERSION = 'v3'
 YOUTUBE_BASE_URL = 'https://www.youtube.com/watch'
 YOUTUBE_IETF_CHANNEL_ID = 'UC8dtK9njBLdFnBahHFp0eZQ'
 
+# If we need to revert to xmpp, change this to 'xmpp:{chat_room_name}@jabber.ietf.org?join'
+CHAT_URL_PATTERN = 'https://zulip.ietf.org/#narrow/stream/{chat_room_name}'
+
+# If we need to revert to xmpp
+# CHAT_ARCHIVE_URL_PATTERN = 'https://www.ietf.org/jabber/logs/{chat_room_name}?C=M;O=D'
+
 PRODUCTION_TIMEZONE = "America/Los_Angeles"
 
 PYFLAKES_DEFAULT_ARGS= ["ietf", ]

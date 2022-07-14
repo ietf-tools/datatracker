@@ -107,12 +107,11 @@ export const useAgendaStore = defineStore('agenda', {
           adjustedStartDateTime: eventStartDate.toISO(),
           adjustedEndDateTime: eventEndDate.toISO(),
           links: {
-            recordings: s.links.recordings,
+            ...s.links,
             videoStream: formatLinkUrl(s.links.videoStream, s, state.meeting.number),
             onsiteTool: formatLinkUrl(s.links.onsiteTool, s, state.meeting.number),
             audioStream: formatLinkUrl(s.links.audioStream, s, state.meeting.number),
             remoteCallIn: remoteCallInUrl,
-            calendar: s.links.calendar
           },
           sessionKeyword: s.sessionToken ? `${s.groupAcronym}-${s.sessionToken}` : s.groupAcronym
         }

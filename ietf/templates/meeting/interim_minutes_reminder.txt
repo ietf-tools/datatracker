@@ -3,7 +3,7 @@
 Please note that we have not yet received minutes from the
 {{ group.name }} ({{ group.acronym }}) interim meeting held
 on {{ meeting.date|date:"Y-m-d"}}.  As per the IESG Guidence on Interim Meetings,
-Conference Calls and Jabber Sessions [1], detailed minutes must 
+Conference Calls and Chat Sessions [1], detailed minutes must 
 be provided within 10 days of the event.
 
 At your earliest convenience, please upload meeting minutes, as 

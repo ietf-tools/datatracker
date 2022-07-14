@@ -255,11 +255,11 @@
                 </tr>
             </tbody>
         {% endif %}
-        {% if group.state_id != "conclude" and group.features.has_default_jabber %}
+        {% if group.state_id != "conclude" and group.features.has_default_chat %}
             <tbody class="meta border-top">
                 <tr>
                     <th scope="row">
-                        Jabber chat
+                        Chat
                     </th>
                     <th scope="row">
                         Room address
@@ -267,11 +267,12 @@
                     <td class="edit">
                     </td>
                     <td>
-                        <a href="xmpp:{{ group.acronym }}@jabber.ietf.org?join">
-                            xmpp:{{ group.acronym }}@jabber.ietf.org?join
+                        <a href="{{ group.chat_room_url }}">
+                            chat_room_url
                         </a>
                     </td>
                 </tr>
+                {% if group.chat_room_url != group.chat_archive_url %}
                 <tr>
                     <td>
                     </td>
@@ -281,11 +282,12 @@
                     <td class="edit">
                     </td>
                     <td>
-                        <a href="https://jabber.ietf.org/jabber/logs/{{ group.acronym }}/">
-                            https://jabber.ietf.org/jabber/logs/{{ group.acronym }}/
+                        <a href="{{ group.chat_archive_url }}">
+                            {{ group.chat_archive_url }}
                         </a>
                     </td>
                 </tr>
+                {% endif %}
             </tbody>
         {% endif %}
     </table>
