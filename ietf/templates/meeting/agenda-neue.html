@@ -12,6 +12,7 @@
 {% endblock %}
 {% block pagehead %}
     <!-- AGENDA VUE COMPONENT -->
+    <!-- [html-validate-disable-block void-style, attribute-empty-style] -->
     {{ schedule_json|json_script:"agenda-data" }}
     {% vite_asset 'client/agenda/main.js' %}
 {% endblock %}
