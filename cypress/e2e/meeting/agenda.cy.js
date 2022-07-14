@@ -21,7 +21,7 @@ describe('meeting agenda', () => {
   })
 
   it('filtering the agenda should modify the URL', () => {
-    cy.get('.agenda-filter-groupselectbtn').any(5).as('selectedGroups').each(randomElement => {
+    cy.get('.agenda-filter-groupselectbtn').take(5).as('selectedGroups').each(randomElement => {
       cy.wrap(randomElement).click()
       cy.wrap(randomElement).invoke('attr', 'data-filter-item').then(keyword => {
         cy.url().should('contain', keyword)
@@ -33,7 +33,7 @@ describe('meeting agenda', () => {
   })
 
   it('selecting an area should select all corresponding groups', () => {
-    cy.get('.agenda-filter-areaselectbtn').any().click().invoke('attr', 'data-filter-item').then(area => {
+    cy.get('.agenda-filter-areaselectbtn').first().click().invoke('attr', 'data-filter-item').then(area => {
       cy.url().should('contain', area)
 
       cy.get(`.agenda-filter-groupselectbtn[data-filter-keywords*="${area}"]`).each(group => {
