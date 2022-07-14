@@ -1,10 +1,12 @@
 <template lang="pug">
 n-theme
   n-message-provider
-    router-view.meeting
+    .app-container(ref='appContainer')
+      router-view.meeting
 </template>
 
 <script setup>
+import { onBeforeUnmount ,onMounted, ref } from 'vue'
 import { NMessageProvider } from 'naive-ui'
 
 import { useAgendaStore } from './store'
@@ -15,9 +17,32 @@ import NTheme from '../components/n-theme.vue'
 
 const agendaStore = useAgendaStore()
 
+// STATE
+
+const appContainer = ref(null)
+
 // INIT
 
 agendaStore.fetch()
+
+// --------------------------------------------------------------------
+// Handle browser resize
+// --------------------------------------------------------------------
+
+const resizeObserver = new ResizeObserver(entries => {
+  agendaStore.$patch({ viewport: Math.round(window.innerWidth) })
+  // for (const entry of entries) {
+    // const newWidth = entry.contentBoxSize ? entry.contentBoxSize[0].inlineSize : entry.contentRect.width
+  // }
+})
+
+onMounted(() => {
+  resizeObserver.observe(appContainer.value, { box: 'device-pixel-content-box' })
+})
+
+onBeforeUnmount(() => {
+  resizeObserver.unobserve(appContainer.value)
+})
 </script>
 
 <style lang="scss">

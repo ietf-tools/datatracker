@@ -127,7 +127,7 @@
       // -----------------------------------
       // -> Schedule List
       // -----------------------------------
-      agenda-schedule-list.mt-3(ref='schdList')
+      agenda-schedule-list.mt-3
 
     // -----------------------------------
     // -> Anchored Day Quick Access Menu
@@ -180,7 +180,6 @@ const state = reactive({
 
 // REFS
 
-const schdList = ref(null)
 const searchIpt = ref(null)
 
 // WATCHERS
@@ -271,25 +270,6 @@ function toggleSettings () {
     settingsShown: !agendaStore.settingsShown
   })
 }
-
-// --------------------------------------------------------------------
-// Handle browser resize
-// --------------------------------------------------------------------
-
-const resizeObserver = new ResizeObserver(entries => {
-  agendaStore.$patch({ viewport: Math.round(window.innerWidth) })
-  // for (const entry of entries) {
-    // const newWidth = entry.contentBoxSize ? entry.contentBoxSize[0].inlineSize : entry.contentRect.width
-  // }
-})
-
-onMounted(() => {
-  resizeObserver.observe(schdList.value.$el)
-})
-
-onBeforeUnmount(() => {
-  resizeObserver.unobserve(schdList.value.$el)
-})
 
 // --------------------------------------------------------------------
 // Handle day indicator / scroll
