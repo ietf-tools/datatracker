@@ -55,7 +55,7 @@ from django.contrib.sites.models import Site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.urls import reverse as urlreverse
 from django.utils.safestring import mark_safe
-from django.http import Http404, HttpResponseRedirect  #, HttpResponse, 
+from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.encoding import force_bytes
 
@@ -303,7 +303,6 @@ def profile(request):
         person_form = get_person_form(instance=person)
 
     return render(request, 'registration/edit_profile.html', {
-        'user': request.user,
         'person': person,
         'person_form': person_form,
         'roles': roles,
@@ -462,7 +461,11 @@ def confirm_password_reset(request, auth):
         raise Http404("Invalid or expired auth")
 
     user = get_object_or_404(User, username=username, password__endswith=password, last_login=last_login)
-
+    if request.user.is_authenticated and request.user != user:
+        return HttpResponseForbidden(
+            f'This password reset link is not for the signed-in user. '
+            f'Please <a href="{urlreverse("django.contrib.auth.views.logout")}">sign out</a> and try again.'
+        )
     success = False
     if request.method == 'POST':
         form = PasswordForm(request.POST)
@@ -483,7 +486,7 @@ def confirm_password_reset(request, auth):
     hasher = getattr(hlib, hashername)
     return render(request, 'registration/change_password.html', {
         'form': form,
-        'user': user,
+        'update_user': user,
         'success': success,
         'hasher': hasher,
     })
@@ -647,7 +650,6 @@ def change_password(request):
     hasher = getattr(hlib, hashername)
     return render(request, 'registration/change_password.html', {
         'form': form,
-        'user': user,
         'success': success,
         'hasher': hasher,
     })
@@ -685,10 +687,7 @@ def change_username(request):
     else:
         form = ChangeUsernameForm(request.user)
 
-    return render(request, 'registration/change_username.html', {
-        'form': form,
-        'user': user,
-    })
+    return render(request, 'registration/change_username.html', {'form': form})
 
 
 
