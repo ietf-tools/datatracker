@@ -139,7 +139,7 @@ const downloadIcsOptions = [
 // COMPUTED
 
 const shortMode = computed(() => {
-  return agendaStore.viewport < 1350
+  return agendaStore.viewport <= 1350
 })
 
 // METHODS
@@ -213,6 +213,10 @@ function scrollToNow (ev) {
         padding: .5rem;
       }
     }
+  }
+
+  .card-body .n-button {
+    overflow: hidden;
   }
 
   &-btnrow {
