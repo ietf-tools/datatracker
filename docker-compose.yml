@@ -67,6 +67,7 @@ services:
         image: ghcr.io/ietf-tools/datatracker-celery:latest
         environment:
             CELERY_APP: ietf
+            UPDATE_REQUIREMENTS_FROM: requirements.txt
         command:
             - '--loglevel=INFO'
         depends_on:
