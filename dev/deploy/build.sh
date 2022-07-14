@@ -3,5 +3,9 @@
 echo "Compiling native node packages..."
 yarn rebuild
 echo "Packaging static assets..."
-yarn build --base=https://www.ietf.org/lib/dt/$PKG_VERSION/
+if [ "$SHOULD_DEPLOY" = true ]; then
+    yarn build --base=https://www.ietf.org/lib/dt/$PKG_VERSION/
+elif
+    yarn build
+fi
 yarn legacy:build
