@@ -29,6 +29,7 @@ General Instructions for Deployment of a New Release
       python3.9 -mvenv env
       source env/bin/activate
       pip install -r requirements.txt
+      pip freeze > frozen-requirements.txt
 
  5. Move static files into place for CDN (/a/www/www6s/lib/dt):
 
