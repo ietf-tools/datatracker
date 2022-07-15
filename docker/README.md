@@ -84,8 +84,10 @@ You can also open the datatracker project folder and click the **Reopen in conta
 
     ```sh
     cd docker
-    run
+    ./run
     ```
+    
+    > Note that you can pass the `-r` flag to `./run` to force a rebuild of the containers. This is useful if you switched branches and that the existing containers still contain configurations from the old branch.
 
     On Windows *(using Powershell)*:
     ```sh
