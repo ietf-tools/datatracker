@@ -278,7 +278,7 @@ const meetingEvents = computed(() => {
       }
       if (item.adjustedEnd > current) {
         // -> Pre/live event
-        // -> Chat logs
+        // -> Chat room
         links.push({
           id: `lnk-${item.id}-room`,
           label: `Chat room for ${item.acronym}`,
@@ -344,7 +344,7 @@ const meetingEvents = computed(() => {
             id: `lnk-${item.id}-logs`,
             label: `Chat logs for ${item.acronym}`,
             icon: 'chat-left-text',
-            href: item.links.chat_archive,
+            href: item.links.chatArchive,
             color: 'green'
           })
         }

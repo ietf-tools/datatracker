@@ -54,7 +54,7 @@ class Migration(migrations.Migration):
                 ('has_nonsession_materials', models.BooleanField(default=False, verbose_name='Materials')),
                 ('has_meetings', models.BooleanField(default=False, verbose_name='Meetings')),
                 ('has_reviews', models.BooleanField(default=False, verbose_name='Reviews')),
-                ('has_default_chat', models.BooleanField(default=False, verbose_name='Chat')),
+                ('has_default_jabber', models.BooleanField(default=False, verbose_name='Jabber')),
                 ('customize_workflow', models.BooleanField(default=False, verbose_name='Workflow')),
                 ('about_page', models.CharField(default='ietf.group.views.group_about', max_length=64)),
                 ('default_tab', models.CharField(default='ietf.group.views.group_about', max_length=64)),

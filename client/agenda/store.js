@@ -111,7 +111,7 @@ export const useAgendaStore = defineStore('agenda', {
             videoStream: formatLinkUrl(s.links.videoStream, s, state.meeting.number),
             onsiteTool: formatLinkUrl(s.links.onsiteTool, s, state.meeting.number),
             audioStream: formatLinkUrl(s.links.audioStream, s, state.meeting.number),
-            remoteCallIn: remoteCallInUrl,
+            remoteCallIn: remoteCallInUrl
           },
           sessionKeyword: s.sessionToken ? `${s.groupAcronym}-${s.sessionToken}` : s.groupAcronym
         }

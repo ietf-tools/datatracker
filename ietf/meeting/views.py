@@ -1690,7 +1690,7 @@ def agenda_extract_schedule (item):
         "sessionToken": item.session.docname_token_only_for_multiple(),
         "links": {
             "chat" : item.session.chat_room_url(),
-            "chat_archive" : item.session.chat_archive_url(),
+            "chatArchive" : item.session.chat_archive_url(),
             "recordings": list(map(agenda_extract_recording, item.session.recordings())),
             "videoStream": item.timeslot.location.video_stream_url() if item.timeslot.location else "",
             "audioStream": item.timeslot.location.audio_stream_url() if item.timeslot.location else "",
