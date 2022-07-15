@@ -441,6 +441,7 @@ INSTALLED_APPS = [
     'django_markup',
     'django_password_strength',
     'form_utils',
+    'graphene_django',
     'oidc_provider',
     'simple_history',
     'tastypie',
@@ -487,6 +488,12 @@ try:
     INSTALLED_APPS.append('django_extensions')
 except ImportError:
     pass
+
+# Settings for graphene-django
+# See https://docs.graphene-python.org/projects/django/en/latest/settings/
+GRAPHENE = {
+    "SCHEMA": "ietf.schema.schema"
+}
 
 # Settings for django-bootstrap5
 # See https://django-bootstrap5.readthedocs.io/en/latest/settings.html
