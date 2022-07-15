@@ -87,7 +87,7 @@ You can also open the datatracker project folder and click the **Reopen in conta
     ./run
     ```
     
-    > Note that you can pass the `-r` flag to `./run` to force a rebuild of the containers. This is useful if you switched branches and that the existing containers still contain configurations from the old branch.
+    > Note that you can pass the `-r` flag to `./run` to force a rebuild of the containers. This is useful if you switched branches and that the existing containers still contain configurations from the old branch. You should also use this if you don't regularly keep up with main and your containers reflect a much older version of the branch.
 
     On Windows *(using Powershell)*:
     ```sh
@@ -131,7 +131,7 @@ On Linux / macOS:
 
 ```sh
 cd docker
-cleandb
+./cleandb
 ```
 
 On Windows:
@@ -149,7 +149,7 @@ On Linux / macOS:
 
 ```sh
 cd docker
-cleanall
+./cleanall
 ```
 
 On Windows:
