@@ -19,9 +19,6 @@ export default defineConfig({
   ],
   publicDir: 'ietf/static/public',
   server: {
-    host: true,
-    watch: {
-      usePolling: true
-    }
+    host: true
   }
 })

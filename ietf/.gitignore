@@ -2,4 +2,5 @@
 /settings_local.py
 /settings_local_debug.py
 /settings_local_sqlitetest.py
+/settings_local_vite.py
 /ietfdb.sql.gz

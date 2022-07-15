@@ -59,6 +59,17 @@ else
     fi
 fi
 
+if [ ! -f "$WORKSPACEDIR/ietf/settings_local_vite.py" ]; then
+    echo "Setting up a default settings_local_vite.py ..."
+    cp $WORKSPACEDIR/docker/configs/settings_local_vite.py $WORKSPACEDIR/ietf/settings_local_vite.py
+else
+    echo "Using existing ietf/settings_local_vite.py file"
+    if ! cmp -s $WORKSPACEDIR/docker/configs/settings_local_vite.py $WORKSPACEDIR/ietf/settings_local_vite.py; then
+        echo "NOTE: Differences detected compared to docker/configs/settings_local_vite.py!"
+        echo "We'll assume you made these deliberately."
+    fi
+fi
+
 # Create data directories
 
 echo "Creating data directories..."

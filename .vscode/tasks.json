@@ -69,7 +69,7 @@
                 "${workspaceFolder}/ietf/manage.py",
                 "test",
                 "--settings=settings_local_sqlitetest",
-                "--pattern=tests_js.py",
+                "--pattern=tests_js.py"
             ],
             "group": "test",
             "presentation": {
@@ -103,7 +103,14 @@
             "label": "Run SMTP Debugging Server",
             "type": "shell",
             "command": "/usr/local/bin/python",
-            "args": ["-m", "smtpd", "-n", "-c", "DebuggingServer", "localhost:2025"],
+            "args": [
+                "-m",
+                "smtpd",
+                "-n",
+                "-c",
+                "DebuggingServer",
+                "localhost:2025"
+            ],
             "presentation": {
                 "echo": true,
                 "reveal": "always",
@@ -163,6 +170,28 @@
                 "panel": "new",
                 "showReuseMessage": false,
                 "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Vite Dev Server",
+            "type": "shell",
+            "command": "yarn",
+            "args": [
+                "dev"
+            ],
+            "isBackground": true,
+            "presentation": {
+                "group": "main",
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "runOptions": {
+                "instanceLimit": 1
             },
             "problemMatcher": []
         }
