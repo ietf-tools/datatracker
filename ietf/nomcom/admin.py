@@ -73,6 +73,7 @@ class VolunteerAdmin(admin.ModelAdmin):
     list_display = ['id', 'nomcom','person','affiliation']
     list_filter = ['nomcom']
     search_fields = ['person__name', 'nomcom__group__acronym', 'affiliation']
+    raw_id_fields = ['person']
 admin.site.register(Volunteer, VolunteerAdmin)
 
 
