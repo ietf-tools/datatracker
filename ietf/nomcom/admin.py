@@ -70,9 +70,9 @@ class TopicFeedbackLastSeenAdmin(admin.ModelAdmin):
 admin.site.register(TopicFeedbackLastSeen, TopicFeedbackLastSeenAdmin)
 
 class VolunteerAdmin(admin.ModelAdmin):
-    list_display = ['nomcom','person','affiliation']
+    list_display = ['id', 'nomcom','person','affiliation']
     list_filter = ['nomcom']
-    raw_id_fields = ['person']
+    search_fields = ['person__name', 'nomcom__group__acronym', 'affiliation']
 admin.site.register(Volunteer, VolunteerAdmin)
 
 
