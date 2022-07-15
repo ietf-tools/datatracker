@@ -200,7 +200,7 @@ class GroupFeaturesAdmin(admin.ModelAdmin):
         'has_nonsession_materials',
         'has_meetings',
         'has_reviews',
-        'has_default_jabber',
+        'has_default_chat',
         'acts_like_wg',
         'create_wiki',
         'custom_group_roles',

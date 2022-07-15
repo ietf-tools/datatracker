@@ -55,12 +55,12 @@
                             {% endif %}
                             {# show stream buttons up till end of session, then show archive buttons #}
                             {% if now < timeslot.utc_end_time %}
-                                {# Jabber #}
+                                {# Chat #}
                                 <a class="btn btn-outline-primary"
                                    role="button"
-                                   href="xmpp:{{ session.jabber_room_name }}@jabber.ietf.org?join"
-                                   aria-label="Chat room for {{ session.jabber_room_name }}"
-                                   title="Chat room for {{ session.jabber_room_name }}">
+                                   href="{{ session.chat_room_url }}"
+                                   aria-label="Chat room for {{ session.chat_room_name }}"
+                                   title="Chat room for {{ session.chat_room_name }}">
                                     <i class="bi bi-chat"></i>
                                 </a>
                                 {# Video stream (meetecho) #}
@@ -128,13 +128,13 @@
                                     <i class="bi bi-calendar"></i>
                                 </a>
                             {% else %}
-                                {# Jabber logs #}
+                                {# Chat logs #}
                                 {% if meeting.number|add:"0" >= 60 %}
                                     <a class="btn btn-outline-primary"
                                        role="button"
-                                       href="https://www.ietf.org/jabber/logs/{{ session.jabber_room_name }}?C=M;O=D"
-                                       aria-label="Chat logs for {{ session.jabber_room_name }}"
-                                       title="Chat logs for {{ session.jabber_room_name }}">
+                                       href="{{ session.chat_archive_url }}"
+                                       aria-label="Chat logs for {{ session.chat_room_name }}"
+                                       title="Chat logs for {{ session.chat_room_name }}">
                                         <i class="bi bi-file-text"></i>
                                     </a>
                                 {% endif %}
@@ -241,10 +241,10 @@
                                 {% endif %}
                                 {# show stream buttons up till end of session, then show archive buttons #}
                                 {% if now < timeslot.utc_end_time %}
-                                    {# Jabber #}
+                                    {# Chat #}
                                     <li>
                                         <a class="dropdown-item"
-                                           href="xmpp:{{ session.jabber_room_name }}@jabber.ietf.org?join">
+                                           href="{{ session.chat_room_url }}">
                                             <i class="bi bi-chat"></i> Chat room
                                         </a>
                                     </li>
@@ -305,11 +305,11 @@
                                     </a>
                                 </li>
                             {% else %}
-                                {# Jabber logs #}
+                                {# Chat logs #}
                                 {% if meeting.number|add:"0" >= 60 %}
                                     <li>
                                         <a class="dropdown-item"
-                                           href="https://www.ietf.org/jabber/logs/{{ session.jabber_room_name }}?C=M;O=D">
+                                           href="{{ session.chat_archive_url }}">
                                             <i class="bi bi-file-text"></i> Chat logs
                                         </a>
                                     </li>

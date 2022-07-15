@@ -278,12 +278,12 @@ const meetingEvents = computed(() => {
       }
       if (item.adjustedEnd > current) {
         // -> Pre/live event
-        // -> Jabber logs
+        // -> Chat room
         links.push({
-          id: `lnk-${item.id}-logs`,
-          label: `Chat logs for ${item.acronym}`,
+          id: `lnk-${item.id}-room`,
+          label: `Chat room for ${item.acronym}`,
           icon: 'chat-left-text',
-          href: `xmpp:${item.type === 'plenary' ? 'plenary' : item.acronym}@jabber.ietf.org?join`,
+          href: item.links.chat,
           color: 'green'
         })
         // -> Video stream
@@ -339,12 +339,12 @@ const meetingEvents = computed(() => {
       } else {
         // -> Post event
         if (meetingNumberInt >= 60) {
-          // -> Jabber logs
+          // -> Chat logs
           links.push({
             id: `lnk-${item.id}-logs`,
             label: `Chat logs for ${item.acronym}`,
             icon: 'chat-left-text',
-            href: `https://www.ietf.org/jabber/logs/${item.type === 'plenary' ? 'plenary' : item.acronym}?C=M;O=D`,
+            href: item.links.chatArchive,
             color: 'green'
           })
         }
