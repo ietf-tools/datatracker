@@ -4,6 +4,7 @@ services:
     app:
         ports:
             - 'CUSTOM_PORT:8000'
+            - '3000:3000'
         volumes:
             - .:/workspace
             - /workspace/.parcel-cache
