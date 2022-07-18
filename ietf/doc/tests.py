@@ -1829,7 +1829,7 @@ class DocTestCase(TestCase):
         self.assertNotContains(r, "Request publication")
 
     def _parse_bibtex_response(self, response) -> dict:
-        parser = bibtexparser.bparser.BibTexParser()
+        parser = bibtexparser.bparser.BibTexParser(common_strings=True)
         parser.homogenise_fields = False  # do not modify field names (e.g., turns "url" into "link" by default)
         return bibtexparser.loads(response.content.decode(), parser=parser).get_entry_dict()
 
@@ -1851,7 +1851,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['number'],   num)
         self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     '2010')
-        self.assertEqual(entry['month'],    'oct')
+        self.assertEqual(entry['month'].lower()[0:3], 'oct')
         self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
         #
         self.assertNotIn('day', entry)
@@ -1873,7 +1873,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['number'],   num)
         self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     '1990')
-        self.assertEqual(entry['month'],    'apr')
+        self.assertEqual(entry['month'].lower()[0:3],    'apr')
         self.assertEqual(entry['day'],      '1')
         self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
 
@@ -1886,7 +1886,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['note'],     'Work in Progress')
         self.assertEqual(entry['number'],   docname)
         self.assertEqual(entry['year'],     str(draft.pub_date().year))
-        self.assertEqual(entry['month'],    draft.pub_date().strftime('%b').lower())
+        self.assertEqual(entry['month'].lower()[0:3],    draft.pub_date().strftime('%b').lower())
         self.assertEqual(entry['day'],      str(draft.pub_date().day))
         self.assertEqual(entry['url'],      settings.IDTRACKER_BASE_URL + urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=draft.rev)))
         #

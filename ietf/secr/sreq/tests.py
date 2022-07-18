@@ -50,7 +50,7 @@ class SessionRequestTestCase(TestCase):
         sched = r.context['scheduled_groups']
         self.assertEqual(len(sched), 2)
         unsched = r.context['unscheduled_groups']
-        self.assertEqual(len(unsched), 8)
+        self.assertEqual(len(unsched), 11)
 
     def test_approve(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())

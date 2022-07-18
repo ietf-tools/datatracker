@@ -17,6 +17,13 @@ $popover-max-width: 100%;
 @import "bootstrap/scss/mixins";
 @import "bootstrap/scss/utilities";
 
+$h1-font-size: $font-size-base * 2.2;
+$h2-font-size: $font-size-base * 1.8;
+$h3-font-size: $font-size-base * 1.6;
+$h4-font-size: $font-size-base * 1.4;
+$h5-font-size: $font-size-base * 1.2;
+$h6-font-size: $font-size-base;
+
 // Layout & components
 @import "bootstrap/scss/root";
 @import "bootstrap/scss/reboot";
@@ -71,9 +78,10 @@ html {
     scroll-padding-top: 60px;
 }
 
-// Make textareas use a monospace font
-textarea {
-    font-family: var(--bs-font-monospace);
+// Make textareas in forms use a monospace font
+textarea.form-control {
+    font-family: $font-family-code;
+    font-size: $code-font-size;
 }
 
 // Wrap long lines in preformatted text.
@@ -1036,4 +1044,23 @@ tr.position-recuse-row {
 
 #current-time {
     display: inline-block;
+}
+
+.meeting-switch {
+    background-color: lighten($gray-600, 15%);
+    padding: 5px 10px;
+    text-align: center;
+    color: #FFF;
+    font-size: .9rem;
+    font-weight: 500;
+
+    a {
+        color: #FFF;
+        text-shadow: 1px 1px 1px rgba(0,0,0,.4);
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
 }

@@ -410,8 +410,13 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'ietf.urls'
 
+DJANGO_VITE_ASSETS_PATH = os.path.join(BASE_DIR, 'static/dist-neue')
+if DEBUG:
+    DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, 'static/dist-neue/manifest.json')
+
 # Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (
+    DJANGO_VITE_ASSETS_PATH,
     os.path.join(BASE_DIR, 'static/dist'),
     os.path.join(BASE_DIR, 'secr/static/dist'),
 )
@@ -430,6 +435,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # External apps 
     'analytical',
+    'django_vite',
     'django_bootstrap5',
     'corsheaders',
     'django_markup',
@@ -538,7 +544,7 @@ RFCDIFF_BASE_URL = "https://www.ietf.org/rfcdiff"
 IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
 
 # Content security policy configuration (django-csp)
-CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", f"data: {IDTRACKER_BASE_URL} https://www.ietf.org/ https://analytics.ietf.org/")
+CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", f"data: {IDTRACKER_BASE_URL} https://www.ietf.org/ https://analytics.ietf.org/ https://fonts.googleapis.com/")
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
@@ -1024,6 +1030,12 @@ YOUTUBE_API_SERVICE_NAME = 'youtube'
 YOUTUBE_API_VERSION = 'v3'
 YOUTUBE_BASE_URL = 'https://www.youtube.com/watch'
 YOUTUBE_IETF_CHANNEL_ID = 'UC8dtK9njBLdFnBahHFp0eZQ'
+
+# If we need to revert to xmpp, change this to 'xmpp:{chat_room_name}@jabber.ietf.org?join'
+CHAT_URL_PATTERN = 'https://zulip.ietf.org/#narrow/stream/{chat_room_name}'
+
+# If we need to revert to xmpp
+# CHAT_ARCHIVE_URL_PATTERN = 'https://www.ietf.org/jabber/logs/{chat_room_name}?C=M;O=D'
 
 PRODUCTION_TIMEZONE = "America/Los_Angeles"
 

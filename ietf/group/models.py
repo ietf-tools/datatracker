@@ -206,6 +206,16 @@ class Group(GroupInfo):
                     desc = [ p for p in re.split(r'\r?\n\s*\r?\n\s*', text) if p.strip() ][0]
         return desc
 
+    def chat_room_url(self):
+        return settings.CHAT_URL_PATTERN.format(chat_room_name=self.acronym)
+
+    def chat_archive_url(self):
+        # Zulip has no separate archive
+        if 'CHAT_ARCHIVE_URL_PATTERN' in settings:
+            return settings.CHAT_ARCHIVE_URL_PATTERN.format(chat_room_name=self.acronym)
+        else:
+            return self.chat_room_url()
+
 
 validate_comma_separated_materials = RegexValidator(
     regex=r"[a-z0-9_-]+(,[a-z0-9_-]+)*",
@@ -238,7 +248,7 @@ class GroupFeatures(models.Model):
     has_nonsession_materials= models.BooleanField("Other Matrl.",  default=False)
     has_meetings            = models.BooleanField("Meetings",   default=False)
     has_reviews             = models.BooleanField("Reviews",    default=False)
-    has_default_jabber      = models.BooleanField("Jabber",     default=False)
+    has_default_chat        = models.BooleanField("Chat",     default=False)
     #
     acts_like_wg            = models.BooleanField("WG-Like",    default=False)
     create_wiki             = models.BooleanField("Wiki",       default=False)

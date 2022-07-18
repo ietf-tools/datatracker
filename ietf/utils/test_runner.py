@@ -852,6 +852,10 @@ class IetfTestRunner(DiscoverRunner):
                     "script-type": "off",
                     # django-bootstrap5 seems to still generate 'checked="checked"', ignore:
                     "attribute-boolean-style": "off",
+                    # self-closing style tags are valid in HTML5. Both self-closing and non-self-closing tags are accepted. (vite generates self-closing link tags)
+                    # "void-style": "off",
+                    # Both attributes without value and empty strings are equal and valid. (vite generates empty value attributes)
+                    # "attribute-empty-style": "off"
                 },
             }
 

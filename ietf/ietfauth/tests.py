@@ -38,7 +38,7 @@ from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.mailinglists.models import Subscribed
 from ietf.meeting.factories import MeetingFactory
 from ietf.nomcom.factories import NomComFactory
-from ietf.person.factories import PersonFactory, EmailFactory
+from ietf.person.factories import PersonFactory, EmailFactory, UserFactory
 from ietf.person.models import Person, Email, PersonalApiKey
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import ReviewWish, UnavailablePeriod
@@ -434,10 +434,20 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(outbox), 1)
 
-        # go to change password page
+        # goto change password page, logged in as someone else
         confirm_url = self.extract_confirm_url(outbox[-1])
+        other_user = UserFactory()
+        self.client.login(username=other_user.username, password=other_user.username + '+password')
+        r = self.client.get(confirm_url)
+        self.assertEqual(r.status_code, 403)
+
+        # sign out and go back to change password page
+        self.client.logout()
         r = self.client.get(confirm_url)
         self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertNotIn(user.username, q('.nav').text(),
+                         'user should not appear signed in while resetting password')
 
         # password mismatch
         r = self.client.post(confirm_url, { 'password': 'secret', 'password_confirmation': 'nosecret' })

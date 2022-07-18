@@ -76,7 +76,7 @@
 		"ms-python.python",
 		"ms-python.vscode-pylance",
 		"mtxr.sqltools-driver-mysql",
-		"mtxr.sqltools",
+        "mtxr.sqltools",
 		"mutantdino.resourcemonitor",
 		"oderwat.indent-rainbow",
 		"redhat.vscode-yaml",

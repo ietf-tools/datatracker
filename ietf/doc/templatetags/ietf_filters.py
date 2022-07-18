@@ -730,7 +730,7 @@ def is_special_agenda_item(assignment):
 
 @register.filter
 def should_show_agenda_session_buttons(assignment):
-    """Should this agenda item show the session buttons (jabber link, etc)?
+    """Should this agenda item show the session buttons (chat link, etc)?
 
     In IETF-112 and earlier, office hours sessions were designated by a name ending
     with ' office hours' and belonged to the IESG or some other group. This led to

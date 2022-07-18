@@ -42,11 +42,11 @@
         {% endif %}
         {# show stream buttons up till end of session, then show archive buttons #}
         {% if now < item.timeslot.end_time %}
-            {# Jabber #}
+            {# Chat #}
             <a class="btn btn-outline-primary"
-               href="xmpp:{{ session.jabber_room_name }}@jabber.ietf.org?join"
-               aria-label="Jabber room for {{ session.jabber_room_name }}"
-               title="Jabber room for {{ session.jabber_room_name }}">
+               href="{{ session.chat_room_url }}"
+               aria-label="Chat for {{ session.chat_room_name }}"
+               title="Chat for {{ session.chat_room_name }}">
                 <i class="bi bi-lightbulb"></i>
             </a>
             {# Remote call-in #}
@@ -95,11 +95,11 @@
                 <i class="bi bi-calendar"></i>
             </a>
         {% else %}
-            {# Jabber #}
+            {# Chat logs #}
             <a class="btn btn-outline-primary"
-               href="https://www.ietf.org/jabber/logs/{{ session.jabber_room_name }}?C=M;O=D"
-               aria-label="Jabber logs for {{ session.jabber_room_name }}"
-               title="Jabber logs for {{ session.jabber_room_name }}">
+               href="{{ session.chat_archive_url }}"
+               aria-label="Chat logs for {{ session.chat_room_name }}"
+               title="Chat logs for {{ session.chat_room_name }}">
                 <i class="bi bi-file-text"></i>
             </a>
             {% with session.recordings as recordings %}

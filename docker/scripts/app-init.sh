@@ -8,6 +8,8 @@ sudo service rsyslog start &>/dev/null
 echo "Fixing volumes ownership..."
 sudo chown -R dev:dev "$WORKSPACEDIR/.parcel-cache"
 sudo chown -R dev:dev "$WORKSPACEDIR/__pycache__"
+sudo chown -R dev:dev "$WORKSPACEDIR/.vite"
+sudo chown -R dev:dev "$WORKSPACEDIR/.yarn/unplugged"
 sudo chown dev:dev "/assets"
 
 echo "Fix chromedriver /dev/shm permissions..."
@@ -20,6 +22,7 @@ yarn rebuild
 # Generate static assets
 echo "Building static assets... (this could take a minute or two)"
 yarn build
+yarn legacy:build
 
 # Copy config files if needed
 
@@ -52,6 +55,17 @@ else
     echo "Using existing ietf/settings_local_sqlitetest.py file"
     if ! cmp -s $WORKSPACEDIR/docker/configs/settings_local_sqlitetest.py $WORKSPACEDIR/ietf/settings_local_sqlitetest.py; then
         echo "NOTE: Differences detected compared to docker/configs/settings_local_sqlitetest.py!"
+        echo "We'll assume you made these deliberately."
+    fi
+fi
+
+if [ ! -f "$WORKSPACEDIR/ietf/settings_local_vite.py" ]; then
+    echo "Setting up a default settings_local_vite.py ..."
+    cp $WORKSPACEDIR/docker/configs/settings_local_vite.py $WORKSPACEDIR/ietf/settings_local_vite.py
+else
+    echo "Using existing ietf/settings_local_vite.py file"
+    if ! cmp -s $WORKSPACEDIR/docker/configs/settings_local_vite.py $WORKSPACEDIR/ietf/settings_local_vite.py; then
+        echo "NOTE: Differences detected compared to docker/configs/settings_local_vite.py!"
         echo "We'll assume you made these deliberately."
     fi
 fi

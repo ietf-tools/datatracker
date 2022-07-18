@@ -5,6 +5,7 @@
 {% load origin %}
 {% origin %}
 {% load django_bootstrap5 %}
+{% load django_vite %}
 <html lang="en">
     <head>
         {% analytical_head_top %}
@@ -17,11 +18,15 @@
         {% comment Halloween %}
         <link href='https://fonts.googleapis.com/css?family=IM+Fell+English+SC|IM+Fell+DW+Pica:400,400italic|Nova+Mono|IM+Fell+English:400,400italic&subset=latin-ext,latin' rel='stylesheet'>
         {% endcomment %}
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300..700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}">
         <link rel="stylesheet" href="{% static 'ietf/css/select2.css' %}">
         <style>
             {% block morecss %}{% endblock %}
         </style>
+        {% vite_hmr_client %}
         {% block pagehead %}{% endblock %}
         {% include "base/icons.html" %}
         <script src="{% static 'ietf/js/ietf.js' %}"></script>
@@ -72,6 +77,7 @@
                 </button>
             </div>
         </nav>
+        {% block precontent %}{% endblock %}
         <div class="pt-3 container-fluid">
             <div class="row">
                 {% if request.COOKIES.left_menu == "on" and not hide_menu %}
