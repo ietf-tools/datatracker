@@ -15,7 +15,30 @@
                 "0.0.0.0:8000",
                 "--settings=settings_local"
             ],
-            "django": true
+            "django": true,
+            "presentation": {
+                "hidden": false,
+                "group": "main",
+                "order": 1
+            }
+        },
+        {
+            "name": "Run Server in Vite Dev Mode",
+            "type": "python",
+            "request": "launch",
+            "python": "/usr/local/bin/python",
+            "program": "${workspaceFolder}/ietf/manage.py",
+            "args": [
+                "runserver",
+                "0.0.0.0:8000",
+                "--settings=settings_local_vite"
+            ],
+            "django": true,
+            "presentation": {
+                "hidden": false,
+                "group": "main",
+                "order": 1
+            }
         },
         {
             "name": "Run Server with Debug Toolbar",
@@ -28,7 +51,12 @@
                 "0.0.0.0:8000",
                 "--settings=settings_local_debug"
             ],
-            "django": true
+            "django": true,
+            "presentation": {
+                "hidden": false,
+                "group": "main",
+                "order": 1
+            }
         }
     ]
 }
