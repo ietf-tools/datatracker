@@ -7,7 +7,7 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('group', '0056_dir_chair_groupman_role'),
+        ('group', '0058_alter_has_default_chat'),
     ]
 
     operations = [
