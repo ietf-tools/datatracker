@@ -34,7 +34,7 @@ def unescape(text):
 def remove_tags(html, tags):
     """Returns the given HTML sanitized, and with the given tags removed."""
     allowed = set(acceptable_tags) - set([ t.lower() for t in tags ])
-    return bleach.clean(html, tags=allowed)
+    return bleach.clean(html, tags=allowed, strip=True)
 
 # ----------------------------------------------------------------------
 # Html fragment cleaning
