@@ -1,4 +1,4 @@
-{# Keep in sync with https://github.com/ietf-chairs/chairs.ietf.org/blob/main/documents/qa-style-writeup-template.md #}{% if doc.stream %}{% if doc.stream.slug == 'ietf' %}# Document Shepherd Write-Up
+{# Keep in sync with https://github.com/ietf-chairs/chairs.ietf.org/blob/main/documents/qa-style-writeup-template.md #}{% if not doc or doc.stream %}{% if not doc or doc.stream.slug == 'ietf' %}# Document Shepherd Write-Up{% if type == "group" %} for Group Documents{% elif type == "individual" %} for Individual Documents{% endif %}
 
 *This version is dated 4 July 2022.*
 
@@ -13,7 +13,7 @@ Note that some numbered items contain multiple related questions; please be sure
 to answer all of them.
 
 ## Document History
-{% if doc.group.type.slug == 'individ' %}
+{% if not doc and type == 'individual' or doc.group.type.slug == 'individ' %}
 1. Was the document considered in any WG, and if so, why was it not adopted as a
    work item there?
 
@@ -37,7 +37,7 @@ to answer all of them.
    either in the document itself (as [RFC 7942][3] recommends) or elsewhere
    (where)?
 
-### Additional Reviews
+## Additional Reviews
 
 5. Do the contents of this document closely interact with technologies in other
    IETF working groups or external organizations, and would it therefore benefit
@@ -58,7 +58,7 @@ to answer all of them.
    final version of the document written in a formal language, such as XML code,
    BNF rules, MIB definitions, CBOR's CDDL, etc.
 
-### Document Shepherd Checks
+## Document Shepherd Checks
 
 9. Based on the shepherd's review of the document, is it their opinion that this
    document is needed, clearly written, complete, correctly designed, and ready
