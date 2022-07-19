@@ -1144,13 +1144,13 @@ def document_shepherd_writeup_template(request, type):
     writeup = markdown.markdown(
         render_to_string(
             "doc/shepherd_writeup.txt",
-            dict(type=type),
+            dict(type=type, stream="ietf", group="individ" if type == "individual" else "group"),
         )
     )
     return render(
         request,
         "doc/shepherd_writeup_template.html",
-        dict(writeup=writeup, type=type),
+        dict(writeup=writeup, type=type, stream="ietf", group="individ" if type == "individual" else "group"),
     )
 
 

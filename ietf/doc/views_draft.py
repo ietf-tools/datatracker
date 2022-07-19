@@ -982,7 +982,7 @@ def edit_shepherd_writeup(request, name):
 
         elif "reset_text" in request.POST:
 
-            init = { "content": render_to_string("doc/shepherd_writeup.txt",dict(doc=doc))}
+            init = { "content": render_to_string("doc/shepherd_writeup.txt",dict(doc=doc, stream=doc.stream.slug, group=doc.group.type.slug))}
             form = ShepherdWriteupUploadForm(initial=init)
 
         # Protect against handcrufted malicious posts
@@ -1000,7 +1000,7 @@ def edit_shepherd_writeup(request, name):
             init["content"] = previous_writeup.text
         else:
             init["content"] = render_to_string("doc/shepherd_writeup.txt",
-                                                dict(doc=doc),
+                                                dict(doc=doc, stream=doc.stream.slug, group=doc.group.type.slug),
                                               )
         form = ShepherdWriteupUploadForm(initial=init)
 

@@ -1,4 +1,4 @@
-{# Keep in sync with https://github.com/ietf-chairs/chairs.ietf.org/blob/main/documents/qa-style-writeup-template.md #}{% if not doc or doc.stream %}{% if not doc or doc.stream.slug == 'ietf' %}# Document Shepherd Write-Up{% if type == "group" %} for Group Documents{% elif type == "individual" %} for Individual Documents{% endif %}
+{# Keep in sync with https://github.com/ietf-chairs/chairs.ietf.org/blob/main/documents/qa-style-writeup-template.md #}{% if stream %}{% if stream == 'ietf' %}# Document Shepherd Write-Up{% if type == "group" %} for Group Documents{% elif type == "individual" %} for Individual Documents{% endif %}
 
 *This version is dated 4 July 2022.*
 
@@ -13,7 +13,7 @@ Note that some numbered items contain multiple related questions; please be sure
 to answer all of them.
 
 ## Document History
-{% if not doc and type == 'individual' or doc.group.type.slug == 'individ' %}
+{% if type == 'individ' %}
 1. Was the document considered in any WG, and if so, why was it not adopted as a
    work item there?
 
@@ -139,5 +139,5 @@ to answer all of them.
 [15]: https://authors.ietf.org/en/content-guidelines-overview
 [16]: https://www.ietf.org/about/groups/iesg/statements/normative-informative-references/
 [17]: https://datatracker.ietf.org/doc/downref/
-{% else %}There is no default shepherd write-up template for the {{doc.stream}} stream.
+{% else %}There is no default shepherd write-up template for the {{stream}} stream.
 {% endif %}{% else %}There is no stream set for this document (thus, no default shepherd write-up template).{% endif %}
