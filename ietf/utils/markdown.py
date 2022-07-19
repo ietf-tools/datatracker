@@ -8,20 +8,17 @@ the datatracker.
 import markdown as python_markdown
 
 from django.utils.safestring import mark_safe
-from markdown.extensions.extra import ExtraExtension
 
 from ietf.doc.templatetags.ietf_filters import urlize_ietf_docs
-from ietf.utils.text import bleach_cleaner, bleach_linker
+from ietf.utils.text import bleach_linker
 
 
 def markdown(text):
     return mark_safe(
         bleach_linker.linkify(
             urlize_ietf_docs(
-                bleach_cleaner.clean(
-                    python_markdown.markdown(
-                        text, extensions=[ExtraExtension(), "nl2br"]
-                    )
+                python_markdown.markdown(
+                    text, extensions=["extra", "nl2br", "sane_lists", "toc"]
                 )
             )
         )
