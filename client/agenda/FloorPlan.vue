@@ -57,7 +57,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } 
 import find from 'lodash/find'
 import xslugify from '../shared/xslugify'
 import { DateTime } from 'luxon'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAgendaStore } from './store' 
 
 import MeetingNavigation from './MeetingNavigation.vue'
@@ -68,6 +68,7 @@ const agendaStore = useAgendaStore()
 
 // ROUTER
 
+const router = useRouter()
 const route = useRoute()
 
 // STATE
@@ -205,10 +206,20 @@ onBeforeUnmount(() => {
 // MOUNTED
 
 onMounted(() => {
+  // -> Go to current meeting if not provided
+  if (!route.params.meetingNumber && agendaStore.meeting.number) {
+    router.replace({ params: { meetingNumber: agendaStore.meeting.number } })
+  }
+
+  // -> Hide Loading Screen
   agendaStore.hideLoadingScreen()
+
+  // -> Set Current Floor
   if (agendaStore.floors?.length > 0) {
     state.currentFloor = agendaStore.floors[0].id
   }
+
+  // -> Go to requested room
   if (route.query.room) {
     state.desiredRoom = route.query.room
     handleDesiredRoom()

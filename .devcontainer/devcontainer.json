@@ -88,13 +88,17 @@
     "forwardPorts": [8000, 3306],
     
     "portsAttributes": {
-        "8000": {
-            "label": "Datatracker",
-            "onAutoForward": "notify"
+        "3000": {
+            "label": "Vite",
+            "onAutoForward": "silent"
         },
         "3306": {
             "label": "MariaDB",
             "onAutoForward": "silent"
+        },
+        "8000": {
+            "label": "Datatracker",
+            "onAutoForward": "notify"
         }
     },
     
