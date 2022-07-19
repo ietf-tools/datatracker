@@ -940,49 +940,68 @@ class ShepherdWriteupUploadForm(forms.Form):
     def clean_txt(self):
         return get_cleaned_text_file_content(self.cleaned_data["txt"])
 
+
 @login_required
 def edit_shepherd_writeup(request, name):
     """Change this document's shepherd writeup"""
     doc = get_object_or_404(Document, type="draft", name=name)
 
     can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
-    can_edit_shepherd_writeup = ( can_edit_stream_info
+    can_edit_shepherd_writeup = (
+        can_edit_stream_info
         or (doc.shepherd and user_is_person(request.user, doc.shepherd.person))
-        or has_role(request.user, ["Area Director"]))
+        or has_role(request.user, ["Area Director"])
+    )
 
     if not can_edit_shepherd_writeup:
-        permission_denied(request, "You do not have the necessary permissions to view this page")
+        permission_denied(
+            request, "You do not have the necessary permissions to view this page"
+        )
 
     login = request.user.person
 
-    if request.method == 'POST':
+    if request.method == "POST":
         if "submit_response" in request.POST:
             form = ShepherdWriteupUploadForm(request.POST, request.FILES)
             if form.is_valid():
-                
-                from_file = form.cleaned_data['txt']
-                if from_file:
-                     writeup = from_file
-                else:
-                     writeup = form.cleaned_data['content']
-                e = WriteupDocEvent(doc=doc, rev=doc.rev, by=login, type="changed_protocol_writeup")
 
-                # Add the shepherd writeup to description if the document is in submitted for publication state
+                from_file = form.cleaned_data["txt"]
+                if from_file:
+                    writeup = from_file
+                else:
+                    writeup = form.cleaned_data["content"]
+                e = WriteupDocEvent(
+                    doc=doc, rev=doc.rev, by=login, type="changed_protocol_writeup"
+                )
+
+                # Add the shepherd writeup to description,
+                # if the document is in submitted for publication state
                 stream_state = doc.get_state("draft-stream-%s" % doc.stream_id)
-                iesg_state   = doc.get_state("draft-iesg")
-                if (iesg_state or (stream_state and stream_state.slug=='sub-pub')):
+                iesg_state = doc.get_state("draft-iesg")
+                if iesg_state or (stream_state and stream_state.slug == "sub-pub"):
                     e.desc = writeup
                 else:
                     e.desc = "Changed document writeup"
 
                 e.text = writeup
                 e.save()
-            
-                return redirect('ietf.doc.views_doc.document_main', name=doc.name)
+
+                return redirect("ietf.doc.views_doc.document_main", name=doc.name)
 
         elif "reset_text" in request.POST:
-
-            init = { "content": render_to_string("doc/shepherd_writeup.txt",dict(doc=doc, stream=doc.stream.slug, group=doc.group.type.slug))}
+            init = {
+                "content": render_to_string(
+                    "doc/shepherd_writeup.txt",
+                    dict(
+                        doc=doc,
+                        type="individ"
+                        if not doc.group.type.slug or doc.group.type.slug != "ietf"
+                        else "group",
+                        stream=doc.stream.slug,
+                        group=doc.group.type.slug,
+                    ),
+                )
+            }
             form = ShepherdWriteupUploadForm(initial=init)
 
         # Protect against handcrufted malicious posts
@@ -993,21 +1012,36 @@ def edit_shepherd_writeup(request, name):
         form = None
 
     if not form:
-        init = { "content": ""}
+        init = {"content": ""}
 
-        previous_writeup = doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup")
+        previous_writeup = doc.latest_event(
+            WriteupDocEvent, type="changed_protocol_writeup"
+        )
         if previous_writeup:
             init["content"] = previous_writeup.text
         else:
-            init["content"] = render_to_string("doc/shepherd_writeup.txt",
-                                                dict(doc=doc, stream=doc.stream.slug, group=doc.group.type.slug),
-                                              )
+            init["content"] = render_to_string(
+                "doc/shepherd_writeup.txt",
+                dict(
+                    doc=doc,
+                    type="individ"
+                    if not doc.group.type.slug or doc.group.type.slug != "ietf"
+                    else "group",
+                    stream=doc.stream.slug,
+                    group=doc.group.type.slug,
+                ),
+            )
         form = ShepherdWriteupUploadForm(initial=init)
 
-    return render(request, 'doc/draft/change_shepherd_writeup.html',
-                              {'form': form,
-                               'doc' : doc,
-                              })
+    return render(
+        request,
+        "doc/draft/change_shepherd_writeup.html",
+        {
+            "form": form,
+            "doc": doc,
+        },
+    )
+
 
 class ShepherdForm(forms.Form):
     shepherd = SearchableEmailField(required=False, only_users=True)

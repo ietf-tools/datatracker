@@ -1,5 +1,5 @@
-{# Keep in sync with https://github.com/ietf-chairs/chairs.ietf.org/blob/main/documents/qa-style-writeup-template.md #}{% if stream %}{% if stream == 'ietf' %}# Document Shepherd Write-Up{% if type == "group" %} for Group Documents{% elif type == "individual" %} for Individual Documents{% endif %}
-
+{# Keep in sync with https://github.com/ietf-chairs/chairs.ietf.org/blob/main/documents/qa-style-writeup-template.md #}{% if stream %}{% if stream == 'ietf' %}# Document Shepherd Write-Up{% if type != "individ" %} for Group Documents{% else %} for Individual Documents{% endif %}
+{{type}}
 *This version is dated 4 July 2022.*
 
 Thank you for your service as a document shepherd. Among the responsibilities is

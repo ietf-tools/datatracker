@@ -60,7 +60,10 @@ urlpatterns = [
     url(r'^email-aliases/?$', views_doc.email_aliases),
     url(r'^downref/?$', views_downref.downref_registry),
     url(r'^downref/add/?$', views_downref.downref_registry_add),
-    url(r'^shepherdwriteup-template/(?P<type>\w+)/?$', views_doc.document_shepherd_writeup_template),
+    url(
+        r"^shepherdwriteup-template/(?P<type>\w+)/?$",
+        views_doc.document_shepherd_writeup_template,
+    ),
 
     url(r'^stats/newrevisiondocevent/?$', views_stats.chart_newrevisiondocevent),
     url(r'^stats/newrevisiondocevent/conf/?$', views_stats.chart_conf_newrevisiondocevent),
