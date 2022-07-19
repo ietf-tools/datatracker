@@ -140,6 +140,7 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { DateTime } from 'luxon'
 import debounce from 'lodash/debounce'
 
@@ -171,6 +172,11 @@ const message = useMessage()
 // STORES
 
 const agendaStore = useAgendaStore()
+
+// ROUTER
+
+const router = useRouter()
+const route = useRoute()
 
 // DATA
 
@@ -335,6 +341,12 @@ onBeforeUnmount(() => {
 // MOUNTED
 
 onMounted(() => {
+  // -> Go to current meeting if not provided
+  if (!route.params.meetingNumber && agendaStore.meeting.number) {
+    router.replace({ params: { meetingNumber: agendaStore.meeting.number } })
+  }
+
+  // -> Hide Loading Screen
   agendaStore.hideLoadingScreen()
 })
 
