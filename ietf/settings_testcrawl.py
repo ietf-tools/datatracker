@@ -59,7 +59,7 @@ CACHES = {
 
 PASSWORD_HASHERS = [ 'django.contrib.auth.hashers.MD5PasswordHasher', ]
 SERVER_MODE = 'test'
-ALLOWED_HOSTS = ["127.0.0.1", "localhost:8000", "testserver", ]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "testserver", ]
 
 SILENCED_SYSTEM_CHECKS = [
     "fields.W342",  # Setting unique=True on a ForeignKey has the same effect as using a OneToOneField.
