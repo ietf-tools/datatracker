@@ -536,7 +536,7 @@ def get_8989_eligibility_querysets(date, base_qs):
         base_qs = Person.objects.all()
 
     previous_five = previous_five_meetings(date)
-    three_of_five_qs = three_of_five_eligible(previous_five=previous_five, queryset=base_qs)
+    three_of_five_qs = new_three_of_five_eligible(previous_five=previous_five, queryset=base_qs)
 
     three_years_ago = datetime.date(date.year-3,date.month,date.day)
     officer_qs = base_qs.filter(
