@@ -230,9 +230,9 @@ function draw_graph(data, group) {
 
     function ticked() {
         // don't animate each tick
-        // for (let i = 0; i < 3; i++) {
-        //     simulation.tick();
-        // }
+        for (let i = 0; i < 3; i++) {
+            this.tick();
+        }
 
         // code for straight links:
         // link.attr("d", function (d) {
