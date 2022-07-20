@@ -207,5 +207,7 @@ admin.site.register(MeetingHost, MeetingHostAdmin)
 
 class AttendedAdmin(admin.ModelAdmin):
     model = Attended
+    list_display= ["id", "person", "session"]
     search_fields = ["person__name", "session__group__acronym", "session__meeting__number"]
+    raw_id_fields= ["person", "session"]
 admin.site.register(Attended, AttendedAdmin)
