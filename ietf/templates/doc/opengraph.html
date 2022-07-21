@@ -16,6 +16,7 @@
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 {% elif doc.stream.slug == "irtf" or doc.name|startswith:"draft-irtf" %}
 <meta property="og:image" content="{{ settings.IDTRACKER_BASE_URL }}{% static 'ietf/images/irtf-logo-card.png' %}">
 <meta property="og:image:alt" content="Logo of the IRTF">
@@ -23,6 +24,7 @@
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 {% elif doc.stream.slug == "iab" or doc.name|startswith:"draft-iab" %}
 <meta property="og:image" content="{{ settings.IDTRACKER_BASE_URL }}{% static 'ietf/images/iab-logo-card.png' %}">
 <meta property="og:image:alt" content="Logo of the IAB">
@@ -30,6 +32,7 @@
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 {% else %}{# TODO: We need a card image for individual I-Ds. #}
 <meta property="article:section" content="Individual Internet-Draft">
 {% endif %}
