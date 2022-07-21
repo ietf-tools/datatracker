@@ -5,7 +5,7 @@
 {% load ietf_filters %}
 {% load person_filters %}
 {% load textfilters %}
-{% block html_attrs %}prefix="og: http://ogp.me/ns#"{% endblock %}
+{% block html_attrs %}prefix="og: http://ogp.me/ns# article: http://ogp.me/ns/article#"{% endblock %}
 {% block pagehead %}
     {% include "doc/opengraph.html" %}
     <link rel="alternate"
