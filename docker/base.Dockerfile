@@ -32,7 +32,6 @@ RUN apt-get update --fix-missing && apt-get install -qy \
 	ghostscript \
 	git \
 	gnupg \
-	graphviz \
 	jq \
 	less \
     libcairo2-dev \
