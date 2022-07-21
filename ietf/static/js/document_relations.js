@@ -293,8 +293,6 @@ function draw_graph(data, group) {
         node.attr("transform", transform);
     }
 
-    $('svg [title][title!=""]')
-        .tooltip();
     return [svg.node(), d3
         .forceSimulation()
         .nodes(data.nodes)
@@ -451,6 +449,9 @@ $("#deps-modal")
                         .replaceWith(dep_el);
                     dep_sim.restart();
 
+                    $('svg [title][title!=""]')
+                        .tooltip();
+
                     $("#legend")
                         .prop("disabled", false)
                         .on("click", function () {
@@ -465,6 +466,9 @@ $("#deps-modal")
                                     .replaceWith(dep_el);
                                 dep_sim.restart();
                             }
+
+                            $('svg [title][title!=""]')
+                                .tooltip();
                         });
 
                     $(this)
