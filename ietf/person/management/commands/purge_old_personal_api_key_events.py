@@ -1,9 +1,10 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Max, Min
+from django.utils import timezone
 
 from ietf.person.models import PersonApiKeyEvent
 
@@ -33,7 +34,7 @@ class Command(BaseCommand):
         self.stdout.write('Finding events older than {}\n'.format(_format_count(keep_days)))
         self.stdout.flush()
 
-        now = datetime.now()
+        now = timezone.now()
         old_events = PersonApiKeyEvent.objects.filter(
             time__lt=now - timedelta(days=keep_days)
         )

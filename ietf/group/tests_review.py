@@ -8,6 +8,7 @@ import debug      # pyflakes:ignore
 from pyquery import PyQuery
 
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 from ietf.review.policies import get_reviewer_queue_policy
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, reload_db_objects
@@ -131,7 +132,7 @@ class ReviewTests(TestCase):
         doc.states.add(State.objects.get(type="draft-iesg", slug="lc", used=True))
         LastCallDocEvent.objects.create(
             doc=doc,
-            expires=datetime.datetime.now() + datetime.timedelta(days=365),
+            expires=timezone.now() + datetime.timedelta(days=365),
             by=Person.objects.get(name="(System)"),
             rev=doc.rev
         )
@@ -429,7 +430,7 @@ class ReviewTests(TestCase):
         doc.states.add(State.objects.get(type="draft-iesg", slug="lc", used=True))
         LastCallDocEvent.objects.create(
             doc=doc,
-            expires=datetime.datetime.now() + datetime.timedelta(days=365),
+            expires=timezone.now() + datetime.timedelta(days=365),
             by=Person.objects.get(name="(System)"),
             rev=doc.rev
         )

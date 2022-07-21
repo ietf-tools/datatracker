@@ -23,6 +23,7 @@ from django.conf import settings
 from django.forms import Form
 from django.utils.html import escape
 from django.test import override_settings
+from django.utils import timezone
 from django.utils.text import slugify
 
 from tastypie.test import ResourceTestCaseMixin
@@ -343,13 +344,13 @@ class SearchTests(TestCase):
         # Three drafts to show with various warnings
         drafts = WgDraftFactory.create_batch(3,states=[('draft','active'),('draft-iesg','ad-eval')])
         for index, draft in enumerate(drafts):
-            StateDocEventFactory(doc=draft, state=('draft-iesg','ad-eval'), time=datetime.datetime.now()-datetime.timedelta(days=[1,15,29][index]))
+            StateDocEventFactory(doc=draft, state=('draft-iesg','ad-eval'), time=timezone.now()-datetime.timedelta(days=[1,15,29][index]))
             draft.action_holders.set([PersonFactory()])
 
         # And one draft that should not show (with the default of 7 days to view)
         old = WgDraftFactory()
-        old.docevent_set.filter(newrevisiondocevent__isnull=False).update(time=datetime.datetime.now()-datetime.timedelta(days=8))
-        StateDocEventFactory(doc=old, time=datetime.datetime.now()-datetime.timedelta(days=8))
+        old.docevent_set.filter(newrevisiondocevent__isnull=False).update(time=timezone.now()-datetime.timedelta(days=8))
+        StateDocEventFactory(doc=old, time=timezone.now()-datetime.timedelta(days=8))
 
         url = urlreverse('ietf.doc.views_search.recent_drafts')
         r = self.client.get(url)
@@ -722,7 +723,7 @@ Man                    Expires September 22, 2015               [Page 3]
 
         replacement = WgDraftFactory(
             name="draft-ietf-replacement",
-            time=datetime.datetime.now(),
+            time=timezone.now(),
             title="Replacement Draft",
             stream_id=draft.stream_id, group_id=draft.group_id, abstract=draft.abstract,stream=draft.stream, rev=draft.rev,
             pages=draft.pages, intended_std_level_id=draft.intended_std_level_id,
@@ -1538,7 +1539,7 @@ class DocTestCase(TestCase):
             name = "session-72-mars-1",
             meeting = Meeting.objects.get(number='72'),
             group = Group.objects.get(acronym='mars'),
-            modified = datetime.datetime.now(),
+            modified = timezone.now(),
             add_to_schedule=False,
         )
         SchedulingEvent.objects.create(
@@ -1568,7 +1569,7 @@ class DocTestCase(TestCase):
             type="changed_ballot_position",
             pos_id="yes",
             comment="Looks fine to me",
-            comment_time=datetime.datetime.now(),
+            comment_time=timezone.now(),
             balloter=Person.objects.get(user__username="ad"),
             by=Person.objects.get(name="(System)"))
 
@@ -1602,7 +1603,7 @@ class DocTestCase(TestCase):
             type="changed_ballot_position",
             pos_id="noobj",
             comment="Still looks okay to me",
-            comment_time=datetime.datetime.now(),
+            comment_time=timezone.now(),
             balloter=Person.objects.get(user__username="ad"),
             by=Person.objects.get(name="(System)"))
 
@@ -1624,7 +1625,7 @@ class DocTestCase(TestCase):
                 type="changed_ballot_position",
                 pos_id="yes",
                 comment="Looks fine to me",
-                comment_time=datetime.datetime.now(),
+                comment_time=timezone.now(),
                 balloter=Person.objects.get(user__username="ad"),
                 by=Person.objects.get(name="(System)"))
 
@@ -1997,7 +1998,7 @@ class GenerateDraftAliasesTests(TestCase):
        super().tearDown()
 
    def testManagementCommand(self):
-       a_month_ago = datetime.datetime.now() - datetime.timedelta(30)
+       a_month_ago = timezone.now() - datetime.timedelta(30)
        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
        shepherd = PersonFactory()
        author1 = PersonFactory()

@@ -5,6 +5,8 @@ import factory
 
 from typing import List    # pyflakes:ignore
 
+from django.utils import timezone
+
 from ietf.group.models import Group, Role, GroupEvent, GroupMilestone, \
                               GroupHistory, RoleHistory
 from ietf.review.factories import ReviewTeamSettingsFactory
@@ -66,7 +68,7 @@ class BaseGroupMilestoneFactory(factory.django.DjangoModelFactory):
 
 class DatedGroupMilestoneFactory(BaseGroupMilestoneFactory):
     group = factory.SubFactory(GroupFactory, uses_milestone_dates=True)
-    due = datetime.datetime.today()+datetime.timedelta(days=180)
+    due = timezone.now()+datetime.timedelta(days=180)
 
 class DatelessGroupMilestoneFactory(BaseGroupMilestoneFactory):
     group = factory.SubFactory(GroupFactory, uses_milestone_dates=False)

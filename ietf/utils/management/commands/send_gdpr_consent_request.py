@@ -7,6 +7,7 @@ import time
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -65,7 +66,7 @@ class Command(BaseCommand):
         delay = 1.0/options['rate']
         # --minimum_interval
         minimum_interval = options['minimum_interval']
-        latest_previous = datetime.datetime.now() - datetime.timedelta(days=minimum_interval)
+        latest_previous = timezone.now() - datetime.timedelta(days=minimum_interval)
         # user
         self.stdout.write('Querying the database for matching person records ...')
         if 'user' in options and options['user']:

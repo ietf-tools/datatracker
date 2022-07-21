@@ -4,7 +4,6 @@
 
 import os
 import shutil
-import datetime
 import io
 
 from pathlib import Path
@@ -14,6 +13,7 @@ import debug              # pyflakes:ignore
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 from ietf.doc.models import Document, State, DocAlias, NewRevisionDocEvent
 from ietf.group.factories import RoleFactory
@@ -155,7 +155,7 @@ class GroupMaterialTests(TestCase):
             name = "session-42-mars-1",
             meeting = Meeting.objects.get(number='42'),
             group = Group.objects.get(acronym='mars'),
-            modified = datetime.datetime.now(),
+            modified = timezone.now(),
         )
         SchedulingEvent.objects.create(
             session=session,

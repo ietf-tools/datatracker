@@ -17,6 +17,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -42,7 +43,7 @@ def get_meeting(num=None,type_in=['ietf',],days=28):
     if type_in:
         meetings = meetings.filter(type__in=type_in)
     if num == None:
-        meetings = meetings.filter(date__gte=datetime.datetime.today()-datetime.timedelta(days=days)).order_by('date')
+        meetings = meetings.filter(date__gte=timezone.now()-datetime.timedelta(days=days)).order_by('date')
     else:
         meetings = meetings.filter(number=num)
     if meetings.exists():
@@ -51,7 +52,7 @@ def get_meeting(num=None,type_in=['ietf',],days=28):
         raise Http404("No such meeting found: %s" % num)
 
 def get_current_ietf_meeting():
-    meetings = Meeting.objects.filter(type='ietf',date__gte=datetime.datetime.today()-datetime.timedelta(days=31)).order_by('date')
+    meetings = Meeting.objects.filter(type='ietf',date__gte=timezone.now()-datetime.timedelta(days=31)).order_by('date')
     return meetings.first()
 
 def get_current_ietf_meeting_num():

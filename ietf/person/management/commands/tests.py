@@ -5,6 +5,7 @@ import datetime
 from io import StringIO
 
 from django.core.management import call_command, CommandError
+from django.utils import timezone
 
 from ietf.person.factories import PersonApiKeyEventFactory
 from ietf.person.models import PersonApiKeyEvent, PersonEvent
@@ -51,7 +52,7 @@ class CommandTests(TestCase):
         # Remember how many PersonEvents were present so we can verify they're cleaned up properly.
         personevents_before = PersonEvent.objects.count()
 
-        now = datetime.datetime.now()
+        now = timezone.now()
         # The first of these events will be timestamped a fraction of a second more than keep_days
         # days ago by the time we call the management command, so will just barely chosen for purge.
         old_events = [
@@ -101,7 +102,7 @@ class CommandTests(TestCase):
 
     def test_purge_old_personal_api_key_events_rejects_invalid_arguments(self):
         """The purge_old_personal_api_key_events command should reject invalid arguments"""
-        event = PersonApiKeyEventFactory(time=datetime.datetime.now() - datetime.timedelta(days=30))
+        event = PersonApiKeyEventFactory(time=timezone.now() - datetime.timedelta(days=30))
 
         with self.assertRaises(CommandError):
             self._call_command('purge_old_personal_api_key_events')

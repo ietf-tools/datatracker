@@ -10,6 +10,7 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
@@ -418,7 +419,7 @@ def generate_issue_ballot_mail(request, doc, ballot):
     
     e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
     last_call_expires = e.expires if e else None
-    last_call_has_expired = last_call_expires and last_call_expires < datetime.datetime.now()
+    last_call_has_expired = last_call_expires and last_call_expires < timezone.now()
 
     return render_to_string("doc/mail/issue_iesg_ballot_mail.txt",
                             dict(doc=doc,
@@ -437,7 +438,7 @@ def _send_irsg_ballot_email(request, doc, ballot, subject, template):
     (to, cc) = gather_address_lists('irsg_ballot_issued', doc=doc)
     sender = 'IESG Secretary <iesg-secretary@ietf.org>'
 
-    ballot_expired = ballot.duedate < datetime.datetime.now()
+    ballot_expired = ballot.duedate < timezone.now()
     active_ballot = doc.active_ballot()
     if active_ballot is None:
         needed_bps = ''

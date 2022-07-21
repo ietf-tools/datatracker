@@ -8,6 +8,7 @@ from pyquery import PyQuery
 import debug    # pyflakes:ignore
 
 from django.urls import reverse
+from django.utils import timezone
 
 from ietf.doc.factories import (WgDraftFactory, IndividualRfcFactory, CharterFactory,
     IndividualDraftFactory, ConflictReviewFactory)
@@ -22,7 +23,7 @@ from ietf.secr.telechat.views import get_next_telechat_date
 SECR_USER='secretary'
 
 def augment_data():
-    TelechatDate.objects.create(date=datetime.datetime.today())
+    TelechatDate.objects.create(date=timezone.now())
 
 class SecrTelechatTestCase(TestCase):
     def test_main(self):
@@ -138,7 +139,7 @@ class SecrTelechatTestCase(TestCase):
         self.assertEqual(q("#telechat-positions-table").find("th:contains('No Record')").length,1)
 
     def test_bash(self):
-        today = datetime.datetime.today() 
+        today = timezone.now()
         TelechatDate.objects.create(date=today)
         url = reverse('ietf.secr.telechat.views.bash',kwargs={'date':today.strftime('%Y-%m-%d')})
         self.client.login(username="secretary", password="secretary+password")

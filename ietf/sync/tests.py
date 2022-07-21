@@ -10,6 +10,7 @@ import quopri
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -34,11 +35,11 @@ class IANASyncTests(TestCase):
         self.assertEqual(len(rfc_names), 1)
         self.assertEqual(rfc_names[0], "rfc1234")
 
-        iana.update_rfc_log_from_protocol_page(rfc_names, datetime.datetime.now() - datetime.timedelta(days=1))
+        iana.update_rfc_log_from_protocol_page(rfc_names, timezone.now() - datetime.timedelta(days=1))
         self.assertEqual(DocEvent.objects.filter(doc=draft, type="rfc_in_iana_registry").count(), 1)
 
         # make sure it doesn't create duplicates
-        iana.update_rfc_log_from_protocol_page(rfc_names, datetime.datetime.now() - datetime.timedelta(days=1))
+        iana.update_rfc_log_from_protocol_page(rfc_names, timezone.now() - datetime.timedelta(days=1))
         self.assertEqual(DocEvent.objects.filter(doc=draft, type="rfc_in_iana_registry").count(), 1)
 
     def test_changes_sync(self):

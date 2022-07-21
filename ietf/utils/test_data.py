@@ -6,6 +6,7 @@ import datetime
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.utils import timezone
 from django.utils.encoding import smart_text
 
 import debug                            # pyflakes:ignore
@@ -271,14 +272,14 @@ def make_test_data():
     # old draft
     old_draft = Document.objects.create(
         name="draft-foo-mars-test",
-        time=datetime.datetime.now() - datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
+        time=timezone.now() - datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
         type_id="draft",
         title="Optimizing Martian Network Topologies",
         stream_id="ietf",
         abstract="Techniques for achieving near-optimal Martian networks.",
         rev="00",
         pages=2,
-        expires=datetime.datetime.now(),
+        expires=timezone.now(),
         )
     old_draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
     old_alias = DocAlias.objects.create(name=old_draft.name)
@@ -287,7 +288,7 @@ def make_test_data():
     # draft
     draft = Document.objects.create(
         name="draft-ietf-mars-test",
-        time=datetime.datetime.now(),
+        time=timezone.now(),
         type_id="draft",
         title="Optimizing Martian Network Topologies",
         stream_id="ietf",
@@ -298,7 +299,7 @@ def make_test_data():
         intended_std_level_id="ps",
         shepherd=email,
         ad=ad,
-        expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
+        expires=timezone.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
         notify="aliens@example.mars",
         note="",
         )
@@ -458,7 +459,7 @@ def make_review_data(doc):
         doc=doc,
         team=team1,
         type_id="early",
-        deadline=datetime.datetime.now() + datetime.timedelta(days=20),
+        deadline=timezone.now() + datetime.timedelta(days=20),
         state_id="accepted",
         requested_by=reviewer,
         reviewer=email,

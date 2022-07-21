@@ -5,6 +5,7 @@
 import datetime
 import factory
 
+from django.utils import timezone
 
 from ietf.ipr.models import (
     IprDisclosureBase, HolderIprDisclosure, ThirdPartyIprDisclosure, NonDocSpecificIprDisclosure,
@@ -13,7 +14,7 @@ from ietf.ipr.models import (
 
 def _fake_patent_info():
     return "Date: %s\nNotes: %s\nTitle: %s\nNumber: %s\nInventor: %s\n" % (
-        (datetime.datetime.today()-datetime.timedelta(days=365)).strftime("%Y-%m-%d"),
+        (timezone.now()-datetime.timedelta(days=365)).strftime("%Y-%m-%d"),
         factory.Faker('paragraph'),
         factory.Faker('sentence', nb_words=8),
         'US9999999',

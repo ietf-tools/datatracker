@@ -11,8 +11,8 @@ from unittest import skipIf
 import urllib.parse
 
 import django
+from django.utils import timezone
 from django.utils.text import slugify
-from django.utils.timezone import now
 from django.db.models import F
 import pytz
 
@@ -307,7 +307,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         room = RoomFactory(meeting=meeting)
 
         # get current time in meeting time zone
-        right_now = now().astimezone(
+        right_now = timezone.now().astimezone(
             pytz.timezone(meeting.time_zone)
         )
         if not settings.USE_TZ:
@@ -394,11 +394,11 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
     def test_past_swap_days_buttons(self):
         """Swap days buttons should be hidden for past items"""
         wait = WebDriverWait(self.driver, 2)
-        meeting = MeetingFactory(type_id='ietf', date=datetime.datetime.today() - datetime.timedelta(days=3), days=7)
+        meeting = MeetingFactory(type_id='ietf', date=timezone.now() - datetime.timedelta(days=3), days=7)
         room = RoomFactory(meeting=meeting)
 
         # get current time in meeting time zone
-        right_now = now().astimezone(
+        right_now = timezone.now().astimezone(
             pytz.timezone(meeting.time_zone)
         )
         if not settings.USE_TZ:
@@ -518,11 +518,11 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
     def test_past_swap_timeslot_col_buttons(self):
         """Swap timeslot column buttons should be hidden for past items"""
         wait = WebDriverWait(self.driver, 2)
-        meeting = MeetingFactory(type_id='ietf', date=datetime.datetime.today() - datetime.timedelta(days=3), days=7)
+        meeting = MeetingFactory(type_id='ietf', date=timezone.now() - datetime.timedelta(days=3), days=7)
         room = RoomFactory(meeting=meeting)
 
         # get current time in meeting time zone
-        right_now = now().astimezone(
+        right_now = timezone.now().astimezone(
             pytz.timezone(meeting.time_zone)
         )
         if not settings.USE_TZ:
@@ -2048,7 +2048,7 @@ class InterimTests(IetfSeleniumTestCase):
             Session.objects.filter(
                 meeting__type_id='interim',
                 timeslotassignments__schedule=F('meeting__schedule'),
-                timeslotassignments__timeslot__time__gte=datetime.datetime.today()
+                timeslotassignments__timeslot__time__gte=timezone.now()
             )
         ).filter(current_status__in=('sched','canceled'))
         meetings = []
@@ -2061,7 +2061,7 @@ class InterimTests(IetfSeleniumTestCase):
     def all_ietf_meetings(self):
         meetings = Meeting.objects.filter(
             type_id='ietf',
-            date__gte=datetime.datetime.today()-datetime.timedelta(days=7)
+            date__gte=timezone.now()-datetime.timedelta(days=7)
         )
         for m in meetings:
             m.calendar_label = 'IETF %s' % m.number
@@ -2609,7 +2609,7 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
         self.meeting: Meeting = MeetingFactory(
             type_id='ietf',
             number=120,
-            date=datetime.datetime.today() + datetime.timedelta(days=10),
+            date=timezone.now() + datetime.timedelta(days=10),
             populate_schedule=False,
         )
         self.edit_timeslot_url = self.absreverse(

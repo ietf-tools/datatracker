@@ -1,6 +1,7 @@
 import datetime
 
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 from ietf.meeting.models import Meeting
 from ietf.doc.models import DocEvent, Document
@@ -9,7 +10,7 @@ from ietf.secr.proceedings.proc_utils import get_progress_stats
 def report_id_activity(start,end):
 
     # get previous meeting
-    meeting = Meeting.objects.filter(date__lt=datetime.datetime.now(),type='ietf').order_by('-date')[0]
+    meeting = Meeting.objects.filter(date__lt=timezone.now(),type='ietf').order_by('-date')[0]
     syear,smonth,sday = start.split('-')
     eyear,emonth,eday = end.split('-')
     sdate = datetime.datetime(int(syear),int(smonth),int(sday))

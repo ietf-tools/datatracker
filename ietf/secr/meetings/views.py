@@ -11,6 +11,7 @@ from django.db.models import IntegerField
 from django.db.models.functions import Cast
 from django.forms.models import inlineformset_factory
 from django.shortcuts import render, get_object_or_404, redirect
+from django.utils import timezone
 from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
@@ -121,7 +122,7 @@ def send_notifications(meeting, groups, person):
     Send session scheduled email notifications for each group in groups.  Person is the
     user who initiated this action, request.uesr.get_profile().
     '''
-    now = datetime.datetime.now()
+    now = timezone.now()
     for group in groups:
         sessions = group.session_set.filter(meeting=meeting)
         addrs = gather_address_lists('session_scheduled',group=group,session=sessions[0])

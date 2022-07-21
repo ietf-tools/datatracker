@@ -19,6 +19,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.forms.utils import ErrorList
 from django.template.defaultfilters import pluralize
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -857,7 +858,7 @@ def resurrect(request, name):
         events.append(e)
 
         doc.set_state(State.objects.get(used=True, type="draft", slug="active"))
-        doc.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
+        doc.expires = timezone.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
         doc.save_with_history(events)
 
         restore_draft_file(request, doc)

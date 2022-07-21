@@ -11,6 +11,7 @@ from urllib.parse import urlencode
 from xml.dom import pulldom, Node
 
 from django.conf import settings
+from django.utils import timezone
 from django.utils.encoding import smart_bytes, force_str, force_text
 
 import debug                            # pyflakes:ignore
@@ -443,7 +444,7 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
             # at the moment because the data only has month/year, so
             # try to deduce it
             d = datetime.datetime.combine(rfc_published_date, datetime.time())
-            synthesized = datetime.datetime.now()
+            synthesized = timezone.now()
             if abs(d - synthesized) > datetime.timedelta(days=60):
                 synthesized = d
             else:
