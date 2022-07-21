@@ -8254,24 +8254,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
-      ["tinypool", [\
-        ["npm:0.2.4", {\
-          "packageLocation": "./.yarn/cache/tinypool-npm-0.2.4-1940a28d43-f050bd36c8.zip/node_modules/tinypool/",\
-          "packageDependencies": [\
-            ["tinypool", "npm:0.2.4"]\
-          ],\
-          "linkType": "HARD"\
-        }]\
-      ]],\
-      ["tinyspy", [\
-        ["npm:1.0.0", {\
-          "packageLocation": "./.yarn/cache/tinyspy-npm-1.0.0-6b0cbea3cc-f9a7cea406.zip/node_modules/tinyspy/",\
-          "packageDependencies": [\
-            ["tinyspy", "npm:1.0.0"]\
-          ],\
-          "linkType": "HARD"\
-        }]\
-      ]],\
       ["tmp", [\
         ["npm:0.2.1", {\
           "packageLocation": "./.yarn/cache/tmp-npm-0.2.1-a9c8d9c0ca-8b12146541.zip/node_modules/tmp/",\
@@ -8581,9 +8563,11 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             "@types/less",\
             "@types/sass",\
             "@types/stylus",\
+            "@types/terser",\
             "less",\
             "sass",\
-            "stylus"\
+            "stylus",\
+            "terser"\
           ],\
           "linkType": "HARD"\
         }]\
