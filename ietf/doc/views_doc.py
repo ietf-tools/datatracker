@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2020, All Rights Reserved
+# Copyright The IETF Trust 2009-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
@@ -621,9 +621,9 @@ def document_main(request, name, rev=None):
             ballot_summary = needed_ballot_positions(doc, list(doc.active_ballot().active_balloter_positions().values()))
      
         if isinstance(doc,Document):
-            sorted_relations=doc.relateddocument_set.all().order_by('relationship__name')
+            sorted_relations=doc.relateddocument_set.all().order_by("relationship__name", "target__name")
         elif isinstance(doc,DocHistory):
-            sorted_relations=doc.relateddochistory_set.all().order_by('relationship__name')
+            sorted_relations=doc.relateddochistory_set.all().order_by("relationship__name", "target__name")
         else:
             sorted_relations=None
 
