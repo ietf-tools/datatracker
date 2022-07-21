@@ -1868,14 +1868,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bootstrap-icons@npm:1.8.3":
-  version: 1.8.3
-  resolution: "bootstrap-icons@npm:1.8.3"
-  checksum: c7f9cac462f1dce1798a067b5185968206b8e71d8e2934bcdae437b3eb94a624de7860f628d920d68ab5f744948ac5251d00812a90d21fc8fc0d4757b567e6ca
+"bootstrap-icons@npm:1.9.1":
+  version: 1.9.1
+  resolution: "bootstrap-icons@npm:1.9.1"
+  checksum: b388264719b5d2526809df509b83aa7e696d467f3b976d79faefb6fc7f07cee5427a894331af90b00b1ceb8d28a99fc398f1ca0553afaa53eb77a7749bb73ea5
   languageName: node
   linkType: hard
 
-"bootstrap@npm:5.1.3, bootstrap@npm:^5.1.3":
+"bootstrap@npm:5.2.0":
+  version: 5.2.0
+  resolution: "bootstrap@npm:5.2.0"
+  peerDependencies:
+    "@popperjs/core": ^2.11.5
+  checksum: 9dbfb5d26bbdac3e27a6b46cb7456cd4dd75ae3b48644737809885b8ea9c265d3359c4cdbf25a55bb7e5046f51e441557033ba21eeaf24ef8316bfbb3d420084
+  languageName: node
+  linkType: hard
+
+"bootstrap@npm:^5.1.3":
   version: 5.1.3
   resolution: "bootstrap@npm:5.1.3"
   peerDependencies:
@@ -6670,8 +6679,8 @@ browserlist@latest:
     "@popperjs/core": 2.11.5
     "@vitejs/plugin-vue": 2.3.3
     "@vue/test-utils": 2.0.2
-    bootstrap: 5.1.3
-    bootstrap-icons: 1.8.3
+    bootstrap: 5.2.0
+    bootstrap-icons: 1.9.1
     browser-fs-access: 0.31.0
     browserlist: latest
     c8: 7.11.3

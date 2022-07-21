@@ -45,8 +45,8 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@popperjs/core", "npm:2.11.5"],\
             ["@vitejs/plugin-vue", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.3.3"],\
             ["@vue/test-utils", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.0.2"],\
-            ["bootstrap", "virtual:10122bfbcba1a448fa8cd209500287123cf7dd2abe325c6afac0050500c2a7843d4fa38428d3ef45d200d480f092839e6533b4c96c028b4d6e4e1d970111b151#npm:5.1.3"],\
-            ["bootstrap-icons", "npm:1.8.3"],\
+            ["bootstrap", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.2.0"],\
+            ["bootstrap-icons", "npm:1.9.1"],\
             ["browser-fs-access", "npm:0.31.0"],\
             ["browserlist", "npm:1.0.1"],\
             ["c8", "npm:7.11.3"],\
@@ -2373,6 +2373,13 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           ],\
           "linkType": "SOFT"\
         }],\
+        ["npm:5.2.0", {\
+          "packageLocation": "./.yarn/cache/bootstrap-npm-5.2.0-e6c71ad969-9dbfb5d26b.zip/node_modules/bootstrap/",\
+          "packageDependencies": [\
+            ["bootstrap", "npm:5.2.0"]\
+          ],\
+          "linkType": "SOFT"\
+        }],\
         ["virtual:10122bfbcba1a448fa8cd209500287123cf7dd2abe325c6afac0050500c2a7843d4fa38428d3ef45d200d480f092839e6533b4c96c028b4d6e4e1d970111b151#npm:5.1.3", {\
           "packageLocation": "./.yarn/__virtual__/bootstrap-virtual-60f254b806/0/cache/bootstrap-npm-5.1.3-691fdc19a6-301b5ed872.zip/node_modules/bootstrap/",\
           "packageDependencies": [\
@@ -2385,13 +2392,26 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             "@types/popperjs__core"\
           ],\
           "linkType": "HARD"\
+        }],\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.2.0", {\
+          "packageLocation": "./.yarn/__virtual__/bootstrap-virtual-3ea260682f/0/cache/bootstrap-npm-5.2.0-e6c71ad969-9dbfb5d26b.zip/node_modules/bootstrap/",\
+          "packageDependencies": [\
+            ["bootstrap", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.2.0"],\
+            ["@popperjs/core", "npm:2.11.5"],\
+            ["@types/popperjs__core", null]\
+          ],\
+          "packagePeers": [\
+            "@popperjs/core",\
+            "@types/popperjs__core"\
+          ],\
+          "linkType": "HARD"\
         }]\
       ]],\
       ["bootstrap-icons", [\
-        ["npm:1.8.3", {\
-          "packageLocation": "./.yarn/cache/bootstrap-icons-npm-1.8.3-6de657c08a-c7f9cac462.zip/node_modules/bootstrap-icons/",\
+        ["npm:1.9.1", {\
+          "packageLocation": "./.yarn/cache/bootstrap-icons-npm-1.9.1-69d14bd4a0-b388264719.zip/node_modules/bootstrap-icons/",\
           "packageDependencies": [\
-            ["bootstrap-icons", "npm:1.8.3"]\
+            ["bootstrap-icons", "npm:1.9.1"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -7885,8 +7905,8 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@popperjs/core", "npm:2.11.5"],\
             ["@vitejs/plugin-vue", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.3.3"],\
             ["@vue/test-utils", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.0.2"],\
-            ["bootstrap", "virtual:10122bfbcba1a448fa8cd209500287123cf7dd2abe325c6afac0050500c2a7843d4fa38428d3ef45d200d480f092839e6533b4c96c028b4d6e4e1d970111b151#npm:5.1.3"],\
-            ["bootstrap-icons", "npm:1.8.3"],\
+            ["bootstrap", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.2.0"],\
+            ["bootstrap-icons", "npm:1.9.1"],\
             ["browser-fs-access", "npm:0.31.0"],\
             ["browserlist", "npm:1.0.1"],\
             ["c8", "npm:7.11.3"],\
