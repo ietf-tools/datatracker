@@ -1987,9 +1987,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"c8@npm:7.11.3":
-  version: 7.11.3
-  resolution: "c8@npm:7.11.3"
+"c8@npm:7.12.0":
+  version: 7.12.0
+  resolution: "c8@npm:7.12.0"
   dependencies:
     "@bcoe/v8-coverage": ^0.2.3
     "@istanbuljs/schema": ^0.1.3
@@ -2005,7 +2005,7 @@ browserlist@latest:
     yargs-parser: ^20.2.9
   bin:
     c8: bin/c8.js
-  checksum: 9f7272bb5fd3d4f7d1c2f7fb986c1025a09c3afefce168c3ba62497dd6294f887c1678d23736126485ec534263ec6b4ed9b4bd2a05aa8d1682c949c3db1f5359
+  checksum: 3b7fa9ad7cff2cb0bb579467e6b544498fbd46e9353a809ad3b8cf749df4beadd074cde277356b0552f3c8055b1b3ec3ebaf2209e9ad4bdefed92dbf64d283ab
   languageName: node
   linkType: hard
 
@@ -2059,10 +2059,10 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"caniuse-lite@npm:1.0.30001365":
-  version: 1.0.30001365
-  resolution: "caniuse-lite@npm:1.0.30001365"
-  checksum: 5d043006e9bd9de1ae06c0e12c31997f0ed26f889f47ea6403dc2d08f46a5bd4bf0fe1a5b1099561fc447201ddf13083f277de68829e77fd238ff2af8c05e0a6
+"caniuse-lite@npm:1.0.30001368":
+  version: 1.0.30001368
+  resolution: "caniuse-lite@npm:1.0.30001368"
+  checksum: e2a763e7bca8f7a2494f752d0e1a5c0cd1c70ebd18df2eda2bdcf2f908901bbff14f78961ad1cada3eb7af32120ce95aa93f06c5a093d721e787816dc7f5bfaa
   languageName: node
   linkType: hard
 
@@ -2467,9 +2467,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"cypress@npm:10.3.0":
-  version: 10.3.0
-  resolution: "cypress@npm:10.3.0"
+"cypress@npm:10.3.1":
+  version: 10.3.1
+  resolution: "cypress@npm:10.3.1"
   dependencies:
     "@cypress/request": ^2.88.10
     "@cypress/xvfb": ^1.2.4
@@ -2515,7 +2515,7 @@ browserlist@latest:
     yauzl: ^2.10.0
   bin:
     cypress: bin/cypress
-  checksum: 9cc6d8cd087d7c79f07ad83b8ef9b183f44cf816499bba53e1cee2b6f987d0a6893be209fcd47660cdd0e8456bd132813abe8a6bd15f446d9c96e0129be2de29
+  checksum: 7c76157195ec9409b9665aa9f7698ffd221c74c17f5026769fa20f90a60869cc8274282fa5b9b65e495429839f7a0ba05d69cf12a8af7a318ebcd704f96156c2
   languageName: node
   linkType: hard
 
@@ -3844,9 +3844,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"eslint@npm:8.19.0":
-  version: 8.19.0
-  resolution: "eslint@npm:8.19.0"
+"eslint@npm:8.20.0":
+  version: 8.20.0
+  resolution: "eslint@npm:8.20.0"
   dependencies:
     "@eslint/eslintrc": ^1.3.0
     "@humanwhocodes/config-array": ^0.9.2
@@ -3885,7 +3885,7 @@ browserlist@latest:
     v8-compile-cache: ^2.0.3
   bin:
     eslint: bin/eslint.js
-  checksum: 0bc9df1a3a09dcd5a781ec728f280aa8af3ab19c2d1f14e2668b5ee5b8b1fb0e72dde5c3acf738e7f4281685fb24ec149b6154255470b06cf41de76350bca7a4
+  checksum: a31adf390d71d916925586bc8467b48f620e93dd0416bc1e897d99265af88b48d4eba3985b5ff4653ae5cc46311a360d373574002277e159bb38a4363abf9228
   languageName: node
   linkType: hard
 
@@ -5259,7 +5259,7 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"local-pkg@npm:^0.4.1":
+"local-pkg@npm:^0.4.2":
   version: 0.4.2
   resolution: "local-pkg@npm:0.4.2"
   checksum: 22be451353c25c4411b552bf01880ebc9e995b93574b2facc7757968d888356df59199cacada14162ab53bbc9da055bb692c907b4171f008dbce45a2afc777c1
@@ -6683,12 +6683,12 @@ browserlist@latest:
     bootstrap-icons: 1.9.1
     browser-fs-access: 0.31.0
     browserlist: latest
-    c8: 7.11.3
-    caniuse-lite: 1.0.30001365
-    cypress: 10.3.0
+    c8: 7.12.0
+    caniuse-lite: 1.0.30001368
+    cypress: 10.3.1
     cypress-real-events: 1.7.1
     d3: 7.6.1
-    eslint: 8.19.0
+    eslint: 8.20.0
     eslint-config-standard: 17.0.0
     eslint-plugin-cypress: 2.12.1
     eslint-plugin-import: 2.26.0
@@ -6719,7 +6719,7 @@ browserlist@latest:
     slugify: 1.6.5
     sortablejs: 1.15.0
     vite: 2.9.14
-    vitest: 0.18.0
+    vitest: 0.18.1
     vue: 3.2.37
     vue-router: 4.1.2
     zxcvbn: 4.4.2
@@ -7243,17 +7243,17 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"tinypool@npm:^0.2.1":
-  version: 0.2.2
-  resolution: "tinypool@npm:0.2.2"
-  checksum: 2ce12dd4f28ed7182095981b29e6cf8170b3efea7016c99c1d059da7b4929124565a35e89fe1b69a9a0d2d9aa58143c32a9f7f793f3160c4f453da8febede98a
+"tinypool@npm:^0.2.4":
+  version: 0.2.4
+  resolution: "tinypool@npm:0.2.4"
+  checksum: f050bd36c89529a2a0d3f9c1fdbba3f317114e3ee6eb5d5ba72c51e887d45ef3ef8d8533fb2ca2eba7189d19d2231712b81b3a75e099248532f5563369929c33
   languageName: node
   linkType: hard
 
-"tinyspy@npm:^0.3.3":
-  version: 0.3.3
-  resolution: "tinyspy@npm:0.3.3"
-  checksum: 1beb8f04c100d9ac769ff85266594f07d6f08f41cfb95c4bef9da3e59988b42e8d4e66c2ec455d3ecad80027347920e87d7a7098c5a2a28637f9fee25e11a8f1
+"tinyspy@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "tinyspy@npm:1.0.0"
+  checksum: f9a7cea406db9b0f99a4ef162eb0a45d88fc36facbc309702c8d568283baa363ab3c4138d8402fbfdef7a8d3157ff7cfae3e99ec6c75d8f684bd7b23485b5ec5
   languageName: node
   linkType: hard
 
@@ -7557,18 +7557,18 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"vitest@npm:0.18.0":
-  version: 0.18.0
-  resolution: "vitest@npm:0.18.0"
+"vitest@npm:0.18.1":
+  version: 0.18.1
+  resolution: "vitest@npm:0.18.1"
   dependencies:
     "@types/chai": ^4.3.1
     "@types/chai-subset": ^1.3.3
     "@types/node": "*"
     chai: ^4.3.6
     debug: ^4.3.4
-    local-pkg: ^0.4.1
-    tinypool: ^0.2.1
-    tinyspy: ^0.3.3
+    local-pkg: ^0.4.2
+    tinypool: ^0.2.4
+    tinyspy: ^1.0.0
     vite: ^2.9.12 || ^3.0.0-0
   peerDependencies:
     "@edge-runtime/vm": "*"
@@ -7589,7 +7589,7 @@ browserlist@latest:
       optional: true
   bin:
     vitest: vitest.mjs
-  checksum: 20e76b0de9f02dd09a412b11e5898d1ec7c5c9f9287da40a79fde98f6bd100db6f777fb5f1370496a2c153277cc5eb6738e176435101332fce1c87a565e62d5f
+  checksum: 0d3a77625eb542bae27715cb24c91b7f4379d1084ce154ff54c991ab669fe0977a927121d232e6659e97b71b852060ca85c0b1825612f2e092b436e24cca276c
   languageName: node
   linkType: hard
 
