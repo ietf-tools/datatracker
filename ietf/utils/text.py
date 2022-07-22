@@ -39,6 +39,7 @@ tags = set(copy.copy(bleach.sanitizer.ALLOWED_TAGS)).union(
 )
 
 attributes = copy.copy(bleach.sanitizer.ALLOWED_ATTRIBUTES)
+attributes["*"] = ["id"]
 attributes["ol"] = ["start"]
 
 bleach_cleaner = bleach.sanitizer.Cleaner(
