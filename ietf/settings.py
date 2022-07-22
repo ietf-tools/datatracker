@@ -1176,6 +1176,10 @@ qvNU+qRWi+YXrITsgn92/gVxX5AoK0n+s5Lx7fpjxkARVi66SF6zTJnX
 DEFAULT_REQUESTS_TIMEOUT = 20  # seconds
 
 
+# Celery configuration
+CELERY_TIMEZONE = 'UTC'
+CELERY_BROKER_URL = 'amqp://mq/'
+
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests
 #

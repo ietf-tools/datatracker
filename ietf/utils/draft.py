@@ -142,12 +142,28 @@ class Draft:
         raise NotImplementedError
 
     def get_author_list(self):
+        """Get detailed author list
+
+        Returns a list of dicts with the following keys:
+            full_name, first_name, middle_initial, last_name,
+            name_suffix, email, country, company
+        Values will be None if not available
+        """
         raise NotImplementedError
 
     def get_authors(self):
+        """Get simple author list
+
+        Get as list of strings with author name and email within angle brackets
+        """
         raise NotImplementedError
 
     def get_authors_with_firm(self):
+        """Get simple list of authors with firm (company) info
+
+        Get as list of strings with author name and email within angle brackets and
+        company in parentheses
+        """
         raise NotImplementedError
 
     def get_creation_date(self):
@@ -558,6 +574,8 @@ class PlaintextDraft(Draft):
     def get_author_list(self):          # () -> List[List[str, str, str, str, str, str, str]]
         """Returns a list of tuples, with each tuple containing (given_names,
         surname, email, company).  Email will be None if unknown.
+
+        Todo update to agree with superclass method signature
         """
         if self._author_info == None:
             self.extract_authors()

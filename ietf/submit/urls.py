@@ -25,4 +25,7 @@ urlpatterns = [
     url(r'^manualpost/email/(?P<submission_id>\d+)/(?P<message_id>\d+)/(?P<access_token>[a-f\d]*)/$', views.show_submission_email_message),
     url(r'^manualpost/replyemail/(?P<submission_id>\d+)/(?P<message_id>\d+)/$', views.send_submission_email),
     url(r'^manualpost/sendemail/(?P<submission_id>\d+)/$', views.send_submission_email),
+
+    # proof-of-concept for celery async tasks
+    url(r'^async-poke/?$', views.async_poke_test),
 ]

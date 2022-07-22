@@ -7,14 +7,15 @@ import base64
 import datetime
 
 from typing import Optional, cast         # pyflakes:ignore
+from urllib.parse import urljoin
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.db import DataError
+from django.db import DataError, transaction
 from django.urls import reverse as urlreverse
 from django.core.exceptions import ValidationError
-from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponse
+from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponse, JsonResponse
 from django.http import HttpRequest     # pyflakes:ignore
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
@@ -30,14 +31,16 @@ from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message, MessageAttachment
 from ietf.person.models import Email
 from ietf.submit.forms import ( SubmissionManualUploadForm, SubmissionAutoUploadForm, AuthorForm,
-    SubmitterForm, EditSubmissionForm, PreapprovalForm, ReplacesForm, SubmissionEmailForm, MessageModelForm )
+    SubmitterForm, EditSubmissionForm, PreapprovalForm, ReplacesForm, SubmissionEmailForm, MessageModelForm,
+    DeprecatedSubmissionAutoUploadForm )
 from ietf.submit.mail import send_full_url, send_manual_post_request, add_submission_email, get_reply_to
 from ietf.submit.models import (Submission, Preapproval, SubmissionExtResource,
     DraftSubmissionStateName, SubmissionEmailEvent )
+from ietf.submit.tasks import process_uploaded_submission_task, poke
 from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
     recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
     post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
-    get_submission, fill_in_submission, apply_checkers, save_files, 
+    get_submission, fill_in_submission, apply_checkers, save_files, clear_existing_files,
     check_submission_revision_consistency, accept_submission, accept_submission_requires_group_approval,
     accept_submission_requires_prev_auth_approval, update_submission_external_resources, remote_ip )
 from ietf.stats.utils import clean_country_name
@@ -107,6 +110,111 @@ def upload_submission(request):
                                'form': form})
 
 @csrf_exempt
+def api_submission(request):
+    def err(code, error, messages=None):
+        data = {'error': error}
+        if messages is not None:
+            data['messages'] = [messages] if isinstance(messages, str) else messages
+        return JsonResponse(data, status=code)
+
+    if request.method == 'GET':
+        return render(request, 'submit/api_submission_info.html')
+    elif request.method == 'POST':
+        exception = None
+        submission = None
+        try:
+            form = SubmissionAutoUploadForm(request, data=request.POST, files=request.FILES)
+            if form.is_valid():
+                log('got valid submission form for %s' % form.filename)
+                username = form.cleaned_data['user']
+                user = User.objects.filter(username=username)
+                if user.count() == 0:
+                    # See if a secondary login was being used
+                    email = Email.objects.filter(address=username, active=True)
+                    # The error messages don't talk about 'email', as the field we're
+                    # looking at is still the 'username' field.
+                    if email.count() == 0:
+                        return err(400, "No such user: %s" % username)
+                    elif email.count() > 1:
+                        return err(500, "Multiple matching accounts for %s" % username)
+                    email = email.first()
+                    if not hasattr(email, 'person'):
+                        return err(400, "No person matches %s" % username)
+                    person = email.person
+                    if not hasattr(person, 'user'):
+                        return err(400, "No user matches: %s" % username)
+                    user = person.user
+                elif user.count() > 1:
+                    return err(500, "Multiple matching accounts for %s" % username)
+                else:
+                    user = user.first()
+                if not hasattr(user, 'person'):
+                    return err(400, "No person with username %s" % username)
+
+                # There is a race condition here: creating the Submission with the name/rev
+                # of this draft is meant to prevent another submission from occurring. However,
+                # if two submissions occur at the same time, both may decide that they are the
+                # only submission in progress. This may result in a Submission being posted with
+                # the wrong files. The window for this is short, though, so it's probably
+                # tolerable risk.
+                submission = get_submission(form)
+                submission.state = DraftSubmissionStateName.objects.get(slug="validating")
+                submission.remote_ip = form.remote_ip
+                submission.file_types = ','.join(form.file_types)
+                submission.submission_date = datetime.date.today()
+                submission.submitter = user.person.formatted_email()
+                submission.replaces = form.cleaned_data['replaces']
+                submission.save()
+                clear_existing_files(form)
+                save_files(form)
+                create_submission_event(request, submission, desc="Uploaded submission through API")
+
+                # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
+                transaction.on_commit(
+                    lambda: process_uploaded_submission_task.delay(submission.pk)
+                )
+                return JsonResponse(
+                    {
+                        'id': str(submission.pk),
+                        'name': submission.name,
+                        'rev': submission.rev,
+                        'status_url': urljoin(
+                            settings.IDTRACKER_BASE_URL,
+                            urlreverse(api_submission_status, kwargs={'submission_id': submission.pk}),
+                        ),
+                    }
+                )
+            else:
+                raise ValidationError(form.errors)
+        except IOError as e:
+            exception = e
+            return err(500, 'IO Error', str(e))
+        except ValidationError as e:
+            exception = e
+            return err(400, 'Validation Error', e.messages)
+        except Exception as e:
+            exception = e
+            raise
+        finally:
+            if exception and submission:
+                remove_submission_files(submission)
+                submission.delete()
+    else:
+        return err(405, "Method not allowed")
+
+
+@csrf_exempt
+def api_submission_status(request, submission_id):
+    submission = get_submission_or_404(submission_id)
+    return JsonResponse(
+        {
+            'id': str(submission.pk),
+            'state': submission.state.slug,
+        }
+    )
+
+
+@csrf_exempt
 def api_submit(request):
     "Automated submission entrypoint"
     submission = None
@@ -118,7 +226,7 @@ def api_submit(request):
     elif request.method == 'POST':
         exception = None
         try:
-            form = SubmissionAutoUploadForm(request, data=request.POST, files=request.FILES)
+            form = DeprecatedSubmissionAutoUploadForm(request, data=request.POST, files=request.FILES)
             if form.is_valid():
                 log('got valid submission form for %s' % form.filename)
                 username = form.cleaned_data['user']
@@ -175,7 +283,7 @@ def api_submit(request):
                     raise ValidationError('Submitter %s is not one of the document authors' % user.username)
 
                 submission.submitter = user.person.formatted_email()
-                sent_to = accept_submission(request, submission)
+                sent_to = accept_submission(submission, request)
 
                 return HttpResponse(
                     "Upload of %s OK, confirmation requests sent to:\n  %s" % (submission.name, ',\n  '.join(sent_to)),
@@ -244,7 +352,11 @@ def submission_status(request, submission_id, access_token=None):
     is_ad = area and area.has_role(request.user, "ad")
 
     can_edit = can_edit_submission(request.user, submission, access_token) and submission.state_id == "uploaded"
-    can_cancel = (key_matched or is_secretariat) and submission.state.next_states.filter(slug="cancel")
+    # disallow cancellation of 'validating' submissions except by secretariat until async process is safely abortable
+    can_cancel = (
+            (is_secretariat or (key_matched and submission.state_id != 'validating'))
+            and submission.state.next_states.filter(slug="cancel")
+    )
     can_group_approve = (is_secretariat or is_ad or is_chair) and submission.state_id == "grp-appr"
     can_ad_approve = (is_secretariat or is_ad) and submission.state_id == "ad-appr"
 
@@ -365,13 +477,13 @@ def submission_status(request, submission_id, access_token=None):
                         permission_denied(request, 'You do not have permission to perform this action')
 
                     # go directly to posting submission
-                    docevent_from_submission(request, submission, desc="Uploaded new revision")
+                    docevent_from_submission(submission, desc="Uploaded new revision")
 
                     desc = "Secretariat manually posting. Approvals already received"
                     post_submission(request, submission, desc, desc)
 
                 else:
-                    accept_submission(request, submission, autopost=True)
+                    accept_submission(submission, request, autopost=True)
 
                 if access_token:
                     return redirect("ietf.submit.views.submission_status", submission_id=submission.pk, access_token=access_token)
@@ -698,9 +810,7 @@ def cancel_waiting_for_draft(request):
         create_submission_event(request, submission, "Cancelled submission")
         if (submission.rev != "00"):
             # Add a doc event
-            docevent_from_submission(request, 
-                                     submission,
-                                     "Cancelled submission for rev {}".format(submission.rev))
+            docevent_from_submission(submission, "Cancelled submission for rev {}".format(submission.rev))
     
     return redirect("ietf.submit.views.manualpost")
 
@@ -924,3 +1034,8 @@ def get_submission_or_404(submission_id, access_token=None):
         raise Http404
 
     return submission
+
+
+def async_poke_test(request):
+    result = poke.delay()
+    return HttpResponse(f'Poked {result}', content_type='text/plain')
