@@ -1,7 +1,9 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 """Tests of models in the Meeting application"""
-from ietf.meeting.factories import MeetingFactory
+import datetime
+
+from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.utils.test_utils import TestCase
 
@@ -49,3 +51,10 @@ class MeetingTests(TestCase):
         self.assertIsNotNone(attendance)
         self.assertEqual(attendance.online, 0)
         self.assertEqual(attendance.onsite, 5)
+
+
+class SessionTests(TestCase):
+    def test_chat_archive_url_with_jabber(self):
+        # datatracker 8.8.0 rolled out on 2022-07-15. Before that, chat logs were jabber logs hosted at www.ietf.org.
+        session_with_jabber = SessionFactory(group__acronym='fakeacronym', meeting__date=datetime.date(2022,7,14))
+        self.assertEqual(session_with_jabber.chat_archive_url(), 'https://www.ietf.org/jabber/logs/fakeacronym?C=M;O=D')
