@@ -307,6 +307,32 @@ def search_for_name(request, name):
 
     return cached_redirect(cache_key, urlreverse('ietf.doc.views_search.search') + search_args)
 
+def ad_dashboard_group_type(doc):
+    # Return group type for document for dashboard.
+    # If doc is not defined return list of all possible
+    # group types
+    if not doc:
+        return ('I-D', 'RFC', 'Conflict Review', 'Status Change', 'Charter')
+    if doc.type.slug=='draft':
+        if doc.get_state_slug('draft') == 'rfc':
+            return 'RFC'
+        elif doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg') and doc.get_state('draft-iesg').name in ('RFC Ed Queue Internet-Draft'):
+            return 'RFC'
+        elif doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg') and doc.get_state('draft-iesg').name in ('Dead', 'I-D Exists', 'AD is watching'):
+             return None
+        elif doc.get_state('draft').name in ('Expired', 'Replaced'):
+            return None
+        else:
+            return 'I-D'
+    elif doc.type.slug=='conflrev':
+          return 'Conflict Review'
+    elif doc.type.slug=='statchg':
+        return 'Status Change'
+    elif doc.type.slug=='charter':
+        return "Charter"
+    else:
+        return "Document"
+
 def ad_dashboard_group(doc):
 
     if doc.type.slug=='draft':
@@ -395,14 +421,107 @@ def ad_dashboard_sort_key(doc):
 
 def docs_for_ad(request, name):
     ad = None
+    ads = []
     responsible = Document.objects.values_list('ad', flat=True).distinct()
     for p in Person.objects.filter(Q(role__name__in=("pre-ad", "ad"),
                                      role__group__type="area",
                                      role__group__state="active")
                                    | Q(pk__in=responsible)).distinct():
-        if name == p.full_name_as_key():
-            ad = p
-            break
+        if not name:
+            if p in get_active_ads():
+                ads.append(p)
+        else:
+            if name == p.full_name_as_key():
+                ad = p
+                break
+    if not name:
+        doctypes = list(DocTypeName.objects.filter(used=True).exclude(slug='draft').values_list("pk", flat=True))
+
+        group_types = ad_dashboard_group_type(None)
+
+        groups = {}
+        group_names = {}
+        for g in group_types:
+            groups[g] = {}
+            group_names[g] = []
+            
+        # Prefill groups in preferred sort order
+        id = 0
+        for g in [
+                'Publication Requested Internet-Draft',
+                'Waiting for Writeup Internet-Draft',
+                'AD Evaluation Internet-Draft',
+                'In Last Call Internet-Draft',
+                'IESG Evaluation - Defer Internet-Draft',
+                'IESG Evaluation Internet-Draft',
+                'Waiting for AD Go-Ahead Internet-Draft',
+                'Approved-announcement to be sent Internet-Draft',
+                'Approved-announcement sent Internet-Draft']:
+            groups['I-D'][g] = id
+            group_names['I-D'].append(g)
+            id += 1;
+        id = 0
+        for g in ['RFC Ed Queue Internet-Draft', 'RFC']:
+            groups['RFC'][g] = id
+            group_names['RFC'].append(g)
+            id += 1;
+        id = 0
+        for g in ['AD Review Conflict Review',
+                  'Needs Shepherd Conflict Review',
+                  'IESG Evaluation Conflict Review',
+                  'Approved Conflict Review',
+                  'Withdrawn Conflict Review']:
+            groups['Conflict Review'][g] = id
+            group_names['Conflict Review'].append(g)
+            id += 1;
+        id = 0
+        for g in [ 'Start Chartering/Rechartering (Internal Steering Group/IAB Review) Charter',
+                   'Replaced Charter',
+                   'Approved Charter',
+                   'Not currently under review Charter']:
+            groups['Charter'][g] = id
+            group_names['Charter'].append(g)
+            id += 1;
+
+        for ad in ads:
+            form = SearchForm({'by':'ad','ad': ad.id,
+                               'rfcs':'on', 'activedrafts':'on',
+                               'olddrafts':'on',
+                               'doctypes': doctypes})
+            data = retrieve_search_results(form)
+            ad.dashboard = urlreverse("ietf.doc.views_search.docs_for_ad") + ad.full_name_as_key()
+            counts = {}
+            for g in group_types:
+                counts[g] = []
+            for doc in data:
+                group_type = ad_dashboard_group_type(doc)
+                if group_type:
+                    group = ad_dashboard_group(doc)
+                    if group not in groups[group_type]:
+                        groups[group_type][group] = len(groups[group_type])
+                        group_names[group_type].append(group)
+                    if len(counts[group_type]) < len(groups[group_type]):
+                        counts[group_type].extend([0] * (len(groups[group_type]) - len(counts[group_type])))
+                    counts[group_type][groups[group_type][group]] += 1
+            ad.counts = counts
+        for ad in ads:
+            for group_type in group_types:
+                if len(ad.counts[group_type]) < len(groups[group_type]):
+                    ad.counts[group_type].extend([0] * (len(groups[group_type]) - len(ad.counts[group_type])))
+        # Shorten the names of groups
+        for gt in group_types:
+            for idx,g in enumerate(group_names[gt]):
+                for s in [' Internet-Draft', ' Charter', ' Conflict Review', ' Status Change', ' (Internal Steering Group/IAB Review) Charter']:
+                    print(g, s)
+                    if g.endswith(s):
+                        group_names[gt][idx] = g[:-len(s)]
+        return render(request, 'doc/ad_list.html', {
+            'ads': ads,
+            'group_types': group_types,
+            'group_names': group_names,
+            'groups': groups
+        })
+        
     if not ad:
         raise Http404
     form = SearchForm({'by':'ad','ad': ad.id,
