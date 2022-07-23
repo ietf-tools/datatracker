@@ -20,6 +20,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from django.utils.encoding import force_text
 from django.utils.html import mark_safe # type:ignore
+from django.contrib.staticfiles import finders
 
 import debug                            # pyflakes:ignore
 
@@ -573,8 +574,9 @@ class DocumentInfo(models.Model):
             pdf = None
         if not pdf:
             html = rfc2html.markup(text, path=settings.PDFIZER_URL_PREFIX)
+            css = finders.find("ietf/css/document_html.css")
             try:
-                pdf = wpHTML(string=html.replace('\xad','')).write_pdf(stylesheets=[io.BytesIO(b'html { font-size: 94%;}')])
+                pdf = wpHTML(string=html.replace('\xad','')).write_pdf(stylesheets=[css, io.BytesIO(b'body { font-size: 9.25pt;}')])
             except AssertionError:
                 pdf = None
             if pdf:

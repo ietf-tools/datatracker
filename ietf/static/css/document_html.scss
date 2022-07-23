@@ -95,12 +95,13 @@ h6 {
 
     pre {
         width: 80ch;
+        margin: 0;
+        padding: 0;
     }
 
     .grey,
     hr {
         opacity: $hr-opacity;
-        margin: 0;
     }
 }
 
@@ -194,10 +195,19 @@ tbody.meta tr {
 }
 
 @media print {
+    @page {
+        size: letter;
+        margin: .75in;
+    }
+
     body {
         margin: 0;
         padding: 0;
         font-size: 11pt;
+    }
+
+    pre {
+        page-break-inside: avoid;
     }
 
     a:link,
@@ -207,7 +217,7 @@ tbody.meta tr {
     }
 
     .newpage {
-        page-break-before: always;
+        page-break-before: always !important;
     }
 
     .noprint {
