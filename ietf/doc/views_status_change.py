@@ -125,16 +125,16 @@ def change_state(request, name, option=None):
                                    ))
 
 def send_status_change_eval_email(request,doc):
-    msg = render_to_string("doc/eval_email.txt",
-                            dict(doc=doc,
-                                 doc_url = settings.IDTRACKER_BASE_URL+doc.get_absolute_url(),
-                                 )
-                           )
-    addrs = gather_address_lists('iesg_ballot_issued',doc=doc)
-    override = {'To':addrs.to }
-    if addrs.cc:
-        override['Cc'] = addrs.cc
-    send_mail_preformatted(request,msg,override=override)
+    for target in ('iesg_ballot_issued', 'ballot_issued_iana'):
+        addrs = gather_address_lists(target,doc=doc).as_strings()
+        msg = render_to_string("doc/eval_email.txt",
+                                dict(doc=doc,
+                                    doc_url = settings.IDTRACKER_BASE_URL+doc.get_absolute_url(),
+                                    to = addrs.to,
+                                    cc = addrs.cc
+                                    )
+                            )
+        send_mail_preformatted(request,msg)
 
 class UploadForm(forms.Form):
     content = forms.CharField(widget=forms.Textarea, label="Status change text", help_text="Edit the status change text.", required=False, strip=False)
