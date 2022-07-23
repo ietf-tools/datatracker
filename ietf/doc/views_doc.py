@@ -1216,6 +1216,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
         else:
             position_groups.append(g)
 
+    iesg_state = doc.get_state("draft-iesg").slug
     if (ballot.ballot_type.slug == "irsg-approve"):
         summary = irsg_needed_ballot_positions(doc, [p for p in positions if not p.is_old_pos])
     else:
@@ -1241,6 +1242,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
                                    deferred=deferred,
                                    summary=summary,
                                    all_ballots=all_ballots,
+                                   iesg_state=iesg_state,
                                    ),
                               request=request)
 

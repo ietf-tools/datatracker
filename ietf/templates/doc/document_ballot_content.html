@@ -39,7 +39,7 @@
                 </p>
             {% endif %}
         {% endif %}
-        {% if not ballot_open %}
+        {% if not ballot_open or iesg_state == "ann" or iesg_state == "approved" %}
             <p class="alert alert-warning my-3">
                 <b>Note:</b> This ballot was opened for revision {{ ballot.rev }} and is now closed.
             </p>
