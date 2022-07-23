@@ -121,6 +121,11 @@ tbody.meta tr {
     margin-bottom: map.get($spacers, 1);
 }
 
+// Make revision numbers pagination items fixed-width
+.revision-list .page-item {
+    width: 2.2rem;
+}
+
 #docinfo {
     max-height: 70vh;
     z-index: -1;
