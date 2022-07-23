@@ -13,12 +13,17 @@
     {% if next_states %}
         <a class="my-3 btn btn-info"
            href="{% url 'ietf.doc.views_help.state_help' type=state_type.slug %}">Help on states</a>
-        <p>
-            <b>Move document to {{ next_states|pluralize:"to one of" }} the recommended next state{{ next_states|pluralize }}:</b>
-        </p>
-        {% for state in next_states %}
-            <button type="button" class="btn btn-primary next-state" data-state="{{ state.pk }}">{{ state.name }}</button>
-        {% endfor %}
+        {% if sub_to_iesg %}
+            <p/>
+            <a class="btn btn-primary btn-sm" href="{{ sub_to_iesg }}">Submit to IESG for Publication</a>
+        {% else %}
+            <p>
+                <b>Move document to {{ next_states|pluralize:"to one of" }} the recommended next state{{ next_states|pluralize }}:</b>
+            </p>
+            {% for state in next_states %}
+                <button type="button" class="btn btn-primary next-state" data-state="{{ state.pk }}">{{ state.name }}</button>
+            {% endfor %}
+        {% endif %}
     {% endif %}
     <form class="mt-5" method="post">
         {% csrf_token %}

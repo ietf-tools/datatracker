@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2020, All Rights Reserved
+# Copyright The IETF Trust 2010-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -19,6 +19,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.forms.utils import ErrorList
 from django.template.defaultfilters import pluralize
+from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
@@ -1562,6 +1563,7 @@ class ChangeStreamStateForm(forms.Form):
             if self.can_set_sub_pub:
                 f.help_text = "Only select 'Submitted to IESG for Publication' to correct errors. Use the document's main page to request publication."
             else:
+                f.queryset = f.queryset.exclude(slug='sub-pub')
                 f.help_text = "You may not set the 'Submitted to IESG for Publication' using this form - Use the document's main page to request publication."
 
         f = self.fields['tags']
@@ -1615,8 +1617,13 @@ def change_stream_state(request, name, state_type):
 
     can_set_sub_pub = has_role(request.user,('Secretariat','Area Director')) or (prev_state and prev_state.slug=='sub-pub')
 
+    if len(next_states) == 1 and next_states[0].slug == 'sub-pub':
+        sub_to_iesg_url = urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=doc.name))
+    else:
+        sub_to_iesg_url = ''
+
     if request.method == 'POST':
-        form = ChangeStreamStateForm(request.POST, doc=doc, state_type=state_type,can_set_sub_pub=can_set_sub_pub,stream=doc.stream)
+        form = ChangeStreamStateForm(request.POST, doc=doc, state_type=state_type,can_set_sub_pub=can_set_sub_pub,stream=doc.stream,sub_to_iesg=sub_to_iesg_url)
         if form.is_valid():
             by = request.user.person
             events = []
@@ -1678,11 +1685,11 @@ def change_stream_state(request, name, state_type):
 
     milestones = doc.groupmilestone_set.all()
 
-
     return render(request, "doc/draft/change_stream_state.html",
                               {"doc": doc,
                                "form": form,
                                "milestones": milestones,
                                "state_type": state_type,
                                "next_states": next_states,
+                               "sub_to_iesg": sub_to_iesg_url,
                               })
