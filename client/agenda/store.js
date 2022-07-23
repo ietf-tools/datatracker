@@ -23,6 +23,7 @@ export const useAgendaStore = defineStore('agenda', {
       { hex: '#20c997', tag: 'Attended' }
     ],
     colorAssignments: {},
+    criticalError: null,
     currentTab: 'agenda',
     dayIntersectId: '',
     defaultCalendarView: 'week',
@@ -137,6 +138,9 @@ export const useAgendaStore = defineStore('agenda', {
         const meetingData = JSON.parse(document.getElementById('meeting-data').textContent)
 
         const resp = await fetch(`/api/meeting/${meetingData.meetingNumber}/agenda-data`, { credentials: 'omit' })
+        if (!resp.ok) {
+          throw new Error(resp.statusText)
+        }
         const agendaData = await resp.json()
 
         // -> Switch to meeting timezone
@@ -159,12 +163,12 @@ export const useAgendaStore = defineStore('agenda', {
         this.pickedEvents = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.pickedEvents`) || '[]')
 
         this.isLoaded = true
-
-        this.hideLoadingScreen()
       } catch (err) {
         console.error(err)
-        throw err
+        this.criticalError = `Failed to load this meeting: ${err.message}`
       }
+
+      this.hideLoadingScreen()
     },
     persistMeetingPreferences () {
       if (this.infoNoteShown) {

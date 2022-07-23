@@ -1,6 +1,9 @@
 <template lang="pug">
 n-theme
   n-message-provider
+    .app-error(v-if='agendaStore.criticalError')
+      i.bi.bi-x-octagon-fill.me-2
+      span {{agendaStore.criticalError}}
     .app-container(ref='appContainer')
       router-view.meeting
 </template>
@@ -49,6 +52,15 @@ onBeforeUnmount(() => {
 @import "bootstrap/scss/functions";
 @import "bootstrap/scss/variables";
 @import "../shared/breakpoints";
+
+.app-error {
+  background-color: $red-500;
+  border-radius: 5px;
+  color: #FFF;
+  font-weight: 500;
+  padding: 1rem;
+  text-align: center;
+}
 
 .meeting {
   > h1 {

@@ -1571,8 +1571,21 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
 
 @ensure_csrf_cookie
 def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
+    # Get current meeting if not specified
     if num is None:
         num = get_current_ietf_meeting_num()
+
+    # We do not have the appropriate data in the datatracker for IETF 64 and earlier.
+    # So that we're not producing misleading pages, redirect to their proceedings.
+    # The datatracker DB does include a Meeting instance for every IETF meeting, though,
+    # so we can use that to validate that num is a valid meeting number.
+    if int(num) <= 64:
+        meeting = get_ietf_meeting(num)
+        if meeting is None:
+            raise Http404("No such full IETF meeting")
+        else:
+            return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}')
+
     return render(request, "meeting/agenda-neue.html", {
         "meetingData": {
             "meetingNumber": num
