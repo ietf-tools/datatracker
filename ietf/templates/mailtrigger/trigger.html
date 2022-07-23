@@ -20,7 +20,7 @@
             {% for mailtrigger in mailtriggers %}
                 <tr>
                     <td>
-                        <span title="{{ mailtrigger.desc }}">{{ mailtrigger.slug }}</span>
+                        <a href="{% url 'ietf.mailtrigger.views.show_triggers' mailtrigger.slug %}" title="{{ mailtrigger.desc }}">{{ mailtrigger.slug }}</a>
                     </td>
                     <td>
                         {% for recipient in mailtrigger.to.all %}
