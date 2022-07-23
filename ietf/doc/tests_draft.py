@@ -1767,7 +1767,7 @@ class ChangeStreamStateTests(TestCase):
     def test_pubreq_validation(self):
         role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name='WG Cháir Man')
         RoleFactory(name_id='delegate',group=role.group,person__user__email='marsdelegate@ietf.org')
-        draft = WgDraftFactory(group=role.group,stream_id='ietf')
+        draft = WgDraftFactory(group=role.group)
 
         url = urlreverse('ietf.doc.views_draft.change_stream_state', kwargs=dict(name=draft.name, state_type="draft-stream-ietf"))
         login_testing_unauthorized(self, "marschairman", url)
@@ -1781,7 +1781,7 @@ class ChangeStreamStateTests(TestCase):
                                   comment="some comment",
                                   weeks="10",
                                   tags=[t.pk for t in draft.tags.filter(slug__in=get_tags_for_stream_id(draft.stream_id))],
-                                  sub_to_iesg=urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=draft.name))
+                                  sub_to_iesg=urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=draft.name)),
                                   ))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
