@@ -32,6 +32,7 @@
               content="{{ doc.title }} (Internet-Draft, {{ doc.time|date:"Y" }})"
           {% endif %}>
         {% include "base/icons.html" %}
+        {% include "doc/opengraph.html" %}
 </head>
 <body {% block bodyAttrs %}{% endblock %}>
     <nav class="navbar navbar-light bg-light px-1 fixed-top d-print-none d-md-none">
