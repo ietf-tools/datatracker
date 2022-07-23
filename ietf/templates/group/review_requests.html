@@ -166,7 +166,10 @@
                                 {{ r.type }}
                             </td>
                             <td>
-                                {{ r.time|date:"Y-m-d" }} by {% person_link r.requested_by %}
+                                {{ r.time|date:"Y-m-d" }}
+                                {% if r.requested_by.id != 1 %}
+                                    by {% person_link r.requested_by %}
+                                {% endif %}
                             </td>
                             <td>
                                 {{ r.deadline|date:"Y-m-d" }}
