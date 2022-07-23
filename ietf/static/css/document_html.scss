@@ -60,7 +60,13 @@ url("npm:bootstrap-icons/font/fonts/bootstrap-icons.woff") format("woff");
 
     @include media-breakpoint-up(sm) {
         .rfcmarkup {
-            font-size: 11pt;
+            font-size: 9.5pt;
+        }
+    }
+
+    @include media-breakpoint-up(md) {
+        .rfcmarkup {
+            font-size: 9.5pt;
         }
     }
 
@@ -85,11 +91,16 @@ h6 {
 }
 
 .rfcmarkup {
+    overflow-x: hidden;
+
+    pre {
+        width: 80ch;
+    }
 
     .grey,
     hr {
         opacity: $hr-opacity;
-
+        margin: 0;
     }
 }
 
