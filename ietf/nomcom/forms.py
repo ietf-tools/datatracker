@@ -120,7 +120,7 @@ class EditNomcomForm(forms.ModelForm):
     class Meta:
         model = NomCom
         fields = ('public_key', 'initial_text', 'show_nominee_pictures', 'show_accepted_nominees',
-                  'send_questionnaire', 'reminder_interval')
+                  'send_questionnaire', 'is_accepting_volunteers', 'first_call_for_volunteers', 'reminder_interval')
         widgets = {'public_key':FileInput, }
 
     def clean_public_key(self):
