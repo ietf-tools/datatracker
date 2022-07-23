@@ -1,5 +1,6 @@
 <template lang="pug">
 .agenda(
+  v-if='agendaStore.isLoaded'
   :class='{ "bolder-text": agendaStore.bolderText }'
   )
   h1
@@ -213,6 +214,8 @@ watch(() => agendaStore.meetingDays, () => {
   })
 })
 
+watch(() => agendaStore.isLoaded, handleCurrentMeetingRedirect)
+
 // COMPUTED
 
 const titleExtra = computed(() => {
@@ -275,6 +278,13 @@ function toggleSettings () {
   agendaStore.$patch({
     settingsShown: !agendaStore.settingsShown
   })
+}
+
+// -> Go to current meeting if not provided
+function handleCurrentMeetingRedirect () {
+  if (!route.params.meetingNumber && agendaStore.meeting.number) {
+    router.replace({ params: { meetingNumber: agendaStore.meeting.number } })
+  }
 }
 
 // --------------------------------------------------------------------
@@ -341,13 +351,12 @@ onBeforeUnmount(() => {
 // MOUNTED
 
 onMounted(() => {
-  // -> Go to current meeting if not provided
-  if (!route.params.meetingNumber && agendaStore.meeting.number) {
-    router.replace({ params: { meetingNumber: agendaStore.meeting.number } })
-  }
+  handleCurrentMeetingRedirect()
 
   // -> Hide Loading Screen
-  agendaStore.hideLoadingScreen()
+  if (agendaStore.isLoaded) {
+    agendaStore.hideLoadingScreen()
+  }
 })
 
 // CREATED

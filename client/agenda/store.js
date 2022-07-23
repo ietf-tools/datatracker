@@ -132,29 +132,39 @@ export const useAgendaStore = defineStore('agenda', {
     }
   },
   actions: {
-    fetch () {
-      const agendaData = JSON.parse(document.getElementById('agenda-data').textContent)
+    async fetch () {
+      try {
+        const meetingData = JSON.parse(document.getElementById('meeting-data').textContent)
 
-      // -> Switch to meeting timezone
-      this.timezone = agendaData.meeting.timezone
+        const resp = await fetch(`/api/meeting/${meetingData.meetingNumber}/agenda-data`, { credentials: 'omit' })
+        const agendaData = await resp.json()
 
-      // -> Load meeting data
-      this.categories = agendaData.categories
-      this.floors = agendaData.floors
-      this.isCurrentMeeting = agendaData.isCurrentMeeting
-      this.meeting = agendaData.meeting
-      this.schedule = agendaData.schedule
-      this.useHedgeDoc = agendaData.useHedgeDoc
+        // -> Switch to meeting timezone
+        this.timezone = agendaData.meeting.timezone
 
-      // -> Compute current info note hash
-      this.infoNoteHash = murmur(agendaData.meeting.infoNote, 0).toString()
+        // -> Load meeting data
+        this.categories = agendaData.categories
+        this.floors = agendaData.floors
+        this.isCurrentMeeting = agendaData.isCurrentMeeting
+        this.meeting = agendaData.meeting
+        this.schedule = agendaData.schedule
+        this.useHedgeDoc = agendaData.useHedgeDoc
 
-      // -> Load meeting-specific preferences
-      this.infoNoteShown = !(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.hideInfo`) === this.infoNoteHash)
-      this.colorAssignments = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.colorAssignments`) || '{}')
-      this.pickedEvents = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.pickedEvents`) || '[]')
+        // -> Compute current info note hash
+        this.infoNoteHash = murmur(agendaData.meeting.infoNote, 0).toString()
 
-      this.isLoaded = true
+        // -> Load meeting-specific preferences
+        this.infoNoteShown = !(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.hideInfo`) === this.infoNoteHash)
+        this.colorAssignments = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.colorAssignments`) || '{}')
+        this.pickedEvents = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.pickedEvents`) || '[]')
+
+        this.isLoaded = true
+
+        this.hideLoadingScreen()
+      } catch (err) {
+        console.error(err)
+        throw err
+      }
     },
     persistMeetingPreferences () {
       if (this.infoNoteShown) {

@@ -1,29 +1,30 @@
 <template lang="pug">
 .floorplan
-  h1
-    span #[strong IETF {{agendaStore.meeting.number}}] Floor Plan
-    .meeting-h1-badges.d-none.d-sm-flex
-      span.meeting-warning(v-if='agendaStore.meeting.warningNote') {{agendaStore.meeting.warningNote}}
-      span.meeting-beta BETA
-  h4
-    span {{agendaStore.meeting.city}}, {{ meetingDate }}
+  template(v-if='agendaStore.isLoaded')
+    h1
+      span #[strong IETF {{agendaStore.meeting.number}}] Floor Plan
+      .meeting-h1-badges.d-none.d-sm-flex
+        span.meeting-warning(v-if='agendaStore.meeting.warningNote') {{agendaStore.meeting.warningNote}}
+        span.meeting-beta BETA
+    h4
+      span {{agendaStore.meeting.city}}, {{ meetingDate }}
 
-  .floorplan-topnav.my-3
-    meeting-navigation
+    .floorplan-topnav.my-3
+      meeting-navigation
 
-  nav.floorplan-floors.nav.nav-pills.nav-justified
-    a.nav-link(
-      v-for='floor of agendaStore.floors'
-      :key='floor.id'
-      :name='floor.name'
-      :class='{ active: state.currentFloor === floor.id }'
-      @click='state.currentFloor = floor.id'
-      )
-      i.bi.bi-arrow-down-right-square.me-2
-      span {{floor.name}}
+    nav.floorplan-floors.nav.nav-pills.nav-justified(v-if='agendaStore.isLoaded')
+      a.nav-link(
+        v-for='floor of agendaStore.floors'
+        :key='floor.id'
+        :name='floor.name'
+        :class='{ active: state.currentFloor === floor.id }'
+        @click='state.currentFloor = floor.id'
+        )
+        i.bi.bi-arrow-down-right-square.me-2
+        span {{floor.name}}
 
   .row.mt-3
-    .col-12.col-md-auto
+    .col-12.col-md-auto(v-if='agendaStore.isLoaded')
       .floorplan-rooms.list-group.shadow-sm
         router-link.list-group-item.list-group-item-action(
           v-for='room of floor.rooms'
@@ -149,6 +150,8 @@ watch(() => agendaStore.viewport, () => {
   })
 })
 
+watch(() => agendaStore.isLoaded, handleCurrentMeetingRedirect)
+
 // METHODS
 
 function computePlanSizeRatio () {
@@ -187,6 +190,13 @@ function handleDesiredRoom () {
   }
 }
 
+// -> Go to current meeting if not provided
+function handleCurrentMeetingRedirect () {
+  if (!route.params.meetingNumber && agendaStore.meeting.number) {
+    router.replace({ params: { meetingNumber: agendaStore.meeting.number } })
+  }
+}
+
 // --------------------------------------------------------------------
 // Handle browser resize
 // --------------------------------------------------------------------
@@ -212,7 +222,9 @@ onMounted(() => {
   }
 
   // -> Hide Loading Screen
-  agendaStore.hideLoadingScreen()
+  if (agendaStore.isLoaded) {
+    agendaStore.hideLoadingScreen()
+  }
 
   // -> Set Current Floor
   if (agendaStore.floors?.length > 0) {

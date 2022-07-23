@@ -8,12 +8,12 @@
 {% load django_vite %}
 
 {% block title %}
-    IETF {{ schedule.meeting.number }} Meeting Agenda
+    IETF {{ meetingData.meetingNumber }} Meeting Agenda
 {% endblock %}
 {% block pagehead %}
     <!-- AGENDA VUE COMPONENT -->
     <!-- [html-validate-disable-block void-style, attribute-empty-style] -->
-    {{ schedule_json|json_script:"agenda-data" }}
+    {{ meetingData|json_script:"meeting-data" }}
     {% vite_asset 'client/agenda/main.js' %}
 {% endblock %}
 {% block morecss %}
@@ -54,7 +54,7 @@ body {
 }
 
 #app-meeting-loading:after {
-    content: 'Loading meeting {{ schedule.meeting.number }}...';
+    content: 'Loading meeting {{ meetingData.meetingNumber }}...';
     position: absolute;
     text-align: center;
     top: 50%;
@@ -69,7 +69,7 @@ body {
 {% block precontent %}
     <div class="meeting-switch">
         <i class="bi bi-arrow-left-right me-2"></i>
-        <a href="{% url 'ietf.meeting.views.agenda' num=schedule.meeting.number %}">Switch to Legacy Agenda Display</a>
+        <a href="{% url 'ietf.meeting.views.agenda' num=meetingData.meetingNumber %}">Switch to Legacy Agenda Display</a>
     </div>
 {% endblock %}
 {% block content %}

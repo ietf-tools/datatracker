@@ -27,6 +27,8 @@ urlpatterns = [
     url(r'^iesg/position', views_ballot.api_set_position),
     # Let Meetecho set session video URLs
     url(r'^meeting/session/video/url$', meeting_views.api_set_session_video_url),
+    # Meeting agenda + floorplan data
+    url(r'^meeting/(?P<num>[A-Za-z0-9._+-]+)/agenda-data$', meeting_views.api_get_agenda_data),
     # Let Meetecho trigger recording imports
     url(r'^notify/meeting/import_recordings/(?P<number>[a-z0-9-]+)/?$', meeting_views.api_import_recordings),
     # Let MeetEcho upload bluesheets
