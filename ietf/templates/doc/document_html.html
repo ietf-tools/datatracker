@@ -34,39 +34,37 @@
         {% include "base/icons.html" %}
 </head>
 <body {% block bodyAttrs %}{% endblock %}>
-    <nav class="navbar navbar-light bg-light px-4 fixed-top d-print-none d-md-none">
-      <div class="container-fluid">
+    <nav class="navbar navbar-light bg-light px-1 fixed-top d-print-none d-md-none">
 
-        <a class="nav-link ps-1" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">
-            {% if not snapshot and doc.get_state_slug == "rfc" %}
-                RFC {{ doc.rfc_number }}
-            {% else %}
-                {{ doc.name }}-{{ doc.rev }}
-            {% endif %}
-            <span class="ms-3 badge rounded-pill badge-{% if not snapshot %}{{ doc|std_level_to_label_format }}{% else %}draft{% endif %}">{% if not snapshot %}{{ doc.std_level }}{% else %}Internet-Draft{% endif %}</span>
-        </a>
+      <a class="nav-link ps-1" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">
+          {% if not snapshot and doc.get_state_slug == "rfc" %}
+              RFC {{ doc.rfc_number }}
+          {% else %}
+              {{ doc.name }}-{{ doc.rev }}
+          {% endif %}
+      <br class="d-sm-none">
+      <span class="ms-sm-3 badge rounded-pill badge-{% if not snapshot %}{{ doc|std_level_to_label_format }}{% else %}draft{% endif %}">{% if not snapshot %}{{ doc.std_level }}{% else %}Internet-Draft{% endif %}</span>
+      </a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#docinfo" aria-controls="docinfo" aria-expanded="false" aria-label="Show document information">
-          <span class="navbar-toggler-icon"></span>
-        </button>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#docinfo" aria-controls="docinfo" aria-expanded="false" aria-label="Show document information">
+        <span class="navbar-toggler-icon"></span>
+      </button>
 
+      <div class="collapse overflow-scroll w-100" id="docinfo">
+        <div class="bg-light p-0 overflow-scroll">
 
-        <div class="collapse overflow-scroll w-100" id="docinfo">
-          <div class="bg-light p-0 overflow-scroll">
+          <table class="table table-sm table-borderless small">
+              <tbody class="meta">
+                  <tr>
+                      <th scope="row"></th>
+                      <th scope="row">Title</th>
+                      <td class="edit"></td>
+                      <td>{{ doc.title }}</td>
+                  </tr>
+              </tbody>
+              {% include "doc/document_info.html" with sidebar=False %}
+          </table>
 
-            <table class="table table-sm table-borderless small">
-                <tbody class="meta">
-                    <tr>
-                        <th scope="row"></th>
-                        <th scope="row">Title</th>
-                        <td class="edit"></td>
-                        <td>{{ doc.title }}</td>
-                    </tr>
-                </tbody>
-                {% include "doc/document_info.html" with sidebar=False %}
-            </table>
-
-          </div>
         </div>
       </div>
     </nav>
