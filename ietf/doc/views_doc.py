@@ -1139,6 +1139,25 @@ def document_shepherd_writeup(request, name):
                                    ),
                               )
 
+
+def document_shepherd_writeup_template(request, type):
+    writeup = markdown.markdown(
+        render_to_string(
+            "doc/shepherd_writeup.txt",
+            dict(stream="ietf", type="individ" if type == "individual" else "group"),
+        )
+    )
+    return render(
+        request,
+        "doc/shepherd_writeup_template.html",
+        dict(
+            writeup=writeup,
+            stream="ietf",
+            type="individ" if type == "individual" else "group",
+        ),
+    )
+
+
 def document_references(request, name):
     doc = get_object_or_404(Document,docalias__name=name)
     refs = doc.references()

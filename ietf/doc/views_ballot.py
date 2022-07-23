@@ -679,9 +679,7 @@ def ballot_writeupnotes(request, name):
                     send_mail_preformatted(request, msg, override=override)
 
                     addrs = gather_address_lists('ballot_issued_iana',doc=doc).as_strings()
-                    override={ "To": "IANA <%s>"%settings.IANA_EVAL_EMAIL, "Bcc": None , "Reply-To": []}
-                    if addrs.cc:
-                        override['CC'] = addrs.cc
+                    override={ "To": addrs.to, "Bcc": None , "Reply-To": [], "CC": addrs.cc or None }
                     send_mail_preformatted(request, msg, extra=extra_automation_headers(doc), override=override)
 
                     e = DocEvent(doc=doc, rev=doc.rev, by=login)
@@ -1031,7 +1029,7 @@ def make_last_call(request, name):
                 announcement_event.save()
 
             send_mail_preformatted(request, announcement)
-            if doc.type.slug == 'draft':
+            if doc.type.slug in ("draft", "statchg"):
                 addrs = gather_address_lists('last_call_issued_iana',doc=doc).as_strings(compact=False)
                 send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
                                        override={ "To": addrs.to, "CC": addrs.cc, "Bcc": None, "Reply-To": []})

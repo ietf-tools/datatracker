@@ -760,7 +760,6 @@ PDFIZER_URL_PREFIX = IDTRACKER_BASE_URL+"/doc/pdf"
 # Email settings
 IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
 AUDIO_IMPORT_EMAIL = ['ietf@meetecho.com']
-IANA_EVAL_EMAIL = "drafts-eval@icann.org"
 SESSION_REQUEST_FROM_EMAIL = 'IETF Meeting Session Request Tool <session-request@ietf.org>' 
 
 SECRETARIAT_SUPPORT_EMAIL = "support@ietf.org"
