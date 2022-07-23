@@ -1551,6 +1551,7 @@ class ChangeStreamStateForm(forms.Form):
         state_type = kwargs.pop("state_type")
         self.can_set_sub_pub = kwargs.pop("can_set_sub_pub")
         self.stream = kwargs.pop("stream")
+        self.sub_to_iesg = kwargs.pop("sub_to_iesg")
         super(ChangeStreamStateForm, self).__init__(*args, **kwargs)
 
         f = self.fields["new_state"]
@@ -1680,8 +1681,8 @@ def change_stream_state(request, name, state_type):
             else:
                 form.add_error(None, "No change in state or tags found, and no comment provided -- nothing to do.")
     else:
-        form = ChangeStreamStateForm(initial=dict(new_state=prev_state.pk if prev_state else None, tags= doc.tags.all()),
-                                     doc=doc, state_type=state_type, can_set_sub_pub = can_set_sub_pub,stream = doc.stream)
+        form = ChangeStreamStateForm(initial=dict(new_state=prev_state.pk if prev_state else None, tags=doc.tags.all()),
+                                     doc=doc, state_type=state_type, can_set_sub_pub=can_set_sub_pub, stream=doc.stream, sub_to_iesg=sub_to_iesg_url)
 
     milestones = doc.groupmilestone_set.all()
 
