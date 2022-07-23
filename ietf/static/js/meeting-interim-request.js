@@ -185,6 +185,8 @@ const interimRequest = (function() {
                     .length > 0) {
                     $('#id_time_zone')
                         .val(tzname);
+                    $('#id_time_zone')
+                        .trigger('change');
                 }
             }
         },
@@ -231,10 +233,14 @@ const interimRequest = (function() {
         },
 
         timezoneChange: function () {
+            var tzname = $(this).val();
             $("input[name$='-time']")
                 .trigger('blur');
             $("input[name$='-end_time']")
                 .trigger('change');
+            $('input[type="text"][name*="time"]').next().each(function(){
+                this.innerText = "Time in the " + tzname + " time zone";
+            });
         },
 
         toggleLocation: function () {
