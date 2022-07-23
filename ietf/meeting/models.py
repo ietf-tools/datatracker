@@ -1266,10 +1266,13 @@ class Session(models.Model):
         return settings.CHAT_URL_PATTERN.format(chat_room_name=self.chat_room_name())
 
     def chat_archive_url(self):
-        # Zulip has no separate archive
-        if hasattr(settings,'CHAT_ARCHIVE_URL_PATTERN'):
+        # datatracker 8.8.0 released on 2022 July 15; before that, fall back to old log URL
+        if self.meeting.date <= datetime.date(2022, 7, 15):
+            return f'https://www.ietf.org/jabber/logs/{ self.chat_room_name() }?C=M;O=D'
+        elif hasattr(settings,'CHAT_ARCHIVE_URL_PATTERN'):
             return settings.CHAT_ARCHIVE_URL_PATTERN.format(chat_room_name=self.chat_room_name())
         else:
+            # Zulip has no separate archive
             return self.chat_room_url()
 
     def notes_id(self):
