@@ -15,7 +15,7 @@
   <thead>
     <tr>
       <th scope="col" data-sort="name">Name</th>
-      {% for g in group_names|hash:gt %}
+      {% for g in group_names|get_hash:gt %}
       <th scope="col" data-sort="{{ g|slugify }}-num">
 	{{ g }}</th>
       {% endfor %}
@@ -25,8 +25,8 @@
     {% for ad in ads %}
     <tr>
       <td><A HREF="{{ ad.dashboard }}">{{ ad.name }}</A></td>
-      {% for c in ad.counts|hash:gt %}
-      {% if forloop.counter0 < groups|hash:gt|length %}
+      {% for c in ad.counts|get_hash:gt %}
+      {% if forloop.counter0 < groups|get_hash:gt|length %}
       <td>{{ c }}</th>
       {% endif %}
       {% endfor %}

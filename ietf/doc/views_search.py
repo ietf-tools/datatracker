@@ -512,7 +512,6 @@ def docs_for_ad(request, name):
         for gt in group_types:
             for idx,g in enumerate(group_names[gt]):
                 for s in [' Internet-Draft', ' Charter', ' Conflict Review', ' Status Change', ' (Internal Steering Group/IAB Review) Charter']:
-                    print(g, s)
                     if g.endswith(s):
                         group_names[gt][idx] = g[:-len(s)]
         return render(request, 'doc/ad_list.html', {

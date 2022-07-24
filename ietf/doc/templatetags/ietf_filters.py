@@ -781,7 +781,7 @@ def is_valid_url(url):
     return True
 
 @register.filter
-def hash(h, key):
+def get_hash(h, key):
     """
     Get a key from hash
     """
