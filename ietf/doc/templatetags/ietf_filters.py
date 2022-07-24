@@ -456,13 +456,6 @@ def doc_edit_button(url_name, *args, **kwargs):
     return mark_safe('<a class="btn btn-primary btn-sm" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
 
 @register.filter
-def textify(text):
-    text = re.sub("</?b>", "*", text)
-    text = re.sub("</?i>", "/", text)
-    # There are probably additional conversions we should apply here
-    return text
-
-@register.filter
 def state(doc, slug):
     if slug == "stream": # convenient shorthand
         slug = "%s-stream-%s" % (doc.type_id, doc.stream_id)
