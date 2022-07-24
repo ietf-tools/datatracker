@@ -233,7 +233,7 @@ const interimRequest = (function() {
         },
 
         timezoneChange: function () {
-            var tzname = $(this).val();
+            const tzname = $(this).val();
             $("input[name$='-time']")
                 .trigger('blur');
             $("input[name$='-end_time']")
