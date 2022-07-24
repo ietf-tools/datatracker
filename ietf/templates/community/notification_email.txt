@@ -8,7 +8,7 @@ Document: {{ event.doc }},
 
 Change by {{ event.by }} on {{ event.time }}:
 
-{{ event.desc|textify|striptags }}
+{{ event.desc|textify }}
 
 Best regards,
 
