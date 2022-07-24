@@ -206,6 +206,7 @@ $(document)
                             });
                         // override search module with a patched version
                         // see https://github.com/javve/list.js/issues/699
+                        // TODO: check if this is still needed if list.js ever sees an update
                         newlist.search = require("./listjs-search")(newlist);
                         list_instance.push(newlist);
                     });
