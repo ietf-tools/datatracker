@@ -197,14 +197,17 @@ $(document)
                             hook = parent[0];
                         }
 
-                        list_instance.push(
-                            new List(hook, pagination ? {
+                        let newlist = new List(hook, pagination ? {
                                 valueNames: fields,
                                 pagination: pagination,
                                 page: items_per_page
                             } : {
                                 valueNames: fields
-                            }));
+                            });
+                        // override search module with a patched version
+                        // see https://github.com/javve/list.js/issues/699
+                        newlist.search = require("./listjs-search")(newlist);
+                        list_instance.push(newlist);
                     });
 
                 if (enable_search) {
