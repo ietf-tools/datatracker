@@ -169,6 +169,31 @@ class MeetingTests(BaseMeetingTestCase):
         r = self.client.get(urlreverse("agenda-neue", kwargs=dict(num=meeting.number,utc='-utc')))
         self.assertEqual(r.status_code, 200)  
 
+        # Agenda API tests
+        r = self.client.get(urlreverse("ietf.meeting.views.api_get_agenda_data", kwargs=dict(num=meeting.number)))
+        self.assertEqual(r.status_code, 200)  
+        rjson = json.loads(r.content.decode("utf8"))
+        self.assertJSONEqual(
+            r.content.decode("utf8"),
+            {
+                "meeting": {
+                    "number": meeting.number,
+                    "city": meeting.city,
+                    "startDate": meeting.date.isoformat(),
+                    "endDate": meeting.end_date().isoformat(),
+                    "updated": rjson.get("meeting").get("updated"), # Just expect the value to exist
+                    "timezone": meeting.time_zone,
+                    "infoNote": meeting.agenda_info_note,
+                    "warningNote": meeting.agenda_warning_note
+                },
+                "categories": rjson.get("categories"), # Just expect the value to exist
+                "isCurrentMeeting": True,
+                "useHedgeDoc": True,
+                "schedule": rjson.get("schedule"), # Just expect the value to exist
+                "floors": []
+            }
+        )
+
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number,utc='-utc')))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
