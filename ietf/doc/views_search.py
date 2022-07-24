@@ -316,7 +316,7 @@ def ad_dashboard_group_type(doc):
     if doc.type.slug=='draft':
         if doc.get_state_slug('draft') == 'rfc':
             return 'RFC'
-        elif doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg') and doc.get_state('draft-iesg').name in ('RFC Ed Queue Internet-Draft'):
+        elif doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg') and doc.get_state('draft-iesg').name in ('RFC Ed Queue'):
             return 'RFC'
         elif doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg') and doc.get_state('draft-iesg').name in ('Dead', 'I-D Exists', 'AD is watching'):
              return None
