@@ -17,7 +17,11 @@
             <b>Move document to {{ next_states|pluralize:"to one of" }} the recommended next state{{ next_states|pluralize }}:</b>
         </p>
         {% for state in next_states %}
-            <button type="button" class="btn btn-primary next-state" data-state="{{ state.pk }}">{{ state.name }}</button>
+            {% if state.slug == 'sub-pub' %}
+                <a type="button" class="btn btn-primary next-state" href="{% url 'ietf.doc.views_draft.to_iesg' name=doc.name %}">{{ state.name }}</a>
+            {% else %}
+                <button type="button" class="btn btn-primary next-state" data-state="{{ state.pk }}">{{ state.name }}</button>
+            {% endif %}
         {% endfor %}
     {% endif %}
     <form class="mt-5" method="post">
