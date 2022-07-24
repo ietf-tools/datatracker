@@ -272,6 +272,12 @@
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
+           href="{% url 'ietf.meeting.views.interim_request' %}">
+            Request an interim
+        </a>
+    </li>
+    <li>
+        <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
            href="{% url 'ietf.secr.sreq.views.main' %}">
             Request a session
         </a>
