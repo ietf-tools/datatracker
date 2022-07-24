@@ -1596,6 +1596,7 @@ class ChangeStreamStateForm(forms.Form):
             if self.can_set_sub_pub:
                 f.help_text = "Only select 'Submitted to IESG for Publication' to correct errors. Use the document's main page to request publication."
             else:
+                f.queryset = f.queryset.exclude(slug='sub-pub')
                 f.help_text = "You may not set the 'Submitted to IESG for Publication' using this form - Use the document's main page to request publication."
 
         f = self.fields['tags']
