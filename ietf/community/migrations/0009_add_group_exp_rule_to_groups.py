@@ -21,7 +21,7 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('community', '0008_auto_20220630_0559'),
+        ('community', '0008_add_group_exp_rule'),
     ]
 
     operations = [
