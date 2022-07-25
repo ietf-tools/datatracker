@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 {% load origin %}
 {% load static %}
-{% load ietf_filters %}
+{% load ietf_filters textfilters %}
 {% origin %}
 <html lang="en">
     <head>
@@ -34,7 +34,7 @@
         {% include "base/icons.html" %}
         {% include "doc/opengraph.html" %}
 </head>
-<body {% block bodyAttrs %}{% endblock %}>
+<body>
     <nav class="navbar navbar-light bg-light px-1 fixed-top d-print-none d-md-none">
 
       <a class="nav-link ps-1" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">
@@ -47,11 +47,11 @@
       <span class="ms-sm-3 badge rounded-pill badge-{% if not snapshot %}{{ doc|std_level_to_label_format }}{% else %}draft{% endif %}">{% if not snapshot %}{{ doc.std_level }}{% else %}Internet-Draft{% endif %}</span>
       </a>
 
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#docinfo" aria-controls="docinfo" aria-expanded="false" aria-label="Show document information">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#docinfo-collapse" aria-controls="docinfo-collapse" aria-expanded="false" aria-label="Show document information">
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <div class="collapse overflow-scroll w-100" id="docinfo">
+      <div class="collapse overflow-scroll w-100" id="docinfo-collapse">
         <div class="bg-light p-0 overflow-scroll">
 
           <table class="table table-sm table-borderless small">
@@ -70,18 +70,37 @@
       </div>
     </nav>
     <div class="row g-0">
-        <div class="col d-flex justify-content-center pt-5 mt-4 pt-md-0 mt-md-2 m-2 m-lg-4 me-3 lh-sm">
+        <div class="col d-flex justify-content-center pt-5 mt-4 pt-md-0 mt-md-2 m-2 m-lg-4 me-3 lh-sm" data-bs-spy="scroll" data-bs-target="#toc" data-bs-smooth-scroll="true" tabindex="0">
             <div class="rfcmarkup">
                  <!-- [html-validate-disable-block attr-quotes, void-style -- FIXME: rfcmarkup generates HTML with issues] -->
-                {{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}
+                {{ doc.htmlized|default:"Generation of htmlized text failed"|linkify|safe }}
             </div>
         </div>
         <div class="d-print-none col-3 d-none d-md-block bg-light">
-            <div class="position-fixed border-start pt-2 pt-lg-4 px-3 sidebar overflow-scroll">
+            <div class="position-fixed col-3 border-start sidebar overflow-scroll">
+                <div class="pt-2 pt-lg-4 px-md-2 px-lg-3">
                 <a class="btn btn-primary btn-sm mb-3" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}" title="Datatracker information for this document">Datatracker page</a>
-                <table class="table table-sm table-borderless">
-                    {% include "doc/document_info.html" with sidebar=True %}
-                </table>
+
+                <ul class="nav nav-tabs" id="docinfo" role="tablist">
+                  <li class="nav-item" role="presentation" title="Document information">
+                    <button class="nav-link active" id="docinfo-tab" data-bs-toggle="tab" data-bs-target="#docinfo-tab-pane" type="button" role="tab" aria-controls="docinfo-tab-pane" aria-selected="true">Info</button>
+                  </li>
+                  <li class="nav-item" role="presentation" title="Table of contents">
+                    <button class="nav-link" id="toc-tab" data-bs-toggle="tab" data-bs-target="#toc-tab-pane" type="button" role="tab" aria-controls="toc-tab-pane" aria-selected="false">Contents</button>
+                  </li>
+                </ul>
+
+                <div class="tab-content mt-2">
+                  <div class="tab-pane fade show active" id="docinfo-tab-pane" role="tabpanel" aria-labelledby="docinfo-tab" tabindex="0">
+                    <table class="table table-sm table-borderless">
+                        {% include "doc/document_info.html" with sidebar=True %}
+                    </table>
+                  </div>
+                  <div class="tab-pane fade" id="toc-tab-pane" role="tabpanel" aria-labelledby="toc-tab" tabindex="0">
+                    <nav class="nav nav-pills flex-column fw-bold small" id="toc"></nav>
+                  </div>
+                </div>
+              </div>
             </div>
         </div>
     </div>
