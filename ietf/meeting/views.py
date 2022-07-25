@@ -1639,9 +1639,26 @@ def api_get_agenda_data (request, num=None):
         "floors": list(map(agenda_extract_floorplan, floors))
     })
 
+def api_get_session_materials (request, session_id=None):
+    session = get_object_or_404(Session,pk=session_id)
+
+    minutes = session.minutes()
+
+    return JsonResponse({
+        "url": session.agenda().get_href(),
+        "slides": list(map(agenda_extract_slide, session.slides())),
+        "minutes": {
+            "id": minutes.id,
+            "title": minutes.title,
+            "url": minutes.get_href(),
+            "ext": minutes.file_extension()
+        } if minutes is not None else None
+    })
+
 def agenda_extract_schedule (item):
     return {
         "id": item.id,
+        "sessionId": item.session.id,
         "room": item.room_name,
         "location": {
             "short": item.timeslot.location.floorplan.short,
@@ -1670,6 +1687,7 @@ def agenda_extract_schedule (item):
         },
         "agenda": {
             "url": item.session.agenda().get_href()
+            # "slides": item.session.slides
         } if item.session.agenda() is not None else {
             "url": None
         },
@@ -1725,6 +1743,14 @@ def agenda_extract_recording (item):
         "name": item.name,
         "title": item.title,
         "url": item.external_url
+    }
+
+def agenda_extract_slide (item):
+    return {
+        "id": item.id,
+        "title": item.title,
+        "url": item.get_versionless_href(),
+        "ext": item.file_extension()
     }
 
 def agenda_csv(schedule, filtered_assignments):
