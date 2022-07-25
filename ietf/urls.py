@@ -7,6 +7,7 @@ from django.contrib import admin
 from django.contrib.sitemaps import views as sitemap_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views import static as static_view
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.views.defaults import server_error
 from django.urls import path
@@ -20,6 +21,7 @@ from ietf.ipr.sitemaps import IPRMap
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.utils.urls import url
 
+from graphene_django.views import GraphQLView
 
 admin.autodiscover()
 
@@ -48,6 +50,7 @@ urlpatterns = [
     url(r'^drafts/', include('ietf.doc.redirect_drafts_urls')),
     url(r'^mailtrigger/',include('ietf.mailtrigger.urls')),
     url(r'^feed/', include('ietf.feed_urls')),
+    url(r'^graphql', csrf_exempt(GraphQLView.as_view(graphiql=True))),
     url(r'^group/', include(group_urls)),
     url(r'^help/', include('ietf.help.urls')),
     url(r'^idtracker/', include('ietf.doc.redirect_idtracker_urls')),
