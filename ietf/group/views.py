@@ -452,10 +452,13 @@ def prepare_group_documents(request, group, clist):
         # non-WG drafts and call for WG adoption are considered related
         if (d.group != group
             or (d.stream_id and d.get_state_slug("draft-stream-%s" % d.stream_id) in ("c-adopt", "wg-cand"))):
-            d.search_heading = "Related Internet-Draft"
-            docs_related.append(d)
+            if d.get_state_slug() != "expired":
+                d.search_heading = "Related Internet-Draft"
+                docs_related.append(d)
         else:
-            docs.append(d)
+            if not (d.get_state_slug('draft') in ("auth-rm", "ietf-rm") or d.get_state_slug('draft-iesg') == "dead"
+                or (d.stream_id and d.get_state_slug("draft-stream-%s" % d.stream_id) == "dead")):
+                docs.append(d)
 
     meta_related = meta.copy()
 

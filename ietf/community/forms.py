@@ -38,9 +38,12 @@ class SearchRuleForm(forms.ModelForm):
                 f.initial = f.queryset[0].pk
                 f.widget = forms.HiddenInput()
 
-        if rule_type in ['group', 'group_rfc', 'area', 'area_rfc']:
-            restrict_state("draft", "rfc" if rule_type.endswith("rfc") else "active")
-
+        if rule_type in ["group", "group_rfc", "area", "area_rfc", "group_exp"]:
+            if rule_type == "group_exp":
+                restrict_state("draft", "expired")
+            else:
+                restrict_state("draft", "rfc" if rule_type.endswith("rfc") else "active")
+            
             if rule_type.startswith("area"):
                 self.fields["group"].label = "Area"
                 self.fields["group"].queryset = self.fields["group"].queryset.filter(Q(type="area") | Q(acronym="irtf")).order_by("acronym")

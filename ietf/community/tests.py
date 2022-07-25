@@ -52,6 +52,8 @@ class CommunityListTests(WebTest):
 
         rule_shepherd = SearchRule.objects.create(rule_type="shepherd", state=State.objects.get(type="draft", slug="active"), person=draft.shepherd.person, community_list=clist)
 
+        rule_group_exp = SearchRule.objects.create(rule_type="group_exp", group=draft.group, state=State.objects.get(type="draft", slug="expired"), community_list=clist)
+
         rule_name_contains = SearchRule.objects.create(rule_type="name_contains", state=State.objects.get(type="draft", slug="active"), text="draft-.*" + "-".join(draft.name.split("-")[2:]), community_list=clist)
         reset_name_contains_index_for_rule(rule_name_contains)
 
@@ -65,6 +67,7 @@ class CommunityListTests(WebTest):
         self.assertTrue(rule_ad in matching_rules)
         self.assertTrue(rule_shepherd in matching_rules)
         self.assertTrue(rule_name_contains in matching_rules)
+        self.assertTrue(rule_group_exp not in matching_rules)
 
         # rule -> docs
         self.assertTrue(draft in list(docs_matching_community_list_rule(rule_group)))
@@ -75,6 +78,7 @@ class CommunityListTests(WebTest):
         self.assertTrue(draft in list(docs_matching_community_list_rule(rule_ad)))
         self.assertTrue(draft in list(docs_matching_community_list_rule(rule_shepherd)))
         self.assertTrue(draft in list(docs_matching_community_list_rule(rule_name_contains)))
+        self.assertTrue(draft not in list(docs_matching_community_list_rule(rule_group_exp)))
 
     def test_view_list(self):
         PersonFactory(user__username='plain')

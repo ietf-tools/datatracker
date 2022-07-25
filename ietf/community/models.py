@@ -45,6 +45,7 @@ class SearchRule(models.Model):
         ('area', 'All I-Ds associated with all groups in a particular Area'),
         ('group_rfc', 'All RFCs associated with a particular group'),
         ('area_rfc', 'All RFCs associated with all groups in a particular Area'),
+        ('group_exp', 'All expired I-Ds of a particular group'),
 
         ('state_iab', 'All I-Ds that are in a particular IAB state'),
         ('state_iana', 'All I-Ds that are in a particular IANA state'),
