@@ -92,7 +92,7 @@ class SearchablePersonsField(SearchableField):
         # via the extra_prefetch property.
         prefetch_set = set(model_instances) if model_instances else set()
         prefetch_set = prefetch_set.union(set(self.extra_prefetch))  # eliminate duplicates
-        return select2_id_name(list(prefetch_set))
+        return select2_id_name(sorted(prefetch_set, key=lambda p: p.ascii_name()))
 
     def ajax_url(self):
         if self.disable_ajax:

@@ -201,6 +201,7 @@ class SearchableField(forms.MultipleChoiceField):
     model = None  # type:Optional[Type[models.Model]]
 #    max_entries = None  # may be overridden in __init__
     max_entries = None # type: Optional[int] 
+    min_search_length = None # type: Optional[int]
     default_hint_text = 'Type a value to search'
     
     def __init__(self, hint_text=None, *args, **kwargs):
@@ -210,6 +211,8 @@ class SearchableField(forms.MultipleChoiceField):
         # not setting the parameter at all.
         if 'max_entries' in kwargs:
             self.max_entries = kwargs.pop('max_entries')
+        if 'min_search_length' in kwargs:
+            self.min_search_length = kwargs.pop('min_search_length')
 
         super(SearchableField, self).__init__(*args, **kwargs)
 
@@ -217,6 +220,8 @@ class SearchableField(forms.MultipleChoiceField):
         self.widget.attrs["data-placeholder"] = self.hint_text
         if self.max_entries is not None:
             self.widget.attrs["data-max-entries"] = self.max_entries
+        if self.min_search_length is not None:
+            self.widget.attrs["data-min-search-length"] = self.min_search_length
 
     def make_select2_data(self, model_instances):
         """Get select2 data items
@@ -281,9 +286,7 @@ class SearchableField(forms.MultipleChoiceField):
                 d["selected"] = any([v.pk == d["id"] for v in value])
             else:
                 d["selected"] = value.exists() and value.filter(pk__in=[d["id"]]).exists()
-        self.widget.attrs["data-pre"] = json.dumps({
-            d['id']: d for d in pre
-        })
+        self.widget.attrs["data-pre"] = json.dumps(list(pre))
 
         # doing this in the constructor is difficult because the URL
         # patterns may not have been fully constructed there yet
