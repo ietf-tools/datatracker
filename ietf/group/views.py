@@ -456,8 +456,7 @@ def prepare_group_documents(request, group, clist):
                 d.search_heading = "Related Internet-Draft"
                 docs_related.append(d)
         else:
-            if not (d.get_state_slug('draft') in ("auth-rm", "ietf-rm") or d.get_state_slug('draft-iesg') == "dead"
-                or (d.stream_id and d.get_state_slug("draft-stream-%s" % d.stream_id) == "dead")):
+            if not (d.get_state_slug('draft-iesg') == "dead" or (d.stream_id and d.get_state_slug("draft-stream-%s" % d.stream_id) == "dead")):
                 docs.append(d)
 
     meta_related = meta.copy()
