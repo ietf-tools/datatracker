@@ -22,7 +22,7 @@ function prettify_tz(x) {
 // Copyright The IETF Trust 2015-2021, All Rights Reserved
 // JS for ietf.utils.fields.SearchableField subclasses
 window.setupSelect2Field = function (e) {
-    var url = e.data("ajax--url");
+    var url = e.data("select2-ajax-url");
     var maxEntries = e.data("max-entries");
     var result_key = e.data("result-key");
     var options = e.data("pre");

@@ -287,7 +287,9 @@ class SearchableField(forms.MultipleChoiceField):
 
         # doing this in the constructor is difficult because the URL
         # patterns may not have been fully constructed there yet
-        self.widget.attrs["data-ajax--url"] = self.ajax_url()
+        ajax_url = self.ajax_url()
+        if ajax_url is not None:
+            self.widget.attrs["data-select2-ajax-url"] = ajax_url
 
         result = value
         return result
