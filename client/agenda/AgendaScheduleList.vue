@@ -107,11 +107,12 @@
                 span.badge.is-rescheduled(v-else-if='!isMobile && item.status === `resched`') Rescheduled
                 .agenda-table-cell-links-buttons(v-else-if='agendaStore.viewport < 1200 && item.links && item.links.length > 0')
                   n-dropdown(
+                    v-if='!agendaStore.colorPickerVisible'
                     trigger='click'
                     :options='item.links'
                     key-field='id'
                     :render-icon='renderLinkIcon'
-                    v-if='!agendaStore.colorPickerVisible'
+                    @select='goToSessionLink'
                     )
                     n-button(size='tiny')
                       i.bi.bi-three-dots
@@ -189,12 +190,17 @@ import {
   NCheckbox,
   NCheckboxGroup,
   NDropdown,
-  NPopover
+  NPopover,
+  useMessage
 } from 'naive-ui'
 
 import AgendaDetailsModal from './AgendaDetailsModal.vue'
 
 import { useAgendaStore } from './store'
+
+// MESSAGE PROVIDER
+
+const message = useMessage()
 
 // STORES
 
@@ -489,6 +495,14 @@ function toggleColorPicker () {
   agendaStore.$patch({
     colorPickerVisible: !agendaStore.colorPickerVisible
   })
+}
+
+function goToSessionLink (lnkKey, lnk) {
+  if (lnk.href) {
+    window.location.assign(lnk.href)
+  } else {
+    message.error('Missing link for this dropdown item.')
+  }
 }
 
 function showMaterials (eventId) {
