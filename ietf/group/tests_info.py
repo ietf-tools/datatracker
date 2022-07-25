@@ -26,7 +26,7 @@ from django.utils.html import escape
 
 from ietf.community.models import CommunityList
 from ietf.community.utils import reset_name_contains_index_for_rule
-from ietf.doc.factories import WgDraftFactory, CharterFactory, BallotDocEventFactory
+from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, CharterFactory, BallotDocEventFactory
 from ietf.doc.models import Document, DocAlias, DocEvent, State
 from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.admin import GroupForm as AdminGroupForm
@@ -212,6 +212,17 @@ class GroupPagesTests(TestCase):
         old_dah.time_added -= datetime.timedelta(days=173)  # make an "old" action holder
         old_dah.save()
 
+        draft4 = WgDraftFactory(group=group)
+        draft4.set_state(State.objects.get(type='draft', slug='expired'))   # Expired WG draft
+        draft5 = IndividualDraftFactory()
+        draft5.set_state(State.objects.get(type='draft', slug='expired'))   # Expired non-WG draft
+        draft6 = WgDraftFactory(group=group)
+        draft6.set_state(State.objects.get(type='draft', slug='expired'))
+        draft6.set_state(State.objects.get(type='draft-iesg', slug='dead')) # Expired WG draft, marked as dead
+        draft7 = WgDraftFactory(group=group)
+        draft7.set_state(State.objects.get(type='draft', slug='expired'))
+        draft7.set_state(State.objects.get(type='draft-stream-%s' % draft7.stream_id, slug='dead')) # Expired WG draft, marked as dead
+
         clist = CommunityList.objects.get(group=group)
         related_docs_rule = clist.searchrule_set.get(rule_type='name_contains')
         reset_name_contains_index_for_rule(related_docs_rule)
@@ -229,6 +240,10 @@ class GroupPagesTests(TestCase):
             for ah in draft3.action_holders.all():
                 self.assertContains(r, escape(ah.name))
             self.assertContains(r, 'for 173 days', count=1)  # the old_dah should be tagged
+            self.assertContains(r, draft4.name)
+            self.assertNotContains(r, draft5.name)
+            self.assertNotContains(r, draft6.name)
+            self.assertNotContains(r, draft7.name)
 
         # Make sure that a logged in user is presented with an opportunity to add results to their community list
         self.client.login(username="secretary", password="secretary+password")

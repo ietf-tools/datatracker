@@ -80,6 +80,15 @@ class CommunityListTests(WebTest):
         self.assertTrue(draft in list(docs_matching_community_list_rule(rule_name_contains)))
         self.assertTrue(draft not in list(docs_matching_community_list_rule(rule_group_exp)))
 
+        draft.set_state(State.objects.get(type='draft', slug='expired'))
+
+        # doc -> rules
+        matching_rules = list(community_list_rules_matching_doc(draft))
+        self.assertTrue(rule_group_exp in matching_rules)
+
+        # rule -> docs
+        self.assertTrue(draft in list(docs_matching_community_list_rule(rule_group_exp)))
+
     def test_view_list(self):
         PersonFactory(user__username='plain')
         draft = WgDraftFactory()
