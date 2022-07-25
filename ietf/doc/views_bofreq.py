@@ -7,6 +7,7 @@ import io
 from django import forms
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
@@ -20,6 +21,7 @@ from ietf.doc.utils import add_state_change_event
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.person.fields import SearchablePersonsField
+from ietf.person.models import Person
 from ietf.utils import markdown
 from ietf.utils.response import permission_denied
 from ietf.utils.text import xslugify
@@ -224,7 +226,22 @@ def change_editors(request, name):
 
 
 class ChangeResponsibleForm(forms.Form):
-    responsible = SearchablePersonsField(required=False)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # The queryset here finds users for whom has_role(u, 'Area Director') or has_role(u, 'IAB') is True.
+        # It needs to match. Disable ajax requests because the SearchablePersonsField cannot enforce the
+        # queryset filter.
+        self.fields['responsible'] = SearchablePersonsField(
+            required=False,
+            extra_prefetch=Person.objects.filter(
+                Q(role__name='member', role__group__acronym='iab')
+                | Q(role__name__in=('pre-ad', 'ad'), role__group__type='area', role__group__state='active')
+            ).distinct(),
+            disable_ajax=True,  # only use the prefetched options
+            min_search_length=0,  # do not require typing to display options
+        )
+
     def clean_responsible(self):
         responsible = self.cleaned_data['responsible']
         not_leadership = list()
