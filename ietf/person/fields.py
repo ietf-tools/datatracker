@@ -62,6 +62,9 @@ class SearchablePersonsField(SearchableField):
     that may be added to the initial set should be included in the extra_prefetch
     list. These can then be added by updating val() and triggering the 'change'
     event on the select2 field in JavaScript.
+
+    If disable_ajax is True, only objects that are prefetched can be selected. This
+    will be any currently selected items plus any in extra_prefetch.
     """
     model = Person # type: Type[models.Model]
     default_hint_text = "Type name to search for person."
@@ -69,12 +72,14 @@ class SearchablePersonsField(SearchableField):
                  only_users=False, # only select persons who also have a user
                  all_emails=False, # select only active email addresses
                  extra_prefetch=None, # extra data records to include in prefetch
+                 disable_ajax=False, # use ajax to search outside of prefetched set
                  *args, **kwargs):
         super(SearchablePersonsField, self).__init__(*args, **kwargs)
         self.only_users = only_users
         self.all_emails = all_emails
         self.extra_prefetch = extra_prefetch or []
         assert all([isinstance(obj, self.model) for obj in self.extra_prefetch])
+        self.disable_ajax = disable_ajax
 
     def validate_pks(self, pks):
         """Validate format of PKs"""
@@ -90,18 +95,21 @@ class SearchablePersonsField(SearchableField):
         return select2_id_name(list(prefetch_set))
 
     def ajax_url(self):
-        url = urlreverse(
-            "ietf.person.views.ajax_select2_search",
-            kwargs={ "model_name": self.model.__name__.lower() }
-        )
-        query_args = {}
-        if self.only_users:
-            query_args["user"] = "1"
-        if self.all_emails:
-            query_args["a"] = "1"
-        if len(query_args) > 0:
-            url += '?%s' % urlencode(query_args)
-        return url
+        if self.disable_ajax:
+            return None
+        else:
+            url = urlreverse(
+                "ietf.person.views.ajax_select2_search",
+                kwargs={ "model_name": self.model.__name__.lower() }
+            )
+            query_args = {}
+            if self.only_users:
+                query_args["user"] = "1"
+            if self.all_emails:
+                query_args["a"] = "1"
+            if len(query_args) > 0:
+                url += '?%s' % urlencode(query_args)
+            return url
 
 
 class SearchablePersonField(SearchablePersonsField):
