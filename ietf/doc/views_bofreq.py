@@ -229,9 +229,9 @@ class ChangeResponsibleForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # The queryset here finds users for whom has_role(u, 'Area Director') or has_role(u, 'IAB') is True.
-        # It needs to match. Disable ajax requests because the SearchablePersonsField cannot enforce the
-        # queryset filter.
+        # The queryset in extra_prefetch finds users for whom has_role(u, 'Area Director') or
+        # has_role(u, 'IAB') is True. It needs to match the queries in the has_role() method.
+        # Disable ajax requests because the SearchablePersonsField cannot enforce the queryset filter.
         self.fields['responsible'] = SearchablePersonsField(
             required=False,
             extra_prefetch=Person.objects.filter(
