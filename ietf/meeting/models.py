@@ -358,6 +358,11 @@ class Meeting(models.Model):
 #                    SchedTimeSessAssignment.objects.create(schedule = sched,
 #                                                    timeslot = ts)
 
+    def tz(self):
+        if not hasattr(self, '_cached_tz'):
+            self._cached_tz = pytz.timezone(self.time_zone)
+        return self._cached_tz
+
     def vtimezone(self):
         if self.time_zone:
             try:
@@ -609,12 +614,7 @@ class TimeSlot(models.Model):
         return self._cached_html_location
 
     def tz(self):
-        if not hasattr(self, '_cached_tz'):
-            if self.meeting.time_zone:
-                self._cached_tz = pytz.timezone(self.meeting.time_zone)
-            else:
-                self._cached_tz = None
-        return self._cached_tz
+        return self.meeting.tz()
 
     def tzname(self):
         if self.tz():
