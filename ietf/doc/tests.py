@@ -2468,12 +2468,12 @@ class FieldTests(TestCase):
             decoded = json.loads(json_data)
         except json.JSONDecodeError as e:
             self.fail('data-pre contained invalid JSON data: %s' % str(e))
-        decoded_ids = list(decoded.keys())
-        self.assertCountEqual(decoded_ids, [str(doc.id) for doc in docs])
+        decoded_ids = [item['id'] for item in decoded]
+        self.assertEqual(decoded_ids, [doc.id for doc in docs])
         for doc in docs:
             self.assertEqual(
                 dict(id=doc.pk, selected=True, url=doc.get_absolute_url(), text=escape(uppercase_std_abbreviated_name(doc.name))),
-                decoded[str(doc.pk)],
+                decoded[decoded_ids.index(doc.pk)],
             )
 
 class MaterialsTests(TestCase):
