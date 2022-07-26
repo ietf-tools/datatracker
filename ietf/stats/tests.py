@@ -237,7 +237,9 @@ class StatisticsTests(TestCase):
             'Company': 'ABC',
             'Country': 'US',
             'Email': person.email().address,
-            'RegType': 'onsite'
+            'RegType': 'onsite',
+            'TicketType': 'week_pass',
+            'CheckedIn': 'True',
         }
         data2 = data.copy()
         data2['RegType'] = 'hackathon'
@@ -259,6 +261,9 @@ class StatisticsTests(TestCase):
         self.assertEqual(query.count(), 2)
         self.assertEqual(query.filter(reg_type='onsite').count(), 1)
         self.assertEqual(query.filter(reg_type='hackathon').count(), 1)
+        onsite = query.get(reg_type='onsite')
+        self.assertEqual(onsite.ticket_type, 'week_pass')
+        self.assertEqual(onsite.checkedin, True)
         # call a second time to test delete
         get_meeting_registration_data(meeting)
         query = MeetingRegistration.objects.filter(meeting=meeting, email=person.email())

@@ -261,6 +261,9 @@ def get_meeting_registration_data(meeting):
             country_code    = registration['Country'].strip()
             address         = registration['Email'].strip()
             reg_type        = registration['RegType'].strip()
+            ticket_type     = registration['TicketType'].strip()
+            checkedin       = registration['CheckedIn'].strip()
+
             if (address, reg_type) in meeting_registrations:
                 object = meeting_registrations.pop((address, reg_type))
                 created = False
@@ -274,11 +277,15 @@ def get_meeting_registration_data(meeting):
             if (object.first_name != first_name[:200] or
                 object.last_name != last_name[:200] or
                 object.affiliation != affiliation or
-                object.country_code != country_code):
+                object.country_code != country_code or
+                object.ticket_type != ticket_type or
+                object.checkedin != checkedin):
                     object.first_name=first_name[:200]
                     object.last_name=last_name[:200]
                     object.affiliation=affiliation
                     object.country_code=country_code
+                    object.ticket_type=ticket_type
+                    object.checkedin=checkedin
                     object.save()
 
             # Add a Person object to MeetingRegistration object
