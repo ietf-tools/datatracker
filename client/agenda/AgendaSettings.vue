@@ -52,6 +52,7 @@ n-drawer(v-model:show='isShown', placement='right', :width='panelWidth')
         :options='timezones'
         placeholder='Select Time Zone'
         filterable
+        @update:value='() => { agendaStore.persistMeetingPreferences() }'
         )
 
       n-divider(title-placement='left')
@@ -401,6 +402,7 @@ function setTimezone (tz) {
       agendaStore.$patch({ timezone: tz })
       break
   }
+  agendaStore.persistMeetingPreferences()
 }
 
 // MOUNTED
