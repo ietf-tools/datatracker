@@ -258,7 +258,7 @@ def materials_document(request, document, num=None, ext=None):
                     content_type = content_type.replace('plain', 'markdown', 1)
                     break;
                 elif atype[0] == 'text/html':
-                    bytes = "<html>\n<head></head>\n<body>\n%s\n</body>\n</html>\n" % markdown.markdown(bytes.decode())
+                    bytes = "<html>\n<head><base target=\"_blank\" /></head>\n<body>\n%s\n</body>\n</html>\n" % markdown.markdown(bytes.decode())
                     content_type = content_type.replace('plain', 'html', 1)
                     break;
                 elif atype[0] == 'text/plain':
