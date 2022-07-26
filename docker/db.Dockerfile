@@ -1,7 +1,7 @@
 # ====================
 # --- Import Stage ---
 # ====================
-FROM ubuntu:hirsute AS importStage
+FROM ubuntu:jammy AS importStage
 
 # Install dependencies for import
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y update && \
