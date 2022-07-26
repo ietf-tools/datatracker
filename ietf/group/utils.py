@@ -193,6 +193,12 @@ def setup_default_community_list_for_group(group):
         group=group,
         state=State.objects.get(slug="rfc", type="draft"),
     )
+    SearchRule.objects.create(
+        community_list=clist,
+        rule_type="group_exp",
+        group=group,
+        state=State.objects.get(slug="expired", type="draft"),
+    )
     related_docs_rule = SearchRule.objects.create(
         community_list=clist,
         rule_type="name_contains",
