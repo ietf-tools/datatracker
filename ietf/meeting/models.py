@@ -360,7 +360,7 @@ class Meeting(models.Model):
 
     def tz(self):
         if not hasattr(self, '_cached_tz'):
-            self._cached_tz = pytz.timezone(self.time_zone)
+            self._cached_tz = pytz.timezone(self.time_zone) if self.time_zone else pytz.utc
         return self._cached_tz
 
     def vtimezone(self):
