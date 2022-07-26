@@ -56,6 +56,11 @@ class Command(BaseCommand):
                         order = 6
                     elif meeting_number == '108':
                         order = 13
+                if session_acronym == 'ietf':
+                    if meeting_number == '112':
+                        order = 2
+                    elif meeting_number == '113':
+                        order = 2
                 if not (meeting_number, session_acronym) in session_cache:
                     session_cache[(meeting_number, session_acronym)] = sort_sessions([s for s in Session.objects.filter(meeting__number=meeting_number,group__acronym=session_acronym) if s.official_timeslotassignment()])
                 sessions = session_cache[(meeting_number, session_acronym)]

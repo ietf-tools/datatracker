@@ -28,7 +28,7 @@ from ietf.doc.factories import DocEventFactory, WgDocumentAuthorFactory, \
                                NewRevisionDocEventFactory, DocumentAuthorFactory
 from ietf.group.factories import GroupFactory, GroupHistoryFactory, RoleFactory, RoleHistoryFactory
 from ietf.group.models import Group, Role
-from ietf.meeting.factories import MeetingFactory
+from ietf.meeting.factories import MeetingFactory, AttendedFactory
 from ietf.message.models import Message
 from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comments, \
                                   COMMUNITY_USER, CHAIR_USER, \
@@ -2397,6 +2397,7 @@ class rfc8989EligibilityTests(TestCase):
                     p = PersonFactory()
                     for m in combo:
                         MeetingRegistrationFactory(person=p, meeting=m)
+                        AttendedFactory(session__meeting=m, session__type_id='plenary',person=p)
                     if combo_len<3:
                         ineligible_people.append(p)
                     else:
@@ -2648,6 +2649,7 @@ class VolunteerDecoratorUnitTests(TestCase):
         ]]
         for m in meetings:
             MeetingRegistrationFactory(meeting=m,person=meeting_person)
+            AttendedFactory(session__meeting=m, session__type_id='plenary', person=meeting_person)
         nomcom.volunteer_set.create(person=meeting_person)
 
         office_person = PersonFactory()

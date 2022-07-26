@@ -258,7 +258,7 @@ def materials_document(request, document, num=None, ext=None):
                     content_type = content_type.replace('plain', 'markdown', 1)
                     break;
                 elif atype[0] == 'text/html':
-                    bytes = "<html>\n<head></head>\n<body>\n%s\n</body>\n</html>\n" % markdown.markdown(bytes.decode())
+                    bytes = "<html>\n<head><base target=\"_blank\" /></head>\n<body>\n%s\n</body>\n</html>\n" % markdown.markdown(bytes.decode())
                     content_type = content_type.replace('plain', 'html', 1)
                     break;
                 elif atype[0] == 'text/plain':
@@ -1571,38 +1571,39 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
 
 @ensure_csrf_cookie
 def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
-    base = base if base else 'agenda'
-    ext = ext if ext else '.html'
-    mimetype = {
-        ".html":"text/html; charset=%s"%settings.DEFAULT_CHARSET,
-        ".txt": "text/plain; charset=%s"%settings.DEFAULT_CHARSET,
-        ".csv": "text/csv; charset=%s"%settings.DEFAULT_CHARSET,
-    }
-    if ext not in mimetype:
-        raise Http404('Extension not allowed')
+    # Get current meeting if not specified
+    if num is None:
+        num = get_current_ietf_meeting_num()
 
     # We do not have the appropriate data in the datatracker for IETF 64 and earlier.
     # So that we're not producing misleading pages, redirect to their proceedings.
     # The datatracker DB does include a Meeting instance for every IETF meeting, though,
     # so we can use that to validate that num is a valid meeting number.
+    if int(num) <= 64:
+        meeting = get_ietf_meeting(num)
+        if meeting is None:
+            raise Http404("No such full IETF meeting")
+        else:
+            return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}')
+
+    return render(request, "meeting/agenda-neue.html", {
+        "meetingData": {
+            "meetingNumber": num
+        }
+    })
+
+@cache_page(5 * 60)
+def api_get_agenda_data (request, num=None):
     meeting = get_ietf_meeting(num)
     if meeting is None:
         raise Http404("No such full IETF meeting")
     elif int(meeting.number) <= 64:
-        return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}')
+        return Http404("Pre-IETF 64 meetings are not available through this API")
     else:
         pass
 
     # Select the schedule to show
-    if name is None:
-        schedule = get_schedule(meeting, name)
-    else:
-        person   = get_person_by_email(owner)
-        schedule = get_schedule_by_name(meeting, person, name)
-
-    if schedule == None:
-        base = base.replace("-utc", "")
-        return render(request, "meeting/no-"+base+ext, {'meeting':meeting }, content_type=mimetype[ext])
+    schedule = get_schedule(meeting, None)
 
     updated = meeting.updated()
 
@@ -1613,10 +1614,6 @@ def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, u
     )
     AgendaKeywordTagger(assignments=filtered_assignments).apply()
 
-    # Done processing for CSV output
-    if ext == ".csv":
-        return agenda_csv(schedule, filtered_assignments)
-
     filter_organizer = AgendaFilterOrganizer(assignments=filtered_assignments)
 
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
@@ -1624,36 +1621,44 @@ def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, u
     # Get Floor Plans
     floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
 
-    rendered_page = render(request, "meeting/agenda-neue.html", {
-        "schedule_json": {
-            "meeting": {
-                "number": schedule.meeting.number,
-                "city": schedule.meeting.city,
-                "startDate": schedule.meeting.date.isoformat(),
-                "endDate": schedule.meeting.end_date().isoformat(),
-                "updated": updated,
-                "timezone": meeting.time_zone,
-                "infoNote": schedule.meeting.agenda_info_note,
-                "warningNote": schedule.meeting.agenda_warning_note
-            },
-            "categories": filter_organizer.get_filter_categories(),
-            "isCurrentMeeting": is_current_meeting,
-            "useHedgeDoc": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
-            "schedule": list(map(agenda_extract_schedule, filtered_assignments)),
-            "floors": list(map(agenda_extract_floorplan, floors))
+    return JsonResponse({
+        "meeting": {
+            "number": schedule.meeting.number,
+            "city": schedule.meeting.city,
+            "startDate": schedule.meeting.date.isoformat(),
+            "endDate": schedule.meeting.end_date().isoformat(),
+            "updated": updated,
+            "timezone": meeting.time_zone,
+            "infoNote": schedule.meeting.agenda_info_note,
+            "warningNote": schedule.meeting.agenda_warning_note
         },
-        "schedule": {
-            "meeting": {
-                "number": schedule.meeting.number,
-            }
-        }
-    }, content_type=mimetype[ext])
+        "categories": filter_organizer.get_filter_categories(),
+        "isCurrentMeeting": is_current_meeting,
+        "useHedgeDoc": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
+        "schedule": list(map(agenda_extract_schedule, filtered_assignments)),
+        "floors": list(map(agenda_extract_floorplan, floors))
+    })
 
-    return rendered_page
+def api_get_session_materials (request, session_id=None):
+    session = get_object_or_404(Session,pk=session_id)
+
+    minutes = session.minutes()
+
+    return JsonResponse({
+        "url": session.agenda().get_href(),
+        "slides": list(map(agenda_extract_slide, session.slides())),
+        "minutes": {
+            "id": minutes.id,
+            "title": minutes.title,
+            "url": minutes.get_href(),
+            "ext": minutes.file_extension()
+        } if minutes is not None else None
+    })
 
 def agenda_extract_schedule (item):
     return {
         "id": item.id,
+        "sessionId": item.session.id,
         "room": item.room_name,
         "location": {
             "short": item.timeslot.location.floorplan.short,
@@ -1737,6 +1742,14 @@ def agenda_extract_recording (item):
         "name": item.name,
         "title": item.title,
         "url": item.external_url
+    }
+
+def agenda_extract_slide (item):
+    return {
+        "id": item.id,
+        "title": item.title,
+        "url": item.get_versionless_href(),
+        "ext": item.file_extension()
     }
 
 def agenda_csv(schedule, filtered_assignments):

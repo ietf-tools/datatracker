@@ -4,8 +4,8 @@
 import io
 import os
 import datetime
+import json
 
-from unittest import skipIf
 from tempfile import NamedTemporaryFile
 
 from django.core.management import call_command
@@ -22,24 +22,9 @@ from ietf.doc.models import DocEvent, RelatedDocument
 from ietf.group.models import Role, Group
 from ietf.group.utils import get_group_role_emails, get_child_group_role_emails, get_group_ad_emails
 from ietf.group.factories import GroupFactory, RoleFactory
-from ietf.utils.test_runner import set_coverage_checking
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Person
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
-
-
-if   getattr(settings,'SKIP_DOT_TO_PDF', False):
-    skip_dot_to_pdf = True
-    skip_message = "settings.SKIP_DOT_TO_PDF = %s" % skip_dot_to_pdf
-elif (  os.path.exists(settings.DOT_BINARY) and
-        os.path.exists(settings.UNFLATTEN_BINARY)):
-    skip_dot_to_pdf = False
-    skip_message = ""
-else:
-    skip_dot_to_pdf = True
-    skip_message = ("Skipping dependency graph tests: One or more of the binaries for dot\n       "
-                    "and unflatten weren't found in the locations indicated in settings.py")
-    print("     "+skip_message)
 
 class StreamTests(TestCase):
     def test_streams(self):
@@ -73,56 +58,43 @@ class StreamTests(TestCase):
         self.assertTrue(Role.objects.filter(name="delegate", group__acronym=stream_acronym, email__address="ad2@ietf.org"))
 
 
-@skipIf(skip_dot_to_pdf, skip_message)
-class GroupDocDependencyGraphTests(TestCase):
-
+class GroupDocDependencyTests(TestCase):
     def setUp(self):
         super().setUp()
-        set_coverage_checking(False)
         a = WgDraftFactory()
         b = WgDraftFactory()
-        RelatedDocument.objects.create(source=a,target=b.docalias.first(),relationship_id='refnorm')
+        RelatedDocument.objects.create(
+            source=a, target=b.docalias.first(), relationship_id="refnorm"
+        )
 
-    def tearDown(self):
-        set_coverage_checking(True)
-        super().tearDown()
-
-    def test_group_document_dependency_dotfile(self):
+    def test_group_document_dependencies(self):
         for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
-            client = Client(Accept='text/plain')
-            for url in [ urlreverse("ietf.group.views.dependencies",kwargs=dict(acronym=group.acronym,output_type="dot")),
-                         urlreverse("ietf.group.views.dependencies",kwargs=dict(acronym=group.acronym,group_type=group.type_id,output_type="dot")),
-                       ]:
+            client = Client(Accept="application/json")
+            for url in [
+                urlreverse(
+                    "ietf.group.views.dependencies", kwargs=dict(acronym=group.acronym)
+                ),
+                urlreverse(
+                    "ietf.group.views.dependencies",
+                    kwargs=dict(acronym=group.acronym, group_type=group.type_id),
+                ),
+            ]:
                 r = client.get(url)
-                self.assertTrue(r.status_code == 200, "Failed to receive "
-                    "a dot dependency graph for group: %s"%group.acronym)
-                self.assertGreater(len(r.content), 0, "Dot dependency graph for group "
-                    "%s has no content"%group.acronym)
+                self.assertTrue(
+                    r.status_code == 200,
+                    "Failed to receive a group document dependencies for group: %s"
+                    % group.acronym,
+                )
+                self.assertGreater(
+                    len(r.content),
+                    0,
+                    "Document dependencies for group %s has no content" % group.acronym,
+                )
+                try:
+                    json.loads(r.content)
+                except Exception as e:
+                    self.fail("JSON load failed: %s" % e)
 
-    def test_group_document_dependency_pdffile(self):
-        for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
-            client = Client(Accept='application/pdf')
-            for url in [ urlreverse("ietf.group.views.dependencies",kwargs=dict(acronym=group.acronym,output_type="pdf")),
-                         urlreverse("ietf.group.views.dependencies",kwargs=dict(acronym=group.acronym,group_type=group.type_id,output_type="pdf")),
-                       ]:
-                r = client.get(url)
-                self.assertTrue(r.status_code == 200, "Failed to receive "
-                    "a pdf dependency graph for group: %s"%group.acronym)
-                self.assertGreater(len(r.content), 0, "Pdf dependency graph for group "
-                    "%s has no content"%group.acronym)
-
-    def test_group_document_dependency_svgfile(self):
-        for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
-            client = Client(Accept='image/svg+xml')
-            for url in [ urlreverse("ietf.group.views.dependencies",kwargs=dict(acronym=group.acronym,output_type="svg")),
-                         urlreverse("ietf.group.views.dependencies",kwargs=dict(acronym=group.acronym,group_type=group.type_id,output_type="svg")),
-                       ]:
-                r = client.get(url)
-                self.assertTrue(r.status_code == 200, "Failed to receive "
-                    "a svg dependency graph for group: %s"%group.acronym)
-                self.assertGreater(len(r.content), 0, "svg dependency graph for group "
-                    "%s has no content"%group.acronym)
-            
 
 class GenerateGroupAliasesTests(TestCase):
     def setUp(self):

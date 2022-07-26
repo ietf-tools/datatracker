@@ -70,19 +70,64 @@ n-modal(v-model:show='modalShown')
               span.badge {{eventDetails.locationShort}}
             span {{eventDetails.locationName}}
           span {{eventDetails.room}}
-      .detail-text(v-if='eventDetails.materialsUrl')
-        iframe(
-          :src='eventDetails.materialsUrl'
+      nav.detail-nav.nav.nav-pills.nav-justified.mt-3
+        a.nav-link(
+          :class='{ active: state.tab === `agenda` }'
+          @click='state.tab = `agenda`'
           )
+          i.bi.bi-list-columns-reverse.me-2
+          span Agenda
+        a.nav-link(
+          :class='{ active: state.tab === `slides` }'
+          @click='state.tab = `slides`'
+          )
+          i.bi.bi-easel.me-2
+          span Slides
+        a.nav-link(
+          :class='{ active: state.tab === `minutes` }'
+          @click='state.tab = `minutes`'
+          )
+          i.bi.bi-journal-text.me-2
+          span Minutes
+      .detail-text(v-if='eventDetails.materialsUrl')
+        template(v-if='state.tab === `agenda`')
+          iframe(
+            :src='eventDetails.materialsUrl'
+            )
+        template(v-else-if='state.tab === `slides`')
+          .text-center(v-if='state.isLoading')
+            n-spin(description='Loading slides...')
+          .text-center.p-3(v-else-if='!state.materials || !state.materials.slides || state.materials.slides.length < 1')
+            span No slides submitted for this session.
+          .list-group(v-else)
+            a.list-group-item(
+              v-for='slide of state.materials.slides'
+              :key='slide.id'
+              :href='slide.url'
+              target='_blank'
+              )
+              i.bi.me-2(:class='`bi-filetype-` + slide.ext')
+              span {{slide.title}}
+        template(v-else)
+          .text-center(v-if='state.isLoading')
+            n-spin(description='Loading minutes...')
+          .text-center.p-3(v-else-if='!state.materials || !state.materials.minutes')
+            span No minutes submitted for this session.
+          iframe(
+            v-else
+            :src='state.materials.minutes.url'
+            )
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import {
   NButton,
   NCard,
   NModal,
-  NPopover
+  NPopover,
+  NSpin,
+  useMessage
 } from 'naive-ui'
 
 import { useAgendaStore } from './store'
@@ -101,6 +146,10 @@ const props = defineProps({
   }
 })
 
+// MESSAGE PROVIDER
+
+const message = useMessage()
+
 // STORES
 
 const agendaStore = useAgendaStore()
@@ -108,6 +157,14 @@ const agendaStore = useAgendaStore()
 // EMIT
 
 const emit = defineEmits(['update:shown'])
+
+// STATE
+
+const state = reactive({
+  tab: 'agenda',
+  isLoading: false,
+  materials: {}
+})
 
 // COMPUTED
 
@@ -141,6 +198,38 @@ const modalShown = computed({
     emit('update:shown', value)
   }
 })
+
+// WATCHERS
+
+watch(() => props.shown, (newValue) => {
+  if (newValue) {
+    state.materials = {}
+    state.tab = 'agenda'
+    if (props.event.flags.showAgenda) {
+      fetchSessionMaterials()
+    }
+  }
+})
+
+// METHODS
+
+async function fetchSessionMaterials () {
+  if (!props.event) { return null }
+
+  state.isLoading = true
+
+  try {
+    const resp = await fetch(`/api/meeting/session/${props.event.sessionId}/materials`, { credentials: 'omit' })
+    if (!resp.ok) {
+      throw new Error(resp.statusText)
+    }
+    state.materials = await resp.json()
+  } catch (err) {
+    console.warn(err)
+    message.error('Failed to fetch session materials.')
+  }
+  state.isLoading = false
+}
 
 </script>
 
@@ -209,6 +298,27 @@ const modalShown = computed({
     }
   }
 
+  nav.detail-nav {
+    padding: 5px;
+    background-color: #FFF;
+    border: 1px solid $gray-300;
+    border-radius: 5px;
+    font-weight: 500;
+
+    a {
+      cursor: pointer;
+
+      .bi {
+        font-size: inherit;
+        color: inherit;
+      }
+
+      &:not(.active):hover {
+        background-color: rgba($blue-100, .25);
+      }
+    }
+  }
+
   .detail-text {
     padding: 12px;
     background-color: #FAFAFA;
@@ -216,6 +326,10 @@ const modalShown = computed({
     border: 1px solid #AAA;
     margin-top: 12px;
     border-radius: 5px;
+
+    .bi {
+      color: $blue;
+    }
 
     > iframe {
       width: 100%;

@@ -1164,7 +1164,27 @@ class IndividualInfoFormsTests(TestCase):
         self.assertEqual(r.status_code, 302)
         doc = Document.objects.get(name=self.docname)
         self.assertEqual(comment_event, doc.latest_event(DocEvent, type="added_comment"))
-       
+
+    def test_doc_view_shepherd_writeup_templates(self):
+        url = urlreverse(
+            "ietf.doc.views_doc.document_shepherd_writeup_template",
+            kwargs=dict(type="group"),
+        )
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('h1:contains("for Group Documents")')), 1)
+
+        url = urlreverse(
+            "ietf.doc.views_doc.document_shepherd_writeup_template",
+            kwargs=dict(type="individual"),
+        )
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('h1:contains("for Individual Documents")')), 1)
 
     def test_doc_view_shepherd_writeup(self):
         url = urlreverse('ietf.doc.views_doc.document_shepherd_writeup',kwargs=dict(name=self.docname))

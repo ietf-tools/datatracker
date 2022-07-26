@@ -169,6 +169,50 @@ class MeetingTests(BaseMeetingTestCase):
         r = self.client.get(urlreverse("agenda-neue", kwargs=dict(num=meeting.number,utc='-utc')))
         self.assertEqual(r.status_code, 200)  
 
+        # Agenda API tests
+        # -> Meeting data
+        r = self.client.get(urlreverse("ietf.meeting.views.api_get_agenda_data", kwargs=dict(num=meeting.number)))
+        self.assertEqual(r.status_code, 200)  
+        rjson = json.loads(r.content.decode("utf8"))
+        self.assertJSONEqual(
+            r.content.decode("utf8"),
+            {
+                "meeting": {
+                    "number": meeting.number,
+                    "city": meeting.city,
+                    "startDate": meeting.date.isoformat(),
+                    "endDate": meeting.end_date().isoformat(),
+                    "updated": rjson.get("meeting").get("updated"), # Just expect the value to exist
+                    "timezone": meeting.time_zone,
+                    "infoNote": meeting.agenda_info_note,
+                    "warningNote": meeting.agenda_warning_note
+                },
+                "categories": rjson.get("categories"), # Just expect the value to exist
+                "isCurrentMeeting": True,
+                "useHedgeDoc": True,
+                "schedule": rjson.get("schedule"), # Just expect the value to exist
+                "floors": []
+            }
+        )
+        # -> Session Materials
+        r = self.client.get(urlreverse("ietf.meeting.views.api_get_session_materials", kwargs=dict(session_id=session.id)))
+        self.assertEqual(r.status_code, 200)  
+        rjson = json.loads(r.content.decode("utf8"))
+        minutes = session.minutes()
+        self.assertJSONEqual(
+            r.content.decode("utf8"),
+            {
+                "url": session.agenda().get_href(),
+                "slides": rjson.get("slides"), # Just expect the value to exist
+                "minutes": {
+                    "id": minutes.id,
+                    "title": minutes.title,
+                    "url": minutes.get_href(),
+                    "ext": minutes.file_extension()
+                } if minutes is not None else None
+            }
+        )
+
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number,utc='-utc')))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)

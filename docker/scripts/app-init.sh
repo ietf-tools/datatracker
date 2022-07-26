@@ -4,6 +4,9 @@ WORKSPACEDIR="/workspace"
 
 sudo service rsyslog start &>/dev/null
 
+# Turn off git info in zsh prompt (causes slowdowns)
+git config oh-my-zsh.hide-info 1
+
 # Fix ownership of volumes
 echo "Fixing volumes ownership..."
 sudo chown -R dev:dev "$WORKSPACEDIR/.parcel-cache"
@@ -110,13 +113,13 @@ if [ -z "$EDITOR_VSCODE" ]; then
         echo
         echo "You can execute arbitrary commands now, e.g.,"
         echo
-        echo "    ietf/manage.py check && ietf/manage.py runserver 0.0.0.0:8000"
+        echo "    ietf/manage.py runserver 0.0.0.0:8000"
         echo
         echo "to start a development instance of the Datatracker."
         echo
         echo "    ietf/manage.py test --settings=settings_sqlitetest"
         echo
-        echo "to run all the tests."
+        echo "to run all the python tests."
         echo
         zsh
     else

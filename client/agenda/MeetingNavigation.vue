@@ -1,5 +1,5 @@
 <template lang="pug">
-ul.nav.nav-tabs.meeting-nav
+ul.nav.nav-tabs.meeting-nav(v-if='agendaStore.isLoaded')
   li.nav-item(v-for='tab of tabs')
     a.nav-link(
       v-if='tab.href'

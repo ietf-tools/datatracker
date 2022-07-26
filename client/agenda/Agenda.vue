@@ -1,5 +1,6 @@
 <template lang="pug">
 .agenda(
+  v-if='agendaStore.isLoaded'
   :class='{ "bolder-text": agendaStore.bolderText }'
   )
   h1
@@ -140,6 +141,7 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { DateTime } from 'luxon'
 import debounce from 'lodash/debounce'
 
@@ -171,6 +173,11 @@ const message = useMessage()
 // STORES
 
 const agendaStore = useAgendaStore()
+
+// ROUTER
+
+const router = useRouter()
+const route = useRoute()
 
 // DATA
 
@@ -206,6 +213,8 @@ watch(() => agendaStore.meetingDays, () => {
     }, 100)
   })
 })
+
+watch(() => agendaStore.isLoaded, handleCurrentMeetingRedirect)
 
 // COMPUTED
 
@@ -269,6 +278,13 @@ function toggleSettings () {
   agendaStore.$patch({
     settingsShown: !agendaStore.settingsShown
   })
+}
+
+// -> Go to current meeting if not provided
+function handleCurrentMeetingRedirect () {
+  if (!route.params.meetingNumber && agendaStore.meeting.number) {
+    router.replace({ params: { meetingNumber: agendaStore.meeting.number } })
+  }
 }
 
 // --------------------------------------------------------------------
@@ -335,7 +351,12 @@ onBeforeUnmount(() => {
 // MOUNTED
 
 onMounted(() => {
-  agendaStore.hideLoadingScreen()
+  handleCurrentMeetingRedirect()
+
+  // -> Hide Loading Screen
+  if (agendaStore.isLoaded) {
+    agendaStore.hideLoadingScreen()
+  }
 })
 
 // CREATED

@@ -107,11 +107,12 @@
                 span.badge.is-rescheduled(v-else-if='!isMobile && item.status === `resched`') Rescheduled
                 .agenda-table-cell-links-buttons(v-else-if='agendaStore.viewport < 1200 && item.links && item.links.length > 0')
                   n-dropdown(
+                    v-if='!agendaStore.colorPickerVisible'
                     trigger='click'
                     :options='item.links'
                     key-field='id'
                     :render-icon='renderLinkIcon'
-                    v-if='!agendaStore.colorPickerVisible'
+                    @select='goToSessionLink'
                     )
                     n-button(size='tiny')
                       i.bi.bi-three-dots
@@ -121,6 +122,13 @@
                         template(#trigger)
                           i.bi.bi-collection(@click='showMaterials(item.key)')
                         span Show meeting materials
+                    template(v-else-if='item.type === `regular`')
+                      n-popover
+                        template(#trigger)
+                          i.no-meeting-materials
+                            i.bi.bi-clipboard-x
+                            i.bi.bi-exclamation-triangle-fill.ms-1
+                        span No meeting materials yet.
                     n-popover(v-for='lnk of item.links', :key='lnk.id')
                       template(#trigger)
                         a(
@@ -182,12 +190,17 @@ import {
   NCheckbox,
   NCheckboxGroup,
   NDropdown,
-  NPopover
+  NPopover,
+  useMessage
 } from 'naive-ui'
 
 import AgendaDetailsModal from './AgendaDetailsModal.vue'
 
 import { useAgendaStore } from './store'
+
+// MESSAGE PROVIDER
+
+const message = useMessage()
 
 // STORES
 
@@ -219,7 +232,7 @@ const meetingEvents = computed(() => {
 
   return reduce(sortBy(agendaStore.scheduleAdjusted, 'adjustedStartDate'), (acc, item) => {
     const isLive = current >= item.adjustedStart && current < item.adjustedEnd
-    const itemTimeSlot = agendaStore.viewport > 600 ?
+    const itemTimeSlot = agendaStore.viewport > 576 ?
       `${item.adjustedStart.toFormat('HH:mm')} - ${item.adjustedEnd.toFormat('HH:mm')}` :
       `${item.adjustedStart.toFormat('HH:mm')} ${item.adjustedEnd.toFormat('HH:mm')}`
 
@@ -484,6 +497,14 @@ function toggleColorPicker () {
   })
 }
 
+function goToSessionLink (lnkKey, lnk) {
+  if (lnk.href) {
+    window.location.assign(lnk.href)
+  } else {
+    message.error('Missing link for this dropdown item.')
+  }
+}
+
 function showMaterials (eventId) {
   state.eventDetails = find(agendaStore.scheduleAdjusted, ['id', eventId])
   state.showEventDetails = true
@@ -656,7 +677,7 @@ onBeforeUnmount(() => {
     font-weight: 600;
     border-right: 1px solid #FFF;
 
-    @media screen and (max-width: $bs5-break-sm) {
+    @media screen and (max-width: $bs5-break-md) {
       font-size: .8em;
       padding: 0 6px;
     }
@@ -675,14 +696,14 @@ onBeforeUnmount(() => {
         width: 100px;
       }
 
-      @media screen and (max-width: $bs5-break-sm) {
+      @media screen and (max-width: $bs5-break-md) {
         width: 30px;
       }
     }
     &.agenda-table-head-location {
       width: 250px;
 
-      @media screen and (max-width: $bs5-break-sm) {
+      @media screen and (max-width: $bs5-break-md) {
         width: auto;
       }
     }
@@ -730,7 +751,7 @@ onBeforeUnmount(() => {
     font-weight: 600;
     scroll-margin-top: 25px;
 
-    @media screen and (max-width: $bs5-break-sm) {
+    @media screen and (max-width: $bs5-break-md) {
       font-size: .9em;
     }
   }
@@ -742,7 +763,7 @@ onBeforeUnmount(() => {
     padding: 0 12px;
     color: #333;
 
-    @media screen and (max-width: $bs5-break-sm) {
+    @media screen and (max-width: $bs5-break-md) {
       padding: 0 6px;
     }
 
@@ -755,7 +776,7 @@ onBeforeUnmount(() => {
       color: $blue-700;
       font-weight: 600;
 
-      @media screen and (max-width: $bs5-break-sm) {
+      @media screen and (max-width: $bs5-break-md) {
         font-size: .9em;
       }
     }
@@ -766,7 +787,7 @@ onBeforeUnmount(() => {
     padding: 0 12px;
     color: #333;
 
-    @media screen and (max-width: $bs5-break-sm) {
+    @media screen and (max-width: $bs5-break-md) {
       padding: 2px 6px;
     }
 
@@ -794,7 +815,7 @@ onBeforeUnmount(() => {
         font-size: .85rem;
       }
 
-      @media screen and (max-width: $bs5-break-sm) {
+      @media screen and (max-width: $bs5-break-md) {
         white-space: initial;
         word-wrap: break-word;
         max-width: 70px;
@@ -822,7 +843,7 @@ onBeforeUnmount(() => {
         border-bottom-left-radius: 0;
         margin-right: 6px;
 
-        @media screen and (max-width: $bs5-break-sm) {
+        @media screen and (max-width: $bs5-break-md) {
           display: none;
         }
       }
@@ -833,7 +854,7 @@ onBeforeUnmount(() => {
       border-right: 1px solid $gray-300 !important;
       white-space: nowrap;
 
-      @media screen and (max-width: $bs5-break-sm) {
+      @media screen and (max-width: $bs5-break-md) {
         font-size: .7rem;
         word-break: break-all;
       }
@@ -863,17 +884,25 @@ onBeforeUnmount(() => {
     }
 
     &.agenda-table-cell-name {
-      @media screen and (max-width: $bs5-break-sm) {
+      @media screen and (max-width: $bs5-break-md) {
         font-size: .7rem;
+        word-break: break-word;
+        word-wrap: break-word;
       }
 
       .badge.is-bof {
         background-color: $teal-500;
         margin: 0 8px;
+
+        @media screen and (max-width: $bs5-break-md) {
+          width: 30px;
+          display: block;
+          margin: 2px 0 0 0;
+        }
       }
 
       > .bi {
-        @media screen and (max-width: $bs5-break-sm) {
+        @media screen and (max-width: $bs5-break-md) {
           display: none;
         }
 
@@ -991,6 +1020,14 @@ onBeforeUnmount(() => {
               background-color: rgba($teal-400, .3);
             }
           }
+          &.no-meeting-materials {
+            background-color: $red-400;
+            color: #FFF;
+
+            > i:nth-child(2) {
+              color: $red-100;
+            }
+          }
         }
       }
     }
@@ -1007,6 +1044,10 @@ onBeforeUnmount(() => {
 
     @media screen and (max-width: 1300px) {
       font-size: .9rem;
+    }
+
+    @media screen and (max-width: $bs5-break-md) {
+      font-size: .8rem;
     }
 
     @media screen and (max-width: $bs5-break-sm) {
@@ -1259,6 +1300,15 @@ onBeforeUnmount(() => {
         animation-delay: #{(5 - $i) * .05}s;
       }
     }
+  }
+}
+
+@keyframes fadeInAnim {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
   }
 }
 
