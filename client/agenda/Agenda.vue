@@ -59,6 +59,7 @@
             :options='timezones'
             placeholder='Select Time Zone'
             filterable
+            @update:value='() => { agendaStore.persistMeetingPreferences() }'
             )
 
       .alert.alert-warning.mt-3(v-if='agendaStore.isCurrentMeeting') #[strong Note:] IETF agendas are subject to change, up to and during a meeting.
@@ -260,6 +261,7 @@ function setTimezone (tz) {
       agendaStore.$patch({ timezone: tz })
       break
   }
+  agendaStore.persistMeetingPreferences()
 }
 
 function closeSearch () {
