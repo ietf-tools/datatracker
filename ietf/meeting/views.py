@@ -1687,7 +1687,6 @@ def agenda_extract_schedule (item):
         },
         "agenda": {
             "url": item.session.agenda().get_href()
-            # "slides": item.session.slides
         } if item.session.agenda() is not None else {
             "url": None
         },
