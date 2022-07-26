@@ -2,6 +2,7 @@
 
 import datetime
 import debug    # pyflakes:ignore
+import json
 import os
 
 from pathlib import Path
@@ -18,7 +19,9 @@ from ietf.group.factories import RoleFactory
 from ietf.doc.factories import BofreqFactory, NewRevisionDocEventFactory
 from ietf.doc.models import State, Document, DocAlias, NewRevisionDocEvent
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
+from ietf.ietfauth.utils import has_role
 from ietf.person.factories import PersonFactory
+from ietf.person.models import Person
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import TestCase, reload_db_objects, unicontent, login_testing_unauthorized
 from ietf.utils.text import xslugify
@@ -270,6 +273,25 @@ This test section has some text.
         for p in bad_batch:
             self.assertIn(p.plain_name(), error_text)
 
+    def test_change_responsible_options(self):
+        """Only valid options should be offered for responsible leadership field"""
+        doc = BofreqFactory()
+        url = urlreverse('ietf.doc.views_bofreq.change_responsible', kwargs={'name': doc.name})
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        option_ids = [opt['id'] for opt in json.loads(q('#id_responsible').attr('data-pre'))]
+        ad_people = [p for p in Person.objects.all() if has_role(p.user, 'Area Director')]
+        iab_people = [p for p in Person.objects.all() if has_role(p.user, 'IAB')]
+        self.assertGreater(len(ad_people), 0, 'Need at least one AD')
+        self.assertGreater(len(iab_people), 0, 'Need at least one IAB member')
+        self.assertGreater(Person.objects.count(), len(ad_people) + len(iab_people),
+                           'Need at least one Person not an AD nor IAB member')
+        # Next line will fail if there's overlap between ad_people and iab_people. This is by design.
+        # If the test setup changes and overlap is expected, need to separately check that area directors
+        # and IAB members wind up in the options list.
+        self.assertCountEqual(option_ids, [p.pk for p in ad_people + iab_people])
 
     def test_submit(self):
         doc = BofreqFactory()
