@@ -9,7 +9,7 @@ export default defineConfig({
     manifest: true,
     rollupOptions: {
       input: {
-        agenda: 'client/agenda/main.js'
+        main: 'client/main.js'
       }
     }
   },

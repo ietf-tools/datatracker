@@ -12,9 +12,9 @@ n-theme
 import { onBeforeUnmount ,onMounted, ref } from 'vue'
 import { NMessageProvider } from 'naive-ui'
 
-import { useAgendaStore } from './store'
+import { useAgendaStore } from './agenda/store'
 
-import NTheme from '../components/n-theme.vue'
+import NTheme from './components/n-theme.vue'
 
 // STORES
 
@@ -51,7 +51,7 @@ onBeforeUnmount(() => {
 <style lang="scss">
 @import "bootstrap/scss/functions";
 @import "bootstrap/scss/variables";
-@import "../shared/breakpoints";
+@import "./shared/breakpoints";
 
 .app-error {
   background-color: $red-500;

@@ -6,7 +6,7 @@ export default createRouter({
     {
       name: 'agenda',
       path: '/meeting/:meetingNumber(\\d+)?/agenda-neue',
-      component: () => import('./Agenda.vue'),
+      component: () => import('./agenda/Agenda.vue'),
       meta: {
         hideLeftMenu: true
       }
@@ -14,7 +14,7 @@ export default createRouter({
     {
       name: 'floor-plan',
       path: '/meeting/:meetingNumber(\\d+)?/floor-plan-neue',
-      component: () => import('./FloorPlan.vue'),
+      component: () => import('./agenda/FloorPlan.vue'),
       meta: {
         hideLeftMenu: true
       }
