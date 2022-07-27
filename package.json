@@ -2,7 +2,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
+    "preview": "vite build --mode test && vite preview --mode test",
     "legacy:dev": "parcel",
     "legacy:build": "parcel build",
     "cypress": "cypress run",

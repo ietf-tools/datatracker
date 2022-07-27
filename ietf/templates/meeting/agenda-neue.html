@@ -25,7 +25,7 @@ body {
     to { transform: rotate(360deg); }
 }
 
-#app-meeting-loading {
+#app-loading {
     position: fixed;
     top: 60px;
     left: 0;
@@ -36,7 +36,7 @@ body {
     backdrop-filter: blur(10px);
 }
 
-#app-meeting-loading:before {
+#app-loading:before {
     content: '';
     box-sizing: border-box;
     position: absolute;
@@ -53,7 +53,7 @@ body {
     z-index: 2000000000;
 }
 
-#app-meeting-loading:after {
+#app-loading:after {
     content: 'Loading meeting {{ meetingData.meetingNumber }}...';
     position: absolute;
     text-align: center;
@@ -74,6 +74,6 @@ body {
 {% endblock %}
 {% block content %}
     {% origin %}
-    <div id="app-meeting"></div>
-    <div id="app-meeting-loading"></div>
+    <div id="app"></div>
+    <div id="app-loading"></div>
 {% endblock %}

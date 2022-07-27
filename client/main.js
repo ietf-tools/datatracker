@@ -28,4 +28,4 @@ app.use(router)
 
 // Mount App
 
-app.mount('#app-meeting')
+app.mount('#app')
