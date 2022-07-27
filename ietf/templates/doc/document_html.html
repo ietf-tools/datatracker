@@ -16,7 +16,14 @@
             {% endif %}
         </title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
+{% comment %}
+        <script>{{ js|safe }}</script>
+        <style>{{ css|safe }}</style>
+{% endcomment %}
         <link rel="stylesheet" href="{% static 'ietf/css/document_html.css' %}">
+        {% if html %}
+            <link rel="stylesheet" href="{% static 'ietf/css/document_html_txt.css' %}">
+        {% endif %}
         <script src="{% static 'ietf/js/document_html.js' %}"></script>
         <style>
             {#  TODO: we want I-Ds to be standalone; include instead of linking #}
@@ -70,11 +77,17 @@
       </div>
     </nav>
     <div class="row g-0">
-        <div class="col d-flex justify-content-center pt-5 mt-4 pt-md-0 mt-md-2 m-2 m-lg-4 me-3 lh-sm" data-bs-spy="scroll" data-bs-target="#toc" data-bs-smooth-scroll="true" tabindex="0">
-            <div class="rfcmarkup">
-                 <!-- [html-validate-disable-block attr-quotes, void-style -- FIXME: rfcmarkup generates HTML with issues] -->
-                {{ doc.htmlized|default:"Generation of htmlized text failed"|linkify|safe }}
-            </div>
+        <div class="col d-flex justify-content-center pt-5 mt-4 pt-md-0 mt-md-2 m-2 m-lg-4 me-3 lh-sm" data-bs-spy="scroll" data-bs-target="#toc-nav" data-bs-smooth-scroll="true" tabindex="0" id="content">
+            {% if html %}
+                <div class="xml2rfc">
+                    {{ html|safe }}
+                </div>
+            {% else %}
+                <div class="rfcmarkup">
+                     <!-- [html-validate-disable-block attr-quotes, void-style -- FIXME: rfcmarkup generates HTML with issues] -->
+                    {{ doc.htmlized|default:"Generation of htmlized text failed"|linkify|safe }}
+                </div>
+            {% endif %}
         </div>
         <div class="d-print-none col-3 d-none d-md-block bg-light">
             <div class="position-fixed col-3 border-start sidebar overflow-scroll">
@@ -96,8 +109,8 @@
                         {% include "doc/document_info.html" with sidebar=True %}
                     </table>
                   </div>
-                  <div class="tab-pane fade" id="toc-tab-pane" role="tabpanel" aria-labelledby="toc-tab" tabindex="0">
-                    <nav class="nav nav-pills flex-column fw-bold small" id="toc"></nav>
+                  <div class="tab-pane fade mb-5" id="toc-tab-pane" role="tabpanel" aria-labelledby="toc-tab" tabindex="0">
+                    <nav class="nav nav-pills flex-column small" id="toc-nav"></nav>
                   </div>
                 </div>
               </div>

@@ -10,7 +10,7 @@ import debounce from "lodash/debounce";
 
 function make_nav() {
     const nav = document.createElement("nav");
-    nav.classList.add("nav-pills", "ps-3", "fw-normal", "flex-column");
+    nav.classList.add("nav-pills", "ps-3", "flex-column");
     return nav;
 }
 
@@ -18,7 +18,7 @@ function make_nav() {
 // otherwise the main view doesn't scroll?
 
 document.addEventListener("scroll", debounce(function () {
-    const items = document.querySelector("#toc")
+    const items = document.querySelector("#toc-nav")
         .querySelectorAll(".active");
     const item = [...items].pop();
     if (item) {
@@ -39,10 +39,10 @@ document.addEventListener("DOMContentLoaded", function (event) {
     // See https://github.com/twbs/bootstrap/issues/34381
     // TODO: check if this can be removed when bs5 is updated
     const ids = document.querySelectorAll(
-        ".rfcmarkup [id^=section-], .rfcmarkup [id^=appendix-]");
+        "#content [id^=section-], #content [id^=appendix-]");
     [...ids].map(id_el => id_el.id = id_el.id.replaceAll(/\./g, "-"));
     const hrefs = document.querySelectorAll(
-        ".rfcmarkup [href*='#section-'], .rfcmarkup [href*='#appendix-']"
+        "#content [href*='#section-'], #content [href*='#appendix-']"
     );
     [...hrefs].map(id_el => {
         const href = new URL(id_el.href);
@@ -59,15 +59,16 @@ document.addEventListener("DOMContentLoaded", function (event) {
 
     });
 
+    // Set up a nav pane
+    const toc_pane = document.querySelector("#toc-nav");
+
     // Extract section headings from document
     const headings = document.querySelectorAll(
-        // ".rfcmarkup h1, "
-        ".rfcmarkup h2, .rfcmarkup h3, " +
-        ".rfcmarkup h4, .rfcmarkup h5, .rfcmarkup h6"
+        // "#content h1, "
+        "#content h2, #content h3, " +
+        "#content h4, #content h5, #content h6"
     );
 
-    // Set up a nav pane
-    const toc_pane = document.querySelector("#toc");
     let nav_stack = [toc_pane];
     let cur_level = 0;
     headings.forEach(el => {
@@ -88,22 +89,35 @@ document.addEventListener("DOMContentLoaded", function (event) {
         const link = document.createElement("a");
         link.classList.add("nav-link", "py-0", "ps-1", "d-flex");
 
-        if (el.childNodes.length > 1) {
-            link.href = el.childNodes[0].attributes.href.nodeValue;
-        } else {
+        for (let i = 0; i < el.childNodes.length; i++) {
+            if (el.childNodes[i].attributes &&
+                el.childNodes[i].attributes.href.nodeValue) {
+                link.href = el.childNodes[i].attributes.href.nodeValue;
+            }
+        }
+        if (!link.href) {
             link.classList.add("disabled");
             link.setAttribute("href", "#");
         }
 
         const words = el.innerText.split(/\s+/);
-        const number = document.createElement("div");
-        number.classList.add("pe-1");
-        number.textContent = words[0];
-        link.appendChild(number);
+        let nr = "";
+        if (words[0].includes(".")) {
+            nr = words.shift();
+        } else if (words.length > 1 && words[1].includes(".")) {
+            nr = words.shift() + " " + words.shift();
+        }
+
+        if (nr) {
+            const number = document.createElement("div");
+            number.classList.add("pe-1");
+            number.textContent = nr;
+            link.appendChild(number);
+        }
+
         const text = document.createElement("div");
         text.classList.add("text-break");
-        text.textContent = words.slice(1)
-            .join(" ");
+        text.textContent = words.join(" ");
         link.appendChild(text);
 
         nav_stack[level].appendChild(link);

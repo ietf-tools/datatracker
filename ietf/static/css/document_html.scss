@@ -50,53 +50,60 @@ $bootstrap-icons-font-src: url("npm:bootstrap-icons/font/fonts/bootstrap-icons.w
 url("npm:bootstrap-icons/font/fonts/bootstrap-icons.woff") format("woff");
 @import "bootstrap-icons/font/bootstrap-icons";
 
-
-@media screen {
-    @include media-breakpoint-only(xs) {
-        .rfcmarkup {
-            font-size: 8.25pt;
-        }
-    }
-
-    @include media-breakpoint-up(sm) {
-        .rfcmarkup {
-            font-size: 9.5pt;
-        }
-    }
-
-    @include media-breakpoint-up(md) {
-        .rfcmarkup {
-            font-size: 9.5pt;
-        }
-    }
-
-    @include media-breakpoint-up(lg) {
-        .rfcmarkup {
-            font-size: 12pt;
-        }
-    }
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    font-weight: bold;
-    white-space: pre;
+.rfcmarkup,
+.xml2rfc {
     font-family: var(--bs-font-monospace);
-    font-size: 1em;
-    display: inline;
+
+
+    code {
+        font-size: 1em;
+    }
+
+    @media screen {
+        @include media-breakpoint-only(xs) {
+            font-size: 7.5pt;
+        }
+
+        @include media-breakpoint-up(sm) {
+            font-size: 9.5pt;
+        }
+
+        @include media-breakpoint-up(md) {
+            font-size: 9.5pt;
+        }
+
+        @include media-breakpoint-up(lg) {
+            font-size: 11pt;
+        }
+    }
 }
 
 .rfcmarkup {
+
+    pre,
+    code {
+        font-size: 1em;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-weight: bold;
+        white-space: pre;
+        font-size: 1em;
+        display: inline;
+    }
+
     overflow-x: hidden;
 
     pre {
-        width: 80ch;
+        width: 72ch;
         margin: 0;
         padding: 0;
+        overflow-x: hidden;
     }
 
     .grey,
@@ -116,6 +123,11 @@ tbody.meta tr {
 
 .sidebar {
     height: 100vh;
+
+    .toplink,
+    #name-table-of-contents {
+        display: none;
+    }
 
     th,
     td {
