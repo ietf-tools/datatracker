@@ -23,8 +23,10 @@ from ietf.utils.test_data import make_test_data
 
 def make_interim_meeting(group,date,status='sched'):
     system_person = Person.objects.get(name="(System)")
-    time = datetime.datetime.combine(date, datetime.time(9))
     meeting = create_interim_meeting(group=group,date=date)
+    time = meeting.tz().localize(
+        datetime.datetime.combine(date, datetime.time(9))
+    )
     session = SessionFactory(meeting=meeting, group=group,
                              attendees=10,
                              requested_duration=datetime.timedelta(minutes=20),
@@ -102,24 +104,37 @@ def make_meeting_test_data(meeting=None, create_interims=False):
 
     # slots
     session_date = meeting.date + datetime.timedelta(days=1)
+    tz = meeting.tz()
     slot1 = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
                                     duration=datetime.timedelta(minutes=60),
-                                    time=datetime.datetime.combine(session_date, datetime.time(9, 30)))
+                                    time=tz.localize(
+                                        datetime.datetime.combine(session_date, datetime.time(9, 30))
+                                    ))
     slot2 = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
                                     duration=datetime.timedelta(minutes=60),
-                                    time=datetime.datetime.combine(session_date, datetime.time(10, 50)))
+                                    time=tz.localize(
+                                        datetime.datetime.combine(session_date, datetime.time(10, 50))
+                                    ))
     breakfast_slot = TimeSlot.objects.create(meeting=meeting, type_id="lead", location=breakfast_room,
                                     duration=datetime.timedelta(minutes=90),
-                                    time=datetime.datetime.combine(session_date, datetime.time(7,0)))
+                                    time=tz.localize(
+                                        datetime.datetime.combine(session_date, datetime.time(7,0))
+                                    ))
     reg_slot = TimeSlot.objects.create(meeting=meeting, type_id="reg", location=reg_room,
                                        duration=datetime.timedelta(minutes=480),
-                                       time=datetime.datetime.combine(session_date, datetime.time(9,0)))
+                                       time=tz.localize(
+                                           datetime.datetime.combine(session_date, datetime.time(9,0))
+                                       ))
     break_slot = TimeSlot.objects.create(meeting=meeting, type_id="break", location=break_room,
                                          duration=datetime.timedelta(minutes=90),
-                                         time=datetime.datetime.combine(session_date, datetime.time(7,0)))
+                                         time=tz.localize(
+                                             datetime.datetime.combine(session_date, datetime.time(7,0))
+                                         ))
     plenary_slot = TimeSlot.objects.create(meeting=meeting, type_id="plenary", location=room,
                                          duration=datetime.timedelta(minutes=60),
-                                         time=datetime.datetime.combine(session_date, datetime.time(11,0)))
+                                         time=tz.localize(
+                                             datetime.datetime.combine(session_date, datetime.time(11,0))
+                                         ))
     # mars WG
     mars = Group.objects.get(acronym='mars')
     mars_session = SessionFactory(meeting=meeting, group=mars,

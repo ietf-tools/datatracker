@@ -60,7 +60,9 @@ class Command(BaseCommand):
                         type_id=type_id,
                         meeting=meeting,
                         location=room,
-                        time=datetime.datetime.combine(date, datetime.time(10, 0, 0)) + datetime.timedelta(hours=n),
+                        time=meeting.tz().localize(
+                            datetime.datetime.combine(date, datetime.time(10, 0, 0)) + datetime.timedelta(hours=n)
+                        ),
                         duration=datetime.timedelta(hours=1),
                     )
 

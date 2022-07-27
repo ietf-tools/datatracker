@@ -36,9 +36,11 @@ class ScheduleGeneratorTest(TestCase):
                     t = TimeSlotFactory(
                         meeting=self.meeting,
                         location=room,
-                        time=datetime.datetime.combine(
-                            self.meeting.date + datetime.timedelta(days=day),
-                            datetime.time(hour, 0),
+                        time=self.meeting.tz().localize(
+                            datetime.datetime.combine(
+                                self.meeting.date + datetime.timedelta(days=day),
+                                datetime.time(hour, 0),
+                            )
                         ),
                         duration=datetime.timedelta(minutes=60),
                     )

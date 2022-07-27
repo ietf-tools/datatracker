@@ -1151,7 +1151,7 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
                 meeting=meeting,
                 type=c['type'],
                 name=c['name'],
-                time=datetime.datetime.combine(c['day'], c['time']),
+                time=meeting.tz().localize(datetime.datetime.combine(c['day'], c['time'])),
                 duration=c['duration'],
                 location=c['location'],
                 show_location=c['show_location'],
@@ -1200,7 +1200,7 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
 
             timeslot.type = c['type']
             timeslot.name = c['name']
-            timeslot.time = datetime.datetime.combine(c['day'], c['time'])
+            timeslot.time = meeting.tz().localize(datetime.datetime.combine(c['day'], c['time']))
             timeslot.duration = c['duration']
             timeslot.location = c['location']
             timeslot.show_location = c['show_location']
@@ -2386,7 +2386,9 @@ def session_details(request, num, acronym):
 
     # Find the time of the meeting, so that we can look back historically 
     # for what the group was called at the time. 
-    meeting_time = datetime.datetime.combine(meeting.date, datetime.time()) 
+    meeting_time = meeting.tz().localize(
+        datetime.datetime.combine(meeting.date, datetime.time())
+    )
 
     groups = list(set([ s.group for s in sessions ]))
     group_replacements = find_history_replacements_active_at(groups, meeting_time) 
@@ -4102,7 +4104,7 @@ def create_timeslot(request, num):
         if form.is_valid():
             bulk_create_timeslots(
                 meeting,
-                [datetime.datetime.combine(day, form.cleaned_data['time'])
+                [meeting.tz().localize(datetime.datetime.combine(day, form.cleaned_data['time']))
                  for day in form.cleaned_data.get('days', [])],
                 form.cleaned_data['locations'],
                 dict(

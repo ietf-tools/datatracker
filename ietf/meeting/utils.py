@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import itertools
+import pytz
 import requests
 import subprocess
 
@@ -34,13 +35,17 @@ def session_time_for_sorting(session, use_meeting_date):
     if official_timeslot:
         return official_timeslot.time
     elif use_meeting_date and session.meeting.date:
-        return datetime.datetime.combine(session.meeting.date, datetime.time.min)
+        return session.meeting.tz().localize(
+            datetime.datetime.combine(session.meeting.date, datetime.time.min)
+        )
     else:
         first_event = SchedulingEvent.objects.filter(session=session).order_by('time', 'id').first()
         if first_event:
             return first_event.time
         else:
-            return datetime.datetime.min
+            # n.b. cannot interpret this in timezones west of UTC. That is not expected to be necessary,
+            # but could probably safely add a day to the minimum datetime to make that possible.
+            return pytz.utc.localize(datetime.datetime.min)
 
 def session_requested_by(session):
     first_event = SchedulingEvent.objects.filter(session=session).order_by('time', 'id').first()
@@ -159,7 +164,12 @@ def create_proceedings_templates(meeting):
 
 def finalize(meeting):
     end_date = meeting.end_date()
-    end_time = datetime.datetime.combine(end_date, datetime.datetime.min.time())+datetime.timedelta(days=1)
+    end_time = meeting.tz().localize(
+        datetime.datetime.combine(
+            end_date,
+            datetime.time.min,
+        )
+    ).astimezone(pytz.utc) + datetime.timedelta(days=1)
     for session in meeting.session_set.all():
         for sp in session.sessionpresentation_set.filter(document__type='draft',rev=None):
             rev_before_end = [e for e in sp.document.docevent_set.filter(newrevisiondocevent__isnull=False).order_by('-time') if e.time <= end_time ]
@@ -323,7 +333,9 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
     # synthesize AD constraints - we can treat them as a special kind of 'bethere'
     responsible_ad_for_group = {}
     session_groups = set(s.group for s in sessions if s.group and s.group.parent and s.group.parent.type_id == 'area')
-    meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
+    meeting_time = meeting.tz().localize(
+        datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
+    )
 
     # dig up historic AD names
     for group_id, history_time, pk in Person.objects.filter(rolehistory__name='ad', rolehistory__group__group__in=session_groups, rolehistory__group__time__lte=meeting_time).values_list('rolehistory__group__group', 'rolehistory__group__time', 'pk').order_by('rolehistory__group__time'):

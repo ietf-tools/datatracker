@@ -118,7 +118,10 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
     # assignments = list(assignments_queryset) # make sure we're set in stone
     assignments = assignments_queryset
 
-    meeting_time = datetime.datetime.combine(meeting.date, datetime.time())
+    # meeting_time is meeting-local midnight at the start of the meeting date
+    meeting_time = meeting.tz().localize(
+        datetime.datetime.combine(meeting.date, datetime.time())
+    )
 
     # replace groups with historic counterparts
     groups = [ ]
@@ -1149,11 +1152,15 @@ def sessions_post_cancel(request, sessions):
 
 
 def update_interim_session_assignment(form):
-    """Helper function to create / update timeslot assigned to interim session"""
-    time = datetime.datetime.combine(
-        form.cleaned_data['date'],
-        form.cleaned_data['time'])
+    """Helper function to create / update timeslot assigned to interim session
+
+    form is an InterimSessionModelForm
+    """
     session = form.instance
+    meeting = session.meeting
+    time = meeting.tz().localize(
+        datetime.datetime.combine(form.cleaned_data['date'], form.cleaned_data['time'])
+    )
     if session.official_timeslotassignment():
         slot = session.official_timeslotassignment().timeslot
         slot.time = time
@@ -1161,14 +1168,14 @@ def update_interim_session_assignment(form):
         slot.save()
     else:
         slot = TimeSlot.objects.create(
-            meeting=session.meeting,
+            meeting=meeting,
             type_id='regular',
             duration=session.requested_duration,
             time=time)
         SchedTimeSessAssignment.objects.create(
             timeslot=slot,
             session=session,
-            schedule=session.meeting.schedule)
+            schedule=meeting.schedule)
 
 def populate_important_dates(meeting):
     assert ImportantDate.objects.filter(meeting=meeting).exists() is False

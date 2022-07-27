@@ -52,6 +52,7 @@ from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.text import xslugify
+from ietf.utils.timezone import date_today, time_now
 
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import GroupFactory, GroupEventFactory, RoleFactory
@@ -430,7 +431,9 @@ class MeetingTests(BaseMeetingTestCase):
         session_date = meeting.date + datetime.timedelta(days=1)
         slot3 = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
                                         duration=datetime.timedelta(minutes=60),
-                                        time=datetime.datetime.combine(session_date, datetime.time(13, 30)))
+                                        time=meeting.tz().localize(
+                                            datetime.datetime.combine(session_date, datetime.time(13, 30))
+                                        ))
         SchedTimeSessAssignment.objects.create(timeslot=slot3, session=venus_session, schedule=meeting.schedule)
         url = urlreverse('ietf.meeting.views.agenda', kwargs=dict(num=meeting.number))
         r = self.client.get(url)
@@ -801,7 +804,12 @@ class MeetingTests(BaseMeetingTestCase):
         a1 = s1.official_timeslotassignment()
         t1 = a1.timeslot
         # Create an extra session
-        t2 = TimeSlotFactory.create(meeting=meeting, time=datetime.datetime.combine(meeting.date, datetime.time(11, 30)))
+        t2 = TimeSlotFactory.create(
+            meeting=meeting,
+            time=meeting.tz().localize(
+                datetime.datetime.combine(meeting.date, datetime.time(11, 30))
+            )
+        )
         s2 = SessionFactory.create(meeting=meeting, group=s1.group, add_to_schedule=False)
         SchedTimeSessAssignment.objects.create(timeslot=t2, session=s2, schedule=meeting.schedule)
         #
@@ -1105,7 +1113,9 @@ class EditMeetingScheduleTests(TestCase):
                     TimeSlotFactory(
                         meeting=meeting,
                         location=room,
-                        time=datetime.datetime.combine(meeting.date, time),
+                        time=meeting.tz().localize(
+                            datetime.datetime.combine(meeting.date, time)
+                        ),
                         duration=datetime.timedelta(minutes=duration),
                     )
 
@@ -1189,7 +1199,11 @@ class EditMeetingScheduleTests(TestCase):
         ]
 
         # Set up different sets of timeslots
-        t0 = datetime.datetime.combine(meeting.date, datetime.time(11, 0))
+        # Work with t0 in UTC for arithmetic. This does not change the results but is cleaner if someone looks
+        # at intermediate results which may be misleading until passed through tz.normalize().
+        t0 = meeting.tz().localize(
+            datetime.datetime.combine(meeting.date, datetime.time(11, 0))
+        ).astimezone(pytz.utc)
         dur = datetime.timedelta(hours=2)
         for room in room_groups[0]:
             TimeSlotFactory(meeting=meeting, location=room, duration=dur, time=t0)
@@ -1284,7 +1298,7 @@ class EditMeetingScheduleTests(TestCase):
         self.client.login(username=username, password=username + '+password')
 
         # Swap group 0's first and last sessions, first in the past
-        right_now = self._right_now_in(meeting.time_zone)
+        right_now = self._right_now_in(meeting.tz())
         for room in room_groups[0]:
             ts = room.timeslot_set.last()
             ts.time = right_now - datetime.timedelta(minutes=5)
@@ -1466,12 +1480,18 @@ class EditMeetingScheduleTests(TestCase):
         self.client.login(username=username, password=username + '+password')
 
         # Swap group 0's first and last sessions, first in the past
-        right_now = self._right_now_in(meeting.time_zone)
-        yesterday = (right_now - datetime.timedelta(days=1)).date()
-        day_before = (right_now - datetime.timedelta(days=2)).date()
+        right_now = self._right_now_in(meeting.tz())
+        yesterday = right_now.date() - datetime.timedelta(days=1)
+        day_before = right_now.date() - datetime.timedelta(days=2)
         for room in room_groups[0]:
             ts = room.timeslot_set.last()
-            ts.time = datetime.datetime.combine(yesterday, ts.time.time())
+            # Calculation keeps local clock time, shifted to a different day.
+            ts.time = meeting.tz().localize(
+                datetime.datetime.combine(
+                    yesterday,
+                    ts.time.astimezone(meeting.tz()).time()
+                ),
+            )
             ts.save()
         # timeslot_set is ordered by -time, so check that we know which is past/future
         self.assertTrue(room_groups[0][0].timeslot_set.last().time < right_now)
@@ -1505,7 +1525,12 @@ class EditMeetingScheduleTests(TestCase):
         # now with both in the past
         for room in room_groups[0]:
             ts = room.timeslot_set.first()
-            ts.time = datetime.datetime.combine(day_before, ts.time.time())
+            ts.time = meeting.tz().localize(
+                datetime.datetime.combine(
+                    day_before,
+                    ts.time.astimezone(meeting.tz()).time(),
+                )
+            )
             ts.save()
         past_slots = room_groups[0][0].timeslot_set.filter(time__lt=right_now)
         self.assertEqual(len(past_slots), 2, 'Need two timeslots in the past!')
@@ -1528,8 +1553,8 @@ class EditMeetingScheduleTests(TestCase):
             self.fail('Response was not valid JSON: {}'.format(err))
 
     @staticmethod
-    def _right_now_in(tzname):
-        right_now = timezone.now().astimezone(pytz.timezone(tzname))
+    def _right_now_in(tzinfo):
+        right_now = timezone.now().astimezone(tzinfo)
         if not settings.USE_TZ:
             right_now = right_now.replace(tzinfo=None)
         return right_now
@@ -1541,7 +1566,7 @@ class EditMeetingScheduleTests(TestCase):
             date=(timezone.now() - datetime.timedelta(days=1)).date(),
             days=3,
         )
-        right_now = self._right_now_in(meeting.time_zone)
+        right_now = self._right_now_in(meeting.tz())
 
         schedules = dict(
             official=meeting.schedule,
@@ -1601,7 +1626,7 @@ class EditMeetingScheduleTests(TestCase):
             date=(timezone.now() - datetime.timedelta(days=1)).date(),
             days=3,
         )
-        right_now = self._right_now_in(meeting.time_zone)
+        right_now = self._right_now_in(meeting.tz())
 
         schedules = dict(
             official=meeting.schedule,
@@ -1736,7 +1761,7 @@ class EditMeetingScheduleTests(TestCase):
             date=(timezone.now() - datetime.timedelta(days=1)).date(),
             days=3,
         )
-        right_now = self._right_now_in(meeting.time_zone)
+        right_now = self._right_now_in(meeting.tz())
 
         schedules = dict(
             official=meeting.schedule,
@@ -2068,7 +2093,7 @@ class EditTimeslotsTests(TestCase):
                     TimeSlotFactory(
                         meeting=meeting,
                         location=room,
-                        time=datetime.datetime.combine(day, t),
+                        time=meeting.tz().localize(datetime.datetime.combine(day, t)),
                         duration=duration,
                     )
                     for t in times
@@ -2149,17 +2174,21 @@ class EditTimeslotsTests(TestCase):
             TimeSlotFactory(
                 meeting=meeting,
                 location=meeting.room_set.first(),
-                time=datetime.datetime.combine(
-                    meeting.get_meeting_date(day).date(),
-                    datetime.time(hour=11)
+                time=meeting.tz().localize(
+                    datetime.datetime.combine(
+                        meeting.get_meeting_date(day).date(),
+                        datetime.time(hour=11),
+                    )
                 ),
             )
             TimeSlotFactory(
                 meeting=meeting,
                 location=meeting.room_set.first(),
-                time=datetime.datetime.combine(
-                    meeting.get_meeting_date(day).date(),
-                    datetime.time(hour=14)
+                time=meeting.tz().localize(
+                    datetime.datetime.combine(
+                        meeting.get_meeting_date(day).date(),
+                        datetime.time(hour=14),
+                    )
                 ),
             )
 
@@ -2258,9 +2287,8 @@ class EditTimeslotsTests(TestCase):
 
         name_before = 'Name Classic (tm)'
         type_before = 'regular'
-        time_before = datetime.datetime.combine(
-            meeting.date,
-            datetime.time(hour=10),
+        time_before = meeting.tz().localize(
+            datetime.datetime.combine(meeting.date, datetime.time(hour=10))
         )
         duration_before = datetime.timedelta(minutes=60)
         show_location_before = True
@@ -3288,7 +3316,9 @@ class EditTests(TestCase):
         room = Room.objects.get(meeting=meeting, session_types='regular')
         base_timeslot = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
                                                 duration=datetime.timedelta(minutes=50),
-                                                time=datetime.datetime.combine(meeting.date + datetime.timedelta(days=2), datetime.time(9, 30)))
+                                                time=meeting.tz().localize(
+                                                    datetime.datetime.combine(meeting.date + datetime.timedelta(days=2), datetime.time(9, 30))
+                                                ))
 
         timeslots = list(TimeSlot.objects.filter(meeting=meeting, type='regular').order_by('time'))
 
@@ -3510,7 +3540,12 @@ class EditTests(TestCase):
         self.assertIn("#scroll=1234", r['Location'])
 
         test_timeslot = TimeSlot.objects.get(meeting=meeting, name="IETF Testing")
-        self.assertEqual(test_timeslot.time, datetime.datetime.combine(meeting.date, datetime.time(8, 30)))
+        self.assertEqual(
+            test_timeslot.time,
+            meeting.tz().localize(
+                datetime.datetime.combine(meeting.date, datetime.time(8, 30))
+            ),
+        )
         self.assertEqual(test_timeslot.duration, datetime.timedelta(hours=1, minutes=30))
         self.assertEqual(test_timeslot.location_id, break_room.pk)
         self.assertEqual(test_timeslot.show_location, True)
@@ -3552,7 +3587,12 @@ class EditTests(TestCase):
         })
         self.assertNoFormPostErrors(r)
         test_timeslot.refresh_from_db()
-        self.assertEqual(test_timeslot.time, datetime.datetime.combine(meeting.date, datetime.time(9, 30)))
+        self.assertEqual(
+            test_timeslot.time,
+            meeting.tz().localize(
+                datetime.datetime.combine(meeting.date, datetime.time(9, 30))
+            ),
+        )
         self.assertEqual(test_timeslot.duration, datetime.timedelta(hours=1))
         self.assertEqual(test_timeslot.location_id, breakfast_room.pk)
         self.assertEqual(test_timeslot.show_location, False)
@@ -4679,9 +4719,9 @@ class InterimTests(TestCase):
     def do_interim_request_single_virtual(self, emails_expected):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
-        date = datetime.date.today() + datetime.timedelta(days=30)
-        time = timezone.now().time().replace(microsecond=0,second=0)
-        dt = datetime.datetime.combine(date, time)
+        date = date_today() + datetime.timedelta(days=30)
+        time = time_now().replace(microsecond=0,second=0)
+        dt = pytz.utc.localize(datetime.datetime.combine(date, time))
         duration = datetime.timedelta(hours=3)
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
@@ -4750,13 +4790,14 @@ class InterimTests(TestCase):
     def test_interim_request_single_in_person(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
-        date = datetime.date.today() + datetime.timedelta(days=30)
-        time = timezone.now().time().replace(microsecond=0,second=0)
-        dt = datetime.datetime.combine(date, time)
+        date = date_today() + datetime.timedelta(days=30)
+        time = time_now().replace(microsecond=0,second=0)
+        time_zone = 'America/Los_Angeles'
+        tz = pytz.timezone(time_zone)
+        dt = tz.localize(datetime.datetime.combine(date, time))
         duration = datetime.timedelta(hours=3)
         city = 'San Francisco'
         country = 'US'
-        time_zone = 'America/Los_Angeles'
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
@@ -4797,16 +4838,17 @@ class InterimTests(TestCase):
 
     def test_interim_request_multi_day(self):
         make_meeting_test_data()
-        date = datetime.date.today() + datetime.timedelta(days=30)
+        date = date_today() + datetime.timedelta(days=30)
         date2 = date + datetime.timedelta(days=1)
-        time = timezone.now().time().replace(microsecond=0,second=0)
-        dt = datetime.datetime.combine(date, time)
-        dt2 = datetime.datetime.combine(date2, time)
+        time = time_now().replace(microsecond=0,second=0)
+        time_zone = 'America/Los_Angeles'
+        tz = pytz.timezone(time_zone)
+        dt = tz.localize(datetime.datetime.combine(date, time))
+        dt2 = tz.localize(datetime.datetime.combine(date2, time))
         duration = datetime.timedelta(hours=3)
         group = Group.objects.get(acronym='mars')
         city = 'San Francisco'
         country = 'US'
-        time_zone = 'America/Los_Angeles'
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
@@ -4923,7 +4965,7 @@ class InterimTests(TestCase):
     def test_interim_request_series(self):
         make_meeting_test_data()
         meeting_count_before = Meeting.objects.filter(type='interim').count()
-        date = datetime.date.today() + datetime.timedelta(days=30)
+        date = date_today() + datetime.timedelta(days=30)
         if (date.month, date.day) == (12, 31):
             # Avoid date and date2 in separate years
             # (otherwise the test will fail if run on December 1st)
@@ -4933,14 +4975,15 @@ class InterimTests(TestCase):
         if date.year != date2.year:
             date += datetime.timedelta(days=1)
             date2 += datetime.timedelta(days=1)
-        time = timezone.now().time().replace(microsecond=0,second=0)
-        dt = datetime.datetime.combine(date, time)
-        dt2 = datetime.datetime.combine(date2, time)
+        time = time_now().replace(microsecond=0,second=0)
+        time_zone = 'America/Los_Angeles'
+        tz = pytz.timezone(time_zone)
+        dt = tz.localize(datetime.datetime.combine(date, time))
+        dt2 = tz.localize(datetime.datetime.combine(date2, time))
         duration = datetime.timedelta(hours=3)
         group = Group.objects.get(acronym='mars')
         city = ''
         country = ''
-        time_zone = 'America/Los_Angeles'
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
@@ -5630,7 +5673,11 @@ class InterimTests(TestCase):
         a1 = s1.official_timeslotassignment()
         t1 = a1.timeslot
         # Create an extra session
-        t2 = TimeSlotFactory.create(meeting=meeting, time=datetime.datetime.combine(meeting.date, datetime.time(11, 30)))
+        t2 = TimeSlotFactory.create(
+            meeting=meeting,
+            time=meeting.tz().localize(
+                datetime.datetime.combine(meeting.date, datetime.time(11, 30))
+            ))
         s2 = SessionFactory.create(meeting=meeting, group=s1.group, add_to_schedule=False)
         SchedTimeSessAssignment.objects.create(timeslot=t2, session=s2, schedule=meeting.schedule)
         #

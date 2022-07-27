@@ -1929,7 +1929,9 @@ class WeekviewTests(IetfSeleniumTestCase):
         )
         overnight_timeslot = TimeSlotFactory(
             meeting=self.meeting,
-            time=datetime.datetime.combine(self.meeting.date, datetime.time(23,0)),
+            time=self.meeting.tz().localize(
+                datetime.datetime.combine(self.meeting.date, datetime.time(23,0))
+            ),
             duration=duration,
         )
         overnight_session.timeslotassignments.create(timeslot=overnight_timeslot, schedule=self.meeting.schedule)
@@ -2688,13 +2690,17 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
         delete: [TimeSlot] = TimeSlotFactory.create_batch(
             2,
             meeting=self.meeting,
-            time=datetime.datetime.combine(delete_day, delete_time),
+            time=self.meeting.tz().localize(
+                datetime.datetime.combine(delete_day, delete_time)
+            ),
             duration=duration)
 
         keep: [TimeSlot] = [
             TimeSlotFactory(
                 meeting=self.meeting,
-                time=datetime.datetime.combine(day, time),
+                time=self.meeting.tz().localize(
+                    datetime.datetime.combine(day, time)
+                ),
                 duration=duration
             )
             for (day, time) in (
@@ -2711,7 +2717,9 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
             '[data-col-id="{}T{}-{}"]'.format(
                 delete_day.isoformat(),
                 delete_time.strftime('%H:%M'),
-                (datetime.datetime.combine(delete_day, delete_time) + duration).strftime(
+                self.meeting.tz().localize(
+                    datetime.datetime.combine(delete_day, delete_time) + duration
+                ).astimezone(pytz.utc).strftime(
                     '%H:%M'
                 ))
         )
@@ -2733,14 +2741,18 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
         delete: [TimeSlot] = [
             TimeSlotFactory(
                 meeting=self.meeting,
-                time=datetime.datetime.combine(delete_day, time),
+                time=self.meeting.tz().localize(
+                    datetime.datetime.combine(delete_day, time)
+                ),
             ) for time in times
         ]
 
         keep: [TimeSlot] = [
             TimeSlotFactory(
                 meeting=self.meeting,
-                time=datetime.datetime.combine(day, time),
+                time=self.meeting.tz().localize(
+                    datetime.datetime.combine(day, time)
+                ),
             ) for day in other_days for time in times
         ]
 

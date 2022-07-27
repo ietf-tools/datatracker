@@ -187,7 +187,9 @@ class TimeSlotFactory(factory.django.DjangoModelFactory):
     
     @factory.lazy_attribute
     def time(self):
-        return datetime.datetime.combine(self.meeting.date,datetime.time(11,0))
+        return self.tz().localize(
+            datetime.datetime.combine(self.meeting.date, datetime.time(11, 0))
+        )
 
     @factory.lazy_attribute
     def duration(self):
