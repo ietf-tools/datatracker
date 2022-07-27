@@ -617,33 +617,19 @@ class TimeSlot(models.Model):
         return self.meeting.tz()
 
     def tzname(self):
-        if self.tz():
-            return self.tz().tzname(self.time)
-        else:
-            return ""
+        return self.tz().tzname(self.time)
 
     def utc_start_time(self):
-        if self.tz():
-            local_start_time = self.tz().localize(self.time)
-            return local_start_time.astimezone(pytz.utc)
-        else:
-            return None
+        return self.time.astimezone(pytz.utc)
 
     def utc_end_time(self):
-        utc_start = self.utc_start_time()
-        # Add duration after converting start time, otherwise errors creep in around DST change
-        return None if utc_start is None else utc_start + self.duration
+        return self.utc_start_time() + self.duration
 
     def local_start_time(self):
-        if self.tz():
-            return self.tz().localize(self.time)
-        else:
-            return None
+        return self.time.astimezone(self.tz())
 
     def local_end_time(self):
-        local_start = self.local_start_time()
-        # Add duration after converting start time, otherwise errors creep in around DST change
-        return None if local_start is None else local_start + self.duration
+        return (self.time + self.duration).astimezone(self.tz())
 
     @property
     def js_identifier(self):
