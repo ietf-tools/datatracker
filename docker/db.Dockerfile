@@ -14,6 +14,7 @@ ENV MARIADB_PASSWORD=RkTkDPFnKpko
 
 # Import the latest database dump
 ADD https://www.ietf.org/lib/dt/sprint/ietf_utf8.sql.gz /docker-entrypoint-initdb.d/
+RUN chmod 0777 /docker-entrypoint-initdb.d/ietf_utf8.sql.gz
 
 # Need to change the datadir to something else that /var/lib/mysql because the parent docker file defines it as a volume.
 # https://docs.docker.com/engine/reference/builder/#volume :
