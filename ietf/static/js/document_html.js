@@ -72,7 +72,8 @@ document.addEventListener("DOMContentLoaded", function (event) {
     let nav_stack = [toc_pane];
     let cur_level = 0;
     headings.forEach(el => {
-        let level = el.tagName.at(-1) - 2;
+        let level = el.tagName.charAt(el.tagName.length - 1) -
+            2;
         if (level < cur_level) {
             while (level < cur_level) {
                 let nav = nav_stack.pop();
@@ -91,8 +92,8 @@ document.addEventListener("DOMContentLoaded", function (event) {
 
         for (let i = 0; i < el.childNodes.length; i++) {
             if (el.childNodes[i].attributes &&
-                el.childNodes[i].attributes.href.nodeValue) {
-                link.href = el.childNodes[i].attributes.href.nodeValue;
+                el.childNodes[i].attributes.href.value) {
+                link.href = el.childNodes[i].attributes.href.value;
             }
         }
         if (!link.href) {

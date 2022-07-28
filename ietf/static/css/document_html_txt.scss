@@ -6,14 +6,9 @@
 
 .xml2rfc {
 
-// body {
-  // color: black;
-  // font-family: monospace;
-  // font-size: .875em;
   line-height: var(--line);
   width: 72ch;
-  // margin: var(--line) 3ch;
-// }
+
 h1, h2, h3, h4, h5 {
   font-weight: bold;
   font-size: inherit;
@@ -45,7 +40,7 @@ blockquote {
   display: none;
 }
 #identifiers {
-  margin: 0 0 0 0; /* Use a bogus alignment to align with text rendering */
+  margin: 0;
   position: relative;
 }
 #identifiers dt {
