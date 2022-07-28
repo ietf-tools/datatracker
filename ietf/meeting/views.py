@@ -1287,8 +1287,9 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
     for t in timeslot_qs:
         timeslots_by_day_and_room[(t.time.date(), t.location_id)].append(t)
 
-    min_time = min([t.time.time() for t in timeslot_qs] + [datetime.time(8)])
-    max_time = max([t.end_time().time() for t in timeslot_qs] + [datetime.time(22)])
+    # Calculate full time range for display in meeting-local time, always showing at least 8am to 10pm
+    min_time = min([t.local_start_time().time() for t in timeslot_qs] + [datetime.time(8)])
+    max_time = max([t.local_end_time().time() for t in timeslot_qs] + [datetime.time(22)])
     min_max_delta = datetime.datetime.combine(meeting.date, max_time) - datetime.datetime.combine(meeting.date, min_time)
 
     day_grid = []
@@ -1310,7 +1311,14 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
                     if s:
                         t.assigned_sessions.append(s)
 
-                t.left_offset = 100.0 * (t.time - datetime.datetime.combine(t.time.date(), min_time)) / min_max_delta
+                local_start_dt = t.local_start_time()
+                local_min_dt = local_start_dt.replace(
+                    hour=min_time.hour,
+                    minute=min_time.minute,
+                    second=min_time.second,
+                    microsecond=min_time.microsecond,
+                )
+                t.left_offset = 100.0 * (local_start_dt - local_min_dt) / min_max_delta
                 t.layout_width = min(100.0 * t.duration / min_max_delta, 100 - t.left_offset)
                 ts.append(t)
 
