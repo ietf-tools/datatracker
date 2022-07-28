@@ -42,7 +42,7 @@ RUN pigz -v -d /ietf_utf8.sql.gz && \
     sed -i -e 's/ENGINE=MyISAM/ENGINE=InnoDB/' /ietf_utf8.sql
 # see https://dba.stackexchange.com/a/83385
 RUN sed -i 's/\[mysqld\]/\[mysqld\]\ninnodb_buffer_pool_size = 1G\ninnodb_log_buffer_size = 128M\ninnodb_log_file_size = 256M\ninnodb_write_io_threads = 8\ninnodb_flush_log_at_trx_commit = 0/' /etc/mysql/mariadb.conf.d/50-server.cnf && \
-    service mariadb start --innodb-doublewrite=0 && \
+    systemctl start mariadb.service --innodb-doublewrite=0 && \
     echo "This sequence will take a long time, please be patient" && \
     mysqladmin -u root --default-character-set=utf8 create ietf_utf8 && \
     bash -c "cd /mariadb-sys-master && mysql --user root < sys_10.sql" && \
