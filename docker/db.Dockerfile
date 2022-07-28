@@ -47,8 +47,7 @@ RUN sed -i 's/\[mysqld\]/\[mysqld\]\ninnodb_buffer_pool_size = 1G\ninnodb_log_bu
     mysqladmin -u root --default-character-set=utf8 create ietf_utf8 && \
     bash -c "cd /mariadb-sys-master && mysql --user root < sys_10.sql" && \
     bash -c "mysql --user root ietf_utf8 <<< \"GRANT ALL PRIVILEGES ON *.* TO 'django'@'%' IDENTIFIED BY 'RkTkDPFnKpko'; FLUSH PRIVILEGES;\"" && \
-    bash -c "mysql --user=django --password=RkTkDPFnKpko -f ietf_utf8 < /ietf_utf8.sql" && \
-    service mariadb stop
+    bash -c "mysql --user=django --password=RkTkDPFnKpko -f ietf_utf8 < /ietf_utf8.sql"
 
 # ===================
 # --- Final Image ---
