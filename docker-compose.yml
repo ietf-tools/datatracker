@@ -41,7 +41,7 @@ services:
         volumes:
             - mariadb-data:/var/lib/mysql
         environment:
-            MYSQL_ROOT_PASSWORD: ietf
+            MYSQL_ROOT_PASSWORD: RkTkDPFnKpko
             MYSQL_DATABASE: ietf_utf8
             MYSQL_USER: django
             MYSQL_PASSWORD: RkTkDPFnKpko
