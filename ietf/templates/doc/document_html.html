@@ -16,18 +16,8 @@
             {% endif %}
         </title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-{% comment %}
         <script>{{ js|safe }}</script>
         <style>{{ css|safe }}</style>
-{% endcomment %}
-        <link rel="stylesheet" href="{% static 'ietf/css/document_html.css' %}">
-        {% if html %}
-            <link rel="stylesheet" href="{% static 'ietf/css/document_html_txt.css' %}">
-        {% endif %}
-        <script src="{% static 'ietf/js/document_html.js' %}"></script>
-        <style>
-            {#  TODO: we want I-Ds to be standalone; include instead of linking #}
-        </style>
     <link rel="alternate"
           type="application/atom+xml"
           title="Document changes"

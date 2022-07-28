@@ -51,7 +51,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django import forms
-# from django.contrib.staticfiles import finders
+from django.contrib.staticfiles import finders
 
 
 import debug                            # pyflakes:ignore
@@ -446,12 +446,6 @@ def document_main(request, name, rev=None, document_html=False):
         else:
             stream_desc = "(None)"
 
-        # css = None
-        # js = None
-        # if document_html:
-        #     css = Path(finders.find("ietf/css/document_html.css")).read_text()
-        #     js = Path(finders.find("ietf/js/document_html.js")).read_text()
-
         html = None
         if doc.get_state_slug() == "rfc":
             html = Path(os.path.join(settings.RFC_PATH, doc.canonical_name() + ".html")).read_text()
@@ -466,11 +460,18 @@ def document_main(request, name, rev=None, document_html=False):
                     t.getparent().remove(t)
             html = etree.tostring(body, encoding=str, method="html")
 
+        js = None
+        css = None
+        if document_html:
+            js = Path(finders.find("ietf/js/document_html.js")).read_text()
+            css = Path(finders.find("ietf/css/document_html.css")).read_text()
+            if html:
+                css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
         return render(request, "doc/document_draft.html" if document_html is False else "doc/document_html.html",
                                   dict(doc=doc,
                                        document_html=document_html,
-                                       # css=css,
-                                       # js=js,
+                                       css=css,
+                                       js=js,
                                        html=html,
                                        group=group,
                                        top=top,
