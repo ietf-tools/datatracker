@@ -36,7 +36,7 @@ blockquote {
 #external-metadata {
   display: none !important; /* metadata.min.js is evil because it produces unstyleable goop */
 }
-.ears, #identifiers :is(.label-stream, .label-authors, .label-rfc) {
+.ears, #identifiers .label-stream, #identifiers .label-authors, #identifiers.label-rfc {
   display: none;
 }
 #identifiers {
@@ -101,7 +101,7 @@ ol, ul {
 ol {
   margin: 0 0 0 6ch; /* todo: deal with lists that have >= 10 items */
 }
-:is(ol, ul) ol {
+ol ol, ul ol {
   margin: 0 0 0 3ch;
 }
 ul {
@@ -111,7 +111,7 @@ ul {
 ul ul {
   list-style-type: '-';
 }
-:is(ul, ol) ul {
+ul ul, ol ul {
   margin-left: 1ch;
 }
 ul ul ul {
@@ -124,7 +124,7 @@ li {
 .compact li {
   margin: 0;
 }
-:is(li, dd) p:first-child {
+li p:first-child, dd p:first-child {
   margin: 0;
 }
 dt {
@@ -135,7 +135,7 @@ dt {
 dd {
   margin: var(--paragraph);
 }
-dl.compact :is(dt, dd) {
+dl.compact dt, dl.compact dd {
   margin-top: 0;
   margin-bottom: 0;
 }
@@ -153,29 +153,31 @@ dd.break {
 pre {
   margin: var(--line) 0;
 }
-div:is(.artwork, .sourcecode) {
+div.artwork, div.sourcecode {
   display: flex;
   flex-wrap: nowrap;
   align-items: end;
 }
-div:is(.artwork, .sourcecode).alignCenter {
+div.artwork.alignCenter, div.sourcecode.alignCenter {
   justify-content: center;
+  text-align: center;
 }
-div:is(.artwork, .sourcecode).alignRight {
+div.artwork.alignRight, div.sourcecode.alignRight {
   justify-content: end;
+  text-align: end;
 }
-div:is(.artwork, .sourcecode)::before {
+div.artwork::before, div.sourcecode::before {
   flex: 0 1 3ch;
   content: "";
 }
-div:is(.artwork, .sourcecode).alignRight::before {
+div.artwork.alignRight::before, div.sourcecode.alignRight::before {
   flex-grow: 1;
 }
-div:is(.artwork, .sourcecode) pre {
+div.artwork pre, div.sourcecode pre {
   flex: 0 0 auto;
   margin: 0;
 }
-div:is(.artwork, .sourcecode) .pilcrow {
+div.artwork .pilcrow, div.sourcecode .pilcrow {
   flex: 0 0 1ch;
 }
 figcaption, table caption {
