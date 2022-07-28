@@ -40,6 +40,8 @@ blockquote {
   display: none;
 }
 #identifiers {
+  min-height: 12em;
+  min-height: calc(10*var(--line));
   margin: 0;
   position: relative;
 }

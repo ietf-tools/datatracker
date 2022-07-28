@@ -55,9 +55,14 @@
 .xml2rfc {
     font-family: var(--bs-font-monospace);
 
+    caption {
+        padding: 0;
+        color: var(--bs-body-color);
+    }
 
     code {
         font-size: 1em;
+        color: var(--bs-body-color);
     }
 
     @media screen {
