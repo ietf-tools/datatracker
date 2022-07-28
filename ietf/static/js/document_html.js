@@ -107,6 +107,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
             nr = words.shift();
         } else if (words.length > 1 && words[1].includes(".")) {
             nr = words.shift() + " " + words.shift();
+            nr = nr.replace(/\s*Appendix\s*/, "");
         }
 
         if (nr) {
