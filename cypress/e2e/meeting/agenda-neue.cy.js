@@ -1,13 +1,34 @@
-describe('meeting -> agenda-neue', () => {
-  const meetingNumber = 113
+import { DateTime } from 'luxon'
 
+import meetingData from '../../fixtures/agenda-114-data.json'
+
+describe('meeting -> agenda-neue [desktop]', () => {
   before(() => {
-    cy.intercept('GET', `/api/meeting/${meetingNumber}/agenda-data`, { fixture: `agenda-${meetingNumber}-data.json` }).as('getMeetingData')
-    cy.visit(`/meeting/${meetingNumber}/agenda-neue`)
+    cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { fixture: `agenda-${meetingData.meeting.number}-data.json` }).as('getMeetingData')
+    cy.viewport('macbook-16')
+    cy.visit(`/meeting/${meetingData.meeting.number}/agenda-neue`, {
+      onBeforeLoad: (win) => {
+        const meetingDataScript = win.document.createElement('script')
+        meetingDataScript.id = 'meeting-data'
+        meetingDataScript.type = 'application/json'
+        meetingDataScript.innerHTML = `{"meetingNumber": "${meetingData.meeting.number}"}`
+        win.document.querySelector('head').appendChild(meetingDataScript)
+      }
+    })
     cy.wait('@getMeetingData')
   })
 
-  it(`have IETF ${meetingNumber} title`, () => {
-    cy.get('h1').should('have.string', `IETF ${meetingNumber}`)
+  it(`has IETF ${meetingData.meeting.number} title`, () => {
+    cy.get('.agenda h1').first().contains(`IETF ${meetingData.meeting.number} Meeting Agenda`)
+  })
+  it(`has meeting city subtitle`, () => {
+    cy.get('.agenda h4').first().contains(meetingData.meeting.city)
+  })
+  it(`has meeting date subtitle`, () => {
+    cy.get('.agenda h4').first().contains(/[a-zA-Z] [0-9]{1,2} - ([a-zA-Z]+ )?[0-9]{1,2}, [0-9]{4}/i)
+  })
+  it(`has meeting last updated datetime`, () => {
+    const updatedDateTime = DateTime.fromISO(meetingData.meeting.updated).setZone(meetingData.meeting.timezone).toFormat(`DD 'at' tt ZZZZ`)
+    cy.get('.agenda h6').first().contains(updatedDateTime)
   })
 })
