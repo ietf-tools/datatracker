@@ -1,0 +1,23 @@
+{% if file_urls %}
+    <div class="buttonlist">
+    {% for label, url in file_urls %}
+        <a class="btn btn-primary btn-sm" href="{{ url }}">
+            {% if label == 'pdf' or label == 'pdfized' %}
+                <i class="bi bi-file-pdf"></i> pdf
+            {% elif label == 'xml' or label == 'html' %}
+                <i class="bi bi-file-code"></i> {{ label}}
+            {% elif label == 'htmlized' %}
+                <i class="bi bi-file-code"></i> htmlized
+            {% elif label == 'bibtex' %}
+                <i class="bi bi-file-ruled"></i> bibtex
+            {% elif label == 'plain text' %}
+                <i class="bi bi-file-text"></i> txt
+            {% elif label == 'with errata' %}
+                <i class="bi bi-file-diff"></i> w/errata
+            {% endif %}
+        </a>
+    {% endfor %}
+</div>
+{% else %}
+    <span class="text-muted">(not online)</span>
+{% endif %}
