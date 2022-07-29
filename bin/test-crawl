@@ -54,6 +54,7 @@ parser.add_argument('--validator-nu', dest='validator_nu', action='store_true',
 parser.add_argument('--validate-all', dest='validate_all', action='store_true', default=False,
                     help='Run html 5 validation on all pages, without skipping similar urls. '
                     '(The default is to only run validation on one of /foo/1/, /foo/2/, /foo/3/, etc.)')
+parser.add_argument('--skip-html-validation', dest='skip_html_validation', action='store_true', help='Skip HTML validation.',default=False)
 parser.add_argument('-v', '--verbose', action='store_true', default=False,
                     help='Be more verbose')
 parser.add_argument('-x', '--exclude', action='append', default=[], help="Exclude URLs matching pattern")
@@ -149,6 +150,9 @@ def extract_tastypie_urls(content):
                     yield uri
 
 def check_html_valid(url, response, args):
+    if args.skip_html_validation:
+        return
+
     global parser, validated_urls, doc_types, warnings
     key = url
     if not args.validate_all:
