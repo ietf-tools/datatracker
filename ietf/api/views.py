@@ -36,7 +36,6 @@ from ietf.ietfauth.utils import role_required
 from ietf.meeting.models import Meeting
 from ietf.stats.models import MeetingRegistration
 from ietf.utils.decorators import require_api_key
-from ietf.utils.log import log
 from ietf.utils.models import DumpInfo
 
 
@@ -154,7 +153,6 @@ def api_new_meeting_registration(request):
             if value is None and item in required_fields:
                 missing_fields.append(item)
             data[item] = value
-        log("Meeting registration notification: %s" % json.dumps(data))
         if missing_fields:
             return err(400, "Missing parameters: %s" % ', '.join(missing_fields))
         number = data['meeting']

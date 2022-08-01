@@ -31,7 +31,6 @@ from django.contrib import admin
 from ietf.person.models import Person
 from ietf.person.utils import (merge_persons, send_merge_notification, handle_users,
     determine_merge_order)
-from ietf.utils.log import log
 
 
 def main():
