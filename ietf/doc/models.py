@@ -1224,9 +1224,7 @@ class DocEvent(models.Model):
 
     def __str__(self):
         return u"%s %s by %s at %s" % (self.doc.name, self.get_type_display().lower(), self.by.plain_name(), self.time)
-
-    def save(self, *args, **kwargs):
-        super(DocEvent, self).save(*args, **kwargs)        
+    
     class Meta:
         ordering = ['-time', '-id']
         indexes = [
