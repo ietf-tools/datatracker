@@ -19,6 +19,8 @@ describe('meeting -> agenda-neue [past, desktop]', () => {
     cy.wait('@getMeetingData')
   })
 
+  // -> HEADER
+
   it(`has IETF ${meetingData.meeting.number} title`, () => {
     cy.get('.agenda h1').first().contains(`IETF ${meetingData.meeting.number} Meeting Agenda`)
   })
@@ -31,5 +33,19 @@ describe('meeting -> agenda-neue [past, desktop]', () => {
   it(`has meeting last updated datetime`, () => {
     const updatedDateTime = DateTime.fromISO(meetingData.meeting.updated).setZone(meetingData.meeting.timezone).toFormat(`DD 'at' tt ZZZZ`)
     cy.get('.agenda h6').first().contains(updatedDateTime)
+  })
+
+  // -> NAV
+
+  it(`has the correct navigation items`, () => {
+    cy.get('.agenda .meeting-nav > li').should('have.length', 3)
+    cy.get('.agenda .meeting-nav > li').first().contains('Agenda')
+    cy.get('.agenda .meeting-nav > li').eq(1).contains('Floor plan')
+    cy.get('.agenda .meeting-nav > li').last().contains('Plaintext')
+  })
+  it(`has the Settings button on the right`, () => {
+    cy.get('.agenda .meeting-nav').next('button').should('exist')
+      .and('include.text', 'Settings')
+    // cy.get('.agenda .meeting-nav').next('button').its('offsetLeft').should('be.greaterThan', 1000)
   })
 })
