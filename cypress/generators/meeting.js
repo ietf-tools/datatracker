@@ -13,11 +13,33 @@ export default {
         startDate: startDate.toISODate(),
         endDate: endDate.toISODate(),
         updated: faker.date.between(startDate.toISO(), endDate.toISO()).toISOString(),
-        timezone: faker.address.timeZone(),
+        timezone: 'Asia/Tokyo',
         infoNote: faker.lorem.paragraph(4),
         warningNote: ''
       },
-      categories: [],
+      categories: [
+        [],
+        [],
+        [
+          {
+            "label": "Plenary",
+            "keyword": "plenary",
+            "toggled_by": [],
+            "is_bof": false,
+            "children": [
+              {
+                "label": "IETF Plenary",
+                "keyword": "ietf-plenary",
+                "toggled_by": [
+                  "plenary",
+                  "ietf"
+                ],
+                "is_bof": false
+              }
+            ]
+          },
+        ]
+      ],
       isCurrentMeeting: future,
       useHedgeDoc: true,
       schedule: [],

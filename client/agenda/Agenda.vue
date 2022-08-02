@@ -62,7 +62,7 @@
             @update:value='() => { agendaStore.persistMeetingPreferences() }'
             )
 
-      .alert.alert-warning.mt-3(v-if='agendaStore.isCurrentMeeting') #[strong Note:] IETF agendas are subject to change, up to and during a meeting.
+      .agenda-currentwarn.alert.alert-warning.mt-3(v-if='agendaStore.isCurrentMeeting') #[strong Note:] IETF agendas are subject to change, up to and during a meeting.
       .agenda-infonote.mt-3(v-if='agendaStore.meeting.infoNote && agendaStore.infoNoteShown')
         n-popover
           template(#trigger)
