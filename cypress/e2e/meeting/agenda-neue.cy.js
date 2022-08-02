@@ -46,6 +46,11 @@ describe('meeting -> agenda-neue [past, desktop]', () => {
   it(`has the Settings button on the right`, () => {
     cy.get('.agenda .meeting-nav').next('button').should('exist')
       .and('include.text', 'Settings')
-    // cy.get('.agenda .meeting-nav').next('button').its('offsetLeft').should('be.greaterThan', 1000)
+    cy.window().then(win => {
+      cy.get('.agenda .meeting-nav').next('button').then(el => {
+        const btnBounds = el[0].getBoundingClientRect()
+        expect(btnBounds.x).to.be.greaterThan(win.innerWidth - btnBounds.width - 100)
+      })
+    })
   })
 })
