@@ -1,10 +1,11 @@
 import { DateTime } from 'luxon'
+import meetingGenerator from '../../generators/meeting'
 
-import meetingData from '../../fixtures/agenda-114-data.json'
+const meetingData = meetingGenerator.generateAgendaResponse({ future: false })
 
-describe('meeting -> agenda-neue [desktop]', () => {
+describe('meeting -> agenda-neue [past, desktop]', () => {
   before(() => {
-    cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { fixture: `agenda-${meetingData.meeting.number}-data.json` }).as('getMeetingData')
+    cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { body: meetingData }).as('getMeetingData')
     cy.viewport('macbook-16')
     cy.visit(`/meeting/${meetingData.meeting.number}/agenda-neue`, {
       onBeforeLoad: (win) => {
