@@ -31,6 +31,10 @@ General Instructions for Deployment of a New Release
       pip install -r requirements.txt
       pip freeze > frozen-requirements.txt
 
+    (The pip freeze command records the exact versions of the Python libraries that pip installed.
+     This is used by the celery docker container to ensure it uses the same library versions as
+     the datatracker service.)
+
  5. Move static files into place for CDN (/a/www/www6s/lib/dt):
 
       ietf/manage.py collectstatic
