@@ -118,7 +118,7 @@
     <div class="button-group">
         <ul>
             <li><button type="submit" name="submit" value="Save"{% if is_locked %} disabled{% endif %}>Save</button></li>
-            <li><button type="submit" name="submit" value="Cancel">Cancel</button></li>
+            <li><button type="button" onclick="history.back()">Back</button></li>
         </ul>
     </div>
 </form>

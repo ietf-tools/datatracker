@@ -45,12 +45,14 @@
                     Account info
                 </a>
             </li>
-            <li>
-                <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
-                   href="{% url 'ietf.person.views.profile' email_or_name=user.person.name %}">
-                    Public profile page
-                </a>
-            </li>
+            {% if user and user.person %}
+                <li>
+                    <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+                       href="{% url 'ietf.person.views.profile' email_or_name=user.person.name %}">
+                        Public profile page
+                    </a>
+                </li>
+            {% endif %}
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
                    href="{% url 'ietf.cookies.views.preferences' %}"

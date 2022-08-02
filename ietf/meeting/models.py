@@ -1254,13 +1254,26 @@ class Session(models.Model):
             
         return self._agenda_file
 
-    def jabber_room_name(self):
+    def chat_room_name(self):
         if self.type_id=='plenary':
             return 'plenary'
-        elif self.historic_group:
+        elif hasattr(self, 'historic_group'):
             return self.historic_group.acronym
         else:
             return self.group.acronym
+
+    def chat_room_url(self):
+        return settings.CHAT_URL_PATTERN.format(chat_room_name=self.chat_room_name())
+
+    def chat_archive_url(self):
+        # datatracker 8.8.0 released on 2022 July 15; before that, fall back to old log URL
+        if self.meeting.date <= datetime.date(2022, 7, 15):
+            return f'https://www.ietf.org/jabber/logs/{ self.chat_room_name() }?C=M;O=D'
+        elif hasattr(settings,'CHAT_ARCHIVE_URL_PATTERN'):
+            return settings.CHAT_ARCHIVE_URL_PATTERN.format(chat_room_name=self.chat_room_name())
+        else:
+            # Zulip has no separate archive
+            return self.chat_room_url()
 
     def notes_id(self):
         note_id_fragment = 'plenary' if self.type.slug == 'plenary' else self.group.acronym

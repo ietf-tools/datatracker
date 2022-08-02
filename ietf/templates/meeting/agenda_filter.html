@@ -43,7 +43,7 @@ Optional parameters:
                                 <div class="col-1 ms-1">
                                     <div class="row">
                                         <button type="button"
-                                                class="agenda-filter-areaselectbtn btn btn-sm btn-outline-primary {% if area.label or area.keyword %}pickview {{ area.keyword }}{% endif %}"
+                                                class="agenda-filter-areaselectbtn overflow-hidden btn btn-sm btn-outline-primary {% if area.label or area.keyword %}pickview {{ area.keyword }}{% endif %}"
                                                 data-filter-item="{{ area.keyword }}"
                                                 {% if not area.label and not area.keyword %}disabled{% endif %}>
                                             {% if area.label or area.keyword %}

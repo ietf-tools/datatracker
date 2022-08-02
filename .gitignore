@@ -10,11 +10,14 @@ datatracker.sublime-workspace
 /.Python
 /.settings
 /.tmp
+/.vite
 /data
+/dist
 /docker/docker-compose.extend-custom.yml
 /env
 /ghostdriver.log
 /htmlcov
+/ietf/static/dist-neue
 /latest-coverage.json
 /media
 /node_modules

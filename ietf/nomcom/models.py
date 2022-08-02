@@ -60,7 +60,7 @@ class NomCom(models.Model):
     show_accepted_nominees = models.BooleanField(verbose_name='Show accepted nominees', default=True, 
                                                  help_text='Show accepted nominees on the public nomination page')
     is_accepting_volunteers = models.BooleanField(verbose_name="Accepting volunteers", default=False,
-                                                  help_text='Is this nomcom is currently accepting volunteers?')
+                                                  help_text='Is this nomcom currently accepting volunteers?')
     first_call_for_volunteers = models.DateField(verbose_name='Date of the first call for volunteers', blank=True, null=True)
 
     class Meta:

@@ -302,7 +302,7 @@ class GroupFeaturesResource(ModelResource):
             "has_nonsession_materials": ALL,
             "has_meetings": ALL,
             "has_reviews": ALL,
-            "has_default_jabber": ALL,
+            "has_default_chat": ALL,
             "customize_workflow": ALL,
             "about_page": ALL,
             "default_tab": ALL,

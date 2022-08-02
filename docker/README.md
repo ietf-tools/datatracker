@@ -4,6 +4,8 @@
 
 1. [Set up Docker](https://docs.docker.com/get-started/) on your preferred platform. On Windows, it is highly recommended to use the [WSL 2 *(Windows Subsystem for Linux)*](https://docs.docker.com/desktop/windows/wsl/) backend.
 
+> See the [IETF Tools Windows Dev guide](https://github.com/ietf-tools/.github/blob/main/docs/windows-dev.md) on how to get started when using Windows.
+
 2. On Linux, you must also install [Docker Compose](https://docs.docker.com/compose/install/). Docker Desktop for Mac and Windows already include Docker Compose.
 
 2. If you have a copy of the datatracker code checked out already, simply `cd` to the top-level directory.
@@ -84,8 +86,10 @@ You can also open the datatracker project folder and click the **Reopen in conta
 
     ```sh
     cd docker
-    run
+    ./run
     ```
+    
+    > Note that you can pass the `-r` flag to `./run` to force a rebuild of the containers. This is useful if you switched branches and that the existing containers still contain configurations from the old branch. You should also use this if you don't regularly keep up with main and your containers reflect a much older version of the branch.
 
     On Windows *(using Powershell)*:
     ```sh
@@ -129,7 +133,7 @@ On Linux / macOS:
 
 ```sh
 cd docker
-cleandb
+./cleandb
 ```
 
 On Windows:
@@ -147,7 +151,7 @@ On Linux / macOS:
 
 ```sh
 cd docker
-cleanall
+./cleanall
 ```
 
 On Windows:

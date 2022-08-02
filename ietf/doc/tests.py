@@ -49,7 +49,7 @@ from ietf.meeting.factories import ( MeetingFactory, SessionFactory, SessionPres
 from ietf.name.models import SessionStatusName, BallotPositionName, DocTypeName
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory, EmailFactory
-from ietf.utils.mail import outbox
+from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text
@@ -1665,11 +1665,15 @@ class DocTestCase(TestCase):
         DocAlias.objects.create(name='rfc9999').docs.add(IndividualDraftFactory())
         doc = DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review')
         iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='statchg').pk)
+        empty_outbox()
         self.client.login(username='ad', password='ad+password')
         r = self.client.post(urlreverse('ietf.doc.views_status_change.change_state',kwargs=dict(name=doc.name)),dict(new_state=iesgeval_pk))
         self.assertEqual(r.status_code, 302)
         r = self.client.get(r._headers["location"][1])
         self.assertContains(r, ">IESG Evaluation<")
+        self.assertEqual(len(outbox), 2)
+        self.assertIn('iesg-secretary',outbox[0]['To'])
+        self.assertIn('drafts-eval',outbox[1]['To'])
 
         doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
@@ -1828,7 +1832,7 @@ class DocTestCase(TestCase):
         self.assertNotContains(r, "Request publication")
 
     def _parse_bibtex_response(self, response) -> dict:
-        parser = bibtexparser.bparser.BibTexParser()
+        parser = bibtexparser.bparser.BibTexParser(common_strings=True)
         parser.homogenise_fields = False  # do not modify field names (e.g., turns "url" into "link" by default)
         return bibtexparser.loads(response.content.decode(), parser=parser).get_entry_dict()
 
@@ -1850,7 +1854,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['number'],   num)
         self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     '2010')
-        self.assertEqual(entry['month'],    'oct')
+        self.assertEqual(entry['month'].lower()[0:3], 'oct')
         self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
         #
         self.assertNotIn('day', entry)
@@ -1872,7 +1876,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['number'],   num)
         self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     '1990')
-        self.assertEqual(entry['month'],    'apr')
+        self.assertEqual(entry['month'].lower()[0:3],    'apr')
         self.assertEqual(entry['day'],      '1')
         self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
 
@@ -1885,7 +1889,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['note'],     'Work in Progress')
         self.assertEqual(entry['number'],   docname)
         self.assertEqual(entry['year'],     str(draft.pub_date().year))
-        self.assertEqual(entry['month'],    draft.pub_date().strftime('%b').lower())
+        self.assertEqual(entry['month'].lower()[0:3],    draft.pub_date().strftime('%b').lower())
         self.assertEqual(entry['day'],      str(draft.pub_date().day))
         self.assertEqual(entry['url'],      settings.IDTRACKER_BASE_URL + urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=draft.rev)))
         #
@@ -2464,12 +2468,12 @@ class FieldTests(TestCase):
             decoded = json.loads(json_data)
         except json.JSONDecodeError as e:
             self.fail('data-pre contained invalid JSON data: %s' % str(e))
-        decoded_ids = list(decoded.keys())
-        self.assertCountEqual(decoded_ids, [str(doc.id) for doc in docs])
+        decoded_ids = [item['id'] for item in decoded]
+        self.assertEqual(decoded_ids, [doc.id for doc in docs])
         for doc in docs:
             self.assertEqual(
                 dict(id=doc.pk, selected=True, url=doc.get_absolute_url(), text=escape(uppercase_std_abbreviated_name(doc.name))),
-                decoded[str(doc.pk)],
+                decoded[decoded_ids.index(doc.pk)],
             )
 
 class MaterialsTests(TestCase):

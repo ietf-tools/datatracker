@@ -94,14 +94,14 @@ $(document)
 $(document)
     .ready(function () {
 
-        function dropdown_hover() {
+        function dropdown_hover(e) {
             var navbar = $(this)
                 .closest(".navbar");
             if (navbar.length === 0 || navbar.find(".navbar-toggler")
                 .is(":hidden")) {
                 $(this)
                     .children(".dropdown-toggle")
-                    .dropdown("toggle");
+                    .dropdown(e.type == "mouseenter" ? "show" : "hide");
             }
         }
 

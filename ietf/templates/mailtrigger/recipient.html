@@ -22,7 +22,7 @@
                 {% for recipient in recipients %}
                     <tr>
                         <td>
-                            <span title="{{ recipient.desc }}">{{ recipient.slug }}</span>
+                            <a href="{% url 'ietf.mailtrigger.views.show_recipients' recipient.slug %}" title="{{ recipient.desc }}">{{ recipient.slug }}</a>
                         </td>
                         <td>
                             {% for mailtrigger in recipient.used_in_to.all %}

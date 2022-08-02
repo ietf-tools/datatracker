@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load ietf_filters %}
+{% load textfilters htmlfilters %}
+{% block title %}Document Shepherd Write-Up{% if type == "group" %} for Group Documents{% elif type == "individual" %} for Individual Documents{% endif %}{% endblock %}
+{% block content %}
+    {% origin %}
+    {{ writeup|urlize_ietf_docs|linkify }}
+{% endblock %}
