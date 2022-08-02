@@ -1,12 +1,14 @@
 import { DateTime } from 'luxon'
 import meetingGenerator from '../../generators/meeting'
 
-const meetingData = meetingGenerator.generateAgendaResponse({ future: false })
+describe('meeting -> agenda-neue [past, desktop]', {
+    viewportWidth: 1536,
+    viewportHeight: 960
+  }, () => {
+  const meetingData = meetingGenerator.generateAgendaResponse({ future: false })
 
-describe('meeting -> agenda-neue [past, desktop]', () => {
   before(() => {
     cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { body: meetingData }).as('getMeetingData')
-    cy.viewport('macbook-16')
     cy.visit(`/meeting/${meetingData.meeting.number}/agenda-neue`, {
       onBeforeLoad: (win) => {
         const meetingDataScript = win.document.createElement('script')
@@ -52,5 +54,25 @@ describe('meeting -> agenda-neue [past, desktop]', () => {
         expect(btnBounds.x).to.be.greaterThan(win.innerWidth - btnBounds.width - 100)
       })
     })
+  })
+
+  // -> SCHEDULE LIST
+
+  it(`has schedule list title`, () => {
+    cy.get('.agenda h2').first().contains(`Schedule`)
+  })
+  it(`has info note`, () => {
+    cy.get('.agenda .agenda-infonote').should('exist').and('include.text', meetingData.meeting.infoNote)
+  })
+  it(`info note can be dismissed`, () => {
+    cy.get('.agenda .agenda-infonote > button').click()
+    cy.get('.agenda .agenda-infonote').should('not.exist')
+  })
+  it(`info note can be re-opened`, () => {
+    cy.viewport('macbook-16')
+    cy.get('.agenda h2').first().next('button').should('exist')
+    cy.get('.agenda h2').first().next('button').click()
+    cy.get('.agenda .agenda-infonote').should('exist')
+    cy.get('.agenda h2').first().next('button').should('not.exist')
   })
 })
