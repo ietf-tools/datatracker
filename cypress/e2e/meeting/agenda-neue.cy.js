@@ -130,3 +130,39 @@ describe('meeting -> agenda-neue [future, desktop]', {
     cy.get('.agenda .agenda-currentwarn').should('exist').and('include.text', 'Note: IETF agendas are subject to change, up to and during a meeting.')
   })
 })
+
+describe('meeting -> floor-plan-neue [desktop]', {
+    viewportWidth: viewports.desktop[0],
+    viewportHeight: viewports.desktop[1]
+  }, () => {
+  const meetingData = meetingGenerator.generateAgendaResponse()
+
+  before(() => {
+    cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { body: meetingData }).as('getMeetingData')
+    cy.intercept('GET', '/media/floor/floorplan-1.png', { fixture: 'meeting-floor-1.png,null' })
+    cy.intercept('GET', '/media/floor/floorplan-2.png', { fixture: 'meeting-floor-2.png,null' })
+    cy.intercept('GET', '/media/floor/floorplan-3.png', { fixture: 'meeting-floor-3.png,null' })
+    cy.intercept('GET', '/media/floor/floorplan-4.jpg', { fixture: 'meeting-floor-4.jpg,null' })
+    cy.intercept('GET', '/media/floor/floorplan-5.jpg', { fixture: 'meeting-floor-5.jpg,null' })
+    cy.intercept('GET', '/media/floor/floorplan-6.jpg', { fixture: 'meeting-floor-6.jpg,null' })
+    cy.visit(`/meeting/${meetingData.meeting.number}/floor-plan-neue`, {
+      onBeforeLoad: (win) => {
+        const meetingDataScript = win.document.createElement('script')
+        meetingDataScript.id = 'meeting-data'
+        meetingDataScript.type = 'application/json'
+        meetingDataScript.innerHTML = `{"meetingNumber": "${meetingData.meeting.number}"}`
+        win.document.querySelector('head').appendChild(meetingDataScript)
+      }
+    })
+    cy.wait('@getMeetingData')
+  })
+
+  // -> NAV
+
+  it(`has the correct navigation items`, () => {
+    cy.get('.floorplan .meeting-nav > li').should('have.length', 3)
+    cy.get('.floorplan .meeting-nav > li').first().contains('Agenda')
+    cy.get('.floorplan .meeting-nav > li').eq(1).contains('Floor plan')
+    cy.get('.floorplan .meeting-nav > li').last().contains('Plaintext')
+  })
+})

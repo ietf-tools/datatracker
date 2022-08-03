@@ -71,6 +71,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["js-cookie", "npm:3.0.1"],\
             ["list.js", "npm:2.3.1"],\
             ["lodash", "npm:4.17.21"],\
+            ["lodash-es", "npm:4.17.21"],\
             ["luxon", "npm:3.0.1"],\
             ["moment", "npm:2.29.4"],\
             ["moment-timezone", "npm:0.5.34"],\
@@ -7666,6 +7667,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["js-cookie", "npm:3.0.1"],\
             ["list.js", "npm:2.3.1"],\
             ["lodash", "npm:4.17.21"],\
+            ["lodash-es", "npm:4.17.21"],\
             ["luxon", "npm:3.0.1"],\
             ["moment", "npm:2.29.4"],\
             ["moment-timezone", "npm:0.5.34"],\
