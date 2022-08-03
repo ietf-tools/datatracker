@@ -56,33 +56,40 @@ General Instructions for Deployment of a New Release
       docker-compose stop celery
       docker-compose rm celery
 
- 9. Return to the release directory and run migrations:
+ 9. Stop the datatracker 
+    (consider doing this with a second shell at ietfa to avoid the exit and shift back to wwwrun)
+
+      exit
+      sudo systemctl stop datatracker.socket datatracker.service
+      sudo su - -s /bin/bash wwwrun
+
+ 10. Return to the release directory and run migrations:
 
       cd /a/www/ietf-datatracker/${releasenumber}
       ietf/manage.py migrate
 
       Take note if any migrations were executed.
  
- 10. Back out one directory level, then re-point the 'web' symlink::
+ 11. Back out one directory level, then re-point the 'web' symlink::
 
       cd ..
       rm ./web; ln -s ${releasenumber} web
 
- 11. Reload the datatracker service (it is no longer necessary to restart apache) ::
+ 12. Start the datatracker service (it is no longer necessary to restart apache) ::
 
       exit # or CTRL-D, back to root level shell
-      systemctl restart datatracker
+      sudo systemctl start datatracker.service datatracker.socket
 
- 12. Start async task worker:
+ 13. Start async task worker:
 
       cd /a/docker/datatracker-cel
       bash startcommand
 
- 13. Verify operation:
+ 14. Verify operation:
 
       http://datatracker.ietf.org/
 
- 14. If install failed and there were no migrations at step 9, revert web symlink and docker update and repeat the
+ 15. If install failed and there were no migrations at step 9, revert web symlink and docker update and repeat the
      restart in steps 11 and 12. To revert the docker update:
 
           cd /a/docker/datatracker-cel
