@@ -16,13 +16,13 @@ export default {
       const floorIdx = idx + 1
       const floor = floorsMeta[idx]
       return {
-        "id": floorIdx,
-        "image": `/media/floor/${floor.path}`,
-        "name": `Level ${startCase(faker.color.human())} ${floorIdx}`,
-        "short": `L${floorIdx}`,
-        "width": floor.width,
-        "height": floor.height,
-        "rooms": times(random(5, 10), (ridx) => {
+        id: floorIdx,
+        image: `/media/floor/${floor.path}`,
+        name: `Level ${startCase(faker.color.human())} ${floorIdx}`,
+        short: `L${floorIdx}`,
+        width: floor.width,
+        height: floor.height,
+        rooms: times(random(5, 10), (ridx) => {
           const roomName = `${faker.science.chemicalElement().name} ${floorIdx}-${ridx + 1}`
           // Keep 10% margin on each side
           const roomXUnit = Math.round(floor.width / 10)
@@ -30,14 +30,14 @@ export default {
           const roomX = random(roomXUnit, roomXUnit * 8)
           const roomY = random(roomYUnit, roomYUnit * 8)
           return {
-            "id": floorIdx * 100 + ridx,
-            "name": roomName,
-            "functionalName": startCase(faker.lorem.words(2)),
-            "slug": xslugify(roomName),
-            "left": roomX,
-            "right": roomX + roomXUnit,
-            "top": roomY,
-            "bottom": roomY + roomYUnit
+            id: floorIdx * 100 + ridx,
+            name: roomName,
+            functionalName: startCase(faker.lorem.words(2)),
+            slug: xslugify(roomName),
+            left: roomX,
+            right: roomX + roomXUnit,
+            top: roomY,
+            bottom: roomY + roomYUnit
           }
         })
       }

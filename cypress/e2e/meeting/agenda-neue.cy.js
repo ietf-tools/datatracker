@@ -180,11 +180,41 @@ describe('meeting -> floor-plan-neue [desktop]', {
     cy.get('.floorplan .floorplan-floors > .nav-link').each((el, idx) => {
       cy.wrap(el).contains(meetingData.floors[idx].name)
       cy.wrap(el).click()
-      // Wait for image to load
-      cy.get('.floorplan .floorplan-plan > img').should('be.visible').and(img => expect(img[0].naturalWidth).to.be.greaterThan(1))
       cy.wrap(el).should('have.class', 'active')
       cy.wrap(el).siblings().should('not.have.class', 'active')
+      // Wait for image to load + verify
+      cy.get('.floorplan .floorplan-plan > img').should('be.visible').and(img => expect(img[0].naturalWidth).to.be.greaterThan(1))
     })
+  })
+
+  // -> ROOMS
+
+  it(`can select rooms`, () => {
+    const floor = meetingData.floors[0]
     cy.get('.floorplan .floorplan-floors > .nav-link').first().click()
+    cy.get('.floorplan .floorplan-rooms > .list-group-item').should('have.length', floor.rooms.length)
+    cy.get('.floorplan .floorplan-rooms > .list-group-item').each((el, idx) => {
+      // Room List
+      const room = floor.rooms[idx]
+      cy.wrap(el).find('strong').contains(room.name)
+        .next('small').contains(room.functionalName)
+      cy.wrap(el).find('.badge').should('exist').and('include.text', floor.short)
+      cy.wrap(el).click()
+      cy.wrap(el).should('have.class', 'active')
+      cy.wrap(el).siblings().should('not.have.class', 'active')
+      // URL query segment
+      cy.location('search').should('include', `room=${room.slug}`)
+      // Pin Drop
+      cy.get('.floorplan .floorplan-plan > img').then(floorImg => {
+        const planxRatio = floorImg[0].width / floor.width
+        const planyRatio = floorImg[0].height / floor.height
+        cy.get('.floorplan .floorplan-plan-pin').should('exist').and('be.visible').then(el => {
+          const xPos = Math.round((room.left + (room.right - room.left) / 2) * planxRatio) - 25
+          const yPos = Math.round((room.top + (room.bottom - room.top) / 2) * planyRatio) - 40
+          expect(el[0].offsetLeft).to.equal(xPos)
+          expect(el[0].offsetTop).to.equal(yPos)
+        })
+      })
+    })
   })
 })
