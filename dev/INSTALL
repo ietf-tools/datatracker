@@ -49,7 +49,9 @@ General Instructions for Deployment of a New Release
       docker image tag ghcr.io/ietf-tools/datatracker-celery:latest datatracker-celery-fallback
       docker-compose pull celery
 
- 8. Stop and remove the async task container (this may take a few minutes if tasks are in progress):
+ 8. Stop and remove the async task container:
+    (Wait for these to finish cleanly - it may take up to about 10 minutes for the 'stop' command to
+     complete if a long-running task is in progress.)
 
       docker-compose stop celery
       docker-compose rm celery
