@@ -1,9 +1,14 @@
 import { DateTime } from 'luxon'
 import meetingGenerator from '../../generators/meeting'
+import floorsMeta from '../../fixtures/meeting-floors.json'
 
 const viewports = {
   desktop: [1536, 960]
 }
+
+// ====================================================================
+// AGENDA-NEUE (past meeting) in DESKTOP viewport
+// ====================================================================
 
 describe('meeting -> agenda-neue [past, desktop]', {
     viewportWidth: viewports.desktop[0],
@@ -104,6 +109,10 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
 })
 
+// ====================================================================
+// AGENDA-NEUE (future meeting) in DESKTOP viewport
+// ====================================================================
+
 describe('meeting -> agenda-neue [future, desktop]', {
     viewportWidth: viewports.desktop[0],
     viewportHeight: viewports.desktop[1]
@@ -131,6 +140,10 @@ describe('meeting -> agenda-neue [future, desktop]', {
   })
 })
 
+// ====================================================================
+// FLOOR-PLAN-NEUE in DESKTOP viewport
+// ====================================================================
+
 describe('meeting -> floor-plan-neue [desktop]', {
     viewportWidth: viewports.desktop[0],
     viewportHeight: viewports.desktop[1]
@@ -139,12 +152,6 @@ describe('meeting -> floor-plan-neue [desktop]', {
 
   before(() => {
     cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { body: meetingData }).as('getMeetingData')
-    cy.intercept('GET', '/media/floor/floorplan-1.png', { fixture: 'meeting-floor-1.png,null' })
-    cy.intercept('GET', '/media/floor/floorplan-2.png', { fixture: 'meeting-floor-2.png,null' })
-    cy.intercept('GET', '/media/floor/floorplan-3.png', { fixture: 'meeting-floor-3.png,null' })
-    cy.intercept('GET', '/media/floor/floorplan-4.jpg', { fixture: 'meeting-floor-4.jpg,null' })
-    cy.intercept('GET', '/media/floor/floorplan-5.jpg', { fixture: 'meeting-floor-5.jpg,null' })
-    cy.intercept('GET', '/media/floor/floorplan-6.jpg', { fixture: 'meeting-floor-6.jpg,null' })
     cy.visit(`/meeting/${meetingData.meeting.number}/floor-plan-neue`, {
       onBeforeLoad: (win) => {
         const meetingDataScript = win.document.createElement('script')
@@ -164,5 +171,20 @@ describe('meeting -> floor-plan-neue [desktop]', {
     cy.get('.floorplan .meeting-nav > li').first().contains('Agenda')
     cy.get('.floorplan .meeting-nav > li').eq(1).contains('Floor plan')
     cy.get('.floorplan .meeting-nav > li').last().contains('Plaintext')
+  })
+
+  // -> FLOORS
+
+  it(`can switch between floors`, () => {
+    cy.get('.floorplan .floorplan-floors > .nav-link').should('have.length', meetingData.floors.length)
+    cy.get('.floorplan .floorplan-floors > .nav-link').each((el, idx) => {
+      cy.wrap(el).contains(meetingData.floors[idx].name)
+      cy.wrap(el).click()
+      // Wait for image to load
+      cy.get('.floorplan .floorplan-plan > img').should('be.visible').and(img => expect(img[0].naturalWidth).to.be.greaterThan(1))
+      cy.wrap(el).should('have.class', 'active')
+      cy.wrap(el).siblings().should('not.have.class', 'active')
+    })
+    cy.get('.floorplan .floorplan-floors > .nav-link').first().click()
   })
 })

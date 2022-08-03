@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'path'
 import vue from '@vitejs/plugin-vue'
+import servePreviewAssets from './dev/vite-plugins/serve-preview-assets'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
@@ -36,6 +37,7 @@ export default defineConfig(({ command, mode }) => {
     viteConfig.root = resolve(__dirname, 'client')
     viteConfig.build.outDir = 'dist'
     viteConfig.build.rollupOptions.input.main = resolve(__dirname, 'client/index.html')
+    viteConfig.plugins.push(servePreviewAssets())
   }
   return viteConfig
 })

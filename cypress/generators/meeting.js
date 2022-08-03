@@ -3,6 +3,8 @@ import { faker } from '@faker-js/faker'
 import { random, startCase, times } from 'lodash-es'
 import slugify from 'slugify'
 
+import floorsMeta from '../fixtures/meeting-floors.json'
+
 const xslugify = (str) =>  slugify(str.replace('/', '-'), { lower: true })
 
 export default {
@@ -12,24 +14,30 @@ export default {
 
     const floors = times(6, (idx) => {
       const floorIdx = idx + 1
+      const floor = floorsMeta[idx]
       return {
         "id": floorIdx,
-        "image": `/media/floor/floorplan-${floorIdx}.${floorIdx < 4 ? 'png' : 'jpg'}`,
+        "image": `/media/floor/${floor.path}`,
         "name": `Level ${startCase(faker.color.human())} ${floorIdx}`,
         "short": `L${floorIdx}`,
-        "width": 4691,
-        "height": 3508,
+        "width": floor.width,
+        "height": floor.height,
         "rooms": times(random(5, 10), (ridx) => {
           const roomName = `${faker.science.chemicalElement().name} ${floorIdx}-${ridx + 1}`
+          // Keep 10% margin on each side
+          const roomXUnit = Math.round(floor.width / 10)
+          const roomYUnit = Math.round(floor.height / 10)
+          const roomX = random(roomXUnit, roomXUnit * 8)
+          const roomY = random(roomYUnit, roomYUnit * 8)
           return {
-            "id": idx * 100 + ridx,
+            "id": floorIdx * 100 + ridx,
             "name": roomName,
             "functionalName": startCase(faker.lorem.words(2)),
             "slug": xslugify(roomName),
-            "left": 1810,
-            "right": 1980,
-            "top": 2280,
-            "bottom": 2450
+            "left": roomX,
+            "right": roomX + roomXUnit,
+            "top": roomY,
+            "bottom": roomY + roomYUnit
           }
         })
       }
