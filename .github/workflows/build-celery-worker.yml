@@ -8,6 +8,7 @@ on:
     paths:
       - 'requirements.txt'
       - 'dev/celery/**'
+      - '.github/workflows/build-celery-worker.yml'
 
   workflow_dispatch: 
 
