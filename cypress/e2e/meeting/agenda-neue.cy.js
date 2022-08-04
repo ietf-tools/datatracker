@@ -159,6 +159,18 @@ describe(`meeting -> floor-plan-neue`, () => {
         cy.wait('@getMeetingData')
       })
 
+      // -> HEADER
+
+      it(`has IETF ${meetingData.meeting.number} title`, () => {
+        cy.get('.floorplan h1').first().contains(`IETF ${meetingData.meeting.number} Floor Plan`)
+      })
+      it(`has meeting city subtitle`, () => {
+        cy.get('.floorplan h4').first().contains(meetingData.meeting.city)
+      })
+      it(`has meeting date subtitle`, () => {
+        cy.get('.floorplan h4').first().contains(/[a-zA-Z] [0-9]{1,2} - ([a-zA-Z]+ )?[0-9]{1,2}, [0-9]{4}/i)
+      })
+
       // -> NAV
 
       it(`has the correct navigation items`, () => {
