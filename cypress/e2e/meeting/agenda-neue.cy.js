@@ -1,6 +1,5 @@
 import { DateTime } from 'luxon'
 import meetingGenerator from '../../generators/meeting'
-import floorsMeta from '../../fixtures/meeting-floors.json'
 
 const viewports = {
   desktop: [1536, 960],

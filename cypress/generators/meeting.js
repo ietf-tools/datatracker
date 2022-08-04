@@ -7,11 +7,61 @@ import floorsMeta from '../fixtures/meeting-floors.json'
 
 const xslugify = (str) =>  slugify(str.replace('/', '-'), { lower: true })
 
+/**
+ * Generate area response from label + children
+ */
+const createArea = ({ label, children = [] }) => {
+  return {
+    label,
+    keyword: xslugify(label),
+    toggled_by: [],
+    is_bof: false,
+    children: children.map(gr => {
+      gr.toggled_by.push(xslugify(label))
+      return gr
+    })
+  }
+}
+
+/**
+ * Generate group response from label
+ */
+const uniqueGroupNames = []
+const createGroup = ({ label, mayBeBof = false, toggledBy = [] }) => {
+  // make sure group name is unique
+  while (!label) {
+    const nameAttempt = faker.word.verb()
+    if (!uniqueGroupNames.includes(nameAttempt)) {
+      label = nameAttempt
+      uniqueGroupNames.push(nameAttempt)
+    }
+  }
+
+  // Set toggledBy
+  if (!toggledBy) {
+    toggledBy = []
+  }
+
+  // 10% chance of BoF, if enabled
+  const isBof = mayBeBof && random(0, 100) < 10
+  if (isBof) {
+    toggledBy.push('bof')
+  }
+
+  return {
+    label,
+    keyword: xslugify(label),
+    toggled_by: toggledBy,
+    is_bof: isBof
+  }
+}
+
 export default {
   generateAgendaResponse ({ future = false, skipSchedule = false } = {}) {
     const startDate = future ? DateTime.fromISO(faker.date.future(1).toISOString()) : DateTime.fromISO(faker.date.past(5, DateTime.utc().minus({ months: 3 })).toISOString())
     const endDate = startDate.plus({ days: 7 })
 
+    // Generate floors
     const floors = times(6, (idx) => {
       const floorIdx = idx + 1
       const floor = floorsMeta[idx]
@@ -43,36 +93,102 @@ export default {
       }
     })
 
-
     const categories = []
     const schedule = []
-    
+
     if (!skipSchedule) {
-      categories.push([])
-      categories.push([])
+      // Generate first group of areas
+      const firstAreas = []
+      const firstAreasNames = ['ABC', 'DEF', 'GHI', 'JKL', 'MNO', 'PQR', 'STU']
+      for (const area of firstAreasNames) {
+        firstAreas.push(createArea({
+          label: area,
+          children: times(random(2, 25), (idx) => {
+            return createGroup({ mayBeBof: true })
+          })
+        }))
+      }
+      categories.push(firstAreas)
+
+      // Generate second group of areas
+      const secondAreas = []
+      for (const area of ['UVW', 'XYZ0']) {
+        secondAreas.push(createArea({
+          label: area,
+          children: times(random(2, 25), (idx) => {
+            return createGroup({ mayBeBof: true })
+          })
+        }))
+      }
+      categories.push(secondAreas)
+
+      // Generate last group of areas
       categories.push(
         [
-          {
-            "label": "Plenary",
-            "keyword": "plenary",
-            "toggled_by": [],
-            "is_bof": false,
-            "children": [
-              {
-                "label": "IETF Plenary",
-                "keyword": "ietf-plenary",
-                "toggled_by": [
-                  "plenary",
-                  "ietf"
-                ],
-                "is_bof": false
-              }
+          createArea({
+            label: 'Administrative',
+            children: [
+              createGroup({ label: 'IETF Registration' })
             ]
-          },
+          }),
+          createArea({
+            label: 'Coding',
+            children: [
+              createGroup({ label: 'Hackathon', toggledBy: ['hackathon'] }),
+              createGroup({ label: 'Code Sprint', toggledBy: ['tools'] })
+            ]
+          }),
+          createArea({
+            label: 'Office hours',
+            children: firstAreasNames.map(n => createGroup({ label: `${n} Office Hours`}))
+          }),
+          createArea({
+            label: 'Open meeting',
+            children: [
+              createGroup({ label: 'WG Chairs Forum' }),
+              createGroup({ label: `Newcomers' Feedback Session` })
+            ]
+          }),
+          createArea({
+            label: 'Plenary',
+            children: [
+              createGroup({ label: 'IETF Plenary', toggledBy: ['ietf'] })
+            ]
+          }),
+          createArea({
+            label: 'Presentation',
+            children: [
+              createGroup({ label: 'Hackathon Kickoff', toggledBy: ['hackathon'] }),
+              createGroup({ label: 'Host Speaker Series', toggledBy: ['ietf'] }),
+            ]
+          }),
+          createArea({
+            label: 'Social',
+            children: [
+              createGroup({ label: `Newcomers' Quick Connections` }),
+              createGroup({ label: 'Welcome Reception', toggledBy: ['ietf'] }),
+              createGroup({ label: 'Break', toggledBy: ['secretariat'] }),
+              createGroup({ label: 'Beverage and Snack Break', toggledBy: ['secretariat'] }),
+              createGroup({ label: 'Hackdemo Happy Hour', toggledBy: ['hackathon'] })
+            ]
+          }),
+          createArea({
+            label: 'Tutorial',
+            children: [
+              createGroup({ label: `Tutorial: Newcomers' Overview` })
+            ]
+          }),
+          createArea({
+            label: '',
+            children: [
+              createGroup({ label: 'BoF' }),
+              createGroup({ label: 'qwerty', toggledBy: ['abc'] }),
+              createGroup({ label: 'azerty', toggledBy: ['def'] }),
+              createGroup({ label: 'Tools' })
+            ]
+          })
         ]
       )
-
-      
     }
 
     return {
