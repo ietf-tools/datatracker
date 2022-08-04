@@ -4,6 +4,7 @@
     .card.shadow-sm
       .card-body
         n-button(
+          id='agenda-quickaccess-filterbyareagroups-btn'
           block
           type='success'
           size='large'

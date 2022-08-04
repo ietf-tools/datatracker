@@ -111,6 +111,74 @@ describe('meeting -> agenda-neue [past, desktop]', {
     cy.get('.agenda .agenda-timezone-ddn').contains('Tokyo')
   })
 
+  // -> FILTER BY AREA/GROUP DIALOG
+
+  it('can filter by area/group', () => {
+    // Open dialog
+    cy.get('#agenda-quickaccess-filterbyareagroups-btn').should('exist').and('be.visible').click()
+    cy.get('.agenda-personalize').should('exist').and('be.visible')
+    // Check header elements
+    cy.get('.agenda-personalize .n-drawer-header__main > span').contains('Filter Areas + Groups')
+    cy.get('.agenda-personalize .agenda-personalize-actions > button').should('have.length', 3)
+    cy.get('.agenda-personalize .agenda-personalize-actions > button').first().contains('Clear Selection')
+    cy.get('.agenda-personalize .agenda-personalize-actions > button').eq(1).contains('Cancel')
+    cy.get('.agenda-personalize .agenda-personalize-actions > button').last().contains('Apply')
+    // Check categories
+    cy.get('.agenda-personalize .agenda-personalize-category').should('have.length', meetingData.categories.length)
+    // Check areas + groups
+    cy.get('.agenda-personalize .agenda-personalize-category').each((el, idx) => {
+      const cat = meetingData.categories[idx]
+      cy.wrap(el).find('.agenda-personalize-area').should('have.length', cat.length)
+        .each((areaEl, areaIdx) => {
+          // Area Button
+          const area = cat[areaIdx]
+          cy.wrap(areaEl).find('.agenda-personalize-areamain').scrollIntoView()
+          if (area.label) {
+            cy.wrap(areaEl).find('.agenda-personalize-areamain > button').should('be.visible').contains(area.label)
+          } else {
+            cy.wrap(areaEl).find('.agenda-personalize-areamain > button').should('not.exist')
+          }
+          // Group Buttons
+          cy.wrap(areaEl).find('.agenda-personalize-groups > button').should('have.length', area.children.length)
+            .each((groupEl, groupIdx) => {
+              const group = area.children[groupIdx]
+              cy.wrap(groupEl).should('be.visible').contains(group.label)
+              if (group.is_bof) {
+                cy.wrap(groupEl).should('have.class', 'is-bof')
+                cy.wrap(groupEl).find('.badge').should('be.visible').contains('BoF')
+              }
+            })
+          // Test Area Selection
+          if (area.label) {
+            cy.wrap(areaEl).find('.agenda-personalize-areamain > button').click()
+            cy.wrap(areaEl).find('.agenda-personalize-groups > button').should('have.class', 'is-checked')
+            cy.wrap(areaEl).find('.agenda-personalize-areamain > button').click()
+            cy.wrap(areaEl).find('.agenda-personalize-groups > button').should('not.have.class', 'is-checked')
+          }
+          // Test Group Selection
+          cy.wrap(areaEl).find('.agenda-personalize-groups > button').any().click()
+            .should('have.class', 'is-checked').click().should('not.have.class', 'is-checked')
+        })
+    })
+    // Test multi-toggled_by button trigger
+    cy.get(`.agenda-personalize .agenda-personalize-category:last .agenda-personalize-area:last .agenda-personalize-groups > button:contains('BoF')`).as('bofbtn')
+    cy.get('@bofbtn').click()
+    cy.get('.agenda-personalize .agenda-personalize-group:has(.badge)').should('have.class', 'is-checked')
+    cy.get('@bofbtn').click()
+    cy.get('.agenda-personalize .agenda-personalize-group:has(.badge)').should('not.have.class', 'is-checked')
+    // Clicking all groups from area then area button should unselect all
+    cy.get('.agenda-personalize .agenda-personalize-area:first .agenda-personalize-groups > button').click({ multiple: true })
+    cy.get('.agenda-personalize .agenda-personalize-area:first .agenda-personalize-areamain > button').click()
+    cy.get('.agenda-personalize .agenda-personalize-area:first .agenda-personalize-groups > button').should('not.have.class', 'is-checked')
+    // Test Clear Selection
+    cy.get('.agenda-personalize .agenda-personalize-group').any(10).click({ multiple: true })
+    cy.get('.agenda-personalize .agenda-personalize-actions > button').first().click()
+    cy.get('.agenda-personalize .agenda-personalize-group').should('not.have.class', 'is-checked')
+    // Click Cancel should hide dialog
+    cy.get('.agenda-personalize .agenda-personalize-actions > button').eq(1).click()
+    cy.get('.agenda-personalize').should('not.exist')
+  })
+
 })
 
 // ====================================================================
