@@ -18,3 +18,4 @@ services:
     celery:
         volumes:
             - .:/workspace
+            - app-assets:/assets

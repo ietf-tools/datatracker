@@ -24,14 +24,13 @@ fi
 echo "Running initial checks..."
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check
 
+CELERY_WORKER_OPTS=()
 if [[ -n "${CELERY_UID}" ]]; then
   # ensure that some group with the necessary GID exists in container
   if ! id "${CELERY_UID}" ; then
     adduser --system --uid "${CELERY_UID}" --no-create-home --disabled-login "celery-user-${CELERY_UID}"
   fi
-  UID_OPT="--uid=${CELERY_UID}"
-else
-  UID_OPT=
+  CELERY_WORKER_OPTS+=("--uid=${CELERY_UID}")
 fi
 
 if [[ -n "${CELERY_GID}" ]]; then
@@ -39,9 +38,7 @@ if [[ -n "${CELERY_GID}" ]]; then
   if ! getent group "${CELERY_GID}" ; then
     addgroup --gid "${CELERY_GID}" "celery-group-${CELERY_GID}"
   fi
-  GID_OPT="--gid=${CELERY_GID}"
-else
-  GID_OPT=
+  CELERY_WORKER_OPTS+=("--gid=${CELERY_GID}")
 fi
 
 
@@ -56,6 +53,6 @@ cleanup () {
 
 trap 'trap "" TERM; cleanup' TERM
 # start celery in the background so we can trap the TERM signal
-celery --app="${CELERY_APP:-ietf}" worker "${UID_OPT}" ${GID_OPT} "$@" &
+celery --app="${CELERY_APP:-ietf}" worker "${CELERY_WORKER_OPTS[@]}" "$@" &
 celery_pid=$!
 wait "${celery_pid}"
