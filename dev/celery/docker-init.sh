@@ -4,6 +4,10 @@
 #
 #   CELERY_APP - name of application to pass to celery (defaults to ietf)
 #
+#   CELERY_UID - numeric uid for the celery worker process
+#
+#   CELERY_GID - numeric gid for the celery worker process
+#
 #   UPDATES_REQUIREMENTS_FROM - path, relative to /workspace mount, to a pip requirements
 #       file that should be installed at container startup. Default is no package install/update.
 #
@@ -20,6 +24,27 @@ fi
 echo "Running initial checks..."
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check
 
+if [[ -n "${CELERY_UID}" ]]; then
+  # ensure that some group with the necessary GID exists in container
+  if ! id "${CELERY_UID}" ; then
+    adduser --system --uid "${CELERY_UID}" --no-create-home --disabled-login "celery-user-${CELERY_UID}"
+  fi
+  UID_OPT="--uid=${CELERY_UID}"
+else
+  UID_OPT=
+fi
+
+if [[ -n "${CELERY_GID}" ]]; then
+  # ensure that some group with the necessary GID exists in container
+  if ! getent group "${CELERY_GID}" ; then
+    addgroup --gid "${CELERY_GID}" "celery-group-${CELERY_GID}"
+  fi
+  GID_OPT="--gid=${CELERY_GID}"
+else
+  GID_OPT=
+fi
+
+
 cleanup () {
   # Cleanly terminate the celery app by sending it a TERM, then waiting for it to exit.
   if [[ -n "${celery_pid}" ]]; then
@@ -31,6 +56,6 @@ cleanup () {
 
 trap 'trap "" TERM; cleanup' TERM
 # start celery in the background so we can trap the TERM signal
-celery --app="${CELERY_APP:-ietf}" --uid="${CELERY_UID:-0}" --gid="${CELERY_GID:-0}" worker "$@" &
+celery --app="${CELERY_APP:-ietf}" worker "${UID_OPT}" ${GID_OPT} "$@" &
 celery_pid=$!
 wait "${celery_pid}"

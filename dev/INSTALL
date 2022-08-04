@@ -50,11 +50,13 @@ General Instructions for Deployment of a New Release
       docker-compose pull celery
 
  8. Stop and remove the async task container:
-    (Wait for these to finish cleanly - it may take up to about 10 minutes for the 'stop' command to
-     complete if a long-running task is in progress.)
+    Wait for these to finish cleanly. It may take up to about 10 minutes for the 'stop' command to
+    complete if a long-running task is in progress.
 
       docker-compose stop celery
       docker-compose rm celery
+
+    (Answer 'y' when prompted to remove the container.)
 
  9. Stop the datatracker 
     (consider doing this with a second shell at ietfa to avoid the exit and shift back to wwwrun)
