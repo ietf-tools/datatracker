@@ -31,6 +31,6 @@ cleanup () {
 
 trap 'trap "" TERM; cleanup' TERM
 # start celery in the background so we can trap the TERM signal
-celery --app="${CELERY_APP:-ietf}" worker "$@" &
+celery --app="${CELERY_APP:-ietf}" --uid="${CELERY_UID:-0}" --gid="${CELERY_GID:-0}" worker "$@" &
 celery_pid=$!
 wait "${celery_pid}"
