@@ -18,7 +18,7 @@ if [[ -n "${UPDATE_REQUIREMENTS_FROM}" ]]; then
 fi
 
 echo "Running initial checks..."
-/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check --settings=settings_local
+/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check
 
 cleanup () {
   # Cleanly terminate the celery app by sending it a TERM, then waiting for it to exit.
