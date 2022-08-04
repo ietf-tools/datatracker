@@ -8,7 +8,7 @@ import floorsMeta from '../fixtures/meeting-floors.json'
 const xslugify = (str) =>  slugify(str.replace('/', '-'), { lower: true })
 
 export default {
-  generateAgendaResponse ({ future = false } = {}) {
+  generateAgendaResponse ({ future = false, skipSchedule = false } = {}) {
     const startDate = future ? DateTime.fromISO(faker.date.future(1).toISOString()) : DateTime.fromISO(faker.date.past(5, DateTime.utc().minus({ months: 3 })).toISOString())
     const endDate = startDate.plus({ days: 7 })
 
@@ -43,29 +43,37 @@ export default {
       }
     })
 
-    const categories = [
-      [],
-      [],
-      [
-        {
-          "label": "Plenary",
-          "keyword": "plenary",
-          "toggled_by": [],
-          "is_bof": false,
-          "children": [
-            {
-              "label": "IETF Plenary",
-              "keyword": "ietf-plenary",
-              "toggled_by": [
-                "plenary",
-                "ietf"
-              ],
-              "is_bof": false
-            }
-          ]
-        },
-      ]
-    ]
+
+    const categories = []
+    const schedule = []
+    
+    if (!skipSchedule) {
+      categories.push([])
+      categories.push([])
+      categories.push(
+        [
+          {
+            "label": "Plenary",
+            "keyword": "plenary",
+            "toggled_by": [],
+            "is_bof": false,
+            "children": [
+              {
+                "label": "IETF Plenary",
+                "keyword": "ietf-plenary",
+                "toggled_by": [
+                  "plenary",
+                  "ietf"
+                ],
+                "is_bof": false
+              }
+            ]
+          },
+        ]
+      )
+
+      
+    }
 
     return {
       meeting: {
@@ -81,7 +89,7 @@ export default {
       categories,
       isCurrentMeeting: future,
       useHedgeDoc: true,
-      schedule: [],
+      schedule,
       floors
     }
   }

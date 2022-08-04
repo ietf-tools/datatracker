@@ -3,11 +3,22 @@ import meetingGenerator from '../../generators/meeting'
 import floorsMeta from '../../fixtures/meeting-floors.json'
 
 const viewports = {
-  desktop: [1536, 960]
+  desktop: [1536, 960],
+  smallDesktop: [1280, 800],
+  tablet: [768, 1024],
+  mobile: [360, 760]
+}
+
+const injectMeetingData = (win, meetingNumber) => {
+  const meetingDataScript = win.document.createElement('script')
+  meetingDataScript.id = 'meeting-data'
+  meetingDataScript.type = 'application/json'
+  meetingDataScript.innerHTML = `{"meetingNumber": "${meetingNumber}"}`
+  win.document.querySelector('head').appendChild(meetingDataScript)
 }
 
 // ====================================================================
-// AGENDA-NEUE (past meeting) in DESKTOP viewport
+// AGENDA-NEUE (past meeting) | DESKTOP viewport
 // ====================================================================
 
 describe('meeting -> agenda-neue [past, desktop]', {
@@ -19,13 +30,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
   before(() => {
     cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { body: meetingData }).as('getMeetingData')
     cy.visit(`/meeting/${meetingData.meeting.number}/agenda-neue`, {
-      onBeforeLoad: (win) => {
-        const meetingDataScript = win.document.createElement('script')
-        meetingDataScript.id = 'meeting-data'
-        meetingDataScript.type = 'application/json'
-        meetingDataScript.innerHTML = `{"meetingNumber": "${meetingData.meeting.number}"}`
-        win.document.querySelector('head').appendChild(meetingDataScript)
-      }
+      onBeforeLoad: (win) => { injectMeetingData(win, meetingData.meeting.number) }
     })
     cy.wait('@getMeetingData')
   })
@@ -110,7 +115,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
 })
 
 // ====================================================================
-// AGENDA-NEUE (future meeting) in DESKTOP viewport
+// AGENDA-NEUE (future meeting) | DESKTOP viewport
 // ====================================================================
 
 describe('meeting -> agenda-neue [future, desktop]', {
@@ -122,13 +127,7 @@ describe('meeting -> agenda-neue [future, desktop]', {
   before(() => {
     cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { body: meetingData }).as('getMeetingData')
     cy.visit(`/meeting/${meetingData.meeting.number}/agenda-neue`, {
-      onBeforeLoad: (win) => {
-        const meetingDataScript = win.document.createElement('script')
-        meetingDataScript.id = 'meeting-data'
-        meetingDataScript.type = 'application/json'
-        meetingDataScript.innerHTML = `{"meetingNumber": "${meetingData.meeting.number}"}`
-        win.document.querySelector('head').appendChild(meetingDataScript)
-      }
+      onBeforeLoad: (win) => { injectMeetingData(win, meetingData.meeting.number) }
     })
     cy.wait('@getMeetingData')
   })
@@ -141,80 +140,81 @@ describe('meeting -> agenda-neue [future, desktop]', {
 })
 
 // ====================================================================
-// FLOOR-PLAN-NEUE in DESKTOP viewport
+// FLOOR-PLAN-NEUE | All Viewports
 // ====================================================================
 
-describe('meeting -> floor-plan-neue [desktop]', {
-    viewportWidth: viewports.desktop[0],
-    viewportHeight: viewports.desktop[1]
-  }, () => {
-  const meetingData = meetingGenerator.generateAgendaResponse()
+describe(`meeting -> floor-plan-neue`, () => {
+  for (const vp of ['desktop', 'smallDesktop', 'tablet', 'mobile']) {
+    describe(vp, {
+        viewportWidth: viewports[vp][0],
+        viewportHeight: viewports[vp][1]
+      }, () => {
+      const meetingData = meetingGenerator.generateAgendaResponse({ skipSchedule: true })
 
-  before(() => {
-    cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { body: meetingData }).as('getMeetingData')
-    cy.visit(`/meeting/${meetingData.meeting.number}/floor-plan-neue`, {
-      onBeforeLoad: (win) => {
-        const meetingDataScript = win.document.createElement('script')
-        meetingDataScript.id = 'meeting-data'
-        meetingDataScript.type = 'application/json'
-        meetingDataScript.innerHTML = `{"meetingNumber": "${meetingData.meeting.number}"}`
-        win.document.querySelector('head').appendChild(meetingDataScript)
-      }
-    })
-    cy.wait('@getMeetingData')
-  })
+      before(() => {
+        cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { body: meetingData }).as('getMeetingData')
+        cy.visit(`/meeting/${meetingData.meeting.number}/floor-plan-neue`, {
+          onBeforeLoad: (win) => { injectMeetingData(win, meetingData.meeting.number) }
+        })
+        cy.wait('@getMeetingData')
+      })
 
-  // -> NAV
+      // -> NAV
 
-  it(`has the correct navigation items`, () => {
-    cy.get('.floorplan .meeting-nav > li').should('have.length', 3)
-    cy.get('.floorplan .meeting-nav > li').first().contains('Agenda')
-    cy.get('.floorplan .meeting-nav > li').eq(1).contains('Floor plan')
-    cy.get('.floorplan .meeting-nav > li').last().contains('Plaintext')
-  })
+      it(`has the correct navigation items`, () => {
+        cy.get('.floorplan .meeting-nav > li').should('have.length', 3)
+        cy.get('.floorplan .meeting-nav > li').first().contains('Agenda')
+        cy.get('.floorplan .meeting-nav > li').eq(1).contains('Floor plan')
+        cy.get('.floorplan .meeting-nav > li').last().contains('Plaintext')
+      })
 
-  // -> FLOORS
+      // -> FLOORS
 
-  it(`can switch between floors`, () => {
-    cy.get('.floorplan .floorplan-floors > .nav-link').should('have.length', meetingData.floors.length)
-    cy.get('.floorplan .floorplan-floors > .nav-link').each((el, idx) => {
-      cy.wrap(el).contains(meetingData.floors[idx].name)
-      cy.wrap(el).click()
-      cy.wrap(el).should('have.class', 'active')
-      cy.wrap(el).siblings().should('not.have.class', 'active')
-      // Wait for image to load + verify
-      cy.get('.floorplan .floorplan-plan > img').should('be.visible').and(img => expect(img[0].naturalWidth).to.be.greaterThan(1))
-    })
-  })
+      it(`can switch between floors`, () => {
+        cy.get('.floorplan .floorplan-floors > .nav-link').should('have.length', meetingData.floors.length)
+        cy.get('.floorplan .floorplan-floors > .nav-link').each((el, idx) => {
+          cy.wrap(el).contains(meetingData.floors[idx].name)
+          cy.wrap(el).click()
+          cy.wrap(el).should('have.class', 'active')
+          cy.wrap(el).siblings().should('not.have.class', 'active')
+          // Wait for image to load + verify
+          cy.get('.floorplan .floorplan-plan > img').should('be.visible').and(img => expect(img[0].naturalWidth).to.be.greaterThan(1))
+        })
+      })
 
-  // -> ROOMS
+      // -> ROOMS
 
-  it(`can select rooms`, () => {
-    const floor = meetingData.floors[0]
-    cy.get('.floorplan .floorplan-floors > .nav-link').first().click()
-    cy.get('.floorplan .floorplan-rooms > .list-group-item').should('have.length', floor.rooms.length)
-    cy.get('.floorplan .floorplan-rooms > .list-group-item').each((el, idx) => {
-      // Room List
-      const room = floor.rooms[idx]
-      cy.wrap(el).find('strong').contains(room.name)
-        .next('small').contains(room.functionalName)
-      cy.wrap(el).find('.badge').should('exist').and('include.text', floor.short)
-      cy.wrap(el).click()
-      cy.wrap(el).should('have.class', 'active')
-      cy.wrap(el).siblings().should('not.have.class', 'active')
-      // URL query segment
-      cy.location('search').should('include', `room=${room.slug}`)
-      // Pin Drop
-      cy.get('.floorplan .floorplan-plan > img').then(floorImg => {
-        const planxRatio = floorImg[0].width / floor.width
-        const planyRatio = floorImg[0].height / floor.height
-        cy.get('.floorplan .floorplan-plan-pin').should('exist').and('be.visible').then(el => {
-          const xPos = Math.round((room.left + (room.right - room.left) / 2) * planxRatio) - 25
-          const yPos = Math.round((room.top + (room.bottom - room.top) / 2) * planyRatio) - 40
-          expect(el[0].offsetLeft).to.equal(xPos)
-          expect(el[0].offsetTop).to.equal(yPos)
+      it(`can select rooms`, () => {
+        const floor = meetingData.floors[0]
+        cy.get('.floorplan .floorplan-floors > .nav-link').first().click()
+        cy.get('.floorplan .floorplan-rooms > .list-group-item').should('have.length', floor.rooms.length)
+        cy.get('.floorplan .floorplan-rooms > .list-group-item').each((el, idx) => {
+          // Room List
+          const room = floor.rooms[idx]
+          cy.wrap(el).find('strong').contains(room.name)
+            .next('small').contains(room.functionalName)
+          cy.wrap(el).find('.badge').should('exist').and('include.text', floor.short)
+          cy.wrap(el).click()
+          cy.wrap(el).should('have.class', 'active')
+          cy.wrap(el).siblings().should('not.have.class', 'active')
+          // URL query segment
+          cy.location('search').should('include', `room=${room.slug}`)
+          // Pin Drop
+          cy.window().then(win => {
+            cy.get('.floorplan .floorplan-plan > img').then(floorImg => {
+              const planxRatio = floorImg[0].width / floor.width
+              const planyRatio = floorImg[0].height / floor.height
+              cy.get('.floorplan .floorplan-plan-pin').should('exist').and('be.visible').then(el => {
+                const pinMarginLeft = parseInt(win.getComputedStyle(el[0]).getPropertyValue('margin-left').match(/\d+/))
+                const xPos = Math.round((room.left + (room.right - room.left) / 2) * planxRatio) - 25 + pinMarginLeft
+                const yPos = Math.round((room.top + (room.bottom - room.top) / 2) * planyRatio) - 40
+                expect(el[0].offsetLeft).to.equal(xPos)
+                expect(el[0].offsetTop).to.equal(yPos)
+              })
+            })
+          })
         })
       })
     })
-  })
+  }
 })
