@@ -288,6 +288,7 @@ def find_submission_filenames(draft):
 
 @transaction.atomic
 def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
+    # This is very chatty into the logs, but these could still be useful for quick diagnostics
     log.log(f"{submission.name}: start")
     system = Person.objects.get(name="(System)")
     submitter_parsed = submission.submitter_parsed()
@@ -589,15 +590,10 @@ def ensure_person_email_info_exists(name, email, docname):
     else:
         person.name_from_draft = name
 
-    # make sure we have an email address
-    if addr and (addr.startswith('unknown-email-') or is_valid_email(addr)):
-        active = True
-        addr = addr.lower()
-    else:
-        log.unreachable('2019-10-02')
-        # we're in trouble, use a fake one
-        active = False
-        addr = "unknown-email-%s" % person.plain_ascii().replace(" ", "-")
+
+    active = True
+    addr = addr.lower()
+
 
     try:
         email = person.email_set.get(address=addr)
