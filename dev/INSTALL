@@ -43,20 +43,18 @@ General Instructions for Deployment of a New Release
 
       ietf/manage.py check
 
- 7. Switch to the docker directory and update async task docker image:
+ 7. Switch to the docker directory and update images:
 
       cd /a/docker/datatracker-cel
       docker image tag ghcr.io/ietf-tools/datatracker-celery:latest datatracker-celery-fallback
-      docker-compose pull celery
+      docker image tag ghcr.io/ietf-tools/datatracker-mq:latest datatracker-mq-fallback
+      docker-compose pull
 
- 8. Stop and remove the async task container:
-    Wait for these to finish cleanly. It may take up to about 10 minutes for the 'stop' command to
+ 8. Stop and remove the async task containers:
+    Wait for this to finish cleanly. It may take up to about 10 minutes for the 'stop' command to
     complete if a long-running task is in progress.
 
-      docker-compose stop celery
-      docker-compose rm celery
-
-    (Answer 'y' when prompted to remove the container.)
+      docker-compose down
 
  9. Stop the datatracker 
     (consider doing this with a second shell at ietfa to avoid the exit and shift back to wwwrun)
@@ -82,7 +80,7 @@ General Instructions for Deployment of a New Release
       exit # or CTRL-D, back to root level shell
       sudo systemctl start datatracker.service datatracker.socket
 
- 13. Start async task worker:
+ 13. Start async task worker and message broker:
 
       cd /a/docker/datatracker-cel
       bash startcommand
@@ -95,13 +93,13 @@ General Instructions for Deployment of a New Release
      restart in steps 11 and 12. To revert the docker update:
 
           cd /a/docker/datatracker-cel
-          docker-compose stop celery
-          docker-compose rm celery
-          docker image rm ghcr.io/ietf-tools/datatracker-celery:latest
+          docker-compose down
+          docker image rm ghcr.io/ietf-tools/datatracker-celery:latest ghcr.io/ietf-tools/datatracker-mq:latest
           docker image tag datatracker-celery-fallback ghcr.io/ietf-tools/datatracker-celery:latest
+          docker image tag datatracker-mq-fallback ghcr.io/ietf-tools/datatracker-mq:latest
           cd -
 
-     If there were migrations at step 7, they will need to be reversed before the restart at step 11.
+     If there were migrations at step 10, they will need to be reversed before the restart at step 12.
      If it's not obvious what to do to reverse the migrations, contact the dev team.
 
  
