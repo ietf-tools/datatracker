@@ -4,7 +4,7 @@
 #
 #   CELERY_PASSWORD - password for the datatracker celery user
 #
-export RABBITMQ_PID_FILE=/var/run/rabbitmq.pid
+export RABBITMQ_PID_FILE=/tmp/rabbitmq.pid
 
 update_celery_password () {
   rabbitmqctl wait "${RABBITMQ_PID_FILE}" --timeout 300
