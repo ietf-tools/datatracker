@@ -1,0 +1,30 @@
+{
+  "permissions": [
+    {
+      "configure": ".*",
+      "read": ".*",
+      "user": "datatracker",
+      "vhost": "dt",
+      "write": ".*"
+    }
+  ],
+  "users": [
+    {
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "limits": {},
+      "name": "datatracker",
+      "password_hash": "",
+      "tags": []
+    }
+  ],
+  "vhosts": [
+    {
+      "limits": [],
+      "metadata": {
+        "description": "",
+        "tags": []
+      },
+      "name": "dt"
+    }
+  ]
+}

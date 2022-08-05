@@ -1,0 +1,18 @@
+#!/bin/bash -x
+#
+# Environment parameters:
+#
+#   CELERY_PASSWORD - password for the datatracker celery user
+#
+export RABBITMQ_PID_FILE=/var/run/rabbitmq.pid
+
+update_celery_password () {
+  rabbitmqctl wait "${RABBITMQ_PID_FILE}" --timeout 300
+  rabbitmqctl await_startup --timeout 300
+  rabbitmqctl change_password datatracker <<END
+${CELERY_PASSWORD}
+END
+}
+
+update_celery_password &
+exec rabbitmq-server "$@"
