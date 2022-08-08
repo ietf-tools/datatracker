@@ -5687,8 +5687,8 @@ class InterimTests(TestCase):
         self.assertContains(r, 'BEGIN:VEVENT')
         self.assertEqual(r.content.count(b'UID'), 2)
         self.assertContains(r, 'SUMMARY:mars - Martian Special Interest Group')
-        self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
-        self.assertContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t1.time.astimezone(meeting.tz()).strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t2.time.astimezone(meeting.tz()).strftime('%Y%m%dT%H%M%S'))
         self.assertContains(r, 'END:VEVENT')
         #
         url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number, 'session_id':s1.id, })

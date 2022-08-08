@@ -384,16 +384,14 @@ class Meeting(models.Model):
             self.save()
 
     def updated(self):
-        min_time = datetime.datetime(1970, 1, 1, 0, 0, 0) # should be Meeting.modified, but we don't have that
+        # should be Meeting.modified, but we don't have that
+        min_time = pytz.utc.localize(datetime.datetime(1970, 1, 1, 0, 0, 0))
         timeslots_updated = self.timeslot_set.aggregate(Max('modified'))["modified__max"] or min_time
         sessions_updated = self.session_set.aggregate(Max('modified'))["modified__max"] or min_time
         assignments_updated = min_time
         if self.schedule:
             assignments_updated = SchedTimeSessAssignment.objects.filter(schedule__in=[self.schedule, self.schedule.base if self.schedule else None]).aggregate(Max('modified'))["modified__max"] or min_time
-        ts = max(timeslots_updated, sessions_updated, assignments_updated)
-        tz = pytz.timezone(settings.PRODUCTION_TIMEZONE)
-        ts = tz.localize(ts)
-        return ts
+        return max(timeslots_updated, sessions_updated, assignments_updated)
 
     @memoize
     def previous_meeting(self):
