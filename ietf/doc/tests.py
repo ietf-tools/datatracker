@@ -10,12 +10,14 @@ import bibtexparser
 import mock
 import json
 import copy
+import random
 
 from http.cookies import SimpleCookie
 from pathlib import Path
 from pyquery import PyQuery
 from urllib.parse import urlparse, parse_qs
 from tempfile import NamedTemporaryFile
+from collections import defaultdict
 
 from django.core.management import call_command
 from django.urls import reverse as urlreverse
@@ -36,10 +38,11 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
     BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
-    StatusChangeFactory)
+    StatusChangeFactory, BofreqFactory)
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
-from ietf.group.models import Group
+from ietf.doc.views_search import ad_dashboard_group, ad_dashboard_group_type # TODO: red flag that we're importing from views in tests. Move these to utils.
+from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
 from ietf.meeting.models import Meeting, SessionPresentation, SchedulingEvent
@@ -227,6 +230,41 @@ class SearchTests(TestCase):
         r = self.client.get("/")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Document Search")
+
+    def test_ad_workload(self):
+        Role.objects.filter(name_id='ad').delete()
+        ad = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person
+        doc_type_names = ['bofreq', 'charter', 'conflrev', 'draft', 'statchg']
+        expected = defaultdict(lambda :0)
+        for doc_type_name in doc_type_names:
+            if doc_type_name=='draft':
+                states = State.objects.filter(type='draft-iesg', used=True).values_list('slug', flat=True)
+            else:
+                states = State.objects.filter(type=doc_type_name, used=True).values_list('slug', flat=True)
+
+            for state in states:
+                target_num = random.randint(0,2)
+                for _ in range(target_num):
+                    if doc_type_name == 'draft':
+                        doc = IndividualDraftFactory(ad=ad,states=[('draft-iesg', state),('draft','rfc' if state=='pub' else 'active')])
+                    elif doc_type_name == 'charter':
+                        doc = CharterFactory(ad=ad, states=[(doc_type_name, state)])
+                    elif doc_type_name == 'bofreq':
+                        # Note that the view currently doesn't handle bofreqs
+                        doc = BofreqFactory(states=[(doc_type_name, state)], bofreqresponsibledocevent__responsible=[ad])
+                    elif doc_type_name == 'conflrev':
+                        doc = ConflictReviewFactory(ad=ad, states=State.objects.filter(type_id=doc_type_name, slug=state))
+                    elif doc_type_name == 'statchg':
+                        doc = StatusChangeFactory(ad=ad, states=State.objects.filter(type_id=doc_type_name, slug=state))
+                    else:
+                        # Currently unreachable
+                        doc = DocumentFactory(type_id=doc_type_name, ad=ad, states=[(doc_type_name, state)])
+                    expected[(ad_dashboard_group_type(doc),ad_dashboard_group(doc))] += 1
+
+        #debug.show("expected")
+        url = urlreverse('ietf.doc.views_search.ad_workload')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
 
     def test_docs_for_ad(self):
         ad = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person

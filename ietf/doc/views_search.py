@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2020, All Rights Reserved
+# Copyright The IETF Trust 2009-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Some parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
@@ -422,10 +422,14 @@ def ad_dashboard_sort_key(doc):
 def ad_workload(request):
     ads = []
     responsible = Document.objects.values_list('ad', flat=True).distinct()
-    for p in Person.objects.filter(Q(role__name__in=("pre-ad", "ad"),
-                                     role__group__type="area",
-                                     role__group__state="active")
-                                   | Q(pk__in=responsible)).distinct():
+    for p in Person.objects.filter(
+        Q(
+            role__name__in=("pre-ad", "ad"),
+            role__group__type="area",
+            role__group__state="active"
+        )
+        | Q(pk__in=responsible)
+    ).distinct():
         if p in get_active_ads():
                 ads.append(p)
 
@@ -489,7 +493,7 @@ def ad_workload(request):
             counts[g] = []
         for doc in data:
             group_type = ad_dashboard_group_type(doc)
-            if group_type:
+            if group_type and group_type in groups: # Right now, anything with group_type "Document", such as a bofreq is not handled.
                 group = ad_dashboard_group(doc)
                 if group not in groups[group_type]:
                     groups[group_type][group] = len(groups[group_type])
@@ -508,6 +512,8 @@ def ad_workload(request):
             for s in [' Internet-Draft', ' Charter', ' Conflict Review', ' Status Change', ' (Internal Steering Group/IAB Review) Charter']:
                 if g.endswith(s):
                     group_names[gt][idx] = g[:-len(s)]
+
+
     return render(request, 'doc/ad_list.html', {
         'ads': ads,
         'group_types': group_types,
