@@ -5,12 +5,12 @@ import slugify from 'slugify'
 
 import floorsMeta from '../fixtures/meeting-floors.json'
 
-const xslugify = (str) =>  slugify(str.replace('/', '-'), { lower: true })
+const xslugify = (str) => slugify(str.replace('/', '-'), { lower: true })
 
 /**
  * Generate area response from label + children
  */
-const createArea = ({ label, children = [] }) => {
+function createArea ({ label, children = [] }) {
   return {
     label,
     keyword: xslugify(label),
@@ -27,7 +27,7 @@ const createArea = ({ label, children = [] }) => {
  * Generate group response from label
  */
 const uniqueGroupNames = []
-const createGroup = ({ label, mayBeBof = false, toggledBy = [] }) => {
+function createGroup ({ label, mayBeBof = false, toggledBy = [] }) {
   // make sure group name is unique
   while (!label) {
     const nameAttempt = faker.word.verb()
@@ -56,9 +56,77 @@ const createGroup = ({ label, mayBeBof = false, toggledBy = [] }) => {
   }
 }
 
+/**
+ * Generate event
+ */
+let lastEventId = 100000
+let lastSessionId = 25000
+function createEvent ({
+  name = '',
+  hasNote = false
+}, floors, categories) {
+  const floor = sample(floors)
+  const room = sample(floor.rooms)
+  const eventName = name ?? faker.lorem.sentence(random(2, 5))
+  return {
+    id: ++lastEventId,
+    sessionId: ++lastSessionId,
+    room: room.name,
+    location: {
+      short: floor.short,
+      name: floor.name
+    },
+    acronym: "hackathon",
+    duration: 41400,
+    name: eventName,
+    startDateTime: "2022-07-23T09:30:00",
+    status: "sched",
+    type: "other",
+    isBoF: false,
+    filterKeywords: [
+      "coding",
+      "hackathon",
+      "hackathon-sessc"
+    ],
+    groupAcronym: "hackathon",
+    groupName: "Hackathon",
+    groupParent: {
+      acronym: "gen"
+    },
+    note: hasNote ? faker.lorem.sentence(4) : '',
+    remoteInstructions: '',
+    flags: {
+      agenda: false,
+      showAgenda: false
+    },
+    agenda: {
+      url: null
+    },
+    orderInMeeting: 1,
+    short: "Hackathon",
+    sessionToken: "sessc",
+    links: {
+      chat: "https://zulip.ietf.org/#narrow/stream/hackathon",
+      chatArchive: "https://zulip.ietf.org/#narrow/stream/hackathon",
+      recordings: [],
+      videoStream: null,
+      audioStream: null,
+      webex: null,
+      onsiteTool: null,
+      calendar: `/meeting/123/session/${lastSessionId}.ics`
+    }
+  }
+}
+
 export default {
+  /**
+   * Generate a standard agenda data reponse
+   */
   generateAgendaResponse ({ future = false, skipSchedule = false } = {}) {
-    const startDate = future ? DateTime.fromISO(faker.date.future(1).toISOString()) : DateTime.fromISO(faker.date.past(5, DateTime.utc().minus({ months: 3 })).toISOString())
+    // Get random date but always start on a saturday
+    const startDate = future ?
+      DateTime.fromISO(faker.date.future(1).toISOString()).startOf('week').minus({ days: 2 }) :
+      DateTime.fromISO(faker.date.past(5, DateTime.utc().minus({ months: 3 })).toISOString()).startOf('week').minus({ days: 2 })
     const endDate = startDate.plus({ days: 7 })
 
     // Generate floors
@@ -93,8 +161,9 @@ export default {
       }
     })
 
+    // Generate categories (groups/areas)
+
     const categories = []
-    const schedule = []
 
     if (!skipSchedule) {
       // Generate first group of areas
@@ -190,6 +259,19 @@ export default {
         ]
       )
     }
+
+    // Generate schedule
+
+    const schedule = []
+
+    if (!skipSchedule) {
+      // Generate first 2 days (no regular sessions)
+
+
+
+    }
+
+    // Return response object
 
     return {
       meeting: {
