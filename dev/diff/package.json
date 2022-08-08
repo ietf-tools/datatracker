@@ -1,0 +1,15 @@
+{
+  "name": "diff",
+  "type": "module",
+  "dependencies": {
+    "chalk": "^5.0.1",
+    "dockerode": "^3.3.3",
+    "fs-extra": "^10.1.0",
+    "inquirer": "^9.1.0",
+    "ora": "^6.1.2",
+    "yargs": "^17.5.1"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}
