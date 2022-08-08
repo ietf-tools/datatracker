@@ -24,10 +24,10 @@
   <tbody>
     {% for ad in ads %}
     <tr>
-      <td><A HREF="{{ ad.dashboard }}">{{ ad.name }}</A></td>
+      <td><a href="{{ ad.dashboard }}">{{ ad.name }}</a></td>
       {% for c in ad.counts|get_hash:gt %}
       {% if forloop.counter0 < groups|get_hash:gt|length %}
-      <td>{{ c }}</th>
+      <td>{{ c }}</td>
       {% endif %}
       {% endfor %}
     </tr>
