@@ -86,7 +86,7 @@ class Meeting(models.Model):
     # We can't derive time-zone from country, as there are some that have
     # more than one timezone, and the pytz module doesn't provide timezone
     # lookup information for all relevant city/country combinations.
-    time_zone = models.CharField(blank=True, max_length=255, choices=timezones)
+    time_zone = models.CharField(max_length=255, choices=timezones, default='UTC')
     idsubmit_cutoff_day_offset_00 = models.IntegerField(blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_00,
         help_text = "The number of days before the meeting start date when the submission of -00 drafts will be closed.")
