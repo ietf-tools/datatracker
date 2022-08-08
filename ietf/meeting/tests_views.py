@@ -5125,14 +5125,14 @@ class InterimTests(TestCase):
         self.assertFalse(can_manage_group(user=user,group=group))
 
     def test_interim_request_details(self):
-        make_interim_test_data()
+        make_interim_test_data(meeting_tz='America/Chicago')
         meeting = Session.objects.with_current_status().filter(
             meeting__type='interim', group__acronym='mars', current_status='apprw').first().meeting
         url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        start_time = meeting.session_set.first().official_timeslotassignment().timeslot.time.strftime('%H:%M')
+        start_time = meeting.session_set.first().official_timeslotassignment().timeslot.local_start_time().strftime('%H:%M')
         utc_start_time = meeting.session_set.first().official_timeslotassignment().timeslot.utc_start_time().strftime('%H:%M')
         self.assertIn(start_time, unicontent(r))
         self.assertIn(utc_start_time, unicontent(r))

@@ -21,9 +21,9 @@ from ietf.person.factories import PersonFactory
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
 
-def make_interim_meeting(group,date,status='sched'):
+def make_interim_meeting(group,date,status='sched',tz='UTC'):
     system_person = Person.objects.get(name="(System)")
-    meeting = create_interim_meeting(group=group,date=date)
+    meeting = create_interim_meeting(group=group,date=date,timezone=tz)
     time = meeting.tz().localize(
         datetime.datetime.combine(date, datetime.time(9))
     )
@@ -228,7 +228,7 @@ def make_meeting_test_data(meeting=None, create_interims=False):
 
     return meeting
 
-def make_interim_test_data():
+def make_interim_test_data(meeting_tz='UTC'):
     date = datetime.date.today() + datetime.timedelta(days=365)
     date2 = datetime.date.today() + datetime.timedelta(days=1000)
     PersonFactory(user__username='plain')
@@ -240,10 +240,10 @@ def make_interim_test_data():
     RoleFactory(group=mars,person__user__username='marschairman',name_id='chair')
     RoleFactory(group=ames,person__user__username='ameschairman',name_id='chair')
 
-    make_interim_meeting(group=mars,date=date,status='sched')
-    make_interim_meeting(group=mars,date=date2,status='apprw')
-    make_interim_meeting(group=ames,date=date,status='canceled')
-    make_interim_meeting(group=ames,date=date2,status='apprw')
+    make_interim_meeting(group=mars,date=date,status='sched',tz=meeting_tz)
+    make_interim_meeting(group=mars,date=date2,status='apprw',tz=meeting_tz)
+    make_interim_meeting(group=ames,date=date,status='canceled',tz=meeting_tz)
+    make_interim_meeting(group=ames,date=date2,status='apprw',tz=meeting_tz)
 
     return
 

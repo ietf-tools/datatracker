@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load static django_bootstrap5 widget_tweaks ietf_filters person_filters textfilters %}
+{% load static django_bootstrap5 widget_tweaks ietf_filters person_filters textfilters tz %}
 {% block title %}Interim Request Details{% endblock %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static 'ietf/css/select2.css' %}">
@@ -58,19 +58,21 @@
             <dt class="col-sm-2">
                 Date
             </dt>
-            <dd class="col-sm-10">
-                {{ assignment.timeslot.time|date:"Y-m-d" }}
-            </dd>
-            <dt class="col-sm-2">
-                Start time
-            </dt>
-            <dd class="col-sm-10">
-                {{ assignment.timeslot.time|date:"H:i" }}
-                {% if meeting.time_zone != 'UTC' %}
-                    ({{ assignment.timeslot.utc_start_time|date:"H:i" }} UTC)
-                {% endif %}
-            </dd>
-            <dt class="col-sm-2">
+            {% localtime off %}
+                <dd class="col-sm-10">
+                    {{ assignment.timeslot.time|timezone:meeting.tz|date:"Y-m-d" }}
+                </dd>
+                <dt class="col-sm-2">
+                    Start time
+                </dt>
+                <dd class="col-sm-10">
+                    {{ assignment.timeslot.local_start_time|date:"H:i" }}
+                    {% if meeting.time_zone != 'UTC' %}
+                        ({{ assignment.timeslot.utc_start_time|date:"H:i" }} UTC)
+                    {% endif %}
+                </dd>
+                <dt class="col-sm-2">
+            {% endlocaltime %}
                 Duration
             </dt>
             <dd class="col-sm-10">
