@@ -358,19 +358,17 @@ class Meeting(models.Model):
 #                                                    timeslot = ts)
 
     def vtimezone(self):
-        if self.time_zone:
-            try:
-                tzfn = os.path.join(settings.TZDATA_ICS_PATH, self.time_zone + ".ics")
-                if os.path.exists(tzfn):
-                    with io.open(tzfn) as tzf:
-                        icstext = tzf.read()
-                    vtimezone = re.search("(?sm)(\nBEGIN:VTIMEZONE.*\nEND:VTIMEZONE\n)", icstext).group(1).strip()
-                    if vtimezone:
-                        vtimezone += "\n"
-                    return vtimezone
-            except IOError:
-                pass
-        return ''
+        try:
+            tzfn = os.path.join(settings.TZDATA_ICS_PATH, self.time_zone + ".ics")
+            if os.path.exists(tzfn):
+                with io.open(tzfn) as tzf:
+                    icstext = tzf.read()
+                vtimezone = re.search("(?sm)(\nBEGIN:VTIMEZONE.*\nEND:VTIMEZONE\n)", icstext).group(1).strip()
+                if vtimezone:
+                    vtimezone += "\n"
+                return vtimezone
+        except IOError:
+            pass
 
     def set_official_schedule(self, schedule):
         if self.schedule != schedule:
@@ -609,24 +607,15 @@ class TimeSlot(models.Model):
 
     def tz(self):
         if not hasattr(self, '_cached_tz'):
-            if self.meeting.time_zone:
-                self._cached_tz = pytz.timezone(self.meeting.time_zone)
-            else:
-                self._cached_tz = None
+            self._cached_tz = pytz.timezone(self.meeting.time_zone)
         return self._cached_tz
 
     def tzname(self):
-        if self.tz():
-            return self.tz().tzname(self.time)
-        else:
-            return ""
+        return self.tz().tzname(self.time)
 
     def utc_start_time(self):
-        if self.tz():
-            local_start_time = self.tz().localize(self.time)
-            return local_start_time.astimezone(pytz.utc)
-        else:
-            return None
+        local_start_time = self.tz().localize(self.time)
+        return local_start_time.astimezone(pytz.utc)
 
     def utc_end_time(self):
         utc_start = self.utc_start_time()
@@ -634,10 +623,7 @@ class TimeSlot(models.Model):
         return None if utc_start is None else utc_start + self.duration
 
     def local_start_time(self):
-        if self.tz():
-            return self.tz().localize(self.time)
-        else:
-            return None
+        return self.tz().localize(self.time)
 
     def local_end_time(self):
         local_start = self.local_start_time()
