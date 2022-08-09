@@ -20,7 +20,7 @@
         <a href="{% url 'agenda-neue' num=schedule.meeting.number %}">Switch to New Agenda Display</a>
     </div>
 {% endblock %}
-{% block content %}{% timezone display_timezone %}
+{% block content %}
     {% origin %}
     {% if "-utc" in request.path %}
         {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated selected="agenda-utc" title_extra="(UTC)" %}
@@ -360,7 +360,7 @@
     {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting personalize=personalize only %}
 {% endif %}
 {% endcache %}
-{% endtimezone %}{% endblock %}
+{% endblock %}
 {% block js %}
     <script src="{% static 'ietf/js/agenda_filter.js' %}"></script>
     <script>

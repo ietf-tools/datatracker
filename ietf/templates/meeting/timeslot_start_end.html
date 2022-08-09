@@ -1,11 +1,7 @@
-{% load tz %}<div class="timetooltip">
+<div class="timetooltip">
     <div class="time"
          data-start-time="{{ item.start_timestamp }}"
          data-end-time="{{ item.end_timestamp }}">
-{#        {% if "-utc" in request.path %}#}
-{#            {{ item.timeslot.time|utc|date:"H:i" }}<span class="d-lg-none"><br></span>-{{ item.timeslot.end_time|utc|date:"H:i" }}#}
-{#        {% else %}#}
-            {{ item.timeslot.time|date:"H:i" }}<span class="d-lg-none"><br></span>-{{ item.timeslot.end_time|date:"H:i" }}
-{#        {% endif %}#}
+        {{ item.timeslot.time|date:"H:i" }}<span class="d-lg-none"><br></span>-{{ item.timeslot.end_time|date:"H:i" }}
     </div>
 </div>

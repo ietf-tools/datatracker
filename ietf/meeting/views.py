@@ -281,8 +281,8 @@ def materials_editable_groups(request, num=None):
 def edit_timeslots(request, num=None):
 
     meeting = get_meeting(num)
+    timezone.activate(meeting.tz())
     try:
-        timezone.activate(meeting.tz())
         if request.method == 'POST':
             # handle AJAX requests
             action = request.POST.get('action')
@@ -1564,19 +1564,29 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
 
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
-    rendered_page = render(request, "meeting/"+base+ext, {
-        "personalize": False,
-        "schedule": schedule,
-        "filtered_assignments": filtered_assignments,
-        "updated": updated,
-        "filter_categories": filter_organizer.get_filter_categories(),
-        "non_area_keywords": filter_organizer.get_non_area_keywords(),
-        "now": timezone.now().astimezone(pytz.utc),
-        "display_timezone": 'UTC' if utc else meeting.time_zone,
-        "is_current_meeting": is_current_meeting,
-        "use_codimd": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
-        "cache_time": 150 if is_current_meeting else 3600,
-    }, content_type=mimetype[ext])
+    display_timezone = 'UTC' if utc else meeting.time_zone
+    timezone.activate(display_timezone)
+    try:
+        rendered_page = render(
+            request,
+            "meeting/" + base + ext,
+            {
+                "personalize": False,
+                "schedule": schedule,
+                "filtered_assignments": filtered_assignments,
+                "updated": updated,
+                "filter_categories": filter_organizer.get_filter_categories(),
+                "non_area_keywords": filter_organizer.get_non_area_keywords(),
+                "now": timezone.now().astimezone(pytz.utc),
+                "display_timezone": display_timezone,
+                "is_current_meeting": is_current_meeting,
+                "use_codimd": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
+                "cache_time": 150 if is_current_meeting else 3600,
+            },
+            content_type=mimetype[ext],
+        )
+    finally:
+        timezone.deactivate()
 
     return rendered_page
 
@@ -4086,8 +4096,8 @@ def edit_timeslot(request, num, slot_id):
     meeting = get_object_or_404(Meeting, number=num)
     if timeslot.meeting != meeting:
         raise Http404()
+    timezone.activate(meeting.tz())  # specifies current_timezone used for rendering and form handling
     try:
-        timezone.activate(meeting.tz())  # specifies current_timezone used for rendering and form handling
         if request.method == 'POST':
             form = TimeSlotEditForm(instance=timeslot, data=request.POST)
             if form.is_valid():

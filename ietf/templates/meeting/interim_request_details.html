@@ -6,7 +6,7 @@
 {% block pagehead %}
     <link rel="stylesheet" href="{% static 'ietf/css/select2.css' %}">
 {% endblock %}
-{% block content %}
+{% block content %}{% timezone meeting.tz %}
     {% origin %}
     <h1>Interim Meeting Request Details</h1>
     <dl class="row my-3">
@@ -58,21 +58,19 @@
             <dt class="col-sm-2">
                 Date
             </dt>
-            {% localtime off %}
-                <dd class="col-sm-10">
-                    {{ assignment.timeslot.time|timezone:meeting.tz|date:"Y-m-d" }}
-                </dd>
-                <dt class="col-sm-2">
-                    Start time
-                </dt>
-                <dd class="col-sm-10">
-                    {{ assignment.timeslot.local_start_time|date:"H:i" }}
-                    {% if meeting.time_zone != 'UTC' %}
-                        ({{ assignment.timeslot.utc_start_time|date:"H:i" }} UTC)
-                    {% endif %}
-                </dd>
-                <dt class="col-sm-2">
-            {% endlocaltime %}
+            <dd class="col-sm-10">
+                {{ assignment.timeslot.time|date:"Y-m-d" }}
+            </dd>
+            <dt class="col-sm-2">
+                Start time
+            </dt>
+            <dd class="col-sm-10">
+                {{ assignment.timeslot.time|date:"H:i" }}
+                {% if meeting.time_zone != 'UTC' %}
+                    ({{ assignment.timeslot.time|utc|date:"H:i" }} UTC)
+                {% endif %}
+            </dd>
+            <dt class="col-sm-2">
                 Duration
             </dt>
             <dd class="col-sm-10">
@@ -153,7 +151,7 @@
             {% endif %}
         {% endwith %}
     {% if can_approve and status_slug == 'apprw' %}</form>{% endif %}
-{% endblock %}
+{% endtimezone %}{% endblock %}
 {% block js %}
     <script src="{% static 'ietf/js/select2.js' %}"></script>
     <script src="{% static 'ietf/js/meeting-interim-request.js' %}"></script>
