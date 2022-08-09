@@ -4369,12 +4369,10 @@ class InterimTests(TestCase):
         self.do_interim_skip_announcement_test(extra_session=True, canceled_session=True, base_session=True)
 
     def do_interim_send_announcement_test(self, base_session=False, extra_session=False, canceled_session=False):
-        make_interim_test_data()
+        make_interim_test_data(meeting_tz='America/Los_Angeles')
         session = Session.objects.with_current_status().filter(
             meeting__type='interim', group__acronym='mars', current_status='apprw').first()
         meeting = session.meeting
-        meeting.time_zone = 'America/Los_Angeles'
-        meeting.save()
 
         if base_session:
             base_session = SessionFactory(meeting=meeting, status_id='apprw', add_to_schedule=False)
