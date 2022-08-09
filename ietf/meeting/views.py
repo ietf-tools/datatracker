@@ -143,7 +143,7 @@ def materials(request, num=None):
                 'cor_cut_off_date': cor_cut_off_date
             })
 
-    past_cutoff_date = datetime_today() > meeting.get_submission_correction_date()
+    past_cutoff_date = date_today() > meeting.get_submission_correction_date()
 
     schedule = get_schedule(meeting, None)
 

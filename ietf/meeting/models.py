@@ -7,26 +7,23 @@
 import datetime
 import io
 import os
-import pytz
 import random
 import re
 import string
-
 from collections import namedtuple
 from pathlib import Path
 from urllib.parse import urljoin
 
-import debug                            # pyflakes:ignore
-
+import pytz
+from django.conf import settings
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.db.models import Max, Subquery, OuterRef, TextField, Value, Q
 from django.db.models.functions import Coalesce
-from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
-from django.utils.text import slugify
 from django.utils.safestring import mark_safe
+from django.utils.text import slugify
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.models import Document
@@ -39,16 +36,16 @@ from ietf.name.models import (
 )
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
+from ietf.utils.fields import MissingOkImageField
+from ietf.utils.log import unreachable
+from ietf.utils.models import ForeignKey
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import date2datetime
-from ietf.utils.models import ForeignKey
 from ietf.utils.validators import (
     MaxImageSizeValidator, WrappedValidator, validate_file_size, validate_mime_type,
     validate_file_extension,
 )
-from ietf.utils.fields import MissingOkImageField
-from ietf.utils.log import unreachable
 
 countries = list(pytz.country_names.items())
 countries.sort(key=lambda x: x[1])
@@ -139,6 +136,11 @@ class Meeting(models.Model):
     def end_date(self):
         return self.get_meeting_date(self.days-1)
 
+    def end_datetime(self):
+        """Datetime of the first instant _after_ the meeting's last day"""
+        return self.tz().localize(
+            datetime.datetime.combine(self.get_meeting_date(self.days), datetime.time())
+        )
     def get_00_cutoff(self):
         start_date = datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day, tzinfo=pytz.utc)
         importantdate = self.importantdate_set.filter(name_id='idcutoff').first()

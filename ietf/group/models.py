@@ -181,11 +181,15 @@ class Group(GroupInfo):
         return self.role_set.none()
 
     def status_for_meeting(self,meeting):
-        end_date = meeting.end_date()+datetime.timedelta(days=1)
         previous_meeting = meeting.previous_meeting()
-        status_events = self.groupevent_set.filter(type='status_update',time__lte=end_date).order_by('-time')
+        status_events = self.groupevent_set.filter(
+            type='status_update',
+            time__lt=meeting.end_datetime(),
+        ).order_by('-time')
         if previous_meeting:
-            status_events = status_events.filter(time__gte=previous_meeting.end_date()+datetime.timedelta(days=1))
+            status_events = status_events.filter(
+                time__gte=previous_meeting.end_datetime()
+            )
         return status_events.first()
 
     def get_description(self):
