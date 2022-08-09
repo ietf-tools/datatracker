@@ -156,7 +156,7 @@ class MeetingTests(BaseMeetingTestCase):
         #
         self.write_materials_files(meeting, session)
         #
-        future_year = datetime.date.today().year+1
+        future_year = date_today().year+1
         future_num =  (future_year-1984)*3            # valid for the mid-year meeting
         future_meeting = Meeting.objects.create(date=datetime.date(future_year, 7, 22), number=future_num, type_id='ietf',
                                 city="Panama City", country="PA", time_zone='America/Panama')
@@ -971,7 +971,7 @@ class MeetingTests(BaseMeetingTestCase):
         url = urlreverse('ietf.meeting.views.current_materials')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
-        MeetingFactory(type_id='ietf', date=datetime.date.today())
+        MeetingFactory(type_id='ietf', date=date_today())
         response = self.client.get(url)
         self.assertEqual(response.status_code, 302)
 
@@ -7469,7 +7469,7 @@ class ProceedingsTests(BaseMeetingTestCase):
 
     def test_proceedings_no_agenda(self):
         # Meeting number must be larger than the last special-cased proceedings (currently 96)
-        meeting = MeetingFactory(type_id='ietf',populate_schedule=False,date=datetime.date.today(), number='100')
+        meeting = MeetingFactory(type_id='ietf',populate_schedule=False,date=date_today(), number='100')
         url = urlreverse('ietf.meeting.views.proceedings')
         r = self.client.get(url)
         self.assertRedirects(r, urlreverse('ietf.meeting.views.materials'))
@@ -7578,7 +7578,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         """Generate a meeting for proceedings material test"""
         # meeting number 123 avoids various legacy cases that affect these tests
         # (as of Aug 2021, anything above 96 is probably ok)
-        return MeetingFactory(type_id='ietf', number='123', date=datetime.date.today())
+        return MeetingFactory(type_id='ietf', number='123', date=date_today())
 
     def _secretary_only_permission_test(self, url, include_post=True):
         self.client.logout()

@@ -96,6 +96,7 @@ from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 from ietf.utils.response import permission_denied
 from ietf.utils.text import xslugify
+from ietf.utils.timezone import datetime_today, date_today
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
     InterimCancelForm, InterimSessionInlineFormSet, RequestMinutesForm,
@@ -127,7 +128,7 @@ def materials(request, num=None):
     begin_date = meeting.get_submission_start_date()
     cut_off_date = meeting.get_submission_cut_off_date()
     cor_cut_off_date = meeting.get_submission_correction_date()
-    now = datetime.date.today()
+    now = date_today()
     old = timezone.now() - datetime.timedelta(days=1)
     if settings.SERVER_MODE != 'production' and '_testoverride' in request.GET:
         pass
@@ -142,7 +143,7 @@ def materials(request, num=None):
                 'cor_cut_off_date': cor_cut_off_date
             })
 
-    past_cutoff_date = datetime.date.today() > meeting.get_submission_correction_date()
+    past_cutoff_date = datetime_today() > meeting.get_submission_correction_date()
 
     schedule = get_schedule(meeting, None)
 
@@ -192,7 +193,7 @@ def materials(request, num=None):
     })
 
 def current_materials(request):
-    today = datetime.date.today()
+    today = date_today()
     meetings = Meeting.objects.exclude(number__startswith='interim-').filter(date__lte=today).order_by('-date')
     if meetings:
         return redirect(materials, meetings[0].number)
@@ -2474,7 +2475,7 @@ def session_details(request, num, acronym):
                     'is_materials_manager' : session.group.has_role(request.user, session.group.features.matman_roles),
                     'can_manage_materials' : can_manage,
                     'can_view_request': can_view_request,
-                    'thisweek': datetime.date.today()-datetime.timedelta(days=7),
+                    'thisweek': datetime_today()-datetime.timedelta(days=7),
                     'now': timezone.now(),
                     'use_codimd': True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
                   })
@@ -3573,7 +3574,7 @@ def past(request):
 
 def upcoming(request):
     '''List of upcoming meetings'''
-    today = datetime.date.today()
+    today = datetime_today()
 
     # Get ietf meetings starting 7 days ago, and interim meetings starting today
     ietf_meetings = Meeting.objects.filter(type_id='ietf', date__gte=today-datetime.timedelta(days=7))
@@ -3637,7 +3638,7 @@ def upcoming(request):
                   'menu_entries': menu_entries,
                   'selected_menu_entry': selected_menu_entry,
                   'now': timezone.now(),
-                  'use_codimd': True if datetime.date.today()>=settings.MEETING_USES_CODIMD_DATE else False,
+                  'use_codimd': (date_today() >= settings.MEETING_USES_CODIMD_DATE),
                   })
 
 
@@ -3651,7 +3652,7 @@ def upcoming_ical(request):
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
         
-    today = datetime.date.today()
+    today = datetime_today()
 
     # get meetings starting 7 days ago -- we'll filter out sessions in the past further down
     meetings = data_for_meetings_overview(Meeting.objects.filter(date__gte=today-datetime.timedelta(days=7)).prefetch_related('schedule').order_by('date'))
@@ -3698,7 +3699,7 @@ def upcoming_ical(request):
 
 def upcoming_json(request):
     '''Return Upcoming meetings in json format'''
-    today = datetime.date.today()
+    today = datetime_today()
 
     # get meetings starting 7 days ago -- we'll filter out sessions in the past further down
     meetings = data_for_meetings_overview(Meeting.objects.filter(date__gte=today-datetime.timedelta(days=7)).order_by('date'))
@@ -3747,7 +3748,7 @@ def proceedings(request, num=None):
     begin_date = meeting.get_submission_start_date()
     cut_off_date = meeting.get_submission_cut_off_date()
     cor_cut_off_date = meeting.get_submission_correction_date()
-    now = datetime.date.today()
+    now = date_today()
 
     schedule = get_schedule(meeting, None)
     sessions  = add_event_info_to_session_qs(
@@ -4044,7 +4045,7 @@ def important_dates(request, num=None, output_format=None):
     base_num = int(meeting.number)
 
     user = request.user
-    today = datetime.date.today()
+    today = datetime_today()
     meetings = []
     if meeting.show_important_dates or meeting.date < today:
         meetings.append(meeting)
