@@ -25,6 +25,13 @@ const config = {
     port: 8080
   }
 }
+const containers = {
+  net: null,
+  dbSource: null,
+  dbTarget: null,
+  appSource: null,
+  appTarget: null
+}
 
 /**
  * Prompt the user for a path
@@ -236,9 +243,90 @@ async function main () {
     }
   }
 
+  try {
 
-  // const containers = await dock.listContainers()
-  // console.info(containers)
+    // Pull latest images
+    cliStatus.fetchImages = ora('Pulling latest docker images... [0/2]').start()
+    let fetchImagesIdx = 0
+    await Promise.all([
+      (async () => {
+        const dbImagePullStream = await dock.pull('ghcr.io/ietf-tools/datatracker-db:latest')
+        await new Promise((resolve, reject) => {
+          dock.modem.followProgress(dbImagePullStream, (err, res) => err ? reject(err) : resolve(res))
+        })
+        fetchImagesIdx++
+        cliStatus.fetchImages.text = `Pulling latest docker images... [${fetchImagesIdx}/2]`
+      })(),
+      (async () => {
+        const appImagePullStream = await dock.pull('ghcr.io/ietf-tools/datatracker-app-base:latest')
+        await new Promise((resolve, reject) => {
+          dock.modem.followProgress(appImagePullStream, (err, res) => err ? reject(err) : resolve(res))
+        })
+        fetchImagesIdx++
+        cliStatus.fetchImages.text = `Pulling latest docker images... [${fetchImagesIdx}/2]`
+      })()
+    ])
+    cliStatus.fetchImages.succeed('Pulled latest docker images successfully. [2/2]')
+
+    // Create network
+    cliStatus.createNet = ora('Creating network...').start()
+    containers.net = await dock.createNetwork({
+      Name: 'dt-diff-net',
+      CheckDuplicate: true
+    })
+    cliStatus.createNet.succeed('Network created successfully.')
+
+    // Create + Start DB containers
+    cliStatus.createDbs = ora('Creating DB docker containers... [0/2]').start()
+    let createDbsIdx = 0
+    await Promise.all([
+      (async () => {
+        containers.dbSource = await dock.createContainer({
+          Image: 'ghcr.io/ietf-tools/datatracker-db:latest',
+          name: 'dt-diff-db-source',
+          Hostname: 'dbsource',
+          HostConfig: {
+            NetworkMode: 'dt-diff-net'
+          }
+        })
+        await containers.dbSource.start()
+        createDbsIdx++
+        cliStatus.createDbs.text = `Creating DB docker containers... [${createDbsIdx}/2]`
+      })(),
+      (async () => {
+        containers.dbTarget = await dock.createContainer({
+          Image: 'ghcr.io/ietf-tools/datatracker-db:latest',
+          name: 'dt-diff-db-target',
+          Hostname: 'dbtarget',
+          HostConfig: {
+            NetworkMode: 'dt-diff-net'
+          }
+        })
+        await containers.dbTarget.start()
+        createDbsIdx++
+        cliStatus.createDbs.text = `Creating DB docker containers... [${createDbsIdx}/2]`
+      })()
+    ])
+    cliStatus.createDbs.succeed('Created and started DB containers successfully. [2/2]')
+
+    // Stop + Remove Containers
+    cliStatus.stopContainers = ora('Stopping containers...').start()
+    await Promise.all([
+      containers.dbSource.stop(),
+      containers.dbTarget.stop()
+    ])
+    cliStatus.stopContainers.text = 'Removing containers...'
+    await Promise.all([
+      containers.dbSource.remove(),
+      containers.dbTarget.remove()
+    ])
+    cliStatus.stopContainers.text = 'Removing network...'
+    containers.net.remove()
+    cliStatus.stopContainers.succeed('Removed docker resources.')
+  } catch (err) {
+    console.error(chalk.redBright(err.message))
+    return process.exit(1)
+  }
 }
 
 main()
