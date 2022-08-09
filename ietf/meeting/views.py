@@ -281,60 +281,63 @@ def materials_editable_groups(request, num=None):
 def edit_timeslots(request, num=None):
 
     meeting = get_meeting(num)
+    try:
+        timezone.activate(meeting.tz())
+        if request.method == 'POST':
+            # handle AJAX requests
+            action = request.POST.get('action')
+            if action == 'delete':
+                # delete a timeslot
+                # Parameters:
+                #   slot_id: comma-separated list of TimeSlot PKs to delete
+                slot_id = request.POST.get('slot_id')
+                if slot_id is None:
+                    return HttpResponseBadRequest('missing slot_id')
+                slot_ids = [id.strip() for id in slot_id.split(',')]
+                try:
+                    timeslots = meeting.timeslot_set.filter(pk__in=slot_ids)
+                except ValueError:
+                    return HttpResponseBadRequest('invalid slot_id specification')
+                missing_ids = set(slot_ids).difference(str(ts.pk) for ts in timeslots)
+                if len(missing_ids) != 0:
+                    return HttpResponseNotFound('TimeSlot ids not found in meeting {}: {}'.format(
+                        meeting.number,
+                        ', '.join(sorted(missing_ids))
+                    ))
+                timeslots.delete()
+                return HttpResponse(content='; '.join('Deleted TimeSlot {}'.format(id) for id in slot_ids))
+            else:
+                return HttpResponseBadRequest('unknown action')
 
-    if request.method == 'POST':
-        # handle AJAX requests
-        action = request.POST.get('action')
-        if action == 'delete':
-            # delete a timeslot
-            # Parameters:
-            #   slot_id: comma-separated list of TimeSlot PKs to delete
-            slot_id = request.POST.get('slot_id')
-            if slot_id is None:
-                return HttpResponseBadRequest('missing slot_id')
-            slot_ids = [id.strip() for id in slot_id.split(',')]
-            try:
-                timeslots = meeting.timeslot_set.filter(pk__in=slot_ids)
-            except ValueError:
-                return HttpResponseBadRequest('invalid slot_id specification')
-            missing_ids = set(slot_ids).difference(str(ts.pk) for ts in timeslots)
-            if len(missing_ids) != 0:
-                return HttpResponseNotFound('TimeSlot ids not found in meeting {}: {}'.format(
-                    meeting.number,
-                    ', '.join(sorted(missing_ids))
-                ))
-            timeslots.delete()
-            return HttpResponse(content='; '.join('Deleted TimeSlot {}'.format(id) for id in slot_ids))
-        else:
-            return HttpResponseBadRequest('unknown action')
+        # Labels here differ from those in the build_timeslices() method. The labels here are
+        # relative to the table: time_slices are the row headings (ie, days), date_slices are
+        # the column headings (i.e., time intervals), and slots are the per-day list of timeslots
+        # (with only one timeslot per unique time/duration)
+        time_slices, date_slices, slots = meeting.build_timeslices()
 
-    # Labels here differ from those in the build_timeslices() method. The labels here are
-    # relative to the table: time_slices are the row headings (ie, days), date_slices are
-    # the column headings (i.e., time intervals), and slots are the per-day list of timeslots
-    # (with only one timeslot per unique time/duration)
-    time_slices, date_slices, slots = meeting.build_timeslices()
+        ts_list = deque()
+        rooms = meeting.room_set.order_by("capacity","name","id")
+        for room in rooms:
+            for day in time_slices:
+                for slice in date_slices[day]:
+                    ts_list.append(room.timeslot_set.filter(time=slice[0],duration=datetime.timedelta(seconds=slice[2])))
 
-    ts_list = deque()
-    rooms = meeting.room_set.order_by("capacity","name","id")
-    for room in rooms:
-        for day in time_slices:
-            for slice in date_slices[day]:
-                ts_list.append(room.timeslot_set.filter(time=slice[0],duration=datetime.timedelta(seconds=slice[2])))
+        # Grab these in one query each to identify sessions that are in use and should be handled with care
+        ts_with_official_assignments = meeting.timeslot_set.filter(sessionassignments__schedule=meeting.schedule)
+        ts_with_any_assignments = meeting.timeslot_set.filter(sessionassignments__isnull=False)
 
-    # Grab these in one query each to identify sessions that are in use and should be handled with care
-    ts_with_official_assignments = meeting.timeslot_set.filter(sessionassignments__schedule=meeting.schedule)
-    ts_with_any_assignments = meeting.timeslot_set.filter(sessionassignments__isnull=False)
-    
-    return render(request, "meeting/timeslot_edit.html",
-                                         {"rooms":rooms,
-                                          "time_slices":time_slices,
-                                          "slot_slices": slots,
-                                          "date_slices":date_slices,
-                                          "meeting":meeting,
-                                          "ts_list":ts_list,
-                                          "ts_with_official_assignments": ts_with_official_assignments,
-                                          "ts_with_any_assignments": ts_with_any_assignments,
-                                      })
+        return render(request, "meeting/timeslot_edit.html",
+                                             {"rooms":rooms,
+                                              "time_slices":time_slices,
+                                              "slot_slices": slots,
+                                              "date_slices":date_slices,
+                                              "meeting":meeting,
+                                              "ts_list":ts_list,
+                                              "ts_with_official_assignments": ts_with_official_assignments,
+                                              "ts_with_any_assignments": ts_with_any_assignments,
+                                          })
+    finally:
+        timezone.deactivate()
 
 class NewScheduleForm(forms.ModelForm):
     class Meta:
@@ -4083,23 +4086,27 @@ def edit_timeslot(request, num, slot_id):
     meeting = get_object_or_404(Meeting, number=num)
     if timeslot.meeting != meeting:
         raise Http404()
-    if request.method == 'POST':
-        form = TimeSlotEditForm(instance=timeslot, data=request.POST)
-        if form.is_valid():
-            form.save()
-            return HttpResponseRedirect(reverse('ietf.meeting.views.edit_timeslots', kwargs={'num': num}))
-    else:
-        form = TimeSlotEditForm(instance=timeslot)
+    try:
+        timezone.activate(meeting.tz())  # specifies current_timezone used for rendering and form handling
+        if request.method == 'POST':
+            form = TimeSlotEditForm(instance=timeslot, data=request.POST)
+            if form.is_valid():
+                form.save()
+                return HttpResponseRedirect(reverse('ietf.meeting.views.edit_timeslots', kwargs={'num': num}))
+        else:
+            form = TimeSlotEditForm(instance=timeslot)
 
-    sessions = timeslot.sessions.filter(
-        timeslotassignments__schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None])
+        sessions = timeslot.sessions.filter(
+            timeslotassignments__schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None])
 
-    return render(
-        request,
-        'meeting/edit_timeslot.html',
-        {'timeslot': timeslot, 'form': form, 'sessions': sessions},
-        status=400 if form.errors else 200,
-    )
+        return render(
+            request,
+            'meeting/edit_timeslot.html',
+            {'timeslot': timeslot, 'form': form, 'sessions': sessions},
+            status=400 if form.errors else 200,
+        )
+    finally:
+        timezone.deactivate()
 
 
 @role_required('Secretariat')

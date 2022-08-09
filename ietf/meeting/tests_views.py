@@ -2290,9 +2290,8 @@ class EditTimeslotsTests(TestCase):
 
         name_before = 'Name Classic (tm)'
         type_before = 'regular'
-        time_before = meeting.tz().localize(
-            datetime.datetime.combine(meeting.date, datetime.time(hour=10))
-        )
+        time_utc = pytz.utc.localize(datetime.datetime.combine(meeting.date, datetime.time(hour=10)))
+        time_before = time_utc.astimezone(meeting.tz())
         duration_before = datetime.timedelta(minutes=60)
         show_location_before = True
         location_before = meeting.room_set.first()
@@ -2309,7 +2308,7 @@ class EditTimeslotsTests(TestCase):
         self.login()
         name_after = 'New Name (tm)'
         type_after = 'plenary'
-        time_after = time_before + datetime.timedelta(days=1, hours=2)
+        time_after = (time_utc + datetime.timedelta(days=1, hours=2)).astimezone(meeting.tz())
         duration_after = duration_before * 2
         show_location_after = False
         location_after = meeting.room_set.last()
@@ -2489,8 +2488,8 @@ class EditTimeslotsTests(TestCase):
         ts = meeting.timeslot_set.exclude(pk__in=timeslots_before).first()  # only 1
         self.assertEqual(ts.name, post_data['name'])
         self.assertEqual(ts.type_id, post_data['type'])
-        self.assertEqual(str(ts.time.date().toordinal()), post_data['days'])
-        self.assertEqual(ts.time.strftime('%H:%M'), post_data['time'])
+        self.assertEqual(str(ts.local_start_time().date().toordinal()), post_data['days'])
+        self.assertEqual(ts.local_start_time().strftime('%H:%M'), post_data['time'])
         self.assertEqual(str(ts.duration), '{}:00'.format(post_data['duration']))  # add seconds
         self.assertEqual(ts.show_location, post_data['show_location'])
         self.assertEqual(str(ts.location.pk), post_data['locations'])
@@ -2522,8 +2521,8 @@ class EditTimeslotsTests(TestCase):
         ts = meeting.timeslot_set.exclude(pk__in=timeslots_before).first()  # only 1
         self.assertEqual(ts.name, post_data['name'])
         self.assertEqual(ts.type_id, post_data['type'])
-        self.assertEqual(ts.time.date(), other_date)
-        self.assertEqual(ts.time.strftime('%H:%M'), post_data['time'])
+        self.assertEqual(ts.local_start_time().date(), other_date)
+        self.assertEqual(ts.local_start_time().strftime('%H:%M'), post_data['time'])
         self.assertEqual(str(ts.duration), '{}:00'.format(post_data['duration']))  # add seconds
         self.assertEqual(ts.show_location, post_data['show_location'])
         self.assertEqual(str(ts.location.pk), post_data['locations'])
@@ -2768,10 +2767,10 @@ class EditTimeslotsTests(TestCase):
         for ts in meeting.timeslot_set.exclude(pk__in=timeslots_before):
             self.assertEqual(ts.name, post_data['name'])
             self.assertEqual(ts.type_id, post_data['type'])
-            self.assertEqual(ts.time.strftime('%H:%M'), post_data['time'])
+            self.assertEqual(ts.local_start_time().strftime('%H:%M'), post_data['time'])
             self.assertEqual(str(ts.duration), '{}:00'.format(post_data['duration']))  # add seconds
             self.assertEqual(ts.show_location, post_data['show_location'])
-            self.assertIn(ts.time.date(), days)
+            self.assertIn(ts.local_start_time().date(), days)
             self.assertIn(ts.location, locations)
             self.assertIn((ts.time.date(), ts.location), day_locs,
                           'Duplicated day / location found')

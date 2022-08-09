@@ -326,7 +326,7 @@ class Meeting(models.Model):
         for ts in self.timeslot_set.all():
             if ts.location_id is None:
                 continue
-            ymd = ts.time.date()
+            ymd = ts.local_start_time().date()
             if ymd not in time_slices:
                 time_slices[ymd] = []
                 slots[ymd] = []
@@ -334,15 +334,15 @@ class Meeting(models.Model):
 
             if ymd in time_slices:
                 # only keep unique entries
-                if [ts.time, ts.time + ts.duration, ts.duration.seconds] not in time_slices[ymd]:
-                    time_slices[ymd].append([ts.time, ts.time + ts.duration, ts.duration.seconds])
+                if [ts.local_start_time(), ts.local_end_time(), ts.duration.seconds] not in time_slices[ymd]:
+                    time_slices[ymd].append([ts.local_start_time(), ts.local_end_time(), ts.duration.seconds])
                     slots[ymd].append(ts)
 
         days.sort()
         for ymd in time_slices:
             # Make sure these sort the same way
             time_slices[ymd].sort()
-            slots[ymd].sort(key=lambda x: (x.time, x.duration))
+            slots[ymd].sort(key=lambda x: (x.local_start_time(), x.duration))
         return days,time_slices,slots
 
     # this functions makes a list of timeslices and rooms, and
