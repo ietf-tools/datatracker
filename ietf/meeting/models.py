@@ -618,10 +618,10 @@ class TimeSlot(models.Model):
         return self.tz().tzname(self.time)
 
     def utc_start_time(self):
-        return self.time.astimezone(pytz.utc)
+        return self.time  # USE_TZ is True, so time is UTC
 
     def utc_end_time(self):
-        return self.utc_start_time() + self.duration
+        return self.time + self.duration  # USE_TZ is True, so time is UTC
 
     def local_start_time(self):
         return self.time.astimezone(self.tz())

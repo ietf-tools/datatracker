@@ -1569,7 +1569,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         "filter_categories": filter_organizer.get_filter_categories(),
         "non_area_keywords": filter_organizer.get_non_area_keywords(),
         "now": timezone.now().astimezone(pytz.utc),
-        "timezone": meeting.time_zone,
+        "display_timezone": 'UTC' if utc else meeting.time_zone,
         "is_current_meeting": is_current_meeting,
         "use_codimd": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
         "cache_time": 150 if is_current_meeting else 3600,
@@ -1925,7 +1925,7 @@ def agenda_personalize(request, num):
             'filtered_assignments': filtered_assignments,
             'filter_categories': filter_organizer.get_filter_categories(),
             'non_area_labels': filter_organizer.get_non_area_keywords(),
-            'timezone': meeting.time_zone,
+            'display_timezone': meeting.time_zone,
             'is_current_meeting': is_current_meeting,
             'cache_time': 150 if is_current_meeting else 3600,
         }

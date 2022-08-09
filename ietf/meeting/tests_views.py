@@ -229,7 +229,10 @@ class MeetingTests(BaseMeetingTestCase):
                              'Time zone indicator should be in nav sidebar')
 
         # plain
-        time_interval = r"%s<span.*/span>-%s" % (slot.time.strftime("%H:%M").lstrip("0"), (slot.time + slot.duration).strftime("%H:%M").lstrip("0"))
+        time_interval = r"{}<span.*/span>-{}".format(
+            slot.time.astimezone(meeting.tz()).strftime("%H:%M").lstrip("0"),
+            slot.end_time().astimezone(meeting.tz()).strftime("%H:%M").lstrip("0"),
+        )
 
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
@@ -819,16 +822,16 @@ class MeetingTests(BaseMeetingTestCase):
                                       r,
                                       expected_event_summaries=['mars - Martian Special Interest Group'],
                                       expected_event_count=2)
-        self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
-        self.assertContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t1.local_start_time().strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t2.local_start_time().strftime('%Y%m%dT%H%M%S'))
         #
         url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number, 'session_id':s1.id, })
         r = self.client.get(url)
         assert_ical_response_is_valid(self, r,
                                       expected_event_summaries=['mars - Martian Special Interest Group'],
                                       expected_event_count=1)
-        self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
-        self.assertNotContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t1.local_start_time().strftime('%Y%m%dT%H%M%S'))
+        self.assertNotContains(r, t2.local_start_time().strftime('%Y%m%dT%H%M%S'))
 
     def test_meeting_agenda_has_static_ical_links(self):
         """Links to the agenda_ical view must appear on the agenda page
@@ -5685,8 +5688,8 @@ class InterimTests(TestCase):
         self.assertContains(r, 'BEGIN:VEVENT')
         self.assertEqual(r.content.count(b'UID'), 2)
         self.assertContains(r, 'SUMMARY:mars - Martian Special Interest Group')
-        self.assertContains(r, t1.time.astimezone(meeting.tz()).strftime('%Y%m%dT%H%M%S'))
-        self.assertContains(r, t2.time.astimezone(meeting.tz()).strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t1.local_start_time().strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t2.local_start_time().strftime('%Y%m%dT%H%M%S'))
         self.assertContains(r, 'END:VEVENT')
         #
         url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number, 'session_id':s1.id, })
