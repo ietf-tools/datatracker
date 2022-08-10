@@ -1885,7 +1885,7 @@ class EditTimeslotsTests(TestCase):
         return MeetingFactory(
             type_id='ietf',
             number=number,
-            date=timezone.now() + datetime.timedelta(days=10),
+            date=date_today() + datetime.timedelta(days=10),
             populate_schedule=False,
         )
 
@@ -1917,7 +1917,8 @@ class EditTimeslotsTests(TestCase):
         meeting = self.create_bare_meeting(number=number)
         RoomFactory.create_batch(8, meeting=meeting)
         self.create_initial_schedule(meeting)
-        return meeting
+        # retrieve meeting from DB so it goes through Django's processing
+        return Meeting.objects.get(pk=meeting.pk)
 
     def test_view_permissions(self):
         """Only the secretary should be able to edit timeslots"""
@@ -2736,8 +2737,8 @@ class EditTimeslotsTests(TestCase):
         """Creating multiple timeslots should work"""
         meeting = self.create_meeting()
         timeslots_before = set(ts.pk for ts in meeting.timeslot_set.all())
-        days = [meeting.get_meeting_date(n).date() for n in range(meeting.days)]
-        other_date = meeting.get_meeting_date(-1).date()  # date before start of meeting
+        days = [meeting.get_meeting_date(n) for n in range(meeting.days)]
+        other_date = meeting.get_meeting_date(-1)  # date before start of meeting
         self.assertNotIn(other_date, days)
         locations = meeting.room_set.all()
         post_data = dict(
