@@ -15,7 +15,7 @@ import { kebabCase } from 'lodash-es'
 import { Listr } from 'listr2'
 
 let dock = null
-let diffOutput = null
+let diffOutput = []
 const config = {
   options: [],
   source: process.cwd(),
@@ -28,6 +28,7 @@ const containers = {
   appSource: null,
   appTarget: null
 }
+const sha1reg = /^[0-9a-f]{5,40}$/
 
 /**
  * Prompt the user for a path
@@ -210,9 +211,10 @@ async function main () {
             message: 'What do you want to compare against?',
             choices: [
               { name: 'local', message: 'Local folder path...' },
-              { name: 'remote', message: 'Remote GitHub branch...' },
-              { name: 'commit', message: 'Remote commit hash...', disabled: true },
-              { name: 'release', message: 'Latest release' }
+              { name: 'branch', message: 'Remote GitHub branch...' },
+              { name: 'tag', message: 'Remote GitHub tag...' },
+              { name: 'commit', message: 'Remote GitHub commit hash...' },
+              { name: 'release', message: 'Latest GitHub release', disabled: true }
             ]
           })
           task.title = `Selected diff target: ${ctx.targetMode}`
@@ -226,20 +228,22 @@ async function main () {
         task: async (ctx, task) => {
           switch (ctx.targetMode) {
             // MODE: LOCAL
+            // ------------------------------------------------
             case 'local': {
               task.title = 'Waiting for diff target path input'
-              config.target = await promptForPath(task, 'Enter the path to the datatracker project to compare against:')
+              config.target = await promptForPath(task, 'Enter the local path to the datatracker project to compare against:')
               task.title = `Using path ${config.target} for target datatracker instance.`
               break
             }
             // MODE: REMOTE BRANCH
-            case 'remote': {
+            // ------------------------------------------------
+            case 'branch': {
               // Prompt for branch
               const branches = []
               let branch = 'main'
               try {
                 task.title = 'Fetching available remote branches...'
-                const branchesResp = await got('https://api.github.com/repos/ietf-tools/datatracker/branches').json()
+                const branchesResp = await got('https://api.github.com/repos/ietf-tools/datatracker/branches?per_page=100').json()
                 if (branchesResp?.length < 1) {
                   throw new Error('No remote branches available.')
                 }
@@ -264,15 +268,73 @@ async function main () {
               // Download / Extract branch zip
               await downloadExtractZip(task, {
                 msg: `Downloading ${branch} branch contents...`,
-                url: `https://github.com/ietf-tools/datatracker/archive/refs/heads/${branch}.zip`,
-                ext: 'zip',
-                branch
+                url: `https://github.com/ietf-tools/datatracker/archive/refs/heads/${branch}.tar.gz`,
+                ext: 'tgz'
               })
 
               task.title = `Fetched branch ${branch} to ${config.target}`
               break
             }
+            // MODE: REMOTE TAG
+            // ------------------------------------------------
+            case 'tag': {
+              // Prompt for tag             
+              const tag = await task.prompt([
+                {
+                  type: 'input',
+                  message: 'Enter the remote repository tag to compare against:'
+                }
+              ])
+        
+              // Prompt for local path where to download tag contents
+              config.target = await promptForPath(task, 'Enter a local path where the tag contents will be downloaded to:', false)
+              await fs.ensureDir(config.target)
+        
+              // Download / Extract tag tarball
+              await downloadExtractZip(task, {
+                msg: `Downloading tag ${tag} contents...`,
+                url: `https://github.com/ietf-tools/datatracker/archive/refs/tags/${tag}.tar.gz`,
+                ext: 'tgz'
+              })
+
+              task.title = `Fetched tag ${tag} to ${config.target}`
+              break
+            }
+            // MODE: REMOTE COMMIT
+            // ------------------------------------------------
+            case 'commit': {
+              // Prompt for commit hash             
+              const commit = await task.prompt([
+                {
+                  type: 'input',
+                  message: 'Enter the FULL commit hash to compare against:',
+                  async validate (input) {
+                    if (!input) {
+                      return 'You must provide a hash!'
+                    } else if (!sha1reg.test(input)) {
+                      return 'Invalid hash!'
+                    }
+                    return true
+                  }
+                }
+              ])
+        
+              // Prompt for local path where to download commit contents
+              config.target = await promptForPath(task, 'Enter a local path where the commit contents will be downloaded to:', false)
+              await fs.ensureDir(config.target)
+        
+              // Download / Extract commit tarball
+              await downloadExtractZip(task, {
+                msg: `Downloading commit ${commit} contents...`,
+                url: `https://github.com/ietf-tools/datatracker/archive/${commit}.tar.gz`,
+                ext: 'tgz'
+              })
+
+              task.title = `Fetched commit ${commit} to ${config.target}`
+              break
+            }
             // MODE: LATEST RELEASE
+            // ------------------------------------------------
             case 'release': {
               task.title = 'Waiting for diff target download location'
               // Prompt for local path where to download release
