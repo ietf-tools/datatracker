@@ -2087,7 +2087,7 @@ class EditTimeslotsTests(TestCase):
         meeting = self.create_meeting()
         # add some timeslots
         times = [datetime.time(hour=h) for h in (11, 14)]
-        days = [meeting.get_meeting_date(ii).date() for ii in range(meeting.days)]
+        days = [meeting.get_meeting_date(ii) for ii in range(meeting.days)]
 
         timeslots = []
         duration = datetime.timedelta(minutes=90)
@@ -2180,7 +2180,7 @@ class EditTimeslotsTests(TestCase):
                 location=meeting.room_set.first(),
                 time=meeting.tz().localize(
                     datetime.datetime.combine(
-                        meeting.get_meeting_date(day).date(),
+                        meeting.get_meeting_date(day),
                         datetime.time(hour=11),
                     )
                 ),
@@ -2190,7 +2190,7 @@ class EditTimeslotsTests(TestCase):
                 location=meeting.room_set.first(),
                 time=meeting.tz().localize(
                     datetime.datetime.combine(
-                        meeting.get_meeting_date(day).date(),
+                        meeting.get_meeting_date(day),
                         datetime.time(hour=14),
                     )
                 ),
@@ -2499,7 +2499,7 @@ class EditTimeslotsTests(TestCase):
         """Creating a single timeslot outside the official meeting days should work"""
         meeting = self.create_meeting()
         timeslots_before = set(ts.pk for ts in meeting.timeslot_set.all())
-        other_date = meeting.get_meeting_date(-7).date()
+        other_date = meeting.get_meeting_date(-7)
         post_data = dict(
             name='some name',
             type='regular',
