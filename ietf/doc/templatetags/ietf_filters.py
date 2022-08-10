@@ -779,10 +779,3 @@ def is_valid_url(url):
     except ValidationError:
         return False
     return True
-
-@register.filter
-def get_hash(h, key):
-    """
-    Get a key from hash
-    """
-    return h[key]

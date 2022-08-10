@@ -9,31 +9,28 @@
 {% block content %}
 {% origin %}
 <h1>Area Directors Workload</h1>
-{% for gt in group_types %}
-<h2>{{ gt }}</h2>
+{% for group in workload %}
+<h2>{{ group.group_type }}</h2>
 <table class="table table-sm table-striped tablesorter">
   <thead>
     <tr>
       <th scope="col" data-sort="name">Name</th>
-      {% for g in group_names|get_hash:gt %}
-      <th scope="col" data-sort="{{ g|slugify }}-num">
-	{{ g }}</th>
+      {% for g in group.group_names %}
+      <th scope="col" class="text-end" data-sort="{{ g|slugify }}-num">{{ g }}</th>
       {% endfor %}
     </tr>
   </thead>
   <tbody>
-    {% for ad in ads %}
+    {% for ad, ad_counts in group.counts %}
     <tr>
       <td><a href="{{ ad.dashboard }}">{{ ad.name }}</a></td>
-      {% for c in ad.counts|get_hash:gt %}
-      {% if forloop.counter0 < groups|get_hash:gt|length %}
-      <td>{{ c }}</td>
-      {% endif %}
+      {% for label, count in ad_counts %}
+        <td id="{{group.group_type|slugify}}-{{ad.full_name_as_key|slugify}}-{{label|slugify}}">{{count}}</td>
       {% endfor %}
     </tr>
     {% endfor %}
   </tbody>
-</table>
+<table>
 {% endfor %}
 {% endblock %}
 {% block js %}

@@ -41,7 +41,7 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     StatusChangeFactory, BofreqFactory)
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
-from ietf.doc.views_search import ad_dashboard_group, ad_dashboard_group_type # TODO: red flag that we're importing from views in tests. Move these to utils.
+from ietf.doc.views_search import ad_dashboard_group, ad_dashboard_group_type, shorten_group_name # TODO: red flag that we're importing from views in tests. Move these to utils.
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
@@ -233,7 +233,7 @@ class SearchTests(TestCase):
 
     def test_ad_workload(self):
         Role.objects.filter(name_id='ad').delete()
-        ad = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person
+        ad = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active',person__name='Example Areadirector').person
         doc_type_names = ['bofreq', 'charter', 'conflrev', 'draft', 'statchg']
         expected = defaultdict(lambda :0)
         for doc_type_name in doc_type_names:
@@ -259,12 +259,16 @@ class SearchTests(TestCase):
                     else:
                         # Currently unreachable
                         doc = DocumentFactory(type_id=doc_type_name, ad=ad, states=[(doc_type_name, state)])
-                    expected[(ad_dashboard_group_type(doc),ad_dashboard_group(doc))] += 1
 
-        #debug.show("expected")
+                    if not slugify(ad_dashboard_group_type(doc)) in ('document', 'none'):
+                        expected[(slugify(ad_dashboard_group_type(doc)), slugify(ad.full_name_as_key()), slugify(shorten_group_name(ad_dashboard_group(doc))))] += 1
+        
         url = urlreverse('ietf.doc.views_search.ad_workload')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        for group_type, ad, group in expected:
+            self.assertEqual(int(q(f'#{group_type}-{ad}-{group}').text()),expected[(group_type, ad, group)])
 
     def test_docs_for_ad(self):
         ad = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person

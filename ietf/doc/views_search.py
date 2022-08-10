@@ -364,6 +364,12 @@ def ad_dashboard_group(doc):
     else:
         return "Document"
 
+def shorten_group_name(name):
+    for s in [' Internet-Draft', ' Conflict Review', ' Status Change', ' (Internal Steering Group/IAB Review) Charter', 'Charter']:
+        if name.endswith(s):
+            name = name[:-len(s)]
+    return name
+
 def ad_dashboard_sort_key(doc):
 
     if doc.type.slug=='draft' and doc.get_state_slug('draft') == 'rfc':
@@ -509,16 +515,17 @@ def ad_workload(request):
     # Shorten the names of groups
     for gt in group_types:
         for idx,g in enumerate(group_names[gt]):
-            for s in [' Internet-Draft', ' Charter', ' Conflict Review', ' Status Change', ' (Internal Steering Group/IAB Review) Charter']:
-                if g.endswith(s):
-                    group_names[gt][idx] = g[:-len(s)]
+            group_names[gt][idx] = shorten_group_name(g)
+#            for s in [' Internet-Draft', ' Charter', ' Conflict Review', ' Status Change', ' (Internal Steering Group/IAB Review) Charter']:
+#                if g.endswith(s):
+#                    group_names[gt][idx] = g[:-len(s)]
 
+    workload = []
+    for gt in group_types:
+        workload.append(dict(group_type=gt,group_names=group_names[gt],counts=[(ad, [(group_names[gt][index],ad.counts[gt][index]) for index in range(len(group_names[gt]))]) for ad in ads]))
 
     return render(request, 'doc/ad_list.html', {
-        'ads': ads,
-        'group_types': group_types,
-        'group_names': group_names,
-        'groups': groups
+        'workload': workload
     })
         
 
