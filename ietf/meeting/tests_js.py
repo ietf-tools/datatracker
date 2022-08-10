@@ -36,6 +36,7 @@ from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.utils.test_utils import assert_ical_response_is_valid
 from ietf.utils.jstest import ( IetfSeleniumTestCase, ifSeleniumEnabled, selenium_enabled,
                                 presence_of_element_child_by_css_selector )
+from ietf.utils.timezone import datetime_today
 
 if selenium_enabled():
     from selenium.webdriver.common.action_chains import ActionChains
@@ -1434,13 +1435,16 @@ class AgendaTests(IetfSeleniumTestCase):
         # for others (break, reg, other):
         #   row-<meeting#>-<year>-<month>-<day>-<DoW>-<HHMM>-<group acro>-<session name slug>
         meeting_number = components[1]
-        start_time = datetime.datetime(
-            year=int(components[2]),
-            month=int(components[3]),
-            day=int(components[4]),
-            hour=int(components[6][0:2]),
-            minute=int(components[6][2:4]),
+        start_time = pytz.utc.localize(
+            datetime.datetime(
+                year=int(components[2]),
+                month=int(components[3]),
+                day=int(components[4]),
+                hour=int(components[6][0:2]),
+                minute=int(components[6][2:4]),
+            )
         )
+
         # If labeled as plenary, it's plenary...
         if components[7] == '1plenary':
             session_type = 'plenary'
@@ -1904,10 +1908,9 @@ class WeekviewTests(IetfSeleniumTestCase):
 
         # Session during a single day in meeting local time but multi-day UTC
         # Compute a time that overlaps midnight, UTC, but won't when shifted to a local time zone
-        start_time_utc = pytz.timezone('UTC').localize(
+        start_time_utc = pytz.utc.localize(
             datetime.datetime.combine(self.meeting.date, datetime.time(23,0))
         )
-        start_time_local = start_time_utc.astimezone(pytz.timezone(self.meeting.time_zone))
 
         daytime_session = SessionFactory(
             meeting=self.meeting,
@@ -1916,7 +1919,7 @@ class WeekviewTests(IetfSeleniumTestCase):
         )
         daytime_timeslot = TimeSlotFactory(
             meeting=self.meeting,
-            time=start_time_local.replace(tzinfo=None),  # drop timezone for Django
+            time=start_time_utc,
             duration=duration,
         )
         daytime_session.timeslotassignments.create(timeslot=daytime_timeslot, schedule=self.meeting.schedule)
@@ -1935,7 +1938,6 @@ class WeekviewTests(IetfSeleniumTestCase):
             duration=duration,
         )
         overnight_session.timeslotassignments.create(timeslot=overnight_timeslot, schedule=self.meeting.schedule)
-
         # Check assumptions about events overlapping midnight
         self.assertEqual(daytime_timeslot.local_start_time().day,
                          daytime_timeslot.local_end_time().day,
@@ -2193,7 +2195,7 @@ class InterimTests(IetfSeleniumTestCase):
         expected_assignments = list(SchedTimeSessAssignment.objects.filter(
             schedule__in=expected_schedules,
             session__in=expected_interim_sessions,
-            timeslot__time__gte=datetime.date.today(),
+            timeslot__time__gte=datetime_today(),
         ))
         # The UID formats should match those in the upcoming.ics template
         expected_uids = [
@@ -2719,7 +2721,7 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
                 delete_time.strftime('%H:%M'),
                 self.meeting.tz().localize(
                     datetime.datetime.combine(delete_day, delete_time) + duration
-                ).astimezone(pytz.utc).strftime(
+                ).strftime(
                     '%H:%M'
                 ))
         )
