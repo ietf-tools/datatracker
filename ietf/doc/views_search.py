@@ -516,9 +516,6 @@ def ad_workload(request):
     for gt in group_types:
         for idx,g in enumerate(group_names[gt]):
             group_names[gt][idx] = shorten_group_name(g)
-#            for s in [' Internet-Draft', ' Charter', ' Conflict Review', ' Status Change', ' (Internal Steering Group/IAB Review) Charter']:
-#                if g.endswith(s):
-#                    group_names[gt][idx] = g[:-len(s)]
 
     workload = []
     for gt in group_types:
