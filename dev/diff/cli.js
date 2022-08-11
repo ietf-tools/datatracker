@@ -322,8 +322,8 @@ async function main () {
               { name: 'local', message: 'Local folder path...' },
               { name: 'branch', message: 'Remote GitHub branch...' },
               { name: 'tag', message: 'Remote GitHub tag...' },
-              { name: 'commit', message: 'Remote GitHub commit hash...' },
-              { name: 'release', message: 'Latest GitHub release', disabled: true }
+              { name: 'commit', message: 'Remote GitHub commit hash...' }
+              // { name: 'release', message: 'Latest GitHub release', disabled: true }
             ]
           })
           task.title = `Selected diff target: ${ctx.targetMode}`
