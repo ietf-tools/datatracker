@@ -1949,3 +1949,17 @@ class MoreReplacesTests(TestCase):
             old_doc = Document.objects.get(name=old_doc.name)
             self.assertEqual(old_doc.get_state_slug('draft'),'repl')
             self.assertEqual(old_doc.get_state_slug('draft-stream-%s'%stream),'repl')
+
+class ShepherdWriteupTests(TestCase):
+
+    def test_shepherd_writeup_generation(self):
+        ind_draft = IndividualDraftFactory(stream_id='ietf')
+        wg_draft = WgDraftFactory()
+
+        url = urlreverse('ietf.doc.views_draft.edit_shepherd_writeup', kwargs=dict(name=ind_draft.name))
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertContains(r, "for Individual Documents", status_code=200)
+        url = urlreverse('ietf.doc.views_draft.edit_shepherd_writeup', kwargs=dict(name=wg_draft.name))
+        r = self.client.get(url)
+        self.assertContains(r, "for Group Documents", status_code=200)
