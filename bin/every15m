@@ -18,3 +18,11 @@ logger -p user.info -t cron "Running $DTDIR/bin/every15m"
 
 # Send mail scheduled to go out at certain times
 $DTDIR/ietf/bin/send-scheduled-mail all
+
+# Reparse the last _year_ of RFC index entries 
+# (which is the default if -d is not provided)
+# until https://github.com/ietf-tools/datatracker/issues/3734
+# is addressed.
+# This takes about 20s on production as of 2022-08-11
+$DTDIR/ietf/bin/rfc-editor-index-updates
+
