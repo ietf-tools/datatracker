@@ -290,6 +290,12 @@ class StatusChangeFactory(BaseDocumentFactory):
 
 class ConflictReviewFactory(BaseDocumentFactory):
     type_id='conflrev'
+
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',acronym='none')
+
+    @factory.lazy_attribute_sequence
+    def name(self, n):
+        return draft_name_generator(self.type_id,self.group,n).replace('conflrev-','conflict-review-')
     
     @factory.post_generation
     def review_of(obj, create, extracted, **kwargs):
@@ -298,7 +304,8 @@ class ConflictReviewFactory(BaseDocumentFactory):
         if extracted:
             obj.relateddocument_set.create(relationship_id='conflrev',target=extracted.docalias.first())
         else:
-            obj.relateddocument_set.create(relationship_id='conflrev',target=DocumentFactory(type_id='draft',group=Group.objects.get(type_id='individ')).docalias.first())
+            obj.relateddocument_set.create(relationship_id='conflrev',target=DocumentFactory(name=obj.name.replace('conflict-review-','draft-'),type_id='draft',group=Group.objects.get(type_id='individ')).docalias.first())
+
 
     @factory.post_generation
     def states(obj, create, extracted, **kwargs):
