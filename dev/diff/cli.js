@@ -19,7 +19,9 @@ let diffOutput = []
 const config = {
   options: [],
   source: process.cwd(),
-  target: null
+  target: null,
+  tmpDir: null,
+  savePath: null
 }
 const containers = {
   net: null,
@@ -38,12 +40,13 @@ const sha1reg = /^[0-9a-f]{5,40}$/
  * @param {Boolean} mustExist Whether the path must already exist
  * @returns path
  */
-async function promptForPath (task, msg, mustExist = true) {
+async function promptForPath (task, msg, mustExist = true, initial) {
   return task.prompt([
     {
       type: 'input',
       name: 'path',
       message: msg,
+      initial,
       async validate (input) {
         if (!input) {
           return 'You must provide a valid path!'
@@ -128,14 +131,16 @@ async function downloadExtractZip (task, { msg, url, ext = 'zip', branch }) {
  * @param {Array<String>} cmd Command to execute
  * @param {Boolean} collectOutput Whether to collect and return the command output
  */
-async function executeCommand (task, container, cmd, collectOutput = false) {
+async function executeCommand (task, container, cmd, collectOutput = false, silent = false) {
   const logStack = []
   const errStack = []
+  let logFStream = null
   return new Promise(async (resolve, reject) => {
+    // Handle stream output
     const logStream = new PassThrough()
     logStream.on('data', chunk => {
       const logLine = chunk.toString('utf8').trim()
-      if (logLine) {
+      if (logLine && !silent) {
         task.output = logLine
         if (collectOutput) {
           logStack.push(...logLine.split('\n').filter(l => l))
@@ -146,20 +151,33 @@ async function executeCommand (task, container, cmd, collectOutput = false) {
       task.output = chunk.toString('utf8')
       errStack.push(chunk.toString('utf8'))
     })
+    if (collectOutput) {
+      logFStream = fs.createWriteStream(path.join(config.savePath))
+      logStream.pipe(logFStream)
+    }
+    // Execute command in container
     const execChmod = await container.exec({
       Cmd: cmd,
       AttachStdout: true,
       AttachStderr: true
     })
     const execChmodStream = await execChmod.start()
+    // Handle stream close
     execChmodStream.on('close', () => {
+      if (collectOutput) {
+        logFStream.close()
+      }
       if (errStack.length > 0) {
-        reject(errStack)
+        reject(new Error(errStack))
       } else {
+        if (!silent) {
+          
+        }
         task.output = ''
         resolve(logStack)
       }
     })
+    // Pipe container stream to log stream
     container.modem.demuxStream(execChmodStream, logStream, logStream)
   })
 }
@@ -379,13 +397,37 @@ async function main () {
                 { message: 'Skip HTML Validation', name: '--skip-html-validation', hint: 'Skip HTML Validation', enabled: true },
                 { message: 'Fail-fast', name: '--failfast', hint: 'Stop the crawl on the first page failure' },
                 { message: 'No-Follow', name: '--no-follow', hint: 'Do not follow URLs found in fetched pages, just check the given URLs' },
+                { message: 'No-Revisit', name: '--no-revisit', hint: 'Don\'t revisit already visited URLs' },
                 { message: 'Pedantic', name: '--pedantic', hint: 'Stop the crawl on the first error or warning' },
-                { message: 'Random', name: '--random', hint: 'Crawl URLs randomly' }
+                { message: 'Random', name: '--random', hint: 'Crawl URLs randomly' },
+                { message: 'Validate All', name: '--validate-all', hint: 'Run html 5 validation on all pages, without skipping similar urls' },
+                { message: 'Verbose', name: '--verbose', hint: 'Be more verbose' }
               ]
             }
           ])
           if (config.options.length > 0) {
             task.title = `Selected additional crawl options: ${config.options.join(' ')}`
+          }
+        }
+      },
+      // ---------------------------
+      // Prompt to save crawl output
+      // ---------------------------
+      {
+        title: 'Save crawl output',
+        task: async (ctx, task) => {
+          const saveToDisk = await task.prompt({
+            type: 'confirm',
+            message: 'Save the crawl output to file?'
+          })
+
+          if (saveToDisk) {
+            config.savePath = await promptForPath(task, 'Enter the path where the crawl output will be saved:', false, path.join(os.homedir(), 'Desktop/crawl-out.txt'))
+            task.title = `Crawl output will be saved to ${config.savePath}`
+          } else {
+            config.tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dt-'))
+            config.savePath = path.join(config.tmpDir, 'out.txt')
+            task.title = 'Crawl output will not be saved.'
           }
         }
       },
@@ -599,7 +641,9 @@ async function main () {
         title: 'Run crawl tool',
         task: async (ctx, task) => {
           task.output = 'Starting ./bin/test-crawl...'
-          diffOutput = await executeCommand (task, containers.appTarget, ['bash', '-c', `./bin/test-crawl --settings=ietf.settings_testcrawl --diff http://dt-diff-app-target:8000/ ${config.options.join(' ')}`], true)
+          config.options.push('--settings=ietf.settings_testcrawl')
+          config.options.push('--diff http://dt-diff-app-target:8000/')
+          diffOutput = await executeCommand(task, containers.appSource, ['bash', '-c', `./bin/test-crawl ${config.options.join(' ')}`], true)
         }
       }
     ])
@@ -676,6 +720,11 @@ async function main () {
     ])
   
     await postTasks.run()
+
+    // Cleanup
+    if (config.tmpDir) {
+      await fs.remove(config.tmpDir)
+    }
 
   } catch (err) {
     console.error(chalk.redBright(err.message))
