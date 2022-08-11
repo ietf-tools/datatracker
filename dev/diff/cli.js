@@ -13,15 +13,20 @@ import extract from 'extract-zip'
 import tar from 'tar'
 import { kebabCase } from 'lodash-es'
 import { Listr } from 'listr2'
+import { performance } from 'perf_hooks'
+import { Duration } from 'luxon'
+import keypress from 'keypress'
 
 let dock = null
 let diffOutput = []
-const config = {
+const diffStack = []
+const config = {  
   options: [],
   source: process.cwd(),
   target: null,
   tmpDir: null,
-  savePath: null
+  savePath: null,
+  shouldCleanup: false
 }
 const containers = {
   net: null,
@@ -180,6 +185,92 @@ async function executeCommand (task, container, cmd, collectOutput = false, sile
     // Pipe container stream to log stream
     container.modem.demuxStream(execChmodStream, logStream, logStream)
   })
+}
+
+/**
+ * Run cleanup tasks (e.g. stop/remove docker resources)
+ * 
+ * @param {Boolean} exitAfter Whether to exit the process at the end
+ */
+async function cleanup (exitAfter = false) {
+  try {
+    const cleanupTasks = new Listr([
+      // ------------------------
+      // Stop + Remove Containers
+      // ------------------------
+      {
+        title: 'Stop + remove docker containers',
+        task: async (ctx, task) => {
+          task.output = 'Stopping containers...'
+          try {
+            await Promise.allSettled([
+              containers.dbSource && containers.dbSource.stop(),
+              containers.dbTarget && containers.dbTarget.stop(),
+              containers.appSource && containers.appSource.stop(),
+              containers.appTarget && containers.appTarget.stop()
+            ])
+          } catch (err) { }
+          task.output = 'Removing containers...'
+          try {
+            await Promise.allSettled([
+              containers.dbSource && containers.dbSource.remove({ v: true }),
+              containers.dbTarget && containers.dbTarget.remove({ v: true }),
+              containers.appSource && containers.appSource.remove({ v: true }),
+              containers.appTarget && containers.appTarget.remove({ v: true })
+            ])
+          } catch (err) { }
+          task.output = 'Removing network...'
+          try {
+            await containers.net.remove()
+          } catch (err) {}
+        }
+      },
+      // --------------------
+      // Restore config files
+      // --------------------
+      {
+        title: 'Restore original source settings file',
+        task: async (ctx, task) => {
+          const sourceSettingsPath = path.join(config.source, 'ietf/settings_local.py')
+          if (await fs.pathExists(`${sourceSettingsPath}.bak`)) {
+            await fs.move(`${sourceSettingsPath}.bak`, sourceSettingsPath, { overwrite: true })
+            task.title = 'Restored original source settings file.'
+          } else {
+            task.skip('Nothing to restore.')
+          }
+        }
+      },
+      {
+        title: 'Restore original target settings file',
+        task: async (ctx, task) => {
+          const targetSettingsPath = path.join(config.target, 'ietf/settings_local.py')
+          if (await fs.pathExists(`${targetSettingsPath}.bak`)) {
+            await fs.move(`${targetSettingsPath}.bak`, targetSettingsPath, { overwrite: true })
+            task.title = 'Restored original target settings file.'
+          } else {
+            task.skip('Nothing to restore.')
+          }
+        }
+      }
+    ], {
+      registerSignalListeners: false
+    })
+  
+    await cleanupTasks.run()
+
+    // Cleanup
+    if (config.tmpDir) {
+      await fs.remove(config.tmpDir)
+    }
+
+  } catch (err) {
+    console.error(chalk.redBright(err.message))
+    process.exit(1)
+  }
+
+  if (exitAfter) {
+    process.exit(0)
+  }
 }
 
 async function main () {
@@ -389,19 +480,23 @@ async function main () {
       {
         title: 'Select additional crawl options',
         task: async (ctx, task) => {
+          const toggleIndicatorFn = (state, choice) => {
+            return choice.enabled ? chalk.greenBright('✔') : chalk.gray('o')
+          }
           config.options = await task.prompt([
             {
               type: 'multiselect',
-              message: 'Select additional options to enable: (use SPACE to toggle)',
+              message: 'Select additional options to enable:',
+              hint: '(use <SPACE> to toggle, <ENTER> to confirm)',
               choices: [
-                { message: 'Skip HTML Validation', name: '--skip-html-validation', hint: 'Skip HTML Validation', enabled: true },
-                { message: 'Fail-fast', name: '--failfast', hint: 'Stop the crawl on the first page failure' },
-                { message: 'No-Follow', name: '--no-follow', hint: 'Do not follow URLs found in fetched pages, just check the given URLs' },
-                { message: 'No-Revisit', name: '--no-revisit', hint: 'Don\'t revisit already visited URLs' },
-                { message: 'Pedantic', name: '--pedantic', hint: 'Stop the crawl on the first error or warning' },
-                { message: 'Random', name: '--random', hint: 'Crawl URLs randomly' },
-                { message: 'Validate All', name: '--validate-all', hint: 'Run html 5 validation on all pages, without skipping similar urls' },
-                { message: 'Verbose', name: '--verbose', hint: 'Be more verbose' }
+                { message: 'Skip HTML Validation', name: '--skip-html-validation', hint: 'Skip HTML Validation', indicator: toggleIndicatorFn },
+                { message: 'Fail-fast', name: '--failfast', hint: 'Stop the crawl on the first page failure', indicator: toggleIndicatorFn },
+                { message: 'No-Follow', name: '--no-follow', hint: 'Do not follow URLs found in fetched pages, just check the given URLs', indicator: toggleIndicatorFn },
+                { message: 'No-Revisit', name: '--no-revisit', hint: 'Don\'t revisit already visited URLs', indicator: toggleIndicatorFn },
+                { message: 'Pedantic', name: '--pedantic', hint: 'Stop the crawl on the first error or warning', indicator: toggleIndicatorFn },
+                { message: 'Random', name: '--random', hint: 'Crawl URLs randomly', indicator: toggleIndicatorFn },
+                { message: 'Validate All', name: '--validate-all', hint: 'Run html 5 validation on all pages, without skipping similar urls', indicator: toggleIndicatorFn },
+                { message: 'Verbose', name: '--verbose', hint: 'Be more verbose', indicator: toggleIndicatorFn }
               ]
             }
           ])
@@ -492,6 +587,7 @@ async function main () {
       {
         title: 'Create docker network',
         task: async (ctx, task) => {
+          config.shouldCleanup = true
           containers.net = await dock.createNetwork({
             Name: 'dt-diff-net',
             CheckDuplicate: true
@@ -638,12 +734,80 @@ async function main () {
       // Run crawl tool
       // --------------
       {
-        title: 'Run crawl tool',
+        title: 'Run crawl',
         task: async (ctx, task) => {
-          task.output = 'Starting ./bin/test-crawl...'
+          task.title = 'Running crawl... (Press F10 to cancel)'
+          task.output = 'Starting ./bin/test-crawl... (Results will start appearing soon)'
+          
+          const startMs = performance.now()
+
           config.options.push('--settings=ietf.settings_testcrawl')
           config.options.push('--diff http://dt-diff-app-target:8000/')
-          diffOutput = await executeCommand(task, containers.appSource, ['bash', '-c', `./bin/test-crawl ${config.options.join(' ')}`], true)
+
+          // Run crawl
+          const errStack = []
+          let execChmodStream = null
+          let linesScanned = 0
+          const execPromise = new Promise(async (resolve, reject) => {
+            // Handle stream output
+            const logStream = new PassThrough()
+            logStream.on('data', chunk => {
+              const logLines = chunk.toString('utf8').trim().split('\n').filter(l => l.trim())
+              // Check for DIFF mentions
+              if (logLines.length > 0) {
+                linesScanned += logLines.length
+                for (const logLine of logLines) {
+                  if (logLine.includes('DIFF')) {
+                    diffStack.push(logLine)
+                  }
+                }
+                const currentDur = Duration.fromMillis(performance.now() - startMs)
+                task.output = `[${currentDur.toFormat('hh:mm:ss')}] Scanned ${linesScanned} lines. Found ${diffStack.length} DIFF mentions.`
+              }
+            })
+            // Handle error stream
+            logStream.on('error', chunk => {
+              task.output = chunk.toString('utf8')
+              errStack.push(chunk.toString('utf8'))
+            })
+            // Pipe to file stream
+            const logFStream = fs.createWriteStream(path.join(config.savePath))
+            logStream.pipe(logFStream)
+            // Execute command in container
+            const execChmod = await containers.appSource.exec({
+              Cmd: ['bash', '-c', `./bin/test-crawl ${config.options.join(' ')}`],
+              AttachStdout: true,
+              AttachStderr: true
+            })
+            execChmodStream = await execChmod.start()
+            // Handle stream close
+            execChmodStream.on('close', () => {
+              logFStream.close()
+              process.stdin.setRawMode(false)
+              process.stdin.resume()
+              if (errStack.length > 0) {
+                reject(new Error(errStack))
+              } else {
+                resolve()
+              }
+            })
+            // Pipe container stream to log stream
+            containers.appSource.modem.demuxStream(execChmodStream, logStream, logStream)
+          })
+
+          // Handle F10 Exit
+          keypress(process.stdin)
+          process.stdin.on('keypress', (ch, key) => {
+            if (key && key.name === 'f10') {
+              task.title = 'Run crawl'
+              execChmodStream.destroy()
+              task.skip()
+            }
+          })
+          process.stdin.setRawMode(true)
+          process.stdin.resume()
+
+          return execPromise
         }
       }
     ])
@@ -654,82 +818,11 @@ async function main () {
     console.error(chalk.redBright(err.message))
   }
 
-  // ==================================================================
-  // POST-TASKS
-  // ==================================================================
+  // ------------------------
+  // Cleanup
+  // ------------------------
 
-  try {
-    const postTasks = new Listr([
-      // ------------------------
-      // Stop + Remove Containers
-      // ------------------------
-      {
-        title: 'Stop + remove docker containers',
-        task: async (ctx, task) => {
-          task.output = 'Stopping containers...'
-          try {
-            await Promise.allSettled([
-              containers.dbSource && containers.dbSource.stop(),
-              containers.dbTarget && containers.dbTarget.stop(),
-              containers.appSource && containers.appSource.stop(),
-              containers.appTarget && containers.appTarget.stop()
-            ])
-          } catch (err) { }
-          task.output = 'Removing containers...'
-          try {
-            await Promise.allSettled([
-              containers.dbSource && containers.dbSource.remove({ v: true }),
-              containers.dbTarget && containers.dbTarget.remove({ v: true }),
-              containers.appSource && containers.appSource.remove({ v: true }),
-              containers.appTarget && containers.appTarget.remove({ v: true })
-            ])
-          } catch (err) { }
-          task.output = 'Removing network...'
-          try {
-            await containers.net.remove()
-          } catch (err) {}
-        }
-      },
-      // --------------------
-      // Restore config files
-      // --------------------
-      {
-        title: 'Restore original source settings file',
-        task: async (ctx, task) => {
-          const sourceSettingsPath = path.join(config.source, 'ietf/settings_local.py')
-          if (await fs.pathExists(`${sourceSettingsPath}.bak`)) {
-            await fs.move(`${sourceSettingsPath}.bak`, sourceSettingsPath, { overwrite: true })
-            task.title = 'Restored original source settings file.'
-          } else {
-            task.skip('Nothing to restore.')
-          }
-        }
-      },
-      {
-        title: 'Restore original target settings file',
-        task: async (ctx, task) => {
-          const targetSettingsPath = path.join(config.target, 'ietf/settings_local.py')
-          if (await fs.pathExists(`${targetSettingsPath}.bak`)) {
-            await fs.move(`${targetSettingsPath}.bak`, targetSettingsPath, { overwrite: true })
-            task.title = 'Restored original target settings file.'
-          } else {
-            task.skip('Nothing to restore.')
-          }
-        }
-      }
-    ])
-  
-    await postTasks.run()
-
-    // Cleanup
-    if (config.tmpDir) {
-      await fs.remove(config.tmpDir)
-    }
-
-  } catch (err) {
-    console.error(chalk.redBright(err.message))
-    process.exit(1)
-  }
+  await cleanup()
 
   // ------------------------
   // Output results
@@ -739,16 +832,30 @@ async function main () {
   console.info('RESULTS')
   console.info('=====================\n')
 
-  let totalDiff = 0
-  for (const logLine of diffOutput) {
-    if (logLine.includes('DIFF')) {
-      totalDiff++
-      console.info(`> ${logLine}`)
+  if (diffStack.length > 0) {
+    for (const diffLine of diffStack) {
+      console.info(`> ${diffLine}`)
     }
+    console.info(chalk.blueBright(`\nFound ${diffStack.length} mention(s) of DIFF.\n`))
+  } else {
+    console.info(chalk.blueBright(`No mention of DIFF were found.\n`))
   }
 
-  console.info(chalk.blueBright(`\nFound ${totalDiff} mention(s) of DIFF.\n`))
   process.exit(0)
 }
+
+// Handle user interrupt
+// process.once('SIGINT', async () => {
+//   console.info('Trying to shutdown gracefully...')
+//   if (config.shouldCleanup) {
+//     setTimeout(() => { process.exit(1) }, 30000).unref()
+//     try {
+//       await cleanup()
+//     } catch (err) {
+//       console.warn(`Failed to shutdown gracefully: ${err.message}`)
+//     }
+//   }
+//   process.exit(0)
+// })
 
 main()
