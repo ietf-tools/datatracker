@@ -71,7 +71,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
   // -> SCHEDULE LIST -> Header
 
-  it(`has schedule list title`, () => {
+  it.only(`has schedule list title`, () => {
     cy.get('.agenda h2').first().contains(`Schedule`)
   })
   it(`has info note`, () => {

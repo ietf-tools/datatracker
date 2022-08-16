@@ -1,11 +1,12 @@
 import { DateTime } from 'luxon'
 import { faker } from '@faker-js/faker'
-import { random, startCase, times } from 'lodash-es'
+import { random, sample, sampleSize, startCase, times } from 'lodash-es'
 import slugify from 'slugify'
+import ms from 'ms'
 
 import floorsMeta from '../fixtures/meeting-floors.json'
 
-const xslugify = (str) => slugify(str.replace('/', '-'), { lower: true })
+const xslugify = (str) => slugify(str.replace('/', '-'), { lower: true, strict: true })
 
 /**
  * Generate area response from label + children
@@ -57,14 +58,51 @@ function createGroup ({ label, mayBeBof = false, toggledBy = [] }) {
 }
 
 /**
+ * Find area and group based on group slug
+ */
+function findAreaGroup (slug, areas) {
+  for (const area of areas) {
+    for (const group of area.children) {
+      if (group.keyword === slug) {
+        return { area, group }
+      }
+    }
+  }
+  throw new Error('Requested group does not exist!')
+}
+
+
+/**
+ * Reverse areas and groups mapping
+ */
+function reverseAreaGroupsMapping (areas) {
+  const groups = []
+  for (const area of areas) {
+    for (const group of area.children) {
+      groups.push({
+        ...group,
+        area
+      })
+    }
+  }
+  return groups
+}
+
+/**
  * Generate event
  */
 let lastEventId = 100000
 let lastSessionId = 25000
 function createEvent ({
   name = '',
-  hasNote = false
-}, floors, categories) {
+  startDateTime,
+  duration = '1h',
+  area,
+  group,
+  type = 'other',
+  hasNote = false,
+  isBoF = false
+}, floors) {
   const floor = sample(floors)
   const room = sample(floor.rooms)
   const eventName = name ?? faker.lorem.sentence(random(2, 5))
@@ -76,22 +114,22 @@ function createEvent ({
       short: floor.short,
       name: floor.name
     },
-    acronym: "hackathon",
-    duration: 41400,
+    acronym: group.keyword,
+    duration: typeof duration === 'string' ? ms(duration) / 1000 : duration,
     name: eventName,
-    startDateTime: "2022-07-23T09:30:00",
+    startDateTime: startDateTime.toISO({ includeOffset: false, suppressMilliseconds: true }),
     status: "sched",
-    type: "other",
-    isBoF: false,
+    type,
+    isBoF,
     filterKeywords: [
       "coding",
       "hackathon",
       "hackathon-sessc"
     ],
-    groupAcronym: "hackathon",
-    groupName: "Hackathon",
+    groupAcronym: group.keyword,
+    groupName: faker.lorem.sentence(random(2, 5)),
     groupParent: {
-      acronym: "gen"
+      acronym: area.keyword
     },
     note: hasNote ? faker.lorem.sentence(4) : '',
     remoteInstructions: '',
@@ -167,6 +205,7 @@ export default {
 
     if (!skipSchedule) {
       // Generate first group of areas
+      // -----------------------------
       const firstAreas = []
       const firstAreasNames = ['ABC', 'DEF', 'GHI', 'JKL', 'MNO', 'PQR', 'STU']
       for (const area of firstAreasNames) {
@@ -180,6 +219,7 @@ export default {
       categories.push(firstAreas)
 
       // Generate second group of areas
+      // ------------------------------
       const secondAreas = []
       for (const area of ['UVW', 'XYZ0']) {
         secondAreas.push(createArea({
@@ -192,6 +232,7 @@ export default {
       categories.push(secondAreas)
 
       // Generate last group of areas
+      // ----------------------------
       categories.push(
         [
           createArea({
@@ -228,7 +269,8 @@ export default {
             label: 'Presentation',
             children: [
               createGroup({ label: 'Hackathon Kickoff', toggledBy: ['hackathon'] }),
-              createGroup({ label: 'Host Speaker Series', toggledBy: ['ietf'] }),
+              createGroup({ label: 'Hackathon Project Results Presentations', toggledBy: ['hackathon'] }),
+              createGroup({ label: 'Host Speaker Series', toggledBy: ['ietf'] })
             ]
           }),
           createArea({
@@ -265,9 +307,216 @@ export default {
     const schedule = []
 
     if (!skipSchedule) {
-      // Generate first 2 days (no regular sessions)
+      const daySessions = []
+      const regGroups = reverseAreaGroupsMapping([...categories[0], ...categories[1]])
 
+      // DAY 1 - No regular sessions
+      // ---------------------------
+      const day1 = startDate
 
+      schedule.push(createEvent({
+        name: 'Hackathon',
+        startDateTime: day1.set({ hour: 9, minute: 30 }),
+        duration: '11.5h',
+        ...findAreaGroup('hackathon', categories[2])
+      }, floors))
+
+      schedule.push(createEvent({
+        name: 'Code Sprint',
+        startDateTime: day1.set({ hour: 10 }),
+        duration: '12h',
+        ...findAreaGroup('code-sprint', categories[2])
+      }, floors))
+
+      schedule.push(createEvent({
+        name: 'Hackathon Kickoff',
+        startDateTime: day1.set({ hour: 10, minute: 30 }),
+        duration: '30m',
+        ...findAreaGroup('hackathon-kickoff', categories[2])
+      }, floors))
+
+      // DAY 2 - No regular sessions
+      // ---------------------------
+      const day2 = startDate.plus({ days: 1 })
+
+      schedule.push(createEvent({
+        name: 'Hackathon',
+        startDateTime: day2.set({ hour: 9, minute: 30 }),
+        duration: '6.5h',
+        ...findAreaGroup('hackathon', categories[2])
+      }, floors))
+
+      schedule.push(createEvent({
+        name: 'IETF Registration',
+        startDateTime: day2.set({ hour: 10 }),
+        duration: '8h',
+        ...findAreaGroup('ietf-registration', categories[2])
+      }, floors))
+
+      schedule.push(createEvent({
+        name: 'Tutorial: Newcomers',
+        startDateTime: day2.set({ hour: 12, minute: 30 }),
+        duration: '1h',
+        ...findAreaGroup('tutorial-newcomers-overview', categories[2])
+      }, floors))
+
+      schedule.push(createEvent({
+        name: 'Hackathon Results Presentations',
+        startDateTime: day2.set({ hour: 14 }),
+        duration: '2h',
+        ...findAreaGroup('hackathon-project-results-presentations', categories[2])
+      }, floors))
+
+      schedule.push(createEvent({
+        name: `Newcomers' Quick Connections (Note that pre-registration is required)`,
+        startDateTime: day2.set({ hour: 16 }),
+        duration: '1h',
+        ...findAreaGroup('newcomers-quick-connections', categories[2])
+      }, floors))
+
+      schedule.push(createEvent({
+        name: 'ABC AD Office Hours',
+        startDateTime: day2.set({ hour: 16 }),
+        duration: '1h',
+        ...findAreaGroup('abc-office-hours', categories[2])
+      }, floors))
+
+      schedule.push(createEvent({
+        name: 'DEF AD Office Hours',
+        startDateTime: day2.set({ hour: 16, minute: 15 }),
+        duration: '45m',
+        ...findAreaGroup('def-office-hours', categories[2])
+      }, floors))
+
+      schedule.push(createEvent({
+        name: 'Welcome Reception',
+        startDateTime: day2.set({ hour: 17 }),
+        duration: '2h',
+        ...findAreaGroup('welcome-reception', categories[2])
+      }, floors))
+
+      // DAY 3-7 - Regular Sessions
+      // --------------------------
+      for (let dayIdx = 2; dayIdx < 7; dayIdx++) {
+        const curDay = startDate.plus({ days: dayIdx })
+        daySessions.push(...sampleSize(regGroups, 24))
+
+        schedule.push(createEvent({
+          name: 'Continental Breakfast',
+          startDateTime: curDay.set({ hour: 8, minute: 30 }),
+          duration: '1.5h',
+          type: 'break',
+          ...findAreaGroup('beverage-and-snack-break', categories[2])
+        }, floors))
+
+        schedule.push(createEvent({
+          name: 'ABC AD Office Hours',
+          startDateTime: curDay.set({ hour: 8, minute: 30 }),
+          duration: '8.5h',
+          ...findAreaGroup('abc-office-hours', categories[2])
+        }, floors))
+
+        schedule.push(createEvent({
+          name: 'IETF Registration',
+          startDateTime: curDay.set({ hour: 8, minute: 30 }),
+          duration: '8h',
+          ...findAreaGroup('ietf-registration', categories[2])
+        }, floors))
+
+        schedule.push(createEvent({
+          name: 'DEF AD Office Hours',
+          startDateTime: curDay.set({ hour: 9 }),
+          duration: '8.5h',
+          ...findAreaGroup('def-office-hours', categories[2])
+        }, floors))
+
+        schedule.push(createEvent({
+          name: 'GHI AD Office Hours',
+          startDateTime: curDay.set({ hour: 9 }),
+          duration: '30m',
+          ...findAreaGroup('ghi-office-hours', categories[2])
+        }, floors))
+
+        // -> Session I
+        times(8, () => { // 8 lanes per session time
+          const { area, ...group } = daySessions.pop()
+          schedule.push(createEvent({
+            name: 'Session I',
+            startDateTime: curDay.set({ hour: 10 }),
+            duration: '2h',
+            type: 'regular',
+            group,
+            area,
+            isBoF: group.is_bof
+          }, floors))
+        })
+
+        schedule.push(createEvent({
+          name: 'Break',
+          startDateTime: curDay.set({ hour: 12 }),
+          duration: '1.5h',
+          type: 'break',
+          ...findAreaGroup('beverage-and-snack-break', categories[2])
+        }, floors))
+
+        // -> Session II
+        times(8, () => { // 8 lanes per session time
+          const { area, ...group } = daySessions.pop()
+          schedule.push(createEvent({
+            name: 'Session II',
+            startDateTime: curDay.set({ hour: 13, minute: 30 }),
+            duration: '1h',
+            type: 'regular',
+            group,
+            area,
+            isBoF: group.is_bof
+          }, floors))
+        })
+
+        // -> No 3rd session on last day
+        if (dayIdx < 6) {
+          schedule.push(createEvent({
+            name: 'Beverage and Snack Break',
+            startDateTime: curDay.set({ hour: 14, minute: 30 }),
+            duration: '30m',
+            type: 'break',
+            ...findAreaGroup('beverage-and-snack-break', categories[2])
+          }, floors))
+  
+          // -> Session III
+          times(8, () => { // 8 lanes per session time
+            const { area, ...group } = daySessions.pop()
+            schedule.push(createEvent({
+              name: 'Session III',
+              startDateTime: curDay.set({ hour: 15 }),
+              duration: '2h',
+              type: 'regular',
+              group,
+              area,
+              isBoF: group.is_bof
+            }, floors))
+          })
+        }
+
+        // -> Plenary
+        if (dayIdx === 4) {
+          schedule.push(createEvent({
+            name: 'Beverage and Snack Break',
+            startDateTime: curDay.set({ hour: 17 }),
+            duration: '30m',
+            type: 'break',
+            ...findAreaGroup('beverage-and-snack-break', categories[2])
+          }, floors))
+
+          schedule.push(createEvent({
+            name: 'IETF Plenary',
+            startDateTime: curDay.set({ hour: 17, minute: 30 }),
+            duration: '2h',
+            type: 'plenary',
+            ...findAreaGroup('ietf-plenary', categories[2])
+          }, floors))
+        }
+      }
 
     }
 

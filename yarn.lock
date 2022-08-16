@@ -6468,6 +6468,7 @@ browserlist@latest:
     luxon: 3.0.1
     moment: 2.29.4
     moment-timezone: 0.5.34
+    ms: 2.1.3
     murmurhash-js: 1.0.0
     naive-ui: 2.31.0
     parcel: 2.6.2
