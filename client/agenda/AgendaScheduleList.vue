@@ -68,7 +68,7 @@
               a.discreet(:href='`/group/` + item.acronym + `/about/`') {{item.acronym}}
             //- CELL - NAME ---------------------------
             td.agenda-table-cell-name
-              i.bi.me-2(v-if='item.icon && agendaStore.eventIconsShown', :class='item.icon')
+              i.bi.me-2.agenda-event-icon(v-if='item.icon && agendaStore.eventIconsShown', :class='item.icon')
               a.discreet(
                 v-if='item.flags.agenda'
                 :href='item.agenda.url'

@@ -113,6 +113,20 @@ describe('meeting -> agenda-neue [past, desktop]', {
     cy.get('.agenda .agenda-timezone-ddn').contains('Tokyo')
   })
 
+  // -> SCHEDULE LIST -> Table
+
+  it.only('has schedule list table', () => {
+    // Table Headers
+    cy.get('.agenda-table-head-time').should('exist').and('contain', 'Time')
+    cy.get('.agenda-table-head-location').should('exist').and('contain', 'Location')
+    cy.get('.agenda-table-head-event').should('exist').and('contain', 'Event')
+    // Day Headers
+    cy.get('.agenda-table-display-day').should('have.length', 7).each((el, idx) => {
+      const localDateTime = DateTime.fromISO(meetingData.meeting.startDate).setZone('local').plus({ days: idx }).toLocaleString(DateTime.DATE_HUGE)
+      cy.wrap(el).should('contain', localDateTime)
+    })
+  })
+
   // -> FILTER BY AREA/GROUP DIALOG
 
   it('can filter by area/group', () => {
@@ -183,7 +197,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
   // -> SETTINGS DIALOG
 
-  it.only('can change settings', () => {
+  it('can change settings', () => {
     // Open dialog
     cy.get('.meeting-nav').next('button').should('exist').and('be.visible').click()
     cy.get('.agenda-settings').should('exist').and('be.visible')
@@ -192,38 +206,6 @@ describe('meeting -> agenda-neue [past, desktop]', {
     cy.get('.agenda-settings .agenda-settings-actions > button').should('have.length', 2)
     cy.get('.agenda-settings .agenda-settings-actions > button').first().should('be.visible')
     cy.get('.agenda-settings .agenda-settings-actions > button').last().contains('Close')
-    // -----------------------
-    // Check timezone controls
-    // -----------------------
-    cy.get('.agenda-settings-content > .n-divider').first().should('contain', 'Timezone').as('settings-timezone')
-    // Switch to local timezone
-    cy.get('@settings-timezone').next('.n-button-group').find('button').eq(1).click().should('have.class', 'n-button--primary-type')
-      .prev('button').should('not.have.class', 'n-button--primary-type')
-    const localDateTime = DateTime.fromISO(meetingData.meeting.updated).setZone('local').toFormat(`DD 'at' tt ZZZZ`)
-    cy.get('.agenda h6').first().contains(localDateTime)
-    // Switch to UTC
-    cy.get('@settings-timezone').next('.n-button-group').find('button').last().click().should('have.class', 'n-button--primary-type')
-      .prev('button').should('not.have.class', 'n-button--primary-type')
-    const utcDateTime = DateTime.fromISO(meetingData.meeting.updated).setZone('utc').toFormat(`DD 'at' tt ZZZZ`)
-    cy.get('.agenda h6').first().contains(utcDateTime)
-    // Switch back to meeting timezone
-    cy.get('@settings-timezone').next('.n-button-group').find('button').first().click().should('have.class', 'n-button--primary-type')
-    cy.get('@settings-timezone').next('.n-button-group').next('.n-select').contains('Tokyo')
-    // ----------------------
-    // Check display controls
-    // ----------------------
-    cy.get('.agenda-settings-content > .n-divider').eq(1).should('contain', 'Display').as('settings-display')
-    // TODO: display checks
-    // ----------------------------
-    // Check calendar view controls
-    // ----------------------------
-    cy.get('.agenda-settings-content > .n-divider').eq(2).should('contain', 'Calendar View').as('settings-calendar')
-    // TODO: calendar view checks
-    // ----------------------------
-    // Check calendar view controls
-    // ----------------------------
-    cy.get('.agenda-settings-content > .n-divider').eq(3).should('contain', 'Custom Colors / Tags').as('settings-colors')
-    // TODO: custom colors checks
     // -------------------
     // Check export config
     // -------------------
@@ -251,6 +233,65 @@ describe('meeting -> agenda-neue [past, desktop]', {
         cy.get('.n-message').should('contain', 'Config imported successfully')
       })
     })
+    // -----------------------
+    // Check timezone controls
+    // -----------------------
+    cy.get('.agenda-settings-content > .n-divider').first().should('contain', 'Timezone').as('settings-timezone')
+    // Switch to local timezone
+    cy.get('@settings-timezone').next('.n-button-group').find('button').eq(1).click().should('have.class', 'n-button--primary-type')
+      .prev('button').should('not.have.class', 'n-button--primary-type')
+    const localDateTime = DateTime.fromISO(meetingData.meeting.updated).setZone('local').toFormat(`DD 'at' tt ZZZZ`)
+    cy.get('.agenda h6').first().contains(localDateTime)
+    // Switch to UTC
+    cy.get('@settings-timezone').next('.n-button-group').find('button').last().click().should('have.class', 'n-button--primary-type')
+      .prev('button').should('not.have.class', 'n-button--primary-type')
+    const utcDateTime = DateTime.fromISO(meetingData.meeting.updated).setZone('utc').toFormat(`DD 'at' tt ZZZZ`)
+    cy.get('.agenda h6').first().contains(utcDateTime)
+    // Switch back to meeting timezone
+    cy.get('@settings-timezone').next('.n-button-group').find('button').first().click().should('have.class', 'n-button--primary-type')
+    cy.get('@settings-timezone').next('.n-button-group').next('.n-select').contains('Tokyo')
+    // ----------------------
+    // Check display controls
+    // ----------------------
+    cy.get('.agenda-settings-content > .n-divider').eq(1).should('contain', 'Display').as('settings-display')
+    // TODO: color legend toggle
+    // -> Test Current Meeting Info Note toggle
+    cy.get('@settings-display').nextAll('div.d-flex').eq(1).find('div[role=switch]').as('switch-infonote').click()
+    cy.get('.agenda .agenda-infonote').should('not.exist')
+    cy.get('@switch-infonote').click()
+    cy.get('.agenda .agenda-infonote').should('exist')
+    // -> Test Event Icons toggle
+    cy.get('@settings-display').nextAll('div.d-flex').eq(2).find('div[role=switch]').as('switch-eventicons').click()
+    cy.get('.agenda .agenda-event-icon').should('not.exist')
+    cy.get('@switch-eventicons').click()
+    cy.get('.agenda .agenda-event-icon').should('exist')
+    // -> Test Floor Indicators toggle
+    cy.get('@settings-display').nextAll('div.d-flex').eq(3).find('div[role=switch]').as('switch-floorind').click()
+    cy.get('.agenda .agenda-table-cell-room > span.badge').should('not.exist')
+    cy.get('@switch-floorind').click()
+    cy.get('.agenda .agenda-table-cell-room > span.badge').should('exist')
+    // -> Test Group Area Indicators toggle
+    cy.get('@settings-display').nextAll('div.d-flex').eq(4).find('div[role=switch]').as('switch-groupind').click()
+    cy.get('.agenda .agenda-table-cell-group > span.badge').should('not.exist')
+    cy.get('@switch-groupind').click()
+    cy.get('.agenda .agenda-table-cell-group > span.badge').should('exist')
+    // TODO: realtime red line toggle
+    // -> Test Bolder Text toggle
+    cy.get('@settings-display').nextAll('div.d-flex').eq(6).find('div[role=switch]').as('switch-boldertext').click()
+    cy.get('.agenda').should('have.class', 'bolder-text')
+    cy.get('@switch-boldertext').click()
+    cy.get('.agenda').should('not.have.class', 'bolder-text')
+
+    // ----------------------------
+    // Check calendar view controls
+    // ----------------------------
+    cy.get('.agenda-settings-content > .n-divider').eq(2).should('contain', 'Calendar View').as('settings-calendar')
+    // TODO: calendar view checks
+    // ----------------------------
+    // Check calendar view controls
+    // ----------------------------
+    cy.get('.agenda-settings-content > .n-divider').eq(3).should('contain', 'Custom Colors / Tags').as('settings-colors')
+    // TODO: custom colors checks
     // ------------------------------
     // Click Close should hide dialog
     // ------------------------------
