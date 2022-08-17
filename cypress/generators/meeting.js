@@ -8,6 +8,12 @@ import floorsMeta from '../fixtures/meeting-floors.json'
 
 const xslugify = (str) => slugify(str.replace('/', '-'), { lower: true, strict: true })
 
+const sessionsWithNotes = [3, 6, 20, 48, 49, 60]
+const sessionsCancelled = [29, 93]
+const sessionsRescheduled = [76]
+const sessionsMissingAgenda = [5, 10]
+const sessionsWithWebex = [3, 4]
+
 /**
  * Generate area response from label + children
  */
@@ -88,11 +94,22 @@ function reverseAreaGroupsMapping (areas) {
   return groups
 }
 
+function getEventStatus (idx) {
+  if (sessionsCancelled.includes(idx)) {
+    return 'canceled'
+  } else if (sessionsRescheduled.includes(idx)) {
+    return 'resched'
+  } else {
+    return 'sched'
+  }
+}
+
 /**
  * Generate event
  */
 let lastEventId = 100000
 let lastSessionId = 25000
+let lastRecordingId = 150000
 function createEvent ({
   name = '',
   startDateTime,
@@ -100,25 +117,32 @@ function createEvent ({
   area,
   group,
   type = 'other',
+  status = 'sched',
+  hasLocation = true,
   hasNote = false,
+  hasAgenda = false,
+  showAgenda = false,
+  hasRecordings = false,
+  hasVideoStream = true,
+  hasWebex = false,
   isBoF = false
 }, floors) {
   const floor = sample(floors)
-  const room = sample(floor.rooms)
+  const room = hasLocation ? sample(floor.rooms) : { name: 'Somewhere' }
   const eventName = name ?? faker.lorem.sentence(random(2, 5))
   return {
     id: ++lastEventId,
     sessionId: ++lastSessionId,
     room: room.name,
-    location: {
+    location: hasLocation ? {
       short: floor.short,
       name: floor.name
-    },
+    } : {},
     acronym: group.keyword,
     duration: typeof duration === 'string' ? ms(duration) / 1000 : duration,
     name: eventName,
     startDateTime: startDateTime.toISO({ includeOffset: false, suppressMilliseconds: true }),
-    status: "sched",
+    status,
     type,
     isBoF,
     filterKeywords: [
@@ -131,26 +155,33 @@ function createEvent ({
     groupParent: {
       acronym: area.keyword
     },
-    note: hasNote ? faker.lorem.sentence(4) : '',
+    note: (hasNote || status === 'resched') ? faker.lorem.sentence(4) : '',
     remoteInstructions: '',
     flags: {
-      agenda: false,
-      showAgenda: false
+      agenda: hasAgenda,
+      showAgenda
     },
     agenda: {
-      url: null
+      url: hasAgenda ? `https://datatracker.ietf.org/meeting/123/materials/agenda-123-ietf-sessa-00` : null
     },
     orderInMeeting: 1,
-    short: "Hackathon",
-    sessionToken: "sessc",
+    short: eventName,
+    sessionToken: "sessa",
     links: {
-      chat: "https://zulip.ietf.org/#narrow/stream/hackathon",
-      chatArchive: "https://zulip.ietf.org/#narrow/stream/hackathon",
-      recordings: [],
-      videoStream: null,
-      audioStream: null,
-      webex: null,
-      onsiteTool: null,
+      chat: `https://zulip.ietf.org/#narrow/stream/${group.keyword}`,
+      chatArchive: `https://zulip.ietf.org/#narrow/stream/${group.keyword}`,
+      recordings: hasRecordings ? [
+        {
+          id: ++lastRecordingId,
+          name: `recording-123-${group.keyword}-1`,
+          title: `Video recording for ${group.keyword} on ${startDateTime.toFormat('yyyy-LL-dd \'at\' HH:mm:ss')}`,
+          url: "https://www.youtube.com/watch?v=1eq_5xvacl0"
+        }
+      ] : [],
+      videoStream: showAgenda && hasVideoStream ? 'https://meetings.conf.meetecho.com/ietf{meeting.number}/?group={group.acronym}&short={short}&item={order_number}' : null,
+      audioStream: hasAgenda ? 'https://mp3.conf.meetecho.com/ietf114/{group.acronym}/{order_number}.m3u' : null,
+      webex: hasWebex ? 'https://webex.com/123' : null,
+      onsiteTool: hasAgenda ? 'https://meetings.conf.meetecho.com/onsite{meeting.number}/?group={group.acronym}&short={short}&item={order_number}' : null,
       calendar: `/meeting/123/session/${lastSessionId}.ics`
     }
   }
@@ -307,6 +338,7 @@ export default {
     const schedule = []
 
     if (!skipSchedule) {
+      let sessionIdx = 0
       const daySessions = []
       const regGroups = reverseAreaGroupsMapping([...categories[0], ...categories[1]])
 
@@ -318,7 +350,11 @@ export default {
         name: 'Hackathon',
         startDateTime: day1.set({ hour: 9, minute: 30 }),
         duration: '11.5h',
-        ...findAreaGroup('hackathon', categories[2])
+        ...findAreaGroup('hackathon', categories[2]),
+        showAgenda: true,
+        hasAgenda: true,
+        hasRecordings: true,
+        hasVideoStream: false
       }, floors))
 
       schedule.push(createEvent({
@@ -332,7 +368,11 @@ export default {
         name: 'Hackathon Kickoff',
         startDateTime: day1.set({ hour: 10, minute: 30 }),
         duration: '30m',
-        ...findAreaGroup('hackathon-kickoff', categories[2])
+        ...findAreaGroup('hackathon-kickoff', categories[2]),
+        showAgenda: true,
+        hasAgenda: true,
+        hasRecordings: true,
+        hasVideoStream: false
       }, floors))
 
       // DAY 2 - No regular sessions
@@ -343,7 +383,10 @@ export default {
         name: 'Hackathon',
         startDateTime: day2.set({ hour: 9, minute: 30 }),
         duration: '6.5h',
-        ...findAreaGroup('hackathon', categories[2])
+        ...findAreaGroup('hackathon', categories[2]),
+        showAgenda: true,
+        hasAgenda: true,
+        hasVideoStream: false
       }, floors))
 
       schedule.push(createEvent({
@@ -357,7 +400,10 @@ export default {
         name: 'Tutorial: Newcomers',
         startDateTime: day2.set({ hour: 12, minute: 30 }),
         duration: '1h',
-        ...findAreaGroup('tutorial-newcomers-overview', categories[2])
+        ...findAreaGroup('tutorial-newcomers-overview', categories[2]),
+        showAgenda: true,
+        hasRecordings: true,
+        hasVideoStream: true
       }, floors))
 
       schedule.push(createEvent({
@@ -371,7 +417,8 @@ export default {
         name: `Newcomers' Quick Connections (Note that pre-registration is required)`,
         startDateTime: day2.set({ hour: 16 }),
         duration: '1h',
-        ...findAreaGroup('newcomers-quick-connections', categories[2])
+        ...findAreaGroup('newcomers-quick-connections', categories[2]),
+        hasLocation: false
       }, floors))
 
       schedule.push(createEvent({
@@ -434,7 +481,8 @@ export default {
           name: 'GHI AD Office Hours',
           startDateTime: curDay.set({ hour: 9 }),
           duration: '30m',
-          ...findAreaGroup('ghi-office-hours', categories[2])
+          ...findAreaGroup('ghi-office-hours', categories[2]),
+          hasLocation: false
         }, floors))
 
         // -> Session I
@@ -447,8 +495,15 @@ export default {
             type: 'regular',
             group,
             area,
-            isBoF: group.is_bof
+            status: getEventStatus(sessionIdx),
+            hasNote: sessionsWithNotes.includes(sessionIdx),
+            isBoF: group.is_bof,
+            showAgenda: true,
+            hasAgenda: !sessionsMissingAgenda.includes(sessionIdx),
+            hasRecordings: !sessionsMissingAgenda.includes(sessionIdx),
+            hasWebex: sessionsWithWebex.includes(sessionIdx)
           }, floors))
+          sessionIdx++
         })
 
         schedule.push(createEvent({
@@ -469,8 +524,15 @@ export default {
             type: 'regular',
             group,
             area,
-            isBoF: group.is_bof
+            status: getEventStatus(sessionIdx),
+            hasNote: sessionsWithNotes.includes(sessionIdx),
+            isBoF: group.is_bof,
+            showAgenda: true,
+            hasAgenda: !sessionsMissingAgenda.includes(sessionIdx),
+            hasRecordings: !sessionsMissingAgenda.includes(sessionIdx),
+            hasWebex: sessionsWithWebex.includes(sessionIdx)
           }, floors))
+          sessionIdx++
         })
 
         // -> No 3rd session on last day
@@ -493,8 +555,15 @@ export default {
               type: 'regular',
               group,
               area,
-              isBoF: group.is_bof
+              status: getEventStatus(sessionIdx),
+              hasNote: sessionsWithNotes.includes(sessionIdx),
+              isBoF: group.is_bof,
+              showAgenda: true,
+              hasAgenda: !sessionsMissingAgenda.includes(sessionIdx),
+              hasRecordings: !sessionsMissingAgenda.includes(sessionIdx),
+              hasWebex: sessionsWithWebex.includes(sessionIdx)
             }, floors))
+            sessionIdx++
           })
         }
 
@@ -517,7 +586,6 @@ export default {
           }, floors))
         }
       }
-
     }
 
     // Return response object

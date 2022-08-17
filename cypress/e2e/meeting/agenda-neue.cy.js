@@ -1,4 +1,6 @@
 import { DateTime } from 'luxon'
+import path from 'path'
+import { isEqual } from 'lodash-es'
 import meetingGenerator from '../../generators/meeting'
 
 const viewports = {
@@ -71,7 +73,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
   // -> SCHEDULE LIST -> Header
 
-  it.only(`has schedule list title`, () => {
+  it(`has schedule list title`, () => {
     cy.get('.agenda h2').first().contains(`Schedule`)
   })
   it(`has info note`, () => {
@@ -179,6 +181,46 @@ describe('meeting -> agenda-neue [past, desktop]', {
     cy.get('.agenda-personalize').should('not.exist')
   })
 
+  // -> FILTER BY AREA/GROUP DIALOG
+
+  it.only('can export / import settings', () => {
+    // Open dialog
+    cy.get('.meeting-nav').next('button').should('exist').and('be.visible').click()
+    cy.get('.agenda-settings').should('exist').and('be.visible')
+    // Check header elements
+    cy.get('.agenda-settings .n-drawer-header__main > span').contains('Agenda Settings')
+    cy.get('.agenda-settings .agenda-settings-actions > button').should('have.length', 2)
+    cy.get('.agenda-settings .agenda-settings-actions > button').first().should('be.visible')
+    cy.get('.agenda-settings .agenda-settings-actions > button').last().contains('Close')
+    // Check timezone controls
+    cy.get('.agenda-settings-content > .n-divider:first').contains('Timezone')
+    // Check export config
+    cy.get('.agenda-settings .agenda-settings-actions > button').first().click()
+    cy.get('.n-dropdown-option:contains("Export Configuration")').should('exist').and('be.visible').click()
+    cy.readFile(path.join(Cypress.config('downloadsFolder'), 'agenda-settings.json'), { timeout: 15000 }).then(cfg => {
+      cy.fixture('agenda-settings.json').then(cfgValid => {
+        expect(isEqual(cfg, cfgValid)).to.be.true
+      })
+    })
+    // Check import config
+    cy.fixture('agenda-settings.json', { encoding: 'utf8' }).then(cfgImport => {
+      // Stub the native file picker
+      // From https://cypresstips.substack.com/p/stub-the-browser-filesystem-api
+      cy.window().then((win) => {
+        cy.stub(win, 'showOpenFilePicker').resolves([{
+          getFile: cy.stub().resolves({
+            text: cy.stub().resolves(JSON.stringify(cfgImport))
+          })
+        }])
+        cy.get('.agenda-settings .agenda-settings-actions > button').first().click()
+        cy.get('.n-dropdown-option:contains("Import Configuration")').should('exist').and('be.visible').click()
+        cy.get('.n-message').should('contain', 'Config imported successfully')
+      })
+    })
+    // Click Close should hide dialog
+    cy.get('.agenda-settings .agenda-settings-actions > button').last().click()
+    cy.get('.agenda-settings').should('not.exist')
+  })
 })
 
 // ====================================================================
