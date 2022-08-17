@@ -181,9 +181,9 @@ describe('meeting -> agenda-neue [past, desktop]', {
     cy.get('.agenda-personalize').should('not.exist')
   })
 
-  // -> FILTER BY AREA/GROUP DIALOG
+  // -> SETTINGS DIALOG
 
-  it.only('can export / import settings', () => {
+  it.only('can change settings', () => {
     // Open dialog
     cy.get('.meeting-nav').next('button').should('exist').and('be.visible').click()
     cy.get('.agenda-settings').should('exist').and('be.visible')
@@ -192,9 +192,41 @@ describe('meeting -> agenda-neue [past, desktop]', {
     cy.get('.agenda-settings .agenda-settings-actions > button').should('have.length', 2)
     cy.get('.agenda-settings .agenda-settings-actions > button').first().should('be.visible')
     cy.get('.agenda-settings .agenda-settings-actions > button').last().contains('Close')
+    // -----------------------
     // Check timezone controls
-    cy.get('.agenda-settings-content > .n-divider:first').contains('Timezone')
+    // -----------------------
+    cy.get('.agenda-settings-content > .n-divider').first().should('contain', 'Timezone').as('settings-timezone')
+    // Switch to local timezone
+    cy.get('@settings-timezone').next('.n-button-group').find('button').eq(1).click().should('have.class', 'n-button--primary-type')
+      .prev('button').should('not.have.class', 'n-button--primary-type')
+    const localDateTime = DateTime.fromISO(meetingData.meeting.updated).setZone('local').toFormat(`DD 'at' tt ZZZZ`)
+    cy.get('.agenda h6').first().contains(localDateTime)
+    // Switch to UTC
+    cy.get('@settings-timezone').next('.n-button-group').find('button').last().click().should('have.class', 'n-button--primary-type')
+      .prev('button').should('not.have.class', 'n-button--primary-type')
+    const utcDateTime = DateTime.fromISO(meetingData.meeting.updated).setZone('utc').toFormat(`DD 'at' tt ZZZZ`)
+    cy.get('.agenda h6').first().contains(utcDateTime)
+    // Switch back to meeting timezone
+    cy.get('@settings-timezone').next('.n-button-group').find('button').first().click().should('have.class', 'n-button--primary-type')
+    cy.get('@settings-timezone').next('.n-button-group').next('.n-select').contains('Tokyo')
+    // ----------------------
+    // Check display controls
+    // ----------------------
+    cy.get('.agenda-settings-content > .n-divider').eq(1).should('contain', 'Display').as('settings-display')
+    // TODO: display checks
+    // ----------------------------
+    // Check calendar view controls
+    // ----------------------------
+    cy.get('.agenda-settings-content > .n-divider').eq(2).should('contain', 'Calendar View').as('settings-calendar')
+    // TODO: calendar view checks
+    // ----------------------------
+    // Check calendar view controls
+    // ----------------------------
+    cy.get('.agenda-settings-content > .n-divider').eq(3).should('contain', 'Custom Colors / Tags').as('settings-colors')
+    // TODO: custom colors checks
+    // -------------------
     // Check export config
+    // -------------------
     cy.get('.agenda-settings .agenda-settings-actions > button').first().click()
     cy.get('.n-dropdown-option:contains("Export Configuration")').should('exist').and('be.visible').click()
     cy.readFile(path.join(Cypress.config('downloadsFolder'), 'agenda-settings.json'), { timeout: 15000 }).then(cfg => {
@@ -202,7 +234,9 @@ describe('meeting -> agenda-neue [past, desktop]', {
         expect(isEqual(cfg, cfgValid)).to.be.true
       })
     })
+    // -------------------
     // Check import config
+    // -------------------
     cy.fixture('agenda-settings.json', { encoding: 'utf8' }).then(cfgImport => {
       // Stub the native file picker
       // From https://cypresstips.substack.com/p/stub-the-browser-filesystem-api
@@ -217,7 +251,9 @@ describe('meeting -> agenda-neue [past, desktop]', {
         cy.get('.n-message').should('contain', 'Config imported successfully')
       })
     })
+    // ------------------------------
     // Click Close should hide dialog
+    // ------------------------------
     cy.get('.agenda-settings .agenda-settings-actions > button').last().click()
     cy.get('.agenda-settings').should('not.exist')
   })
