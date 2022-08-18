@@ -82,7 +82,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
   // -> HEADER
 
-  it.only(`has IETF ${meetingData.meeting.number} title`, () => {
+  it(`has IETF ${meetingData.meeting.number} title`, () => {
     cy.get('.agenda h1').first().contains(`IETF ${meetingData.meeting.number} Meeting Agenda`)
   })
   it(`has meeting city subtitle`, () => {
@@ -318,7 +318,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
   // -> SCHEDULE LIST -> Show Meeting Materials dialog
 
-  it.only('can show meeting materials dialog', () => {
+  it('can show meeting materials dialog', () => {
     const event = find(meetingData.schedule, s => s.flags.showAgenda && s.flags.agenda)
     const eventStart = DateTime.fromISO(event.startDateTime)
     const eventEnd = eventStart.plus({ seconds: event.duration })
@@ -389,7 +389,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
   // -> SCHEDULE LIST -> Show Meeting Materials dialog (EMPTY VARIANT)
 
-  it.only('can show meeting materials dialog (empty variant)', () => {
+  it('can show meeting materials dialog (empty variant)', () => {
     const event = find(meetingData.schedule, s => s.flags.showAgenda && s.flags.agenda)
     // Intercept meeting materials request
     const materialsUrl = (new URL(event.agenda.url)).pathname
