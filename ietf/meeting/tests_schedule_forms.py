@@ -264,7 +264,7 @@ class TimeSlotCreateFormTests(TestCase):
 class DurationChoiceFieldTests(TestCase):
     def test_choices_default(self):
         f = DurationChoiceField()
-        self.assertEqual(f.choices, [('', '--Please select'), ('3600', '1 hour'), ('7200', '2 hours')])
+        self.assertEqual(f.choices, [('', '--Please select'), ('3600', '1 hour'), ('5400', '1 hour 30 minutes'), ('7200', '2 hours')])
 
     def test_choices(self):
         f = DurationChoiceField([60, 1800, 3600, 5400, 7260, 7261])
@@ -343,7 +343,7 @@ class SessionDetailsFormTests(TestCase):
         self.assertTrue(self.group.features.acts_like_wg)
         self.assertEqual(
             SessionDetailsForm(group=self.group).fields['requested_duration'].choices,
-            [('', '--Please select'), ('3600', '1 hour'), ('7200', '2 hours')],
+            [('', '--Please select'), ('3600', '1 hour'), ('5400', '1 hour 30 minutes'), ('7200', '2 hours')],
         )
         self.group.features.acts_like_wg = False
         self.group.features.save()
