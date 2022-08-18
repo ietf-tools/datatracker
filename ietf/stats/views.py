@@ -38,7 +38,6 @@ from ietf.meeting.models import Meeting
 from ietf.stats.models import MeetingRegistration, CountryAlias
 from ietf.stats.utils import get_aliased_affiliations, get_aliased_countries, compute_hirsch_index
 from ietf.ietfauth.utils import has_role
-from ietf.utils.log import log
 from ietf.utils.response import permission_denied
 
 def stats_index(request):
@@ -744,7 +743,8 @@ def document_stats(request, stats_type=None):
             "eu_countries": sorted(eu_countries or [], key=lambda c: c.name),
             "content_template": "stats/document_stats_{}.html".format(template_name),
         }
-        log("Cache miss for '%s'.  Data size: %sk" % (cache_key, len(str(data))/1000))
+        # Logs are full of these, but nobody is using them
+        # log("Cache miss for '%s'.  Data size: %sk" % (cache_key, len(str(data))/1000))
         cache.set(cache_key, data, 24*60*60)
     return render(request, "stats/document_stats.html", data)
 
@@ -996,7 +996,8 @@ def meeting_stats(request, num=None, stats_type=None):
             "eu_countries": sorted(eu_countries or [], key=lambda c: c.name),
             "content_template": "stats/meeting_stats_{}.html".format(template_name),
         }
-        log("Cache miss for '%s'.  Data size: %sk" % (cache_key, len(str(data))/1000))
+        # Logs are full of these, but nobody is using them...
+        # log("Cache miss for '%s'.  Data size: %sk" % (cache_key, len(str(data))/1000))
         cache.set(cache_key, data, 24*60*60)
     #
     return render(request, "stats/meeting_stats.html", data)

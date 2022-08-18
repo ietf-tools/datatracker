@@ -52,7 +52,7 @@ python-dateutil>=2.8.2
 python-magic==0.4.18    # Versions beyond the yanked .19 and .20 introduce form failures
 python-memcached>=1.59    # for django.core.cache.backends.memcached
 python-mimeparse>=1.6    # from TastyPie
-pytz>=2022.1
+pytz==2022.2.1   # Pinned as changes need to be vetted for their effect on Meeting fields
 requests>=2.27.1
 requests-mock>=1.9.3
 rfc2html>=2.0.3

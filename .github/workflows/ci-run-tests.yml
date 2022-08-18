@@ -42,6 +42,7 @@ jobs:
       run: |
         echo "Running checks..."
         ./ietf/manage.py check
+        ./ietf/manage.py migrate
         echo "Validating migrations..."
         MSG=$(ietf/manage.py makemigrations 2>&1)
         if ! ( echo ${MSG} | grep -q "^No changes detected$") ; then

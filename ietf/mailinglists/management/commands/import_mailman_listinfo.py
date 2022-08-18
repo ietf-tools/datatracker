@@ -40,17 +40,13 @@ def import_mailman_listinfo(verbosity=0):
         return
     mailman_export = json.loads(result.stdout)
 
-    log("Starting import of list info from Mailman")
     names = sorted(mailman_export.keys())
-    log_time("Fetched list of mailman list names")
     addr_max_length = Subscribed._meta.get_field('email').max_length
     
     subscribed = { l.name: set(l.subscribed_set.values_list('email', flat=True)) for l in List.objects.all().prefetch_related('subscribed_set') }
-    log_time("Computed dictionary of list members")
 
     for name in names:
         note("List: %s" % mailman_export[name]['internal_name'])
-        log_time("Fetched Mailman list object for %s" % name)
 
         lists = List.objects.filter(name=mailman_export[name]['real_name'])
         if lists.count() > 1:
@@ -68,12 +64,12 @@ def import_mailman_listinfo(verbosity=0):
             dirty = True
         if dirty:
             mmlist.save()
-        log_time("  Updated database List object for %s" % name)
         # The following calls return lowercased addresses
         if mailman_export[name]['advertised']:
             members = set(mailman_export[name]['members'])
             if not mailman_export[name]['real_name'] in subscribed:
-                log("Note: didn't find '%s' in the dictionary of subscriptions" % mailman_export[name]['real_name'])
+                # 2022-7-29: lots of these going into the logs but being ignored...
+                # log("Note: didn't find '%s' in the dictionary of subscriptions" % mailman_export[name]['real_name'])
                 continue
             known = subscribed[mailman_export[name]['real_name']]
             log_time("  Fetched known list members from database")            
@@ -82,14 +78,10 @@ def import_mailman_listinfo(verbosity=0):
             for addr in to_remove:
                     note("  Removing subscription: %s" % (addr))
                     old = Subscribed.objects.get(email=addr)
-                    log_time("    Fetched subscribed object")
                     old.lists.remove(mmlist)
-                    log_time("    Removed %s from %s" % (mmlist, old))
                     if old.lists.count() == 0:
                         note("    Removing address with no subscriptions: %s" % (addr))
                         old.delete()
-                        log_time("      Removed %s" % old)
-            log_time("  Removed addresses no longer subscribed")
             if to_remove:
                 log("  Removed %s addresses from %s" % (len(to_remove), name))
             for addr in to_add:
@@ -103,7 +95,6 @@ def import_mailman_listinfo(verbosity=0):
                     sys.stderr.write("    **  Error handling %s in %s: %s\n" % (addr, name, e))
                     continue
                 new.lists.add(mmlist)
-            log_time("  Added new addresses")
             if to_add:
                 log("  Added %s addresses to %s" % (len(to_add), name))
     log("Completed import of list info from Mailman")    
