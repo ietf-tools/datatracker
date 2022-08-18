@@ -1,9 +1,9 @@
 import { DateTime } from 'luxon'
 import path from 'path'
-import { isEqual } from 'lodash-es'
+import { find, isEqual, times } from 'lodash-es'
+import { faker } from '@faker-js/faker'
 import slugify from 'slugify'
 import meetingGenerator from '../../generators/meeting'
-import meeting from '../../generators/meeting'
 
 const xslugify = (str) => slugify(str.replace('/', '-'), { lower: true, strict: true })
 
@@ -14,12 +14,52 @@ const viewports = {
   mobile: [360, 760]
 }
 
-const injectMeetingData = (win, meetingNumber) => {
+/**
+ * Inject meeting info json into the page
+ * 
+ * @param {*} win Window Object
+ * @param {*} meetingNumber Meeting Number
+ */
+function injectMeetingData (win, meetingNumber) {
   const meetingDataScript = win.document.createElement('script')
   meetingDataScript.id = 'meeting-data'
   meetingDataScript.type = 'application/json'
   meetingDataScript.innerHTML = `{"meetingNumber": "${meetingNumber}"}`
   win.document.querySelector('head').appendChild(meetingDataScript)
+}
+
+/**
+ * Format URL by replacing inline variables
+ * 
+ * @param {String} url Raw URL
+ * @param {Object} session Session Object
+ * @param {String} meetingNumber Meeting Number
+ * @returns Formatted URL
+ */
+function formatLinkUrl (url, session, meetingNumber) {
+  return url ? url.replace('{meeting.number}', meetingNumber)
+    .replace('{group.acronym}', session.groupAcronym)
+    .replace('{short}', session.short)
+    .replace('{order_number}', session.orderInMeeting) : url
+}
+
+/**
+ * Find the first URL in text matching a conference domain
+ * 
+ * @param {String} txt Raw Text
+ * @returns First URL found
+ */
+function findFirstConferenceUrl (txt) {
+  try {
+    const fUrl = txt.match(urlRe)
+    if (fUrl && fUrl[0].length > 0) {
+      const pUrl = new URL(fUrl[0])
+      if (conferenceDomains.some(d => pUrl.hostname.endsWith(d))) {
+        return fUrl[0]
+      }
+    }
+  } catch (err) { }
+  return null
 }
 
 // ====================================================================
@@ -42,7 +82,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
   // -> HEADER
 
-  it(`has IETF ${meetingData.meeting.number} title`, () => {
+  it.only(`has IETF ${meetingData.meeting.number} title`, () => {
     cy.get('.agenda h1').first().contains(`IETF ${meetingData.meeting.number} Meeting Agenda`)
   })
   it(`has meeting city subtitle`, () => {
@@ -267,11 +307,111 @@ describe('meeting -> agenda-neue [past, desktop]', {
               cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-rec`).should('have.attr', 'href', videoStreamLink)
                 .children('i.bi').should('exist')
             }
+          } else {
+            cy.wrap(el).find('.agenda-table-cell-links > .agenda-table-cell-links-buttons').should('not.exist')
           }
           break
         }
       }
     })
+  })
+
+  // -> SCHEDULE LIST -> Show Meeting Materials dialog
+
+  it.only('can show meeting materials dialog', () => {
+    const event = find(meetingData.schedule, s => s.flags.showAgenda && s.flags.agenda)
+    const eventStart = DateTime.fromISO(event.startDateTime)
+    const eventEnd = eventStart.plus({ seconds: event.duration })
+    // Intercept meeting materials request
+    const materialsUrl = (new URL(event.agenda.url)).pathname
+    const materialsInfo = {
+      url: event.agenda.url,
+      slides: times(5, idx => ({
+        id: 100000 + idx,
+        title: faker.commerce.productName(),
+        url: `/meeting/${meetingData.meeting.number}/materials/slides-${meetingData.meeting.number}-${event.acronym}-${faker.internet.domainWord()}`,
+        ext: ['pdf', 'html', 'md', 'txt', 'pptx'][idx]
+      })),
+      minutes: {
+        ext: 'md',
+        id: 123456,
+        title: 'Minutes IETF123 Testing',
+        url: `/meeting/${meetingData.meeting.number}/materials/minutes-${meetingData.meeting.number}-${event.acronym}-${faker.internet.domainWord()}`
+      }
+    }
+    cy.intercept('GET', `/api/meeting/session/${event.sessionId}/materials`, { body: materialsInfo }).as('getMaterialsInfo')
+    cy.intercept('GET', materialsUrl, { body: 'The internet is a series of tubes.' }).as('getMaterialsText')
+    cy.intercept('GET', materialsInfo.minutes.url, { body: 'One does not simply walk into mordor.' }).as('getMaterialsMinutes')
+    // Open dialog
+    cy.get(`#agenda-rowid-${event.id}`).find(`#btn-lnk-${event.id}-mat`).click()
+    cy.get('.agenda-eventdetails').should('exist').and('be.visible')
+    cy.wait('@getMaterialsText')
+    // Header
+    cy.get('.agenda-eventdetails .n-card-header__main > .detail-header > .bi').should('exist')
+      .next('span').should('contain', eventStart.toFormat('DDDD'))
+    cy.get('.agenda-eventdetails .n-card-header__extra > .detail-header > .bi').should('exist')
+      .next('strong').should('contain', `${eventStart.toFormat('T')} - ${eventEnd.toFormat('T')}`)
+    cy.get('.agenda-eventdetails .detail-title > h6 > .bi').should('exist')
+      .next('span').should('contain', event.name)
+    cy.get('.agenda-eventdetails .detail-location > .bi').should('exist')
+      .next('.badge').should('contain', event.location.short)
+      .next('span').should('contain', event.room)
+    // Navigation
+    cy.get('.agenda-eventdetails .detail-nav > a').should('have.length', 3)
+      .first().should('have.class', 'active')
+      .nextAll().should('not.have.class', 'active')
+    // Agenda Tab
+    cy.get('.agenda-eventdetails .detail-text > iframe').should('have.attr', 'src', materialsUrl)
+    // Slides Tab
+    cy.get('.agenda-eventdetails .detail-nav > a').eq(1).click()
+      .should('have.class', 'active')
+      .siblings('a').should('not.have.class', 'active')
+    cy.get('.agenda-eventdetails .detail-text > .list-group > .list-group-item').should('have.length', materialsInfo.slides.length).each((el, idx) => {
+      cy.wrap(el).should('have.attr', 'href', materialsInfo.slides[idx].url)
+        .children('.bi').should('have.class', `bi-filetype-${materialsInfo.slides[idx].ext}`)
+        .next('span').should('contain', materialsInfo.slides[idx].title)
+    })
+    // Minutes Tab
+    cy.get('.agenda-eventdetails .detail-nav > a').eq(2).click()
+      .should('have.class', 'active')
+      .prevAll('a').should('not.have.class', 'active')
+    cy.wait('@getMaterialsMinutes')
+    cy.get('.agenda-eventdetails .detail-text > iframe').should('have.attr', 'src', materialsInfo.minutes.url)
+    // Footer Buttons
+    const hedgeDocLink = `https://notes.ietf.org/notes-ietf-${meetingData.meeting.number}-${event.type === 'plenary' ? 'plenary' : event.acronym}`
+    cy.get('.agenda-eventdetails .detail-action > a').should('have.length', 3)
+      .first().should('contain', 'Download as tarball').should('have.attr', 'href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.tgz`)
+      .next().should('contain', 'Download as PDF').should('have.attr', 'href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.pdf`)
+      .next().should('contain', 'Notepad').should('have.attr', 'href', hedgeDocLink)
+    // Clicking X should close the dialog
+    cy.get('.agenda-eventdetails .n-card-header__extra > .detail-header > button').click()
+  })
+
+  // -> SCHEDULE LIST -> Show Meeting Materials dialog (EMPTY VARIANT)
+
+  it.only('can show meeting materials dialog (empty variant)', () => {
+    const event = find(meetingData.schedule, s => s.flags.showAgenda && s.flags.agenda)
+    // Intercept meeting materials request
+    const materialsUrl = (new URL(event.agenda.url)).pathname
+    const materialsInfo = {
+      url: event.agenda.url,
+      slides: [],
+      minutes: null
+    }
+    cy.intercept('GET', `/api/meeting/session/${event.sessionId}/materials`, { body: materialsInfo }).as('getMaterialsInfo')
+    cy.intercept('GET', materialsUrl, { body: 'The internet is a series of tubes.' }).as('getMaterialsText')
+    // Open dialog
+    cy.get(`#agenda-rowid-${event.id}`).find(`#btn-lnk-${event.id}-mat`).click()
+    cy.get('.agenda-eventdetails').should('exist').and('be.visible')
+    cy.wait('@getMaterialsText')
+    // Slides Tab
+    cy.get('.agenda-eventdetails .detail-nav > a').eq(1).click()
+    cy.get('.agenda-eventdetails .detail-text').should('contain', 'No slides submitted for this session.')
+    // Minutes Tab
+    cy.get('.agenda-eventdetails .detail-nav > a').eq(2).click()
+    cy.get('.agenda-eventdetails .detail-text').should('contain', 'No minutes submitted for this session.')
+    // Clicking X should close the dialog
+    cy.get('.agenda-eventdetails .n-card-header__extra > .detail-header > button').click()
   })
 
   // -> FILTER BY AREA/GROUP DIALOG
@@ -468,10 +608,93 @@ describe('meeting -> agenda-neue [future, desktop]', {
     cy.wait('@getMeetingData')
   })
 
-  // -> SCHEDULE LIST
+  // -> SCHEDULE LIST -> Warning
 
   it(`has current meeting warning`, () => {
     cy.get('.agenda .agenda-currentwarn').should('exist').and('include.text', 'Note: IETF agendas are subject to change, up to and during a meeting.')
+  })
+
+  // -> SCHEDULE LIST -> Table Events
+
+  it('has schedule list table events', {
+    // This test is VERY memory-intensive, so disable DOM snapshots to prevent browser crash
+    numTestsKeptInMemory: 0
+  }, () => {
+    let isFirstSession = true
+    cy.get('tr.agenda-table-display-event').should('have.length', meetingData.schedule.length).each((el, idx) => {
+      // Apply small arbitrary wait every 10 rows to prevent the test UI from freezing
+      if (idx % 10 === 0) {
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
+        cy.wait(10)
+      }
+      const event = meetingData.schedule[idx]
+
+      // -----------------------
+      // Buttons / Status Column
+      // -----------------------
+      if (event.status === 'sched') {
+        if (event.flags.showAgenda || ['regular', 'plenary'].includes(event.type)) {
+          cy.wrap(el).find('.agenda-table-cell-links > .agenda-table-cell-links-buttons').as('eventbuttons')
+          if (event.flags.agenda) {
+            // Show meeting materials button
+            cy.get('@eventbuttons').find('i.bi.bi-collection').should('exist')
+            // ZIP materials button
+            cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-tar`).should('have.attr', 'href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.tgz`)
+              .children('i.bi').should('exist')
+            // PDF materials button
+            cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-pdf`).should('have.attr', 'href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.pdf`)
+              .children('i.bi').should('exist')
+          } else if (event.type === 'regular') {
+            // No meeting materials yet warning badge
+            cy.get('@eventbuttons').find('.no-meeting-materials').should('exist')
+          }
+          // Notepad button
+          const hedgeDocLink = `https://notes.ietf.org/notes-ietf-${meetingData.meeting.number}-${event.type === 'plenary' ? 'plenary' : event.acronym}`
+          cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-note`).should('have.attr', 'href', hedgeDocLink)
+            .children('i.bi').should('exist')
+          // Chat room
+          cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-room`).should('have.attr', 'href', event.links.chat)
+            .children('i.bi').should('exist')
+          // Video Stream
+          if (event.links.videoStream) {
+            cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-video`).should('have.attr', 'href', formatLinkUrl(event.links.videoStream, event, meetingData.meeting.number))
+              .children('i.bi').should('exist')
+          }
+          // Onsite Tool
+          if (event.links.onsitetool) {
+            cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-onsitetool`).should('have.attr', 'href', formatLinkUrl(event.links.onsitetool, event, meetingData.meeting.number))
+              .children('i.bi').should('exist')
+          }
+          // Audio Stream
+          if (event.links.audioStream) {
+            cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-audio`).should('have.attr', 'href', formatLinkUrl(event.links.audioStream, event, meetingData.meeting.number))
+              .children('i.bi').should('exist')
+          }
+          // Remote Call-In
+          let remoteCallInUrl = null
+          if (event.note) {
+            remoteCallInUrl = findFirstConferenceUrl(event.note)
+          }
+          if (!remoteCallInUrl && event.remoteInstructions) {
+            remoteCallInUrl = findFirstConferenceUrl(event.remoteInstructions)
+          }
+          if (!remoteCallInUrl && event.links.webex) {
+            remoteCallInUrl = event.links.webex
+          }
+          if (remoteCallInUrl) {
+            cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-remotecallin`).should('have.attr', 'href', remoteCallInUrl)
+              .children('i.bi').should('exist')
+          }
+          // calendar
+          if (event.links.calendar) {
+            cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-calendar`).should('have.attr', 'href', event.links.calendar)
+              .children('i.bi').should('exist')
+          }
+        } else {
+          cy.wrap(el).find('.agenda-table-cell-links > .agenda-table-cell-links-buttons').should('not.exist')
+        }
+      }
+    })
   })
 })
 

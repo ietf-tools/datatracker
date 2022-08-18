@@ -120,7 +120,10 @@
                     template(v-if='item.flags.agenda')
                       n-popover
                         template(#trigger)
-                          i.bi.bi-collection(@click='showMaterials(item.key)')
+                          i.bi.bi-collection(
+                            :id='`btn-lnk-` + item.key + `-mat`'
+                            @click='showMaterials(item.key)'
+                            )
                         span Show meeting materials
                     template(v-else-if='item.type === `regular`')
                       n-popover

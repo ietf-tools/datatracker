@@ -179,7 +179,7 @@ function createEvent ({
         }
       ] : [],
       videoStream: showAgenda && hasVideoStream ? 'https://meetings.conf.meetecho.com/ietf{meeting.number}/?group={group.acronym}&short={short}&item={order_number}' : null,
-      audioStream: hasAgenda ? 'https://mp3.conf.meetecho.com/ietf114/{group.acronym}/{order_number}.m3u' : null,
+      audioStream: hasAgenda ? 'https://mp3.conf.meetecho.com/ietf123/{group.acronym}/{order_number}.m3u' : null,
       webex: hasWebex ? 'https://webex.com/123' : null,
       onsiteTool: hasAgenda ? 'https://meetings.conf.meetecho.com/onsite{meeting.number}/?group={group.acronym}&short={short}&item={order_number}' : null,
       calendar: `/meeting/123/session/${lastSessionId}.ics`
