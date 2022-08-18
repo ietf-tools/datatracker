@@ -1,7 +1,10 @@
 import { DateTime } from 'luxon'
 import path from 'path'
 import { isEqual } from 'lodash-es'
+import slugify from 'slugify'
 import meetingGenerator from '../../generators/meeting'
+
+const xslugify = (str) => slugify(str.replace('/', '-'), { lower: true, strict: true })
 
 const viewports = {
   desktop: [1536, 960],
@@ -113,9 +116,9 @@ describe('meeting -> agenda-neue [past, desktop]', {
     cy.get('.agenda .agenda-timezone-ddn').contains('Tokyo')
   })
 
-  // -> SCHEDULE LIST -> Table
+  // -> SCHEDULE LIST -> Table Headers
 
-  it.only('has schedule list table', () => {
+  it('has schedule list table headers', () => {
     // Table Headers
     cy.get('.agenda-table-head-time').should('exist').and('contain', 'Time')
     cy.get('.agenda-table-head-location').should('exist').and('contain', 'Location')
@@ -124,6 +127,48 @@ describe('meeting -> agenda-neue [past, desktop]', {
     cy.get('.agenda-table-display-day').should('have.length', 7).each((el, idx) => {
       const localDateTime = DateTime.fromISO(meetingData.meeting.startDate).setZone('local').plus({ days: idx }).toLocaleString(DateTime.DATE_HUGE)
       cy.wrap(el).should('contain', localDateTime)
+    })
+  })
+
+  // -> SCHEDULE LIST -> Table Events
+
+  it('has schedule list table events', () => {
+    let isFirstSession = true
+    cy.get('tr.agenda-table-display-event').should('have.length', meetingData.schedule.length).each((el, idx) => {
+      const event = meetingData.schedule[idx]
+      const eventStart = DateTime.fromISO(event.startDateTime)
+      const eventEnd = eventStart.plus({ seconds: event.duration })
+      const eventTimeSlot = `${eventStart.toFormat('HH:mm')} - ${eventEnd.toFormat('HH:mm')}`
+      // Location
+      if (event.location?.short) {
+        cy.wrap(el).find('.agenda-table-cell-room > a').should('contain', event.room)
+          .and('have.attr', 'href', `/meeting/` + meetingData.meeting.number + `/floor-plan-neue?room=` + xslugify(event.room))
+          .prev('.badge').should('contain', event.location.short)
+      } else {
+        cy.wrap(el).find('.agenda-table-cell-room > span:not(.badge)').should('contain', event.room)
+          .prev('.badge').should('not.exist')
+      }
+      // Type-specific tests
+      if (event.type === 'regular') {
+        if (isFirstSession) {
+          // First session should have header row above it
+          cy.wrap(el).prev('tr.agenda-table-display-session-head').should('exist')
+            .find('.agenda-table-cell-ts').should('contain', eventTimeSlot)
+            .next('.agenda-table-cell-name').should('contain', `${DateTime.fromISO(event.startDateTime).toFormat('cccc')} ${event.name}`)
+          // Timeslot
+          cy.wrap(el).find('.agenda-table-cell-ts').should('contain', '—')
+          // Group Acronym + Parent
+          cy.wrap(el).find('.agenda-table-cell-group > .badge').should('contain', event.groupParent.acronym)
+            .next('a').should('contain', event.acronym).and('have.attr', 'href', `/group/` + event.acronym + `/about/`)
+          // Group Name
+          cy.wrap(el).find('.agenda-table-cell-name').should('contain', event.groupName)
+        }
+        isFirstSession = false
+      } else {
+        cy.wrap(el).find('.agenda-table-cell-ts').should('contain', eventTimeSlot)
+        cy.wrap(el).find('.agenda-table-cell-name').should('contain', event.name)
+        isFirstSession = true
+      }
     })
   })
 
