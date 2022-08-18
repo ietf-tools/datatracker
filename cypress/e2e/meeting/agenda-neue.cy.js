@@ -82,7 +82,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
   // -> HEADER
 
-  it(`has IETF ${meetingData.meeting.number} title`, () => {
+  it.only(`has IETF ${meetingData.meeting.number} title`, () => {
     cy.get('.agenda h1').first().contains(`IETF ${meetingData.meeting.number} Meeting Agenda`)
   })
   it(`has meeting city subtitle`, () => {
@@ -314,6 +314,44 @@ describe('meeting -> agenda-neue [past, desktop]', {
         }
       }
     })
+  })
+
+  // -> SCHEDULE LIST -> Search
+
+  it.only('can search meetings', () => {
+    cy.get('.agenda-table > .agenda-table-search > button').click()
+    cy.get('.agenda-search').should('exist').and('be.visible')
+    const event = find(meetingData.schedule, s => s.type === 'regular')
+    const eventWithNote = find(meetingData.schedule, s => s.note)
+    // Search different terms
+    const searchTerms = [
+      'hack', // Should match hackathon events
+      event.groupAcronym, // Match group name
+      event.room.toLowerCase(), // Match room name
+      eventWithNote.note.substring(0, 10).toLowerCase() // Match partial note
+    ]
+    for (const term of searchTerms) {
+      cy.get('.agenda-search input[type=text]').clear().type(term)
+      cy.get('.agenda-table .agenda-table-display-event').should('have.length.lessThan', meetingData.schedule.length)
+      // Let the UI update before checking each displayed row
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(1000)
+      cy.get('.agenda-table .agenda-table-display-event').each((el, idx) => {
+        cy.wrap(el).contains(term, { matchCase: false })
+      })
+    }
+    // Clear button
+    cy.get('.agenda-search button').click()
+    cy.get('.agenda-search input[type=text]').should('have.value', '')
+    cy.get('.agenda-table .agenda-table-display-event').should('have.length', meetingData.schedule.length)
+    // Invalid search
+    cy.get('.agenda-search input[type=text]').type(faker.vehicle.vin())
+    cy.get('.agenda-table .agenda-table-display-event').should('have.length', 0)
+    cy.get('.agenda-table .agenda-table-display-noresult').should('exist').and('contain', 'No event matching your search query.')
+    // Closing search should clear search
+    cy.get('.agenda-table > .agenda-table-search > button').click()
+    cy.get('.agenda-search').should('not.exist')
+    cy.get('.agenda-table .agenda-table-display-event').should('have.length', meetingData.schedule.length)
   })
 
   // -> SCHEDULE LIST -> Show Meeting Materials dialog
