@@ -82,7 +82,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
   // -> HEADER
 
-  it.only(`has IETF ${meetingData.meeting.number} title`, () => {
+  it(`has IETF ${meetingData.meeting.number} title`, () => {
     cy.get('.agenda h1').first().contains(`IETF ${meetingData.meeting.number} Meeting Agenda`)
   })
   it(`has meeting city subtitle`, () => {
@@ -173,7 +173,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
   // -> SCHEDULE LIST -> Table Events
 
-  it('has schedule list table events', {
+  it('has schedule list table events (can take a while)', {
     // This test is VERY memory-intensive, so disable DOM snapshots to prevent browser crash
     numTestsKeptInMemory: 0
   }, () => {
@@ -318,7 +318,10 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
   // -> SCHEDULE LIST -> Search
 
-  it.only('can search meetings', () => {
+  it('can search meetings', {
+    // No need to keep DOM snapshots for this test
+    numTestsKeptInMemory: 0
+  }, () => {
     cy.get('.agenda-table > .agenda-table-search > button').click()
     cy.get('.agenda-search').should('exist').and('be.visible')
     const event = find(meetingData.schedule, s => s.type === 'regular')
@@ -654,7 +657,7 @@ describe('meeting -> agenda-neue [future, desktop]', {
 
   // -> SCHEDULE LIST -> Table Events
 
-  it('has schedule list table events', {
+  it('has schedule list table events (can take a while)', {
     // This test is VERY memory-intensive, so disable DOM snapshots to prevent browser crash
     numTestsKeptInMemory: 0
   }, () => {
