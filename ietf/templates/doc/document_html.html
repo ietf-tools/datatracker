@@ -67,13 +67,15 @@
       </div>
     </nav>
     <div class="row g-0">
-        <div class="col d-flex justify-content-center pt-5 mt-4 pt-md-0 mt-md-2 m-2 m-lg-4 me-3 lh-sm" data-bs-spy="scroll" data-bs-target="#toc-nav" data-bs-smooth-scroll="true" tabindex="0" id="content">
+        <div class="col d-flex justify-content-center lh-sm" data-bs-spy="scroll" data-bs-target="#toc-nav" data-bs-smooth-scroll="true" tabindex="0" id="content">
             {% if html %}
                 <div class="xml2rfc">
+                    <br class="noprint">
                     {{ html|safe }}
                 </div>
             {% else %}
                 <div class="rfcmarkup">
+                    <br class="noprint">
                      <!-- [html-validate-disable-block attr-quotes, void-style -- FIXME: rfcmarkup generates HTML with issues] -->
                     {{ doc.htmlized|default:"Generation of htmlized text failed"|linkify|safe }}
                 </div>

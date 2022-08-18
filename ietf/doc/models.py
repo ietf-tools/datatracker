@@ -565,7 +565,7 @@ class DocumentInfo(models.Model):
 
     def pdfized(self):
         name = self.get_base_name()
-        text = self.text()
+        text = self.htmlized()
         cache = caches['pdfized']
         cache_key = name.split('.')[0]
         try:
@@ -575,8 +575,9 @@ class DocumentInfo(models.Model):
         if not pdf:
             html = rfc2html.markup(text, path=settings.PDFIZER_URL_PREFIX)
             css = finders.find("ietf/css/document_html.css")
+            css_txt = finders.find("ietf/css/document_html_txt.css")
             try:
-                pdf = wpHTML(string=html.replace('\xad','')).write_pdf(stylesheets=[css, io.BytesIO(b'body { font-size: 9.25pt;}')])
+                pdf = wpHTML(string=html.replace('\xad','')).write_pdf(stylesheets=[css, css_txt, io.BytesIO(b'body { font-size: 9.25pt;}')])
             except AssertionError:
                 pdf = None
             if pdf:

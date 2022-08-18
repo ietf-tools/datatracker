@@ -450,7 +450,10 @@ def document_main(request, name, rev=None, document_html=False):
         if doc.get_state_slug() == "rfc":
             html = Path(os.path.join(settings.RFC_PATH, doc.canonical_name() + ".html")).read_text()
         else:
-            html = Path(os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".html")).read_text()
+            try:
+                html = Path(os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".html")).read_text()
+            except:
+                pass
         if html:
             # get body
             body = etree.HTML(html).xpath("//body")[0]
