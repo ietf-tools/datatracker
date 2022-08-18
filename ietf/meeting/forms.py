@@ -666,7 +666,7 @@ class TimeSlotCreateForm(forms.Form):
 class DurationChoiceField(forms.ChoiceField):
     def __init__(self, durations=None, *args, **kwargs):
         if durations is None:
-            durations = (3600, 7200)
+            durations = (3600, 5400, 7200)
         super().__init__(
             choices=self._make_choices(durations),
             *args, **kwargs,
