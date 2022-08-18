@@ -3,6 +3,7 @@ import path from 'path'
 import { isEqual } from 'lodash-es'
 import slugify from 'slugify'
 import meetingGenerator from '../../generators/meeting'
+import meeting from '../../generators/meeting'
 
 const xslugify = (str) => slugify(str.replace('/', '-'), { lower: true, strict: true })
 
@@ -132,49 +133,153 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
   // -> SCHEDULE LIST -> Table Events
 
-  it('has schedule list table events', () => {
+  it('has schedule list table events', {
+    // This test is VERY memory-intensive, so disable DOM snapshots to prevent browser crash
+    numTestsKeptInMemory: 0
+  }, () => {
     let isFirstSession = true
     cy.get('tr.agenda-table-display-event').should('have.length', meetingData.schedule.length).each((el, idx) => {
+      // Apply small arbitrary wait every 10 rows to prevent the test UI from freezing
+      if (idx % 10 === 0) {
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
+        cy.wait(10)
+      }
       const event = meetingData.schedule[idx]
       const eventStart = DateTime.fromISO(event.startDateTime)
       const eventEnd = eventStart.plus({ seconds: event.duration })
       const eventTimeSlot = `${eventStart.toFormat('HH:mm')} - ${eventEnd.toFormat('HH:mm')}`
+      // --------
       // Location
+      // --------
       if (event.location?.short) {
+        // Has floor badge
         cy.wrap(el).find('.agenda-table-cell-room > a').should('contain', event.room)
           .and('have.attr', 'href', `/meeting/` + meetingData.meeting.number + `/floor-plan-neue?room=` + xslugify(event.room))
           .prev('.badge').should('contain', event.location.short)
       } else {
+        // No floor badge
         cy.wrap(el).find('.agenda-table-cell-room > span:not(.badge)').should('contain', event.room)
           .prev('.badge').should('not.exist')
       }
-      // Type-specific tests
+      // ---------------------------------------------------
+      // Type-specific timeslot / group / name columns tests
+      // ---------------------------------------------------
       if (event.type === 'regular') {
+        // First session should have header row above it
         if (isFirstSession) {
-          // First session should have header row above it
           cy.wrap(el).prev('tr.agenda-table-display-session-head').should('exist')
             .find('.agenda-table-cell-ts').should('contain', eventTimeSlot)
             .next('.agenda-table-cell-name').should('contain', `${DateTime.fromISO(event.startDateTime).toFormat('cccc')} ${event.name}`)
-          // Timeslot
-          cy.wrap(el).find('.agenda-table-cell-ts').should('contain', '—')
-          // Group Acronym + Parent
-          cy.wrap(el).find('.agenda-table-cell-group > .badge').should('contain', event.groupParent.acronym)
-            .next('a').should('contain', event.acronym).and('have.attr', 'href', `/group/` + event.acronym + `/about/`)
-          // Group Name
-          cy.wrap(el).find('.agenda-table-cell-name').should('contain', event.groupName)
         }
+        // Timeslot
+        cy.wrap(el).find('.agenda-table-cell-ts').should('contain', '—')
+        // Group Acronym + Parent
+        cy.wrap(el).find('.agenda-table-cell-group > .badge').should('contain', event.groupParent.acronym)
+          .next('a').should('contain', event.acronym).and('have.attr', 'href', `/group/` + event.acronym + `/about/`)
+        // Group Name
+        cy.wrap(el).find('.agenda-table-cell-name').should('contain', event.groupName)
         isFirstSession = false
       } else {
+        // Timeslot
         cy.wrap(el).find('.agenda-table-cell-ts').should('contain', eventTimeSlot)
+        // Event Name
         cy.wrap(el).find('.agenda-table-cell-name').should('contain', event.name)
         isFirstSession = true
+      }
+      // -----------
+      // Name column
+      // -----------
+      // Event icon
+      if (['break', 'plenary'].includes(event.type) || (event.type === 'other' && ['office hours', 'hackathon'].some(s => event.name.toLowerCase().indexOf(s) >= 0))) {
+        cy.wrap(el).find('.agenda-table-cell-name > i.bi').should('exist')
+      }
+      // Name link
+      if (event.flags.agenda) {
+        cy.wrap(el).find('.agenda-table-cell-name > a').should('have.attr', 'href', event.agenda.url)
+      }
+      // BoF badge
+      if (event.isBoF) {
+        cy.wrap(el).find('.agenda-table-cell-name > .badge').should('contain', 'BoF')
+      }
+      // Note
+      if (event.note) {
+        cy.wrap(el).find('.agenda-table-cell-name > .agenda-table-note').should('exist')
+          .find('i.bi').should('exist')
+          .next('span').should('contain', event.note)
+      }
+      // -----------------------
+      // Buttons / Status Column
+      // -----------------------
+      switch (event.status) {
+        // Cancelled
+        case 'canceled': {
+          cy.wrap(el).find('.agenda-table-cell-links > .badge.is-cancelled').should('contain', 'Cancelled')
+          break
+        }
+        // Rescheduled
+        case 'resched': {
+          cy.wrap(el).find('.agenda-table-cell-links > .badge.is-rescheduled').should('contain', 'Rescheduled')
+          break
+        }
+        // Scheduled
+        case 'sched': {
+          if (event.flags.showAgenda || ['regular', 'plenary'].includes(event.type)) {
+            cy.wrap(el).find('.agenda-table-cell-links > .agenda-table-cell-links-buttons').as('eventbuttons')
+            if (event.flags.agenda) {
+              // Show meeting materials button
+              cy.get('@eventbuttons').find('i.bi.bi-collection').should('exist')
+              // ZIP materials button
+              cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-tar`).should('have.attr', 'href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.tgz`)
+                .children('i.bi').should('exist')
+              // PDF materials button
+              cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-pdf`).should('have.attr', 'href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.pdf`)
+                .children('i.bi').should('exist')
+            } else if (event.type === 'regular') {
+              // No meeting materials yet warning badge
+              cy.get('@eventbuttons').find('.no-meeting-materials').should('exist')
+            }
+            // Notepad button
+            const hedgeDocLink = `https://notes.ietf.org/notes-ietf-${meetingData.meeting.number}-${event.type === 'plenary' ? 'plenary' : event.acronym}`
+            cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-note`).should('have.attr', 'href', hedgeDocLink)
+              .children('i.bi').should('exist')
+            // Chat logs
+            cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-logs`).should('have.attr', 'href', event.links.chatArchive)
+              .children('i.bi').should('exist')
+            // Recordings
+            for (const rec of event.links.recordings) {
+              if (rec.url.indexOf('audio') > 0) {
+                // -> Audio
+                cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-audio-${rec.id}`).should('have.attr', 'href', rec.url)
+                  .children('i.bi').should('exist')
+              } else if (rec.url.indexOf('youtu') > 0) {
+                // -> Youtube
+                cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-youtube-${rec.id}`).should('have.attr', 'href', rec.url)
+                  .children('i.bi').should('exist')
+              } else {
+                // -> Others
+                cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-video-${rec.id}`).should('have.attr', 'href', rec.url)
+                  .children('i.bi').should('exist')
+              }
+            }
+            // Video Stream
+            if (event.links.videoStream) {
+              const videoStreamLink = `https://www.meetecho.com/ietf${meetingData.meeting.number}/recordings#${event.acronym.toUpperCase()}`
+              cy.get('@eventbuttons').find(`#btn-lnk-${event.id}-rec`).should('have.attr', 'href', videoStreamLink)
+                .children('i.bi').should('exist')
+            }
+          }
+          break
+        }
       }
     })
   })
 
   // -> FILTER BY AREA/GROUP DIALOG
 
-  it('can filter by area/group', () => {
+  it('can filter by area/group', {
+    // This test has lot of UI element interactions and the UI can get slow with DOM snapshots, so disable it
+    numTestsKeptInMemory: 0
+  }, () => {
     // Open dialog
     cy.get('#agenda-quickaccess-filterbyareagroups-btn').should('exist').and('be.visible').click()
     cy.get('.agenda-personalize').should('exist').and('be.visible')

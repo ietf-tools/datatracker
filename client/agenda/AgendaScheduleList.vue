@@ -132,6 +132,7 @@
                     n-popover(v-for='lnk of item.links', :key='lnk.id')
                       template(#trigger)
                         a(
+                          :id='`btn-` + lnk.id'
                           :href='lnk.href'
                           :aria-label='lnk.label'
                           :class='`text-` + lnk.color'
