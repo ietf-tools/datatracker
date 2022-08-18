@@ -11,6 +11,8 @@
 #   UPDATES_REQUIREMENTS_FROM - path, relative to /workspace mount, to a pip requirements
 #       file that should be installed at container startup. Default is no package install/update.
 #
+#   DEBUG_TERM_TIMING - if non-empty, writes debug messages during shutdown after a TERM signal
+#
 WORKSPACEDIR="/workspace"
 
 cd "$WORKSPACEDIR" || exit 255
@@ -41,12 +43,22 @@ if [[ -n "${CELERY_GID}" ]]; then
   CELERY_WORKER_OPTS+=("--gid=${CELERY_GID}")
 fi
 
+log_term_timing_msgs () {
+  # output periodic debug message
+  while true; do
+    echo "Waiting for celery worker shutdown ($(date --utc --iso-8601=ns))"
+    sleep 0.5s
+  done
+}
 
 cleanup () {
   # Cleanly terminate the celery app by sending it a TERM, then waiting for it to exit.
   if [[ -n "${celery_pid}" ]]; then
     echo "Gracefully terminating celery worker. This may take a few minutes if tasks are in progress..."
     kill -TERM "${celery_pid}"
+    if [[ -n "${DEBUG_TERM_TIMING}" ]]; then
+      log_term_timing_msgs &
+    fi
     wait "${celery_pid}"
   fi
 }
