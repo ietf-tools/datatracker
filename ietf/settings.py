@@ -844,6 +844,8 @@ IDSUBMIT_CHECKER_CLASSES = (
 #    "ietf.submit.checkers.DraftYangvalidatorChecker",    
 )
 
+# Max time to allow for validation before a submission is subject to cancellation
+IDSUBMIT_MAX_VALIDATION_TIME = datetime.timedelta(minutes=20)
 
 IDSUBMIT_MANUAL_STAGING_DIR = '/tmp/'
 
