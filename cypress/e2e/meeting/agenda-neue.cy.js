@@ -75,10 +75,19 @@ describe('meeting -> agenda-neue [past, desktop]', {
     viewportWidth: viewports.desktop[0],
     viewportHeight: viewports.desktop[1]
   }, () => {
-  const meetingData = meetingGenerator.generateAgendaResponse({ future: false })
+  let meetingData = null
 
   before(() => {
+    // Set clock to 2022-01-01
+    cy.clock(new Date(2022, 1, 1))
+
+    // Generate meeting data
+    meetingData = meetingGenerator.generateAgendaResponse({ future: false })
+
+    // Intercept Meeting Data API
     cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { body: meetingData }).as('getMeetingData')
+
+    // Visit agenda page
     cy.visit(`/meeting/${meetingData.meeting.number}/agenda-neue`, {
       onBeforeLoad: (win) => { injectMeetingData(win, meetingData.meeting.number) }
     })
@@ -87,7 +96,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
   // -> HEADER
 
-  it(`has IETF ${meetingData.meeting.number} title`, () => {
+  it(`has IETF 123 title`, () => {
     cy.get('.agenda h1').first().contains(`IETF ${meetingData.meeting.number} Meeting Agenda`)
   })
   it(`has meeting city subtitle`, () => {
@@ -644,10 +653,19 @@ describe('meeting -> agenda-neue [future, desktop]', {
     viewportWidth: viewports.desktop[0],
     viewportHeight: viewports.desktop[1]
   }, () => {
-  const meetingData = meetingGenerator.generateAgendaResponse({ future: true })
+  let meetingData = null
 
   before(() => {
+    // Set clock to 2022-01-01
+    cy.clock(new Date(2022, 1, 1))
+
+    // Generate future meeting data
+    meetingData = meetingGenerator.generateAgendaResponse({ future: true })
+
+    // Intercept Meeting Data API
     cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { body: meetingData }).as('getMeetingData')
+
+    // Visit agenda page
     cy.visit(`/meeting/${meetingData.meeting.number}/agenda-neue`, {
       onBeforeLoad: (win) => { injectMeetingData(win, meetingData.meeting.number) }
     })
