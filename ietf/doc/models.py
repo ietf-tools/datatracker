@@ -8,6 +8,8 @@ import io
 import os
 import rfc2html
 
+from pathlib import Path
+from lxml import etree
 from typing import Optional, TYPE_CHECKING
 from weasyprint import HTML as wpHTML
 
@@ -540,6 +542,38 @@ class DocumentInfo(models.Model):
     def text_or_error(self):
         return self.text() or "Error; cannot read '%s'"%self.get_base_name()
 
+    def html_body(self, classes=""):
+        if self.get_state_slug() == "rfc":
+            try:
+                html = Path(
+                    os.path.join(settings.RFC_PATH, self.canonical_name() + ".html")
+                ).read_text()
+            except IOError:
+                return None
+        else:
+            try:
+                html = Path(
+                    os.path.join(
+                        settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR,
+                        self.name + "-" + self.rev + ".html",
+                    )
+                ).read_text()
+            except IOError:
+                return None
+        # get body
+        body = etree.HTML(html).xpath("//body")[0]
+        body.tag = "div"
+        if classes:
+            body.attrib["class"] = classes
+
+        # remove things
+        for tag in ["script"]:
+            for t in body.xpath(f"//{tag}"):
+                t.getparent().remove(t)
+        html = etree.tostring(body, encoding=str, method="html")
+
+        return html
+
     def htmlized(self):
         name = self.get_base_name()
         text = self.text()
@@ -565,19 +599,23 @@ class DocumentInfo(models.Model):
 
     def pdfized(self):
         name = self.get_base_name()
-        text = self.htmlized()
-        cache = caches['pdfized']
-        cache_key = name.split('.')[0]
+        text = self.html_body(classes="xml2rfc")
+        stylesheets = [finders.find("ietf/css/document_html.css")]
+        if text:
+            stylesheets.append(finders.find("ietf/css/document_html_txt.css"))
+        else:
+            text = self.htmlized()
+            stylesheets.append(io.BytesIO(b"body { font-size: 9.2pt; }"))
+
+        cache = caches["pdfized"]
+        cache_key = name.split(".")[0]
         try:
             pdf = cache.get(cache_key)
         except EOFError:
             pdf = None
         if not pdf:
-            html = rfc2html.markup(text, path=settings.PDFIZER_URL_PREFIX)
-            css = finders.find("ietf/css/document_html.css")
-            css_txt = finders.find("ietf/css/document_html_txt.css")
             try:
-                pdf = wpHTML(string=html.replace('\xad','')).write_pdf(stylesheets=[css, css_txt, io.BytesIO(b'body { font-size: 9.25pt;}')])
+                pdf = wpHTML(string=text).write_pdf(stylesheets=stylesheets)
             except AssertionError:
                 pdf = None
             if pdf:

@@ -43,7 +43,6 @@ import re
 from pathlib import Path
 
 from urllib.parse import quote
-from lxml import etree
 
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
@@ -446,22 +445,7 @@ def document_main(request, name, rev=None, document_html=False):
         else:
             stream_desc = "(None)"
 
-        html = None
-        if doc.get_state_slug() == "rfc":
-            html = Path(os.path.join(settings.RFC_PATH, doc.canonical_name() + ".html")).read_text()
-        else:
-            try:
-                html = Path(os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".html")).read_text()
-            except:
-                pass
-        if html:
-            # get body
-            body = etree.HTML(html).xpath("//body")[0]
-            # remove things
-            for tag in ["script"]:
-                for t in body.xpath(f"//{tag}"):
-                    t.getparent().remove(t)
-            html = etree.tostring(body, encoding=str, method="html")
+        html = doc.html_body()
 
         js = None
         css = None
