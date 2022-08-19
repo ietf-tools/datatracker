@@ -80,7 +80,7 @@ services:
             - app-assets:/assets
 
     beat:
-        image: datatracker-celery-test
+        image: ghcr.io/ietf-tools/datatracker-celery:latest
         environment:
             CELERY_APP: ietf
             CELERY_ROLE: beat
