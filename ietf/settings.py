@@ -437,6 +437,7 @@ INSTALLED_APPS = [
     'analytical',
     'django_vite',
     'django_bootstrap5',
+    'django_celery_beat',
     'corsheaders',
     'django_markup',
     'django_password_strength',
@@ -1179,6 +1180,10 @@ DEFAULT_REQUESTS_TIMEOUT = 20  # seconds
 # Celery configuration
 CELERY_TIMEZONE = 'UTC'
 CELERY_BROKER_URL = 'amqp://mq/'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
+assert not USE_TZ, 'Drop DJANGO_CELERY_BEAT_TZ_AWARE setting once USE_TZ is True!'
+DJANGO_CELERY_BEAT_TZ_AWARE = False
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests

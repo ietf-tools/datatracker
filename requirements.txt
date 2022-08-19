@@ -12,6 +12,7 @@ defusedxml>=0.7.1    # for TastyPie when using xml; not a declared dependency
 Django>=2.2.28,<3.0
 django-analytical>=3.1.0
 django-bootstrap5>=21.3
+django-celery-beat>=2.3.0
 django-csp>=3.7
 django-cors-headers>=3.11.0
 django-debug-toolbar>=3.2.4
