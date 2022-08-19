@@ -4,6 +4,8 @@
 #
 #   CELERY_APP - name of application to pass to celery (defaults to ietf)
 #
+#   CELERY_ROLE - 'worker' or 'beat' (defaults to 'worker')
+#
 #   CELERY_UID - numeric uid for the celery worker process
 #
 #   CELERY_GID - numeric gid for the celery worker process
@@ -14,6 +16,7 @@
 #   DEBUG_TERM_TIMING - if non-empty, writes debug messages during shutdown after a TERM signal
 #
 WORKSPACEDIR="/workspace"
+CELERY_ROLE="${CELERY_ROLE:-worker}"
 
 cd "$WORKSPACEDIR" || exit 255
 
@@ -23,16 +26,18 @@ if [[ -n "${UPDATE_REQUIREMENTS_FROM}" ]]; then
   pip install --upgrade -r "${reqs_file}"
 fi
 
-echo "Running initial checks..."
-/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check
+if [[ "${CELERY_ROLE}" == "worker" ]]; then
+    echo "Running initial checks..."
+    /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check
+fi
 
-CELERY_WORKER_OPTS=()
+CELERY_OPTS=( "${CELERY_ROLE}" )
 if [[ -n "${CELERY_UID}" ]]; then
   # ensure that some group with the necessary GID exists in container
   if ! id "${CELERY_UID}" ; then
     adduser --system --uid "${CELERY_UID}" --no-create-home --disabled-login "celery-user-${CELERY_UID}"
   fi
-  CELERY_WORKER_OPTS+=("--uid=${CELERY_UID}")
+  CELERY_OPTS+=("--uid=${CELERY_UID}")
 fi
 
 if [[ -n "${CELERY_GID}" ]]; then
@@ -40,7 +45,7 @@ if [[ -n "${CELERY_GID}" ]]; then
   if ! getent group "${CELERY_GID}" ; then
     addgroup --gid "${CELERY_GID}" "celery-group-${CELERY_GID}"
   fi
-  CELERY_WORKER_OPTS+=("--gid=${CELERY_GID}")
+  CELERY_OPTS+=("--gid=${CELERY_GID}")
 fi
 
 log_term_timing_msgs () {
@@ -65,6 +70,6 @@ cleanup () {
 
 trap 'trap "" TERM; cleanup' TERM
 # start celery in the background so we can trap the TERM signal
-celery --app="${CELERY_APP:-ietf}" worker "${CELERY_WORKER_OPTS[@]}" "$@" &
+celery --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" "$@" &
 celery_pid=$!
 wait "${celery_pid}"

@@ -67,6 +67,7 @@ services:
         image: ghcr.io/ietf-tools/datatracker-celery:latest
         environment:
             CELERY_APP: ietf
+            CELERY_ROLE: worker
             UPDATE_REQUIREMENTS_FROM: requirements.txt
         command:
             - '--loglevel=INFO'
@@ -74,6 +75,24 @@ services:
             - db
         restart: unless-stopped
         stop_grace_period: 1m
+        volumes:
+            - .:/workspace
+            - app-assets:/assets
+
+    beat:
+        image: datatracker-celery-test
+        environment:
+            CELERY_APP: ietf
+            CELERY_ROLE: beat
+            UPDATE_REQUIREMENTS_FROM: requirements.txt
+        command:
+            - '--loglevel=INFO'
+        depends_on:
+            - db
+        restart: unless-stopped
+        stop_grace_period: 1m
+        volumes:
+            - .:/workspace
 
 volumes:
     mariadb-data:
