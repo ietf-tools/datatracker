@@ -22,8 +22,8 @@ from django.forms import ValidationError
 from django.test import override_settings
 from django.test.client import RequestFactory
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from django.utils.encoding import force_str, force_text
-
 import debug                            # pyflakes:ignore
 
 from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
@@ -47,7 +47,7 @@ from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactor
 from ietf.submit.forms import SubmissionBaseUploadForm, SubmissionAutoUploadForm
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
 from ietf.submit.mail import add_submission_email, process_response_email
-from ietf.submit.tasks import process_uploaded_submission_task
+from ietf.submit.tasks import cancel_stale_submissions, process_uploaded_submission_task
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.models import VersionInfo
@@ -3360,6 +3360,28 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertContains(r, s.name)
         self.assertContains(r, 'still being processed and validated', status_code=200)
 
+    @override_settings(IDSUBMIT_MAX_VALIDATION_TIME=datetime.timedelta(minutes=30))
+    def test_cancel_stale_submissions(self):
+        fresh_submission = SubmissionFactory(state_id='validating')
+        fresh_submission.submissionevent_set.create(
+            desc='fake created event',
+            time=timezone.now() - datetime.timedelta(minutes=15),
+        )
+        stale_submission = SubmissionFactory(state_id='validating')
+        stale_submission.submissionevent_set.create(
+            desc='fake created event',
+            time=timezone.now() - datetime.timedelta(minutes=30, seconds=1),
+        )
+
+        cancel_stale_submissions()
+
+        fresh_submission = Submission.objects.get(pk=fresh_submission.pk)
+        self.assertEqual(fresh_submission.state_id, 'validating')
+        self.assertEqual(fresh_submission.submissionevent_set.count(), 1)
+
+        stale_submission = Submission.objects.get(pk=stale_submission.pk)
+        self.assertEqual(stale_submission.state_id, 'cancel')
+        self.assertEqual(stale_submission.submissionevent_set.count(), 2)
 
 
 class ApiSubmitTests(BaseSubmitTestCase):
