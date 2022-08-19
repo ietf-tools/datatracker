@@ -1,6 +1,8 @@
 import { DateTime } from 'luxon'
 import { faker } from '@faker-js/faker'
-import { random, sample, sampleSize, startCase, times } from 'lodash-es'
+import seedrandom from 'seedrandom'
+import _lodash from 'lodash' // Cannot use lodash-es as we need to runInContext for constant randomness
+import { startCase, times } from 'lodash-es'
 import slugify from 'slugify'
 import ms from 'ms'
 
@@ -8,11 +10,17 @@ import floorsMeta from '../fixtures/meeting-floors.json'
 
 const xslugify = (str) => slugify(str.replace('/', '-'), { lower: true, strict: true })
 
+const TEST_SEED = 123
 const sessionsWithNotes = [3, 6, 20, 48, 49, 60]
 const sessionsCancelled = [29, 93]
 const sessionsRescheduled = [76]
 const sessionsMissingAgenda = [5, 10]
 const sessionsWithWebex = [3, 4]
+
+// Use constant randomness seed
+seedrandom(TEST_SEED.toString(), { global: true })
+faker.seed(TEST_SEED)
+const { sample, sampleSize } = _lodash.runInContext()
 
 /**
  * Generate area response from label + children
@@ -50,7 +58,7 @@ function createGroup ({ label, mayBeBof = false, toggledBy = [] }) {
   }
 
   // 10% chance of BoF, if enabled
-  const isBof = mayBeBof && random(0, 100) < 10
+  const isBof = mayBeBof && faker.mersenne.rand(100, 0) < 10
   if (isBof) {
     toggledBy.push('bof')
   }
@@ -129,7 +137,7 @@ function createEvent ({
 }, floors) {
   const floor = sample(floors)
   const room = hasLocation ? sample(floor.rooms) : { name: 'Somewhere' }
-  const eventName = name ?? faker.lorem.sentence(random(2, 5))
+  const eventName = name ?? faker.lorem.sentence(faker.mersenne.rand(5, 2))
   return {
     id: ++lastEventId,
     sessionId: ++lastSessionId,
@@ -151,7 +159,7 @@ function createEvent ({
       "hackathon-sessc"
     ],
     groupAcronym: group.keyword,
-    groupName: faker.lorem.sentence(random(2, 5)),
+    groupName: faker.lorem.sentence(faker.mersenne.rand(5, 2)),
     groupParent: {
       acronym: area.keyword
     },
@@ -209,13 +217,13 @@ export default {
         short: `L${floorIdx}`,
         width: floor.width,
         height: floor.height,
-        rooms: times(random(5, 10), (ridx) => {
+        rooms: times(faker.mersenne.rand(10, 5), (ridx) => {
           const roomName = `${faker.science.chemicalElement().name} ${floorIdx}-${ridx + 1}`
           // Keep 10% margin on each side
           const roomXUnit = Math.round(floor.width / 10)
           const roomYUnit = Math.round(floor.height / 10)
-          const roomX = random(roomXUnit, roomXUnit * 8)
-          const roomY = random(roomYUnit, roomYUnit * 8)
+          const roomX = faker.mersenne.rand(roomXUnit * 8, roomXUnit)
+          const roomY = faker.mersenne.rand(roomYUnit * 8, roomYUnit)
           return {
             id: floorIdx * 100 + ridx,
             name: roomName,
@@ -242,7 +250,7 @@ export default {
       for (const area of firstAreasNames) {
         firstAreas.push(createArea({
           label: area,
-          children: times(random(2, 25), (idx) => {
+          children: times(faker.mersenne.rand(25, 2), (idx) => {
             return createGroup({ mayBeBof: true })
           })
         }))
@@ -255,7 +263,7 @@ export default {
       for (const area of ['UVW', 'XYZ0']) {
         secondAreas.push(createArea({
           label: area,
-          children: times(random(2, 25), (idx) => {
+          children: times(faker.mersenne.rand(25, 2), (idx) => {
             return createGroup({ mayBeBof: true })
           })
         }))

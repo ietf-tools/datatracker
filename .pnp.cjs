@@ -83,6 +83,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["pinia-plugin-persist", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:1.0.0"],\
             ["pug", "npm:3.0.2"],\
             ["sass", "npm:1.53.0"],\
+            ["seedrandom", "npm:3.0.5"],\
             ["select2", "npm:4.1.0-rc.0"],\
             ["select2-bootstrap-5-theme", "npm:1.3.0"],\
             ["send", "npm:0.18.0"],\
@@ -7784,6 +7785,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["pinia-plugin-persist", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:1.0.0"],\
             ["pug", "npm:3.0.2"],\
             ["sass", "npm:1.53.0"],\
+            ["seedrandom", "npm:3.0.5"],\
             ["select2", "npm:4.1.0-rc.0"],\
             ["select2-bootstrap-5-theme", "npm:1.3.0"],\
             ["send", "npm:0.18.0"],\
@@ -7859,6 +7861,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["chokidar", "npm:3.5.3"],\
             ["immutable", "npm:4.0.0"],\
             ["source-map-js", "npm:1.0.2"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["seedrandom", [\
+        ["npm:3.0.5", {\
+          "packageLocation": "./.yarn/cache/seedrandom-npm-3.0.5-6946e8f8db-728b56bc3b.zip/node_modules/seedrandom/",\
+          "packageDependencies": [\
+            ["seedrandom", "npm:3.0.5"]\
           ],\
           "linkType": "HARD"\
         }]\

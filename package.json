@@ -69,6 +69,7 @@
     "parcel": "2.6.2",
     "pug": "3.0.2",
     "sass": "1.53.0",
+    "seedrandom": "3.0.5",
     "vite": "2.9.14"
   },
   "targets": {

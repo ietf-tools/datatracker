@@ -7,12 +7,17 @@ import meetingGenerator from '../../generators/meeting'
 
 const xslugify = (str) => slugify(str.replace('/', '-'), { lower: true, strict: true })
 
+const TEST_SEED = 123
+
 const viewports = {
   desktop: [1536, 960],
   smallDesktop: [1280, 800],
   tablet: [768, 1024],
   mobile: [360, 760]
 }
+
+// Set randomness seed
+faker.seed(TEST_SEED)
 
 /**
  * Inject meeting info json into the page
