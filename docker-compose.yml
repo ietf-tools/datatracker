@@ -16,6 +16,7 @@ services:
 
         depends_on:
             - db
+            - mq
 
         ipc: host
 
@@ -57,6 +58,41 @@ services:
             
     # Add "forwardPorts": ["5432"] to **devcontainer.json** to forward PostgreSQL locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)
+
+    mq:
+        image: rabbitmq:3-alpine
+        restart: unless-stopped
+
+    celery:
+        image: ghcr.io/ietf-tools/datatracker-celery:latest
+        environment:
+            CELERY_APP: ietf
+            CELERY_ROLE: worker
+            UPDATE_REQUIREMENTS_FROM: requirements.txt
+        command:
+            - '--loglevel=INFO'
+        depends_on:
+            - db
+        restart: unless-stopped
+        stop_grace_period: 1m
+        volumes:
+            - .:/workspace
+            - app-assets:/assets
+
+    beat:
+        image: ghcr.io/ietf-tools/datatracker-celery:latest
+        environment:
+            CELERY_APP: ietf
+            CELERY_ROLE: beat
+            UPDATE_REQUIREMENTS_FROM: requirements.txt
+        command:
+            - '--loglevel=INFO'
+        depends_on:
+            - db
+        restart: unless-stopped
+        stop_grace_period: 1m
+        volumes:
+            - .:/workspace
 
 volumes:
     mariadb-data:

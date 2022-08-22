@@ -16,3 +16,10 @@ __release_branch__ = ''
 
 # set this to ".p1", ".p2", etc. after patching
 __patch__   = ""
+
+
+# This will make sure the app is always imported when
+# Django starts so that shared_task will use this app.
+from .celeryapp import app as celery_app
+
+__all__ = ('celery_app',)

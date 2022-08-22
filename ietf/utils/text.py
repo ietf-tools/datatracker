@@ -248,6 +248,7 @@ def unwrap(s):
     return s.replace('\n', ' ')
     
 def normalize_text(s):
+    """Normalize various unicode whitespaces to ordinary spaces"""
     return re.sub(r'[\s\n\r\u2028\u2029]+', ' ', s, flags=re.U).strip()
 
 def parse_unicode(text):
