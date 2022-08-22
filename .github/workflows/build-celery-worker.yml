@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - 'main'
-      - 'jennifer/submit-async'
     paths:
       - 'requirements.txt'
       - 'dev/celery/**'
@@ -42,6 +41,5 @@ jobs:
         file: dev/celery/Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
-#        tags: ghcr.io/ietf-tools/datatracker-celery:latest
-        tags: ghcr.io/painless-security/datatracker-celery:latest
+        tags: ghcr.io/ietf-tools/datatracker-celery:latest
 
