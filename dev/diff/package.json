@@ -1,0 +1,22 @@
+{
+  "name": "diff",
+  "type": "module",
+  "dependencies": {
+    "chalk": "^5.0.1",
+    "dockerode": "^3.3.3",
+    "enquirer": "^2.3.6",
+    "extract-zip": "^2.0.1",
+    "fs-extra": "^10.1.0",
+    "got": "^12.3.1",
+    "keypress": "^0.2.1",
+    "listr2": "^5.0.2",
+    "lodash-es": "^4.17.21",
+    "luxon": "^3.0.1",
+    "pretty-bytes": "^6.0.0",
+    "tar": "^6.1.11",
+    "yargs": "^17.5.1"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}
