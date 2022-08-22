@@ -6,7 +6,7 @@ on:
       - 'main'
     paths:
       - 'dev/mq/**'
-      - '.github/workflows/build-mq-worker.yml'
+      - '.github/workflows/build-mq-broker.yml'
 
   workflow_dispatch: 
 
