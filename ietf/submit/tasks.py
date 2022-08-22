@@ -37,7 +37,7 @@ def cancel_stale_submissions():
         age = now - subm.submitted_at
         log.log(f'Canceling stale submission (id={subm.id}, age={age})')
         cancel_submission(subm)
-        create_submission_event(None, subm, f'Submission canceled: validation checks took too long')
+        create_submission_event(None, subm, 'Submission canceled: validation checks took too long')
 
 
 @shared_task(bind=True)
