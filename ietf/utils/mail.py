@@ -192,7 +192,10 @@ def encode_message(txt):
     return MIMEText(txt.encode('utf-8'), 'plain', 'UTF-8')
 
 def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=False, bcc=None, copy=True, save=True):
-    """Send plain text message."""
+    """Send plain text message.
+
+    request can be None unless it is needed by the template
+    """
     msg = encode_message(txt)
     return send_mail_mime(request, to, frm, subject, msg, cc, extra, toUser, bcc, copy=copy, save=save)
         
