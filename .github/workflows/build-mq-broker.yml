@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - 'main'
-      - 'jennifer/submit-async'
     paths:
       - 'dev/mq/**'
       - '.github/workflows/build-mq-worker.yml'
@@ -41,6 +40,5 @@ jobs:
         file: dev/mq/Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
-#        tags: ghcr.io/ietf-tools/datatracker-mq:latest
-        tags: ghcr.io/painless-security/datatracker-mq:latest
+        tags: ghcr.io/ietf-tools/datatracker-mq:latest
 

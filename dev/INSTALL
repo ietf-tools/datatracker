@@ -45,7 +45,7 @@ General Instructions for Deployment of a New Release
 
  7. Switch to the docker directory and update images:
 
-      cd /a/docker/datatracker-cel
+      cd /a/docker/datatracker
       docker image tag ghcr.io/ietf-tools/datatracker-celery:latest datatracker-celery-fallback
       docker image tag ghcr.io/ietf-tools/datatracker-mq:latest datatracker-mq-fallback
       docker-compose pull
@@ -82,7 +82,7 @@ General Instructions for Deployment of a New Release
 
  13. Start async task worker and message broker:
 
-      cd /a/docker/datatracker-cel
+      cd /a/docker/datatracker
       bash startcommand
 
  14. Verify operation:
@@ -92,7 +92,7 @@ General Instructions for Deployment of a New Release
  15. If install failed and there were no migrations at step 9, revert web symlink and docker update and repeat the
      restart in steps 11 and 12. To revert the docker update:
 
-          cd /a/docker/datatracker-cel
+          cd /a/docker/datatracker
           docker-compose down
           docker image rm ghcr.io/ietf-tools/datatracker-celery:latest ghcr.io/ietf-tools/datatracker-mq:latest
           docker image tag datatracker-celery-fallback ghcr.io/ietf-tools/datatracker-celery:latest
@@ -137,7 +137,7 @@ The following process should be used:
 
  7. Stop the async task container (this may take a few minutes if tasks are in progress):
 
-      cd /a/docker/datatracker-cel
+      cd /a/docker/datatracker
       docker-compose stop celery
 
  8. Change the 'web' symlink, reload etc. as described in
@@ -145,7 +145,7 @@ The following process should be used:
 
  9. Start async task worker:
 
-      cd /a/docker/datatracker-cel
+      cd /a/docker/datatracker
       bash startcommand
 
 
