@@ -79,20 +79,23 @@ services:
             - .:/workspace
             - app-assets:/assets
 
-    beat:
-        image: ghcr.io/ietf-tools/datatracker-celery:latest
-        environment:
-            CELERY_APP: ietf
-            CELERY_ROLE: beat
-            UPDATE_REQUIREMENTS_FROM: requirements.txt
-        command:
-            - '--loglevel=INFO'
-        depends_on:
-            - db
-        restart: unless-stopped
-        stop_grace_period: 1m
-        volumes:
-            - .:/workspace
+#  Celery Beat is a periodic task runner. It is not normally needed for development,
+#  but can be enabled by uncommenting the following.
+#
+#    beat:
+#        image: ghcr.io/ietf-tools/datatracker-celery:latest
+#        environment:
+#            CELERY_APP: ietf
+#            CELERY_ROLE: beat
+#            UPDATE_REQUIREMENTS_FROM: requirements.txt
+#        command:
+#            - '--loglevel=INFO'
+#        depends_on:
+#            - db
+#        restart: unless-stopped
+#        stop_grace_period: 1m
+#        volumes:
+#            - .:/workspace
 
 volumes:
     mariadb-data:
