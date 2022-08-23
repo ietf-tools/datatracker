@@ -1,5 +1,11 @@
 @use "sass:map";
 
+// FIXME: It's not clear why these three variables remain unset by bs5, but just
+// set them to placeholder values so the CSS embedded in the HTML validates.
+$btn-font-family: inherit !default;
+$nav-link-font-weight: inherit !default;
+$tooltip-margin: inherit !default;
+
 @import "bootstrap/scss/functions";
 @import "bootstrap/scss/variables";
 @import "bootstrap/scss/maps";
