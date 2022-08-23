@@ -65,6 +65,7 @@ services:
 
     celery:
         image: ghcr.io/ietf-tools/datatracker-celery:latest
+        init: true
         environment:
             CELERY_APP: ietf
             CELERY_ROLE: worker
