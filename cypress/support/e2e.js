@@ -20,3 +20,4 @@ import './commands'
 // require('./commands')
 
 import 'cypress-real-events/support'
+import '@percy/cypress'

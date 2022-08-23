@@ -98,6 +98,9 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
   it(`has IETF 123 title`, () => {
     cy.get('.agenda h1').first().contains(`IETF ${meetingData.meeting.number} Meeting Agenda`)
+    
+    // Take a snapshot for visual diffing
+    cy.percySnapshot('meeting -> agenda-neue [past, desktop]', { widths: [viewports.desktop[0]] })
   })
   it(`has meeting city subtitle`, () => {
     cy.get('.agenda h4').first().contains(meetingData.meeting.city)
@@ -786,6 +789,9 @@ describe(`meeting -> floor-plan-neue`, () => {
 
       it(`has IETF ${meetingData.meeting.number} title`, () => {
         cy.get('.floorplan h1').first().contains(`IETF ${meetingData.meeting.number} Floor Plan`)
+
+        // Take a snapshot for visual diffing
+        cy.percySnapshot(`meeting -> floor-plan-neue [${vp}]`, { widths: [viewports[vp][0]] })
       })
       it(`has meeting city subtitle`, () => {
         cy.get('.floorplan h4').first().contains(meetingData.meeting.city)
