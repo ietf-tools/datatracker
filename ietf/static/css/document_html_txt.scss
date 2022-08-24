@@ -112,22 +112,30 @@ blockquote {
 }
 #identifiers dd.obsoletes::before {
   content: "Obsoletes:";
-  margin-left: -11ch;
+  margin: 0 0 0 -10ch;
 }
 #identifiers dd.obsoletes {
-  padding-left: 11ch;
-  width: 36ch;
+  padding-left: 10ch;
+  width: 37ch;
 }
 #identifiers dd.updates::before {
   content: "Updates:";
-  margin-left: -9ch;
+  margin: 0 0 0 -8ch;
 }
 #identifiers dd.updates {
-  padding-left: 9ch;
-  width: 38ch;
+  padding-left: 8ch;
+  width: 39ch;
 }
-#identifiers dd.updates::first-line {
-  padding-left: 0;
+#identifiers dd:is(.updates, .obsoletes) {
+  /* HAXX: this gets around the lack of text-content-trim support */
+  display: flex;
+  flex-wrap: wrap;
+}
+#identifiers dd:is(.updates, .obsoletes) a {
+  margin: 0 0 0 1ch;
+}
+#identifiers dd:is(.updates, .obsoletes) a:last-of-type {
+  margin: 0 1ch;
 }
 #identifiers dd.published::before {
   content: "Published:";
