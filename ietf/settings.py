@@ -1070,6 +1070,8 @@ DEV_APPS = []                           # type: List[str]
 DEV_PRE_APPS = []                       # type: List[str]
 DEV_MIDDLEWARE = ()
 
+PROD_PRE_APPS = []                      # type: List[str]
+
 # django-debug-toolbar and the debug listing of sql queries at the bottom of
 # each page when in dev mode can overlap in functionality, and can slow down
 # page loading.  If you wish to use the sql_queries debug listing, put this in
@@ -1209,14 +1211,15 @@ for app in INSTALLED_APPS:
         if os.path.exists(app_settings_file):
             exec("from %s import *" % (app+".settings"))
 
-# Add DEV_APPS to INSTALLED_APPS
-INSTALLED_APPS += DEV_APPS
-INSTALLED_APPS = DEV_PRE_APPS + INSTALLED_APPS
-MIDDLEWARE += DEV_MIDDLEWARE
-TEMPLATES[0]['OPTIONS']['context_processors'] += DEV_TEMPLATE_CONTEXT_PROCESSORS
-
+# Add APPS from settings_local to INSTALLED_APPS
 if SERVER_MODE == 'production':
-    INSTALLED_APPS.insert(0,'scout_apm.django')
+    INSTALLED_APPS = PROD_PRE_APPS + INSTALLED_APPS
+else:
+    INSTALLED_APPS += DEV_APPS
+    INSTALLED_APPS = DEV_PRE_APPS + INSTALLED_APPS
+    MIDDLEWARE += DEV_MIDDLEWARE
+    TEMPLATES[0]['OPTIONS']['context_processors'] += DEV_TEMPLATE_CONTEXT_PROCESSORS
+
 
 # We provide a secret key only for test and development modes.  It's
 # absolutely vital that django fails to start in production mode unless a
