@@ -587,6 +587,87 @@ describe('meeting -> agenda-neue [past, desktop]', {
     cy.get('.agenda .agenda-table-display-event').should('have.length', meetingData.schedule.length)
   })
 
+  // -> CALENDAR VIEW
+
+  it('can view calendar', () => {
+    // Open dialog
+    cy.get('#agenda-quickaccess-calview-btn').should('be.visible').click()
+    cy.get('.agenda-calendar').should('exist').and('be.visible')
+    // Check header elements
+    cy.get('.agenda-calendar .n-drawer-header__main > span').contains('Calendar View')
+    cy.get('.agenda-calendar .agenda-calendar-actions').as('diagheader')
+    cy.get('@diagheader').children('button').should('have.length', 2)
+    cy.get('@diagheader').children('button').first().should('include.text', 'Filter')
+    cy.get('@diagheader').children('button').last().should('include.text', 'Close')
+    // -----------------------
+    // Check timezone controls
+    // -----------------------
+    cy.get('@diagheader').children('small').first().should('contain', 'Timezone')
+    // Switch to local timezone
+    cy.get('@diagheader').children('.n-button-group').find('button').as('tzbuttons').eq(1).click().should('have.class', 'n-button--primary-type')
+      .prev('button').should('not.have.class', 'n-button--primary-type')
+    const localDateTime = DateTime.fromISO(meetingData.meeting.updated).setZone('local').toFormat(`DD 'at' tt ZZZZ`)
+    cy.get('.agenda h6').first().contains(localDateTime)
+    // Switch to UTC
+    cy.get('@tzbuttons').last().click().should('have.class', 'n-button--primary-type')
+      .prev('button').should('not.have.class', 'n-button--primary-type')
+    const utcDateTime = DateTime.fromISO(meetingData.meeting.updated).setZone('utc').toFormat(`DD 'at' tt ZZZZ`)
+    cy.get('.agenda h6').first().contains(utcDateTime)
+    // Switch back to meeting timezone
+    cy.get('@tzbuttons').first().click().should('have.class', 'n-button--primary-type')
+    // ----------------------
+    // Check Filters Shortcut
+    // ----------------------
+    cy.get('@diagheader').children('button').first().click()
+    // Only check whether the dialog is shown. We already tested the dialog earlier.
+    cy.get('.agenda-personalize').should('be.visible')
+    // Close dialog
+    cy.get('.agenda-personalize .agenda-personalize-actions > button').eq(1).click()
+    cy.get('.agenda-personalize').should('not.exist')
+    // ------------------
+    // Check Event Dialog
+    // ------------------
+    const firstEvent = meetingData.schedule[0]
+    const materialsUrl = (new URL(firstEvent.agenda.url)).pathname
+    const materialsInfo = {
+      url: firstEvent.agenda.url,
+      slides: [],
+      minutes: null
+    }
+    cy.intercept('GET', `/api/meeting/session/${firstEvent.sessionId}/materials`, { body: materialsInfo }).as('getMaterialsInfo')
+    cy.intercept('GET', materialsUrl, { body: 'The internet is a series of tubes.' }).as('getMaterialsText')
+    cy.get('.agenda-calendar .fc-event').first().click()
+    // Only check whether the dialog is shown. We already tested the dialog earlier.
+    cy.get('.agenda-eventdetails').should('be.visible')
+    // Close dialog
+    cy.get('.agenda-eventdetails .n-card-header__extra > .detail-header > button').click()
+    // -----------
+    // Event Hover
+    // -----------
+    // First Event
+    let eventStart = DateTime.fromISO(firstEvent.startDateTime)
+    let eventEnd = eventStart.plus({ seconds: firstEvent.duration })
+    let hoverDateTime = `${eventStart.toFormat('DDDD')} from ${eventStart.toFormat('T')} to ${eventEnd.toFormat('T')}`
+    cy.get('.agenda-calendar .fc-event').first().realHover({ position: 'center' })
+    cy.get('.agenda-calendar-hint > div').first().should('include.text', firstEvent.name)
+      .next().should('include.text', firstEvent.location.short).and('include.text', firstEvent.room)
+      .next().should('include.text', hoverDateTime)
+    // Second Event
+    const secondEvent = meetingData.schedule[1]
+    eventStart = DateTime.fromISO(secondEvent.startDateTime)
+    eventEnd = eventStart.plus({ seconds: secondEvent.duration })
+    hoverDateTime = `${eventStart.toFormat('DDDD')} from ${eventStart.toFormat('T')} to ${eventEnd.toFormat('T')}`
+    cy.get('.agenda-calendar .fc-event').eq(1).realHover({ position: 'center' })
+    cy.get('.agenda-calendar-hint > div').first().should('include.text', secondEvent.name)
+      .next().should('include.text', secondEvent.location.short).and('include.text', secondEvent.room)
+      .next().should('include.text', hoverDateTime)
+    // ------------------------------
+    // Click Close should hide dialog
+    // ------------------------------
+    cy.get('@diagheader').children('button').last().click()
+    cy.get('.agenda-calendar').should('not.exist')
+  })
+
   // -> SETTINGS DIALOG
 
   it('can change settings', () => {
