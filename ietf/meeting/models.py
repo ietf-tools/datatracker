@@ -48,7 +48,6 @@ from ietf.utils.validators import (
     validate_file_extension,
 )
 from ietf.utils.fields import MissingOkImageField
-from ietf.utils.log import unreachable
 
 countries = list(pytz.country_names.items())
 countries.sort(key=lambda x: x[1])
@@ -275,16 +274,13 @@ class Meeting(models.Model):
             else:
                 version = len(settings.PROCEEDINGS_VERSION_CHANGES)  # start assuming latest version
                 mtg_number = self.get_number()
-                if mtg_number is None:
-                    unreachable('2021-08-10')
-                else:
-                    # Find the index of the first entry in the version change array that
-                    # is >= this meeting's number. The first entry in the array is 0, so the
-                    # version is always >= 1 for positive meeting numbers.
-                    for vers, threshold in enumerate(settings.PROCEEDINGS_VERSION_CHANGES):
-                        if mtg_number < threshold:
-                            version = vers
-                            break
+                # Find the index of the first entry in the version change array that
+                # is >= this meeting's number. The first entry in the array is 0, so the
+                # version is always >= 1 for positive meeting numbers.
+                for vers, threshold in enumerate(settings.PROCEEDINGS_VERSION_CHANGES):
+                    if mtg_number < threshold:
+                        version = vers
+                        break
             self._proceedings_format_version = version  # save this for later
         return self._proceedings_format_version
 

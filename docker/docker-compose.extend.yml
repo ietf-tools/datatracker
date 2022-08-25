@@ -15,3 +15,7 @@ services:
     db:
         ports:
             - '3306'
+    celery:
+        volumes:
+            - .:/workspace
+            - app-assets:/assets

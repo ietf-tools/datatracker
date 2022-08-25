@@ -209,7 +209,7 @@ def export_to_csv(request, username=None, acronym=None, group_type=None):
         row.append(str(doc.ad) if doc.ad else "")
         e = doc.latest_event()
         row.append(e.time.strftime("%Y-%m-%d") if e else "")
-        writer.writerow([v.encode("utf-8") for v in row])
+        writer.writerow(row)
 
     return response
 

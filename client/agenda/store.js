@@ -144,7 +144,7 @@ export const useAgendaStore = defineStore('agenda', {
         const agendaData = await resp.json()
 
         // -> Switch to meeting timezone
-        this.timezone = agendaData.meeting.timezone
+        this.timezone = window.localStorage.getItem(`agenda.${agendaData.meeting.number}.timezone`) || agendaData.meeting.timezone
 
         // -> Load meeting data
         this.categories = agendaData.categories
@@ -178,6 +178,7 @@ export const useAgendaStore = defineStore('agenda', {
       }
       window.localStorage.setItem(`agenda.${this.meeting.number}.colorAssignments`, JSON.stringify(this.colorAssignments))
       window.localStorage.setItem(`agenda.${this.meeting.number}.pickedEvents`, JSON.stringify(this.pickedEvents))
+      window.localStorage.setItem(`agenda.${this.meeting.number}.timezone`, this.timezone)
     },
     findCurrentEventId () {
       const current = (this.nowDebugDiff ? DateTime.local().minus(this.nowDebugDiff) : DateTime.local()).setZone(this.timezone)

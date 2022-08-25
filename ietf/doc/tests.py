@@ -10,12 +10,14 @@ import bibtexparser
 import mock
 import json
 import copy
+import random
 
 from http.cookies import SimpleCookie
 from pathlib import Path
 from pyquery import PyQuery
 from urllib.parse import urlparse, parse_qs
 from tempfile import NamedTemporaryFile
+from collections import defaultdict
 
 from django.core.management import call_command
 from django.urls import reverse as urlreverse
@@ -37,10 +39,11 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
     BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
-    StatusChangeFactory)
+    StatusChangeFactory, BofreqFactory)
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
-from ietf.group.models import Group
+from ietf.doc.views_search import ad_dashboard_group, ad_dashboard_group_type, shorten_group_name # TODO: red flag that we're importing from views in tests. Move these to utils.
+from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
 from ietf.meeting.models import Meeting, SessionPresentation, SchedulingEvent
@@ -228,6 +231,45 @@ class SearchTests(TestCase):
         r = self.client.get("/")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Document Search")
+
+    def test_ad_workload(self):
+        Role.objects.filter(name_id='ad').delete()
+        ad = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active',person__name='Example Areadirector').person
+        doc_type_names = ['bofreq', 'charter', 'conflrev', 'draft', 'statchg']
+        expected = defaultdict(lambda :0)
+        for doc_type_name in doc_type_names:
+            if doc_type_name=='draft':
+                states = State.objects.filter(type='draft-iesg', used=True).values_list('slug', flat=True)
+            else:
+                states = State.objects.filter(type=doc_type_name, used=True).values_list('slug', flat=True)
+
+            for state in states:
+                target_num = random.randint(0,2)
+                for _ in range(target_num):
+                    if doc_type_name == 'draft':
+                        doc = IndividualDraftFactory(ad=ad,states=[('draft-iesg', state),('draft','rfc' if state=='pub' else 'active')])
+                    elif doc_type_name == 'charter':
+                        doc = CharterFactory(ad=ad, states=[(doc_type_name, state)])
+                    elif doc_type_name == 'bofreq':
+                        # Note that the view currently doesn't handle bofreqs
+                        doc = BofreqFactory(states=[(doc_type_name, state)], bofreqresponsibledocevent__responsible=[ad])
+                    elif doc_type_name == 'conflrev':
+                        doc = ConflictReviewFactory(ad=ad, states=State.objects.filter(type_id=doc_type_name, slug=state))
+                    elif doc_type_name == 'statchg':
+                        doc = StatusChangeFactory(ad=ad, states=State.objects.filter(type_id=doc_type_name, slug=state))
+                    else:
+                        # Currently unreachable
+                        doc = DocumentFactory(type_id=doc_type_name, ad=ad, states=[(doc_type_name, state)])
+
+                    if not slugify(ad_dashboard_group_type(doc)) in ('document', 'none'):
+                        expected[(slugify(ad_dashboard_group_type(doc)), slugify(ad.full_name_as_key()), slugify(shorten_group_name(ad_dashboard_group(doc))))] += 1
+        
+        url = urlreverse('ietf.doc.views_search.ad_workload')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        for group_type, ad, group in expected:
+            self.assertEqual(int(q(f'#{group_type}-{ad}-{group}').text()),expected[(group_type, ad, group)])
 
     def test_docs_for_ad(self):
         ad = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person
@@ -2469,12 +2511,12 @@ class FieldTests(TestCase):
             decoded = json.loads(json_data)
         except json.JSONDecodeError as e:
             self.fail('data-pre contained invalid JSON data: %s' % str(e))
-        decoded_ids = list(decoded.keys())
-        self.assertCountEqual(decoded_ids, [str(doc.id) for doc in docs])
+        decoded_ids = [item['id'] for item in decoded]
+        self.assertEqual(decoded_ids, [doc.id for doc in docs])
         for doc in docs:
             self.assertEqual(
                 dict(id=doc.pk, selected=True, url=doc.get_absolute_url(), text=escape(uppercase_std_abbreviated_name(doc.name))),
-                decoded[str(doc.pk)],
+                decoded[decoded_ids.index(doc.pk)],
             )
 
 class MaterialsTests(TestCase):

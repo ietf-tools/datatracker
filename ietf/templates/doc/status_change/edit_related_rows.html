@@ -5,7 +5,7 @@
 {% for rfc,choice_slug in form.relations.items %}
     <div class="input-group mb-3">
         <select class="form-control select2-field"
-                data-ajax--url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='document' doc_type='draft' %}"
+                data-select2-ajax-url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='document' doc_type='draft' %}"
                 data-max-entries="1"
                 data-width="resolve"
                 data-result-key="text"
@@ -39,7 +39,7 @@
             id="new_relation_row_rfc"
             aria-label="Enter new affected RFC"
             class="form-control select2-field"
-            data-ajax--url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='docalias' doc_type='draft' %}"
+            data-select2-ajax-url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='docalias' doc_type='draft' %}"
             data-result-key="text"
             data-max-entries="1"
             data-width="resolve"

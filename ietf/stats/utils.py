@@ -246,7 +246,8 @@ def get_meeting_registration_data(meeting):
             decoded = response.json()
         except ValueError:
             if response.content.strip() == 'Invalid meeting':
-                pass
+                logger.info('Invalid meeting: {}'.format(meeting.number))
+                return (0,0,0)
             else:
                 raise RuntimeError("Could not decode response from registrations API: '%s...'" % (response.content[:64], ))
 
@@ -261,6 +262,9 @@ def get_meeting_registration_data(meeting):
             country_code    = registration['Country'].strip()
             address         = registration['Email'].strip()
             reg_type        = registration['RegType'].strip()
+            ticket_type     = registration['TicketType'].strip()
+            checkedin       = registration['CheckedIn'].strip()
+
             if (address, reg_type) in meeting_registrations:
                 object = meeting_registrations.pop((address, reg_type))
                 created = False
@@ -274,11 +278,15 @@ def get_meeting_registration_data(meeting):
             if (object.first_name != first_name[:200] or
                 object.last_name != last_name[:200] or
                 object.affiliation != affiliation or
-                object.country_code != country_code):
+                object.country_code != country_code or
+                object.ticket_type != ticket_type or
+                object.checkedin != checkedin):
                     object.first_name=first_name[:200]
                     object.last_name=last_name[:200]
                     object.affiliation=affiliation
                     object.country_code=country_code
+                    object.ticket_type=ticket_type
+                    object.checkedin=checkedin
                     object.save()
 
             # Add a Person object to MeetingRegistration object
@@ -300,16 +308,14 @@ def get_meeting_registration_data(meeting):
                 num_created += 1
             num_processed += 1
 
-        # handle deleted registrations, if count is reasonable
         # any registrations left in meeting_registrations no longer exist in reg
         # so must have been deleted
-        if  0 < len(meeting_registrations) < 5:
-            for r in meeting_registrations:
-                try:
-                    MeetingRegistration.objects.get(meeting=meeting,email=r[0],reg_type=r[1]).delete()
-                    logger.info('Removing deleted registration. email={}, reg_type={}'.format(r[0], r[1]))
-                except MeetingRegistration.DoesNotExist:
-                    pass
+        for r in meeting_registrations:
+            try:
+                MeetingRegistration.objects.get(meeting=meeting,email=r[0],reg_type=r[1]).delete()
+                logger.info('Removing deleted registration. email={}, reg_type={}'.format(r[0], r[1]))
+            except MeetingRegistration.DoesNotExist:
+                pass
     else:
         raise RuntimeError("Bad response from registrations API: %s, '%s'" % (response.status_code, response.content))
     num_total = MeetingRegistration.objects.filter(

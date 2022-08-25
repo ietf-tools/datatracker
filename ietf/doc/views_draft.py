@@ -1026,7 +1026,7 @@ def edit_shepherd_writeup(request, name):
                 dict(
                     doc=doc,
                     type="individ"
-                    if not doc.group.type.slug or doc.group.type.slug != "ietf"
+                    if not doc.group.type.slug or doc.group.type.slug != "wg"
                     else "group",
                     stream=doc.stream.slug,
                     group=doc.group.type.slug,

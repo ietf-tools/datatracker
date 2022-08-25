@@ -245,19 +245,7 @@
                             Expired &amp; archived
                         </div>
                     {% endif %}
-                    {% if file_urls %}
-                        <div class="buttonlist">
-                        {% for label, url in file_urls %}
-                            <a class="btn btn-primary btn-sm" href="{{ url }}">
-                                <i class="bi bi-file-{% if label == 'pdf' %}pdf{% elif label == 'xml' or label == 'htmlized' or label == 'html' %}code{% elif label == 'bibtex' %}ruled{% elif label == 'plain text' %}text{% endif %}">
-                                </i>
-                                {{ label }}
-                            </a>
-                        {% endfor %}
-                        </div>
-                    {% else %}
-                        (not online)
-                    {% endif %}
+                    {% include "doc/document_format_buttons.html" %}
                 </td>
             </tr>
             {% for check in doc.submission.latest_checks %}
@@ -1155,12 +1143,10 @@
         {% else %}
             <div class="card border-warning mt-5">
                 <div class="card-header bg-warning">
-                    <b>This Internet-Draft is no longer active. A copy of
-                    the expired Internet-Draft can be found at:</b>
-                    <br>
-                    <a href="{{ doc.get_href }}">
-                        {{ doc.get_href }}
-                    </a>
+                    <p><b>This Internet-Draft is no longer active. A copy of
+                    the expired Internet-Draft is available in these formats:</b></p>
+
+                    {% include "doc/document_format_buttons.html" %}
                 </div>
                 <div class="card-body">
                     <p class="h5 card-title">
