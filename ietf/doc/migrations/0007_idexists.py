@@ -18,7 +18,7 @@ def forward(apps, schema_editor):
         slug = 'idexists',
         name = 'I-D Exists',
         used = True,
-        desc = 'The IESG has not started processing this draft, or has stopped processing it without publicastion.',
+        desc = 'The IESG has not started processing this draft, or has stopped processing it without publication.',
         order = 0,
     )
     idexists.next_states.set(State.objects.filter(type='draft-iesg',slug__in=['pub-req','watching']))

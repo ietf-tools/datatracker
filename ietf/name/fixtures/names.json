@@ -2200,7 +2200,7 @@
   },
   {
     "fields": {
-      "desc": "The IESG has not started processing this draft, or has stopped processing it without publicastion.",
+      "desc": "The IESG has not started processing this draft, or has stopped processing it without publication.",
       "name": "I-D Exists",
       "next_states": [
         16,
