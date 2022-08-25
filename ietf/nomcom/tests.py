@@ -17,6 +17,7 @@ from django.conf import settings
 from django.core.files import File
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
@@ -27,7 +28,7 @@ from ietf.doc.factories import DocEventFactory, WgDocumentAuthorFactory, \
                                NewRevisionDocEventFactory, DocumentAuthorFactory
 from ietf.group.factories import GroupFactory, GroupHistoryFactory, RoleFactory, RoleHistoryFactory
 from ietf.group.models import Group, Role
-from ietf.meeting.factories import MeetingFactory
+from ietf.meeting.factories import MeetingFactory, AttendedFactory
 from ietf.message.models import Message
 from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comments, \
                                   COMMUNITY_USER, CHAIR_USER, \
@@ -1389,7 +1390,7 @@ class FeedbackLastSeenTests(TestCase):
             f.nominees.add(self.nominee)
         f = FeedbackFactory.create(author=self.author,nomcom=self.nc,type_id='comment')
         f.topics.add(self.topic)
-        now = datetime.datetime.now() 
+        now = timezone.now() 
         self.hour_ago = now - datetime.timedelta(hours=1)
         self.half_hour_ago = now - datetime.timedelta(minutes=30)
         self.second_from_now = now + datetime.timedelta(seconds=1)
@@ -1935,6 +1936,12 @@ Junk body for testing
             self.client.login(username='plain',password='plain+password')
             response = self.client.get(url)
             self.assertEqual(response.status_code, 302)
+        self.client.logout()
+        url = reverse('ietf.nomcom.views.private_volunteers_csv',kwargs={'year':year})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        response = self.client.get(url)
+        self.assertContains(response,people[-1].email(),status_code=200)
+
 
 
 
@@ -2390,6 +2397,7 @@ class rfc8989EligibilityTests(TestCase):
                     p = PersonFactory()
                     for m in combo:
                         MeetingRegistrationFactory(person=p, meeting=m)
+                        AttendedFactory(session__meeting=m, session__type_id='plenary',person=p)
                     if combo_len<3:
                         ineligible_people.append(p)
                     else:
@@ -2641,6 +2649,7 @@ class VolunteerDecoratorUnitTests(TestCase):
         ]]
         for m in meetings:
             MeetingRegistrationFactory(meeting=m,person=meeting_person)
+            AttendedFactory(session__meeting=m, session__type_id='plenary', person=meeting_person)
         nomcom.volunteer_set.create(person=meeting_person)
 
         office_person = PersonFactory()

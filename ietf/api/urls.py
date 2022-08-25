@@ -27,6 +27,10 @@ urlpatterns = [
     url(r'^iesg/position', views_ballot.api_set_position),
     # Let Meetecho set session video URLs
     url(r'^meeting/session/video/url$', meeting_views.api_set_session_video_url),
+    # Meeting agenda + floorplan data
+    url(r'^meeting/(?P<num>[A-Za-z0-9._+-]+)/agenda-data$', meeting_views.api_get_agenda_data),
+    # Meeting session materials
+    url(r'^meeting/session/(?P<session_id>[A-Za-z0-9._+-]+)/materials$', meeting_views.api_get_session_materials),
     # Let Meetecho trigger recording imports
     url(r'^notify/meeting/import_recordings/(?P<number>[a-z0-9-]+)/?$', meeting_views.api_import_recordings),
     # Let MeetEcho upload bluesheets
@@ -40,6 +44,10 @@ urlpatterns = [
     url(r'^openid/', include('oidc_provider.urls', namespace='oidc_provider')),
     # Draft submission API
     url(r'^submit/?$', submit_views.api_submit),
+    # Draft upload API
+    url(r'^submission/?$', submit_views.api_submission),
+    # Draft submission state API
+    url(r'^submission/(?P<submission_id>[0-9]+)/status/?', submit_views.api_submission_status),
     # Datatracker version
     url(r'^version/?$', api_views.version),
     # Application authentication API key

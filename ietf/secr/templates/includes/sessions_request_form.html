@@ -78,7 +78,7 @@
                 </td>
             </tr>
             <tr class="bg1">
-                <td>Times during which this WG can <strong>not</strong> meet:</td>
+                <td>Times during which this WG can <strong>not</strong> meet:<br>Please explain any selections in Special Requests below.</td>
                  <!-- [html-validate-disable-block no-redundant-for -- FIXME: form renders with redundant for attributes] -->
                 <td>{{ form.timeranges.errors }}{{ form.timeranges }}</td>
             </tr>
@@ -118,7 +118,7 @@
     <div class="button-group">
         <ul>
             <li><button type="submit" name="submit" value="Save"{% if is_locked %} disabled{% endif %}>Save</button></li>
-            <li><button type="submit" name="submit" value="Cancel">Cancel</button></li>
+            <li><button type="button" onclick="history.back()">Back</button></li>
         </ul>
     </div>
 </form>

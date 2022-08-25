@@ -7,7 +7,6 @@ import logging
 import io
 import os
 import rfc2html
-import time
 
 from typing import Optional, TYPE_CHECKING
 from weasyprint import HTML as wpHTML
@@ -15,11 +14,11 @@ from weasyprint import HTML as wpHTML
 from django.db import models
 from django.core import checks
 from django.core.cache import caches
-from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, RegexValidator
 from django.urls import reverse as urlreverse
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
+from django.utils import timezone
 from django.utils.encoding import force_text
 from django.utils.html import mark_safe # type:ignore
 
@@ -87,7 +86,7 @@ IESG_SUBSTATE_TAGS = ('ad-f-up', 'need-rev', 'extpty')
 
 class DocumentInfo(models.Model):
     """Any kind of document.  Draft, RFC, Charter, IPR Statement, Liaison Statement"""
-    time = models.DateTimeField(default=datetime.datetime.now) # should probably have auto_now=True
+    time = models.DateTimeField(default=timezone.now) # should probably have auto_now=True
 
     type = ForeignKey(DocTypeName, blank=True, null=True) # Draft, Agenda, Minutes, Charter, Discuss, Guideline, Email, Review, Issue, Wiki, External ...
     title = models.CharField(max_length=255, validators=[validate_no_control_chars, ])
@@ -221,12 +220,8 @@ class DocumentInfo(models.Model):
         if not hasattr(self, '_cached_href'):
             validator = URLValidator()
             if self.external_url and self.external_url.split(':')[0] in validator.schemes:
-                try:
-                    validator(self.external_url)
-                    return self.external_url
-                except ValidationError:
-                    log.unreachable('2018-12-28')
-                    pass
+                validator(self.external_url)
+                return self.external_url
 
             if self.type_id in settings.DOC_HREFS and self.type_id in meeting_doc_refs:
                 if self.meeting_related():
@@ -582,7 +577,6 @@ class DocumentInfo(models.Model):
             try:
                 pdf = wpHTML(string=html.replace('\xad','')).write_pdf(stylesheets=[io.BytesIO(b'html { font-size: 94%;}')])
             except AssertionError:
-                log.log(f'weasyprint failed with an assert on {self.name}')
                 pdf = None
             if pdf:
                 cache.set(cache_key, pdf, settings.PDFIZER_CACHE_TIME)
@@ -689,7 +683,7 @@ class DocumentActionHolder(models.Model):
     """Action holder for a document"""
     document = ForeignKey('Document')
     person = ForeignKey(Person)
-    time_added = models.DateTimeField(default=datetime.datetime.now)
+    time_added = models.DateTimeField(default=timezone.now)
 
     CLEAR_ACTION_HOLDERS_STATES = ['approved', 'ann', 'rfcqueue', 'pub', 'dead']  # draft-iesg state slugs
     GROUP_ROLES_OF_INTEREST = ['chair', 'techadv', 'editor', 'secr']
@@ -819,16 +813,12 @@ class Document(DocumentInfo):
         assert events, "You must always add at least one event to describe the changes in the history log"
         self.time = max(self.time, events[0].time)
 
-        mark = time.time()
         self._has_an_event_so_saving_is_allowed = True
         self.save()
         del self._has_an_event_so_saving_is_allowed
-        log.log(f'{time.time()-mark:.3f} seconds to save {self.name} Document')
 
-        mark = time.time()
         from ietf.doc.utils import save_document_in_history
         save_document_in_history(self)
-        log.log(f'{time.time()-mark:.3f} seconds to save {self.name} DocHistory')
 
     def save(self, *args, **kwargs):
         # if there's no primary key yet, we can allow the save to go
@@ -849,7 +839,7 @@ class Document(DocumentInfo):
 
     def previous_telechat_date(self):
         "Return the most recent telechat date in the past, if any (even if there's another in the future)"
-        e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat", telechat_date__lt=datetime.datetime.now())
+        e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat", telechat_date__lt=timezone.now())
         return e.telechat_date if e else None
 
     def request_closed_time(self, review_req):
@@ -1219,7 +1209,7 @@ EVENT_TYPES = [
 
 class DocEvent(models.Model):
     """An occurrence for a document, used for tracking who, when and what."""
-    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened", db_index=True)
+    time = models.DateTimeField(default=timezone.now, help_text="When the event happened", db_index=True)
     type = models.CharField(max_length=50, choices=EVENT_TYPES)
     by = ForeignKey(Person)
     doc = ForeignKey(Document)
@@ -1235,11 +1225,7 @@ class DocEvent(models.Model):
 
     def __str__(self):
         return u"%s %s by %s at %s" % (self.doc.name, self.get_type_display().lower(), self.by.plain_name(), self.time)
-
-    def save(self, *args, **kwargs):
-        super(DocEvent, self).save(*args, **kwargs)        
-        log.assertion('self.rev != None')
-
+    
     class Meta:
         ordering = ['-time', '-id']
         indexes = [
@@ -1403,7 +1389,7 @@ class DeletedEvent(models.Model):
     content_type = ForeignKey(ContentType)
     json = models.TextField(help_text="Deleted object in JSON format, with attribute names chosen to be suitable for passing into the relevant create method.")
     by = ForeignKey(Person)
-    time = models.DateTimeField(default=datetime.datetime.now)
+    time = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return u"%s by %s %s" % (self.content_type, self.by, self.time)

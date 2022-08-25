@@ -43,12 +43,6 @@ class StatusChangeTests(TestCase):
 
         # faulty posts
 
-        ## Must set a responsible AD
-        r = self.client.post(url,dict(document_name="bogus",title="Bogus Title",ad="",create_in_state=state_strpk,notify='ipu@ietf.org'))
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q('form .is-invalid')) > 0)
-
         ## Must set a name
         r = self.client.post(url,dict(document_name="",title="Bogus Title",ad=ad_strpk,create_in_state=state_strpk,notify='ipu@ietf.org'))
         self.assertEqual(r.status_code, 200)
@@ -67,10 +61,13 @@ class StatusChangeTests(TestCase):
         q = PyQuery(r.content)
         self.assertTrue(len(q('form .is-invalid')) > 0)
 
-        # successful status change start
-        r = self.client.post(url,dict(document_name="imaginary-new",title="A new imaginary status change",ad=ad_strpk,
-                                      create_in_state=state_strpk,notify='ipu@ietf.org',new_relation_row_blah="rfc9999",
-                                      statchg_relation_row_blah="tois"))
+        # successful status change starts
+
+        r = self.client.post(url,dict(
+            document_name="imaginary-new",title="A new imaginary status change",ad=ad_strpk,
+            create_in_state=state_strpk,notify='ipu@ietf.org',new_relation_row_blah="rfc9999",
+            statchg_relation_row_blah="tois")
+        )
         self.assertEqual(r.status_code, 302)
         status_change = Document.objects.get(name='status-change-imaginary-new')        
         self.assertEqual(status_change.get_state('statchg').slug,'adrev')
@@ -78,6 +75,17 @@ class StatusChangeTests(TestCase):
         self.assertEqual(status_change.ad.name,'Areað Irector')
         self.assertEqual(status_change.notify,'ipu@ietf.org')
         self.assertTrue(status_change.relateddocument_set.filter(relationship__slug='tois',target__docs__name='draft-ietf-random-thing'))
+
+        # Verify that it's possible to start a status change without a responsible ad.
+        r = self.client.post(url,dict(
+            document_name="imaginary-new2",title="A new imaginary status change",
+            create_in_state=state_strpk,notify='ipu@ietf.org',new_relation_row_blah="rfc9999",
+            statchg_relation_row_blah="tois")
+        )
+        self.assertEqual(r.status_code, 302)
+        status_change = Document.objects.get(name='status-change-imaginary-new2')
+        self.assertIsNone(status_change.ad)        
+
 
     def test_change_state(self):
 

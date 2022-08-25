@@ -89,12 +89,16 @@ class IetfFiltersTests(TestCase):
                 f'New version available: <b><a href="/doc/{charter.name}/01-00/">{charter.name}-01-00.txt</a></b>',
             ),
             (
-                "repository https://github.com/tlswg/draft-ietf-tls-ticketrequest",
-                "repository https://github.com/tlswg/draft-ietf-tls-ticketrequest",
+                f"repository https://github.com/tlswg/{id.name}",
+                f"repository https://github.com/tlswg/{id.name}",
             ),
             (
-                '<a href="mailto:draft-ietf-some-names@ietf.org">draft-ietf-some-names@ietf.org</a>',
-                '<a href="mailto:draft-ietf-some-names@ietf.org">draft-ietf-some-names@ietf.org</a>',
+                f'<a href="mailto:{id.name}@ietf.org">{id.name}@ietf.org</a>',
+                f'<a href="mailto:{id.name}@ietf.org">{id.name}@ietf.org</a>',
+            ),
+            (
+                f"{id.name}@ietf.org",
+                f"{id.name}@ietf.org",
             ),
             (
                 "http://ieee802.org/1/files/public/docs2015/cn-thaler-Qcn-draft-PAR.pdf",
@@ -143,5 +147,5 @@ class IetfFiltersTests(TestCase):
         ]
 
         for input, output in cases:
-            #debug.show("(urlize_ietf_docs(input),output)")
+            # debug.show("(input, urlize_ietf_docs(input), output)")
             self.assertEqual(urlize_ietf_docs(input), output)

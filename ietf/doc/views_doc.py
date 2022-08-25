@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2020, All Rights Reserved
+# Copyright The IETF Trust 2009-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
@@ -621,9 +621,9 @@ def document_main(request, name, rev=None):
             ballot_summary = needed_ballot_positions(doc, list(doc.active_ballot().active_balloter_positions().values()))
      
         if isinstance(doc,Document):
-            sorted_relations=doc.relateddocument_set.all().order_by('relationship__name')
+            sorted_relations=doc.relateddocument_set.all().order_by("relationship__name", "target__name")
         elif isinstance(doc,DocHistory):
-            sorted_relations=doc.relateddochistory_set.all().order_by('relationship__name')
+            sorted_relations=doc.relateddochistory_set.all().order_by("relationship__name", "target__name")
         else:
             sorted_relations=None
 
@@ -1139,6 +1139,25 @@ def document_shepherd_writeup(request, name):
                                    ),
                               )
 
+
+def document_shepherd_writeup_template(request, type):
+    writeup = markdown.markdown(
+        render_to_string(
+            "doc/shepherd_writeup.txt",
+            dict(stream="ietf", type="individ" if type == "individual" else "group"),
+        )
+    )
+    return render(
+        request,
+        "doc/shepherd_writeup_template.html",
+        dict(
+            writeup=writeup,
+            stream="ietf",
+            type="individ" if type == "individual" else "group",
+        ),
+    )
+
+
 def document_references(request, name):
     doc = get_object_or_404(Document,docalias__name=name)
     refs = doc.references()
@@ -1197,6 +1216,8 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
         else:
             position_groups.append(g)
 
+    iesg = doc.get_state("draft-iesg")
+    iesg_state = iesg.slug if iesg else None
     if (ballot.ballot_type.slug == "irsg-approve"):
         summary = irsg_needed_ballot_positions(doc, [p for p in positions if not p.is_old_pos])
     else:
@@ -1222,6 +1243,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
                                    deferred=deferred,
                                    summary=summary,
                                    all_ballots=all_ballots,
+                                   iesg_state=iesg_state,
                                    ),
                               request=request)
 
@@ -1950,7 +1972,7 @@ def rfcdiff_latest_json(request, name, rev=None):
             if doc.name != doc.canonical_name():
                 prev_rev = doc.rev
                 # not sure what to do if non-numeric values come back, so at least log it
-                log.assertion('doc.rfc_number().isdigit()')
+                log.assertion('doc.rfc_number().isdigit()') # .rfc_number() is expensive...
                 log.assertion('doc.rev.isdigit()')
                 if int(doc.rfc_number()) in HAS_TOMBSTONE and prev_rev != '00':
                     prev_rev = f'{(int(doc.rev)-1):02d}'

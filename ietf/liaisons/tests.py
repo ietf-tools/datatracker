@@ -14,6 +14,8 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.urls import reverse as urlreverse
 from django.db.models import Q
+from django.utils import timezone
+
 from io import StringIO
 from pyquery import PyQuery
 
@@ -50,7 +52,7 @@ def get_liaison_post_data(type='incoming'):
                 to_contacts='to_contacts@example.com',
                 purpose="info",
                 title="title",
-                submitted_date=datetime.datetime.today().strftime("%Y-%m-%d"),
+                submitted_date=timezone.now().strftime("%Y-%m-%d"),
                 body="body",
                 send="1" )
 
@@ -385,7 +387,7 @@ class LiaisonManagementTests(TestCase):
 
     def test_edit_liaison(self):
         liaison = LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
-        LiaisonStatementEventFactory(statement=liaison,type_id='submitted', time=datetime.datetime.now()-datetime.timedelta(days=1))
+        LiaisonStatementEventFactory(statement=liaison,type_id='submitted', time=timezone.now()-datetime.timedelta(days=1))
         LiaisonStatementEventFactory(statement=liaison,type_id='posted')
         from_group = liaison.from_groups.first()
         to_group = liaison.to_groups.first()
@@ -1014,7 +1016,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(q('#id_from_groups').find('option:selected').val(),reply_from_group_id)
         self.assertEqual(q('#id_to_groups').find('option:selected').val(),reply_to_group_id)
         pre = json.loads(q('#id_related_to').attr("data-pre"))
-        self.assertEqual(pre[str(liaison.pk)]['id'], liaison.pk)
+        self.assertEqual(pre[0]['id'], liaison.pk)
 
     def test_search(self):
         # Statement 1

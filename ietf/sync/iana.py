@@ -10,6 +10,7 @@ import re
 import requests
 
 from django.conf import settings
+from django.utils import timezone
 from django.utils.encoding import smart_bytes, force_str
 from django.utils.http import urlquote
 
@@ -241,7 +242,7 @@ def parse_review_email(text):
     doc_name = strip_version_extension(doc_name)
 
     # date
-    review_time = datetime.datetime.now()
+    review_time = timezone.now()
     if "Date" in msg:
         review_time = email_time_to_local_timezone(msg["Date"])
 

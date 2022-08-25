@@ -4,10 +4,15 @@ WORKSPACEDIR="/workspace"
 
 sudo service rsyslog start &>/dev/null
 
+# Turn off git info in zsh prompt (causes slowdowns)
+git config oh-my-zsh.hide-info 1
+
 # Fix ownership of volumes
 echo "Fixing volumes ownership..."
 sudo chown -R dev:dev "$WORKSPACEDIR/.parcel-cache"
 sudo chown -R dev:dev "$WORKSPACEDIR/__pycache__"
+sudo chown -R dev:dev "$WORKSPACEDIR/.vite"
+sudo chown -R dev:dev "$WORKSPACEDIR/.yarn/unplugged"
 sudo chown dev:dev "/assets"
 
 echo "Fix chromedriver /dev/shm permissions..."
@@ -20,6 +25,7 @@ yarn rebuild
 # Generate static assets
 echo "Building static assets... (this could take a minute or two)"
 yarn build
+yarn legacy:build
 
 # Copy config files if needed
 
@@ -56,6 +62,17 @@ else
     fi
 fi
 
+if [ ! -f "$WORKSPACEDIR/ietf/settings_local_vite.py" ]; then
+    echo "Setting up a default settings_local_vite.py ..."
+    cp $WORKSPACEDIR/docker/configs/settings_local_vite.py $WORKSPACEDIR/ietf/settings_local_vite.py
+else
+    echo "Using existing ietf/settings_local_vite.py file"
+    if ! cmp -s $WORKSPACEDIR/docker/configs/settings_local_vite.py $WORKSPACEDIR/ietf/settings_local_vite.py; then
+        echo "NOTE: Differences detected compared to docker/configs/settings_local_vite.py!"
+        echo "We'll assume you made these deliberately."
+    fi
+fi
+
 # Create data directories
 
 echo "Creating data directories..."
@@ -65,7 +82,7 @@ chmod +x ./docker/scripts/app-create-dirs.sh
 # Download latest coverage results file
 
 echo "Downloading latest coverage results file..."
-curl -fsSL https://github.com/ietf-tools/datatracker/releases/latest/download/coverage.json -o release-coverage.json
+curl -fsSL https://github.com/ietf-tools/datatracker/releases/download/baseline/coverage.json -o release-coverage.json
 
 # Wait for DB container
 
@@ -96,13 +113,13 @@ if [ -z "$EDITOR_VSCODE" ]; then
         echo
         echo "You can execute arbitrary commands now, e.g.,"
         echo
-        echo "    ietf/manage.py check && ietf/manage.py runserver 0.0.0.0:8000"
+        echo "    ietf/manage.py runserver 0.0.0.0:8000"
         echo
         echo "to start a development instance of the Datatracker."
         echo
         echo "    ietf/manage.py test --settings=settings_sqlitetest"
         echo
-        echo "to run all the tests."
+        echo "to run all the python tests."
         echo
         zsh
     else

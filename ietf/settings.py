@@ -13,6 +13,7 @@ import warnings
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
 warnings.simplefilter("always", DeprecationWarning)
+warnings.filterwarnings("ignore", message="'urllib3\[secure\]' extra is deprecated")
 warnings.filterwarnings("ignore", message="The logout\(\) view is superseded by")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
 warnings.filterwarnings("ignore", message="{% load staticfiles %} is deprecated")
@@ -63,7 +64,7 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.CryptPasswordHasher',
 ]
 
-ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", "127.0.0.1", "localhost:8000", ]
+ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", "127.0.0.1", "localhost", ]
 
 # Server name of the tools server
 TOOLS_SERVER = 'tools.' + IETF_DOMAIN
@@ -410,8 +411,13 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'ietf.urls'
 
+DJANGO_VITE_ASSETS_PATH = os.path.join(BASE_DIR, 'static/dist-neue')
+if DEBUG:
+    DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, 'static/dist-neue/manifest.json')
+
 # Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (
+    DJANGO_VITE_ASSETS_PATH,
     os.path.join(BASE_DIR, 'static/dist'),
     os.path.join(BASE_DIR, 'secr/static/dist'),
 )
@@ -430,7 +436,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # External apps 
     'analytical',
+    'django_vite',
     'django_bootstrap5',
+    'django_celery_beat',
     'corsheaders',
     'django_markup',
     'django_password_strength',
@@ -536,9 +544,10 @@ INTERNAL_IPS = (
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://www.ietf.org/rfcdiff"
 IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
+IDNITS_SERVICE_URL = "https://author-tools.ietf.org/idnits"
 
 # Content security policy configuration (django-csp)
-CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", f"data: {IDTRACKER_BASE_URL} https://www.ietf.org/ https://analytics.ietf.org/")
+CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", f"data: {IDTRACKER_BASE_URL} https://www.ietf.org/ https://analytics.ietf.org/ https://fonts.googleapis.com/")
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
@@ -754,7 +763,6 @@ PDFIZER_URL_PREFIX = IDTRACKER_BASE_URL+"/doc/pdf"
 # Email settings
 IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
 AUDIO_IMPORT_EMAIL = ['ietf@meetecho.com']
-IANA_EVAL_EMAIL = "drafts-eval@icann.org"
 SESSION_REQUEST_FROM_EMAIL = 'IETF Meeting Session Request Tool <session-request@ietf.org>' 
 
 SECRETARIAT_SUPPORT_EMAIL = "support@ietf.org"
@@ -837,6 +845,8 @@ IDSUBMIT_CHECKER_CLASSES = (
 #    "ietf.submit.checkers.DraftYangvalidatorChecker",    
 )
 
+# Max time to allow for validation before a submission is subject to cancellation
+IDSUBMIT_MAX_VALIDATION_TIME = datetime.timedelta(minutes=20)
 
 IDSUBMIT_MANUAL_STAGING_DIR = '/tmp/'
 
@@ -985,8 +995,6 @@ OIDC_EXTRA_SCOPE_CLAIMS = 'ietf.ietfauth.utils.OidcExtraScopeClaims'
 # ==============================================================================
 
 
-DOT_BINARY = '/usr/bin/dot'
-UNFLATTEN_BINARY= '/usr/bin/unflatten'
 RSYNC_BINARY = '/usr/bin/rsync'
 YANGLINT_BINARY = '/usr/bin/yanglint'
 DE_GFM_BINARY = '/usr/bin/de-gfm.ruby2.5'
@@ -1025,6 +1033,12 @@ YOUTUBE_API_VERSION = 'v3'
 YOUTUBE_BASE_URL = 'https://www.youtube.com/watch'
 YOUTUBE_IETF_CHANNEL_ID = 'UC8dtK9njBLdFnBahHFp0eZQ'
 
+# If we need to revert to xmpp, change this to 'xmpp:{chat_room_name}@jabber.ietf.org?join'
+CHAT_URL_PATTERN = 'https://zulip.ietf.org/#narrow/stream/{chat_room_name}'
+
+# If we need to revert to xmpp
+# CHAT_ARCHIVE_URL_PATTERN = 'https://www.ietf.org/jabber/logs/{chat_room_name}?C=M;O=D'
+
 PRODUCTION_TIMEZONE = "America/Los_Angeles"
 
 PYFLAKES_DEFAULT_ARGS= ["ietf", ]
@@ -1055,6 +1069,8 @@ BADNESS_MUCHTOOBIG = 500
 DEV_APPS = []                           # type: List[str]
 DEV_PRE_APPS = []                       # type: List[str]
 DEV_MIDDLEWARE = ()
+
+PROD_PRE_APPS = []                      # type: List[str]
 
 # django-debug-toolbar and the debug listing of sql queries at the bottom of
 # each page when in dev mode can overlap in functionality, and can slow down
@@ -1166,6 +1182,14 @@ qvNU+qRWi+YXrITsgn92/gVxX5AoK0n+s5Lx7fpjxkARVi66SF6zTJnX
 DEFAULT_REQUESTS_TIMEOUT = 20  # seconds
 
 
+# Celery configuration
+CELERY_TIMEZONE = 'UTC'
+CELERY_BROKER_URL = 'amqp://mq/'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
+assert not USE_TZ, 'Drop DJANGO_CELERY_BEAT_TZ_AWARE setting once USE_TZ is True!'
+DJANGO_CELERY_BEAT_TZ_AWARE = False
+
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests
 #
@@ -1187,14 +1211,15 @@ for app in INSTALLED_APPS:
         if os.path.exists(app_settings_file):
             exec("from %s import *" % (app+".settings"))
 
-# Add DEV_APPS to INSTALLED_APPS
-INSTALLED_APPS += DEV_APPS
-INSTALLED_APPS = DEV_PRE_APPS + INSTALLED_APPS
-MIDDLEWARE += DEV_MIDDLEWARE
-TEMPLATES[0]['OPTIONS']['context_processors'] += DEV_TEMPLATE_CONTEXT_PROCESSORS
-
+# Add APPS from settings_local to INSTALLED_APPS
 if SERVER_MODE == 'production':
-    INSTALLED_APPS.insert(0,'scout_apm.django')
+    INSTALLED_APPS = PROD_PRE_APPS + INSTALLED_APPS
+else:
+    INSTALLED_APPS += DEV_APPS
+    INSTALLED_APPS = DEV_PRE_APPS + INSTALLED_APPS
+    MIDDLEWARE += DEV_MIDDLEWARE
+    TEMPLATES[0]['OPTIONS']['context_processors'] += DEV_TEMPLATE_CONTEXT_PROCESSORS
+
 
 # We provide a secret key only for test and development modes.  It's
 # absolutely vital that django fails to start in production mode unless a

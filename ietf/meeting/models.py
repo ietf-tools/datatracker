@@ -24,6 +24,7 @@ from django.db.models import Max, Subquery, OuterRef, TextField, Value, Q
 from django.db.models.functions import Coalesce
 from django.conf import settings
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.safestring import mark_safe
 
@@ -47,7 +48,6 @@ from ietf.utils.validators import (
     validate_file_extension,
 )
 from ietf.utils.fields import MissingOkImageField
-from ietf.utils.log import unreachable
 
 countries = list(pytz.country_names.items())
 countries.sort(key=lambda x: x[1])
@@ -177,7 +177,7 @@ class Meeting(models.Model):
 
     @classmethod
     def get_current_meeting(cls, type="ietf"):
-        return cls.objects.filter(type=type, date__gte=datetime.datetime.today()-datetime.timedelta(days=7) ).order_by('date').first()
+        return cls.objects.filter(type=type, date__gte=timezone.now()-datetime.timedelta(days=7) ).order_by('date').first()
 
     def get_first_cut_off(self):
         return self.get_00_cutoff()
@@ -274,16 +274,13 @@ class Meeting(models.Model):
             else:
                 version = len(settings.PROCEEDINGS_VERSION_CHANGES)  # start assuming latest version
                 mtg_number = self.get_number()
-                if mtg_number is None:
-                    unreachable('2021-08-10')
-                else:
-                    # Find the index of the first entry in the version change array that
-                    # is >= this meeting's number. The first entry in the array is 0, so the
-                    # version is always >= 1 for positive meeting numbers.
-                    for vers, threshold in enumerate(settings.PROCEEDINGS_VERSION_CHANGES):
-                        if mtg_number < threshold:
-                            version = vers
-                            break
+                # Find the index of the first entry in the version change array that
+                # is >= this meeting's number. The first entry in the array is 0, so the
+                # version is always >= 1 for positive meeting numbers.
+                for vers, threshold in enumerate(settings.PROCEEDINGS_VERSION_CHANGES):
+                    if mtg_number < threshold:
+                        version = vers
+                        break
             self._proceedings_format_version = version  # save this for later
         return self._proceedings_format_version
 
@@ -1240,13 +1237,26 @@ class Session(models.Model):
             
         return self._agenda_file
 
-    def jabber_room_name(self):
+    def chat_room_name(self):
         if self.type_id=='plenary':
             return 'plenary'
-        elif self.historic_group:
+        elif hasattr(self, 'historic_group'):
             return self.historic_group.acronym
         else:
             return self.group.acronym
+
+    def chat_room_url(self):
+        return settings.CHAT_URL_PATTERN.format(chat_room_name=self.chat_room_name())
+
+    def chat_archive_url(self):
+        # datatracker 8.8.0 released on 2022 July 15; before that, fall back to old log URL
+        if self.meeting.date <= datetime.date(2022, 7, 15):
+            return f'https://www.ietf.org/jabber/logs/{ self.chat_room_name() }?C=M;O=D'
+        elif hasattr(settings,'CHAT_ARCHIVE_URL_PATTERN'):
+            return settings.CHAT_ARCHIVE_URL_PATTERN.format(chat_room_name=self.chat_room_name())
+        else:
+            # Zulip has no separate archive
+            return self.chat_room_url()
 
     def notes_id(self):
         note_id_fragment = 'plenary' if self.type.slug == 'plenary' else self.group.acronym
@@ -1257,7 +1267,7 @@ class Session(models.Model):
 
 class SchedulingEvent(models.Model):
     session = ForeignKey(Session)
-    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
+    time = models.DateTimeField(default=timezone.now, help_text="When the event happened")
     status = ForeignKey(SessionStatusName)
     by = ForeignKey(Person)
 

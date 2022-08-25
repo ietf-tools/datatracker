@@ -17,6 +17,8 @@ from django.utils.encoding import force_str # pyflakes:ignore force_str is used 
 from django.urls import reverse as urlreverse
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from django.urls import NoReverseMatch
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -181,6 +183,8 @@ def link_charter_doc_match(match):
 
 def link_non_charter_doc_match(match):
     name = match[0]
+    # handle "I-D.*"" reference-style matches
+    name = re.sub(r"^i-d\.(.*)", r"draft-\1", name, flags=re.IGNORECASE)
     cname = doc_canonical_name(name)
     if not cname:
         return match[0]
@@ -200,10 +204,13 @@ def link_non_charter_doc_match(match):
     if not cname:
         return match[0]
     if name == cname:
-        url = urlreverse(
-            "ietf.doc.views_doc.document_main",
-            kwargs=dict(name=cname, rev=rev_split.group(2)),
-        )
+        try:
+            url = urlreverse(
+                "ietf.doc.views_doc.document_main",
+                kwargs=dict(name=cname, rev=rev_split.group(2)),
+            )
+        except NoReverseMatch:
+            return match[0]
         return f'<a href="{url}">{match[0]}</a>'
 
     # if we get here, we can't linkify
@@ -230,19 +237,19 @@ def urlize_ietf_docs(string, autoescape=None):
         else:
             string = mark_safe(string)
     string = re.sub(
-        r"\b(?<![/\-:=#])(charter-(?:[\d\w\.+]+-)*)(\d{2}(?:-\d{2}))(\.(?:txt|ps|pdf|html))?\b",
+        r"\b(?<![/\-:=#\"\'])(charter-(?:[\d\w\.+]+-)*)(\d{2}(?:-\d{2}))(\.(?:txt|ps|pdf|html))?\b",
         link_charter_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
     string = re.sub(
-        r"\b(?<![/\-:=#])((?:draft-|bofreq-|conflict-review-|status-change-)[\d\w\.+-]+(?![-@]))",
+        r"\b(?<![/\-:=#\"\'])((?:draft-|i-d\.|bofreq-|conflict-review-|status-change-)[\d\w\.+-]+(?![-@]))",
         link_non_charter_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
     string = re.sub(
-        r"\b(?<![/\-:=#])((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
+        r"\b(?<![/\-:=#\"\'])((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
         link_other_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
@@ -312,7 +319,7 @@ def timesince_days(date):
     """Returns the number of days since 'date' (relative to now)"""
     if date.__class__ is not datetime.datetime:
         date = datetime.datetime(date.year, date.month, date.day)
-    delta = datetime.datetime.now() - date
+    delta = timezone.now() - date
     return delta.days
 
 @register.filter
@@ -631,19 +638,19 @@ def action_holder_badge(action_holder):
     >>> action_holder_badge(DocumentActionHolderFactory())
     ''
 
-    >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=15)))
+    >>> action_holder_badge(DocumentActionHolderFactory(time_added=timezone.now() - datetime.timedelta(days=15)))
     ''
 
-    >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=16)))
+    >>> action_holder_badge(DocumentActionHolderFactory(time_added=timezone.now() - datetime.timedelta(days=16)))
     '<span class="badge bg-danger" title="In state for 16 days; goal is &lt;15 days."><i class="bi bi-clock-fill"></i> 16</span>'
 
-    >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=30)))
+    >>> action_holder_badge(DocumentActionHolderFactory(time_added=timezone.now() - datetime.timedelta(days=30)))
     '<span class="badge bg-danger" title="In state for 30 days; goal is &lt;15 days."><i class="bi bi-clock-fill"></i> 30</span>'
 
     >>> settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS = old_limit
     """
     age_limit = settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS
-    age = (datetime.datetime.now() - action_holder.time_added).days
+    age = (timezone.now() - action_holder.time_added).days
     if age > age_limit:
         return mark_safe(
             '<span class="badge bg-danger" title="In state for %d day%s; goal is &lt;%d days."><i class="bi bi-clock-fill"></i> %d</span>'
@@ -723,7 +730,7 @@ def is_special_agenda_item(assignment):
 
 @register.filter
 def should_show_agenda_session_buttons(assignment):
-    """Should this agenda item show the session buttons (jabber link, etc)?
+    """Should this agenda item show the session buttons (chat link, etc)?
 
     In IETF-112 and earlier, office hours sessions were designated by a name ending
     with ' office hours' and belonged to the IESG or some other group. This led to

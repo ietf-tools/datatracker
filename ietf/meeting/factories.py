@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -9,7 +9,7 @@ import datetime
 from django.core.files.base import ContentFile
 from django.db.models import Q
 
-from ietf.meeting.models import (Meeting, Session, SchedulingEvent, Schedule,
+from ietf.meeting.models import (Attended, Meeting, Session, SchedulingEvent, Schedule,
     TimeSlot, SessionPresentation, FloorPlan, Room, SlideSubmission, Constraint,
     MeetingHost, ProceedingsMaterial)
 from ietf.name.models import (ConstraintName, SessionStatusName, ProceedingsMaterialTypeName,
@@ -297,3 +297,10 @@ class ProceedingsMaterialFactory(factory.django.DjangoModelFactory):
         uploaded_filename=factory.LazyAttribute(
             lambda doc: f'{_pmf_doc_name(doc)}-{doc.rev}.pdf'
         ))
+
+class AttendedFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Attended
+
+    session = factory.SubFactory(SessionFactory)
+    person = factory.SubFactory(PersonFactory)

@@ -22,11 +22,6 @@ from ietf.utils import log
 NUM_SESSION_CHOICES = (('','--Please select'),('1','1'),('2','2'))
 SESSION_TIME_RELATION_CHOICES = (('', 'No preference'),) + Constraint.TIME_RELATION_CHOICES
 JOINT_FOR_SESSION_CHOICES = (('1', 'First session'), ('2', 'Second session'), ('3', 'Third session'), )
-# Used for traditional face-to-face meetings:
-# LENGTH_SESSION_CHOICES = (('','--Please select'),('1800','30 minutes'),('3600','1 hour'),('5400','1.5 hours'), ('7200','2 hours'),('9000','2.5 hours'))
-# Used for totally virtual meetings during COVID-19:
-# LENGTH_SESSION_CHOICES = (('','--Please select'),('3000','50 minutes'),('6000','100 minutes'))
-LENGTH_SESSION_CHOICES = (('','--Please select'),('3600','60 minutes'),('7200','120 minutes'))
 
 # -------------------------------------------------
 # Helper Functions

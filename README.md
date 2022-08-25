@@ -25,6 +25,8 @@
 - [Old Datatracker Branches](https://github.com/ietf-tools/old-datatracker-branches/branches/all)
 - [Frontend Development](#frontend-development)
     - [Intro](#intro)
+    - [Vite](#vite-vue-3)
+    - [Parcel](#parcel-legacyjquery)
     - [Bootstrap](#bootstrap)
     - [Serving Static Files via CDN](#serving-static-files-via-cdn)
     - [Handling of External Javascript and CSS Components](#handling-of-external-javascript-and-css-components)
@@ -78,7 +80,37 @@ https://www.ietf.org/lib/dt/sprint/ietf_utf8.sql.gz
 
 #### Intro
 
-We now use `yarn` to manage assets for the Datatracker, and `parcel` to package them. `yarn` maintains its `node` packages under the `.yarn` directory.
+We now use `yarn` to manage assets for the Datatracker, and `vite`/`parcel` to package them. `yarn` maintains its `node` packages under the `.yarn` directory.
+
+The datatracker uses 2 different build systems, depending on the use case:
+- [**Vite**](https://vitejs.dev/) for Vue 3 pages / components
+- [**Parcel**](https://parceljs.org/) for legacy pages / jQuery
+
+#### Vite *(Vue 3)*
+
+Pages will gradually be updated to Vue 3 components. These components are located under the `/client` directory.
+
+Each Vue 3 app has its own sub-directory. For example, the agenda app is located under `/client/agenda`.
+
+The datatracker makes use of the Django-Vite plugin to point to either the Vite.js server or the precompiled production files. The `DJANGO_VITE_DEV_MODE` flag, found in the `ietf/settings_local.py` file determines whether the Vite.js server is used or not.
+
+In development mode, you must start the Vite.js development server, in addition to the usual Datatracker server:
+
+```sh
+yarn dev
+```
+
+Any changes made to the files under `/client` will automatically trigger a hot-reload of the modified components.
+
+To generate production assets, run the build command:
+
+```sh
+yarn build
+```
+
+This will create packages under `ietf/static/dist-neue`, which are then served by the Django development server, and which must be uploaded to the CDN.
+
+#### Parcel *(Legacy/jQuery)*
 
 The Datatracker includes these packages from the various Javascript and CSS files in `ietf/static/js` and `ietf/static/css`, respectively.
 Static images are likewise in `ietf/static/images`.
@@ -86,7 +118,7 @@ Static images are likewise in `ietf/static/images`.
 Whenever changes are made to the files under `ietf/static`, you must re-run `parcel` to package them:
 
 ``` shell
-yarn build
+yarn legacy:build
 ```
 
 This will create packages under `ietf/static/dist/ietf`, which are then served by the Django development server, and which must be uploaded to the CDN.

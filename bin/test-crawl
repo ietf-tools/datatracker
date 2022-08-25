@@ -1,11 +1,24 @@
 #!/usr/bin/env python
 # -*- indent-with-tabs: 0 -*-
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# Copyright The IETF Trust 2013-2022, All Rights Reserved
 
 
-import os, sys, re, datetime, argparse, traceback, json
+import argparse
+import datetime
+import difflib
 import html5lib
+import json
+import os
 import random
+import re
+import requests
+import sys
+import time
+import traceback
+import urllib.parse
+import warnings
+
+warnings.filterwarnings("ignore", message=r"group\.HistoricalGroupFeatures\.\w+ failed to load invalid json")
 
 # Set up import path to find our own Django
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
@@ -19,26 +32,34 @@ parser = argparse.ArgumentParser(
     printed - in case of errors, a stacktrace is also included.""")
 parser.add_argument('urls', metavar='URL', nargs='*',
                     help='One or more URLs to start the crawl from')
-parser.add_argument('--urls', '-u', dest='url_file',
-                    help='File with URLs to start the crawl from')
-parser.add_argument('--slow', dest='slow_threshold', type=float, default=1.0,
-                    help='Responses taking longer than this (in seconds) results in SLOW being printed')
-parser.add_argument('--settings', help='Custom settings file')
+parser.add_argument('--diff', dest='exthost', type=str, metavar="SITE", help='Diff pages against external site')
+parser.add_argument('--failfast', action='store_true',
+                    help='Stop the crawl on the first page failure')
 parser.add_argument('--logfile', help='Write to logfile')
-parser.add_argument('--user', help='Crawl logged in as this user', default=None)
 parser.add_argument('--no-follow', dest='follow', action='store_false', default=True,
                     help='Do not follow URLs found in fetched pages, just check the given URLs')
-parser.add_argument('--validator-nu', dest='validator_nu', action='store_true',
-                    help='Use validator.nu instead of html5lib for HTML validation')
 parser.add_argument('--pedantic', action='store_true',
                     help='Stop the crawl on the first error or warning')
 parser.add_argument('--random', action='store_true',
                     help='Crawl URLs randomly')
+parser.add_argument('-R', '--no-revisit', action='store_true', default=False, help="Don't revisit already visited URLs")
+parser.add_argument('--slow', dest='slow_threshold', type=float, default=1.0,
+                    help='Responses taking longer than this (in seconds) results in SLOW being printed')
+parser.add_argument('--settings', help='Custom settings file')
+parser.add_argument('--urls', '-u', dest='url_file',
+                    help='File with URLs to start the crawl from')
+parser.add_argument('--user', help='Crawl logged in as this user', default=None)
+parser.add_argument('--validator-nu', dest='validator_nu', action='store_true',
+                    help='Use validator.nu instead of html5lib for HTML validation')
 parser.add_argument('--validate-all', dest='validate_all', action='store_true', default=False,
                     help='Run html 5 validation on all pages, without skipping similar urls. '
                     '(The default is to only run validation on one of /foo/1/, /foo/2/, /foo/3/, etc.)')
+parser.add_argument('--skip-html-validation', dest='skip_html_validation', action='store_true', help='Skip HTML validation.',default=False)
 parser.add_argument('-v', '--verbose', action='store_true', default=False,
                     help='Be more verbose')
+parser.add_argument('-x', '--exclude', action='append', default=[], help="Exclude URLs matching pattern")
+parser.add_argument('-X', '--exclude-from', metavar='FILE', help="URL exclusion pattern file")
+
 
 args = parser.parse_args()
 
@@ -49,6 +70,7 @@ import django
 import django.test
 import django.core.checks
 from django.conf import settings
+from django.utils import timezone
 
 django.setup()
 
@@ -81,7 +103,7 @@ def note(s):
 def strip_url(url):
     if url.startswith("http://testserver"):
         url = url[len("http://testserver"):]
-    fragment_url = re.search("^(.+)#[a-z_.-]+$", url)
+    fragment_url = re.search(r"^(.+)#[a-z_.-]+$", url)
     if fragment_url:
         url = fragment_url.group(1)
     next_url = re.search(r"^(.+)\?next=.+$", url)
@@ -128,6 +150,9 @@ def extract_tastypie_urls(content):
                     yield uri
 
 def check_html_valid(url, response, args):
+    if args.skip_html_validation:
+        return
+
     global parser, validated_urls, doc_types, warnings
     key = url
     if not args.validate_all:
@@ -202,27 +227,8 @@ def skip_extract_from(url):
     return False
 
 def skip_url(url):
-    for pattern in (
-            r"^/community/[0-9]+/remove_document/",
-            r"^/community/personal/",
-            # Skip most of the slow pdf composite generation urls and svg urls
-            r"^/meeting/[0-9]+/agenda/[0-9b-z].*-drafts\\.pdf",
-            r"^/wg/[a-z0-9-]+/deps/svg/",
-            # Skip other bad urls
-            r"^/dir/tsvdir/reviews/",
-            # r"^/ipr/\d{,3}/history/",
-            # Skip most html conversions, not worth the time
-            r"^/doc/html/draft-[0-9ac-z]",
-            r"^/doc/html/draft-b[0-9b-z]",
-            r"^/doc/pdf/draft-[0-9ac-z]",
-            r"^/doc/pdf/draft-b[0-9b-z]",
-            r"^/doc/html/charter-.*",
-            r"^/doc/html/status-.*",
-            r"^/doc/html/rfc.*",
-            r"^/static/coverage/",
-            r"^/meeting/\d{,2}/agenda",  # no agendas < 100
-        ):
-        if re.search(pattern, url):
+    for pattern in skip_patterns + args.exclude:
+        if pattern.search(url):
             return True
     return False
 
@@ -244,12 +250,105 @@ def get_referrers(url):
         ref_list.append(url)
     return ref_list
 
+nowtime = None
+nowstrn = None
+def nowstr():
+    global nowtime, nowstrn
+    t = time.time_ns()/(10**9)
+    if nowtime != t:
+        nowtime = t
+        nowstrn = timezone.now().strftime('%H:%M:%S').encode()
+    return nowstrn
+
+b_exthost = re.sub(b'https?', b'', args.exthost.encode()) if args.exthost else None
+def normalize_for_diff(page):
+    # pages containing 'current time' can differ if they're fetched on different seconds:
+    #page = page.replace(nowstr(), b'00:00:00')
+    page = page.replace(b'https://', b'http://')
+    # regex replacements
+    page = re.sub(b'<!--.*?-->', b'', page)
+    page = re.sub(b' -- (Test|Development) Mode', b'', page)
+    page = re.sub(b'\n\s*\n+\s*', b'\n', page)
+    page = re.sub(b'name="csrfmiddlewaretoken" value="\w+"', b'', page)
+    page = re.sub(b'urn:uuid:[0-9a-f-]+', b'urn:uuid:00000000-0000-0000-0000-000000000000', page)
+    page = re.sub(b'<updated>[0-9T.:+-]+</updated>', b'', page)
+    page = re.sub(b'<published>[0-9T.:+-]+</published>', b'', page)
+    
+    if b_exthost:
+        page = re.sub(b_exthost, b'://testserver/', page)
+    return page
+
+def get_differences(a, b):
+    #open('a.html','wb').write(a)
+    #open('b.html','wb').write(b)
+    a = a.decode().splitlines()
+    b = b.decode().splitlines()
+    for group in difflib.SequenceMatcher(None,a,b).get_grouped_opcodes():
+        for tag, i1, i2, j1, j2 in group:
+            if tag == 'equal':
+                pass
+            elif tag == 'replace':
+                # see if the lines have next-day date matches
+                if i2-i1 == j2-j1:
+                    matches = []
+                    for i in range(i2-i1):
+                        aline = a[i1+i]
+                        bline = b[j1+i]
+                        if len(aline) == len(bline):
+                            adates = list(re.finditer(r'\d\d\d\d-\d\d-\d\d', aline))
+                            bdates = list(re.finditer(r'\d\d\d\d-\d\d-\d\d', bline))
+                            # See if all date matches are in the same places
+                            if len(adates) and [ match.start() for match in adates ] == [ match.start() for match in bdates ]:
+                                # try to transform a into b by date shifting
+                                adates = [ match[0] for match in adates ]
+                                bdates = [ match[0] for match in bdates ]
+                                for i in range(len(adates)):
+                                    if adates[i] != bdates[i]:
+                                        d = datetime.datetime.strptime(adates[i], '%Y-%m-%d').date()
+                                        # shift date
+                                        d += datetime.timedelta(days=1)
+                                        adates[i] = d.strftime('%Y-%m-%d')
+                                matches.append(adates == bdates)
+                else:
+                    matches = [ False ]
+                if not all(matches):
+                    for line in a[i1:i2]:
+                        yield '-' + line
+                    for line in b[j1:j2]:
+                        yield '+' + line
+            elif tag == 'delete':
+                for line in a[i1:i2]:
+                    yield '-' + line
+            elif tag == 'insert':
+                for line in b[j1:j2]:
+                    yield '+' + line
+
+
+
 # --- GLobals ---
 
 slow_threshold = args.slow_threshold
 
+visited_fn = 'visited.json'
 visited = set()
+if args.no_revisit:
+    if os.path.exists(visited_fn):
+        with open(visited_fn, "r") as f:
+            visited = set(json.load(f))
+else:
+    if os.path.exists(visited_fn):
+        os.unlink(visited_fn)
+
+urls_fn = 'urls.json'
 urls = {} # url -> referrer
+if args.no_revisit:
+    if os.path.exists(urls_fn):
+        with open(urls_fn, "r") as f:
+            urls = json.load(f)
+else:
+    if os.path.exists(urls_fn):
+        os.unlink(urls_fn)
+
 referrers = {}
 
 initial_urls = []
@@ -268,6 +367,40 @@ if not initial_urls:
 
 for url in initial_urls:
     urls[url] = "[initial]"
+
+if args.exclude_from:
+    with open(args.exclude_from) as f:
+        args.exclude += [ l.strip() for l in f.readlines() ]
+args.exclude = [ re.compile(p) for p in args.exclude if p ]
+
+
+# pre-set exclusion patterns
+skip_patterns = [
+        r"^/community/[0-9]+/remove_document/",
+        r"^/community/personal/",
+        # Skip most of the slow pdf composite generation urls and svg urls
+        r"^/meeting/[0-9]+/agenda/[0-9b-z].*-drafts\\.pdf",
+        r"^/wg/[a-z0-9-]+/deps/svg/",
+        # This bad url occurs in an uploaded html agenda:
+        r"/site/ietfdhcwg/_/rsrc/1311005436000/system/app/css/overlay.css\?cb=simple100%250150goog-ws-left",
+        r"/dir/tsvdir/reviews/",
+        r"draft-touch-msword-template-v2\.0",
+        # There is a long list of urls that will always 404, but we include only those not excluded above
+        r"^/doc/html/draft-balakrishnan-cm-03",
+        r"^/doc/html/draft-ballardie-cbt-02",
+        #
+        r"^/doc/html/draft-[0-9ac-z]",
+        r"^/doc/html/draft-b[0-9b-z]",
+        r"^/doc/pdf/draft-[0-9ac-z]",
+        r"^/doc/pdf/draft-b[0-9b-z]",
+        r"^/doc/html/charter-.*",
+        r"^/doc/html/status-.*",
+        r"^/doc/html/rfc.*",
+        r"^/static/coverage/",
+        r"^/meeting/\d{,2}/agenda",  # no agendas < 100
+    ]
+skip_patterns = [ re.compile(p) for p in skip_patterns ]
+
 
 parser = html5lib.HTMLParser(strict=True)
 
@@ -288,6 +421,12 @@ client = django.test.Client(Accept='text/html,text/plain,application/json')
 logfile = None
 if args.logfile:
     logfile = open(args.logfile, "w")
+
+if args.exthost:
+    curdir = './cur/'
+    os.makedirs(curdir, exist_ok=True)
+    extdir = './ext/'
+    os.makedirs(extdir, exist_ok=True)
 
 vnu = None
 
@@ -326,118 +465,175 @@ if __name__ == "__main__":
 
     if args.validator_nu:
         vnu = start_vnu_server(port=8887)
-
-    while urls:
-        if args.random:
-            # popitem() is documented to be random, but really isn't
-            url = random.choice(list(urls.keys()))
-            referrer = urls.pop(url)
-        else:
-            url, referrer = urls.popitem()
-
-        visited.add(url)
-
-        if skip_url(url):
-            continue
-
-        timestamp = datetime.datetime.now()
-        acc_time = (timestamp - start_time).total_seconds()
-        acc_secs = (timestamp - start_time).total_seconds()
-        hrs = acc_secs // (60*60)
-        min = (acc_secs % (60*60)) // 60
-        sec = acc_secs % 60
-
-        try:
-            request_start = datetime.datetime.now()
-            if args.verbose:
-                sys.stderr.write(url+'\n')
-            r = client.get(url, secure=True)
-            elapsed = datetime.datetime.now() - request_start
-        except KeyboardInterrupt:
-            log(" ... was fetching %s" % url)
-            do_exit(1)
-        except:
-            elapsed = datetime.datetime.now() - request_start
-            tags = [ "FAIL  (from [ %s ])" % (",\n\t".join(get_referrers(url))) ]
-            log("%2d:%02d:%02d %7d %6d  %s %6.3fs %s %s" % (hrs,min,sec, len(visited), len(urls), 500, elapsed.total_seconds(), url, " ".join(tags)))
-            log("=============")
-            log(traceback.format_exc())
-            log("=============")
-            errors += 1
-        else:
-            tags = []
-
-            if r.status_code in (301, 302):
-                u = strip_url(r["Location"])
-                if not url.startswith("/") and u not in visited and u not in urls:
-                    urls[u] = referrer # referrer is original referrer, not redirected url
-                    referrers[u] = referrer
-
-            elif r.status_code == 200:
-                ctype = r["Content-Type"]
-                if ";" in ctype:
-                    ctype = ctype[:ctype.index(";")]
-
-                if ctype == "text/html":
-                    try:
-                        if args.follow and not skip_extract_from(url):
-                            for u in extract_html_urls(unicontent(r)):
-                                if u not in visited and u not in urls:
-                                    urls[u] = url
-                                    referrers[u] = url
-
-                        check_html_valid(url, r, args)
-
-                    except:
-                        log("error extracting HTML urls from %s" % url)
-                        log("=============")
-                        log(traceback.format_exc())
-                        log("=============")
-
-                elif ctype == "application/json":
-                    try:
-                        if args.follow:
-                            for u in extract_tastypie_urls(unicontent(r)):
-                                if u not in visited and u not in urls:
-                                    urls[u] = url
-                                    referrers[u] = url
-                    except:
-                        log("error extracting urls from %s" % url)
-                        log("=============")
-                        log(traceback.format_exc())
-                        log("=============")
-
+    try:
+        while urls:
+            if args.random:
+                url = random.choice(list(urls.keys()))
+                referrer = urls.pop(url)
             else:
-                tags.append("FAIL  (from {})".format(referrer))
-                if not url.startswith("/person/"):  # FIXME: those fail sometimes
-                    errors += 1
+                url, referrer = urls.popitem()
 
-            if elapsed.total_seconds() > slow_threshold:
-                tags.append("SLOW")
+            visited.add(url)
 
+            if (len(visited) % 100) == 1:
+                if args.exthost:
+                    # Check that we have the same dump on both sides
+                    exturl = urllib.parse.urljoin(args.exthost, 'api/version')
+                    extres = requests.get(exturl)
+                    extdumptime = extres.json()['dumptime']
+                    intres = client.get('/api/version')
+                    intdumptime = intres.json()['dumptime']
+                    if extdumptime != intdumptime:
+                        sys.stderr.write("Was trying to diff output from different dumps:\n"
+                                         f"  External site dump time: {extdumptime}\n"
+                                         f"  Internal site dump time: {intdumptime}\n")
+                        sys.exit(2)
+                log("\nElapsed  Visited  Queue Code   Time  Url  ...  Notes")
+
+            if (len(visited) % 1000) == 0:
+                with open(visited_fn, "w") as f:
+                    json.dump(list(visited), f, indent=1)
+                with open(urls_fn, "w") as f:
+                    json.dump(urls, f, indent=1)
+
+            if skip_url(url):
+                continue
+
+            timestamp = datetime.datetime.now()
             acc_time = (timestamp - start_time).total_seconds()
             acc_secs = (timestamp - start_time).total_seconds()
             hrs = acc_secs // (60*60)
             min = (acc_secs % (60*60)) // 60
             sec = acc_secs % 60
 
-            if (len(visited) % 100) == 1:
-                log("\nElapsed  Visited  Queue Code   Time  Url  ...  Notes")
-
-            log("%2d:%02d:%02d %7d %6d  %s %6.3fs %s %s" % (hrs,min,sec, len(visited), len(urls), r.status_code, elapsed.total_seconds(), url, " ".join(tags)))
-            if ((errors or warnings) and args.pedantic):
+            try:
+                request_start = datetime.datetime.now()
+                if args.verbose:
+                    sys.stderr.write(url+'\n')
+                r = client.get(url, secure=True)
+                elapsed = datetime.datetime.now() - request_start
+            except KeyboardInterrupt:
+                log(" ... was fetching %s" % url)
+                visited.remove(url)
                 do_exit(1)
+            except:
+                elapsed = datetime.datetime.now() - request_start
+                tags = [ "FAIL  (from [ %s ])" % (",\n\t".join(get_referrers(url))) ]
+                log("%2d:%02d:%02d %7d %6d  %s %6.3fs %s %s" % (hrs,min,sec, len(visited), len(urls), 500, elapsed.total_seconds(), url, " ".join(tags)))
+                log("=============")
+                log(traceback.format_exc())
+                log("=============")
+                errors += 1
+            else:
+                tags = []
 
-    if logfile:
-        logfile.close()
-        sys.stderr.write("Output written to %s\n\n" % logfile.name)
+                ctype = r["Content-Type"]
+                if r.status_code in (301, 302):
+                    u = strip_url(r["Location"])
+                    if not url.startswith("/") and u not in visited and u not in urls:
+                        urls[u] = referrer # referrer is original referrer, not redirected url
+                        referrers[u] = referrer
+                    ctype = ''
+                elif r.status_code == 200:
+                    ctype = r["Content-Type"]
+                    if ";" in ctype:
+                        ctype = ctype[:ctype.index(";")]
 
-    if errors > 0:
-        sys.stderr.write("Found %s errors, grep output for FAIL for details\n" % errors)
-        do_exit(1)
-    else:
-        sys.stderr.write("Found no errors.\n")
-    if warnings > 0:
-        sys.stderr.write("Found %s warnings, grep output for WARN for details\n" % warnings)
-    else:
-        sys.stderr.write("Found no warnings.\n")
+                    if ctype == "text/html":
+                        try:
+                            if args.follow and not skip_extract_from(url):
+                                for u in extract_html_urls(unicontent(r)):
+                                    if u not in visited and u not in urls:
+                                        urls[u] = url
+                                        referrers[u] = url
+
+                            check_html_valid(url, r, args)
+
+                        except:
+                            log("error extracting HTML urls from %s" % url)
+                            log("=============")
+                            log(traceback.format_exc())
+                            log("=============")
+
+                    elif ctype == "application/json" and url.startswith('/api/v1/'):
+                        try:
+                            if args.follow:
+                                for u in extract_tastypie_urls(unicontent(r)):
+                                    if u not in visited and u not in urls:
+                                        urls[u] = url
+                                        referrers[u] = url
+                        except:
+                            log("error extracting urls from %s" % url)
+                            log("=============")
+                            log(traceback.format_exc())
+                            log("=============")
+
+                    if args.exthost and ctype not in ('application/json', 'application/pdf',
+                            'application/x-gtar', 'application/octet-stream', ):
+                        urlpath = urllib.parse.urljoin(args.exthost, url)
+                        try:
+                            x = requests.get(urlpath)
+                            if hasattr(r, 'content') and hasattr(x, 'content'):
+                                # Remove comments (which can contain template paths and
+                                # version strings, and do some newline normalization:
+                                cur = normalize_for_diff(r.content)
+                                ext = normalize_for_diff(x.content)
+                                #
+                                if cur != ext:
+                                    try:
+                                        diff = list(get_differences(ext, cur))
+                                    except Exception as e:
+                                        log(f"Error computing diff for {url} ({ctype}):\n  {e}")
+                                        sys.exit(1)
+                                    if diff:
+                                        fn = url.strip('/').replace('/', '_') or 'root'
+                                        with open(curdir+fn, 'wb') as f:
+                                            f.write(cur)
+                                        with open(extdir+fn, 'wb') as f:
+                                            f.write(ext)
+                                        tags.append(f"DIFF  ({len(diff)} lines)")
+                                        if args.failfast:
+                                            sys.stderr.write('\n'.join(diff)+'\n')
+                                            sys.exit(1)
+                        except requests.exceptions.ConnectionError as e:
+                            sys.exit(e)
+                else:
+                    tags.append("FAIL  (from {})".format(referrer))
+                    if not url.startswith("/person/"):  # FIXME: those fail sometimes
+                        errors += 1
+
+                if elapsed.total_seconds() > slow_threshold:
+                    tags.append("SLOW")
+
+                acc_time = (timestamp - start_time).total_seconds()
+                acc_secs = (timestamp - start_time).total_seconds()
+                hrs = acc_secs // (60*60)
+                min = (acc_secs % (60*60)) // 60
+                sec = acc_secs % 60
+
+                log("%2d:%02d:%02d %7d %6d  %s %6.3fs %s %s" % (hrs,min,sec, len(visited), len(urls), r.status_code, elapsed.total_seconds(), url, " ".join(tags)))
+                if ((errors or warnings) and args.pedantic):
+                    log(f"Errors  : {errors}")
+                    log(f"Warnings: {warnings}")
+                    do_exit(1)
+
+        if logfile:
+            logfile.close()
+            sys.stderr.write("Output written to %s\n\n" % logfile.name)
+
+        if errors > 0:
+            sys.stderr.write("Found %s errors, grep output for FAIL for details\n" % errors)
+            do_exit(1)
+        else:
+            sys.stderr.write("Found no errors.\n")
+        if warnings > 0:
+            sys.stderr.write("Found %s warnings, grep output for WARN for details\n" % warnings)
+        else:
+            sys.stderr.write("Found no warnings.\n")
+    finally:
+        if args.no_revisit:
+            sys.stderr.write("Saving list of visited URLs\n")
+            with open(visited_fn, "w") as f:
+                json.dump(list(visited), f, indent=1)
+            with open(urls_fn, "w") as f:
+                json.dump(urls, f, indent=1)

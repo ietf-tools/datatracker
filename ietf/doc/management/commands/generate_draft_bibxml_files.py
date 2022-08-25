@@ -11,6 +11,7 @@ import sys
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -68,7 +69,7 @@ class Command(BaseCommand):
         if process_all:
             doc_events = NewRevisionDocEvent.objects.filter(type='new_revision', doc__type_id='draft')
         else:
-            start = datetime.datetime.now() - datetime.timedelta(days=days)
+            start = timezone.now() - datetime.timedelta(days=days)
             doc_events = NewRevisionDocEvent.objects.filter(type='new_revision', doc__type_id='draft', time__gte=start)
         doc_events = doc_events.order_by('time')
 

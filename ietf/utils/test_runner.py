@@ -43,7 +43,6 @@ import json
 import pytz
 import importlib
 import socket
-import datetime
 import gzip
 import unittest
 import pathlib
@@ -52,6 +51,7 @@ import tempfile
 import copy
 import factory.random
 import urllib3
+import warnings
 from urllib.parse import urlencode
 
 from fnmatch import fnmatch
@@ -75,6 +75,7 @@ from django.core.management import call_command
 from django.urls import URLResolver # type: ignore
 from django.template.backends.django import DjangoTemplates
 from django.template.backends.django import Template  # type: ignore[attr-defined]
+from django.utils import timezone
 # from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
@@ -569,7 +570,7 @@ class CoverageTest(unittest.TestCase):
             checker.stop()
             # Save to the .coverage file
             checker.save()
-            # Apply the configured and requested omit and include data 
+            # Apply the configured and requested omit and include data
             checker.config.from_args(ignore_errors=None, omit=settings.TEST_CODE_COVERAGE_EXCLUDE_FILES,
                 include=include, file=None)
             for pattern in settings.TEST_CODE_COVERAGE_EXCLUDE_LINES:
@@ -663,7 +664,7 @@ class CoverageTest(unittest.TestCase):
                 break
         mixed = [ unreleased[i] for i in range(s+1,len(unreleased)) if unreleased[i][1] != unreleased[i-1][1] ]
         if len(mixed) > 1 and not self.runner.permit_mixed_migrations:
-            raise self.failureException('Found interleaved schema and data operations in unreleased migrations;'
+            warnings.warn('Found interleaved schema and data operations in unreleased migrations;'
                 ' please see if they can be re-ordered with all data migrations before the schema migrations:\n'
                 +('\n'.join(['    %-6s:  %-12s, %s (%s)'% (op, node.key[0], node.key[1], nm) for (node, op, nm) in unreleased ])))
 
@@ -738,7 +739,7 @@ class IetfTestRunner(DiscoverRunner):
         print("     Datatracker %s test suite, %s:" % (ietf.__version__, time.strftime("%d %B %Y %H:%M:%S %Z")))
         print("     Python %s." % sys.version.replace('\n', ' '))
         print("     Django %s, settings '%s'" % (django.get_version(), settings.SETTINGS_MODULE))
-        
+
         settings.TEMPLATES[0]['BACKEND'] = 'ietf.utils.test_runner.ValidatingTemplates'
         if self.check_coverage:
             if self.coverage_file.endswith('.gz'):
@@ -748,19 +749,19 @@ class IetfTestRunner(DiscoverRunner):
                 with io.open(self.coverage_file, encoding='utf-8') as file:
                     self.coverage_master = json.load(file)
             self.coverage_data = {
-                "time": datetime.datetime.now(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "time": timezone.now().astimezone(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "template": {
-                    "coverage": 0.0, 
+                    "coverage": 0.0,
                     "covered": {},
                     "format": 1,        # default format, coverage data in 'covered' are just fractions
                 },
                 "url": {
-                    "coverage": 0.0, 
+                    "coverage": 0.0,
                     "covered": {},
                     "format": 4,
                 },
                 "code": {
-                    "coverage": 0.0, 
+                    "coverage": 0.0,
                     "covered": {},
                     "format": 1,
                 },
@@ -807,8 +808,8 @@ class IetfTestRunner(DiscoverRunner):
         for offset in range(10):
             try:
                 # remember the value so ietf.utils.mail.send_smtp() will use the same
-                ietf.utils.mail.SMTP_ADDR['port'] = base + offset 
-                self.smtpd_driver = SMTPTestServerDriver((ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port']),None) 
+                ietf.utils.mail.SMTP_ADDR['port'] = base + offset
+                self.smtpd_driver = SMTPTestServerDriver((ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port']),None)
                 self.smtpd_driver.start()
                 print(("     Running an SMTP test server on %(ip4)s:%(port)s to catch outgoing email." % ietf.utils.mail.SMTP_ADDR))
                 break
@@ -852,6 +853,10 @@ class IetfTestRunner(DiscoverRunner):
                     "script-type": "off",
                     # django-bootstrap5 seems to still generate 'checked="checked"', ignore:
                     "attribute-boolean-style": "off",
+                    # self-closing style tags are valid in HTML5. Both self-closing and non-self-closing tags are accepted. (vite generates self-closing link tags)
+                    # "void-style": "off",
+                    # Both attributes without value and empty strings are equal and valid. (vite generates empty value attributes)
+                    # "attribute-empty-style": "off"
                 },
             }
 
@@ -1036,10 +1041,13 @@ class IetfTestRunner(DiscoverRunner):
         test_paths = [ os.path.join(*app.split('.')) for app in test_apps ]
         return test_apps, test_paths
 
-    def run_tests(self, test_labels, extra_tests=[], **kwargs):
+    def run_tests(self, test_labels, extra_tests=None, **kwargs):
         global old_destroy, old_create, test_database_name, template_coverage_collection, code_coverage_collection, url_coverage_collection
         from django.db import connection
         from ietf.doc.tests import TemplateTagTest
+
+        if extra_tests is None:
+            extra_tests=[]
 
         # Tests that involve switching back and forth between the real
         # database and the test database are way too dangerous to run

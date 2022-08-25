@@ -5,7 +5,8 @@
 {% load origin %}
 {% origin %}
 {% load django_bootstrap5 %}
-<html lang="en">
+{% load django_vite %}
+<html lang="en" {% block html_attrs %}{% endblock %}>
     <head>
         {% analytical_head_top %}
         <meta charset="utf-8">
@@ -17,11 +18,15 @@
         {% comment Halloween %}
         <link href='https://fonts.googleapis.com/css?family=IM+Fell+English+SC|IM+Fell+DW+Pica:400,400italic|Nova+Mono|IM+Fell+English:400,400italic&subset=latin-ext,latin' rel='stylesheet'>
         {% endcomment %}
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300..700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}">
         <link rel="stylesheet" href="{% static 'ietf/css/select2.css' %}">
         <style>
             {% block morecss %}{% endblock %}
         </style>
+        {% vite_hmr_client %}
         {% block pagehead %}{% endblock %}
         {% include "base/icons.html" %}
         <script src="{% static 'ietf/js/ietf.js' %}"></script>
@@ -34,8 +39,8 @@
         <nav class="navbar navbar-expand-lg {% if server_mode and server_mode != "production" %} navbar-light bg-warning {% else %} navbar-dark bg-secondary {% endif %}  {% if navbar_mode %} {{ navbar_mode }} {% else %} fixed-top {% endif %}">
             <div class="container-fluid">
                 <a class="navbar-brand" href="/">
-                    <img alt="IETF Logo" class="me-1"
-                         src="{% static 'ietf/images/ietf-logo-nor.svg' %}">
+                    <img alt="IETF Logo" class="me-2"
+                        src="{% static 'ietf/images/ietf-logo-nor-white.svg' %}">
                     Datatracker
                     {% if server_mode and server_mode != "production" %}Dev Mode{% endif %}
                 </a>
@@ -56,7 +61,7 @@
                     <label aria-label="Document search">
                     <input class="form-control select2-field"
                            id="navbar-doc-search"
-                           data-ajax--url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='docalias' doc_type='draft' %}"
+                           data-select2-ajax-url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='docalias' doc_type='draft' %}"
                            type="text"
                            data-placeholder="Document search">
                    </label>
@@ -72,6 +77,7 @@
                 </button>
             </div>
         </nav>
+        {% block precontent %}{% endblock %}
         <div class="pt-3 container-fluid">
             <div class="row">
                 {% if request.COOKIES.left_menu == "on" and not hide_menu %}

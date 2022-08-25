@@ -3,7 +3,6 @@
 
 
 import copy
-import datetime
 #import logging
 import re
 import smtplib
@@ -27,6 +26,7 @@ from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.core.validators import validate_email
 from django.template.loader import render_to_string
 from django.template import Context,RequestContext
+from django.utils import timezone
 from django.utils.encoding import force_text, force_str, force_bytes
 
 import debug                            # pyflakes:ignore
@@ -183,6 +183,7 @@ def send_mail(request, to, frm, subject, template, context, *args, **kwargs):
     The body is a text/plain rendering of the template with the context.
     extra is a dict of extra headers to add.
     '''
+    context["settings"] = settings
     txt = render_to_string(template, context, request=request)
     return send_mail_text(request, to, frm, subject, txt, *args, **kwargs)
 
@@ -191,7 +192,10 @@ def encode_message(txt):
     return MIMEText(txt.encode('utf-8'), 'plain', 'UTF-8')
 
 def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=False, bcc=None, copy=True, save=True):
-    """Send plain text message."""
+    """Send plain text message.
+
+    request can be None unless it is needed by the template
+    """
     msg = encode_message(txt)
     return send_mail_mime(request, to, frm, subject, msg, cc, extra, toUser, bcc, copy=copy, save=save)
         
@@ -320,7 +324,7 @@ def show_that_mail_was_sent(request,leadline,msg,bcc):
         if request and request.user:
             from ietf.ietfauth.utils import has_role
             if has_role(request.user,['Area Director','Secretariat','IANA','RFC Editor','ISE','IAD','IRTF Chair','WG Chair','RG Chair','WG Secretary','RG Secretary']):
-                info =  "%s at %s %s\n" % (leadline,datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),settings.TIME_ZONE)
+                info =  "%s at %s %s\n" % (leadline,timezone.now().strftime("%Y-%m-%d %H:%M:%S"),settings.TIME_ZONE)
                 info += "Subject: %s\n" % force_text(msg.get('Subject','[no subject]'))
                 info += "To: %s\n" % msg.get('To','[no to]')
                 if msg.get('Cc'):
@@ -374,7 +378,7 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
         try:
             send_smtp(msg, bcc)
             if save:
-                message.sent = datetime.datetime.now()
+                message.sent = timezone.now()
                 message.save()
             if settings.SERVER_MODE != 'development':
                 show_that_mail_was_sent(request,'Email was sent',msg,bcc)
@@ -404,8 +408,12 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
 
     return msg
 
-def parse_preformatted(preformatted, extra={}, override={}):
+def parse_preformatted(preformatted, extra=None, override=None):
     """Parse preformatted string containing mail with From:, To:, ...,"""
+    if extra is None:
+        extra = {}
+    if override is None:
+        override = {}
     assert isinstance(preformatted, str)
     msg = message_from_bytes(preformatted.encode('utf-8'))
     msg.set_charset('UTF-8')
@@ -457,19 +465,26 @@ def parse_preformatted(preformatted, extra={}, override={}):
         assertion('len(list(set(v))) == len(v)')
     return (msg, extra, bcc)
 
-def send_mail_preformatted(request, preformatted, extra={}, override={}):
+def send_mail_preformatted(request, preformatted, extra=None, override=None):
     """Parse preformatted string containing mail with From:, To:, ...,
     and send it through the standard IETF mail interface (inserting
     extra headers as needed)."""
+
+    if extra is None:
+        extra = {}
+    if override is None:
+        override = {}
 
     (msg, extra, bcc) = parse_preformatted(preformatted, extra, override)
     txt = msg.get_payload()
     send_mail_text(request, msg['To'], msg["From"], msg["Subject"], txt, extra=extra, bcc=bcc)
     return msg
 
-def send_mail_message(request, message, extra={}):
+def send_mail_message(request, message, extra=None):
     """Send a Message object."""
     # note that this doesn't handle MIME messages at the moment
+    if extra is None:
+        extra = {}
     assertion('isinstance(message.to, str) and isinstance(message.cc, str) and isinstance(message.bcc, str)')
 
     e = extra.copy()
@@ -490,7 +505,7 @@ def send_mail_message(request, message, extra={}):
 
 #     msg = send_mail_text(request, message.to, message.frm, message.subject,
 #                           message.body, cc=message.cc, bcc=message.bcc, extra=e, save=False)
-    message.sent = datetime.datetime.now()
+    message.sent = timezone.now()
     message.save()
     return msg
 

@@ -12,6 +12,7 @@ from urllib.error import HTTPError
 from django.conf import settings
 from django.contrib import messages
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.encoding import smart_text
 
 import debug                            # pyflakes:ignore
@@ -511,7 +512,7 @@ def swap_meeting_schedule_timeslot_assignments(schedule, source_timeslots, targe
             if max_overlap > datetime.timedelta(minutes=5):
                 for a in lts_assignments:
                     a.timeslot = most_overlapping_rts
-                    a.modified = datetime.datetime.now()
+                    a.modified = timezone.now()
                     a.save()
                 swapped = True
 

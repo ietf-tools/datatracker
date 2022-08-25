@@ -12,6 +12,8 @@ from django.template.defaultfilters import pluralize
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.contrib.sites.models import Site
+from django.utils import timezone
+
 from simple_history.utils import update_change_reason
 
 import debug                            # pyflakes:ignore
@@ -119,7 +121,7 @@ def days_needed_to_fulfill_min_interval_for_reviewers(team):
 
     min_intervals = dict(ReviewerSettings.objects.filter(team=team).values_list("person_id", "min_interval"))
 
-    now = datetime.datetime.now()
+    now = timezone.now()
 
     res = {}
     for person_id, latest_assignment_time in latest_assignments.items():
@@ -140,9 +142,12 @@ ReviewAssignmentData = namedtuple("ReviewAssignmentData", [
     "request_to_assignment_days", "assignment_to_closure_days", "request_to_closure_days"])
 
 
-def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, time_to=None, ordering=[]):
+def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, time_to=None, ordering=None):
     """Yield data on each review assignment, sorted by (*ordering, assigned_on)
     for easy use with itertools.groupby. Valid entries in *ordering are "team" and "reviewer"."""
+
+    if ordering is None:
+        ordering = []
 
     filters = Q()
 
@@ -492,7 +497,7 @@ def suggested_review_requests_for_team(team):
 
     requests = {}
 
-    now = datetime.datetime.now()
+    now = timezone.now()
 
     reviewable_docs_qs = Document.objects.filter(type="draft").exclude(stream="ise")
 

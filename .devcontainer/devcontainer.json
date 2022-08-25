@@ -14,8 +14,7 @@
     "features": {
         "docker-in-docker": {
             "version": "latest"
-        },
-        "github-cli": "latest"
+        }
     },
     
     // Set *default* container specific settings.json values on container create.
@@ -76,7 +75,7 @@
 		"ms-python.python",
 		"ms-python.vscode-pylance",
 		"mtxr.sqltools-driver-mysql",
-		"mtxr.sqltools",
+        "mtxr.sqltools",
 		"mutantdino.resourcemonitor",
 		"oderwat.indent-rainbow",
 		"redhat.vscode-yaml",
@@ -88,13 +87,17 @@
     "forwardPorts": [8000, 3306],
     
     "portsAttributes": {
-        "8000": {
-            "label": "Datatracker",
-            "onAutoForward": "notify"
+        "3000": {
+            "label": "Vite",
+            "onAutoForward": "silent"
         },
         "3306": {
             "label": "MariaDB",
             "onAutoForward": "silent"
+        },
+        "8000": {
+            "label": "Datatracker",
+            "onAutoForward": "notify"
         }
     },
     

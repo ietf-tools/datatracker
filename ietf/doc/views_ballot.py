@@ -37,7 +37,6 @@ from ietf.mailtrigger.forms import CcSelectForm
 from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName, DocTypeName
 from ietf.person.models import Person
-from ietf.utils import log
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.utils.decorators import require_api_key
 from ietf.utils.response import permission_denied
@@ -94,17 +93,6 @@ def do_undefer_ballot(request, doc):
         doc.save_with_history(events)
 
     email_ballot_undeferred(request, doc, by.plain_name(), telechat_date)
-
-def position_to_ballot_choice(position):
-    log.unreachable('2018-04-25')
-    for v, label in BALLOT_CHOICES:
-        if v and getattr(position, v):
-            return v
-    return ""
-
-def position_label(position_value):
-    log.unreachable('2018-04-25')
-    return dict(BALLOT_CHOICES).get(position_value, "")
 
 # -------------------------------------------------
 class EditPositionForm(forms.Form):
@@ -679,9 +667,7 @@ def ballot_writeupnotes(request, name):
                     send_mail_preformatted(request, msg, override=override)
 
                     addrs = gather_address_lists('ballot_issued_iana',doc=doc).as_strings()
-                    override={ "To": "IANA <%s>"%settings.IANA_EVAL_EMAIL, "Bcc": None , "Reply-To": []}
-                    if addrs.cc:
-                        override['CC'] = addrs.cc
+                    override={ "To": addrs.to, "Bcc": None , "Reply-To": [], "CC": addrs.cc or None }
                     send_mail_preformatted(request, msg, extra=extra_automation_headers(doc), override=override)
 
                     e = DocEvent(doc=doc, rev=doc.rev, by=login)
@@ -1031,7 +1017,7 @@ def make_last_call(request, name):
                 announcement_event.save()
 
             send_mail_preformatted(request, announcement)
-            if doc.type.slug == 'draft':
+            if doc.type.slug in ("draft", "statchg"):
                 addrs = gather_address_lists('last_call_issued_iana',doc=doc).as_strings(compact=False)
                 send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
                                        override={ "To": addrs.to, "CC": addrs.cc, "Bcc": None, "Reply-To": []})

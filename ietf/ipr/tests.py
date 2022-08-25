@@ -9,6 +9,7 @@ from pyquery import PyQuery
 from urllib.parse import quote, urlparse
 
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -636,7 +637,7 @@ I would like to revoke this declaration.
                 message_string.format(
                     to=addrs.to,
                     cc=addrs.cc,
-                    date=datetime.datetime.now().ctime()
+                    date=timezone.now().ctime()
                 )
             )
             self.assertIsNone(result)
@@ -646,7 +647,7 @@ I would like to revoke this declaration.
 From: joe@test.com
 Date: {}
 Subject: test
-""".format(reply_to, datetime.datetime.now().ctime())
+""".format(reply_to, timezone.now().ctime())
         result = process_response_email(message_string)
 
         self.assertIsInstance(result, Message)
@@ -660,7 +661,7 @@ Subject: test
 From: joe@test.com
 Date: {}
 Subject: test
-""".format(reply_to, datetime.datetime.now().ctime())
+""".format(reply_to, timezone.now().ctime())
         message_bytes = message_string.encode('utf8') + b'\nInvalid stuff: \xfe\xff\n'
         result = process_response_email(message_bytes)
         self.assertIsInstance(result, Message)
@@ -676,7 +677,7 @@ Subject: test
             message_bytes = message_string.format(
                                 to=addrs.to,
                                 cc=addrs.cc,
-                                date=datetime.datetime.now().ctime(),
+                                date=timezone.now().ctime(),
             ).encode('utf8') + b'\nInvalid stuff: \xfe\xff\n'
             result = process_response_email(message_bytes)
             self.assertIsNone(result)

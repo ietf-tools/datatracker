@@ -10,6 +10,7 @@ import datetime
 from typing import Optional         # pyflakes:ignore
 
 from django.conf import settings
+from django.utils import timezone
 
 from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor,
     StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent, TelechatDocEvent,
@@ -38,7 +39,7 @@ class BaseDocumentFactory(factory.django.DjangoModelFactory):
     rev = '00'
     std_level_id = None                 # type: Optional[str]
     intended_std_level_id = None
-    time = datetime.datetime.now()
+    time = timezone.now()
     expires = factory.LazyAttribute(lambda o: o.time+datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE))
     pages = factory.fuzzy.FuzzyInteger(2,400)
 
@@ -290,6 +291,12 @@ class StatusChangeFactory(BaseDocumentFactory):
 
 class ConflictReviewFactory(BaseDocumentFactory):
     type_id='conflrev'
+
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',acronym='none')
+
+    @factory.lazy_attribute_sequence
+    def name(self, n):
+        return draft_name_generator(self.type_id,self.group,n).replace('conflrev-','conflict-review-')
     
     @factory.post_generation
     def review_of(obj, create, extracted, **kwargs):
@@ -298,7 +305,8 @@ class ConflictReviewFactory(BaseDocumentFactory):
         if extracted:
             obj.relateddocument_set.create(relationship_id='conflrev',target=extracted.docalias.first())
         else:
-            obj.relateddocument_set.create(relationship_id='conflrev',target=DocumentFactory(type_id='draft',group=Group.objects.get(type_id='individ')).docalias.first())
+            obj.relateddocument_set.create(relationship_id='conflrev',target=DocumentFactory(name=obj.name.replace('conflict-review-','draft-'),type_id='draft',group=Group.objects.get(type_id='individ')).docalias.first())
+
 
     @factory.post_generation
     def states(obj, create, extracted, **kwargs):
@@ -350,7 +358,8 @@ class TelechatDocEventFactory(DocEventFactory):
     class Meta:
         model = TelechatDocEvent
 
-    telechat_date = datetime.datetime.today()+datetime.timedelta(days=14)
+    # note: this is evaluated at import time and not updated - all events will have the same telechat_date
+    telechat_date = timezone.now()+datetime.timedelta(days=14)
     type = 'scheduled_for_telechat'
 
 class NewRevisionDocEventFactory(DocEventFactory):
@@ -403,7 +412,7 @@ class IRSGBallotDocEventFactory(BallotDocEventFactory):
     class Meta:
         model = IRSGBallotDocEvent
 
-    duedate = datetime.datetime.now() + datetime.timedelta(days=14)
+    duedate = timezone.now() + datetime.timedelta(days=14)
     ballot_type = factory.SubFactory(BallotTypeFactory, slug='irsg-approve')
 
 class BallotPositionDocEventFactory(DocEventFactory):

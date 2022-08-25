@@ -10,12 +10,14 @@ import bibtexparser
 import mock
 import json
 import copy
+import random
 
 from http.cookies import SimpleCookie
 from pathlib import Path
 from pyquery import PyQuery
 from urllib.parse import urlparse, parse_qs
 from tempfile import NamedTemporaryFile
+from collections import defaultdict
 
 from django.core.management import call_command
 from django.urls import reverse as urlreverse
@@ -23,6 +25,7 @@ from django.conf import settings
 from django.forms import Form
 from django.utils.html import escape
 from django.test import override_settings
+from django.utils import timezone
 from django.utils.text import slugify
 
 from tastypie.test import ResourceTestCaseMixin
@@ -36,10 +39,11 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
     BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
-    StatusChangeFactory)
+    StatusChangeFactory, BofreqFactory)
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
-from ietf.group.models import Group
+from ietf.doc.views_search import ad_dashboard_group, ad_dashboard_group_type, shorten_group_name # TODO: red flag that we're importing from views in tests. Move these to utils.
+from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
 from ietf.meeting.models import Meeting, SessionPresentation, SchedulingEvent
@@ -49,7 +53,7 @@ from ietf.meeting.factories import ( MeetingFactory, SessionFactory, SessionPres
 from ietf.name.models import SessionStatusName, BallotPositionName, DocTypeName
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory, EmailFactory
-from ietf.utils.mail import outbox
+from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text
@@ -228,6 +232,45 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Document Search")
 
+    def test_ad_workload(self):
+        Role.objects.filter(name_id='ad').delete()
+        ad = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active',person__name='Example Areadirector').person
+        doc_type_names = ['bofreq', 'charter', 'conflrev', 'draft', 'statchg']
+        expected = defaultdict(lambda :0)
+        for doc_type_name in doc_type_names:
+            if doc_type_name=='draft':
+                states = State.objects.filter(type='draft-iesg', used=True).values_list('slug', flat=True)
+            else:
+                states = State.objects.filter(type=doc_type_name, used=True).values_list('slug', flat=True)
+
+            for state in states:
+                target_num = random.randint(0,2)
+                for _ in range(target_num):
+                    if doc_type_name == 'draft':
+                        doc = IndividualDraftFactory(ad=ad,states=[('draft-iesg', state),('draft','rfc' if state=='pub' else 'active')])
+                    elif doc_type_name == 'charter':
+                        doc = CharterFactory(ad=ad, states=[(doc_type_name, state)])
+                    elif doc_type_name == 'bofreq':
+                        # Note that the view currently doesn't handle bofreqs
+                        doc = BofreqFactory(states=[(doc_type_name, state)], bofreqresponsibledocevent__responsible=[ad])
+                    elif doc_type_name == 'conflrev':
+                        doc = ConflictReviewFactory(ad=ad, states=State.objects.filter(type_id=doc_type_name, slug=state))
+                    elif doc_type_name == 'statchg':
+                        doc = StatusChangeFactory(ad=ad, states=State.objects.filter(type_id=doc_type_name, slug=state))
+                    else:
+                        # Currently unreachable
+                        doc = DocumentFactory(type_id=doc_type_name, ad=ad, states=[(doc_type_name, state)])
+
+                    if not slugify(ad_dashboard_group_type(doc)) in ('document', 'none'):
+                        expected[(slugify(ad_dashboard_group_type(doc)), slugify(ad.full_name_as_key()), slugify(shorten_group_name(ad_dashboard_group(doc))))] += 1
+        
+        url = urlreverse('ietf.doc.views_search.ad_workload')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        for group_type, ad, group in expected:
+            self.assertEqual(int(q(f'#{group_type}-{ad}-{group}').text()),expected[(group_type, ad, group)])
+
     def test_docs_for_ad(self):
         ad = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person
         draft = IndividualDraftFactory(ad=ad)
@@ -343,13 +386,13 @@ class SearchTests(TestCase):
         # Three drafts to show with various warnings
         drafts = WgDraftFactory.create_batch(3,states=[('draft','active'),('draft-iesg','ad-eval')])
         for index, draft in enumerate(drafts):
-            StateDocEventFactory(doc=draft, state=('draft-iesg','ad-eval'), time=datetime.datetime.now()-datetime.timedelta(days=[1,15,29][index]))
+            StateDocEventFactory(doc=draft, state=('draft-iesg','ad-eval'), time=timezone.now()-datetime.timedelta(days=[1,15,29][index]))
             draft.action_holders.set([PersonFactory()])
 
         # And one draft that should not show (with the default of 7 days to view)
         old = WgDraftFactory()
-        old.docevent_set.filter(newrevisiondocevent__isnull=False).update(time=datetime.datetime.now()-datetime.timedelta(days=8))
-        StateDocEventFactory(doc=old, time=datetime.datetime.now()-datetime.timedelta(days=8))
+        old.docevent_set.filter(newrevisiondocevent__isnull=False).update(time=timezone.now()-datetime.timedelta(days=8))
+        StateDocEventFactory(doc=old, time=timezone.now()-datetime.timedelta(days=8))
 
         url = urlreverse('ietf.doc.views_search.recent_drafts')
         r = self.client.get(url)
@@ -722,7 +765,7 @@ Man                    Expires September 22, 2015               [Page 3]
 
         replacement = WgDraftFactory(
             name="draft-ietf-replacement",
-            time=datetime.datetime.now(),
+            time=timezone.now(),
             title="Replacement Draft",
             stream_id=draft.stream_id, group_id=draft.group_id, abstract=draft.abstract,stream=draft.stream, rev=draft.rev,
             pages=draft.pages, intended_std_level_id=draft.intended_std_level_id,
@@ -1538,7 +1581,7 @@ class DocTestCase(TestCase):
             name = "session-72-mars-1",
             meeting = Meeting.objects.get(number='72'),
             group = Group.objects.get(acronym='mars'),
-            modified = datetime.datetime.now(),
+            modified = timezone.now(),
             add_to_schedule=False,
         )
         SchedulingEvent.objects.create(
@@ -1568,7 +1611,7 @@ class DocTestCase(TestCase):
             type="changed_ballot_position",
             pos_id="yes",
             comment="Looks fine to me",
-            comment_time=datetime.datetime.now(),
+            comment_time=timezone.now(),
             balloter=Person.objects.get(user__username="ad"),
             by=Person.objects.get(name="(System)"))
 
@@ -1602,7 +1645,7 @@ class DocTestCase(TestCase):
             type="changed_ballot_position",
             pos_id="noobj",
             comment="Still looks okay to me",
-            comment_time=datetime.datetime.now(),
+            comment_time=timezone.now(),
             balloter=Person.objects.get(user__username="ad"),
             by=Person.objects.get(name="(System)"))
 
@@ -1624,7 +1667,7 @@ class DocTestCase(TestCase):
                 type="changed_ballot_position",
                 pos_id="yes",
                 comment="Looks fine to me",
-                comment_time=datetime.datetime.now(),
+                comment_time=timezone.now(),
                 balloter=Person.objects.get(user__username="ad"),
                 by=Person.objects.get(name="(System)"))
 
@@ -1665,11 +1708,15 @@ class DocTestCase(TestCase):
         DocAlias.objects.create(name='rfc9999').docs.add(IndividualDraftFactory())
         doc = DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review')
         iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='statchg').pk)
+        empty_outbox()
         self.client.login(username='ad', password='ad+password')
         r = self.client.post(urlreverse('ietf.doc.views_status_change.change_state',kwargs=dict(name=doc.name)),dict(new_state=iesgeval_pk))
         self.assertEqual(r.status_code, 302)
         r = self.client.get(r._headers["location"][1])
         self.assertContains(r, ">IESG Evaluation<")
+        self.assertEqual(len(outbox), 2)
+        self.assertIn('iesg-secretary',outbox[0]['To'])
+        self.assertIn('drafts-eval',outbox[1]['To'])
 
         doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
@@ -1828,7 +1875,7 @@ class DocTestCase(TestCase):
         self.assertNotContains(r, "Request publication")
 
     def _parse_bibtex_response(self, response) -> dict:
-        parser = bibtexparser.bparser.BibTexParser()
+        parser = bibtexparser.bparser.BibTexParser(common_strings=True)
         parser.homogenise_fields = False  # do not modify field names (e.g., turns "url" into "link" by default)
         return bibtexparser.loads(response.content.decode(), parser=parser).get_entry_dict()
 
@@ -1850,7 +1897,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['number'],   num)
         self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     '2010')
-        self.assertEqual(entry['month'],    'oct')
+        self.assertEqual(entry['month'].lower()[0:3], 'oct')
         self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
         #
         self.assertNotIn('day', entry)
@@ -1872,7 +1919,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['number'],   num)
         self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     '1990')
-        self.assertEqual(entry['month'],    'apr')
+        self.assertEqual(entry['month'].lower()[0:3],    'apr')
         self.assertEqual(entry['day'],      '1')
         self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
 
@@ -1885,7 +1932,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['note'],     'Work in Progress')
         self.assertEqual(entry['number'],   docname)
         self.assertEqual(entry['year'],     str(draft.pub_date().year))
-        self.assertEqual(entry['month'],    draft.pub_date().strftime('%b').lower())
+        self.assertEqual(entry['month'].lower()[0:3],    draft.pub_date().strftime('%b').lower())
         self.assertEqual(entry['day'],      str(draft.pub_date().day))
         self.assertEqual(entry['url'],      settings.IDTRACKER_BASE_URL + urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=draft.rev)))
         #
@@ -1997,7 +2044,7 @@ class GenerateDraftAliasesTests(TestCase):
        super().tearDown()
 
    def testManagementCommand(self):
-       a_month_ago = datetime.datetime.now() - datetime.timedelta(30)
+       a_month_ago = timezone.now() - datetime.timedelta(30)
        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
        shepherd = PersonFactory()
        author1 = PersonFactory()
@@ -2464,12 +2511,12 @@ class FieldTests(TestCase):
             decoded = json.loads(json_data)
         except json.JSONDecodeError as e:
             self.fail('data-pre contained invalid JSON data: %s' % str(e))
-        decoded_ids = list(decoded.keys())
-        self.assertCountEqual(decoded_ids, [str(doc.id) for doc in docs])
+        decoded_ids = [item['id'] for item in decoded]
+        self.assertEqual(decoded_ids, [doc.id for doc in docs])
         for doc in docs:
             self.assertEqual(
                 dict(id=doc.pk, selected=True, url=doc.get_absolute_url(), text=escape(uppercase_std_abbreviated_name(doc.name))),
-                decoded[str(doc.pk)],
+                decoded[decoded_ids.index(doc.pk)],
             )
 
 class MaterialsTests(TestCase):

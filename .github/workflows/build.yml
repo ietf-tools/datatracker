@@ -7,6 +7,11 @@ on:
 
   workflow_dispatch:
     inputs:
+      summary:
+        description: 'Release Summary'
+        required: false
+        type: string
+        default: ''
       publish:
         description: 'Create Production Release'
         required: true
@@ -15,15 +20,15 @@ on:
         description: 'Skip Tests'
         required: true
         type: boolean
+      updatecoverage:
+        description: 'Update Baseline Coverage'
+        default: true
+        required: true
+        type: boolean
       dryrun:
         description: 'Dry Run'
         required: true
         type: boolean
-      summary:
-        description: 'Summary'
-        required: false
-        type: string
-        default: ''
 
 jobs:
   # -----------------------------------------------------------------
@@ -94,8 +99,8 @@ jobs:
   # -----------------------------------------------------------------
   # TESTS
   # -----------------------------------------------------------------
-  tests:
-    name: Run Tests
+  tests-python:
+    name: Run Tests (Python)
     if: ${{ github.event.inputs.skiptests == 'false' }}
     needs: [prepare]
     runs-on: ubuntu-latest
@@ -128,11 +133,10 @@ jobs:
       run: |
         echo "Running checks..."
         ./ietf/manage.py check
+        ./ietf/manage.py migrate
         echo "Validating migrations..."
-        MSG=$(ietf/manage.py makemigrations 2>&1)
-        if ! ( echo ${MSG} | grep -q "^No changes detected$") ; then
+        if ! ( ietf/manage.py makemigrations --dry-run --check --verbosity 3 ) ; then
           echo "Model changes without migrations found."
-          echo ${MSG}
           exit 1
         fi
         echo "Running tests..."
@@ -155,6 +159,57 @@ jobs:
       with:
         name: coverage
         path: coverage.json
+
+  tests-cypress:
+    name: Run Tests (Cypress)
+    if: ${{ github.event.inputs.skiptests == 'false' }}
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    
+    services:
+      db:
+        image: ghcr.io/ietf-tools/datatracker-db:latest
+        volumes:
+            - mariadb-data:/var/lib/mysql
+        env:
+            MYSQL_ROOT_PASSWORD: ietf
+            MYSQL_DATABASE: ietf_utf8
+            MYSQL_USER: django
+            MYSQL_PASSWORD: RkTkDPFnKpko
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Prepare for tests
+      run: |
+        chmod +x ./dev/tests/prepare.sh
+        sh ./dev/tests/prepare.sh
+        
+    - name: Ensure DB is ready
+      run: |
+        /usr/local/bin/wait-for db:3306 -- echo "DB ready"
+        
+    - name: Start Datatracker
+      run: |
+        echo "Running checks..."
+        ./ietf/manage.py check
+        echo "Starting datatracker..."
+        ./ietf/manage.py runserver 0.0.0.0:8000 --settings=settings_local &
+        echo "Waiting for datatracker to be ready..."
+        /usr/local/bin/wait-for localhost:8000 -- echo "Datatracker ready"
+
+    - name: Run all tests
+      run: |
+        echo "Running tests..."
+        yarn cypress
+        
+    - name: Upload Video Recordings
+      uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
+      with:
+        name: videos
+        path: cypress/videos/
         
   # -----------------------------------------------------------------
   # RELEASE
@@ -162,7 +217,7 @@ jobs:
   release:
     name: Make Release
     if: ${{ always() }}
-    needs: [tests, prepare]
+    needs: [tests-python, tests-cypress, prepare]
     runs-on: ubuntu-latest
     env:
       SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
@@ -256,6 +311,19 @@ jobs:
         name: ${{ env.PKG_VERSION }}
         body: ${{ steps.covprocess.outputs.changelog }}
         artifacts: "/home/runner/work/release/release.tar.gz,coverage.json,historical-coverage.json"
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Update Baseline Coverage
+      uses: ncipollo/release-action@v1
+      if: ${{ github.event.inputs.updatecoverage == 'true' && github.event.inputs.dryrun == 'false' }}
+      with:
+        allowUpdates: true
+        tag: baseline
+        omitBodyDuringUpdate: true
+        omitNameDuringUpdate: true
+        omitPrereleaseDuringUpdate: true
+        replacesArtifacts: true
+        artifacts: "coverage.json"
         token: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Upload Build Artifacts

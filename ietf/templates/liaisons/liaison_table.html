@@ -21,7 +21,8 @@
                         {{ liaison.deadline|default:"-"|date:"Y-m-d" }}
                         {% if liaison.deadline and not liaison.action_taken %}
                             <br>
-                            <span class="badge rounded-pill
+                            <span title="{{ liaison.is_outgoing|yesno:'Outgoing,Incoming' }} liaison"
+                                  class="badge rounded-pill
                                          {% if liaison.is_outgoing %}
                                              bg-warning
                                          {% else %}

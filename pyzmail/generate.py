@@ -110,7 +110,7 @@ def format_addresses(addresses, header_name=None, charset=None):
     return header
 
 
-def build_mail(text, html=None, attachments=[], embeddeds=[]):
+def build_mail(text, html=None, attachments=None, embeddeds=None):
     """
     Generate the core of the email message regarding the parameters.
     The structure of the MIME email may vary, but the general one is as follow::
@@ -184,6 +184,11 @@ def build_mail(text, html=None, attachments=[], embeddeds=[]):
     --===limit1==--
     """
 
+    if attachments is None:
+        attachments = []
+    if embeddeds is None:
+        embeddeds = []
+
     main=text_part=html_part=None
     if text:
         content, charset=text
@@ -234,7 +239,7 @@ def build_mail(text, html=None, attachments=[], embeddeds=[]):
         
     return main
 
-def complete_mail(message, sender, recipients, subject, default_charset, cc=[], bcc=[], message_id_string=None, date=None, headers=[]):
+def complete_mail(message, sender, recipients, subject, default_charset, cc=None, bcc=None, message_id_string=None, date=None, headers=None):
     """
     Fill in the From, To, Cc, Subject, Date and Message-Id I{headers} of 
     one existing message regarding the parameters.
@@ -312,6 +317,13 @@ def complete_mail(message, sender, recipients, subject, default_charset, cc=[], 
         else:
             return address
 
+    if cc is None:
+        cc=[]
+    if bcc is None:
+        bcc=[]
+    if headers is None:
+        headers=[]
+
     mail_from=getaddr(sender[1])
     rcpt_to=list(map(getaddr, recipients))
     rcpt_to.extend(list(map(getaddr, cc)))
@@ -341,7 +353,7 @@ def complete_mail(message, sender, recipients, subject, default_charset, cc=[], 
     
     return payload, mail_from, rcpt_to, msg_id
 
-def compose_mail(sender, recipients, subject, default_charset, text, html=None, attachments=[], embeddeds=[], cc=[], bcc=[], message_id_string=None, date=None, headers=[]):
+def compose_mail(sender, recipients, subject, default_charset, text, html=None, attachments=None, embeddeds=None, cc=None, bcc=None, message_id_string=None, date=None, headers=None):
     """
     Compose an email regarding the arguments. Call L{build_mail()} and 
     L{complete_mail()} at once.
@@ -356,6 +368,17 @@ def compose_mail(sender, recipients, subject, default_charset, text, html=None, 
 
     >>> payload, mail_from, rcpt_to, msg_id=compose_mail((u'Me', 'me@foo.com'), [(u'Him', 'him@bar.com')], u'the subject', 'iso-8859-1', ('Hello world', 'us-ascii'), attachments=[('attached', 'text', 'plain', 'text.txt', 'us-ascii')])
     """
+    if attachments is None:
+        attachments=[]
+    if embeddeds is None:
+        embeddeds=[]
+    if cc is None:
+        cc=[]
+    if bcc is None:
+        bcc = []
+    if headers is None:
+        headers=[]
+
     message=build_mail(text, html, attachments, embeddeds)
     return complete_mail(message, sender, recipients, subject, default_charset, cc, bcc, message_id_string, date, headers)
         

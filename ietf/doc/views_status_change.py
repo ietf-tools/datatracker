@@ -125,16 +125,16 @@ def change_state(request, name, option=None):
                                    ))
 
 def send_status_change_eval_email(request,doc):
-    msg = render_to_string("doc/eval_email.txt",
-                            dict(doc=doc,
-                                 doc_url = settings.IDTRACKER_BASE_URL+doc.get_absolute_url(),
-                                 )
-                           )
-    addrs = gather_address_lists('iesg_ballot_issued',doc=doc)
-    override = {'To':addrs.to }
-    if addrs.cc:
-        override['Cc'] = addrs.cc
-    send_mail_preformatted(request,msg,override=override)
+    for target in ('iesg_ballot_issued', 'ballot_issued_iana'):
+        addrs = gather_address_lists(target,doc=doc).as_strings()
+        msg = render_to_string("doc/eval_email.txt",
+                                dict(doc=doc,
+                                    doc_url = settings.IDTRACKER_BASE_URL+doc.get_absolute_url(),
+                                    to = addrs.to,
+                                    cc = addrs.cc
+                                    )
+                            )
+        send_mail_preformatted(request,msg)
 
 class UploadForm(forms.Form):
     content = forms.CharField(widget=forms.Textarea, label="Status change text", help_text="Edit the status change text.", required=False, strip=False)
@@ -465,7 +465,7 @@ class StartStatusChangeForm(forms.Form):
     document_name = forms.CharField(max_length=255, label="Document name", help_text="A descriptive name such as status-change-md2-to-historic is better than status-change-rfc1319.", required=True)
     title = forms.CharField(max_length=255, label="Title", required=True)
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active",role__group__type='area').order_by('name'), 
-                                label="Shepherding AD", empty_label="(None)", required=True)
+                                label="Shepherding AD", empty_label="(None)", required=False)
     create_in_state = forms.ModelChoiceField(State.objects.filter(type="statchg", slug__in=("needshep", "adrev")), empty_label=None, required=False)
     notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas.", required=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))

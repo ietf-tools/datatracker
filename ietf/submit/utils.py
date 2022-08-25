@@ -1,5 +1,5 @@
-# Copyright The IETF Trust 2011-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2011-2020, All Rights Reserved
 
 
 import datetime
@@ -8,8 +8,11 @@ import os
 import pathlib
 import re
 import time
+import traceback
+import xml2rfc
 
-from typing import Callable, Optional # pyflakes:ignore
+from typing import Optional  # pyflakes:ignore
+from unidecode import unidecode
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -19,6 +22,7 @@ from django.http import HttpRequest     # pyflakes:ignore
 from django.utils.module_loading import import_string
 from django.template.loader import render_to_string
 from django.contrib.auth.models import AnonymousUser
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -43,7 +47,8 @@ from ietf.utils import log
 from ietf.utils.accesstoken import generate_random_key
 from ietf.utils.draft import PlaintextDraft
 from ietf.utils.mail import is_valid_email
-from ietf.utils.text import parse_unicode
+from ietf.utils.text import parse_unicode, normalize_text
+from ietf.utils.xmldraft import XMLDraft
 from ietf.person.name import unidecode_name
 
 
@@ -199,7 +204,7 @@ def check_submission_revision_consistency(submission):
     return None
 
 
-def create_submission_event(request, submission, desc):
+def create_submission_event(request: Optional[HttpRequest], submission, desc):
     by = None
     if request and request.user.is_authenticated:
         try:
@@ -209,8 +214,8 @@ def create_submission_event(request, submission, desc):
 
     SubmissionEvent.objects.create(submission=submission, by=by, desc=desc)
 
-def docevent_from_submission(request, submission, desc, who=None):
-    # type: (HttpRequest, Submission, str, Optional[Person]) -> Optional[DocEvent]
+def docevent_from_submission(submission, desc, who=None):
+    # type: (Submission, str, Optional[Person]) -> Optional[DocEvent]
     log.assertion('who is None or isinstance(who, Person)')
 
     try:
@@ -288,6 +293,7 @@ def find_submission_filenames(draft):
 
 @transaction.atomic
 def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
+    # This is very chatty into the logs, but these could still be useful for quick diagnostics
     log.log(f"{submission.name}: start")
     system = Person.objects.get(name="(System)")
     submitter_parsed = submission.submitter_parsed()
@@ -333,7 +339,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
         if stream_slug:
             draft.stream = StreamName.objects.get(slug=stream_slug)
 
-    draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
+    draft.expires = timezone.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
     log.log(f"{submission.name}: got draft details")
 
     events = []
@@ -589,15 +595,10 @@ def ensure_person_email_info_exists(name, email, docname):
     else:
         person.name_from_draft = name
 
-    # make sure we have an email address
-    if addr and (addr.startswith('unknown-email-') or is_valid_email(addr)):
-        active = True
-        addr = addr.lower()
-    else:
-        log.unreachable('2019-10-02')
-        # we're in trouble, use a fake one
-        active = False
-        addr = "unknown-email-%s" % person.plain_ascii().replace(" ", "-")
+
+    active = True
+    addr = addr.lower()
+
 
     try:
         email = person.email_set.get(address=addr)
@@ -616,7 +617,7 @@ def ensure_person_email_info_exists(name, email, docname):
             email.active = active
         email.person = person
         if email.time is None:
-            email.time = datetime.datetime.now()
+            email.time = timezone.now()
         email.origin = "author: %s" % docname
         email.save()
 
@@ -642,7 +643,6 @@ def update_authors(draft, submission):
 def cancel_submission(submission):
     submission.state = DraftSubmissionStateName.objects.get(slug="cancel")
     submission.save()
-
     remove_submission_files(submission)
 
 def rename_submission_files(submission, prev_rev, new_rev):
@@ -664,11 +664,22 @@ def move_files_to_repository(submission):
             elif ext in submission.file_types.split(','):
                 raise ValueError("Intended to move '%s' to '%s', but found source and destination missing.")
 
+
+def remove_staging_files(name, rev, exts=None):
+    """Remove staging files corresponding to a submission
+    
+    exts is a list of extensions to be removed. If None, defaults to settings.IDSUBMIT_FILE_TYPES.
+    """
+    if exts is None:
+        exts = [f'.{ext}' for ext in settings.IDSUBMIT_FILE_TYPES]
+    basename = pathlib.Path(settings.IDSUBMIT_STAGING_PATH) / f'{name}-{rev}' 
+    for ext in exts:
+        basename.with_suffix(ext).unlink(missing_ok=True)
+
+
 def remove_submission_files(submission):
-    for ext in submission.file_types.split(','):
-        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.name, submission.rev, ext))
-        if os.path.exists(source):
-            os.unlink(source)
+    remove_staging_files(submission.name, submission.rev, submission.file_types.split(','))
+
 
 def approvable_submissions_for_user(user):
     if not user.is_authenticated:
@@ -730,6 +741,12 @@ def expire_submission(submission, by):
     submission.save()
 
     SubmissionEvent.objects.create(submission=submission, by=by, desc="Cancelled expired submission")
+
+
+def clear_existing_files(form):
+    """Make sure there are no leftover files from a previous submission"""
+    remove_staging_files(form.filename, form.revision)
+
 
 def save_files(form):
     file_name = {}
@@ -814,6 +831,10 @@ def get_draft_meta(form, saved_files):
 
 
 def get_submission(form):
+    # See if there is a Submission in state waiting-for-draft
+    # for this revision.
+    # If so - we're going to update it otherwise we create a new object
+
     submissions = Submission.objects.filter(name=form.filename,
                                             rev=form.revision,
                                             state_id = "waiting-for-draft").distinct()
@@ -827,32 +848,28 @@ def get_submission(form):
 
 
 def fill_in_submission(form, submission, authors, abstract, file_size):
-    # See if there is a Submission in state waiting-for-draft
-    # for this revision.
-    # If so - we're going to update it otherwise we create a new object 
-
     submission.state = DraftSubmissionStateName.objects.get(slug="uploaded")
     submission.remote_ip = form.remote_ip
     submission.title = form.title
     submission.abstract = abstract
-    submission.pages = form.parsed_draft.get_pagecount()
-    submission.words = form.parsed_draft.get_wordcount()
     submission.authors = authors
-    submission.first_two_pages = ''.join(form.parsed_draft.pages[:2])
     submission.file_size = file_size
     submission.file_types = ','.join(form.file_types)
     submission.xml_version = form.xml_version
     submission.submission_date = datetime.date.today()
-    submission.document_date = form.parsed_draft.get_creation_date()
     submission.replaces = ""
-
+    if form.parsed_draft is not None:
+        submission.pages = form.parsed_draft.get_pagecount()
+        submission.words = form.parsed_draft.get_wordcount()
+        submission.first_two_pages = ''.join(form.parsed_draft.pages[:2])
+        submission.document_date = form.parsed_draft.get_creation_date()
     submission.save()
 
-    submission.formal_languages.set(FormalLanguageName.objects.filter(slug__in=form.parsed_draft.get_formal_languages()))
+    if form.parsed_draft is not None:
+        submission.formal_languages.set(FormalLanguageName.objects.filter(slug__in=form.parsed_draft.get_formal_languages()))
     set_extresources_from_existing_draft(submission)
 
-def apply_checkers(submission, file_name):
-    # run submission checkers
+def apply_checker(checker, submission, file_name):
     def apply_check(submission, checker, method, fn):
         func = getattr(checker, method)
         passed, message, errors, warnings, info = func(fn)
@@ -860,18 +877,21 @@ def apply_checkers(submission, file_name):
                                 message=message, errors=errors, warnings=warnings, items=info,
                                 symbol=checker.symbol)
         check.save()
+    # ordered list of methods to try
+    for method in ("check_fragment_xml", "check_file_xml", "check_fragment_txt", "check_file_txt", ):
+        ext = method[-3:]
+        if hasattr(checker, method) and ext in file_name:
+            apply_check(submission, checker, method, file_name[ext])
+            break
 
+def apply_checkers(submission, file_name):
+    # run submission checkers
     mark = time.time()
     for checker_path in settings.IDSUBMIT_CHECKER_CLASSES:
         lap = time.time()
         checker_class = import_string(checker_path)
         checker = checker_class()
-        # ordered list of methods to try
-        for method in ("check_fragment_xml", "check_file_xml", "check_fragment_txt", "check_file_txt", ):
-            ext = method[-3:]
-            if hasattr(checker, method) and ext in file_name:
-                apply_check(submission, checker, method, file_name[ext])
-                break
+        apply_checker(checker, submission, file_name)
         tau = time.time() - lap
         log.log(f"ran {checker.__class__.__name__} ({tau:.3}s) for {file_name}")
     tau = time.time() - mark
@@ -892,7 +912,76 @@ def accept_submission_requires_group_approval(submission):
         and not Preapproval.objects.filter(name=submission.name).exists()
     )
 
-def accept_submission(request, submission, autopost=False):
+
+class SubmissionError(Exception):
+    """Exception for errors during submission processing"""
+    pass
+
+
+def staging_path(filename, revision, ext):
+    if len(ext) > 0 and ext[0] != '.':
+        ext = f'.{ext}'
+    return pathlib.Path(settings.IDSUBMIT_STAGING_PATH) / f'{filename}-{revision}{ext}'
+
+
+def render_missing_formats(submission):
+    """Generate txt and html formats from xml draft
+
+    If a txt file already exists, leaves it in place. Overwrites an existing html file
+    if there is one.
+    """
+    xml2rfc.log.write_out = io.StringIO()   # open(os.devnull, "w")
+    xml2rfc.log.write_err = io.StringIO()   # open(os.devnull, "w")
+    xml_path = staging_path(submission.name, submission.rev, '.xml')
+    parser = xml2rfc.XmlRfcParser(str(xml_path), quiet=True)
+    # --- Parse the xml ---
+    xmltree = parser.parse(remove_comments=False)
+    # If we have v2, run it through v2v3. Keep track of the submitted version, though.
+    xmlroot = xmltree.getroot()
+    xml_version = xmlroot.get('version', '2')
+    if xml_version == '2':
+        v2v3 = xml2rfc.V2v3XmlWriter(xmltree)
+        xmltree.tree = v2v3.convert2to3()
+
+    # --- Prep the xml ---
+    prep = xml2rfc.PrepToolWriter(xmltree, quiet=True, liberal=True, keep_pis=[xml2rfc.V3_PI_TARGET])
+    prep.options.accept_prepped = True
+    xmltree.tree = prep.prep()
+    if xmltree.tree == None:
+        raise SubmissionError(f'Error from xml2rfc (prep): {prep.errors}')
+
+    # --- Convert to txt ---
+    txt_path = staging_path(submission.name, submission.rev, '.txt')
+    if not txt_path.exists():
+        writer = xml2rfc.TextWriter(xmltree, quiet=True)
+        writer.options.accept_prepped = True
+        writer.write(txt_path)
+        log.log(
+            'In %s: xml2rfc %s generated %s from %s (version %s)' % (
+                str(xml_path.parent),
+                xml2rfc.__version__,
+                txt_path.name,
+                xml_path.name,
+                xml_version,
+            )
+        )
+
+    # --- Convert to html ---
+    html_path = staging_path(submission.name, submission.rev, '.html')
+    writer = xml2rfc.HtmlWriter(xmltree, quiet=True)
+    writer.write(str(html_path))
+    log.log(
+        'In %s: xml2rfc %s generated %s from %s (version %s)' % (
+            str(xml_path.parent),
+            xml2rfc.__version__,
+            html_path.name,
+            xml_path.name,
+            xml_version,
+        )
+    )
+
+
+def accept_submission(submission: Submission, request: Optional[HttpRequest] = None, autopost=False):
     """Accept a submission and post or put in correct state to await approvals
 
     If autopost is True, will post draft if submitter is authorized to do so.
@@ -902,18 +991,15 @@ def accept_submission(request, submission, autopost=False):
     curr_authors = [ get_person_from_name_email(author["name"], author.get("email"))
                      for author in submission.authors ]
     # Is the user authenticated as an author who can approve this submission?
-    user_is_author = (
-        request.user.is_authenticated
-        and request.user.person in (prev_authors if submission.rev != '00' else curr_authors) # type: ignore
-    )
+    requester = None
+    requester_is_author = False
+    if request is not None and request.user.is_authenticated:
+        requester = request.user.person
+        requester_is_author = requester in (prev_authors if submission.rev != '00' else curr_authors)
 
     # If "who" is None, docevent_from_submission will pull it out of submission
-    docevent_from_submission(
-        request,
-        submission,
-        desc="Uploaded new revision",
-        who=request.user.person if user_is_author else None,
-    )
+    docevent_from_submission(submission, desc="Uploaded new revision",
+                             who=requester if requester_is_author else None)
 
     replaces = DocAlias.objects.filter(name__in=submission.replaces_names)
     pretty_replaces = '(none)' if not replaces else (
@@ -936,6 +1022,7 @@ def accept_submission(request, submission, autopost=False):
 
     # Partial message for submission event
     sub_event_desc = 'Set submitter to \"%s\", replaces to %s' % (parse_unicode(submission.submitter), pretty_replaces)
+    create_event = True  # Indicates whether still need to create an event
     docevent_desc = None
     address_list = []
     if requires_ad_approval or requires_prev_ad_approval:
@@ -972,11 +1059,11 @@ def accept_submission(request, submission, autopost=False):
         sent_to = ', '.join(address_list)
         sub_event_desc += ' and sent approval email to group chairs: %s' % sent_to
         docevent_desc = "Request for posting approval emailed to group chairs: %s" % sent_to
-    elif user_is_author and autopost:
+    elif requester_is_author and autopost:
         # go directly to posting submission
-        sub_event_desc = "New version accepted (logged-in submitter: %s)" % request.user.person # type: ignore
+        sub_event_desc = f'New version accepted (logged-in submitter: {requester})'
         post_submission(request, submission, sub_event_desc, sub_event_desc)
-        sub_event_desc = None  # do not create submission event below, post_submission() handles it
+        create_event = False  # do not create submission event below, post_submission() handled it
     else:
         submission.auth_key = generate_random_key()
         if requires_prev_authors_approval:
@@ -1005,10 +1092,10 @@ def accept_submission(request, submission, autopost=False):
             sub_event_desc += " and sent confirmation email to submitter and authors: %s" % sent_to
             docevent_desc = "Request for posting confirmation emailed to submitter and authors: %s" % sent_to
 
-    if sub_event_desc:
+    if create_event:
         create_submission_event(request, submission, sub_event_desc)
     if docevent_desc:
-        docevent_from_submission(request, submission, docevent_desc, who=Person.objects.get(name="(System)"))
+        docevent_from_submission(submission, docevent_desc, who=Person.objects.get(name="(System)"))
 
     return address_list
 
@@ -1039,3 +1126,131 @@ def remote_ip(request):
     else:
         remote_ip = request.META.get('REMOTE_ADDR', None)
     return remote_ip
+
+
+def _normalize_title(title):
+    if isinstance(title, str):
+        title = unidecode(title)  # replace unicode with best-match ascii
+    return normalize_text(title)  # normalize whitespace
+
+
+def process_submission_xml(submission):
+    """Validate and extract info from an uploaded submission"""
+    xml_path = staging_path(submission.name, submission.rev, '.xml')
+    xml_draft = XMLDraft(xml_path)
+
+    if submission.name != xml_draft.filename:
+        raise SubmissionError('XML draft filename disagrees with submission filename')
+    if submission.rev != xml_draft.revision:
+        raise SubmissionError('XML draft revision disagrees with submission revision')
+
+    authors = xml_draft.get_author_list()
+    for a in authors:
+        if not a['email']:
+            raise SubmissionError(f'Missing email address for author {a}')
+
+    author_emails = [a['email'].lower() for a in authors]
+    submitter = get_person_from_name_email(**submission.submitter_parsed())  # the ** expands dict into kwargs
+    if not any(
+            email.address.lower() in author_emails
+            for email in submitter.email_set.filter(active=True)
+    ):
+        raise SubmissionError(f'Submitter ({submitter}) is not one of the document authors')
+
+    # Fill in the submission data
+    submission.title = _normalize_title(xml_draft.get_title())
+    if not submission.title:
+        raise SubmissionError('Could not extract a valid title from the XML')
+    submission.authors = [
+        {key: auth[key] for key in ('name', 'email', 'affiliation', 'country')}
+        for auth in authors
+    ]
+    submission.xml_version = xml_draft.xml_version
+    submission.save()
+
+
+def process_submission_text(submission):
+    """Validate/extract data from the text version of a submitted draft
+
+    This assumes the draft was uploaded as XML and extracts data that is not
+    currently available directly from the XML. Additional processing, e.g. from
+    get_draft_meta(), would need to be added in order to support direct text
+    draft uploads.
+    """
+    text_path = staging_path(submission.name, submission.rev, '.txt')
+    text_draft = PlaintextDraft.from_file(text_path)
+
+    if submission.name != text_draft.filename:
+        raise SubmissionError(
+            f'Text draft filename ({text_draft.filename}) disagrees with submission filename ({submission.name})'
+        )
+    if submission.rev != text_draft.revision:
+        raise SubmissionError(
+            f'Text draft revision ({text_draft.revision}) disagrees with submission revision ({submission.rev})')
+    text_title = _normalize_title(text_draft.get_title())
+    if not text_title:
+        raise SubmissionError('Could not extract a valid title from the text')
+    if text_title != submission.title:
+        raise SubmissionError(
+            f'Text draft title ({text_title}) disagrees with submission title ({submission.title})')
+
+    submission.abstract = text_draft.get_abstract()
+    submission.document_date = text_draft.get_creation_date()
+    submission.pages = text_draft.get_pagecount()
+    submission.words = text_draft.get_wordcount()
+    submission.first_two_pages = ''.join(text_draft.pages[:2])
+    submission.file_size = os.stat(text_path).st_size
+    submission.save()
+
+    submission.formal_languages.set(
+        FormalLanguageName.objects.filter(
+            slug__in=text_draft.get_formal_languages()
+        )
+    )
+
+
+def process_uploaded_submission(submission):
+    def abort_submission(error):
+        cancel_submission(submission)
+        create_submission_event(None, submission, f'Submission rejected: {error}')
+
+    if submission.state_id != 'validating':
+        log.log(f'Submission {submission.pk} is not in "validating" state, skipping.')
+        return  # do nothing
+
+    if submission.file_types != '.xml':
+        abort_submission('Only XML draft submissions can be processed.')
+
+    try:
+        process_submission_xml(submission)
+        if check_submission_revision_consistency(submission):
+            raise SubmissionError(
+                'Document revision inconsistency error in the database. '
+                'Please contact the secretariat for assistance.'
+            )
+        render_missing_formats(submission)
+        process_submission_text(submission)
+        set_extresources_from_existing_draft(submission)
+        apply_checkers(
+            submission,
+            {
+                ext: staging_path(submission.name, submission.rev, ext)
+                for ext in ['xml', 'txt', 'html']
+            }
+        )
+        errors = [c.message for c in submission.checks.filter(passed__isnull=False) if not c.passed]
+        if len(errors) > 0:
+            raise SubmissionError('Checks failed: ' + ' / '.join(errors))
+    except SubmissionError as err:
+        abort_submission(err)
+    except Exception:
+        log.log(f'Unexpected exception while processing submission {submission.pk}.')
+        log.log(traceback.format_exc())
+        abort_submission('A system error occurred while processing the submission.')
+
+    # if we get here and are still "validating", accept the draft
+    if submission.state_id == 'validating':
+        submission.state_id = 'uploaded'
+        submission.save()
+        create_submission_event(None, submission, desc="Completed submission validation checks")
+        accept_submission(submission)

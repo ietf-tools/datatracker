@@ -4,11 +4,18 @@ services:
     app:
         ports:
             - 'CUSTOM_PORT:8000'
+            - '3000:3000'
         volumes:
             - .:/workspace
             - /workspace/.parcel-cache
             - /workspace/__pycache__
+            - /workspace/.vite
+            - /workspace/.yarn/unplugged
             - app-assets:/assets
     db:
         ports:
             - '3306'
+    celery:
+        volumes:
+            - .:/workspace
+            - app-assets:/assets

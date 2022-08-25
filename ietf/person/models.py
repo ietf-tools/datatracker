@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-import datetime
 import email.utils
 import email.header
 import jsonfield
@@ -18,6 +17,7 @@ from django.core.validators import validate_email
 from django.db import models
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from django.utils.encoding import smart_bytes
 from django.utils.text import slugify
 
@@ -38,7 +38,7 @@ from ietf.utils.models import ForeignKey, OneToOneField
 class Person(models.Model):
     history = HistoricalRecords()
     user = OneToOneField(User, blank=True, null=True, on_delete=models.SET_NULL)
-    time = models.DateTimeField(default=datetime.datetime.now)      # When this Person record entered the system
+    time = models.DateTimeField(default=timezone.now)      # When this Person record entered the system
     # The normal unicode form of the name.  This must be
     # set to the same value as the ascii-form if equal.
     name = models.CharField("Full Name (Unicode)", max_length=255, db_index=True, help_text="Preferred long form of name.")
@@ -377,7 +377,7 @@ PERSON_API_KEY_ENDPOINTS = sorted(list(set([ (v, n) for (v, n, r) in PERSON_API_
 class PersonalApiKey(models.Model):
     person   = ForeignKey(Person, related_name='apikeys')
     endpoint = models.CharField(max_length=128, null=False, blank=False, choices=PERSON_API_KEY_ENDPOINTS)
-    created  = models.DateTimeField(default=datetime.datetime.now, null=False)
+    created  = models.DateTimeField(default=timezone.now, null=False)
     valid    = models.BooleanField(default=True)
     salt     = models.BinaryField(default=salt, max_length=12, null=False, blank=False)
     count    = models.IntegerField(default=0, null=False, blank=False)
@@ -427,7 +427,7 @@ PERSON_EVENT_CHOICES = [
 
 class PersonEvent(models.Model):
     person = ForeignKey(Person)
-    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
+    time = models.DateTimeField(default=timezone.now, help_text="When the event happened")
     type = models.CharField(max_length=50, choices=PERSON_EVENT_CHOICES)
     desc = models.TextField()
 

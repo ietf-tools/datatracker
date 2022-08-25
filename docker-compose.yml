@@ -16,6 +16,7 @@ services:
 
         depends_on:
             - db
+            - mq
 
         ipc: host
 
@@ -41,7 +42,7 @@ services:
         volumes:
             - mariadb-data:/var/lib/mysql
         environment:
-            MYSQL_ROOT_PASSWORD: ietf
+            MYSQL_ROOT_PASSWORD: RkTkDPFnKpko
             MYSQL_DATABASE: ietf_utf8
             MYSQL_USER: django
             MYSQL_PASSWORD: RkTkDPFnKpko
@@ -57,6 +58,46 @@ services:
             
     # Add "forwardPorts": ["5432"] to **devcontainer.json** to forward PostgreSQL locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)
+
+    mq:
+        image: rabbitmq:3-alpine
+        restart: unless-stopped
+
+    celery:
+        image: ghcr.io/ietf-tools/datatracker-celery:latest
+        init: true
+        environment:
+            CELERY_APP: ietf
+            CELERY_ROLE: worker
+            UPDATE_REQUIREMENTS_FROM: requirements.txt
+        command:
+            - '--loglevel=INFO'
+        depends_on:
+            - db
+        restart: unless-stopped
+        stop_grace_period: 1m
+        volumes:
+            - .:/workspace
+            - app-assets:/assets
+
+#  Celery Beat is a periodic task runner. It is not normally needed for development,
+#  but can be enabled by uncommenting the following.
+#
+#    beat:
+#        image: ghcr.io/ietf-tools/datatracker-celery:latest
+#        init: true
+#        environment:
+#            CELERY_APP: ietf
+#            CELERY_ROLE: beat
+#            UPDATE_REQUIREMENTS_FROM: requirements.txt
+#        command:
+#            - '--loglevel=INFO'
+#        depends_on:
+#            - db
+#        restart: unless-stopped
+#        stop_grace_period: 1m
+#        volumes:
+#            - .:/workspace
 
 volumes:
     mariadb-data:

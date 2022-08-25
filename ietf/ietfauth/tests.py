@@ -28,6 +28,7 @@ from django.urls import reverse as urlreverse
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.template.loader import render_to_string 
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -37,7 +38,7 @@ from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.mailinglists.models import Subscribed
 from ietf.meeting.factories import MeetingFactory
 from ietf.nomcom.factories import NomComFactory
-from ietf.person.factories import PersonFactory, EmailFactory
+from ietf.person.factories import PersonFactory, EmailFactory, UserFactory
 from ietf.person.models import Person, Email, PersonalApiKey
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import ReviewWish, UnavailablePeriod
@@ -433,10 +434,20 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(outbox), 1)
 
-        # go to change password page
+        # goto change password page, logged in as someone else
         confirm_url = self.extract_confirm_url(outbox[-1])
+        other_user = UserFactory()
+        self.client.login(username=other_user.username, password=other_user.username + '+password')
+        r = self.client.get(confirm_url)
+        self.assertEqual(r.status_code, 403)
+
+        # sign out and go back to change password page
+        self.client.logout()
         r = self.client.get(confirm_url)
         self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertNotIn(user.username, q('.nav').text(),
+                         'user should not appear signed in while resetting password')
 
         # password mismatch
         r = self.client.post(confirm_url, { 'password': 'secret', 'password_confirmation': 'nosecret' })
@@ -740,11 +751,11 @@ class IetfAuthTests(TestCase):
             self.assertContains(r, 'Invalid apikey', status_code=403)
 
             # too long since regular login
-            person.user.last_login = datetime.datetime.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS+1)
+            person.user.last_login = timezone.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS+1)
             person.user.save()
             r = self.client.post(key.endpoint, {'apikey':key.hash(), 'dummy':'dummy',})
             self.assertContains(r, 'Too long since last regular login', status_code=400)
-            person.user.last_login = datetime.datetime.now()
+            person.user.last_login = timezone.now()
             person.user.save()
 
             # endpoint mismatch
@@ -773,7 +784,7 @@ class IetfAuthTests(TestCase):
         # apikey usage will be registered)
         count = 2
         # avoid usage across dates
-        if datetime.datetime.now().time() > datetime.time(hour=23, minute=59, second=58):
+        if timezone.now().time() > datetime.time(hour=23, minute=59, second=58):
             time.sleep(2)
         for i in range(count):
             for key in person.apikeys.all():

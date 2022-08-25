@@ -18,6 +18,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.forms import ValidationError
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.html import escape
 from django.urls import reverse as urlreverse
 
@@ -35,10 +36,9 @@ from ietf.group.models import Role, Group
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author, is_bofreq_editor
 from ietf.person.models import Person
 from ietf.review.models import ReviewWish
-from ietf.utils import draft, text
+from ietf.utils import draft, log
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.utils import log
 from ietf.utils.xmldraft import XMLDraft
 
 
@@ -396,23 +396,6 @@ def get_unicode_document_content(key, filename, codec='utf-8', errors='ignore'):
 
     return raw_content
 
-def get_document_content(key, filename, split=True, markup=True):
-    log.unreachable("2017-12-05")
-    try:
-        with io.open(filename, 'rb') as f:
-            raw_content = f.read()
-    except IOError:
-        if settings.DEBUG:
-            error = "Error; cannot read ("+filename+")"
-        else:
-            error = "Error; cannot read ("+key+")"
-        return error
-
-#     if markup:
-#         return markup_txt.markup(raw_content, split)
-#     else:
-#         return raw_content
-    return text.decode(raw_content)
 
 def tags_suffix(tags):
     return ("::" + "::".join(t.name for t in tags)) if tags else ""
@@ -650,10 +633,12 @@ def nice_consensus(consensus):
         }
     return mapping[consensus]
 
-def has_same_ballot(doc, date1, date2=datetime.date.today()):
+def has_same_ballot(doc, date1, date2=None):
     """ Test if the most recent ballot created before the end of date1
         is the same as the most recent ballot created before the
         end of date 2. """
+    if date2 is None:
+        date2 = datetime.date.today()
     ballot1 = doc.latest_event(BallotDocEvent,type='created_ballot',time__lt=date1+datetime.timedelta(days=1))
     ballot2 = doc.latest_event(BallotDocEvent,type='created_ballot',time__lt=date2+datetime.timedelta(days=1))
     return ballot1==ballot2
@@ -823,7 +808,7 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, com
             cc.update(other_addrs.cc)
             RelatedDocument.objects.filter(source=doc, target=d, relationship=relationship).delete()
             if not RelatedDocument.objects.filter(target=d, relationship=relationship):
-                s = 'active' if d.document.expires > datetime.datetime.now() else 'expired'
+                s = 'active' if d.document.expires > timezone.now() else 'expired'
                 d.document.set_state(State.objects.get(type='draft', slug=s))
 
     for d in new_replaces:
@@ -926,7 +911,9 @@ def extract_complete_replaces_ancestor_mapping_for_docs(names):
 def make_rev_history(doc):
     # return document history data for inclusion in doc.json (used by timeline)
 
-    def get_predecessors(doc, predecessors=[]):
+    def get_predecessors(doc, predecessors=None):
+        if predecessors is None:
+            predecessors = []
         if hasattr(doc, 'relateddocument_set'):
             for alias in doc.related_that_doc('replaces'):
                 for document in alias.docs.all():
@@ -935,7 +922,9 @@ def make_rev_history(doc):
                         predecessors.extend(get_predecessors(document, predecessors))
         return predecessors
 
-    def get_ancestors(doc, ancestors = []):
+    def get_ancestors(doc, ancestors = None):
+        if ancestors is None:
+            ancestors = []
         if hasattr(doc, 'relateddocument_set'):
             for alias in doc.related_that('replaces'):
                 for document in alias.docs.all():
@@ -1130,7 +1119,7 @@ def build_doc_meta_block(doc, path):
             lines[i] = line
         return lines
     #
-    now = datetime.datetime.now()
+    now = timezone.now()
     draft_state = doc.get_state('draft')
     block = ''
     meta = {}

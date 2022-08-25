@@ -13,6 +13,33 @@
                         {# Note: if called with show_agenda=True, calling template must load agenda_materials.js, needed by session_agenda_include.html #}
                         {% include "meeting/session_agenda_include.html" with slug=slug session=session timeslot=timeslot only %}
                     {% endif %}
+                    <div class="d-flex">
+                    {% if timeslot.location.video_stream_url or timeslot.location.onsite_tool_url %}
+                    <div id="session-meetecho-buttons-{{ session.pk }}"
+                         role="group"
+                         class="btn-group btn-group-sm d-none d-lg-flex me-1">
+                                {# Video stream (meetecho) #}
+                                {% if timeslot.location.video_stream_url %}
+                                    <a class="btn btn-outline-primary"
+                                       role="button"
+                                       href="{{ timeslot.location.video_stream_url|format:session }}"
+                                       aria-label="Full Client with Video"
+                                       title="Full Client with Video">
+                                        <i class="bi bi-camera-video"></i>
+                                    </a>
+                                {% endif %}
+                                {# Onsite tool (meetecho_onsite) #}
+                                {% if timeslot.location.onsite_tool_url %}
+                                    <a class="btn btn-outline-primary"
+                                       role="button"
+                                       href="{{ timeslot.location.onsite_tool_url|format:session }}"
+                                       aria-label="Onsite tool"
+                                       title="Onsite tool">
+                                       <i class="bi bi-phone"></i>
+                                    </a>
+                                {% endif %}
+                    </div>
+                    {% endif %}
                     <div id="session-buttons-{{ session.pk }}"
                          role="group"
                          class="btn-group btn-group-sm d-none d-lg-flex">
@@ -55,34 +82,14 @@
                             {% endif %}
                             {# show stream buttons up till end of session, then show archive buttons #}
                             {% if now < timeslot.utc_end_time %}
-                                {# Jabber #}
+                                {# Chat #}
                                 <a class="btn btn-outline-primary"
                                    role="button"
-                                   href="xmpp:{{ session.jabber_room_name }}@jabber.ietf.org?join"
-                                   aria-label="Chat room for {{ session.jabber_room_name }}"
-                                   title="Chat room for {{ session.jabber_room_name }}">
+                                   href="{{ session.chat_room_url }}"
+                                   aria-label="Chat room for {{ session.chat_room_name }}"
+                                   title="Chat room for {{ session.chat_room_name }}">
                                     <i class="bi bi-chat"></i>
                                 </a>
-                                {# Video stream (meetecho) #}
-                                {% if timeslot.location.video_stream_url %}
-                                    <a class="btn btn-outline-primary"
-                                       role="button"
-                                       href="{{ timeslot.location.video_stream_url|format:session }}"
-                                       aria-label="Video stream"
-                                       title="Video stream">
-                                        <i class="bi bi-camera-video"></i>
-                                    </a>
-                                {% endif %}
-                                {# Onsite tool (meetecho_onsite) #}
-                                {% if timeslot.location.onsite_tool_url %}
-                                    <a class="btn btn-outline-primary"
-                                       role="button"
-                                       href="{{ timeslot.location.onsite_tool_url|format:session }}"
-                                       aria-label="Onsite tool"
-                                       title="Onsite tool">
-                                       <i class="bi bi-phone"></i>
-                                    </a>
-                                {% endif %}
                                 {# Audio stream #}
                                 {% if timeslot.location.audio_stream_url %}
                                     <a class="btn btn-outline-primary"
@@ -128,13 +135,13 @@
                                     <i class="bi bi-calendar"></i>
                                 </a>
                             {% else %}
-                                {# Jabber logs #}
+                                {# Chat logs #}
                                 {% if meeting.number|add:"0" >= 60 %}
                                     <a class="btn btn-outline-primary"
                                        role="button"
-                                       href="https://www.ietf.org/jabber/logs/{{ session.jabber_room_name }}?C=M;O=D"
-                                       aria-label="Chat logs for {{ session.jabber_room_name }}"
-                                       title="Chat logs for {{ session.jabber_room_name }}">
+                                       href="{{ session.chat_archive_url }}"
+                                       aria-label="Chat logs for {{ session.chat_room_name }}"
+                                       title="Chat logs for {{ session.chat_room_name }}">
                                         <i class="bi bi-file-text"></i>
                                     </a>
                                 {% endif %}
@@ -241,10 +248,10 @@
                                 {% endif %}
                                 {# show stream buttons up till end of session, then show archive buttons #}
                                 {% if now < timeslot.utc_end_time %}
-                                    {# Jabber #}
+                                    {# Chat #}
                                     <li>
                                         <a class="dropdown-item"
-                                           href="xmpp:{{ session.jabber_room_name }}@jabber.ietf.org?join">
+                                           href="{{ session.chat_room_url }}">
                                             <i class="bi bi-chat"></i> Chat room
                                         </a>
                                     </li>
@@ -305,11 +312,11 @@
                                     </a>
                                 </li>
                             {% else %}
-                                {# Jabber logs #}
+                                {# Chat logs #}
                                 {% if meeting.number|add:"0" >= 60 %}
                                     <li>
                                         <a class="dropdown-item"
-                                           href="https://www.ietf.org/jabber/logs/{{ session.jabber_room_name }}?C=M;O=D">
+                                           href="{{ session.chat_archive_url }}">
                                             <i class="bi bi-file-text"></i> Chat logs
                                         </a>
                                     </li>
@@ -364,6 +371,7 @@
                         {% endwith %}
                     </ul>
                 </div>
+            </div>
                 {% endwith %}
             {% endwith %}
         {% endwith %}

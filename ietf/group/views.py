@@ -39,10 +39,9 @@ import datetime
 import itertools
 import io
 import math
-import os
 import re
+import json
 
-from tempfile import mkstemp
 from collections import OrderedDict, defaultdict
 from simple_history.utils import update_change_reason
 
@@ -54,6 +53,7 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonRespons
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from django.utils.html import escape
 from django.views.decorators.cache import cache_page, cache_control
 
@@ -67,7 +67,6 @@ from ietf.doc.utils import get_chartering_type, get_tags_for_stream_id
 from ietf.doc.utils_charter import charter_name_for_group, replace_charter_of_replaced_group
 from ietf.doc.utils_search import prepare_document_table
 #
-from ietf.group.dot import make_dot
 from ietf.group.forms import (GroupForm, StatusUpdateForm, ConcludeGroupForm, StreamEditForm,
                               ManageReviewRequestForm, EmailOpenAssignmentsForm, ReviewerSettingsForm,
                               AddUnavailablePeriodForm, EndUnavailablePeriodForm, ReviewSecretarySettingsForm, )
@@ -117,7 +116,6 @@ from ietf.dbtemplate.models import DBTemplate
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.mailtrigger.models import Recipient
 from ietf.settings import MAILING_LIST_INFO_URL
-from ietf.utils.pipe import pipe
 from ietf.utils.response import permission_denied
 from ietf.utils.text import strip_suffix
 from ietf.utils import markdown
@@ -455,10 +453,12 @@ def prepare_group_documents(request, group, clist):
         # non-WG drafts and call for WG adoption are considered related
         if (d.group != group
             or (d.stream_id and d.get_state_slug("draft-stream-%s" % d.stream_id) in ("c-adopt", "wg-cand"))):
-            d.search_heading = "Related Internet-Draft"
-            docs_related.append(d)
+            if d.get_state_slug() != "expired":
+                d.search_heading = "Related Internet-Draft"
+                docs_related.append(d)
         else:
-            docs.append(d)
+            if not (d.get_state_slug('draft-iesg') == "dead" or (d.stream_id and d.get_state_slug("draft-stream-%s" % d.stream_id) == "dead")):
+                docs.append(d)
 
     meta_related = meta.copy()
 
@@ -567,7 +567,7 @@ def all_status(request):
         if e:
             wg_reports.append(e)
 
-    wg_reports.sort(key=lambda x: (x.group.parent.acronym,datetime.datetime.now()-x.time))
+    wg_reports.sort(key=lambda x: (x.group.parent.acronym,timezone.now()-x.time))
 
     rg_reports = []
     for rg in rgs:
@@ -712,44 +712,86 @@ def materials(request, acronym, group_type=None):
                       "can_manage_materials": can_manage_materials(request.user, group)
                   }))
 
+
 @cache_page(60 * 60)
-def dependencies(request, acronym, group_type=None, output_type="pdf"):
+def dependencies(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
-    if not group.features.has_documents or output_type not in ["dot", "pdf", "svg"]:
+    if not group.features.has_documents:
         raise Http404
 
-    dothandle, dotname = mkstemp()
-    os.close(dothandle)
-    dotfile = io.open(dotname, "w")
-    dotfile.write(make_dot(group))
-    dotfile.close()
+    if not group.communitylist_set.exists():
+        setup_default_community_list_for_group(group)
+    clist = group.communitylist_set.first()
 
-    if (output_type == "dot"):
-        return HttpResponse(make_dot(group),
-                            content_type='text/plain; charset=UTF-8'
-                            )
+    docs, meta, docs_related, meta_related = prepare_group_documents(
+        request, group, clist
+    )
+    cl_docs = set(docs).union(set(docs_related))
 
-    unflathandle, unflatname = mkstemp()
-    os.close(unflathandle)
-    outhandle, outname = mkstemp()
-    os.close(outhandle)
+    references = Q(
+        Q(source__group=group) | Q(source__in=cl_docs),
+        source__type="draft",
+        relationship__slug__startswith="ref",
+    )
 
-    pipe("%s -f -l 10 -o %s %s" % (settings.UNFLATTEN_BINARY, unflatname, dotname))
-    pipe("%s -T%s -o %s %s" % (settings.DOT_BINARY, output_type, outname, unflatname))
+    both_rfcs = Q(source__states__slug="rfc", target__docs__states__slug="rfc")
+    inactive = Q(source__states__slug__in=["expired", "repl"])
+    attractor = Q(target__name__in=["rfc5000", "rfc5741"])
+    removed = Q(source__states__slug__in=["auth-rm", "ietf-rm"])
+    relations = (
+        RelatedDocument.objects.filter(references)
+        .exclude(both_rfcs)
+        .exclude(inactive)
+        .exclude(attractor)
+        .exclude(removed)
+    )
 
-    outhandle = io.open(outname, "rb")
-    out = outhandle.read()
-    outhandle.close()
+    links = set()
+    for x in relations:
+        target_state = x.target.document.get_state_slug("draft")
+        if target_state != "rfc" or x.is_downref():
+            links.add(x)
 
-    os.unlink(outname)
-    os.unlink(unflatname)
-    os.unlink(dotname)
+    replacements = RelatedDocument.objects.filter(
+        relationship__slug="replaces",
+        target__docs__in=[x.target.document for x in links],
+    )
 
-    if (output_type == "pdf"):
-        output_type = "application/pdf"
-    elif (output_type == "svg"):
-        output_type = "image/svg+xml"
-    return HttpResponse(out, content_type=output_type)
+    for x in replacements:
+        links.add(x)
+
+    nodes = set([x.source for x in links]).union([x.target.document for x in links])
+    graph = {
+        "nodes": [
+            {
+                "id": x.canonical_name(),
+                "rfc": x.get_state("draft").slug == "rfc",
+                "post-wg": not x.get_state("draft-iesg").slug
+                in ["idexists", "watching", "dead"],
+                "expired": x.get_state("draft").slug == "expired",
+                "replaced": x.get_state("draft").slug == "repl",
+                "group": x.group.acronym if x.group.acronym != "none" else "",
+                "url": x.get_absolute_url(),
+                "level": x.intended_std_level.name
+                if x.intended_std_level
+                else x.std_level.name
+                if x.std_level
+                else "",
+            }
+            for x in nodes
+        ],
+        "links": [
+            {
+                "source": x.source.canonical_name(),
+                "target": x.target.document.canonical_name(),
+                "rel": "downref" if x.is_downref() else x.relationship.slug,
+            }
+            for x in links
+        ],
+    }
+
+    return HttpResponse(json.dumps(graph), content_type="application/json")
+
 
 def email_aliases(request, acronym=None, group_type=None):
     group = get_group_or_404(acronym,group_type) if acronym else None
@@ -767,7 +809,7 @@ def email_aliases(request, acronym=None, group_type=None):
 def meetings(request, acronym=None, group_type=None):
     group = get_group_or_404(acronym,group_type) if acronym else None
 
-    four_years_ago = datetime.datetime.now()-datetime.timedelta(days=4*365)
+    four_years_ago = timezone.now()-datetime.timedelta(days=4*365)
 
     sessions = add_event_info_to_session_qs(
         group.session_set.filter(
@@ -931,7 +973,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                 try:
                     group = Group.objects.get(acronym=clean["acronym"])
                     save_group_in_history(group)
-                    group.time = datetime.datetime.now()
+                    group.time = timezone.now()
                     group.save()
                 except Group.DoesNotExist:
                     group = Group.objects.create(name=clean["name"],
@@ -1030,7 +1072,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                         )
                     ))
 
-            group.time = datetime.datetime.now()
+            group.time = timezone.now()
 
             if changes and not new_group:
                 for attr, new, desc in changes:
@@ -1468,7 +1510,7 @@ def reviewer_overview(request, acronym, group_type=None):
                                     int(math.ceil(d.assignment_to_closure_days)) if d.assignment_to_closure_days is not None else None))
             if d.state in ["completed", "completed_in_time", "completed_late"]:
                 if d.assigned_time is not None:
-                    delta = datetime.datetime.now() - d.assigned_time
+                    delta = timezone.now() - d.assigned_time
                     if d.assignment_to_closure_days is not None:
                         days = int(delta.days - d.assignment_to_closure_days)
                         if days_since > days: days_since = days

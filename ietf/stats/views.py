@@ -18,6 +18,7 @@ from django.db.models import Count, Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 
@@ -38,7 +39,6 @@ from ietf.meeting.models import Meeting
 from ietf.stats.models import MeetingRegistration, CountryAlias
 from ietf.stats.utils import get_aliased_affiliations, get_aliased_countries, compute_hirsch_index
 from ietf.ietfauth.utils import has_role
-from ietf.utils.log import log
 from ietf.utils.response import permission_denied
 
 def stats_index(request):
@@ -133,7 +133,9 @@ def add_labeled_top_series_from_bins(chart_data, bins, limit):
         })
 
 def document_stats(request, stats_type=None):
-    def build_document_stats_url(stats_type_override=Ellipsis, get_overrides={}):
+    def build_document_stats_url(stats_type_override=Ellipsis, get_overrides=None):
+        if get_overrides is None:
+            get_overrides={}
         kwargs = {
             "stats_type": stats_type if stats_type_override is Ellipsis else stats_type_override,
         }
@@ -195,7 +197,7 @@ def document_stats(request, stats_type=None):
         if "y" in time_choice:
             try:
                 y = int(time_choice.rstrip("y"))
-                from_time = datetime.datetime.today() - dateutil.relativedelta.relativedelta(years=y)
+                from_time = timezone.now() - dateutil.relativedelta.relativedelta(years=y)
             except ValueError:
                 pass
 
@@ -742,7 +744,8 @@ def document_stats(request, stats_type=None):
             "eu_countries": sorted(eu_countries or [], key=lambda c: c.name),
             "content_template": "stats/document_stats_{}.html".format(template_name),
         }
-        log("Cache miss for '%s'.  Data size: %sk" % (cache_key, len(str(data))/1000))
+        # Logs are full of these, but nobody is using them
+        # log("Cache miss for '%s'.  Data size: %sk" % (cache_key, len(str(data))/1000))
         cache.set(cache_key, data, 24*60*60)
     return render(request, "stats/document_stats.html", data)
 
@@ -762,7 +765,9 @@ def meeting_stats(request, num=None, stats_type=None):
     if num is not None:
         meeting = get_object_or_404(Meeting, number=num, type="ietf")
 
-    def build_meeting_stats_url(number=None, stats_type_override=Ellipsis, get_overrides={}):
+    def build_meeting_stats_url(number=None, stats_type_override=Ellipsis, get_overrides=None):
+        if get_overrides is None:
+            get_overrides = {}
         kwargs = {
             "stats_type": stats_type if stats_type_override is Ellipsis else stats_type_override,
         }
@@ -992,7 +997,8 @@ def meeting_stats(request, num=None, stats_type=None):
             "eu_countries": sorted(eu_countries or [], key=lambda c: c.name),
             "content_template": "stats/meeting_stats_{}.html".format(template_name),
         }
-        log("Cache miss for '%s'.  Data size: %sk" % (cache_key, len(str(data))/1000))
+        # Logs are full of these, but nobody is using them...
+        # log("Cache miss for '%s'.  Data size: %sk" % (cache_key, len(str(data))/1000))
         cache.set(cache_key, data, 24*60*60)
     #
     return render(request, "stats/meeting_stats.html", data)
@@ -1009,7 +1015,9 @@ def review_stats(request, stats_type=None, acronym=None):
     # and statistics type) are incorporated directly into the URL to
     # be a bit nicer.
 
-    def build_review_stats_url(stats_type_override=Ellipsis, acronym_override=Ellipsis, get_overrides={}):
+    def build_review_stats_url(stats_type_override=Ellipsis, acronym_override=Ellipsis, get_overrides=None):
+        if get_overrides is None:
+            get_overrides = {}
         kwargs = {
             "stats_type": stats_type if stats_type_override is Ellipsis else stats_type_override,
         }

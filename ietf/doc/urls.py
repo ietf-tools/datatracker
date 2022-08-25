@@ -50,6 +50,7 @@ urlpatterns = [
     url(r'^$', views_search.search),
     url(r'^search/?$', views_search.search),
     url(r'^in-last-call/?$', views_search.drafts_in_last_call),
+    url(r'^ad/?$', views_search.ad_workload),
     url(r'^ad/(?P<name>[^/]+)/?$', views_search.docs_for_ad),
     url(r'^ad2/(?P<name>[\w.-]+)/$', RedirectView.as_view(url='/doc/ad/%(name)s/', permanent=True)),
     url(r'^rfc-status-changes/?$', views_status_change.rfc_status_changes),
@@ -60,6 +61,11 @@ urlpatterns = [
     url(r'^email-aliases/?$', views_doc.email_aliases),
     url(r'^downref/?$', views_downref.downref_registry),
     url(r'^downref/add/?$', views_downref.downref_registry_add),
+    url(
+        r"^shepherdwriteup-template/(?P<type>\w+)/?$",
+        views_doc.document_shepherd_writeup_template,
+    ),
+
     url(r'^stats/newrevisiondocevent/?$', views_stats.chart_newrevisiondocevent),
     url(r'^stats/newrevisiondocevent/conf/?$', views_stats.chart_conf_newrevisiondocevent),
     url(r'^stats/newrevisiondocevent/data/?$', views_stats.chart_data_newrevisiondocevent),

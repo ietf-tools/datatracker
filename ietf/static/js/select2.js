@@ -22,12 +22,19 @@ function prettify_tz(x) {
 // Copyright The IETF Trust 2015-2021, All Rights Reserved
 // JS for ietf.utils.fields.SearchableField subclasses
 window.setupSelect2Field = function (e) {
-    var url = e.data("ajax--url");
-    var maxEntries = e.data("max-entries");
-    var result_key = e.data("result-key");
-    var options = e.data("pre");
-    for (var id in options) {
-        e.append(new Option(options[id].text, options[id].id, false, options[id].selected));
+    // Avoid using data attributes that match any of the search2 option attributes.
+    // These will override settings in the options object that we use below.
+    // (see https://select2.org/configuration/data-attributes)
+    // Note: e.data('k') returns undefined if there is no data-k attribute.
+    let url = e.data("select2-ajax-url");
+    let maxEntries = e.data("max-entries");
+    let minSearchLength = e.data("min-search-length");
+    let result_key = e.data("result-key");
+    let options = e.data("pre");
+    if (options) {
+        options.forEach(
+          opt => e.append(new Option(opt.text, opt.id, false, opt.selected))
+        );
     }
 
     template_modify = e.hasClass("tz-select") ? prettify_tz : undefined;
@@ -35,6 +42,7 @@ window.setupSelect2Field = function (e) {
     e.select2({
         multiple: maxEntries !== 1,
         maximumSelectionSize: maxEntries,
+        minimumInputLength: minSearchLength,
         templateResult: template_modify,
         templateSelection: template_modify,
         ajax: url ? {
