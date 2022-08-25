@@ -17,6 +17,7 @@ from django.conf import settings
 from django.core.files import File
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
@@ -1389,7 +1390,7 @@ class FeedbackLastSeenTests(TestCase):
             f.nominees.add(self.nominee)
         f = FeedbackFactory.create(author=self.author,nomcom=self.nc,type_id='comment')
         f.topics.add(self.topic)
-        now = datetime.datetime.now() 
+        now = timezone.now() 
         self.hour_ago = now - datetime.timedelta(hours=1)
         self.half_hour_ago = now - datetime.timedelta(minutes=30)
         self.second_from_now = now + datetime.timedelta(seconds=1)

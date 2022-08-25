@@ -24,6 +24,7 @@ from django.db.models import Max, Subquery, OuterRef, TextField, Value, Q
 from django.db.models.functions import Coalesce
 from django.conf import settings
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.safestring import mark_safe
 
@@ -176,7 +177,7 @@ class Meeting(models.Model):
 
     @classmethod
     def get_current_meeting(cls, type="ietf"):
-        return cls.objects.filter(type=type, date__gte=datetime.datetime.today()-datetime.timedelta(days=7) ).order_by('date').first()
+        return cls.objects.filter(type=type, date__gte=timezone.now()-datetime.timedelta(days=7) ).order_by('date').first()
 
     def get_first_cut_off(self):
         return self.get_00_cutoff()
@@ -1280,7 +1281,7 @@ class Session(models.Model):
 
 class SchedulingEvent(models.Model):
     session = ForeignKey(Session)
-    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
+    time = models.DateTimeField(default=timezone.now, help_text="When the event happened")
     status = ForeignKey(SessionStatusName)
     by = ForeignKey(Person)
 

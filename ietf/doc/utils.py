@@ -18,6 +18,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.forms import ValidationError
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.html import escape
 from django.urls import reverse as urlreverse
 
@@ -807,7 +808,7 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, com
             cc.update(other_addrs.cc)
             RelatedDocument.objects.filter(source=doc, target=d, relationship=relationship).delete()
             if not RelatedDocument.objects.filter(target=d, relationship=relationship):
-                s = 'active' if d.document.expires > datetime.datetime.now() else 'expired'
+                s = 'active' if d.document.expires > timezone.now() else 'expired'
                 d.document.set_state(State.objects.get(type='draft', slug=s))
 
     for d in new_replaces:
@@ -1118,7 +1119,7 @@ def build_doc_meta_block(doc, path):
             lines[i] = line
         return lines
     #
-    now = datetime.datetime.now()
+    now = timezone.now()
     draft_state = doc.get_state('draft')
     block = ''
     meta = {}

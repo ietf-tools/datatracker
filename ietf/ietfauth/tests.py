@@ -28,6 +28,7 @@ from django.urls import reverse as urlreverse
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.template.loader import render_to_string 
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -750,11 +751,11 @@ class IetfAuthTests(TestCase):
             self.assertContains(r, 'Invalid apikey', status_code=403)
 
             # too long since regular login
-            person.user.last_login = datetime.datetime.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS+1)
+            person.user.last_login = timezone.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS+1)
             person.user.save()
             r = self.client.post(key.endpoint, {'apikey':key.hash(), 'dummy':'dummy',})
             self.assertContains(r, 'Too long since last regular login', status_code=400)
-            person.user.last_login = datetime.datetime.now()
+            person.user.last_login = timezone.now()
             person.user.save()
 
             # endpoint mismatch
@@ -783,7 +784,7 @@ class IetfAuthTests(TestCase):
         # apikey usage will be registered)
         count = 2
         # avoid usage across dates
-        if datetime.datetime.now().time() > datetime.time(hour=23, minute=59, second=58):
+        if timezone.now().time() > datetime.time(hour=23, minute=59, second=58):
             time.sleep(2)
         for i in range(count):
             for key in person.apikeys.all():

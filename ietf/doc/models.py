@@ -18,6 +18,7 @@ from django.core.validators import URLValidator, RegexValidator
 from django.urls import reverse as urlreverse
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
+from django.utils import timezone
 from django.utils.encoding import force_text
 from django.utils.html import mark_safe # type:ignore
 
@@ -85,7 +86,7 @@ IESG_SUBSTATE_TAGS = ('ad-f-up', 'need-rev', 'extpty')
 
 class DocumentInfo(models.Model):
     """Any kind of document.  Draft, RFC, Charter, IPR Statement, Liaison Statement"""
-    time = models.DateTimeField(default=datetime.datetime.now) # should probably have auto_now=True
+    time = models.DateTimeField(default=timezone.now) # should probably have auto_now=True
 
     type = ForeignKey(DocTypeName, blank=True, null=True) # Draft, Agenda, Minutes, Charter, Discuss, Guideline, Email, Review, Issue, Wiki, External ...
     title = models.CharField(max_length=255, validators=[validate_no_control_chars, ])
@@ -682,7 +683,7 @@ class DocumentActionHolder(models.Model):
     """Action holder for a document"""
     document = ForeignKey('Document')
     person = ForeignKey(Person)
-    time_added = models.DateTimeField(default=datetime.datetime.now)
+    time_added = models.DateTimeField(default=timezone.now)
 
     CLEAR_ACTION_HOLDERS_STATES = ['approved', 'ann', 'rfcqueue', 'pub', 'dead']  # draft-iesg state slugs
     GROUP_ROLES_OF_INTEREST = ['chair', 'techadv', 'editor', 'secr']
@@ -838,7 +839,7 @@ class Document(DocumentInfo):
 
     def previous_telechat_date(self):
         "Return the most recent telechat date in the past, if any (even if there's another in the future)"
-        e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat", telechat_date__lt=datetime.datetime.now())
+        e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat", telechat_date__lt=timezone.now())
         return e.telechat_date if e else None
 
     def request_closed_time(self, review_req):
@@ -1208,7 +1209,7 @@ EVENT_TYPES = [
 
 class DocEvent(models.Model):
     """An occurrence for a document, used for tracking who, when and what."""
-    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened", db_index=True)
+    time = models.DateTimeField(default=timezone.now, help_text="When the event happened", db_index=True)
     type = models.CharField(max_length=50, choices=EVENT_TYPES)
     by = ForeignKey(Person)
     doc = ForeignKey(Document)
@@ -1388,7 +1389,7 @@ class DeletedEvent(models.Model):
     content_type = ForeignKey(ContentType)
     json = models.TextField(help_text="Deleted object in JSON format, with attribute names chosen to be suitable for passing into the relevant create method.")
     by = ForeignKey(Person)
-    time = models.DateTimeField(default=datetime.datetime.now)
+    time = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return u"%s by %s %s" % (self.content_type, self.by, self.time)

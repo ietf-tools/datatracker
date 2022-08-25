@@ -29,8 +29,8 @@ from django.test import Client, override_settings
 from django.db.models import F, Max
 from django.http import QueryDict, FileResponse
 from django.template import Context, Template
+from django.utils import timezone
 from django.utils.text import slugify
-from django.utils.timezone import now
 
 import debug           # pyflakes:ignore
 
@@ -604,7 +604,7 @@ class MeetingTests(BaseMeetingTestCase):
     def test_interim_materials(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
-        date = datetime.datetime.today() - datetime.timedelta(days=10)
+        date = timezone.now() - datetime.timedelta(days=10)
         meeting = make_interim_meeting(group=group, date=date, status='sched')
         session = meeting.session_set.first()
 
@@ -1529,7 +1529,7 @@ class EditMeetingScheduleTests(TestCase):
 
     @staticmethod
     def _right_now_in(tzname):
-        right_now = now().astimezone(pytz.timezone(tzname))
+        right_now = timezone.now().astimezone(pytz.timezone(tzname))
         if not settings.USE_TZ:
             right_now = right_now.replace(tzinfo=None)
         return right_now
@@ -1538,7 +1538,7 @@ class EditMeetingScheduleTests(TestCase):
         """Allow assignment to future timeslots only for official schedule"""
         meeting = MeetingFactory(
             type_id='ietf',
-            date=(datetime.datetime.today() - datetime.timedelta(days=1)).date(),
+            date=(timezone.now() - datetime.timedelta(days=1)).date(),
             days=3,
         )
         right_now = self._right_now_in(meeting.time_zone)
@@ -1598,7 +1598,7 @@ class EditMeetingScheduleTests(TestCase):
         """Do not allow assignment of past sessions for official schedule"""
         meeting = MeetingFactory(
             type_id='ietf',
-            date=(datetime.datetime.today() - datetime.timedelta(days=1)).date(),
+            date=(timezone.now() - datetime.timedelta(days=1)).date(),
             days=3,
         )
         right_now = self._right_now_in(meeting.time_zone)
@@ -1733,7 +1733,7 @@ class EditMeetingScheduleTests(TestCase):
         """Allow unassignment only of future timeslots for official schedule"""
         meeting = MeetingFactory(
             type_id='ietf',
-            date=(datetime.datetime.today() - datetime.timedelta(days=1)).date(),
+            date=(timezone.now() - datetime.timedelta(days=1)).date(),
             days=3,
         )
         right_now = self._right_now_in(meeting.time_zone)
@@ -1857,7 +1857,7 @@ class EditTimeslotsTests(TestCase):
         return MeetingFactory(
             type_id='ietf',
             number=number,
-            date=datetime.datetime.today() + datetime.timedelta(days=10),
+            date=timezone.now() + datetime.timedelta(days=10),
             populate_schedule=False,
         )
 
@@ -4680,7 +4680,7 @@ class InterimTests(TestCase):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
         date = datetime.date.today() + datetime.timedelta(days=30)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        time = timezone.now().time().replace(microsecond=0,second=0)
         dt = datetime.datetime.combine(date, time)
         duration = datetime.timedelta(hours=3)
         remote_instructions = 'Use webex'
@@ -4751,7 +4751,7 @@ class InterimTests(TestCase):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
         date = datetime.date.today() + datetime.timedelta(days=30)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        time = timezone.now().time().replace(microsecond=0,second=0)
         dt = datetime.datetime.combine(date, time)
         duration = datetime.timedelta(hours=3)
         city = 'San Francisco'
@@ -4799,7 +4799,7 @@ class InterimTests(TestCase):
         make_meeting_test_data()
         date = datetime.date.today() + datetime.timedelta(days=30)
         date2 = date + datetime.timedelta(days=1)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        time = timezone.now().time().replace(microsecond=0,second=0)
         dt = datetime.datetime.combine(date, time)
         dt2 = datetime.datetime.combine(date2, time)
         duration = datetime.timedelta(hours=3)
@@ -4865,7 +4865,7 @@ class InterimTests(TestCase):
         make_meeting_test_data()
         date = datetime.date.today() + datetime.timedelta(days=30)
         date2 = date + datetime.timedelta(days=2)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        time = timezone.now().time().replace(microsecond=0,second=0)
         group = Group.objects.get(acronym='mars')
         city = 'San Francisco'
         country = 'US'
@@ -4933,7 +4933,7 @@ class InterimTests(TestCase):
         if date.year != date2.year:
             date += datetime.timedelta(days=1)
             date2 += datetime.timedelta(days=1)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        time = timezone.now().time().replace(microsecond=0,second=0)
         dt = datetime.datetime.combine(date, time)
         dt2 = datetime.datetime.combine(date2, time)
         duration = datetime.timedelta(hours=3)
@@ -5615,7 +5615,7 @@ class InterimTests(TestCase):
     def test_send_interim_minutes_reminder(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
-        date = datetime.datetime.today() - datetime.timedelta(days=10)
+        date = timezone.now() - datetime.timedelta(days=10)
         meeting = make_interim_meeting(group=group, date=date, status='sched')
         length_before = len(outbox)
         send_interim_minutes_reminder(meeting=meeting)
@@ -6563,7 +6563,7 @@ class HasMeetingsTests(TestCase):
         q = PyQuery(r.content)
         self.assertTrue(q('#id_group option[value="%d"]'%group.pk))
         date = datetime.date.today() + datetime.timedelta(days=30+meeting_count)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        time = timezone.now().time().replace(microsecond=0,second=0)
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
@@ -6659,7 +6659,7 @@ class HasMeetingsTests(TestCase):
             session = SessionFactory(
                 group__type_id = gf.type_id,
                 meeting__type_id='interim', 
-                meeting__date = datetime.datetime.today()+datetime.timedelta(days=30),
+                meeting__date = timezone.now()+datetime.timedelta(days=30),
                 status_id='sched',
             )
             sessions.append(session)
@@ -6675,7 +6675,7 @@ class HasMeetingsTests(TestCase):
         sessions=[]
         for gf in GroupFeatures.objects.filter(has_meetings=True):
             group = GroupFactory(type_id=gf.type_id)
-            meeting_date = datetime.datetime.today() + datetime.timedelta(days=30)
+            meeting_date = timezone.now() + datetime.timedelta(days=30)
             session = SessionFactory(
                 group=group,
                 meeting__type_id='interim', 
@@ -6696,7 +6696,7 @@ class HasMeetingsTests(TestCase):
         sessions=[]
         for gf in GroupFeatures.objects.filter(has_meetings=True):
             group = GroupFactory(type_id=gf.type_id)
-            meeting_date = datetime.datetime.today() + datetime.timedelta(days=30)
+            meeting_date = timezone.now() + datetime.timedelta(days=30)
             session = SessionFactory(
                 group=group,
                 meeting__type_id='interim', 
