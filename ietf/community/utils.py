@@ -75,6 +75,8 @@ def docs_matching_community_list_rule(rule):
     docs = Document.objects.all()
     if rule.rule_type in ['group', 'area', 'group_rfc', 'area_rfc']:
         return docs.filter(Q(group=rule.group_id) | Q(group__parent=rule.group_id), states=rule.state)
+    elif rule.rule_type in ['group_exp']:
+        return docs.filter(group=rule.group_id, states=rule.state)
     elif rule.rule_type.startswith("state_"):
         return docs.filter(states=rule.state)
     elif rule.rule_type in ["author", "author_rfc"]:
@@ -98,7 +100,7 @@ def community_list_rules_matching_doc(doc):
         if doc.group.parent_id:
             groups.append(doc.group.parent_id)
         rules |= SearchRule.objects.filter(
-            rule_type__in=['group', 'area', 'group_rfc', 'area_rfc'],
+            rule_type__in=['group', 'area', 'group_rfc', 'area_rfc', 'group_exp'],
             state__in=states,
             group__in=groups
         )

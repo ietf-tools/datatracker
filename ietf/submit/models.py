@@ -64,6 +64,11 @@ class Submission(models.Model):
     def __str__(self):
         return "%s-%s" % (self.name, self.rev)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['submission_date']),
+        ]
+
     def submitter_parsed(self):
         return parse_email_line(self.submitter)
 

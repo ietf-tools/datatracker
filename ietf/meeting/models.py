@@ -7,23 +7,26 @@
 import datetime
 import io
 import os
+import pytz
 import random
 import re
 import string
+
 from collections import namedtuple
 from pathlib import Path
 from urllib.parse import urljoin
 
-import pytz
-from django.conf import settings
+import debug                            # pyflakes:ignore
+
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.db.models import Max, Subquery, OuterRef, TextField, Value, Q
 from django.db.models.functions import Coalesce
+from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
-from django.utils.safestring import mark_safe
 from django.utils.text import slugify
+from django.utils.safestring import mark_safe
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.models import Document
@@ -36,16 +39,15 @@ from ietf.name.models import (
 )
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
-from ietf.utils.fields import MissingOkImageField
-from ietf.utils.log import unreachable
-from ietf.utils.models import ForeignKey
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import date2datetime
+from ietf.utils.models import ForeignKey
 from ietf.utils.validators import (
     MaxImageSizeValidator, WrappedValidator, validate_file_size, validate_mime_type,
     validate_file_extension,
 )
+from ietf.utils.fields import MissingOkImageField
 
 countries = list(pytz.country_names.items())
 countries.sort(key=lambda x: x[1])
@@ -84,7 +86,7 @@ class Meeting(models.Model):
     # We can't derive time-zone from country, as there are some that have
     # more than one timezone, and the pytz module doesn't provide timezone
     # lookup information for all relevant city/country combinations.
-    time_zone = models.CharField(blank=True, max_length=255, choices=timezones)
+    time_zone = models.CharField(max_length=255, choices=timezones, default='UTC')
     idsubmit_cutoff_day_offset_00 = models.IntegerField(blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_00,
         help_text = "The number of days before the meeting start date when the submission of -00 drafts will be closed.")
@@ -277,16 +279,13 @@ class Meeting(models.Model):
             else:
                 version = len(settings.PROCEEDINGS_VERSION_CHANGES)  # start assuming latest version
                 mtg_number = self.get_number()
-                if mtg_number is None:
-                    unreachable('2021-08-10')
-                else:
-                    # Find the index of the first entry in the version change array that
-                    # is >= this meeting's number. The first entry in the array is 0, so the
-                    # version is always >= 1 for positive meeting numbers.
-                    for vers, threshold in enumerate(settings.PROCEEDINGS_VERSION_CHANGES):
-                        if mtg_number < threshold:
-                            version = vers
-                            break
+                # Find the index of the first entry in the version change array that
+                # is >= this meeting's number. The first entry in the array is 0, so the
+                # version is always >= 1 for positive meeting numbers.
+                for vers, threshold in enumerate(settings.PROCEEDINGS_VERSION_CHANGES):
+                    if mtg_number < threshold:
+                        version = vers
+                        break
             self._proceedings_format_version = version  # save this for later
         return self._proceedings_format_version
 
@@ -362,23 +361,21 @@ class Meeting(models.Model):
 
     def tz(self):
         if not hasattr(self, '_cached_tz'):
-            self._cached_tz = pytz.timezone(self.time_zone) if self.time_zone else pytz.utc
+            self._cached_tz = pytz.timezone(self.time_zone)
         return self._cached_tz
 
     def vtimezone(self):
-        if self.time_zone:
-            try:
-                tzfn = os.path.join(settings.TZDATA_ICS_PATH, self.time_zone + ".ics")
-                if os.path.exists(tzfn):
-                    with io.open(tzfn) as tzf:
-                        icstext = tzf.read()
-                    vtimezone = re.search("(?sm)(\nBEGIN:VTIMEZONE.*\nEND:VTIMEZONE\n)", icstext).group(1).strip()
-                    if vtimezone:
-                        vtimezone += "\n"
-                    return vtimezone
-            except IOError:
-                pass
-        return ''
+        try:
+            tzfn = os.path.join(settings.TZDATA_ICS_PATH, self.time_zone + ".ics")
+            if os.path.exists(tzfn):
+                with io.open(tzfn) as tzf:
+                    icstext = tzf.read()
+                vtimezone = re.search("(?sm)(\nBEGIN:VTIMEZONE.*\nEND:VTIMEZONE\n)", icstext).group(1).strip()
+                if vtimezone:
+                    vtimezone += "\n"
+                return vtimezone
+        except IOError:
+            pass
 
     def set_official_schedule(self, schedule):
         if self.schedule != schedule:
@@ -620,16 +617,16 @@ class TimeSlot(models.Model):
         return self.tz().tzname(self.time)
 
     def utc_start_time(self):
-        return self.time.astimezone(pytz.utc)  # USE_TZ is True, so time is UTC
+        return self.time.astimezone(pytz.utc)  # USE_TZ is True, so time is aware
 
     def utc_end_time(self):
-        return self.time.astimezone(pytz.utc) + self.duration  # USE_TZ is True, so time is UTC
+        return self.time.astimezone(pytz.utc) + self.duration  # USE_TZ is True, so time is aware
 
     def local_start_time(self):
         return self.time.astimezone(self.tz())
 
     def local_end_time(self):
-        return (self.time + self.duration).astimezone(self.tz())
+        return (self.time.astimezone(pytz.utc) + self.duration).astimezone(self.tz())
 
     @property
     def js_identifier(self):

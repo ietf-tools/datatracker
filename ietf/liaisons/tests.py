@@ -1016,7 +1016,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(q('#id_from_groups').find('option:selected').val(),reply_from_group_id)
         self.assertEqual(q('#id_to_groups').find('option:selected').val(),reply_to_group_id)
         pre = json.loads(q('#id_related_to').attr("data-pre"))
-        self.assertEqual(pre[str(liaison.pk)]['id'], liaison.pk)
+        self.assertEqual(pre[0]['id'], liaison.pk)
 
     def test_search(self):
         # Statement 1

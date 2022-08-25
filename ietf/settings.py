@@ -13,6 +13,7 @@ import warnings
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
 warnings.simplefilter("always", DeprecationWarning)
+warnings.filterwarnings("ignore", message="'urllib3\[secure\]' extra is deprecated")
 warnings.filterwarnings("ignore", message="The logout\(\) view is superseded by")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
 warnings.filterwarnings("ignore", message="{% load staticfiles %} is deprecated")
@@ -437,6 +438,7 @@ INSTALLED_APPS = [
     'analytical',
     'django_vite',
     'django_bootstrap5',
+    'django_celery_beat',
     'corsheaders',
     'django_markup',
     'django_password_strength',
@@ -542,6 +544,7 @@ INTERNAL_IPS = (
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://www.ietf.org/rfcdiff"
 IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
+IDNITS_SERVICE_URL = "https://author-tools.ietf.org/idnits"
 
 # Content security policy configuration (django-csp)
 CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", f"data: {IDTRACKER_BASE_URL} https://www.ietf.org/ https://analytics.ietf.org/ https://fonts.googleapis.com/")
@@ -842,6 +845,8 @@ IDSUBMIT_CHECKER_CLASSES = (
 #    "ietf.submit.checkers.DraftYangvalidatorChecker",    
 )
 
+# Max time to allow for validation before a submission is subject to cancellation
+IDSUBMIT_MAX_VALIDATION_TIME = datetime.timedelta(minutes=20)
 
 IDSUBMIT_MANUAL_STAGING_DIR = '/tmp/'
 
@@ -1065,6 +1070,8 @@ DEV_APPS = []                           # type: List[str]
 DEV_PRE_APPS = []                       # type: List[str]
 DEV_MIDDLEWARE = ()
 
+PROD_PRE_APPS = []                      # type: List[str]
+
 # django-debug-toolbar and the debug listing of sql queries at the bottom of
 # each page when in dev mode can overlap in functionality, and can slow down
 # page loading.  If you wish to use the sql_queries debug listing, put this in
@@ -1175,6 +1182,14 @@ qvNU+qRWi+YXrITsgn92/gVxX5AoK0n+s5Lx7fpjxkARVi66SF6zTJnX
 DEFAULT_REQUESTS_TIMEOUT = 20  # seconds
 
 
+# Celery configuration
+CELERY_TIMEZONE = 'UTC'
+CELERY_BROKER_URL = 'amqp://mq/'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
+assert not USE_TZ, 'Drop DJANGO_CELERY_BEAT_TZ_AWARE setting once USE_TZ is True!'
+DJANGO_CELERY_BEAT_TZ_AWARE = False
+
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests
 #
@@ -1196,14 +1211,15 @@ for app in INSTALLED_APPS:
         if os.path.exists(app_settings_file):
             exec("from %s import *" % (app+".settings"))
 
-# Add DEV_APPS to INSTALLED_APPS
-INSTALLED_APPS += DEV_APPS
-INSTALLED_APPS = DEV_PRE_APPS + INSTALLED_APPS
-MIDDLEWARE += DEV_MIDDLEWARE
-TEMPLATES[0]['OPTIONS']['context_processors'] += DEV_TEMPLATE_CONTEXT_PROCESSORS
-
+# Add APPS from settings_local to INSTALLED_APPS
 if SERVER_MODE == 'production':
-    INSTALLED_APPS.insert(0,'scout_apm.django')
+    INSTALLED_APPS = PROD_PRE_APPS + INSTALLED_APPS
+else:
+    INSTALLED_APPS += DEV_APPS
+    INSTALLED_APPS = DEV_PRE_APPS + INSTALLED_APPS
+    MIDDLEWARE += DEV_MIDDLEWARE
+    TEMPLATES[0]['OPTIONS']['context_processors'] += DEV_TEMPLATE_CONTEXT_PROCESSORS
+
 
 # We provide a secret key only for test and development modes.  It's
 # absolutely vital that django fails to start in production mode unless a

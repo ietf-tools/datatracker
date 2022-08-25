@@ -303,7 +303,7 @@ const meetingEvents = computed(() => {
         if (item.links.videoStream) {
           links.push({
             id: `lnk-${item.id}-video`,
-            label: 'Video stream',
+            label: 'Full Client with Video',
             icon: 'camera-video',
             href: item.links.videoStream,
             color: 'purple'

@@ -173,25 +173,6 @@ def send_notifications(meeting, groups, person):
                                   by=person,desc='sent scheduled notification for %s' % meeting)
 
 
-# -------------------------------------------------
-# AJAX Functions
-# -------------------------------------------------
-# def ajax_get_times(request, meeting_id, day):
-#     '''
-#     Ajax function to get timeslot times for a given day.
-#     returns JSON format response: [{id:start_time, value:start_time-end_time},...]
-#     '''
-#     # TODO strip duplicates if there are any
-#     from ietf.utils import log
-#     log.unreachable("2017-07-08")
-#     results=[]
-#     room = Room.objects.filter(meeting__number=meeting_id)[0]
-#     slots = TimeSlot.objects.filter(meeting__number=meeting_id,time__week_day=day,location=room).order_by('time')
-#     for slot in slots:
-#         d = {'id': slot.time.strftime('%H%M'), 'value': '%s-%s' % (slot.time.strftime('%H%M'), slot.end_time().strftime('%H%M'))}
-#         results.append(d)
-# 
-#     return HttpResponse(json.dumps(results), content_type='application/javascript')
 
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS

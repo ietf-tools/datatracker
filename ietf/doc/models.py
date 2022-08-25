@@ -7,7 +7,6 @@ import logging
 import io
 import os
 import rfc2html
-import time
 
 from typing import Optional, TYPE_CHECKING
 from weasyprint import HTML as wpHTML
@@ -15,7 +14,6 @@ from weasyprint import HTML as wpHTML
 from django.db import models
 from django.core import checks
 from django.core.cache import caches
-from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, RegexValidator
 from django.urls import reverse as urlreverse
 from django.contrib.contenttypes.models import ContentType
@@ -222,12 +220,8 @@ class DocumentInfo(models.Model):
         if not hasattr(self, '_cached_href'):
             validator = URLValidator()
             if self.external_url and self.external_url.split(':')[0] in validator.schemes:
-                try:
-                    validator(self.external_url)
-                    return self.external_url
-                except ValidationError:
-                    log.unreachable('2018-12-28')
-                    pass
+                validator(self.external_url)
+                return self.external_url
 
             if self.type_id in settings.DOC_HREFS and self.type_id in meeting_doc_refs:
                 if self.meeting_related():
@@ -583,7 +577,6 @@ class DocumentInfo(models.Model):
             try:
                 pdf = wpHTML(string=html.replace('\xad','')).write_pdf(stylesheets=[io.BytesIO(b'html { font-size: 94%;}')])
             except AssertionError:
-                log.log(f'weasyprint failed with an assert on {self.name}')
                 pdf = None
             if pdf:
                 cache.set(cache_key, pdf, settings.PDFIZER_CACHE_TIME)
@@ -820,16 +813,12 @@ class Document(DocumentInfo):
         assert events, "You must always add at least one event to describe the changes in the history log"
         self.time = max(self.time, events[0].time)
 
-        mark = time.time()
         self._has_an_event_so_saving_is_allowed = True
         self.save()
         del self._has_an_event_so_saving_is_allowed
-        log.log(f'{time.time()-mark:.3f} seconds to save {self.name} Document')
 
-        mark = time.time()
         from ietf.doc.utils import save_document_in_history
         save_document_in_history(self)
-        log.log(f'{time.time()-mark:.3f} seconds to save {self.name} DocHistory')
 
     def save(self, *args, **kwargs):
         # if there's no primary key yet, we can allow the save to go
@@ -1236,11 +1225,7 @@ class DocEvent(models.Model):
 
     def __str__(self):
         return u"%s %s by %s at %s" % (self.doc.name, self.get_type_display().lower(), self.by.plain_name(), self.time)
-
-    def save(self, *args, **kwargs):
-        super(DocEvent, self).save(*args, **kwargs)        
-        log.assertion('self.rev != None')
-
+    
     class Meta:
         ordering = ['-time', '-id']
         indexes = [
