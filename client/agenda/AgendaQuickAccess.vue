@@ -82,7 +82,7 @@
             span {{ shortMode ? '.ics' : 'Add to your calendar...' }}
         template(v-if='agendaStore.meetingDays.length > 0')
           n-divider: small.text-muted Jump to...
-          ul.nav.nav-pills.flex-column.small
+          ul.nav.nav-pills.flex-column.small.agenda-quickaccess-jumpto
             li.nav-item(v-if='agendaStore.isMeetingLive')
               a.nav-link(
                 href='#now'

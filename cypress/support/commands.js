@@ -41,3 +41,13 @@ Cypress.Commands.add('take', { prevSubject: 'element' }, (subject, size = 1) => 
     cy.wrap(elementList)
   })
 })
+
+Cypress.Commands.add('isInViewport', { prevSubject: 'element' }, subject => {
+  cy.get(subject).should(($el) => {
+    const bottom = Cypress.$(cy.state("window")).height()
+    const rect = $el[0].getBoundingClientRect()
+
+    expect(rect.top).not.to.be.greaterThan(bottom, `Expected element not to be below the visible scrolled area`)
+    expect(rect.top).to.be.greaterThan(0 - rect.height, `Expected element not to be above the visible scrolled area`)
+  })
+})

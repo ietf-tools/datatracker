@@ -92,6 +92,15 @@ describe('meeting -> agenda-neue [past, desktop]', {
       onBeforeLoad: (win) => { injectMeetingData(win, meetingData.meeting.number) }
     })
     cy.wait('@getMeetingData')
+
+    // Fix scroll behavior
+    // See https://github.com/cypress-io/cypress/issues/3200
+    cy.document().then(document => {
+      const htmlElement = document.querySelector('html')
+      if (htmlElement) {
+        htmlElement.style.scrollBehavior = 'inherit'
+      }
+    })
   })
 
   // -> HEADER
@@ -645,6 +654,31 @@ describe('meeting -> agenda-neue [past, desktop]', {
     // ------------------------------
     cy.get('.agenda-settings .agenda-settings-actions > button').last().click()
     cy.get('.agenda-settings').should('not.exist')
+  })
+
+  // -> JUMP TO DAY
+
+  it(`can jump to specific days`, () => {
+    // -> Separator label
+    cy.get('.agenda .agenda-quickaccess-jumpto').prev('div[role=separator]').should('be.visible').and('include.text', 'Jump to...')
+    // -> Check nav items
+    cy.get('.agenda .agenda-quickaccess-jumpto > .nav-item').should('have.length', 7).as('dayjumpbuttons')
+      .each((el, idx) => {
+        const localDateTime = DateTime.fromISO(meetingData.meeting.startDate).setZone('local').plus({ days: idx }).toLocaleString(DateTime.DATE_HUGE)
+        cy.wrap(el).should('contain', localDateTime)
+      })
+    
+    // Scroll to last day
+    // Cypress does not handle the IntersectionObserver correctly, so disable this test for now.
+    // See https://github.com/cypress-io/cypress/issues/3848
+    cy.get('@dayjumpbuttons').last().children('a').click({ scrollBehavior: false, force: true }) // .should('have.class', 'active')
+    cy.get('.agenda-table-display-day').last().isInViewport()
+
+    // Scroll to second day
+    cy.get('@dayjumpbuttons').eq(1).children('a').click({ scrollBehavior: false, force: true }) // .should('have.class', 'active')
+    cy.get('.agenda-table-display-day').eq(1).isInViewport()
+
+    cy.scrollTo('top')
   })
 })
 

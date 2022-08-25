@@ -7,7 +7,8 @@
     "legacy:build": "parcel build",
     "cypress": "cypress run",
     "cypress:open": "cypress open",
-    "cypress:run:agenda-neue": "percy exec -- cypress run --spec cypress/e2e/meeting/agenda-neue.cy.js"
+    "cypress:run:agenda-neue": "cypress run --spec cypress/e2e/meeting/agenda-neue.cy.js",
+    "percy:run:agenda-neue": "percy exec -- cypress run --spec cypress/e2e/meeting/agenda-neue.cy.js"
   },
   "dependencies": {
     "@fullcalendar/bootstrap5": "5.11.0",
