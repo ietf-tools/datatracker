@@ -75,7 +75,7 @@ to answer all of them.
     of RFC? Do all Datatracker state attributes correctly reflect this intent?
 
 12. Have reasonable efforts been made to remind all authors of the intellectual
-    property rights (IPR) disclosure obligations described in [BCP 79][8]? To
+    property rights (IPR) disclosure obligations described in [BCP 79][7]? To
     the best of your knowledge, have all required disclosures been filed? If
     not, explain why. If yes, summarize any relevant discussion, including links
     to publicly-available messages when applicable.
