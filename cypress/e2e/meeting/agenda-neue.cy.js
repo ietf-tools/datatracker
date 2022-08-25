@@ -552,6 +552,41 @@ describe('meeting -> agenda-neue [past, desktop]', {
     cy.get('.agenda-personalize').should('not.exist')
   })
 
+  // -> PICK SESSIONS
+
+  it('can pick individual sessions', () => {
+    // Enter pick mode
+    cy.get('#agenda-quickaccess-picksessions-btn').should('be.visible').click().should('not.exist')
+    cy.get('#agenda-quickaccess-applypick-btn').should('be.visible')
+    cy.get('#agenda-quickaccess-discardpick-btn').should('be.visible')
+
+    // Pick 10 random sessions
+    cy.get('.agenda .agenda-table-cell-check > .n-checkbox').should('have.length', meetingData.schedule.length)
+      .any(10).click({ multiple: true })
+    cy.get('#agenda-quickaccess-applypick-btn').click().should('not.exist')
+    cy.get('#agenda-quickaccess-modifypick-btn').should('be.visible')
+    cy.get('#agenda-quickaccess-discardpick-btn').should('be.visible')
+    cy.get('.agenda .agenda-table-display-event').should('have.length', 10)
+
+    // Change selection (keep existing 5 + add 5 new ones)
+    cy.get('#agenda-quickaccess-modifypick-btn').click().should('not.exist')
+    cy.get('#agenda-quickaccess-applypick-btn').should('be.visible')
+    cy.get('#agenda-quickaccess-discardpick-btn').should('be.visible')
+    cy.get('.agenda .agenda-table-cell-check > .n-checkbox').should('have.length', meetingData.schedule.length)
+      .filter('.n-checkbox--checked').should('have.length', 10)
+      .take(5).click({ multiple: true })
+    cy.get('.agenda .agenda-table-cell-check > .n-checkbox:not(.n-checkbox--checked)').any(5).click({ multiple: true })
+    cy.get('#agenda-quickaccess-applypick-btn').click()
+    cy.get('.agenda .agenda-table-display-event').should('have.length', 10)
+
+    // Discard should clear selection
+    cy.get('#agenda-quickaccess-discardpick-btn').click().should('not.exist')
+    cy.get('#agenda-quickaccess-modifypick-btn').should('not.exist')
+    cy.get('#agenda-quickaccess-picksessions-btn').should('be.visible')
+    cy.get('.agenda .agenda-table-cell-check').should('not.exist')
+    cy.get('.agenda .agenda-table-display-event').should('have.length', meetingData.schedule.length)
+  })
+
   // -> SETTINGS DIALOG
 
   it('can change settings', () => {
@@ -658,15 +693,15 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
   // -> ADD TO CALENDAR
 
-  it.only('can add to calendar', () => {
-    cy.get('.agenda .agenda-quickaccess-downloadics').should('be.visible').and('include.text', 'Add to your calendar').click()
+  it('can add to calendar', () => {
+    cy.get('#agenda-quickaccess-addtocal-btn').should('be.visible').and('include.text', 'Add to your calendar').click()
     cy.get('.n-dropdown-menu > .n-dropdown-option').should('have.length', 2)
       .first().should('include.text', 'Subscribe')
       .next().should('include.text', 'Download')
 
     // Cannot test if .ics download works because of cypress bug:
     // See https://github.com/cypress-io/cypress/issues/14857
-    
+
     // // Intercept Download ICS Call
     // cy.intercept('GET', `/meeting/${meetingData.meeting.number}/agenda.ics`, {
     //   body: 'test',
@@ -678,6 +713,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
 
     // // Test Download ICS
     // cy.get('.n-dropdown-menu > .n-dropdown-option').eq(1).click()
+    // cy.wait('@getIcs')
   })
 
   // -> JUMP TO DAY
