@@ -55,7 +55,7 @@
             i.bi.bi-x-square.me-2
             span Discard
         n-divider: small.text-muted Calendar
-        n-button.mt-2(
+        n-button.agenda-quickaccess-calview.mt-2(
           block
           color='#6c757d'
           size='large'
@@ -71,7 +71,7 @@
           trigger='click'
           @select='downloadIcs'
           )
-          n-button.mt-2(
+          n-button.agenda-quickaccess-downloadics.mt-2(
             block
             secondary
             color='#6c757d'

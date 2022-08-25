@@ -656,6 +656,30 @@ describe('meeting -> agenda-neue [past, desktop]', {
     cy.get('.agenda-settings').should('not.exist')
   })
 
+  // -> ADD TO CALENDAR
+
+  it.only('can add to calendar', () => {
+    cy.get('.agenda .agenda-quickaccess-downloadics').should('be.visible').and('include.text', 'Add to your calendar').click()
+    cy.get('.n-dropdown-menu > .n-dropdown-option').should('have.length', 2)
+      .first().should('include.text', 'Subscribe')
+      .next().should('include.text', 'Download')
+
+    // Cannot test if .ics download works because of cypress bug:
+    // See https://github.com/cypress-io/cypress/issues/14857
+    
+    // // Intercept Download ICS Call
+    // cy.intercept('GET', `/meeting/${meetingData.meeting.number}/agenda.ics`, {
+    //   body: 'test',
+    //   headers: {
+    //     'Content-disposition': 'attachment; filename=agenda.ics',
+    //     'Content-Type': 'text/calendar'
+    //   }
+    // }).as('getIcs')
+
+    // // Test Download ICS
+    // cy.get('.n-dropdown-menu > .n-dropdown-option').eq(1).click()
+  })
+
   // -> JUMP TO DAY
 
   it(`can jump to specific days`, () => {
