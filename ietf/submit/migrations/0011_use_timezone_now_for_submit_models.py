@@ -7,7 +7,7 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('submit', '0008_submissionextresource'),
+        ('submit', '0010_create_cancel_stale_submissions_task'),
     ]
 
     operations = [
