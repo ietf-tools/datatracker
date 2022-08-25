@@ -132,7 +132,7 @@ def forward(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ('utils', '0001_initial'),
-        ('meeting', '0055_meeting_time_zone_not_blank'),
+        ('meeting', '0058_meeting_time_zone_not_blank'),
     ]
 
     # To generate the queries:

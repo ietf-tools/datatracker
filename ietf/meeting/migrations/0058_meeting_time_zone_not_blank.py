@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('meeting', '0054_fill_in_empty_meeting_time_zone'),
+        ('meeting', '0057_fill_in_empty_meeting_time_zone'),
     ]
 
     operations = [

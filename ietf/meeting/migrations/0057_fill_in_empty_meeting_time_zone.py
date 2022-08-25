@@ -39,7 +39,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('meeting', '0053_attended'),
+        ('meeting', '0056_use_timezone_now_for_meeting_models'),
     ]
 
     operations = [
