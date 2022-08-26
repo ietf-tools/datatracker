@@ -80,6 +80,7 @@ def get_document_emails(ipr):
         author_names = ', '.join(a.person.name for a in doc.documentauthor_set.select_related("person"))
     
         context = dict(
+            settings=settings,
             doc_info=doc_info,
             to_email=addrs.to,
             to_name=author_names,
@@ -97,6 +98,7 @@ def get_posted_emails(ipr):
 
     addrs = gather_address_lists('ipr_posting_confirmation',ipr=ipr).as_strings(compact=False)
     context = dict(
+        settings=settings,
         to_email=addrs.to,
         to_name=ipr.submitter_name,
         cc_email=addrs.cc,
@@ -112,6 +114,7 @@ def get_posted_emails(ipr):
     if isinstance(ipr, (GenericIprDisclosure,NonDocSpecificIprDisclosure)):
         role = Role.objects.filter(group__acronym='gen',name='ad').first()
         context = dict(
+            settings=settings,
             to_email=role.email.address,
             to_name=role.person.name,
             ipr=ipr)
