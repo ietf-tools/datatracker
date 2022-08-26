@@ -114,7 +114,7 @@ SITE_ID = 1
 # to load the internationalization machinery.
 USE_I18N = False
 
-USE_TZ = False
+USE_TZ = True
 
 if SERVER_MODE == 'production':
     MEDIA_ROOT = '/a/www/www6s/lib/dt/media/'
@@ -1187,8 +1187,6 @@ CELERY_TIMEZONE = 'UTC'
 CELERY_BROKER_URL = 'amqp://mq/'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
-assert not USE_TZ, 'Drop DJANGO_CELERY_BEAT_TZ_AWARE setting once USE_TZ is True!'
-DJANGO_CELERY_BEAT_TZ_AWARE = False
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests

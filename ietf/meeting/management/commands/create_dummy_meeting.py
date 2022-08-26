@@ -48,7 +48,7 @@ import socket
 import datetime
 import pytz
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models import Q
 
@@ -75,10 +75,12 @@ class Command(BaseCommand):
 
     def _meeting_datetime(self, day, *time_args):
         """Generate a datetime on a meeting day"""
-        return datetime.datetime.combine(
-            self.start_date,
-            datetime.time(*time_args)
-        ) + datetime.timedelta(days=day)
+        return self.meeting_tz.localize(
+            datetime.datetime.combine(
+                self.start_date,
+                datetime.time(*time_args)
+            ) + datetime.timedelta(days=day)
+        )
 
     def handle(self, *args, **options):
         if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
@@ -87,10 +89,7 @@ class Command(BaseCommand):
         opt_delete = options.get('delete', False)
         opt_use_old_conflicts = options.get('old_conflicts', False)
         self.start_date = options['start_date']
-        meeting_tz = options['tz']
-        if not opt_delete and (meeting_tz not in pytz.common_timezones):
-            self.stderr.write("Warning: {} is not a recognized time zone.".format(meeting_tz))
-
+        meeting_tzname = options['tz']
         if opt_delete:
             if Meeting.objects.filter(number='999').exists():
                 Meeting.objects.filter(number='999').delete()
@@ -98,6 +97,11 @@ class Command(BaseCommand):
             else:
                 self.stderr.write("Dummy meeting IETF 999 does not exist; nothing to do.\n")
         else:
+            try:
+                self.meeting_tz = pytz.timezone(meeting_tzname)
+            except pytz.UnknownTimeZoneError:
+                raise CommandError("{} is not a recognized time zone.".format(meeting_tzname))
+
             if Meeting.objects.filter(number='999').exists():
                 self.stderr.write("Dummy meeting IETF 999 already exists; nothing to do.\n")
             else:
@@ -111,7 +115,7 @@ class Command(BaseCommand):
                     type_id='IETF',
                     date=self._meeting_datetime(0).date(),
                     days=7,
-                    time_zone=meeting_tz,
+                    time_zone=meeting_tzname,
                 )
 
                 # Set enabled constraints

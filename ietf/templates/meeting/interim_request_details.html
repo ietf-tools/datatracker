@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load static django_bootstrap5 widget_tweaks ietf_filters person_filters textfilters %}
+{% load static django_bootstrap5 widget_tweaks ietf_filters person_filters textfilters tz %}
 {% block title %}Interim Request Details{% endblock %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static 'ietf/css/select2.css' %}">
 {% endblock %}
-{% block content %}
+{% block content %}{% timezone meeting.tz %}
     {% origin %}
     <h1>Interim Meeting Request Details</h1>
     <dl class="row my-3">
@@ -67,7 +67,7 @@
             <dd class="col-sm-10">
                 {{ assignment.timeslot.time|date:"H:i" }}
                 {% if meeting.time_zone != 'UTC' %}
-                    ({{ assignment.timeslot.utc_start_time|date:"H:i" }} UTC)
+                    ({{ assignment.timeslot.time|utc|date:"H:i" }} UTC)
                 {% endif %}
             </dd>
             <dt class="col-sm-2">
@@ -151,7 +151,7 @@
             {% endif %}
         {% endwith %}
     {% if can_approve and status_slug == 'apprw' %}</form>{% endif %}
-{% endblock %}
+{% endtimezone %}{% endblock %}
 {% block js %}
     <script src="{% static 'ietf/js/select2.js' %}"></script>
     <script src="{% static 'ietf/js/meeting-interim-request.js' %}"></script>

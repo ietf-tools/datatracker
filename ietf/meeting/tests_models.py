@@ -56,16 +56,16 @@ class MeetingTests(TestCase):
 
     def test_vtimezone(self):
         # normal time zone that should have a zoneinfo file
-        meeting = MeetingFactory(type_id='ietf', time_zone='America/Los_Angeles')
+        meeting = MeetingFactory(type_id='ietf', time_zone='America/Los_Angeles', populate_schedule=False)
         vtz = meeting.vtimezone()
         self.assertIsNotNone(vtz)
         self.assertGreater(len(vtz), 0)
         # time zone that does not have a zoneinfo file should return None
-        meeting = MeetingFactory(type_id='ietf', time_zone='Fake/Time_Zone')
+        meeting = MeetingFactory(type_id='ietf', time_zone='Fake/Time_Zone', populate_schedule=False)
         vtz = meeting.vtimezone()
         self.assertIsNone(vtz)
         # ioerror trying to read zoneinfo should return None
-        meeting = MeetingFactory(type_id='ietf', time_zone='America/Los_Angeles')
+        meeting = MeetingFactory(type_id='ietf', time_zone='America/Los_Angeles', populate_schedule=False)
         with patch('ietf.meeting.models.io.open', side_effect=IOError):
             vtz = meeting.vtimezone()
         self.assertIsNone(vtz)

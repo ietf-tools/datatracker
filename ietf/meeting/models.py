@@ -138,6 +138,11 @@ class Meeting(models.Model):
     def end_date(self):
         return self.get_meeting_date(self.days-1)
 
+    def end_datetime(self):
+        """Datetime of the first instant _after_ the meeting's last day"""
+        return self.tz().localize(
+            datetime.datetime.combine(self.get_meeting_date(self.days), datetime.time())
+        )
     def get_00_cutoff(self):
         start_date = datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day, tzinfo=pytz.utc)
         importantdate = self.importantdate_set.filter(name_id='idcutoff').first()
@@ -322,7 +327,7 @@ class Meeting(models.Model):
         for ts in self.timeslot_set.all():
             if ts.location_id is None:
                 continue
-            ymd = ts.time.date()
+            ymd = ts.local_start_time().date()
             if ymd not in time_slices:
                 time_slices[ymd] = []
                 slots[ymd] = []
@@ -330,15 +335,15 @@ class Meeting(models.Model):
 
             if ymd in time_slices:
                 # only keep unique entries
-                if [ts.time, ts.time + ts.duration, ts.duration.seconds] not in time_slices[ymd]:
-                    time_slices[ymd].append([ts.time, ts.time + ts.duration, ts.duration.seconds])
+                if [ts.local_start_time(), ts.local_end_time(), ts.duration.seconds] not in time_slices[ymd]:
+                    time_slices[ymd].append([ts.local_start_time(), ts.local_end_time(), ts.duration.seconds])
                     slots[ymd].append(ts)
 
         days.sort()
         for ymd in time_slices:
             # Make sure these sort the same way
             time_slices[ymd].sort()
-            slots[ymd].sort(key=lambda x: (x.time, x.duration))
+            slots[ymd].sort(key=lambda x: (x.local_start_time(), x.duration))
         return days,time_slices,slots
 
     # this functions makes a list of timeslices and rooms, and
@@ -353,6 +358,11 @@ class Meeting(models.Model):
 #                if not (ts in ts_hash):
 #                    SchedTimeSessAssignment.objects.create(schedule = sched,
 #                                                    timeslot = ts)
+
+    def tz(self):
+        if not hasattr(self, '_cached_tz'):
+            self._cached_tz = pytz.timezone(self.time_zone)
+        return self._cached_tz
 
     def vtimezone(self):
         try:
@@ -374,16 +384,14 @@ class Meeting(models.Model):
             self.save()
 
     def updated(self):
-        min_time = datetime.datetime(1970, 1, 1, 0, 0, 0) # should be Meeting.modified, but we don't have that
+        # should be Meeting.modified, but we don't have that
+        min_time = pytz.utc.localize(datetime.datetime(1970, 1, 1, 0, 0, 0))
         timeslots_updated = self.timeslot_set.aggregate(Max('modified'))["modified__max"] or min_time
         sessions_updated = self.session_set.aggregate(Max('modified'))["modified__max"] or min_time
         assignments_updated = min_time
         if self.schedule:
             assignments_updated = SchedTimeSessAssignment.objects.filter(schedule__in=[self.schedule, self.schedule.base if self.schedule else None]).aggregate(Max('modified'))["modified__max"] or min_time
-        ts = max(timeslots_updated, sessions_updated, assignments_updated)
-        tz = pytz.timezone(settings.PRODUCTION_TIMEZONE)
-        ts = tz.localize(ts)
-        return ts
+        return max(timeslots_updated, sessions_updated, assignments_updated)
 
     @memoize
     def previous_meeting(self):
@@ -604,29 +612,22 @@ class TimeSlot(models.Model):
         return self._cached_html_location
 
     def tz(self):
-        if not hasattr(self, '_cached_tz'):
-            self._cached_tz = pytz.timezone(self.meeting.time_zone)
-        return self._cached_tz
+        return self.meeting.tz()
 
     def tzname(self):
         return self.tz().tzname(self.time)
 
     def utc_start_time(self):
-        local_start_time = self.tz().localize(self.time)
-        return local_start_time.astimezone(pytz.utc)
+        return self.time.astimezone(pytz.utc)  # USE_TZ is True, so time is aware
 
     def utc_end_time(self):
-        utc_start = self.utc_start_time()
-        # Add duration after converting start time, otherwise errors creep in around DST change
-        return None if utc_start is None else utc_start + self.duration
+        return self.time.astimezone(pytz.utc) + self.duration  # USE_TZ is True, so time is aware
 
     def local_start_time(self):
-        return self.tz().localize(self.time)
+        return self.time.astimezone(self.tz())
 
     def local_end_time(self):
-        local_start = self.local_start_time()
-        # Add duration after converting start time, otherwise errors creep in around DST change
-        return None if local_start is None else local_start + self.duration
+        return (self.time.astimezone(pytz.utc) + self.duration).astimezone(self.tz())
 
     @property
     def js_identifier(self):
