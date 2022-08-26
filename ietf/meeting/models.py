@@ -366,6 +366,7 @@ class Meeting(models.Model):
                 return vtimezone
         except IOError:
             pass
+        return None
 
     def set_official_schedule(self, schedule):
         if self.schedule != schedule:

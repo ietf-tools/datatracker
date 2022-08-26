@@ -3662,9 +3662,12 @@ def upcoming_ical(request):
     ietfs = [m for m in meetings if m.type_id == 'ietf']
     preprocess_meeting_important_dates(ietfs)
 
+    meeting_vtz = {meeting.vtimezone() for meeting in meetings}
+    meeting_vtz.discard(None)
+
     # icalendar response file should have '\r\n' line endings per RFC5545
     response = render_to_string('meeting/upcoming.ics', {
-        'vtimezones': ''.join(sorted(list({meeting.vtimezone() for meeting in meetings if meeting.vtimezone()}))),
+        'vtimezones': ''.join(sorted(meeting_vtz)),
         'assignments': assignments,
         'ietfs': ietfs,
     }, request=request)
