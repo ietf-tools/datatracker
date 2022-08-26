@@ -44,7 +44,7 @@ jQuery.ajaxSetup({
 // Use the Bootstrap tooltip plugin for all elements with a title attribute
 $(document)
     .ready(function () {
-        $('[title][title!=""]')
+        $("[title]:not([title=''])")
             .tooltip();
     });
 
