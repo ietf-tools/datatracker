@@ -9,7 +9,7 @@ from ietf.name.models import GroupTypeName
 register = template.Library()
 
 parents = GroupTypeName.objects.filter(
-    slug__in=["ag", "area", "rag", "team", "dir", "program"]
+    slug__in=["ag", "area", "rag", "team", "dir", "program", "adhoc"]
 )
 
 others = []

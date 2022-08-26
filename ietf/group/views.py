@@ -294,6 +294,8 @@ def active_groups(request, group_type=None):
         return active_adm(request)
     elif group_type == "rfcedtyp":
         return active_rfced(request)
+    elif group_type == "adhoc":
+        return active_adhoc(request)
     else:
         raise Http404
 
@@ -335,6 +337,9 @@ def active_rfced(request):
     rfced = Group.objects.filter(type="rfcedtyp", state="active").order_by("parent", "name")
     return render(request, 'group/active_rfced.html', {'rfced' : rfced})
 
+def active_adhoc(request):
+    adhoc = Group.objects.filter(type="adhoc", state="active").order_by("parent", "name")
+    return render(request, 'group/active_adhoc.html', {'adhoc' : adhoc})
 
 def active_areas(request):
         areas = Group.objects.filter(type="area", state="active").order_by("name")  
