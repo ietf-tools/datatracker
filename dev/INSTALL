@@ -9,7 +9,12 @@
 General Instructions for Deployment of a New Release
 ====================================================
 
- 1. Make a directory to hold the new release::
+ 0. Prepare to hold different roles at different stages of the instructions below.
+    You will need to be root, wwwrun, and some user in group docker. 
+    Consider using separate shells for the wwwrun and other roles. These instructions 
+    are written assuming you will only use one shell.
+
+ 1. Make a directory to hold the new release as wwwrun::
       sudo su - -s /bin/bash wwwrun
       mkdir /a/www/ietf-datatracker/${releasenumber}
       cd /a/www/ietf-datatracker/${releasenumber}
@@ -43,28 +48,27 @@ General Instructions for Deployment of a New Release
 
       ietf/manage.py check
 
- 7. Switch to the docker directory and update images:
+ 7. Switch to the docker directory and update images as a user in group docker:
 
+      exit
       cd /a/docker/datatracker
       docker image tag ghcr.io/ietf-tools/datatracker-celery:latest datatracker-celery-fallback
       docker image tag ghcr.io/ietf-tools/datatracker-mq:latest datatracker-mq-fallback
       docker-compose pull
 
  8. Stop and remove the async task containers:
-    Wait for this to finish cleanly. It may take up to about 10 minutes for the 'stop' command to
-    complete if a long-running task is in progress.
+    Wait for this to finish cleanly. Usually this will only be a few seconds, but it may take up 
+    to about 10 minutes for the 'down' command to complete if a long-running task is in progress.
 
       docker-compose down
 
  9. Stop the datatracker 
-    (consider doing this with a second shell at ietfa to avoid the exit and shift back to wwwrun)
 
-      exit
       sudo systemctl stop datatracker.socket datatracker.service
+
+ 10. Return to the release directory and run migrations as wwwrun:
+
       sudo su - -s /bin/bash wwwrun
-
- 10. Return to the release directory and run migrations:
-
       cd /a/www/ietf-datatracker/${releasenumber}
       ietf/manage.py migrate
 
@@ -77,7 +81,7 @@ General Instructions for Deployment of a New Release
 
  12. Start the datatracker service (it is no longer necessary to restart apache) ::
 
-      exit # or CTRL-D, back to root level shell
+      exit 
       sudo systemctl start datatracker.service datatracker.socket
 
  13. Start async task worker and message broker:
@@ -138,7 +142,7 @@ The following process should be used:
  7. Stop the async task container (this may take a few minutes if tasks are in progress):
 
       cd /a/docker/datatracker
-      docker-compose stop celery
+      docker-compose down
 
  8. Change the 'web' symlink, reload etc. as described in
     `General Instructions for Deployment of a New Release`_.
