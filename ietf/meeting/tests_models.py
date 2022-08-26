@@ -62,7 +62,6 @@ class MeetingTests(TestCase):
         self.assertGreater(len(vtz), 0)
         # time zone that does not have a zoneinfo file should return None
         meeting = MeetingFactory(type_id='ietf', time_zone='Fake/Time_Zone')
-        meeting.save()
         vtz = meeting.vtimezone()
         self.assertIsNone(vtz)
         # ioerror trying to read zoneinfo should return None
