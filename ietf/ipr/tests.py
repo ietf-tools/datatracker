@@ -9,6 +9,7 @@ from pyquery import PyQuery
 from urllib.parse import quote, urlparse
 
 from django.urls import reverse as urlreverse
+from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
@@ -575,6 +576,8 @@ I would like to revoke this declaration.
         self.assertTrue('draft-ietf-mars-test@ietf.org' in outbox[len_before+1]['To'])
         self.assertTrue('mars-wg@ietf.org' in outbox[len_before+1]['Cc'])
         self.assertIn('Secretariat on '+ipr.get_latest_event_submitted().time.strftime("%Y-%m-%d"), get_payload_text(outbox[len_before+1]).replace('\n',' '))
+        self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.showlist")}', get_payload_text(outbox[len_before]).replace('\n',' '))
+        self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.history",kwargs=dict(id=ipr.pk))}', get_payload_text(outbox[len_before+1]).replace('\n',' '))
 
     def test_notify_generic(self):
         RoleFactory(name_id='ad',group__acronym='gen')
@@ -591,6 +594,7 @@ I would like to revoke this declaration.
         self.assertEqual(r.status_code,302)
         self.assertEqual(len(outbox),2)
         self.assertIn('Secretariat on '+ipr.get_latest_event_submitted().time.strftime("%Y-%m-%d"), get_payload_text(outbox[1]).replace('\n',' '))
+        self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.showlist")}', get_payload_text(outbox[1]).replace('\n',' '))
 
     def send_ipr_email_helper(self):
         ipr = HolderIprDisclosureFactory()
