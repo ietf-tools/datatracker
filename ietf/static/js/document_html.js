@@ -35,7 +35,6 @@ document.addEventListener("DOMContentLoaded", function (event) {
         "[title]:not([title=''])");
     [...tt_triggers].map(tt_el => {
         const tooltip = Tooltip.getOrCreateInstance(tt_el);
-        console.log(tt_el);
         tt_el.addEventListener("click", el => {
             tooltip.hide();
             tt_el.blur();
