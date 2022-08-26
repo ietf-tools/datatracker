@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon'
 import path from 'path'
-import { find, isEqual, times } from 'lodash-es'
+import { find, first, isEqual, times } from 'lodash-es'
 import { faker } from '@faker-js/faker'
 import slugify from 'slugify'
 import meetingGenerator from '../../generators/meeting'
@@ -727,7 +727,6 @@ describe('meeting -> agenda-neue [past, desktop]', {
     // Check display controls
     // ----------------------
     cy.get('.agenda-settings-content > .n-divider').eq(1).should('contain', 'Display').as('settings-display')
-    // TODO: color legend toggle
     // -> Test Current Meeting Info Note toggle
     cy.get('@settings-display').nextAll('div.d-flex').eq(1).find('div[role=switch]').as('switch-infonote').click()
     cy.get('.agenda .agenda-infonote').should('not.exist')
@@ -764,7 +763,6 @@ describe('meeting -> agenda-neue [past, desktop]', {
     // Check calendar view controls
     // ----------------------------
     cy.get('.agenda-settings-content > .n-divider').eq(3).should('contain', 'Custom Colors / Tags').as('settings-colors')
-    // TODO: custom colors checks
     // ------------------------------
     // Click Close should hide dialog
     // ------------------------------
@@ -820,6 +818,87 @@ describe('meeting -> agenda-neue [past, desktop]', {
     cy.get('.agenda-table-display-day').eq(1).isInViewport()
 
     cy.scrollTo('top')
+  })
+
+  // -> Color Tagging
+
+  it(`can assign colors/tags to sessions`, () => {
+    cy.scrollTo('top')
+    cy.get('.agenda .agenda-table-colorpicker').should('be.visible').click({ scrollBehavior: false })
+
+    // Check Legend
+    cy.get('.agenda .agenda-colorlegend').should('be.visible')
+      .children().first().should('include.text', 'Color Legend')
+      .nextAll().should('have.length', 5)
+
+    // Check color dots
+    cy.get('.agenda .agenda-table-display-event .agenda-table-colorindicator.is-active').should('have.length', meetingData.schedule.length)
+
+    // -------------------------
+    // Assign colors to sessions
+    // -------------------------
+    cy.get('.agenda .agenda-table-display-event').take(5).each((el, idx) => {
+      cy.wrap(el).find('.agenda-table-colorindicator').should('be.visible').click({ scrollBehavior: false, force: true })
+      .prev('.agenda-table-colorchoices').should('be.visible')
+      .children('.agenda-table-colorchoice').should('have.length', 6)
+      .eq(idx + 1).click({ scrollBehavior: false }).should('not.exist')
+    })
+
+    // Exit color assignment mode
+    cy.get('.agenda .agenda-table-colorpicker').click({ scrollBehavior: false })
+    cy.get('.agenda .agenda-table-display-event .agenda-table-colorindicator').should('have.length', 5).and('not.have.class', 'is-active')
+    cy.get('.agenda .agenda-colorlegend').should('be.visible')
+
+    // ----------------------------------------
+    // Change color legend from settings dialog
+    // ----------------------------------------
+    // Open dialog
+    cy.get('.meeting-nav').next('button').should('exist').and('be.visible').click()
+    cy.get('.agenda-settings').should('exist').and('be.visible')
+    // Toggle color legend switch
+    cy.get('.agenda-settings-content > .n-divider').eq(1).should('contain', 'Display')
+      .next('div.d-flex').find('div[role=switch]').as('switch-colorlegend').click()
+    // Legend should be hidden
+    cy.get('.agenda .agenda-colorlegend').should('not.exist')
+    // Toggle color legend back
+    cy.get('@switch-colorlegend').click()
+    // Legend should be visible
+    cy.get('.agenda .agenda-colorlegend').should('be.visible')
+    // Change color names
+    cy.get('#agenda-settings-colors-header').nextAll('div.d-flex').each((el, idx) => {
+      const newName = faker.music.genre()
+      cy.wrap(el).find('.n-input').clear().type(newName)
+      // TODO: Color names + values don't update in test mode for some reason... Watcher not triggering? Skipped for now.
+      // cy.get('.agenda .agenda-colorlegend').children().eq(idx + 1).should('include.text', newName)
+    })
+    // Close dialog
+    cy.get('.agenda-settings .agenda-settings-actions > button').last().click()
+    cy.get('.agenda-settings').should('not.exist')
+
+    // ---------------
+    // Unassign colors
+    // ---------------
+    // Re-enter color assignment mode
+    cy.get('.agenda .agenda-table-colorpicker').should('be.visible').click({ scrollBehavior: false })
+    // Remove color selection
+    cy.get('.agenda .agenda-table-display-event').take(5).each((el, idx) => {
+      cy.wrap(el).find('.agenda-table-colorindicator').should('be.visible').click({ scrollBehavior: false, force: true })
+      .prev('.agenda-table-colorchoices').should('be.visible')
+      .children('.agenda-table-colorchoice').should('have.length', 6)
+      .first().click({ scrollBehavior: false }).should('not.exist')
+    })
+    // Exit color assignment mode
+    cy.get('.agenda .agenda-table-colorpicker').click({ scrollBehavior: false })
+    // No colored dots should appear
+    cy.get('.agenda .agenda-table-display-event .agenda-table-colorindicator').should('not.exist')
+    // Clear all colors from Settings menu
+    cy.get('.meeting-nav').next('button').should('exist').and('be.visible').click()
+    cy.get('.agenda-settings').should('exist').and('be.visible')
+    cy.get('.agenda-settings .agenda-settings-actions > button').first().click()
+    cy.get('.n-dropdown-option:contains("Clear Color")').should('exist').and('be.visible').click()
+    // Color legend should no longer be displayed
+    cy.get('.agenda .agenda-colorlegend').should('not.exist')
+    cy.get('.agenda-settings').should('not.exist')
   })
 })
 

@@ -137,7 +137,7 @@ n-drawer(v-model:show='isShown', placement='right', :width='panelWidth')
           @click='agendaStore.defaultCalendarView = `day`'
           ) Day
 
-      n-divider(title-placement='left')
+      n-divider#agenda-settings-colors-header(title-placement='left')
         i.bi.bi-palette.me-2
         small Custom Colors / Tags
       .d-flex.align-items-center.mt-3(v-for='(cl, idx) of state.colors')
