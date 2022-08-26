@@ -33,7 +33,14 @@ document.addEventListener("DOMContentLoaded", function (event) {
     // Use the Bootstrap tooltip plugin for all elements with a title attribute
     const tt_triggers = document.querySelectorAll(
         "[title]:not([title=''])");
-    [...tt_triggers].map(tt_el => new Tooltip(tt_el));
+    [...tt_triggers].map(tt_el => {
+        const tooltip = Tooltip.getOrCreateInstance(tt_el);
+        console.log(tt_el);
+        tt_el.addEventListener("click", el => {
+            tooltip.hide();
+            tt_el.blur();
+        });
+    });
 
     // Rewrite ids and hrefs to not contains dots (bug in bs5.2 scrollspy)
     // See https://github.com/twbs/bootstrap/issues/34381
@@ -48,15 +55,6 @@ document.addEventListener("DOMContentLoaded", function (event) {
         const href = new URL(id_el.href);
         href.hash = href.hash.replaceAll(/\./g, "-");
         id_el.href = href.href;
-    });
-
-    const tabs = document.querySelectorAll("li.nav-item");
-    [...tabs].map(t_el => {
-        const tooltip = Tooltip.getInstance(t_el);
-        t_el.addEventListener("click", el => {
-            tooltip.hide();
-        });
-
     });
 
     // Set up a nav pane
