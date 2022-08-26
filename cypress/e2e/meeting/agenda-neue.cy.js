@@ -692,20 +692,25 @@ describe('meeting -> agenda-neue [past, desktop]', {
     // -------------------
     // Check import config
     // -------------------
-    cy.fixture('agenda-settings.json', { encoding: 'utf8' }).then(cfgImport => {
-      // Stub the native file picker
-      // From https://cypresstips.substack.com/p/stub-the-browser-filesystem-api
-      cy.window().then((win) => {
-        cy.stub(win, 'showOpenFilePicker').resolves([{
-          getFile: cy.stub().resolves({
-            text: cy.stub().resolves(JSON.stringify(cfgImport))
-          })
-        }])
-        cy.get('.agenda-settings .agenda-settings-actions > button').first().click()
-        cy.get('.n-dropdown-option:contains("Import Configuration")').should('exist').and('be.visible').click()
-        cy.get('.n-message').should('contain', 'Config imported successfully')
+    // Skip test if firefox/safari since they don't support the file picker API
+    if (!Cypress.isBrowser('firefox') && !Cypress.isBrowser('safari')) {
+      cy.fixture('agenda-settings.json', { encoding: 'utf8' }).then(cfgImport => {
+        // Stub the native file picker
+        // From https://cypresstips.substack.com/p/stub-the-browser-filesystem-api
+        cy.window().then((win) => {
+          cy.stub(win, 'showOpenFilePicker').resolves([{
+            getFile: cy.stub().resolves({
+              text: cy.stub().resolves(JSON.stringify(cfgImport))
+            })
+          }])
+          cy.get('.agenda-settings .agenda-settings-actions > button').first().click()
+          cy.get('.n-dropdown-option:contains("Import Configuration")').should('exist').and('be.visible').click()
+          cy.get('.n-message').should('contain', 'Config imported successfully')
+        })
       })
-    })
+    } else {
+      cy.log('Config import test skipped because this browser does not support file picker API, which is required for the test.')
+    }
     // -----------------------
     // Check timezone controls
     // -----------------------
