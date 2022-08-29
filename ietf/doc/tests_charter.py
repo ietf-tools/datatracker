@@ -26,6 +26,8 @@ from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized
+from ietf.utils.timezone import datetime_today
+
 
 class ViewCharterTests(TestCase):
     def test_view_revisions(self):
@@ -402,7 +404,7 @@ class EditCharterTests(TestCase):
 
         # Make it so that the charter has been through internal review, and passed its external review
         # ballot on a previous telechat 
-        last_week = datetime.date.today()-datetime.timedelta(days=7)
+        last_week = datetime_today() - datetime.timedelta(days=7)
         BallotDocEvent.objects.create(type='created_ballot',by=login,doc=charter, rev=charter.rev,
                                       ballot_type=BallotType.objects.get(doc_type=charter.type,slug='r-extrev'),
                                       time=last_week)
@@ -746,7 +748,7 @@ class EditCharterTests(TestCase):
 
         charter.set_state(State.objects.get(used=True, type="charter", slug="iesgrev"))
 
-        due_date = datetime.date.today() + datetime.timedelta(days=180)
+        due_date = datetime_today() + datetime.timedelta(days=180)
         m1 = GroupMilestone.objects.create(group=group,
                                            state_id="active",
                                            desc="Has been copied",
@@ -826,7 +828,7 @@ class EditCharterTests(TestCase):
         m = GroupMilestone.objects.create(group=charter.group,
                                           state_id="active",
                                           desc="Test milestone",
-                                          due=datetime.date.today(),
+                                          due=datetime_today(),
                                           resolved="")
 
         url = urlreverse('ietf.doc.views_charter.charter_with_milestones_txt', kwargs=dict(name=charter.name, rev=charter.rev))
