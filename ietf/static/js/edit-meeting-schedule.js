@@ -882,8 +882,12 @@ $(function () {
      * Responsible for final determination of whether a timeslot is visible, invisible, or hidden.
      */
     function updateTimeSlotVisibility() {
-        timeslots.not(classes_to_hide).removeClass('hidden');
-        timeslots.filter(classes_to_hide).addClass('hidden');
+        const tsToShow = timeslots.not(classes_to_hide);
+        tsToShow.removeClass('hidden');
+        tsToShow.show();
+        const tsToHide = timeslots.filter(classes_to_hide);
+        tsToHide.addClass('hidden');
+        tsToHide.hide();
     }
 
     /**
@@ -892,8 +896,12 @@ $(function () {
      * Responsible for final determination of whether a session is visible or hidden.
      */
     function updateSessionVisibility() {
-        sessions.not(classes_to_hide).removeClass('hidden');
-        sessions.filter(classes_to_hide).addClass('hidden');
+        const sessToShow = sessions.not(classes_to_hide);
+        sessToShow.removeClass('hidden');
+        sessToShow.show();
+        const sessToHide = sessions.filter(classes_to_hide);
+        sessToHide.addClass('hidden');
+        sessToHide.hide();
     }
 
     /**
