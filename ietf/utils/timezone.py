@@ -2,6 +2,8 @@ import pytz
 import email.utils
 import datetime
 
+from zoneinfo import ZoneInfo
+
 from django.conf import settings
 from django.utils import timezone
 
@@ -70,3 +72,7 @@ def time_now(tzinfo=None):
     if tzinfo is None:
         tzinfo = pytz.utc
     return timezone.now().astimezone(tzinfo).time()
+
+
+def production_tzinfo():
+    return ZoneInfo(settings.PRODUCTION_TIMEZONE)
