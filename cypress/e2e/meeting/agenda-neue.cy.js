@@ -78,11 +78,11 @@ describe('meeting -> agenda-neue [past, desktop]', {
   let meetingData = null
 
   before(() => {
-    // Set clock to 2022-01-01
+    // Set clock to 2022-02-01 (month is 0-indexed)
     cy.clock(new Date(2022, 1, 1))
 
     // Generate meeting data
-    meetingData = meetingGenerator.generateAgendaResponse({ future: false })
+    meetingData = meetingGenerator.generateAgendaResponse({ dateMode: 'past' })
 
     // Intercept Meeting Data API
     cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { body: meetingData }).as('getMeetingData')
@@ -918,11 +918,11 @@ describe('meeting -> agenda-neue [future, desktop]', {
   let meetingData = null
 
   before(() => {
-    // Set clock to 2022-01-01
+    // Set clock to 2022-02-01 (month is 0-indexed)
     cy.clock(new Date(2022, 1, 1))
 
     // Generate future meeting data
-    meetingData = meetingGenerator.generateAgendaResponse({ future: true })
+    meetingData = meetingGenerator.generateAgendaResponse({ dateMode: 'future' })
 
     // Intercept Meeting Data API
     cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { body: meetingData }).as('getMeetingData')
@@ -1025,6 +1025,115 @@ describe('meeting -> agenda-neue [future, desktop]', {
 })
 
 // ====================================================================
+// AGENDA-NEUE (live meeting) | DESKTOP viewport
+// ====================================================================
+
+describe.only('meeting -> agenda-neue [live, desktop]', {
+  viewportWidth: viewports.desktop[0],
+  viewportHeight: viewports.desktop[1]
+  }, () => {
+  let meetingData = null
+  const currentTime = DateTime.fromISO('2022-02-01T13:45:15', { zone: 'Asia/Tokyo' })
+  const liveEvents = []
+  let lastLiveEvent = null
+
+  before(() => {
+    // Set clock to 2022-02-01 (month is 0-indexed)
+    cy.clock(currentTime.toMillis())
+
+    // Generate live meeting data
+    meetingData = meetingGenerator.generateAgendaResponse({ dateMode: 'current' })
+
+    // Calculate live events
+    let lastEventStartTime = null
+    for (const event of meetingData.schedule) {
+      const eventStart = DateTime.fromISO(event.startDateTime, { zone: 'Asia/Tokyo' })
+      const eventEnd = eventStart.plus({ seconds: event.duration })
+      if (currentTime >= eventStart && currentTime < eventEnd) {
+        liveEvents.push(event)
+        // -> Find last event before current time
+        if (lastEventStartTime === eventStart.toMillis()) {
+          continue
+        } else {
+          lastEventStartTime = eventStart.toMillis()
+          lastLiveEvent = event
+        }
+      }
+      // -> Skip future events
+      if (eventStart > currentTime) {
+        break
+      }
+    }
+
+    // Intercept Meeting Data API
+    cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { body: meetingData }).as('getMeetingData')
+
+    // Visit agenda page
+    cy.visit(`/meeting/${meetingData.meeting.number}/agenda-neue`, {
+      onBeforeLoad: (win) => { injectMeetingData(win, meetingData.meeting.number) }
+    })
+    cy.wait('@getMeetingData')
+
+    // Fix scroll behavior
+    // See https://github.com/cypress-io/cypress/issues/3200
+    cy.document().then(document => {
+      const htmlElement = document.querySelector('html')
+      if (htmlElement) {
+        htmlElement.style.scrollBehavior = 'inherit'
+      }
+    })
+  })
+
+  beforeEach(() => {
+    cy.clock(currentTime.toMillis())
+  })
+
+  // -> HIGHLIGHTED LIVE SESSIONS
+
+  it(`has live sessions highlighted`, () => {
+    cy.get('.agenda .agenda-table-display-event.agenda-table-live').should('have.length', liveEvents.length)
+  })
+
+  // -> LIVE RED LINE
+
+  it(`has live red line`, () => {
+    cy.get('.agenda .agenda-table-redhand').should('be.visible').then(el => {
+      cy.get(`#agenda-rowid-${lastLiveEvent.id}`).then(elEv => {
+        expect(el.offsetTop).to.equal(elEv.offsetTop)
+      })
+    })
+  })
+
+  // -> JUMP TO NOW
+
+  it(`has jump to now button`, () => {
+    cy.get('.agenda .agenda-quickaccess-jumpto > .nav-item').should('have.length', 8).first().should('include.text', 'Now').click()
+    cy.get('.agenda .agenda-table-redhand').isInViewport()
+  })
+
+  // -> HIDE RED LINE
+  // TODO: dialog fails to render for unknown reason (but clicking manually on the window triggers the render)
+  // Seems like a cypress bug... Skipping for now.
+  it.skip(`can toggle the live red line`, () => {
+    // Open settings dialog
+    cy.get('.meeting-nav').next('button').click()
+    cy.get('.agenda-settings').should('exist').and('be.visible')
+    // Toggle red line switch
+    cy.get('.agenda-settings-content > .n-divider').eq(1).should('contain', 'Display')
+      .nextAll('div.d-flex').eq(5).find('div[role=switch]').as('switch-redline').click()
+    // Check red line disappeared
+    cy.get('.agenda .agenda-table-redhand').should('not.exist')
+    // Re-enable it
+    cy.get('@switch-redline').click()
+    // Check red line is visible again
+    cy.get('.agenda .agenda-table-redhand').should('be.visible')
+    // Close dialog
+    cy.get('.agenda-settings .agenda-settings-actions > button').last().click()
+    cy.get('.agenda-settings').should('not.exist')
+  })
+})
+
+// ====================================================================
 // FLOOR-PLAN-NEUE | All Viewports
 // ====================================================================
 
@@ -1034,7 +1143,7 @@ describe(`meeting -> floor-plan-neue`, () => {
         viewportWidth: viewports[vp][0],
         viewportHeight: viewports[vp][1]
       }, () => {
-      const meetingData = meetingGenerator.generateAgendaResponse({ skipSchedule: true })
+      const meetingData = meetingGenerator.generateAgendaResponse({ dateMode: 'past', skipSchedule: true })
 
       before(() => {
         cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { body: meetingData }).as('getMeetingData')

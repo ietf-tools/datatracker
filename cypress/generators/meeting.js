@@ -199,11 +199,23 @@ export default {
   /**
    * Generate a standard agenda data reponse
    */
-  generateAgendaResponse ({ future = false, skipSchedule = false } = {}) {
+  generateAgendaResponse ({ dateMode = 'past', skipSchedule = false } = {}) {
     // Get random date but always start on a saturday
-    const startDate = future ?
-      DateTime.fromISO(faker.date.future(1).toISOString()).startOf('week').minus({ days: 2 }) :
-      DateTime.fromISO(faker.date.past(5, DateTime.utc().minus({ months: 3 })).toISOString()).startOf('week').minus({ days: 2 })
+    let startDate = null
+    switch (dateMode) {
+      case 'current': {
+        startDate = DateTime.fromISO('2022-02-01T13:45:15', { zone: 'Asia/Tokyo' }).startOf('week').minus({ days: 2 })
+        break
+      }
+      case 'future': {
+        startDate = DateTime.fromISO(faker.date.future(1).toISOString(), { zone: 'Asia/Tokyo' }).startOf('week').minus({ days: 2 })
+        break
+      }
+      default: {
+        startDate = DateTime.fromISO(faker.date.past(5, DateTime.utc().minus({ months: 3 }), { zone: 'Asia/Tokyo' }).toISOString()).startOf('week').minus({ days: 2 })
+        break
+      }
+    }
     const endDate = startDate.plus({ days: 7 })
 
     // Generate floors
@@ -610,7 +622,7 @@ export default {
         warningNote: ''
       },
       categories,
-      isCurrentMeeting: future,
+      isCurrentMeeting: dateMode !== 'past',
       useHedgeDoc: true,
       schedule,
       floors
