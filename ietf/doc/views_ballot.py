@@ -40,6 +40,8 @@ from ietf.person.models import Person
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.utils.decorators import require_api_key
 from ietf.utils.response import permission_denied
+from ietf.utils.timezone import datetime_from_date, production_tzinfo
+
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -1055,9 +1057,11 @@ def make_last_call(request, name):
             e.desc = "The following Last Call announcement was sent out (ends %s):<br><br>" % expiration_date
             e.desc += announcement
 
-            if form.cleaned_data['last_call_sent_date'] != e.time.date():
-                e.time = datetime.datetime.combine(form.cleaned_data['last_call_sent_date'], e.time.time())
-            e.expires = expiration_date
+            e_production_time = e.time.astimezone(production_tzinfo())
+            if form.cleaned_data['last_call_sent_date'] != e_production_time.date():
+                lcsd = form.cleaned_data['last_call_sent_date']
+                e.time = e_production_time.replace(year=lcsd.year, month=lcsd.month, day=lcsd.day)  # preserves tzinfo
+            e.expires = datetime_from_date(expiration_date, production_tzinfo())
             e.save()
             events.append(e)
 
