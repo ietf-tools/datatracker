@@ -10,7 +10,6 @@ import email.mime.multipart, email.mime.text, email.utils
 from mock import patch
 from requests import Response
 
-
 from django.apps import apps
 from django.urls import reverse as urlreverse
 from django.conf import settings
@@ -39,6 +38,7 @@ from ietf.utils.mail import outbox, empty_outbox, parseaddr, on_behalf_of, get_p
 from ietf.utils.test_utils import login_testing_unauthorized, reload_db_objects
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import strip_prefix, xslugify
+from ietf.utils.timezone import DEADLINE_TZINFO
 from django.utils.html import escape
 
 class ReviewTests(TestCase):
@@ -734,7 +734,7 @@ class ReviewTests(TestCase):
         # The secretary is allowed to set a custom completion date (#2590)
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, "completed")
-        self.assertEqual(assignment.completed_on, datetime.datetime(2012, 12, 24, 12, 13, 14))
+        self.assertEqual(assignment.completed_on, datetime.datetime(2012, 12, 24, 12, 13, 14, tzinfo=DEADLINE_TZINFO))
 
         # There should be two events:
         # - the event logging when the change when it was entered, i.e. very close to now.
@@ -742,7 +742,7 @@ class ReviewTests(TestCase):
         events = ReviewAssignmentDocEvent.objects.filter(doc=assignment.review_request.doc).order_by('-time')
         event0_time_diff = timezone.now() - events[0].time
         self.assertLess(event0_time_diff, datetime.timedelta(seconds=10))
-        self.assertEqual(events[1].time, datetime.datetime(2012, 12, 24, 12, 13, 14))
+        self.assertEqual(events[1].time, datetime.datetime(2012, 12, 24, 12, 13, 14, tzinfo=DEADLINE_TZINFO))
         
         with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
