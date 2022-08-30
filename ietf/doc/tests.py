@@ -58,7 +58,7 @@ from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text
-from ietf.utils.timezone import datetime_today
+from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO
 
 
 class SearchTests(TestCase):
@@ -1842,7 +1842,7 @@ class DocTestCase(TestCase):
             desc="Last call\x0b",  # include a control character to be sure it does not break anything
             type="sent_last_call",
             by=Person.objects.get(user__username="secretary"),
-            expires=datetime_today() + datetime.timedelta(days=7))
+            expires=datetime_today(DEADLINE_TZINFO) + datetime.timedelta(days=7))
 
         r = self.client.get("/feed/last-call/")
         self.assertEqual(r.status_code, 200)
