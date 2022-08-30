@@ -5,10 +5,12 @@
     "preview": "vite build --mode test && vite preview --mode test",
     "legacy:dev": "parcel",
     "legacy:build": "parcel build",
-    "cypress": "cypress run",
-    "cypress:open": "cypress open",
-    "cypress:run:agenda-neue": "cypress run --spec cypress/e2e/meeting/agenda-neue.cy.js",
-    "percy:run:agenda-neue": "percy exec -- cypress run --spec cypress/e2e/meeting/agenda-neue.cy.js"
+    "cypress": "cypress run --config-file cypress/configs/modern.config.js",
+    "cypress:open": "cypress open --config-file cypress/configs/modern.config.js",
+    "cypress:legacy": "cypress run --config-file cypress/configs/legacy.config.js",
+    "cypress:legacy:open": "cypress open --config-file cypress/configs/legacy.config.js",
+    "percy:run": "percy exec -- cypress run --config-file cypress/configs/modern.config.js",
+    "percy:legacy:run": "percy exec -- cypress run --config-file cypress/configs/legacy.config.js"
   },
   "dependencies": {
     "@fullcalendar/bootstrap5": "5.11.0",
