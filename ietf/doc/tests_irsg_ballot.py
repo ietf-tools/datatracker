@@ -19,6 +19,7 @@ from ietf.doc.utils import create_ballot_if_not_open, close_ballot
 from ietf.person.utils import get_active_irsg, get_active_ads
 from ietf.group.factories import RoleFactory
 from ietf.person.models import Person
+from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO
 
 
 class IssueIRSGBallotTests(TestCase):
@@ -254,7 +255,7 @@ class IssueIRSGBallotTests(TestCase):
         irsgmember = get_active_irsg()[0]
         secr = RoleFactory(group__acronym='secretariat',name_id='secr')
         wg_ballot = create_ballot_if_not_open(None, wg_draft, ad.person, 'approve')
-        due = datetime.date.today()+datetime.timedelta(days=14)
+        due = datetime_today(DEADLINE_TZINFO) + datetime.timedelta(days=14)
         rg_ballot = create_ballot_if_not_open(None, rg_draft, secr.person, 'irsg-approve', due)
 
         url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=wg_draft.name, ballot_id=wg_ballot.pk))
