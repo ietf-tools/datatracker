@@ -1028,7 +1028,7 @@ describe('meeting -> agenda-neue [future, desktop]', {
 // AGENDA-NEUE (live meeting) | DESKTOP viewport
 // ====================================================================
 
-describe.only('meeting -> agenda-neue [live, desktop]', {
+describe('meeting -> agenda-neue [live, desktop]', {
   viewportWidth: viewports.desktop[0],
   viewportHeight: viewports.desktop[1]
   }, () => {
@@ -1131,6 +1131,142 @@ describe.only('meeting -> agenda-neue [live, desktop]', {
     cy.get('.agenda-settings .agenda-settings-actions > button').last().click()
     cy.get('.agenda-settings').should('not.exist')
   })
+})
+
+// ====================================================================
+// AGENDA-NEUE (past meeting) | SMALL DESKTOP/TABLET/MOBILE  viewport
+// ====================================================================
+
+describe('meeting -> agenda-neue [past, small screens]', () => {
+  // Generate meeting data
+  const meetingData = meetingGenerator.generateAgendaResponse({ dateMode: 'past' })
+
+  for (const vp of ['smallDesktop', 'tablet', 'mobile']) {
+    describe(vp, {
+      viewportWidth: viewports[vp][0],
+      viewportHeight: viewports[vp][1]
+    }, () => {
+      before(() => {
+        // Set clock to 2022-02-01 (month is 0-indexed)
+        cy.clock(new Date(2022, 1, 1))
+
+        // Intercept Meeting Data API
+        cy.intercept('GET', `/api/meeting/${meetingData.meeting.number}/agenda-data`, { body: meetingData }).as('getMeetingData')
+
+        // Visit agenda page
+        cy.visit(`/meeting/${meetingData.meeting.number}/agenda-neue`, {
+          onBeforeLoad: (win) => { injectMeetingData(win, meetingData.meeting.number) }
+        })
+        cy.wait('@getMeetingData')
+
+        // Fix scroll behavior
+        // See https://github.com/cypress-io/cypress/issues/3200
+        cy.document().then(document => {
+          const htmlElement = document.querySelector('html')
+          if (htmlElement) {
+            htmlElement.style.scrollBehavior = 'inherit'
+          }
+        })
+      })
+
+      // -> NARROW QUICK ACCESS PANEL (smallDesktop only)
+
+      if (vp === 'smallDesktop') {
+        it('has narrow quick access panel', () => {
+          // Alternate labels for buttons
+          cy.get('#agenda-quickaccess-filterbyareagroups-btn').should('be.visible').and('include.text', 'Filter...')
+            .next('button').should('be.visible').and('include.text', 'Pick...')
+          cy.get('#agenda-quickaccess-calview-btn').should('be.visible').and('include.text', 'Cal View')
+            .next('button').should('be.visible').and('include.text', '.ics')
+          // -> Shorter date labels for Jump to buttons
+          cy.get('.agenda .agenda-quickaccess-jumpto > .nav-item').should('have.length', 7).as('dayjumpbuttons')
+            .each((el, idx) => {
+              const localDateTime = DateTime.fromISO(meetingData.meeting.startDate).setZone('local').plus({ days: idx }).toFormat('ccc LLL d')
+              cy.wrap(el).should('contain', localDateTime).find('i.bi').should('not.be.visible')
+            })
+
+          // Take a snapshot for visual diffing
+          cy.percySnapshot(`meeting -> agenda-neue [past, ${vp}]`, { widths: [viewports[vp][0]] })
+        })
+      }
+
+      // -> TABLET + MOBILE-specific tests
+
+      if (vp === 'tablet' || vp === 'mobile') {
+
+        // Check for elements that should not exist on smaller screens
+
+        it('has no updated date', () => {
+          cy.get('.agenda > h4 > h6').should('not.be.visible')
+
+          // Take a snapshot for visual diffing
+          cy.percySnapshot(`meeting -> agenda-neue [past, ${vp}]`, { widths: [viewports[vp][0]] })
+        })
+
+        it('has no timezone dropdown selector', () => {
+          cy.get('.agenda .agenda-tz-selector').next('.agenda-timezone-ddn').should('not.exist')
+        })
+
+        it('has no floor + group indicators', () => {
+          cy.get('.agenda .agenda-table-cell-room > .badge').should('not.be.visible')
+          cy.get('.agenda .agenda-table-cell-group > .badge').should('not.exist')
+        })
+
+        // Session buttons should be hidden in a dropdown menu
+
+        it('has session buttons dropdown', () => {
+          cy.get('.agenda .agenda-table-display-event .agenda-table-cell-links-buttons').each(el => {
+            cy.wrap(el).children().should('have.length', 1)
+          })
+
+          // TODO: Check for dropdown links once changed to a custom panel with standard links
+        })
+
+        // Bottom Mobile Bar
+
+        it('has no lateral quick access panel', () => {
+          cy.get('.agenda-quickaccess').should('not.exist')
+        })
+
+        it('has a bottom mobile bar', () => {
+          cy.get('.agenda-mobile-bar').should('be.visible')
+            .children().should('have.length', 4)
+            .first().should('include.text', 'Filters')
+            .next().should('include.text', 'Cal')
+            .next().should('include.text', '.ics')
+            .next().children().should('have.length', 1).and('have.class', 'bi')
+        })
+
+        it('can open the filters overlay', () => {
+          cy.get('.agenda-mobile-bar > button').first().click()
+          cy.get('.agenda-personalize').should('be.visible')
+          cy.get('.agenda-personalize .agenda-personalize-actions > button').eq(1).click()
+          cy.get('.agenda-personalize').should('not.exist')
+        })
+
+        it('can open the calendar view', () => {
+          cy.get('.agenda-mobile-bar > button').eq(1).click()
+          cy.get('.agenda-calendar').should('be.visible')
+          cy.get('.agenda-calendar .agenda-calendar-actions > button').eq(1).click()
+          cy.get('.agenda-calendar').should('not.exist')
+        })
+
+        it('can open the ics dropdown', () => {
+          cy.get('.agenda-mobile-bar > button').eq(2).click()
+          cy.get('.n-dropdown-menu > .n-dropdown-option').should('have.length', 2)
+            .first().should('include.text', 'Subscribe')
+            .next().should('include.text', 'Download')
+        })
+
+        it('can open the settings overlay', () => {
+          cy.get('.agenda-mobile-bar > button').last().click()
+          cy.get('.agenda-settings').should('be.visible')
+          cy.get('.agenda-settings .agenda-settings-actions > button').eq(1).click()
+          cy.get('.agenda-settings').should('not.exist')
+        })
+      }
+    })
+  }
 })
 
 // ====================================================================
