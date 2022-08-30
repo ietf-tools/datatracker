@@ -100,7 +100,8 @@ echo "Starting memcached..."
 
 echo "Running initial checks..."
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check --settings=settings_local
-# /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local
+
+/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local || (echo "USE_TZ = True" >> $WORKSPACEDIR/ietf/settings_local.py; /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local)
 
 echo "-----------------------------------------------------------------"
 echo "Done!"
