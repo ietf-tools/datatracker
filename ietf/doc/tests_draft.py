@@ -34,6 +34,7 @@ from ietf.iesg.models import TelechatDate
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase
+from ietf.utils.timezone import date_today, datetime_from_date
 
 
 class ChangeStateTests(TestCase):
@@ -402,11 +403,11 @@ class EditInfoTests(TestCase):
 
         # change to a telechat that should cause returning item to be auto-detected
         # First, make it appear that the previous telechat has already passed
-        telechat_event.telechat_date = datetime.date.today()-datetime.timedelta(days=7)
+        telechat_event.telechat_date = date_today() - datetime.timedelta(days=7)
         telechat_event.save()
         ad = Person.objects.get(user__username="ad")
         ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
-        ballot.time = telechat_event.telechat_date
+        ballot.time = datetime_from_date(telechat_event.telechat_date)
         ballot.save()
 
         r = self.client.post(url, data)
@@ -429,7 +430,7 @@ class EditInfoTests(TestCase):
         self.assertTrue("Telechat update" in outbox[-1]['Subject'])
 
         # Put it on an agenda that's very soon from now
-        next_week = datetime.date.today()+datetime.timedelta(days=7)
+        next_week = date_today() + datetime.timedelta(days=7)
         td =  TelechatDate.objects.active()[0]
         td.date = next_week
         td.save()
