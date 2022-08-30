@@ -7,6 +7,11 @@ from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.utils import timezone
 
+
+# Default time zone for deadlines / expiration dates.
+DEADLINE_TZINFO = ZoneInfo('PST8PDT')
+
+
 def local_timezone_to_utc(d):
     """Takes a naive datetime in the local timezone and returns a
     naive datetime with the corresponding UTC time."""
@@ -72,7 +77,3 @@ def time_now(tzinfo=None):
     if tzinfo is None:
         tzinfo = pytz.utc
     return timezone.now().astimezone(tzinfo).time()
-
-
-def production_tzinfo():
-    return ZoneInfo(settings.PRODUCTION_TIMEZONE)

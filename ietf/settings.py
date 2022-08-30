@@ -1039,8 +1039,6 @@ CHAT_URL_PATTERN = 'https://zulip.ietf.org/#narrow/stream/{chat_room_name}'
 # If we need to revert to xmpp
 # CHAT_ARCHIVE_URL_PATTERN = 'https://www.ietf.org/jabber/logs/{chat_room_name}?C=M;O=D'
 
-PRODUCTION_TIMEZONE = "America/Los_Angeles"
-
 PYFLAKES_DEFAULT_ARGS= ["ietf", ]
 VULTURE_DEFAULT_ARGS= ["ietf", ]
 
