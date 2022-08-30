@@ -14,7 +14,6 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
-from django.utils import timezone
 from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
@@ -44,6 +43,7 @@ from ietf.utils.draft_search import normalize_draftname
 from ietf.utils.mail import send_mail, send_mail_message
 from ietf.utils.response import permission_denied
 from ietf.utils.text import text_to_dict
+from ietf.utils.timezone import datetime_from_date, datetime_today, DEADLINE_TZINFO
 
 # ----------------------------------------------------------------
 # Globals
@@ -393,7 +393,7 @@ def email(request, id):
                 type_id = 'msgout',
                 by = request.user.person,
                 disclosure = ipr,
-                response_due = form.cleaned_data['response_due'],
+                response_due = datetime_from_date(form.cleaned_data['response_due'], DEADLINE_TZINFO),
                 message = msg,
             )
 
@@ -587,7 +587,7 @@ def notify(request, id, type):
                     type_id = form.cleaned_data['type'],
                     by = request.user.person,
                     disclosure = ipr,
-                    response_due = timezone.now().date() + datetime.timedelta(days=30),
+                    response_due = datetime_today(DEADLINE_TZINFO) + datetime.timedelta(days=30),
                     message = message,
                 )
             messages.success(request,'Notifications sent')
