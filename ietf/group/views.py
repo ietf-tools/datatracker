@@ -119,6 +119,7 @@ from ietf.settings import MAILING_LIST_INFO_URL
 from ietf.utils.response import permission_denied
 from ietf.utils.text import strip_suffix
 from ietf.utils import markdown
+from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO
 
 
 # --- Helpers ----------------------------------------------------------
@@ -1421,11 +1422,14 @@ def review_requests(request, acronym, group_type=None):
         }[since]
 
         closed_review_requests = closed_review_requests.filter(
-              Q(reviewrequestdocevent__type='closed_review_request', reviewrequestdocevent__time__gte=datetime.date.today() - date_limit)
-            | Q(reviewrequestdocevent__isnull=True, time__gte=datetime.date.today() - date_limit)
+              Q(reviewrequestdocevent__type='closed_review_request',
+                reviewrequestdocevent__time__gte=datetime_today(DEADLINE_TZINFO) - date_limit)
+            | Q(reviewrequestdocevent__isnull=True, time__gte=datetime_today(DEADLINE_TZINFO) - date_limit)
         ).distinct()
 
-        closed_review_assignments = closed_review_assignments.filter(completed_on__gte = datetime.date.today() - date_limit)
+        closed_review_assignments = closed_review_assignments.filter(
+            completed_on__gte = datetime_today(DEADLINE_TZINFO) - date_limit,
+        )
 
     return render(request, 'group/review_requests.html',
                   construct_group_menu_context(request, group, "review requests", group_type, {
