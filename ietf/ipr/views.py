@@ -145,15 +145,14 @@ def ipr_rfc_number(disclosureDate, thirdPartyDisclosureFlag):
     # made on 1993-07-23, which is more than a year after RFC 1310.
 
     # RFC publication date comes from the RFC Editor announcement
-    # TODO: These times are tzinfo=pytz.utc, but disclosure times are offset-naive
     ipr_rfc_pub_datetime = {
-        1310 : datetime.datetime(1992,  3, 13,  0,  0),
-        1802 : datetime.datetime(1994,  3, 23,  0,  0),
-        2026 : datetime.datetime(1996, 10, 29,  0,  0),
-        3668 : datetime.datetime(2004,  2, 18,  0,  0),
-        3979 : datetime.datetime(2005,  3,  2,  2, 23),
-        4879 : datetime.datetime(2007,  4, 10, 18, 21),
-        8179 : datetime.datetime(2017,  5, 31, 23,  1),
+        1310 : datetime.datetime(1992,  3, 13,  0,  0, tzinfo=datetime.timezone.utc),
+        1802 : datetime.datetime(1994,  3, 23,  0,  0, tzinfo=datetime.timezone.utc),
+        2026 : datetime.datetime(1996, 10, 29,  0,  0, tzinfo=datetime.timezone.utc),
+        3668 : datetime.datetime(2004,  2, 18,  0,  0, tzinfo=datetime.timezone.utc),
+        3979 : datetime.datetime(2005,  3,  2,  2, 23, tzinfo=datetime.timezone.utc),
+        4879 : datetime.datetime(2007,  4, 10, 18, 21, tzinfo=datetime.timezone.utc),
+        8179 : datetime.datetime(2017,  5, 31, 23,  1, tzinfo=datetime.timezone.utc),
     }
 
     if disclosureDate < ipr_rfc_pub_datetime[1310]:
