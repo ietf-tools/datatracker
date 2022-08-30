@@ -449,7 +449,7 @@ $("#deps-modal")
                         .replaceWith(dep_el);
                     dep_sim.restart();
 
-                    $('svg [title][title!=""]')
+                    $('svg [title]:not([title=""])')
                         .tooltip();
 
                     $("#legend")
@@ -467,7 +467,7 @@ $("#deps-modal")
                                 dep_sim.restart();
                             }
 
-                            $('svg [title][title!=""]')
+                            $('svg [title]:not([title=""])')
                                 .tooltip();
                         });
 

@@ -1972,7 +1972,7 @@ def rfcdiff_latest_json(request, name, rev=None):
             if doc.name != doc.canonical_name():
                 prev_rev = doc.rev
                 # not sure what to do if non-numeric values come back, so at least log it
-                log.assertion('doc.rfc_number().isdigit()')
+                log.assertion('doc.rfc_number().isdigit()') # .rfc_number() is expensive...
                 log.assertion('doc.rev.isdigit()')
                 if int(doc.rfc_number()) in HAS_TOMBSTONE and prev_rev != '00':
                     prev_rev = f'{(int(doc.rev)-1):02d}'

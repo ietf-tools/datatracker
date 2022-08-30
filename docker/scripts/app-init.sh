@@ -82,7 +82,7 @@ chmod +x ./docker/scripts/app-create-dirs.sh
 # Download latest coverage results file
 
 echo "Downloading latest coverage results file..."
-curl -fsSL https://github.com/ietf-tools/datatracker/releases/latest/download/coverage.json -o release-coverage.json
+curl -fsSL https://github.com/ietf-tools/datatracker/releases/download/baseline/coverage.json -o release-coverage.json
 
 # Wait for DB container
 

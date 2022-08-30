@@ -35,10 +35,9 @@ from ietf.group.models import Role, Group
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author, is_bofreq_editor
 from ietf.person.models import Person
 from ietf.review.models import ReviewWish
-from ietf.utils import draft, text
+from ietf.utils import draft, log
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.utils import log
 from ietf.utils.xmldraft import XMLDraft
 
 
@@ -396,23 +395,6 @@ def get_unicode_document_content(key, filename, codec='utf-8', errors='ignore'):
 
     return raw_content
 
-def get_document_content(key, filename, split=True, markup=True):
-    log.unreachable("2017-12-05")
-    try:
-        with io.open(filename, 'rb') as f:
-            raw_content = f.read()
-    except IOError:
-        if settings.DEBUG:
-            error = "Error; cannot read ("+filename+")"
-        else:
-            error = "Error; cannot read ("+key+")"
-        return error
-
-#     if markup:
-#         return markup_txt.markup(raw_content, split)
-#     else:
-#         return raw_content
-    return text.decode(raw_content)
 
 def tags_suffix(tags):
     return ("::" + "::".join(t.name for t in tags)) if tags else ""
