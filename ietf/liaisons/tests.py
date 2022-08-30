@@ -1023,7 +1023,7 @@ class LiaisonManagementTests(TestCase):
         LiaisonStatementEventFactory(type_id='posted', statement__body="Has recently in its body",statement__from_groups=[GroupFactory(type_id='sdo',acronym='ulm'),])
         # Statement 2
         s2 = LiaisonStatementEventFactory(type_id='posted', statement__body="That word does not occur here", statement__title="Nor does it occur here")
-        s2.time=datetime.datetime(2010,1,1)
+        s2.time=datetime.datetime(2010, 1, 1, tzinfo=datetime.timezone.utc)
         s2.save()
 
         # test list only, no search filters
