@@ -700,10 +700,6 @@ async function main () {
             task: async (subctx, subtask) => {
               await executeCommand(subtask, containers.appSource, ['bash', '-c', 'chmod +x ./dev/diff/prepare.sh'])
               await executeCommand(subtask, containers.appSource, ['bash', './dev/diff/prepare.sh'])
-              subtask.title = `Preparing source Datatracker instance - Running checks...`
-              await executeCommand(subtask, containers.appSource, ['bash', '-c', './ietf/manage.py check'])
-              subtask.title = `Preparing source Datatracker instance - Applying migrations...`
-              await executeCommand(subtask, containers.appSource, ['bash', '-c', './ietf/manage.py migrate'])
               subtask.title = `Source Datatracker instance is now ready.`
             }
           },
@@ -712,10 +708,6 @@ async function main () {
             task: async (subctx, subtask) => {
               await executeCommand(subtask, containers.appTarget, ['bash', '-c', 'chmod +x ./dev/diff/prepare.sh'])
               await executeCommand(subtask, containers.appTarget, ['bash', './dev/diff/prepare.sh'])
-              subtask.title = `Run target Datatracker instance - Running checks...`
-              await executeCommand(subtask, containers.appTarget, ['bash', '-c', './ietf/manage.py check'])
-              subtask.title = `Run target Datatracker instance - Applying migrations...`
-              await executeCommand(subtask, containers.appTarget, ['bash', '-c', './ietf/manage.py migrate'])
               subtask.title = `Run target Datatracker instance - Starting server...`
               executeCommand(subtask, containers.appTarget, ['bash', '-c', './ietf/manage.py runserver 0.0.0.0:8000 --settings=settings_local'])
               subtask.title = `Run target Datatracker instance - Waiting for server to accept connections...`
