@@ -33,6 +33,10 @@
     - [Handling of Internal Static Files](#handling-of-internal-static-files)
     - [Changes to Template Files](#changes-to-template-files)
     - [Deployment](#deployment)
+- [Running Tests](#running-tests)
+    - [Python](#python-tests)
+    - [Frontend](#frontend-tests)
+    - [Diff Tool](#diff-tool)
 
 ---
 
@@ -191,3 +195,53 @@ During deployment, it is now necessary to run the management command:
 ietf/manage.py collectstatic
 ````
 before activating a new release.
+
+## Running Tests
+
+### Python Tests
+
+From a datatracker container, run the command:
+```sh
+./ietf/manage.py test --settings=settings_local_sqlitetest
+```
+
+> You can limit the run to specific tests using the `--pattern` argument.
+
+### Frontend Tests
+
+Frontend tests are done via Cypress. There're 2 different type of tests:
+
+- Tests that test Vue pages / components and run natively without any external dependency.
+- Tests that require a running datatracker instance to test against (usually legacy views).
+
+> Make sure you have Node.js 16.x or later installed on your machine.
+
+#### Run Vue Tests
+
+To run the tests headlessly (command line mode):
+```sh
+yarn cypress
+```
+To run the tests visually **(CANNOT run in docker)**:
+```sh
+yarn cypress:open
+```
+> It can take a few seconds before the tests start or the GUI opens.
+
+#### Run Legacy Views Tests
+
+First, you need to start a datatracker instance (dev or prod), ideally from a docker container, exposing the 8000 port.
+
+To run the tests headlessly (command line mode):
+```sh
+yarn cypress:legacy
+```
+To run the tests visually **(CANNOT run in docker)**:
+```sh
+yarn cypress:legacy:open
+```
+> It can take a few seconds before the tests start or the GUI opens.
+
+### Diff Tool
+
+To compare 2 different datatracker instances and look for diff, read the [diff tool instructions](dev/diff).
