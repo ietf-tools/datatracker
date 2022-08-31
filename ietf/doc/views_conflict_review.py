@@ -373,10 +373,12 @@ def approve_conflict_review(request, name):
 
 
 class SimpleStartReviewForm(forms.Form):
-    notify = forms.CharField(max_length=255, 
-                             label="Notice emails", 
-                             help_text="Separate email addresses with commas.", 
-                             required=False)        
+    notify = forms.CharField(
+        max_length=255,
+        label="Notice emails",
+        help_text="Separate email addresses with commas. " + 
+                  "ISE and IRTF stream editors are notified automatically for their streams.",
+        required=False)
 
 
 class StartReviewForm(SimpleStartReviewForm):
