@@ -455,12 +455,18 @@ def start_review_sanity_check(request, name):
 
     return doc_to_review
 
+
 def build_notify_addresses(doc_to_review):
     # Take care to do the right thing during ietf chair and stream owner transitions
     notify_addresses = []
-    notify_addresses.extend([r.formatted_email() for r in Role.objects.filter(group__acronym=doc_to_review.stream.slug, name='chair')])
+    if doc_to_review.stream.slug not in ['ise', 'irtf']:
+        notify_addresses.extend(
+            [r.formatted_email() 
+             for r in Role.objects.filter(group__acronym=doc_to_review.stream.slug, name='chair')]
+        )
     notify_addresses.append("%s@%s" % (doc_to_review.name, settings.DRAFT_ALIAS_DOMAIN))
     return notify_addresses
+
 
 def build_conflict_review_document(login, doc_to_review, ad, notify, create_in_state):
     if doc_to_review.name.startswith('draft-'):
