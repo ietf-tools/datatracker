@@ -50,6 +50,8 @@ from ietf.stats.models import MeetingRegistration
 from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
+from ietf.utils.timezone import datetime_today, datetime_from_date, DEADLINE_TZINFO
+
 
 client_test_cert_files = None
 
@@ -1092,7 +1094,7 @@ class ReminderTest(TestCase):
         rai = Position.objects.get(nomcom=self.nomcom,name='RAI')
         iab = Position.objects.get(nomcom=self.nomcom,name='IAB')
 
-        today = datetime.date.today()
+        today = datetime_today()
         t_minus_3 = today - datetime.timedelta(days=3)
         t_minus_4 = today - datetime.timedelta(days=4)
         e1 = EmailFactory(address="nominee1@example.org", person=PersonFactory(name="Nominee 1"), origin='test')
@@ -2418,7 +2420,8 @@ class rfc8989EligibilityTests(TestCase):
 
         nobody=PersonFactory()
         for nomcom in self.nomcoms:
-            before_elig_date = nomcom.first_call_for_volunteers - datetime.timedelta(days=5)
+            elig_datetime = datetime_from_date(nomcom.first_call_for_volunteers, DEADLINE_TZINFO)
+            before_elig_date = elig_datetime - datetime.timedelta(days=5)
 
             chair = RoleFactory(name_id='chair',group__time=before_elig_date).person
 
@@ -2436,7 +2439,7 @@ class rfc8989EligibilityTests(TestCase):
     def test_elig_by_office_edge(self):
 
         for nomcom in self.nomcoms:
-            elig_date=get_eligibility_date(nomcom)
+            elig_date = datetime_from_date(get_eligibility_date(nomcom), DEADLINE_TZINFO)
             day_after = elig_date + datetime.timedelta(days=1)
             two_days_after = elig_date + datetime.timedelta(days=2)
 
@@ -2451,15 +2454,15 @@ class rfc8989EligibilityTests(TestCase):
     def test_elig_by_office_closed_groups(self):
 
         for nomcom in self.nomcoms:
-            elig_date=get_eligibility_date(nomcom)
+            elig_date=datetime_from_date(get_eligibility_date(nomcom), DEADLINE_TZINFO)
             day_before = elig_date-datetime.timedelta(days=1)
             # special case for Feb 29
             if elig_date.month == 2 and elig_date.day == 29:
-                year_before = datetime.date(elig_date.year - 1, 2, 28)
-                three_years_before = datetime.date(elig_date.year - 3, 2, 28)
+                year_before = elig_date.replace(year=elig_date.year - 1, day=28)
+                three_years_before = elig_date.replace(year=elig_date.year - 3, day=28)
             else:
-                year_before = datetime.date(elig_date.year - 1, elig_date.month, elig_date.day)
-                three_years_before = datetime.date(elig_date.year - 3, elig_date.month, elig_date.day)
+                year_before = elig_date.replace(year=elig_date.year - 1)
+                three_years_before = elig_date.replace(year=elig_date.year - 3)
             just_after_three_years_before = three_years_before + datetime.timedelta(days=1)
             just_before_three_years_before = three_years_before - datetime.timedelta(days=1)
 
@@ -2518,14 +2521,14 @@ class rfc8989EligibilityTests(TestCase):
         for nomcom in self.nomcoms:
             elig_date = get_eligibility_date(nomcom)
 
-            last_date = elig_date
+            last_date = datetime_from_date(elig_date, DEADLINE_TZINFO)
             # special case for Feb 29
             if last_date.month == 2 and last_date.day == 29:
-                first_date = datetime.date(last_date.year - 5, 2, 28)
-                middle_date = datetime.date(last_date.year - 3, 2, 28)
+                first_date = last_date.replace(year = last_date.year - 5, day=28)
+                middle_date = last_date.replace(year=first_date.year - 3, day=28)
             else:
-                first_date = datetime.date(last_date.year - 5, last_date.month, last_date.day)
-                middle_date = datetime.date(last_date.year - 3, last_date.month, last_date.day)
+                first_date = last_date.replace(year=last_date.year - 5)
+                middle_date = last_date.replace(year=first_date.year - 3)
             day_after_last_date = last_date+datetime.timedelta(days=1)
             day_before_first_date = first_date-datetime.timedelta(days=1)
 
@@ -2665,7 +2668,7 @@ class VolunteerDecoratorUnitTests(TestCase):
         office_person = PersonFactory()
         RoleHistoryFactory(
             name_id='chair',
-            group__time= elig_date - datetime.timedelta(days=365),
+            group__time=datetime_from_date(elig_date) - datetime.timedelta(days=365),
             group__group__state_id='conclude',
             person=office_person,
         )
@@ -2677,11 +2680,13 @@ class VolunteerDecoratorUnitTests(TestCase):
             DocEventFactory(
                 type='published_rfc',
                 doc=da.document,
-                time=datetime.date(
+                time=datetime.datetime(
                     elig_date.year - 3,
                     elig_date.month,
                     28 if elig_date.month == 2 and elig_date.day == 29 else elig_date.day,
-                ))
+                    tzinfo=datetime.timezone.utc,
+                )
+            )
         nomcom.volunteer_set.create(person=author_person)
 
         volunteers = nomcom.volunteer_set.all()
