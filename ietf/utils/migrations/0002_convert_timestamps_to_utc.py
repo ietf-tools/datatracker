@@ -105,7 +105,6 @@ expected_datetime_columns = (
     ('submit_submissioncheck', 'time'),
     ('submit_submissionevent', 'time'),
     ('tastypie_apikey', 'created'),
-    ('utils_dumpinfo', 'date'),
     ('utils_versioninfo', 'time'),
 )
 
@@ -142,6 +141,7 @@ def forward(apps, schema_editor):
                 WHERE table_schema='ietf_utf8' 
                     AND column_type LIKE 'datetime%'
                     AND NOT table_name LIKE 'django_celery_beat_%' 
+                    AND NOT table_name='utils_dumpinfo'
                 ORDER BY table_name, column_name;
         """)
         assert cursor.fetchall() == expected_datetime_columns, 'unexpected or missing datetime columns in db'
@@ -253,7 +253,6 @@ UPDATE submit_preapproval SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
 UPDATE submit_submissioncheck SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
 UPDATE submit_submissionevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
 UPDATE tastypie_apikey SET created = CONVERT_TZ(created, 'PST8PDT', 'UTC');
-UPDATE utils_dumpinfo SET date = CONVERT_TZ(date, 'PST8PDT', 'UTC');
 UPDATE utils_versioninfo SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
 
 UPDATE meeting_timeslot
