@@ -5,6 +5,7 @@
 import datetime
 import io
 import os
+import re
 
 from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
@@ -25,6 +26,7 @@ from ietf.doc.forms import AdForm
 from ietf.group.models import Role, Group
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_stream
+from ietf.mailtrigger.models import Recipient
 from ietf.person.models import Person
 from ietf.utils import log
 from ietf.utils.mail import send_mail_preformatted
@@ -375,6 +377,23 @@ class SimpleStartReviewForm(forms.Form):
                              label="Notice emails", 
                              help_text="Separate email addresses with commas.", 
                              required=False)
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        if 'notify' not in cleaned_data:
+            return
+                
+        notify = cleaned_data['notify']
+        stream_managers = [
+            re.sub('([^<]*<)?(.*)(>.*)', '\2', r) 
+            for r in Recipient(slug='stream_managers').gather(streams=['ise', 'irtf'])
+        ]
+        notifications = notify.split(',')
+        for mgr in stream_managers:
+            goods = [n for n in notifications if mgr not in n]
+            notifications = goods
+        cleaned_data['notify'] = ','.join(notifications)
+        return cleaned_data
         
 
 
