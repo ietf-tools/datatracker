@@ -58,7 +58,7 @@ describe('meeting agenda', () => {
 
 describe('meeting agenda weekview', () => {
   before(() => {
-    cy.visit('/meeting/agenda/week-view.html')
+    cy.visit('/meeting/113/agenda/week-view.html')
   })
   it('should have day headers', () => {
     cy.get('.agenda-weekview-day').should('have.length.greaterThan', 0).and('be.visible')

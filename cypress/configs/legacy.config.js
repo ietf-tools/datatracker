@@ -4,6 +4,7 @@ module.exports = defineConfig({
   chromeWebSecurity: false,
   e2e: {
     baseUrl: 'http://localhost:8000',
+    specPattern: 'cypress/e2e-legacy/**/*.cy.{js,jsx,ts,tsx}',
     setupNodeEvents(on, config) {
       // implement node event listeners here
     }
