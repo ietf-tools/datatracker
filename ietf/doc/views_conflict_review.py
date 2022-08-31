@@ -397,10 +397,35 @@ class StartReviewForm(SimpleStartReviewForm):
 
 @role_required("Secretariat","IRTF Chair","ISE")
 def start_review(request, name):
-    if has_role(request.user,"Secretariat"):
-        return start_review_as_secretariat(request,name)
+    """Start the conflict review process, setting the initial 
+    shepherding AD, and possibly putting the review on a telechat."""
+
+    doc_to_review = start_review_sanity_check(request, name)
+    if has_role(request.user, "Secretariat"):
+        form_class = StartReviewForm
     else:
-        return start_review_as_stream_owner(request,name)
+        form_class = SimpleStartReviewForm
+
+    if request.method == 'POST':
+        form = form_class(request.POST)
+        if form.is_valid():
+            conflict_review = conflict_review_document(doc_to_review, form, request)
+            send_conflict_review_started_email(request, conflict_review)
+            return HttpResponseRedirect(conflict_review.get_absolute_url())
+    else:
+        notify_addresses = build_notify_addresses(doc_to_review)
+        init = {'notify': ', '.join(notify_addresses)}
+        if has_role(request.user, 'Secretariat'):
+            init["ad"] = Role.objects.filter(group__acronym='ietf', name='chair')[0].person.id
+        form = form_class(initial=init)
+
+    return render(
+        request,
+        'doc/conflict_review/start.html',
+        {'form': form,
+         'doc_to_review': doc_to_review}
+    )
+
 
 def start_review_sanity_check(request, name):
     doc_to_review = get_object_or_404(Document, type="draft", name=name)
@@ -458,74 +483,26 @@ def build_conflict_review_document(login, doc_to_review, ad, notify, create_in_s
 
     return conflict_review
 
-def start_review_as_secretariat(request, name):
-    """Start the conflict review process, setting the initial shepherding AD, and possibly putting the review on a telechat."""
 
-    doc_to_review = start_review_sanity_check(request, name)
-
+def conflict_review_document(doc_to_review, form, request):
     login = request.user.person
-
-    if request.method == 'POST':
-        form = StartReviewForm(request.POST)
-        if form.is_valid():
-            conflict_review = build_conflict_review_document(login = login,
-                                                             doc_to_review = doc_to_review, 
-                                                             ad = form.cleaned_data['ad'],
-                                                             notify = form.cleaned_data['notify'],
-                                                             create_in_state = form.cleaned_data['create_in_state']
-                                                            )
-
-            tc_date = form.cleaned_data['telechat_date']
-            if tc_date:
-                update_telechat(request, conflict_review, login, tc_date)
-
-            send_conflict_review_started_email(request, conflict_review)
-
-            return HttpResponseRedirect(conflict_review.get_absolute_url())
-    else: 
-        notify_addresses = build_notify_addresses(doc_to_review)
-        init = { 
-                "ad" : Role.objects.filter(group__acronym='ietf',name='chair')[0].person.id,
-                "notify" : ', '.join(notify_addresses),
-               }
-        form = StartReviewForm(initial=init)
-
-    return render(request, 'doc/conflict_review/start.html',
-                              {'form':   form,
-                               'doc_to_review': doc_to_review,
-                              },
-                          )
-
-def start_review_as_stream_owner(request, name):
-    """Start the conflict review process using defaults for everything but notify and let the secretariat know"""
-
-    doc_to_review = start_review_sanity_check(request, name)
-
-    login = request.user.person
-
-    if request.method == 'POST':
-        form = SimpleStartReviewForm(request.POST)
-        if form.is_valid():
-            conflict_review = build_conflict_review_document(login = login,
-                                                             doc_to_review = doc_to_review, 
-                                                             ad = Role.objects.filter(group__acronym='ietf',name='chair')[0].person,
-                                                             notify = form.cleaned_data['notify'],
-                                                             create_in_state = State.objects.get(used=True,type='conflrev',slug='needshep')
-                                                            )
-
-            send_conflict_review_started_email(request, conflict_review)
-
-            return HttpResponseRedirect(conflict_review.get_absolute_url())
-    else: 
-        notify_addresses = build_notify_addresses(doc_to_review)
-        
-        init = { 
-                "notify" : ', '.join(notify_addresses),
-               }
-        form = SimpleStartReviewForm(initial=init)
-
-    return render(request, 'doc/conflict_review/start.html',
-                              {'form':   form,
-                               'doc_to_review': doc_to_review,
-                              },
-                          )
+    if has_role(request.user, "Secretariat"):
+        ad = form.cleaned_data['ad']
+        create_in_state = form.cleaned_data['create_in_state']
+        tc_date = form.cleaned_data['telechat_date']
+    else:
+        ad = Role.objects.filter(group__acronym='ietf', name='chair')[0].person
+        create_in_state = State.objects.get(used=True, type='conflrev', slug='needshep')
+        tc_date = None
+    
+    conflict_review = build_conflict_review_document(
+        login=login,
+        doc_to_review=doc_to_review,
+        ad=ad,
+        notify=form.cleaned_data['notify'],
+        create_in_state=create_in_state
+    )
+    if tc_date:
+        update_telechat(request, conflict_review, login, tc_date)
+    
+    return conflict_review
