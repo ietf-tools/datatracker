@@ -14,7 +14,8 @@ from django.urls import reverse as urlreverse
 import debug    # pyflakes:ignore
 
 from ietf.doc.factories import IndividualDraftFactory, ConflictReviewFactory
-from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, BallotPositionDocEvent, TelechatDocEvent, State
+from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, BallotPositionDocEvent, \
+                            TelechatDocEvent, State, DocAlias
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_conflict_review import default_approval_text
 from ietf.group.models import Person
@@ -80,6 +81,63 @@ class ConflictReviewTests(TestCase):
         r = self.client.post(url,dict(ad="Areað Irector",create_in_state="Needs Shepherd",notify='ipu@ietf.org'))
         self.assertEqual(r.status_code, 404)
 
+    def test_start_review_as_secretary_with_stream_manager_in_notify(self):
+        ad_strpk = str(Person.objects.get(name='Areað Irector').pk)
+        state_strpk = str(State.objects.get(used=True, slug='needshep', type__slug='conflrev').pk)
+        self.client.login(username="secretary", password="secretary+password")
+        """ This set of notification recipients should cover a bunch of cases for this test.
+            It includes: 
+              * The address to remove being first in the list
+              * The address to remove being in the list twice
+              * The address to remove having a name in front of the email address
+              * The address to remove being bare
+              * Extra addresses not being removed
+              """
+        notify = ','.join(['<rfc-ise@rfc-editor.org>',
+                           'IRTF Chair <irtf-chair@irtf.org>',
+                           '<iesg@ietf.org>',
+                           'rfc-ise@rfc-editor.org',
+                           '<iab-chair@iab.org>'])
+        manager_emails = {'ise': 'rfc-ise@rfc-editor.org', 'irtf': 'irtf-chair@irtf.org'}
+
+        for stream_slug in ['ise', 'irtf']:
+            doc = Document.objects.create(
+                name=f"draft-{stream_slug}-imaginary-submission",
+                type_id='draft',
+                rev='00',
+                stream=StreamName.objects.get(slug=stream_slug),
+                title=f"Imaginary {stream_slug}: A flight of fancy through {stream_slug}"
+            )
+            DocAlias.objects.create(name=doc.name).docs.add(doc)
+            url = urlreverse('ietf.doc.views_conflict_review.start_review', kwargs=dict(name=doc.name))
+            
+            # Choose which email address needs to be removed.
+            email = manager_emails[stream_slug]
+            
+            # Get the email addresses which should remain
+            other_emails = [manager_emails[stream] 
+                            for stream in list(manager_emails) 
+                            if stream != stream_slug]
+
+            data = dict(
+                ad=ad_strpk, 
+                create_in_state=state_strpk,
+                notify=notify
+            )
+            r = self.client.post(
+                url,
+                data
+            )
+            self.assertEqual(r.status_code, 302)
+            
+            review_doc = Document.objects.get(name=f"conflict-review-{stream_slug}-imaginary-submission")
+            self.assertNotIn(email, review_doc.notify)
+            self.assertIn('iesg@ietf.org', review_doc.notify)
+            self.assertIn('iab-chair@iab.org', review_doc.notify)
+            for other_email in other_emails:
+                self.assertIn(
+                    other_email, 
+                    review_doc.notify)
 
     def test_start_review_as_stream_owner(self):
 
