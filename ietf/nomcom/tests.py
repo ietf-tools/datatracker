@@ -2453,8 +2453,13 @@ class rfc8989EligibilityTests(TestCase):
         for nomcom in self.nomcoms:
             elig_date=get_eligibility_date(nomcom)
             day_before = elig_date-datetime.timedelta(days=1)
-            year_before = datetime.date(elig_date.year-1,elig_date.month,elig_date.day)
-            three_years_before = datetime.date(elig_date.year-3,elig_date.month,elig_date.day)
+            # special case for Feb 29
+            if elig_date.month == 2 and elig_date.day == 29:
+                year_before = datetime.date(elig_date.year - 1, 2, 28)
+                three_years_before = datetime.date(elig_date.year - 3, 2, 28)
+            else:
+                year_before = datetime.date(elig_date.year - 1, elig_date.month, elig_date.day)
+                three_years_before = datetime.date(elig_date.year - 3, elig_date.month, elig_date.day)
             just_after_three_years_before = three_years_before + datetime.timedelta(days=1)
             just_before_three_years_before = three_years_before - datetime.timedelta(days=1)
 
@@ -2514,10 +2519,15 @@ class rfc8989EligibilityTests(TestCase):
             elig_date = get_eligibility_date(nomcom)
 
             last_date = elig_date
-            first_date = datetime.date(last_date.year-5,last_date.month,last_date.day)
+            # special case for Feb 29
+            if last_date.month == 2 and last_date.day == 29:
+                first_date = datetime.date(last_date.year - 5, 2, 28)
+                middle_date = datetime.date(last_date.year - 3, 2, 28)
+            else:
+                first_date = datetime.date(last_date.year - 5, last_date.month, last_date.day)
+                middle_date = datetime.date(last_date.year - 3, last_date.month, last_date.day)
             day_after_last_date = last_date+datetime.timedelta(days=1)
             day_before_first_date = first_date-datetime.timedelta(days=1)
-            middle_date = datetime.date(last_date.year-3,last_date.month,last_date.day)
 
             eligible = set()
             ineligible = set()
@@ -2664,7 +2674,14 @@ class VolunteerDecoratorUnitTests(TestCase):
         author_person = PersonFactory()
         for i in range(2):
             da = WgDocumentAuthorFactory(person=author_person)
-            DocEventFactory(type='published_rfc',doc=da.document,time=datetime.date(elig_date.year-3,elig_date.month,elig_date.day))
+            DocEventFactory(
+                type='published_rfc',
+                doc=da.document,
+                time=datetime.date(
+                    elig_date.year - 3,
+                    elig_date.month,
+                    28 if elig_date.month == 2 and elig_date.day == 29 else elig_date.day,
+                ))
         nomcom.volunteer_set.create(person=author_person)
 
         volunteers = nomcom.volunteer_set.all()
