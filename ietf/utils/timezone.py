@@ -12,6 +12,17 @@ from django.utils import timezone
 DEADLINE_TZINFO = ZoneInfo('PST8PDT')
 
 
+def make_aware(dt, tzinfo):
+    """Assign timezone to a naive datetime
+
+    Helper to deal with both pytz and zoneinfo type time zones. Can go away when pytz is removed.
+    """
+    if hasattr(tzinfo, 'localize'):
+        return tzinfo.localize(dt)  # pytz-style
+    else:
+        return dt.replace(tzinfo=tzinfo)  # zoneinfo- / datetime.timezone-style
+
+
 def local_timezone_to_utc(d):
     """Takes a naive datetime in the local timezone and returns a
     naive datetime with the corresponding UTC time."""
@@ -44,7 +55,8 @@ def email_time_to_local_timezone(date_string):
 
 def datetime_from_date(date, tz=pytz.utc):
     """Get datetime at midnight on a given date"""
-    return datetime.datetime(date.year, date.month, date.day, tzinfo=tz)
+    # accept either pytz or zoneinfo tzinfos until we get rid of pytz
+    return make_aware(datetime.datetime(date.year, date.month, date.day), tz)
 
 
 def datetime_today(tzinfo=None):
