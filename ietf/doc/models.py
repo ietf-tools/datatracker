@@ -617,7 +617,11 @@ class DocumentInfo(models.Model):
             try:
                 pdf = wpHTML(
                     string=text, base_url=settings.IDTRACKER_BASE_URL
-                ).write_pdf(stylesheets=stylesheets, presentational_hints=True)
+                ).write_pdf(
+                    stylesheets=stylesheets,
+                    presentational_hints=True,
+                    optimize_size=("fonts", "images"),
+                )
             except AssertionError:
                 pdf = None
             if pdf:
