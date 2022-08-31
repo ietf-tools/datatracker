@@ -376,25 +376,7 @@ class SimpleStartReviewForm(forms.Form):
     notify = forms.CharField(max_length=255, 
                              label="Notice emails", 
                              help_text="Separate email addresses with commas.", 
-                             required=False)
-    
-    def clean(self):
-        cleaned_data = super().clean()
-        if 'notify' not in cleaned_data:
-            return
-                
-        notify = cleaned_data['notify']
-        stream_managers = [
-            re.sub('([^<]*<)?(.*)(>.*)', '\2', r) 
-            for r in Recipient(slug='stream_managers').gather(streams=['ise', 'irtf'])
-        ]
-        notifications = notify.split(',')
-        for mgr in stream_managers:
-            goods = [n for n in notifications if mgr not in n]
-            notifications = goods
-        cleaned_data['notify'] = ','.join(notifications)
-        return cleaned_data
-        
+                             required=False)        
 
 
 class StartReviewForm(SimpleStartReviewForm):
@@ -416,6 +398,18 @@ class StartReviewForm(SimpleStartReviewForm):
 
 @role_required("Secretariat","IRTF Chair","ISE")
 def start_review(request, name):
+    def cleaned_notify(notify, doc):
+        stream_managers = [
+            re.sub('([^<]*<)?(.*)(>.*)', '\2', r)
+            for r in Recipient(slug='stream_managers').gather(streams=[doc.stream.slug])
+        ]
+        notifications = notify.split(',')
+        for mgr in stream_managers:
+            goods = [n for n in notifications if mgr not in n]
+            notifications = goods
+        retval = ','.join(notifications)
+        return retval
+
     """Start the conflict review process, setting the initial 
     shepherding AD, and possibly putting the review on a telechat."""
 
@@ -428,6 +422,7 @@ def start_review(request, name):
     if request.method == 'POST':
         form = form_class(request.POST)
         if form.is_valid():
+            form.cleaned_data['notify'] = cleaned_notify(form.cleaned_data['notify'], doc_to_review)
             conflict_review = conflict_review_document(doc_to_review, form, request)
             send_conflict_review_started_email(request, conflict_review)
             return HttpResponseRedirect(conflict_review.get_absolute_url())
