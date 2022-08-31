@@ -445,13 +445,13 @@ def document_main(request, name, rev=None, document_html=False):
         else:
             stream_desc = "(None)"
 
-        html = doc.html_body()
-
+        html = None
         js = None
         css = None
         if document_html:
             js = Path(finders.find("ietf/js/document_html.js")).read_text()
             css = Path(finders.find("ietf/css/document_html.css")).read_text()
+            html = doc.html_body()
             if html:
                 css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
         return render(request, "doc/document_draft.html" if document_html is False else "doc/document_html.html",
