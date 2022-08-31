@@ -101,7 +101,27 @@ echo "Starting memcached..."
 echo "Running initial checks..."
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check --settings=settings_local
 
-/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local || (echo "USE_TZ = True" >> $WORKSPACEDIR/ietf/settings_local.py; /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local)
+# Migrate, adjusting to what the current state of the underlying database might be:
+
+if ietf/manage.py showmigrations | grep "\[ \] 0003_pause_to_change_use_tz"; then
+    if grep "USE_TZ" $WORKSPACEDIR/ietf/settings_local.py; then
+        cat $WORKSPACEDIR/ietf/settings_local.py | sed 's/USE_TZ.*$/USE_TZ = False/' > /tmp/settings_local.py && mv /tmp/settings_local.py $WORKSPACEDIR/ietf/settings_local.py
+    else
+        echo "USE_TZ = False" >> $WORKSPACEDIR/ietf/settings_local.py
+    fi
+    # This is expected to exit non-zero at the pause
+    /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local || true
+    cat $WORKSPACEDIR/ietf/settings_local.py | sed 's/USE_TZ.*$/USE_TZ = True/' > /tmp/settings_local.py && mv /tmp/settings_local.py $WORKSPACEDIR/ietf/settings_local.py
+    /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local
+
+else
+    if grep "USE_TZ" $WORKSPACEDIR/ietf/settings_local.py; then
+        cat $WORKSPACEDIR/ietf/settings_local.py | sed 's/USE_TZ.*$/USE_TZ = True/' > /tmp/settings_local.py && mv /tmp/settings_local.py $WORKSPACEDIR/ietf/settings_local.py
+    else
+        echo "USE_TZ = True" >> $WORKSPACEDIR/ietf/settings_local.py
+    /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local
+    fi
+fi
 
 echo "-----------------------------------------------------------------"
 echo "Done!"
