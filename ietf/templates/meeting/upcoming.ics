@@ -26,6 +26,6 @@ CLASS:PUBLIC
 DTSTART;VALUE=DATE{% if meeting.time_zone %};TZID={{ meeting.time_zone|ics_esc }}{% endif %}:{{ meeting.date|date:"Ymd" }}
 DTEND;VALUE=DATE{% if meeting.time_zone %};TZID={{ meeting.time_zone|ics_esc }}{% endif %}:{{ meeting.end_date|date:"Ymd" }}
 DTSTAMP:{{ meeting.cached_updated|date:"Ymd" }}T{{ meeting.cached_updated|date:"His" }}Z
-URL:{{ request.scheme }}://{{ request.get_host }}{% url 'ietf.meeting.views.agenda' num=meeting.number %}
+URL:{{ request.scheme }}://{{ request.get_host }}{% url 'agenda' num=meeting.number %}
 END:VEVENT
 {% endfor %}END:VCALENDAR{% endautoescape %}
