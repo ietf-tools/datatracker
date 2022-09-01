@@ -39,6 +39,7 @@ from ietf.review.models import ReviewWish
 from ietf.utils import draft, log
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
+from ietf.utils.timezone import date_today, datetime_from_date, datetime_today, DEADLINE_TZINFO
 from ietf.utils.xmldraft import XMLDraft
 
 
@@ -637,11 +638,22 @@ def has_same_ballot(doc, date1, date2=None):
     """ Test if the most recent ballot created before the end of date1
         is the same as the most recent ballot created before the
         end of date 2. """
+    datetime1 = datetime_from_date(date1, DEADLINE_TZINFO)
     if date2 is None:
-        date2 = datetime.date.today()
-    ballot1 = doc.latest_event(BallotDocEvent,type='created_ballot',time__lt=date1+datetime.timedelta(days=1))
-    ballot2 = doc.latest_event(BallotDocEvent,type='created_ballot',time__lt=date2+datetime.timedelta(days=1))
-    return ballot1==ballot2
+        datetime2 = datetime_today(DEADLINE_TZINFO)
+    else:
+        datetime2 = datetime_from_date(date2, DEADLINE_TZINFO)
+    ballot1 = doc.latest_event(
+        BallotDocEvent,
+        type='created_ballot',
+        time__lt=datetime1 + datetime.timedelta(days=1),
+    )
+    ballot2 = doc.latest_event(
+        BallotDocEvent,
+        type='created_ballot',
+        time__lt=datetime2 + datetime.timedelta(days=1),
+    )
+    return ballot1 == ballot2
 
 def make_notify_changed_event(request, doc, by, new_notify, time=None):
 
@@ -687,7 +699,7 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
          and on_agenda
          and prev_agenda
          and new_telechat_date != prev_telechat
-         and prev_telechat < datetime.date.today()
+         and prev_telechat < date_today(DEADLINE_TZINFO)
          and has_same_ballot(doc,prev.telechat_date)
        ):
         returning = True

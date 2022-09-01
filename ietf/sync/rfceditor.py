@@ -25,6 +25,7 @@ from ietf.name.models import StdLevelName, StreamName
 from ietf.person.models import Person
 from ietf.utils.log import log
 from ietf.utils.mail import send_mail_text
+from ietf.utils.timezone import datetime_from_date
 
 #QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
 #INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
@@ -372,7 +373,7 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
 
     for rfc_number, title, authors, rfc_published_date, current_status, updates, updated_by, obsoletes, obsoleted_by, also, draft, has_errata, stream, wg, file_formats, pages, abstract in index_data:
 
-        if skip_older_than_date and rfc_published_date < skip_older_than_date:
+        if skip_older_than_date and datetime_from_date(rfc_published_date) < datetime_from_date(skip_older_than_date):
             # speed up the process by skipping old entries
             continue
 
@@ -443,7 +444,7 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
             # unfortunately, rfc_published_date doesn't include the correct day
             # at the moment because the data only has month/year, so
             # try to deduce it
-            d = datetime.datetime.combine(rfc_published_date, datetime.time())
+            d = datetime_from_date(rfc_published_date)
             synthesized = timezone.now()
             if abs(d - synthesized) > datetime.timedelta(days=60):
                 synthesized = d

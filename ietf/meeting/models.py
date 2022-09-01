@@ -41,7 +41,7 @@ from ietf.person.models import Person
 from ietf.utils.decorators import memoize
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.text import xslugify
-from ietf.utils.timezone import date2datetime
+from ietf.utils.timezone import datetime_from_date
 from ietf.utils.models import ForeignKey
 from ietf.utils.validators import (
     MaxImageSizeValidator, WrappedValidator, validate_file_size, validate_mime_type,
@@ -152,7 +152,7 @@ class Meeting(models.Model):
             cutoff_date = importantdate.date
         else:
             cutoff_date = start_date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
-        cutoff_time = date2datetime(cutoff_date) + self.idsubmit_cutoff_time_utc
+        cutoff_time = datetime_from_date(cutoff_date) + self.idsubmit_cutoff_time_utc
         return cutoff_time
 
     def get_01_cutoff(self):
@@ -164,7 +164,7 @@ class Meeting(models.Model):
             cutoff_date = importantdate.date
         else:
             cutoff_date = start_date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
-        cutoff_time = date2datetime(cutoff_date) + self.idsubmit_cutoff_time_utc
+        cutoff_time = datetime_from_date(cutoff_date) + self.idsubmit_cutoff_time_utc
         return cutoff_time
 
     def get_reopen_time(self):

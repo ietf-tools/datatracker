@@ -23,6 +23,7 @@ from ietf.sync import iana, rfceditor
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_utils import TestCase
+from ietf.utils.timezone import date_today
 
 
 class IANASyncTests(TestCase):
@@ -191,7 +192,7 @@ ICANN
                         doc_name, review_time, by, comment = iana.parse_review_email(msg.encode('utf-8'))
     
                         self.assertEqual(doc_name, draft.name)
-                        self.assertEqual(review_time, datetime.datetime(2012, 5, 10, 5, 0, rtime))
+                        self.assertEqual(review_time, datetime.datetime(2012, 5, 10, 12, 0, rtime, tzinfo=datetime.timezone.utc))
                         self.assertEqual(by, Person.objects.get(user__username="iana"))
                         self.assertIn("there are no IANA Actions", comment.replace("\n", ""))
     
@@ -238,7 +239,7 @@ class RFCSyncTests(TestCase):
         DocAlias.objects.create(name=updated_doc.name).docs.add(updated_doc)
         DocAlias.objects.create(name="rfc123").docs.add(updated_doc)
 
-        today = datetime.date.today()
+        today = date_today()
 
         t = '''<?xml version="1.0" encoding="UTF-8"?>
 <rfc-index xmlns="http://www.rfc-editor.org/rfc-index"

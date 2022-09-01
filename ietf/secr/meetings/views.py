@@ -31,6 +31,7 @@ from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm,
 from ietf.secr.sreq.views import get_initial_session
 from ietf.secr.utils.meeting import get_session, get_timeslot
 from ietf.mailtrigger.utils import gather_address_lists
+from ietf.utils.timezone import make_aware
 
 
 # prep for agenda changes
@@ -342,7 +343,7 @@ def edit_meeting(request, meeting_id):
 
     else:
         form = MeetingModelForm(instance=meeting)
-
+    debug.show('form.errors')
     return render(request, 'meetings/edit_meeting.html', {
         'meeting': meeting,
         'form' : form, },
@@ -799,7 +800,8 @@ def get_timeslot_time(form, meeting):
     day = form.cleaned_data['day']
 
     date = meeting.date + datetime.timedelta(days=int(day))
-    return datetime.datetime(date.year,date.month,date.day,time.hour,time.minute)
+    return make_aware(datetime.datetime(date.year,date.month,date.day,time.hour,time.minute), meeting.tz())
+
 
 @role_required('Secretariat')
 def times_edit(request, meeting_id, schedule_name, time):
@@ -810,7 +812,7 @@ def times_edit(request, meeting_id, schedule_name, time):
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
     
     parts = [ int(x) for x in time.split(':') ]
-    dtime = datetime.datetime(*parts)
+    dtime = make_aware(datetime.datetime(*parts), tzinfo=meeting.tz())
     timeslots = TimeSlot.objects.filter(meeting=meeting,time=dtime)
 
     if request.method == 'POST':
@@ -861,7 +863,7 @@ def times_delete(request, meeting_id, schedule_name, time):
     meeting = get_object_or_404(Meeting, number=meeting_id)
     
     parts = [ int(x) for x in time.split(':') ]
-    dtime = datetime.datetime(*parts)
+    dtime = make_aware(datetime.datetime(*parts), tzinfo=meeting.tz())
     status = SessionStatusName.objects.get(slug='schedw')
 
     if request.method == 'POST' and request.POST['post'] == 'yes':

@@ -54,6 +54,8 @@ from ietf.utils.mail import send_mail_message
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.fields import MultiEmailField
 from ietf.utils.response import permission_denied
+from ietf.utils.timezone import DEADLINE_TZINFO
+
 
 def clean_doc_revision(doc, rev):
     if rev:
@@ -768,7 +770,11 @@ def complete_review(request, name, assignment_id=None, acronym=None):
 
             completion_datetime = timezone.now()
             if "completion_date" in form.cleaned_data:
-                completion_datetime = datetime.datetime.combine(form.cleaned_data["completion_date"], form.cleaned_data.get("completion_time") or datetime.time.min)
+                completion_datetime = datetime.datetime.combine(
+                    form.cleaned_data["completion_date"],
+                    form.cleaned_data.get("completion_time") or datetime.time.min,
+                    tzinfo=DEADLINE_TZINFO,
+                )
 
             # complete assignment
             assignment.state = form.cleaned_data["state"]

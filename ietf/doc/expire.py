@@ -18,6 +18,7 @@ from ietf.person.models import Person
 from ietf.meeting.models import Meeting
 from ietf.doc.utils import add_state_change_event, update_action_holders
 from ietf.mailtrigger.utils import gather_address_lists
+from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO
 
 
 nonexpirable_states: Optional[List[State]] = None
@@ -53,13 +54,13 @@ def expirable_drafts(queryset=None):
 
 
 def get_soon_to_expire_drafts(days_of_warning):
-    start_date = datetime.date.today() - datetime.timedelta(1)
+    start_date = datetime_today(DEADLINE_TZINFO) - datetime.timedelta(1)
     end_date = start_date + datetime.timedelta(days_of_warning)
 
     return expirable_drafts().filter(expires__gte=start_date, expires__lt=end_date)
 
 def get_expired_drafts():
-    return expirable_drafts().filter(expires__lt=datetime.date.today() + datetime.timedelta(1))
+    return expirable_drafts().filter(expires__lt=datetime_today(DEADLINE_TZINFO) + datetime.timedelta(1))
 
 def in_draft_expire_freeze(when=None):
     if when == None:

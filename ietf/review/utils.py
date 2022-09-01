@@ -32,6 +32,8 @@ from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewRequestSt
 from ietf.utils.mail import send_mail
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 from ietf.utils import log
+from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO
+
 
 # The origin date is used to have a single reference date for "every X days".
 # This date is arbitrarily chosen and has no special meaning, but should be consistent.
@@ -194,7 +196,10 @@ def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, t
         assigned_time = assigned_on
         closed_time = completed_on
 
-        late_days = positive_days(datetime.datetime.combine(deadline, datetime.time.max), closed_time)
+        late_days = positive_days(
+            datetime.datetime.combine(deadline, datetime.time.max, tzinfo=DEADLINE_TZINFO),
+            closed_time,
+        )
         request_to_assignment_days = positive_days(requested_time, assigned_time)
         assignment_to_closure_days = positive_days(assigned_time, closed_time)
         request_to_closure_days = positive_days(requested_time, closed_time)
@@ -285,7 +290,7 @@ def latest_review_assignments_for_reviewers(team, days_back=365):
 
     extracted_data = extract_review_assignment_data(
         teams=[team],
-        time_from=datetime.date.today() - datetime.timedelta(days=days_back),
+        time_from=datetime_today(DEADLINE_TZINFO) - datetime.timedelta(days=days_back),
         ordering=["reviewer"],
     )
 
