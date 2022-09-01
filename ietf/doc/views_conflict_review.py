@@ -401,6 +401,8 @@ class StartReviewForm(SimpleStartReviewForm):
 @role_required("Secretariat","IRTF Chair","ISE")
 def start_review(request, name):
     def cleaned_notify(notify, doc):
+        if doc.stream.slug not in ['irtf', 'ise']:
+            return notify
         stream_managers = [
             re.sub('([^<]*<)?(.*)(>.*)', '\2', r)
             for r in Recipient(slug='stream_managers').gather(streams=[doc.stream.slug])
