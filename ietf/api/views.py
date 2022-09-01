@@ -200,8 +200,13 @@ def api_new_meeting_registration(request):
 
 
 def version(request):
+    dumpdate = None
     dumpinfo = DumpInfo.objects.order_by('-date').first()
-    dumptime = pytz.timezone(dumpinfo.tz).localize(dumpinfo.date).strftime('%Y-%m-%d %H:%M:%S %z') if dumpinfo else None
+    if dumpinfo:
+        dumpdate = dumpinfo.date
+        if dumpinfo.tz != "UTC":
+            dumpdate = dumpdate.replace(tzinfo=pytz.timezone(dumpinfo.tz))
+    dumptime = dumpdate.strftime('%Y-%m-%d %H:%M:%S %z') if dumpinfo else None
     return HttpResponse(
             json.dumps({
                         'version': ietf.__version__+ietf.__patch__,
