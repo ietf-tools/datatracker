@@ -24,7 +24,7 @@ $tooltip-margin: inherit !default;
 @import "bootstrap/scss/buttons";
 @import "bootstrap/scss/transitions";
 // @import "bootstrap/scss/dropdown";
-// @import "bootstrap/scss/button-group";
+@import "bootstrap/scss/button-group";
 @import "bootstrap/scss/nav";
 @import "bootstrap/scss/navbar";
 // @import "bootstrap/scss/card";
@@ -52,10 +52,9 @@ $tooltip-margin: inherit !default;
 @import "bootstrap/scss/utilities/api";
 
 // Make the bootstrap icons available.
-// FIXME: Figure out how to embed the font or icons that document_info.html needs
-// $bootstrap-icons-font-src: url("npm:bootstrap-icons/font/fonts/bootstrap-icons.woff2") format("woff2"),
-// url("npm:bootstrap-icons/font/fonts/bootstrap-icons.woff") format("woff");
-// @import "bootstrap-icons/font/bootstrap-icons";
+$bootstrap-icons-font-src: url(data-url:npm:bootstrap-icons/font/fonts/bootstrap-icons.woff2) format("woff2"),
+url(data-url:npm:bootstrap-icons/font/fonts/bootstrap-icons.woff) format("woff");
+@import "bootstrap-icons/font/bootstrap-icons";
 
 
 @media screen {

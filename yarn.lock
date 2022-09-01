@@ -949,6 +949,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@parcel/optimizer-data-url@npm:2.6.2":
+  version: 2.6.2
+  resolution: "@parcel/optimizer-data-url@npm:2.6.2"
+  dependencies:
+    "@parcel/plugin": 2.6.2
+    "@parcel/utils": 2.6.2
+    isbinaryfile: ^4.0.2
+    mime: ^2.4.4
+  checksum: 29a1ce25937fc81970c4a0783e9fb4ffc37fbe13539d056f3a864e6fd536baee19c5456118ef8e7db64eab8a8a796dd9c202843d115ea46a7dc1dbcc4a87f93a
+  languageName: node
+  linkType: hard
+
 "@parcel/optimizer-htmlnano@npm:2.7.0":
   version: 2.7.0
   resolution: "@parcel/optimizer-htmlnano@npm:2.7.0"
@@ -1258,6 +1270,15 @@ __metadata:
   peerDependencies:
     "@parcel/core": ^2.7.0
   checksum: 1decacc1a4b037de9c7838fce34057338262c03e16a199d00e9641be0ad80885ff77119bd571765268e5f0d2f1f2d1863b759aaaaba6de2f64fe5b2c44b69b4c
+  languageName: node
+  linkType: hard
+
+"@parcel/transformer-inline-string@npm:2.6.2":
+  version: 2.6.2
+  resolution: "@parcel/transformer-inline-string@npm:2.6.2"
+  dependencies:
+    "@parcel/plugin": 2.6.2
+  checksum: 43ca6fdfe8c6cf7803651bd0ea4db229256f0232268e4c3a450d3db95695402a032fdbe792d7b9675cf7978163c3ebfba7807b38ba02156e2c6b15775544bfb4
   languageName: node
   linkType: hard
 
@@ -5268,6 +5289,13 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
+"isbinaryfile@npm:^4.0.2":
+  version: 4.0.10
+  resolution: "isbinaryfile@npm:4.0.10"
+  checksum: a6b28db7e23ac7a77d3707567cac81356ea18bd602a4f21f424f862a31d0e7ab4f250759c98a559ece35ffe4d99f0d339f1ab884ffa9795172f632ab8f88e686
+  languageName: node
+  linkType: hard
+
 "isexe@npm:^2.0.0":
   version: 2.0.0
   resolution: "isexe@npm:2.0.0"
@@ -5798,12 +5826,12 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"mime@npm:1.6.0":
-  version: 1.6.0
-  resolution: "mime@npm:1.6.0"
+"mime@npm:^2.4.4":
+  version: 2.6.0
+  resolution: "mime@npm:2.6.0"
   bin:
     mime: cli.js
-  checksum: fef25e39263e6d207580bdc629f8872a3f9772c923c7f8c7e793175cee22777bbe8bba95e5d509a40aaa292d8974514ce634ae35769faa45f22d17edda5e8557
+  checksum: 1497ba7b9f6960694268a557eae24b743fd2923da46ec392b042469f4b901721ba0adcf8b0d3c2677839d0e243b209d76e5edcbd09cfdeffa2dfb6bb4df4b862
   languageName: node
   linkType: hard
 
@@ -7036,6 +7064,8 @@ browserlist@latest:
     "@fullcalendar/luxon2": 5.11.3
     "@fullcalendar/timegrid": 5.11.3
     "@fullcalendar/vue3": 5.11.2
+    "@parcel/optimizer-data-url": 2.6.2
+    "@parcel/transformer-inline-string": 2.6.2
     "@parcel/transformer-sass": 2.7.0
     "@percy/cli": 1.10.2
     "@percy/cypress": 3.1.2

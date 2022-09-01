@@ -42,6 +42,8 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@fullcalendar/luxon2", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.11.3"],\
             ["@fullcalendar/timegrid", "npm:5.11.3"],\
             ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.11.2"],\
+            ["@parcel/optimizer-data-url", "npm:2.6.2"],\
+            ["@parcel/transformer-inline-string", "npm:2.6.2"],\
             ["@parcel/transformer-sass", "npm:2.7.0"],\
             ["@percy/cli", "npm:1.10.2"],\
             ["@percy/cypress", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.1.2"],\
@@ -1264,6 +1266,19 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
+      ["@parcel/optimizer-data-url", [\
+        ["npm:2.6.2", {\
+          "packageLocation": "./.yarn/cache/@parcel-optimizer-data-url-npm-2.6.2-f286bb05a7-29a1ce2593.zip/node_modules/@parcel/optimizer-data-url/",\
+          "packageDependencies": [\
+            ["@parcel/optimizer-data-url", "npm:2.6.2"],\
+            ["@parcel/plugin", "npm:2.6.2"],\
+            ["@parcel/utils", "npm:2.6.2"],\
+            ["isbinaryfile", "npm:4.0.10"],\
+            ["mime", "npm:2.6.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
       ["@parcel/optimizer-htmlnano", [\
         ["npm:2.7.0", {\
           "packageLocation": "./.yarn/cache/@parcel-optimizer-htmlnano-npm-2.7.0-6f46846f28-a5fa890bc3.zip/node_modules/@parcel/optimizer-htmlnano/",\
@@ -1645,6 +1660,16 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packagePeers": [\
             "@parcel/core",\
             "@types/parcel__core"\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["@parcel/transformer-inline-string", [\
+        ["npm:2.6.2", {\
+          "packageLocation": "./.yarn/cache/@parcel-transformer-inline-string-npm-2.6.2-e83695a0c3-43ca6fdfe8.zip/node_modules/@parcel/transformer-inline-string/",\
+          "packageDependencies": [\
+            ["@parcel/transformer-inline-string", "npm:2.6.2"],\
+            ["@parcel/plugin", "npm:2.6.2"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -6502,6 +6527,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
+      ["isbinaryfile", [\
+        ["npm:4.0.10", {\
+          "packageLocation": "./.yarn/cache/isbinaryfile-npm-4.0.10-91d1251522-a6b28db7e2.zip/node_modules/isbinaryfile/",\
+          "packageDependencies": [\
+            ["isbinaryfile", "npm:4.0.10"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
       ["isexe", [\
         ["npm:2.0.0", {\
           "packageLocation": "./.yarn/cache/isexe-npm-2.0.0-b58870bd2e-26bf6c5480.zip/node_modules/isexe/",\
@@ -7068,6 +7102,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
+<<<<<<< HEAD
       ["merge2", [\
         ["npm:1.4.1", {\
           "packageLocation": "./.yarn/cache/merge2-npm-1.4.1-a2507bd06c-7268db63ed.zip/node_modules/merge2/",\
@@ -7093,6 +7128,13 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/mime-npm-1.6.0-60ae95038a-fef25e3926.zip/node_modules/mime/",\
           "packageDependencies": [\
             ["mime", "npm:1.6.0"]\
+=======
+      ["mime", [\
+        ["npm:2.6.0", {\
+          "packageLocation": "./.yarn/cache/mime-npm-2.6.0-88b89d8de0-1497ba7b9f.zip/node_modules/mime/",\
+          "packageDependencies": [\
+            ["mime", "npm:2.6.0"]\
+>>>>>>> 3abacefcc (Make bootstrap-icons available in htmlized CSS)
           ],\
           "linkType": "HARD"\
         }]\
@@ -8500,6 +8542,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./",\
           "packageDependencies": [\
             ["root-workspace-0b6124", "workspace:."],\
+<<<<<<< HEAD
             ["@faker-js/faker", "npm:7.5.0"],\
             ["@fullcalendar/bootstrap5", "npm:5.11.3"],\
             ["@fullcalendar/core", "npm:5.11.3"],\
@@ -8514,6 +8557,21 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@percy/cypress", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.1.2"],\
             ["@popperjs/core", "npm:2.11.6"],\
             ["@vitejs/plugin-vue", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.3.4"],\
+=======
+            ["@fullcalendar/bootstrap5", "npm:5.11.0"],\
+            ["@fullcalendar/core", "npm:5.11.0"],\
+            ["@fullcalendar/daygrid", "npm:5.11.0"],\
+            ["@fullcalendar/interaction", "npm:5.11.0"],\
+            ["@fullcalendar/list", "npm:5.11.0"],\
+            ["@fullcalendar/luxon2", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.11.0"],\
+            ["@fullcalendar/timegrid", "npm:5.11.0"],\
+            ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.11.1"],\
+            ["@parcel/optimizer-data-url", "npm:2.6.2"],\
+            ["@parcel/transformer-inline-string", "npm:2.6.2"],\
+            ["@parcel/transformer-sass", "npm:2.6.2"],\
+            ["@popperjs/core", "npm:2.11.5"],\
+            ["@vitejs/plugin-vue", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.3.3"],\
+>>>>>>> 3abacefcc (Make bootstrap-icons available in htmlized CSS)
             ["@vue/test-utils", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.0.2"],\
             ["bootstrap", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.2.1"],\
             ["bootstrap-icons", "npm:1.9.1"],\

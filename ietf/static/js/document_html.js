@@ -7,6 +7,7 @@ import {
 } from "bootstrap";
 
 import debounce from "lodash/debounce";
+import Cookies from "js-cookie";
 
 function make_nav() {
     const nav = document.createElement("nav");
