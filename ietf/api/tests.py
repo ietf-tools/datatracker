@@ -428,7 +428,7 @@ class CustomApiTests(TestCase):
         DumpInfo.objects.update(tz='PST8PDT')
         r = self.client.get(url)
         data = r.json()        
-        self.assertEqual(data['dumptime'], "2022-08-31 00:10:01 -0700")
+        self.assertEqual(data['dumptime'], "2022-08-31 07:10:01 -0700")
 
 
     def test_api_appauth(self):

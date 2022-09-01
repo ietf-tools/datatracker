@@ -205,7 +205,7 @@ def version(request):
     if dumpinfo:
         dumpdate = dumpinfo.date
         if dumpinfo.tz != "UTC":
-            dumpdate = dumpdate.astimezone(pytz.timezone(dumpinfo.tz))
+            dumpdate = pytz.timezone(dumpinfo.tz).localize(dumpinfo.date.replace(tzinfo=None))
     dumptime = dumpdate.strftime('%Y-%m-%d %H:%M:%S %z') if dumpinfo else None
     return HttpResponse(
             json.dumps({
