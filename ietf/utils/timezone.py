@@ -1,5 +1,4 @@
 import pytz
-import email.utils
 import datetime
 
 from zoneinfo import ZoneInfo
