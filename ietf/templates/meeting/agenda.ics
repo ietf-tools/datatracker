@@ -23,6 +23,6 @@ DESCRIPTION:{{item.timeslot.name|ics_esc}}\n{% if item.session.agenda_note %}
  \n
  Session materials: {% absurl 'ietf.meeting.views.session_details' num=schedule.meeting.number acronym=item.session.group.acronym %}\n{% if schedule.meeting.get_number is not None %}
  \n{# link agenda for ietf meetings #}
- See in schedule: {% absurl 'ietf.meeting.views.agenda' num=schedule.meeting.number %}#row-{{ item.slug }}\n{% endif %}
+ See in schedule: {% absurl 'agenda' num=schedule.meeting.number %}#row-{{ item.slug }}\n{% endif %}
 END:VEVENT
 {% endif %}{% endfor %}END:VCALENDAR{% endcache %}{% endautoescape %}

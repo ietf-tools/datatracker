@@ -1502,11 +1502,10 @@ def get_assignments_for_agenda(schedule):
 
 
 @ensure_csrf_cookie
-def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
+def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
     base = base if base else 'agenda'
-    ext = ext if ext else '.html'
+    ext = ext if ext else '.txt'
     mimetype = {
-        ".html":"text/html; charset=%s"%settings.DEFAULT_CHARSET,
         ".txt": "text/plain; charset=%s"%settings.DEFAULT_CHARSET,
         ".csv": "text/csv; charset=%s"%settings.DEFAULT_CHARSET,
     }
@@ -1570,7 +1569,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
     return rendered_page
 
 @ensure_csrf_cookie
-def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
+def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
     # Get current meeting if not specified
     if num is None:
         num = get_current_ietf_meeting_num()
@@ -1586,7 +1585,7 @@ def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, u
         else:
             return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}')
 
-    return render(request, "meeting/agenda-neue.html", {
+    return render(request, "meeting/agenda.html", {
         "meetingData": {
             "meetingNumber": num
         }
