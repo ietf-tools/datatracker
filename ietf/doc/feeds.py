@@ -5,6 +5,8 @@
 import datetime
 import unicodedata
 
+from zoneinfo import ZoneInfo
+
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed, Rss201rev2Feed
 from django.urls import reverse as urlreverse
@@ -134,7 +136,16 @@ class RfcFeed(Feed):
     
     def items(self):
         if self.year:
-            rfc_events = DocEvent.objects.filter(type='published_rfc',time__year=self.year).order_by('-time')
+            # Find published RFCs based on their official publication year - see
+            # ietf.sync.rfceditor.update_docs_from_rfc_index() for explanation of why this is PST8PDT
+            tz = ZoneInfo('PST8PDT')
+            start_of_year = datetime.datetime(self.year, 1, 1, tzinfo=tz)
+            start_of_next_year = datetime.datetime(self.year + 1, 1, 1, tzinfo=tz)
+            rfc_events = DocEvent.objects.filter(
+                type='published_rfc',
+                time__gte=start_of_year,
+                time__lt=start_of_next_year,
+            ).order_by('-time')
         else:
             cutoff = timezone.now() - datetime.timedelta(days=8)
             rfc_events = DocEvent.objects.filter(type='published_rfc',time__gte=cutoff).order_by('-time')
