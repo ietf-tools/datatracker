@@ -68,7 +68,7 @@
     </nav>
     <div class="row g-0">
         <div class="col d-flex justify-content-center lh-sm" data-bs-spy="scroll" data-bs-target="#toc-nav" data-bs-smooth-scroll="true" tabindex="0" id="content">
-            {% if html %}
+            {% if html and request.COOKIES.htmlconf != 'txt' %}
                 <div class="xml2rfc">
                     <br class="noprint">
                     {{ html|safe }}
@@ -114,6 +114,13 @@
                         <label class="btn btn-outline-primary" for="docinfo-radio">Info</label>
                         <input type="radio" class="btn-check" name="deftab" id="toc-radio">
                         <label class="btn btn-outline-primary" for="toc-radio">Contents</label>
+                    </div>
+                    <div class="fw-bold mt-4 mb-2">HTMLization configuration</div>
+                    <div class="btn-group-vertical btn-group-sm d-flex" role="group">
+                        <input type="radio" class="btn-check" name="htmlconf" id="txt-radio">
+                        <label class="btn btn-outline-primary" for="txt-radio" title="">Plaintextify the HTML</label>
+                        <input type="radio" class="btn-check" name="htmlconf" id="html-radio">
+                        <label class="btn btn-outline-primary" for="html-radio" title="">HTMLize the plaintext</label>
                     </div>
                   </div>
                 </div>

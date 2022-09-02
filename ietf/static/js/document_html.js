@@ -129,29 +129,28 @@ document.addEventListener("DOMContentLoaded", function (event) {
         nav_stack[i - 1].appendChild(nav_stack[i]);
     }
 
-    // activate tab selected in prefs
-    const deftab = cookies.get("deftab");
-    if (deftab) {
-        let defpane;
-        try {
-            defpane = Tab.getOrCreateInstance(`#${deftab}-tab`);
-        } catch (err) {
-            defpane = Tab.getOrCreateInstance("#docinfo-tab");
-        };
-        defpane.show();
-        document.activeElement.blur();
-    }
-
     // activate pref buttons selected by pref cookies
     document.querySelectorAll(".btn-check")
         .forEach(btn => {
             const id = btn.id.replace("-radio", "");
-            btn.addEventListener("click", el => {
-                cookies.set("deftab", id);
-            });
-            if (deftab == id) {
+            if (cookies.get(btn.name) == id) {
                 btn.checked = true;
             }
+            btn.addEventListener("click", el => {
+                cookies.set(btn.name, id);
+                window.location.reload();
+            });
         });
+
+    // activate tab selected in prefs
+    let defpane;
+    try {
+        defpane = Tab.getOrCreateInstance(
+            `#${cookies.get("deftab")}-tab`);
+    } catch (err) {
+        defpane = Tab.getOrCreateInstance("#docinfo-tab");
+    };
+    defpane.show();
+    document.activeElement.blur();
 
 });
