@@ -10,6 +10,7 @@ import rfc2html
 
 from typing import Optional, TYPE_CHECKING
 from weasyprint import HTML as wpHTML
+from zoneinfo import ZoneInfo
 
 from django.db import models
 from django.core import checks
@@ -925,13 +926,19 @@ class Document(DocumentInfo):
         return s
 
     def pub_date(self):
-        """This is the rfc publication date (datetime) for RFCs, 
-        and the new-revision datetime for other documents."""
+        """Get the publication date for this document
+
+        This is the rfc publication date (datetime) for RFCs, and the new-revision datetime for other documents.
+        """
         if self.get_state_slug() == "rfc":
+            # As of Sept 2022, in ietf.sync.rfceditor.update_docs_from_rfc_index() `published_rfc` events are
+            # created with a timestamp whose date *in the PST8PDT timezone* is the official publication date
+            # assigned by the RFC editor.
             event = self.latest_event(type='published_rfc')
+            return event.time.astimezone(ZoneInfo('PST8PDT')).date()
         else:
             event = self.latest_event(type='new_revision')
-        return event.time
+            return event.time.date()
 
     def is_dochistory(self):
         return False

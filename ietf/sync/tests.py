@@ -354,7 +354,7 @@ class RFCSyncTests(TestCase):
         self.assertEqual(events[0].type, "sync_from_rfc_editor")
         self.assertEqual(events[1].type, "changed_action_holders")
         self.assertEqual(events[2].type, "published_rfc")
-        self.assertEqual(events[2].time.date(), today)
+        self.assertEqual(events[2].time.astimezone('PST8PDT').date(), today)  # must interpret in PST8PDT
         self.assertTrue("errata" in doc.tags.all().values_list("slug", flat=True))
         self.assertTrue(DocAlias.objects.filter(name="rfc1234", docs=doc))
         self.assertTrue(DocAlias.objects.filter(name="bcp1", docs=doc))
