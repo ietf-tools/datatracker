@@ -86,34 +86,35 @@
                 <div class="pt-2 pt-lg-4 px-md-2 px-lg-3">
                 <a class="btn btn-primary btn-sm mb-3" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}" title="Datatracker information for this document">Datatracker page</a>
 
-                <ul class="nav nav-tabs nav-fill" id="docinfo" role="tablist">
+                <ul class="nav nav-tabs nav-fill small" role="tablist">
                   <li class="nav-item" role="presentation" title="Document information">
-                    <button class="nav-link active" id="docinfo-tab" data-bs-toggle="tab" data-bs-target="#docinfo-tab-pane" type="button" role="tab" aria-controls="docinfo-tab-pane" aria-selected="true"><i class="bi bi-info-circle"></i> Info</button>
+                    <button class="nav-link px-2" id="docinfo-tab" data-bs-toggle="tab" data-bs-target="#docinfo-tab-pane" type="button" role="tab" aria-controls="docinfo-tab-pane" aria-selected="true"><i class="bi bi-info-circle"></i><span class="d-none d-md-block d-xl-inline"> Info</span></button>
                   </li>
                   <li class="nav-item" role="presentation" title="Table of contents">
-                    <button class="nav-link" id="toc-tab" data-bs-toggle="tab" data-bs-target="#toc-tab-pane" type="button" role="tab" aria-controls="toc-tab-pane" aria-selected="false"><i class="bi bi-list-columns-reverse"></i> Contents</button>
+                    <button class="nav-link px-2" id="toc-tab" data-bs-toggle="tab" data-bs-target="#toc-tab-pane" type="button" role="tab" aria-controls="toc-tab-pane" aria-selected="false"><i class="bi bi-list-columns-reverse"></i><span class="d-none d-md-block d-xl-inline"> Contents</span></button>
                   </li>
                   <li class="nav-item" role="presentation" title="Preferences">
-                    <button class="nav-link" id="pref-tab" data-bs-toggle="tab" data-bs-target="#pref-tab-pane" type="button" role="tab" aria-controls="pref-tab-pane" aria-selected="false"><i class="bi bi-gear"></i> Prefs</button>
+                    <button class="nav-link px-2" id="pref-tab" data-bs-toggle="tab" data-bs-target="#pref-tab-pane" type="button" role="tab" aria-controls="pref-tab-pane" aria-selected="false"><i class="bi bi-gear"></i><span class="d-none d-md-block d-xl-inline"> Prefs</span></button>
                   </li>
                 </ul>
 
-                <div class="tab-content mt-2">
-                  <div class="tab-pane fade show active" id="docinfo-tab-pane" role="tabpanel" aria-labelledby="docinfo-tab" tabindex="0">
+                <div class="tab-content pt-2">
+                  <div class="tab-pane" id="docinfo-tab-pane" role="tabpanel" aria-labelledby="docinfo-tab" tabindex="0">
                     <table class="table table-sm table-borderless">
                         {% include "doc/document_info.html" with sidebar=True %}
                     </table>
                   </div>
-                  <div class="tab-pane fade mb-5" id="toc-tab-pane" role="tabpanel" aria-labelledby="toc-tab" tabindex="0">
+                  <div class="tab-pane mb-5" id="toc-tab-pane" role="tabpanel" aria-labelledby="toc-tab" tabindex="0">
                     <nav class="nav nav-pills flex-column small" id="toc-nav"></nav>
                   </div>
-                  <div class="tab-pane fade mb-5" id="pref-tab-pane" role="tabpanel" aria-labelledby="pref-tab" tabindex="0">
-                    <p id="deftab" class="fw-bold">Tab to show by default</p>
+                  <div class="tab-pane mb-5 small" id="pref-tab-pane" role="tabpanel" aria-labelledby="pref-tab" tabindex="0">
+                    <div id="deftab" class="fw-bold mb-2">Tab to show by default</div>
                     <div class="btn-group-vertical btn-group-sm d-flex" role="group" aria-labelled-by="#deftab">
-                      <button onclick="Cookies.set('deftab', 'info');" type="button" class="btn btn-outline-primary">Info</button>
-                      <button onclick="Cookies.set('deftab', 'toc');" type="button" class="btn btn-outline-primary">Contents</button>
+                        <input type="radio" class="btn-check" name="deftab" id="docinfo-radio" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="docinfo-radio">Info</label>
+                        <input type="radio" class="btn-check" name="deftab" id="toc-radio" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="toc-radio">Contents</label>
                     </div>
-
                   </div>
                 </div>
               </div>

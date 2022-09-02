@@ -3,11 +3,13 @@ import {
     // Button as Button,
     // Collapse as Collapse,
     // ScrollSpy as ScrollSpy,
-    // Tab as Tab
+    Tab as Tab
 } from "bootstrap";
 
 import debounce from "lodash/debounce";
 import Cookies from "js-cookie";
+
+const cookies = Cookies.withAttributes({ sameSite: "strict" });
 
 function make_nav() {
     const nav = document.createElement("nav");
@@ -126,4 +128,30 @@ document.addEventListener("DOMContentLoaded", function (event) {
     for (var i = nav_stack.length - 1; i > 0; i--) {
         nav_stack[i - 1].appendChild(nav_stack[i]);
     }
+
+    // activate tab selected in prefs
+    const deftab = cookies.get("deftab");
+    if (deftab) {
+        let defpane;
+        try {
+            defpane = Tab.getOrCreateInstance(`#${deftab}-tab`);
+        } catch (err) {
+            defpane = Tab.getOrCreateInstance("#docinfo-tab");
+        };
+        defpane.show();
+        document.activeElement.blur();
+    }
+
+    // activate pref buttons selected by pref cookies
+    document.querySelectorAll(".btn-check")
+        .forEach(btn => {
+            const id = btn.id.replace("-radio", "");
+            btn.addEventListener("click", el => {
+                cookies.set("deftab", id);
+            });
+            if (deftab == id) {
+                btn.checked = true;
+            }
+        });
+
 });
