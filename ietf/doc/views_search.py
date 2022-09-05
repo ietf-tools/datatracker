@@ -519,11 +519,28 @@ def ad_workload(request):
 
     workload = []
     for gt in group_types:
-        workload.append(dict(group_type=gt,group_names=group_names[gt],counts=[(ad, [(group_names[gt][index],ad.counts[gt][index]) for index in range(len(group_names[gt]))]) for ad in ads]))
+        workload.append(
+            dict(
+                group_type=gt,
+                group_names=group_names[gt],
+                counts=[
+                    (
+                        ad,
+                        [
+                            (group_names[gt][index], ad.counts[gt][index])
+                            for index in range(len(group_names[gt]))
+                        ],
+                    )
+                    for ad in ads
+                ],
+                sums=[
+                    (group_names[gt][index], sum([ad.counts[gt][index] for ad in ads]))
+                    for index in range(len(group_names[gt]))
+                ],
+            )
+        )
 
-    return render(request, 'doc/ad_list.html', {
-        'workload': workload
-    })
+    return render(request, "doc/ad_list.html", {"workload": workload})
         
 
 def docs_for_ad(request, name):
