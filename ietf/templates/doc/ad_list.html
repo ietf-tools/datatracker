@@ -8,10 +8,10 @@
 {% block title %}Area directors{% endblock %}
 {% block content %}
     {% origin %}
-    <h1>Area Directors Workload</h1>
+    <h1>Area Director Workload</h1>
     {% for group in workload %}
-        <h2>{{ group.group_type }}</h2>
-        <table class="table table-sm table-striped tablesorter">
+        <h2>{{ group.group_type }} State Counts</h2>
+        <table class="table table-sm table-striped table-bordered tablesorter">
             <thead>
                 <tr>
                     <th scope="col" data-sort="name">Area Director</th>

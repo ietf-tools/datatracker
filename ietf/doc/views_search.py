@@ -493,6 +493,7 @@ def ad_workload(request):
                             'olddrafts':'on',
                             'doctypes': doctypes})
         data = retrieve_search_results(form)
+        print(data)
         ad.dashboard = urlreverse("ietf.doc.views_search.docs_for_ad", kwargs=dict(name=ad.full_name_as_key()))
         counts = {}
         for g in group_types:
