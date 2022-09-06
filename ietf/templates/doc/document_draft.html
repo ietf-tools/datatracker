@@ -115,7 +115,7 @@
                 <td class="edit"></td>
                 <td>
                     {{ doc.time|date:"Y-m-d" }}
-                    {% if latest_revision and latest_revision.time.date != doc.time.date %}
+                    {% if latest_revision and latest_revision.time|date:"Y-m-d" != doc.time|date:"Y-m-d" %}
                         <span class="text-muted">(Latest revision {{ latest_revision.time|date:"Y-m-d" }})</span>
                     {% endif %}
                 </td>
