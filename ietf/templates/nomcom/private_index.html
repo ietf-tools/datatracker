@@ -11,21 +11,21 @@
     <table class="table table-sm table-striped table-hover tablesorter">
         <thead>
             <tr>
-                <th scope="col" data-sort="position">Position</th>
+                <th scope="col" data-sort="position">Po&shy;si&shy;tion</th>
                 <th scope="col" data-sort="open">Open</th>
-                <th scope="col" data-sort="accepting-nom-num">Accepting nominations</th>
-                <th scope="col" data-sort="accepting-fb-num">Accepting feedback</th>
-                <th scope="col" data-sort="nom-num">Nominations</th>
-                <th scope="col" data-sort="uniq-num">Unique nominees</th>
-                <th scope="col" data-sort="acc-num">Accepted</th>
-                <th scope="col" data-sort="decl-num">Declined</th>
-                <th scope="col" data-sort="pend-num">Pending</th>
-                <th scope="col" data-sort="resp-num">Questionnaire responses</th>
-                <th scope="col" data-sort="comm-num">Comments</th>
+                <th scope="col" data-sort="accepting-nom-num">Ac&shy;cept&shy;ing nom&shy;i&shy;na&shy;tions</th>
+                <th scope="col" data-sort="accepting-fb-num">Ac&shy;cept&shy;ing feed&shy;back</th>
+                <th scope="col" data-sort="nom-num">Nom&shy;i&shy;na&shy;tions</th>
+                <th scope="col" data-sort="uniq-num">Unique nom&shy;i&shy;nees</th>
+                <th scope="col" data-sort="acc-num">Ac&shy;cept&shy;ed</th>
+                <th scope="col" data-sort="decl-num">De&shy;clined</th>
+                <th scope="col" data-sort="pend-num">Pend&shy;ing</th>
+                <th scope="col" data-sort="resp-num">Ques&shy;tion&shy;naire re&shy;spons&shy;es</th>
+                <th scope="col" data-sort="comm-num">Com&shy;ments</th>
             </tr>
         </thead>
         {% if stats %}
-            <tbody>
+            <tbody class="table-group-divider">
                 {% for item in stats %}
                     <tr>
                         <th scope="row">{{ item.position__name }}</th>
@@ -43,7 +43,7 @@
                 {% endfor %}
             </tbody>
         {% endif %}
-        <tfoot>
+        <tfoot class="table-group-divider">
             <tr>
                 <th scope="row">Totals</th>
                 <td>{{ totals.open }}</td>
