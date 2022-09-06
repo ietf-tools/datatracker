@@ -364,11 +364,34 @@ def ad_dashboard_group(doc):
     else:
         return "Document"
 
+
 def shorten_group_name(name):
-    for s in [' Internet-Draft', ' Conflict Review', ' Status Change', ' (Internal Steering Group/IAB Review) Charter', 'Charter']:
+    for s in [
+        " Internet-Draft",
+        " Conflict Review",
+        " Status Change",
+        " (Internal Steering Group/IAB Review) Charter",
+        "Charter",
+    ]:
         if name.endswith(s):
-            name = name[:-len(s)]
-    return name
+            name = name[: -len(s)]
+
+    for pat, sub in [
+        ("Requested", "Req"),
+        ("Evaluation", "Eval"),
+        ("Publication", "Pub"),
+        ("Waiting", "Wait"),
+        ("Go-Ahead", "OK"),
+        ("Approved-", "App, "),
+        ("announcement", "ann."),
+        ("IESG Eval - ", ""),
+        ("Chartering/Rechartering", "(Re)charter"),
+        (r"\(Message to Community, Selected by Secretariat\)", "")
+    ]:
+        name = re.sub(pat, sub, name)
+
+    return name.strip()
+
 
 def ad_dashboard_sort_key(doc):
 
@@ -585,6 +608,7 @@ def ad_workload(request):
         for idx, g in enumerate(group_names[gt]):
             group_names[gt][idx] = (
                 shorten_group_name(g),
+                g,
                 up_is_good[g] if g in up_is_good else None,
             )
 

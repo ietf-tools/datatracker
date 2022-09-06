@@ -15,8 +15,9 @@
             <thead>
                 <tr>
                     <th scope="col" data-sort="name">Area Director</th>
-                    {% for g, up_is_good in group.group_names %}
-                        <th scope="col" class="col-1" data-sort="{{ g|slugify }}-num">
+                    {% for g, desc, up_is_good in group.group_names %}
+                        <th scope="col" class="col-1" title="{{ desc }}"
+                            data-sort="{{ g|slugify }}-num">
                             {{ g|split:'/'|join:'/<wbr>' }}
                         </th>
                     {% endfor %}
