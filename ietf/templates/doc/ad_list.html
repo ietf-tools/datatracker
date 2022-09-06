@@ -15,7 +15,7 @@
             <thead>
                 <tr>
                     <th scope="col" data-sort="name">Area Director</th>
-                    {% for g in group.group_names %}
+                    {% for g, up_is_good in group.group_names %}
                         <th scope="col" class="col-1" data-sort="{{ g|slugify }}-num">
                             {{ g|split:'/'|join:'/<wbr>' }}
                         </th>
@@ -28,11 +28,11 @@
                         <td>
                             <a href="{{ ad.dashboard }}">{{ ad.name }}</a>
                         </td>
-                        {% for label, count in ad_counts %}
-                            <td class="col-1"
-                                id="{{ group.group_type|slugify }}-{{ ad.full_name_as_key|slugify }}-{{ label|slugify }}">
-                                {% if count != 0 %}{{ count }}{% endif %}
-                            </td>
+                        {% for label, count, prev in ad_counts %}
+                        <td class="col-1"
+                            id="{{ group.group_type|slugify }}-{{ ad.full_name_as_key|slugify }}-{{ label.0|slugify }}">
+                            {% include 'doc/ad_count.html' %}
+                        </td>
                         {% endfor %}
                     </tr>
                 {% endfor %}
@@ -40,7 +40,11 @@
             <tfoot>
                 <tr>
                     <th scope="row">Sum</th>
-                    {% for name, sum in group.sums %}<td>{{ sum }}</td>{% endfor %}
+                    {% for label, count, prev in group.sums %}
+                        <td>
+                            {% include 'doc/ad_count.html' %}
+                        </td>
+                    {% endfor %}
                 </tr>
             </tfoot>
         </table>

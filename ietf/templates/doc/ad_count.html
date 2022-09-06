@@ -1,0 +1,19 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load ietf_filters %}
+
+{% if prev or count %}
+    <span{% if count == 0 %} class="text-muted"{% endif %}>{{ count }}</span>
+    {% if user|has_role:"Area Director,Secretariat" %}
+        <i title="{{ delta.days }} days ago was {{ prev }}."
+        {% with label.1 as up_is_good %}
+            {% if prev < count %}
+                   class="bi bi-arrow-up-right-circle{% if count %}-fill{% endif %} {{ up_is_good|yesno:'text-success,text-danger,text-muted' }}"
+            {% elif prev > count %}
+                   class="bi bi-arrow-down-right-circle{% if count %}-fill{% endif %} {{ up_is_good|yesno:'text-danger,text-success,text-muted' }}"
+            {% else %}
+                   class="bi bi-arrow-right-circle text-muted"
+            {% endif %}
+            ></i>
+        {% endwith %}
+    {% endif %}
+{% endif %}

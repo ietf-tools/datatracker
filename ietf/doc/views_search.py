@@ -425,98 +425,168 @@ def ad_dashboard_sort_key(doc):
 
     return "3%s" % seed
 
+
 def ad_workload(request):
+    delta = datetime.timedelta(days=30)
+    today = datetime.date.today()
+
     ads = []
-    responsible = Document.objects.values_list('ad', flat=True).distinct()
+    responsible = Document.objects.values_list("ad", flat=True).distinct()
     for p in Person.objects.filter(
         Q(
             role__name__in=("pre-ad", "ad"),
             role__group__type="area",
-            role__group__state="active"
+            role__group__state="active",
         )
         | Q(pk__in=responsible)
     ).distinct():
         if p in get_active_ads():
-                ads.append(p)
+            ads.append(p)
 
-    doctypes = list(DocTypeName.objects.filter(used=True).exclude(slug='draft').values_list("pk", flat=True))
+    doctypes = list(
+        DocTypeName.objects.filter(used=True)
+        .exclude(slug="draft")
+        .values_list("pk", flat=True)
+    )
 
+    up_is_good = {}
     group_types = ad_dashboard_group_type(None)
-
     groups = {}
     group_names = {}
     for g in group_types:
         groups[g] = {}
         group_names[g] = []
-        
+
     # Prefill groups in preferred sort order
-    id = 0
-    for g in [
-            'Publication Requested Internet-Draft',
-            'Waiting for Writeup Internet-Draft',
-            'AD Evaluation Internet-Draft',
-            'In Last Call Internet-Draft',
-            'IESG Evaluation - Defer Internet-Draft',
-            'IESG Evaluation Internet-Draft',
-            'Waiting for AD Go-Ahead Internet-Draft',
-            'Approved-announcement to be sent Internet-Draft',
-            'Approved-announcement sent Internet-Draft']:
-        groups['I-D'][g] = id
-        group_names['I-D'].append(g)
-        id += 1;
-    id = 0
-    for g in ['RFC Ed Queue Internet-Draft', 'RFC']:
-        groups['RFC'][g] = id
-        group_names['RFC'].append(g)
-        id += 1;
-    id = 0
-    for g in ['AD Review Conflict Review',
-                'Needs Shepherd Conflict Review',
-                'IESG Evaluation Conflict Review',
-                'Approved Conflict Review',
-                'Withdrawn Conflict Review']:
-        groups['Conflict Review'][g] = id
-        group_names['Conflict Review'].append(g)
-        id += 1;
-    id = 0
-    for g in [ 'Start Chartering/Rechartering (Internal Steering Group/IAB Review) Charter',
-                'Replaced Charter',
-                'Approved Charter',
-                'Not currently under review Charter']:
-        groups['Charter'][g] = id
-        group_names['Charter'].append(g)
-        id += 1;
+    for id, (g, uig) in enumerate(
+        [
+            ("Publication Requested Internet-Draft", False),
+            ("Waiting for Writeup Internet-Draft", False),
+            ("AD Evaluation Internet-Draft", False),
+            ("In Last Call Internet-Draft", None),
+            ("IESG Evaluation - Defer Internet-Draft", None),
+            ("IESG Evaluation Internet-Draft", True),
+            ("Waiting for AD Go-Ahead Internet-Draft", False),
+            ("Approved-announcement to be sent Internet-Draft", True),
+            ("Approved-announcement sent Internet-Draft", True),
+        ]
+    ):
+        groups["I-D"][g] = id
+        group_names["I-D"].append(g)
+        up_is_good[g] = uig
+
+    for id, g in enumerate(["RFC Ed Queue Internet-Draft", "RFC"]):
+        groups["RFC"][g] = id
+        group_names["RFC"].append(g)
+
+    for id, (g, uig) in enumerate(
+        [
+            ("AD Review Conflict Review", False),
+            ("Needs Shepherd Conflict Review", False),
+            ("IESG Evaluation Conflict Review", None),
+            ("Approved Conflict Review", True),
+            ("Withdrawn Conflict Review", None),
+        ]
+    ):
+        groups["Conflict Review"][g] = id
+        group_names["Conflict Review"].append(g)
+        up_is_good[g] = uig
+
+    for id, g in enumerate(
+        [
+            "Start Chartering/Rechartering (Internal Steering Group/IAB Review) Charter",
+            "Replaced Charter",
+            "Approved Charter",
+            "Not currently under review Charter",
+        ]
+    ):
+        groups["Charter"][g] = id
+        group_names["Charter"].append(g)
 
     for ad in ads:
-        form = SearchForm({'by':'ad','ad': ad.id,
-                            'rfcs':'on', 'activedrafts':'on',
-                            'olddrafts':'on',
-                            'doctypes': doctypes})
+        form = SearchForm(
+            {
+                "by": "ad",
+                "ad": ad.id,
+                "rfcs": "on",
+                "activedrafts": "on",
+                "olddrafts": "on",
+                "doctypes": doctypes,
+            }
+        )
         data = retrieve_search_results(form)
-        print(data)
-        ad.dashboard = urlreverse("ietf.doc.views_search.docs_for_ad", kwargs=dict(name=ad.full_name_as_key()))
+        ad.dashboard = urlreverse(
+            "ietf.doc.views_search.docs_for_ad", kwargs=dict(name=ad.full_name_as_key())
+        )
+
         counts = {}
+        prev = {}
         for g in group_types:
             counts[g] = []
+            prev[g] = []
+
         for doc in data:
             group_type = ad_dashboard_group_type(doc)
-            if group_type and group_type in groups: # Right now, anything with group_type "Document", such as a bofreq is not handled.
+            if group_type and group_type in groups:
+                # Right now, anything with group_type "Document", such as a bofreq is not handled.
                 group = ad_dashboard_group(doc)
                 if group not in groups[group_type]:
                     groups[group_type][group] = len(groups[group_type])
                     group_names[group_type].append(group)
                 if len(counts[group_type]) < len(groups[group_type]):
-                    counts[group_type].extend([0] * (len(groups[group_type]) - len(counts[group_type])))
+                    counts[group_type].extend(
+                        [0] * (len(groups[group_type]) - len(counts[group_type]))
+                    )
+                if len(prev[group_type]) < len(groups[group_type]):
+                    prev[group_type].extend(
+                        [0] * (len(groups[group_type]) - len(prev[group_type]))
+                    )
                 counts[group_type][groups[group_type][group]] += 1
+
+            if doc.type_id != "draft" or doc.get_state_slug() not in ["active", "rfc"]:
+                continue
+            iesg_state = doc.get_state_slug("draft-iesg")
+            if not iesg_state or iesg_state in ["dead", "watching", "pub", "idexists"]:
+                continue
+
+            try:
+                state_date = (
+                    doc.docevent_set.filter(
+                        Q(type="started_iesg_process")
+                        | Q(
+                            type="changed_state", statedocevent__state_type="draft-iesg"
+                        )
+                    )
+                    .order_by("-time")[0]
+                    .time.date()
+                )
+            except IndexError:
+                state_date = datetime.date(1990, 1, 1)
+
+            if today - state_date > delta:
+                prev[group_type][groups[group_type][group]] += 1
+
         ad.counts = counts
+        ad.prev = prev
+
     for ad in ads:
         for group_type in group_types:
             if len(ad.counts[group_type]) < len(groups[group_type]):
-                ad.counts[group_type].extend([0] * (len(groups[group_type]) - len(ad.counts[group_type])))
+                ad.counts[group_type].extend(
+                    [0] * (len(groups[group_type]) - len(ad.counts[group_type]))
+                )
+            if len(ad.prev[group_type]) < len(groups[group_type]):
+                ad.prev[group_type].extend(
+                    [0] * (len(groups[group_type]) - len(ad.prev[group_type]))
+                )
+
     # Shorten the names of groups
     for gt in group_types:
-        for idx,g in enumerate(group_names[gt]):
-            group_names[gt][idx] = shorten_group_name(g)
+        for idx, g in enumerate(group_names[gt]):
+            group_names[gt][idx] = (
+                shorten_group_name(g),
+                up_is_good[g] if g in up_is_good else None,
+            )
 
     workload = []
     for gt in group_types:
@@ -528,21 +598,29 @@ def ad_workload(request):
                     (
                         ad,
                         [
-                            (group_names[gt][index], ad.counts[gt][index])
+                            (
+                                group_names[gt][index],
+                                ad.counts[gt][index],
+                                ad.prev[gt][index],
+                            )
                             for index in range(len(group_names[gt]))
                         ],
                     )
                     for ad in ads
                 ],
                 sums=[
-                    (group_names[gt][index], sum([ad.counts[gt][index] for ad in ads]))
+                    (
+                        group_names[gt][index],
+                        sum([ad.counts[gt][index] for ad in ads]),
+                        sum([ad.prev[gt][index] for ad in ads]),
+                    )
                     for index in range(len(group_names[gt]))
                 ],
             )
         )
 
-    return render(request, "doc/ad_list.html", {"workload": workload})
-        
+    return render(request, "doc/ad_list.html", {"workload": workload, "delta": delta})
+
 
 def docs_for_ad(request, name):
     ad = None
