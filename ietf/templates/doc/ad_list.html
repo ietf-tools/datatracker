@@ -12,7 +12,7 @@
     {% if user|has_role:"Area Director,Secretariat" %}
     <div class="alert alert-info my-3">
         {{ delta.days }}-day trend indicators
-        are only shown for logged-in Area Directors.
+        are only shown to logged-in Area Directors.
     </div>
     {% endif %}
     {% for group in workload %}
