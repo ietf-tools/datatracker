@@ -23,7 +23,7 @@
                     {% endfor %}
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="table-group-divider">
                 {% for ad, ad_counts in group.counts %}
                     <tr>
                         <td>
@@ -38,7 +38,7 @@
                     </tr>
                 {% endfor %}
             </tbody>
-            <tfoot>
+            <tfoot class="table-group-divider">
                 <tr>
                     <th scope="row">Sum</th>
                     {% for label, count, prev in group.sums %}
