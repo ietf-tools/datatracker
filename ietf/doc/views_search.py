@@ -476,8 +476,8 @@ def ad_workload(request):
 
     up_is_good = {}
     group_types = ad_dashboard_group_type(None)
-    groups = defaultdict(dict)
-    group_names = defaultdict(list)
+    groups = {g: {} for g in group_types}
+    group_names = {g: [] for g in group_types}
 
     # Prefill groups in preferred sort order
     for id, (g, uig) in enumerate(
