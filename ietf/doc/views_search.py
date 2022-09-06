@@ -37,6 +37,8 @@
 import re
 import datetime
 
+from collections import defaultdict
+
 from django import forms
 from django.conf import settings
 from django.core.cache import cache, caches
@@ -474,11 +476,8 @@ def ad_workload(request):
 
     up_is_good = {}
     group_types = ad_dashboard_group_type(None)
-    groups = {}
-    group_names = {}
-    for g in group_types:
-        groups[g] = {}
-        group_names[g] = []
+    groups = defaultdict(dict)
+    group_names = defaultdict(list)
 
     # Prefill groups in preferred sort order
     for id, (g, uig) in enumerate(
@@ -537,18 +536,16 @@ def ad_workload(request):
                 "doctypes": doctypes,
             }
         )
-        data = retrieve_search_results(form)
+
         ad.dashboard = urlreverse(
             "ietf.doc.views_search.docs_for_ad", kwargs=dict(name=ad.full_name_as_key())
         )
+        ad.counts = defaultdict(list)
+        ad.prev = defaultdict(list)
+        ad.doc_now = defaultdict(list)
+        ad.doc_prev = defaultdict(list)
 
-        counts = {}
-        prev = {}
-        for g in group_types:
-            counts[g] = []
-            prev[g] = []
-
-        for doc in data:
+        for doc in retrieve_search_results(form):
             group_type = ad_dashboard_group_type(doc)
             if group_type and group_type in groups:
                 # Right now, anything with group_type "Document", such as a bofreq is not handled.
@@ -556,52 +553,53 @@ def ad_workload(request):
                 if group not in groups[group_type]:
                     groups[group_type][group] = len(groups[group_type])
                     group_names[group_type].append(group)
-                if len(counts[group_type]) < len(groups[group_type]):
-                    counts[group_type].extend(
-                        [0] * (len(groups[group_type]) - len(counts[group_type]))
-                    )
-                if len(prev[group_type]) < len(groups[group_type]):
-                    prev[group_type].extend(
-                        [0] * (len(groups[group_type]) - len(prev[group_type]))
-                    )
-                counts[group_type][groups[group_type][group]] += 1
 
-            if doc.type_id != "draft" or doc.get_state_slug() not in ["active", "rfc"]:
-                continue
-            iesg_state = doc.get_state_slug("draft-iesg")
-            if not iesg_state or iesg_state in ["dead", "watching", "pub", "idexists"]:
-                continue
+                inc = len(groups[group_type]) - len(ad.counts[group_type])
+                if inc > 0:
+                    ad.counts[group_type].extend([0] * inc)
+                    ad.prev[group_type].extend([0] * inc)
+                    ad.doc_now[group_type].extend(set() for _ in range(inc))
+                    ad.doc_prev[group_type].extend(set() for _ in range(inc))
 
-            try:
-                state_date = (
-                    doc.docevent_set.filter(
-                        Q(type="started_iesg_process")
-                        | Q(
-                            type="changed_state", statedocevent__state_type="draft-iesg"
-                        )
-                    )
-                    .order_by("-time")[0]
-                    .time.date()
+                ad.counts[group_type][groups[group_type][group]] += 1
+                ad.doc_now[group_type][groups[group_type][group]].add(
+                    doc.canonical_name()
                 )
-            except IndexError:
-                state_date = datetime.date(1990, 1, 1)
 
-            if today - state_date > delta:
-                prev[group_type][groups[group_type][group]] += 1
+                try:
+                    state_date = (
+                        doc.docevent_set.filter(
+                            Q(type="started_iesg_process")
+                            | Q(
+                                type="changed_state",
+                                statedocevent__state_type="draft-iesg",
+                            )
+                        )
+                        .order_by("-time")[0]
+                        .time.date()
+                    )
+                except IndexError:
+                    state_date = datetime.date(1990, 1, 1)
 
-        ad.counts = counts
-        ad.prev = prev
+                if today - state_date > delta:
+                    ad.prev[group_type][groups[group_type][group]] += 1
+                    ad.doc_prev[group_type][groups[group_type][group]].add(
+                        doc.canonical_name()
+                    )
 
     for ad in ads:
-        for group_type in group_types:
-            if len(ad.counts[group_type]) < len(groups[group_type]):
-                ad.counts[group_type].extend(
-                    [0] * (len(groups[group_type]) - len(ad.counts[group_type]))
-                )
-            if len(ad.prev[group_type]) < len(groups[group_type]):
-                ad.prev[group_type].extend(
-                    [0] * (len(groups[group_type]) - len(ad.prev[group_type]))
-                )
+        ad.doc_diff = defaultdict(list)
+        for gt in group_types:
+            inc = len(groups[gt]) - len(ad.counts[gt])
+            if inc > 0:
+                ad.counts[gt].extend([0] * inc)
+                ad.prev[gt].extend([0] * inc)
+                ad.doc_now[gt].extend([set()] * inc)
+                ad.doc_prev[gt].extend([set()] * inc)
+
+            ad.doc_diff[gt].extend([set()] * len(groups[gt]))
+            for idx, g in enumerate(group_names[gt]):
+                ad.doc_diff[gt][idx] = ad.doc_prev[gt][idx] ^ ad.doc_now[gt][idx]
 
     # Shorten the names of groups
     for gt in group_types:
@@ -612,39 +610,38 @@ def ad_workload(request):
                 up_is_good[g] if g in up_is_good else None,
             )
 
-    workload = []
-    for gt in group_types:
-        workload.append(
-            dict(
-                group_type=gt,
-                group_names=group_names[gt],
-                counts=[
-                    (
-                        ad,
-                        [
-                            (
-                                group_names[gt][index],
-                                ad.counts[gt][index],
-                                ad.prev[gt][index],
-                            )
-                            for index in range(len(group_names[gt]))
-                        ],
-                    )
-                    for ad in ads
-                ],
-                sums=[
-                    (
-                        group_names[gt][index],
-                        sum([ad.counts[gt][index] for ad in ads]),
-                        sum([ad.prev[gt][index] for ad in ads]),
-                    )
-                    for index in range(len(group_names[gt]))
-                ],
-            )
+    workload = [
+        dict(
+            group_type=gt,
+            group_names=group_names[gt],
+            counts=[
+                (
+                    ad,
+                    [
+                        (
+                            group_names[gt][index],
+                            ad.counts[gt][index],
+                            ad.prev[gt][index],
+                            ad.doc_diff[gt][index],
+                        )
+                        for index in range(len(group_names[gt]))
+                    ],
+                )
+                for ad in ads
+            ],
+            sums=[
+                (
+                    group_names[gt][index],
+                    sum([ad.counts[gt][index] for ad in ads]),
+                    sum([ad.prev[gt][index] for ad in ads]),
+                )
+                for index in range(len(group_names[gt]))
+            ],
         )
+        for gt in group_types
+    ]
 
     return render(request, "doc/ad_list.html", {"workload": workload, "delta": delta})
-
 
 def docs_for_ad(request, name):
     ad = None

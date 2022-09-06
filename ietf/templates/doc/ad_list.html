@@ -30,12 +30,12 @@
                 </tr>
             </thead>
             <tbody class="table-group-divider">
-                {% for ad, ad_counts in group.counts %}
+                {% for ad, ad_data in group.counts %}
                     <tr>
                         <td>
                             <a href="{{ ad.dashboard }}">{{ ad.name }}</a>
                         </td>
-                        {% for label, count, prev in ad_counts %}
+                        {% for label, count, prev, docs_delta in ad_data %}
                         <td class="col-1"
                             id="{{ group.group_type|slugify }}-{{ ad.full_name_as_key|slugify }}-{{ label.0|slugify }}">
                             {% include 'doc/ad_count.html' %}
@@ -59,4 +59,15 @@
 {% endblock %}
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
+    <script>
+        $(document)
+            .ready(function () {
+                $("[data-bs-toggle='popover']")
+                    .popover({
+                        html: true,
+                        sanitize: false,
+                        trigger: "hover focus"
+                    });
+            });
+    </script>
 {% endblock %}
