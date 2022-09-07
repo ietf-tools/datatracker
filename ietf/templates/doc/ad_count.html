@@ -14,7 +14,7 @@
                        {{ group.group_type }}s in the delta are:
                        <ul>
                             {% for d in docs_delta %}
-                                <li>{{ d }}</li>
+                                <li><a href='{% url "ietf.doc.views_doc.document_main" d.name %}'>{{ d.name }}</a></li>
                             {% endfor %}
                         </ul>
                     {% endif %}"

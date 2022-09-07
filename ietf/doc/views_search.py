@@ -562,9 +562,7 @@ def ad_workload(request):
                     ad.doc_prev[group_type].extend(set() for _ in range(inc))
 
                 ad.counts[group_type][groups[group_type][group]] += 1
-                ad.doc_now[group_type][groups[group_type][group]].add(
-                    doc.canonical_name()
-                )
+                ad.doc_now[group_type][groups[group_type][group]].add(doc)
 
                 try:
                     state_date = (
@@ -583,9 +581,7 @@ def ad_workload(request):
 
                 if today - state_date > delta:
                     ad.prev[group_type][groups[group_type][group]] += 1
-                    ad.doc_prev[group_type][groups[group_type][group]].add(
-                        doc.canonical_name()
-                    )
+                    ad.doc_prev[group_type][groups[group_type][group]].add(doc)
 
     for ad in ads:
         ad.doc_diff = defaultdict(list)
