@@ -9,7 +9,6 @@ import requests
 
 from urllib.parse import urlencode
 from xml.dom import pulldom, Node
-from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.utils import timezone
@@ -26,7 +25,7 @@ from ietf.name.models import StdLevelName, StreamName
 from ietf.person.models import Person
 from ietf.utils.log import log
 from ietf.utils.mail import send_mail_text
-from ietf.utils.timezone import datetime_from_date
+from ietf.utils.timezone import datetime_from_date, RPC_TZINFO
 
 #QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
 #INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
@@ -454,10 +453,10 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
             # server-local datetime (PST8PDT) matched the publication date from the RFC index.
             # When switching to USE_TZ=True, the timestamps were migrated so they still
             # matched the publication date in PST8PDT. When interpreting the event timestamp
-            # as a publication date, you must treat it in the PST8PDT time zone.
-            tz = ZoneInfo('PST8PDT')
-            d = datetime_from_date(rfc_published_date, tz)
-            synthesized = timezone.now().astimezone(tz)
+            # as a publication date, you must treat it in the PST8PDT time zone. The
+            # RPC_TZINFO constant in ietf.utils.timezone is defined for this purpose.
+            d = datetime_from_date(rfc_published_date, RPC_TZINFO)
+            synthesized = timezone.now().astimezone(RPC_TZINFO)
             if abs(d - synthesized) > datetime.timedelta(days=60):
                 synthesized = d
             else:

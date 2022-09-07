@@ -5,8 +5,6 @@
 import datetime
 import unicodedata
 
-from zoneinfo import ZoneInfo
-
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed, Rss201rev2Feed
 from django.urls import reverse as urlreverse
@@ -18,6 +16,7 @@ from django.utils.html import strip_tags
 from ietf.doc.models import Document, State, LastCallDocEvent, DocEvent
 from ietf.doc.utils import augment_events_with_revision
 from ietf.doc.templatetags.ietf_filters import format_textarea
+from ietf.utils.timezone import RPC_TZINFO
 
 
 def strip_control_characters(s):
@@ -136,11 +135,9 @@ class RfcFeed(Feed):
     
     def items(self):
         if self.year:
-            # Find published RFCs based on their official publication year - see
-            # ietf.sync.rfceditor.update_docs_from_rfc_index() for explanation of why this is PST8PDT
-            tz = ZoneInfo('PST8PDT')
-            start_of_year = datetime.datetime(self.year, 1, 1, tzinfo=tz)
-            start_of_next_year = datetime.datetime(self.year + 1, 1, 1, tzinfo=tz)
+            # Find published RFCs based on their official publication year
+            start_of_year = datetime.datetime(self.year, 1, 1, tzinfo=RPC_TZINFO)
+            start_of_next_year = datetime.datetime(self.year + 1, 1, 1, tzinfo=RPC_TZINFO)
             rfc_events = DocEvent.objects.filter(
                 type='published_rfc',
                 time__gte=start_of_year,

@@ -10,7 +10,6 @@ import rfc2html
 
 from typing import Optional, TYPE_CHECKING
 from weasyprint import HTML as wpHTML
-from zoneinfo import ZoneInfo
 
 from django.db import models
 from django.core import checks
@@ -37,6 +36,7 @@ from ietf.utils.decorators import memoize
 from ietf.utils.validators import validate_no_control_chars
 from ietf.utils.mail import formataddr
 from ietf.utils.models import ForeignKey
+from ietf.utils.timezone import RPC_TZINFO
 if TYPE_CHECKING:
     # importing other than for type checking causes errors due to cyclic imports
     from ietf.meeting.models import ProceedingsMaterial, Session
@@ -935,7 +935,7 @@ class Document(DocumentInfo):
             # created with a timestamp whose date *in the PST8PDT timezone* is the official publication date
             # assigned by the RFC editor.
             event = self.latest_event(type='published_rfc')
-            return event.time.astimezone(ZoneInfo('PST8PDT')).date()
+            return event.time.astimezone(RPC_TZINFO).date()
         else:
             event = self.latest_event(type='new_revision')
             return event.time.date()
