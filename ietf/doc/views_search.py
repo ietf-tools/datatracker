@@ -480,6 +480,7 @@ def ad_workload(request):
     group_names = {g: [] for g in group_types}
 
     # Prefill groups in preferred sort order
+    # FIXME: This should really use the database states instead of replicating the logic
     for id, (g, uig) in enumerate(
         [
             ("Publication Requested Internet-Draft", False),
@@ -500,12 +501,13 @@ def ad_workload(request):
     for id, g in enumerate(["RFC Ed Queue Internet-Draft", "RFC"]):
         groups["RFC"][g] = id
         group_names["RFC"].append(g)
+        up_is_good[g] = True
 
     for id, (g, uig) in enumerate(
         [
             ("AD Review Conflict Review", False),
             ("Needs Shepherd Conflict Review", False),
-            ("IESG Evaluation Conflict Review", None),
+            ("IESG Evaluation Conflict Review", True),
             ("Approved Conflict Review", True),
             ("Withdrawn Conflict Review", None),
         ]
@@ -514,16 +516,36 @@ def ad_workload(request):
         group_names["Conflict Review"].append(g)
         up_is_good[g] = uig
 
-    for id, g in enumerate(
+    for id, (g, uig) in enumerate(
         [
-            "Start Chartering/Rechartering (Internal Steering Group/IAB Review) Charter",
-            "Replaced Charter",
-            "Approved Charter",
-            "Not currently under review Charter",
+            ("Publication Requested Status Change", False),
+            ("Waiting for Writeup Status Change", False),
+            ("AD Evaluation Status Change", False),
+            ("In Last Call Status Change", None),
+            ("IESG Evaluation Status Change", True),
+            ("Waiting for AD Go-Ahead Status Change", False),
+            ("Approved", True),
+            ("Dead", None),
+        ]
+    ):
+        groups["Status Change"][g] = id
+        group_names["Status Change"].append(g)
+        up_is_good[g] = uig
+
+    for id, (g, uig) in enumerate(
+        [
+            ("Not currently under review Charter", None),
+            ("Draft Charter Charter", None),
+            ("Start Chartering/Rechartering (Internal Steering Group/IAB Review) Charter", False),
+            ("External Review (Message to Community, Selected by Secretariat) Charter", True),
+            ("IESG Review (Charter for Approval, Selected by Secretariat) Charter", True),
+            ("Approved Charter", True),
+            ("Replaced Charter", None),
         ]
     ):
         groups["Charter"][g] = id
         group_names["Charter"].append(g)
+        up_is_good[g] = uig
 
     for ad in ads:
         form = SearchForm(
@@ -567,15 +589,12 @@ def ad_workload(request):
                 try:
                     state_date = (
                         doc.docevent_set.filter(
-                            Q(type="started_iesg_process")
-                            | Q(
-                                type="changed_state",
-                                statedocevent__state_type="draft-iesg",
-                            )
+                            Q(type="started_iesg_process") | Q(type="changed_state")
                         )
                         .order_by("-time")[0]
                         .time.date()
                     )
+
                 except IndexError:
                     state_date = datetime.date(1990, 1, 1)
 
