@@ -3,11 +3,14 @@
 # Important: To avoid corrupting timestamps in the database, do not use this migration as a dependency for
 # future migrations. Use 0003_pause_to_change_use_tz instead.
 #
+import datetime
+
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.db import migrations, connection
 
-# to generate the expected list:
+# to generate the expected columns list:
 #
 # from django.db import connection
 # from pprint import pp
@@ -108,6 +111,36 @@ expected_datetime_columns = (
     ('utils_versioninfo', 'time'),
 )
 
+def convert_pre1970_timestamps(apps, schema_editor):
+    """Convert timestamps that CONVERT_TZ cannot handle
+
+    This could be made to do the entire conversion but some tables that require converison
+    do not use 'id' as their PK. Rather than reinvent the ORM, we'll let SQL do what it can
+    with CONVERT_TZ and clean up after. The tables that have pre-1970 timestamps both have
+    'id' columns.
+    """
+    min_timestamp = "1969-12-31 16:00:01"  # minimum PST8PDT timestamp CONVERT_TZ can convert to UTC
+    with connection.cursor() as cursor:
+        convert_manually = [
+            (tbl, col) for (tbl, col) in expected_datetime_columns
+            if cursor.execute(
+                f'# SELECT COUNT(*) FROM {tbl} WHERE {col} IS NOT NULL AND {col} <= %s',
+                (min_timestamp,)
+            ) and cursor.fetchone()[0] > 0
+        ]
+
+        pst8pdt = ZoneInfo('PST8PDT')
+        for (tbl, col) in convert_manually:
+            cursor.execute(f'SELECT id, {col} FROM {tbl} WHERE {col} < %s', (min_timestamp,))
+            for (id, naive_in_pst8pdt) in cursor.fetchall():
+                aware_in_pst8pdt = naive_in_pst8pdt.replace(tzinfo=pst8pdt)
+                aware_in_utc = aware_in_pst8pdt.astimezone(datetime.timezone.utc)
+                naive_in_utc = aware_in_utc.replace(tzinfo=None)
+                cursor.execute(
+                    f'UPDATE {tbl} SET {col}=%s WHERE id=%s',
+                    (naive_in_utc, id)
+                )
+
 
 def forward(apps, schema_editor):
     # Check that the USE_TZ has been False so far, otherwise we might be corrupting timestamps. If this test
@@ -161,10 +194,11 @@ class Migration(migrations.Migration):
 
     # To generate the queries:
     #
+    # min_timestamp = "1969-12-31 16:00:01"  # minimum PST8PDT timestamp CONVERT_TZ can convert to UTC
     # pst8pdt_columns = [e for e in expected_datetime_columns if e != ('meeting_timeslot', 'time')]
     # queries = []
     # for table, column in pst8pdt_columns:
-    #     queries.append(f"UPDATE {table} SET {column} = CONVERT_TZ({column}, 'PST8PDT', 'UTC');")
+    #     queries.append(f"UPDATE {table} SET {column} = CONVERT_TZ({column}, 'PST8PDT', 'UTC') WHERE {column} >= '{min_timestamp}'";)
     #
     # queries.append("""
     # UPDATE meeting_timeslot
@@ -178,92 +212,93 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(forward),
         migrations.RunSQL("""
-UPDATE auth_user SET date_joined = CONVERT_TZ(date_joined, 'PST8PDT', 'UTC');
-UPDATE auth_user SET last_login = CONVERT_TZ(last_login, 'PST8PDT', 'UTC');
-UPDATE community_documentchangedates SET new_version_date = CONVERT_TZ(new_version_date, 'PST8PDT', 'UTC');
-UPDATE community_documentchangedates SET normal_change_date = CONVERT_TZ(normal_change_date, 'PST8PDT', 'UTC');
-UPDATE community_documentchangedates SET significant_change_date = CONVERT_TZ(significant_change_date, 'PST8PDT', 'UTC');
-UPDATE django_admin_log SET action_time = CONVERT_TZ(action_time, 'PST8PDT', 'UTC');
-UPDATE django_migrations SET applied = CONVERT_TZ(applied, 'PST8PDT', 'UTC');
-UPDATE django_session SET expire_date = CONVERT_TZ(expire_date, 'PST8PDT', 'UTC');
-UPDATE doc_ballotpositiondocevent SET comment_time = CONVERT_TZ(comment_time, 'PST8PDT', 'UTC');
-UPDATE doc_ballotpositiondocevent SET discuss_time = CONVERT_TZ(discuss_time, 'PST8PDT', 'UTC');
-UPDATE doc_deletedevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE doc_docevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE doc_dochistory SET expires = CONVERT_TZ(expires, 'PST8PDT', 'UTC');
-UPDATE doc_dochistory SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE doc_docreminder SET due = CONVERT_TZ(due, 'PST8PDT', 'UTC');
-UPDATE doc_document SET expires = CONVERT_TZ(expires, 'PST8PDT', 'UTC');
-UPDATE doc_document SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE doc_documentactionholder SET time_added = CONVERT_TZ(time_added, 'PST8PDT', 'UTC');
-UPDATE doc_initialreviewdocevent SET expires = CONVERT_TZ(expires, 'PST8PDT', 'UTC');
-UPDATE doc_irsgballotdocevent SET duedate = CONVERT_TZ(duedate, 'PST8PDT', 'UTC');
-UPDATE doc_lastcalldocevent SET expires = CONVERT_TZ(expires, 'PST8PDT', 'UTC');
-UPDATE group_group SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE group_groupevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE group_grouphistory SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE group_groupmilestone SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE group_groupmilestonehistory SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE ipr_iprdisclosurebase SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE ipr_iprevent SET response_due = CONVERT_TZ(response_due, 'PST8PDT', 'UTC');
-UPDATE ipr_iprevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE liaisons_liaisonstatementevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE mailinglists_subscribed SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE mailinglists_whitelisted SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE meeting_floorplan SET modified = CONVERT_TZ(modified, 'PST8PDT', 'UTC');
-UPDATE meeting_room SET modified = CONVERT_TZ(modified, 'PST8PDT', 'UTC');
-UPDATE meeting_schedtimesessassignment SET modified = CONVERT_TZ(modified, 'PST8PDT', 'UTC');
-UPDATE meeting_schedulingevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE meeting_session SET modified = CONVERT_TZ(modified, 'PST8PDT', 'UTC');
-UPDATE meeting_session SET scheduled = CONVERT_TZ(scheduled, 'PST8PDT', 'UTC');
-UPDATE meeting_slidesubmission SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE meeting_timeslot SET modified = CONVERT_TZ(modified, 'PST8PDT', 'UTC');
-UPDATE message_message SET sent = CONVERT_TZ(sent, 'PST8PDT', 'UTC');
-UPDATE message_message SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE message_sendqueue SET send_at = CONVERT_TZ(send_at, 'PST8PDT', 'UTC');
-UPDATE message_sendqueue SET sent_at = CONVERT_TZ(sent_at, 'PST8PDT', 'UTC');
-UPDATE message_sendqueue SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE nomcom_feedback SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE nomcom_feedbacklastseen SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE nomcom_nomination SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE nomcom_nomineeposition SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE nomcom_topicfeedbacklastseen SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE oidc_provider_code SET expires_at = CONVERT_TZ(expires_at, 'PST8PDT', 'UTC');
-UPDATE oidc_provider_token SET expires_at = CONVERT_TZ(expires_at, 'PST8PDT', 'UTC');
-UPDATE oidc_provider_userconsent SET date_given = CONVERT_TZ(date_given, 'PST8PDT', 'UTC');
-UPDATE oidc_provider_userconsent SET expires_at = CONVERT_TZ(expires_at, 'PST8PDT', 'UTC');
-UPDATE person_email SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE person_historicalemail SET history_date = CONVERT_TZ(history_date, 'PST8PDT', 'UTC');
-UPDATE person_historicalemail SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE person_historicalperson SET history_date = CONVERT_TZ(history_date, 'PST8PDT', 'UTC');
-UPDATE person_historicalperson SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE person_person SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE person_personalapikey SET created = CONVERT_TZ(created, 'PST8PDT', 'UTC');
-UPDATE person_personalapikey SET latest = CONVERT_TZ(latest, 'PST8PDT', 'UTC');
-UPDATE person_personevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE request_profiler_profilingrecord SET end_ts = CONVERT_TZ(end_ts, 'PST8PDT', 'UTC');
-UPDATE request_profiler_profilingrecord SET start_ts = CONVERT_TZ(start_ts, 'PST8PDT', 'UTC');
-UPDATE review_historicalreviewassignment SET assigned_on = CONVERT_TZ(assigned_on, 'PST8PDT', 'UTC');
-UPDATE review_historicalreviewassignment SET completed_on = CONVERT_TZ(completed_on, 'PST8PDT', 'UTC');
-UPDATE review_historicalreviewassignment SET history_date = CONVERT_TZ(history_date, 'PST8PDT', 'UTC');
-UPDATE review_historicalreviewersettings SET history_date = CONVERT_TZ(history_date, 'PST8PDT', 'UTC');
-UPDATE review_historicalreviewrequest SET history_date = CONVERT_TZ(history_date, 'PST8PDT', 'UTC');
-UPDATE review_historicalreviewrequest SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE review_historicalunavailableperiod SET history_date = CONVERT_TZ(history_date, 'PST8PDT', 'UTC');
-UPDATE review_reviewassignment SET assigned_on = CONVERT_TZ(assigned_on, 'PST8PDT', 'UTC');
-UPDATE review_reviewassignment SET completed_on = CONVERT_TZ(completed_on, 'PST8PDT', 'UTC');
-UPDATE review_reviewrequest SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE review_reviewwish SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE south_migrationhistory SET applied = CONVERT_TZ(applied, 'PST8PDT', 'UTC');
-UPDATE submit_preapproval SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE submit_submissioncheck SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE submit_submissionevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
-UPDATE tastypie_apikey SET created = CONVERT_TZ(created, 'PST8PDT', 'UTC');
-UPDATE utils_versioninfo SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC');
+UPDATE auth_user SET date_joined = CONVERT_TZ(date_joined, 'PST8PDT', 'UTC') WHERE date_joined >= '1969-12-31 16:00:01';
+UPDATE auth_user SET last_login = CONVERT_TZ(last_login, 'PST8PDT', 'UTC') WHERE last_login >= '1969-12-31 16:00:01';
+UPDATE community_documentchangedates SET new_version_date = CONVERT_TZ(new_version_date, 'PST8PDT', 'UTC') WHERE new_version_date >= '1969-12-31 16:00:01';
+UPDATE community_documentchangedates SET normal_change_date = CONVERT_TZ(normal_change_date, 'PST8PDT', 'UTC') WHERE normal_change_date >= '1969-12-31 16:00:01';
+UPDATE community_documentchangedates SET significant_change_date = CONVERT_TZ(significant_change_date, 'PST8PDT', 'UTC') WHERE significant_change_date >= '1969-12-31 16:00:01';
+UPDATE django_admin_log SET action_time = CONVERT_TZ(action_time, 'PST8PDT', 'UTC') WHERE action_time >= '1969-12-31 16:00:01';
+UPDATE django_migrations SET applied = CONVERT_TZ(applied, 'PST8PDT', 'UTC') WHERE applied >= '1969-12-31 16:00:01';
+UPDATE django_session SET expire_date = CONVERT_TZ(expire_date, 'PST8PDT', 'UTC') WHERE expire_date >= '1969-12-31 16:00:01';
+UPDATE doc_ballotpositiondocevent SET comment_time = CONVERT_TZ(comment_time, 'PST8PDT', 'UTC') WHERE comment_time >= '1969-12-31 16:00:01';
+UPDATE doc_ballotpositiondocevent SET discuss_time = CONVERT_TZ(discuss_time, 'PST8PDT', 'UTC') WHERE discuss_time >= '1969-12-31 16:00:01';
+UPDATE doc_deletedevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE doc_docevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE doc_dochistory SET expires = CONVERT_TZ(expires, 'PST8PDT', 'UTC') WHERE expires >= '1969-12-31 16:00:01';
+UPDATE doc_dochistory SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE doc_docreminder SET due = CONVERT_TZ(due, 'PST8PDT', 'UTC') WHERE due >= '1969-12-31 16:00:01';
+UPDATE doc_document SET expires = CONVERT_TZ(expires, 'PST8PDT', 'UTC') WHERE expires >= '1969-12-31 16:00:01';
+UPDATE doc_document SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE doc_documentactionholder SET time_added = CONVERT_TZ(time_added, 'PST8PDT', 'UTC') WHERE time_added >= '1969-12-31 16:00:01';
+UPDATE doc_initialreviewdocevent SET expires = CONVERT_TZ(expires, 'PST8PDT', 'UTC') WHERE expires >= '1969-12-31 16:00:01';
+UPDATE doc_irsgballotdocevent SET duedate = CONVERT_TZ(duedate, 'PST8PDT', 'UTC') WHERE duedate >= '1969-12-31 16:00:01';
+UPDATE doc_lastcalldocevent SET expires = CONVERT_TZ(expires, 'PST8PDT', 'UTC') WHERE expires >= '1969-12-31 16:00:01';
+UPDATE group_group SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE group_groupevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE group_grouphistory SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE group_groupmilestone SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE group_groupmilestonehistory SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE ipr_iprdisclosurebase SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE ipr_iprevent SET response_due = CONVERT_TZ(response_due, 'PST8PDT', 'UTC') WHERE response_due >= '1969-12-31 16:00:01';
+UPDATE ipr_iprevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE liaisons_liaisonstatementevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE mailinglists_subscribed SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE mailinglists_whitelisted SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE meeting_floorplan SET modified = CONVERT_TZ(modified, 'PST8PDT', 'UTC') WHERE modified >= '1969-12-31 16:00:01';
+UPDATE meeting_room SET modified = CONVERT_TZ(modified, 'PST8PDT', 'UTC') WHERE modified >= '1969-12-31 16:00:01';
+UPDATE meeting_schedtimesessassignment SET modified = CONVERT_TZ(modified, 'PST8PDT', 'UTC') WHERE modified >= '1969-12-31 16:00:01';
+UPDATE meeting_schedulingevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE meeting_session SET modified = CONVERT_TZ(modified, 'PST8PDT', 'UTC') WHERE modified >= '1969-12-31 16:00:01';
+UPDATE meeting_session SET scheduled = CONVERT_TZ(scheduled, 'PST8PDT', 'UTC') WHERE scheduled >= '1969-12-31 16:00:01';
+UPDATE meeting_slidesubmission SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE meeting_timeslot SET modified = CONVERT_TZ(modified, 'PST8PDT', 'UTC') WHERE modified >= '1969-12-31 16:00:01';
+UPDATE message_message SET sent = CONVERT_TZ(sent, 'PST8PDT', 'UTC') WHERE sent >= '1969-12-31 16:00:01';
+UPDATE message_message SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE message_sendqueue SET send_at = CONVERT_TZ(send_at, 'PST8PDT', 'UTC') WHERE send_at >= '1969-12-31 16:00:01';
+UPDATE message_sendqueue SET sent_at = CONVERT_TZ(sent_at, 'PST8PDT', 'UTC') WHERE sent_at >= '1969-12-31 16:00:01';
+UPDATE message_sendqueue SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE nomcom_feedback SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE nomcom_feedbacklastseen SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE nomcom_nomination SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE nomcom_nomineeposition SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE nomcom_topicfeedbacklastseen SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE oidc_provider_code SET expires_at = CONVERT_TZ(expires_at, 'PST8PDT', 'UTC') WHERE expires_at >= '1969-12-31 16:00:01';
+UPDATE oidc_provider_token SET expires_at = CONVERT_TZ(expires_at, 'PST8PDT', 'UTC') WHERE expires_at >= '1969-12-31 16:00:01';
+UPDATE oidc_provider_userconsent SET date_given = CONVERT_TZ(date_given, 'PST8PDT', 'UTC') WHERE date_given >= '1969-12-31 16:00:01';
+UPDATE oidc_provider_userconsent SET expires_at = CONVERT_TZ(expires_at, 'PST8PDT', 'UTC') WHERE expires_at >= '1969-12-31 16:00:01';
+UPDATE person_email SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE person_historicalemail SET history_date = CONVERT_TZ(history_date, 'PST8PDT', 'UTC') WHERE history_date >= '1969-12-31 16:00:01';
+UPDATE person_historicalemail SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE person_historicalperson SET history_date = CONVERT_TZ(history_date, 'PST8PDT', 'UTC') WHERE history_date >= '1969-12-31 16:00:01';
+UPDATE person_historicalperson SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE person_person SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE person_personalapikey SET created = CONVERT_TZ(created, 'PST8PDT', 'UTC') WHERE created >= '1969-12-31 16:00:01';
+UPDATE person_personalapikey SET latest = CONVERT_TZ(latest, 'PST8PDT', 'UTC') WHERE latest >= '1969-12-31 16:00:01';
+UPDATE person_personevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE request_profiler_profilingrecord SET end_ts = CONVERT_TZ(end_ts, 'PST8PDT', 'UTC') WHERE end_ts >= '1969-12-31 16:00:01';
+UPDATE request_profiler_profilingrecord SET start_ts = CONVERT_TZ(start_ts, 'PST8PDT', 'UTC') WHERE start_ts >= '1969-12-31 16:00:01';
+UPDATE review_historicalreviewassignment SET assigned_on = CONVERT_TZ(assigned_on, 'PST8PDT', 'UTC') WHERE assigned_on >= '1969-12-31 16:00:01';
+UPDATE review_historicalreviewassignment SET completed_on = CONVERT_TZ(completed_on, 'PST8PDT', 'UTC') WHERE completed_on >= '1969-12-31 16:00:01';
+UPDATE review_historicalreviewassignment SET history_date = CONVERT_TZ(history_date, 'PST8PDT', 'UTC') WHERE history_date >= '1969-12-31 16:00:01';
+UPDATE review_historicalreviewersettings SET history_date = CONVERT_TZ(history_date, 'PST8PDT', 'UTC') WHERE history_date >= '1969-12-31 16:00:01';
+UPDATE review_historicalreviewrequest SET history_date = CONVERT_TZ(history_date, 'PST8PDT', 'UTC') WHERE history_date >= '1969-12-31 16:00:01';
+UPDATE review_historicalreviewrequest SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE review_historicalunavailableperiod SET history_date = CONVERT_TZ(history_date, 'PST8PDT', 'UTC') WHERE history_date >= '1969-12-31 16:00:01';
+UPDATE review_reviewassignment SET assigned_on = CONVERT_TZ(assigned_on, 'PST8PDT', 'UTC') WHERE assigned_on >= '1969-12-31 16:00:01';
+UPDATE review_reviewassignment SET completed_on = CONVERT_TZ(completed_on, 'PST8PDT', 'UTC') WHERE completed_on >= '1969-12-31 16:00:01';
+UPDATE review_reviewrequest SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE review_reviewwish SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE south_migrationhistory SET applied = CONVERT_TZ(applied, 'PST8PDT', 'UTC') WHERE applied >= '1969-12-31 16:00:01';
+UPDATE submit_preapproval SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE submit_submissioncheck SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE submit_submissionevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE tastypie_apikey SET created = CONVERT_TZ(created, 'PST8PDT', 'UTC') WHERE created >= '1969-12-31 16:00:01';
+UPDATE utils_versioninfo SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
 
 UPDATE meeting_timeslot
   JOIN meeting_meeting
     ON meeting_meeting.id = meeting_id
   SET time = CONVERT_TZ(time, time_zone, 'UTC');
 """),
+        migrations.RunPython(convert_pre1970_timestamps),
     ]
