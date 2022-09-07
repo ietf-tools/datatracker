@@ -379,6 +379,7 @@ def shorten_group_name(name):
             name = name[: -len(s)]
 
     for pat, sub in [
+        ("Writeup", "Write-up"),
         ("Requested", "Req"),
         ("Evaluation", "Eval"),
         ("Publication", "Pub"),
@@ -387,7 +388,14 @@ def shorten_group_name(name):
         ("Approved-", "App, "),
         ("announcement", "ann."),
         ("IESG Eval - ", ""),
-        ("Chartering/Rechartering", "(Re)charter"),
+        ("Not currently under review", "Not under review"),
+        ("External Review", "Ext. Review"),
+        (r"IESG Review \(Charter for Approval, Selected by Secretariat\)", "IESG Review"),
+        ("Needs Shepherd", "Needs Shep."),
+        ("Approved", "App."),
+        ("Replaced", "Repl."),
+        ("Withdrawn", "Withd."),
+        ("Chartering/Rechartering", "Charter"),
         (r"\(Message to Community, Selected by Secretariat\)", "")
     ]:
         name = re.sub(pat, sub, name)
@@ -524,8 +532,6 @@ def ad_workload(request):
             ("In Last Call Status Change", None),
             ("IESG Evaluation Status Change", True),
             ("Waiting for AD Go-Ahead Status Change", False),
-            ("Approved", True),
-            ("Dead", None),
         ]
     ):
         groups["Status Change"][g] = id
