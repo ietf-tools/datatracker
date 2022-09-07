@@ -173,6 +173,8 @@ jobs:
       run: |
         echo "Installing dependencies..."
         yarn
+        echo "Start Vite Preview..."
+        yarn preview &>/dev/null &
         echo "Running tests..."
         yarn cypress
         
