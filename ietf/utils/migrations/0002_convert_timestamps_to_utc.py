@@ -121,14 +121,15 @@ def convert_pre1970_timestamps(apps, schema_editor):
     """
     min_timestamp = "1969-12-31 16:00:01"  # minimum PST8PDT timestamp CONVERT_TZ can convert to UTC
     with connection.cursor() as cursor:
-        convert_manually = [
-            (tbl, col) for (tbl, col) in expected_datetime_columns
-            if cursor.execute(
-                f'# SELECT COUNT(*) FROM {tbl} WHERE {col} IS NOT NULL AND {col} <= %s',
-                (min_timestamp,)
-            ) and cursor.fetchone()[0] > 0
-        ]
-
+        # To get these values, use:
+        # convert_manually = [
+        #     (tbl, col) for (tbl, col) in expected_datetime_columns
+        #     if cursor.execute(
+        #         f'SELECT COUNT(*) FROM {tbl} WHERE {col} IS NOT NULL AND {col} <= %s',
+        #         (min_timestamp,)
+        #     ) and cursor.fetchone()[0] > 0
+        # ]
+        convert_manually = [('doc_docevent', 'time'), ('group_groupevent', 'time')]
         pst8pdt = ZoneInfo('PST8PDT')
         for (tbl, col) in convert_manually:
             cursor.execute(f'SELECT id, {col} FROM {tbl} WHERE {col} < %s', (min_timestamp,))
