@@ -11,6 +11,7 @@ datatracker.sublime-workspace
 /.settings
 /.tmp
 /.vite
+/client/dist
 /data
 /dist
 /docker/docker-compose.extend-custom.yml

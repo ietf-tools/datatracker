@@ -20,3 +20,12 @@ import './commands'
 // require('./commands')
 
 import 'cypress-real-events/support'
+import '@percy/cypress'
+
+// Handle ResizeObserver loop errors
+// See https://github.com/quasarframework/quasar/issues/2233
+Cypress.on('uncaught:exception', (err) => {
+  if (err.message.includes('ResizeObserver loop limit exceeded')) {
+    return false
+  }
+})

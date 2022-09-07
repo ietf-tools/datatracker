@@ -1,0 +1,32 @@
+{
+  "areaIndicatorsShown": true,
+  "bolderText": false,
+  "colorLegendShown": true,
+  "colors": [
+    {
+      "hex": "#0d6efd",
+      "tag": "Interesting"
+    },
+    {
+      "hex": "#6f42c1",
+      "tag": "Might Attend"
+    },
+    {
+      "hex": "#d63384",
+      "tag": "Important"
+    },
+    {
+      "hex": "#ffc107",
+      "tag": "Food"
+    },
+    {
+      "hex": "#20c997",
+      "tag": "Attended"
+    }
+  ],
+  "defaultCalendarView": "week",
+  "eventIconsShown": true,
+  "floorIndicatorsShown": true,
+  "listDayCollapse": false,
+  "redhandShown": true
+}
