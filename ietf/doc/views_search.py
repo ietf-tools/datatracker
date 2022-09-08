@@ -593,19 +593,14 @@ def ad_workload(request):
                 ad.counts[group_type][groups[group_type][group]] += 1
                 ad.doc_now[group_type][groups[group_type][group]].add(doc)
 
-                try:
-                    state_date = (
-                        doc.docevent_set.filter(
-                            Q(type="started_iesg_process") | Q(type="changed_state")
-                        )
-                        .order_by("-time")[0]
-                        .time
+                last_state_event = (
+                    doc.docevent_set.filter(
+                        Q(type="started_iesg_process") | Q(type="changed_state")
                     )
-
-                except IndexError:
-                    state_date = datetime.datetime(1990, 1, 1, tzinfo=datetime.timezone.utc)
-
-                if right_now - state_date > delta:
+                    .order_by("-time")
+                    .first()
+                )
+                if (last_state_event is not None) and (right_now - last_state_event.time) > delta:
                     ad.prev[group_type][groups[group_type][group]] += 1
                     ad.doc_prev[group_type][groups[group_type][group]].add(doc)
 
