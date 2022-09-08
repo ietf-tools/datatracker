@@ -135,6 +135,7 @@ jobs:
         /usr/local/bin/wait-for db:3306 -- echo "DB ready"
         
     - name: Run all tests
+      shell: bash
       run: |
         echo "Running checks..."
         ./ietf/manage.py check
