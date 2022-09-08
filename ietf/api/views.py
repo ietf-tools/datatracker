@@ -135,7 +135,7 @@ def api_new_meeting_registration(request):
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
     required_fields = [ 'meeting', 'first_name', 'last_name', 'affiliation', 'country_code',
-                        'email', 'reg_type', 'ticket_type', ]
+                        'email', 'reg_type', 'ticket_type', 'checkedin']
     fields = required_fields + []
     if request.method == 'POST':
         # parameters:
