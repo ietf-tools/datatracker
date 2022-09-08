@@ -626,7 +626,7 @@ def document_stats(request, stats_type=None):
             ).values_list("doc", "time").order_by("doc")
 
             for doc, time in docevent_qs.iterator():
-                doc_years[doc].add(time.year)
+                doc_years[doc].add(doc.pub_date().year)
 
             person_qs = Person.objects.filter(person_filters)
 

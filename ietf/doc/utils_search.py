@@ -5,6 +5,10 @@ import re
 import datetime
 import debug                            # pyflakes:ignore
 
+from zoneinfo import ZoneInfo
+
+from django.conf import settings
+
 from ietf.doc.models import Document, DocAlias, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent
 from ietf.doc.expire import expirable_drafts
 from ietf.doc.utils import augment_docs_and_user_with_user_info
@@ -204,7 +208,7 @@ def prepare_document_table(request, docs, query=None, max_results=200):
         if sort_key == "title":
             res.append(d.title)
         elif sort_key == "date":
-            res.append(str(d.latest_revision_date))
+            res.append(str(d.latest_revision_date.astimezone(ZoneInfo(settings.TIME_ZONE))))
         elif sort_key == "status":
             if rfc_num != None:
                 res.append(num(rfc_num))

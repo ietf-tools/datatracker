@@ -968,6 +968,7 @@ def make_rev_history(doc):
                         history[url]['pages'] = d.history_set.filter(rev=e.newrevisiondocevent.rev).first().pages
 
     if doc.type_id == "draft":
+        # e.time.date() agrees with RPC publication date when shown in the RPC_TZINFO time zone
         e = doc.latest_event(type='published_rfc')
     else:
         e = doc.latest_event(type='iesg_approved')
