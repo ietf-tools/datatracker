@@ -3326,7 +3326,7 @@ class EditTests(TestCase):
             s_other = s2 if s == s1 else s1
             self.assertEqual(len(constraints), 3)
             self.assertEqual(constraints.eq(0).attr("data-sessions"), str(s_other.pk))
-            self.assertEqual(constraints.eq(0).find(".bi-person").parent().text(), "1") # 1 person in the constraint
+            self.assertEqual(constraints.eq(0).find(".bi-people-fill").parent().text(), "1") # 1 person in the constraint
             self.assertEqual(constraints.eq(1).attr("data-sessions"), str(s_other.pk))
             self.assertEqual(constraints.eq(1).find(".encircled").text(), "1" if s_other == s2 else "-1")
             self.assertEqual(constraints.eq(2).attr("data-sessions"), str(s_other.pk))
@@ -3662,7 +3662,7 @@ class EditTests(TestCase):
 
         # Now enable the 'chair_conflict' constraint only
         chair_conflict = ConstraintName.objects.get(slug='chair_conflict')
-        chair_conf_label = b'<i class="bi bi-person-circle"/>'  # result of etree.tostring(etree.fromstring(editor_label))
+        chair_conf_label = b'<i class="bi bi-circle-fill"/>'  # result of etree.tostring(etree.fromstring(editor_label))
         meeting.group_conflict_types.add(chair_conflict)
         r = self.client.get(url)
         q = PyQuery(r.content)

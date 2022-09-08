@@ -68,7 +68,7 @@
               a.discreet(:href='`/group/` + item.acronym + `/about/`') {{item.acronym}}
             //- CELL - NAME ---------------------------
             td.agenda-table-cell-name
-              i.bi.me-2(v-if='item.icon && agendaStore.eventIconsShown', :class='item.icon')
+              i.bi.me-2.agenda-event-icon(v-if='item.icon && agendaStore.eventIconsShown', :class='item.icon')
               a.discreet(
                 v-if='item.flags.agenda'
                 :href='item.agenda.url'
@@ -120,7 +120,10 @@
                     template(v-if='item.flags.agenda')
                       n-popover
                         template(#trigger)
-                          i.bi.bi-collection(@click='showMaterials(item.key)')
+                          i.bi.bi-collection(
+                            :id='`btn-lnk-` + item.key + `-mat`'
+                            @click='showMaterials(item.key)'
+                            )
                         span Show meeting materials
                     template(v-else-if='item.type === `regular`')
                       n-popover
@@ -132,6 +135,7 @@
                     n-popover(v-for='lnk of item.links', :key='lnk.id')
                       template(#trigger)
                         a(
+                          :id='`btn-` + lnk.id'
                           :href='lnk.href'
                           :aria-label='lnk.label'
                           :class='`text-` + lnk.color'

@@ -208,7 +208,7 @@ export const useAgendaStore = defineStore('agenda', {
     },
     hideLoadingScreen () {
       // -> Hide loading screen
-      const loadingRef = document.querySelector('#app-meeting-loading')
+      const loadingRef = document.querySelector('#app-loading')
       if (loadingRef) {
         loadingRef.remove()
       }

@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "path": "meeting-floor-1.png",
+    "width": 2094,
+    "height": 1650
+  },
+  {
+    "id": 2,
+    "path": "meeting-floor-2.png",
+    "width": 2496,
+    "height": 1142
+  },
+  {
+    "id": 3,
+    "path": "meeting-floor-3.png",
+    "width": 800,
+    "height": 575
+  },
+  {
+    "id": 4,
+    "path": "meeting-floor-4.jpg",
+    "width": 900,
+    "height": 720
+  },
+  {
+    "id": 5,
+    "path": "meeting-floor-5.jpg",
+    "width": 900,
+    "height": 720
+  },
+  {
+    "id": 6,
+    "path": "meeting-floor-6.jpg",
+    "width": 1175,
+    "height": 1075
+  }
+]

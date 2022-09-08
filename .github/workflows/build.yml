@@ -160,8 +160,42 @@ jobs:
         name: coverage
         path: coverage.json
 
-  tests-cypress:
-    name: Run Tests (Cypress)
+  tests-cypress-modern:
+    name: Run Tests (Cypress - Modern)
+    if: ${{ github.event.inputs.skiptests == 'false' }}
+    needs: [prepare]
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Run all tests
+      run: |
+        echo "Installing dependencies..."
+        yarn
+        echo "Start Vite Preview..."
+        yarn preview &>/dev/null &
+        echo "Running tests..."
+        yarn cypress
+        
+    - name: Upload Video Recordings
+      uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
+      continue-on-error: true
+      with:
+        name: videos-modern
+        path: cypress/videos/
+        
+    - name: Upload Screenshots
+      uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
+      continue-on-error: true
+      with:
+        name: screenshots-modern
+        path: cypress/screenshots/
+
+  tests-cypress-legacy:
+    name: Run Tests (Cypress - Legacy)
     if: ${{ github.event.inputs.skiptests == 'false' }}
     needs: [prepare]
     runs-on: ubuntu-latest
@@ -202,14 +236,23 @@ jobs:
     - name: Run all tests
       run: |
         echo "Running tests..."
-        yarn cypress
+        yarn cypress:legacy
         
     - name: Upload Video Recordings
       uses: actions/upload-artifact@v3.0.0
       if: ${{ always() }}
+      continue-on-error: true
       with:
-        name: videos
+        name: videos-legacy
         path: cypress/videos/
+        
+    - name: Upload Screenshots
+      uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
+      continue-on-error: true
+      with:
+        name: screenshots-modern
+        path: cypress/screenshots/
         
   # -----------------------------------------------------------------
   # RELEASE
@@ -217,7 +260,7 @@ jobs:
   release:
     name: Make Release
     if: ${{ always() }}
-    needs: [tests-python, tests-cypress, prepare]
+    needs: [tests-python, tests-cypress-modern, tests-cypress-legacy, prepare]
     runs-on: ubuntu-latest
     env:
       SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
