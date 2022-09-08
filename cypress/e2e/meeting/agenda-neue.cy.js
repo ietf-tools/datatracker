@@ -1329,7 +1329,7 @@ describe(`meeting -> floor-plan-neue`, () => {
 
       // -> ROOMS
 
-      it(`can select rooms`, () => {
+      it(`can select rooms`, { retries: 2 }, () => {
         const floor = meetingData.floors[0]
         cy.get('.floorplan .floorplan-floors > .nav-link').first().click()
         cy.get('.floorplan .floorplan-rooms > .list-group-item').should('have.length', floor.rooms.length)
@@ -1349,7 +1349,7 @@ describe(`meeting -> floor-plan-neue`, () => {
             cy.get('.floorplan .floorplan-plan > img').then(floorImg => {
               const planxRatio = floorImg[0].width / floor.width
               const planyRatio = floorImg[0].height / floor.height
-              cy.get('.floorplan .floorplan-plan-pin').should('exist').and('be.visible').then(el => {
+              cy.get('.floorplan .floorplan-plan-pin').should('exist').then(el => {
                 const pinMarginLeft = parseInt(win.getComputedStyle(el[0]).getPropertyValue('margin-left').match(/\d+/))
                 const xPos = Math.round((room.left + (room.right - room.left) / 2) * planxRatio) - 25 + pinMarginLeft
                 const yPos = Math.round((room.top + (room.bottom - room.top) / 2) * planyRatio) - 40
