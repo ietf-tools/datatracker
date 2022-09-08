@@ -58,7 +58,7 @@ from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text
-from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO
+from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO, RPC_TZINFO
 
 
 class SearchTests(TestCase):
@@ -1431,7 +1431,7 @@ Man                    Expires September 22, 2015               [Page 3]
 
     def test_draft_group_link(self):
         """Link to group 'about' page should have correct format"""
-        event_datetime = datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo('America/Los_Angeles'))
+        event_datetime = datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO)
 
         for group_type_id in ['wg', 'rg', 'ag']:
             group = GroupFactory(type_id=group_type_id)
@@ -1890,13 +1890,13 @@ class DocTestCase(TestCase):
                   #other_aliases = ['rfc6020',],
                   states = [('draft','rfc'),('draft-iesg','pub')],
                   std_level_id = 'ps',
-                  time = datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo('America/Los_Angeles')),
+                  time = datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE)),
               )
         num = rfc.rfc_number()
         DocEventFactory.create(
             doc=rfc,
             type='published_rfc',
-            time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo('America/Los_Angeles')),
+            time=datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO),
         )
         #
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=rfc.name))
@@ -1915,13 +1915,13 @@ class DocTestCase(TestCase):
                   stream_id =       'ise',
                   states =          [('draft','rfc'),('draft-iesg','pub')],
                   std_level_id =    'inf',
-                  time =            datetime.datetime(1990, 4, 1, tzinfo=ZoneInfo('America/Los_Angeles')),
+                  time =            datetime.datetime(1990, 4, 1, tzinfo=ZoneInfo(settings.TIME_ZONE)),
               )
         num = april1.rfc_number()
         DocEventFactory.create(
             doc=april1,
             type='published_rfc',
-            time=datetime.datetime(1990, 4, 1, tzinfo=ZoneInfo('America/Los_Angeles')),
+            time=datetime.datetime(1990, 4, 1, tzinfo=RPC_TZINFO),
         )
         #
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=april1.name))
@@ -2057,8 +2057,7 @@ class GenerateDraftAliasesTests(TestCase):
        super().tearDown()
 
    def testManagementCommand(self):
-       tz = ZoneInfo('America/Los_Angeles')
-       a_month_ago = (timezone.now() - datetime.timedelta(30)).astimezone(tz)
+       a_month_ago = (timezone.now() - datetime.timedelta(30)).astimezone(RPC_TZINFO)
        a_month_ago = a_month_ago.replace(hour=0, minute=0, second=0, microsecond=0)
        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
        shepherd = PersonFactory()
@@ -2075,8 +2074,8 @@ class GenerateDraftAliasesTests(TestCase):
        doc2 = WgDraftFactory(name='draft-ietf-mars-test', group__acronym='mars', authors=[author2], ad=ad)
        doc3 = WgRfcFactory.create(name='draft-ietf-mars-finished', group__acronym='mars', authors=[author3], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=a_month_ago)
        DocEventFactory.create(doc=doc3, type='published_rfc', time=a_month_ago)
-       doc4 = WgRfcFactory.create(authors=[author4,author5], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=datetime.datetime(2010,10,10, tzinfo=tz))
-       DocEventFactory.create(doc=doc4, type='published_rfc', time=datetime.datetime(2010, 10, 10, tzinfo=tz))
+       doc4 = WgRfcFactory.create(authors=[author4,author5], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=datetime.datetime(2010,10,10, tzinfo=ZoneInfo(settings.TIME_ZONE)))
+       DocEventFactory.create(doc=doc4, type='published_rfc', time=datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO))
        doc5 = IndividualDraftFactory(authors=[author6])
 
        args = [ ]

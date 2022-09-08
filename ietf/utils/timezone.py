@@ -7,8 +7,16 @@ from django.conf import settings
 from django.utils import timezone
 
 
+# Timezone constants - tempting to make these settings, but changing them will
+# require code changes.
+#
 # Default time zone for deadlines / expiration dates.
 DEADLINE_TZINFO = ZoneInfo('PST8PDT')
+
+# Time zone for dates from the RPC. This value is baked into the timestamps on DocEvents
+# of type="published_rfc" - see Document.pub_date() and ietf.sync.refceditor.update_docs_from_rfc_index()
+# for more information about how that works.
+RPC_TZINFO = ZoneInfo('PST8PDT')
 
 
 def make_aware(dt, tzinfo):

@@ -967,7 +967,7 @@ def document_bibtex(request, name, rev=None):
 
     latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
     replaced_by = [d.name for d in doc.related_that("replaces")]
-    published = doc.latest_event(type="published_rfc")
+    published = doc.latest_event(type="published_rfc") is not None
     rfc = latest_revision.doc if latest_revision and latest_revision.doc.get_state_slug() == "rfc" else None
 
     if rev != None and rev != doc.rev:

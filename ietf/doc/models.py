@@ -36,6 +36,7 @@ from ietf.utils.decorators import memoize
 from ietf.utils.validators import validate_no_control_chars
 from ietf.utils.mail import formataddr
 from ietf.utils.models import ForeignKey
+from ietf.utils.timezone import RPC_TZINFO
 if TYPE_CHECKING:
     # importing other than for type checking causes errors due to cyclic imports
     from ietf.meeting.models import ProceedingsMaterial, Session
@@ -925,13 +926,18 @@ class Document(DocumentInfo):
         return s
 
     def pub_date(self):
-        """This is the rfc publication date (datetime) for RFCs, 
-        and the new-revision datetime for other documents."""
+        """Get the publication date for this document
+
+        This is the rfc publication date for RFCs, and the new-revision date for other documents.
+        """
         if self.get_state_slug() == "rfc":
+            # As of Sept 2022, in ietf.sync.rfceditor.update_docs_from_rfc_index() `published_rfc` events are
+            # created with a timestamp whose date *in the PST8PDT timezone* is the official publication date
+            # assigned by the RFC editor.
             event = self.latest_event(type='published_rfc')
         else:
             event = self.latest_event(type='new_revision')
-        return event.time
+        return event.time.astimezone(RPC_TZINFO).date() if event else None
 
     def is_dochistory(self):
         return False

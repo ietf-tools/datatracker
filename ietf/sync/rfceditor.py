@@ -25,7 +25,7 @@ from ietf.name.models import StdLevelName, StreamName
 from ietf.person.models import Person
 from ietf.utils.log import log
 from ietf.utils.mail import send_mail_text
-from ietf.utils.timezone import datetime_from_date
+from ietf.utils.timezone import datetime_from_date, RPC_TZINFO
 
 #QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
 #INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
@@ -333,9 +333,12 @@ def parse_index(response):
 
 
 def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=None):
-    """Given parsed data from the RFC Editor index, update the documents
-    in the database. Yields a list of change descriptions for each
-    document, if any."""
+    """Given parsed data from the RFC Editor index, update the documents in the database
+
+    Yields a list of change descriptions for each document, if any.
+
+    The skip_older_than_date is a bare date, not a datetime.
+    """
 
     errata = {}
     for item in errata_data:
@@ -373,7 +376,7 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
 
     for rfc_number, title, authors, rfc_published_date, current_status, updates, updated_by, obsoletes, obsoleted_by, also, draft, has_errata, stream, wg, file_formats, pages, abstract in index_data:
 
-        if skip_older_than_date and datetime_from_date(rfc_published_date) < datetime_from_date(skip_older_than_date):
+        if skip_older_than_date and rfc_published_date < skip_older_than_date:
             # speed up the process by skipping old entries
             continue
 
@@ -444,8 +447,16 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
             # unfortunately, rfc_published_date doesn't include the correct day
             # at the moment because the data only has month/year, so
             # try to deduce it
-            d = datetime_from_date(rfc_published_date)
-            synthesized = timezone.now()
+            #
+            # Note: This is in done PST8PDT to preserve compatibility with events created when
+            # USE_TZ was False. The published_rfc event was created with a timestamp whose
+            # server-local datetime (PST8PDT) matched the publication date from the RFC index.
+            # When switching to USE_TZ=True, the timestamps were migrated so they still
+            # matched the publication date in PST8PDT. When interpreting the event timestamp
+            # as a publication date, you must treat it in the PST8PDT time zone. The
+            # RPC_TZINFO constant in ietf.utils.timezone is defined for this purpose.
+            d = datetime_from_date(rfc_published_date, RPC_TZINFO)
+            synthesized = timezone.now().astimezone(RPC_TZINFO)
             if abs(d - synthesized) > datetime.timedelta(days=60):
                 synthesized = d
             else:

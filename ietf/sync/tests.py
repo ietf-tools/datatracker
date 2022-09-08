@@ -23,7 +23,7 @@ from ietf.sync import iana, rfceditor
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_utils import TestCase
-from ietf.utils.timezone import date_today
+from ietf.utils.timezone import date_today, RPC_TZINFO
 
 
 class IANASyncTests(TestCase):
@@ -354,7 +354,7 @@ class RFCSyncTests(TestCase):
         self.assertEqual(events[0].type, "sync_from_rfc_editor")
         self.assertEqual(events[1].type, "changed_action_holders")
         self.assertEqual(events[2].type, "published_rfc")
-        self.assertEqual(events[2].time.date(), today)
+        self.assertEqual(events[2].time.astimezone(RPC_TZINFO).date(), today)
         self.assertTrue("errata" in doc.tags.all().values_list("slug", flat=True))
         self.assertTrue(DocAlias.objects.filter(name="rfc1234", docs=doc))
         self.assertTrue(DocAlias.objects.filter(name="bcp1", docs=doc))
