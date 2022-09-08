@@ -857,6 +857,8 @@ class IetfTestRunner(DiscoverRunner):
                     # "void-style": "off",
                     # Both attributes without value and empty strings are equal and valid. (vite generates empty value attributes)
                     # "attribute-empty-style": "off"
+                    # For fragments, don't check that elements are in the proper ancestor element
+                    "element-required-ancestor": "off",
                 },
             }
 
@@ -865,6 +867,8 @@ class IetfTestRunner(DiscoverRunner):
             config["doc"]["extends"].append("html-validate:document")
             # FIXME: we should find a way to use SRI, but ignore for now:
             config["doc"]["rules"]["require-sri"] = "off"
+            # Turn "element-required-ancestor" back on
+            del config["doc"]["rules"]["element-required-ancestor"]
             # permit discontinuous heading numbering in cards, modals and dialogs:
             config["doc"]["rules"]["heading-level"] = [
                 "error",
