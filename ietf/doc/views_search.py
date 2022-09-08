@@ -46,6 +46,7 @@ from django.urls import reverse as urlreverse
 from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import render
+from django.utils import timezone
 from django.utils.cache import _generate_cache_key # type: ignore
 
 
@@ -461,7 +462,7 @@ def ad_dashboard_sort_key(doc):
 
 def ad_workload(request):
     delta = datetime.timedelta(days=30)
-    today = datetime.date.today()
+    right_now = timezone.now()
 
     ads = []
     responsible = Document.objects.values_list("ad", flat=True).distinct()
@@ -598,13 +599,13 @@ def ad_workload(request):
                             Q(type="started_iesg_process") | Q(type="changed_state")
                         )
                         .order_by("-time")[0]
-                        .time.date()
+                        .time
                     )
 
                 except IndexError:
-                    state_date = datetime.date(1990, 1, 1)
+                    state_date = datetime.datetime(1990, 1, 1, tzinfo=datetime.timezone.utc)
 
-                if today - state_date > delta:
+                if right_now - state_date > delta:
                     ad.prev[group_type][groups[group_type][group]] += 1
                     ad.doc_prev[group_type][groups[group_type][group]].add(doc)
 
