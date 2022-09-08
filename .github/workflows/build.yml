@@ -181,9 +181,18 @@ jobs:
     - name: Upload Video Recordings
       uses: actions/upload-artifact@v3.0.0
       if: ${{ always() }}
+      continue-on-error: true
       with:
         name: videos-modern
         path: cypress/videos/
+        
+    - name: Upload Screenshots
+      uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
+      continue-on-error: true
+      with:
+        name: screenshots-modern
+        path: cypress/screenshots/
 
   tests-cypress-legacy:
     name: Run Tests (Cypress - Legacy)
@@ -232,9 +241,18 @@ jobs:
     - name: Upload Video Recordings
       uses: actions/upload-artifact@v3.0.0
       if: ${{ always() }}
+      continue-on-error: true
       with:
         name: videos-legacy
         path: cypress/videos/
+        
+    - name: Upload Screenshots
+      uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
+      continue-on-error: true
+      with:
+        name: screenshots-modern
+        path: cypress/screenshots/
         
   # -----------------------------------------------------------------
   # RELEASE
