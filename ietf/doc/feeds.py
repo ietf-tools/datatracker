@@ -136,8 +136,8 @@ class RfcFeed(Feed):
     def items(self):
         if self.year:
             # Find published RFCs based on their official publication year
-            start_of_year = datetime.datetime(self.year, 1, 1, tzinfo=RPC_TZINFO)
-            start_of_next_year = datetime.datetime(self.year + 1, 1, 1, tzinfo=RPC_TZINFO)
+            start_of_year = datetime.datetime(int(self.year), 1, 1, tzinfo=RPC_TZINFO)
+            start_of_next_year = datetime.datetime(int(self.year) + 1, 1, 1, tzinfo=RPC_TZINFO)
             rfc_events = DocEvent.objects.filter(
                 type='published_rfc',
                 time__gte=start_of_year,

@@ -2074,7 +2074,7 @@ class GenerateDraftAliasesTests(TestCase):
        doc2 = WgDraftFactory(name='draft-ietf-mars-test', group__acronym='mars', authors=[author2], ad=ad)
        doc3 = WgRfcFactory.create(name='draft-ietf-mars-finished', group__acronym='mars', authors=[author3], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=a_month_ago)
        DocEventFactory.create(doc=doc3, type='published_rfc', time=a_month_ago)
-       doc4 = WgRfcFactory.create(authors=[author4,author5], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=datetime.datetime(2010,10,10, tzinfo=tz))
+       doc4 = WgRfcFactory.create(authors=[author4,author5], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=datetime.datetime(2010,10,10, tzinfo=ZoneInfo(settings.TIME_ZONE)))
        DocEventFactory.create(doc=doc4, type='published_rfc', time=datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO))
        doc5 = IndividualDraftFactory(authors=[author6])
 

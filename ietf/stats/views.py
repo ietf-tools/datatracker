@@ -40,7 +40,7 @@ from ietf.stats.models import MeetingRegistration, CountryAlias
 from ietf.stats.utils import get_aliased_affiliations, get_aliased_countries, compute_hirsch_index
 from ietf.ietfauth.utils import has_role
 from ietf.utils.response import permission_denied
-from ietf.utils.timezone import date_today, DEADLINE_TZINFO
+from ietf.utils.timezone import date_today, DEADLINE_TZINFO, RPC_TZINFO
 
 
 def stats_index(request):
@@ -625,8 +625,9 @@ def document_stats(request, stats_type=None):
                 type__in=["published_rfc", "new_revision"],
             ).values_list("doc", "time").order_by("doc")
 
-            for doc, time in docevent_qs.iterator():
-                doc_years[doc].add(doc.pub_date().year)
+            for doc_id, time in docevent_qs.iterator():
+                # RPC_TZINFO is used to match the timezone handling in Document.pub_date()
+                doc_years[doc_id].add(time.astimezone(RPC_TZINFO).year)
 
             person_qs = Person.objects.filter(person_filters)
 
