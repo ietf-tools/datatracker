@@ -25,7 +25,7 @@
             </tr>
         </thead>
         {% if stats %}
-            <tbody>
+            <tbody class="table-group-divider">
                 {% for item in stats %}
                     <tr>
                         <th scope="row">{{ item.position__name }}</th>
@@ -43,7 +43,7 @@
                 {% endfor %}
             </tbody>
         {% endif %}
-        <tfoot>
+        <tfoot class="table-group-divider">
             <tr>
                 <th scope="row">Totals</th>
                 <td>{{ totals.open }}</td>

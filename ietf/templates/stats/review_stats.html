@@ -175,10 +175,10 @@
                 </tr>
             </thead>
             {% for row in data %}
-                    {% if forloop.first %}<tbody>{% endif %}
-                    {% if forloop.last %}</tbody><tfoot>{% endif %}
+                    {% if forloop.first %}<tbody class="table-group-divider">{% endif %}
+                    {% if forloop.last %}</tbody><tfoot class="table-group-divider">{% endif %}
                     <tr>
-                        <td>{{ row.obj }}</td>
+                        {% if forloop.last %}<th scope="row">{% else %}<td>{% endif %}{{ row.obj }}{% if forloop.last %}</th>{% else %}</td>{% endif %}
                         <td>{{ row.open_in_time }}</td>
                         <td>{{ row.open_late }}</td>
                         <td>{{ row.completed_in_time }}</td>
@@ -219,12 +219,10 @@
                     </tr>
                 </thead>
                 {% for row in data %}
-                        {% if forloop.first %}<tbody>{% endif %}
-                        {% if forloop.last %}</tbody><tfoot>{% endif %}
+                        {% if forloop.first %}<tbody class="table-group-divider">{% endif %}
+                        {% if forloop.last %}</tbody><tfoot class="table-group-divider">{% endif %}
                         <tr>
-                            <td>
-                                {{ row.obj }}
-                            </td>
+                            {% if forloop.last %}<th scope="row">{% else %}<td>{% endif %}{{ row.obj }}{% if forloop.last %}</th>{% else %}</td>{% endif %}
                             {% for c in row.result_list %}
                                 <td>
                                     {{ c }}
@@ -256,12 +254,10 @@
                     </tr>
                 </thead>
                 {% for row in data %}
-                    {% if forloop.first %}<tbody>{% endif %}
-                        {% if forloop.last %}</tbody><tfoot>{% endif %}
+                    {% if forloop.first %}<tbody class="table-group-divider">{% endif %}
+                        {% if forloop.last %}</tbody><tfoot class="table-group-divider">{% endif %}
                         <tr>
-                            <td>
-                                {{ row.obj }}
-                            </td>
+                            {% if forloop.last %}<th scope="row">{% else %}<td>{% endif %}{{ row.obj }}{% if forloop.last %}</th>{% else %}</td>{% endif %}
                             {% for c in row.state_list %}
                                 <td>
                                     {{ c }}
