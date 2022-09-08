@@ -928,17 +928,16 @@ class Document(DocumentInfo):
     def pub_date(self):
         """Get the publication date for this document
 
-        This is the rfc publication date (datetime) for RFCs, and the new-revision datetime for other documents.
+        This is the rfc publication date for RFCs, and the new-revision date for other documents.
         """
         if self.get_state_slug() == "rfc":
             # As of Sept 2022, in ietf.sync.rfceditor.update_docs_from_rfc_index() `published_rfc` events are
             # created with a timestamp whose date *in the PST8PDT timezone* is the official publication date
             # assigned by the RFC editor.
             event = self.latest_event(type='published_rfc')
-            return event.time.astimezone(RPC_TZINFO).date()
         else:
             event = self.latest_event(type='new_revision')
-            return event.time.date()
+        return event.time.astimezone(RPC_TZINFO).date() if event else None
 
     def is_dochistory(self):
         return False
