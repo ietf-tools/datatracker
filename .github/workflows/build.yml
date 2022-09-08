@@ -20,9 +20,14 @@ on:
         description: 'Skip Tests'
         required: true
         type: boolean
-      updatecoverage:
+      ignoreLowerCoverage:
+        description: 'Ignore Lower Coverage'
+        default: false
+        required: true
+        type: boolean
+      updateCoverage:
         description: 'Update Baseline Coverage'
-        default: true
+        default: false
         required: true
         type: boolean
       dryrun:
@@ -140,7 +145,12 @@ jobs:
           exit 1
         fi
         echo "Running tests..."
-        ./ietf/manage.py test --settings=settings_sqlitetest
+        if [[ "$INPUT_IGNORE_LOWER_COVERAGE" == "true" ]]; then
+          echo "Lower coverage failures will be ignored."
+          ./ietf/manage.py test --settings=settings_sqlitetest --ignore-lower-coverage
+        else
+          ./ietf/manage.py test --settings=settings_sqlitetest
+        fi
         coverage xml
 
     - name: Upload Coverage Results to Codecov
@@ -358,7 +368,7 @@ jobs:
 
     - name: Update Baseline Coverage
       uses: ncipollo/release-action@v1
-      if: ${{ github.event.inputs.updatecoverage == 'true' && github.event.inputs.dryrun == 'false' }}
+      if: ${{ github.event.inputs.updateCoverage == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         allowUpdates: true
         tag: baseline
