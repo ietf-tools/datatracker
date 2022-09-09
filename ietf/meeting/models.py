@@ -139,10 +139,9 @@ class Meeting(models.Model):
         return self.get_meeting_date(self.days-1)
 
     def end_datetime(self):
-        """Datetime of the first instant _after_ the meeting's last day"""
-        return self.tz().localize(
-            datetime.datetime.combine(self.get_meeting_date(self.days), datetime.time())
-        )
+        """Datetime of the first instant _after_ the meeting's last day in meeting time zone"""
+        return datetime_from_date(self.get_meeting_date(self.days), self.tz())
+
     def get_00_cutoff(self):
         start_date = datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day, tzinfo=pytz.utc)
         importantdate = self.importantdate_set.filter(name_id='idcutoff').first()
