@@ -949,15 +949,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@parcel/optimizer-data-url@npm:2.6.2":
-  version: 2.6.2
-  resolution: "@parcel/optimizer-data-url@npm:2.6.2"
+"@parcel/optimizer-data-url@npm:2.7.0":
+  version: 2.7.0
+  resolution: "@parcel/optimizer-data-url@npm:2.7.0"
   dependencies:
-    "@parcel/plugin": 2.6.2
-    "@parcel/utils": 2.6.2
+    "@parcel/plugin": 2.7.0
+    "@parcel/utils": 2.7.0
     isbinaryfile: ^4.0.2
     mime: ^2.4.4
-  checksum: 29a1ce25937fc81970c4a0783e9fb4ffc37fbe13539d056f3a864e6fd536baee19c5456118ef8e7db64eab8a8a796dd9c202843d115ea46a7dc1dbcc4a87f93a
+  checksum: cbfd39eb51a2000cb3c151d133c47fa4b9fed8a3d5a95aec20faf25875be8c19beb348f1a80bb0e06b0a3eb5f240e54ca4c2650eef724f00a5c048f5173a98d2
   languageName: node
   linkType: hard
 
@@ -1273,12 +1273,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@parcel/transformer-inline-string@npm:2.6.2":
-  version: 2.6.2
-  resolution: "@parcel/transformer-inline-string@npm:2.6.2"
+"@parcel/transformer-inline-string@npm:2.7.0":
+  version: 2.7.0
+  resolution: "@parcel/transformer-inline-string@npm:2.7.0"
   dependencies:
-    "@parcel/plugin": 2.6.2
-  checksum: 43ca6fdfe8c6cf7803651bd0ea4db229256f0232268e4c3a450d3db95695402a032fdbe792d7b9675cf7978163c3ebfba7807b38ba02156e2c6b15775544bfb4
+    "@parcel/plugin": 2.7.0
+  checksum: 469bfeeadcb6f09b5b0470a118baf808d2d574df9c36899af75fd6973d3dc354a0c39141872d9129cdbb28d3411173b3b85a3aa450a7a300cb218f30c3b58f5a
   languageName: node
   linkType: hard
 
@@ -5826,6 +5826,15 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
+"mime@npm:1.6.0":
+  version: 1.6.0
+  resolution: "mime@npm:1.6.0"
+  bin:
+    mime: cli.js
+  checksum: fef25e39263e6d207580bdc629f8872a3f9772c923c7f8c7e793175cee22777bbe8bba95e5d509a40aaa292d8974514ce634ae35769faa45f22d17edda5e8557
+  languageName: node
+  linkType: hard
+
 "mime@npm:^2.4.4":
   version: 2.6.0
   resolution: "mime@npm:2.6.0"
@@ -7064,8 +7073,8 @@ browserlist@latest:
     "@fullcalendar/luxon2": 5.11.3
     "@fullcalendar/timegrid": 5.11.3
     "@fullcalendar/vue3": 5.11.2
-    "@parcel/optimizer-data-url": 2.6.2
-    "@parcel/transformer-inline-string": 2.6.2
+    "@parcel/optimizer-data-url": 2.7.0
+    "@parcel/transformer-inline-string": 2.7.0
     "@parcel/transformer-sass": 2.7.0
     "@percy/cli": 1.10.2
     "@percy/cypress": 3.1.2
