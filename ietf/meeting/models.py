@@ -138,6 +138,10 @@ class Meeting(models.Model):
     def end_date(self):
         return self.get_meeting_date(self.days-1)
 
+    def start_datetime(self):
+        """Start-of-day on meeting.date in meeting time zone"""
+        return datetime_from_date(self.date, self.tz())
+
     def end_datetime(self):
         """Datetime of the first instant _after_ the meeting's last day in meeting time zone"""
         return datetime_from_date(self.get_meeting_date(self.days), self.tz())
