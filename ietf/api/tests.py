@@ -383,7 +383,7 @@ class CustomApiTests(TestCase):
         # Check record
         obj = MeetingRegistration.objects.get(email=reg['email'], meeting__number=reg['meeting'])
         for key in ['affiliation', 'country_code', 'first_name', 'last_name', 'person', 'reg_type', 'ticket_type', 'checkedin']:
-            self.assertEqual(getattr(obj, key), reg.get(key), "Bad data for field '%s'" % key)
+            self.assertEqual(getattr(obj, key), False if key=='checkedin' else reg.get(key) , "Bad data for field '%s'" % key)
         #
         # Test with existing user
         person = PersonFactory()
