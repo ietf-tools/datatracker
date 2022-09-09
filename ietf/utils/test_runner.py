@@ -505,9 +505,10 @@ class CoverageTest(unittest.TestCase):
                 fudge_factor = 0.0002
                 self.assertLessEqual(len(test_missing), len(master_missing),
                     msg = "New %s without test coverage since %s: %s" % (test, latest_coverage_version, list(set(test_missing) - set(master_missing))))
-                self.assertGreaterEqual(test_coverage, master_coverage - fudge_factor,
-                    msg = "The %s coverage percentage is now lower (%.2f%%) than for version %s (%.2f%%)" %
-                        ( test, test_coverage*100, latest_coverage_version, master_coverage*100, ))
+                if not self.runner.ignore_lower_coverage:
+                    self.assertGreaterEqual(test_coverage, master_coverage - fudge_factor,
+                        msg = "The %s coverage percentage is now lower (%.2f%%) than for version %s (%.2f%%)" %
+                            ( test, test_coverage*100, latest_coverage_version, master_coverage*100, ))
 
     def template_coverage_test(self):
         global loaded_templates
@@ -679,6 +680,9 @@ class IetfTestRunner(DiscoverRunner):
     @classmethod
     def add_arguments(cls, parser):
         super(IetfTestRunner, cls).add_arguments(parser)
+        parser.add_argument('--ignore-lower-coverage',
+            action= 'store_true', dest='ignore_lower_coverage', default=False,
+            help='Do not treat lower coverage as a failure. Useful for building a new coverage file to reset the coverage baseline.')
         parser.add_argument('--skip-coverage',
             action='store_true', dest='skip_coverage', default=False,
             help='Skip test coverage measurements for code, templates, and URLs. ' )
@@ -704,8 +708,9 @@ class IetfTestRunner(DiscoverRunner):
             action='store_true', dest="validate_html_harder", default=False,
             help='Validate all generated HTML with additional validators (slow)')
 
-    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, validate_html_harder=None, **kwargs):
+    def __init__(self, ignore_lower_coverage=False, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, validate_html_harder=None, **kwargs):
         #
+        self.ignore_lower_coverage = ignore_lower_coverage
         self.check_coverage = not skip_coverage
         self.save_version_coverage = save_version_coverage
         self.html_report = html_report
