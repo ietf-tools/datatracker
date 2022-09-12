@@ -166,15 +166,15 @@ describe('meeting -> agenda-neue [past, desktop]', {
     cy.get('.agenda .agenda-tz-selector > button').last().contains('UTC')
     cy.get('.agenda .agenda-timezone-ddn').should('exist')
   })
-  it.skip('can change timezone', () => {
+  it('can change timezone', () => {
     // Switch to local timezone
     cy.get('.agenda .agenda-tz-selector > button').eq(1).click().should('have.class', 'n-button--primary-type')
-      .prev('button').should('not.have.class', 'n-button--primary-type')
+    cy.get('.agenda .agenda-tz-selector > button').first().should('not.have.class', 'n-button--primary-type')
     const localDateTime = DateTime.fromISO(meetingData.meeting.updated).setZone('local').toFormat(`DD 'at' tt ZZZZ`)
     cy.get('.agenda h6').first().contains(localDateTime)
     // Switch to UTC
     cy.get('.agenda .agenda-tz-selector > button').last().click().should('have.class', 'n-button--primary-type')
-      .prev('button').should('not.have.class', 'n-button--primary-type')
+    cy.get('.agenda .agenda-tz-selector > button').eq(1).should('not.have.class', 'n-button--primary-type')
     const utcDateTime = DateTime.fromISO(meetingData.meeting.updated).setZone('utc').toFormat(`DD 'at' tt ZZZZ`)
     cy.get('.agenda h6').first().contains(utcDateTime)
     cy.get('.agenda .agenda-timezone-ddn').contains('UTC')
@@ -208,7 +208,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
       // Apply small arbitrary wait every 10 rows to prevent the test UI from freezing
       if (idx % 10 === 0) {
         // eslint-disable-next-line cypress/no-unnecessary-waiting
-        cy.wait(10)
+        cy.wait(10, { log: false })
       }
       const event = meetingData.schedule[idx]
       const eventStart = DateTime.fromISO(event.startDateTime)
@@ -364,7 +364,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
       cy.get('.agenda-table .agenda-table-display-event').should('have.length.lessThan', meetingData.schedule.length)
       // Let the UI update before checking each displayed row
       // eslint-disable-next-line cypress/no-unnecessary-waiting
-      cy.wait(1000)
+      cy.wait(1000, { log: false })
       cy.get('.agenda-table .agenda-table-display-event').each((el, idx) => {
         cy.wrap(el).contains(term, { matchCase: false })
       })
@@ -469,7 +469,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
     cy.intercept('GET', materialsUrl, { body: 'The internet is a series of tubes.' }).as('getMaterialsText')
     // Open dialog
     cy.get(`#agenda-rowid-${event.id}`).find(`#btn-lnk-${event.id}-mat`).click()
-    cy.get('.agenda-eventdetails').should('exist').and('be.visible')
+    cy.get('.agenda-eventdetails').should('exist')
     cy.wait('@getMaterialsText')
     // Slides Tab
     cy.get('.agenda-eventdetails .detail-nav > a').eq(1).click()
@@ -488,8 +488,8 @@ describe('meeting -> agenda-neue [past, desktop]', {
     numTestsKeptInMemory: 0
   }, () => {
     // Open dialog
-    cy.get('#agenda-quickaccess-filterbyareagroups-btn').should('exist').and('be.visible').click()
-    cy.get('.agenda-personalize').should('exist').and('be.visible')
+    cy.get('#agenda-quickaccess-filterbyareagroups-btn').should('exist').click()
+    cy.get('.agenda-personalize').should('exist')
     // Check header elements
     cy.get('.agenda-personalize .n-drawer-header__main > span').contains('Filter Areas + Groups')
     cy.get('.agenda-personalize .agenda-personalize-actions > button').should('have.length', 3)
@@ -752,7 +752,6 @@ describe('meeting -> agenda-neue [past, desktop]', {
     cy.get('.agenda .agenda-table-cell-group > span.badge').should('not.exist')
     cy.get('@switch-groupind').click()
     cy.get('.agenda .agenda-table-cell-group > span.badge').should('exist')
-    // TODO: realtime red line toggle
     // -> Test Bolder Text toggle
     cy.get('@settings-display').nextAll('div.d-flex').eq(6).find('div[role=switch]').as('switch-boldertext').click()
     cy.get('.agenda').should('have.class', 'bolder-text')
