@@ -36,7 +36,7 @@ from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.utils.test_utils import assert_ical_response_is_valid
 from ietf.utils.jstest import ( IetfSeleniumTestCase, ifSeleniumEnabled, selenium_enabled,
                                 presence_of_element_child_by_css_selector )
-from ietf.utils.timezone import datetime_today
+from ietf.utils.timezone import datetime_today, datetime_from_date, date_today
 
 if selenium_enabled():
     from selenium.webdriver.common.action_chains import ActionChains
@@ -2613,7 +2613,7 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
         self.meeting: Meeting = MeetingFactory(
             type_id='ietf',
             number=120,
-            date=timezone.now() + datetime.timedelta(days=10),
+            date=date_today() + datetime.timedelta(days=10),
             populate_schedule=False,
         )
         self.edit_timeslot_url = self.absreverse(
@@ -2683,26 +2683,23 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
         self.do_delete_timeslot_test(cancel=True)
 
     def do_delete_time_interval_test(self, cancel=False):
-        delete_day = self.meeting.date.date()
+        delete_day = self.meeting.date
         delete_time = datetime.time(hour=10)
-        other_day = self.meeting.get_meeting_date(1).date()
+        other_day = self.meeting.get_meeting_date(1)
         other_time = datetime.time(hour=12)
         duration = datetime.timedelta(minutes=60)
 
         delete: [TimeSlot] = TimeSlotFactory.create_batch(
             2,
             meeting=self.meeting,
-            time=self.meeting.tz().localize(
-                datetime.datetime.combine(delete_day, delete_time)
-            ),
-            duration=duration)
+            time=datetime_from_date(delete_day, self.meeting.tz()).replace(hour=delete_time.hour),
+            duration=duration,
+        )
 
         keep: [TimeSlot] = [
             TimeSlotFactory(
                 meeting=self.meeting,
-                time=self.meeting.tz().localize(
-                    datetime.datetime.combine(day, time)
-                ),
+                time=datetime_from_date(day, self.meeting.tz()).replace(hour=time.hour),
                 duration=duration
             )
             for (day, time) in (
@@ -2736,26 +2733,22 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
         self.do_delete_time_interval_test(cancel=True)
 
     def do_delete_day_test(self, cancel=False):
-        delete_day = self.meeting.date.date()
-        times = [datetime.time(hour=10), datetime.time(hour=12)]
-        other_days = [self.meeting.get_meeting_date(d).date() for d in range(1, 3)]
+        delete_day = self.meeting.date
+        hours = [10, 12]
+        other_days = [self.meeting.get_meeting_date(d) for d in range(1, 3)]
 
         delete: [TimeSlot] = [
             TimeSlotFactory(
                 meeting=self.meeting,
-                time=self.meeting.tz().localize(
-                    datetime.datetime.combine(delete_day, time)
-                ),
-            ) for time in times
+                time=datetime_from_date(delete_day, self.meeting.tz()).replace(hour=hour),
+            ) for hour in hours
         ]
 
         keep: [TimeSlot] = [
             TimeSlotFactory(
                 meeting=self.meeting,
-                time=self.meeting.tz().localize(
-                    datetime.datetime.combine(day, time)
-                ),
-            ) for day in other_days for time in times
+                time=datetime_from_date(day, self.meeting.tz()).replace(hour=hour),
+            ) for day in other_days for hour in hours
         ]
 
         selector = (
