@@ -168,18 +168,18 @@ describe('meeting -> agenda-neue [past, desktop]', {
   })
   it('can change timezone', () => {
     // Switch to local timezone
-    cy.get('.agenda .agenda-tz-selector > button').eq(1).click().should('have.class', 'n-button--primary-type')
-    cy.get('.agenda .agenda-tz-selector > button').first().should('not.have.class', 'n-button--primary-type')
+    cy.get('.agenda .agenda-tz-selector > button:nth-child(2)').click().should('have.class', 'n-button--primary-type')
+    cy.get('.agenda .agenda-tz-selector > button:first-child').should('not.have.class', 'n-button--primary-type')
     const localDateTime = DateTime.fromISO(meetingData.meeting.updated).setZone('local').toFormat(`DD 'at' tt ZZZZ`)
     cy.get('.agenda h6').first().contains(localDateTime)
     // Switch to UTC
-    cy.get('.agenda .agenda-tz-selector > button').last().click().should('have.class', 'n-button--primary-type')
-    cy.get('.agenda .agenda-tz-selector > button').eq(1).should('not.have.class', 'n-button--primary-type')
+    cy.get('.agenda .agenda-tz-selector > button:last-child').click().should('have.class', 'n-button--primary-type')
+    cy.get('.agenda .agenda-tz-selector > button:nth-child(2)').should('not.have.class', 'n-button--primary-type')
     const utcDateTime = DateTime.fromISO(meetingData.meeting.updated).setZone('utc').toFormat(`DD 'at' tt ZZZZ`)
     cy.get('.agenda h6').first().contains(utcDateTime)
     cy.get('.agenda .agenda-timezone-ddn').contains('UTC')
     // Switch back to meeting timezone
-    cy.get('.agenda .agenda-tz-selector > button').first().click().should('have.class', 'n-button--primary-type')
+    cy.get('.agenda .agenda-tz-selector > button:first-child').click().should('have.class', 'n-button--primary-type')
     cy.get('.agenda .agenda-timezone-ddn').contains('Tokyo')
   })
 
