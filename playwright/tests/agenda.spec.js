@@ -72,7 +72,7 @@ test.describe('meeting -> agenda-neue [past, desktop]', () => {
   })
 
   test('agenda header section', async ({ page }) => {
-    await expect(page.locator('.agenda h1').first(), 'should have agenda title').toContainText(`IETF ${meetingData.meeting.number} Meeting Agenda`)
+    await expect(page.locator('.agenda h1'), 'should have agenda title').toContainText(`IETF ${meetingData.meeting.number} Meeting Agenda`)
     await expect(page.locator('.agenda h4').first(), 'should have meeting city subtitle').toContainText(meetingData.meeting.city)
     await expect(page.locator('.agenda h4').first(), 'should have meeting date subtitle').toContainText(/[a-zA-Z] [0-9]{1,2} - ([a-zA-Z]+ )?[0-9]{1,2}, [0-9]{4}/i)
 
