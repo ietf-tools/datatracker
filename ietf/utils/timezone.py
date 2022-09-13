@@ -44,14 +44,6 @@ def make_aware(dt, tz):
         return dt.replace(tzinfo=tzinfo)  # zoneinfo- / datetime.timezone-style
 
 
-def local_timezone_to_utc(d):
-    """Takes a naive datetime in the local timezone and returns a
-    naive datetime with the corresponding UTC time."""
-    local_timezone = _tzinfo(settings.TIME_ZONE)
-    d = d.replace(tzinfo=local_timezone).astimezone(datetime.timezone.utc)
-    return d.replace(tzinfo=None)
-
-
 def datetime_from_date(date, tz=None):
     """Get datetime at midnight on a given date"""
     # accept either pytz or zoneinfo tzinfos until we get rid of pytz
