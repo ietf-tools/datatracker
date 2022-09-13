@@ -1,13 +1,15 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% origin %}
-<label class="my-1 fw-bold">Versions:</label>
-<nav class="mb-3">
-    <ul class="pagination pagination-sm flex-wrap">
+{% if not document_html %}
+    <label class="my-1 fw-bold">Versions:</label>
+    <nav class="mb-3">
+{% endif %}
+    <ul class="revision-list pagination pagination-sm text-center flex-wrap{% if document_html %} my-0{% endif %}">
         {% for rev in revisions %}
             <li class="page-item {% if rev == doc.rev %}{% if snapshot or doc.get_state_slug != 'rfc' %}active{% endif %}{% endif %}">
                 <a class="page-link"
-                   href="{% if snapshot and doc.get_state_slug == 'rfc' %}{% url 'ietf.doc.views_doc.document_main' name=doc.doc.name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.name %}{% endif %}{% if rev %}{{ rev }}/{% endif %}"
+                   href="{% if not document_html %}{% if snapshot and doc.get_state_slug == 'rfc' %}{% url 'ietf.doc.views_doc.document_main' name=doc.doc.name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.name %}{% endif %}{% if rev %}{{ rev }}/{% endif %}{% else %}{% if snapshot and doc.get_state_slug == 'rfc' %}{% url 'ietf.doc.views_doc.document_html' name=doc.doc.name %}{% else %}{% url 'ietf.doc.views_doc.document_html' name=doc.name %}{% endif %}{% if rev %}-{{ rev }}/{% endif %}{% endif %}"
                    {% if rev != '00' and rev != latest_rev %}rel="nofollow"{% endif %}>
                     {% if rev %}
                         {{ rev }}
@@ -18,4 +20,6 @@
             </li>
         {% endfor %}
     </ul>
-</nav>
+{% if not document_html %}
+    </nav>
+{% endif %}

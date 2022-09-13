@@ -42,6 +42,8 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@fullcalendar/luxon2", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.11.3"],\
             ["@fullcalendar/timegrid", "npm:5.11.3"],\
             ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.11.2"],\
+            ["@parcel/optimizer-data-url", "npm:2.7.0"],\
+            ["@parcel/transformer-inline-string", "npm:2.7.0"],\
             ["@parcel/transformer-sass", "npm:2.7.0"],\
             ["@percy/cli", "npm:1.10.2"],\
             ["@percy/cypress", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.1.2"],\
@@ -1264,6 +1266,19 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
+      ["@parcel/optimizer-data-url", [\
+        ["npm:2.7.0", {\
+          "packageLocation": "./.yarn/cache/@parcel-optimizer-data-url-npm-2.7.0-e44570ff54-cbfd39eb51.zip/node_modules/@parcel/optimizer-data-url/",\
+          "packageDependencies": [\
+            ["@parcel/optimizer-data-url", "npm:2.7.0"],\
+            ["@parcel/plugin", "npm:2.7.0"],\
+            ["@parcel/utils", "npm:2.7.0"],\
+            ["isbinaryfile", "npm:4.0.10"],\
+            ["mime", "npm:2.6.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
       ["@parcel/optimizer-htmlnano", [\
         ["npm:2.7.0", {\
           "packageLocation": "./.yarn/cache/@parcel-optimizer-htmlnano-npm-2.7.0-6f46846f28-a5fa890bc3.zip/node_modules/@parcel/optimizer-htmlnano/",\
@@ -1645,6 +1660,16 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packagePeers": [\
             "@parcel/core",\
             "@types/parcel__core"\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["@parcel/transformer-inline-string", [\
+        ["npm:2.7.0", {\
+          "packageLocation": "./.yarn/cache/@parcel-transformer-inline-string-npm-2.7.0-2b1da240b3-469bfeeadc.zip/node_modules/@parcel/transformer-inline-string/",\
+          "packageDependencies": [\
+            ["@parcel/transformer-inline-string", "npm:2.7.0"],\
+            ["@parcel/plugin", "npm:2.7.0"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -6502,6 +6527,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
+      ["isbinaryfile", [\
+        ["npm:4.0.10", {\
+          "packageLocation": "./.yarn/cache/isbinaryfile-npm-4.0.10-91d1251522-a6b28db7e2.zip/node_modules/isbinaryfile/",\
+          "packageDependencies": [\
+            ["isbinaryfile", "npm:4.0.10"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
       ["isexe", [\
         ["npm:2.0.0", {\
           "packageLocation": "./.yarn/cache/isexe-npm-2.0.0-b58870bd2e-26bf6c5480.zip/node_modules/isexe/",\
@@ -7093,6 +7127,13 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/mime-npm-1.6.0-60ae95038a-fef25e3926.zip/node_modules/mime/",\
           "packageDependencies": [\
             ["mime", "npm:1.6.0"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:2.6.0", {\
+          "packageLocation": "./.yarn/cache/mime-npm-2.6.0-88b89d8de0-1497ba7b9f.zip/node_modules/mime/",\
+          "packageDependencies": [\
+            ["mime", "npm:2.6.0"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -8509,6 +8550,8 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@fullcalendar/luxon2", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.11.3"],\
             ["@fullcalendar/timegrid", "npm:5.11.3"],\
             ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.11.2"],\
+            ["@parcel/optimizer-data-url", "npm:2.7.0"],\
+            ["@parcel/transformer-inline-string", "npm:2.7.0"],\
             ["@parcel/transformer-sass", "npm:2.7.0"],\
             ["@percy/cli", "npm:1.10.2"],\
             ["@percy/cypress", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.1.2"],\

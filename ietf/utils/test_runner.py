@@ -176,14 +176,21 @@ def vnu_fmt_message(file, msg, content):
 
 def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
     "True if the vnu message is a known false positive"
-    if filter_db_issues and re.search(
-        r"""^Forbidden\ code\ point\ U\+|
-             Illegal\ character\ in\ query:\ '\['|
-            'href'\ on\ element\ 'a':\ Percentage\ \("%"\)\ is\ not\ followed|
-            ^Saw\ U\+\d+\ in\ stream|
-            ^Document\ uses\ the\ Unicode\ Private\ Use\ Area""",
+    if re.search(
+        r"""^Document\ uses\ the\ Unicode\ Private\ Use\ Area|
+            ^Element\ 'h.'\ not\ allowed\ as\ child\ of\ element\ 'pre'""",
         msg["message"],
         flags=re.VERBOSE,
+    ) or (
+        filter_db_issues
+        and re.search(
+            r"""^Forbidden\ code\ point\ U\+|
+                 Illegal\ character\ in\ query:\ '\['|
+                 'href'\ on\ element\ 'a':\ Percentage\ \("%"\)\ is\ not|
+                ^Saw\ U\+\d+\ in\ stream""",
+            msg["message"],
+            flags=re.VERBOSE,
+        )
     ):
         return True
 

@@ -54,6 +54,8 @@
   },
   "devDependencies": {
     "@faker-js/faker": "7.5.0",
+    "@parcel/optimizer-data-url": "2.7.0",
+    "@parcel/transformer-inline-string": "2.7.0",
     "@parcel/transformer-sass": "2.7.0",
     "@percy/cli": "1.10.2",
     "@percy/cypress": "3.1.2",
@@ -83,6 +85,8 @@
       "distDir": "ietf/static/dist/ietf",
       "source": [
         "ietf/static/css/datepicker.scss",
+        "ietf/static/css/document_html.scss",
+        "ietf/static/css/document_html_txt.scss",
         "ietf/static/css/ietf.scss",
         "ietf/static/css/jquery-ui.scss",
         "ietf/static/css/liaisons.css",
@@ -117,6 +121,7 @@
         "ietf/static/js/d3.js",
         "ietf/static/js/datepicker.js",
         "ietf/static/js/doc-search.js",
+        "ietf/static/js/document_html.js",
         "ietf/static/js/document_relations.js",
         "ietf/static/js/document_timeline.js",
         "ietf/static/js/draft-submit.js",
