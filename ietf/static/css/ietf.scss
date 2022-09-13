@@ -168,6 +168,16 @@ table tbody.meta {
     }
 }
 
+// Try and hyphenate table headings
+th {
+    hyphens: auto;
+}
+
+// Helper to make sure very wide tables work on narrow screens.
+.wrap-anywhere {
+    overflow-wrap: anywhere;
+}
+
 // Highlight required form field labels with bi-asterisk
 .required>label:after {
     display: inline-block;
