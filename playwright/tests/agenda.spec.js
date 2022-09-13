@@ -169,7 +169,7 @@ test.describe('meeting -> agenda-neue [past, desktop]', () => {
 
     await expect(dayHeadersLocator).toHaveCount(7)
     for (let idx = 0; idx < 7; idx++) {
-      const localDateTime = DateTime.fromISO(meetingData.meeting.startDate)
+      const localDateTime = DateTime.fromISO(meetingData.meeting.startDate, { zone: BROWSER_TIMEZONE })
         .setZone(BROWSER_TIMEZONE)
         .setLocale(BROWSER_LOCALE)
         .plus({ days: idx })
