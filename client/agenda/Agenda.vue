@@ -353,6 +353,8 @@ onBeforeUnmount(() => {
 // MOUNTED
 
 onMounted(() => {
+  agendaStore.fetch(route.params.meetingNumber)
+  
   handleCurrentMeetingRedirect()
 
   // -> Hide Loading Screen

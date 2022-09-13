@@ -172,7 +172,7 @@ jobs:
         path: coverage.json
 
   tests-cypress-modern:
-    name: Run Tests (Cypress - Modern)
+    name: Run Tests (Playwright)
     if: ${{ github.event.inputs.skiptests == 'false' }}
     needs: [prepare]
     runs-on: macos-latest
@@ -186,8 +186,11 @@ jobs:
         yarn
         echo "Start Vite Preview..."
         yarn preview &>/dev/null &
+        echo "Installing Playwright..."
+        cd playwright
+        npm install
         echo "Running tests..."
-        yarn cypress
+        npx playwright test
         
     - name: Upload Video Recordings
       uses: actions/upload-artifact@v3.0.0

@@ -169,7 +169,7 @@ describe('meeting -> agenda-neue [past, desktop]', {
   it('can change timezone', () => {
     // Switch to local timezone
     cy.get('.agenda .agenda-tz-selector > button:nth-child(2)').click().should('have.class', 'n-button--primary-type')
-    cy.get('.agenda .agenda-tz-selector > button:first-child').should('not.have.class', 'n-button--primary-type')
+    cy.get('.agenda .agenda-tz-selector > button:first-child').pause().should('not.have.class', 'n-button--primary-type')
     const localDateTime = DateTime.fromISO(meetingData.meeting.updated).setZone('local').toFormat(`DD 'at' tt ZZZZ`)
     cy.get('.agenda h6').first().contains(localDateTime)
     // Switch to UTC
