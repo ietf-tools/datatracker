@@ -188,7 +188,8 @@ jobs:
         yarn preview &>/dev/null &
         echo "Installing Playwright..."
         cd playwright
-        npm install
+        npm ci
+        npx playwright install --with-deps
         echo "Running tests..."
         npx playwright test
         
