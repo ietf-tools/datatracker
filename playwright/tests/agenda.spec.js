@@ -5,6 +5,8 @@ const slugify = require('slugify')
 const meetingGenerator = require('../helpers/meeting.js')
 const _ = require('lodash')
 
+/* eslint-disable cypress/no-async-tests */
+
 const xslugify = (str) => slugify(str.replace('/', '-'), { lower: true, strict: true })
 
 const TEST_SEED = 123
@@ -175,6 +177,148 @@ test.describe('meeting -> agenda-neue [past, desktop]', () => {
         .plus({ days: idx })
         .toLocaleString(DateTime.DATE_HUGE)
       await expect(dayHeadersLocator.nth(idx)).toContainText(localDateTime)
+    }
+  })
+
+  test.only('agenda schedule list table events', async ({ page }) => {
+    const eventRowsLocator = page.locator('.agenda-table .agenda-table-display-event')
+
+    await expect(eventRowsLocator).toHaveCount(meetingData.schedule.length)
+
+    let isFirstSession = true
+    for (let idx = 0; idx < meetingData.schedule.length; idx++) {
+      const row = eventRowsLocator.nth(idx)
+      const event = meetingData.schedule[idx]
+      const eventStart = DateTime.fromISO(event.startDateTime)
+      const eventEnd = eventStart.plus({ seconds: event.duration })
+      const eventTimeSlot = `${eventStart.toFormat('HH:mm')} - ${eventEnd.toFormat('HH:mm')}`
+      // --------
+      // Location
+      // --------
+      if (event.location?.short) {
+        // Has floor badge
+        await expect(row.locator('.agenda-table-cell-room > a')).toContainText(event.room)
+        await expect(row.locator('.agenda-table-cell-room > a')).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/floor-plan-neue?room=${xslugify(event.room)}`)
+        await expect(row.locator('.agenda-table-cell-room > .badge')).toContainText(event.location.short)
+      } else {
+        // No floor badge
+        await expect(row.locator('.agenda-table-cell-room > span:not(.badge)')).toContainText(event.room)
+        await expect(row.locator('.agenda-table-cell-room > .badge')).not.toBeVisible()
+      }
+      // ---------------------------------------------------
+      // Type-specific timeslot / group / name columns tests
+      // ---------------------------------------------------
+      if (event.type === 'regular') {
+        // First session should have header row above it
+        if (isFirstSession) {
+          const headerRow = await page.locator(`#agenda-rowid-sesshd-${event.id}`)
+          await expect(headerRow).toBeVisible()
+          await expect(headerRow.locator('.agenda-table-cell-ts')).toContainText(eventTimeSlot)
+          await expect(headerRow.locator('.agenda-table-cell-name')).toContainText(`${DateTime.fromISO(event.startDateTime).toFormat('cccc')} ${event.name}`)
+        }
+        // Timeslot
+        await expect(row.locator('.agenda-table-cell-ts')).toContainText('—')
+        // Group Acronym + Parent
+        await expect(row.locator('.agenda-table-cell-group > .badge')).toContainText(event.groupParent.acronym)
+        await expect(row.locator('.agenda-table-cell-group > .badge + a')).toContainText(event.acronym)
+        await expect(row.locator('.agenda-table-cell-group > .badge + a')).toHaveAttribute('href', `/group/${event.acronym}/about/`)
+        // Group Name
+        await expect(row.locator('.agenda-table-cell-name')).toContainText(event.groupName)
+        isFirstSession = false
+      } else {
+        // Timeslot
+        await expect(row.locator('.agenda-table-cell-ts')).toContainText(eventTimeSlot)
+        // Event Name
+        await expect(row.locator('.agenda-table-cell-name')).toContainText(event.name)
+        isFirstSession = true
+      }
+      // -----------
+      // Name column
+      // -----------
+      // Event icon
+      if (['break', 'plenary'].includes(event.type) || (event.type === 'other' && ['office hours', 'hackathon'].some(s => event.name.toLowerCase().indexOf(s) >= 0))) {
+        await expect(row.locator('.agenda-table-cell-name > i.bi')).toBeVisible()
+      }
+      // Name link
+      if (event.flags.agenda) {
+        await expect(row.locator('.agenda-table-cell-name > a')).toHaveAttribute('href', event.agenda.url)
+      }
+      // BoF badge
+      if (event.isBoF) {
+        await expect(row.locator('.agenda-table-cell-name > .badge')).toContainText('BoF')
+      }
+      // Note
+      if (event.note) {
+        await expect(row.locator('.agenda-table-cell-name > .agenda-table-note')).toBeVisible()
+        await expect(row.locator('.agenda-table-cell-name > .agenda-table-note i.bi')).toBeVisible()
+        await expect(row.locator('.agenda-table-cell-name > .agenda-table-note i.bi + span')).toContainText(event.note)
+      }
+      // -----------------------
+      // Buttons / Status Column
+      // -----------------------
+      switch (event.status) {
+        // Cancelled
+        case 'canceled': {
+          await expect(row.locator('.agenda-table-cell-links > .badge.is-cancelled')).toContainText('Cancelled')
+          break
+        }
+        // Rescheduled
+        case 'resched': {
+          await expect(row.locator('.agenda-table-cell-links > .badge.is-rescheduled')).toContainText('Rescheduled')
+          break
+        }
+        // Scheduled
+        case 'sched': {
+          if (event.flags.showAgenda || ['regular', 'plenary'].includes(event.type)) {
+            const eventButtons = row.locator('.agenda-table-cell-links > .agenda-table-cell-links-buttons')
+            if (event.flags.agenda) {
+              // Show meeting materials button
+              await expect(eventButtons.locator('i.bi.bi-collection')).toBeVisible()
+              // ZIP materials button
+              await expect(eventButtons.locator(`#btn-lnk-${event.id}-tar`)).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.tgz`)
+              await expect(eventButtons.locator(`#btn-lnk-${event.id}-tar > i.bi`)).toBeVisible()
+              // PDF materials button
+              await expect(eventButtons.locator(`#btn-lnk-${event.id}-pdf`)).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.pdf`)
+              await expect(eventButtons.locator(`#btn-lnk-${event.id}-pdf > i.bi`)).toBeVisible()
+            } else if (event.type === 'regular') {
+              // No meeting materials yet warning badge
+              await expect(eventButtons.locator('.no-meeting-materials')).toBeVisible()
+            }
+            // Notepad button
+            const hedgeDocLink = `https://notes.ietf.org/notes-ietf-${meetingData.meeting.number}-${event.type === 'plenary' ? 'plenary' : event.acronym}`
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-note`)).toHaveAttribute('href', hedgeDocLink)
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-note > i.bi`)).toBeVisible()
+            // Chat logs
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-logs`)).toHaveAttribute('href', event.links.chatArchive)
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-logs > i.bi`)).toBeVisible()
+            // Recordings
+            for (const rec of event.links.recordings) {
+              if (rec.url.indexOf('audio') > 0) {
+                // -> Audio
+                await expect(eventButtons.locator(`#btn-lnk-${event.id}-audio-${rec.id}`)).toHaveAttribute('href', rec.url)
+                await expect(eventButtons.locator(`#btn-lnk-${event.id}-audio-${rec.id} > i.bi`)).toBeVisible()
+              } else if (rec.url.indexOf('youtu') > 0) {
+                // -> Youtube
+                await expect(eventButtons.locator(`#btn-lnk-${event.id}-youtube-${rec.id}`)).toHaveAttribute('href', rec.url)
+                await expect(eventButtons.locator(`#btn-lnk-${event.id}-youtube-${rec.id} > i.bi`)).toBeVisible()
+              } else {
+                // -> Others
+                await expect(eventButtons.locator(`#btn-lnk-${event.id}-video-${rec.id}`)).toHaveAttribute('href', rec.url)
+                await expect(eventButtons.locator(`#btn-lnk-${event.id}-video-${rec.id} > i.bi`)).toBeVisible()
+              }
+            }
+            // Video Stream
+            if (event.links.videoStream) {
+              const videoStreamLink = `https://www.meetecho.com/ietf${meetingData.meeting.number}/recordings#${event.acronym.toUpperCase()}`
+              await expect(eventButtons.locator(`#btn-lnk-${event.id}-rec`)).toHaveAttribute('href', videoStreamLink)
+              await expect(eventButtons.locator(`#btn-lnk-${event.id}-rec > i.bi`)).toBeVisible()
+            }
+          } else {
+            await expect(row.locator('.agenda-table-cell-links > .agenda-table-cell-links-buttons')).not.toBeVisible()
+          }
+          break
+        }
+      }
     }
   })
 
