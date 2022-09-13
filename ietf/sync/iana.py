@@ -24,7 +24,6 @@ from ietf.doc.utils import add_state_change_event
 from ietf.person.models import Person
 from ietf.utils.log import log
 from ietf.utils.mail import parseaddr, get_payload_text
-from ietf.utils.timezone import local_timezone_to_utc
 
 
 #PROTOCOLS_URL = "https://www.iana.org/protocols/"
@@ -67,8 +66,8 @@ def update_rfc_log_from_protocol_page(rfc_names, rfc_must_published_later_than):
     
 
 def fetch_changes_json(url, start, end):
-    url += "?start=%s&end=%s" % (urlquote(local_timezone_to_utc(start).strftime("%Y-%m-%d %H:%M:%S")),
-                                 urlquote(local_timezone_to_utc(end).strftime("%Y-%m-%d %H:%M:%S")))
+    url += "?start=%s&end=%s" % (urlquote(start.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")),
+                                 urlquote(end.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")))
     # HTTP basic auth
     username = "ietfsync"
     password = settings.IANA_SYNC_PASSWORD
