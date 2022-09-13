@@ -69,6 +69,7 @@ test.describe('meeting -> agenda-neue [past, desktop]', () => {
 
     // Wait for Meeting Data API call
     await page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`)
+    await page.locator('.agenda h1').waitFor({ state: 'visible' })
   })
 
   test('agenda header section', async ({ page }) => {
