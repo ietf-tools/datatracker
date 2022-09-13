@@ -197,8 +197,8 @@ jobs:
       uses: actions/upload-artifact@v3.0.0
       if: ${{ always() }}
       with:
-        name: playwright-report
-        path: playwright/playwright-report/
+        name: playwright-results
+        path: playwright/test-results/
 
   tests-cypress-legacy:
     name: Run Tests (Cypress - Legacy)

@@ -42,6 +42,8 @@ const config = {
     locale: 'en-US',
     timezoneId: 'America/Toronto',
 
+    screenshot: 'only-on-failure',
+
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry'
   },
