@@ -18,6 +18,7 @@ django.setup()
 
 from django.conf import settings
 from optparse import OptionParser
+from zoneinfo import ZoneInfo
 
 parser = OptionParser()
 parser.add_option("-f", "--from", dest="start",
@@ -38,13 +39,16 @@ CLOCK_SKEW_COMPENSATION = 5 # seconds
 MAX_INTERVAL_ACCEPTED_BY_IANA = datetime.timedelta(hours=23)
 
 
+local_tzinfo = ZoneInfo(settings.TIME_ZONE)
 start = datetime.datetime.now() - datetime.timedelta(hours=23) + datetime.timedelta(seconds=CLOCK_SKEW_COMPENSATION)
 if options.start:
     start = datetime.datetime.strptime(options.start, "%Y-%m-%d %H:%M:%S")
+start = start.replace(tzinfo=local_tzinfo).astimezone(datetime.timezone.utc)
 
 end = start + datetime.timedelta(hours=23)
 if options.end:
-    end = datetime.datetime.strptime(options.end, "%Y-%m-%d %H:%M:%S")
+    end = datetime.datetime.strptime(options.end, "%Y-%m-%d %H:%M:%S").replace(tzinfo=local_tzinfo)
+end = end.astimezone(datetime.timezone.utc)
 
 syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 
@@ -52,7 +56,13 @@ syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 
 from ietf.sync.iana import fetch_changes_json, parse_changes_json, update_history_with_changes
 
-syslog.syslog("Updating history log with new changes from IANA from %s, period %s - %s" % (settings.IANA_SYNC_CHANGES_URL, start, end))
+syslog.syslog(
+    "Updating history log with new changes from IANA from %s, period %s - %s" % (
+        settings.IANA_SYNC_CHANGES_URL,
+        start.astimezone(local_tzinfo),
+        end.astimezone(local_tzinfo),
+    )
+)
 
 t = start
 while t < end:
