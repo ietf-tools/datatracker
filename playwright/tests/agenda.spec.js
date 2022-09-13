@@ -180,7 +180,7 @@ test.describe('meeting -> agenda-neue [past, desktop]', () => {
     }
   })
 
-  test.only('agenda schedule list table events', async ({ page }) => {
+  test('agenda schedule list table events', async ({ page }) => {
     const eventRowsLocator = page.locator('.agenda-table .agenda-table-display-event')
 
     await expect(eventRowsLocator).toHaveCount(meetingData.schedule.length)
