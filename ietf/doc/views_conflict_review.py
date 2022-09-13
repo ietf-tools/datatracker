@@ -400,6 +400,11 @@ class StartReviewForm(SimpleStartReviewForm):
 
 @role_required("Secretariat","IRTF Chair","ISE")
 def start_review(request, name):
+    '''Start the conflict review process.
+
+    Start the conflict review process, setting the initial 
+    shepherding AD, and possibly putting the review on a telechat.'''
+
     def cleaned_notify(notify, doc):
         if doc.stream.slug not in ['irtf', 'ise']:
             return notify
@@ -413,9 +418,6 @@ def start_review(request, name):
             notifications = goods
         retval = ','.join(notifications)
         return retval
-
-    """Start the conflict review process, setting the initial 
-    shepherding AD, and possibly putting the review on a telechat."""
 
     doc_to_review = start_review_sanity_check(request, name)
     if has_role(request.user, "Secretariat"):

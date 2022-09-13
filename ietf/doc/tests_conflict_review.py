@@ -85,14 +85,13 @@ class ConflictReviewTests(TestCase):
         ad_strpk = str(Person.objects.get(name='Areað Irector').pk)
         state_strpk = str(State.objects.get(used=True, slug='needshep', type__slug='conflrev').pk)
         self.client.login(username="secretary", password="secretary+password")
-        """ This set of notification recipients should cover a bunch of cases for this test.
-            It includes: 
-              * The address to remove being first in the list
-              * The address to remove being in the list twice
-              * The address to remove having a name in front of the email address
-              * The address to remove being bare
-              * Extra addresses not being removed
-              """
+        # This set of notification recipients should cover a bunch of cases for this test.
+        # It includes: 
+        #     * The address to remove being first in the list
+        #     * The address to remove being in the list twice
+        #     * The address to remove having a name in front of the email address
+        #     * The address to remove being bare
+        #     * Extra addresses not being removed
         notify = ','.join(['<rfc-ise@rfc-editor.org>',
                            'IRTF Chair <irtf-chair@irtf.org>',
                            '<iesg@ietf.org>',
@@ -115,8 +114,7 @@ class ConflictReviewTests(TestCase):
             email = manager_emails[stream_slug]
             
             # Get the email addresses which should remain
-            other_emails = [manager_emails[stream] 
-                            for stream in list(manager_emails) 
+            other_emails = [email for stream, email in manager_emails.items()
                             if stream != stream_slug]
 
             data = dict(
