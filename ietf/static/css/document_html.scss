@@ -252,6 +252,12 @@ tbody.meta tr {
     background-color: $danger;
 }
 
+#toc-nav {
+    width: inherit;
+    overscroll-behavior-y: none; // Prevent overscrolling from scrolling the main content
+}
+
+
 @media print {
     @page {
         size: letter;

@@ -26,6 +26,8 @@ import Cookies from "js-cookie";
 
 import debounce from "lodash/debounce";
 
+import { populate_nav } from "./nav.js";
+
 // setup CSRF protection using jQuery
 function csrfSafeMethod(method) {
     // these HTTP methods do not require CSRF protection
@@ -154,9 +156,9 @@ $(document)
 $(function () {
     const contentElement = $('#content.ietf-auto-nav');
     if (contentElement.length > 0) {
+        const heading_selector = "h2:not([style='display:none']):not(.navskip), h3:not([style='display:none']):not(.navskip), h4:not([style='display:none']):not(.navskip), h5:not([style='display:none']):not(.navskip), h6:not([style='display:none']):not(.navskip), .nav-heading:not([style='display:none']):not(.navskip)";
         const headings = contentElement
-            .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible, .nav-heading:visible")
-            .not(".navskip");
+            .find(heading_selector);
 
         const contents = (headings.length > 0) &&
             ($(headings)
@@ -178,8 +180,6 @@ $(function () {
 
         if (pageTooTall || haveExtraNav) {
             // console.log("Enabling nav.");
-            let n = 0;
-            let last_level;
 
             contentElement
                 .attr("data-bs-offset", 0)
@@ -197,48 +197,7 @@ $(function () {
                 .children()
                 .last();
 
-            contentElement
-                .find("h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible, .nav-heading:visible")
-                .not(".navskip")
-                .each(function () {
-                    // Some headings have line breaks in them - only use first line in that case.
-                    const frag = $(this)
-                        .html()
-                        .split("<br")
-                        .shift();
-                    const text = $.parseHTML(frag)
-                        .map(x => $(x)
-                            .text())
-                        .join(" ");
-
-                    if (text === undefined || text === "") {
-                        // Nothing to do for empty headings.
-                        return;
-                    }
-                    let id = $(this)
-                        .attr("id");
-
-                    if (id === undefined) {
-                        id = `autoid-${++n}`;
-                        $(this)
-                            .attr("id", id);
-                    }
-
-                    const level = parseInt(this.nodeName.substring(1)) - 1;
-                    if (!last_level) {
-                        last_level = level;
-                    }
-
-                    if (level > last_level) {
-                        last_level = level;
-                    } else
-                        while (level < last_level) {
-                            last_level--;
-                        }
-
-                    $(nav)
-                        .append(`<a class="nav-link" href="#${id}">${text}</a>`);
-                });
+            populate_nav(nav[0], heading_selector, 2);
 
             if (haveExtraNav) {
                 $('#righthand-panel').append('<div id="righthand-extra" class="w-100 py-3"></div>');

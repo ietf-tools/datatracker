@@ -168,8 +168,8 @@ table tbody.meta {
     }
 }
 
-// Try and hyphenate table headings
-th {
+// Try and hyphenate table headings and other things
+th, .hyphenate {
     hyphens: auto;
 }
 
