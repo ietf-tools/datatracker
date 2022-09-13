@@ -13,6 +13,7 @@ from django import forms
 from django.utils.html import mark_safe # type:ignore
 from django.db.models import F
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.db.models import Q
 
 # IETF imports
 from ietf.group.models import Group, GroupHistory, GroupStateName, GroupFeatures 
@@ -118,6 +119,10 @@ class GroupForm(forms.Form):
             if fieldname == 'delegate_roles':
                 field_args['max_entries'] = MAX_GROUP_DELEGATES
                 field_args['help_text'] = mark_safe("Chairs can delegate the authority to update the state of group documents - at most %s persons at a given time." % MAX_GROUP_DELEGATES)
+            if role_slug == "ad":
+                field_args['extra_prefetch'] = Email.objects.filter(Q(role__name__in=('pre-ad', 'ad'), role__group__type='area', role__group__state='active')).distinct()
+                field_args['disable_ajax'] = True  # only use the prefetched options
+                field_args['min_search_length'] = 0  # do not require typing to display options
             self.fields[fieldname] = SearchableEmailsField(**field_args)
             self.fields[fieldname].initial = Email.objects.filter(person__role__name_id=role_slug,person__role__group=self.group,person__role__email__pk=F('pk')).distinct()
 
