@@ -8,6 +8,7 @@ const xslugify = (str) => slugify(str.replace('/', '-'), { lower: true, strict: 
 
 const TEST_SEED = 123
 const BROWSER_LOCALE = 'en-US'
+const BROWSER_TIMEZONE = 'America/Toronto'
 
 const viewports = {
   desktop: [1536, 960],
@@ -98,7 +99,7 @@ test.describe('meeting -> agenda-neue [past, desktop]', () => {
     await expect(localSelector).toHaveClass(/n-button--primary-type/)
     await expect(meetingSelector).not.toHaveClass(/n-button--primary-type/)
     const localDateTime = DateTime.fromISO(meetingData.meeting.updated)
-      .setZone('local')
+      .setZone(BROWSER_TIMEZONE)
       .setLocale(BROWSER_LOCALE)
       .toFormat('DD \'at\' tt ZZZZ')
     await expect(page.locator('.agenda h6').first()).toContainText(localDateTime)
