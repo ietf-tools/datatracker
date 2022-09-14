@@ -181,6 +181,8 @@ test.describe('meeting -> agenda-neue [past, desktop]', () => {
   })
 
   test('agenda schedule list table events', async ({ page }) => {
+    test.slow() // Triple the default timeout
+
     const eventRowsLocator = page.locator('.agenda-table .agenda-table-display-event')
 
     await expect(eventRowsLocator).toHaveCount(meetingData.schedule.length)
@@ -363,5 +365,137 @@ test.describe('meeting -> agenda-neue [past, desktop]', () => {
     await page.locator('.agenda-table > .agenda-table-search > button').click()
     await expect(page.locator('.agenda-search')).not.toBeVisible()
     await expect(eventRowsLocator).toHaveCount(meetingData.schedule.length)
+  })
+
+  test('agenda meeting materials dialog', async ({ page }) => {
+    const event = _.find(meetingData.schedule, s => s.flags.showAgenda && s.flags.agenda)
+    const eventStart = DateTime.fromISO(event.startDateTime)
+    const eventEnd = eventStart.plus({ seconds: event.duration })
+    // Intercept meeting materials request
+    const materialsUrl = (new URL(event.agenda.url)).pathname
+    const materialsInfo = {
+      url: event.agenda.url,
+      slides: _.times(5, idx => ({
+        id: 100000 + idx,
+        title: faker.commerce.productName(),
+        url: `/meeting/${meetingData.meeting.number}/materials/slides-${meetingData.meeting.number}-${event.acronym}-${faker.internet.domainWord()}`,
+        ext: ['pdf', 'html', 'md', 'txt', 'pptx'][idx]
+      })),
+      minutes: {
+        ext: 'md',
+        id: 123456,
+        title: 'Minutes IETF123 Testing',
+        url: `/meeting/${meetingData.meeting.number}/materials/minutes-${meetingData.meeting.number}-${event.acronym}-${faker.internet.domainWord()}`
+      }
+    }
+    await page.route(`**/api/meeting/session/${event.sessionId}/materials`, route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(materialsInfo)
+      })
+    })
+    await page.route(materialsUrl, route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'text/plain',
+        body: 'The internet is a series of tubes.'
+      })
+    })
+    await page.route(materialsInfo.minutes.url, route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'text/plain',
+        body: 'One does not simply walk into mordor.'
+      })
+    })
+    // Open dialog
+    await page.locator(`#agenda-rowid-${event.id} #btn-lnk-${event.id}-mat`).click()
+    await expect(page.locator('.agenda-eventdetails')).toBeVisible()
+    // await page.waitForResponse(materialsUrl)
+    // Header
+    await expect(page.locator('.agenda-eventdetails .n-card-header__main > .detail-header > .bi')).toBeVisible()
+    await expect(page.locator('.agenda-eventdetails .n-card-header__main > .detail-header > .bi + span')).toContainText(eventStart.toFormat('DDDD'))
+    await expect(page.locator('.agenda-eventdetails .n-card-header__extra > .detail-header > .bi')).toBeVisible()
+    await expect(page.locator('.agenda-eventdetails .n-card-header__extra > .detail-header > .bi + strong')).toContainText(`${eventStart.toFormat('T')} - ${eventEnd.toFormat('T')}`)
+    await expect(page.locator('.agenda-eventdetails .detail-title > h6 > .bi')).toBeVisible()
+    await expect(page.locator('.agenda-eventdetails .detail-title > h6 > .bi + span')).toContainText(event.name)
+    await expect(page.locator('.agenda-eventdetails .detail-location > .bi')).toBeVisible()
+    await expect(page.locator('.agenda-eventdetails .detail-location > .bi + .badge')).toContainText(event.location.short)
+    await expect(page.locator('.agenda-eventdetails .detail-location > .bi + .badge + span')).toContainText(event.room)
+    // Navigation
+    const navLocator = await page.locator('.agenda-eventdetails .detail-nav > a')
+    await expect(navLocator).toHaveCount(3)
+    await expect(navLocator.first()).toHaveClass(/active/)
+    await expect(navLocator.nth(1)).not.toHaveClass(/active/)
+    await expect(navLocator.nth(2)).not.toHaveClass(/active/)
+    // Agenda Tab
+    await expect(page.locator('.agenda-eventdetails .detail-text > iframe')).toHaveAttribute('src', materialsUrl)
+    // Slides Tab
+    await navLocator.nth(1).click()
+    await expect(navLocator.nth(1)).toHaveClass(/active/)
+    await expect(navLocator.first()).not.toHaveClass(/active/)
+    const slidesLocator = await page.locator('.agenda-eventdetails .detail-text > .list-group > .list-group-item')
+    await expect(slidesLocator).toHaveCount(materialsInfo.slides.length)
+    for (let idx = 0; idx < materialsInfo.slides.length; idx++) {
+      await expect(slidesLocator.nth(idx)).toHaveAttribute('href', materialsInfo.slides[idx].url)
+      await expect(slidesLocator.nth(idx).locator('.bi')).toHaveClass(new RegExp(`bi-filetype-${materialsInfo.slides[idx].ext}`))
+      await expect(slidesLocator.nth(idx).locator('span')).toContainText(materialsInfo.slides[idx].title)
+    }
+    // Minutes Tab
+    await navLocator.last().click()
+    await expect(navLocator.last()).toHaveClass(/active/)
+    await expect(navLocator.nth(1)).not.toHaveClass(/active/)
+    await expect(page.locator('.agenda-eventdetails .detail-text > iframe')).toHaveAttribute('src', materialsInfo.minutes.url)
+    // Footer Buttons
+    const hedgeDocLink = `https://notes.ietf.org/notes-ietf-${meetingData.meeting.number}-${event.type === 'plenary' ? 'plenary' : event.acronym}`
+    const footerBtnsLocator = await page.locator('.agenda-eventdetails .detail-action > a')
+    await expect(footerBtnsLocator).toHaveCount(3)
+    await expect(footerBtnsLocator.first()).toContainText('Download as tarball')
+    await expect(footerBtnsLocator.first()).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.tgz`)
+    await expect(footerBtnsLocator.nth(1)).toContainText('Download as PDF')
+    await expect(footerBtnsLocator.nth(1)).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.pdf`)
+    await expect(footerBtnsLocator.last()).toContainText('Notepad')
+    await expect(footerBtnsLocator.last()).toHaveAttribute('href', hedgeDocLink)
+    // Clicking X should close the dialog
+    await page.locator('.agenda-eventdetails .n-card-header__extra > .detail-header > button').click()
+  })
+
+  // -> SCHEDULE LIST -> Show Meeting Materials dialog (EMPTY VARIANT)
+
+  test('agenda meeting materials dialog (empty variant)', async ({ page }) => {
+    const event = _.find(meetingData.schedule, s => s.flags.showAgenda && s.flags.agenda)
+    // Intercept meeting materials request
+    const materialsUrl = (new URL(event.agenda.url)).pathname
+    const materialsInfo = {
+      url: event.agenda.url,
+      slides: [],
+      minutes: null
+    }
+    await page.route(`**/api/meeting/session/${event.sessionId}/materials`, route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(materialsInfo)
+      })
+    })
+    await page.route(materialsUrl, route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'text/plain',
+        body: 'The internet is a series of tubes.'
+      })
+    })
+    // Open dialog
+    await page.locator(`#btn-lnk-${event.id}-mat`).click()
+    await expect(page.locator('.agenda-eventdetails')).toBeVisible()
+    // Slides Tab
+    await page.locator('.agenda-eventdetails .detail-nav > a').nth(1).click()
+    await expect(page.locator('.agenda-eventdetails .detail-text')).toContainText('No slides submitted for this session.')
+    // Minutes Tab
+    await page.locator('.agenda-eventdetails .detail-nav > a').nth(2).click()
+    await expect(page.locator('.agenda-eventdetails .detail-text')).toContainText('No minutes submitted for this session.')
+    // Clicking X should close the dialog
+    await page.locator('.agenda-eventdetails .n-card-header__extra > .detail-header > button').click()
   })
 })
