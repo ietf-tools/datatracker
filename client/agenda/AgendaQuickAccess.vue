@@ -4,6 +4,7 @@
     .card.shadow-sm
       .card-body
         n-button(
+          id='agenda-quickaccess-filterbyareagroups-btn'
           block
           type='success'
           size='large'
@@ -15,6 +16,7 @@
           n-badge.ms-2(:value='agendaStore.selectedCatSubs.length', processing)
         n-button.mt-2(
           v-if='!agendaStore.pickerMode'
+          id='agenda-quickaccess-picksessions-btn'
           block
           secondary
           type='success'
@@ -28,6 +30,7 @@
           .agenda-quickaccess-btnrow-title {{ shortMode ? 'Sess. Pick' : 'Session Selection' }}
           n-button.me-1(
             v-if='!agendaStore.pickerModeView'
+            id='agenda-quickaccess-applypick-btn'
             type='success'
             size='large'
             strong
@@ -37,6 +40,7 @@
             span Apply
           n-button.me-1(
             v-else
+            id='agenda-quickaccess-modifypick-btn'
             color='#6f42c1'
             size='large'
             strong
@@ -45,6 +49,7 @@
             i.bi.bi-pencil-square.me-2
             span Modify
           n-button.ms-1(
+            id='agenda-quickaccess-discardpick-btn'
             secondary
             color='#666'
             size='large'
@@ -55,6 +60,7 @@
             span Discard
         n-divider: small.text-muted Calendar
         n-button.mt-2(
+          id='agenda-quickaccess-calview-btn'
           block
           color='#6c757d'
           size='large'
@@ -71,6 +77,7 @@
           @select='downloadIcs'
           )
           n-button.mt-2(
+            id='agenda-quickaccess-addtocal-btn'
             block
             secondary
             color='#6c757d'
@@ -81,7 +88,7 @@
             span {{ shortMode ? '.ics' : 'Add to your calendar...' }}
         template(v-if='agendaStore.meetingDays.length > 0')
           n-divider: small.text-muted Jump to...
-          ul.nav.nav-pills.flex-column.small
+          ul.nav.nav-pills.flex-column.small.agenda-quickaccess-jumpto
             li.nav-item(v-if='agendaStore.isMeetingLive')
               a.nav-link(
                 href='#now'

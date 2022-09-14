@@ -47,35 +47,47 @@
                 {% if not session.on_agenda %}&middot; <i>off agenda</i>{% endif %}
             </div>
         {% endif %}
+        {% if session.comments %}<div class="comments">{{ session.comments|linebreaksbr }}</div>{% endif %}
         {% if session.requested_by_person %}
-            <div>
-                <i title="Requested by" class="bi bi-person-circle"></i> {% person_link session.requested_by_person %}
-                {% if session.requested_time %}({{ session.requested_time|date:"Y-m-d" }}){% endif %}
+            <div class="row">
+                <div class="col-1">
+                    <i title="Requested by" class="bi bi-person-circle"></i>
+                </div>
+                <div class="col">
+                    {% person_link session.requested_by_person %}
+                    {% if session.requested_time %}({{ session.requested_time|date:"Y-m-d" }}){% endif %}
+                </div>
             </div>
         {% endif %}
         {% if session.resources.all %}
-            <div>
-                Resources:
-                {% for r in session.resources.all %}
-                    {{ r.name }}{% if not forloop.last %},{% endif %}
-                {% endfor %}
+            <div class="row">
+                <div class="col-1"><i class="bi bi-layers-fill" title="Resources"></i></div>
+                <div class="col">
+                    {% for r in session.resources.all %}
+                        {{ r.name }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </div>
             </div>
         {% endif %}
-        {% if session.comments %}<div class="comments">{{ session.comments|linebreaksbr }}</div>{% endif %}
         {% if session.formatted_constraints %}
             <div class="formatted-constraints">
                 {% for constraint_name, values in session.formatted_constraints.items %}
-                    <div>
-                        <span title="{{ constraint_name.name }}">{% constraint_icon_for constraint_name %}</span>: {{ values|join:", " }}
+                    <div class="row">
+                        <div class="col-1" title="{{ constraint_name.name }}">{% constraint_icon_for constraint_name %}</div><div class="col">{{ values|join:", " }}</div>
                     </div>
                 {% endfor %}
             </div>
         {% endif %}
         {% for s in session.other_sessions %}
-            <div class="other-session" data-othersessionid="{{ s.pk }}">
-                <i class="bi bi-calendar"></i> Other session <span class="time"
-       data-scheduled="scheduled: {time}"
-       data-notscheduled="not yet scheduled"></span>
+            <div class="other-session row" data-othersessionid="{{ s.pk }}">
+                <div class="col-1">
+                    <i class="bi bi-calendar" title="Other session"></i>
+                </div>
+                <div class="col">
+                    <span class="time"
+                          data-scheduled="scheduled: {time}"
+                          data-notscheduled="not yet scheduled"></span>
+               </div>
             </div>
         {% endfor %}
         <a class="btn btn-primary btn-sm mt-2"

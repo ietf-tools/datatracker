@@ -9,7 +9,7 @@
     {% origin %}
     <h2 class="mt-3">Nomination status</h2>
     <table class="table table-sm table-striped table-hover tablesorter">
-        <thead>
+        <thead class="wrap-anywhere">
             <tr>
                 <th scope="col" data-sort="position">Position</th>
                 <th scope="col" data-sort="open">Open</th>
@@ -25,7 +25,7 @@
             </tr>
         </thead>
         {% if stats %}
-            <tbody>
+            <tbody class="table-group-divider">
                 {% for item in stats %}
                     <tr>
                         <th scope="row">{{ item.position__name }}</th>
@@ -43,7 +43,7 @@
                 {% endfor %}
             </tbody>
         {% endif %}
-        <tfoot>
+        <tfoot class="table-group-divider">
             <tr>
                 <th scope="row">Totals</th>
                 <td>{{ totals.open }}</td>

@@ -10,7 +10,7 @@
 <meta property="og:description" content="{{ doc.abstract|clean_whitespace }}">
 <meta property="og:type" content="article">
 {% if doc.stream.slug == "ietf" or doc.name|startswith:"draft-ietf" %}
-<meta property="og:image" content="{{ settings.IDTRACKER_BASE_URL }}{% static 'ietf/images/ietf-logo-card.png' %}">
+<meta property="og:image" content="{% static 'ietf/images/ietf-logo-card.png' %}">
 <meta property="og:image:alt" content="Logo of the IETF">
 <meta property="article:section" content="IETF - Internet Engineering Task Force">
 <meta property="og:image:type" content="image/png">
@@ -18,7 +18,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 {% elif doc.stream.slug == "irtf" or doc.name|startswith:"draft-irtf" %}
-<meta property="og:image" content="{{ settings.IDTRACKER_BASE_URL }}{% static 'ietf/images/irtf-logo-card.png' %}">
+<meta property="og:image" content="{% static 'ietf/images/irtf-logo-card.png' %}">
 <meta property="og:image:alt" content="Logo of the IRTF">
 <meta property="article:section" content="IRTF - Internet Research Task Force">
 <meta property="og:image:type" content="image/png">
@@ -26,7 +26,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 {% elif doc.stream.slug == "iab" or doc.name|startswith:"draft-iab" %}
-<meta property="og:image" content="{{ settings.IDTRACKER_BASE_URL }}{% static 'ietf/images/iab-logo-card.png' %}">
+<meta property="og:image" content="{% static 'ietf/images/iab-logo-card.png' %}">
 <meta property="og:image:alt" content="Logo of the IAB">
 <meta property="article:section" content="IRTF - Internet Architecture Board">
 <meta property="og:image:type" content="image/png">

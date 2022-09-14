@@ -538,14 +538,21 @@ def get_8989_eligibility_querysets(date, base_qs):
     previous_five = previous_five_meetings(date)
     three_of_five_qs = new_three_of_five_eligible(previous_five=previous_five, queryset=base_qs)
 
-    three_years_ago = datetime.date(date.year-3,date.month,date.day)
+    # If date is Feb 29, neither 3 nor 5 years ago has a Feb 29. Use Feb 28 instead.
+    if date.month == 2 and date.day == 29:
+        three_years_ago = datetime.date(date.year - 3, 2, 28)
+        five_years_ago = datetime.date(date.year - 5, 2, 28)
+    else:
+        three_years_ago = datetime.date(date.year - 3, date.month, date.day)
+        five_years_ago = datetime.date(date.year - 5, date.month, date.day)
+
     officer_qs = base_qs.filter(
         # is currently an officer
         Q(role__name_id__in=('chair','secr'),
           role__group__state_id='active',
           role__group__type_id='wg',
           role__group__time__lte=date,
-        ) 
+        )
         # was an officer since the given date (I think this is wrong - it looks at when roles _start_, not when roles end)
       | Q(rolehistory__group__time__gte=three_years_ago,
           rolehistory__group__time__lte=date,
@@ -555,7 +562,6 @@ def get_8989_eligibility_querysets(date, base_qs):
          )
     ).distinct()
 
-    five_years_ago = datetime.date(date.year-5,date.month,date.day)
     rfc_pks = set(DocEvent.objects.filter(type='published_rfc',time__gte=five_years_ago,time__lte=date).values_list('doc__pk',flat=True))
     iesgappr_pks = set(DocEvent.objects.filter(type='iesg_approved',time__gte=five_years_ago,time__lte=date).values_list('doc__pk',flat=True))
     qualifying_pks = rfc_pks.union(iesgappr_pks.difference(rfc_pks))

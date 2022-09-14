@@ -24,9 +24,9 @@ from ietf.name.models import GroupTypeName
 from ietf.utils.aliases import dump_sublist
 
 DEFAULT_YEARS = 5
-ACTIVE_STATES=['active','bof','proposed']
-GROUP_TYPES=['wg','rg','dir','team','review','program']
-NO_AD_GROUP_TYPES=['rg','team','program']
+ACTIVE_STATES=['active', 'bof', 'proposed']
+GROUP_TYPES=['wg', 'rg', 'dir', 'team', 'review', 'program', 'rfcedtyp']
+NO_AD_GROUP_TYPES=['rg', 'team', 'program', 'rfcedtyp']
 IETF_DOMAIN=['ietf.org', ]
 IRTF_DOMAIN=['irtf.org', ]
 IAB_DOMAIN=['iab.org', ]

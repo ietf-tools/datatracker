@@ -12,3 +12,5 @@ yarn legacy:build
 echo "Creating data directories..."
 chmod +x ./docker/scripts/app-create-dirs.sh
 ./docker/scripts/app-create-dirs.sh
+./ietf/manage.py check
+./ietf/manage.py migrate
