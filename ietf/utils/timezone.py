@@ -3,7 +3,6 @@ import datetime
 from typing import Union
 from zoneinfo import ZoneInfo
 
-from django.conf import settings
 from django.utils import timezone
 
 

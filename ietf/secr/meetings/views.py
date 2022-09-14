@@ -812,7 +812,7 @@ def times_edit(request, meeting_id, schedule_name, time):
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
     
     parts = [ int(x) for x in time.split(':') ]
-    dtime = make_aware(datetime.datetime(*parts), tzinfo=meeting.tz())
+    dtime = make_aware(datetime.datetime(*parts), meeting.tz())
     timeslots = TimeSlot.objects.filter(meeting=meeting,time=dtime)
 
     if request.method == 'POST':
@@ -863,7 +863,7 @@ def times_delete(request, meeting_id, schedule_name, time):
     meeting = get_object_or_404(Meeting, number=meeting_id)
     
     parts = [ int(x) for x in time.split(':') ]
-    dtime = make_aware(datetime.datetime(*parts), tzinfo=meeting.tz())
+    dtime = make_aware(datetime.datetime(*parts), meeting.tz())
     status = SessionStatusName.objects.get(slug='schedw')
 
     if request.method == 'POST' and request.POST['post'] == 'yes':
