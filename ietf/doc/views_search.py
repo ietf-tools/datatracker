@@ -37,6 +37,8 @@
 import re
 import datetime
 
+from collections import defaultdict
+
 from django import forms
 from django.conf import settings
 from django.core.cache import cache, caches
@@ -365,11 +367,42 @@ def ad_dashboard_group(doc):
     else:
         return "Document"
 
+
 def shorten_group_name(name):
-    for s in [' Internet-Draft', ' Conflict Review', ' Status Change', ' (Internal Steering Group/IAB Review) Charter', 'Charter']:
+    for s in [
+        " Internet-Draft",
+        " Conflict Review",
+        " Status Change",
+        " (Internal Steering Group/IAB Review) Charter",
+        "Charter",
+    ]:
         if name.endswith(s):
-            name = name[:-len(s)]
-    return name
+            name = name[: -len(s)]
+
+    for pat, sub in [
+        ("Writeup", "Write-up"),
+        ("Requested", "Req"),
+        ("Evaluation", "Eval"),
+        ("Publication", "Pub"),
+        ("Waiting", "Wait"),
+        ("Go-Ahead", "OK"),
+        ("Approved-", "App, "),
+        ("announcement", "ann."),
+        ("IESG Eval - ", ""),
+        ("Not currently under review", "Not under review"),
+        ("External Review", "Ext. Review"),
+        (r"IESG Review \(Charter for Approval, Selected by Secretariat\)", "IESG Review"),
+        ("Needs Shepherd", "Needs Shep."),
+        ("Approved", "App."),
+        ("Replaced", "Repl."),
+        ("Withdrawn", "Withd."),
+        ("Chartering/Rechartering", "Charter"),
+        (r"\(Message to Community, Selected by Secretariat\)", "")
+    ]:
+        name = re.sub(pat, sub, name)
+
+    return name.strip()
+
 
 def ad_dashboard_sort_key(doc):
 
@@ -426,106 +459,206 @@ def ad_dashboard_sort_key(doc):
 
     return "3%s" % seed
 
+
 def ad_workload(request):
+    delta = datetime.timedelta(days=30)
+    right_now = timezone.now()
+
     ads = []
-    responsible = Document.objects.values_list('ad', flat=True).distinct()
+    responsible = Document.objects.values_list("ad", flat=True).distinct()
     for p in Person.objects.filter(
         Q(
             role__name__in=("pre-ad", "ad"),
             role__group__type="area",
-            role__group__state="active"
+            role__group__state="active",
         )
         | Q(pk__in=responsible)
     ).distinct():
         if p in get_active_ads():
-                ads.append(p)
+            ads.append(p)
 
-    doctypes = list(DocTypeName.objects.filter(used=True).exclude(slug='draft').values_list("pk", flat=True))
+    doctypes = list(
+        DocTypeName.objects.filter(used=True)
+        .exclude(slug="draft")
+        .values_list("pk", flat=True)
+    )
 
+    up_is_good = {}
     group_types = ad_dashboard_group_type(None)
+    groups = {g: {} for g in group_types}
+    group_names = {g: [] for g in group_types}
 
-    groups = {}
-    group_names = {}
-    for g in group_types:
-        groups[g] = {}
-        group_names[g] = []
-        
     # Prefill groups in preferred sort order
-    id = 0
-    for g in [
-            'Publication Requested Internet-Draft',
-            'Waiting for Writeup Internet-Draft',
-            'AD Evaluation Internet-Draft',
-            'In Last Call Internet-Draft',
-            'IESG Evaluation - Defer Internet-Draft',
-            'IESG Evaluation Internet-Draft',
-            'Waiting for AD Go-Ahead Internet-Draft',
-            'Approved-announcement to be sent Internet-Draft',
-            'Approved-announcement sent Internet-Draft']:
-        groups['I-D'][g] = id
-        group_names['I-D'].append(g)
-        id += 1;
-    id = 0
-    for g in ['RFC Ed Queue Internet-Draft', 'RFC']:
-        groups['RFC'][g] = id
-        group_names['RFC'].append(g)
-        id += 1;
-    id = 0
-    for g in ['AD Review Conflict Review',
-                'Needs Shepherd Conflict Review',
-                'IESG Evaluation Conflict Review',
-                'Approved Conflict Review',
-                'Withdrawn Conflict Review']:
-        groups['Conflict Review'][g] = id
-        group_names['Conflict Review'].append(g)
-        id += 1;
-    id = 0
-    for g in [ 'Start Chartering/Rechartering (Internal Steering Group/IAB Review) Charter',
-                'Replaced Charter',
-                'Approved Charter',
-                'Not currently under review Charter']:
-        groups['Charter'][g] = id
-        group_names['Charter'].append(g)
-        id += 1;
+    # FIXME: This should really use the database states instead of replicating the logic
+    for id, (g, uig) in enumerate(
+        [
+            ("Publication Requested Internet-Draft", False),
+            ("Waiting for Writeup Internet-Draft", False),
+            ("AD Evaluation Internet-Draft", False),
+            ("In Last Call Internet-Draft", None),
+            ("IESG Evaluation - Defer Internet-Draft", None),
+            ("IESG Evaluation Internet-Draft", True),
+            ("Waiting for AD Go-Ahead Internet-Draft", False),
+            ("Approved-announcement to be sent Internet-Draft", True),
+            ("Approved-announcement sent Internet-Draft", True),
+        ]
+    ):
+        groups["I-D"][g] = id
+        group_names["I-D"].append(g)
+        up_is_good[g] = uig
+
+    for id, g in enumerate(["RFC Ed Queue Internet-Draft", "RFC"]):
+        groups["RFC"][g] = id
+        group_names["RFC"].append(g)
+        up_is_good[g] = True
+
+    for id, (g, uig) in enumerate(
+        [
+            ("AD Review Conflict Review", False),
+            ("Needs Shepherd Conflict Review", False),
+            ("IESG Evaluation Conflict Review", True),
+            ("Approved Conflict Review", True),
+            ("Withdrawn Conflict Review", None),
+        ]
+    ):
+        groups["Conflict Review"][g] = id
+        group_names["Conflict Review"].append(g)
+        up_is_good[g] = uig
+
+    for id, (g, uig) in enumerate(
+        [
+            ("Publication Requested Status Change", False),
+            ("Waiting for Writeup Status Change", False),
+            ("AD Evaluation Status Change", False),
+            ("In Last Call Status Change", None),
+            ("IESG Evaluation Status Change", True),
+            ("Waiting for AD Go-Ahead Status Change", False),
+        ]
+    ):
+        groups["Status Change"][g] = id
+        group_names["Status Change"].append(g)
+        up_is_good[g] = uig
+
+    for id, (g, uig) in enumerate(
+        [
+            ("Not currently under review Charter", None),
+            ("Draft Charter Charter", None),
+            ("Start Chartering/Rechartering (Internal Steering Group/IAB Review) Charter", False),
+            ("External Review (Message to Community, Selected by Secretariat) Charter", True),
+            ("IESG Review (Charter for Approval, Selected by Secretariat) Charter", True),
+            ("Approved Charter", True),
+            ("Replaced Charter", None),
+        ]
+    ):
+        groups["Charter"][g] = id
+        group_names["Charter"].append(g)
+        up_is_good[g] = uig
 
     for ad in ads:
-        form = SearchForm({'by':'ad','ad': ad.id,
-                            'rfcs':'on', 'activedrafts':'on',
-                            'olddrafts':'on',
-                            'doctypes': doctypes})
-        data = retrieve_search_results(form)
-        ad.dashboard = urlreverse("ietf.doc.views_search.docs_for_ad", kwargs=dict(name=ad.full_name_as_key()))
-        counts = {}
-        for g in group_types:
-            counts[g] = []
-        for doc in data:
+        form = SearchForm(
+            {
+                "by": "ad",
+                "ad": ad.id,
+                "rfcs": "on",
+                "activedrafts": "on",
+                "olddrafts": "on",
+                "doctypes": doctypes,
+            }
+        )
+
+        ad.dashboard = urlreverse(
+            "ietf.doc.views_search.docs_for_ad", kwargs=dict(name=ad.full_name_as_key())
+        )
+        ad.counts = defaultdict(list)
+        ad.prev = defaultdict(list)
+        ad.doc_now = defaultdict(list)
+        ad.doc_prev = defaultdict(list)
+
+        for doc in retrieve_search_results(form):
             group_type = ad_dashboard_group_type(doc)
-            if group_type and group_type in groups: # Right now, anything with group_type "Document", such as a bofreq is not handled.
+            if group_type and group_type in groups:
+                # Right now, anything with group_type "Document", such as a bofreq is not handled.
                 group = ad_dashboard_group(doc)
                 if group not in groups[group_type]:
                     groups[group_type][group] = len(groups[group_type])
                     group_names[group_type].append(group)
-                if len(counts[group_type]) < len(groups[group_type]):
-                    counts[group_type].extend([0] * (len(groups[group_type]) - len(counts[group_type])))
-                counts[group_type][groups[group_type][group]] += 1
-        ad.counts = counts
+
+                inc = len(groups[group_type]) - len(ad.counts[group_type])
+                if inc > 0:
+                    ad.counts[group_type].extend([0] * inc)
+                    ad.prev[group_type].extend([0] * inc)
+                    ad.doc_now[group_type].extend(set() for _ in range(inc))
+                    ad.doc_prev[group_type].extend(set() for _ in range(inc))
+
+                ad.counts[group_type][groups[group_type][group]] += 1
+                ad.doc_now[group_type][groups[group_type][group]].add(doc)
+
+                last_state_event = (
+                    doc.docevent_set.filter(
+                        Q(type="started_iesg_process") | Q(type="changed_state")
+                    )
+                    .order_by("-time")
+                    .first()
+                )
+                if (last_state_event is not None) and (right_now - last_state_event.time) > delta:
+                    ad.prev[group_type][groups[group_type][group]] += 1
+                    ad.doc_prev[group_type][groups[group_type][group]].add(doc)
+
     for ad in ads:
-        for group_type in group_types:
-            if len(ad.counts[group_type]) < len(groups[group_type]):
-                ad.counts[group_type].extend([0] * (len(groups[group_type]) - len(ad.counts[group_type])))
+        ad.doc_diff = defaultdict(list)
+        for gt in group_types:
+            inc = len(groups[gt]) - len(ad.counts[gt])
+            if inc > 0:
+                ad.counts[gt].extend([0] * inc)
+                ad.prev[gt].extend([0] * inc)
+                ad.doc_now[gt].extend([set()] * inc)
+                ad.doc_prev[gt].extend([set()] * inc)
+
+            ad.doc_diff[gt].extend([set()] * len(groups[gt]))
+            for idx, g in enumerate(group_names[gt]):
+                ad.doc_diff[gt][idx] = ad.doc_prev[gt][idx] ^ ad.doc_now[gt][idx]
+
     # Shorten the names of groups
     for gt in group_types:
-        for idx,g in enumerate(group_names[gt]):
-            group_names[gt][idx] = shorten_group_name(g)
+        for idx, g in enumerate(group_names[gt]):
+            group_names[gt][idx] = (
+                shorten_group_name(g),
+                g,
+                up_is_good[g] if g in up_is_good else None,
+            )
 
-    workload = []
-    for gt in group_types:
-        workload.append(dict(group_type=gt,group_names=group_names[gt],counts=[(ad, [(group_names[gt][index],ad.counts[gt][index]) for index in range(len(group_names[gt]))]) for ad in ads]))
+    workload = [
+        dict(
+            group_type=gt,
+            group_names=group_names[gt],
+            counts=[
+                (
+                    ad,
+                    [
+                        (
+                            group_names[gt][index],
+                            ad.counts[gt][index],
+                            ad.prev[gt][index],
+                            ad.doc_diff[gt][index],
+                        )
+                        for index in range(len(group_names[gt]))
+                    ],
+                )
+                for ad in ads
+            ],
+            sums=[
+                (
+                    group_names[gt][index],
+                    sum([ad.counts[gt][index] for ad in ads]),
+                    sum([ad.prev[gt][index] for ad in ads]),
+                )
+                for index in range(len(group_names[gt]))
+            ],
+        )
+        for gt in group_types
+    ]
 
-    return render(request, 'doc/ad_list.html', {
-        'workload': workload
-    })
-        
+    return render(request, "doc/ad_list.html", {"workload": workload, "delta": delta})
 
 def docs_for_ad(request, name):
     ad = None

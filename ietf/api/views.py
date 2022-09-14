@@ -135,7 +135,7 @@ def api_new_meeting_registration(request):
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
     required_fields = [ 'meeting', 'first_name', 'last_name', 'affiliation', 'country_code',
-                        'email', 'reg_type', 'ticket_type', ]
+                        'email', 'reg_type', 'ticket_type', 'checkedin']
     fields = required_fields + []
     if request.method == 'POST':
         # parameters:
@@ -180,7 +180,10 @@ def api_new_meeting_registration(request):
             try:
                 # Update attributes
                 for key in set(data.keys())-set(['attended', 'apikey', 'meeting', 'email']):
-                    new = data.get(key)
+                    if key == 'checkedin':
+                        new = bool(data.get(key).lower() == 'true')
+                    else:
+                        new = data.get(key)
                     setattr(object, key, new)
                 person = Person.objects.filter(email__address=email)
                 if person.exists():

@@ -103,54 +103,54 @@
             {% endif %}
         {% endfor %}
     </dl>
-    {% if can_approve and status_slug == 'apprw' %}
-    <form method="post">
-        {% csrf_token %}
-    {% endif %}
-        {%  with meeting_status.slug as status_slug %}
-            {% if can_edit %}
-                <a class="btn btn-primary"
-                   href="{% url 'ietf.meeting.views.interim_request_edit' number=meeting.number %}">Edit</a>
-            {% endif %}
-            {% if can_approve and status_slug == 'apprw' %}
-                <button class="btn btn-primary" type="submit" name="approve">Approve</button>
-                <button class="btn btn-primary" type="submit" name="disapprove">Disapprove</button>
-            {% endif %}
-            {% if user|has_role:"Secretariat" and status_slug == 'scheda' %}
-                <a class="btn btn-primary"
-                   href="{% url 'ietf.meeting.views.interim_send_announcement' number=meeting.number %}">
-                    Announce
+    {%  with meeting_status.slug as status_slug %}
+        {% if can_approve and status_slug == 'apprw' %}
+            <form method="post">
+            {% csrf_token %}
+        {% endif %}
+        {% if can_edit %}
+            <a class="btn btn-primary"
+               href="{% url 'ietf.meeting.views.interim_request_edit' number=meeting.number %}">Edit</a>
+        {% endif %}
+        {% if can_approve and status_slug == 'apprw' %}
+            <button class="btn btn-primary" type="submit" name="approve" value="approve">Approve</button>
+            <button class="btn btn-primary" type="submit" name="disapprove" value="disapprove">Disapprove</button>
+        {% endif %}
+        {% if user|has_role:"Secretariat" and status_slug == 'scheda' %}
+            <a class="btn btn-primary"
+               href="{% url 'ietf.meeting.views.interim_send_announcement' number=meeting.number %}">
+                Announce
+            </a>
+            <a class="btn btn-warning"
+               href="{% url 'ietf.meeting.views.interim_skip_announcement' number=meeting.number %}">
+                Skip announcement
+            </a>
+        {% endif %}
+        {% if can_edit %}
+            {% if status_slug == 'apprw' or status_slug == 'scheda' or status_slug == 'sched' %}
+                <a class="btn btn-danger"
+                   href="{% url 'ietf.meeting.views.interim_request_cancel' number=meeting.number %}">
+                    Cancel meeting
                 </a>
-                <a class="btn btn-warning"
-                   href="{% url 'ietf.meeting.views.interim_skip_announcement' number=meeting.number %}">
-                    Skip announcement
-                </a>
             {% endif %}
-            {% if can_edit %}
-                {% if status_slug == 'apprw' or status_slug == 'scheda' or status_slug == 'sched' %}
-                    <a class="btn btn-danger"
-                       href="{% url 'ietf.meeting.views.interim_request_cancel' number=meeting.number %}">
-                        Cancel meeting
-                    </a>
-                {% endif %}
-            {% endif %}
-            {% if status_slug == "apprw" %}
-                <a class="btn btn-secondary float-end"
-                   href="{% url 'ietf.meeting.views.interim_pending' %}">Back</a>
-            {% elif status_slug == "scheda" %}
-                <a class="btn btn-secondary float-end"
-                   href="{% url 'ietf.meeting.views.interim_announce' %}">Back</a>
-            {% elif status_slug == "sched" %}
-                <a class="btn btn-secondary float-end"
-                   href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.session_set.first.group.acronym %}">
-                    Back
-                </a>
-            {% else %}
-                <a class="btn btn-secondary float-end"
-                   href="{% url 'ietf.meeting.views.upcoming' %}">Back</a>
-            {% endif %}
-        {% endwith %}
-    {% if can_approve and status_slug == 'apprw' %}</form>{% endif %}
+        {% endif %}
+        {% if status_slug == "apprw" %}
+            <a class="btn btn-secondary float-end"
+               href="{% url 'ietf.meeting.views.interim_pending' %}">Back</a>
+        {% elif status_slug == "scheda" %}
+            <a class="btn btn-secondary float-end"
+               href="{% url 'ietf.meeting.views.interim_announce' %}">Back</a>
+        {% elif status_slug == "sched" %}
+            <a class="btn btn-secondary float-end"
+               href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.session_set.first.group.acronym %}">
+                Back
+            </a>
+        {% else %}
+            <a class="btn btn-secondary float-end"
+               href="{% url 'ietf.meeting.views.upcoming' %}">Back</a>
+        {% endif %}
+        {% if can_approve and status_slug == 'apprw' %}</form>{% endif %}
+    {% endwith %}
 {% endtimezone %}{% endblock %}
 {% block js %}
     <script src="{% static 'ietf/js/select2.js' %}"></script>

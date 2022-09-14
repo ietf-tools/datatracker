@@ -3,7 +3,7 @@ n-drawer(v-model:show='isShown', placement='right', :width='panelWidth')
   n-drawer-content.agenda-settings
     template(#header)
       span Agenda Settings
-      .d-flex.justify-content-end
+      .agenda-settings-actions.d-flex.justify-content-end
         n-dropdown(
           :options='actionOptions'
           size='large'
@@ -137,7 +137,7 @@ n-drawer(v-model:show='isShown', placement='right', :width='panelWidth')
           @click='agendaStore.defaultCalendarView = `day`'
           ) Day
 
-      n-divider(title-placement='left')
+      n-divider#agenda-settings-colors-header(title-placement='left')
         i.bi.bi-palette.me-2
         small Custom Colors / Tags
       .d-flex.align-items-center.mt-3(v-for='(cl, idx) of state.colors')
@@ -364,6 +364,7 @@ async function actionClick (key) {
           redhandShown: configJson.redhandShown === true
         })
         state.colors = cloneDeep(agendaStore.colors)
+        message.success('Config imported successfully.')
       } catch (err) {
         console.warn(err)
         message.error('Failed to import JSON config.')

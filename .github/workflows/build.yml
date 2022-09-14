@@ -20,9 +20,14 @@ on:
         description: 'Skip Tests'
         required: true
         type: boolean
-      updatecoverage:
+      ignoreLowerCoverage:
+        description: 'Ignore Lower Coverage'
+        default: false
+        required: true
+        type: boolean
+      updateCoverage:
         description: 'Update Baseline Coverage'
-        default: true
+        default: false
         required: true
         type: boolean
       dryrun:
@@ -130,6 +135,7 @@ jobs:
         /usr/local/bin/wait-for db:3306 -- echo "DB ready"
         
     - name: Run all tests
+      shell: bash
       run: |
         echo "Running checks..."
         ./ietf/manage.py check
@@ -142,7 +148,12 @@ jobs:
           exit 1
         fi
         echo "Running tests..."
-        ./ietf/manage.py test --settings=settings_sqlitetest
+        if [[ "x${{ github.event.inputs.ignoreLowerCoverage }}" == "xtrue" ]]; then
+          echo "Lower coverage failures will be ignored."
+          ./ietf/manage.py test --settings=settings_sqlitetest --ignore-lower-coverage
+        else
+          ./ietf/manage.py test --settings=settings_sqlitetest
+        fi
         coverage xml
 
     - name: Upload Coverage Results to Codecov
@@ -162,8 +173,42 @@ jobs:
         name: coverage
         path: coverage.json
 
-  tests-cypress:
-    name: Run Tests (Cypress)
+  tests-cypress-modern:
+    name: Run Tests (Cypress - Modern)
+    if: ${{ github.event.inputs.skiptests == 'false' }}
+    needs: [prepare]
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Run all tests
+      run: |
+        echo "Installing dependencies..."
+        yarn
+        echo "Start Vite Preview..."
+        yarn preview &>/dev/null &
+        echo "Running tests..."
+        yarn cypress
+        
+    - name: Upload Video Recordings
+      uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
+      continue-on-error: true
+      with:
+        name: videos-modern
+        path: cypress/videos/
+        
+    - name: Upload Screenshots
+      uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
+      continue-on-error: true
+      with:
+        name: screenshots-modern
+        path: cypress/screenshots/
+
+  tests-cypress-legacy:
+    name: Run Tests (Cypress - Legacy)
     if: ${{ github.event.inputs.skiptests == 'false' }}
     needs: [prepare]
     runs-on: ubuntu-latest
@@ -204,14 +249,23 @@ jobs:
     - name: Run all tests
       run: |
         echo "Running tests..."
-        yarn cypress
+        yarn cypress:legacy
         
     - name: Upload Video Recordings
       uses: actions/upload-artifact@v3.0.0
       if: ${{ always() }}
+      continue-on-error: true
       with:
-        name: videos
+        name: videos-legacy
         path: cypress/videos/
+        
+    - name: Upload Screenshots
+      uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
+      continue-on-error: true
+      with:
+        name: screenshots-modern
+        path: cypress/screenshots/
         
   # -----------------------------------------------------------------
   # RELEASE
@@ -219,7 +273,7 @@ jobs:
   release:
     name: Make Release
     if: ${{ always() }}
-    needs: [tests-python, tests-cypress, prepare]
+    needs: [tests-python, tests-cypress-modern, tests-cypress-legacy, prepare]
     runs-on: ubuntu-latest
     env:
       SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
@@ -317,7 +371,7 @@ jobs:
 
     - name: Update Baseline Coverage
       uses: ncipollo/release-action@v1
-      if: ${{ github.event.inputs.updatecoverage == 'true' && github.event.inputs.dryrun == 'false' }}
+      if: ${{ github.event.inputs.updateCoverage == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         allowUpdates: true
         tag: baseline

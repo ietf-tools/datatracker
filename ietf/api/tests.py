@@ -357,6 +357,7 @@ class CustomApiTests(TestCase):
             'meeting': meeting.number,
             'reg_type': 'hackathon',
             'ticket_type': '',
+            'checkedin': 'False',
         }
         url = urlreverse('ietf.api.views.api_new_meeting_registration')
         r = self.client.post(url, reg)
@@ -382,8 +383,8 @@ class CustomApiTests(TestCase):
         #
         # Check record
         obj = MeetingRegistration.objects.get(email=reg['email'], meeting__number=reg['meeting'])
-        for key in ['affiliation', 'country_code', 'first_name', 'last_name', 'person', 'reg_type', 'ticket_type']:
-            self.assertEqual(getattr(obj, key), reg.get(key), "Bad data for field '%s'" % key)
+        for key in ['affiliation', 'country_code', 'first_name', 'last_name', 'person', 'reg_type', 'ticket_type', 'checkedin']:
+            self.assertEqual(getattr(obj, key), False if key=='checkedin' else reg.get(key) , "Bad data for field '%s'" % key)
         #
         # Test with existing user
         person = PersonFactory()
