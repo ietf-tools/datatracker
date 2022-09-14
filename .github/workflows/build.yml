@@ -380,6 +380,12 @@ jobs:
         artifacts: "coverage.json"
         token: ${{ secrets.GITHUB_TOKEN }}
         
+    - name: Generate SBOM
+      run: |
+        curl -Lo $RUNNER_TEMP/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64
+        chmod +x $RUNNER_TEMP/sbom-tool
+        $RUNNER_TEMP/sbom-tool generate -b /home/runner/work/release -bc . -pn ${{ github.repository }} -pv $PKG_VERSION -ps ${{ github.repository_owner }} -nsb https://sbom.ietf.org/${{ github.repository_owner }} -V Verbose
+
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v2.3.1
       if: ${{ env.SHOULD_DEPLOY == 'false' || github.event.inputs.dryrun == 'true' }}
@@ -387,13 +393,3 @@ jobs:
         name: release-${{ env.PKG_VERSION }}
         path: /home/runner/work/release/release.tar.gz
 
-    - name: Generate SBOM
-      run: |
-        curl -Lo $RUNNER_TEMP/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64
-        chmod +x $RUNNER_TEMP/sbom-tool
-        $RUNNER_TEMP/sbom-tool generate -b /home/runner/work/release -bc . -pn ${{ github.repository }} -pv $PKG_VERSION -ps ${{ github.repository_owner }} -nsb https://sbom.ietf.org/${{ github.repository_owner }} -V Verbose
-
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v3.1.0
-      with:
-        path: buildOutput
