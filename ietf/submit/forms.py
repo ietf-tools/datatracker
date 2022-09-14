@@ -21,6 +21,7 @@ from django import forms
 from django.conf import settings
 from django.utils.html import mark_safe, format_html # type:ignore
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
@@ -79,7 +80,7 @@ class SubmissionBaseUploadForm(forms.Form):
         self.base_formats = None        # None will raise an exception in clean() if this isn't changed in a subclass
 
     def set_cutoff_warnings(self):
-        now = datetime.datetime.now(pytz.utc)
+        now = timezone.now().astimezone(pytz.utc)
         meeting = Meeting.get_current_meeting()
         if not meeting:
             return

@@ -11,8 +11,8 @@ from unittest import skipIf
 import urllib.parse
 
 import django
+from django.utils import timezone
 from django.utils.text import slugify
-from django.utils.timezone import now
 from django.db.models import F
 import pytz
 
@@ -36,6 +36,7 @@ from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.utils.test_utils import assert_ical_response_is_valid
 from ietf.utils.jstest import ( IetfSeleniumTestCase, ifSeleniumEnabled, selenium_enabled,
                                 presence_of_element_child_by_css_selector )
+from ietf.utils.timezone import datetime_today, datetime_from_date, date_today
 
 if selenium_enabled():
     from selenium.webdriver.common.action_chains import ActionChains
@@ -307,7 +308,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         room = RoomFactory(meeting=meeting)
 
         # get current time in meeting time zone
-        right_now = now().astimezone(
+        right_now = timezone.now().astimezone(
             pytz.timezone(meeting.time_zone)
         )
         if not settings.USE_TZ:
@@ -394,11 +395,11 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
     def test_past_swap_days_buttons(self):
         """Swap days buttons should be hidden for past items"""
         wait = WebDriverWait(self.driver, 2)
-        meeting = MeetingFactory(type_id='ietf', date=datetime.datetime.today() - datetime.timedelta(days=3), days=7)
+        meeting = MeetingFactory(type_id='ietf', date=timezone.now() - datetime.timedelta(days=3), days=7)
         room = RoomFactory(meeting=meeting)
 
         # get current time in meeting time zone
-        right_now = now().astimezone(
+        right_now = timezone.now().astimezone(
             pytz.timezone(meeting.time_zone)
         )
         if not settings.USE_TZ:
@@ -518,11 +519,11 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
     def test_past_swap_timeslot_col_buttons(self):
         """Swap timeslot column buttons should be hidden for past items"""
         wait = WebDriverWait(self.driver, 2)
-        meeting = MeetingFactory(type_id='ietf', date=datetime.datetime.today() - datetime.timedelta(days=3), days=7)
+        meeting = MeetingFactory(type_id='ietf', date=timezone.now() - datetime.timedelta(days=3), days=7)
         room = RoomFactory(meeting=meeting)
 
         # get current time in meeting time zone
-        right_now = now().astimezone(
+        right_now = timezone.now().astimezone(
             pytz.timezone(meeting.time_zone)
         )
         if not settings.USE_TZ:
@@ -1434,13 +1435,16 @@ class AgendaTests(IetfSeleniumTestCase):
         # for others (break, reg, other):
         #   row-<meeting#>-<year>-<month>-<day>-<DoW>-<HHMM>-<group acro>-<session name slug>
         meeting_number = components[1]
-        start_time = datetime.datetime(
-            year=int(components[2]),
-            month=int(components[3]),
-            day=int(components[4]),
-            hour=int(components[6][0:2]),
-            minute=int(components[6][2:4]),
+        start_time = pytz.utc.localize(
+            datetime.datetime(
+                year=int(components[2]),
+                month=int(components[3]),
+                day=int(components[4]),
+                hour=int(components[6][0:2]),
+                minute=int(components[6][2:4]),
+            )
         )
+
         # If labeled as plenary, it's plenary...
         if components[7] == '1plenary':
             session_type = 'plenary'
@@ -1904,10 +1908,9 @@ class WeekviewTests(IetfSeleniumTestCase):
 
         # Session during a single day in meeting local time but multi-day UTC
         # Compute a time that overlaps midnight, UTC, but won't when shifted to a local time zone
-        start_time_utc = pytz.timezone('UTC').localize(
+        start_time_utc = pytz.utc.localize(
             datetime.datetime.combine(self.meeting.date, datetime.time(23,0))
         )
-        start_time_local = start_time_utc.astimezone(pytz.timezone(self.meeting.time_zone))
 
         daytime_session = SessionFactory(
             meeting=self.meeting,
@@ -1916,7 +1919,7 @@ class WeekviewTests(IetfSeleniumTestCase):
         )
         daytime_timeslot = TimeSlotFactory(
             meeting=self.meeting,
-            time=start_time_local.replace(tzinfo=None),  # drop timezone for Django
+            time=start_time_utc,
             duration=duration,
         )
         daytime_session.timeslotassignments.create(timeslot=daytime_timeslot, schedule=self.meeting.schedule)
@@ -1929,11 +1932,12 @@ class WeekviewTests(IetfSeleniumTestCase):
         )
         overnight_timeslot = TimeSlotFactory(
             meeting=self.meeting,
-            time=datetime.datetime.combine(self.meeting.date, datetime.time(23,0)),
+            time=self.meeting.tz().localize(
+                datetime.datetime.combine(self.meeting.date, datetime.time(23,0))
+            ),
             duration=duration,
         )
         overnight_session.timeslotassignments.create(timeslot=overnight_timeslot, schedule=self.meeting.schedule)
-
         # Check assumptions about events overlapping midnight
         self.assertEqual(daytime_timeslot.local_start_time().day,
                          daytime_timeslot.local_end_time().day,
@@ -2048,7 +2052,7 @@ class InterimTests(IetfSeleniumTestCase):
             Session.objects.filter(
                 meeting__type_id='interim',
                 timeslotassignments__schedule=F('meeting__schedule'),
-                timeslotassignments__timeslot__time__gte=datetime.datetime.today()
+                timeslotassignments__timeslot__time__gte=timezone.now()
             )
         ).filter(current_status__in=('sched','canceled'))
         meetings = []
@@ -2061,7 +2065,7 @@ class InterimTests(IetfSeleniumTestCase):
     def all_ietf_meetings(self):
         meetings = Meeting.objects.filter(
             type_id='ietf',
-            date__gte=datetime.datetime.today()-datetime.timedelta(days=7)
+            date__gte=timezone.now()-datetime.timedelta(days=7)
         )
         for m in meetings:
             m.calendar_label = 'IETF %s' % m.number
@@ -2191,7 +2195,7 @@ class InterimTests(IetfSeleniumTestCase):
         expected_assignments = list(SchedTimeSessAssignment.objects.filter(
             schedule__in=expected_schedules,
             session__in=expected_interim_sessions,
-            timeslot__time__gte=datetime.date.today(),
+            timeslot__time__gte=datetime_today(),
         ))
         # The UID formats should match those in the upcoming.ics template
         expected_uids = [
@@ -2609,7 +2613,7 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
         self.meeting: Meeting = MeetingFactory(
             type_id='ietf',
             number=120,
-            date=datetime.datetime.today() + datetime.timedelta(days=10),
+            date=date_today() + datetime.timedelta(days=10),
             populate_schedule=False,
         )
         self.edit_timeslot_url = self.absreverse(
@@ -2679,22 +2683,23 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
         self.do_delete_timeslot_test(cancel=True)
 
     def do_delete_time_interval_test(self, cancel=False):
-        delete_day = self.meeting.date.date()
+        delete_day = self.meeting.date
         delete_time = datetime.time(hour=10)
-        other_day = self.meeting.get_meeting_date(1).date()
+        other_day = self.meeting.get_meeting_date(1)
         other_time = datetime.time(hour=12)
         duration = datetime.timedelta(minutes=60)
 
         delete: [TimeSlot] = TimeSlotFactory.create_batch(
             2,
             meeting=self.meeting,
-            time=datetime.datetime.combine(delete_day, delete_time),
-            duration=duration)
+            time=datetime_from_date(delete_day, self.meeting.tz()).replace(hour=delete_time.hour),
+            duration=duration,
+        )
 
         keep: [TimeSlot] = [
             TimeSlotFactory(
                 meeting=self.meeting,
-                time=datetime.datetime.combine(day, time),
+                time=datetime_from_date(day, self.meeting.tz()).replace(hour=time.hour),
                 duration=duration
             )
             for (day, time) in (
@@ -2711,7 +2716,9 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
             '[data-col-id="{}T{}-{}"]'.format(
                 delete_day.isoformat(),
                 delete_time.strftime('%H:%M'),
-                (datetime.datetime.combine(delete_day, delete_time) + duration).strftime(
+                self.meeting.tz().localize(
+                    datetime.datetime.combine(delete_day, delete_time) + duration
+                ).strftime(
                     '%H:%M'
                 ))
         )
@@ -2726,22 +2733,22 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
         self.do_delete_time_interval_test(cancel=True)
 
     def do_delete_day_test(self, cancel=False):
-        delete_day = self.meeting.date.date()
-        times = [datetime.time(hour=10), datetime.time(hour=12)]
-        other_days = [self.meeting.get_meeting_date(d).date() for d in range(1, 3)]
+        delete_day = self.meeting.date
+        hours = [10, 12]
+        other_days = [self.meeting.get_meeting_date(d) for d in range(1, 3)]
 
         delete: [TimeSlot] = [
             TimeSlotFactory(
                 meeting=self.meeting,
-                time=datetime.datetime.combine(delete_day, time),
-            ) for time in times
+                time=datetime_from_date(delete_day, self.meeting.tz()).replace(hour=hour),
+            ) for hour in hours
         ]
 
         keep: [TimeSlot] = [
             TimeSlotFactory(
                 meeting=self.meeting,
-                time=datetime.datetime.combine(day, time),
-            ) for day in other_days for time in times
+                time=datetime_from_date(day, self.meeting.tz()).replace(hour=hour),
+            ) for day in other_days for hour in hours
         ]
 
         selector = (

@@ -10,7 +10,9 @@ import datetime
 import requests
 import email.utils
 
+from django.utils import timezone
 from django.utils.http import is_safe_url
+
 from simple_history.utils import update_change_reason
 
 import debug    # pyflakes:ignore
@@ -52,6 +54,8 @@ from ietf.utils.mail import send_mail_message
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.fields import MultiEmailField
 from ietf.utils.response import permission_denied
+from ietf.utils.timezone import DEADLINE_TZINFO
+
 
 def clean_doc_revision(doc, rev):
     if rev:
@@ -117,7 +121,7 @@ def request_review(request, name):
     if not can_request_review_of_doc(request.user, doc):
         permission_denied(request, "You do not have permission to perform this action")
 
-    now = datetime.datetime.now()
+    now = timezone.now()
 
     lc_ends = None
     e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
@@ -364,7 +368,7 @@ def reject_reviewer_assignment(request, name, assignment_id):
         if form.is_valid():
             # reject the assignment
             review_assignment.state = ReviewAssignmentStateName.objects.get(slug="rejected")
-            review_assignment.completed_on = datetime.datetime.now()
+            review_assignment.completed_on = timezone.now()
             review_assignment.save()
 
             descr = "Assignment of request for {} review by {} to {} was rejected".format(
@@ -731,13 +735,13 @@ def complete_review(request, name, assignment_id=None, acronym=None):
                     review_request=review_request,
                     state_id='assigned',
                     reviewer=form.cleaned_data['reviewer'].role_email('reviewer', group=team),
-                    assigned_on=datetime.datetime.now(),
+                    assigned_on=timezone.now(),
                     review = review,
                 )
 
             review.rev = "00" if not review.rev else "{:02}".format(int(review.rev) + 1)
             review.title = "{} Review of {}-{}".format(assignment.review_request.type.name, assignment.review_request.doc.name, form.cleaned_data["reviewed_rev"])
-            review.time = datetime.datetime.now()
+            review.time = timezone.now()
             if review_submission == "link":
                 review.external_url = form.cleaned_data['review_url']
 
@@ -764,9 +768,13 @@ def complete_review(request, name, assignment_id=None, acronym=None):
             with io.open(filename, 'w', encoding='utf-8') as destination:
                 destination.write(content)
 
-            completion_datetime = datetime.datetime.now()
+            completion_datetime = timezone.now()
             if "completion_date" in form.cleaned_data:
-                completion_datetime = datetime.datetime.combine(form.cleaned_data["completion_date"], form.cleaned_data.get("completion_time") or datetime.time.min)
+                completion_datetime = datetime.datetime.combine(
+                    form.cleaned_data["completion_date"],
+                    form.cleaned_data.get("completion_time") or datetime.time.min,
+                    tzinfo=DEADLINE_TZINFO,
+                )
 
             # complete assignment
             assignment.state = form.cleaned_data["state"]
@@ -799,7 +807,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
             close_event.by = request.user.person
             close_event.desc = desc
             close_event.state = assignment.state
-            close_event.time = datetime.datetime.now()
+            close_event.time = timezone.now()
             close_event.save()
             
             # If the completion date is different, record when the initial review was made too.

@@ -10,11 +10,13 @@ from django.utils.feedgenerator import Atom1Feed, Rss201rev2Feed
 from django.urls import reverse as urlreverse
 from django.template.defaultfilters import truncatewords, truncatewords_html, date as datefilter
 from django.template.defaultfilters import linebreaks # type: ignore
+from django.utils import timezone
 from django.utils.html import strip_tags
 
 from ietf.doc.models import Document, State, LastCallDocEvent, DocEvent
 from ietf.doc.utils import augment_events_with_revision
 from ietf.doc.templatetags.ietf_filters import format_textarea
+from ietf.utils.timezone import RPC_TZINFO
 
 
 def strip_control_characters(s):
@@ -133,9 +135,16 @@ class RfcFeed(Feed):
     
     def items(self):
         if self.year:
-            rfc_events = DocEvent.objects.filter(type='published_rfc',time__year=self.year).order_by('-time')
+            # Find published RFCs based on their official publication year
+            start_of_year = datetime.datetime(int(self.year), 1, 1, tzinfo=RPC_TZINFO)
+            start_of_next_year = datetime.datetime(int(self.year) + 1, 1, 1, tzinfo=RPC_TZINFO)
+            rfc_events = DocEvent.objects.filter(
+                type='published_rfc',
+                time__gte=start_of_year,
+                time__lt=start_of_next_year,
+            ).order_by('-time')
         else:
-            cutoff = datetime.datetime.now() - datetime.timedelta(days=8)
+            cutoff = timezone.now() - datetime.timedelta(days=8)
             rfc_events = DocEvent.objects.filter(type='published_rfc',time__gte=cutoff).order_by('-time')
         results = [(e.doc, e.time) for e in rfc_events]
         for doc,time in results:

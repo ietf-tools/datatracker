@@ -4,7 +4,7 @@
 {% load static %}
 {% load ietf_filters %}
 {% load textfilters %}
-{% load htmlfilters agenda_custom_tags %}
+{% load htmlfilters agenda_custom_tags tz %}
 {% block title %}
     IETF {{ schedule.meeting.number }} Meeting Agenda
     {% if "-utc" in request.path %}(UTC){% endif %}
@@ -36,10 +36,10 @@
               <a class="btn btn-sm btn-primary my-3 now-link" href="#">Jump to current session</a>
           {% endif %}
           <div class="d-flex">
-            {% include 'meeting/tz-display.html' with id_suffix="-rh" meeting_timezone=timezone minimal=True only %}
+            {% include 'meeting/tz-display.html' with id_suffix="-rh" meeting_timezone=display_timezone minimal=True only %}
           </div>
           <div class="small text-muted">
-            Showing <span class="current-tz">{{ timezone|split:"_"|join:" "|split:"/"|join:" / " }}</span> time
+            Showing <span class="current-tz">{{ display_timezone|split:"_"|join:" "|split:"/"|join:" / " }}</span> time
           </div>
         </div>
     </div>
@@ -63,7 +63,7 @@
             {{ schedule.meeting.agenda_info_note|removetags:"h1"|safe }}
         </p>
     {% endif %}
-    {% include 'meeting/tz-display.html' with id_suffix="" meeting_timezone=timezone only %}
+    {% include 'meeting/tz-display.html' with id_suffix="" meeting_timezone=display_timezone only %}
     {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Filter this agenda view..." always_show=personalize %}
     {% include "meeting/agenda_personalize_buttonlist.html" with meeting=schedule.meeting personalize=personalize only %}
     <div class="input-group mb-3">
@@ -249,7 +249,8 @@
                         </td>
                     {% endif %}
                     {% if item.slot_type.slug == 'plenary' %}
-                        <td class="text-end">{% include "meeting/timeslot_start_end.html" %}</td>
+                        <td class="text-end">
+                            {% include "meeting/timeslot_start_end.html" %}</td>
                         <td colspan="3">
                             {% if item.timeslot.show_location and item.timeslot.location %}
                                 {% location_anchor item.timeslot %}
@@ -327,11 +328,11 @@
                     {% if item.session.rescheduled_to %}
                         TO
                         <div class="timetooltip reschedtimetooltip">
-                            <div data-start-time="{{ item.session.rescheduled_to.utc_start_time|date:"U" }}"
-                                 data-end-time="{{ item.session.rescheduled_to.utc_end_time|date:"U" }}"
+                            <div data-start-time="{{ item.session.rescheduled_to.time|utc|date:"U" }}"
+                                 data-end-time="{{ item.session.rescheduled_to.end_time|utc|date:"U" }}"
                                  {% if item.timeslot.time|date:"l" != item.session.rescheduled_to.time|date:"l" %} data-weekday="1"{% endif %}>
                                 {% if "-utc" in request.path %}
-                                    {{ item.session.rescheduled_to.utc_start_time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.utc_end_time|date:"G:i" }}
+                                    {{ item.session.rescheduled_to.time|utc|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.end_time|utc|date:"G:i" }}
                                 {% else %}
                                     {{ item.session.rescheduled_to.time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.end_time|date:"G:i" }}
                                 {% endif %}
@@ -487,7 +488,7 @@
 
         $(document).ready(function() {
             // Methods/variables here that are not in ietf_timezone or agenda_filter are from agenda_timezone.js
-            meeting_timezone = '{{ timezone }}';
+            meeting_timezone = '{{ display_timezone }}';
 
             // First, initialize_moments(). This must be done before calling any of the update methods.
             // It does not need timezone info, so safe to call before initializing ietf_timezone.

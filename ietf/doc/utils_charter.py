@@ -11,6 +11,7 @@ import shutil
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.encoding import smart_text, force_text
 
 import debug                            # pyflakes:ignore
@@ -73,7 +74,7 @@ def change_group_state_after_charter_approval(group, by):
 
     save_group_in_history(group)
     group.state = new_state
-    group.time = datetime.datetime.now()
+    group.time = timezone.now()
     group.save()
 
     # create an event for the group state change, too
@@ -132,7 +133,7 @@ def historic_milestones_for_charter(charter, rev):
         # revision (when approving a charter)
         just_before_next_rev = e[0].time - datetime.timedelta(seconds=5)
     else:
-        just_before_next_rev = datetime.datetime.now()
+        just_before_next_rev = timezone.now()
 
     res = []
     if hasattr(charter, 'chartered_group'):
@@ -197,7 +198,7 @@ def derive_new_work_text(review_text,group):
     return smart_text(m.as_string())
 
 def default_review_text(group, charter, by):
-    now = datetime.datetime.now()
+    now = timezone.now()
     addrs = gather_address_lists('charter_external_review',group=group).as_strings(compact=False)
 
     e1 = WriteupDocEvent(doc=charter, rev=charter.rev, by=by)
