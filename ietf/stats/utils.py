@@ -263,7 +263,7 @@ def get_meeting_registration_data(meeting):
             address         = registration['Email'].strip()
             reg_type        = registration['RegType'].strip()
             ticket_type     = registration['TicketType'].strip()
-            checkedin       = registration['CheckedIn'].strip()
+            checkedin       = bool(registration['CheckedIn'].strip().lower() == 'true')
 
             if (address, reg_type) in meeting_registrations:
                 object = meeting_registrations.pop((address, reg_type))
