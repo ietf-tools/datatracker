@@ -4,6 +4,8 @@ const { faker } = require('@faker-js/faker')
 const slugify = require('slugify')
 const meetingGenerator = require('../helpers/meeting.js')
 const _ = require('lodash')
+const path = require('path')
+const fs = require('fs/promises')
 
 /* eslint-disable cypress/no-async-tests */
 
@@ -44,7 +46,7 @@ function formatLinkUrl (url, session, meetingNumber) {
 // AGENDA-NEUE (past meeting) | DESKTOP viewport
 // ====================================================================
 
-test.describe('meeting -> agenda-neue [past, desktop]', () => {
+test.describe('past - desktop', () => {
   let meetingData
 
   test.beforeAll(async () => {
@@ -761,5 +763,134 @@ test.describe('meeting -> agenda-neue [past, desktop]', () => {
     // ------------------------------
     await diagHeaderLocator.locator('button').last().click()
     await expect(page.locator('.agenda-calendar')).not.toBeVisible()
+  })
+
+  // -> SETTINGS DIALOG
+
+  test('agenda settings', async ({ page, browserName }) => {
+    // Open dialog
+    await page.locator('.meeting-nav + button').click()
+    await expect(page.locator('.agenda-settings')).toBeVisible()
+    // Check header elements
+    await expect(page.locator('.agenda-settings .n-drawer-header__main > span')).toContainText('Agenda Settings')
+    await expect(page.locator('.agenda-settings .agenda-settings-actions > button')).toHaveCount(2)
+    await expect(page.locator('.agenda-settings .agenda-settings-actions > button').first()).toBeVisible()
+    await expect(page.locator('.agenda-settings .agenda-settings-actions > button').last()).toContainText('Close')
+
+    // -------------------
+    // Check export config
+    // -------------------
+    await page.locator('.agenda-settings .agenda-settings-actions > button').first().click()
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.locator('.n-dropdown-option:has-text("Export Configuration")').click()
+    ])
+
+    const downloadPath = await download.path()
+    try {
+      const downloadedConfig = JSON.parse(await fs.readFile(downloadPath, 'utf8'))
+      const expectedConfig = JSON.parse(await fs.readFile('data/agenda-settings.json', 'utf8'))
+      await expect(downloadedConfig).toEqual(expectedConfig)
+    } catch (err) {
+      expect(err).toBeUndefined()
+    }
+
+    // -------------------
+    // Check import config
+    // -------------------
+    await test.step('import config', async () => {
+      if (browserName === 'chromium') {
+        // Chromium use the experimental file selector API so this test won't work, skipping...
+        // See https://github.com/microsoft/playwright/issues/8850')
+        return
+      }
+      await page.locator('.agenda-settings .agenda-settings-actions > button').first().click()
+      const [fileChooser] = await Promise.all([
+        page.waitForEvent('filechooser'),
+        page.locator('.n-dropdown-option:has-text("Import Configuration")').click()
+      ])
+      await fileChooser.setFiles('data/agenda-settings.json')
+      await expect(page.locator('.n-message')).toContainText('Config imported successfully')
+    })
+
+    // -----------------------
+    // Check timezone controls
+    // -----------------------
+    const tzMeetingBtnLocator = page.locator('#agenda-settings-tz-btn button:first-child')
+    const tzLocalBtnLocator = page.locator('#agenda-settings-tz-btn button:nth-child(2)')
+    const tzUtcBtnLocator = page.locator('#agenda-settings-tz-btn button:last-child')
+    await expect(page.locator('.agenda-settings-content > .n-divider').first()).toContainText('Timezone')
+    // Switch to local timezone
+    await tzLocalBtnLocator.click()
+    await expect(tzLocalBtnLocator).toHaveClass(/n-button--primary-type/)
+    await expect(tzMeetingBtnLocator).not.toHaveClass(/n-button--primary-type/)
+    const localDateTime = DateTime.fromISO(meetingData.meeting.updated)
+      .setZone(BROWSER_TIMEZONE)
+      .setLocale(BROWSER_LOCALE)
+      .toFormat('DD \'at\' tt ZZZZ')
+    await expect(page.locator('.agenda h6').first()).toContainText(localDateTime)
+    // Switch to UTC
+    await tzUtcBtnLocator.click()
+    await expect(tzUtcBtnLocator).toHaveClass(/n-button--primary-type/)
+    await expect(tzLocalBtnLocator).not.toHaveClass(/n-button--primary-type/)
+    const utcDateTime = DateTime.fromISO(meetingData.meeting.updated)
+      .setZone('utc')
+      .setLocale(BROWSER_LOCALE)
+      .toFormat('DD \'at\' tt ZZZZ')
+    await expect(page.locator('.agenda h6').first()).toContainText(utcDateTime)
+    // Switch back to meeting timezone
+    await tzMeetingBtnLocator.click()
+    await expect(tzMeetingBtnLocator).toHaveClass(/n-button--primary-type/)
+    await expect(page.locator('#agenda-settings-tz-ddn')).toContainText('Tokyo')
+
+    // ----------------------
+    // Check display controls
+    // ----------------------
+    await expect(page.locator('.agenda-settings-content > .n-divider').nth(1)).toContainText('Display')
+    // -> Test Current Meeting Info Note toggle
+    const infonoteSwitchLocator = page.locator('#agenda-settings-tgl-infonote div[role=switch]')
+    await infonoteSwitchLocator.click()
+    await expect(page.locator('.agenda .agenda-infonote')).not.toBeVisible()
+    await infonoteSwitchLocator.click()
+    await expect(page.locator('.agenda .agenda-infonote')).toBeVisible()
+    // -> Test Event Icons toggle
+    const eventiconsSwitchLocator = page.locator('#agenda-settings-tgl-eventicons div[role=switch]')
+    await eventiconsSwitchLocator.click()
+    await expect(page.locator('.agenda .agenda-event-icon')).toHaveCount(0)
+    await eventiconsSwitchLocator.click()
+    await expect(page.locator('.agenda .agenda-event-icon')).not.toHaveCount(0)
+    // -> Test Floor Indicators toggle
+    const floorindSwitchLocator = page.locator('#agenda-settings-tgl-floorind div[role=switch]')
+    await floorindSwitchLocator.click()
+    await expect(page.locator('.agenda .agenda-table-cell-room > span.badge')).toHaveCount(0)
+    await floorindSwitchLocator.click()
+    await expect(page.locator('.agenda .agenda-table-cell-room > span.badge')).not.toHaveCount(0)
+    // -> Test Group Area Indicators toggle
+    const groupindSwitchLocator = page.locator('#agenda-settings-tgl-groupind div[role=switch]')
+    await groupindSwitchLocator.click()
+    await expect(page.locator('.agenda .agenda-table-cell-group > span.badge')).toHaveCount(0)
+    await groupindSwitchLocator.click()
+    await expect(page.locator('.agenda .agenda-table-cell-group > span.badge')).not.toHaveCount(0)
+    // -> Test Bolder Text toggle
+    const boldertxtSwitchLocator = page.locator('#agenda-settings-tgl-boldertxt div[role=switch]')
+    await boldertxtSwitchLocator.click()
+    await expect(page.locator('.agenda')).toHaveClass(/bolder-text/)
+    await boldertxtSwitchLocator.click()
+    await expect(page.locator('.agenda')).not.toHaveClass(/bolder-text/)
+
+    // ----------------------------
+    // Check calendar view controls
+    // ----------------------------
+    await expect(page.locator('.agenda-settings-content > .n-divider').nth(2)).toContainText('Calendar View')
+    // TODO: calendar view checks
+    // ----------------------------
+    // Check calendar view controls
+    // ----------------------------
+    await expect(page.locator('.agenda-settings-content > .n-divider').nth(3)).toContainText('Custom Colors / Tags')
+    // ------------------------------
+    // Click Close should hide dialog
+    // ------------------------------
+    await page.locator('.agenda-settings .agenda-settings-actions > button').last().click()
+    await expect(page.locator('.agenda-settings')).not.toBeVisible()
   })
 })

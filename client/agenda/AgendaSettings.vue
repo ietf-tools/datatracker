@@ -31,7 +31,7 @@ n-drawer(v-model:show='isShown', placement='right', :width='panelWidth')
       n-divider(title-placement='left')
         i.bi.bi-globe.me-2
         small Timezone
-      n-button-group.mt-2(style='justify-content: stretch; width: 100%;')
+      n-button-group.mt-2#agenda-settings-tz-btn(style='justify-content: stretch; width: 100%;')
         n-button(
           style='flex-grow: 1;'
           :type='agendaStore.isTimezoneMeeting ? `primary` : `default`'
@@ -47,7 +47,7 @@ n-drawer(v-model:show='isShown', placement='right', :width='panelWidth')
           :type='agendaStore.timezone === `UTC` ? `primary` : `default`'
           @click='setTimezone(`UTC`)'
           ) UTC
-      n-select.mt-2(
+      n-select.mt-2#agenda-settings-tz-ddn(
         v-model:value='agendaStore.timezone'
         :options='timezones'
         placeholder='Select Time Zone'
@@ -61,7 +61,7 @@ n-drawer(v-model:show='isShown', placement='right', :width='panelWidth')
       //- .d-flex.align-items-center.mt-3
       //-   n-switch.me-3(v-model:value='agendaStore.listDayCollapse', disabled)
       //-   span.small Collapse Days by Default
-      .d-flex.align-items-center.mt-3
+      #agenda-settings-tgl-colorlgd.d-flex.align-items-center.mt-3
         n-switch.me-3(
           v-model:value='agendaStore.colorLegendShown'
           aria-label='Display Color Legend'
@@ -71,7 +71,7 @@ n-drawer(v-model:show='isShown', placement='right', :width='panelWidth')
           template(#trigger)
             i.bi.bi-info-circle
           span Only displayed when a color is assigned to at least 1 event.
-      .d-flex.align-items-center.mt-3
+      #agenda-settings-tgl-infonote.d-flex.align-items-center.mt-3
         n-switch.me-3(
           v-model:value='agendaStore.infoNoteShown'
           aria-label='Display Current Meeting Info Note'
@@ -81,19 +81,19 @@ n-drawer(v-model:show='isShown', placement='right', :width='panelWidth')
           template(#trigger)
             i.bi.bi-info-circle
           span Any update to the note will result in this setting being turned back on.
-      .d-flex.align-items-center.mt-3
+      #agenda-settings-tgl-eventicons.d-flex.align-items-center.mt-3
         n-switch.me-3(
           v-model:value='agendaStore.eventIconsShown'
           aria-label='Display Event Icons'
           )
         span.small Display Event Icons
-      .d-flex.align-items-center.mt-3
+      #agenda-settings-tgl-floorind.d-flex.align-items-center.mt-3
         n-switch.me-3(
           v-model:value='agendaStore.floorIndicatorsShown'
           aria-label='Display Floor Indicators'
           )
         span.small Display Floor Indicators
-      .d-flex.align-items-center.mt-3
+      #agenda-settings-tgl-groupind.d-flex.align-items-center.mt-3
         n-switch.me-3(
           v-model:value='agendaStore.areaIndicatorsShown'
           aria-label='Display Group Area Indicators'
@@ -103,7 +103,7 @@ n-drawer(v-model:show='isShown', placement='right', :width='panelWidth')
           template(#trigger)
             i.bi.bi-info-circle
           span Will not be shown on smaller screens, regardless of this setting.
-      .d-flex.align-items-center.mt-3
+      #agenda-settings-tgl-redline.d-flex.align-items-center.mt-3
         n-switch.me-3(
           v-model:value='agendaStore.redhandShown'
           aria-label='Display Realtime Red Line'
@@ -113,7 +113,7 @@ n-drawer(v-model:show='isShown', placement='right', :width='panelWidth')
           template(#trigger)
             i.bi.bi-info-circle
           span Only shown during live events. Updated every 5 seconds.
-      .d-flex.align-items-center.mt-3
+      #agenda-settings-tgl-boldertxt.d-flex.align-items-center.mt-3
         n-switch.me-3(
           v-model:value='agendaStore.bolderText'
           aria-label='Use Bolder Text'
@@ -140,7 +140,7 @@ n-drawer(v-model:show='isShown', placement='right', :width='panelWidth')
       n-divider#agenda-settings-colors-header(title-placement='left')
         i.bi.bi-palette.me-2
         small Custom Colors / Tags
-      .d-flex.align-items-center.mt-3(v-for='(cl, idx) of state.colors')
+      .agenda-settings-colors-row.d-flex.align-items-center.mt-3(v-for='(cl, idx) of state.colors')
         n-color-picker.me-3(
           :modes='[`hex`]'
           :render-label='() => {}'
