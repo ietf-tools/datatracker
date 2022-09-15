@@ -597,4 +597,169 @@ test.describe('meeting -> agenda-neue [past, desktop]', () => {
     await page.locator('.agenda-personalize .agenda-personalize-actions > button').nth(1).click()
     await expect(page.locator('.agenda-personalize')).not.toBeVisible()
   })
+
+  // -> PICK SESSIONS
+
+  test('agenda individual sessions picker', async ({ page }) => {
+    const pickBtnLocator = page.locator('#agenda-quickaccess-picksessions-btn')
+    const applyBtnLocator = page.locator('#agenda-quickaccess-applypick-btn')
+    const modifyBtnLocator = page.locator('#agenda-quickaccess-modifypick-btn')
+    const discardBtnLocator = page.locator('#agenda-quickaccess-discardpick-btn')
+    const checkboxesLocator = page.locator('.agenda .agenda-table-cell-check > .n-checkbox')
+    const checkedboxesLocator = page.locator('.agenda .agenda-table-cell-check > .n-checkbox.n-checkbox--checked')
+    const uncheckedboxesLocator = page.locator('.agenda .agenda-table-cell-check > .n-checkbox:not(.n-checkbox--checked)')
+    const eventsLocator = page.locator('.agenda .agenda-table-display-event')
+
+    // Enter pick mode
+    await expect(pickBtnLocator).toBeVisible()
+    await pickBtnLocator.click()
+    await expect(pickBtnLocator).not.toBeVisible()
+    await expect(applyBtnLocator).toBeVisible()
+    await expect(discardBtnLocator).toBeVisible()
+
+    // Pick 10 random sessions
+    await expect(checkboxesLocator).toHaveCount(meetingData.schedule.length)
+    const randSessionsRange = _.take(_.shuffle(_.range(meetingData.schedule.length)), 10)
+    for (const idx of randSessionsRange) {
+      await checkboxesLocator.nth(idx).click()
+    }
+    await applyBtnLocator.click()
+    await expect(applyBtnLocator).not.toBeVisible()
+    await expect(modifyBtnLocator).toBeVisible()
+    await expect(discardBtnLocator).toBeVisible()
+    await expect(eventsLocator).toHaveCount(10)
+
+    // Change selection (keep existing 5 + add 5 new ones)
+    await modifyBtnLocator.click()
+    await expect(modifyBtnLocator).not.toBeVisible()
+    await expect(applyBtnLocator).toBeVisible()
+    await expect(discardBtnLocator).toBeVisible()
+    await expect(checkboxesLocator).toHaveCount(meetingData.schedule.length)
+    await expect(checkedboxesLocator).toHaveCount(10)
+    for (let idx = 0; idx < 5; idx++) {
+      await checkedboxesLocator.nth(idx).click()
+    }
+    const uncheckedCount = await uncheckedboxesLocator.count()
+    const uncheckedRandRange = _.take(_.shuffle(_.range(uncheckedCount)), 5)
+    for (const idx of uncheckedRandRange) {
+      await uncheckedboxesLocator.nth(idx).click()
+    }
+    await applyBtnLocator.click()
+    await expect(eventsLocator).toHaveCount(10)
+
+    // Discard should clear selection
+    await discardBtnLocator.click()
+    await expect(discardBtnLocator).not.toBeVisible()
+    await expect(modifyBtnLocator).not.toBeVisible()
+    await expect(pickBtnLocator).toBeVisible()
+    await expect(page.locator('.agenda .agenda-table-cell-check')).toHaveCount(0)
+    await expect(eventsLocator).toHaveCount(meetingData.schedule.length)
+  })
+
+  // -> CALENDAR VIEW
+
+  test('agenda calendar view', async ({ page }) => {
+    const diagHeaderLocator = page.locator('.agenda-calendar .agenda-calendar-actions')
+    const tzButtonsLocator = diagHeaderLocator.locator('.n-button-group button')
+    const calHintLocator = page.locator('.agenda-calendar-hint > div')
+
+    // Open dialog
+    await page.locator('#agenda-quickaccess-calview-btn').click()
+    await expect(page.locator('.agenda-calendar')).toBeVisible()
+    // Check header elements
+    await expect(page.locator('.agenda-calendar .n-drawer-header__main > span')).toContainText('Calendar View')
+    await expect(diagHeaderLocator.locator('> button')).toHaveCount(2)
+    await expect(diagHeaderLocator.locator('> button').first()).toContainText('Filter')
+    await expect(diagHeaderLocator.locator('> button').last()).toContainText('Close')
+    // -----------------------
+    // Check timezone controls
+    // -----------------------
+    await expect(diagHeaderLocator.locator('small').first()).toContainText('Timezone')
+    // Switch to local timezone
+    await tzButtonsLocator.nth(1).click()
+    await expect(tzButtonsLocator.nth(1)).toHaveClass(/n-button--primary-type/)
+    await expect(tzButtonsLocator.first()).not.toHaveClass(/n-button--primary-type/)
+    const localDateTime = DateTime.fromISO(meetingData.meeting.updated)
+      .setZone(BROWSER_TIMEZONE)
+      .setLocale(BROWSER_LOCALE)
+      .toFormat('DD \'at\' tt ZZZZ')
+    await expect(page.locator('.agenda h6').first()).toContainText(localDateTime)
+    // Switch to UTC
+    await tzButtonsLocator.last().click()
+    await expect(tzButtonsLocator.last()).toHaveClass(/n-button--primary-type/)
+    await expect(tzButtonsLocator.nth(1)).not.toHaveClass(/n-button--primary-type/)
+    const utcDateTime = DateTime.fromISO(meetingData.meeting.updated)
+      .setZone('utc')
+      .setLocale(BROWSER_LOCALE)
+      .toFormat('DD \'at\' tt ZZZZ')
+    await expect(page.locator('.agenda h6').first()).toContainText(utcDateTime)
+    // Switch back to meeting timezone
+    await tzButtonsLocator.first().click()
+    await expect(tzButtonsLocator.first()).toHaveClass(/n-button--primary-type/)
+    // ----------------------
+    // Check Filters Shortcut
+    // ----------------------
+    await diagHeaderLocator.locator('> button').first().click()
+    // Only check whether the dialog is shown. We already tested the dialog earlier.
+    await expect(page.locator('.agenda-personalize')).toBeVisible()
+    // Close dialog
+    await page.locator('.agenda-personalize .agenda-personalize-actions > button').nth(1).click()
+    await expect(page.locator('.agenda-personalize')).not.toBeVisible()
+    // ------------------
+    // Check Event Dialog
+    // ------------------
+    const firstEvent = meetingData.schedule[0]
+    const materialsUrl = (new URL(firstEvent.agenda.url)).pathname
+    const materialsInfo = {
+      url: firstEvent.agenda.url,
+      slides: [],
+      minutes: null
+    }
+    await page.route(`**/api/meeting/session/${firstEvent.sessionId}/materials`, route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(materialsInfo)
+      })
+    })
+    await page.route(materialsUrl, route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'text/plain',
+        body: 'The internet is a series of tubes.'
+      })
+    })
+    await page.locator('.agenda-calendar .fc-event').first().click()
+    // Only check whether the dialog is shown. We already tested the dialog earlier.
+    await expect(page.locator('.agenda-eventdetails')).toBeVisible()
+    // Close dialog
+    await page.locator('.agenda-eventdetails .n-card-header__extra > .detail-header > button').click()
+    // -----------
+    // Event Hover
+    // -----------
+    // First Event
+    let eventStart = DateTime.fromISO(firstEvent.startDateTime)
+    let eventEnd = eventStart.plus({ seconds: firstEvent.duration })
+    let hoverDateTime = `${eventStart.toFormat('DDDD')} from ${eventStart.toFormat('T')} to ${eventEnd.toFormat('T')}`
+    await page.locator('.agenda-calendar .fc-event').first().hover()
+    await expect(calHintLocator.first()).toContainText(firstEvent.name)
+    await expect(calHintLocator.nth(1)).toContainText(firstEvent.location.short)
+    await expect(calHintLocator.nth(1)).toContainText(firstEvent.room)
+    await expect(calHintLocator.nth(2)).toContainText(hoverDateTime)
+    // Second Event
+    const secondEvent = meetingData.schedule[1]
+    eventStart = DateTime.fromISO(secondEvent.startDateTime)
+    eventEnd = eventStart.plus({ seconds: secondEvent.duration })
+    hoverDateTime = `${eventStart.toFormat('DDDD')} from ${eventStart.toFormat('T')} to ${eventEnd.toFormat('T')}`
+    await page.locator('.agenda-calendar .fc-event').nth(1).hover()
+    await expect(calHintLocator.first()).toContainText(secondEvent.name)
+    await expect(calHintLocator.nth(1)).toContainText(secondEvent.location.short)
+    await expect(calHintLocator.nth(1)).toContainText(secondEvent.room)
+    await expect(calHintLocator.nth(2)).toContainText(hoverDateTime)
+    // ------------------------------
+    // Click Close should hide dialog
+    // ------------------------------
+    await diagHeaderLocator.locator('button').last().click()
+    await expect(page.locator('.agenda-calendar')).not.toBeVisible()
+  })
 })
