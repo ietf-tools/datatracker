@@ -446,9 +446,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
     lock_time = settings.MEETING_SESSION_LOCK_TIME
     def timeslot_locked(ts):
-        meeting_now = timezone.now().astimezone(pytz.timezone(meeting.time_zone))
-        if not settings.USE_TZ:
-            meeting_now = meeting_now.replace(tzinfo=None)
+        meeting_now = timezone.now().astimezone(meeting.tz())
         return schedule.is_official and (ts.time - meeting_now < lock_time)
 
     if not can_see:
@@ -645,7 +643,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             rd = room_data[t.location_id]
             rd['timeslot_count'] += 1
             rd['start_and_duration'].append((t.time, t.duration))
-            ttd = t.time.date()
+            ttd = t.local_start_time().date()  # date in meeting timezone
             all_days.add(ttd)
             if ttd not in rd['timeslots_by_day']:
                 rd['timeslots_by_day'][ttd] = []
@@ -830,8 +828,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             source_day = swap_days_form.cleaned_data['source_day']
             target_day = swap_days_form.cleaned_data['target_day']
 
-            source_timeslots = [ts for ts in timeslots_qs if ts.time.date() == source_day]
-            target_timeslots = [ts for ts in timeslots_qs if ts.time.date() == target_day]
+            source_timeslots = [ts for ts in timeslots_qs if ts.local_start_time().date() == source_day]
+            target_timeslots = [ts for ts in timeslots_qs if ts.local_start_time().date() == target_day]
             if any(timeslot_locked(ts) for ts in source_timeslots + target_timeslots):
                 return HttpResponseBadRequest("Can't swap these days.")
 
@@ -888,8 +886,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     # possible timeslot start/ends
     timeslot_groups = defaultdict(set)
     for ts in timeslots_qs:
-        ts.start_end_group = "ts-group-{}-{}".format(ts.time.strftime("%Y%m%d-%H%M"), int(ts.duration.total_seconds() / 60))
-        timeslot_groups[ts.time.date()].add((ts.time, ts.end_time(), ts.start_end_group))
+        ts.start_end_group = "ts-group-{}-{}".format(ts.local_start_time().strftime("%Y%m%d-%H%M"), int(ts.duration.total_seconds() / 60))
+        timeslot_groups[ts.local_start_time().date()].add((ts.local_start_time(), ts.local_end_time(), ts.start_end_group))
 
     # prepare sessions
     prepare_sessions_for_display(sessions)
@@ -970,22 +968,23 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             if ts_type.slug in session_data.get('enabled_timeslot_types', [])
         ]
 
-    return render(request, "meeting/edit_meeting_schedule.html", {
-        'meeting': meeting,
-        'schedule': schedule,
-        'can_edit': can_edit,
-        'can_edit_properties': can_edit or secretariat,
-        'secretariat': secretariat,
-        'days': days,
-        'timeslot_groups': sorted((d, list(sorted(t_groups))) for d, t_groups in timeslot_groups.items()),
-        'unassigned_sessions': unassigned_sessions,
-        'session_parents': session_parents,
-        'session_purposes': session_purposes,
-        'timeslot_types': timeslot_types,
-        'hide_menu': True,
-        'lock_time': lock_time,
-        'enabled_timeslot_types': enabled_timeslot_types,
-    })
+    with timezone.override(meeting.tz()):
+        return render(request, "meeting/edit_meeting_schedule.html", {
+            'meeting': meeting,
+            'schedule': schedule,
+            'can_edit': can_edit,
+            'can_edit_properties': can_edit or secretariat,
+            'secretariat': secretariat,
+            'days': days,
+            'timeslot_groups': sorted((d, list(sorted(t_groups))) for d, t_groups in timeslot_groups.items()),
+            'unassigned_sessions': unassigned_sessions,
+            'session_parents': session_parents,
+            'session_purposes': session_purposes,
+            'timeslot_types': timeslot_types,
+            'hide_menu': True,
+            'lock_time': lock_time,
+            'enabled_timeslot_types': enabled_timeslot_types,
+        })
 
 
 class RoomNameModelChoiceField(forms.ModelChoiceField):
