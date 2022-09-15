@@ -39,12 +39,12 @@
                         </td>
                         <td>
                             {% if recipient.template %}
-                                <code>{{ recipient.template|escape|linebreaksbr }}</code>
+                                <pre><code>{{ recipient.template|escape }}</code></pre>
                             {% endif %}
                         </td>
                         <td>
                             {% if recipient.code %}
-                                <code>{{ recipient.code|escape|linebreaksbr }}</code>
+                                <pre><code>{{ recipient.code|escape }}</code></pre>
                             {% endif %}
                         </td>
                     </tr>
