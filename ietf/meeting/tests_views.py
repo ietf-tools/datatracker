@@ -21,6 +21,7 @@ from urllib.parse import urlparse, urlsplit, quote
 from PIL import Image
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from zoneinfo import ZoneInfo
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
@@ -1558,8 +1559,6 @@ class EditMeetingScheduleTests(TestCase):
     @staticmethod
     def _right_now_in(tzinfo):
         right_now = timezone.now().astimezone(tzinfo)
-        if not settings.USE_TZ:
-            right_now = right_now.replace(tzinfo=None)
         return right_now
 
     def test_assign_session(self):
@@ -1859,6 +1858,58 @@ class EditMeetingScheduleTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'No timeslots exist')
         self.assertContains(r, urlreverse('ietf.meeting.views.edit_timeslots', kwargs={'num': meeting.number}))
+
+    def test_editor_time_zone(self):
+        """Agenda editor should show meeting time zone"""
+        time_zone = 'Etc/GMT+8'
+        meeting_tz = ZoneInfo(time_zone)
+        meeting = MeetingFactory(
+            type_id='ietf',
+            date=date_today(meeting_tz) + datetime.timedelta(days=7),
+            populate_schedule=False,
+            time_zone=time_zone,
+        )
+        meeting.schedule = ScheduleFactory(meeting=meeting)
+        meeting.save()
+        timeslot = TimeSlotFactory(meeting=meeting)
+        ts_start = timeslot.time.astimezone(meeting_tz)
+        ts_end = timeslot.end_time().astimezone(meeting_tz)
+        url = urlreverse('ietf.meeting.views.edit_meeting_schedule', kwargs={'num': meeting.number})
+        self.assertTrue(self.client.login(username='secretary', password='secretary+password'))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        pq = PyQuery(r.content)
+
+        day_header = pq('.day-flow .day-label')
+        self.assertIn(ts_start.strftime('%A'), day_header.text())
+
+        day_swap = day_header.find('.swap-days')
+        self.assertEqual(day_swap.attr('data-dayid'), ts_start.date().isoformat())
+        self.assertEqual(day_swap.attr('data-start'), ts_start.date().isoformat())
+
+        time_label = pq('.day-flow .time-header .time-label')
+        self.assertEqual(len(time_label), 1)
+        # strftime() does not seem to support hours without leading 0, so do this manually
+        time_label_string = f'{ts_start.hour:d}:{ts_start.minute:02d} - {ts_end.hour:d}:{ts_end.minute:02d}'
+        self.assertIn(time_label_string, time_label.text())
+        self.assertEqual(time_label.attr('data-start'), ts_start.astimezone(datetime.timezone.utc).isoformat())
+        self.assertEqual(time_label.attr('data-end'), ts_end.astimezone(datetime.timezone.utc).isoformat())
+
+        ts_swap = time_label.find('.swap-timeslot-col')
+        origin_label = ts_swap.attr('data-origin-label')
+        # testing the exact date in origin_label is hard because Django's date filter uses
+        # different month formats than Python's strftime, so just check a couple parts.
+        self.assertIn(ts_start.strftime('%A'), origin_label)
+        self.assertIn(f'{ts_start.hour:d}:{ts_start.minute:02d}-{ts_end.hour:d}:{ts_end.minute:02d}', origin_label)
+
+        timeslot_elt = pq(f'#timeslot{timeslot.pk}')
+        self.assertEqual(len(timeslot_elt), 1)
+        self.assertEqual(timeslot_elt.attr('data-start'), ts_start.astimezone(datetime.timezone.utc).isoformat())
+        self.assertEqual(timeslot_elt.attr('data-end'), ts_end.astimezone(datetime.timezone.utc).isoformat())
+
+        timeslot_label = pq(f'#timeslot{timeslot.pk} .time-label')
+        self.assertEqual(len(timeslot_label), 1)
+        self.assertIn(time_label_string, timeslot_label.text())
 
 
 class EditTimeslotsTests(TestCase):
