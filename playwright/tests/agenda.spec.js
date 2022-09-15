@@ -213,7 +213,7 @@ test.describe('meeting -> agenda-neue [past, desktop]', () => {
       if (event.type === 'regular') {
         // First session should have header row above it
         if (isFirstSession) {
-          const headerRow = await page.locator(`#agenda-rowid-sesshd-${event.id}`)
+          const headerRow = page.locator(`#agenda-rowid-sesshd-${event.id}`)
           await expect(headerRow).toBeVisible()
           await expect(headerRow.locator('.agenda-table-cell-ts')).toContainText(eventTimeSlot)
           await expect(headerRow.locator('.agenda-table-cell-name')).toContainText(`${DateTime.fromISO(event.startDateTime).toFormat('cccc')} ${event.name}`)
@@ -435,7 +435,7 @@ test.describe('meeting -> agenda-neue [past, desktop]', () => {
     await navLocator.nth(1).click()
     await expect(navLocator.nth(1)).toHaveClass(/active/)
     await expect(navLocator.first()).not.toHaveClass(/active/)
-    const slidesLocator = await page.locator('.agenda-eventdetails .detail-text > .list-group > .list-group-item')
+    const slidesLocator = page.locator('.agenda-eventdetails .detail-text > .list-group > .list-group-item')
     await expect(slidesLocator).toHaveCount(materialsInfo.slides.length)
     for (let idx = 0; idx < materialsInfo.slides.length; idx++) {
       await expect(slidesLocator.nth(idx)).toHaveAttribute('href', materialsInfo.slides[idx].url)
@@ -449,7 +449,7 @@ test.describe('meeting -> agenda-neue [past, desktop]', () => {
     await expect(page.locator('.agenda-eventdetails .detail-text > iframe')).toHaveAttribute('src', materialsInfo.minutes.url)
     // Footer Buttons
     const hedgeDocLink = `https://notes.ietf.org/notes-ietf-${meetingData.meeting.number}-${event.type === 'plenary' ? 'plenary' : event.acronym}`
-    const footerBtnsLocator = await page.locator('.agenda-eventdetails .detail-action > a')
+    const footerBtnsLocator = page.locator('.agenda-eventdetails .detail-action > a')
     await expect(footerBtnsLocator).toHaveCount(3)
     await expect(footerBtnsLocator.first()).toContainText('Download as tarball')
     await expect(footerBtnsLocator.first()).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.tgz`)
@@ -497,5 +497,104 @@ test.describe('meeting -> agenda-neue [past, desktop]', () => {
     await expect(page.locator('.agenda-eventdetails .detail-text')).toContainText('No minutes submitted for this session.')
     // Clicking X should close the dialog
     await page.locator('.agenda-eventdetails .n-card-header__extra > .detail-header > button').click()
+  })
+
+  // -> FILTER BY AREA/GROUP DIALOG
+
+  test('agenda filter by area/group', async ({ page }) => {
+    // Open dialog
+    await page.locator('#agenda-quickaccess-filterbyareagroups-btn').click()
+    await expect(page.locator('.agenda-personalize')).toBeVisible()
+    // Check header elements
+    await expect(page.locator('.agenda-personalize .n-drawer-header__main > span')).toContainText('Filter Areas + Groups')
+    const diagHeaderBtnLocator = page.locator('.agenda-personalize .agenda-personalize-actions > button')
+    await expect(diagHeaderBtnLocator).toHaveCount(3)
+    await expect(diagHeaderBtnLocator.first()).toContainText('Clear Selection')
+    await expect(diagHeaderBtnLocator.nth(1)).toContainText('Cancel')
+    await expect(diagHeaderBtnLocator.last()).toContainText('Apply')
+    // Check categories
+    const catsLocator = page.locator('.agenda-personalize .agenda-personalize-category')
+    await expect(catsLocator).toHaveCount(meetingData.categories.length)
+    // Check areas + groups
+    for (let idx = 0; idx < meetingData.categories.length; idx++) {
+      const cat = meetingData.categories[idx]
+      const areasLocator = catsLocator.nth(idx).locator('.agenda-personalize-area')
+      await expect(areasLocator).toHaveCount(cat.length)
+      for (let areaIdx = 0; areaIdx < cat.length; areaIdx++) {
+        // Area Button
+        const area = cat[areaIdx]
+        if (area.label) {
+          await expect(areasLocator.nth(areaIdx).locator('.agenda-personalize-areamain > button')).toBeVisible()
+          await expect(areasLocator.nth(areaIdx).locator('.agenda-personalize-areamain > button')).toContainText(area.label)
+        } else {
+          await expect(areasLocator.nth(areaIdx).locator('.agenda-personalize-areamain > button')).not.toBeVisible()
+        }
+        // Group Buttons
+        const grpBtnsLocator = areasLocator.nth(areaIdx).locator('.agenda-personalize-groups > button')
+        await expect(grpBtnsLocator).toHaveCount(area.children.length)
+        for (let groupIdx = 0; groupIdx < area.children.length; groupIdx++) {
+          const group = area.children[groupIdx]
+          await expect(grpBtnsLocator.nth(groupIdx)).toBeVisible()
+          await expect(grpBtnsLocator.nth(groupIdx)).toContainText(group.label)
+          if (group.is_bof) {
+            await expect(grpBtnsLocator.nth(groupIdx)).toHaveClass(/is-bof/)
+            await expect(grpBtnsLocator.nth(groupIdx).locator('.badge')).toBeVisible()
+            await expect(grpBtnsLocator.nth(groupIdx).locator('.badge')).toContainText('BoF')
+          }
+        }
+        // Test Area Selection
+        if (area.label) {
+          await areasLocator.nth(areaIdx).locator('.agenda-personalize-areamain > button').click()
+          for (let groupIdx = 0; groupIdx < area.children.length; groupIdx++) {
+            await expect(grpBtnsLocator.nth(groupIdx)).toHaveClass(/is-checked/)
+          }
+          await areasLocator.nth(areaIdx).locator('.agenda-personalize-areamain > button').click()
+          for (let groupIdx = 0; groupIdx < area.children.length; groupIdx++) {
+            await expect(grpBtnsLocator.nth(groupIdx)).not.toHaveClass(/is-checked/)
+          }
+        }
+        // Test Group Selection
+        const randGroupIdx = _.random(area.children.length - 1)
+        const groupLocator = areasLocator.nth(areaIdx).locator('.agenda-personalize-groups > button').nth(randGroupIdx)
+        await groupLocator.click()
+        await expect(groupLocator).toHaveClass(/is-checked/)
+        await groupLocator.click()
+        await expect(groupLocator).not.toHaveClass(/is-checked/)
+      }
+    }
+    // Test multi-toggled_by button trigger
+    const bofBtnLocator = page.locator('.agenda-personalize .agenda-personalize-category:last-child .agenda-personalize-area:last-child .agenda-personalize-groups > button', { hasText: 'BoF' })
+    const bofGroupsLocator = page.locator('.agenda-personalize .agenda-personalize-group:has(.badge)')
+    const bofGroupsCount = await bofGroupsLocator.count()
+    await bofBtnLocator.click()
+    for (let idx = 0; idx < bofGroupsCount; idx++) {
+      await expect(bofGroupsLocator.nth(idx)).toHaveClass(/is-checked/)
+    }
+    await bofBtnLocator.click()
+    for (let idx = 0; idx < bofGroupsCount; idx++) {
+      await expect(bofGroupsLocator.nth(idx)).not.toHaveClass(/is-checked/)
+    }
+    // Clicking all groups from area then area button should unselect all
+    const areaGroupsLocator = page.locator('.agenda-personalize .agenda-personalize-area >> nth=0 >> .agenda-personalize-groups > button')
+    const areaGroupsCount = await areaGroupsLocator.count()
+    for (let idx = 0; idx < areaGroupsCount; idx++) {
+      await areaGroupsLocator.nth(idx).click()
+    }
+    await page.locator('.agenda-personalize .agenda-personalize-area >> nth=0 >> .agenda-personalize-areamain:first-child > button').click()
+    for (let idx = 0; idx < areaGroupsCount; idx++) {
+      await expect(areaGroupsLocator.nth(idx)).not.toHaveClass(/is-checked/)
+    }
+    // Test Clear Selection
+    const groupsLocator = page.locator('.agenda-personalize .agenda-personalize-group')
+    const groupsCount = await groupsLocator.count()
+    const randGroupRange = _.take(_.shuffle(_.range(groupsCount)), 10)
+    for (const idx of randGroupRange) {
+      await groupsLocator.nth(idx).click()
+    }
+    await page.locator('.agenda-personalize .agenda-personalize-actions > button').first().click()
+    await expect(page.locator('.agenda-personalize .agenda-personalize-group.is-checked')).toHaveCount(0)
+    // Click Cancel should hide dialog
+    await page.locator('.agenda-personalize .agenda-personalize-actions > button').nth(1).click()
+    await expect(page.locator('.agenda-personalize')).not.toBeVisible()
   })
 })
