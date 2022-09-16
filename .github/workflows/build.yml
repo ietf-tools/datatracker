@@ -27,7 +27,7 @@ jobs:
         npm ci
         npx playwright install --with-deps
         echo "Running tests..."
-        npx playwright test -x
+        npx playwright test
         
     - name: Upload Report
       uses: actions/upload-artifact@v3.0.0
