@@ -31,7 +31,7 @@ jobs:
         echo "Installing Playwright..."
         cd playwright
         npm ci
-        npx playwright install --with-deps
+        npx playwright install --with-deps ${{ matrix.project }}
         echo "Running tests..."
         npx playwright test --project=${{ matrix.project }}
         

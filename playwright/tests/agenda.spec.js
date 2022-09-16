@@ -928,7 +928,7 @@ test.describe('past - desktop', () => {
       })
     })
 
-    // Cannot test if webcam link works because external app handling not supported:
+    // Cannot test if webcal link works because external app handling not supported:
     // See https://github.com/microsoft/playwright/issues/11014
 
     // Test Download ICS
@@ -947,7 +947,7 @@ test.describe('past - desktop', () => {
 
   // -> JUMP TO DAY
 
-  test('agenda jump to specific days', async ({ page }) => {
+  test('agenda jump to specific days', async ({ page, browserName }) => {
     // -> Separator label
     await expect(page.locator('div[role=separator]:above(.agenda .agenda-quickaccess-jumpto)').first()).toContainText('Jump to...')
 
@@ -964,10 +964,13 @@ test.describe('past - desktop', () => {
     }
 
     // -> Jump to specific days
-    for (const idx of [6, 1, 5]) {
-      await navItemLocator.nth(idx).locator('a').click()
-      await setTimeout(2500)
-      await expect(await isIntersectingViewport(page, `.agenda-table-display-day >> nth=${idx}`)).toBeTruthy()
+    if (browserName === 'chromium') {
+      // Exclude firefox as this test doesn't run reliably on it in CI
+      for (const idx of [6, 1, 5]) {
+        await navItemLocator.nth(idx).locator('a').click()
+        await setTimeout(2500)
+        await expect(await isIntersectingViewport(page, `.agenda-table-display-day >> nth=${idx}`)).toBeTruthy()
+      }
     }
   })
 })
