@@ -4,8 +4,8 @@ const { faker } = require('@faker-js/faker')
 const slugify = require('slugify')
 const meetingGenerator = require('../helpers/meeting.js')
 const _ = require('lodash')
-const path = require('path')
 const fs = require('fs/promises')
+const { setTimeout } = require('timers/promises')
 
 /* eslint-disable cypress/no-async-tests */
 
@@ -42,6 +42,15 @@ function formatLinkUrl (url, session, meetingNumber) {
     : url
 }
 
+async function isIntersectingViewport (page, selector) {
+  return page.$eval(selector, async el => {
+    const bottom = window.innerHeight
+    const rect = el.getBoundingClientRect()
+
+    return rect.top < bottom && rect.top > 0 - rect.height
+  })
+}
+
 // ====================================================================
 // AGENDA-NEUE (past meeting) | DESKTOP viewport
 // ====================================================================
@@ -69,14 +78,15 @@ test.describe('past - desktop', () => {
       height: viewports.desktop[1]
     })
 
-    // Visit agenda page
-    await page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
-
-    // Wait for Meeting Data API call
-    await page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`)
+    // Visit agenda page and await Meeting Data API call to complete
+    await Promise.all([
+      page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
+      page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
+    ])
 
     // Wait for page to be ready
     await page.locator('.agenda h1').waitFor({ state: 'visible' })
+    await setTimeout(500)
   })
 
   test('agenda header section', async ({ page }) => {
@@ -892,5 +902,70 @@ test.describe('past - desktop', () => {
     // ------------------------------
     await page.locator('.agenda-settings .agenda-settings-actions > button').last().click()
     await expect(page.locator('.agenda-settings')).not.toBeVisible()
+  })
+
+  // -> ADD TO CALENDAR
+
+  test('agenda add to calendar', async ({ page }) => {
+    await expect(page.locator('#agenda-quickaccess-addtocal-btn')).toContainText('Add to your calendar')
+    await page.locator('#agenda-quickaccess-addtocal-btn').click()
+    const ddnLocator = page.locator('.n-dropdown-menu > .n-dropdown-option')
+    await expect(ddnLocator).toHaveCount(2)
+    await expect(ddnLocator.first()).toContainText('Subscribe')
+    await expect(ddnLocator.last()).toContainText('Download')
+
+    // Intercept Download ICS Call
+    await page.route(`**/meeting/${meetingData.meeting.number}/agenda.ics`, route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'text/calendar',
+        headers: {
+          'Content-disposition': 'attachment; filename=agenda.ics'
+        },
+        body: 'test'
+      })
+    })
+
+    // Cannot test if webcam link works because external app handling not supported:
+    // See https://github.com/microsoft/playwright/issues/11014
+
+    // Test Download ICS
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      ddnLocator.nth(1).click()
+    ])
+    const downloadPath = await download.path()
+    try {
+      const testIcs = await fs.readFile(downloadPath, 'utf8')
+      await expect(testIcs).toEqual('test')
+    } catch (err) {
+      expect(err).toBeUndefined()
+    }
+  })
+
+  // -> JUMP TO DAY
+
+  test('agenda jump to specific days', async ({ page }) => {
+    // -> Separator label
+    await expect(page.locator('div[role=separator]:above(.agenda .agenda-quickaccess-jumpto)').first()).toContainText('Jump to...')
+
+    // -> Check nav items
+    const navItemLocator = page.locator('.agenda .agenda-quickaccess-jumpto > .nav-item')
+    await expect(navItemLocator).toHaveCount(7)
+    for (let idx = 0; idx < 7; idx++) {
+      const localDateTime = DateTime.fromISO(meetingData.meeting.startDate)
+        .setZone(BROWSER_TIMEZONE)
+        .setLocale(BROWSER_LOCALE)
+        .plus({ days: idx })
+        .toLocaleString(DateTime.DATE_HUGE)
+      await expect(navItemLocator.nth(idx)).toContainText(localDateTime)
+    }
+
+    // -> Jump to specific days
+    for (const idx of [6, 1, 5, 2, 4, 0, 3]) {
+      await navItemLocator.nth(idx).locator('a').click()
+      await setTimeout(1500)
+      await expect(await isIntersectingViewport(page, `.agenda-table-display-day >> nth=${idx}`)).toBeTruthy()
+    }
   })
 })
