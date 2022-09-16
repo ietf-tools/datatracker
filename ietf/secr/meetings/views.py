@@ -343,7 +343,6 @@ def edit_meeting(request, meeting_id):
 
     else:
         form = MeetingModelForm(instance=meeting)
-    debug.show('form.errors')
     return render(request, 'meetings/edit_meeting.html', {
         'meeting': meeting,
         'form' : form, },
