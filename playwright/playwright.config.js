@@ -98,17 +98,19 @@ const config = {
     //     channel: 'chrome',
     //   },
     // },
-  ]
+  ],
 
   /* Folder for test artifacts such as screenshots, videos, traces, etc. */
   // outputDir: 'test-results/',
 
   /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'cd .. && yarn preview',
-  //   port: 3000,
-  //   reuseExistingServer: !process.env.CI
-  // }
+  ...process.env.CI && {
+    webServer: {
+      command: 'cd .. && yarn preview',
+      port: 3000,
+      reuseExistingServer: false
+    }
+  }
 }
 
 module.exports = config

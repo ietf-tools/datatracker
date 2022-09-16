@@ -13,13 +13,11 @@ jobs:
     name: Run Tests (Playwright)
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.25.2
+      image: mcr.microsoft.com/playwright:v1.25.2-focal
     strategy:
       fail-fast: false
       matrix:
         project: [chromium, firefox]
-        shardIndex: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        shardTotal: [10]
     
     steps:
     - uses: actions/checkout@v3
@@ -32,17 +30,15 @@ jobs:
       run: |
         echo "Installing dependencies..."
         yarn
-        echo "Start Vite Preview..."
-        yarn preview &>/dev/null &
         echo "Installing Playwright..."
         cd playwright
         npm ci
         echo "Running tests..."
-        npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+        npx playwright test --project=${{ matrix.project }}
         
     - name: Upload Report
       uses: actions/upload-artifact@v3.0.0
       if: ${{ always() }}
       with:
-        name: playwright-results-${{ matrix.project }}-${{ matrix.shardIndex }}-${{ matrix.shardTotal }}
+        name: playwright-results-${{ matrix.project }}
         path: playwright/test-results/
