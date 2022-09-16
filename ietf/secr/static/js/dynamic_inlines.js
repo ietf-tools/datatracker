@@ -28,7 +28,7 @@ function add_inline_form(name) {
     // check to see if this is a stacked or tabular inline
     if (first.hasClass("tabular")) {
         var field_table = first.parent().find('table > tbody')
-        const children = field_table.children('tr.inline-related')
+        const children = field_table.children('tr.dynamic-inline')
         var count = children.length
         const last = $(children[count-1])
         var copy = last.clone(true)

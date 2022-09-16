@@ -43,7 +43,7 @@
                         <tbody>
                             {% for form in email_formset.forms %}
                                 {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
-                                <tr class="inline-related {% cycle 'row1' 'row2' %}">
+                                <tr class="dynamic-inline {% cycle 'row1' 'row2' %}">
                                     <td>
                                     {# Include the hidden fields in the form #}
                                     {% for hidden in form.hidden_fields %}
