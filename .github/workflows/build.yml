@@ -11,9 +11,7 @@ jobs:
 
   tests-playwright:
     name: Run Tests (Playwright)
-    runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.25.2-focal
+    runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
@@ -33,6 +31,7 @@ jobs:
         echo "Installing Playwright..."
         cd playwright
         npm ci
+        npx playwright install --with-deps
         echo "Running tests..."
         npx playwright test --project=${{ matrix.project }}
         
