@@ -1577,7 +1577,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
                 "updated": updated,
                 "filter_categories": filter_organizer.get_filter_categories(),
                 "non_area_keywords": filter_organizer.get_non_area_keywords(),
-                "now": timezone.now().astimezone(pytz.utc),
+                "now": timezone.now().astimezone(meeting.tz()),
                 "display_timezone": display_timezone,
                 "is_current_meeting": is_current_meeting,
                 "use_codimd": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
