@@ -964,9 +964,9 @@ test.describe('past - desktop', () => {
     }
 
     // -> Jump to specific days
-    for (const idx of [6, 1, 5, 2, 4, 0, 3]) {
+    for (const idx of [6, 1, 5]) {
       await navItemLocator.nth(idx).locator('a').click()
-      await setTimeout(1500)
+      await setTimeout(2500)
       await expect(await isIntersectingViewport(page, `.agenda-table-display-day >> nth=${idx}`)).toBeTruthy()
     }
   })
