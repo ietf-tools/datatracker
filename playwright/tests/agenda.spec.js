@@ -514,6 +514,8 @@ test.describe('past - desktop', () => {
   // -> FILTER BY AREA/GROUP DIALOG
 
   test('agenda filter by area/group', async ({ page }) => {
+    test.slow() // Triple the default timeout
+
     // Open dialog
     await page.locator('#agenda-quickaccess-filterbyareagroups-btn').click()
     await expect(page.locator('.agenda-personalize')).toBeVisible()
