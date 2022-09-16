@@ -28,13 +28,15 @@ function add_inline_form(name) {
     // check to see if this is a stacked or tabular inline
     if (first.hasClass("tabular")) {
         var field_table = first.parent().find('table > tbody')
-        var count = field_table.children().length
-        var copy = $('tr:last', field_table).clone(true)
+        const children = field_table.children('tr.dynamic-inline')
+        var count = children.length
+        const last = $(children[count-1])
+        var copy = last.clone(true)
         copy.removeClass("row1 row2")
-        copy.find("input[name$='address']").removeAttr("readonly")
-        copy.addClass("row"+((count % 2) == 0 ? 1 : 2))
-        field_table.append(copy)
-        increment_form_ids($('tr:last', field_table), count, name)
+        copy.find("input[name$='address']").attr("readonly", false)
+        copy.addClass("row"+((count % 2) ? 2 : 1))
+        copy.insertAfter(last)
+        increment_form_ids($(copy), count, name)
     }
     else {
         var last = $(first).parent().children('.last-related')
@@ -54,13 +56,14 @@ function add_inline_form(name) {
 $(function() {
     var html_template = '<ul class="tools">'+
         '<li>'+
-            '<a class="addlink" href="#" onclick="return add_inline_form(\'{{prefix}}\')">'+
+            '<a id="addlink-{{prefix}}" class="addlink" href="#">'+
             'Add another</a>'+
         '</li>'+
     '</ul>'
     $('.inline-group').each(function(i) {
         //prefix is in the name of the input fields before the "-"
-        var prefix = $("input[type='hidden'][name!='csrfmiddlewaretoken']", this).attr("name").split("-")[0]
-        $(this).append(html_template.replace("{{prefix}}", prefix))
+        var prefix = $("input[type='hidden'][name!='csrfmiddlewaretoken']", this).attr("name").split("-")[0];
+        $(this).append(html_template.replace("{{prefix}}", prefix));
+        $('#addlink-' + prefix).on('click', () => add_inline_form(prefix));
     })
 })
