@@ -1263,7 +1263,9 @@ test.describe('live - desktop', () => {
     await expect(navItemsLocator.first()).toContainText('Now')
     await navItemsLocator.first().click()
     await setTimeout(2500)
-    await expect(await commonHelper.isIntersectingViewport(page, '.agenda .agenda-table-redhand')).toBeTruthy()
+    // red line position isn't pixel perfect on CI, so accept some range
+    const redlineBoundingBox = await page.locator('.agenda .agenda-table-redhand').boundingBox()
+    await expect(redlineBoundingBox.y >= -20 && redlineBoundingBox.y <= 20).toBeTruthy()
   })
 
   // -> HIDE RED LINE
