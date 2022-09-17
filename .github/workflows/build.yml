@@ -173,6 +173,8 @@ jobs:
 
   tests-playwright:
     name: Run Tests (Playwright)
+    if: ${{ github.event.inputs.skiptests == 'false' }}
+    needs: [prepare]
     runs-on: macos-latest
     strategy:
       fail-fast: false
