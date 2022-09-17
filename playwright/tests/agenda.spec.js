@@ -337,10 +337,12 @@ test.describe('past - desktop', () => {
 
     // Clear button
     await page.locator('.agenda-search button').click()
+    await page.waitForTimeout(1000)
     await expect(searchInputLocator).toHaveValue('')
     await expect(eventRowsLocator).toHaveCount(meetingData.schedule.length)
     // Invalid search
     await searchInputLocator.fill(faker.vehicle.vin())
+    await page.waitForTimeout(1000)
     await expect(eventRowsLocator).toHaveCount(0)
     await expect(page.locator('.agenda-table .agenda-table-display-noresult')).toContainText('No event matching your search query.')
     // Closing search should clear search
