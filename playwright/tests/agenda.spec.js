@@ -3,12 +3,12 @@ const { DateTime } = require('luxon')
 const { faker } = require('@faker-js/faker')
 const seedrandom = require('seedrandom')
 const slugify = require('slugify')
-const meetingGenerator = require('../helpers/meeting.js')
+const commonHelper = require('../helpers/common')
+const meetingHelper = require('../helpers/meeting.js')
+const viewports = require('../helpers/viewports')
 const _ = require('lodash')
 const fs = require('fs/promises')
 const { setTimeout } = require('timers/promises')
-
-/* eslint-disable cypress/no-async-tests */
 
 const xslugify = (str) => slugify(str.replace('/', '-'), { lower: true, strict: true })
 
@@ -16,72 +16,10 @@ const TEST_SEED = 123
 const BROWSER_LOCALE = 'en-US'
 const BROWSER_TIMEZONE = 'America/Toronto'
 
-const viewports = {
-  desktop: [1536, 960],
-  smallDesktop: [1280, 800],
-  tablet: [768, 1024],
-  mobile: [360, 760]
-}
-
-const urlRe = /http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+/
-const conferenceDomains = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 'gather.town']
-
 // Set randomness seed
 seedrandom(TEST_SEED.toString(), { global: true })
 faker.seed(TEST_SEED)
 const { random, shuffle } = _.runInContext()
-
-/**
- * Format URL by replacing inline variables
- *
- * @param {String} url Raw URL
- * @param {Object} session Session Object
- * @param {String} meetingNumber Meeting Number
- * @returns Formatted URL
- */
-function formatLinkUrl (url, session, meetingNumber) {
-  return url
-    ? url.replace('{meeting.number}', meetingNumber)
-      .replace('{group.acronym}', session.groupAcronym)
-      .replace('{short}', session.short)
-      .replace('{order_number}', session.orderInMeeting)
-    : url
-}
-
-/**
- * Validate whether a selector is visible in viewport
- *
- * @param {Object} page Page object
- * @param {String} selector Selector to validate
- * @returns Boolean
- */
-async function isIntersectingViewport (page, selector) {
-  return page.$eval(selector, async el => {
-    const bottom = window.innerHeight
-    const rect = el.getBoundingClientRect()
-
-    return rect.top < bottom && rect.top > 0 - rect.height
-  })
-}
-
-/**
- * Find the first URL in text matching a conference domain
- *
- * @param {String} txt Raw Text
- * @returns First URL found
- */
-function findFirstConferenceUrl (txt) {
-  try {
-    const fUrl = txt.match(urlRe)
-    if (fUrl && fUrl[0].length > 0) {
-      const pUrl = new URL(fUrl[0])
-      if (conferenceDomains.some(d => pUrl.hostname.endsWith(d))) {
-        return fUrl[0]
-      }
-    }
-  } catch (err) { }
-  return null
-}
 
 // ====================================================================
 // AGENDA (past meeting) | DESKTOP viewport
@@ -92,7 +30,7 @@ test.describe('past - desktop', () => {
 
   test.beforeAll(async () => {
     // Generate meeting data
-    meetingData = meetingGenerator.generateAgendaResponse({ dateMode: 'past' })
+    meetingData = meetingHelper.generateAgendaResponse({ dateMode: 'past' })
   })
 
   test.beforeEach(async ({ page }) => {
@@ -1000,7 +938,7 @@ test.describe('past - desktop', () => {
       for (const idx of [6, 1, 5]) {
         await navItemLocator.nth(idx).locator('a').click()
         await setTimeout(2500)
-        await expect(await isIntersectingViewport(page, `.agenda-table-display-day >> nth=${idx}`)).toBeTruthy()
+        await expect(await commonHelper.isIntersectingViewport(page, `.agenda-table-display-day >> nth=${idx}`)).toBeTruthy()
       }
     }
   })
@@ -1109,7 +1047,7 @@ test.describe('future - desktop', () => {
 
   test.beforeAll(async () => {
     // Generate meeting data
-    meetingData = meetingGenerator.generateAgendaResponse({ dateMode: 'future' })
+    meetingData = meetingHelper.generateAgendaResponse({ dateMode: 'future' })
   })
 
   test.beforeEach(async ({ page }) => {
@@ -1185,26 +1123,26 @@ test.describe('future - desktop', () => {
           await expect(eventButtons.locator(`#btn-lnk-${event.id}-room > i.bi`)).toBeVisible()
           // Video Stream
           if (event.links.videoStream) {
-            await expect(eventButtons.locator(`#btn-lnk-${event.id}-video`)).toHaveAttribute('href', formatLinkUrl(event.links.videoStream, event, meetingData.meeting.number))
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-video`)).toHaveAttribute('href', meetingHelper.formatLinkUrl(event.links.videoStream, event, meetingData.meeting.number))
             await expect(eventButtons.locator(`#btn-lnk-${event.id}-video > i.bi`)).toBeVisible()
           }
           // Onsite Tool
           if (event.links.onsitetool) {
-            await expect(eventButtons.locator(`#btn-lnk-${event.id}-onsitetool`)).toHaveAttribute('href', formatLinkUrl(event.links.onsitetool, event, meetingData.meeting.number))
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-onsitetool`)).toHaveAttribute('href', meetingHelper.formatLinkUrl(event.links.onsitetool, event, meetingData.meeting.number))
             await expect(eventButtons.locator(`#btn-lnk-${event.id}-onsitetool > i.bi`)).toBeVisible()
           }
           // Audio Stream
           if (event.links.audioStream) {
-            await expect(eventButtons.locator(`#btn-lnk-${event.id}-audio`)).toHaveAttribute('href', formatLinkUrl(event.links.audioStream, event, meetingData.meeting.number))
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-audio`)).toHaveAttribute('href', meetingHelper.formatLinkUrl(event.links.audioStream, event, meetingData.meeting.number))
             await expect(eventButtons.locator(`#btn-lnk-${event.id}-audio > i.bi`)).toBeVisible()
           }
           // Remote Call-In
           let remoteCallInUrl = null
           if (event.note) {
-            remoteCallInUrl = findFirstConferenceUrl(event.note)
+            remoteCallInUrl = meetingHelper.findFirstConferenceUrl(event.note)
           }
           if (!remoteCallInUrl && event.remoteInstructions) {
-            remoteCallInUrl = findFirstConferenceUrl(event.remoteInstructions)
+            remoteCallInUrl = meetingHelper.findFirstConferenceUrl(event.remoteInstructions)
           }
           if (!remoteCallInUrl && event.links.webex) {
             remoteCallInUrl = event.links.webex
@@ -1238,7 +1176,7 @@ test.describe('live - desktop', () => {
 
   test.beforeAll(async () => {
     // Generate meeting data
-    meetingData = meetingGenerator.generateAgendaResponse({ dateMode: 'current' })
+    meetingData = meetingHelper.generateAgendaResponse({ dateMode: 'current' })
 
     // Calculate live events
     let lastEventStartTime = null
@@ -1325,7 +1263,7 @@ test.describe('live - desktop', () => {
     await expect(navItemsLocator.first()).toContainText('Now')
     await navItemsLocator.first().click()
     await setTimeout(2500)
-    await expect(await isIntersectingViewport(page, '.agenda .agenda-table-redhand')).toBeTruthy()
+    await expect(await commonHelper.isIntersectingViewport(page, '.agenda .agenda-table-redhand')).toBeTruthy()
   })
 
   // -> HIDE RED LINE
@@ -1355,7 +1293,7 @@ test.describe('past - small screens', () => {
 
   test.beforeAll(async () => {
     // Generate meeting data
-    meetingData = meetingGenerator.generateAgendaResponse({ dateMode: 'past' })
+    meetingData = meetingHelper.generateAgendaResponse({ dateMode: 'past' })
   })
 
   for (const vp of ['smallDesktop', 'tablet', 'mobile']) {

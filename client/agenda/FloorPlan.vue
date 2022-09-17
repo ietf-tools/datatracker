@@ -216,10 +216,9 @@ onBeforeUnmount(() => {
 // MOUNTED
 
 onMounted(() => {
-  // -> Go to current meeting if not provided
-  if (!route.params.meetingNumber && agendaStore.meeting.number) {
-    router.replace({ params: { meetingNumber: agendaStore.meeting.number } })
-  }
+  agendaStore.fetch(route.params.meetingNumber)
+
+  handleCurrentMeetingRedirect()
 
   // -> Hide Loading Screen
   if (agendaStore.isLoaded) {

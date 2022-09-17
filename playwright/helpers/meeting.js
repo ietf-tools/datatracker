@@ -7,6 +7,9 @@ const ms = require('ms')
 
 const floorsMeta = require('../data/meeting-floors')
 
+const urlRe = /http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+/
+const conferenceDomains = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 'gather.town']
+
 const xslugify = (str) => slugify(str.replace('/', '-'), { lower: true, strict: true })
 
 const TEST_SEED = 123
@@ -629,5 +632,41 @@ module.exports = {
       schedule,
       floors
     }
+  },
+
+  /**
+   * Format URL by replacing inline variables
+   *
+   * @param {String} url Raw URL
+   * @param {Object} session Session Object
+   * @param {String} meetingNumber Meeting Number
+   * @returns Formatted URL
+   */
+  formatLinkUrl: (url, session, meetingNumber) => {
+    return url
+      ? url.replace('{meeting.number}', meetingNumber)
+        .replace('{group.acronym}', session.groupAcronym)
+        .replace('{short}', session.short)
+        .replace('{order_number}', session.orderInMeeting)
+      : url
+  },
+
+  /**
+   * Find the first URL in text matching a conference domain
+   *
+   * @param {String} txt Raw Text
+   * @returns First URL found
+   */
+  findFirstConferenceUrl: (txt) => {
+    try {
+      const fUrl = txt.match(urlRe)
+      if (fUrl && fUrl[0].length > 0) {
+        const pUrl = new URL(fUrl[0])
+        if (conferenceDomains.some(d => pUrl.hostname.endsWith(d))) {
+          return fUrl[0]
+        }
+      }
+    } catch (err) { }
+    return null
   }
 }
