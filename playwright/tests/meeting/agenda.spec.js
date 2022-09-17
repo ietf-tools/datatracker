@@ -3,9 +3,9 @@ const { DateTime } = require('luxon')
 const { faker } = require('@faker-js/faker')
 const seedrandom = require('seedrandom')
 const slugify = require('slugify')
-const commonHelper = require('../helpers/common')
-const meetingHelper = require('../helpers/meeting.js')
-const viewports = require('../helpers/viewports')
+const commonHelper = require('../../helpers/common')
+const meetingHelper = require('../../helpers/meeting.js')
+const viewports = require('../../helpers/viewports')
 const _ = require('lodash')
 const fs = require('fs/promises')
 const { setTimeout } = require('timers/promises')
@@ -60,6 +60,7 @@ test.describe('past - desktop', () => {
   })
 
   test('agenda header section', async ({ page }) => {
+    // HEADER
     await expect(page.locator('.agenda h1'), 'should have agenda title').toContainText(`IETF ${meetingData.meeting.number} Meeting Agenda`)
     await expect(page.locator('.agenda h4').first(), 'should have meeting city subtitle').toContainText(meetingData.meeting.city)
     await expect(page.locator('.agenda h4').first(), 'should have meeting date subtitle').toContainText(/[a-zA-Z] [0-9]{1,2} - ([a-zA-Z]+ )?[0-9]{1,2}, [0-9]{4}/i)
@@ -72,11 +73,13 @@ test.describe('past - desktop', () => {
 
     // NAV
 
-    const navLocator = page.locator('.agenda .meeting-nav > li')
-    await expect(navLocator).toHaveCount(3)
-    await expect(navLocator.first()).toContainText('Agenda')
-    await expect(navLocator.nth(1)).toContainText('Floor plan')
-    await expect(navLocator.last()).toContainText('Plaintext')
+    await test.step('has the correct navigation items', async () => {
+      const navLocator = page.locator('.agenda .meeting-nav > li')
+      await expect(navLocator).toHaveCount(3)
+      await expect(navLocator.first()).toContainText('Agenda')
+      await expect(navLocator.nth(1)).toContainText('Floor plan')
+      await expect(navLocator.last()).toContainText('Plaintext')
+    })
 
     // SETTINGS BUTTON
 
@@ -96,48 +99,54 @@ test.describe('past - desktop', () => {
 
     // INFO-NOTE TOGGLE
 
-    await page.locator('.agenda .agenda-infonote > button').click()
-    await expect(infonoteLocator).not.toBeVisible()
-    await expect(infonoteToggleLocator).toBeVisible()
-    await infonoteToggleLocator.click()
-    await expect(infonoteLocator).toBeVisible()
-    await expect(infonoteToggleLocator).not.toBeVisible()
+    await test.step('info note can be dismissed / reopened', async () => {
+      await page.locator('.agenda .agenda-infonote > button').click()
+      await expect(infonoteLocator).not.toBeVisible()
+      await expect(infonoteToggleLocator).toBeVisible()
+      await infonoteToggleLocator.click()
+      await expect(infonoteLocator).toBeVisible()
+      await expect(infonoteToggleLocator).not.toBeVisible()
+    })
 
     // TIMEZONE SELECTOR
 
-    await expect(page.locator('.agenda .agenda-tz-selector')).toBeVisible()
-    await expect(page.locator('small:left-of(.agenda .agenda-tz-selector)')).toContainText('Timezone:')
-    await expect(page.locator('.agenda .agenda-tz-selector > button')).toHaveCount(3)
-    await expect(tzMeetingBtnLocator).toContainText('Meeting')
-    await expect(tzLocalBtnLocator).toContainText('Local')
-    await expect(tzUtcBtnLocator).toContainText('UTC')
-    await expect(page.locator('.agenda .agenda-timezone-ddn')).toBeVisible()
+    await test.step('has timezone selector', async () => {
+      await expect(page.locator('.agenda .agenda-tz-selector')).toBeVisible()
+      await expect(page.locator('small:left-of(.agenda .agenda-tz-selector)')).toContainText('Timezone:')
+      await expect(page.locator('.agenda .agenda-tz-selector > button')).toHaveCount(3)
+      await expect(tzMeetingBtnLocator).toContainText('Meeting')
+      await expect(tzLocalBtnLocator).toContainText('Local')
+      await expect(tzUtcBtnLocator).toContainText('UTC')
+      await expect(page.locator('.agenda .agenda-timezone-ddn')).toBeVisible()
+    })
 
     // CHANGE TIMEZONE
 
-    // Switch to local timezone
-    await tzLocalBtnLocator.click()
-    await expect(tzLocalBtnLocator).toHaveClass(/n-button--primary-type/)
-    await expect(tzMeetingBtnLocator).not.toHaveClass(/n-button--primary-type/)
-    const localDateTime = DateTime.fromISO(meetingData.meeting.updated)
-      .setZone(BROWSER_TIMEZONE)
-      .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
-    await expect(page.locator('.agenda h6').first()).toContainText(localDateTime)
-    // Switch to UTC
-    await tzUtcBtnLocator.click()
-    await expect(tzUtcBtnLocator).toHaveClass(/n-button--primary-type/)
-    await expect(tzLocalBtnLocator).not.toHaveClass(/n-button--primary-type/)
-    const utcDateTime = DateTime.fromISO(meetingData.meeting.updated)
-      .setZone('utc')
-      .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
-    await expect(page.locator('.agenda h6').first()).toContainText(utcDateTime)
-    await expect(page.locator('.agenda .agenda-timezone-ddn')).toContainText('UTC')
-    // Switch back to meeting timezone
-    await tzMeetingBtnLocator.click()
-    await expect(tzMeetingBtnLocator).toHaveClass(/n-button--primary-type/)
-    await expect(page.locator('.agenda .agenda-timezone-ddn')).toContainText('Tokyo')
+    await test.step('can change timezone', async () => {
+      // Switch to local timezone
+      await tzLocalBtnLocator.click()
+      await expect(tzLocalBtnLocator).toHaveClass(/n-button--primary-type/)
+      await expect(tzMeetingBtnLocator).not.toHaveClass(/n-button--primary-type/)
+      const localDateTime = DateTime.fromISO(meetingData.meeting.updated)
+        .setZone(BROWSER_TIMEZONE)
+        .setLocale(BROWSER_LOCALE)
+        .toFormat('DD \'at\' tt ZZZZ')
+      await expect(page.locator('.agenda h6').first()).toContainText(localDateTime)
+      // Switch to UTC
+      await tzUtcBtnLocator.click()
+      await expect(tzUtcBtnLocator).toHaveClass(/n-button--primary-type/)
+      await expect(tzLocalBtnLocator).not.toHaveClass(/n-button--primary-type/)
+      const utcDateTime = DateTime.fromISO(meetingData.meeting.updated)
+        .setZone('utc')
+        .setLocale(BROWSER_LOCALE)
+        .toFormat('DD \'at\' tt ZZZZ')
+      await expect(page.locator('.agenda h6').first()).toContainText(utcDateTime)
+      await expect(page.locator('.agenda .agenda-timezone-ddn')).toContainText('UTC')
+      // Switch back to meeting timezone
+      await tzMeetingBtnLocator.click()
+      await expect(tzMeetingBtnLocator).toHaveClass(/n-button--primary-type/)
+      await expect(page.locator('.agenda .agenda-timezone-ddn')).toContainText('Tokyo')
+    })
   })
 
   test('agenda schedule list table', async ({ page }) => {
@@ -1272,7 +1281,7 @@ test.describe('live - desktop', () => {
 
   // -> HIDE RED LINE
 
-  test('can toggle the live red line', async ({ page }) => {
+  test('live red line toggle', async ({ page }) => {
     // Open settings dialog
     await page.locator('.meeting-nav + button').click()
     await expect(page.locator('.agenda-settings')).toBeVisible()

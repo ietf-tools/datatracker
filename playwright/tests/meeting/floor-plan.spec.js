@@ -1,8 +1,8 @@
 const { test, expect } = require('@playwright/test')
 const { faker } = require('@faker-js/faker')
 const seedrandom = require('seedrandom')
-const meetingGenerator = require('../helpers/meeting.js')
-const viewports = require('../helpers/viewports')
+const meetingGenerator = require('../../helpers/meeting.js')
+const viewports = require('../../helpers/viewports')
 const { setTimeout } = require('timers/promises')
 
 const TEST_SEED = 123
