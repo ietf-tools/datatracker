@@ -207,7 +207,7 @@ jobs:
         path: playwright/test-results/
         if-no-files-found: ignore
 
-  tests-cypress-legacy:
+  tests-cypress:
     name: Run Tests (Cypress)
     if: ${{ github.event.inputs.skiptests == 'false' }}
     needs: [prepare]
@@ -275,7 +275,7 @@ jobs:
   release:
     name: Make Release
     if: ${{ always() }}
-    needs: [tests-python, tests-cypress-modern, tests-cypress-legacy, prepare]
+    needs: [tests-python, tests-playwright, tests-cypress, prepare]
     runs-on: ubuntu-latest
     env:
       SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
