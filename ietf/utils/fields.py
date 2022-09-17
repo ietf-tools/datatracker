@@ -284,7 +284,7 @@ class SearchableField(forms.MultipleChoiceField):
         for d in pre:
             if isinstance(value, list):
                 d["selected"] = any([v.pk == d["id"] for v in value])
-            else:
+            elif value:
                 d["selected"] = value.exists() and value.filter(pk__in=[d["id"]]).exists()
         self.widget.attrs["data-pre"] = json.dumps(list(pre))
 
