@@ -1,6 +1,7 @@
 const { test, expect } = require('@playwright/test')
 const { DateTime } = require('luxon')
 const { faker } = require('@faker-js/faker')
+const seedrandom = require('seedrandom')
 const slugify = require('slugify')
 const meetingGenerator = require('../helpers/meeting.js')
 const _ = require('lodash')
@@ -22,8 +23,13 @@ const viewports = {
   mobile: [360, 760]
 }
 
+const urlRe = /http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+/
+const conferenceDomains = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 'gather.town']
+
 // Set randomness seed
+seedrandom(TEST_SEED.toString(), { global: true })
 faker.seed(TEST_SEED)
+const { random, shuffle } = _.runInContext()
 
 /**
  * Format URL by replacing inline variables
@@ -42,6 +48,13 @@ function formatLinkUrl (url, session, meetingNumber) {
     : url
 }
 
+/**
+ * Validate whether a selector is visible in viewport
+ *
+ * @param {Object} page Page object
+ * @param {String} selector Selector to validate
+ * @returns Boolean
+ */
 async function isIntersectingViewport (page, selector) {
   return page.$eval(selector, async el => {
     const bottom = window.innerHeight
@@ -49,6 +62,25 @@ async function isIntersectingViewport (page, selector) {
 
     return rect.top < bottom && rect.top > 0 - rect.height
   })
+}
+
+/**
+ * Find the first URL in text matching a conference domain
+ *
+ * @param {String} txt Raw Text
+ * @returns First URL found
+ */
+function findFirstConferenceUrl (txt) {
+  try {
+    const fUrl = txt.match(urlRe)
+    if (fUrl && fUrl[0].length > 0) {
+      const pUrl = new URL(fUrl[0])
+      if (conferenceDomains.some(d => pUrl.hostname.endsWith(d))) {
+        return fUrl[0]
+      }
+    }
+  } catch (err) { }
+  return null
 }
 
 // ====================================================================
@@ -424,7 +456,6 @@ test.describe('past - desktop', () => {
     // Open dialog
     await page.locator(`#agenda-rowid-${event.id} #btn-lnk-${event.id}-mat`).click()
     await expect(page.locator('.agenda-eventdetails')).toBeVisible()
-    // await page.waitForResponse(materialsUrl)
     // Header
     await expect(page.locator('.agenda-eventdetails .n-card-header__main > .detail-header > .bi')).toBeVisible()
     await expect(page.locator('.agenda-eventdetails .n-card-header__main > .detail-header > .bi + span')).toContainText(eventStart.toFormat('DDDD'))
@@ -568,7 +599,7 @@ test.describe('past - desktop', () => {
           }
         }
         // Test Group Selection
-        const randGroupIdx = _.random(area.children.length - 1)
+        const randGroupIdx = random(area.children.length - 1)
         const groupLocator = areasLocator.nth(areaIdx).locator('.agenda-personalize-groups > button').nth(randGroupIdx)
         await groupLocator.click()
         await expect(groupLocator).toHaveClass(/is-checked/)
@@ -601,7 +632,7 @@ test.describe('past - desktop', () => {
     // Test Clear Selection
     const groupsLocator = page.locator('.agenda-personalize .agenda-personalize-group')
     const groupsCount = await groupsLocator.count()
-    const randGroupRange = _.take(_.shuffle(_.range(groupsCount)), 10)
+    const randGroupRange = _.take(shuffle(_.range(groupsCount)), 10)
     for (const idx of randGroupRange) {
       await groupsLocator.nth(idx).click()
     }
@@ -633,7 +664,7 @@ test.describe('past - desktop', () => {
 
     // Pick 10 random sessions
     await expect(checkboxesLocator).toHaveCount(meetingData.schedule.length)
-    const randSessionsRange = _.take(_.shuffle(_.range(meetingData.schedule.length)), 10)
+    const randSessionsRange = _.take(shuffle(_.range(meetingData.schedule.length)), 10)
     for (const idx of randSessionsRange) {
       await checkboxesLocator.nth(idx).click()
     }
@@ -654,7 +685,7 @@ test.describe('past - desktop', () => {
       await checkedboxesLocator.nth(idx).click()
     }
     const uncheckedCount = await uncheckedboxesLocator.count()
-    const uncheckedRandRange = _.take(_.shuffle(_.range(uncheckedCount)), 5)
+    const uncheckedRandRange = _.take(shuffle(_.range(uncheckedCount - 1)), 5)
     for (const idx of uncheckedRandRange) {
       await uncheckedboxesLocator.nth(idx).click()
     }
@@ -972,5 +1003,343 @@ test.describe('past - desktop', () => {
         await expect(await isIntersectingViewport(page, `.agenda-table-display-day >> nth=${idx}`)).toBeTruthy()
       }
     }
+  })
+
+  // -> Color Tagging
+
+  test('agenda colors/tags assignment', async ({ page }) => {
+    test.slow() // Triple the default timeout
+
+    const openBtnLocator = page.locator('.agenda .agenda-table-colorpicker')
+    const colorLgdLocator = page.locator('.agenda .agenda-colorlegend')
+    const eventRowsLocator = page.locator('.agenda .agenda-table-display-event')
+    const colorLgdSwitchLocator = page.locator('#agenda-settings-tgl-colorlgd div[role=switch]')
+    const colorNamesIptLocator = page.locator('.agenda-settings-colors-row .n-input')
+    const randColorNames = _.times(5, faker.music.genre)
+
+    await expect(openBtnLocator).toBeVisible()
+    await openBtnLocator.click()
+
+    // Check Legend
+    await expect(colorLgdLocator).toBeVisible()
+    await expect(colorLgdLocator.locator('> *')).toHaveCount(6)
+    await expect(colorLgdLocator.locator('> * >> nth=0')).toContainText('Color Legend')
+
+    // Check color dots
+    await expect(page.locator('.agenda .agenda-table-display-event .agenda-table-colorindicator.is-active')).toHaveCount(meetingData.schedule.length)
+
+    // -------------------------
+    // Assign colors to sessions
+    // -------------------------
+
+    for (let idx = 0; idx < 5; idx++) {
+      await expect(eventRowsLocator.nth(idx).locator('.agenda-table-colorindicator')).toBeVisible()
+      await eventRowsLocator.nth(idx).locator('.agenda-table-colorindicator').click()
+      await expect(eventRowsLocator.nth(idx).locator('.agenda-table-colorchoices')).toBeVisible()
+      await expect(eventRowsLocator.nth(idx).locator('.agenda-table-colorchoices > .agenda-table-colorchoice')).toHaveCount(6)
+      await eventRowsLocator.nth(idx).locator('.agenda-table-colorchoices > .agenda-table-colorchoice').nth(idx + 1).click()
+      await expect(eventRowsLocator.nth(idx).locator('.agenda-table-colorchoices')).not.toBeVisible()
+    }
+
+    // Exit color assignment mode
+    await openBtnLocator.click()
+    await expect(page.locator('.agenda .agenda-table-display-event .agenda-table-colorindicator')).toHaveCount(5)
+    await expect(page.locator('.agenda .agenda-table-display-event .agenda-table-colorindicator.is-active')).toHaveCount(0)
+    await expect(colorLgdLocator).toBeVisible()
+
+    // ----------------------------------------
+    // Change color legend from settings dialog
+    // ----------------------------------------
+    // Open dialog
+    await page.locator('.meeting-nav + button').click()
+    await expect(page.locator('.agenda-settings')).toBeVisible()
+    // Toggle color legend switch
+    await colorLgdSwitchLocator.click()
+    // Legend should be hidden
+    await expect(colorLgdLocator).not.toBeVisible()
+    // Toggle color legend back
+    await colorLgdSwitchLocator.click()
+    // Legend should be visible
+    await expect(colorLgdLocator).toBeVisible()
+    // Change color names
+    for (let idx = 0; idx < 5; idx++) {
+      await colorNamesIptLocator.nth(idx).locator('input').fill(randColorNames[idx])
+      await setTimeout(1000) // Account for change debounce
+      await expect(colorLgdLocator.locator(`> * >> nth=${idx + 1}`)).toContainText(randColorNames[idx])
+    }
+    // Close dialog
+    await page.locator('.agenda-settings .agenda-settings-actions > button').last().click()
+    await expect(page.locator('.agenda-settings')).not.toBeVisible()
+
+    // ---------------
+    // Unassign colors
+    // ---------------
+    // Re-enter color assignment mode
+    await openBtnLocator.click()
+    // Remove color selection
+    for (let idx = 0; idx < 5; idx++) {
+      await expect(eventRowsLocator.nth(idx).locator('.agenda-table-colorindicator')).toBeVisible()
+      await eventRowsLocator.nth(idx).locator('.agenda-table-colorindicator').click()
+      await expect(eventRowsLocator.nth(idx).locator('.agenda-table-colorchoices')).toBeVisible()
+      await expect(eventRowsLocator.nth(idx).locator('.agenda-table-colorchoices > .agenda-table-colorchoice')).toHaveCount(6)
+      await eventRowsLocator.nth(idx).locator('.agenda-table-colorchoices > .agenda-table-colorchoice').first().click()
+      await expect(eventRowsLocator.nth(idx).locator('.agenda-table-colorchoices')).not.toBeVisible()
+    }
+    // Exit color assignment mode
+    await openBtnLocator.click()
+    // No colored dots should appear
+    await expect(page.locator('.agenda .agenda-table-display-event .agenda-table-colorindicator')).toHaveCount(0)
+    // Clear all colors from Settings menu
+    await page.locator('.meeting-nav + button').click()
+    await expect(page.locator('.agenda-settings')).toBeVisible()
+    await page.locator('.agenda-settings .agenda-settings-actions > button').first().click()
+    await page.locator('.n-dropdown-option:has-text("Clear Color")').click()
+    // Color legend should no longer be displayed
+    await expect(colorLgdLocator).not.toBeVisible()
+    await expect(page.locator('.agenda-settings')).not.toBeVisible()
+  })
+})
+
+// ====================================================================
+// AGENDA-NEUE (future meeting) | DESKTOP viewport
+// ====================================================================
+
+test.describe('future - desktop', () => {
+  let meetingData
+
+  test.beforeAll(async () => {
+    // Generate meeting data
+    meetingData = meetingGenerator.generateAgendaResponse({ dateMode: 'future' })
+  })
+
+  test.beforeEach(async ({ page }) => {
+    // Intercept Meeting Data API
+    await page.route(`**/api/meeting/${meetingData.meeting.number}/agenda-data`, route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(meetingData)
+      })
+    })
+
+    await page.setViewportSize({
+      width: viewports.desktop[0],
+      height: viewports.desktop[1]
+    })
+
+    // Visit agenda page and await Meeting Data API call to complete
+    await Promise.all([
+      page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
+      page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
+    ])
+
+    // Wait for page to be ready
+    await page.locator('.agenda h1').waitFor({ state: 'visible' })
+    await setTimeout(500)
+  })
+
+  // -> SCHEDULE LIST -> Warning
+
+  test('has current meeting warning', async ({ page }) => {
+    await expect(page.locator('.agenda .agenda-currentwarn')).toContainText('Note: IETF agendas are subject to change, up to and during a meeting.')
+  })
+
+  // -> SCHEDULE LIST -> Table Events
+
+  test('has schedule list table events', async ({ page }) => {
+    test.slow() // Triple the default timeout
+
+    const eventRowsLocator = page.locator('.agenda-table .agenda-table-display-event')
+
+    await expect(eventRowsLocator).toHaveCount(meetingData.schedule.length)
+
+    for (let idx = 0; idx < meetingData.schedule.length; idx++) {
+      const row = eventRowsLocator.nth(idx)
+      const event = meetingData.schedule[idx]
+
+      // -----------------------
+      // Buttons / Status Column
+      // -----------------------
+      if (event.status === 'sched') {
+        const eventButtons = row.locator('.agenda-table-cell-links > .agenda-table-cell-links-buttons')
+        if (event.flags.showAgenda || ['regular', 'plenary'].includes(event.type)) {
+          if (event.flags.agenda) {
+            // Show meeting materials button
+            await expect(eventButtons.locator('i.bi.bi-collection')).toBeVisible()
+            // ZIP materials button
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-tar`)).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.tgz`)
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-tar > i.bi`)).toBeVisible()
+            // PDF materials button
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-pdf`)).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.pdf`)
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-pdf > i.bi`)).toBeVisible()
+          } else if (event.type === 'regular') {
+            // No meeting materials yet warning badge
+            await expect(eventButtons.locator('.no-meeting-materials')).toBeVisible()
+          }
+          // Notepad button
+          const hedgeDocLink = `https://notes.ietf.org/notes-ietf-${meetingData.meeting.number}-${event.type === 'plenary' ? 'plenary' : event.acronym}`
+          await expect(eventButtons.locator(`#btn-lnk-${event.id}-note`)).toHaveAttribute('href', hedgeDocLink)
+          await expect(eventButtons.locator(`#btn-lnk-${event.id}-note > i.bi`)).toBeVisible()
+          // Chat room
+          await expect(eventButtons.locator(`#btn-lnk-${event.id}-room`)).toHaveAttribute('href', event.links.chat)
+          await expect(eventButtons.locator(`#btn-lnk-${event.id}-room > i.bi`)).toBeVisible()
+          // Video Stream
+          if (event.links.videoStream) {
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-video`)).toHaveAttribute('href', formatLinkUrl(event.links.videoStream, event, meetingData.meeting.number))
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-video > i.bi`)).toBeVisible()
+          }
+          // Onsite Tool
+          if (event.links.onsitetool) {
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-onsitetool`)).toHaveAttribute('href', formatLinkUrl(event.links.onsitetool, event, meetingData.meeting.number))
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-onsitetool > i.bi`)).toBeVisible()
+          }
+          // Audio Stream
+          if (event.links.audioStream) {
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-audio`)).toHaveAttribute('href', formatLinkUrl(event.links.audioStream, event, meetingData.meeting.number))
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-audio > i.bi`)).toBeVisible()
+          }
+          // Remote Call-In
+          let remoteCallInUrl = null
+          if (event.note) {
+            remoteCallInUrl = findFirstConferenceUrl(event.note)
+          }
+          if (!remoteCallInUrl && event.remoteInstructions) {
+            remoteCallInUrl = findFirstConferenceUrl(event.remoteInstructions)
+          }
+          if (!remoteCallInUrl && event.links.webex) {
+            remoteCallInUrl = event.links.webex
+          }
+          if (remoteCallInUrl) {
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-remotecallin`)).toHaveAttribute('href', remoteCallInUrl)
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-remotecallin > i.bi`)).toBeVisible()
+          }
+          // calendar
+          if (event.links.calendar) {
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-calendar`)).toHaveAttribute('href', event.links.calendar)
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-calendar > i.bi`)).toBeVisible()
+          }
+        } else {
+          await expect(eventButtons).toHaveCount(0)
+        }
+      }
+    }
+  })
+})
+
+// ====================================================================
+// AGENDA-NEUE (live meeting) | DESKTOP viewport
+// ====================================================================
+
+test.describe('live - desktop', () => {
+  let meetingData
+  const currentTime = DateTime.fromISO('2022-02-01T13:45:15', { zone: 'Asia/Tokyo' })
+  const liveEvents = []
+  let lastLiveEvent = null
+
+  test.beforeAll(async () => {
+    // Generate meeting data
+    meetingData = meetingGenerator.generateAgendaResponse({ dateMode: 'current' })
+
+    // Calculate live events
+    let lastEventStartTime = null
+    for (const event of meetingData.schedule) {
+      const eventStart = DateTime.fromISO(event.startDateTime, { zone: 'Asia/Tokyo' })
+      const eventEnd = eventStart.plus({ seconds: event.duration })
+      if (currentTime >= eventStart && currentTime < eventEnd) {
+        liveEvents.push(event)
+        // -> Find last event before current time
+        if (lastEventStartTime === eventStart.toMillis()) {
+          continue
+        } else {
+          lastEventStartTime = eventStart.toMillis()
+          lastLiveEvent = event
+        }
+      }
+      // -> Skip future events
+      if (eventStart > currentTime) {
+        break
+      }
+    }
+  })
+
+  test.beforeEach(async ({ page }) => {
+    // Intercept Meeting Data API
+    await page.route(`**/api/meeting/${meetingData.meeting.number}/agenda-data`, route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(meetingData)
+      })
+    })
+
+    await page.setViewportSize({
+      width: viewports.desktop[0],
+      height: viewports.desktop[1]
+    })
+
+    // Override Date in page to fixed time
+    await page.addInitScript(`{
+      // Extend Date constructor to default to fixed time
+      Date = class extends Date {
+        constructor(...args) {
+          if (args.length === 0) {
+            super(${currentTime.toMillis()});
+          } else {
+            super(...args);
+          }
+        }
+      }
+      // Override Date.now() to start from fixed time
+      const __DateNowOffset = ${currentTime.toMillis()} - Date.now();
+      const __DateNow = Date.now;
+      Date.now = () => __DateNow() + __DateNowOffset;
+    }`)
+
+    // Visit agenda page and await Meeting Data API call to complete
+    await Promise.all([
+      page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
+      page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
+    ])
+
+    // Wait for page to be ready
+    await page.locator('.agenda h1').waitFor({ state: 'visible' })
+    await setTimeout(500)
+  })
+
+  // -> LIVE MEETING ELEMENTS
+
+  test('live meeting elements', async ({ page }) => {
+    const navItemsLocator = page.locator('.agenda .agenda-quickaccess-jumpto > .nav-item')
+    // Highlighted Live Sessions
+    await expect(page.locator('.agenda .agenda-table-display-event.agenda-table-live')).toHaveCount(liveEvents.length)
+
+    // Live Red Line
+    await expect(page.locator('.agenda .agenda-table-redhand')).toBeVisible()
+    const offsetTop = await page.locator(`#agenda-rowid-${lastLiveEvent.id}`).evaluate(node => node.offsetTop)
+    await expect(await page.locator('.agenda .agenda-table-redhand').evaluate(node => node.offsetTop)).toEqual(offsetTop)
+
+    // Jump to Now
+    await expect(navItemsLocator).toHaveCount(8)
+    await expect(navItemsLocator.first()).toContainText('Now')
+    await navItemsLocator.first().click()
+    await setTimeout(2500)
+    await expect(await isIntersectingViewport(page, '.agenda .agenda-table-redhand')).toBeTruthy()
+  })
+
+  // -> HIDE RED LINE
+
+  test('can toggle the live red line', async ({ page }) => {
+    // Open settings dialog
+    await page.locator('.meeting-nav + button').click()
+    await expect(page.locator('.agenda-settings')).toBeVisible()
+    // Toggle red line switch
+    const redlineSwitchLocator = page.locator('#agenda-settings-tgl-redline div[role=switch]')
+    await redlineSwitchLocator.click()
+    await expect(page.locator('.agenda .agenda-table-redhand')).not.toBeVisible()
+    await redlineSwitchLocator.click()
+    await expect(page.locator('.agenda .agenda-table-redhand')).toBeVisible()
+    // Close dialog
+    await page.locator('.agenda-settings .agenda-settings-actions > button').last().click()
+    await expect(page.locator('.agenda-settings')).not.toBeVisible()
   })
 })
