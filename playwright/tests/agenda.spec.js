@@ -84,7 +84,7 @@ function findFirstConferenceUrl (txt) {
 }
 
 // ====================================================================
-// AGENDA-NEUE (past meeting) | DESKTOP viewport
+// AGENDA (past meeting) | DESKTOP viewport
 // ====================================================================
 
 test.describe('past - desktop', () => {
@@ -1101,7 +1101,7 @@ test.describe('past - desktop', () => {
 })
 
 // ====================================================================
-// AGENDA-NEUE (future meeting) | DESKTOP viewport
+// AGENDA (future meeting) | DESKTOP viewport
 // ====================================================================
 
 test.describe('future - desktop', () => {
@@ -1227,7 +1227,7 @@ test.describe('future - desktop', () => {
 })
 
 // ====================================================================
-// AGENDA-NEUE (live meeting) | DESKTOP viewport
+// AGENDA (live meeting) | DESKTOP viewport
 // ====================================================================
 
 test.describe('live - desktop', () => {
@@ -1315,8 +1315,10 @@ test.describe('live - desktop', () => {
 
     // Live Red Line
     await expect(page.locator('.agenda .agenda-table-redhand')).toBeVisible()
-    const offsetTop = await page.locator(`#agenda-rowid-${lastLiveEvent.id}`).evaluate(node => node.offsetTop)
-    await expect(await page.locator('.agenda .agenda-table-redhand').evaluate(node => node.offsetTop)).toEqual(offsetTop)
+    const expectedOffsetTop = await page.locator(`#agenda-rowid-${lastLiveEvent.id}`).evaluate(node => node.offsetTop)
+    const offsetTop = await page.locator('.agenda .agenda-table-redhand').evaluate(node => node.offsetTop)
+    const isCloseEnough = offsetTop >= expectedOffsetTop - 15 && offsetTop <= expectedOffsetTop + 15
+    await expect(isCloseEnough).toBeTruthy()
 
     // Jump to Now
     await expect(navItemsLocator).toHaveCount(8)
@@ -1342,4 +1344,133 @@ test.describe('live - desktop', () => {
     await page.locator('.agenda-settings .agenda-settings-actions > button').last().click()
     await expect(page.locator('.agenda-settings')).not.toBeVisible()
   })
+})
+
+// ====================================================================
+// AGENDA (past meeting) | SMALL DESKTOP/TABLET/MOBILE viewports
+// ====================================================================
+
+test.describe('past - small screens', () => {
+  let meetingData
+
+  test.beforeAll(async () => {
+    // Generate meeting data
+    meetingData = meetingGenerator.generateAgendaResponse({ dateMode: 'past' })
+  })
+
+  for (const vp of ['smallDesktop', 'tablet', 'mobile']) {
+    test(vp, async ({ page }) => {
+      // Intercept Meeting Data API
+      await page.route(`**/api/meeting/${meetingData.meeting.number}/agenda-data`, route => {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(meetingData)
+        })
+      })
+
+      await page.setViewportSize({
+        width: viewports[vp][0],
+        height: viewports[vp][1]
+      })
+
+      // Visit agenda page and await Meeting Data API call to complete
+      await Promise.all([
+        page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
+        page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
+      ])
+
+      // Wait for page to be ready
+      await page.locator('.agenda h1').waitFor({ state: 'visible' })
+      await setTimeout(500)
+
+      // -> NARROW QUICK ACCESS PANEL (smallDesktop only)
+
+      if (vp === 'smallDesktop') {
+        // Alternate labels for buttons
+        await expect(page.locator('#agenda-quickaccess-filterbyareagroups-btn')).toContainText('Filter...')
+        await expect(page.locator('#agenda-quickaccess-filterbyareagroups-btn + button')).toContainText('Pick...')
+        await expect(page.locator('#agenda-quickaccess-calview-btn')).toContainText('Cal View')
+        await expect(page.locator('#agenda-quickaccess-calview-btn + button')).toContainText('.ics')
+        // -> Shorter date labels for Jump to buttons
+        const jumpNavLocator = page.locator('.agenda .agenda-quickaccess-jumpto > .nav-item')
+        await expect(jumpNavLocator).toHaveCount(7)
+        for (let idx = 0; idx < 7; idx++) {
+          const localDateTime = DateTime.fromISO(meetingData.meeting.startDate, { zone: meetingData.meeting.timezone })
+            .setLocale(BROWSER_LOCALE)
+            .plus({ days: idx })
+            .toFormat('ccc LLL d')
+          await expect(jumpNavLocator.nth(idx)).toContainText(localDateTime)
+          await expect(jumpNavLocator.nth(idx).locator('i.bi')).not.toBeVisible()
+        }
+      }
+
+      // Check for elements that should not exist on smaller screens
+
+      if (vp === 'tablet' || vp === 'mobile') {
+        // has no updated date
+        await expect(page.locator('.agenda > h4 > h6')).not.toBeVisible()
+
+        // has no timezone dropdown selector
+        await expect(page.locator('.agenda .agenda-tz-selector + .agenda-timezone-ddn')).not.toBeVisible()
+
+        // has no floor + group indicators
+        const floorIndLocator = page.locator('.agenda .agenda-table-cell-room > .badge')
+        const floorIndCount = await floorIndLocator.count()
+        for (let idx = 0; idx < floorIndCount; idx++) {
+          await expect(floorIndLocator.nth(idx)).not.toBeVisible()
+        }
+        await expect(page.locator('.agenda .agenda-table-cell-group > .badge')).toHaveCount(0)
+
+        // Session buttons should be hidden in a dropdown menu
+        const linkBtnsLocator = page.locator('.agenda .agenda-table-display-event .agenda-table-cell-links-buttons')
+        const linkBtnsCount = await linkBtnsLocator.count()
+        for (let idx; idx < linkBtnsCount; idx++) {
+          await expect(linkBtnsLocator.nth(idx).locator('> *')).toHaveCount(1)
+        }
+
+        // TODO: Check for dropdown links once changed to a custom panel with standard links
+
+        // Bottom Mobile Bar
+        const barBtnLocator = page.locator('.agenda-mobile-bar > button')
+
+        // has no lateral quick access panel
+        await expect(page.locator('.agenda-quickaccess')).not.toBeVisible()
+
+        // has a bottom mobile bar
+        await expect(page.locator('.agenda-mobile-bar')).toBeVisible()
+        await expect(barBtnLocator).toHaveCount(4)
+        await expect(barBtnLocator.first()).toContainText('Filters')
+        await expect(barBtnLocator.nth(1)).toContainText('Cal')
+        await expect(barBtnLocator.nth(2)).toContainText('.ics')
+        await expect(barBtnLocator.last().locator('> *')).toHaveCount(1)
+        await expect(barBtnLocator.last().locator('> *')).toHaveClass(/bi/)
+
+        // can open the filters overlay
+        await barBtnLocator.first().click()
+        await expect(page.locator('.agenda-personalize')).toBeVisible()
+        await page.locator('.agenda-personalize .agenda-personalize-actions > button').nth(1).click()
+        await expect(page.locator('.agenda-personalize')).toBeHidden()
+
+        // can open the calendar view
+        await barBtnLocator.nth(1).click()
+        await expect(page.locator('.agenda-calendar')).toBeVisible()
+        await page.locator('.agenda-calendar .agenda-calendar-actions > button').nth(1).click()
+        await expect(page.locator('.agenda-calendar')).toBeHidden()
+
+        // can open the ics dropdown
+        await barBtnLocator.nth(2).click()
+        const calDdnLocator = page.locator('.n-dropdown-menu > .n-dropdown-option')
+        await expect(calDdnLocator).toHaveCount(2)
+        await expect(calDdnLocator.first()).toContainText('Subscribe')
+        await expect(calDdnLocator.last()).toContainText('Download')
+
+        // can open the settings overlay
+        await barBtnLocator.last().click()
+        await expect(page.locator('.agenda-settings')).toBeVisible()
+        await page.locator('.agenda-settings .agenda-settings-actions > button').nth(1).click()
+        await expect(page.locator('.agenda-settings')).toBeHidden()
+      }
+    })
+  }
 })
