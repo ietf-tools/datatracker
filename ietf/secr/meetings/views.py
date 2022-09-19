@@ -813,13 +813,20 @@ def times_edit(request, meeting_id, schedule_name, time):
     parts = [ int(x) for x in time.split(':') ]
     dtime = make_aware(datetime.datetime(*parts), meeting.tz())
     timeslots = TimeSlot.objects.filter(meeting=meeting,time=dtime)
+    day = (dtime.date() - meeting.date) // datetime.timedelta(days=1)
+    initial = {'day': day,
+               'time': dtime.strftime('%H:%M'),
+               'duration': timeslots.first().duration,
+               'name': timeslots.first().name}
 
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
             return redirect('ietf.secr.meetings.views.times', meeting_id=meeting_id,schedule_name=schedule_name)
 
-        form = TimeSlotForm(request.POST, meeting=meeting)
+        # Pass "initial" even for a POST so the choices initialize correctly if day is outside
+        # the standard set of options. See TimeSlotForm.get_day_choices().
+        form = TimeSlotForm(request.POST, initial=initial, meeting=meeting)
         if form.is_valid():
             day = form.cleaned_data['day']
             time = get_timeslot_time(form, meeting)
@@ -838,13 +845,6 @@ def times_edit(request, meeting_id, schedule_name, time):
     else:
         # we need to pass the session to the form in order to disallow changing
         # of group after materials have been uploaded
-        day = dtime.strftime('%w')
-        if day == 6:
-            day = -1
-        initial = {'day':day,
-                   'time':dtime.strftime('%H:%M'),
-                   'duration':timeslots.first().duration,
-                   'name':timeslots.first().name}
         form = TimeSlotForm(initial=initial, meeting=meeting)
 
     return render(request, 'meetings/times_edit.html', {
