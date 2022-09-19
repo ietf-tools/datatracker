@@ -1,7 +1,8 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
+import base64
 import datetime
 import hashlib
 import hmac
@@ -165,6 +166,8 @@ def delete_nomcom_templates(nomcom):
     nomcom_template_path = '/nomcom/' + nomcom.group.acronym
     DBTemplate.objects.filter(path__contains=nomcom_template_path).delete()
 
+def command_line_safe_secret(secret):
+    return base64.encodebytes(secret).decode('utf-8')[:-2]
 
 def retrieve_nomcom_private_key(request, year):
     private_key = request.session.get('NOMCOM_PRIVATE_KEY_%s' % year, None)
@@ -173,8 +176,13 @@ def retrieve_nomcom_private_key(request, year):
         return private_key
 
     command = "%s bf -d -in /dev/stdin -k \"%s\" -a"
-    code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
-                                       settings.SECRET_KEY), private_key)
+    code, out, error = pipe(
+        command % (
+            settings.OPENSSL_COMMAND,
+            command_line_safe_secret(settings.NOMCOM_APP_SECRET)
+        ),
+        private_key
+    )
     if code != 0:
         log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
     return out
@@ -185,8 +193,13 @@ def store_nomcom_private_key(request, year, private_key):
         request.session['NOMCOM_PRIVATE_KEY_%s' % year] = ''
     else:
         command = "%s bf -e -in /dev/stdin -k \"%s\" -a"
-        code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
-                                           settings.SECRET_KEY), private_key)
+        code, out, error = pipe(
+            command % (
+                settings.OPENSSL_COMMAND,
+                command_line_safe_secret(settings.NOMCOM_APP_SECRET)
+            ),
+            private_key
+        )
         if code != 0:
             log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
         if error:
