@@ -558,7 +558,7 @@ def misc_session_edit(request, meeting_id, schedule_name, slot_id):
                    'name':session.name,
                    'short':session.short,
                    'day':delta.days,
-                   'time':slot.time.strftime('%H:%M'),
+                   'time':slot.time.astimezone(meeting.tz()).strftime('%H:%M'),
                    'duration':duration_string(slot.duration),
                    'show_location':slot.show_location,
                    'purpose': session.purpose,
