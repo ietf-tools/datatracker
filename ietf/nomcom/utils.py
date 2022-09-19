@@ -4,6 +4,7 @@
 
 import datetime
 import hashlib
+import hmac
 import os
 import re
 import tempfile
@@ -101,8 +102,7 @@ def get_user_email(user):
     return user._email_cache
 
 def get_hash_nominee_position(date, nominee_position_id):
-    return hashlib.md5(('%s%s%s' % (settings.SECRET_KEY, date, nominee_position_id)).encode('utf-8')).hexdigest()
-
+    return hmac.new(settings.NOMCOM_APP_SECRET, f"{date}{nominee_position_id}".encode('utf-8'), hashlib.sha256).hexdigest()
 
 def initialize_templates_for_group(group):
     for template_name in DEFAULT_NOMCOM_TEMPLATES:
