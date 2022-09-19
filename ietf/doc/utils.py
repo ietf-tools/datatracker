@@ -1321,7 +1321,7 @@ def fuzzy_find_documents(name, rev=None):
 
 def bibxml_for_draft(doc, rev=None):
 
-    if rev != None and rev != doc.rev:
+    if rev is not None and rev != doc.rev:
         # find the entry in the history
         for h in doc.history_set.order_by("-time"):
             if rev == h.rev:
@@ -1340,7 +1340,7 @@ def bibxml_for_draft(doc, rev=None):
     if best_events.exists():
         # There was a period where it was possible to get more than one NewRevisionDocEvent for a revision.
         # A future data cleanup would allow this to be simplified
-        best_event = best_events.order_by('-time').last()
+        best_event = best_events.order_by('time').first()
         log.assertion('doc.rev == best_event.rev')
         doc.date = best_event.time.date()
     else:
