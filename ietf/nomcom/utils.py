@@ -167,7 +167,7 @@ def delete_nomcom_templates(nomcom):
     DBTemplate.objects.filter(path__contains=nomcom_template_path).delete()
 
 def command_line_safe_secret(secret):
-    return base64.encodebytes(secret).decode('utf-8')[:-2]
+    return base64.encodebytes(secret).decode('utf-8')[:-1]
 
 def retrieve_nomcom_private_key(request, year):
     private_key = request.session.get('NOMCOM_PRIVATE_KEY_%s' % year, None)
