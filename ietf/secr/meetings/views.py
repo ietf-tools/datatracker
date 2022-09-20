@@ -64,15 +64,23 @@ def build_timeslots(meeting,room=None):
         else:
             source_meeting = get_last_meeting(meeting)
 
-        delta = meeting.date - source_meeting.date
         timeslots = []
-        time_seen = set()
+        time_seen = set()  # time of source_meeting timeslot
         for t in source_meeting.timeslot_set.filter(type='regular'):
             if not t.time in time_seen:
                 time_seen.add(t.time)
                 timeslots.append(t)
         for t in timeslots:
-            new_time = t.time + delta
+            # Create new timeslot at the same wall clock time on the same day relative to meeting start
+            day_offset = t.local_start_time().date() - source_meeting.date
+            new_date = meeting.date + day_offset
+            new_time = make_aware(
+                datetime.datetime.combine(
+                    new_date,
+                    t.local_start_time().time(),
+                ),
+                meeting.tz(),
+            )
             for room in rooms:
                 TimeSlot.objects.create(type_id='regular',
                                         meeting=meeting,
