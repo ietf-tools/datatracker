@@ -1,12 +1,14 @@
-import { DateTime } from 'luxon'
-import { faker } from '@faker-js/faker'
-import seedrandom from 'seedrandom'
-import _lodash from 'lodash' // Cannot use lodash-es as we need to runInContext for constant randomness
-import { startCase, times } from 'lodash-es'
-import slugify from 'slugify'
-import ms from 'ms'
+const { DateTime } = require('luxon')
+const { faker } = require('@faker-js/faker')
+const seedrandom = require('seedrandom')
+const _ = require('lodash')
+const slugify = require('slugify')
+const ms = require('ms')
 
-import floorsMeta from '../fixtures/meeting-floors.json'
+const floorsMeta = require('../data/meeting-floors')
+
+const urlRe = /http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+/
+const conferenceDomains = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 'gather.town']
 
 const xslugify = (str) => slugify(str.replace('/', '-'), { lower: true, strict: true })
 
@@ -20,7 +22,7 @@ const sessionsWithWebex = [3, 4]
 // Use constant randomness seed
 seedrandom(TEST_SEED.toString(), { global: true })
 faker.seed(TEST_SEED)
-const { sample, sampleSize } = _lodash.runInContext()
+const { sample, sampleSize } = _.runInContext()
 
 /**
  * Generate area response from label + children
@@ -85,7 +87,6 @@ function findAreaGroup (slug, areas) {
   throw new Error('Requested group does not exist!')
 }
 
-
 /**
  * Reverse areas and groups mapping
  */
@@ -142,10 +143,12 @@ function createEvent ({
     id: ++lastEventId,
     sessionId: ++lastSessionId,
     room: room.name,
-    location: hasLocation ? {
-      short: floor.short,
-      name: floor.name
-    } : {},
+    location: hasLocation
+      ? {
+          short: floor.short,
+          name: floor.name
+        }
+      : {},
     acronym: group.keyword,
     duration: typeof duration === 'string' ? ms(duration) / 1000 : duration,
     name: eventName,
@@ -154,9 +157,9 @@ function createEvent ({
     type,
     isBoF,
     filterKeywords: [
-      "coding",
-      "hackathon",
-      "hackathon-sessc"
+      'coding',
+      'hackathon',
+      'hackathon-sessc'
     ],
     groupAcronym: group.keyword,
     groupName: faker.lorem.sentence(faker.mersenne.rand(5, 2)),
@@ -170,22 +173,24 @@ function createEvent ({
       showAgenda
     },
     agenda: {
-      url: hasAgenda ? `https://datatracker.ietf.org/meeting/123/materials/agenda-123-ietf-sessa-00` : null
+      url: hasAgenda ? 'https://datatracker.ietf.org/meeting/123/materials/agenda-123-ietf-sessa-00' : null
     },
     orderInMeeting: 1,
     short: eventName,
-    sessionToken: "sessa",
+    sessionToken: 'sessa',
     links: {
       chat: `https://zulip.ietf.org/#narrow/stream/${group.keyword}`,
       chatArchive: `https://zulip.ietf.org/#narrow/stream/${group.keyword}`,
-      recordings: hasRecordings ? [
-        {
-          id: ++lastRecordingId,
-          name: `recording-123-${group.keyword}-1`,
-          title: `Video recording for ${group.keyword} on ${startDateTime.toFormat('yyyy-LL-dd \'at\' HH:mm:ss')}`,
-          url: "https://www.youtube.com/watch?v=1eq_5xvacl0"
-        }
-      ] : [],
+      recordings: hasRecordings
+        ? [
+            {
+              id: ++lastRecordingId,
+              name: `recording-123-${group.keyword}-1`,
+              title: `Video recording for ${group.keyword} on ${startDateTime.toFormat('yyyy-LL-dd \'at\' HH:mm:ss')}`,
+              url: 'https://www.youtube.com/watch?v=1eq_5xvacl0'
+            }
+          ]
+        : [],
       videoStream: showAgenda && hasVideoStream ? 'https://meetings.conf.meetecho.com/ietf{meeting.number}/?group={group.acronym}&short={short}&item={order_number}' : null,
       audioStream: hasAgenda ? 'https://mp3.conf.meetecho.com/ietf123/{group.acronym}/{order_number}.m3u' : null,
       webex: hasWebex ? 'https://webex.com/123' : null,
@@ -195,7 +200,7 @@ function createEvent ({
   }
 }
 
-export default {
+module.exports = {
   /**
    * Generate a standard agenda data reponse
    */
@@ -219,17 +224,17 @@ export default {
     const endDate = startDate.plus({ days: 7 })
 
     // Generate floors
-    const floors = times(6, (idx) => {
+    const floors = _.times(6, (idx) => {
       const floorIdx = idx + 1
       const floor = floorsMeta[idx]
       return {
         id: floorIdx,
         image: `/media/floor/${floor.path}`,
-        name: `Level ${startCase(faker.color.human())} ${floorIdx}`,
+        name: `Level ${_.startCase(faker.color.human())} ${floorIdx}`,
         short: `L${floorIdx}`,
         width: floor.width,
         height: floor.height,
-        rooms: times(faker.mersenne.rand(10, 5), (ridx) => {
+        rooms: _.times(faker.mersenne.rand(10, 5), (ridx) => {
           const roomName = `${faker.science.chemicalElement().name} ${floorIdx}-${ridx + 1}`
           // Keep 10% margin on each side
           const roomXUnit = Math.round(floor.width / 10)
@@ -239,7 +244,7 @@ export default {
           return {
             id: floorIdx * 100 + ridx,
             name: roomName,
-            functionalName: startCase(faker.lorem.words(2)),
+            functionalName: _.startCase(faker.lorem.words(2)),
             slug: xslugify(roomName),
             left: roomX,
             right: roomX + roomXUnit,
@@ -262,7 +267,7 @@ export default {
       for (const area of firstAreasNames) {
         firstAreas.push(createArea({
           label: area,
-          children: times(faker.mersenne.rand(25, 2), (idx) => {
+          children: _.times(faker.mersenne.rand(25, 2), (idx) => {
             return createGroup({ mayBeBof: true })
           })
         }))
@@ -275,7 +280,7 @@ export default {
       for (const area of ['UVW', 'XYZ0']) {
         secondAreas.push(createArea({
           label: area,
-          children: times(faker.mersenne.rand(25, 2), (idx) => {
+          children: _.times(faker.mersenne.rand(25, 2), (idx) => {
             return createGroup({ mayBeBof: true })
           })
         }))
@@ -301,13 +306,13 @@ export default {
           }),
           createArea({
             label: 'Office hours',
-            children: firstAreasNames.map(n => createGroup({ label: `${n} Office Hours`}))
+            children: firstAreasNames.map(n => createGroup({ label: `${n} Office Hours` }))
           }),
           createArea({
             label: 'Open meeting',
             children: [
               createGroup({ label: 'WG Chairs Forum' }),
-              createGroup({ label: `Newcomers' Feedback Session` })
+              createGroup({ label: 'Newcomers\' Feedback Session' })
             ]
           }),
           createArea({
@@ -327,7 +332,7 @@ export default {
           createArea({
             label: 'Social',
             children: [
-              createGroup({ label: `Newcomers' Quick Connections` }),
+              createGroup({ label: 'Newcomers\' Quick Connections' }),
               createGroup({ label: 'Welcome Reception', toggledBy: ['ietf'] }),
               createGroup({ label: 'Break', toggledBy: ['secretariat'] }),
               createGroup({ label: 'Beverage and Snack Break', toggledBy: ['secretariat'] }),
@@ -337,7 +342,7 @@ export default {
           createArea({
             label: 'Tutorial',
             children: [
-              createGroup({ label: `Tutorial: Newcomers' Overview` })
+              createGroup({ label: 'Tutorial: Newcomers\' Overview' })
             ]
           }),
           createArea({
@@ -434,7 +439,7 @@ export default {
       }, floors))
 
       schedule.push(createEvent({
-        name: `Newcomers' Quick Connections (Note that pre-registration is required)`,
+        name: 'Newcomers\' Quick Connections (Note that pre-registration is required)',
         startDateTime: day2.set({ hour: 16 }),
         duration: '1h',
         ...findAreaGroup('newcomers-quick-connections', categories[2]),
@@ -506,7 +511,7 @@ export default {
         }, floors))
 
         // -> Session I
-        times(8, () => { // 8 lanes per session time
+        _.times(8, () => { // 8 lanes per session time
           const { area, ...group } = daySessions.pop()
           schedule.push(createEvent({
             name: 'Session I',
@@ -535,7 +540,7 @@ export default {
         }, floors))
 
         // -> Session II
-        times(8, () => { // 8 lanes per session time
+        _.times(8, () => { // 8 lanes per session time
           const { area, ...group } = daySessions.pop()
           schedule.push(createEvent({
             name: 'Session II',
@@ -564,9 +569,9 @@ export default {
             type: 'break',
             ...findAreaGroup('beverage-and-snack-break', categories[2])
           }, floors))
-  
+
           // -> Session III
-          times(8, () => { // 8 lanes per session time
+          _.times(8, () => { // 8 lanes per session time
             const { area, ...group } = daySessions.pop()
             schedule.push(createEvent({
               name: 'Session III',
@@ -627,5 +632,41 @@ export default {
       schedule,
       floors
     }
+  },
+
+  /**
+   * Format URL by replacing inline variables
+   *
+   * @param {String} url Raw URL
+   * @param {Object} session Session Object
+   * @param {String} meetingNumber Meeting Number
+   * @returns Formatted URL
+   */
+  formatLinkUrl: (url, session, meetingNumber) => {
+    return url
+      ? url.replace('{meeting.number}', meetingNumber)
+        .replace('{group.acronym}', session.groupAcronym)
+        .replace('{short}', session.short)
+        .replace('{order_number}', session.orderInMeeting)
+      : url
+  },
+
+  /**
+   * Find the first URL in text matching a conference domain
+   *
+   * @param {String} txt Raw Text
+   * @returns First URL found
+   */
+  findFirstConferenceUrl: (txt) => {
+    try {
+      const fUrl = txt.match(urlRe)
+      if (fUrl && fUrl[0].length > 0) {
+        const pUrl = new URL(fUrl[0])
+        if (conferenceDomains.some(d => pUrl.hostname.endsWith(d))) {
+          return fUrl[0]
+        }
+      }
+    } catch (err) { }
+    return null
   }
 }

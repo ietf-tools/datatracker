@@ -7,7 +7,7 @@ export default function servePreviewAssets () {
     name: 'serve-preview-assets',
     configurePreviewServer(server) {
       server.middlewares.use('/media/floor', (req, res, next) => {
-        send(req, url.parse(req.url).pathname, { root: path.join(process.cwd(), 'cypress/fixtures/floor-plan-images') }).pipe(res)
+        send(req, url.parse(req.url).pathname, { root: path.join(process.cwd(), 'playwright/data/floor-plan-images') }).pipe(res)
       })
     }
   }
