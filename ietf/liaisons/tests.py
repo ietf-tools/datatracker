@@ -14,6 +14,8 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.urls import reverse as urlreverse
 from django.db.models import Q
+from django.utils import timezone
+
 from io import StringIO
 from pyquery import PyQuery
 
@@ -50,7 +52,7 @@ def get_liaison_post_data(type='incoming'):
                 to_contacts='to_contacts@example.com',
                 purpose="info",
                 title="title",
-                submitted_date=datetime.datetime.today().strftime("%Y-%m-%d"),
+                submitted_date=timezone.now().strftime("%Y-%m-%d"),
                 body="body",
                 send="1" )
 
@@ -385,7 +387,7 @@ class LiaisonManagementTests(TestCase):
 
     def test_edit_liaison(self):
         liaison = LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
-        LiaisonStatementEventFactory(statement=liaison,type_id='submitted', time=datetime.datetime.now()-datetime.timedelta(days=1))
+        LiaisonStatementEventFactory(statement=liaison,type_id='submitted', time=timezone.now()-datetime.timedelta(days=1))
         LiaisonStatementEventFactory(statement=liaison,type_id='posted')
         from_group = liaison.from_groups.first()
         to_group = liaison.to_groups.first()
@@ -1021,7 +1023,7 @@ class LiaisonManagementTests(TestCase):
         LiaisonStatementEventFactory(type_id='posted', statement__body="Has recently in its body",statement__from_groups=[GroupFactory(type_id='sdo',acronym='ulm'),])
         # Statement 2
         s2 = LiaisonStatementEventFactory(type_id='posted', statement__body="That word does not occur here", statement__title="Nor does it occur here")
-        s2.time=datetime.datetime(2010,1,1)
+        s2.time=datetime.datetime(2010, 1, 1, tzinfo=datetime.timezone.utc)
         s2.save()
 
         # test list only, no search filters

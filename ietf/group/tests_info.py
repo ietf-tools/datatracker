@@ -1900,7 +1900,7 @@ class StatusUpdateTests(TestCase):
     def test_view_status_update_for_meeting(self):
         chair = RoleFactory(name_id='chair',group__type_id='wg')
         GroupEventFactory(type='status_update',group=chair.group)
-        sess = SessionFactory.create(meeting__type_id='ietf',group=chair.group,meeting__date=datetime.datetime.today()-datetime.timedelta(days=1))
+        sess = SessionFactory.create(meeting__type_id='ietf',group=chair.group,meeting__date=timezone.now()-datetime.timedelta(days=1))
         url = urlreverse('ietf.group.views.group_about_status_meeting',kwargs={'acronym':chair.group.acronym,'num':sess.meeting.number}) 
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)

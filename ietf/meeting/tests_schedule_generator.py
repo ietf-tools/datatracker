@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2020, All Rights Reserved
 import calendar
 import datetime
+import pytz
 from io import StringIO
 
 from django.core.management.base import CommandError
@@ -36,9 +37,11 @@ class ScheduleGeneratorTest(TestCase):
                     t = TimeSlotFactory(
                         meeting=self.meeting,
                         location=room,
-                        time=datetime.datetime.combine(
-                            self.meeting.date + datetime.timedelta(days=day),
-                            datetime.time(hour, 0),
+                        time=self.meeting.tz().localize(
+                            datetime.datetime.combine(
+                                self.meeting.date + datetime.timedelta(days=day),
+                                datetime.time(hour, 0),
+                            )
                         ),
                         duration=datetime.timedelta(minutes=60),
                     )
@@ -306,8 +309,11 @@ class ScheduleGeneratorTest(TestCase):
            add_to_schedule=False
         )
         # use a timeslot not on Sunday
+        meeting_date = pytz.utc.localize(
+            datetime.datetime.combine(self.meeting.get_meeting_date(1), datetime.time())
+        )
         ts = self.meeting.timeslot_set.filter(
-            time__gt=self.meeting.date + datetime.timedelta(days=1),
+            time__gt=meeting_date,
             location__capacity__lt=base_reg_session.attendees,
         ).order_by(
             'time'

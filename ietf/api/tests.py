@@ -30,6 +30,7 @@ from ietf.person.models import User
 from ietf.person.models import PersonalApiKey
 from ietf.stats.models import MeetingRegistration
 from ietf.utils.mail import outbox, get_payload_text
+from ietf.utils.models import DumpInfo
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 
 OMITTED_APPS = (
@@ -419,10 +420,17 @@ class CustomApiTests(TestCase):
         self.assertEqual(set(missing_fields), set(drop_fields))
 
     def test_api_version(self):
+        DumpInfo.objects.create(date=timezone.datetime(2022,8,31,7,10,1,tzinfo=timezone.utc), host='testapi.example.com',tz='UTC')
         url = urlreverse('ietf.api.views.version')
         r = self.client.get(url)
         data = r.json()
         self.assertEqual(data['version'], ietf.__version__+ietf.__patch__)
+        self.assertEqual(data['dumptime'], "2022-08-31 07:10:01 +0000")
+        DumpInfo.objects.update(tz='PST8PDT')
+        r = self.client.get(url)
+        data = r.json()        
+        self.assertEqual(data['dumptime'], "2022-08-31 07:10:01 -0700")
+
 
     def test_api_appauth(self):
         url = urlreverse('ietf.api.views.app_auth')

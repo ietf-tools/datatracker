@@ -7,6 +7,7 @@ import datetime
 from simple_history.models import HistoricalRecords
 
 from django.db import models
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -95,7 +96,7 @@ class UnavailablePeriod(models.Model):
 
 class ReviewWish(models.Model):
     """Reviewer wishes to review a document when it becomes available for review."""
-    time        = models.DateTimeField(default=datetime.datetime.now)
+    time        = models.DateTimeField(default=timezone.now)
     team        = ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     person      = ForeignKey(Person)
     doc         = ForeignKey(Document)
@@ -125,7 +126,7 @@ class ReviewRequest(models.Model):
 
     # Fields filled in on the initial record creation - these
     # constitute the request part.
-    time          = models.DateTimeField(default=datetime.datetime.now)
+    time          = models.DateTimeField(default=timezone.now)
     type          = ForeignKey(ReviewTypeName)
     doc           = ForeignKey(Document, related_name='reviewrequest_set')
     team          = ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
