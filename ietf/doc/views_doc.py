@@ -63,7 +63,8 @@ from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_wit
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content, build_doc_meta_block,
     augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event,
-    build_doc_supermeta_block, build_file_urls, update_documentauthors, fuzzy_find_documents)
+    build_doc_supermeta_block, build_file_urls, update_documentauthors, fuzzy_find_documents,
+    bibxml_for_draft)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_all_groups_of_type, can_manage_materials, group_features_role_filter
@@ -1020,41 +1021,9 @@ def document_bibxml(request, name, rev=None):
             rev = None
 
     doc = get_object_or_404(Document, name=name, type_id='draft')
-
-    latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
-    latest_rev = latest_revision.rev if latest_revision else None
-
-    if rev != None:
-        # find the entry in the history
-        for h in doc.history_set.order_by("-time"):
-            if rev == h.rev:
-                doc = h
-                break
-    if rev and rev != doc.rev:
-        raise Http404("Revision not found")
-
-    ### PATCH to deal with unexpected multiple NewRevisionDocEvent objects for the same revision on a document
-    doc_event_qs = NewRevisionDocEvent.objects.filter(doc__name=doc.name, rev=(rev or latest_rev))
-    if doc_event_qs.count():
-        doc_event = doc_event_qs.order_by('time').last()
-        doc.date = doc_event.time.date()
-    else:
-        doc.date = doc.time.date()      # Even if this may be incoreect, what would be better?
         
-#    try:
-#        doc_event = NewRevisionDocEvent.objects.get(doc__name=doc.name, rev=(rev or latest_rev))
-#        doc.date = doc_event.time.date()
-#    except DocEvent.DoesNotExist:
-#        doc.date = doc.time.date()      # Even if this may be incoreect, what would be better?
+    return HttpResponse(bibxml_for_draft(doc, rev), content_type="application/xml; charset=utf-8")
 
-    return render(request, "doc/bibxml.xml",
-                              dict(
-                                  name=name,
-                                  doc=doc,
-                                  doc_bibtype='I-D',
-                               ),
-                              content_type="application/xml; charset=utf-8",
-                          )
 
 
 def document_writeup(request, name):

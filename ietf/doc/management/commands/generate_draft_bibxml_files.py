@@ -10,12 +10,12 @@ import sys
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.template.loader import render_to_string
 from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import NewRevisionDocEvent
+from ietf.doc.utils import bibxml_for_draft
 
 DEFAULT_DAYS = 7
 
@@ -77,21 +77,8 @@ class Command(BaseCommand):
             self.mutter('%s %s' % (e.time, e.doc.name))
             try:
                 doc = e.doc
-                if e.rev != doc.rev:
-                    for h in doc.history_set.order_by("-time"):
-                        if e.rev == h.rev:
-                            doc = h
-                            break
-                doc.date = e.time.date()
-                ref_text = '%s' % render_to_string('doc/bibxml.xml', {'name':doc.name, 'doc': doc, 'doc_bibtype':'I-D'})
-                # if e.rev == e.doc.rev:
-                #     for name in (doc.name, doc.name[6:]):
-                #         ref_file_name = os.path.join(bibxmldir, 'reference.I-D.%s.xml' % (name, ))
-                #         self.write(ref_file_name, ref_text)
-                # for name in (doc.name, doc.name[6:]):
-                #     ref_rev_file_name = os.path.join(bibxmldir, 'reference.I-D.%s-%s.xml' % (name, doc.rev))
-                #     self.write(ref_rev_file_name, ref_text)
-                ref_rev_file_name = os.path.join(bibxmldir, 'reference.I-D.%s-%s.xml' % (doc.name, doc.rev))
-                self.write(ref_rev_file_name, ref_text)
+                bibxml = bibxml_for_draft(doc, e.rev)
+                ref_rev_file_name = os.path.join(bibxmldir, 'reference.I-D.%s-%s.xml' % (doc.name, e.rev))
+                self.write(ref_rev_file_name, bibxml)
             except Exception as ee:
                 sys.stderr.write('\n%s-%s: %s\n' % (doc.name, doc.rev, ee))
