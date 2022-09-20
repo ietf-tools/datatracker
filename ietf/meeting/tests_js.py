@@ -271,14 +271,32 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         # modal_open.click()
 
         self.assertTrue(self.driver.find_element(By.CSS_SELECTOR, "#timeslot-group-toggles-modal").is_displayed())
-        self.driver.find_element(By.CSS_SELECTOR, "#timeslot-group-toggles-modal [value=\"{}\"]".format("ts-group-{}-{}".format(slot2.time.strftime("%Y%m%d-%H%M"), int(slot2.duration.total_seconds() / 60)))).click()
+        self.driver.find_element(
+            By.CSS_SELECTOR,
+            "#timeslot-group-toggles-modal [value=\"{}\"]".format(
+                "ts-group-{}-{}".format(
+                    slot2.time.astimezone(slot2.tz()).strftime("%Y%m%d-%H%M"),
+                    int(slot2.duration.total_seconds() / 60),
+                ),
+            ),
+        ).click()
         self.driver.find_element(By.CSS_SELECTOR, "#timeslot-group-toggles-modal [data-bs-dismiss=\"modal\"]").click()
         self.assertTrue(not self.driver.find_element(By.CSS_SELECTOR, "#timeslot-group-toggles-modal").is_displayed())
 
         # swap days
-        self.driver.find_element(By.CSS_SELECTOR, ".day .swap-days[data-dayid=\"{}\"]".format(slot4.time.date().isoformat())).click()
+        self.driver.find_element(
+            By.CSS_SELECTOR,
+            ".day .swap-days[data-dayid=\"{}\"]".format(
+                slot4.time.astimezone(slot4.tz()).date().isoformat(),
+            ),
+        ).click()
         self.assertTrue(self.driver.find_element(By.CSS_SELECTOR, "#swap-days-modal").is_displayed())
-        self.driver.find_element(By.CSS_SELECTOR, "#swap-days-modal input[name=\"target_day\"][value=\"{}\"]".format(slot1.time.date().isoformat())).click()
+        self.driver.find_element(
+            By.CSS_SELECTOR,
+            "#swap-days-modal input[name=\"target_day\"][value=\"{}\"]".format(
+                slot1.time.astimezone(slot1.tz()).date().isoformat(),
+            ),
+        ).click()
         self.driver.find_element(By.CSS_SELECTOR, "#swap-days-modal button[type=\"submit\"]").click()
 
         self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, '#timeslot{} #session{}'.format(slot4.pk, s1.pk)),
@@ -430,21 +448,24 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
 
         past_swap_days_buttons = self.driver.find_elements(By.CSS_SELECTOR,
             ','.join(
-                '.swap-days[data-start="{}"]'.format(ts.time.date().isoformat()) for ts in past_timeslots
+                '.swap-days[data-start="{}"]'.format(ts.time.astimezone(ts.tz()).date().isoformat())
+                for ts in past_timeslots
             )
         )
         self.assertEqual(len(past_swap_days_buttons), len(past_timeslots), 'Missing past swap days buttons')
 
         future_swap_days_buttons = self.driver.find_elements(By.CSS_SELECTOR,
             ','.join(
-                '.swap-days[data-start="{}"]'.format(ts.time.date().isoformat()) for ts in future_timeslots
+                '.swap-days[data-start="{}"]'.format(ts.time.astimezone(ts.tz()).date().isoformat())
+                for ts in future_timeslots
             )
         )
         self.assertEqual(len(future_swap_days_buttons), len(future_timeslots), 'Missing future swap days buttons')
 
         now_swap_days_buttons = self.driver.find_elements(By.CSS_SELECTOR,
             ','.join(
-                '.swap-days[data-start="{}"]'.format(ts.time.date().isoformat()) for ts in now_timeslots
+                '.swap-days[data-start="{}"]'.format(ts.time.astimezone(ts.tz()).date().isoformat())
+                for ts in now_timeslots
             )
         )
         # only one "now" button because both sessions are on the same day
@@ -495,7 +516,8 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertFalse(
             any(radio.is_enabled()
                 for radio in modal.find_elements(By.CSS_SELECTOR, ','.join(
-                'input[name="target_day"][value="{}"]'.format(ts.time.date().isoformat()) for ts in past_timeslots)
+                'input[name="target_day"][value="{}"]'.format(ts.time.astimezone(ts.tz()).date().isoformat())
+                for ts in past_timeslots)
             )),
             'Past day is enabled in swap-days modal for official schedule',
         )
@@ -504,14 +526,16 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertTrue(
             all(radio.is_enabled()
                 for radio in modal.find_elements(By.CSS_SELECTOR, ','.join(
-                'input[name="target_day"][value="{}"]'.format(ts.time.date().isoformat()) for ts in enabled_timeslots)
+                'input[name="target_day"][value="{}"]'.format(ts.time.astimezone(ts.tz()).date().isoformat())
+                for ts in enabled_timeslots)
             )),
             'Future day is not enabled in swap-days modal for official schedule',
         )
         self.assertFalse(
             any(radio.is_enabled()
                 for radio in modal.find_elements(By.CSS_SELECTOR, ','.join(
-                'input[name="target_day"][value="{}"]'.format(ts.time.date().isoformat()) for ts in now_timeslots)
+                'input[name="target_day"][value="{}"]'.format(ts.time.astimezone(ts.tz()).date().isoformat())
+                for ts in now_timeslots)
             )),
             '"Now" day is enabled in swap-days modal for official schedule',
         )
