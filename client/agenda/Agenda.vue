@@ -7,7 +7,6 @@
     span #[strong IETF {{agendaStore.meeting.number}}] Meeting Agenda {{titleExtra}}
     .meeting-h1-badges.d-none.d-sm-flex
       span.meeting-warning(v-if='agendaStore.meeting.warningNote') {{agendaStore.meeting.warningNote}}
-      span.meeting-beta BETA
   h4
     span {{agendaStore.meeting.city}}, {{ meetingDate }}
     h6.float-end.d-none.d-lg-inline(v-if='meetingUpdated') #[span.text-muted Updated:] {{ meetingUpdated }}

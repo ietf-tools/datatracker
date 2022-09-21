@@ -58,7 +58,7 @@
                     span.badge {{item.location.short}}
                   span {{item.location.name}}
                 router-link.discreet(
-                  :to='`/meeting/` + agendaStore.meeting.number + `/floor-plan-neue?room=` + xslugify(item.room)'
+                  :to='`/meeting/` + agendaStore.meeting.number + `/floor-plan?room=` + xslugify(item.room)'
                   :aria-label='item.room'
                   ) {{item.room}}
               span(v-else) {{item.room}}
