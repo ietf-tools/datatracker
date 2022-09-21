@@ -3779,20 +3779,21 @@ def proceedings(request, num=None):
                 meeting_sessions.append(s)
         ietf_areas.append((area, meeting_sessions, not_meeting_sessions))
 
-    return render(request, "meeting/proceedings.html", {
-        'meeting': meeting,
-        'plenaries': plenaries, 'ietf': ietf, 'training': training, 'irtf': irtf, 'iab': iab,
-        'ietf_areas': ietf_areas,
-        'cut_off_date': cut_off_date,
-        'cor_cut_off_date': cor_cut_off_date,
-        'submission_started': now > begin_date,
-        'cache_version': cache_version,
-        'attendance': meeting.get_attendance(),
-        'meetinghost_logo': {
-            'max_height': settings.MEETINGHOST_LOGO_MAX_DISPLAY_HEIGHT,
-            'max_width': settings.MEETINGHOST_LOGO_MAX_DISPLAY_WIDTH,
-        }
-    })
+    with timezone.override(meeting.tz()):
+        return render(request, "meeting/proceedings.html", {
+            'meeting': meeting,
+            'plenaries': plenaries, 'ietf': ietf, 'training': training, 'irtf': irtf, 'iab': iab,
+            'ietf_areas': ietf_areas,
+            'cut_off_date': cut_off_date,
+            'cor_cut_off_date': cor_cut_off_date,
+            'submission_started': now > begin_date,
+            'cache_version': cache_version,
+            'attendance': meeting.get_attendance(),
+            'meetinghost_logo': {
+                'max_height': settings.MEETINGHOST_LOGO_MAX_DISPLAY_HEIGHT,
+                'max_width': settings.MEETINGHOST_LOGO_MAX_DISPLAY_WIDTH,
+            }
+        })
 
 @role_required('Secretariat')
 def finalize_proceedings(request, num=None):
