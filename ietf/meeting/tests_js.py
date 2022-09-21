@@ -8,7 +8,6 @@ import shutil
 import os
 import re
 from unittest import skipIf
-import urllib.parse
 
 import django
 from django.utils.text import slugify
@@ -22,7 +21,6 @@ from django.test.utils import override_settings
 import debug                            # pyflakes:ignore
 
 from ietf.doc.factories import DocumentFactory
-from ietf.doc.models import State
 from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
@@ -42,7 +40,7 @@ if selenium_enabled():
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions
-    from selenium.common.exceptions import NoSuchElementException, TimeoutException
+    from selenium.common.exceptions import TimeoutException
     # from selenium.webdriver.common.keys import Keys
 
 
