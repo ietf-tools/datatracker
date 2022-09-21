@@ -13,6 +13,7 @@ import textwrap
 
 from collections import defaultdict, namedtuple
 from urllib.parse import quote
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib import messages
@@ -1351,14 +1352,15 @@ def bibxml_for_draft(doc, rev=None):
     latest_revision_event = doc.latest_event(NewRevisionDocEvent, type="new_revision")
     latest_revision_rev = latest_revision_event.rev if latest_revision_event else None
     best_events = NewRevisionDocEvent.objects.filter(doc__name=doc.name, rev=(rev or latest_revision_rev))
+    tzinfo = ZoneInfo(settings.TIME_ZONE)
     if best_events.exists():
         # There was a period where it was possible to get more than one NewRevisionDocEvent for a revision.
         # A future data cleanup would allow this to be simplified
         best_event = best_events.order_by('time').first()
         log.assertion('doc.rev == best_event.rev')
-        doc.date = best_event.time.date()
+        doc.date = best_event.time.astimezone(tzinfo).date()
     else:
-        doc.date = doc.time.date()      # Even if this may be incoreect, what would be better?
+        doc.date = doc.time.astimezone(tzinfo).date()      # Even if this may be incorrect, what would be better?
 
     return render_to_string('doc/bibxml.xml', {'name':doc.name, 'doc': doc, 'doc_bibtype':'I-D'})
 
