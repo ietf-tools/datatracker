@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin static django_bootstrap5 %}
+{% load origin static django_bootstrap5 tz %}
 {% block title %}
     {% if agenda_sp %}
         Revise
@@ -24,7 +24,7 @@
         </small>
     </h1>
     {% if session_number %}
-        <h2>Session {{ session_number }} : {{ session.official_timeslotassignment.timeslot.time|date:"D M-d-Y Hi" }}</h2>
+        <h2>Session {{ session_number }} : {{ session.official_timeslotassignment.timeslot.time|timezone:session.meeting.time_zone|date:"D M-d-Y Hi" }}</h2>
     {% endif %}
     <form enctype="multipart/form-data" method="post" class="my-3">
         {% csrf_token %}
