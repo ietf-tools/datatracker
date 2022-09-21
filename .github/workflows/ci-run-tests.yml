@@ -10,8 +10,8 @@ on:
       - 'package.json'
 
 jobs:
-  tests:
-    name: Run Tests
+  tests-python:
+    name: Run Tests (Python)
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/datatracker-app-base:latest
     
@@ -69,3 +69,39 @@ jobs:
       with:
         name: coverage
         path: coverage.json
+        
+  tests-playwright:
+    name: Run Tests (Playwright)
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox]
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+
+    - name: Run all tests
+      run: |
+        echo "Installing dependencies..."
+        yarn
+        echo "Installing Playwright..."
+        cd playwright
+        mkdir test-results
+        npm ci
+        npx playwright install --with-deps ${{ matrix.project }}
+        echo "Running tests..."
+        npx playwright test --project=${{ matrix.project }}
+        
+    - name: Upload Report
+      uses: actions/upload-artifact@v3.0.0
+      if: ${{ always() }}
+      continue-on-error: true
+      with:
+        name: playwright-results-${{ matrix.project }}
+        path: playwright/test-results/
+        if-no-files-found: ignore
