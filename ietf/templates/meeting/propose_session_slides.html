@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin static django_bootstrap5 %}
+{% load origin static django_bootstrap5 tz %}
 {% block title %}Propose Slides for {{ session.meeting }} : {{ session.group.acronym }}{% endblock %}
 {% block content %}
     {% origin %}
@@ -13,7 +13,7 @@
     </h1>
     {% if session_number %}
         <h2 class="mt-3">
-            Session {{ session_number }} : {{ session.official_timeslotassignment.timeslot.time|date:"D M-d-Y Hi" }}
+            Session {{ session_number }} : {{ session.official_timeslotassignment.timeslot.time|timezone:session.meeting.time_zone|date:"D M-d-Y Hi" }}
         </h2>
     {% endif %}
     <p class="alert alert-info my-3">
