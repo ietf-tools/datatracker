@@ -136,12 +136,13 @@ def materials(request, num=None):
         if meeting.number.isdigit() and int(meeting.number) > 96:
             return redirect('ietf.meeting.views.proceedings', num=meeting.number)
         else:
-            return render(request, "meeting/materials_upload_closed.html", {
-                'meeting_num': meeting.number,
-                'begin_date': begin_date,
-                'cut_off_date': cut_off_date,
-                'cor_cut_off_date': cor_cut_off_date
-            })
+            with timezone.override(meeting.tz()):
+                return render(request, "meeting/materials_upload_closed.html", {
+                    'meeting_num': meeting.number,
+                    'begin_date': begin_date,
+                    'cut_off_date': cut_off_date,
+                    'cor_cut_off_date': cor_cut_off_date
+                })
 
     past_cutoff_date = date_today() > meeting.get_submission_correction_date()
 
@@ -177,20 +178,21 @@ def materials(request, num=None):
         for type_name in ProceedingsMaterialTypeName.objects.all()
     ]
 
-    return render(request, "meeting/materials.html", {
-        'meeting': meeting,
-        'proceedings_materials': proceedings_materials,
-        'plenaries': plenaries,
-        'ietf': ietf,
-        'training': training,
-        'irtf': irtf,
-        'iab': iab,
-        'other': other,
-        'cut_off_date': cut_off_date,
-        'cor_cut_off_date': cor_cut_off_date,
-        'submission_started': now > begin_date,
-        'old': old,
-    })
+    with timezone.override(meeting.tz()):
+        return render(request, "meeting/materials.html", {
+            'meeting': meeting,
+            'proceedings_materials': proceedings_materials,
+            'plenaries': plenaries,
+            'ietf': ietf,
+            'training': training,
+            'irtf': irtf,
+            'iab': iab,
+            'other': other,
+            'cut_off_date': cut_off_date,
+            'cor_cut_off_date': cor_cut_off_date,
+            'submission_started': now > begin_date,
+            'old': old,
+        })
 
 def current_materials(request):
     today = date_today()
