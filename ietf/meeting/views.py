@@ -1868,13 +1868,14 @@ def agenda_by_room(request, num=None, name=None, owner=None):
         schedule__in=[schedule, schedule.base if schedule else None]
     ).prefetch_related('timeslot', 'timeslot__location', 'session', 'session__group', 'session__group__parent')
 
-    ss_by_day = OrderedDict()
-    for day in assignments.dates('timeslot__time','day'):
-        ss_by_day[day]=[]
+    ss_by_day = {}
     for ss in assignments.order_by('timeslot__location__functional_name','timeslot__location__name','timeslot__time'):
-        day = ss.timeslot.time.date()
-        ss_by_day[day].append(ss)
-    return render(request,"meeting/agenda_by_room.html",{"meeting":meeting,"schedule":schedule,"ss_by_day":ss_by_day})
+        # sorts by time within each day but days are not in order at this point
+        day = ss.timeslot.time.astimezone(meeting.tz()).date()
+        ss_by_day.setdefault(day, []).append(ss)
+    ss_by_day = OrderedDict((key, ss_by_day[key]) for key in sorted(ss_by_day))  # fix day ordering
+    with timezone.override(meeting.tz()):
+        return render(request,"meeting/agenda_by_room.html",{"meeting":meeting,"schedule":schedule,"ss_by_day":ss_by_day})
 
 @role_required('Area Director','Secretariat','IAB')
 def agenda_by_type(request, num=None, type=None, name=None, owner=None):
@@ -1892,7 +1893,8 @@ def agenda_by_type(request, num=None, type=None, name=None, owner=None):
 
     if type:
         assignments = assignments.filter(session__type__slug=type)
-    return render(request,"meeting/agenda_by_type.html",{"meeting":meeting,"schedule":schedule,"assignments":assignments})
+    with timezone.override(meeting.tz()):
+        return render(request,"meeting/agenda_by_type.html",{"meeting":meeting,"schedule":schedule,"assignments":assignments})
 
 @role_required('Area Director','Secretariat','IAB')
 def agenda_by_type_ics(request,num=None,type=None):
