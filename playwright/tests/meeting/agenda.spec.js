@@ -51,7 +51,7 @@ test.describe('past - desktop', () => {
     // Visit agenda page and await Meeting Data API call to complete
     await Promise.all([
       page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
-      page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
+      page.goto(`/meeting/${meetingData.meeting.number}/agenda`)
     ])
 
     // Wait for page to be ready
@@ -191,7 +191,7 @@ test.describe('past - desktop', () => {
       if (event.location?.short) {
         // Has floor badge
         await expect(row.locator('.agenda-table-cell-room > a')).toContainText(event.room)
-        await expect(row.locator('.agenda-table-cell-room > a')).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/floor-plan-neue?room=${xslugify(event.room)}`)
+        await expect(row.locator('.agenda-table-cell-room > a')).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/floor-plan?room=${xslugify(event.room)}`)
         await expect(row.locator('.agenda-table-cell-room > .badge')).toContainText(event.location.short)
       } else {
         // No floor badge
@@ -1079,7 +1079,7 @@ test.describe('future - desktop', () => {
     // Visit agenda page and await Meeting Data API call to complete
     await Promise.all([
       page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
-      page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
+      page.goto(`/meeting/${meetingData.meeting.number}/agenda`)
     ])
 
     // Wait for page to be ready
@@ -1247,7 +1247,7 @@ test.describe('live - desktop', () => {
     // Visit agenda page and await Meeting Data API call to complete
     await Promise.all([
       page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
-      page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
+      page.goto(`/meeting/${meetingData.meeting.number}/agenda`)
     ])
 
     // Wait for page to be ready
@@ -1328,7 +1328,7 @@ test.describe('past - small screens', () => {
       // Visit agenda page and await Meeting Data API call to complete
       await Promise.all([
         page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
-        page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
+        page.goto(`/meeting/${meetingData.meeting.number}/agenda`)
       ])
 
       // Wait for page to be ready
