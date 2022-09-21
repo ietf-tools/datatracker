@@ -282,8 +282,7 @@ def materials_editable_groups(request, num=None):
 def edit_timeslots(request, num=None):
 
     meeting = get_meeting(num)
-    timezone.activate(meeting.tz())
-    try:
+    with timezone.override(meeting.tz()):
         if request.method == 'POST':
             # handle AJAX requests
             action = request.POST.get('action')
@@ -337,8 +336,7 @@ def edit_timeslots(request, num=None):
                                               "ts_with_official_assignments": ts_with_official_assignments,
                                               "ts_with_any_assignments": ts_with_any_assignments,
                                           })
-    finally:
-        timezone.deactivate()
+
 
 class NewScheduleForm(forms.ModelForm):
     class Meta:
@@ -1565,8 +1563,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
     display_timezone = 'UTC' if utc else meeting.time_zone
-    timezone.activate(display_timezone)
-    try:
+    with timezone.override(display_timezone):
         rendered_page = render(
             request,
             "meeting/" + base + ext,
@@ -1585,8 +1582,6 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
             },
             content_type=mimetype[ext],
         )
-    finally:
-        timezone.deactivate()
 
     return rendered_page
 
@@ -4101,8 +4096,7 @@ def edit_timeslot(request, num, slot_id):
     meeting = get_object_or_404(Meeting, number=num)
     if timeslot.meeting != meeting:
         raise Http404()
-    timezone.activate(meeting.tz())  # specifies current_timezone used for rendering and form handling
-    try:
+    with timezone.override(meeting.tz()):  # specifies current_timezone used for rendering and form handling
         if request.method == 'POST':
             form = TimeSlotEditForm(instance=timeslot, data=request.POST)
             if form.is_valid():
@@ -4120,8 +4114,6 @@ def edit_timeslot(request, num, slot_id):
             {'timeslot': timeslot, 'form': form, 'sessions': sessions},
             status=400 if form.errors else 200,
         )
-    finally:
-        timezone.deactivate()
 
 
 @role_required('Secretariat')
