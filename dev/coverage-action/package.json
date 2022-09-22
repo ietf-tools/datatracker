@@ -6,7 +6,7 @@
   "author": "IETF Trust",
   "license": "BSD-3-Clause",
   "dependencies": {
-    "@actions/core": "1.6.0",
+    "@actions/core": "1.9.1",
     "@actions/github": "5.0.0",
     "chart.js": "3.7.1",
     "chartjs-node-canvas": "4.1.6",

@@ -6,6 +6,7 @@ import datetime
 import re
 from collections import OrderedDict, Counter
 import csv
+import hmac
 
 from django.conf import settings
 from django.contrib import messages
@@ -695,7 +696,7 @@ def private_questionnaire(request, year):
 
 
 def process_nomination_status(request, year, nominee_position_id, state, date, hash):
-    valid = get_hash_nominee_position(date, nominee_position_id) == hash
+    valid = hmac.compare_digest(get_hash_nominee_position(date, nominee_position_id), hash)
     if not valid:
         permission_denied(request, "Bad hash!")
     expiration_days = getattr(settings, 'DAYS_TO_EXPIRE_NOMINATION_LINK', None)

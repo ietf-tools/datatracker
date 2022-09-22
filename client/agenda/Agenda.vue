@@ -227,8 +227,8 @@ const titleExtra = computed(() => {
   return title
 })
 const meetingDate = computed(() => {
-  const start = DateTime.fromISO(agendaStore.meeting.startDate).setZone(agendaStore.timezone)
-  const end = DateTime.fromISO(agendaStore.meeting.endDate).setZone(agendaStore.timezone)
+  const start = DateTime.fromISO(agendaStore.meeting.startDate, { zone: agendaStore.meeting.timezone }).setZone(agendaStore.timezone)
+  const end = DateTime.fromISO(agendaStore.meeting.endDate, { zone: agendaStore.meeting.timezone }).setZone(agendaStore.timezone)
   if (start.month === end.month) {
     return `${start.toFormat('MMMM d')} - ${end.toFormat('d, y')}`
   } else {
@@ -353,6 +353,8 @@ onBeforeUnmount(() => {
 // MOUNTED
 
 onMounted(() => {
+  agendaStore.fetch(route.params.meetingNumber)
+  
   handleCurrentMeetingRedirect()
 
   // -> Hide Loading Screen
