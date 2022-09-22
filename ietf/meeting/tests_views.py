@@ -5407,16 +5407,11 @@ class FloorPlanTests(TestCase):
         meeting = Meeting.objects.filter(type_id='ietf').order_by('id').last()
         floorplan = FloorPlanFactory.create(meeting=meeting)
 
-        # Extremely rudimentary test of floor-plan-neue
-        url = urlreverse('floor-plan-neue')
+        url = urlreverse('floor-plan')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        url = urlreverse('ietf.meeting.views.floor_plan')
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-
-        url = urlreverse('ietf.meeting.views.floor_plan', kwargs={'floor': xslugify(floorplan.name)} )
+        url = urlreverse('floor-plan', kwargs={'floor': xslugify(floorplan.name)} )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 

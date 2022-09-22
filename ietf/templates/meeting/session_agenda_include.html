@@ -1,0 +1,39 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# expects slug, session, and timeslot  to be in the context. Calling template must load the agenda_materials.js script. #}
+{% load origin %}
+{% origin %}
+{% load static %}
+{% load textfilters %}
+{% load ietf_filters %}
+<div class="modal fade text-start"
+     id="modal-{{ slug }}"
+     tabindex="-1"
+     role="dialog"
+     aria-labelledby="label-{{ slug }}"
+     aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <p class="h5 modal-title" id="label-{{ slug }}">
+                    Meeting materials for
+                    {% if timeslot.type.slug == 'plenary' %}
+                        {{ timeslot.name }}
+                    {% else %}
+                        {{ session.historic_group.name }}
+                    {% endif %}
+                </p>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="session-materials"
+                     data-src="{% url 'ietf.meeting.views.session_materials' session_id=session.pk %}"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
