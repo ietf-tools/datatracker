@@ -303,13 +303,6 @@ class MeetingTests(BaseMeetingTestCase):
                 kwargs={'num': '32', 'ext': '.html'},
             ))
         self.assertEqual(r.status_code, 404)
-        # Check a post-64 meeting as well
-        r = self.client.get(
-            urlreverse(
-                'agenda',
-                kwargs={'num': '150', 'ext': '.html'},
-            ))
-        self.assertEqual(r.status_code, 404)
 
     @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=False, MEETING_DOC_HREFS = settings.MEETING_DOC_CDN_HREFS)
     def test_materials_through_cdn(self):
@@ -3725,12 +3718,6 @@ class SessionDetailsTests(TestCase):
         self.assertTrue(all([x in unicontent(r) for x in ('slides','agenda','minutes','draft')]))
         self.assertNotContains(r, 'deleted')
 
-        q = PyQuery(r.content)
-        self.assertTrue(q('div#session-buttons-%s' % session.id),
-                               'Session detail page does not contain session tool buttons') 
-        self.assertFalse(q('div#session-buttons-%s span.bi-arrows-fullscreen' % session.id),
-                         'The session detail page is incorrectly showing the "Show meeting materials" button')
-
     def test_session_details_has_import_minutes_buttons(self):
         group = GroupFactory.create(
             type_id='wg',
@@ -5408,10 +5395,6 @@ class FloorPlanTests(TestCase):
         floorplan = FloorPlanFactory.create(meeting=meeting)
 
         url = urlreverse('floor-plan')
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-
-        url = urlreverse('floor-plan', kwargs={'floor': xslugify(floorplan.name)} )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
