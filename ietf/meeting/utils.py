@@ -714,7 +714,9 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
 def new_doc_for_session(type_id, session):
     typename = DocTypeName.objects.get(slug=type_id)
     ota = session.official_timeslotassignment()
-    sess_time = ota and ota.timeslot.time
+    if ota is None:
+        return None
+    sess_time = ota.timeslot.local_start_time()
     if session.meeting.type_id == "ietf":
         name = f"{typename.prefix}-{session.meeting.number}-{session.group.acronym}-{sess_time.strftime('%Y%m%d%H%M')}"
         title = f"{typename.name} IETF{session.meeting.number}: {session.group.acronym}: {sess_time.strftime('%a %H:%M')}"

@@ -3980,6 +3980,8 @@ def api_upload_chat(request):
         chatlog_sp.save()
     else:
         doc = new_doc_for_session('chatlog', session)
+        if doc is None:
+            return err(400, "Could not find official timeslot for session")
     filename = f"{doc.name}-{doc.rev}.json"
     doc.uploaded_filename = filename
     write_doc_for_session(session, 'chatlog', filename, api_data['chatlog'] )
@@ -4016,6 +4018,8 @@ def api_upload_poll(request):
         polls_sp.save()
     else:
         doc = new_doc_for_session('polls', session)
+        if doc is None:
+            return err(400, "Could not find official timeslot for session")
     filename = f"{doc.name}-{doc.rev}.json"
     doc.uploaded_filename = filename
     write_doc_for_session(session, 'polls', filename, api_data['polls'] )
