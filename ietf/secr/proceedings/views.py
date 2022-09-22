@@ -304,7 +304,7 @@ def select(request, meeting_num):
     # get the time proceedings were generated
     path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'index.html')
     if os.path.exists(path):
-        last_run = datetime.datetime.fromtimestamp(os.path.getmtime(path))
+        last_run = datetime.datetime.fromtimestamp(os.path.getmtime(path), datetime.timezone.utc)
     else:
         last_run = None
 

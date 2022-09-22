@@ -89,7 +89,7 @@ def retrieve_messages_from_mbox(mbox_fileobj):
             utcdate = None
             d = email.utils.parsedate_tz(msg["Date"])
             if d:
-                utcdate = datetime.datetime.fromtimestamp(email.utils.mktime_tz(d))
+                utcdate = datetime.datetime.fromtimestamp(email.utils.mktime_tz(d), datetime.timezone.utc)
 
             res.append({
                 "from": msg["From"],

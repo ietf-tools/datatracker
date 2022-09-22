@@ -66,9 +66,9 @@ for name in sorted(names):
                     print name, rev, "Can't parse", p,":",e
                     continue
             if draft.errors and draft.errors.keys()!=['draftname',]:
-                print "Errors - could not process", name, rev, datetime.datetime.fromtimestamp(p.stat().st_mtime), draft.errors, draft.get_title().encode('utf8')
+                print "Errors - could not process", name, rev, datetime.datetime.fromtimestamp(p.stat().st_mtime, datetime.timezone.utc), draft.errors, draft.get_title().encode('utf8')
             else:
-                time = datetime.datetime.fromtimestamp(p.stat().st_mtime)
+                time = datetime.datetime.fromtimestamp(p.stat().st_mtime, datetime.timezone.utc)
                 if not doc:
                     doc = Document.objects.create(name=name,
                                                   time=time,
