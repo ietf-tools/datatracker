@@ -260,12 +260,16 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
     <tr>
         <td></td>
         <th scope="row">
-            {% if document_html %}Available formats{% else %}Formats{% endif %}
+            {% if document_html %}Other formats{% else %}Formats{% endif %}
         </th>
         <td class="edit">
         </td>
         <td>
-            {% include "doc/document_format_buttons.html" %}
+            {% if document_html %}
+                {% include "doc/document_format_buttons.html" with skip_format="htmlized" %}
+            {% else %}
+                {% include "doc/document_format_buttons.html" %}
+            {% endif %}
         </td>
     </tr>
     {% for check in doc.submission.latest_checks %}
