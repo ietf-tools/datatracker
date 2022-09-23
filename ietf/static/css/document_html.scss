@@ -96,7 +96,7 @@ url(data-url:npm:bootstrap-icons/font/fonts/bootstrap-icons.woff) format("woff")
 
     @media screen {
         @include media-breakpoint-only(xs) {
-            font-size: 7.5pt;
+            font-size: 7pt;
         }
 
         @include media-breakpoint-up(sm) {
