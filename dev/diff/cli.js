@@ -653,9 +653,6 @@ async function main () {
                 Tty: true,
                 Hostname: 'appsource',
                 HostConfig: {
-                  Binds: [
-                    `${config.source}:/workspace`
-                  ],
                   NetworkMode: 'dt-diff-net'
                 }
               })
@@ -672,14 +669,68 @@ async function main () {
                 Tty: true,
                 Hostname: 'apptarget',
                 HostConfig: {
-                  Binds: [
-                    `${config.target}:/workspace`
-                  ],
                   NetworkMode: 'dt-diff-net'
                 }
               })
               await containers.appTarget.start()
               subtask.title = `Created target Datatracker docker container (dt-diff-app-target) successfully.`
+            }
+          }
+        ], {
+          concurrent: true,
+          rendererOptions: {
+            collapse: false
+          }
+        })
+      },
+      // --------------------------------------------
+      // Copy working files to Datatracker containers
+      // --------------------------------------------
+      {
+        title: 'Copy working files to Datatracker docker containers',
+        task: (ctx, task) => task.newListr([
+          {
+            title: 'Copying workfing files into source Datatracker docker container...',
+            task: async (subctx, subtask) => {
+              const tgzPath = path.join(config.source, 'diff-import.tgz')
+              await tar.c({
+                gzip: true,
+                file: tgzPath,
+                cwd: config.source,
+                filter (path) {
+                  if (path.includes('.git') || path.includes('node_modules')) { return false }
+                  subtask.output = path
+                  return true
+                }
+              }, ['.'])
+              subtask.output = 'Injecting into container...'
+              await containers.appSource.putArchive(tgzPath, {
+                path: '/workspace'
+              })
+              await fs.remove(tgzPath)
+              subtask.title = `Imported working files into source Datatracker docker container (dt-diff-app-source) successfully.`
+            }
+          },
+          {
+            title: 'Copying working files into target Datatracker docker container...',
+            task: async (subctx, subtask) => {
+              const tgzPath = path.join(config.target, 'diff-import.tgz')
+              await tar.c({
+                gzip: true,
+                file: tgzPath,
+                cwd: config.target,
+                filter (path) {
+                  if (path.includes('.git') || path.includes('node_modules')) { return false }
+                  subtask.output = path
+                  return true
+                }
+              }, ['.'])
+              subtask.output = 'Injecting into container...'
+              await containers.appTarget.putArchive(tgzPath, {
+                path: '/workspace'
+              })
+              await fs.remove(tgzPath)
+              subtask.title = `Imported working files into target Datatracker docker container (dt-diff-app-target) successfully.`
             }
           }
         ], {

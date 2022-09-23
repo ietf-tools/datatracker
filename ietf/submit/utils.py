@@ -20,7 +20,6 @@ from django.core.validators import validate_email
 from django.db import transaction
 from django.http import HttpRequest     # pyflakes:ignore
 from django.utils.module_loading import import_string
-from django.template.loader import render_to_string
 from django.contrib.auth.models import AnonymousUser
 
 import debug                            # pyflakes:ignore
@@ -29,9 +28,10 @@ from ietf.doc.models import ( Document, State, DocAlias, DocEvent, SubmissionDoc
     DocumentAuthor, AddedMessageEvent )
 from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.models import RelatedDocument, DocRelationshipName, DocExtResource
-from ietf.doc.utils import add_state_change_event, rebuild_reference_relations
-from ietf.doc.utils import ( set_replaces_for_document, prettify_std_name,
-    update_doc_extresources, can_edit_docextresources, update_documentauthors, update_action_holders )
+from ietf.doc.utils import (add_state_change_event, rebuild_reference_relations,
+    set_replaces_for_document, prettify_std_name, update_doc_extresources, 
+    can_edit_docextresources, update_documentauthors, update_action_holders,
+    bibxml_for_draft )
 from ietf.doc.mails import send_review_possibly_replaces_request, send_external_resource_change_request
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
@@ -485,14 +485,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     create_submission_event(request, submission, approved_subm_desc)
 
     # Create bibxml-ids entry
-    ref_text = '%s' % render_to_string('doc/bibxml.xml', {'name':draft.name, 'doc': draft, 'doc_bibtype':'I-D'})
-    # for name in (draft.name, draft.name[6:]):
-    #     ref_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s.xml' % (name, ))
-    #     with io.open(ref_file_name, "w", encoding='utf-8') as f:
-    #         f.write(ref_text)
-    #     ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (name, draft.rev ))
-    #     with io.open(ref_rev_file_name, "w", encoding='utf-8') as f:
-    #         f.write(ref_text)
+    ref_text = bibxml_for_draft(draft, draft.rev)
     ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (draft.name, draft.rev ))
     with io.open(ref_rev_file_name, "w", encoding='utf-8') as f:
         f.write(ref_text)

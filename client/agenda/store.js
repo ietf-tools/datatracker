@@ -133,11 +133,14 @@ export const useAgendaStore = defineStore('agenda', {
     }
   },
   actions: {
-    async fetch () {
+    async fetch (meetingNumber) {
       try {
-        const meetingData = JSON.parse(document.getElementById('meeting-data').textContent)
+        if (!meetingNumber) {
+          const meetingData = JSON.parse(document.getElementById('meeting-data').textContent)
+          meetingNumber = meetingData.meetingNumber
+        }
 
-        const resp = await fetch(`/api/meeting/${meetingData.meetingNumber}/agenda-data`, { credentials: 'omit' })
+        const resp = await fetch(`/api/meeting/${meetingNumber}/agenda-data`, { credentials: 'omit' })
         if (!resp.ok) {
           throw new Error(resp.statusText)
         }

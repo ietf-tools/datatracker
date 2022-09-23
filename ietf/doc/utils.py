@@ -17,6 +17,7 @@ from urllib.parse import quote
 from django.conf import settings
 from django.contrib import messages
 from django.forms import ValidationError
+from django.http import Http404
 from django.template.loader import render_to_string
 from django.utils.html import escape
 from django.urls import reverse as urlreverse
@@ -1153,3 +1154,33 @@ def fuzzy_find_documents(name, rev=None):
 
     FoundDocuments = namedtuple('FoundDocuments', 'documents matched_name matched_rev')
     return FoundDocuments(docs, name, rev)
+
+def bibxml_for_draft(doc, rev=None):
+
+    if rev is not None and rev != doc.rev:
+        # find the entry in the history
+        for h in doc.history_set.order_by("-time"):
+            if rev == h.rev:
+                doc = h
+                break
+    if rev and rev != doc.rev:
+        raise Http404("Revision not found")
+
+    # Build the date we want to claim for the document in the bibxml
+    # For documents that have relevent NewRevisionDocEvents, use the date of the event.
+    # Very old documents don't have NewRevisionDocEvents - just use the document time.
+        
+    latest_revision_event = doc.latest_event(NewRevisionDocEvent, type="new_revision")
+    latest_revision_rev = latest_revision_event.rev if latest_revision_event else None
+    best_events = NewRevisionDocEvent.objects.filter(doc__name=doc.name, rev=(rev or latest_revision_rev))
+    if best_events.exists():
+        # There was a period where it was possible to get more than one NewRevisionDocEvent for a revision.
+        # A future data cleanup would allow this to be simplified
+        best_event = best_events.order_by('time').first()
+        log.assertion('doc.rev == best_event.rev')
+        doc.date = best_event.time.date()
+    else:
+        doc.date = doc.time.date()      # Even if this may be incoreect, what would be better?
+
+    return render_to_string('doc/bibxml.xml', {'name':doc.name, 'doc': doc, 'doc_bibtype':'I-D'})
+
