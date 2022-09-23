@@ -111,6 +111,14 @@ url(data-url:npm:bootstrap-icons/font/fonts/bootstrap-icons.woff) format("woff")
             font-size: 11pt;
         }
 
+        @include media-breakpoint-up(xl) {
+            font-size: 13pt;
+        }
+
+        @include media-breakpoint-up(xxl) {
+            font-size: 16pt;
+        }
+
         .grey,
         hr {
             opacity: $hr-opacity;
