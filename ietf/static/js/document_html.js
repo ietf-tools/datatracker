@@ -56,7 +56,10 @@ document.addEventListener("DOMContentLoaded", function (event) {
 
     // Set up a nav pane
     const toc_pane = document.querySelector("#toc-nav");
-    populate_nav(toc_pane, "#content h2, #content h3, #content h4, #content h5, #content h6", 2, ["py-0"]);
+    populate_nav(toc_pane,
+        `#content h2, #content h3, #content h4, #content h5, #content h6
+         #content .h1, #content .h2, #content .h3, #content .h4, #content .h5, #content .h6`,
+        ["py-0"]);
 
     // activate pref buttons selected by pref cookies
     document.querySelectorAll(".btn-check")

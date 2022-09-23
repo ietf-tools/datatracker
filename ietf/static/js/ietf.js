@@ -197,7 +197,7 @@ $(function () {
                 .children()
                 .last();
 
-            populate_nav(nav[0], heading_selector, 2);
+            populate_nav(nav[0], heading_selector);
 
             if (haveExtraNav) {
                 $('#righthand-panel').append('<div id="righthand-extra" class="w-100 py-3"></div>');

@@ -4,17 +4,33 @@ function make_nav() {
     return nav;
 }
 
-export function populate_nav(nav, heading_selector, start_level, classes) {
+function get_level(el) {
+    let h;
+    if (el.tagName.match(/^h\d/i)) {
+        h = el.tagName
+    } else {
+        el.classList.forEach(cl => {
+            if (cl.match(/^h\d/i)) {
+                h = cl;
+                return;
+            }
+        });
+    }
+    return h.charAt(h.length - 1);
+}
+
+export function populate_nav(nav, heading_selector, classes) {
     // Extract section headings from document
     const headings = document.querySelectorAll(heading_selector);
+    const min_level = Math.min(...Array.from(headings)
+        .map(get_level));
 
     let nav_stack = [nav];
     let cur_level = 0;
     let n = 0;
 
     headings.forEach(el => {
-        let level = el.tagName.charAt(el.tagName.length - 1) -
-            start_level;
+        const level = get_level(el) - min_level;
 
         if (level < cur_level) {
             while (level < cur_level) {
@@ -30,7 +46,8 @@ export function populate_nav(nav, heading_selector, start_level, classes) {
         }
 
         const link = document.createElement("a");
-        link.classList.add("nav-link", "ps-1", "d-flex", "hyphenate", classes);
+        link.classList.add("nav-link", "ps-1", "d-flex", "hyphenate",
+            classes);
 
         if (!el.id) {
             el.id = `autoid-${++n}`;

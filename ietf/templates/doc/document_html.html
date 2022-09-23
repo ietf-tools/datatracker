@@ -18,115 +18,183 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <script>{{ js|safe }}</script>
         <style>{{ css|safe }}</style>
-    <link rel="alternate"
-          type="application/atom+xml"
-          title="Document changes"
-          href="/feed/document-changes/{{ doc.name }}/">
-    <meta name="description"
-          {% if not snapshot and doc.get_state_slug == "rfc" %}
-              content="{{ doc.title }} (RFC {{ doc.rfc_number }}{% if published %}, {{ published.time|date:"F Y" }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:", " }}{% endif %})"
-          {% else %}
-              content="{{ doc.title }} (Internet-Draft, {{ doc.time|date:"Y" }})"
-          {% endif %}>
+        <link rel="alternate"
+              type="application/atom+xml"
+              title="Document changes"
+              href="/feed/document-changes/{{ doc.name }}/">
+        <meta name="description"
+            {% if not snapshot and doc.get_state_slug == "rfc" %} content="{{ doc.title }} (RFC {{ doc.rfc_number }}{% if published %}, {{ published.time|date:"F Y" }}{% endif %}
+            {% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:", " }}{% endif %}
+        {% else %}
+            content="{{ doc.title }} (Internet-Draft, {{ doc.time|date:"
+            Y
+        {% endif %}>
         {% include "base/icons.html" %}
         {% include "doc/opengraph.html" %}
-</head>
-<body>
-    <nav class="navbar navbar-light bg-light px-1 fixed-top d-print-none d-md-none">
-
-      <a class="nav-link ps-1" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">
-          {% if not snapshot and doc.get_state_slug == "rfc" %}
-              RFC {{ doc.rfc_number }}
-          {% else %}
-              {{ doc.name }}-{{ doc.rev }}
-          {% endif %}
-      <br class="d-sm-none">
-      <span class="ms-sm-3 badge rounded-pill badge-{% if not snapshot %}{{ doc|std_level_to_label_format }}{% else %}draft{% endif %}">{% if not snapshot %}{{ doc.std_level }}{% else %}Internet-Draft{% endif %}</span>
-      </a>
-
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#docinfo-collapse" aria-controls="docinfo-collapse" aria-expanded="false" aria-label="Show document information">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-
-      <div class="collapse overflow-scroll w-100" id="docinfo-collapse">
-        <div class="bg-light p-0 overflow-scroll">
-
-          <table class="table table-sm table-borderless small">
-              <tbody class="meta">
-                  <tr>
-                      <th scope="row"></th>
-                      <th scope="row">Title</th>
-                      <td class="edit"></td>
-                      <td>{{ doc.title }}</td>
-                  </tr>
-              </tbody>
-              {% include "doc/document_info.html" with sidebar=False %}
-          </table>
-
-        </div>
-      </div>
-    </nav>
-    <div class="row g-0">
-        <div class="col d-flex justify-content-center lh-sm" data-bs-spy="scroll" data-bs-target="#toc-nav" data-bs-smooth-scroll="true" tabindex="0" id="content">
-            {% if html and request.COOKIES.htmlconf != 'txt' %}
-                <div class="xml2rfc">
-                    <br class="noprint">
-                    {{ html|safe }}
-                </div>
-            {% else %}
-                <div class="rfcmarkup">
-                    <br class="noprint">
-                     <!-- [html-validate-disable-block attr-quotes, void-style, element-permitted-content, heading-level -- FIXME: rfcmarkup/rfc2html generates HTML with issues] -->
-                    {{ doc.htmlized|default:"Generation of htmlized text failed"|linkify|safe }}
-                </div>
-            {% endif %}
-        </div>
-        <div class="d-print-none col-3 d-none d-md-block bg-light">
-            <div class="position-fixed col-3 border-start sidebar overflow-scroll">
-                <div class="pt-2 pt-lg-4 px-md-2 px-lg-3">
-                <a class="btn btn-primary btn-sm mb-3" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}" title="Datatracker information for this document">Datatracker page</a>
-
-                <ul class="nav nav-tabs nav-fill small" role="tablist">
-                  <li class="nav-item" role="presentation" title="Document information">
-                    <button class="nav-link px-2" id="docinfo-tab" data-bs-toggle="tab" data-bs-target="#docinfo-tab-pane" type="button" role="tab" aria-controls="docinfo-tab-pane" aria-selected="true"><i class="bi bi-info-circle"></i><span class="d-none d-md-block d-xl-inline"> Info</span></button>
-                  </li>
-                  <li class="nav-item" role="presentation" title="Table of contents">
-                    <button class="nav-link px-2" id="toc-tab" data-bs-toggle="tab" data-bs-target="#toc-tab-pane" type="button" role="tab" aria-controls="toc-tab-pane" aria-selected="false"><i class="bi bi-list-columns-reverse"></i><span class="d-none d-md-block d-xl-inline"> Contents</span></button>
-                  </li>
-                  <li class="nav-item" role="presentation" title="Preferences">
-                    <button class="nav-link px-2" id="pref-tab" data-bs-toggle="tab" data-bs-target="#pref-tab-pane" type="button" role="tab" aria-controls="pref-tab-pane" aria-selected="false"><i class="bi bi-gear"></i><span class="d-none d-md-block d-xl-inline"> Prefs</span></button>
-                  </li>
-                </ul>
-
-                <div class="tab-content pt-2">
-                  <div class="tab-pane" id="docinfo-tab-pane" role="tabpanel" aria-labelledby="docinfo-tab" tabindex="0">
-                    <table class="table table-sm table-borderless">
-                        {% include "doc/document_info.html" with sidebar=True %}
+    </head>
+    <body>
+        <nav class="navbar navbar-light bg-light px-1 fixed-top d-print-none d-md-none">
+            <a class="nav-link ps-1"
+               href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">
+                {% if not snapshot and doc.get_state_slug == "rfc" %}
+                    RFC {{ doc.rfc_number }}
+                {% else %}
+                    {{ doc.name }}-{{ doc.rev }}
+                {% endif %}
+                <br class="d-sm-none">
+                <span class="ms-sm-3 badge rounded-pill badge-{% if not snapshot %}{{ doc|std_level_to_label_format }}{% else %}draft{% endif %}">
+                    {% if not snapshot %}
+                        {{ doc.std_level }}
+                    {% else %}
+                        Internet-Draft
+                    {% endif %}
+                </span>
+            </a>
+            <button class="navbar-toggler p-1"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#docinfo-collapse"
+                    aria-controls="docinfo-collapse"
+                    aria-expanded="false"
+                    aria-label="Show document information">
+                <span class="navbar-toggler-icon small"></span>
+            </button>
+            <div class="collapse overflow-scroll w-100 pt-2" id="docinfo-collapse">
+                <div class="bg-light p-0 overflow-scroll">
+                    <table class="table table-sm table-borderless small">
+                        <tbody class="meta align-top">
+                            <tr>
+                                <th scope="row"></th>
+                                <th scope="row">Title</th>
+                                <td class="edit"></td>
+                                <td>{{ doc.title }}</td>
+                            </tr>
+                        </tbody>
+                        {% include "doc/document_info.html" with sidebar=False %}
                     </table>
-                  </div>
-                  <div class="tab-pane mb-5" id="toc-tab-pane" role="tabpanel" aria-labelledby="toc-tab" tabindex="0">
-                    <nav class="nav nav-pills flex-column small" id="toc-nav"></nav>
-                  </div>
-                  <div class="tab-pane mb-5 small" id="pref-tab-pane" role="tabpanel" aria-labelledby="pref-tab" tabindex="0">
-                    <div class="fw-bold mb-2">Tab to show by default</div>
-                    <div class="btn-group-vertical btn-group-sm d-flex" role="group">
-                        <input type="radio" class="btn-check" name="deftab" id="docinfo-radio">
-                        <label class="btn btn-outline-primary" for="docinfo-radio">Info</label>
-                        <input type="radio" class="btn-check" name="deftab" id="toc-radio">
-                        <label class="btn btn-outline-primary" for="toc-radio">Contents</label>
-                    </div>
-                    <div class="fw-bold mt-4 mb-2">HTMLization configuration</div>
-                    <div class="btn-group-vertical btn-group-sm d-flex" role="group">
-                        <input type="radio" class="btn-check" name="htmlconf" id="txt-radio">
-                        <label class="btn btn-outline-primary" for="txt-radio" title="">Plaintextify the HTML</label>
-                        <input type="radio" class="btn-check" name="htmlconf" id="html-radio">
-                        <label class="btn btn-outline-primary" for="html-radio" title="">HTMLize the plaintext</label>
-                    </div>
-                  </div>
                 </div>
-              </div>
+            </div>
+        </nav>
+        <div class="row g-0">
+            <div class="col d-flex justify-content-center lh-sm"
+                 data-bs-spy="scroll"
+                 data-bs-target="#toc-nav"
+                 data-bs-smooth-scroll="true"
+                 tabindex="0"
+                 id="content">
+                {% if html and request.COOKIES.htmlconf != 'txt' %}
+                    <div class="xml2rfc">
+                        <br class="noprint">
+                        {{ html|safe }}
+                    </div>
+                {% else %}
+                    <div class="rfcmarkup">
+                        <br class="noprint">
+                        <!-- [html-validate-disable-block attr-quotes, void-style, element-permitted-content, heading-level -- FIXME: rfcmarkup/rfc2html generates HTML with issues] -->
+                        {{ doc.htmlized|default:"Generation of htmlized text failed"|linkify|safe }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="d-print-none col-3 d-none d-md-block bg-light">
+                <div class="position-fixed col-3 border-start sidebar overflow-scroll overscroll-none">
+                    <div class="pt-2 pt-lg-3 px-md-2 px-lg-3">
+                        <p>
+                            <a href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">
+                                {% if not snapshot and doc.get_state_slug == "rfc" %}
+                                    RFC {{ doc.rfc_number }}
+                                {% else %}
+                                    {{ doc.name }}-{{ doc.rev }}
+                                {% endif %}
+                                <br>
+                                <span class="badge rounded-pill badge-{% if not snapshot %}{{ doc|std_level_to_label_format }}{% else %}draft{% endif %}">
+                                    {% if not snapshot %}
+                                        {{ doc.std_level }}
+                                    {% else %}
+                                        Internet-Draft
+                                    {% endif %}
+                                </span>
+                            </a>
+                        </p>
+                        <ul class="nav nav-tabs nav-fill small" role="tablist">
+                            <li class="nav-item" role="presentation" title="Document information">
+                                <button class="nav-link px-2"
+                                        id="docinfo-tab"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#docinfo-tab-pane"
+                                        type="button"
+                                        role="tab"
+                                        aria-controls="docinfo-tab-pane"
+                                        aria-selected="true">
+                                    <i class="bi bi-info-circle"></i><span class="d-none d-md-block d-xl-inline ms-xl-1">Info</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation" title="Table of contents">
+                                <button class="nav-link px-2"
+                                        id="toc-tab"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#toc-tab-pane"
+                                        type="button"
+                                        role="tab"
+                                        aria-controls="toc-tab-pane"
+                                        aria-selected="false">
+                                    <i class="bi bi-list-columns-reverse"></i><span class="d-none d-md-block d-xl-inline ms-xl-1">Contents</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation" title="Preferences">
+                                <button class="nav-link px-2"
+                                        id="pref-tab"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#pref-tab-pane"
+                                        type="button"
+                                        role="tab"
+                                        aria-controls="pref-tab-pane"
+                                        aria-selected="false">
+                                    <i class="bi bi-gear"></i><span class="d-none d-md-block d-xl-inline ms-xl-1">Prefs</span>
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content pt-2">
+                            <div class="tab-pane"
+                                 id="docinfo-tab-pane"
+                                 role="tabpanel"
+                                 aria-labelledby="docinfo-tab"
+                                 tabindex="0">
+                                <table class="table table-sm table-borderless">
+                                    {% include "doc/document_info.html" with sidebar=True %}
+                                </table>
+                            </div>
+                            <div class="tab-pane mb-5"
+                                 id="toc-tab-pane"
+                                 role="tabpanel"
+                                 aria-labelledby="toc-tab"
+                                 tabindex="0">
+                                <nav class="nav nav-pills flex-column small" id="toc-nav">
+                                </nav>
+                            </div>
+                            <div class="tab-pane mb-5 small"
+                                 id="pref-tab-pane"
+                                 role="tabpanel"
+                                 aria-labelledby="pref-tab"
+                                 tabindex="0">
+                                <div class="fw-bold mb-2">Tab to show by default</div>
+                                <div class="btn-group-vertical btn-group-sm d-flex" role="group">
+                                    <input type="radio" class="btn-check" name="deftab" id="docinfo-radio">
+                                    <label class="btn btn-outline-primary" for="docinfo-radio">Info</label>
+                                    <input type="radio" class="btn-check" name="deftab" id="toc-radio">
+                                    <label class="btn btn-outline-primary" for="toc-radio">Contents</label>
+                                </div>
+                                <div class="fw-bold mt-4 mb-2">HTMLization configuration</div>
+                                <div class="btn-group-vertical btn-group-sm d-flex" role="group">
+                                    <input type="radio" class="btn-check" name="htmlconf" id="txt-radio">
+                                    <label class="btn btn-outline-primary" for="txt-radio" title="">HTMLize the plaintext</label>
+                                    <input type="radio" class="btn-check" name="htmlconf" id="html-radio">
+                                    <label class="btn btn-outline-primary" for="html-radio" title="">Plaintextify the HTML</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</body>
+    </body>
 </html>

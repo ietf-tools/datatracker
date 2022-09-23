@@ -1,6 +1,7 @@
 {% if file_urls %}
     <div class="buttonlist">
     {% for label, url in file_urls %}
+        {% if label != skip_format %}
         <a class="btn btn-primary btn-sm"
           {% if label == 'pdf' or label == 'pdfized' %}
             download="{% if not snapshot and doc.get_state_slug == 'rfc' %}rfc{{ doc.rfc_number }}{% else %}{{ doc.name }}-{{ doc.rev }}{% endif %}.pdf"
@@ -10,6 +11,7 @@
             download="{% if not snapshot and doc.get_state_slug == 'rfc' %}rfc{{ doc.rfc_number }}{% else %}{{ doc.name }}-{{ doc.rev }}{% endif %}.bib"
           {% endcomment %}
          {% endif %}
+          target="_blank"
           href="{{ url }}">
             {% if label == 'pdf' or label == 'pdfized' %}
                 <i class="bi bi-file-pdf"></i> pdf
@@ -25,6 +27,7 @@
                 <i class="bi bi-file-diff"></i> w/errata
             {% endif %}
         </a>
+        {% endif %}
     {% endfor %}
 </div>
 {% else %}
