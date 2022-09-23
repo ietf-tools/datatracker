@@ -50,16 +50,16 @@
                     {% endif %}
                 </span>
             </a>
-            <button class="navbar-toggler"
+            <button class="navbar-toggler p-1"
                     type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#docinfo-collapse"
                     aria-controls="docinfo-collapse"
                     aria-expanded="false"
                     aria-label="Show document information">
-                <span class="navbar-toggler-icon"></span>
+                <span class="navbar-toggler-icon small"></span>
             </button>
-            <div class="collapse overflow-scroll w-100" id="docinfo-collapse">
+            <div class="collapse overflow-scroll w-100 pt-2" id="docinfo-collapse">
                 <div class="bg-light p-0 overflow-scroll">
                     <table class="table table-sm table-borderless small">
                         <tbody class="meta align-top">
@@ -96,7 +96,7 @@
                 {% endif %}
             </div>
             <div class="d-print-none col-3 d-none d-md-block bg-light">
-                <div class="position-fixed col-3 border-start sidebar overflow-scroll">
+                <div class="position-fixed col-3 border-start sidebar overflow-scroll overscroll-none">
                     <div class="pt-2 pt-lg-3 px-md-2 px-lg-3">
                         <p>
                             <a href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">

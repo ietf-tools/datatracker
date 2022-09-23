@@ -57,6 +57,10 @@ url(data-url:npm:bootstrap-icons/font/fonts/bootstrap-icons.woff) format("woff")
 @import "bootstrap-icons/font/bootstrap-icons";
 
 
+.overscroll-none {
+    overscroll-behavior: none;
+}
+
 @media screen {
     @include media-breakpoint-down(md) {
         body {
