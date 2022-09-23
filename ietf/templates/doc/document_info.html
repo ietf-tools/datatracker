@@ -5,7 +5,7 @@
 {% load person_filters %}
 {% origin %}
 
-<tbody class="meta {% if not document_html %} border-top{% endif %}">
+<tbody class="meta align-top {% if not document_html %} border-top{% endif %}">
     <tr>
         <th scope="row">Document</th>
         <th scope="row">{% if document_html %}Document type{% else %}Type{% endif %}</th>
@@ -71,23 +71,25 @@
         </td>
     </tr>
     {% if document_html %}
-    <tr>
-        <td></td>
-        <th scope="row">Versions</th>
-        <td class="edit"></td>
-        <td>
-            {% include "doc/revisions_list.html" with document_html=document_html %}
-            {% if doc.rev != "00" %}
-                <div class="my-2">
-                        <a class="btn btn-primary btn-sm" href="{{ settings.RFCDIFF_BASE_URL }}?difftype=--hwdiff&amp;url2={{ doc.name }}-{{ doc.rev }}.txt" title="Inline diff (wdiff)"> Wdiff</a>
-                        <a class="btn btn-primary btn-sm" href="{{ settings.RFCDIFF_BASE_URL }}?url2={{ doc.name }}-{{ doc.rev }}.txt" title="Side-by-side diff">Diff</a>
-
-                    <a class="btn btn-primary btn-sm" href="{{ settings.IDNITS_BASE_URL }}?url={{ settings.IETF_ID_ARCHIVE_URL }}{{ doc.name }}-{{ doc.rev }}.txt" title="Run an idnits check of this document">Nits</a>
-
-                </div>
-            {% endif %}
-        </td>
-    </tr>
+        <tr>
+            <td></td>
+            <th scope="row">Select version</th>
+            <td class="edit"></td>
+            <td>
+                {% include "doc/revisions_list.html" with document_html=document_html %}
+            </td>
+        </tr>
+        {% if doc.rev != "00" %}
+            <tr>
+                <td></td>
+                <th scope="row">Compare versions</th>
+                <td class="edit"></td>
+                <td>
+                    <a class="btn btn-primary btn-sm" href="{{ settings.RFCDIFF_BASE_URL }}?difftype=--hwdiff&amp;url2={{ doc.name }}-{{ doc.rev }}.txt" title="Inline diff (wdiff)">Inline</a>
+                    <a class="btn btn-primary btn-sm" href="{{ settings.RFCDIFF_BASE_URL }}?url2={{ doc.name }}-{{ doc.rev }}.txt" title="Side-by-side diff">Side-by-side</a>
+                </td>
+            </tr>
+        {% endif %}
     {% endif %}
     <tr>
         <td></td>
@@ -258,7 +260,7 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
     <tr>
         <td></td>
         <th scope="row">
-            Formats
+            {% if document_html %}Available formats{% else %}Formats{% endif %}
         </th>
         <td class="edit">
         </td>
