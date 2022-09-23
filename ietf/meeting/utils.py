@@ -742,4 +742,3 @@ def write_doc_for_session(session, type_id, filename, contents):
     with open(path / filename, "wb") as file:
         file.write(contents.encode('utf-8'))
     return
-

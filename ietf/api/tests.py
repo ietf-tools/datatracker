@@ -9,6 +9,7 @@ import sys
 
 from importlib import import_module
 from mock import patch
+from pathlib import Path
 
 from django.apps import apps
 from django.conf import settings
@@ -21,6 +22,7 @@ from tastypie.test import ResourceTestCaseMixin
 import debug                            # pyflakes:ignore
 
 import ietf
+from ietf.doc.utils import get_unicode_document_content
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.test_data import make_meeting_test_data
@@ -211,6 +213,69 @@ class CustomApiTests(TestCase):
         self.assertEqual(session.attended_set.count(),2)
         self.assertTrue(session.attended_set.filter(person=recman).exists())
         self.assertTrue(session.attended_set.filter(person=otherperson).exists())
+
+    def test_api_upload_chatlog(self):
+        url = urlreverse('ietf.meeting.views.api_upload_chatlog')
+
+        recmanrole = RoleFactory(group__type_id='ietf', name_id='recman')
+        recmanrole.person.user.last_login = timezone.now()
+        recmanrole.person.user.save()
+        apikey = PersonalApiKey.objects.create(endpoint=url, person=recmanrole.person)
+
+        badrole  = RoleFactory(group__type_id='ietf', name_id='ad')
+        badrole.person.user.last_login = timezone.now()
+        badrole.person.user.save()
+        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+
+        meeting = MeetingFactory(type_id='ietf')
+        session = SessionFactory(group__type_id='wg', meeting=meeting)  
+
+        r = self.client.post(url, {})
+        self.assertContains(r, "Missing apikey parameter", status_code=400)
+
+        r = self.client.post(url, {'apikey': badapikey.hash()} )
+        self.assertContains(r, "Restricted to role: Recording Manager", status_code=403)
+
+        r = self.client.get(url, {'apikey': apikey.hash()} )
+        self.assertContains(r, "Method not allowed", status_code=405)
+
+        r = self.client.post(url, {'apikey': apikey.hash()} )
+        self.assertContains(r, "Missing apidata parameter", status_code=400)
+
+        for baddict in (
+            '{}',
+            '{"bogons;drop table":"bogons;drop table"}',
+            '{"session_id":"Not an integer;drop table"}',
+            f'{{"session_id":{session.pk},"chatlog":"not a list;drop table"}}',
+            f'{{"session_id":{session.pk},"chatlog":"not a list;drop table"}}',
+            f'{{"session_id":{session.pk},"chatlog":[{{}}, {{}}, "not an int;drop table", {{}}]}}',
+        ):
+            r = self.client.post(url, {'apikey': apikey.hash(), 'apidata': baddict})
+            self.assertContains(r, "Malformed post", status_code=400)
+
+        bad_session_id = Session.objects.order_by('-pk').first().pk + 1
+        r = self.client.post(url, {'apikey': apikey.hash(), 'apidata': f'{{"session_id":{bad_session_id},"chatlog":[]}}'})
+        self.assertContains(r, "Invalid session", status_code=400)
+
+        # Valid post (some extra whitespace in the chatlog argument to improve test readability)
+        chatlog="""[
+            {
+                "author": "Raymond Lutz",
+                "text": "<p>Yes I like that comment just made</p>",
+                "time": "2022-07-28T19:26:16Z"
+            },
+            {
+                "author": "Carsten Bormann",
+                "text": "<p>But software is not a thing.</p>",
+                "time": "2022-07-28T19:26:45Z"
+            }
+        ]"""
+        r = self.client.post(url,{'apikey':apikey.hash(),'apidata': f'{{"session_id":{session.pk}, "chatlog":{chatlog}}}'})
+        self.assertEqual(r.status_code, 200)
+
+        newdoc = session.sessionpresentation_set.first().document
+        newdoccontent = get_unicode_document_content(newdoc.name, Path(session.meeting.get_materials_path()) / "chatlog" / newdoc.uploaded_filename)
+        self.assertIn("Carsten", newdoccontent)
 
     def test_api_upload_bluesheet(self):
         url = urlreverse('ietf.meeting.views.api_upload_bluesheet')

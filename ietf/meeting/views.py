@@ -3952,22 +3952,24 @@ def api_add_session_attendees(request):
     return HttpResponse("Done", status=200, content_type='text/plain')  
 
 @require_api_key
-@role_required('Recording Manager', 'Secretariat')
+@role_required('Recording Manager')
 @csrf_exempt
-def api_upload_chat(request):
+def api_upload_chatlog(request):
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
-    api_data_post = request.POST.get('api_data')
-    if not api_data_post:
-        return err(400, "Missing api_data parameter")
+    if request.method != 'POST':
+        return err(405, "Method not allowed")
+    apidata_post = request.POST.get('apidata')
+    if not apidata_post:
+        return err(400, "Missing apidata parameter")
     try:
-        api_data = json.loads(api_data_post)
+        apidata = json.loads(apidata_post)
     except json.decoder.JSONDecodeError:
         return err(400, "Malformed post") 
-    if not ( 'session_id' in api_data and type(api_data['session_id']) is int ):
+    if not ( 'session_id' in apidata and type(apidata['session_id']) is int ):
         return err(400, "Malformed post")
-    session_id = api_data['session_id']
-    if not ( 'chatlog' in api_data and type(api_data['chatlog']) is list and all([type(el) is dict for el in api_data['chatlog']]) ):
+    session_id = apidata['session_id']
+    if not ( 'chatlog' in apidata and type(apidata['chatlog']) is list and all([type(el) is dict for el in apidata['chatlog']]) ):
         return err(400, "Malformed post")
     session = Session.objects.filter(pk=session_id).first()
     if not session:
@@ -3984,28 +3986,30 @@ def api_upload_chat(request):
             return err(400, "Could not find official timeslot for session")
     filename = f"{doc.name}-{doc.rev}.json"
     doc.uploaded_filename = filename
-    write_doc_for_session(session, 'chatlog', filename, api_data['chatlog'] )
+    write_doc_for_session(session, 'chatlog', filename, json.dumps(apidata['chatlog']))
     e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
     doc.save_with_history([e])
     return HttpResponse("Done", status=200, content_type='text/plain')  
 
 @require_api_key
-@role_required('Recording Manager', 'Secretariat')
+@role_required('Recording Manager')
 @csrf_exempt
 def api_upload_poll(request):
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
-    api_data_post = request.POST.get('api_data')
-    if not api_data_post:
-        return err(400, "Missing api_data parameter")
+    if request.method != 'POST':
+        return err(405, "Method not allowed")
+    apidata_post = request.POST.get('apidata')
+    if not apidata_post:
+        return err(400, "Missing apidata parameter")
     try:
-        api_data = json.loads(api_data_post)
+        apidata = json.loads(apidata_post)
     except json.decoder.JSONDecodeError:
         return err(400, "Malformed post") 
-    if not ( 'session_id' in api_data and type(api_data['session_id']) is int ):
+    if not ( 'session_id' in apidata and type(apidata['session_id']) is int ):
         return err(400, "Malformed post")
-    session_id = api_data['session_id']
-    if not ( 'polls' in api_data and type(api_data['poll']) is list and all([type(el) is dict for el in api_data['polls']]) ):
+    session_id = apidata['session_id']
+    if not ( 'polls' in apidata and type(apidata['poll']) is list and all([type(el) is dict for el in apidata['polls']]) ):
         return err(400, "Malformed post")
     session = Session.objects.filter(pk=session_id).first()
     if not session:
@@ -4022,7 +4026,7 @@ def api_upload_poll(request):
             return err(400, "Could not find official timeslot for session")
     filename = f"{doc.name}-{doc.rev}.json"
     doc.uploaded_filename = filename
-    write_doc_for_session(session, 'polls', filename, api_data['polls'] )
+    write_doc_for_session(session, 'polls', filename, apidata['polls'] )
     e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
     doc.save_with_history([e])
     return HttpResponse("Done", status=200, content_type='text/plain') 

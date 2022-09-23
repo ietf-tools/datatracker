@@ -4,7 +4,7 @@ from django.db import migrations
 def forward(apps, shema_editor):
     StateType = apps.get_model("doc", "StateType")
     State = apps.get_model("doc", "State")
-    for slug in ("chatlogs", "polls"):     
+    for slug in ("chatlog", "polls"):     
         StateType.objects.create(slug=slug, label="State")
         for state_slug in ("active", "deleted"):
             State.objects.create(
@@ -19,8 +19,8 @@ def forward(apps, shema_editor):
 def reverse(apps, shema_editor):
     StateType = apps.get_model("doc", "StateType")
     State = apps.get_model("doc", "State")
-    State.objects.filter(type_id__in=("chatlogs", "polls")).delete()
-    StateType.objects.filter(slug__in=("chatlogs", "polls")).delete()  
+    State.objects.filter(type_id__in=("chatlog", "polls")).delete()
+    StateType.objects.filter(slug__in=("chatlog", "polls")).delete()  
 
 class Migration(migrations.Migration):
 
