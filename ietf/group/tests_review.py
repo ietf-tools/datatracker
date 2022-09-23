@@ -7,6 +7,7 @@ import debug      # pyflakes:ignore
 
 from pyquery import PyQuery
 
+from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
 
@@ -477,7 +478,7 @@ class ReviewTests(TestCase):
         review_req1 = ReviewRequestFactory()
         review_assignment_completed = ReviewAssignmentFactory(review_request=review_req1,reviewer=EmailFactory(person__user__username='marschairman'), state_id='completed', reviewed_rev=0)
         ReviewAssignmentFactory(review_request=review_req1,reviewer=review_assignment_completed.reviewer)
-        TelechatDocEvent.objects.create(telechat_date=datetime.date.today(), type='scheduled_for_telechat', by=review_assignment_completed.reviewer.person, doc=review_req1.doc, rev=0)
+        TelechatDocEvent.objects.create(telechat_date=date_today(settings.TIME_ZONE), type='scheduled_for_telechat', by=review_assignment_completed.reviewer.person, doc=review_req1.doc, rev=0)
 
         DBTemplateFactory.create(path='/group/defaults/email/open_assignments.txt',
                                  type_id='django',
@@ -598,7 +599,7 @@ class ReviewTests(TestCase):
         self.assertEqual(settings.skip_next, 0)
 
         # add unavailable period
-        start_date = datetime.date.today() + datetime.timedelta(days=10)
+        start_date = date_today() + datetime.timedelta(days=10)
         empty_outbox()
         r = self.client.post(url, {
             "action": "add_period",

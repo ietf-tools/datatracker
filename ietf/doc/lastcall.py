@@ -10,6 +10,8 @@ from ietf.person.models import Person
 from ietf.doc.utils import add_state_change_event, update_action_holders
 from ietf.doc.mails import generate_ballot_writeup, generate_approval_mail, generate_last_call_announcement
 from ietf.doc.mails import send_last_call_request, email_last_call_expired, email_last_call_expired_with_downref
+from ietf.utils.timezone import date_today, DEADLINE_TZINFO
+
 
 def request_last_call(request, doc):
     if not doc.latest_event(type="changed_ballot_writeup_text"):
@@ -33,7 +35,7 @@ def request_last_call(request, doc):
     e.save()
 
 def get_expired_last_calls():
-    today = datetime.date.today()
+    today = date_today(DEADLINE_TZINFO)
     for d in Document.objects.filter(Q(states__type="draft-iesg", states__slug="lc")
                                     | Q(states__type="statchg", states__slug="in-lc")):
         e = d.latest_event(LastCallDocEvent, type="sent_last_call")

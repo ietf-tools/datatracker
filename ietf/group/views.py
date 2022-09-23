@@ -119,7 +119,7 @@ from ietf.settings import MAILING_LIST_INFO_URL
 from ietf.utils.response import permission_denied
 from ietf.utils.text import strip_suffix
 from ietf.utils import markdown
-from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO
+from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO
 
 
 # --- Helpers ----------------------------------------------------------
@@ -1389,7 +1389,7 @@ def review_requests(request, acronym, group_type=None):
     unassigned_review_requests.sort(key=lambda r: r.doc.name)
 
     open_review_assignments = list(ReviewAssignment.objects.filter(review_request__team=group, state_id__in=('assigned','accepted')).order_by('-assigned_on'))
-    today = datetime.date.today()
+    today = date_today(DEADLINE_TZINFO)
     unavailable_periods = current_unavailable_periods_for_reviewers(group)
     for a in open_review_assignments:
         a.reviewer_unavailable = any(p.availability == "unavailable"
@@ -1460,7 +1460,7 @@ def reviewer_overview(request, acronym, group_type=None):
         unavailable_periods[p.person_id].append(p)
     reviewer_roles = { r.person_id: r for r in Role.objects.filter(group=group, name="reviewer").select_related("email") }
 
-    today = datetime.date.today()
+    today = date_today()
 
     max_closed_reqs = settings.GROUP_REVIEW_MAX_ITEMS_TO_SHOW_IN_REVIEWER_LIST
     days_back = settings.GROUP_REVIEW_DAYS_TO_SHOW_IN_REVIEWER_LIST
@@ -1838,7 +1838,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
             period.save()
             update_change_reason(period, "Added unavailability period: {}".format(period))
 
-            today = datetime.date.today()
+            today = date_today()
 
             in_the_past = period.end_date and period.end_date < today
 
@@ -1879,7 +1879,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
                     period.delete()
                     update_change_reason(period, "Removed unavailability period: {}".format(period))
 
-                    today = datetime.date.today()
+                    today = date_today()
 
                     in_the_past = period.end_date and period.end_date < today
 

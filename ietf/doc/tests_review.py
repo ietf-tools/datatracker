@@ -38,7 +38,7 @@ from ietf.utils.mail import outbox, empty_outbox, parseaddr, on_behalf_of, get_p
 from ietf.utils.test_utils import login_testing_unauthorized, reload_db_objects
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import strip_prefix, xslugify
-from ietf.utils.timezone import DEADLINE_TZINFO
+from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 from django.utils.html import escape
 
 class ReviewTests(TestCase):
@@ -78,7 +78,7 @@ class ReviewTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        deadline = datetime.date.today() + datetime.timedelta(days=10)
+        deadline = date_today() + datetime.timedelta(days=10)
 
         empty_outbox()
 
@@ -268,7 +268,7 @@ class ReviewTests(TestCase):
             team=review_req.team,
             state_id='assigned',
             requested_rev="01",
-            deadline=datetime.date.today() - datetime.timedelta(days=80),
+            deadline=date_today() - datetime.timedelta(days=80),
         )
         ReviewAssignmentFactory(
             review_request = req,
@@ -526,7 +526,7 @@ class ReviewTests(TestCase):
             messages = r.json()["messages"]
             self.assertEqual(len(messages), 2)
 
-            today = datetime.date.today()
+            today = date_today()
 
             self.assertEqual(messages[0]["url"], "https://www.example.com/testmessage")
             self.assertTrue("John Doe" in messages[0]["content"])
