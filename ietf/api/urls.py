@@ -40,6 +40,7 @@ urlpatterns = [
     # Let MeetEcho upload session chatlog
     url(r'^notify/session/chatlog/?$', meeting_views.api_upload_chatlog),    
     # Let MeetEcho upload session polls
+    url(r'^notify/session/polls/?$', meeting_views.api_upload_polls),    
     # Let the registration system notify us about registrations
     url(r'^notify/meeting/registration/?', api_views.api_new_meeting_registration),
     # OpenID authentication provider

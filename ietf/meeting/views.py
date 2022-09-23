@@ -3994,7 +3994,7 @@ def api_upload_chatlog(request):
 @require_api_key
 @role_required('Recording Manager')
 @csrf_exempt
-def api_upload_poll(request):
+def api_upload_polls(request):
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
     if request.method != 'POST':
@@ -4009,7 +4009,7 @@ def api_upload_poll(request):
     if not ( 'session_id' in apidata and type(apidata['session_id']) is int ):
         return err(400, "Malformed post")
     session_id = apidata['session_id']
-    if not ( 'polls' in apidata and type(apidata['poll']) is list and all([type(el) is dict for el in apidata['polls']]) ):
+    if not ( 'polls' in apidata and type(apidata['polls']) is list and all([type(el) is dict for el in apidata['polls']]) ):
         return err(400, "Malformed post")
     session = Session.objects.filter(pk=session_id).first()
     if not session:
@@ -4026,7 +4026,7 @@ def api_upload_poll(request):
             return err(400, "Could not find official timeslot for session")
     filename = f"{doc.name}-{doc.rev}.json"
     doc.uploaded_filename = filename
-    write_doc_for_session(session, 'polls', filename, apidata['polls'] )
+    write_doc_for_session(session, 'polls', filename, json.dumps(apidata['polls']))
     e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
     doc.save_with_history([e])
     return HttpResponse("Done", status=200, content_type='text/plain') 
