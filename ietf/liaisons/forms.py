@@ -226,7 +226,7 @@ class LiaisonModelForm(BetterModelForm):
     to_groups.widget.attrs['data-minimum-input-length'] = 0
     deadline = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Deadline', required=True)
     related_to = SearchableLiaisonStatementsField(label='Related Liaison Statement', required=False)
-    submitted_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Submission date', required=True, initial=date_today(DEADLINE_TZINFO))
+    submitted_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Submission date', required=True, initial=lambda: date_today(DEADLINE_TZINFO))
     attachments = CustomModelMultipleChoiceField(queryset=Document.objects,label='Attachments', widget=ShowAttachmentsWidget, required=False)
     attach_title = forms.CharField(label='Title', required=False)
     attach_file = forms.FileField(label='File', required=False)
