@@ -821,7 +821,7 @@ def times_edit(request, meeting_id, schedule_name, time):
     parts = [ int(x) for x in time.split(':') ]
     dtime = make_aware(datetime.datetime(*parts), meeting.tz())
     timeslots = TimeSlot.objects.filter(meeting=meeting,time=dtime)
-    day = (dtime.date() - meeting.date) // datetime.timedelta(days=1)
+    day = (dtime.date() - meeting.date).days
     initial = {'day': day,
                'time': dtime.strftime('%H:%M'),
                'duration': timeslots.first().duration,
