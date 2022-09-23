@@ -18,6 +18,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.decorators import available_attrs
 from django.utils.http import urlquote
 
@@ -282,8 +283,7 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
         info = {}
         if regs:
             # maybe register attendance if logged in to follow a meeting
-            today = datetime.date.today()
-            if meeting.date <= today <= meeting.end_date():
+            if meeting.start_datetime() <= timezone.now() <= meeting.end_datetime():
                 client = ClientRecord.objects.get(client_id=self.client.client_id)
                 if client.name == 'Meetecho':
                     for reg in regs:
