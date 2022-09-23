@@ -10,6 +10,7 @@
             download="{% if not snapshot and doc.get_state_slug == 'rfc' %}rfc{{ doc.rfc_number }}{% else %}{{ doc.name }}-{{ doc.rev }}{% endif %}.bib"
           {% endcomment %}
          {% endif %}
+          target="_blank"
           href="{{ url }}">
             {% if label == 'pdf' or label == 'pdfized' %}
                 <i class="bi bi-file-pdf"></i> pdf
