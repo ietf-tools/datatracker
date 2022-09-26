@@ -56,9 +56,20 @@ $bootstrap-icons-font-src: url(data-url:npm:bootstrap-icons/font/fonts/bootstrap
 url(data-url:npm:bootstrap-icons/font/fonts/bootstrap-icons.woff) format("woff");
 @import "bootstrap-icons/font/bootstrap-icons";
 
+:root {
+    --doc-ptsize-max: 16pt;
+}
 
 .overscroll-none {
     overscroll-behavior: none;
+}
+
+.sidebar-toggle[aria-expanded="true"] {
+    display: none;
+}
+
+.sidebar-toggle[aria-expanded="false"] {
+    display: inherit;
 }
 
 @media screen {
@@ -100,27 +111,27 @@ url(data-url:npm:bootstrap-icons/font/fonts/bootstrap-icons.woff) format("woff")
 
     @media screen {
         @include media-breakpoint-only(xs) {
-            font-size: 7pt;
+            font-size: min(7pt, var(--doc-ptsize-max));
         }
 
         @include media-breakpoint-up(sm) {
-            font-size: 9.5pt;
+            font-size: min(9.5pt, var(--doc-ptsize-max));
         }
 
         @include media-breakpoint-up(md) {
-            font-size: 9.5pt;
+            font-size: min(9.5pt, var(--doc-ptsize-max));
         }
 
         @include media-breakpoint-up(lg) {
-            font-size: 11pt;
+            font-size: min(11pt, var(--doc-ptsize-max));
         }
 
         @include media-breakpoint-up(xl) {
-            font-size: 13pt;
+            font-size: min(13pt, var(--doc-ptsize-max));
         }
 
         @include media-breakpoint-up(xxl) {
-            font-size: 16pt;
+            font-size: min(16pt, var(--doc-ptsize-max));
         }
 
         .grey,

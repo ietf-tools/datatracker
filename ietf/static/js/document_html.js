@@ -16,7 +16,7 @@ const cookies = Cookies.withAttributes({ sameSite: "strict" });
 // otherwise the main view doesn't scroll?
 
 document.addEventListener("scroll", debounce(function () {
-    const items = document.querySelector("#toc-nav")
+    const items = document.getElementById("toc-nav")
         .querySelectorAll(".active");
     const item = [...items].pop();
     if (item) {
@@ -28,6 +28,21 @@ document.addEventListener("scroll", debounce(function () {
 }, 100));
 
 document.addEventListener("DOMContentLoaded", function (event) {
+    // handle point size slider
+    const cookie = "doc-ptsize-max";
+
+    function change_ptsize(ptsize) {
+        document.documentElement.style.setProperty(`--${cookie}`,
+            `${ptsize}pt`);
+        cookies.set(cookie, ptsize);
+    }
+
+    document.getElementById("ptsize")
+        .oninput = function () { change_ptsize(this.value) };
+
+    const ptsize = cookies.get(cookie);
+    change_ptsize(ptsize ? Math.min(Math.max(7, ptsize), 16) : 16);
+
     // Use the Bootstrap tooltip plugin for all elements with a title attribute
     const tt_triggers = document.querySelectorAll(
         "[title]:not([title=''])");
@@ -55,7 +70,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
     });
 
     // Set up a nav pane
-    const toc_pane = document.querySelector("#toc-nav");
+    const toc_pane = document.getElementById("toc-nav");
     populate_nav(toc_pane,
         `#content h2, #content h3, #content h4, #content h5, #content h6
          #content .h1, #content .h2, #content .h3, #content .h4, #content .h5, #content .h6`,
@@ -84,5 +99,4 @@ document.addEventListener("DOMContentLoaded", function (event) {
     };
     defpane.show();
     document.activeElement.blur();
-
 });
