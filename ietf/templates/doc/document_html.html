@@ -175,20 +175,22 @@
                                  role="tabpanel"
                                  aria-labelledby="pref-tab"
                                  tabindex="0">
-                                <div class="fw-bold mb-2">Tab to show by default</div>
+                                <label class="form-label fw-bold mb-2">Tab to show by default</label>
                                 <div class="btn-group-vertical btn-group-sm d-flex" role="group">
                                     <input type="radio" class="btn-check" name="deftab" id="docinfo-radio">
                                     <label class="btn btn-outline-primary" for="docinfo-radio">Info</label>
                                     <input type="radio" class="btn-check" name="deftab" id="toc-radio">
                                     <label class="btn btn-outline-primary" for="toc-radio">Contents</label>
                                 </div>
-                                <div class="fw-bold mt-4 mb-2">HTMLization configuration</div>
+                                <label class="form-label fw-bold mt-4 mb-2">HTMLization configuration</label>
                                 <div class="btn-group-vertical btn-group-sm d-flex" role="group">
                                     <input type="radio" class="btn-check" name="htmlconf" id="txt-radio">
                                     <label class="btn btn-outline-primary" for="txt-radio" title="">HTMLize the plaintext</label>
                                     <input type="radio" class="btn-check" name="htmlconf" id="html-radio">
                                     <label class="btn btn-outline-primary" for="html-radio" title="">Plaintextify the HTML</label>
                                 </div>
+                                <label class="form-label fw-bold mt-4 mb-2" for="ptsize">Maximum font size</label>
+                                <input type="range" class="form-range" min="7" max="16" id="ptsize" oninput="ptdemo.value = ptsize.value">
                             </div>
                         </div>
                     </div>
