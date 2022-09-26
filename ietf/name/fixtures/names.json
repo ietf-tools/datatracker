@@ -2412,7 +2412,7 @@
       "next_states": [],
       "order": 0,
       "slug": "active",
-      "type": "chatlogs",
+      "type": "chatlog",
       "used": true
     },
     "model": "doc.state",
@@ -2425,7 +2425,7 @@
       "next_states": [],
       "order": 0,
       "slug": "deleted",
-      "type": "chatlogs",
+      "type": "chatlog",
       "used": true
     },
     "model": "doc.state",
@@ -2438,37 +2438,11 @@
       "next_states": [],
       "order": 0,
       "slug": "active",
-      "type": "chatlog",
-      "used": true
-    },
-    "model": "doc.state",
-    "pk": 169
-  },
-  {
-    "fields": {
-      "desc": "",
-      "name": "Deleted",
-      "next_states": [],
-      "order": 0,
-      "slug": "deleted",
-      "type": "chatlog",
-      "used": true
-    },
-    "model": "doc.state",
-    "pk": 170
-  },
-  {
-    "fields": {
-      "desc": "",
-      "name": "Active",
-      "next_states": [],
-      "order": 0,
-      "slug": "active",
       "type": "polls",
       "used": true
     },
     "model": "doc.state",
-    "pk": 171
+    "pk": 167
   },
   {
     "fields": {
@@ -2481,7 +2455,7 @@
       "used": true
     },
     "model": "doc.state",
-    "pk": 172
+    "pk": 168
   },
   {
     "fields": {
@@ -2517,13 +2491,6 @@
     },
     "model": "doc.statetype",
     "pk": "chatlog"
-  },
-  {
-    "fields": {
-      "label": "State"
-    },
-    "model": "doc.statetype",
-    "pk": "chatlogs"
   },
   {
     "fields": {
@@ -10239,17 +10206,6 @@
   {
     "fields": {
       "desc": "",
-      "name": "Chat Logs",
-      "order": 0,
-      "prefix": "chatlogs",
-      "used": true
-    },
-    "model": "name.doctypename",
-    "pk": "chatlogs"
-  },
-  {
-    "fields": {
-      "desc": "",
       "name": "Conflict Review",
       "order": 0,
       "prefix": "conflict-review",
@@ -16130,7 +16086,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2022-09-12T00:09:32.787",
+      "time": "2022-09-22T00:09:27.552",
       "used": true,
       "version": "xym 0.5"
     },
@@ -16141,7 +16097,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2022-09-12T00:09:33.130",
+      "time": "2022-09-22T00:09:27.867",
       "used": true,
       "version": "pyang 2.5.3"
     },
@@ -16152,7 +16108,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2022-09-12T00:09:33.147",
+      "time": "2022-09-22T00:09:27.886",
       "used": true,
       "version": "yanglint SO 1.9.2"
     },
@@ -16163,7 +16119,7 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2022-09-12T00:09:34.054",
+      "time": "2022-09-22T00:09:28.809",
       "used": true,
       "version": "xml2rfc 3.14.2"
     },
