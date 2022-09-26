@@ -43,6 +43,11 @@
 ### Getting Started
 
 This project is following the standard **Git Feature Workflow** development model. Learn about all the various steps of the development workflow, from creating a fork to submitting a pull request, in the [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md) guide.
+#[1a1# Network Throttling
+
+Lighthouse applies network throttling to emulate the ~85th percentile mobile connection speed even when run on much faster fiber connections.
+
+## The mobile network throttling]
 
 > Make sure to read the [Styleguides](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md#styleguides) section to ensure a cohesive code format across the project.
 
