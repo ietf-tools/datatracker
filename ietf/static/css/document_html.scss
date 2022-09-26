@@ -64,6 +64,14 @@ url(data-url:npm:bootstrap-icons/font/fonts/bootstrap-icons.woff) format("woff")
     overscroll-behavior: none;
 }
 
+.sidebar-toggle[aria-expanded="true"] {
+    display: none;
+}
+
+.sidebar-toggle[aria-expanded="false"] {
+    display: inherit;
+}
+
 @media screen {
     @include media-breakpoint-down(md) {
         body {

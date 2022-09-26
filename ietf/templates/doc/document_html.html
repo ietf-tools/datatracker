@@ -32,6 +32,17 @@
         {% include "doc/opengraph.html" %}
     </head>
     <body>
+        <button class="btn btn-outline-secondary position-fixed top-0 end-0 m-2 sidebar-toggle"
+                type="button"
+                id="sidebar-on"
+                data-bs-toggle="collapse"
+                data-bs-target="#sidebar"
+                aria-expanded="{% if request.COOKIES.sidebar != 'off'%}true{% else %}false{% endif %}"
+                aria-controls="sidebar"
+                aria-label="Show metadata sidebar"
+                title="Show metadata sidebar">
+        <i class="bi bi-layout-sidebar-reverse"></i>
+        </button>
         <nav class="navbar navbar-light bg-light px-1 fixed-top d-print-none d-md-none">
             <a class="nav-link ps-1"
                href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">
@@ -94,8 +105,19 @@
                     </div>
                 {% endif %}
             </div>
-            <div class="d-print-none col-3 d-none d-md-block bg-light">
+            <div class="d-print-none col-3 bg-light collapse{% if request.COOKIES.sidebar != 'off'%} show{% endif %}" id="sidebar">
                 <div class="position-fixed col-3 border-start sidebar overflow-scroll overscroll-none">
+                    <button class="btn btn-outline-secondary float-end m-2"
+                            type="button"
+                            id="sidebar-off"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#sidebar"
+                            aria-expanded="{% if request.COOKIES.sidebar != 'off'%}true{% else %}false{% endif %}"
+                            aria-controls="sidebar"
+                            aria-label="Hide metadata sidebar"
+                            title="Hide metadata sidebar">
+                            <i class="bi bi-arrow-bar-up"></i>
+                    </button>
                     <div class="pt-2 pt-lg-3 px-md-2 px-lg-3">
                         <p>
                             <a href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">
@@ -175,7 +197,14 @@
                                  role="tabpanel"
                                  aria-labelledby="pref-tab"
                                  tabindex="0">
-                                <label class="form-label fw-bold mb-2">Tab to show by default</label>
+                                <label class="form-label fw-bold mb-2">Show sidebar by default</label>
+                                <div class="btn-group-vertical btn-group-sm d-flex" role="group">
+                                    <input type="radio" class="btn-check" name="sidebar" id="on-radio">
+                                    <label class="btn btn-outline-primary" for="on-radio">Yes</label>
+                                    <input type="radio" class="btn-check" name="sidebar" id="off-radio">
+                                    <label class="btn btn-outline-primary" for="off-radio">No</label>
+                                </div>
+                                <label class="form-label fw-bold mt-4 mb-2">Tab to show by default</label>
                                 <div class="btn-group-vertical btn-group-sm d-flex" role="group">
                                     <input type="radio" class="btn-check" name="deftab" id="docinfo-radio">
                                     <label class="btn btn-outline-primary" for="docinfo-radio">Info</label>
