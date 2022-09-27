@@ -105,7 +105,7 @@
             {% for author in doc.authors %}
                 {% person_link author %}{% if not forloop.last %},{% endif %}
             {% endfor %}
-            {% if document_html %}
+            {% if document_html and not snapshot or document_html and doc.rev == latest_rev%}
                 <br>
                 <a class="btn btn-primary btn-sm mt-1" href="mailto:{{ doc.name }}@ietf.org?subject={{ doc.name}}" title="Send email to the document authors">Email authors</a>
             {% endif %}
