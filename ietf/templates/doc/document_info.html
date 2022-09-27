@@ -103,7 +103,7 @@
         <td>
             {# Implementation that uses the current primary email for each author #}
             {% for author in doc.authors %}
-                {% person_link author with_email=document_html|yesno:',True' %}{% if not forloop.last %},{% endif %}
+                {% person_link author %}{% if not forloop.last %},{% endif %}
             {% endfor %}
             {% if document_html %}
                 <br>
