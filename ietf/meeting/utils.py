@@ -28,6 +28,7 @@ from ietf.person.models import Person
 from ietf.secr.proceedings.proc_utils import import_audio_files
 from ietf.utils.html import sanitize_document
 from ietf.utils.log import log
+from ietf.utils.timezone import date_today
 
 
 def session_time_for_sorting(session, use_meeting_date):
@@ -70,12 +71,12 @@ def group_sessions(sessions):
 
     sessions = sorted(sessions,key=lambda s:s.time)
 
-    today = datetime.date.today()
     future = []
     in_progress = []
     recent = []
     past = []
     for s in sessions:
+        today = date_today(s.meeting.tz())
         if s.meeting.date > today:
             future.append(s)
         elif s.meeting.end_date() >= today:
@@ -107,7 +108,7 @@ def get_upcoming_manageable_sessions(user):
     # .filter(date__gte=today - F('days')), but unfortunately, it
     # doesn't work correctly with Django 1.11 and MySQL/SQLite
 
-    today = datetime.date.today()
+    today = date_today()
 
     candidate_sessions = add_event_info_to_session_qs(
         Session.objects.filter(meeting__date__gte=today - datetime.timedelta(days=15))

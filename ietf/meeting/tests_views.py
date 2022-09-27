@@ -404,7 +404,7 @@ class MeetingTests(BaseMeetingTestCase):
             self.assertContains(r, row_id)
 
     def test_agenda_iab_session(self):
-        date = datetime.date.today()
+        date = date_today()
         meeting = MeetingFactory(type_id='ietf', date=date )
         make_meeting_test_data(meeting=meeting)
         
@@ -447,7 +447,7 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertIn('venus', venus_row)
         
     def test_agenda_current_audio(self):
-        date = datetime.date.today()
+        date = date_today()
         meeting = MeetingFactory(type_id='ietf', date=date )
         make_meeting_test_data(meeting=meeting)
         url = urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number))
@@ -1190,7 +1190,7 @@ class EditMeetingScheduleTests(TestCase):
         # Meeting must be in the future so it can be edited
         meeting = MeetingFactory(
             type_id='ietf',
-            date=datetime.date.today() + datetime.timedelta(days=7),
+            date=date_today() + datetime.timedelta(days=7),
             populate_schedule=False,
         )
         meeting.schedule = ScheduleFactory(meeting=meeting)
@@ -1845,7 +1845,7 @@ class EditMeetingScheduleTests(TestCase):
         """Schedule editor should not crash when there are no timeslots"""
         meeting = MeetingFactory(
             type_id='ietf',
-            date=datetime.date.today() + datetime.timedelta(days=7),
+            date=date_today() + datetime.timedelta(days=7),
             populate_schedule=False,
         )
         meeting.schedule = ScheduleFactory(meeting=meeting)
@@ -2962,7 +2962,7 @@ class ReorderSlidesTests(TestCase):
     def test_add_slides_to_session(self):
         for type_id in ('ietf','interim'):
             chair_role = RoleFactory(name_id='chair')
-            session = SessionFactory(group=chair_role.group, meeting__date=datetime.date.today()-datetime.timedelta(days=90), meeting__type_id=type_id)
+            session = SessionFactory(group=chair_role.group, meeting__date=date_today() - datetime.timedelta(days=90), meeting__type_id=type_id)
             slides = DocumentFactory(type_id='slides')
             url = urlreverse('ietf.meeting.views.ajax_add_slides_to_session', kwargs={'session_id':session.pk, 'num':session.meeting.number})
 
@@ -2978,7 +2978,7 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 403)
             self.assertIn('materials cutoff', unicontent(r))
 
-            session.meeting.date = datetime.date.today()
+            session.meeting.date = date_today()
             session.meeting.save()
 
             # Invalid order
@@ -3065,7 +3065,7 @@ class ReorderSlidesTests(TestCase):
     def test_remove_slides_from_session(self):
         for type_id in ['ietf','interim']:
             chair_role = RoleFactory(name_id='chair')
-            session = SessionFactory(group=chair_role.group, meeting__date=datetime.date.today()-datetime.timedelta(days=90), meeting__type_id=type_id)
+            session = SessionFactory(group=chair_role.group, meeting__date=date_today()-datetime.timedelta(days=90), meeting__type_id=type_id)
             slides = DocumentFactory(type_id='slides')
             url = urlreverse('ietf.meeting.views.ajax_remove_slides_from_session', kwargs={'session_id':session.pk, 'num':session.meeting.number})
 
@@ -3081,7 +3081,7 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 403)
             self.assertIn('materials cutoff', unicontent(r))
 
-            session.meeting.date = datetime.date.today()
+            session.meeting.date = date_today()
             session.meeting.save()
 
             # Invalid order
@@ -3176,7 +3176,7 @@ class ReorderSlidesTests(TestCase):
 
     def test_reorder_slides_in_session(self):
         chair_role = RoleFactory(name_id='chair')
-        session = SessionFactory(group=chair_role.group, meeting__date=datetime.date.today()-datetime.timedelta(days=90))
+        session = SessionFactory(group=chair_role.group, meeting__date=date_today() - datetime.timedelta(days=90))
         sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session)
         for num, sp in enumerate(sp_list, start=1):
             sp.order = num
@@ -3186,7 +3186,7 @@ class ReorderSlidesTests(TestCase):
         for type_id in ['ietf','interim']:
             
             session.meeting.type_id = type_id
-            session.meeting.date = datetime.date.today()-datetime.timedelta(days=90)
+            session.meeting.date = date_today()-datetime.timedelta(days=90)
             session.meeting.save()
 
             # Not a valid user
@@ -3201,7 +3201,7 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 403)
             self.assertIn('materials cutoff', unicontent(r))
 
-            session.meeting.date = datetime.date.today()
+            session.meeting.date = date_today()
             session.meeting.save()
 
             # Bad index values
@@ -3268,7 +3268,7 @@ class ReorderSlidesTests(TestCase):
 
     def test_slide_order_reconditioning(self):
         chair_role = RoleFactory(name_id='chair')
-        session = SessionFactory(group=chair_role.group, meeting__date=datetime.date.today()-datetime.timedelta(days=90))
+        session = SessionFactory(group=chair_role.group, meeting__date=date_today() - datetime.timedelta(days=90))
         sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session)
         for num, sp in enumerate(sp_list, start=1):
             sp.order = 2*num
@@ -3287,7 +3287,7 @@ class EditTests(TestCase):
 
     def test_official_record_schedule_is_read_only(self):
         def _set_date_offset_and_retrieve_page(meeting, days_offset, client):
-            meeting.date = datetime.date.today() + datetime.timedelta(days=days_offset)
+            meeting.date = date_today() + datetime.timedelta(days=days_offset)
             meeting.save()
             client.login(username="secretary", password="secretary+password")
             url = urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs=dict(num=meeting.number))
@@ -4091,7 +4091,7 @@ class SessionDetailsTests(TestCase):
     def test_session_details(self):
 
         group = GroupFactory.create(type_id='wg',state_id='active')
-        session = SessionFactory.create(meeting__type_id='ietf',group=group, meeting__date=datetime.date.today()+datetime.timedelta(days=90))
+        session = SessionFactory.create(meeting__type_id='ietf',group=group, meeting__date=date_today() + datetime.timedelta(days=90))
         SessionPresentationFactory.create(session=session,document__type_id='draft',rev=None)
         SessionPresentationFactory.create(session=session,document__type_id='minutes')
         SessionPresentationFactory.create(session=session,document__type_id='slides')
@@ -4116,7 +4116,7 @@ class SessionDetailsTests(TestCase):
         session = SessionFactory.create(
             meeting__type_id='ietf',
             group=group,
-            meeting__date=datetime.date.today() + datetime.timedelta(days=90),
+            meeting__date=date_today() + datetime.timedelta(days=90),
         )
         session_details_url = urlreverse(
             'ietf.meeting.views.session_details',
@@ -4168,7 +4168,7 @@ class SessionDetailsTests(TestCase):
     def test_session_details_past_interim(self):
         group = GroupFactory.create(type_id='wg',state_id='active')
         chair = RoleFactory(name_id='chair',group=group)
-        session = SessionFactory.create(meeting__type_id='interim',group=group, meeting__date=datetime.date.today()-datetime.timedelta(days=90))
+        session = SessionFactory.create(meeting__type_id='interim',group=group, meeting__date=date_today() - datetime.timedelta(days=90))
         SessionPresentationFactory.create(session=session,document__type_id='draft',rev=None)
         SessionPresentationFactory.create(session=session,document__type_id='minutes')
         SessionPresentationFactory.create(session=session,document__type_id='slides')
@@ -4187,7 +4187,7 @@ class SessionDetailsTests(TestCase):
         group = GroupFactory.create(type_id='wg',state_id='active')
         group_chair = PersonFactory.create()
         group.role_set.create(name_id='chair',person = group_chair, email = group_chair.email())
-        session = SessionFactory.create(meeting__type_id='ietf',group=group, meeting__date=datetime.date.today()+datetime.timedelta(days=90))
+        session = SessionFactory.create(meeting__type_id='ietf',group=group, meeting__date=date_today() + datetime.timedelta(days=90))
         SessionPresentationFactory.create(session=session,document__type_id='draft',rev=None)
         old_draft = session.sessionpresentation_set.filter(document__type='draft').first().document
         new_draft = DocumentFactory(type_id='draft')
@@ -4353,7 +4353,7 @@ class InterimTests(TestCase):
     def do_interim_skip_announcement_test(self, base_session=False, extra_session=False, canceled_session=False):
         make_meeting_test_data()
         group = Group.objects.get(acronym='irg')
-        date = datetime.date.today() + datetime.timedelta(days=30)
+        date = date_today() + datetime.timedelta(days=30)
         meeting = make_interim_meeting(group=group, date=date, status='scheda')
         session = meeting.session_set.first()
         if base_session:
@@ -4632,7 +4632,7 @@ class InterimTests(TestCase):
         self.do_interim_approve_by_secretariat_test(extra_session=True, canceled_session=True, base_session=True)
 
     def test_past(self):
-        today = datetime.date.today()
+        today = date_today()
         last_week = today - datetime.timedelta(days=7)
         ietf = SessionFactory(meeting__type_id='ietf',meeting__date=last_week,group__state_id='active',group__parent=GroupFactory(state_id='active'))
         SessionFactory(meeting__type_id='interim',meeting__date=last_week,status_id='canceled',group__state_id='active',group__parent=GroupFactory(state_id='active'))
@@ -4651,7 +4651,7 @@ class InterimTests(TestCase):
         if querystring is not None:
             url += '?' + querystring
 
-        today = datetime.date.today()
+        today = date_today()
         interims = dict(
             mars=add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='mars')).filter(current_status='sched').first().meeting,
             ames=add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='ames')).filter(current_status='canceled').first().meeting,
@@ -4957,7 +4957,7 @@ class InterimTests(TestCase):
 
     def test_interim_request_multi_day_non_consecutive(self):
         make_meeting_test_data()
-        date = datetime.date.today() + datetime.timedelta(days=30)
+        date = date_today() + datetime.timedelta(days=30)
         date2 = date + datetime.timedelta(days=2)
         time = timezone.now().time().replace(microsecond=0,second=0)
         group = Group.objects.get(acronym='mars')
@@ -4994,7 +4994,7 @@ class InterimTests(TestCase):
     def test_interim_request_multi_day_cancel(self):
         """All sessions of a multi-day interim request should be canceled"""
         length_before = len(outbox)
-        date = datetime.date.today()+datetime.timedelta(days=15)
+        date = date_today() + datetime.timedelta(days=15)
 
         # Set up an interim request with several sessions 
         num_sessions = 3
@@ -5192,7 +5192,7 @@ class InterimTests(TestCase):
     def test_interim_request_details_announcement(self):
         '''Test access to Announce / Skip Announce features'''
         make_meeting_test_data()
-        date = datetime.date.today() + datetime.timedelta(days=30)
+        date = date_today() + datetime.timedelta(days=30)
         group = Group.objects.get(acronym='mars')
         meeting = make_interim_meeting(group=group, date=date, status='scheda')
         url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
@@ -5950,7 +5950,7 @@ class MaterialsTests(TestCase):
     def test_upload_bluesheets_interim_chair_access(self):
         make_meeting_test_data()
         mars = Group.objects.get(acronym='mars')
-        session=SessionFactory(meeting__type_id='interim',group=mars, meeting__date = datetime.date.today())
+        session=SessionFactory(meeting__type_id='interim',group=mars, meeting__date = date_today())
         url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
         self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(url)
@@ -6193,7 +6193,7 @@ class MaterialsTests(TestCase):
         for type_id in ['ietf','interim']:
             session = SessionFactory(meeting__type_id=type_id)
             chair = RoleFactory(group=session.group,name_id='chair').person
-            session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+            session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
             newperson = PersonFactory()
             
             session_overview_url = urlreverse('ietf.meeting.views.session_details',kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
@@ -6241,7 +6241,7 @@ class MaterialsTests(TestCase):
 
     def test_disapprove_proposed_slides(self):
         submission = SlideSubmissionFactory()
-        submission.session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        submission.session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 1)
         chair = RoleFactory(group=submission.session.group,name_id='chair').person
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
@@ -6259,7 +6259,7 @@ class MaterialsTests(TestCase):
     def test_approve_proposed_slides(self):
         submission = SlideSubmissionFactory()
         session = submission.session
-        session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
         chair = RoleFactory(group=submission.session.group,name_id='chair').person
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, url)
@@ -6284,7 +6284,7 @@ class MaterialsTests(TestCase):
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
         session1 = submission.session
         session2 = SessionFactory(group=submission.session.group, meeting=submission.session.meeting)
-        submission.session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        submission.session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
         chair = RoleFactory(group=submission.session.group,name_id='chair').person
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, url)
@@ -6301,7 +6301,7 @@ class MaterialsTests(TestCase):
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
         session1 = submission.session
         session2 = SessionFactory(group=submission.session.group, meeting=submission.session.meeting)
-        submission.session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        submission.session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
         chair = RoleFactory(group=submission.session.group,name_id='chair').person
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, url)
@@ -6315,7 +6315,7 @@ class MaterialsTests(TestCase):
     def test_submit_and_approve_multiple_versions(self):
         session = SessionFactory(meeting__type_id='ietf')
         chair = RoleFactory(group=session.group,name_id='chair').person
-        session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        session.meeting.importantdate_set.create(name_id='revsub',date=date_today()+datetime.timedelta(days=20))
         newperson = PersonFactory()
         
         propose_url = urlreverse('ietf.meeting.views.propose_session_slides', kwargs={'session_id':session.pk, 'num': session.meeting.number})          
@@ -6661,8 +6661,8 @@ class HasMeetingsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(q('#id_group option[value="%d"]'%group.pk))
-        date = datetime.date.today() + datetime.timedelta(days=30+meeting_count)
-        time = timezone.now().time().replace(microsecond=0,second=0)
+        date = date_today() + datetime.timedelta(days=30+meeting_count)
+        time = time_now().replace(microsecond=0,second=0)
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'

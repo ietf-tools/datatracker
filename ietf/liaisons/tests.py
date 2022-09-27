@@ -31,6 +31,8 @@ from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.liaisons.mails import send_sdo_reminder, possibly_send_deadline_reminder
 from ietf.liaisons.views import contacts_from_roles, contact_email_from_role
+from ietf.utils.timezone import date_today, DEADLINE_TZINFO
+
 
 # -------------------------------------------------
 # Helper Functions
@@ -244,7 +246,7 @@ class ManagementCommandTests(TestCase):
     def test_check_liaison_deadlines(self):
         from django.core.management import call_command
 
-        LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
+        LiaisonStatementFactory(deadline=date_today(DEADLINE_TZINFO)+datetime.timedelta(days=1))
 
         out = io.StringIO()
         mailbox_before = len(outbox)
@@ -312,7 +314,7 @@ class LiaisonManagementTests(TestCase):
         self.assertNotContains(r, 'Private comment')
 
     def test_taken_care_of(self):
-        liaison = LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
+        liaison = LiaisonStatementFactory(deadline=date_today(DEADLINE_TZINFO)+datetime.timedelta(days=1))
 
         url = urlreverse('ietf.liaisons.views.liaison_detail', kwargs=dict(object_id=liaison.pk))
         # normal get
@@ -386,7 +388,7 @@ class LiaisonManagementTests(TestCase):
         self.assertTrue(liaison.liaisonstatementevent_set.filter(type='posted'))
 
     def test_edit_liaison(self):
-        liaison = LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
+        liaison = LiaisonStatementFactory(deadline=date_today(DEADLINE_TZINFO) + datetime.timedelta(days=1))
         LiaisonStatementEventFactory(statement=liaison,type_id='submitted', time=timezone.now()-datetime.timedelta(days=1))
         LiaisonStatementEventFactory(statement=liaison,type_id='posted')
         from_group = liaison.from_groups.first()
@@ -698,7 +700,7 @@ class LiaisonManagementTests(TestCase):
         from_groups = [ str(g.pk) for g in Group.objects.filter(type="sdo") ]
         to_group = Group.objects.get(acronym="mars")
         submitter = Person.objects.get(user__username="marschairman")
-        today = datetime.date.today()
+        today = date_today()
         related_liaison = liaison
         r = self.client.post(url,
                              dict(from_groups=from_groups,
@@ -777,7 +779,7 @@ class LiaisonManagementTests(TestCase):
         from_group = Group.objects.get(acronym="mars")
         to_group = Group.objects.filter(type="sdo")[0]
         submitter = Person.objects.get(user__username="marschairman")
-        today = datetime.date.today()
+        today = date_today()
         related_liaison = liaison
         r = self.client.post(url,
                              dict(from_groups=str(from_group.pk),
@@ -845,7 +847,7 @@ class LiaisonManagementTests(TestCase):
         from_group = Group.objects.get(acronym="mars")
         to_group = Group.objects.filter(type="sdo")[0]
         submitter = Person.objects.get(user__username="marschairman")
-        today = datetime.date.today()
+        today = date_today()
         r = self.client.post(url,
                              dict(from_groups=str(from_group.pk),
                                   from_contact=submitter.email_address(),
@@ -1150,7 +1152,7 @@ class LiaisonManagementTests(TestCase):
         self.assertTrue('ulm-liaiman@' in outbox[-1]['To'])
 
     def test_send_liaison_deadline_reminder(self):
-        liaison = LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
+        liaison = LiaisonStatementFactory(deadline=date_today(DEADLINE_TZINFO) + datetime.timedelta(days=1))
 
         mailbox_before = len(outbox)
         possibly_send_deadline_reminder(liaison)

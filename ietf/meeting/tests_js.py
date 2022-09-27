@@ -2044,7 +2044,7 @@ class InterimTests(IetfSeleniumTestCase):
 
         # Create a group with a plenary interim session for testing type filters
         somegroup = GroupFactory(acronym='sg', name='Some Group')
-        sg_interim = make_interim_meeting(somegroup, datetime.date.today() + datetime.timedelta(days=20))
+        sg_interim = make_interim_meeting(somegroup, date_today() + datetime.timedelta(days=20))
         sg_sess = sg_interim.session_set.first()
         sg_slot = sg_sess.timeslotassignments.first().timeslot
         sg_sess.purpose_id = 'plenary'
