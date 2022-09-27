@@ -1,9 +1,11 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
+import base64
 import datetime
 import hashlib
+import hmac
 import os
 import re
 import tempfile
@@ -101,8 +103,7 @@ def get_user_email(user):
     return user._email_cache
 
 def get_hash_nominee_position(date, nominee_position_id):
-    return hashlib.md5(('%s%s%s' % (settings.SECRET_KEY, date, nominee_position_id)).encode('utf-8')).hexdigest()
-
+    return hmac.new(settings.NOMCOM_APP_SECRET, f"{date}{nominee_position_id}".encode('utf-8'), hashlib.sha256).hexdigest()
 
 def initialize_templates_for_group(group):
     for template_name in DEFAULT_NOMCOM_TEMPLATES:
@@ -165,6 +166,8 @@ def delete_nomcom_templates(nomcom):
     nomcom_template_path = '/nomcom/' + nomcom.group.acronym
     DBTemplate.objects.filter(path__contains=nomcom_template_path).delete()
 
+def command_line_safe_secret(secret):
+    return base64.encodebytes(secret).decode('utf-8').rstrip()
 
 def retrieve_nomcom_private_key(request, year):
     private_key = request.session.get('NOMCOM_PRIVATE_KEY_%s' % year, None)
@@ -173,8 +176,13 @@ def retrieve_nomcom_private_key(request, year):
         return private_key
 
     command = "%s bf -d -in /dev/stdin -k \"%s\" -a"
-    code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
-                                       settings.SECRET_KEY), private_key)
+    code, out, error = pipe(
+        command % (
+            settings.OPENSSL_COMMAND,
+            command_line_safe_secret(settings.NOMCOM_APP_SECRET)
+        ),
+        private_key
+    )
     if code != 0:
         log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
     return out
@@ -185,8 +193,13 @@ def store_nomcom_private_key(request, year, private_key):
         request.session['NOMCOM_PRIVATE_KEY_%s' % year] = ''
     else:
         command = "%s bf -e -in /dev/stdin -k \"%s\" -a"
-        code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
-                                           settings.SECRET_KEY), private_key)
+        code, out, error = pipe(
+            command % (
+                settings.OPENSSL_COMMAND,
+                command_line_safe_secret(settings.NOMCOM_APP_SECRET)
+            ),
+            private_key
+        )
         if code != 0:
             log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
         if error:

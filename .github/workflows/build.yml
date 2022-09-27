@@ -171,42 +171,46 @@ jobs:
         name: coverage
         path: coverage.json
 
-  tests-cypress-modern:
-    name: Run Tests (Cypress - Modern)
+  tests-playwright:
+    name: Run Tests (Playwright)
     if: ${{ github.event.inputs.skiptests == 'false' }}
     needs: [prepare]
     runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox]
     
     steps:
     - uses: actions/checkout@v3
+
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '18'
 
     - name: Run all tests
       run: |
         echo "Installing dependencies..."
         yarn
-        echo "Start Vite Preview..."
-        yarn preview &>/dev/null &
+        echo "Installing Playwright..."
+        cd playwright
+        mkdir test-results
+        npm ci
+        npx playwright install --with-deps ${{ matrix.project }}
         echo "Running tests..."
-        yarn cypress
+        npx playwright test --project=${{ matrix.project }}
         
-    - name: Upload Video Recordings
+    - name: Upload Report
       uses: actions/upload-artifact@v3.0.0
       if: ${{ always() }}
       continue-on-error: true
       with:
-        name: videos-modern
-        path: cypress/videos/
-        
-    - name: Upload Screenshots
-      uses: actions/upload-artifact@v3.0.0
-      if: ${{ always() }}
-      continue-on-error: true
-      with:
-        name: screenshots-modern
-        path: cypress/screenshots/
+        name: playwright-results-${{ matrix.project }}
+        path: playwright/test-results/
+        if-no-files-found: ignore
 
-  tests-cypress-legacy:
-    name: Run Tests (Cypress - Legacy)
+  tests-cypress:
+    name: Run Tests (Cypress)
     if: ${{ github.event.inputs.skiptests == 'false' }}
     needs: [prepare]
     runs-on: ubuntu-latest
@@ -256,6 +260,7 @@ jobs:
       with:
         name: videos-legacy
         path: cypress/videos/
+        if-no-files-found: ignore
         
     - name: Upload Screenshots
       uses: actions/upload-artifact@v3.0.0
@@ -264,6 +269,7 @@ jobs:
       with:
         name: screenshots-modern
         path: cypress/screenshots/
+        if-no-files-found: ignore
         
   # -----------------------------------------------------------------
   # RELEASE
@@ -271,7 +277,7 @@ jobs:
   release:
     name: Make Release
     if: ${{ always() }}
-    needs: [tests-python, tests-cypress-modern, tests-cypress-legacy, prepare]
+    needs: [tests-python, tests-playwright, tests-cypress, prepare]
     runs-on: ubuntu-latest
     env:
       SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}

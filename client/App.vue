@@ -24,10 +24,6 @@ const agendaStore = useAgendaStore()
 
 const appContainer = ref(null)
 
-// INIT
-
-agendaStore.fetch()
-
 // --------------------------------------------------------------------
 // Handle browser resize
 // --------------------------------------------------------------------
