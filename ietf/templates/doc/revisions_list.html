@@ -19,6 +19,21 @@
                 </a>
             </li>
         {% endfor %}
+        {% if doc.get_state_slug == 'rfc' %}
+            <li class="page-item rfc active">
+                <a class="page-link"
+                   href="{% if not document_html %}{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}{% else %}{% url 'ietf.doc.views_doc.document_html' name=doc.canonical_name %}{% endif %}">
+                    RFC {{ doc.rfc_number }}
+                </a>
+            </li>
+        {% elif doc.doc.get_state_slug == 'rfc' %}
+            <li class="page-item rfc">
+                <a class="page-link"
+                   href="{% if not document_html %}{% url 'ietf.doc.views_doc.document_main' name=doc.doc.canonical_name %}{% else %}{% url 'ietf.doc.views_doc.document_html' name=doc.doc.canonical_name %}{% endif %}">
+                    RFC {{ doc.doc.rfc_number }}
+                </a>
+            </li>
+        {% endif %}
     </ul>
 {% if not document_html %}
     </nav>

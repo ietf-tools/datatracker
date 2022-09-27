@@ -219,8 +219,14 @@ tbody.meta tr {
 }
 
 // Make revision numbers pagination items fixed-width
-.revision-list .page-item {
-    width: 2.2rem;
+.revision-list {
+    .page-item {
+        width: 2.2rem;
+    }
+
+    .page-item.rfc {
+        width: 6.6rem;
+    }
 }
 
 #docinfo {
