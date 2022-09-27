@@ -1,11 +1,13 @@
 {# Copyright The IETF Trust 2016, All Rights Reserved #}
 <!DOCTYPE html>
+{% load analytical %}
 {% load origin %}
 {% load static %}
 {% load ietf_filters textfilters %}
 {% origin %}
 <html lang="en">
     <head>
+        {% analytical_head_top %}
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <title>
@@ -38,8 +40,10 @@
             {% endif %}>
         {% include "base/icons.html" %}
         {% include "doc/opengraph.html" %}
+         {% analytical_head_bottom %}
     </head>
     <body>
+        {% analytical_body_top %}
         <button class="btn btn-outline-secondary position-fixed top-0 end-0 m-2 sidebar-toggle"
                 type="button"
                 id="sidebar-on"
@@ -253,5 +257,6 @@
                 </div>
             </div>
         </div>
+    {% analytical_body_bottom %}
     </body>
 </html>
