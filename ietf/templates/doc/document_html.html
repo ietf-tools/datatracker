@@ -16,8 +16,16 @@
             {% endif %}
         </title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <script>{{ js|safe }}</script>
-        <style>{{ css|safe }}</style>
+        {% if request.COOKIES.pagedeps == 'inline' %}
+            <script>{{ js|safe }}</script>
+            <style>{{ css|safe }}</style>
+        {% else %}
+            <link rel="stylesheet" href="{% static 'ietf/css/document_html.css' %}">
+            {% if html %}
+                <link rel="stylesheet" href="{% static 'ietf/css/document_html_txt.css' %}">
+            {% endif %}
+            <script src="{% static 'ietf/js/document_html.js' %}"></script>
+        {% endif %}
         <link rel="alternate"
               type="application/atom+xml"
               title="Document changes"
@@ -158,7 +166,7 @@
                                         role="tab"
                                         aria-controls="toc-tab-pane"
                                         aria-selected="false">
-                                    <i class="bi bi-list-columns-reverse"></i><span class="d-none d-md-block d-xl-inline ms-xl-1">Contents</span>
+                                    <i class="bi bi-list-ol"></i><span class="d-none d-md-block d-xl-inline ms-xl-1">Contents</span>
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation" title="Preferences">
@@ -207,19 +215,38 @@
                                 <label class="form-label fw-bold mt-4 mb-2">Tab to show by default</label>
                                 <div class="btn-group-vertical btn-group-sm d-flex" role="group">
                                     <input type="radio" class="btn-check" name="deftab" id="docinfo-radio">
-                                    <label class="btn btn-outline-primary" for="docinfo-radio">Info</label>
+                                    <label class="btn btn-outline-primary" for="docinfo-radio">
+                                        <i class="bi bi-info-circle me-1"></i>Info
+                                    </label>
                                     <input type="radio" class="btn-check" name="deftab" id="toc-radio">
-                                    <label class="btn btn-outline-primary" for="toc-radio">Contents</label>
+                                    <label class="btn btn-outline-primary" for="toc-radio">
+                                        <i class="bi bi-list-ol me-1"></i>Contents
+                                    </label>
                                 </div>
                                 <label class="form-label fw-bold mt-4 mb-2">HTMLization configuration</label>
                                 <div class="btn-group-vertical btn-group-sm d-flex" role="group">
                                     <input type="radio" class="btn-check" name="htmlconf" id="txt-radio">
-                                    <label class="btn btn-outline-primary" for="txt-radio" title="">HTMLize the plaintext</label>
+                                    <label class="btn btn-outline-primary" for="txt-radio" title="This is the traditional HTMLization method.">
+                                        <i class="bi bi-badge-sd me-1"></i>HTMLize the plaintext
+                                    </label>
                                     <input type="radio" class="btn-check" name="htmlconf" id="html-radio">
-                                    <label class="btn btn-outline-primary" for="html-radio" title="">Plaintextify the HTML</label>
+                                    <label class="btn btn-outline-primary" for="html-radio" title="This is the modern HTMLization method.">
+                                        <i class="bi bi-badge-hd me-1"></i>Plaintextify the HTML
+                                    </label>
                                 </div>
                                 <label class="form-label fw-bold mt-4 mb-2" for="ptsize">Maximum font size</label>
                                 <input type="range" class="form-range" min="7" max="16" id="ptsize" oninput="ptdemo.value = ptsize.value">
+                                <label class="form-label fw-bold mt-4 mb-2">Page dependencies</label>
+                                <div class="btn-group-vertical btn-group-sm d-flex" role="group">
+                                    <input type="radio" class="btn-check" name="pagedeps" id="inline-radio">
+                                    <label class="btn btn-outline-primary" for="inline-radio" title="Generate larger, standalone web pages that do not require network access to render.">
+                                        <i class="bi bi-box me-1"></i>Inline
+                                    </label>
+                                    <input type="radio" class="btn-check" name="pagedeps" id="reference-radio">
+                                    <label class="btn btn-outline-primary" for="reference-radio" title="Generate regular web pages that require network access to render.">
+                                        <i class="bi bi-link-45deg me-1"></i>Reference
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
