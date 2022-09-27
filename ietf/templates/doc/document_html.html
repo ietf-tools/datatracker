@@ -69,7 +69,7 @@
                     aria-label="Show document information">
                 <span class="navbar-toggler-icon small"></span>
             </button>
-            <div class="collapse pt-2" id="docinfo-collapse">
+            <div class="navbar-nav navbar-nav-scroll overscroll-none collapse pt-1" id="docinfo-collapse">
                 <div class="bg-light p-0">
                     <table class="table table-sm table-borderless small">
                         <tbody class="meta align-top">
@@ -106,7 +106,7 @@
                 {% endif %}
             </div>
             <div class="d-print-none col-3 bg-light collapse{% if request.COOKIES.sidebar != 'off'%} show{% endif %}" id="sidebar">
-                <div class="position-fixed col-3 border-start sidebar overscroll-none">
+                <div class="position-fixed col-3 border-start sidebar overflow-scroll overscroll-none no-scrollbar">
                     <button class="btn btn-outline-secondary float-end m-2"
                             type="button"
                             id="sidebar-off"

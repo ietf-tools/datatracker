@@ -1,3 +1,5 @@
+import debounce from "lodash/debounce";
+
 function make_nav() {
     const nav = document.createElement("nav");
     nav.classList.add("nav-pills", "ps-3", "flex-column");
@@ -81,4 +83,18 @@ export function populate_nav(nav, heading_selector, classes) {
     for (var i = nav_stack.length - 1; i > 0; i--) {
         nav_stack[i - 1].appendChild(nav_stack[i]);
     }
+
+    // Chrome apparently wants this debounced to something >10ms,
+    // otherwise the main view doesn't scroll?
+    document.addEventListener("scroll", debounce(function () {
+        const items = nav.querySelectorAll(".active");
+        const item = [...items].pop();
+        console.log(item);
+        if (item) {
+            item.scrollIntoView({
+                block: "center",
+                behavior: "smooth"
+            });
+        }
+    }, 100));
 }

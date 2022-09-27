@@ -64,6 +64,10 @@ url(data-url:npm:bootstrap-icons/font/fonts/bootstrap-icons.woff) format("woff")
     overscroll-behavior: none;
 }
 
+.no-scrollbar {
+    scrollbar-width: none;
+}
+
 .sidebar-toggle[aria-expanded="true"] {
     display: none;
 }
