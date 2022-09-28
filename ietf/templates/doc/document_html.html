@@ -148,6 +148,20 @@
                                 </span>
                             </a>
                         </p>
+                        {% if request.COOKIES.htmlconf != 'html' and html %}
+                        <div class="alert alert-info small">
+                            You are viewing the legacy <code>rfc2html</code>
+                            rendering of this document. Change the
+                            preferences for a modern <code>xml2rfc</code>-based
+                            HTMLization.
+                        </div>
+                        {% elif request.COOKIES.htmlconf == 'html' and not html %}
+                        <div class="alert alert-info small">
+                            You are viewing the legacy <code>rfc2html</code>
+                            rendering, because no <code>xml2rfc</code>-generated
+                            HTML is available for this document.
+                        </div>
+                        {% endif %}
                         <ul class="nav nav-tabs nav-fill small" role="tablist">
                             <li class="nav-item" role="presentation" title="Document information">
                                 <button class="nav-link px-2"
