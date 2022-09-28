@@ -10,6 +10,7 @@ from django.contrib import messages
 from django.db.models import Q
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -76,7 +77,7 @@ def profile(request, email_or_name):
     persons = [ p for p in persons if p and p.id ]
     if not persons:
         raise Http404
-    return render(request, 'person/profile.html', {'persons': persons, 'today':datetime.date.today()})
+    return render(request, 'person/profile.html', {'persons': persons, 'today': timezone.now()})
 
 
 def photo(request, email_or_name):

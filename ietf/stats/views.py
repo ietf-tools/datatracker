@@ -641,7 +641,7 @@ def document_stats(request, stats_type=None):
             template_name = "yearly"
 
             years_from = from_time.year if from_time else 1
-            years_to = datetime.date.today().year - 1
+            years_to = timezone.now().year - 1
 
 
             if stats_type == "yearly/affiliation":
@@ -904,7 +904,7 @@ def meeting_stats(request, num=None, stats_type=None):
 
                 continents = {}
                 
-                meetings = Meeting.objects.filter(type='ietf', date__lte=datetime.date.today()).order_by('number')
+                meetings = Meeting.objects.filter(type='ietf', date__lte=date_today()).order_by('number')
                 for m in meetings:
                     country = CountryName.objects.get(slug=m.country)
                     continents[country.continent.name] = country.continent.name

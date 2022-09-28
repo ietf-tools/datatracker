@@ -8,14 +8,13 @@ from pyquery import PyQuery
 import debug    # pyflakes:ignore
 
 from django.urls import reverse
-from django.utils import timezone
 
 from ietf.doc.factories import (WgDraftFactory, IndividualRfcFactory, CharterFactory,
     IndividualDraftFactory, ConflictReviewFactory)
 from ietf.doc.models import BallotDocEvent, BallotType, BallotPositionDocEvent, State, Document
 from ietf.doc.utils import update_telechat, create_ballot_if_not_open
 from ietf.utils.test_utils import TestCase
-from ietf.utils.timezone import datetime_today
+from ietf.utils.timezone import date_today, datetime_today
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory
@@ -24,7 +23,7 @@ from ietf.secr.telechat.views import get_next_telechat_date
 SECR_USER='secretary'
 
 def augment_data():
-    TelechatDate.objects.create(date=timezone.now())
+    TelechatDate.objects.create(date=date_today())
 
 class SecrTelechatTestCase(TestCase):
     def test_main(self):
@@ -140,7 +139,7 @@ class SecrTelechatTestCase(TestCase):
         self.assertEqual(q("#telechat-positions-table").find("th:contains('No Record')").length,1)
 
     def test_bash(self):
-        today = timezone.now()
+        today = date_today()
         TelechatDate.objects.create(date=today)
         url = reverse('ietf.secr.telechat.views.bash',kwargs={'date':today.strftime('%Y-%m-%d')})
         self.client.login(username="secretary", password="secretary+password")

@@ -31,7 +31,7 @@ from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm,
 from ietf.secr.sreq.views import get_initial_session
 from ietf.secr.utils.meeting import get_session, get_timeslot
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.utils.timezone import make_aware
+from ietf.utils.timezone import date_today, make_aware
 
 
 # prep for agenda changes
@@ -314,7 +314,7 @@ def blue_sheet_redirect(request):
     This is the generic blue sheet URL.  It gets the next IETF meeting and redirects
     to the meeting specific URL.
     '''
-    today = datetime.date.today()
+    today = date_today()
     qs = Meeting.objects.filter(date__gt=today,type='ietf').order_by('date')
     if qs:
         meeting = qs[0]

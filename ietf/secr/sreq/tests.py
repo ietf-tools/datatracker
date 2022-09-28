@@ -16,6 +16,8 @@ from ietf.name.models import ConstraintName, TimerangeName
 from ietf.person.models import Person
 from ietf.secr.sreq.forms import SessionForm
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
+from ietf.utils.timezone import date_today
+
 
 from pyquery import PyQuery
 
@@ -23,7 +25,7 @@ SECR_USER='secretary'
 
 class SreqUrlTests(TestCase):
     def test_urls(self):
-        MeetingFactory(type_id='ietf',date=datetime.date.today())
+        MeetingFactory(type_id='ietf',date=date_today())
 
         self.client.login(username="secretary", password="secretary+password")
 
@@ -39,7 +41,7 @@ class SreqUrlTests(TestCase):
 
 class SessionRequestTestCase(TestCase):
     def test_main(self):
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         SessionFactory.create_batch(2, meeting=meeting, status_id='sched')
         SessionFactory.create_batch(2, meeting=meeting, status_id='disappr')
         # An additional unscheduled group comes from make_immutable_base_data
@@ -53,7 +55,7 @@ class SessionRequestTestCase(TestCase):
         self.assertEqual(len(unsched), 11)
 
     def test_approve(self):
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         ad = Person.objects.get(user__username='ad')
         area = RoleFactory(name_id='ad', person=ad, group__type_id='area').group
         mars = GroupFactory(parent=area, acronym='mars')
@@ -66,7 +68,7 @@ class SessionRequestTestCase(TestCase):
         self.assertEqual(SchedulingEvent.objects.filter(session=session).order_by('-id')[0].status_id, 'appr')
         
     def test_cancel(self):
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         ad = Person.objects.get(user__username='ad')
         area = RoleFactory(name_id='ad', person=ad, group__type_id='area').group
         session = SessionFactory(meeting=meeting, group__parent=area, group__acronym='mars', status_id='sched')
@@ -77,7 +79,7 @@ class SessionRequestTestCase(TestCase):
         self.assertEqual(SchedulingEvent.objects.filter(session=session).order_by('-id')[0].status_id, 'deleted')
 
     def test_edit(self):
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         mars = RoleFactory(name_id='chair', person__user__username='marschairman', group__acronym='mars').group
         group2 = GroupFactory()
         group3 = GroupFactory()
@@ -367,7 +369,7 @@ class SessionRequestTestCase(TestCase):
         self.assertEqual(len(mars.constraint_source_set.filter(name_id='conflict')), 0)
 
     def test_tool_status(self):
-        MeetingFactory(type_id='ietf', date=datetime.date.today())
+        MeetingFactory(type_id='ietf', date=date_today())
         url = reverse('ietf.secr.sreq.views.tool_status')
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
@@ -438,7 +440,7 @@ class SubmitRequestCase(TestCase):
         MeetingFactory.reset_sequence(0)
 
     def test_submit_request(self):
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         ad = Person.objects.get(user__username='ad')
         area = RoleFactory(name_id='ad', person=ad, group__type_id='area').group
         group = GroupFactory(parent=area)
@@ -506,7 +508,7 @@ class SubmitRequestCase(TestCase):
         self.assertEqual(list(session.joint_with_groups.all()), [group3, group4])
 
     def test_submit_request_invalid(self):
-        MeetingFactory(type_id='ietf', date=datetime.date.today())
+        MeetingFactory(type_id='ietf', date=date_today())
         ad = Person.objects.get(user__username='ad')
         area = RoleFactory(name_id='ad', person=ad, group__type_id='area').group
         group = GroupFactory(parent=area)
@@ -542,8 +544,8 @@ class SubmitRequestCase(TestCase):
         self.assertContains(r, 'Must provide data for all sessions')
 
     def test_submit_request_check_constraints(self):
-        m1 = MeetingFactory(type_id='ietf', date=datetime.date.today() - datetime.timedelta(days=100))
-        MeetingFactory(type_id='ietf', date=datetime.date.today(),
+        m1 = MeetingFactory(type_id='ietf', date=date_today() - datetime.timedelta(days=100))
+        MeetingFactory(type_id='ietf', date=date_today(),
                        group_conflicts=['chair_conflict', 'conflic2', 'conflic3'])
         ad = Person.objects.get(user__username='ad')
         area = RoleFactory(name_id='ad', person=ad, group__type_id='area').group
@@ -604,7 +606,7 @@ class SubmitRequestCase(TestCase):
         self.assertContains(r, "Cannot declare a conflict with the same group")
 
     def test_request_notification(self):
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         ad = Person.objects.get(user__username='ad')
         area = GroupFactory(type_id='area')
         RoleFactory(name_id='ad', person=ad, group=area)
@@ -807,7 +809,7 @@ class SubmitRequestCase(TestCase):
 class LockAppTestCase(TestCase):
     def setUp(self):
         super().setUp()
-        self.meeting = MeetingFactory(type_id='ietf', date=datetime.date.today(),session_request_lock_message='locked')
+        self.meeting = MeetingFactory(type_id='ietf', date=date_today(),session_request_lock_message='locked')
         self.group = GroupFactory(acronym='mars')
         RoleFactory(name_id='chair', group=self.group, person__user__username='marschairman')
         SessionFactory(group=self.group,meeting=self.meeting)
@@ -853,7 +855,7 @@ class LockAppTestCase(TestCase):
     
 class NotMeetingCase(TestCase):
     def test_not_meeting(self):
-        MeetingFactory(type_id='ietf',date=datetime.date.today())
+        MeetingFactory(type_id='ietf',date=date_today())
         group = GroupFactory(acronym='mars')
         url = reverse('ietf.secr.sreq.views.no_session',kwargs={'acronym':group.acronym}) 
         self.client.login(username="secretary", password="secretary+password")

@@ -50,7 +50,7 @@ from ietf.stats.models import MeetingRegistration
 from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
-from ietf.utils.timezone import datetime_today, datetime_from_date, DEADLINE_TZINFO
+from ietf.utils.timezone import date_today, datetime_today, datetime_from_date, DEADLINE_TZINFO
 
 
 client_test_cert_files = None
@@ -1130,7 +1130,7 @@ class ReminderTest(TestCase):
 
     def test_is_time_to_send(self):
         self.nomcom.reminder_interval = 4
-        today = datetime.date.today()
+        today = date_today()
         self.assertTrue(is_time_to_send(self.nomcom,today+datetime.timedelta(days=4),today))
         for delta in range(4):
             self.assertFalse(is_time_to_send(self.nomcom,today+datetime.timedelta(days=delta),today))
@@ -1236,7 +1236,7 @@ class InactiveNomcomTests(TestCase):
             self.assertIn( 'closed', q('.alert-warning').text())
 
     def test_acceptance_closed(self):
-        today = datetime.date.today().strftime('%Y%m%d')
+        today = date_today().strftime('%Y%m%d')
         pid = self.nc.position_set.first().nomineeposition_set.order_by('pk').first().id 
         url = reverse('ietf.nomcom.views.process_nomination_status', kwargs = {
                       'year' : self.nc.year(),
@@ -1892,7 +1892,7 @@ Junk body for testing
             assert year >= 1990
             return (year-1985)*3+2
         # Create meetings to ensure we have the 'last 5'
-        meeting_start = first_meeting_of_year(datetime.date.today().year-2)
+        meeting_start = first_meeting_of_year(date_today().year-2)
         # Populate the meeting registration records
         for number in range(meeting_start, meeting_start+10):
             meeting = MeetingFactory.create(type_id='ietf', number=number)

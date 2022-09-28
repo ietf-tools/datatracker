@@ -32,7 +32,7 @@ from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewRequestSt
 from ietf.utils.mail import send_mail
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 from ietf.utils import log
-from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO
+from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO
 
 
 # The origin date is used to have a single reference date for "every X days".
@@ -93,12 +93,12 @@ def no_review_from_teams_on_doc(doc, rev):
 
 def unavailable_periods_to_list(past_days=14):
     return UnavailablePeriod.objects.filter(
-        Q(end_date=None) | Q(end_date__gte=datetime.date.today() - datetime.timedelta(days=past_days)),
+        Q(end_date=None) | Q(end_date__gte=date_today() - datetime.timedelta(days=past_days)),
     ).order_by("start_date")
 
 def current_unavailable_periods_for_reviewers(team):
     """Return dict with currently active unavailable periods for reviewers."""
-    today = datetime.date.today()
+    today = date_today()
 
     unavailable_period_qs = UnavailablePeriod.objects.filter(
         Q(end_date__gte=today) | Q(end_date=None),
@@ -877,7 +877,7 @@ def email_reviewer_reminder(assignment):
     review_request = assignment.review_request
     team = review_request.team
 
-    deadline_days = (review_request.deadline - datetime.date.today()).days
+    deadline_days = (review_request.deadline - date_today(DEADLINE_TZINFO)).days
 
     subject = "Reminder: deadline for review of {} in {} is {}".format(review_request.doc.name, team.acronym, review_request.deadline.isoformat())
 
@@ -943,7 +943,7 @@ def email_secretary_reminder(assignment, secretary_role):
     review_request = assignment.review_request
     team = review_request.team
 
-    deadline_days = (review_request.deadline - datetime.date.today()).days
+    deadline_days = (review_request.deadline - date_today(DEADLINE_TZINFO)).days
 
     subject = "Reminder: deadline for review of {} in {} is {}".format(review_request.doc.name, team.acronym, review_request.deadline.isoformat())
 

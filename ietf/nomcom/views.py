@@ -45,6 +45,8 @@ from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key, sug
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person
 from ietf.utils.response import permission_denied
+from ietf.utils.timezone import date_today
+
 
 import debug                  # pyflakes:ignore
 
@@ -702,7 +704,7 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
     expiration_days = getattr(settings, 'DAYS_TO_EXPIRE_NOMINATION_LINK', None)
     if expiration_days:
         request_date = datetime.date(int(date[:4]), int(date[4:6]), int(date[6:]))
-        if datetime.date.today() > (request_date + datetime.timedelta(days=settings.DAYS_TO_EXPIRE_NOMINATION_LINK)):
+        if date_today() > (request_date + datetime.timedelta(days=expiration_days)):
             permission_denied(request, "Link expired.")
 
     need_confirmation = True

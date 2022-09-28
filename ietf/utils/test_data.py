@@ -21,6 +21,7 @@ from ietf.person.models import Person, Email
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName, ReviewTypeName, ReviewTeamSettings )
 from ietf.person.name import unidecode_name
+from ietf.utils.timezone import date_today
 
 
 def create_person(group, role_name, name=None, username=None, email_address=None, password=None, is_staff=False, is_superuser=False):
@@ -52,7 +53,7 @@ def make_immutable_base_data():
     all tests in a run."""
 
     # telechat dates
-    t = datetime.date.today() + datetime.timedelta(days=1)
+    t = date_today() + datetime.timedelta(days=1)
     old = TelechatDate.objects.create(date=t - datetime.timedelta(days=14)).date        # pyflakes:ignore
     date1 = TelechatDate.objects.create(date=t).date                                    # pyflakes:ignore
     date2 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14)).date      # pyflakes:ignore
@@ -365,7 +366,7 @@ def make_test_data():
     ietf72 = Meeting.objects.create(
         number="72",
         type_id="ietf",
-        date=datetime.date.today() + datetime.timedelta(days=180),
+        date=date_today() + datetime.timedelta(days=180),
         city="New York",
         country="US",
         time_zone="US/Eastern",

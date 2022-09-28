@@ -25,6 +25,8 @@ from django.conf import settings
 from django.utils.encoding import force_bytes, force_str
 
 from ietf.utils.mail import get_payload_text
+from ietf.utils.timezone import date_today
+
 
 def list_name_from_email(list_email):
     if not list_email.endswith("@ietf.org"):
@@ -51,7 +53,7 @@ def construct_query_urls(doc, team, query=None):
 
     encoded_query = "?" + urlencode({
         "qdr": "c", # custom time frame
-        "start_date": (datetime.date.today() - datetime.timedelta(days=180)).isoformat(),
+        "start_date": (date_today() - datetime.timedelta(days=180)).isoformat(),
         "email_list": list_name,
         "q": "subject:({})".format(query),
         "as": "1", # this is an advanced search

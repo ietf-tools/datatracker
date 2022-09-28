@@ -29,6 +29,7 @@ from ietf.name.models import FormalLanguageName, DocRelationshipName, CountryNam
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
 from ietf.stats.models import MeetingRegistration, CountryAlias
 from ietf.stats.utils import get_meeting_registration_data
+from ietf.utils.timezone import date_today
 
 
 class StatisticsTests(TestCase):
@@ -122,7 +123,7 @@ class StatisticsTests(TestCase):
 
     def test_meeting_stats(self):
         # create some data for the statistics
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today(), number="96")
+        meeting = MeetingFactory(type_id='ietf', date=date_today(), number="96")
         MeetingRegistration.objects.create(first_name='John', last_name='Smith', country_code='US', email="john.smith@example.us", meeting=meeting, attended=True)
         CountryAlias.objects.get_or_create(alias="US", country=CountryName.objects.get(slug="US"))
         MeetingRegistration.objects.create(first_name='Jaume', last_name='Guillaume', country_code='FR', email="jaume.guillaume@example.fr", meeting=meeting, attended=True)
@@ -198,7 +199,7 @@ class StatisticsTests(TestCase):
                 self.assertTrue(q('.review-stats td:contains("1")'))
 
         # check stacked chart
-        expected_date = datetime.date.today().replace(day=1)
+        expected_date = date_today().replace(day=1)
         expected_js_timestamp = calendar.timegm(expected_date.timetuple()) * 1000
         url = urlreverse(ietf.stats.views.review_stats, kwargs={ "stats_type": "time" })
         url += "?team={}".format(review_req.team.acronym)
