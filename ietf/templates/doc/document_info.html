@@ -226,7 +226,31 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
         </td>
         <td {% if stream_desc == "(None)" %}class="text-muted"{%endif%}>
             {% if stream_desc != "(None)" %}
-                <a title="{{ stream_desc }}" href="{% url 'ietf.group.views.stream_documents' acronym=doc.stream.name|lower %}">{{ doc.stream.name }}</a>
+                {% if doc.stream.name|lower in 'iab,irtf,ise,editorial' %}
+                    <a href="{% url 'ietf.group.views.stream_documents' acronym=doc.stream.name|lower %}">
+                {% endif %}
+                {% if document_html %}
+                    {% if doc.stream.name|lower in 'iab,ietf,irtf' %}
+                        <img alt="{{ doc.stream.name|upper }} Logo"
+                             title="{{ stream_desc }}"
+                             class="w-25 mt-1"
+                             {% if doc.stream.name|lower == 'iab' %}
+                                 src="{% static 'ietf/images/iab-logo.svg' %}"
+                             {% elif doc.stream.name|lower == 'ietf' %}
+                                 src="{% static 'ietf/images/ietf-logo.svg' %}"
+                             {% elif doc.stream.name|lower == 'irtf' %}
+                                 src="{% static 'ietf/images/irtf-logo.svg' %}"
+                             {% endif %}
+                             >
+                    {% else %}
+                        {{ stream_desc }}
+                    {% endif %}
+                {% else %}
+                    {{ stream_desc }}
+                {% endif %}
+                {% if doc.stream.name|lower in 'iab,irtf,ise,editorial' %}
+                    </a>
+                {% endif %}
             {% else %}
                 {{ stream_desc }}
             {% endif %}
