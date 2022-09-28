@@ -536,20 +536,20 @@ def list_eligible_8713(date, base_qs=None):
     if not base_qs:
         base_qs = Person.objects.all()
     previous_five = previous_five_meetings(date)
-    return remove_disqualified(three_of_five_eligible(previous_five=previous_five, queryset=base_qs))
+    return remove_disqualified(three_of_five_eligible_8713(previous_five=previous_five, queryset=base_qs))
 
 def list_eligible_8788(date, base_qs=None):
     if not base_qs:
         base_qs = Person.objects.all()
     previous_five = Meeting.objects.filter(number__in=['102','103','104','105','106'])
-    return remove_disqualified(three_of_five_eligible(previous_five=previous_five, queryset=base_qs))
+    return remove_disqualified(three_of_five_eligible_8713(previous_five=previous_five, queryset=base_qs))
 
 def get_8989_eligibility_querysets(date, base_qs):
     if not base_qs:
         base_qs = Person.objects.all()
 
     previous_five = previous_five_meetings(date)
-    three_of_five_qs = new_three_of_five_eligible(previous_five=previous_five, queryset=base_qs)
+    three_of_five_qs = three_of_five_eligible_8989(previous_five=previous_five, queryset=base_qs)
 
     # If date is Feb 29, neither 3 nor 5 years ago has a Feb 29. Use Feb 28 instead.
     if date.month == 2 and date.day == 29:
@@ -624,7 +624,7 @@ def previous_five_meetings(date = None):
         date = datetime.date.today()
     return Meeting.objects.filter(type='ietf',date__lte=date).order_by('-date')[:5]
 
-def three_of_five_eligible(previous_five, queryset=None):
+def three_of_five_eligible_8713(previous_five, queryset=None):
     """ Return a list of Person records who attended at least 
         3 of the 5 type_id='ietf' meetings before the given
         date. Does not disqualify anyone based on held roles.
@@ -633,7 +633,7 @@ def three_of_five_eligible(previous_five, queryset=None):
         queryset = Person.objects.all()
     return queryset.filter(meetingregistration__meeting__in=list(previous_five),meetingregistration__attended=True).annotate(mtg_count=Count('meetingregistration')).filter(mtg_count__gte=3)
 
-def new_three_of_five_eligible(previous_five, queryset=None):
+def three_of_five_eligible_8989(previous_five, queryset=None):
     """ Return a list of Person records who attended at least 
         3 of the 5 type_id='ietf' meetings before the given
         date. Does not disqualify anyone based on held roles.
