@@ -54,9 +54,9 @@
                 {% endif %}
             {% else %}
                 {% if snapshot and doc.doc.get_state_slug == 'rfc' %}
-                   <div{% if document_html %} class="alert alert-warning"{% endif %}>This is an older version of an Internet-Draft that was ultimately published as <a href="{% url 'ietf.doc.views_doc.document_html' name=doc.doc.canonical_name %}">{{doc.doc.canonical_name|prettystdname}}</a>.</div>
+                   <div{% if document_html %} class="alert alert-warning small"{% endif %}>This is an older version of an Internet-Draft that was ultimately published as <a href="{% url 'ietf.doc.views_doc.document_html' name=doc.doc.canonical_name %}">{{doc.doc.canonical_name|prettystdname}}</a>.</div>
                 {% elif snapshot and doc.rev != latest_rev  %}
-                    <div{% if document_html %} class="alert alert-warning"{% endif %}>This is an older version of an Internet-Draft whose latest revision state is "{{ doc.doc.get_state }}".</div>
+                    <div{% if document_html %} class="alert alert-warning small"{% endif %}>This is an older version of an Internet-Draft whose latest revision state is "{{ doc.doc.get_state }}".</div>
                  {% else %}
                     <span class="{% if doc.get_state_slug == 'active' %}text-success{% elif doc.get_state_slug == 'expired' or doc.get_state_slug == 'repl' %}text-danger{% endif %}">{% if snapshot and doc.rev == latest_rev %}{{ doc.doc.get_state }}{% else %}{{ doc.get_state }}{% endif %} Internet-Draft</span>
                     {% if submission %}({{ submission|safe }}){% endif %}
@@ -103,9 +103,9 @@
         <td>
             {# Implementation that uses the current primary email for each author #}
             {% for author in doc.authors %}
-                {% person_link author with_email=document_html|yesno:',True' %}{% if not forloop.last %},{% endif %}
+                {% person_link author %}{% if not forloop.last %},{% endif %}
             {% endfor %}
-            {% if document_html %}
+            {% if document_html and not snapshot or document_html and doc.rev == latest_rev%}
                 <br>
                 <a class="btn btn-primary btn-sm mt-1" href="mailto:{{ doc.name }}@ietf.org?subject={{ doc.name}}" title="Send email to the document authors">Email authors</a>
             {% endif %}

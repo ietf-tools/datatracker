@@ -51,17 +51,16 @@ $tooltip-margin: inherit !default;
 // Utilities
 @import "bootstrap/scss/utilities/api";
 
-// Make the bootstrap icons available.
-$bootstrap-icons-font-src: url(data-url:npm:bootstrap-icons/font/fonts/bootstrap-icons.woff2) format("woff2"),
-url(data-url:npm:bootstrap-icons/font/fonts/bootstrap-icons.woff) format("woff");
-@import "bootstrap-icons/font/bootstrap-icons";
-
 :root {
     --doc-ptsize-max: 16pt;
 }
 
 .overscroll-none {
     overscroll-behavior: none;
+}
+
+.no-scrollbar {
+    scrollbar-width: none;
 }
 
 .sidebar-toggle[aria-expanded="true"] {
@@ -215,8 +214,14 @@ tbody.meta tr {
 }
 
 // Make revision numbers pagination items fixed-width
-.revision-list .page-item {
-    width: 2.2rem;
+.revision-list {
+    .page-item {
+        width: 2.2rem;
+    }
+
+    .page-item.rfc {
+        width: 6.6rem;
+    }
 }
 
 #docinfo {

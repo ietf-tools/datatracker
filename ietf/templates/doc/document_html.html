@@ -1,11 +1,13 @@
 {# Copyright The IETF Trust 2016, All Rights Reserved #}
 <!DOCTYPE html>
+{% load analytical %}
 {% load origin %}
 {% load static %}
 {% load ietf_filters textfilters %}
 {% origin %}
 <html lang="en">
     <head>
+        {% analytical_head_top %}
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <title>
@@ -16,8 +18,16 @@
             {% endif %}
         </title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <script>{{ js|safe }}</script>
-        <style>{{ css|safe }}</style>
+        {% if request.COOKIES.pagedeps == 'inline' %}
+            <script>{{ js|safe }}</script>
+            <style>{{ css|safe }}</style>
+        {% else %}
+            <link rel="stylesheet" href="{% static 'ietf/css/document_html_referenced.css' %}">
+            {% if html %}
+                <link rel="stylesheet" href="{% static 'ietf/css/document_html_txt.css' %}">
+            {% endif %}
+            <script src="{% static 'ietf/js/document_html.js' %}"></script>
+        {% endif %}
         <link rel="alternate"
               type="application/atom+xml"
               title="Document changes"
@@ -30,8 +40,10 @@
             {% endif %}>
         {% include "base/icons.html" %}
         {% include "doc/opengraph.html" %}
+         {% analytical_head_bottom %}
     </head>
     <body>
+        {% analytical_body_top %}
         <button class="btn btn-outline-secondary position-fixed top-0 end-0 m-2 sidebar-toggle"
                 type="button"
                 id="sidebar-on"
@@ -69,8 +81,8 @@
                     aria-label="Show document information">
                 <span class="navbar-toggler-icon small"></span>
             </button>
-            <div class="collapse overflow-scroll w-100 pt-2" id="docinfo-collapse">
-                <div class="bg-light p-0 overflow-scroll">
+            <div class="navbar-nav navbar-nav-scroll overscroll-none collapse pt-1" id="docinfo-collapse">
+                <div class="bg-light p-0">
                     <table class="table table-sm table-borderless small">
                         <tbody class="meta align-top">
                             <tr>
@@ -106,7 +118,7 @@
                 {% endif %}
             </div>
             <div class="d-print-none col-3 bg-light collapse{% if request.COOKIES.sidebar != 'off'%} show{% endif %}" id="sidebar">
-                <div class="position-fixed col-3 border-start sidebar overflow-scroll overscroll-none">
+                <div class="position-fixed col-3 border-start sidebar overflow-scroll overscroll-none no-scrollbar">
                     <button class="btn btn-outline-secondary float-end m-2"
                             type="button"
                             id="sidebar-off"
@@ -136,6 +148,20 @@
                                 </span>
                             </a>
                         </p>
+                        {% if request.COOKIES.htmlconf != 'html' and html %}
+                        <div class="alert alert-info small">
+                            You are viewing the legacy <code>rfc2html</code>
+                            rendering of this document. Change the
+                            preferences for a modern <code>xml2rfc</code>-based
+                            HTMLization.
+                        </div>
+                        {% elif request.COOKIES.htmlconf == 'html' and not html %}
+                        <div class="alert alert-info small">
+                            You are viewing the legacy <code>rfc2html</code>
+                            rendering, because no <code>xml2rfc</code>-generated
+                            HTML is available for this document.
+                        </div>
+                        {% endif %}
                         <ul class="nav nav-tabs nav-fill small" role="tablist">
                             <li class="nav-item" role="presentation" title="Document information">
                                 <button class="nav-link px-2"
@@ -158,7 +184,7 @@
                                         role="tab"
                                         aria-controls="toc-tab-pane"
                                         aria-selected="false">
-                                    <i class="bi bi-list-columns-reverse"></i><span class="d-none d-md-block d-xl-inline ms-xl-1">Contents</span>
+                                    <i class="bi bi-list-ol"></i><span class="d-none d-md-block d-xl-inline ms-xl-1">Contents</span>
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation" title="Preferences">
@@ -207,24 +233,44 @@
                                 <label class="form-label fw-bold mt-4 mb-2">Tab to show by default</label>
                                 <div class="btn-group-vertical btn-group-sm d-flex" role="group">
                                     <input type="radio" class="btn-check" name="deftab" id="docinfo-radio">
-                                    <label class="btn btn-outline-primary" for="docinfo-radio">Info</label>
+                                    <label class="btn btn-outline-primary" for="docinfo-radio">
+                                        <i class="bi bi-info-circle me-1"></i>Info
+                                    </label>
                                     <input type="radio" class="btn-check" name="deftab" id="toc-radio">
-                                    <label class="btn btn-outline-primary" for="toc-radio">Contents</label>
+                                    <label class="btn btn-outline-primary" for="toc-radio">
+                                        <i class="bi bi-list-ol me-1"></i>Contents
+                                    </label>
                                 </div>
                                 <label class="form-label fw-bold mt-4 mb-2">HTMLization configuration</label>
                                 <div class="btn-group-vertical btn-group-sm d-flex" role="group">
                                     <input type="radio" class="btn-check" name="htmlconf" id="txt-radio">
-                                    <label class="btn btn-outline-primary" for="txt-radio" title="">HTMLize the plaintext</label>
+                                    <label class="btn btn-outline-primary" for="txt-radio" title="This is the traditional HTMLization method.">
+                                        <i class="bi bi-badge-sd me-1"></i>HTMLize the plaintext
+                                    </label>
                                     <input type="radio" class="btn-check" name="htmlconf" id="html-radio">
-                                    <label class="btn btn-outline-primary" for="html-radio" title="">Plaintextify the HTML</label>
+                                    <label class="btn btn-outline-primary" for="html-radio" title="This is the modern HTMLization method.">
+                                        <i class="bi bi-badge-hd me-1"></i>Plaintextify the HTML
+                                    </label>
                                 </div>
                                 <label class="form-label fw-bold mt-4 mb-2" for="ptsize">Maximum font size</label>
                                 <input type="range" class="form-range" min="7" max="16" id="ptsize" oninput="ptdemo.value = ptsize.value">
+                                <label class="form-label fw-bold mt-4 mb-2">Page dependencies</label>
+                                <div class="btn-group-vertical btn-group-sm d-flex" role="group">
+                                    <input type="radio" class="btn-check" name="pagedeps" id="inline-radio">
+                                    <label class="btn btn-outline-primary" for="inline-radio" title="Generate larger, standalone web pages that do not require network access to render.">
+                                        <i class="bi bi-box me-1"></i>Inline
+                                    </label>
+                                    <input type="radio" class="btn-check" name="pagedeps" id="reference-radio">
+                                    <label class="btn btn-outline-primary" for="reference-radio" title="Generate regular web pages that require network access to render.">
+                                        <i class="bi bi-link-45deg me-1"></i>Reference
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    {% analytical_body_bottom %}
     </body>
 </html>

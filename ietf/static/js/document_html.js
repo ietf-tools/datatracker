@@ -6,26 +6,10 @@ import {
     Tab as Tab
 } from "bootstrap";
 
-import debounce from "lodash/debounce";
 import Cookies from "js-cookie";
 import { populate_nav } from "./nav.js";
 
 const cookies = Cookies.withAttributes({ sameSite: "strict" });
-
-// Chrome apparently wants this debounced to something >10ms,
-// otherwise the main view doesn't scroll?
-
-document.addEventListener("scroll", debounce(function () {
-    const items = document.getElementById("toc-nav")
-        .querySelectorAll(".active");
-    const item = [...items].pop();
-    if (item) {
-        item.scrollIntoView({
-            block: "center",
-            behavior: "smooth"
-        });
-    }
-}, 100));
 
 document.addEventListener("DOMContentLoaded", function (event) {
     // handle point size slider

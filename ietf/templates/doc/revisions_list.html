@@ -7,18 +7,31 @@
 {% endif %}
     <ul class="revision-list pagination pagination-sm text-center flex-wrap{% if document_html %} my-0{% endif %}">
         {% for rev in revisions %}
-            <li class="page-item {% if rev == doc.rev %}{% if snapshot or doc.get_state_slug != 'rfc' %}active{% endif %}{% endif %}">
-                <a class="page-link"
-                   href="{% if not document_html %}{% if snapshot and doc.get_state_slug == 'rfc' %}{% url 'ietf.doc.views_doc.document_main' name=doc.doc.name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.name %}{% endif %}{% if rev %}{{ rev }}/{% endif %}{% else %}{% if snapshot and doc.get_state_slug == 'rfc' %}{% url 'ietf.doc.views_doc.document_html' name=doc.doc.name %}{% else %}{% url 'ietf.doc.views_doc.document_html' name=doc.name %}{% endif %}{% if rev %}-{{ rev }}/{% endif %}{% endif %}"
-                   {% if rev != '00' and rev != latest_rev %}rel="nofollow"{% endif %}>
-                    {% if rev %}
+            {% if rev %}
+                <li class="page-item {% if rev == doc.rev %}{% if snapshot or doc.get_state_slug != 'rfc' %}active{% endif %}{% endif %}">
+                    <a class="page-link"
+                       href="{% if snapshot and doc.get_state_slug == 'rfc' %}{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.doc.name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.doc.name %}{% endif %}{% else %}{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.name rev=rev %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.name rev=rev %}{% endif %}{% endif %}"
+                       {% if rev != '00' and rev != latest_rev %}rel="nofollow"{% endif %}>
                         {{ rev }}
-                    {% else %}
-                        {{ doc.name }}
-                    {% endif %}
+                    </a>
+                </li>
+            {% endif %}
+        {% endfor %}
+        {% if doc.get_state_slug == 'rfc' %}
+            <li class="page-item rfc{% if not snapshot %} active{% endif %}">
+                <a class="page-link"
+                   href="{% if doc.doc %}{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.doc.canonical_name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.doc.canonical_name %}{% endif %}{% else %}{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.canonical_name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}{% endif %}{% endif %}">
+                    RFC {{ doc.rfc_number }}
                 </a>
             </li>
-        {% endfor %}
+        {% elif doc.doc.get_state_slug == 'rfc' %}
+            <li class="page-item rfc">
+                <a class="page-link"
+                   href="{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.doc.canonical_name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.doc.canonical_name %}{% endif %}">
+                    RFC {{ doc.doc.rfc_number }}
+                </a>
+            </li>
+        {% endif %}
     </ul>
 {% if not document_html %}
     </nav>
