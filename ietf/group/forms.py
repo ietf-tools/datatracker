@@ -3,7 +3,6 @@
 
 
 # Stdlib imports
-import datetime
 import re
 
 import debug      # pyflakes:ignore

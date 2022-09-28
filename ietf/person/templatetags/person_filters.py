@@ -1,7 +1,5 @@
 # Copyright The IETF Trust 2017-2020, All Rights Reserved
 
-import datetime
-
 from django import template
 
 import debug  # pyflakes:ignore

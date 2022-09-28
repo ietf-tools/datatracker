@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-import datetime
 from io import StringIO, BytesIO
 from PIL import Image
 

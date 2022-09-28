@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-import datetime
-
 from django.conf import settings
 from django.template.loader import render_to_string
 

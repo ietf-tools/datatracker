@@ -1,7 +1,5 @@
 # helpers for handling last calls on Internet Drafts
 
-import datetime
-
 from django.db.models import Q
 
 from ietf.doc.models import Document, State, DocEvent, LastCallDocEvent, WriteupDocEvent

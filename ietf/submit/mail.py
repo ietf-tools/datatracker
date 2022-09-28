@@ -4,7 +4,6 @@
 
 import re
 import email
-import datetime
 import base64
 import os
 import pyzmail
