@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2022, All Rights Reserved
 from django.db import migrations
 
-def forward(apps, shema_editor):
+def forward(apps, schema_editor):
     StateType = apps.get_model("doc", "StateType")
     State = apps.get_model("doc", "State")
     for slug in ("chatlog", "polls"):     
@@ -16,7 +16,7 @@ def forward(apps, shema_editor):
                 order = 0,
             )
 
-def reverse(apps, shema_editor):
+def reverse(apps, schema_editor):
     StateType = apps.get_model("doc", "StateType")
     State = apps.get_model("doc", "State")
     State.objects.filter(type_id__in=("chatlog", "polls")).delete()
