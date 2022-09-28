@@ -493,10 +493,10 @@ def ad_workload(request):
     for id, (g, uig) in enumerate(
         [
             ("Publication Requested Internet-Draft", False),
-            ("Waiting for Writeup Internet-Draft", False),
             ("AD Evaluation Internet-Draft", False),
-            ("In Last Call Internet-Draft", None),
-            ("IESG Evaluation - Defer Internet-Draft", None),
+            ("In Last Call Internet-Draft", True),
+            ("Waiting for Writeup Internet-Draft", False),
+            ("IESG Evaluation - Defer Internet-Draft", False),
             ("IESG Evaluation Internet-Draft", True),
             ("Waiting for AD Go-Ahead Internet-Draft", False),
             ("Approved-announcement to be sent Internet-Draft", True),
@@ -528,9 +528,9 @@ def ad_workload(request):
     for id, (g, uig) in enumerate(
         [
             ("Publication Requested Status Change", False),
-            ("Waiting for Writeup Status Change", False),
             ("AD Evaluation Status Change", False),
-            ("In Last Call Status Change", None),
+            ("In Last Call Status Change", True),
+            ("Waiting for Writeup Status Change", False),
             ("IESG Evaluation Status Change", True),
             ("Waiting for AD Go-Ahead Status Change", False),
         ]
