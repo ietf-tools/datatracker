@@ -22,7 +22,7 @@
             <script>{{ js|safe }}</script>
             <style>{{ css|safe }}</style>
         {% else %}
-            <link rel="stylesheet" href="{% static 'ietf/css/document_html.css' %}">
+            <link rel="stylesheet" href="{% static 'ietf/css/document_html_referenced.css' %}">
             {% if html %}
                 <link rel="stylesheet" href="{% static 'ietf/css/document_html_txt.css' %}">
             {% endif %}

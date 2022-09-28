@@ -1,0 +1,6 @@
+@import "document_html";
+
+// Make the bootstrap icons available via data-url.
+$bootstrap-icons-font-src: url(data-url:npm:bootstrap-icons/font/fonts/bootstrap-icons.woff2) format("woff2"),
+url(data-url:npm:bootstrap-icons/font/fonts/bootstrap-icons.woff) format("woff");
+@import "bootstrap-icons/font/bootstrap-icons";
