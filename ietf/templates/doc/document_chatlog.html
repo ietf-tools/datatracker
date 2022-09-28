@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2022, All Rights Reserved #}
+{% load origin %}
+{% load static %}
+{% load ietf_filters textfilters %}
+{% block title %}{{ doc.title|default:"Untitled" }}{% endblock %}
+{% block content %}
+    {% origin %}
+    {{ top|safe }}
+    {% include "doc/revisions_list.html" %}
+    <div id="timeline"></div>
+    {% if doc.rev != latest_rev %}
+        <div class="alert alert-warning my-3">The information below is for an old version of the document.</div>
+    {% endif %}
+    <table class="table table-sm table-borderless">
+        <tbody class="meta border-top">
+            <tr>
+                <th scope="row">
+                    {% if doc.meeting_related %}Meeting{% endif %}
+                    {{ doc.type.name }}
+                </th>
+                <td></td>
+                <td>
+                    {% if doc.group %}
+                        {{ doc.group.name }}
+                        <a href="{{ doc.group.about_url }}">({{ doc.group.acronym }})</a>
+                        {{ doc.group.type.name }}
+                    {% endif %}
+                    {% if snapshot %}<span class="badge rounded-pill bg-warning">Snapshot</span>{% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">Title</th>
+                <td class="edit"></td>
+                <th scope="row">{{ doc.title|default:'<span class="text-muted">(None)</span>' }}</th>
+            </tr>
+            <tr>
+                <th scope="row">Session</th>
+                <td class="edit">
+                </td>
+                <td>
+                    <a href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}">Materials</a>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">Last updated</th>
+                <td class="edit"></td>
+                <td>{{ doc.time|date:"Y-m-d" }}</td>
+            </tr>
+        </tbody>
+    </table>
+    <div id="materials-content" class="card mt-5">
+        <div class="card-header">{{ doc.name }}-{{ doc.rev }}</div>
+        <div class="card-body">
+            {{ content }} {# TODO #}
+        </div>
+    </div>
+{% endblock %}
+{% block js %}
+    <script src="{% static 'ietf/js/d3.js' %}"></script>
+    <script src="{% static 'ietf/js/document_timeline.js' %}"></script>
+{% endblock %}
