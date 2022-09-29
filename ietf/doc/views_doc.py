@@ -724,13 +724,13 @@ def document_main(request, name, rev=None):
                            assignments=assignments,
                       ))
 
-    if doc.type_id == "chatlog":
+    if doc.type_id in ("chatlog", "polls"):
         session = doc.sessionpresentation_set.last().session
-        pathname = Path(session.meeting.get_materials_path()) / "chatlog" / doc.uploaded_filename
+        pathname = Path(session.meeting.get_materials_path()) / doc.type_id / doc.uploaded_filename
         content = get_unicode_document_content(doc.name, str(pathname))
         return render(
             request, 
-            "doc/document_chatlog.html",
+            f"doc/document_{doc.type_id}.html",
             dict(
                 doc=doc,
                 top=top,

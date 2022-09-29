@@ -1464,6 +1464,8 @@ Man                    Expires September 22, 2015               [Page 3]
         DocumentFactory(type_id='agenda',name='agenda-72-mars')
         DocumentFactory(type_id='minutes',name='minutes-72-mars')
         DocumentFactory(type_id='slides',name='slides-72-mars-1-active')
+        DocumentFactory(type_id="chatlog",name='chatlog-72-mars-197001010000')
+        DocumentFactory(type_id="polls",name='polls-72-mars-197001010000')
         statchg = DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review')
         statchg.set_state(State.objects.get(type_id='statchg',slug='adrev'))
 
