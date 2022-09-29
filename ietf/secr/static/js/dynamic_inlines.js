@@ -5,6 +5,8 @@ http://www.arnebrodowski.de/blog/507-Add-and-remove-Django-Admin-Inlines-with-Ja
 field as primary key.  Also for some reason the "active" boolean field doesn't get saved properly
 if the checkbox input has an empty "value" argument.
 */
+import $ from 'jquery';
+
 function increment_form_ids(el, to, name) {
     var from = to-1
     $(':input', $(el)).each(function(i,e){
