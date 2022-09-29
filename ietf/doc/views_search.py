@@ -94,7 +94,7 @@ class SearchForm(forms.Form):
             ("ad", "AD"), ("-ad", "AD (desc)"), ),
         required=False, widget=forms.HiddenInput)
 
-    doctypes = forms.ModelMultipleChoiceField(queryset=DocTypeName.objects.filter(used=True).exclude(slug='draft').order_by('name'), required=False)
+    doctypes = forms.ModelMultipleChoiceField(queryset=DocTypeName.objects.filter(used=True).exclude(slug__in=('draft','liai-att')).order_by('name'), required=False)
 
     def __init__(self, *args, **kwargs):
         super(SearchForm, self).__init__(*args, **kwargs)
@@ -479,7 +479,7 @@ def ad_workload(request):
 
     doctypes = list(
         DocTypeName.objects.filter(used=True)
-        .exclude(slug="draft")
+        .exclude(slug__in=("draft", "liai-att"))
         .values_list("pk", flat=True)
     )
 
@@ -675,7 +675,7 @@ def docs_for_ad(request, name):
     form = SearchForm({'by':'ad','ad': ad.id,
                        'rfcs':'on', 'activedrafts':'on', 'olddrafts':'on',
                        'sort': 'status',
-                       'doctypes': list(DocTypeName.objects.filter(used=True).exclude(slug='draft').values_list("pk", flat=True))})
+                       'doctypes': list(DocTypeName.objects.filter(used=True).exclude(slug__in=('draft','liai-att')).values_list("pk", flat=True))})
     results, meta = prepare_document_table(request, retrieve_search_results(form), form.data, max_results=500)
     results.sort(key=ad_dashboard_sort_key)
     del meta["headers"][-1]
