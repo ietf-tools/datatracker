@@ -553,12 +553,12 @@ def get_8989_eligibility_querysets(date, base_qs):
 def get_8989bis_eligibility_querysets(date, base_qs):
     return get_threerule_eligibility_querysets(date, base_qs, three_of_five=three_of_five_eligible_8989bis)
 
-def get_threerule_eligibility_querysets(date, base_qs, three_of_five):
+def get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable):
     if not base_qs:
         base_qs = Person.objects.all()
 
     previous_five = previous_five_meetings(date)
-    three_of_five_qs = three_of_five(previous_five=previous_five, queryset=base_qs)
+    three_of_five_qs = three_of_five_callable(previous_five=previous_five, queryset=base_qs)
 
     # If date is Feb 29, neither 3 nor 5 years ago has a Feb 29. Use Feb 28 instead.
     if date.month == 2 and date.day == 29:
