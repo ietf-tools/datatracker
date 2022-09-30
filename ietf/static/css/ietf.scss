@@ -227,6 +227,13 @@ th {
     }
 }
 
+// Style the navbar user photo
+.nav-link .user-photo {
+    object-fit: cover;
+    height: 40px;
+    width: 40px;
+}
+
 // Style the righthand navigation panel
 #righthand-panel {
     max-height: 80vh;

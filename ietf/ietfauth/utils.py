@@ -4,10 +4,7 @@
 
 # various authentication and authorization utilities
 
-import datetime
-
 import oidc_provider.lib.claims
-from oidc_provider.models import Client as ClientRecord
 
 
 from functools import wraps
@@ -281,15 +278,6 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
                 reg.save()
         info = {}
         if regs:
-            # maybe register attendance if logged in to follow a meeting
-            today = datetime.date.today()
-            if meeting.date <= today <= meeting.end_date():
-                client = ClientRecord.objects.get(client_id=self.client.client_id)
-                if client.name == 'Meetecho':
-                    for reg in regs:
-                        if not reg.attended:
-                            reg.attended = True
-                            reg.save()
             # fill in info to return
             ticket_types = set([])
             reg_types = set([])
