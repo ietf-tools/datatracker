@@ -3,7 +3,7 @@
 """Tests of models in the Meeting application"""
 import datetime
 
-from ietf.meeting.factories import MeetingFactory, SessionFactory
+from ietf.meeting.factories import MeetingFactory, SessionFactory, AttendedFactory
 from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.utils.test_utils import TestCase
 
@@ -17,8 +17,8 @@ class MeetingTests(TestCase):
         MeetingRegistrationFactory.create_batch(5, meeting=meeting, reg_type='in_person')
         self.assertIsNone(meeting.get_attendance())
 
-    def test_get_attendance(self):
-        """Post-110 meetings do calculate attendance"""
+    def test_get_attendance_110(self):
+        """Look at attendance as captured at 110"""
         meeting = MeetingFactory(type_id='ietf', number='110')
 
         # start with attendees that should be ignored
@@ -38,7 +38,7 @@ class MeetingTests(TestCase):
         self.assertEqual(attendance.onsite, 0)
 
         # and the same for onsite attendees
-        MeetingRegistrationFactory.create_batch(5, meeting=meeting, reg_type='in_person')
+        MeetingRegistrationFactory.create_batch(5, meeting=meeting, reg_type='onsite')
         MeetingRegistrationFactory(meeting=meeting, reg_type='in_person', attended=False)
         attendance = meeting.get_attendance()
         self.assertIsNotNone(attendance)
@@ -52,6 +52,18 @@ class MeetingTests(TestCase):
         self.assertEqual(attendance.online, 0)
         self.assertEqual(attendance.onsite, 5)
 
+    def test_get_attendance_113(self):
+        """Simulate IETF 113 attendance gathering data"""
+        meeting = MeetingFactory(type_id='ietf', number='113')
+        MeetingRegistrationFactory(meeting=meeting, reg_type='onsite', attended=True, checkedin=False)
+        MeetingRegistrationFactory(meeting=meeting, reg_type='onsite', attended=False, checkedin=True)
+        p1 = MeetingRegistrationFactory(meeting=meeting, reg_type='onsite', attended=False, checkedin=False).person
+        AttendedFactory(session__meeting=meeting, person=p1)
+        p2 = MeetingRegistrationFactory(meeting=meeting, reg_type='remote', attended=False, checkedin=False).person
+        AttendedFactory(session__meeting=meeting, person=p2)
+        attendance = meeting.get_attendance()
+        self.assertEqual(attendance.onsite, 3)
+        self.assertEqual(attendance.online, 1)
 
 class SessionTests(TestCase):
     def test_chat_archive_url_with_jabber(self):
