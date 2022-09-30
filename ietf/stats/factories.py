@@ -14,4 +14,5 @@ class MeetingRegistrationFactory(factory.django.DjangoModelFactory):
     person = factory.SubFactory(PersonFactory)
     first_name = factory.LazyAttribute(lambda obj: obj.person.first_name())
     last_name = factory.LazyAttribute(lambda obj: obj.person.last_name())
-    attended = True
+    attended = False
+    checkedin = False

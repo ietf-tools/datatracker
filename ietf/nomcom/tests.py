@@ -2289,7 +2289,7 @@ class rfc8713EligibilityTests(TestCase):
             for combo in combinations(meetings,combo_len):
                 p = PersonFactory()
                 for m in combo:
-                    MeetingRegistrationFactory(person=p, meeting=m)
+                    MeetingRegistrationFactory(person=p, meeting=m, attended=True)
                 if combo_len<3:
                     self.ineligible_people.append(p)
                 else:
@@ -2302,7 +2302,7 @@ class rfc8713EligibilityTests(TestCase):
         self.other_date = datetime.date(2009,5,1)
         self.other_people = PersonFactory.create_batch(1)
         for date in (datetime.date(2009,3,1), datetime.date(2008,11,1), datetime.date(2008,7,1)):
-            MeetingRegistrationFactory(person=self.other_people[0],meeting__date=date, meeting__type_id='ietf')
+            MeetingRegistrationFactory(person=self.other_people[0],meeting__date=date, meeting__type_id='ietf', attended=True)
 
 
     def test_is_person_eligible(self):
@@ -2347,7 +2347,7 @@ class rfc8788EligibilityTests(TestCase):
             for combo in combinations(meetings,combo_len):
                 p = PersonFactory()
                 for m in combo:
-                    MeetingRegistrationFactory(person=p, meeting=m)
+                    MeetingRegistrationFactory(person=p, meeting=m, attended=True)
                 if combo_len<3:
                     self.ineligible_people.append(p)
                 else:
@@ -2395,7 +2395,7 @@ class rfc8989EligibilityTests(TestCase):
                 for combo in combinations(prev_five,combo_len):
                     p = PersonFactory()
                     for m in combo:
-                        MeetingRegistrationFactory(person=p, meeting=m)
+                        MeetingRegistrationFactory(person=p, meeting=m, checkedin=True)
                         AttendedFactory(session__meeting=m, session__type_id='plenary',person=p)
                     if combo_len<3:
                         ineligible_people.append(p)
@@ -2585,7 +2585,7 @@ class VolunteerTests(TestCase):
         self.assertContains(r, 'NomCom is not accepting volunteers at this time', status_code=200)
         nomcom.is_accepting_volunteers = True
         nomcom.save()
-        MeetingRegistrationFactory(person=person, affiliation='mtg_affiliation')
+        MeetingRegistrationFactory(person=person, affiliation='mtg_affiliation', checkedin=True)
         r = self.client.get(url)
         self.assertContains(r, 'Volunteer for NomCom', status_code=200)
         self.assertContains(r, 'mtg_affiliation')

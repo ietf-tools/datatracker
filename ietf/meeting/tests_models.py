@@ -22,7 +22,7 @@ class MeetingTests(TestCase):
         meeting = MeetingFactory(type_id='ietf', number='110')
 
         # start with attendees that should be ignored
-        MeetingRegistrationFactory.create_batch(3, meeting=meeting, reg_type='')
+        MeetingRegistrationFactory.create_batch(3, meeting=meeting, reg_type='', attended=True)
         MeetingRegistrationFactory(meeting=meeting, reg_type='', attended=False)
         attendance = meeting.get_attendance()
         self.assertIsNotNone(attendance)
@@ -30,7 +30,7 @@ class MeetingTests(TestCase):
         self.assertEqual(attendance.onsite, 0)
 
         # add online attendees with at least one who registered but did not attend
-        MeetingRegistrationFactory.create_batch(4, meeting=meeting, reg_type='remote')
+        MeetingRegistrationFactory.create_batch(4, meeting=meeting, reg_type='remote', attended=True)
         MeetingRegistrationFactory(meeting=meeting, reg_type='remote', attended=False)
         attendance = meeting.get_attendance()
         self.assertIsNotNone(attendance)
@@ -38,7 +38,7 @@ class MeetingTests(TestCase):
         self.assertEqual(attendance.onsite, 0)
 
         # and the same for onsite attendees
-        MeetingRegistrationFactory.create_batch(5, meeting=meeting, reg_type='onsite')
+        MeetingRegistrationFactory.create_batch(5, meeting=meeting, reg_type='onsite', attended=True)
         MeetingRegistrationFactory(meeting=meeting, reg_type='in_person', attended=False)
         attendance = meeting.get_attendance()
         self.assertIsNotNone(attendance)
