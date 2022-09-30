@@ -1643,17 +1643,10 @@ def api_get_session_materials (request, session_id=None):
     session = get_object_or_404(Session,pk=session_id)
 
     minutes = session.minutes()
-    debug.show('request.user')
+
     return JsonResponse({
         "url": session.agenda().get_href(),
         "slides": list(map(agenda_extract_slide, session.slides())),
-        "propose_slides_url": reverse(
-            'ietf.meeting.views.propose_session_slides',
-            kwargs={
-                'num': session.meeting.number,
-                'session_id': session.pk,
-            },
-        ),
         "minutes": {
             "id": minutes.id,
             "title": minutes.title,
