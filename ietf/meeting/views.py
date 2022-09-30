@@ -1643,10 +1643,17 @@ def api_get_session_materials (request, session_id=None):
     session = get_object_or_404(Session,pk=session_id)
 
     minutes = session.minutes()
-
+    debug.show('request.user')
     return JsonResponse({
         "url": session.agenda().get_href(),
         "slides": list(map(agenda_extract_slide, session.slides())),
+        "propose_slides_url": reverse(
+            'ietf.meeting.views.propose_session_slides',
+            kwargs={
+                'num': session.meeting.number,
+                'session_id': session.pk,
+            },
+        ),
         "minutes": {
             "id": minutes.id,
             "title": minutes.title,
@@ -2320,7 +2327,10 @@ def agenda_json(request, num=None):
 
 def meeting_requests(request, num=None):
     meeting = get_meeting(num)
-    groups_to_show = Group.objects.filter(state_id='active', type__features__has_meetings=True)
+    groups_to_show = Group.objects.filter(
+        state_id__in=('active', 'bof'),
+        type__features__has_meetings=True,
+    )
     sessions = list(
         Session.objects.requests().filter(
             meeting__number=meeting.number,
@@ -2340,7 +2350,7 @@ def meeting_requests(request, num=None):
     for s in sessions:
         s.current_status_name = status_names.get(s.current_status, s.current_status)
         s.requested_by_person = session_requesters.get(s.requested_by)
-        if s.group.parent and s.group.parent.type.slug == 'area':
+        if s.group.parent and s.group.parent.type.slug in ('area', 'irtf'):
             s.display_area = s.group.parent
         else:
             s.display_area = None
