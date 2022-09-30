@@ -95,19 +95,29 @@ n-modal(v-model:show='modalShown')
             :src='eventDetails.materialsUrl'
             )
         template(v-else-if='state.tab === `slides`')
-          .text-center(v-if='state.isLoading')
-            n-spin(description='Loading slides...')
-          .text-center.p-3(v-else-if='!state.materials || !state.materials.slides || state.materials.slides.length < 1')
-            span No slides submitted for this session.
-          .list-group(v-else)
-            a.list-group-item(
-              v-for='slide of state.materials.slides'
-              :key='slide.id'
-              :href='slide.url'
-              target='_blank'
-              )
-              i.bi.me-2(:class='`bi-filetype-` + slide.ext')
-              span {{slide.title}}
+          n-card(
+            :bordered='false'
+            size='small'
+            )
+            .text-center(v-if='state.isLoading')
+              n-spin(description='Loading slides...')
+            .text-center.p-3(v-else-if='!state.materials || !state.materials.slides || !state.materials.slides.decks || state.materials.slides.decks?.length < 1')
+              span No slides submitted for this session.
+            .list-group(v-else)
+              a.list-group-item(
+                v-for='deck of state.materials.slides.decks'
+                :key='deck.id'
+                :href='deck.url'
+                target='_blank'
+                )
+                i.bi.me-2(:class='`bi-filetype-` + deck.ext')
+                span {{deck.title}}
+            template(#action, v-if='state.materials.slides.actions')
+                n-button(
+                  v-for='action of state.materials.slides.actions'
+                  tag='a'
+                  :href='action.url'
+                  ) {{action.label}}
         template(v-else)
           .text-center(v-if='state.isLoading')
             n-spin(description='Loading minutes...')
@@ -219,7 +229,10 @@ async function fetchSessionMaterials () {
   state.isLoading = true
 
   try {
-    const resp = await fetch(`/api/meeting/session/${props.event.sessionId}/materials`, { credentials: 'omit' })
+    const resp = await fetch(
+        `/api/meeting/session/${props.event.sessionId}/materials`,
+        { credentials: 'include' }
+    )
     if (!resp.ok) {
       throw new Error(resp.statusText)
     }
