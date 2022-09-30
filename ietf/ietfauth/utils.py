@@ -4,8 +4,6 @@
 
 # various authentication and authorization utilities
 
-import datetime
-
 import oidc_provider.lib.claims
 
 
