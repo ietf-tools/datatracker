@@ -548,10 +548,10 @@ def list_eligible_8788(date, base_qs=None):
     return remove_disqualified(three_of_five_eligible_8713(previous_five=previous_five, queryset=base_qs))
 
 def get_8989_eligibility_querysets(date, base_qs):
-    return get_threerule_eligibility_querysets(date, base_qs, three_of_five=three_of_five_eligible_8713)
+    return get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable=three_of_five_eligible_8713)
 
 def get_8989bis_eligibility_querysets(date, base_qs):
-    return get_threerule_eligibility_querysets(date, base_qs, three_of_five=three_of_five_eligible_8989bis)
+    return get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable=three_of_five_eligible_8989bis)
 
 def get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable):
     if not base_qs:
