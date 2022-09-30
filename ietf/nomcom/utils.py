@@ -202,7 +202,7 @@ def store_nomcom_private_key(request, year, private_key):
         )
         if code != 0:
             log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
-        if error:
+        if error and error!=b"*** WARNING : deprecated key derivation used.\nUsing -iter or -pbkdf2 would be better.\n":
             out = ''
         request.session['NOMCOM_PRIVATE_KEY_%s' % year] = out
 
