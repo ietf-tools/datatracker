@@ -67,7 +67,10 @@
                                 <div class="d-lg-none">
                                     <i class="bi bi-people-fill"></i> {{ session.attendees }}
                                 </div>
-                            {% endif %}{% if session.group.is_bof %}<span class="badge bg-success float-end">BOF</span>{% endif %}
+                            {% endif %}
+                            {% if session.group.is_bof %}
+                                <span class="badge bg-success float-end">BOF</span>
+                            {% endif %}
                         </td>
                         <td class="d-none d-lg-table-cell">
                             {% if session.requested_duration %}{{ session.requested_duration|stringformat:"s"|slice:"0:4" }}{% endif %}
