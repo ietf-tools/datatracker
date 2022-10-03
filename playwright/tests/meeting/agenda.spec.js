@@ -377,7 +377,7 @@ test.describe('past - desktop', () => {
         })),
         actions: [{
           label: 'Propose slides',
-          url: '/meeting/${meetingData.meeting.number}/session/${event.sessionId}/propose_slides'
+          url: `/meeting/${meetingData.meeting.number}/session/${event.sessionId}/propose_slides`
         }]
       },
       minutes: {
