@@ -93,7 +93,7 @@ def has_role(user, role_names, *args, **kwargs):
             "Robot": Q(person=person, name="robot", group__acronym="secretariat"),
             }
 
-        filter_expr = Q()
+        filter_expr = Q(pk__in=[])  # ensure empty set is returned if no other terms are added
         for r in role_names:
             filter_expr |= role_qs[r]
 
