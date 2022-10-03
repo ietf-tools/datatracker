@@ -101,7 +101,7 @@ n-modal(v-model:show='modalShown')
             )
             .text-center(v-if='state.isLoading')
               n-spin(description='Loading slides...')
-            .text-center.p-3(v-else-if='!state.materials || !state.materials.slides || !state.materials.slides.decks || state.materials.slides.decks?.length < 1')
+            .text-center.p-3(v-else-if='!state.materials || !state.materials.slides || !state.materials.slides.decks || state.materials.slides.decks.length < 1')
               span No slides submitted for this session.
             .list-group(v-else)
               a.list-group-item(
