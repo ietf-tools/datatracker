@@ -164,7 +164,7 @@ def is_authorized_in_doc_stream(user, doc):
             docman_roles = GroupFeatures.objects.get(type_id="ietf").docman_roles
         group_req = Q(group__acronym=doc.stream.slug)
     else:
-        group_req = Q()
+        group_req = Q()  # no group constraint for other cases
 
     return Role.objects.filter(Q(name__in=docman_roles, person__user=user) & group_req).exists()
 
