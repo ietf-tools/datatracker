@@ -7,6 +7,13 @@ from django.conf import settings
 from ietf.meeting import views, views_proceedings
 from ietf.utils.urls import url
 
+class AgendaRedirectView(RedirectView):
+    ignore_kwargs = ('owner', 'name')
+    def get_redirect_url(self, *args, **kwargs):
+        for kwarg in self.ignore_kwargs:
+            kwargs.pop(kwarg, None)
+        return super().get_redirect_url(*args, **kwargs)
+
 safe_for_all_meeting_types = [
     url(r'^session/(?P<acronym>[-a-z0-9]+)/?$',  views.session_details),
     url(r'^session/(?P<session_id>\d+)/drafts$',  views.add_session_drafts),
@@ -33,9 +40,13 @@ type_ietf_only_patterns = [
     url(r'^agenda/%(owner)s/%(schedule_name)s/delete$' % settings.URL_REGEXPS, views.delete_schedule),
     url(r'^agenda/%(owner)s/%(schedule_name)s/make_official$' % settings.URL_REGEXPS, views.make_schedule_official),
     url(r'^agenda/%(owner)s/%(schedule_name)s(\.(?P<ext>.html))?/?$' % settings.URL_REGEXPS, views.agenda),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/week-view(?:.html)?/?$' % settings.URL_REGEXPS, AgendaRedirectView.as_view(pattern_name='agenda', permanent=True)),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/by-room/?$' % settings.URL_REGEXPS, AgendaRedirectView.as_view(pattern_name='agenda', permanent=True)),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/by-type/?$' % settings.URL_REGEXPS, AgendaRedirectView.as_view(pattern_name='agenda', permanent=True)),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/by-type/(?P<type>[a-z]+)$' % settings.URL_REGEXPS, AgendaRedirectView.as_view(pattern_name='agenda', permanent=True)),
     url(r'^agenda/%(owner)s/%(schedule_name)s/new/$' % settings.URL_REGEXPS, views.new_meeting_schedule),
     url(r'^agenda/by-type/(?P<type>[a-z]+)/ics$', views.agenda_by_type_ics),
-    url(r'^agenda/personalize', views.agenda, name='agenda'),
+    url(r'^agenda/personalize', views.agenda, name='agenda-personalize'),
     url(r'^agendas/list$', views.list_schedules),
     url(r'^agendas/edit$', RedirectView.as_view(pattern_name='ietf.meeting.views.list_schedules', permanent=True)),
     url(r'^agendas/diff/$', views.diff_schedules),
@@ -68,7 +79,10 @@ type_ietf_only_patterns_id_optional = [
     url(r'^agenda/agenda\.ics$', views.agenda_ical),
     url(r'^agenda\.ics$', views.agenda_ical),
     url(r'^agenda.json$', views.agenda_json),
+    url(r'^agenda/week-view(?:.html)?/?$', RedirectView.as_view(pattern_name='agenda', permanent=True)),
     url(r'^floor-plan/?$', views.agenda, name='floor-plan'),
+    url(r'^floor-plan/(?P<floor>[-a-z0-9_]+)/?$', RedirectView.as_view(pattern_name='floor-plan', permanent=True)),
+    url(r'^week-view(?:.html)?/?$', RedirectView.as_view(pattern_name='agenda', permanent=True)),
     url(r'^materials(?:.html)?/?$', views.materials),
     url(r'^request_minutes/?$', views.request_minutes),
     url(r'^materials/%(document)s((?P<ext>\.[a-z0-9]+)|/)?$' % settings.URL_REGEXPS, views.materials_document),
