@@ -55,6 +55,10 @@ n-modal(v-model:show='modalShown')
           )
           i.bi.bi-journal-text.me-2 
           span Notepad
+        a.float-end(
+          :href='eventDetails.detailsUrl'
+          target='_blank'
+        ) {{props.event.groupAcronym}} materials page
     .detail-content
       .detail-title
         h6
@@ -196,7 +200,8 @@ const eventDetails = computed(() => {
     materialsUrl: materialsUrl,
     tarUrl: `/meeting/${agendaStore.meeting.number}/agenda/${props.event.acronym}-drafts.tgz`,
     pdfUrl: `/meeting/${agendaStore.meeting.number}/agenda/${props.event.acronym}-drafts.pdf`,
-    notepadUrl: `https://notes.ietf.org/notes-ietf-${agendaStore.meeting.number}-${props.event.type === 'plenary' ? 'plenary' : props.event.acronym}`
+    notepadUrl: `https://notes.ietf.org/notes-ietf-${agendaStore.meeting.number}-${props.event.type === 'plenary' ? 'plenary' : props.event.acronym}`,
+    detailsUrl: props.event.links.sessionDetails
   }
 })
 

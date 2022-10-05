@@ -1723,7 +1723,14 @@ def agenda_extract_schedule (item):
             "audioStream": item.timeslot.location.audio_stream_url() if item.timeslot.location else "",
             "webex": item.timeslot.location.webex_url() if item.timeslot.location else "",
             "onsiteTool": item.timeslot.location.onsite_tool_url() if item.timeslot.location else "",
-            "calendar": reverse('ietf.meeting.views.agenda_ical', kwargs={'num': item.schedule.meeting.number, 'session_id': item.session.id, })
+            "calendar": reverse(
+                'ietf.meeting.views.agenda_ical',
+                kwargs={'num': item.schedule.meeting.number, 'session_id': item.session.id},
+            ),
+            "sessionDetails": reverse(
+                'ietf.meeting.views.session_details',
+                kwargs={'num': item.schedule.meeting.number, 'acronym': item.session.group.acronym}
+            ),
         }
         # "slotType": {
         #     "slug": item.slot_type.slug
