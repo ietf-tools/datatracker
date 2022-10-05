@@ -219,8 +219,8 @@ watch(() => agendaStore.meetingDays, () => {
 })
 
 watch(() => agendaStore.isLoaded, () => {
-  // Handle legacy ?show= parameter
   if (route.query.show) {
+    // Handle legacy ?show= parameter
     const keywords = route.query.show.split(',').map(k => k.trim()).filter(k => !!k)
     if (keywords?.length > 0) {
       const pickedIds = []
@@ -238,6 +238,11 @@ watch(() => agendaStore.isLoaded, () => {
         agendaStore.persistMeetingPreferences()
       }
     }
+  }
+  if (route.query.pick) {
+    // Handle legacy /personalize path (open picker mode)
+    agendaStore.$patch({ pickerMode: true })
+    router.replace({ query: null })
   }
 
   handleCurrentMeetingRedirect()
