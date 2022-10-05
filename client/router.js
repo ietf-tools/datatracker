@@ -3,6 +3,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 export default createRouter({
   history: createWebHistory(),
   routes: [
+    // ---------------------------------------------------------
+    // MEETING
+    // ---------------------------------------------------------
     {
       name: 'agenda',
       path: '/meeting/:meetingNumber(\\d+)?/agenda',
@@ -18,6 +21,11 @@ export default createRouter({
       meta: {
         hideLeftMenu: true
       }
+    },
+    // -> Redirects
+    {
+      path: '/meeting/:meetingNumber(\\d+)?/agenda/personalize',
+      redirect: { name: 'agenda' }
     }
   ]
 })

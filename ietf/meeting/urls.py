@@ -35,6 +35,7 @@ type_ietf_only_patterns = [
     url(r'^agenda/%(owner)s/%(schedule_name)s(\.(?P<ext>.html))?/?$' % settings.URL_REGEXPS, views.agenda),
     url(r'^agenda/%(owner)s/%(schedule_name)s/new/$' % settings.URL_REGEXPS, views.new_meeting_schedule),
     url(r'^agenda/by-type/(?P<type>[a-z]+)/ics$', views.agenda_by_type_ics),
+    url(r'^agenda/personalize', views.agenda, name='agenda'),
     url(r'^agendas/list$', views.list_schedules),
     url(r'^agendas/edit$', RedirectView.as_view(pattern_name='ietf.meeting.views.list_schedules', permanent=True)),
     url(r'^agendas/diff/$', views.diff_schedules),
@@ -56,7 +57,7 @@ type_interim_patterns = [
 ]
 
 type_ietf_only_patterns_id_optional = [
-    url(r'^agenda(?P<utc>-utc)?(?P<ext>\.html)?/?$',     views.agenda, name='agenda'),
+    url(r'^agenda(?P<utc>-utc)?(?P<ext>\.html)?/?$', views.agenda, name='agenda'),
     url(r'^agenda(?P<ext>\.txt)$', views.agenda_plain),
     url(r'^agenda(?P<ext>\.csv)$', views.agenda_plain),
     url(r'^agenda/edit$',

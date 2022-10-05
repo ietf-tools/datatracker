@@ -5389,10 +5389,6 @@ class AjaxTests(TestCase):
 
 class FloorPlanTests(TestCase):
     def test_floor_plan_page(self):
-        make_meeting_test_data()
-        meeting = Meeting.objects.filter(type_id='ietf').order_by('id').last()
-        floorplan = FloorPlanFactory.create(meeting=meeting)
-
         url = urlreverse('floor-plan')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)

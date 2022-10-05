@@ -53,7 +53,7 @@
               @click='setTimezone(`UTC`)'
               ) UTC
           n-select.agenda-timezone-ddn(
-            v-if='agendaStore.viewport > 1250'
+            v-if='siteStore.viewport > 1250'
             v-model:value='agendaStore.timezone'
             :options='timezones'
             placeholder='Select Time Zone'
@@ -133,7 +133,7 @@
     // -----------------------------------
     // -> Anchored Day Quick Access Menu
     // -----------------------------------
-    .col-auto.d-print-none(v-if='agendaStore.viewport >= 990')
+    .col-auto.d-print-none(v-if='siteStore.viewport >= 990')
       agenda-quick-access
 
   agenda-mobile-bar
@@ -165,6 +165,9 @@ import MeetingNavigation from './MeetingNavigation.vue'
 import timezones from '../shared/timezones'
 
 import { useAgendaStore } from './store'
+import { useSiteStore } from '../shared/store'
+
+import './agenda.scss'
 
 // MESSAGE PROVIDER
 
@@ -173,6 +176,7 @@ const message = useMessage()
 // STORES
 
 const agendaStore = useAgendaStore()
+const siteStore = useSiteStore()
 
 // ROUTER
 
@@ -214,7 +218,30 @@ watch(() => agendaStore.meetingDays, () => {
   })
 })
 
-watch(() => agendaStore.isLoaded, handleCurrentMeetingRedirect)
+watch(() => agendaStore.isLoaded, () => {
+  // Handle legacy ?show= parameter
+  if (route.query.show) {
+    const keywords = route.query.show.split(',').map(k => k.trim()).filter(k => !!k)
+    if (keywords?.length > 0) {
+      const pickedIds = []
+      for (const ev of agendaStore.scheduleAdjusted) {
+        if (keywords.includes(ev.sessionKeyword)) {
+          pickedIds.push(ev.id)
+        }
+      }
+      if (pickedIds.length > 0) {
+        agendaStore.$patch({
+          pickerMode: true,
+          pickerModeView: true,
+          pickedEvents: pickedIds
+        })
+        agendaStore.persistMeetingPreferences()
+      }
+    }
+  }
+
+  handleCurrentMeetingRedirect()
+})
 
 // COMPUTED
 

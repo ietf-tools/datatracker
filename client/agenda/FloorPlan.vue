@@ -59,13 +59,18 @@ import find from 'lodash/find'
 import xslugify from '../shared/xslugify'
 import { DateTime } from 'luxon'
 import { useRoute, useRouter } from 'vue-router'
+
 import { useAgendaStore } from './store' 
+import { useSiteStore } from '../shared/store'
 
 import MeetingNavigation from './MeetingNavigation.vue'
+
+import './agenda.scss'
 
 // STORES
 
 const agendaStore = useAgendaStore()
+const siteStore = useSiteStore()
 
 // ROUTER
 
@@ -144,7 +149,7 @@ watch(() => state.currentRoom, () => {
     }, 100)
   })
 })
-watch(() => agendaStore.viewport, () => {
+watch(() => siteStore.viewport, () => {
   nextTick(() => {
     computePlanSizeRatio()
   })
