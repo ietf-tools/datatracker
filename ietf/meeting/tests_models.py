@@ -65,6 +65,28 @@ class MeetingTests(TestCase):
         self.assertEqual(attendance.onsite, 3)
         self.assertEqual(attendance.online, 1)
 
+    def test_get_attendance_keeps_meetings_distinct(self):
+        """No cross-talk between attendance for different meetings"""
+        # numbers are arbitrary here
+        first_mtg = MeetingFactory(type_id='ietf', number='114')
+        second_mtg = MeetingFactory(type_id='ietf', number='115')
+
+        # Create a person who attended a remote session for first_mtg and onsite for second_mtg without
+        # checking in for either.
+        p = MeetingRegistrationFactory(meeting=second_mtg, reg_type='onsite', attended=False, checkedin=False).person
+        AttendedFactory(session__meeting=first_mtg, person=p)
+        MeetingRegistrationFactory(meeting=first_mtg, person=p, reg_type='remote', attended=False, checkedin=False)
+        AttendedFactory(session__meeting=second_mtg, person=p)
+
+        att = first_mtg.get_attendance()
+        self.assertEqual(att.onsite, 0)
+        self.assertEqual(att.online, 1)
+
+        att = second_mtg.get_attendance()
+        self.assertEqual(att.onsite, 1)
+        self.assertEqual(att.online, 0)
+
+
 class SessionTests(TestCase):
     def test_chat_archive_url_with_jabber(self):
         # datatracker 8.8.0 rolled out on 2022-07-15. Before that, chat logs were jabber logs hosted at www.ietf.org.
