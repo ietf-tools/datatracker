@@ -267,8 +267,8 @@ class Meeting(models.Model):
         ).distinct()
 
         return Attendance(
-            onsite=attended.filter(meetingregistration__reg_type='onsite').count(),
-            online=attended.filter(meetingregistration__reg_type='remote').count()
+            onsite=attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='onsite').count(),
+            online=attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='remote').count()
         )
 
     @property
