@@ -244,7 +244,7 @@ class Meeting(models.Model):
         number = self.get_number()
         if number is None or number < 110:
             return None
-        Attendance = namedtuple('Attendance', 'onsite online') # TODO: these should probably be 'onsite remote'
+        Attendance = namedtuple('Attendance', 'onsite remote')
 
         # MeetingRegistration.attended started conflating badge-pickup and session attendance before IETF 114.
         # We've separated session attendence off to ietf.meeting.Attended, but need to report attendance at older
@@ -268,7 +268,7 @@ class Meeting(models.Model):
 
         return Attendance(
             onsite=attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='onsite').count(),
-            online=attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='remote').count()
+            remote=attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='remote').count()
         )
 
     @property

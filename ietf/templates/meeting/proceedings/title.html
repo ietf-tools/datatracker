@@ -13,9 +13,9 @@ This renders the title block for the meeting proceedings page.
     {% if attendance is not None %}
         <div class="proceedings-info lead">
             {% if attendance.onsite > 0 %}
-                {{ attendance.onsite }} onsite participant{{ attendance.onsite|pluralize }}{% if attendance.online > 0 %},{% endif %}
+                {{ attendance.onsite }} onsite participant{{ attendance.onsite|pluralize }}{% if attendance.remote > 0 %},{% endif %}
             {% endif %}
-            {% if attendance.online > 0 %}{{ attendance.online }} online participant{{ attendance.online|pluralize }}{% endif %}
+            {% if attendance.remote > 0 %}{{ attendance.remote }} online participant{{ attendance.remote|pluralize }}{% endif %}
         </div>
     {% endif %}
 </div>

@@ -26,7 +26,7 @@ class MeetingTests(TestCase):
         MeetingRegistrationFactory(meeting=meeting, reg_type='', attended=False)
         attendance = meeting.get_attendance()
         self.assertIsNotNone(attendance)
-        self.assertEqual(attendance.online, 0)
+        self.assertEqual(attendance.remote, 0)
         self.assertEqual(attendance.onsite, 0)
 
         # add online attendees with at least one who registered but did not attend
@@ -34,7 +34,7 @@ class MeetingTests(TestCase):
         MeetingRegistrationFactory(meeting=meeting, reg_type='remote', attended=False)
         attendance = meeting.get_attendance()
         self.assertIsNotNone(attendance)
-        self.assertEqual(attendance.online, 4)
+        self.assertEqual(attendance.remote, 4)
         self.assertEqual(attendance.onsite, 0)
 
         # and the same for onsite attendees
@@ -42,14 +42,14 @@ class MeetingTests(TestCase):
         MeetingRegistrationFactory(meeting=meeting, reg_type='in_person', attended=False)
         attendance = meeting.get_attendance()
         self.assertIsNotNone(attendance)
-        self.assertEqual(attendance.online, 4)
+        self.assertEqual(attendance.remote, 4)
         self.assertEqual(attendance.onsite, 5)
 
         # and once more after removing all the online attendees
         meeting.meetingregistration_set.filter(reg_type='remote').delete()
         attendance = meeting.get_attendance()
         self.assertIsNotNone(attendance)
-        self.assertEqual(attendance.online, 0)
+        self.assertEqual(attendance.remote, 0)
         self.assertEqual(attendance.onsite, 5)
 
     def test_get_attendance_113(self):
@@ -63,7 +63,7 @@ class MeetingTests(TestCase):
         AttendedFactory(session__meeting=meeting, person=p2)
         attendance = meeting.get_attendance()
         self.assertEqual(attendance.onsite, 3)
-        self.assertEqual(attendance.online, 1)
+        self.assertEqual(attendance.remote, 1)
 
     def test_get_attendance_keeps_meetings_distinct(self):
         """No cross-talk between attendance for different meetings"""
@@ -80,11 +80,11 @@ class MeetingTests(TestCase):
 
         att = first_mtg.get_attendance()
         self.assertEqual(att.onsite, 0)
-        self.assertEqual(att.online, 1)
+        self.assertEqual(att.remote, 1)
 
         att = second_mtg.get_attendance()
         self.assertEqual(att.onsite, 1)
-        self.assertEqual(att.online, 0)
+        self.assertEqual(att.remote, 0)
 
 
 class SessionTests(TestCase):
