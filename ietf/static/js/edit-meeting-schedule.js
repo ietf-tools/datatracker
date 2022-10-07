@@ -313,7 +313,7 @@ $(function () {
     // Was this drag started by dragging a session?
     function isSessionDragEvent(event) {
         return event.originalEvent.dataTransfer.types.some(
-          (item_type) => item_type.indexOf(dnd_mime_type) !== -1
+          (item_type) => item_type.indexOf(dnd_mime_type) === 0
         );
     }
 
