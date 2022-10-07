@@ -412,7 +412,6 @@ $(function () {
             let dropElement = jQuery(this);
 
             const sessionElement = getDraggedSession(event);
-            console.log(`Hiya: {sessionElement}`);
             if (!sessionElement) {
                 // not drag event or not from a session we recognize
                 dropElement.parent().removeClass("dropping");
