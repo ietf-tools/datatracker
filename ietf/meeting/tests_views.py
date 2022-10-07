@@ -6506,6 +6506,14 @@ class SessionTests(TestCase):
             status_id='schedw',
             add_to_schedule=False,
         )
+        # proposed WG sessions should be shown
+        proposed_wg_session = SessionFactory(
+            meeting=meeting,
+            group__parent=area,
+            group__state_id='proposed',
+            status_id='schedw',
+            add_to_schedule=False,
+        )
         # rg sessions should be shown under 'irtf' heading
         rg_session = SessionFactory(
             meeting=meeting,
@@ -6547,6 +6555,8 @@ class SessionTests(TestCase):
         self.assertNotContains(r, _sreq_edit_link(not_has_meetings))  # no link to the session request
         self.assertContains(r, bof_session.group.acronym)
         self.assertContains(r, _sreq_edit_link(bof_session))  # link to the session request
+        self.assertContains(r, proposed_wg_session.group.acronym)
+        self.assertContains(r, _sreq_edit_link(proposed_wg_session))  # link to the session request
         self.assertContains(r, rg_session.group.acronym)
         self.assertContains(r, _sreq_edit_link(rg_session))  # link to the session request
         # check headings - note that the special types (has_meetings, etc) do not have a group parent
