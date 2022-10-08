@@ -28,6 +28,7 @@
         </style>
         {% vite_hmr_client %}
         {% block pagehead %}{% endblock %}
+        {% vite_asset 'client/embedded.js' %}
         {% include "base/icons.html" %}
         <script src="{% static 'ietf/js/ietf.js' %}"></script>
         {% analytical_head_bottom %}
