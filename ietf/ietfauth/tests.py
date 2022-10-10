@@ -34,6 +34,7 @@ import debug                            # pyflakes:ignore
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group, Role, RoleName
 from ietf.ietfauth.htpasswd import update_htpasswd_file
+from ietf.ietfauth.utils import has_role
 from ietf.mailinglists.models import Subscribed
 from ietf.meeting.factories import MeetingFactory
 from ietf.nomcom.factories import NomComFactory
@@ -1003,3 +1004,11 @@ class OpenIDConnectTests(TestCase):
             # handler, causing later logging to become visible even if that wasn't intended.
             # Fail here if that happens.
             self.assertEqual(logging.root.handlers, [])
+
+
+class UtilsTests(TestCase):
+    def test_has_role_empty_role_names(self):
+        """has_role is False if role_names is empty"""
+        role = RoleFactory(name_id='secr', group__acronym='secretariat')
+        self.assertTrue(has_role(role.person.user, ['Secretariat']), 'Test is broken')
+        self.assertFalse(has_role(role.person.user, []), 'has_role() should return False when role_name is empty')
