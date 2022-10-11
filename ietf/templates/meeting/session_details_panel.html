@@ -6,7 +6,7 @@
             {% if sessions|length > 1 %}Session {{ forloop.counter }} :{% endif %}
             {% for time in session.times %}
                 {% if not forloop.first %},{% endif %}
-                {{ time|dateformat:"l Y-m-d H:i T" }}
+                {{ time|timezone:session.meeting.time_zone|dateformat:"l Y-m-d H:i T" }}
                 {% if time.tzinfo.zone != "UTC" %}<span class="small">({{ time|utc|dateformat:"H:i T" }})</span>{% endif %}
             {% endfor %}
             {% if session.cancelled %}

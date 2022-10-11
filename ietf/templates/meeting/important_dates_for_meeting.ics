@@ -1,9 +1,9 @@
-{% for d in meeting.important_dates %}BEGIN:VEVENT
+{% load tz %}{% for d in meeting.important_dates %}BEGIN:VEVENT
 UID:ietf-{{ meeting.number }}-{{ d.name_id }}-{{ d.date.isoformat }}
 SUMMARY:IETF {{ meeting.number }}: {{ d.name.name }}
 CLASS:PUBLIC
 DTSTART{% if not d.midnight_cutoff %};VALUE=DATE{% endif %}:{{ d.date|date:"Ymd" }}{% if d.midnight_cutoff %}235900Z{% endif %}
-DTSTAMP:{{ meeting.cached_updated|date:"Ymd" }}T{{ meeting.cached_updated|date:"His" }}Z
+DTSTAMP:{{ meeting.cached_updated|utc|date:"Ymd" }}T{{ meeting.cached_updated|utc|date:"His" }}Z
 TRANSP:TRANSPARENT
 DESCRIPTION:{{ d.name.desc }}{% if first and d.name.slug == 'openreg' or first and d.name.slug == 'earlybird' %}\n
  Register here: https://www.ietf.org/how/meetings/register/{% endif %}{% if d.name.slug == 'opensched' %}\n

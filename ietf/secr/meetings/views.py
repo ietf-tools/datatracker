@@ -11,6 +11,7 @@ from django.db.models import IntegerField
 from django.db.models.functions import Cast
 from django.forms.models import inlineformset_factory
 from django.shortcuts import render, get_object_or_404, redirect
+from django.utils import timezone
 from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
@@ -30,6 +31,7 @@ from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm,
 from ietf.secr.sreq.views import get_initial_session
 from ietf.secr.utils.meeting import get_session, get_timeslot
 from ietf.mailtrigger.utils import gather_address_lists
+from ietf.utils.timezone import make_aware
 
 
 # prep for agenda changes
@@ -62,15 +64,23 @@ def build_timeslots(meeting,room=None):
         else:
             source_meeting = get_last_meeting(meeting)
 
-        delta = meeting.date - source_meeting.date
         timeslots = []
-        time_seen = set()
+        time_seen = set()  # time of source_meeting timeslot
         for t in source_meeting.timeslot_set.filter(type='regular'):
             if not t.time in time_seen:
                 time_seen.add(t.time)
                 timeslots.append(t)
         for t in timeslots:
-            new_time = t.time + delta
+            # Create new timeslot at the same wall clock time on the same day relative to meeting start
+            day_offset = t.local_start_time().date() - source_meeting.date
+            new_date = meeting.date + day_offset
+            new_time = make_aware(
+                datetime.datetime.combine(
+                    new_date,
+                    t.local_start_time().time(),
+                ),
+                meeting.tz(),
+            )
             for room in rooms:
                 TimeSlot.objects.create(type_id='regular',
                                         meeting=meeting,
@@ -121,7 +131,7 @@ def send_notifications(meeting, groups, person):
     Send session scheduled email notifications for each group in groups.  Person is the
     user who initiated this action, request.uesr.get_profile().
     '''
-    now = datetime.datetime.now()
+    now = timezone.now()
     for group in groups:
         sessions = group.session_set.filter(meeting=meeting)
         addrs = gather_address_lists('session_scheduled',group=group,session=sessions[0])
@@ -341,7 +351,6 @@ def edit_meeting(request, meeting_id):
 
     else:
         form = MeetingModelForm(instance=meeting)
-
     return render(request, 'meetings/edit_meeting.html', {
         'meeting': meeting,
         'form' : form, },
@@ -557,7 +566,7 @@ def misc_session_edit(request, meeting_id, schedule_name, slot_id):
                    'name':session.name,
                    'short':session.short,
                    'day':delta.days,
-                   'time':slot.time.strftime('%H:%M'),
+                   'time':slot.time.astimezone(meeting.tz()).strftime('%H:%M'),
                    'duration':duration_string(slot.duration),
                    'show_location':slot.show_location,
                    'purpose': session.purpose,
@@ -798,7 +807,8 @@ def get_timeslot_time(form, meeting):
     day = form.cleaned_data['day']
 
     date = meeting.date + datetime.timedelta(days=int(day))
-    return datetime.datetime(date.year,date.month,date.day,time.hour,time.minute)
+    return make_aware(datetime.datetime(date.year,date.month,date.day,time.hour,time.minute), meeting.tz())
+
 
 @role_required('Secretariat')
 def times_edit(request, meeting_id, schedule_name, time):
@@ -809,15 +819,22 @@ def times_edit(request, meeting_id, schedule_name, time):
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
     
     parts = [ int(x) for x in time.split(':') ]
-    dtime = datetime.datetime(*parts)
+    dtime = make_aware(datetime.datetime(*parts), meeting.tz())
     timeslots = TimeSlot.objects.filter(meeting=meeting,time=dtime)
+    day = (dtime.date() - meeting.date) // datetime.timedelta(days=1)
+    initial = {'day': day,
+               'time': dtime.strftime('%H:%M'),
+               'duration': timeslots.first().duration,
+               'name': timeslots.first().name}
 
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
             return redirect('ietf.secr.meetings.views.times', meeting_id=meeting_id,schedule_name=schedule_name)
 
-        form = TimeSlotForm(request.POST, meeting=meeting)
+        # Pass "initial" even for a POST so the choices initialize correctly if day is outside
+        # the standard set of options. See TimeSlotForm.get_day_choices().
+        form = TimeSlotForm(request.POST, initial=initial, meeting=meeting)
         if form.is_valid():
             day = form.cleaned_data['day']
             time = get_timeslot_time(form, meeting)
@@ -836,13 +853,6 @@ def times_edit(request, meeting_id, schedule_name, time):
     else:
         # we need to pass the session to the form in order to disallow changing
         # of group after materials have been uploaded
-        day = dtime.strftime('%w')
-        if day == 6:
-            day = -1
-        initial = {'day':day,
-                   'time':dtime.strftime('%H:%M'),
-                   'duration':timeslots.first().duration,
-                   'name':timeslots.first().name}
         form = TimeSlotForm(initial=initial, meeting=meeting)
 
     return render(request, 'meetings/times_edit.html', {
@@ -860,7 +870,7 @@ def times_delete(request, meeting_id, schedule_name, time):
     meeting = get_object_or_404(Meeting, number=meeting_id)
     
     parts = [ int(x) for x in time.split(':') ]
-    dtime = datetime.datetime(*parts)
+    dtime = make_aware(datetime.datetime(*parts), meeting.tz())
     status = SessionStatusName.objects.get(slug='schedw')
 
     if request.method == 'POST' and request.POST['post'] == 'yes':

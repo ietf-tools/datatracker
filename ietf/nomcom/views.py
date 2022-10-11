@@ -952,7 +952,7 @@ def view_feedback_topic(request, year, topic_id):
     feedback_types = FeedbackTypeName.objects.filter(slug__in=['comment',])
 
     last_seen = TopicFeedbackLastSeen.objects.filter(reviewer=request.user.person,topic=topic).first()
-    last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1,month=1,day=1)
+    last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1, month=1, day=1, tzinfo=datetime.timezone.utc)
     if last_seen:
         last_seen.save()
     else:
@@ -974,7 +974,7 @@ def view_feedback_nominee(request, year, nominee_id):
     feedback_types = FeedbackTypeName.objects.filter(slug__in=settings.NOMINEE_FEEDBACK_TYPES)
 
     last_seen = FeedbackLastSeen.objects.filter(reviewer=request.user.person,nominee=nominee).first()
-    last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1,month=1,day=1)
+    last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1, month=1, day=1, tzinfo=datetime.timezone.utc)
     if last_seen:
         last_seen.save()
     else:

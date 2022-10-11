@@ -3,7 +3,7 @@
 # This script requires that the proper virtual python environment has been
 # invoked before start
 
-import datetime, os, sys
+import os, sys
 import syslog
 
 # boilerplate
@@ -16,6 +16,7 @@ syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 
 import django
 django.setup()
+from django.utils import timezone
 
 from ietf.utils.mail import log_smtp_exception, send_error_email
 from smtplib import SMTPException
@@ -32,7 +33,7 @@ from ietf.message.models import SendQueue
 
 mode = sys.argv[1]
 
-now = datetime.datetime.now()
+now = timezone.now()
 
 needs_sending = SendQueue.objects.filter(sent_at=None).select_related("message")
 if mode == "specific":

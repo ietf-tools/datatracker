@@ -34,6 +34,7 @@ from ietf.utils.pipe import pipe
 from ietf.utils.mail import send_mail_text, send_mail, get_payload_text
 from ietf.utils.log import log
 from ietf.person.name import unidecode_name
+from ietf.utils.timezone import datetime_from_date, datetime_today, DEADLINE_TZINFO
 
 import debug                            # pyflakes:ignore
 
@@ -558,34 +559,35 @@ def get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable):
         base_qs = Person.objects.all()
 
     previous_five = previous_five_meetings(date)
+    date_as_dt = datetime_from_date(date, DEADLINE_TZINFO)
     three_of_five_qs = three_of_five_callable(previous_five=previous_five, queryset=base_qs)
 
     # If date is Feb 29, neither 3 nor 5 years ago has a Feb 29. Use Feb 28 instead.
     if date.month == 2 and date.day == 29:
-        three_years_ago = datetime.date(date.year - 3, 2, 28)
-        five_years_ago = datetime.date(date.year - 5, 2, 28)
+        three_years_ago = datetime.datetime(date.year - 3, 2, 28, tzinfo=DEADLINE_TZINFO)
+        five_years_ago = datetime.datetime(date.year - 5, 2, 28, tzinfo=DEADLINE_TZINFO)
     else:
-        three_years_ago = datetime.date(date.year - 3, date.month, date.day)
-        five_years_ago = datetime.date(date.year - 5, date.month, date.day)
+        three_years_ago = datetime.datetime(date.year - 3, date.month, date.day, tzinfo=DEADLINE_TZINFO)
+        five_years_ago = datetime.datetime(date.year - 5, date.month, date.day, tzinfo=DEADLINE_TZINFO)
 
     officer_qs = base_qs.filter(
         # is currently an officer
         Q(role__name_id__in=('chair','secr'),
           role__group__state_id='active',
           role__group__type_id='wg',
-          role__group__time__lte=date, ## TODO - inspect - lots of things affect group__time...
+          role__group__time__lte=date_as_dt, ## TODO - inspect - lots of things affect group__time...
         )
         # was an officer since the given date (I think this is wrong - it looks at when roles _start_, not when roles end)
       | Q(rolehistory__group__time__gte=three_years_ago,
-          rolehistory__group__time__lte=date,
+          rolehistory__group__time__lte=date_as_dt,
           rolehistory__name_id__in=('chair','secr'),
           rolehistory__group__state_id='active',
           rolehistory__group__type_id='wg',
          )
     ).distinct()
 
-    rfc_pks = set(DocEvent.objects.filter(type='published_rfc',time__gte=five_years_ago,time__lte=date).values_list('doc__pk',flat=True))
-    iesgappr_pks = set(DocEvent.objects.filter(type='iesg_approved',time__gte=five_years_ago,time__lte=date).values_list('doc__pk',flat=True))
+    rfc_pks = set(DocEvent.objects.filter(type='published_rfc', time__gte=five_years_ago, time__lte=date_as_dt).values_list('doc__pk', flat=True))
+    iesgappr_pks = set(DocEvent.objects.filter(type='iesg_approved', time__gte=five_years_ago, time__lte=date_as_dt).values_list('doc__pk',flat=True))
     qualifying_pks = rfc_pks.union(iesgappr_pks.difference(rfc_pks))
     author_qs = base_qs.filter(
             documentauthor__document__pk__in=qualifying_pks
@@ -634,7 +636,7 @@ def get_eligibility_date(nomcom=None, date=None):
             else:
                 return datetime.date(next_nomcom_year,5,1)
         else:
-            return datetime.date(datetime.date.today().year,5,1)
+            return datetime.date(datetime_today().year,5,1)
 
 def previous_five_meetings(date = None):
     if date is None:

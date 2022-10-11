@@ -287,7 +287,7 @@ class SubmitTests(BaseSubmitTestCase):
         # prepare draft to suggest replace
         sug_replaced_draft = Document.objects.create(
             name="draft-ietf-ames-sug-replaced",
-            time=datetime.datetime.now(),
+            time=timezone.now(),
             type_id="draft",
             title="Draft to be suggested to be replaced",
             stream_id="ietf",
@@ -298,7 +298,7 @@ class SubmitTests(BaseSubmitTestCase):
             words=100,
             intended_std_level_id="ps",
             ad=draft.ad,
-            expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
+            expires=timezone.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             notify="aliens@example.mars",
             note="",
         )
@@ -357,7 +357,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertTrue(os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, rev))))
         self.assertEqual(draft.type_id, "draft")
         self.assertEqual(draft.stream_id, "ietf")
-        self.assertTrue(draft.expires >= datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE - 1))
+        self.assertTrue(draft.expires >= timezone.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE - 1))
         self.assertEqual(draft.get_state("draft-stream-%s" % draft.stream_id).slug, "wg-doc")
         authors = draft.documentauthor_set.all()
         self.assertEqual(len(authors), 1)
@@ -2320,7 +2320,7 @@ Subject: test submission via email
 Please submit my draft at http://test.com/mydraft.txt
 
 Thank you
-""".format(datetime.datetime.now().ctime())
+""".format(timezone.now().ctime())
         message = email.message_from_string(force_str(message_string))
         submission, submission_email_event = (
             add_submission_email(request=None,
@@ -2402,7 +2402,7 @@ Content-Disposition: attachment; filename="attach.txt"
 QW4gZXhhbXBsZSBhdHRhY2htZW50IHd0aG91dCB2ZXJ5IG11Y2ggaW4gaXQuCgpBIGNvdXBs
 ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
 --------------090908050800030909090207--
-""".format(frm, datetime.datetime.now().ctime())
+""".format(frm, timezone.now().ctime())
 
         message = email.message_from_string(force_str(message_string))
         submission, submission_email_event = (
@@ -2458,7 +2458,7 @@ Content-Disposition: attachment; filename="attachment.txt"
 QW4gZXhhbXBsZSBhdHRhY2htZW50IHd0aG91dCB2ZXJ5IG11Y2ggaW4gaXQuCgpBIGNvdXBs
 ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
 --------------090908050800030909090207--
-""".format(datetime.datetime.now().ctime())
+""".format(timezone.now().ctime())
 
         # Back to secretariat
         self.client.login(username="secretary", password="secretary+password")
@@ -2597,7 +2597,7 @@ Subject: Another message
 About my submission
 
 Thank you
-""".format(datetime.datetime.now().ctime())
+""".format(timezone.now().ctime())
 
             r = self.client.post(add_email_url, {
                 "name": "{}-{}".format(submission.name, submission.rev),
@@ -2664,7 +2664,7 @@ Thank you
 From: {}
 Date: {}
 Subject: test
-""".format(reply_to, to, datetime.datetime.now().ctime())
+""".format(reply_to, to, timezone.now().ctime())
 
         result = process_response_email(message_string)
         self.assertIsInstance(result, Message)

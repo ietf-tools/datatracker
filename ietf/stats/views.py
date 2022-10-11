@@ -18,6 +18,7 @@ from django.db.models import Count, Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 
@@ -39,6 +40,8 @@ from ietf.stats.models import MeetingRegistration, CountryAlias
 from ietf.stats.utils import get_aliased_affiliations, get_aliased_countries, compute_hirsch_index
 from ietf.ietfauth.utils import has_role
 from ietf.utils.response import permission_denied
+from ietf.utils.timezone import date_today, DEADLINE_TZINFO, RPC_TZINFO
+
 
 def stats_index(request):
     return render(request, "stats/index.html")
@@ -196,7 +199,7 @@ def document_stats(request, stats_type=None):
         if "y" in time_choice:
             try:
                 y = int(time_choice.rstrip("y"))
-                from_time = datetime.datetime.today() - dateutil.relativedelta.relativedelta(years=y)
+                from_time = timezone.now() - dateutil.relativedelta.relativedelta(years=y)
             except ValueError:
                 pass
 
@@ -622,8 +625,9 @@ def document_stats(request, stats_type=None):
                 type__in=["published_rfc", "new_revision"],
             ).values_list("doc", "time").order_by("doc")
 
-            for doc, time in docevent_qs.iterator():
-                doc_years[doc].add(time.year)
+            for doc_id, time in docevent_qs.iterator():
+                # RPC_TZINFO is used to match the timezone handling in Document.pub_date()
+                doc_years[doc_id].add(time.astimezone(RPC_TZINFO).year)
 
             person_qs = Person.objects.filter(person_filters)
 
@@ -1065,12 +1069,12 @@ def review_stats(request, stats_type=None, acronym=None):
         except ValueError:
             return None
 
-    today = datetime.date.today()
+    today = date_today(DEADLINE_TZINFO)
     from_date = parse_date(request.GET.get("from")) or today - dateutil.relativedelta.relativedelta(years=1)
     to_date = parse_date(request.GET.get("to")) or today
 
-    from_time = datetime.datetime.combine(from_date, datetime.time.min)
-    to_time = datetime.datetime.combine(to_date, datetime.time.max)
+    from_time = datetime.datetime.combine(from_date, datetime.time.min, tzinfo=DEADLINE_TZINFO)
+    to_time = datetime.datetime.combine(to_date, datetime.time.max, tzinfo=DEADLINE_TZINFO)
 
     # teams/reviewers
     teams = list(Group.objects.exclude(reviewrequest=None).distinct().order_by("name"))

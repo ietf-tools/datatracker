@@ -40,6 +40,8 @@ from ietf.person.models import Person
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.utils.decorators import require_api_key
 from ietf.utils.response import permission_denied
+from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
+
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -1055,9 +1057,11 @@ def make_last_call(request, name):
             e.desc = "The following Last Call announcement was sent out (ends %s):<br><br>" % expiration_date
             e.desc += announcement
 
-            if form.cleaned_data['last_call_sent_date'] != e.time.date():
-                e.time = datetime.datetime.combine(form.cleaned_data['last_call_sent_date'], e.time.time())
-            e.expires = expiration_date
+            e_production_time = e.time.astimezone(DEADLINE_TZINFO)
+            if form.cleaned_data['last_call_sent_date'] != e_production_time.date():
+                lcsd = form.cleaned_data['last_call_sent_date']
+                e.time = e_production_time.replace(year=lcsd.year, month=lcsd.month, day=lcsd.day)  # preserves tzinfo
+            e.expires = datetime_from_date(expiration_date, DEADLINE_TZINFO)
             e.save()
             events.append(e)
 
@@ -1108,7 +1112,7 @@ def issue_irsg_ballot(request, name):
         raise Http404
 
     by = request.user.person
-    fillerdate = datetime.date.today() + datetime.timedelta(weeks=2)
+    fillerdate = date_today(DEADLINE_TZINFO) + datetime.timedelta(weeks=2)
 
     if request.method == 'POST':
         button = request.POST.get("irsg_button")
@@ -1117,7 +1121,7 @@ def issue_irsg_ballot(request, name):
             e = IRSGBallotDocEvent(doc=doc, rev=doc.rev, by=request.user.person)
             if (duedate == None or duedate==""):
                 duedate = str(fillerdate)
-            e.duedate = datetime.datetime.strptime(duedate, '%Y-%m-%d')
+            e.duedate = datetime_from_date(datetime.datetime.strptime(duedate, '%Y-%m-%d'), DEADLINE_TZINFO)
             e.type = "created_ballot"
             e.desc = "Created IRSG Ballot"
             ballot_type = BallotType.objects.get(doc_type=doc.type, slug="irsg-approve")

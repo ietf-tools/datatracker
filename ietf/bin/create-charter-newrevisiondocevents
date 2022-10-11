@@ -28,7 +28,7 @@ def warn(string):
 # ------------------------------------------------------------------------------
 
 import re
-from datetime import datetime as Datetime
+import datetime
 
 import django
 django.setup()
@@ -44,7 +44,7 @@ system_entity = Person.objects.get(name="(System)")
 charterdir = Path(settings.CHARTER_PATH)
 for file in charterdir.files("charter-ietf-*.txt"):
     fname = file.name
-    ftime = Datetime.fromtimestamp(file.mtime)
+    ftime = datetime.datetime.fromtimestamp(file.mtime, datetime.timezone.utc)
     match = re.search("^(?P<name>[a-z0-9-]+)-(?P<rev>\d\d-\d\d)\.txt$", fname)
     if match:
         name = match.group("name")

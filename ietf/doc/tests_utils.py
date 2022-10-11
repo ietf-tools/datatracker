@@ -143,7 +143,7 @@ class ActionHoldersTests(TestCase):
         doc = self.doc_in_iesg_state('pub-req')
         doc.action_holders.set([self.ad])
         dah = doc.documentactionholder_set.get(person=self.ad)
-        dah.time_added = datetime.datetime(2020, 1, 1)  # arbitrary date in the past
+        dah.time_added = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)  # arbitrary date in the past
         dah.save()
 
         self.assertNotEqual(doc.documentactionholder_set.get(person=self.ad).time_added.date(), datetime.date.today())

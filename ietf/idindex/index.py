@@ -11,6 +11,7 @@ import pytz
 
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 import debug    # pyflakes:ignore
 
@@ -296,6 +297,6 @@ def id_index_txt(with_abstracts=False):
 
     return render_to_string("idindex/id_index.txt", {
             'groups': groups,
-            'time': datetime.datetime.now(pytz.UTC).strftime("%Y-%m-%d %H:%M:%S %Z"),
+            'time': timezone.now().astimezone(pytz.utc).strftime("%Y-%m-%d %H:%M:%S %Z"),
             'with_abstracts': with_abstracts,
             })

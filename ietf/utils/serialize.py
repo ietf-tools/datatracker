@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 
 def object_as_shallow_dict(obj):
@@ -14,7 +16,7 @@ def object_as_shallow_dict(obj):
         if isinstance(f, models.ManyToManyField):
             v = list(v.values_list("pk", flat=True))
         elif isinstance(f, models.DateTimeField):
-            v = v.strftime('%Y-%m-%d %H:%M:%S')
+            v = v.astimezone(datetime.timezone.utc).isoformat()
         elif isinstance(f, models.DateField):
             v = v.strftime('%Y-%m-%d')
 

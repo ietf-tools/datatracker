@@ -2,7 +2,7 @@
 {% load origin %}
 {% load static %}
 {% load textfilters %}
-{% load ietf_filters %}
+{% load ietf_filters tz %}
 {% origin %}
 {% if item and item|should_show_agenda_session_buttons %}
     {% with slug=item.slug %}
@@ -130,8 +130,8 @@
                                 <a class="btn btn-outline-primary"
                                    role="button"
                                    href="{% url 'ietf.meeting.views.agenda_ical' num=meeting.number session_id=session.id %}"
-                                   aria-label="icalendar entry for {{ acronym }} session on {{ timeslot.utc_start_time|date:'Y-m-d H:i' }} UTC"
-                                   title="icalendar entry for {{ acronym }} session on {{ timeslot.utc_start_time|date:'Y-m-d H:i' }} UTC">
+                                   aria-label="icalendar entry for {{ acronym }} session on {{ timeslot.time|utc|date:'Y-m-d H:i' }} UTC"
+                                   title="icalendar entry for {{ acronym }} session on {{ timeslot.time|utc|date:'Y-m-d H:i' }} UTC">
                                     <i class="bi bi-calendar"></i>
                                 </a>
                             {% else %}
