@@ -13,7 +13,8 @@ import NTheme from './components/n-theme.vue'
 // COMPONENTS
 
 const availableComponents = {
-  ChatLog: defineAsyncComponent(() => import('./components/ChatLog.vue'))
+  ChatLog: defineAsyncComponent(() => import('./components/ChatLog.vue')),
+  Polls: defineAsyncComponent(() => import('./components/Polls.vue')),
 }
 
 // PROPS
