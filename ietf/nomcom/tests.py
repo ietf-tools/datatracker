@@ -2573,6 +2573,59 @@ class rfc8989EligibilityTests(TestCase):
             self.assertEqual(set(list_eligible(nomcom=nomcom)),set(eligible))
             Person.objects.filter(pk__in=[p.pk for p in eligible.union(ineligible)]).delete()
 
+class rfc8989bisEligibilityTests(TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.nomcom = NomComFactory(group__acronym='nomcom2023', populate_personnel=False, first_call_for_volunteers=datetime.date(2023,5,15))
+        self.meetings = [
+            MeetingFactory(number=number, date=date, type_id='ietf') for number,date in [
+                ('115', datetime.date(2022, 11, 5)),
+                ('114', datetime.date(2022, 7, 23)),
+                ('113', datetime.date(2022, 3, 19)),
+                ('112', datetime.date(2021, 11, 8)),
+                ('111', datetime.date(2021, 7, 26)),
+            ]
+        ]
+        # make_immutable_test_data makes things this test does not want
+        Role.objects.filter(name_id__in=('chair','secr')).delete()
+
+    def test_registration_is_not_enough(self):
+        p = PersonFactory()
+        for meeting in self.meetings:
+            MeetingRegistrationFactory(person=p, meeting=meeting, checkedin=False)
+        self.assertFalse(is_eligible(p, self.nomcom))
+
+    def test_elig_by_meetings(self):
+        eligible_people = list()
+        ineligible_people = list()
+        attendance_methods = ('checkedin', 'session', 'both')
+        for combo_len in range(0,6): # Someone might register for 0 to 5 previous meetings
+            for combo in combinations(self.meetings, combo_len):
+                # Cover cases where someone 
+                # - checked in, but attended no sessions
+                # - checked in _and_ attended sessions 
+                # - didn't check_in but attended sessions
+                # (Intentionally not covering the permutations of those cases)
+                for method in attendance_methods:
+                    p = PersonFactory()
+                    for meeting in combo:
+                        MeetingRegistrationFactory(person=p, meeting=meeting, reg_type='onsite', checkedin=(method in ('checkedin', 'both')))
+                        if method in ('session', 'both'):
+                            AttendedFactory(session__meeting=meeting, session__type_id='plenary',person=p)
+                        if combo_len<3:
+                            ineligible_people.append(p)
+                        else:
+                            eligible_people.append(p)
+
+        self.assertEqual(set(eligible_people),set(list_eligible(self.nomcom)))
+
+        for person in eligible_people:
+            self.assertTrue(is_eligible(person,self.nomcom))
+
+        for person in ineligible_people:
+            self.assertFalse(is_eligible(person,self.nomcom))
+
 class VolunteerTests(TestCase):
 
     def test_volunteer(self):

@@ -2339,7 +2339,10 @@ def agenda_json(request, num=None):
 
 def meeting_requests(request, num=None):
     meeting = get_meeting(num)
-    groups_to_show = Group.objects.filter(state_id='active', type__features__has_meetings=True)
+    groups_to_show = Group.objects.filter(
+        state_id__in=('active', 'bof', 'proposed'),
+        type__features__has_meetings=True,
+    )
     sessions = list(
         Session.objects.requests().filter(
             meeting__number=meeting.number,
@@ -2359,7 +2362,7 @@ def meeting_requests(request, num=None):
     for s in sessions:
         s.current_status_name = status_names.get(s.current_status, s.current_status)
         s.requested_by_person = session_requesters.get(s.requested_by)
-        if s.group.parent and s.group.parent.type.slug == 'area':
+        if s.group.parent and s.group.parent.type.slug in ('area', 'irtf'):
             s.display_area = s.group.parent
         else:
             s.display_area = None

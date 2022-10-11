@@ -5,12 +5,18 @@
 <li class="nav-item dropdown">
     {% if flavor == "top" %}
         <a href="#"
-           class="nav-link dropdown-toggle"
+           class="nav-link dropdown-toggle{% if user.person.photo_thumb %} p-0{% endif %}"
            role="button"
            data-bs-toggle="dropdown"
            aria-expanded="false">
             {% if user.is_authenticated %}
-                {{ user }}
+                {% if user.person.photo_thumb %}
+                    <img class="user-photo rounded-circle ms-1" width="40" height="40"
+                         src="{{ user.person.photo_thumb.url }}"
+                         alt="Photo of {{ user.person.name }}">
+                {% else %}
+                    {{ user.username|split:'@'|first }}
+                {% endif %}
             {% else %}
                 User
             {% endif %}

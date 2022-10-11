@@ -187,7 +187,7 @@ def ajax_search(request):
     if not q:
         objs = IprDisclosureBase.objects.none()
     else:
-        query = Q()
+        query = Q()  # all objects returned if no other terms in the queryset
         for t in q:
             query &= Q(title__icontains=t)
 
