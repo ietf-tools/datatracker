@@ -36,7 +36,7 @@ const resizeObserver = new ResizeObserver(entries => {
 })
 
 onMounted(() => {
-  resizeObserver.observe(appContainer.value, { box: 'device-pixel-content-box' })
+  resizeObserver.observe(appContainer.value)
 })
 
 onBeforeUnmount(() => {
