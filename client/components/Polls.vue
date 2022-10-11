@@ -7,7 +7,7 @@
     striped
     )
   span.text-muted(v-else)
-    em No chat log available.
+    em No polls available.
 </template>
   
 <script setup>
