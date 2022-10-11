@@ -11,8 +11,8 @@
            aria-expanded="false">
             {% if user.is_authenticated %}
                 {% if user.person.photo_thumb %}
-                    <img class="user-photo rounded-circle ms-1" width="30" height="40"
-                         src="{{ user.person.photo_thumb.url }}"
+                    <img class="user-photo rounded-circle ms-1"
+                         src="{{ user.person.cdn_photo_url }}"
                          alt="Photo of {{ user.person.name }}">
                 {% else %}
                     {{ user.username|split:'@'|first }}

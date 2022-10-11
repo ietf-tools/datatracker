@@ -219,7 +219,7 @@ def openid_userinfo(claims, user):
     person = get_object_or_404(Person, user=user)
     email = person.email()
     if person.photo:
-        photo_url = person.cdn_photo_url()
+        photo_url = person.cdn_photo_url(width=80, height=80)
     else:
         photo_url = ''
     claims.update( {

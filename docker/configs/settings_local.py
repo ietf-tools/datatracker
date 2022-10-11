@@ -74,3 +74,5 @@ NOMCOM_PUBLIC_KEYS_DIR = 'data/nomcom_keys/public_keys/'
 SLIDE_STAGING_PATH = 'test/staging/'
 
 DE_GFM_BINARY = '/usr/local/bin/de-gfm'
+
+SERVE_CDN_PHOTOS = False

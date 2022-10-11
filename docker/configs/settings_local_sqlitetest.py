@@ -79,3 +79,5 @@ SUBMIT_YANG_IANA_MODEL_DIR = '/assets/ietf-ftp/yang/ianamod/'
 SUBMIT_YANG_RFC_MODEL_DIR   = '/assets/ietf-ftp/yang/rfcmod/'
 
 DE_GFM_BINARY = '/usr/local/bin/de-gfm'
+
+SERVE_CDN_PHOTOS = False
