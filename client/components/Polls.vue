@@ -2,9 +2,9 @@
 .polls
   n-data-table(
     v-if='state.items.length > 0'
-    :data="state.items"
-    :columns="columns"
-    striped=true,
+    :data='state.items'
+    :columns='columns'
+    striped
     )
   span.text-muted(v-else)
     em No chat log available.
