@@ -450,14 +450,17 @@ test.describe('past - desktop', () => {
     await expect(page.locator('.agenda-eventdetails .detail-text > iframe')).toHaveAttribute('src', materialsInfo.minutes.url)
     // Footer Buttons
     const hedgeDocLink = `https://notes.ietf.org/notes-ietf-${meetingData.meeting.number}-${event.type === 'plenary' ? 'plenary' : event.acronym}`
+    const detailsUrl = `/meeting/${meetingData.meeting.number}/session/${event.acronym}/`
     const footerBtnsLocator = page.locator('.agenda-eventdetails .detail-action > a')
     await expect(footerBtnsLocator).toHaveCount(4)
     await expect(footerBtnsLocator.first()).toContainText('Download as tarball')
     await expect(footerBtnsLocator.first()).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.tgz`)
     await expect(footerBtnsLocator.nth(1)).toContainText('Download as PDF')
     await expect(footerBtnsLocator.nth(1)).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.pdf`)
-    await expect(footerBtnsLocator.last()).toContainText('Notepad')
-    await expect(footerBtnsLocator.last()).toHaveAttribute('href', hedgeDocLink)
+    await expect(footerBtnsLocator.nth(2)).toContainText('Notepad')
+    await expect(footerBtnsLocator.nth(2)).toHaveAttribute('href', hedgeDocLink)
+    await expect(footerBtnsLocator.last()).toContainText(`${event.groupAcronym} materials page`)
+    await expect(footerBtnsLocator.last()).toHaveAttribute('href', detailsUrl)
     // Clicking X should close the dialog
     await page.locator('.agenda-eventdetails .n-card-header__extra > .detail-header > button').click()
   })
