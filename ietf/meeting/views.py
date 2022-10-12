@@ -1727,10 +1727,6 @@ def agenda_extract_schedule (item):
                 'ietf.meeting.views.agenda_ical',
                 kwargs={'num': item.schedule.meeting.number, 'session_id': item.session.id},
             ),
-            "sessionDetails": reverse(
-                'ietf.meeting.views.session_details',
-                kwargs={'num': item.schedule.meeting.number, 'acronym': item.session.group.acronym}
-            ),
         }
         # "slotType": {
         #     "slug": item.slot_type.slug
