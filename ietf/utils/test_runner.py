@@ -861,7 +861,7 @@ class IetfTestRunner(DiscoverRunner):
                     # self-closing style tags are valid in HTML5. Both self-closing and non-self-closing tags are accepted. (vite generates self-closing link tags)
                     "void-style": "off",
                     # Both attributes without value and empty strings are equal and valid. (vite generates empty value attributes)
-                    "attribute-empty-style": "off"
+                    "attribute-empty-style": "off",
                     # For fragments, don't check that elements are in the proper ancestor element
                     "element-required-ancestor": "off",
                 },
