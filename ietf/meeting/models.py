@@ -266,9 +266,13 @@ class Meeting(models.Model):
             attended_per_meetingregistration | attended_per_meeting_attended
         ).distinct()
 
+        onsite=set(attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='onsite'))
+        remote=set(attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='remote'))
+        remote.difference_update(onsite)
+
         return Attendance(
-            onsite=attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='onsite').count(),
-            remote=attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='remote').count()
+            onsite=len(onsite),
+            remote=len(remote)
         )
 
     @property
