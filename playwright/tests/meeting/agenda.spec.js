@@ -451,7 +451,7 @@ test.describe('past - desktop', () => {
     // Footer Buttons
     const hedgeDocLink = `https://notes.ietf.org/notes-ietf-${meetingData.meeting.number}-${event.type === 'plenary' ? 'plenary' : event.acronym}`
     const footerBtnsLocator = page.locator('.agenda-eventdetails .detail-action > a')
-    await expect(footerBtnsLocator).toHaveCount(3)
+    await expect(footerBtnsLocator).toHaveCount(4)
     await expect(footerBtnsLocator.first()).toContainText('Download as tarball')
     await expect(footerBtnsLocator.first()).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.tgz`)
     await expect(footerBtnsLocator.nth(1)).toContainText('Download as PDF')
