@@ -889,7 +889,8 @@ class IetfTestRunner(DiscoverRunner):
             self.config_file = {}
             for kind in self.batches:
                 self.config_file[kind] = tempfile.NamedTemporaryFile(
-                    prefix="html-validate-config-"
+                    prefix="html-validate-config-",
+                    suffix=".json"
                 )
                 self.config_file[kind].write(json.dumps(config[kind]).encode())
                 self.config_file[kind].flush()
