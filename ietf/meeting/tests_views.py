@@ -17,7 +17,7 @@ from pyquery import PyQuery
 from lxml.etree import tostring
 from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, urlsplit, quote
+from urllib.parse import urlparse, urlsplit
 from PIL import Image
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -51,7 +51,6 @@ from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, Pro
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
-from ietf.utils.text import xslugify
 
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import GroupFactory, GroupEventFactory, RoleFactory
@@ -166,7 +165,7 @@ class MeetingTests(BaseMeetingTestCase):
         time_interval = r"%s<span.*/span>-%s" % (slot.utc_start_time().strftime("%H:%M").lstrip("0"), (slot.utc_start_time() + slot.duration).strftime("%H:%M").lstrip("0"))
 
         # Extremely rudementary test of agenda-neue - to be replaced with back-end tests as the front-end tests are developed.
-        r = self.client.get(urlreverse("agenda-neue", kwargs=dict(num=meeting.number,utc='-utc')))
+        r = self.client.get(urlreverse("agenda", kwargs=dict(num=meeting.number,utc='-utc')))
         self.assertEqual(r.status_code, 200)  
 
         # Agenda API tests
@@ -213,53 +212,14 @@ class MeetingTests(BaseMeetingTestCase):
             }
         )
 
-        r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number,utc='-utc')))
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        agenda_content = q("#content").html()
-        self.assertIn(session.group.acronym, agenda_content)
-        self.assertIn(session.group.name, agenda_content)
-        self.assertIn(session.group.parent.acronym.upper(), agenda_content)
-        self.assertIn(slot.location.name, agenda_content)
-        self.assertRegex(agenda_content, time_interval)
-        self.assertIsNotNone(q(':input[value="%s"]' % meeting.time_zone),
-                             'Time zone selector should show meeting timezone')
-        self.assertIsNotNone(q('.nav *:contains("%s")' % meeting.time_zone),
-                             'Time zone indicator should be in nav sidebar')
-
         # plain
         time_interval = r"%s<span.*/span>-%s" % (slot.time.strftime("%H:%M").lstrip("0"), (slot.time + slot.duration).strftime("%H:%M").lstrip("0"))
-
-        r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number)))
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        agenda_content = q("#content").html()
-        self.assertIn(session.group.acronym, agenda_content)
-        self.assertIn(session.group.name, agenda_content)
-        self.assertIn(session.group.parent.acronym.upper(), agenda_content)
-        self.assertIn(slot.location.name, agenda_content)
-        self.assertRegex(agenda_content, time_interval)
-        self.assertIn(registration_text, agenda_content)
-
-        # Make sure there's a frame for the session agenda and it points to the right place
-        assignment_url = urlreverse('ietf.meeting.views.session_materials', kwargs=dict(session_id=session.pk))
-        self.assertTrue(
-            any(
-                [assignment_url in x.attrib["data-src"] 
-                 for x in q('tr div.modal-body  div.session-materials')]
-            )
-        ) 
-
-        # future meeting, no agenda
-        r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=future_meeting.number)))
-        self.assertContains(r, "There is no agenda available yet.")
-        self.assertTemplateUsed(r, 'meeting/no-agenda.html')
 
         # text
         # the rest of the results don't have as nicely formatted times
         time_interval = "%s-%s" % (slot.time.strftime("%H%M").lstrip("0"), (slot.time + slot.duration).strftime("%H%M").lstrip("0"))
 
-        r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number, ext=".txt")))
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda_plain", kwargs=dict(num=meeting.number, ext=".txt")))
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, session.group.name)
         self.assertContains(r, session.group.parent.acronym.upper())
@@ -267,16 +227,13 @@ class MeetingTests(BaseMeetingTestCase):
 
         self.assertContains(r, time_interval)
 
-        r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number,name=meeting.unofficial_schedule.name,owner=meeting.unofficial_schedule.owner.email())))
-        self.assertContains(r, 'not the official schedule')
-
         # future meeting, no agenda
-        r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=future_meeting.number, ext=".txt")))
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda_plain", kwargs=dict(num=future_meeting.number, ext=".txt")))
         self.assertContains(r, "There is no agenda available yet.")
         self.assertTemplateUsed(r, 'meeting/no-agenda.txt')
 
         # CSV
-        r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number, ext=".csv")))
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda_plain", kwargs=dict(num=meeting.number, ext=".csv")))
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, session.group.name)
         self.assertContains(r, session.group.parent.acronym.upper())
@@ -304,30 +261,11 @@ class MeetingTests(BaseMeetingTestCase):
                 'ietf.meeting.views.session_details',
                 kwargs=dict(num=meeting.number, acronym=session.group.acronym)),
             msg_prefix='ical should contain link to meeting materials page for session')
-        self.assertContains(
-            r,
-            urlreverse(
-                'ietf.meeting.views.agenda', kwargs=dict(num=meeting.number)
-            ) + f'#row-{session.official_timeslotassignment().slug()}',
-            msg_prefix='ical should contain link to agenda entry for session')
 
-        # week view
-        r = self.client.get(urlreverse("ietf.meeting.views.week_view", kwargs=dict(num=meeting.number)))
-        self.assertNotContains(r, 'CANCELLED')
-        self.assertContains(r, session.group.acronym)
-        self.assertContains(r, slot.location.name)
-        self.assertContains(r, registration_text)
+        # Floor Plan
+        r = self.client.get(urlreverse('floor-plan', kwargs=dict(num=meeting.number)))
+        self.assertEqual(r.status_code, 200)
 
-        # week view with a cancelled session
-        SchedulingEvent.objects.create(
-            session=session,
-            status=SessionStatusName.objects.get(slug='canceled'),
-            by=Person.objects.get(name='(System)')
-        )
-        r = self.client.get(urlreverse("ietf.meeting.views.week_view", kwargs=dict(num=meeting.number)))
-        self.assertContains(r, 'CANCELLED')
-        self.assertContains(r, session.group.acronym)
-        self.assertContains(r, slot.location.name)
 
     @override_settings(PROCEEDINGS_V1_BASE_URL='https://example.com/{meeting.number}')
     def test_agenda_redirects_for_old_meetings(self):
@@ -336,7 +274,7 @@ class MeetingTests(BaseMeetingTestCase):
         MeetingFactory(type_id='ietf', number='35', populate_schedule=False)
         r = self.client.get(
             urlreverse(
-                'ietf.meeting.views.agenda',
+                'agenda',
                 kwargs={'num': '35', 'ext': '.html'},
             ))
         self.assertRedirects(r, 'https://example.com/35', fetch_redirect_response=False)
@@ -345,7 +283,7 @@ class MeetingTests(BaseMeetingTestCase):
         meeting_with_schedule = MeetingFactory(type_id='ietf', number='36', populate_schedule=True)
         r = self.client.get(
             urlreverse(
-                'ietf.meeting.views.agenda',
+                'agenda',
                 kwargs={'num': '36', 'ext': '.html'},
             ))
         self.assertRedirects(r, 'https://example.com/36', fetch_redirect_response=False)
@@ -354,7 +292,7 @@ class MeetingTests(BaseMeetingTestCase):
         SessionFactory(meeting=meeting_with_schedule)
         r = self.client.get(
                     urlreverse(
-                        'ietf.meeting.views.agenda',
+                        'agenda',
                         kwargs={'num': '36', 'ext': '.html'},
                     ))
         self.assertRedirects(r, 'https://example.com/36', fetch_redirect_response=False)
@@ -364,201 +302,10 @@ class MeetingTests(BaseMeetingTestCase):
         # Meetings pre-64 are redirected, but should be a 404 if there is no Meeting instance
         r = self.client.get(
             urlreverse(
-                'ietf.meeting.views.agenda',
+                'agenda',
                 kwargs={'num': '32', 'ext': '.html'},
             ))
         self.assertEqual(r.status_code, 404)
-        # Check a post-64 meeting as well
-        r = self.client.get(
-            urlreverse(
-                'ietf.meeting.views.agenda',
-                kwargs={'num': '150', 'ext': '.html'},
-            ))
-        self.assertEqual(r.status_code, 404)
-
-
-    def test_meeting_agenda_filters_ignored(self):
-        """The agenda view should ignore filter querystrings
-        
-        (They are handled by javascript on the front end)
-        """
-        meeting = make_meeting_test_data()
-        expected_items = meeting.schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
-        expected_rows = ['row-%s' % item.slug() for item in expected_items]
-        
-        r = self.client.get(urlreverse('ietf.meeting.views.agenda'))
-        for row_id in expected_rows:
-            self.assertContains(r, row_id)
-
-        r = self.client.get(urlreverse('ietf.meeting.views.agenda') + '?show=mars')
-        for row_id in expected_rows:
-            self.assertContains(r, row_id)
-
-        r = self.client.get(urlreverse('ietf.meeting.views.agenda') + '?show=mars&hide=ames,mars,plenary,ietf,bof')
-        for row_id in expected_rows:
-            self.assertContains(r, row_id)
-
-    def test_agenda_iab_session(self):
-        date = datetime.date.today()
-        meeting = MeetingFactory(type_id='ietf', date=date )
-        make_meeting_test_data(meeting=meeting)
-        
-        iab = Group.objects.get(acronym='iab')
-        venus = Group.objects.create(
-            name="Three letter acronym",
-            acronym="venus",
-            description="This group discusses exploration of Venus",
-            state_id="active",
-            type_id="program",
-            parent=iab,
-            list_email="venus@ietf.org",
-        )
-        venus_session = SessionFactory(
-            meeting=meeting,
-            group=venus,
-            attendees=10,
-            requested_duration=datetime.timedelta(minutes=60),
-            add_to_schedule=False,
-        )
-        system_person = Person.objects.get(name="(System)")
-        SchedulingEvent.objects.create(session=venus_session, status_id='schedw', by=system_person)
-        room = Room.objects.create(meeting=meeting,
-                                   name="Aphrodite",
-                                   capacity=100,
-                                   functional_name="Aphrodite Room")
-        room.session_types.add('regular')
-        session_date = meeting.date + datetime.timedelta(days=1)
-        slot3 = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
-                                        duration=datetime.timedelta(minutes=60),
-                                        time=datetime.datetime.combine(session_date, datetime.time(13, 30)))
-        SchedTimeSessAssignment.objects.create(timeslot=slot3, session=venus_session, schedule=meeting.schedule)
-        url = urlreverse('ietf.meeting.views.agenda', kwargs=dict(num=meeting.number))
-        r = self.client.get(url)
-        self.assertContains(r, 'venus')
-        q = PyQuery(r.content)
-        venus_row = q('[id*="-iab-"]').html()
-        self.assertIn('venus', venus_row)
-        
-    def test_agenda_current_audio(self):
-        date = datetime.date.today()
-        meeting = MeetingFactory(type_id='ietf', date=date )
-        make_meeting_test_data(meeting=meeting)
-        url = urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number))
-        r = self.client.get(url)
-        self.assertContains(r, "Audio stream")
-
-    def test_agenda_by_room(self):
-        meeting = make_meeting_test_data()
-        url = urlreverse("ietf.meeting.views.agenda_by_room",kwargs=dict(num=meeting.number))
-        login_testing_unauthorized(self,"secretary",url)
-        r = self.client.get(url)
-        self.assertTrue(all([x in unicontent(r) for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
-
-        url = urlreverse("ietf.meeting.views.agenda_by_room",kwargs=dict(num=meeting.number,name=meeting.unofficial_schedule.name,owner=meeting.unofficial_schedule.owner.email()))
-        r = self.client.get(url)
-        self.assertTrue(all([x in unicontent(r) for x in ['mars','Test Room',]]))
-        self.assertNotContains(r, 'IESG Breakfast')
-
-    def test_agenda_by_type(self):
-        meeting = make_meeting_test_data()
-
-        url = urlreverse("ietf.meeting.views.agenda_by_type",kwargs=dict(num=meeting.number))
-        login_testing_unauthorized(self,"secretary",url)
-        r = self.client.get(url)
-        self.assertTrue(all([x in unicontent(r) for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
-
-        url = urlreverse("ietf.meeting.views.agenda_by_type",kwargs=dict(num=meeting.number,name=meeting.unofficial_schedule.name,owner=meeting.unofficial_schedule.owner.email()))
-        r = self.client.get(url)
-        self.assertTrue(all([x in unicontent(r) for x in ['mars','Test Room',]]))
-        self.assertNotContains(r, 'IESG Breakfast')
-
-        url = urlreverse("ietf.meeting.views.agenda_by_type",kwargs=dict(num=meeting.number,type='regular'))
-        r = self.client.get(url)
-        self.assertTrue(all([x in unicontent(r) for x in ['mars','Test Room']]))
-        self.assertFalse(any([x in unicontent(r) for x in ['IESG Breakfast','Breakfast Room']]))
-
-        url = urlreverse("ietf.meeting.views.agenda_by_type",kwargs=dict(num=meeting.number,type='lead'))
-        r = self.client.get(url)
-        self.assertFalse(any([x in unicontent(r) for x in ['mars','Test Room']]))
-        self.assertTrue(all([x in unicontent(r) for x in ['IESG Breakfast','Breakfast Room']]))
-
-        url = urlreverse("ietf.meeting.views.agenda_by_type",kwargs=dict(num=meeting.number,type='lead',name=meeting.unofficial_schedule.name,owner=meeting.unofficial_schedule.owner.email()))
-        r = self.client.get(url)
-        self.assertFalse(any([x in unicontent(r) for x in ['IESG Breakfast','Breakfast Room']]))
-
-
-    def test_agenda_week_view(self):
-        meeting = make_meeting_test_data()
-        url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "?show=farfut"
-        r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
-        self.assertTrue(all([x in unicontent(r) for x in ['redraw_weekview', 'draw_calendar', ]]))
-
-        # Specifying a time zone should not change the output (time zones are handled by the JS)
-        url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "?show=farfut&" + quote("tz=Asia/Bangkok", safe='=')
-        r_with_tz = self.client.get(url)
-        self.assertEqual(r_with_tz.status_code,200)
-        self.assertEqual(r.content, r_with_tz.content)
-
-    def test_agenda_personalize(self):
-        """Session selection page should have a checkbox for each session with appropriate keywords"""
-        meeting = make_meeting_test_data()
-        url = urlreverse("ietf.meeting.views.agenda_personalize",kwargs=dict(num=meeting.number))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
-        q = PyQuery(r.content)
-        for assignment in SchedTimeSessAssignment.objects.filter(
-                schedule__in=[meeting.schedule, meeting.schedule.base],
-                session__on_agenda=True,
-        ):
-            row = q('#row-{}'.format(assignment.slug()))
-            self.assertIsNotNone(row, 'No row for assignment {}'.format(assignment))
-            checkboxes = row('input[type="checkbox"][name="selected-sessions"]')
-            self.assertEqual(len(checkboxes), 1,
-                             'Row for assignment {} does not have a checkbox input'.format(assignment))
-            checkbox = checkboxes.eq(0)
-            kw_token = assignment.session.docname_token_only_for_multiple()
-            self.assertEqual(
-                checkbox.attr('data-filter-item'),
-                assignment.session.group.acronym.lower() + (
-                    '' if kw_token is None else f'-{kw_token}'
-                )
-            )
-
-    def test_agenda_personalize_updates_urls(self):
-        """The correct URLs should be updated when filter settings change on the personalize agenda view
-
-        Tests that the expected elements have the necessary classes. The actual update of these fields
-        is tested in the JS tests
-        """
-        meeting = make_meeting_test_data()
-        url = urlreverse("ietf.meeting.views.agenda_personalize",kwargs=dict(num=meeting.number))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
-        q = PyQuery(r.content)
-
-        # Find all the elements expected to be updated
-        expected_elements = []
-        nav_tab_anchors = q('ul.nav.nav-tabs > li > a')
-        for anchor in nav_tab_anchors.items():
-            text = anchor.text().strip()
-            if text in ['Agenda (New)', 'Agenda', 'UTC agenda', 'Personalize agenda']:
-                expected_elements.append(anchor)
-        for btn in q('.buttonlist a.btn').items():
-            text = btn.text().strip()
-            if text in ['View personal agenda', 'Download .ics of filtered agenda', 'Subscribe to filtered agenda']:
-                expected_elements.append(btn)
-
-        # Check that all the expected elements have the correct classes
-        for elt in expected_elements:
-            self.assertTrue(elt.has_class('agenda-link'))
-            self.assertTrue(elt.has_class('filterable'))
-
-        # Finally, check that there are no unexpected elements marked to be updated.
-        # If there are, they should be added to the test above.
-        self.assertEqual(len(expected_elements),
-                         len(q('.agenda-link.filterable')),
-                         'Unexpected elements updated')
 
     @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=False, MEETING_DOC_HREFS = settings.MEETING_DOC_CDN_HREFS)
     def test_materials_through_cdn(self):
@@ -821,40 +568,6 @@ class MeetingTests(BaseMeetingTestCase):
                                       expected_event_count=1)
         self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
         self.assertNotContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
-
-    def test_meeting_agenda_has_static_ical_links(self):
-        """Links to the agenda_ical view must appear on the agenda page
-        
-        Confirms that these have the correct querystrings. Does not test the JS-based
-        'Customized schedule' button.
-        """
-        meeting = make_meeting_test_data()
-
-        # get the agenda
-        url = urlreverse('ietf.meeting.views.agenda', kwargs=dict(num=meeting.number))
-        r = self.client.get(url)
-        
-        # Check that it has the links we expect
-        ical_url = urlreverse('ietf.meeting.views.agenda_ical', kwargs=dict(num=meeting.number))
-        q = PyQuery(r.content)
-        content = q('#content').html()
-
-        assignments = meeting.schedule.assignments.exclude(timeslot__type__in=['lead', 'offagenda'])
-
-        # Assume the test meeting is not using historic groups
-        groups = [a.session.group for a in assignments if a.session is not None]
-        for g in groups:
-            if g.parent_id is not None:
-                self.assertIn('%s?show=%s' % (ical_url, g.parent.acronym.lower()), content)
-
-        # The 'non-area events' are those whose keywords are in the last column of buttons
-        na_col = q('#customize .col-1:last')  # find the column
-        non_area_labels = [e.attrib['data-filter-item']
-                           for e in na_col.find('button.pickview')]
-        assert len(non_area_labels) > 0  # test setup must produce at least one label for this test
-
-        # Should be a 'non-area events' link showing appropriate types
-        self.assertIn('%s?show=%s' % (ical_url, ','.join(non_area_labels).lower()), content)
 
     def test_parse_agenda_filter_params(self):
         def _r(show=(), hide=(), showtypes=(), hidetypes=()):
@@ -4008,12 +3721,6 @@ class SessionDetailsTests(TestCase):
         self.assertTrue(all([x in unicontent(r) for x in ('slides','agenda','minutes','draft')]))
         self.assertNotContains(r, 'deleted')
 
-        q = PyQuery(r.content)
-        self.assertTrue(q('div#session-buttons-%s' % session.id),
-                               'Session detail page does not contain session tool buttons') 
-        self.assertFalse(q('div#session-buttons-%s span.bi-arrows-fullscreen' % session.id),
-                         'The session detail page is incorrectly showing the "Show meeting materials" button')
-
     def test_session_details_has_import_minutes_buttons(self):
         group = GroupFactory.create(
             type_id='wg',
@@ -5683,25 +5390,6 @@ class AjaxTests(TestCase):
         self.assertIn('utc', data)
         self.assertNotIn('error', data)
         self.assertEqual(data['utc'], '20:00')
-
-class FloorPlanTests(TestCase):
-    def test_floor_plan_page(self):
-        make_meeting_test_data()
-        meeting = Meeting.objects.filter(type_id='ietf').order_by('id').last()
-        floorplan = FloorPlanFactory.create(meeting=meeting)
-
-        # Extremely rudimentary test of floor-plan-neue
-        url = urlreverse('floor-plan-neue')
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-
-        url = urlreverse('ietf.meeting.views.floor_plan')
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-
-        url = urlreverse('ietf.meeting.views.floor_plan', kwargs={'floor': xslugify(floorplan.name)} )
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
 
 class IphoneAppJsonTests(TestCase):
     def test_iphone_app_json_interim(self):

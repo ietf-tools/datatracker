@@ -3,6 +3,8 @@ import { DateTime } from 'luxon'
 import uniqBy from 'lodash/uniqBy'
 import murmur from 'murmurhash-js/murmurhash3_gc'
 
+import { useSiteStore } from '../shared/store'
+
 const urlRe = /http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+/
 const conferenceDomains = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 'gather.town']
 
@@ -23,7 +25,6 @@ export const useAgendaStore = defineStore('agenda', {
       { hex: '#20c997', tag: 'Attended' }
     ],
     colorAssignments: {},
-    criticalError: null,
     currentTab: 'agenda',
     dayIntersectId: '',
     defaultCalendarView: 'week',
@@ -35,7 +36,6 @@ export const useAgendaStore = defineStore('agenda', {
     infoNoteShown: true,
     isCurrentMeeting: false,
     isLoaded: false,
-    isMobile: /Mobi/i.test(navigator.userAgent),
     listDayCollapse: false,
     meeting: {},
     nowDebugDiff: null,
@@ -50,7 +50,6 @@ export const useAgendaStore = defineStore('agenda', {
     settingsShown: false,
     timezone: DateTime.local().zoneName,
     useHedgeDoc: false,
-    viewport: Math.round(window.innerWidth),
     visibleDays: []
   }),
   getters: {
@@ -119,10 +118,11 @@ export const useAgendaStore = defineStore('agenda', {
       })
     },
     meetingDays () {
+      const siteStore = useSiteStore()
       return uniqBy(this.scheduleAdjusted, 'adjustedStartDate').sort().map(s => ({
         slug: s.id.toString(),
         ts: s.adjustedStartDate,
-        label: this.viewport < 1350 ? DateTime.fromISO(s.adjustedStartDate).toFormat('ccc LLL d') : DateTime.fromISO(s.adjustedStartDate).toLocaleString(DateTime.DATE_HUGE)
+        label: siteStore.viewport < 1350 ? DateTime.fromISO(s.adjustedStartDate).toFormat('ccc LLL d') : DateTime.fromISO(s.adjustedStartDate).toLocaleString(DateTime.DATE_HUGE)
       }))
     },
     isMeetingLive (state) {
@@ -168,7 +168,10 @@ export const useAgendaStore = defineStore('agenda', {
         this.isLoaded = true
       } catch (err) {
         console.error(err)
-        this.criticalError = `Failed to load this meeting: ${err.message}`
+        const siteStore = useSiteStore()
+        siteStore.$patch({
+          criticalError: `Failed to load this meeting: ${err.message}`
+        })
       }
 
       this.hideLoadingScreen()

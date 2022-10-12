@@ -1502,11 +1502,10 @@ def get_assignments_for_agenda(schedule):
 
 
 @ensure_csrf_cookie
-def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
+def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
     base = base if base else 'agenda'
-    ext = ext if ext else '.html'
+    ext = ext if ext else '.txt'
     mimetype = {
-        ".html":"text/html; charset=%s"%settings.DEFAULT_CHARSET,
         ".txt": "text/plain; charset=%s"%settings.DEFAULT_CHARSET,
         ".csv": "text/csv; charset=%s"%settings.DEFAULT_CHARSET,
     }
@@ -1570,7 +1569,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
     return rendered_page
 
 @ensure_csrf_cookie
-def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
+def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
     # Get current meeting if not specified
     if num is None:
         num = get_current_ietf_meeting_num()
@@ -1586,7 +1585,7 @@ def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, u
         else:
             return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}')
 
-    return render(request, "meeting/agenda-neue.html", {
+    return render(request, "meeting/agenda.html", {
         "meetingData": {
             "meetingNumber": num
         }
@@ -1835,45 +1834,6 @@ def agenda_csv(schedule, filtered_assignments):
     return response
 
 @role_required('Area Director','Secretariat','IAB')
-def agenda_by_room(request, num=None, name=None, owner=None):
-    meeting = get_meeting(num) 
-    if name is None:
-        schedule = get_schedule(meeting)
-    else:
-        person   = get_person_by_email(owner)
-        schedule = get_schedule_by_name(meeting, person, name)
-
-    assignments = SchedTimeSessAssignment.objects.filter(
-        schedule__in=[schedule, schedule.base if schedule else None]
-    ).prefetch_related('timeslot', 'timeslot__location', 'session', 'session__group', 'session__group__parent')
-
-    ss_by_day = OrderedDict()
-    for day in assignments.dates('timeslot__time','day'):
-        ss_by_day[day]=[]
-    for ss in assignments.order_by('timeslot__location__functional_name','timeslot__location__name','timeslot__time'):
-        day = ss.timeslot.time.date()
-        ss_by_day[day].append(ss)
-    return render(request,"meeting/agenda_by_room.html",{"meeting":meeting,"schedule":schedule,"ss_by_day":ss_by_day})
-
-@role_required('Area Director','Secretariat','IAB')
-def agenda_by_type(request, num=None, type=None, name=None, owner=None):
-    meeting = get_meeting(num) 
-    if name is None:
-        schedule = get_schedule(meeting)
-    else:
-        person   = get_person_by_email(owner)
-        schedule = get_schedule_by_name(meeting, person, name)
-    assignments = SchedTimeSessAssignment.objects.filter(
-        schedule__in=[schedule, schedule.base if schedule else None]
-    ).prefetch_related(
-        'timeslot', 'timeslot__location', 'session', 'session__group', 'session__group__parent'
-    ).order_by('session__type__slug','timeslot__time','session__group__acronym')
-
-    if type:
-        assignments = assignments.filter(session__type__slug=type)
-    return render(request,"meeting/agenda_by_type.html",{"meeting":meeting,"schedule":schedule,"assignments":assignments})
-
-@role_required('Area Director','Secretariat','IAB')
 def agenda_by_type_ics(request,num=None,type=None):
     meeting = get_meeting(num) 
     schedule = get_schedule(meeting)
@@ -1886,42 +1846,6 @@ def agenda_by_type_ics(request,num=None,type=None):
         assignments = assignments.filter(session__type__slug=type)
     updated = meeting.updated()
     return render(request,"meeting/agenda.ics",{"schedule":schedule,"updated":updated,"assignments":assignments},content_type="text/calendar")
-
-
-def agenda_personalize(request, num):
-    meeting = get_ietf_meeting(num)  # num may be None, which requests the current meeting
-    if meeting is None or meeting.schedule is None:
-        raise Http404('No such meeting')
-
-    # Select and prepare sessions that should be included
-    filtered_assignments = preprocess_assignments_for_agenda(
-        get_assignments_for_agenda(meeting.schedule),
-        meeting
-    )
-    tagger = AgendaKeywordTagger(assignments=filtered_assignments)
-    tagger.apply()  # annotate assignments with filter_keywords attribute
-    tagger.apply_session_keywords()  # annotate assignments with session_keyword attribute
-
-    # Now prep the filter UI
-    filter_organizer = AgendaFilterOrganizer(assignments=filtered_assignments)
-
-    is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
-
-    return render(
-        request,
-        "meeting/agenda.html",
-        {
-            'personalize': True,
-            'schedule': meeting.schedule,
-            'updated': meeting.updated(),
-            'filtered_assignments': filtered_assignments,
-            'filter_categories': filter_organizer.get_filter_categories(),
-            'non_area_labels': filter_organizer.get_non_area_keywords(),
-            'timezone': meeting.time_zone,
-            'is_current_meeting': is_current_meeting,
-            'cache_time': 150 if is_current_meeting else 3600,
-        }
-    )
 
 def session_draft_list(num, acronym):
     try:
@@ -2024,70 +1948,6 @@ def session_draft_pdf(request, num, acronym):
     os.unlink(pmn)
     os.unlink(pdfn)
     return HttpResponse(pdf_contents, content_type="application/pdf")
-
-def week_view(request, num=None, name=None, owner=None):
-    meeting = get_meeting(num)
-
-    if name is None:
-        schedule = get_schedule(meeting)
-    else:
-        person   = get_person_by_email(owner)
-        schedule = get_schedule_by_name(meeting, person, name)
-
-    if not schedule:
-        raise Http404
-
-    filtered_assignments = SchedTimeSessAssignment.objects.filter(
-        schedule__in=[schedule, schedule.base],
-        session__on_agenda=True,
-    )
-    filtered_assignments = preprocess_assignments_for_agenda(filtered_assignments, meeting)
-    AgendaKeywordTagger(assignments=filtered_assignments).apply()
-
-    items = []
-    for a in filtered_assignments:
-        # we don't HTML escape any of these as the week-view code is using createTextNode
-        item = {
-            "key": str(a.timeslot.pk),
-            "utc_time": a.timeslot.utc_start_time().strftime("%Y%m%dT%H%MZ"),  # ISO8601 compliant
-            "duration": a.timeslot.duration.seconds,
-            "type": a.slot_type().name,
-            "filter_keywords": ",".join(a.filter_keywords),
-        }
-
-        if a.session:
-            if a.session.historic_group:
-                item["group"] = a.session.historic_group.acronym
-
-            if a.session.name:
-                item["name"] = a.session.name
-            elif a.slot_type().slug == "break":
-                item["name"] = a.timeslot.name
-                item["area"] = a.slot_type().slug
-                item["group"] = a.slot_type().slug
-            elif a.session.historic_group:
-                item["name"] = a.session.historic_group.name
-                if a.session.historic_group.state_id == "bof":
-                    item["name"] += " BOF"
-
-                item["state"] = a.session.historic_group.state.name
-                if a.session.historic_group.historic_parent:
-                    item["area"] = a.session.historic_group.historic_parent.acronym
-
-            if a.timeslot.show_location:
-                item["room"] = a.timeslot.get_location()
-
-            if a.session and a.session.agenda():
-                item["agenda"] = a.session.agenda().get_href()
-
-            if a.session.current_status == 'canceled':
-                item["name"] = "CANCELLED - " + item["name"]
-
-        items.append(item)
-
-    return render(request, "meeting/week-view.html", {
-        "items": json.dumps(items),
-    })
 
 def ical_session_status(assignment):
     if assignment.session.current_status == 'canceled':
@@ -3693,24 +3553,6 @@ def upcoming_json(request):
 
     response = HttpResponse(json.dumps(data, indent=2, sort_keys=False), content_type='application/json;charset=%s'%settings.DEFAULT_CHARSET)
     return response
-
-def floor_plan(request, num=None, floor=None, ):
-    meeting = get_meeting(num)
-    schedule = meeting.schedule
-    floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
-    if floor:
-        floors = [ f for f in floors if xslugify(f.name) == floor ]
-    for floor in floors:
-        try:
-            floor.image.width
-        except FileNotFoundError:
-            raise Http404('Missing floorplan image for %s' % floor)
-    return render(request, 'meeting/floor-plan.html', {
-            "meeting": meeting,
-            "schedule": schedule,
-            "number": num,
-            "floors": floors,
-        })
 
 def proceedings(request, num=None):
 

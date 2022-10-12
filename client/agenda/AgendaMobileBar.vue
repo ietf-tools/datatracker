@@ -1,5 +1,5 @@
 <template lang="pug">
-.agenda-mobile-bar(v-if='agendaStore.viewport < 990')
+.agenda-mobile-bar(v-if='siteStore.viewport < 990')
   button(@click='agendaStore.$patch({ filterShown: true })')
     i.bi.bi-filter-square-fill.me-2
     span Filters
@@ -31,6 +31,7 @@ import {
 } from 'naive-ui'
 
 import { useAgendaStore } from './store'
+import { useSiteStore } from '../shared/store';
 
 // MESSAGE PROVIDER
 
@@ -39,6 +40,7 @@ const message = useMessage()
 // STORES
 
 const agendaStore = useAgendaStore()
+const siteStore = useSiteStore()
 
 // Download Ics Options
 
