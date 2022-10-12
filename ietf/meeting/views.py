@@ -2350,7 +2350,7 @@ def agenda_json(request, num=None):
 def meeting_requests(request, num=None):
     meeting = get_meeting(num)
     groups_to_show = Group.objects.filter(
-        state_id__in=('active', 'bof'),
+        state_id__in=('active', 'bof', 'proposed'),
         type__features__has_meetings=True,
     )
     sessions = list(

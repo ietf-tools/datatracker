@@ -312,7 +312,9 @@ $(function () {
 
     // Was this drag started by dragging a session?
     function isSessionDragEvent(event) {
-        return Boolean(event.originalEvent.dataTransfer.getData(dnd_mime_type));
+        return event.originalEvent.dataTransfer.types.some(
+          (item_type) => item_type.indexOf(dnd_mime_type) === 0
+        );
     }
 
     /**
@@ -324,7 +326,7 @@ $(function () {
         if (!isSessionDragEvent(event)) {
             return null;
         }
-        const sessionId = event.originalEvent.dataTransfer.getData(dnd_mime_type);
+        const sessionId = event.originalEvent.dataTransfer.types[0].slice(dnd_mime_type.length);
         const sessionElements = sessions.filter("#" + sessionId);
         if (sessionElements.length > 0) {
             return sessionElements[0];
@@ -357,7 +359,15 @@ $(function () {
         // dragging
         sessions.on("dragstart", function (event) {
             if (canEditSession(this)) {
-                event.originalEvent.dataTransfer.setData(dnd_mime_type, this.id);
+                /* Bit of a hack here - per the w3c drag and drop spec, the data being dragged
+                 * and dropped are only available during dragstart and drop events. Otherwise,
+                 * only their count and type are guaranteed to be available. (See
+                 * https://www.w3.org/TR/2011/WD-html5-20110113/dnd.html#drag-data-store-mode)
+                 * To work around this, append the sessionId to the dnd_mime_type in the type we
+                 * report for our event. The event handlers can then pull it out when needed.
+                 * (At least Chrome v106 breaks if we try to peek at the payload.)
+                 */
+                event.originalEvent.dataTransfer.setData(dnd_mime_type + this.id, this.id);
                 jQuery(this).addClass("dragging");
                 selectSessionElement(this);
                 showPastTimeslotHints();
