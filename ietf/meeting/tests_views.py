@@ -262,6 +262,10 @@ class MeetingTests(BaseMeetingTestCase):
                 kwargs=dict(num=meeting.number, acronym=session.group.acronym)),
             msg_prefix='ical should contain link to meeting materials page for session')
 
+        # Floor Plan
+        r = self.client.get(urlreverse('floor-plan', kwargs=dict(num=meeting.number)))
+        self.assertEqual(r.status_code, 200)
+
 
     @override_settings(PROCEEDINGS_V1_BASE_URL='https://example.com/{meeting.number}')
     def test_agenda_redirects_for_old_meetings(self):
@@ -5386,12 +5390,6 @@ class AjaxTests(TestCase):
         self.assertIn('utc', data)
         self.assertNotIn('error', data)
         self.assertEqual(data['utc'], '20:00')
-
-class FloorPlanTests(TestCase):
-    def test_floor_plan_page(self):
-        url = urlreverse('floor-plan')
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
 
 class IphoneAppJsonTests(TestCase):
     def test_iphone_app_json_interim(self):
