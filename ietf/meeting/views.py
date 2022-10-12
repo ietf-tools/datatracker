@@ -1642,10 +1642,32 @@ def api_get_session_materials (request, session_id=None):
     session = get_object_or_404(Session,pk=session_id)
 
     minutes = session.minutes()
+    slides_actions = []
+    if can_manage_session_materials(request.user, session.group, session):
+        slides_actions.append({
+            'label': 'Upload slides',
+            'url': reverse(
+                'ietf.meeting.views.upload_session_slides',
+                kwargs={'num': session.meeting.number, 'session_id': session.pk},
+            ),
+        })
+    elif not session.is_material_submission_cutoff():
+        slides_actions.append({
+            'label': 'Propose slides',
+            'url': reverse(
+                'ietf.meeting.views.propose_session_slides',
+                kwargs={'num': session.meeting.number, 'session_id': session.pk},
+            ),
+        })
+    else:
+        pass  # no action available if it's past cutoff
 
     return JsonResponse({
         "url": session.agenda().get_href(),
-        "slides": list(map(agenda_extract_slide, session.slides())),
+        "slides": {
+            "decks": list(map(agenda_extract_slide, session.slides())),
+            "actions": slides_actions,
+        },
         "minutes": {
             "id": minutes.id,
             "title": minutes.title,
@@ -1700,7 +1722,10 @@ def agenda_extract_schedule (item):
             "audioStream": item.timeslot.location.audio_stream_url() if item.timeslot.location else "",
             "webex": item.timeslot.location.webex_url() if item.timeslot.location else "",
             "onsiteTool": item.timeslot.location.onsite_tool_url() if item.timeslot.location else "",
-            "calendar": reverse('ietf.meeting.views.agenda_ical', kwargs={'num': item.schedule.meeting.number, 'session_id': item.session.id, })
+            "calendar": reverse(
+                'ietf.meeting.views.agenda_ical',
+                kwargs={'num': item.schedule.meeting.number, 'session_id': item.session.id},
+            ),
         }
         # "slotType": {
         #     "slug": item.slot_type.slug
