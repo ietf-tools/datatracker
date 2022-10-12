@@ -2395,7 +2395,7 @@ class rfc8989EligibilityTests(TestCase):
                 for combo in combinations(prev_five,combo_len):
                     p = PersonFactory()
                     for m in combo:
-                        MeetingRegistrationFactory(person=p, meeting=m, checkedin=True)
+                        MeetingRegistrationFactory(person=p, meeting=m, attended=True) # not checkedin because this forces looking at older meetings
                         AttendedFactory(session__meeting=m, session__type_id='plenary',person=p)
                     if combo_len<3:
                         ineligible_people.append(p)
@@ -2710,7 +2710,7 @@ class VolunteerDecoratorUnitTests(TestCase):
             ('106', datetime.date(2019, 11, 16)),
         ]]
         for m in meetings:
-            MeetingRegistrationFactory(meeting=m,person=meeting_person)
+            MeetingRegistrationFactory(meeting=m, person=meeting_person, attended=True)
             AttendedFactory(session__meeting=m, session__type_id='plenary', person=meeting_person)
         nomcom.volunteer_set.create(person=meeting_person)
 
