@@ -55,10 +55,17 @@ n-modal(v-model:show='modalShown')
           )
           i.bi.bi-journal-text.me-2 
           span Notepad
-        a.float-end(
+        n-button.float-end(
+          ghost
+          color='gray'
+          strong
+          tag='a'
           :href='eventDetails.detailsUrl'
           target='_blank'
-        ) {{props.event.groupAcronym}} materials page
+          aria-label='Materials page'
+        )
+          span.me-2 {{props.event.groupAcronym}} materials page
+          i.bi.bi-box-arrow-up-right
     .detail-content
       .detail-title
         h6
