@@ -368,7 +368,9 @@ PERSON_API_KEY_VALUES = [
     ("/api/meeting/session/video/url", "/api/meeting/session/video/url", "Recording Manager"),
     ("/api/notify/meeting/registration", "/api/notify/meeting/registration", "Robot"), 
     ("/api/notify/meeting/bluesheet", "/api/notify/meeting/bluesheet", "Recording Manager"),
-    ("/api/notify/session/attendees", "/api/notify/session/attendees", "Recording Manager"), 
+    ("/api/notify/session/attendees", "/api/notify/session/attendees", "Recording Manager"),
+    ("/api/notify/session/chatlog", "/api/notify/session/chatlog", "Recording Manager"),
+    ("/api/notify/session/polls", "/api/notify/session/polls", "Recording Manager"),
     ("/api/appauth/authortools", "/api/appauth/authortools", None),
     ("/api/appauth/bibxml", "/api/appauth/bibxml", None),
 ]

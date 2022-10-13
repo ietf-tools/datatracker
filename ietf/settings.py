@@ -889,6 +889,8 @@ MEETING_DOC_LOCAL_HREFS = {
     "agenda": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "minutes": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "slides": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
+    "chatlog": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
+    "polls": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "recording": "{doc.external_url}",
     "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
     "procmaterials": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",

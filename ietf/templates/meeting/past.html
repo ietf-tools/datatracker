@@ -37,7 +37,7 @@
                                 <a href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.responsible_group.acronym %}">{{ meeting.number }}</a>
                                 {% if meeting.interim_meeting_cancelled %}<span class="badge rounded-pill bg-warning">Cancelled</span>{% endif %}
                             {% else %}
-                                <a href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">IETF-{{ meeting.number }}</a>
+                                <a href="{% url 'agenda' num=meeting.number %}">IETF-{{ meeting.number }}</a>
                             {% endif %}
                         </td>
                         <td class="d-none d-sm-table-cell">

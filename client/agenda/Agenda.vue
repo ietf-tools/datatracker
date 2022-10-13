@@ -7,7 +7,6 @@
     span #[strong IETF {{agendaStore.meeting.number}}] Meeting Agenda {{titleExtra}}
     .meeting-h1-badges.d-none.d-sm-flex
       span.meeting-warning(v-if='agendaStore.meeting.warningNote') {{agendaStore.meeting.warningNote}}
-      span.meeting-beta BETA
   h4
     span {{agendaStore.meeting.city}}, {{ meetingDate }}
     h6.float-end.d-none.d-lg-inline(v-if='meetingUpdated') #[span.text-muted Updated:] {{ meetingUpdated }}
@@ -54,7 +53,7 @@
               @click='setTimezone(`UTC`)'
               ) UTC
           n-select.agenda-timezone-ddn(
-            v-if='agendaStore.viewport > 1250'
+            v-if='siteStore.viewport > 1250'
             v-model:value='agendaStore.timezone'
             :options='timezones'
             placeholder='Select Time Zone'
@@ -134,7 +133,7 @@
     // -----------------------------------
     // -> Anchored Day Quick Access Menu
     // -----------------------------------
-    .col-auto.d-print-none(v-if='agendaStore.viewport >= 990')
+    .col-auto.d-print-none(v-if='siteStore.viewport >= 990')
       agenda-quick-access
 
   agenda-mobile-bar
@@ -166,6 +165,9 @@ import MeetingNavigation from './MeetingNavigation.vue'
 import timezones from '../shared/timezones'
 
 import { useAgendaStore } from './store'
+import { useSiteStore } from '../shared/store'
+
+import './agenda.scss'
 
 // MESSAGE PROVIDER
 
@@ -174,6 +176,7 @@ const message = useMessage()
 // STORES
 
 const agendaStore = useAgendaStore()
+const siteStore = useSiteStore()
 
 // ROUTER
 
@@ -215,7 +218,35 @@ watch(() => agendaStore.meetingDays, () => {
   })
 })
 
-watch(() => agendaStore.isLoaded, handleCurrentMeetingRedirect)
+watch(() => agendaStore.isLoaded, () => {
+  if (route.query.show) {
+    // Handle legacy ?show= parameter
+    const keywords = route.query.show.split(',').map(k => k.trim()).filter(k => !!k)
+    if (keywords?.length > 0) {
+      const pickedIds = []
+      for (const ev of agendaStore.scheduleAdjusted) {
+        if (keywords.includes(ev.sessionKeyword)) {
+          pickedIds.push(ev.id)
+        }
+      }
+      if (pickedIds.length > 0) {
+        agendaStore.$patch({
+          pickerMode: true,
+          pickerModeView: true,
+          pickedEvents: pickedIds
+        })
+        agendaStore.persistMeetingPreferences()
+      }
+    }
+  }
+  if (route.query.pick) {
+    // Handle legacy /personalize path (open picker mode)
+    agendaStore.$patch({ pickerMode: true })
+    router.replace({ query: null })
+  }
+
+  handleCurrentMeetingRedirect()
+})
 
 // COMPUTED
 

@@ -470,7 +470,7 @@ class Room(models.Model):
         if not mtg_num:
             return None
         elif self.floorplan:
-            base_url = urlreverse('ietf.meeting.views.floor_plan', kwargs=dict(num=mtg_num))
+            base_url = urlreverse('floor-plan', kwargs=dict(num=mtg_num))
         else:
             return None
         return f'{base_url}?room={xslugify(self.name)}'
