@@ -81,6 +81,7 @@ from ietf.meeting.utils import preprocess_constraints_for_meeting_schedule_edito
 from ietf.meeting.utils import diff_meeting_schedules, prefetch_schedule_diff_objects
 from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments, bulk_create_timeslots
 from ietf.meeting.utils import preprocess_meeting_important_dates
+from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
 from ietf.message.utils import infer_message
 from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
@@ -2310,6 +2311,7 @@ def session_details(request, num, acronym):
         session.filtered_artifacts.sort(key=lambda d:['agenda','minutes','bluesheets'].index(d.document.type.slug))
         session.filtered_slides    = session.sessionpresentation_set.filter(document__type__slug='slides').order_by('order')
         session.filtered_drafts    = session.sessionpresentation_set.filter(document__type__slug='draft')
+        session.filtered_chatlog_and_polls = session.sessionpresentation_set.filter(document__type__slug__in=('chatlog', 'polls')).order_by('document__type__slug')
         # TODO FIXME Deleted materials shouldn't be in the sessionpresentation_set
         for qs in [session.filtered_artifacts,session.filtered_slides,session.filtered_drafts]:
             qs = [p for p in qs if p.document.get_state_slug(p.document.type_id)!='deleted']
@@ -3820,6 +3822,85 @@ def api_add_session_attendees(request):
         session.attended_set.get_or_create(person=user.person)
     return HttpResponse("Done", status=200, content_type='text/plain')  
 
+@require_api_key
+@role_required('Recording Manager')
+@csrf_exempt
+def api_upload_chatlog(request):
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+    if request.method != 'POST':
+        return err(405, "Method not allowed")
+    apidata_post = request.POST.get('apidata')
+    if not apidata_post:
+        return err(400, "Missing apidata parameter")
+    try:
+        apidata = json.loads(apidata_post)
+    except json.decoder.JSONDecodeError:
+        return err(400, "Malformed post") 
+    if not ( 'session_id' in apidata and type(apidata['session_id']) is int ):
+        return err(400, "Malformed post")
+    session_id = apidata['session_id']
+    if not ( 'chatlog' in apidata and type(apidata['chatlog']) is list and all([type(el) is dict for el in apidata['chatlog']]) ):
+        return err(400, "Malformed post")
+    session = Session.objects.filter(pk=session_id).first()
+    if not session:
+        return err(400, "Invalid session")
+    chatlog_sp = session.sessionpresentation_set.filter(document__type='chatlog').first()
+    if chatlog_sp:
+        doc = chatlog_sp.document
+        doc.rev = f"{(int(doc.rev)+1):02d}"
+        chatlog_sp.rev = doc.rev
+        chatlog_sp.save()
+    else:
+        doc = new_doc_for_session('chatlog', session)
+        if doc is None:
+            return err(400, "Could not find official timeslot for session")
+    filename = f"{doc.name}-{doc.rev}.json"
+    doc.uploaded_filename = filename
+    write_doc_for_session(session, 'chatlog', filename, json.dumps(apidata['chatlog']))
+    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
+    doc.save_with_history([e])
+    return HttpResponse("Done", status=200, content_type='text/plain')  
+
+@require_api_key
+@role_required('Recording Manager')
+@csrf_exempt
+def api_upload_polls(request):
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+    if request.method != 'POST':
+        return err(405, "Method not allowed")
+    apidata_post = request.POST.get('apidata')
+    if not apidata_post:
+        return err(400, "Missing apidata parameter")
+    try:
+        apidata = json.loads(apidata_post)
+    except json.decoder.JSONDecodeError:
+        return err(400, "Malformed post") 
+    if not ( 'session_id' in apidata and type(apidata['session_id']) is int ):
+        return err(400, "Malformed post")
+    session_id = apidata['session_id']
+    if not ( 'polls' in apidata and type(apidata['polls']) is list and all([type(el) is dict for el in apidata['polls']]) ):
+        return err(400, "Malformed post")
+    session = Session.objects.filter(pk=session_id).first()
+    if not session:
+        return err(400, "Invalid session")
+    polls_sp = session.sessionpresentation_set.filter(document__type='polls').first()
+    if polls_sp:
+        doc = polls_sp.document
+        doc.rev = f"{(int(doc.rev)+1):02d}"
+        polls_sp.rev = doc.rev
+        polls_sp.save()
+    else:
+        doc = new_doc_for_session('polls', session)
+        if doc is None:
+            return err(400, "Could not find official timeslot for session")
+    filename = f"{doc.name}-{doc.rev}.json"
+    doc.uploaded_filename = filename
+    write_doc_for_session(session, 'polls', filename, json.dumps(apidata['polls']))
+    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
+    doc.save_with_history([e])
+    return HttpResponse("Done", status=200, content_type='text/plain') 
 
 @require_api_key
 @role_required('Recording Manager', 'Secretariat')
