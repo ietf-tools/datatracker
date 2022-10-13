@@ -47,7 +47,7 @@ jobs:
       pkg_version: ${{ steps.buildvars.outputs.pkg_version }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
         
@@ -284,7 +284,7 @@ jobs:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
         
