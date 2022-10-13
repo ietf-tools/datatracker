@@ -392,3 +392,14 @@ jobs:
       with:
         name: release-${{ env.PKG_VERSION }}
         path: /home/runner/work/release/release.tar.gz
+        
+    - name: Notify on Slack
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+        payload: |
+          {
+            "text": "Datatracker - Build ${{ env.PKG_VERSION }} by ${{ github.triggering_actor }} completed - <@${{ secrets.SLACK_UID_RJSPARKS }}>"
+          }
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
