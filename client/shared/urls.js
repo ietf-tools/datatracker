@@ -2,6 +2,8 @@ import template from 'lodash-es/template'
 import transform from 'lodash-es/transform'
 
 const urls = {
+  bofDefinition: 'https://www.ietf.org/how/bofs/',
+  meetingCalIcs: '/meeting/{meetingNumber}/agenda.ics',
   meetingDetails: '/meeting/{meetingNumber}/session/{eventAcronym}/',
   meetingMaterialsPdf: '/meeting/{meetingNumber}/agenda/{eventAcronym}-drafts.pdf',
   meetingMaterialsTar: '/meeting/{meetingNumber}/agenda/{eventAcronym}-drafts.tgz',
