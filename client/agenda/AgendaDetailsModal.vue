@@ -152,6 +152,7 @@ import {
 } from 'naive-ui'
 
 import { useAgendaStore } from './store'
+import { getUrl } from '../shared/urls'
 
 // PROPS
 
@@ -205,10 +206,22 @@ const eventDetails = computed(() => {
     title: props.event.type === 'regular' ? `${props.event.groupName} (${props.event.acronym})` : props.event.name,
     showAgenda: props.event.flags.showAgenda,
     materialsUrl: materialsUrl,
-    detailsUrl: `/meeting/${agendaStore.meeting.number}/session/${props.event.acronym}/`,
-    tarUrl: `/meeting/${agendaStore.meeting.number}/agenda/${props.event.acronym}-drafts.tgz`,
-    pdfUrl: `/meeting/${agendaStore.meeting.number}/agenda/${props.event.acronym}-drafts.pdf`,
-    notepadUrl: `https://notes.ietf.org/notes-ietf-${agendaStore.meeting.number}-${props.event.type === 'plenary' ? 'plenary' : props.event.acronym}`,
+    detailsUrl: getUrl('meetingDetails', {
+      meetingNumber: agendaStore.meeting.number,
+      eventAcronym: props.event.acronym
+    }),
+    tarUrl: getUrl('meetingMaterialsTar', {
+      meetingNumber: agendaStore.meeting.number,
+      eventAcronym: props.event.acronym
+    }),
+    pdfUrl: getUrl('meetingMaterialsPdf', {
+      meetingNumber: agendaStore.meeting.number,
+      eventAcronym: props.event.acronym
+    }),
+    notepadUrl: getUrl('meetingNotes', {
+      meetingNumber: agendaStore.meeting.number,
+      eventAcronym: props.event.type === 'plenary' ? 'plenary' : props.event.acronym
+    })
   }
 })
 
