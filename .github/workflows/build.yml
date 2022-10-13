@@ -165,7 +165,7 @@ jobs:
         mv latest-coverage.json coverage.json
         
     - name: Upload Coverage Results as Build Artifact
-      uses: actions/upload-artifact@v3.0.0
+      uses: actions/upload-artifact@v3
       if: ${{ always() }}
       with:
         name: coverage
@@ -201,7 +201,7 @@ jobs:
         npx playwright test --project=${{ matrix.project }}
         
     - name: Upload Report
-      uses: actions/upload-artifact@v3.0.0
+      uses: actions/upload-artifact@v3
       if: ${{ always() }}
       continue-on-error: true
       with:
@@ -254,7 +254,7 @@ jobs:
         yarn cypress:legacy
         
     - name: Upload Video Recordings
-      uses: actions/upload-artifact@v3.0.0
+      uses: actions/upload-artifact@v3
       if: ${{ always() }}
       continue-on-error: true
       with:
@@ -263,7 +263,7 @@ jobs:
         if-no-files-found: ignore
         
     - name: Upload Screenshots
-      uses: actions/upload-artifact@v3.0.0
+      uses: actions/upload-artifact@v3
       if: ${{ always() }}
       continue-on-error: true
       with:
@@ -294,7 +294,7 @@ jobs:
         node-version: '18'
     
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
         
@@ -387,7 +387,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v2.3.1
+      uses: actions/upload-artifact@v3
       if: ${{ env.SHOULD_DEPLOY == 'false' || github.event.inputs.dryrun == 'true' }}
       with:
         name: release-${{ env.PKG_VERSION }}
