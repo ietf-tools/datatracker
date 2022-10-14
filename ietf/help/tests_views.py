@@ -20,8 +20,3 @@ class HelpPageTests(TestCase):
             if not '-' in name:
                 self.assertIn(name, content)
 
-        
-    def test_personal_information_help(self):
-        r = self.client.get('/help/personal-information')
-        self.assertContains(r, 'personal information')
-        self.assertContains(r, 'GDPR')
