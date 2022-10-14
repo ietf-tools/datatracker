@@ -7,7 +7,7 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('doc', '0044_procmaterials_states'),
+        ('doc', '0045_docstates_chatlogs_polls'),
     ]
 
     operations = [

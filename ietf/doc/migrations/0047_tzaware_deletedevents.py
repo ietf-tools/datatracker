@@ -52,7 +52,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('doc', '0045_use_timezone_now_for_doc_models'),
+        ('doc', '0046_use_timezone_now_for_doc_models'),
         ('utils', '0003_pause_to_change_use_tz'),
     ]
 
