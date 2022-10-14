@@ -120,10 +120,6 @@ def get_person_form(*args, **kwargs):
 
             self.fields['pronouns_selectable'] = forms.MultipleChoiceField(label='Pronouns', choices = [(option, option) for option in ["he/him", "she/her", "they/them"]], widget=forms.CheckboxSelectMultiple, required=False)
 
-            for f in ['name', 'ascii', 'ascii_short', 'biography', 'photo', 'photo_thumb', 'pronouns_selectable']:
-                if f in self.fields:
-                    self.fields[f].label = mark_safe(self.fields[f].label + ' <a href="#pi" aria-label="!"><i class="bi bi-exclamation-circle"></i></a>')
-
             self.unidecoded_ascii = False
 
             if self.data and not self.data.get("ascii", "").strip():

@@ -1,10 +1,10 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% extends "base.html" %}
 {% load origin textfilters %}
-{% block title %}Profile update successful{% endblock %}
+{% block title %}Account information update successful{% endblock %}
     {% block content %}
         {% origin %}
-        <h1>Profile update successful</h1>
+        <h1>Account information update successful</h1>
         <p class="my-3">
             Your account has been updated to reflect the changes you submitted.
         </p>
@@ -14,5 +14,5 @@
             </p>
         {% endfor %}
         <a class="btn btn-primary"
-           href="{% url "ietf.ietfauth.views.profile" %}">Edit profile</a>
+           href="{% url "ietf.ietfauth.views.profile" %}">Edit account information</a>
     {% endblock %}

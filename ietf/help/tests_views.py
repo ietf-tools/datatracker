@@ -19,4 +19,3 @@ class HelpPageTests(TestCase):
         for name in names:
             if not '-' in name:
                 self.assertIn(name, content)
-
