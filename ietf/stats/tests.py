@@ -13,6 +13,7 @@ from requests import Response
 import debug    # pyflakes:ignore
 
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 import ietf.stats.views
@@ -64,7 +65,7 @@ class StatisticsTests(TestCase):
         Document.objects.filter(pk=draft.pk).update(words=4000)
         # move it back so it shows up in the yearly summaries
         NewRevisionDocEvent.objects.filter(doc=draft, rev=draft.rev).update(
-            time=datetime.datetime.now() - datetime.timedelta(days=500))
+            time=timezone.now() - datetime.timedelta(days=500))
 
         referencing_draft = Document.objects.create(
             name="draft-ietf-mars-referencing",
@@ -89,7 +90,7 @@ class StatisticsTests(TestCase):
             doc=referencing_draft,
             desc="New revision available",
             rev=referencing_draft.rev,
-            time=datetime.datetime.now() - datetime.timedelta(days=1000)
+            time=timezone.now() - datetime.timedelta(days=1000)
         )
 
 

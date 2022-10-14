@@ -1,4 +1,4 @@
-{% load humanize %}{% autoescape off %}{% load ietf_filters textfilters %}{% load cache %}{% cache 1800 ietf_meeting_agenda_ics schedule.meeting.number request.path request.GET %}BEGIN:VCALENDAR
+{% load humanize tz %}{% autoescape off %}{% timezone schedule.meeting.tz %}{% load ietf_filters textfilters %}{% load cache %}{% cache 1800 ietf_meeting_agenda_ics schedule.meeting.number request.path request.GET %}BEGIN:VCALENDAR
 VERSION:2.0
 METHOD:PUBLISH
 PRODID:-//IETF//datatracker.ietf.org ical agenda//EN
@@ -8,8 +8,8 @@ SUMMARY:{% if item.session.name %}{{item.session.name|ics_esc}}{% else %}{% if n
 {% if item.timeslot.show_location %}LOCATION:{{item.timeslot.get_location}}
 {% endif %}STATUS:{{item.session.ical_status}}
 CLASS:PUBLIC
-DTSTART{% if schedule.meeting.time_zone %};TZID={{schedule.meeting.time_zone|ics_esc}}{%endif%}:{{ item.timeslot.time|date:"Ymd" }}T{{item.timeslot.time|date:"Hi"}}00
-DTEND{% if schedule.meeting.time_zone %};TZID={{schedule.meeting.time_zone|ics_esc}}{%endif%}:{{ item.timeslot.end_time|date:"Ymd" }}T{{item.timeslot.end_time|date:"Hi"}}00
+DTSTART;TZID={{schedule.meeting.time_zone|ics_esc}}:{{ item.timeslot.time|date:"Ymd" }}T{{item.timeslot.time|date:"Hi"}}00
+DTEND;TZID={{schedule.meeting.time_zone|ics_esc}}:{{ item.timeslot.end_time|date:"Ymd" }}T{{item.timeslot.end_time|date:"Hi"}}00
 DTSTAMP:{{ item.timeslot.modified|date:"Ymd" }}T{{ item.timeslot.modified|date:"His" }}Z{% if item.session.agenda %}
 URL:{{item.session.agenda.get_versionless_href}}{% endif %}
 DESCRIPTION:{{item.timeslot.name|ics_esc}}\n{% if item.session.agenda_note %}
@@ -25,4 +25,4 @@ DESCRIPTION:{{item.timeslot.name|ics_esc}}\n{% if item.session.agenda_note %}
  \n{# link agenda for ietf meetings #}
  See in schedule: {% absurl 'agenda' num=schedule.meeting.number %}#row-{{ item.slug }}\n{% endif %}
 END:VEVENT
-{% endif %}{% endfor %}END:VCALENDAR{% endcache %}{% endautoescape %}
+{% endif %}{% endfor %}END:VCALENDAR{% endcache %}{% endtimezone %}{% endautoescape %}

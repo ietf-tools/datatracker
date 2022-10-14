@@ -21,6 +21,7 @@ from django.db import transaction
 from django.http import HttpRequest     # pyflakes:ignore
 from django.utils.module_loading import import_string
 from django.contrib.auth.models import AnonymousUser
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -338,7 +339,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
         if stream_slug:
             draft.stream = StreamName.objects.get(slug=stream_slug)
 
-    draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
+    draft.expires = timezone.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
     log.log(f"{submission.name}: got draft details")
 
     events = []
@@ -609,7 +610,7 @@ def ensure_person_email_info_exists(name, email, docname):
             email.active = active
         email.person = person
         if email.time is None:
-            email.time = datetime.datetime.now()
+            email.time = timezone.now()
         email.origin = "author: %s" % docname
         email.save()
 

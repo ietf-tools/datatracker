@@ -5,6 +5,7 @@
 import datetime
 
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -87,7 +88,7 @@ class SendScheduledAnnouncementsTests(TestCase):
         q = SendQueue.objects.create(
             by=Person.objects.get(name="(System)"),
             message=msg,
-            send_at=datetime.datetime.now() + datetime.timedelta(hours=12)
+            send_at=timezone.now() + datetime.timedelta(hours=12)
             )
 
         mailbox_before = len(outbox)
@@ -113,7 +114,7 @@ class SendScheduledAnnouncementsTests(TestCase):
         q = SendQueue.objects.create(
             by=Person.objects.get(name="(System)"),
             message=msg,
-            send_at=datetime.datetime.now() + datetime.timedelta(hours=12)
+            send_at=timezone.now() + datetime.timedelta(hours=12)
             )
         
         mailbox_before = len(outbox)

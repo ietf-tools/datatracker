@@ -13,6 +13,7 @@ from pyquery import PyQuery
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
+from django.utils import timezone
 from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
@@ -33,6 +34,7 @@ from ietf.iesg.models import TelechatDate
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase
+from ietf.utils.timezone import date_today, datetime_from_date
 
 
 class ChangeStateTests(TestCase):
@@ -401,11 +403,11 @@ class EditInfoTests(TestCase):
 
         # change to a telechat that should cause returning item to be auto-detected
         # First, make it appear that the previous telechat has already passed
-        telechat_event.telechat_date = datetime.date.today()-datetime.timedelta(days=7)
+        telechat_event.telechat_date = date_today() - datetime.timedelta(days=7)
         telechat_event.save()
         ad = Person.objects.get(user__username="ad")
         ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
-        ballot.time = telechat_event.telechat_date
+        ballot.time = datetime_from_date(telechat_event.telechat_date)
         ballot.save()
 
         r = self.client.post(url, data)
@@ -428,7 +430,7 @@ class EditInfoTests(TestCase):
         self.assertTrue("Telechat update" in outbox[-1]['Subject'])
 
         # Put it on an agenda that's very soon from now
-        next_week = datetime.date.today()+datetime.timedelta(days=7)
+        next_week = date_today() + datetime.timedelta(days=7)
         td =  TelechatDate.objects.active()[0]
         td.date = next_week
         td.save()
@@ -618,7 +620,7 @@ class ResurrectTests(DraftFileMixin, TestCase):
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
         self.assertEqual(draft.latest_event().type, "completed_resurrect")
         self.assertEqual(draft.get_state_slug(), "active")
-        self.assertTrue(draft.expires >= datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE - 1))
+        self.assertTrue(draft.expires >= timezone.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE - 1))
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue('Resurrection Completed' in outbox[-1]['Subject'])
         self.assertTrue('iesg-secretary' in outbox[-1]['To'])
@@ -659,7 +661,7 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
 
         # hack into expirable state
         draft.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
-        draft.expires = datetime.datetime.now() + datetime.timedelta(days=10)
+        draft.expires = timezone.now() + datetime.timedelta(days=10)
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         self.assertEqual(len(list(get_soon_to_expire_drafts(14))), 1)
@@ -698,7 +700,7 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         
         # hack into expirable state
         draft.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
-        draft.expires = datetime.datetime.now()
+        draft.expires = timezone.now()
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         self.assertEqual(len(list(get_expired_drafts())), 1)
@@ -741,7 +743,7 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
 
         draft.delete()
 
-        rgdraft = RgDraftFactory(expires=datetime.datetime.now())
+        rgdraft = RgDraftFactory(expires=timezone.now())
         self.assertEqual(len(list(get_expired_drafts())), 1)
         for slug in ('iesg-rev','irsgpoll'):
             rgdraft.set_state(State.objects.get(type_id='draft-stream-irtf',slug=slug))
@@ -791,7 +793,7 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
 
         # expire draft
         draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
-        draft.expires = datetime.datetime.now() - datetime.timedelta(days=1)
+        draft.expires = timezone.now() - datetime.timedelta(days=1)
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         e = DocEvent(doc=draft, rev=draft.rev, type= "expired_document", time=draft.expires,
@@ -824,7 +826,7 @@ class ExpireLastCallTests(TestCase):
 
         e = LastCallDocEvent(doc=draft, rev=draft.rev, type="sent_last_call", by=secretary)
         e.text = "Last call sent"
-        e.expires = datetime.datetime.now() + datetime.timedelta(days=14)
+        e.expires = timezone.now() + datetime.timedelta(days=14)
         e.save()
         
         self.assertEqual(len(list(get_expired_last_calls())), 0)
@@ -832,7 +834,7 @@ class ExpireLastCallTests(TestCase):
         # test expired
         e = LastCallDocEvent(doc=draft, rev=draft.rev, type="sent_last_call", by=secretary)
         e.text = "Last call sent"
-        e.expires = datetime.datetime.now()
+        e.expires = timezone.now()
         e.save()
         
         drafts = list(get_expired_last_calls())
@@ -866,7 +868,7 @@ class ExpireLastCallTests(TestCase):
         e = LastCallDocEvent(doc=draft, rev=draft.rev, type="sent_last_call", by=secretary)
         e.text = "Last call sent"
         e.desc = "Blah, blah, blah.\n\nThis document makes the following downward references (downrefs):\n  ** Downref: Normative reference to an Experimental RFC: RFC 4764"
-        e.expires = datetime.datetime.now()
+        e.expires = timezone.now()
         e.save()
         
         drafts = list(get_expired_last_calls())
@@ -1730,7 +1732,7 @@ class ChangeStreamStateTests(TestCase):
         self.assertEqual(draft.docevent_set.count() - events_before, 2)
         reminder = DocReminder.objects.filter(event__doc=draft, type="stream-s")
         self.assertEqual(len(reminder), 1)
-        due = datetime.datetime.now() + datetime.timedelta(weeks=10)
+        due = timezone.now() + datetime.timedelta(weeks=10)
         self.assertTrue(due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1))
         self.assertEqual(len(outbox), 1)
         self.assertTrue("state changed" in outbox[0]["Subject"].lower())
@@ -1775,7 +1777,7 @@ class ChangeStreamStateTests(TestCase):
         self.assertEqual(draft.docevent_set.count() - events_before, 2)
         reminder = DocReminder.objects.filter(event__doc=draft, type="stream-s")
         self.assertEqual(len(reminder), 1)
-        due = datetime.datetime.now() + datetime.timedelta(weeks=10)
+        due = timezone.now() + datetime.timedelta(weeks=10)
         self.assertTrue(due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1))
         self.assertEqual(len(outbox), 1)
         self.assertTrue("state changed" in outbox[0]["Subject"].lower())
@@ -1826,7 +1828,7 @@ class ChangeReplacesTests(TestCase):
             name="draft-test-base-b",
             title="Base B",
             group=mars_wg,
-            expires = datetime.datetime.now() - datetime.timedelta(days = 365 - settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
+            expires = timezone.now() - datetime.timedelta(days = 365 - settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
         )
         p = PersonFactory(name="baseb_author")
         e = Email.objects.create(address="baseb_author@example.com", person=p, origin=p.user.username)
