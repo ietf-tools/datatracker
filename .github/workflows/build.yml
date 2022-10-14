@@ -399,7 +399,7 @@ jobs:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
         payload: |
           {
-            "text": "Datatracker - Build ${{ env.PKG_VERSION }} by ${{ github.triggering_actor }} completed - <@${{ secrets.SLACK_UID_RJSPARKS }}>"
+            "text": "Datatracker - Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} completed - <@${{ secrets.SLACK_UID_RJSPARKS }}>"
           }
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
