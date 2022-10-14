@@ -7,6 +7,7 @@ const urls = {
   meetingDetails: '/meeting/{meetingNumber}/session/{eventAcronym}/',
   meetingMaterialsPdf: '/meeting/{meetingNumber}/agenda/{eventAcronym}-drafts.pdf',
   meetingMaterialsTar: '/meeting/{meetingNumber}/agenda/{eventAcronym}-drafts.tgz',
+  meetingMeetechoRecordings: 'https://www.meetecho.com/ietf{meetingNumber}/recordings#{eventAcronym}',
   meetingNotes: 'https://notes.ietf.org/notes-ietf-{meetingNumber}-{eventAcronym}'
 }
 
