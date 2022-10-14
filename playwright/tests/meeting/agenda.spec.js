@@ -51,7 +51,7 @@ test.describe('past - desktop', () => {
     // Visit agenda page and await Meeting Data API call to complete
     await Promise.all([
       page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
-      page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
+      page.goto(`/meeting/${meetingData.meeting.number}/agenda`)
     ])
 
     // Wait for page to be ready
@@ -191,7 +191,7 @@ test.describe('past - desktop', () => {
       if (event.location?.short) {
         // Has floor badge
         await expect(row.locator('.agenda-table-cell-room > a')).toContainText(event.room)
-        await expect(row.locator('.agenda-table-cell-room > a')).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/floor-plan-neue?room=${xslugify(event.room)}`)
+        await expect(row.locator('.agenda-table-cell-room > a')).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/floor-plan?room=${xslugify(event.room)}`)
         await expect(row.locator('.agenda-table-cell-room > .badge')).toContainText(event.location.short)
       } else {
         // No floor badge
@@ -368,12 +368,18 @@ test.describe('past - desktop', () => {
     const materialsUrl = (new URL(event.agenda.url)).pathname
     const materialsInfo = {
       url: event.agenda.url,
-      slides: _.times(5, idx => ({
-        id: 100000 + idx,
-        title: faker.commerce.productName(),
-        url: `/meeting/${meetingData.meeting.number}/materials/slides-${meetingData.meeting.number}-${event.acronym}-${faker.internet.domainWord()}`,
-        ext: ['pdf', 'html', 'md', 'txt', 'pptx'][idx]
-      })),
+      slides: {
+        decks: _.times(5, idx => ({
+          id: 100000 + idx,
+          title: faker.commerce.productName(),
+          url: `/meeting/${meetingData.meeting.number}/materials/slides-${meetingData.meeting.number}-${event.acronym}-${faker.internet.domainWord()}`,
+          ext: ['pdf', 'html', 'md', 'txt', 'pptx'][idx]
+        })),
+        actions: [{
+          label: 'Propose slides',
+          url: `/meeting/${meetingData.meeting.number}/session/${event.sessionId}/propose_slides`
+        }]
+      },
       minutes: {
         ext: 'md',
         id: 123456,
@@ -427,13 +433,16 @@ test.describe('past - desktop', () => {
     await navLocator.nth(1).click()
     await expect(navLocator.nth(1)).toHaveClass(/active/)
     await expect(navLocator.first()).not.toHaveClass(/active/)
-    const slidesLocator = page.locator('.agenda-eventdetails .detail-text > .list-group > .list-group-item')
-    await expect(slidesLocator).toHaveCount(materialsInfo.slides.length)
-    for (let idx = 0; idx < materialsInfo.slides.length; idx++) {
-      await expect(slidesLocator.nth(idx)).toHaveAttribute('href', materialsInfo.slides[idx].url)
-      await expect(slidesLocator.nth(idx).locator('.bi')).toHaveClass(new RegExp(`bi-filetype-${materialsInfo.slides[idx].ext}`))
-      await expect(slidesLocator.nth(idx).locator('span')).toContainText(materialsInfo.slides[idx].title)
+    const slideDecksLocator = page.locator('.agenda-eventdetails .detail-text .n-card__content > .list-group > .list-group-item')
+    await expect(slideDecksLocator).toHaveCount(materialsInfo.slides.decks.length)
+    for (let idx = 0; idx < materialsInfo.slides.decks.length; idx++) {
+      await expect(slideDecksLocator.nth(idx)).toHaveAttribute('href', materialsInfo.slides.decks[idx].url)
+      await expect(slideDecksLocator.nth(idx).locator('.bi')).toHaveClass(new RegExp(`bi-filetype-${materialsInfo.slides.decks[idx].ext}`))
+      await expect(slideDecksLocator.nth(idx).locator('span')).toContainText(materialsInfo.slides.decks[idx].title)
     }
+    const slideActionButtonLocator = page.locator('.agenda-eventdetails .detail-text .n-card__action > a')
+    await expect(slideActionButtonLocator).toHaveCount(1)
+    await expect(slideActionButtonLocator.first().locator('span')).toContainText('Propose slides')
     // Minutes Tab
     await navLocator.last().click()
     await expect(navLocator.last()).toHaveClass(/active/)
@@ -441,14 +450,17 @@ test.describe('past - desktop', () => {
     await expect(page.locator('.agenda-eventdetails .detail-text > iframe')).toHaveAttribute('src', materialsInfo.minutes.url)
     // Footer Buttons
     const hedgeDocLink = `https://notes.ietf.org/notes-ietf-${meetingData.meeting.number}-${event.type === 'plenary' ? 'plenary' : event.acronym}`
+    const detailsUrl = `/meeting/${meetingData.meeting.number}/session/${event.acronym}/`
     const footerBtnsLocator = page.locator('.agenda-eventdetails .detail-action > a')
-    await expect(footerBtnsLocator).toHaveCount(3)
+    await expect(footerBtnsLocator).toHaveCount(4)
     await expect(footerBtnsLocator.first()).toContainText('Download as tarball')
     await expect(footerBtnsLocator.first()).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.tgz`)
     await expect(footerBtnsLocator.nth(1)).toContainText('Download as PDF')
     await expect(footerBtnsLocator.nth(1)).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.pdf`)
-    await expect(footerBtnsLocator.last()).toContainText('Notepad')
-    await expect(footerBtnsLocator.last()).toHaveAttribute('href', hedgeDocLink)
+    await expect(footerBtnsLocator.nth(2)).toContainText('Notepad')
+    await expect(footerBtnsLocator.nth(2)).toHaveAttribute('href', hedgeDocLink)
+    await expect(footerBtnsLocator.last()).toContainText(`${event.groupAcronym} materials page`)
+    await expect(footerBtnsLocator.last()).toHaveAttribute('href', detailsUrl)
     // Clicking X should close the dialog
     await page.locator('.agenda-eventdetails .n-card-header__extra > .detail-header > button').click()
   })
@@ -483,7 +495,7 @@ test.describe('past - desktop', () => {
     await expect(page.locator('.agenda-eventdetails')).toBeVisible()
     // Slides Tab
     await page.locator('.agenda-eventdetails .detail-nav > a').nth(1).click()
-    await expect(page.locator('.agenda-eventdetails .detail-text')).toContainText('No slides submitted for this session.')
+    await expect(page.locator('.agenda-eventdetails .detail-text .n-card__content')).toContainText('No slides submitted for this session.')
     // Minutes Tab
     await page.locator('.agenda-eventdetails .detail-nav > a').nth(2).click()
     await expect(page.locator('.agenda-eventdetails .detail-text')).toContainText('No minutes submitted for this session.')
@@ -1079,7 +1091,7 @@ test.describe('future - desktop', () => {
     // Visit agenda page and await Meeting Data API call to complete
     await Promise.all([
       page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
-      page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
+      page.goto(`/meeting/${meetingData.meeting.number}/agenda`)
     ])
 
     // Wait for page to be ready
@@ -1247,7 +1259,7 @@ test.describe('live - desktop', () => {
     // Visit agenda page and await Meeting Data API call to complete
     await Promise.all([
       page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
-      page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
+      page.goto(`/meeting/${meetingData.meeting.number}/agenda`)
     ])
 
     // Wait for page to be ready
@@ -1328,7 +1340,7 @@ test.describe('past - small screens', () => {
       // Visit agenda page and await Meeting Data API call to complete
       await Promise.all([
         page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
-        page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
+        page.goto(`/meeting/${meetingData.meeting.number}/agenda`)
       ])
 
       // Wait for page to be ready

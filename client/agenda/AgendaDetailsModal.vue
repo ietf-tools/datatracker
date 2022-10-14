@@ -55,6 +55,17 @@ n-modal(v-model:show='modalShown')
           )
           i.bi.bi-journal-text.me-2 
           span Notepad
+        n-button.float-end(
+          ghost
+          color='gray'
+          strong
+          tag='a'
+          :href='eventDetails.detailsUrl'
+          target='_blank'
+          aria-label='Materials page'
+        )
+          span.me-2 {{props.event.groupAcronym}} materials page
+          i.bi.bi-box-arrow-up-right
     .detail-content
       .detail-title
         h6
@@ -95,19 +106,29 @@ n-modal(v-model:show='modalShown')
             :src='eventDetails.materialsUrl'
             )
         template(v-else-if='state.tab === `slides`')
-          .text-center(v-if='state.isLoading')
-            n-spin(description='Loading slides...')
-          .text-center.p-3(v-else-if='!state.materials || !state.materials.slides || state.materials.slides.length < 1')
-            span No slides submitted for this session.
-          .list-group(v-else)
-            a.list-group-item(
-              v-for='slide of state.materials.slides'
-              :key='slide.id'
-              :href='slide.url'
-              target='_blank'
-              )
-              i.bi.me-2(:class='`bi-filetype-` + slide.ext')
-              span {{slide.title}}
+          n-card(
+            :bordered='false'
+            size='small'
+            )
+            .text-center(v-if='state.isLoading')
+              n-spin(description='Loading slides...')
+            .text-center.p-3(v-else-if='!state.materials || !state.materials.slides || !state.materials.slides.decks || state.materials.slides.decks.length < 1')
+              span No slides submitted for this session.
+            .list-group(v-else)
+              a.list-group-item(
+                v-for='deck of state.materials.slides.decks'
+                :key='deck.id'
+                :href='deck.url'
+                target='_blank'
+                )
+                i.bi.me-2(:class='`bi-filetype-` + deck.ext')
+                span {{deck.title}}
+            template(#action, v-if='state.materials.slides.actions')
+                n-button(
+                  v-for='action of state.materials.slides.actions'
+                  tag='a'
+                  :href='action.url'
+                  ) {{action.label}}
         template(v-else)
           .text-center(v-if='state.isLoading')
             n-spin(description='Loading minutes...')
@@ -184,9 +205,10 @@ const eventDetails = computed(() => {
     title: props.event.type === 'regular' ? `${props.event.groupName} (${props.event.acronym})` : props.event.name,
     showAgenda: props.event.flags.showAgenda,
     materialsUrl: materialsUrl,
+    detailsUrl: `/meeting/${agendaStore.meeting.number}/session/${props.event.acronym}/`,
     tarUrl: `/meeting/${agendaStore.meeting.number}/agenda/${props.event.acronym}-drafts.tgz`,
     pdfUrl: `/meeting/${agendaStore.meeting.number}/agenda/${props.event.acronym}-drafts.pdf`,
-    notepadUrl: `https://notes.ietf.org/notes-ietf-${agendaStore.meeting.number}-${props.event.type === 'plenary' ? 'plenary' : props.event.acronym}`
+    notepadUrl: `https://notes.ietf.org/notes-ietf-${agendaStore.meeting.number}-${props.event.type === 'plenary' ? 'plenary' : props.event.acronym}`,
   }
 })
 
@@ -219,7 +241,10 @@ async function fetchSessionMaterials () {
   state.isLoading = true
 
   try {
-    const resp = await fetch(`/api/meeting/session/${props.event.sessionId}/materials`, { credentials: 'omit' })
+    const resp = await fetch(
+        `/api/meeting/session/${props.event.sessionId}/materials`,
+        { credentials: 'include' }
+    )
     if (!resp.ok) {
       throw new Error(resp.statusText)
     }

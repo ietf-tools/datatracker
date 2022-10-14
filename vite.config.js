@@ -12,7 +12,8 @@ export default defineConfig(({ command, mode }) => {
       manifest: true,
       rollupOptions: {
         input: {
-          main: 'client/main.js'
+          main: 'client/main.js',
+          embedded: 'client/embedded.js'
         }
       }
     },
