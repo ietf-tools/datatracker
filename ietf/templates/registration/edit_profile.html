@@ -80,6 +80,17 @@
                 </p>
             {% endif %}
         </div>
+        <hr>
+        <div class="row mb-3">
+            <label class="col-sm-2 col-form-label fw-bold">
+                Published information
+            </label>
+            <p class="col-sm-10">
+              All of the data below {% if person.photo %}and your photo {% endif %}
+              may be openly published in Datatracker, Meetecho and other IT systems.
+            </p>
+        </div>
+        {% bootstrap_form person_form layout="horizontal" exclude="ascii_short" %}
         <div class="row mb-3">
             <label class="col-sm-2 col-form-label fw-bold">
                 External resources
@@ -105,6 +116,14 @@
         </div>
         <div class="row mb-3">
             <label class="col-sm-2 col-form-label fw-bold">Email addresses</label>
+            <p class="col-sm-10">
+                You can optionally link more email addresses to your account, 
+                which will then ensure that all I-Ds you have published using 
+                different email addresses are all shown against your account.
+            </p>
+        </div>
+        <div class="row mb-3">
+            <div class="col-sm-2"></div>
             <div class="col-sm-10 emails">
                 <table class="table table-sm">
                     <thead>
@@ -151,14 +170,13 @@
                 {% endfor %}
                 <div class="new-emails"></div>
                 <div>
-                    <button type="button" class="btn btn-primary add-email mb-5">Add new email address</button>
+                    <button type="button" class="btn btn-primary add-email mt-3 mb-5">Add another email address</button>
                 </div>
                 {% for role in roles %}
                     {% bootstrap_field role.email_form.email  show_label=False %}
                 {% endfor %}
             </div>
         </div>
-        {% bootstrap_form person_form layout="horizontal" exclude="ascii_short" %}
         {% bootstrap_button button_type="submit" content="Apply changes" extra_classes="offset-sm-2" %}
     </form>
     <div class="form-text mt-5">
@@ -208,10 +226,10 @@
                     .closest("form")
                     .find(".new-emails");
 
-                $('<input class="form-control mb-3" name="new_email" placeholder="You will get a confirmation challenge. To add an address that cannot confirm, contact the secretariat.">')
+                $('<input class="form-control mb-1" name="new_email" placeholder="You will get a confirmation challenge. To add an address that cannot be confirmed this way, contact the secretariat.">')
                     .appendTo(container)
                     .trigger("focus");
-                $('<div class="float-end text-muted small">Remember to submit the form for the new email challenge to be sent.</div>')
+                $('<div class="float-end text-muted small mb-3">Remember to submit the form for the new email challenge to be sent.</div>')
                     .appendTo(container);
             })
         });

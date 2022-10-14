@@ -13,7 +13,6 @@ from urllib.parse import urljoin
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import validate_email
 from django.db import models
 from django.template.loader import render_to_string
@@ -188,32 +187,6 @@ class Person(models.Model):
         from ietf.doc.models import Document
         return Document.objects.filter(documentauthor__person=self, type='draft', states__slug__in=['repl', 'expired', 'auth-rm', 'ietf-rm']).distinct().order_by('-time')
 
-    def needs_consent(self):
-        """
-        Returns an empty list or a list of fields which holds information that
-        requires consent to be given.
-        """
-        needs_consent = []
-        if self.name != self.name_from_draft:
-            needs_consent.append("full name")
-        if self.ascii != self.name_from_draft:
-            needs_consent.append("ascii name")
-        if self.biography and not (self.role_set.exists() or self.rolehistory_set.exists()):
-            needs_consent.append("biography")
-        if self.user_id:
-            needs_consent.append("login")
-            try:
-                if self.user.communitylist_set.exists():
-                    needs_consent.append("draft notification subscription(s)")
-            except ObjectDoesNotExist:
-                pass
-        for email in self.email_set.all():
-            if not email.origin.split(':')[0] in ['author', 'role', 'reviewer', 'liaison', 'shepherd', ]:
-                needs_consent.append("email address(es)")
-                break
-        if self.pronouns_freetext or self.pronouns_selectable:
-            needs_consent.append("pronouns")
-        return needs_consent
 
     def save(self, *args, **kwargs):
         created = not self.pk
@@ -422,7 +395,6 @@ class PersonalApiKey(models.Model):
 
 PERSON_EVENT_CHOICES = [
     ("apikey_login", "API key login"),
-    ("gdpr_notice_email", "GDPR consent request email sent"),
     ("email_address_deactivated", "Email address deactivated"),
     ]
 

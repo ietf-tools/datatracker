@@ -103,10 +103,7 @@ def get_person_form(*args, **kwargs):
     class PersonForm(forms.ModelForm):
         class Meta:
             model = Person
-            exclude = exclude_list
-            widgets = {
-                'consent': forms.widgets.CheckboxInput,
-            }            
+            exclude = exclude_list           
 
         def __init__(self, *args, **kwargs):
             super(PersonForm, self).__init__(*args, **kwargs)
@@ -150,19 +147,6 @@ def get_person_form(*args, **kwargs):
             prevent_at_symbol(name)
             prevent_system_name(name)
             return ascii_cleaner(name)
-
-        def clean_consent(self):
-            consent = self.cleaned_data.get('consent')
-            require_consent = (
-                self.cleaned_data.get('name') != person.name_from_draft
-                or self.cleaned_data.get('ascii') != person.name_from_draft
-                or self.cleaned_data.get('biography')
-                or self.cleaned_data.get('pronouns_selectable')
-                or self.cleaned_data.get('pronouns_freetext')
-            )
-            if consent == False and require_consent:
-                raise forms.ValidationError("In order to modify your profile with data that require consent, you must permit the IETF to use the uploaded data.")
-            return consent
 
         def clean(self):
             if self.cleaned_data.get("pronouns_selectable") and self.cleaned_data.get("pronouns_freetext"):
