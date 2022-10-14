@@ -218,15 +218,27 @@ Frontend tests are done via Cypress. There're 2 different type of tests:
 
 #### Run Vue Tests
 
+> :warning: All commands below must be run from the `./playwright` directory.
+
+Run once to install dependencies on your system:
+```
+npm install
+npx playwright install --with-deps
+```
+
 To run the tests headlessly (command line mode):
 ```sh
-yarn cypress
+npm test
 ```
 To run the tests visually **(CANNOT run in docker)**:
 ```sh
-yarn cypress:open
+npm run test:visual
 ```
-> It can take a few seconds before the tests start or the GUI opens.
+
+To run the tests in debug mode **(CANNOT run in docker)**:
+```sh
+npm run test:debug
+```
 
 #### Run Legacy Views Tests
 
