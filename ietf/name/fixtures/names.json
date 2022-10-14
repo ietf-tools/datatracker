@@ -16086,7 +16086,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2022-09-22T00:09:27.552",
+      "time": "2022-09-22T00:09:27.552Z",
       "used": true,
       "version": "xym 0.5"
     },
@@ -16097,7 +16097,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2022-09-22T00:09:27.867",
+      "time": "2022-09-22T00:09:27.867Z",
       "used": true,
       "version": "pyang 2.5.3"
     },
@@ -16108,7 +16108,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2022-09-22T00:09:27.886",
+      "time": "2022-09-22T00:09:27.886Z",
       "used": true,
       "version": "yanglint SO 1.9.2"
     },
@@ -16119,7 +16119,7 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2022-09-22T00:09:28.809",
+      "time": "2022-09-22T00:09:28.809Z",
       "used": true,
       "version": "xml2rfc 3.14.2"
     },
