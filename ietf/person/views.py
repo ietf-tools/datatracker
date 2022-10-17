@@ -31,7 +31,7 @@ def ajax_select2_search(request, model_name):
     if not q:
         objs = model.objects.none()
     else:
-        query = Q()
+        query = Q()  # all objects returned if no other terms in the queryset
         for t in q:
             if model == Email:
                 query &= Q(person__alias__name__icontains=t) | Q(address__icontains=t)

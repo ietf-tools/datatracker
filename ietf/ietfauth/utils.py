@@ -5,7 +5,6 @@
 # various authentication and authorization utilities
 
 import oidc_provider.lib.claims
-from oidc_provider.models import Client as ClientRecord
 
 
 from functools import wraps
@@ -16,7 +15,6 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 from django.utils.decorators import available_attrs
 from django.utils.http import urlquote
 
@@ -95,7 +93,7 @@ def has_role(user, role_names, *args, **kwargs):
             "Robot": Q(person=person, name="robot", group__acronym="secretariat"),
             }
 
-        filter_expr = Q()
+        filter_expr = Q(pk__in=[])  # ensure empty set is returned if no other terms are added
         for r in role_names:
             filter_expr |= role_qs[r]
 
@@ -166,7 +164,7 @@ def is_authorized_in_doc_stream(user, doc):
             docman_roles = GroupFeatures.objects.get(type_id="ietf").docman_roles
         group_req = Q(group__acronym=doc.stream.slug)
     else:
-        group_req = Q()
+        group_req = Q()  # no group constraint for other cases
 
     return Role.objects.filter(Q(name__in=docman_roles, person__user=user) & group_req).exists()
 
@@ -280,14 +278,6 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
                 reg.save()
         info = {}
         if regs:
-            # maybe register attendance if logged in to follow a meeting
-            if meeting.start_datetime() <= timezone.now() <= meeting.end_datetime():
-                client = ClientRecord.objects.get(client_id=self.client.client_id)
-                if client.name == 'Meetecho':
-                    for reg in regs:
-                        if not reg.attended:
-                            reg.attended = True
-                            reg.save()
             # fill in info to return
             ticket_types = set([])
             reg_types = set([])

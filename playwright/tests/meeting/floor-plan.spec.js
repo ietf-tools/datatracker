@@ -12,7 +12,7 @@ seedrandom(TEST_SEED.toString(), { global: true })
 faker.seed(TEST_SEED)
 
 // ====================================================================
-// FLOOR-PLAN-NEUE | All Viewports
+// FLOOR-PLAN | All Viewports
 // ====================================================================
 
 test.describe('floor-plan', () => {
@@ -42,7 +42,7 @@ test.describe('floor-plan', () => {
       // Visit floor plan page and await Meeting Data API call to complete
       await Promise.all([
         page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
-        page.goto(`/meeting/${meetingData.meeting.number}/floor-plan-neue`)
+        page.goto(`/meeting/${meetingData.meeting.number}/floor-plan`)
       ])
 
       // Wait for page to be ready

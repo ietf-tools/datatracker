@@ -47,7 +47,7 @@ jobs:
       pkg_version: ${{ steps.buildvars.outputs.pkg_version }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
         
@@ -70,7 +70,7 @@ jobs:
         echo "NEXT_VERSION=$nextStrict" >> $GITHUB_ENV
         
     - name: Create Draft Release
-      uses: ncipollo/release-action@v1
+      uses: ncipollo/release-action@v1.11.1
       if: ${{ github.event.inputs.publish == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         prerelease: true
@@ -167,7 +167,7 @@ jobs:
         mv latest-coverage.json coverage.json
         
     - name: Upload Coverage Results as Build Artifact
-      uses: actions/upload-artifact@v3.0.0
+      uses: actions/upload-artifact@v3
       if: ${{ always() }}
       with:
         name: coverage
@@ -186,7 +186,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: actions/setup-node@v2
+    - uses: actions/setup-node@v3
       with:
         node-version: '18'
 
@@ -203,7 +203,7 @@ jobs:
         npx playwright test --project=${{ matrix.project }}
         
     - name: Upload Report
-      uses: actions/upload-artifact@v3.0.0
+      uses: actions/upload-artifact@v3
       if: ${{ always() }}
       continue-on-error: true
       with:
@@ -256,7 +256,7 @@ jobs:
         yarn cypress:legacy
         
     - name: Upload Video Recordings
-      uses: actions/upload-artifact@v3.0.0
+      uses: actions/upload-artifact@v3
       if: ${{ always() }}
       continue-on-error: true
       with:
@@ -265,7 +265,7 @@ jobs:
         if-no-files-found: ignore
         
     - name: Upload Screenshots
-      uses: actions/upload-artifact@v3.0.0
+      uses: actions/upload-artifact@v3
       if: ${{ always() }}
       continue-on-error: true
       with:
@@ -286,17 +286,17 @@ jobs:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
         
     - name: Setup Node.js
-      uses: actions/setup-node@v3.0.0
+      uses: actions/setup-node@v3
       with:
-        node-version: 16.x
+        node-version: '16'
     
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
         
@@ -364,7 +364,7 @@ jobs:
         histCoveragePath: historical-coverage.json
         
     - name: Create Release
-      uses: ncipollo/release-action@v1
+      uses: ncipollo/release-action@v1.11.1
       if: ${{ env.SHOULD_DEPLOY == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         allowUpdates: true
@@ -376,7 +376,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Update Baseline Coverage
-      uses: ncipollo/release-action@v1
+      uses: ncipollo/release-action@v1.11.1
       if: ${{ github.event.inputs.updateCoverage == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         allowUpdates: true
@@ -389,8 +389,19 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v2.3.1
+      uses: actions/upload-artifact@v3
       if: ${{ env.SHOULD_DEPLOY == 'false' || github.event.inputs.dryrun == 'true' }}
       with:
         name: release-${{ env.PKG_VERSION }}
         path: /home/runner/work/release/release.tar.gz
+        
+    - name: Notify on Slack
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+        payload: |
+          {
+            "text": "Datatracker - Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} completed - <@${{ secrets.SLACK_UID_RJSPARKS }}>"
+          }
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}

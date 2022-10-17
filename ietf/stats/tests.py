@@ -22,12 +22,13 @@ from ietf.submit.models import Submission
 from ietf.doc.factories import WgDraftFactory, WgRfcFactory
 from ietf.doc.models import Document, DocAlias, State, RelatedDocument, NewRevisionDocEvent, DocumentAuthor
 from ietf.group.factories import RoleFactory
-from ietf.meeting.factories import MeetingFactory
+from ietf.meeting.factories import MeetingFactory, AttendedFactory
 from ietf.person.factories import PersonFactory
 from ietf.person.models import Person, Email
 from ietf.name.models import FormalLanguageName, DocRelationshipName, CountryName
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
 from ietf.stats.models import MeetingRegistration, CountryAlias
+from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.stats.utils import get_meeting_registration_data
 from ietf.utils.timezone import date_today
 
@@ -124,11 +125,11 @@ class StatisticsTests(TestCase):
     def test_meeting_stats(self):
         # create some data for the statistics
         meeting = MeetingFactory(type_id='ietf', date=date_today(), number="96")
-        MeetingRegistration.objects.create(first_name='John', last_name='Smith', country_code='US', email="john.smith@example.us", meeting=meeting, attended=True)
+        MeetingRegistrationFactory(first_name='John', last_name='Smith', country_code='US', email="john.smith@example.us", meeting=meeting, attended=True)
         CountryAlias.objects.get_or_create(alias="US", country=CountryName.objects.get(slug="US"))
-        MeetingRegistration.objects.create(first_name='Jaume', last_name='Guillaume', country_code='FR', email="jaume.guillaume@example.fr", meeting=meeting, attended=True)
+        p = MeetingRegistrationFactory(first_name='Jaume', last_name='Guillaume', country_code='FR', email="jaume.guillaume@example.fr", meeting=meeting, attended=False).person
         CountryAlias.objects.get_or_create(alias="FR", country=CountryName.objects.get(slug="FR"))
-
+        AttendedFactory(session__meeting=meeting,person=p)
         # check redirect
         url = urlreverse(ietf.stats.views.meeting_stats)
 

@@ -138,7 +138,7 @@ class DocumentInfo(models.Model):
                         else:
                             self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
             elif self.meeting_related() and self.type_id in (
-                    "agenda", "minutes", "slides", "bluesheets", "procmaterials"
+                    "agenda", "minutes", "slides", "bluesheets", "procmaterials", "chatlog", "polls"
             ):
                 meeting = self.get_related_meeting()
                 if meeting is not None:
@@ -422,7 +422,7 @@ class DocumentInfo(models.Model):
         return e != None and (e.text != "")
 
     def meeting_related(self):
-        if self.type_id in ("agenda","minutes","bluesheets","slides","recording","procmaterials"):
+        if self.type_id in ("agenda","minutes","bluesheets","slides","recording","procmaterials","chatlog","polls"):
              return self.type_id != "slides" or self.get_state_slug('reuse_policy')=='single'
         return False
 

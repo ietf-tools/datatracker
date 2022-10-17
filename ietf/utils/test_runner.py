@@ -858,9 +858,9 @@ class IetfTestRunner(DiscoverRunner):
                     # django-bootstrap5 seems to still generate 'checked="checked"', ignore:
                     "attribute-boolean-style": "off",
                     # self-closing style tags are valid in HTML5. Both self-closing and non-self-closing tags are accepted. (vite generates self-closing link tags)
-                    # "void-style": "off",
+                    "void-style": "off",
                     # Both attributes without value and empty strings are equal and valid. (vite generates empty value attributes)
-                    # "attribute-empty-style": "off"
+                    "attribute-empty-style": "off",
                     # For fragments, don't check that elements are in the proper ancestor element
                     "element-required-ancestor": "off",
                 },
@@ -888,7 +888,8 @@ class IetfTestRunner(DiscoverRunner):
             self.config_file = {}
             for kind in self.batches:
                 self.config_file[kind] = tempfile.NamedTemporaryFile(
-                    prefix="html-validate-config-"
+                    prefix="html-validate-config-",
+                    suffix=".json"
                 )
                 self.config_file[kind].write(json.dumps(config[kind]).encode())
                 self.config_file[kind].flush()

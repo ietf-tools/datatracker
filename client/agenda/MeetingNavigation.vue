@@ -10,7 +10,7 @@ ul.nav.nav-tabs.meeting-nav(v-if='agendaStore.isLoaded')
     router-link.nav-link(
       v-else
       active-class='active'
-      :to='`/meeting/` + agendaStore.meeting.number + `/` + tab.key + `-neue`'
+      :to='`/meeting/` + agendaStore.meeting.number + `/` + tab.key'
       )
       i.bi.me-2.d-none.d-sm-inline(:class='tab.icon')
       span {{tab.title}}

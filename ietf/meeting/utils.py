@@ -23,7 +23,7 @@ from ietf.meeting.models import Session, SchedulingEvent, TimeSlot, Constraint, 
 from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
-from ietf.name.models import SessionStatusName, ConstraintName
+from ietf.name.models import SessionStatusName, ConstraintName, DocTypeName
 from ietf.person.models import Person
 from ietf.secr.proceedings.proc_utils import import_audio_files
 from ietf.utils.html import sanitize_document
@@ -724,3 +724,35 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
         subprocess.call(['unzip', filename], cwd=path)
 
     return None
+
+def new_doc_for_session(type_id, session):
+    typename = DocTypeName.objects.get(slug=type_id)
+    ota = session.official_timeslotassignment()
+    if ota is None:
+        return None
+    sess_time = ota.timeslot.local_start_time()
+    if session.meeting.type_id == "ietf":
+        name = f"{typename.prefix}-{session.meeting.number}-{session.group.acronym}-{sess_time.strftime('%Y%m%d%H%M')}"
+        title = f"{typename.name} IETF{session.meeting.number}: {session.group.acronym}: {sess_time.strftime('%a %H:%M')}"
+    else:
+        name = f"{typename.prefix}-{session.meeting.number}-{sess_time.strftime('%Y%m%d%H%M')}"
+        title = f"{typename.name} {session.meeting.number}: {sess_time.strftime('%a %H:%M')}"
+    doc = Document.objects.create(
+                name = name,
+                type_id = type_id,
+                title = title,
+                group = session.group,
+                rev = '00',
+            )
+    doc.states.add(State.objects.get(type_id=type_id, slug='active'))
+    DocAlias.objects.create(name=doc.name).docs.add(doc)
+    session.sessionpresentation_set.create(document=doc,rev='00')
+    return doc
+
+def write_doc_for_session(session, type_id, filename, contents):
+    filename = Path(filename)
+    path = Path(session.meeting.get_materials_path()) / type_id
+    path.mkdir(parents=True, exist_ok=True)
+    with open(path / filename, "wb") as file:
+        file.write(contents.encode('utf-8'))
+    return

@@ -21,10 +21,6 @@
                 {# see note in the included templates re: show_agenda parameter and required JS import #}
                 {% if meeting.type.slug == 'interim' %}
                     {% include "meeting/interim_session_buttons.html" with show_agenda=False show_empty=False %}
-                {% else %}
-                    {% with schedule=meeting.schedule %}
-                        {% include "meeting/session_buttons_include.html" with show_agenda=False %}
-                    {% endwith %}
                 {% endif %}
             </div>
         {% endif %}
@@ -113,6 +109,23 @@
                href="{% url 'ietf.meeting.views.upload_session_bluesheets' session_id=session.pk num=session.meeting.number %}">
                 Upload bluesheets
             </a>
+        {% endif %}
+        {% if session.filtered_chatlog_and_polls %}
+            <h3 class="mt-4">Chatlog and polls</h3>
+                <table class="table table-sm table-striped chatlog-and-polls"
+                        id="chatlog_and_polls_{{ session.pk }}">
+                    <tbody data-session="{{ session.pk }}">
+                        {% for pres in session.filtered_chatlog_and_polls %}
+                            <tr data-name="{{ pres.document.name }}">
+                                {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
+                                <td>
+                                    <a href="{{ pres.document.get_href }}">{{ pres.document.title }}</a>
+                                    <a href="{{ url }}">({{ pres.document.name }})</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+            </table>    
         {% endif %}
         <h3 class="mt-4">Slides</h3>
         <table class="table table-sm table-striped slides"

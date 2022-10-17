@@ -258,18 +258,35 @@ class Meeting(models.Model):
         number = self.get_number()
         if number is None or number < 110:
             return None
-        Attendance = namedtuple('Attendance', 'onsite online')
+        Attendance = namedtuple('Attendance', 'onsite remote')
+
+        # MeetingRegistration.attended started conflating badge-pickup and session attendance before IETF 114.
+        # We've separated session attendence off to ietf.meeting.Attended, but need to report attendance at older
+        # meetings correctly.
+
+        attended_per_meetingregistration = (
+            Q(meetingregistration__meeting=self) & (
+                Q(meetingregistration__attended=True) |
+                Q(meetingregistration__checkedin=True)
+            )
+        )
+        attended_per_meeting_attended = (
+            Q(attended__session__meeting=self)
+            # Note that we are not filtering to plenary, wg, or rg sessions
+            # as we do for nomcom eligibility - if picking up a badge (see above)
+            # is good enough, just attending e.g. a training session is also good enough
+        )
+        attended = Person.objects.filter(
+            attended_per_meetingregistration | attended_per_meeting_attended
+        ).distinct()
+
+        onsite=set(attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='onsite'))
+        remote=set(attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='remote'))
+        remote.difference_update(onsite)
+
         return Attendance(
-            onsite=Person.objects.filter(
-                meetingregistration__meeting=self,
-                meetingregistration__attended=True,
-                meetingregistration__reg_type__contains='in_person',
-            ).distinct().count(),
-            online=Person.objects.filter(
-                meetingregistration__meeting=self,
-                meetingregistration__attended=True,
-                meetingregistration__reg_type__contains='remote',
-            ).distinct().count(),
+            onsite=len(onsite),
+            remote=len(remote)
         )
 
     @property
@@ -469,7 +486,7 @@ class Room(models.Model):
         if not mtg_num:
             return None
         elif self.floorplan:
-            base_url = urlreverse('ietf.meeting.views.floor_plan', kwargs=dict(num=mtg_num))
+            base_url = urlreverse('floor-plan', kwargs=dict(num=mtg_num))
         else:
             return None
         return f'{base_url}?room={xslugify(self.name)}'

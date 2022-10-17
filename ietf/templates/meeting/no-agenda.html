@@ -1,9 +1,0 @@
-{% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
-{% block title %}IETF {{ meeting.number }} Meeting Agenda{% endblock %}
-{% block content %}
-    {% origin %}
-    {% include "meeting/meeting_heading.html" with title_extra="" selected="" %}
-    <div class="alert alert-warning my-3">There is no agenda available yet.</div>
-{% endblock %}
