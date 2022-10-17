@@ -1967,6 +1967,3 @@ class ShepherdWriteupTests(TestCase):
         self.assertContains(r, "for Group Documents", status_code=200)
         r = self.client.post(url,dict(reset_text=''))
         self.assertContains(r, "for Group Documents", status_code=200)
-
-
-
