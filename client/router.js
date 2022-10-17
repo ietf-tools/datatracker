@@ -24,6 +24,12 @@ export default createRouter({
     },
     // -> Redirects
     {
+      path: '/meeting/:meetingNumber(\\d+)?/agenda.html',
+      redirect: to => {
+        return { name: 'agenda' }
+      }
+    },
+    {
       path: '/meeting/:meetingNumber(\\d+)?/agenda/personalize',
       redirect: to => {
         return { name: 'agenda', query: { ...to.query, pick: true } }
