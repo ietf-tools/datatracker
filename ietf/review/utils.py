@@ -147,7 +147,7 @@ def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, t
     if ordering is None:
         ordering = []
 
-    filters = Q()
+    filters = Q()  # all objects returned if no other terms in the queryset
 
     if teams:
         filters &= Q(review_request__team__in=teams)

@@ -2289,7 +2289,7 @@ class rfc8713EligibilityTests(TestCase):
             for combo in combinations(meetings,combo_len):
                 p = PersonFactory()
                 for m in combo:
-                    MeetingRegistrationFactory(person=p, meeting=m)
+                    MeetingRegistrationFactory(person=p, meeting=m, attended=True)
                 if combo_len<3:
                     self.ineligible_people.append(p)
                 else:
@@ -2302,7 +2302,7 @@ class rfc8713EligibilityTests(TestCase):
         self.other_date = datetime.date(2009,5,1)
         self.other_people = PersonFactory.create_batch(1)
         for date in (datetime.date(2009,3,1), datetime.date(2008,11,1), datetime.date(2008,7,1)):
-            MeetingRegistrationFactory(person=self.other_people[0],meeting__date=date, meeting__type_id='ietf')
+            MeetingRegistrationFactory(person=self.other_people[0],meeting__date=date, meeting__type_id='ietf', attended=True)
 
 
     def test_is_person_eligible(self):
@@ -2347,7 +2347,7 @@ class rfc8788EligibilityTests(TestCase):
             for combo in combinations(meetings,combo_len):
                 p = PersonFactory()
                 for m in combo:
-                    MeetingRegistrationFactory(person=p, meeting=m)
+                    MeetingRegistrationFactory(person=p, meeting=m, attended=True)
                 if combo_len<3:
                     self.ineligible_people.append(p)
                 else:
@@ -2395,7 +2395,7 @@ class rfc8989EligibilityTests(TestCase):
                 for combo in combinations(prev_five,combo_len):
                     p = PersonFactory()
                     for m in combo:
-                        MeetingRegistrationFactory(person=p, meeting=m)
+                        MeetingRegistrationFactory(person=p, meeting=m, attended=True) # not checkedin because this forces looking at older meetings
                         AttendedFactory(session__meeting=m, session__type_id='plenary',person=p)
                     if combo_len<3:
                         ineligible_people.append(p)
@@ -2569,6 +2569,59 @@ class rfc8989EligibilityTests(TestCase):
             self.assertEqual(set(list_eligible(nomcom=nomcom)),set(eligible))
             Person.objects.filter(pk__in=[p.pk for p in eligible.union(ineligible)]).delete()
 
+class rfc8989bisEligibilityTests(TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.nomcom = NomComFactory(group__acronym='nomcom2023', populate_personnel=False, first_call_for_volunteers=datetime.date(2023,5,15))
+        self.meetings = [
+            MeetingFactory(number=number, date=date, type_id='ietf') for number,date in [
+                ('115', datetime.date(2022, 11, 5)),
+                ('114', datetime.date(2022, 7, 23)),
+                ('113', datetime.date(2022, 3, 19)),
+                ('112', datetime.date(2021, 11, 8)),
+                ('111', datetime.date(2021, 7, 26)),
+            ]
+        ]
+        # make_immutable_test_data makes things this test does not want
+        Role.objects.filter(name_id__in=('chair','secr')).delete()
+
+    def test_registration_is_not_enough(self):
+        p = PersonFactory()
+        for meeting in self.meetings:
+            MeetingRegistrationFactory(person=p, meeting=meeting, checkedin=False)
+        self.assertFalse(is_eligible(p, self.nomcom))
+
+    def test_elig_by_meetings(self):
+        eligible_people = list()
+        ineligible_people = list()
+        attendance_methods = ('checkedin', 'session', 'both')
+        for combo_len in range(0,6): # Someone might register for 0 to 5 previous meetings
+            for combo in combinations(self.meetings, combo_len):
+                # Cover cases where someone 
+                # - checked in, but attended no sessions
+                # - checked in _and_ attended sessions 
+                # - didn't check_in but attended sessions
+                # (Intentionally not covering the permutations of those cases)
+                for method in attendance_methods:
+                    p = PersonFactory()
+                    for meeting in combo:
+                        MeetingRegistrationFactory(person=p, meeting=meeting, reg_type='onsite', checkedin=(method in ('checkedin', 'both')))
+                        if method in ('session', 'both'):
+                            AttendedFactory(session__meeting=meeting, session__type_id='plenary',person=p)
+                        if combo_len<3:
+                            ineligible_people.append(p)
+                        else:
+                            eligible_people.append(p)
+
+        self.assertEqual(set(eligible_people),set(list_eligible(self.nomcom)))
+
+        for person in eligible_people:
+            self.assertTrue(is_eligible(person,self.nomcom))
+
+        for person in ineligible_people:
+            self.assertFalse(is_eligible(person,self.nomcom))
+
 class VolunteerTests(TestCase):
 
     def test_volunteer(self):
@@ -2585,7 +2638,7 @@ class VolunteerTests(TestCase):
         self.assertContains(r, 'NomCom is not accepting volunteers at this time', status_code=200)
         nomcom.is_accepting_volunteers = True
         nomcom.save()
-        MeetingRegistrationFactory(person=person, affiliation='mtg_affiliation')
+        MeetingRegistrationFactory(person=person, affiliation='mtg_affiliation', checkedin=True)
         r = self.client.get(url)
         self.assertContains(r, 'Volunteer for NomCom', status_code=200)
         self.assertContains(r, 'mtg_affiliation')
@@ -2657,7 +2710,7 @@ class VolunteerDecoratorUnitTests(TestCase):
             ('106', datetime.date(2019, 11, 16)),
         ]]
         for m in meetings:
-            MeetingRegistrationFactory(meeting=m,person=meeting_person)
+            MeetingRegistrationFactory(meeting=m, person=meeting_person, attended=True)
             AttendedFactory(session__meeting=m, session__type_id='plenary', person=meeting_person)
         nomcom.volunteer_set.create(person=meeting_person)
 

@@ -147,7 +147,7 @@ class DraftYangChecker(object):
                 saved_stderr = sys.stderr
                 sys.stdout = io.StringIO()
                 sys.stderr = io.StringIO()
-                extractor.extract_yang_model(file.readlines())
+                extractor.extract_yang_model_text(file.read())
                 model_list = extractor.get_extracted_models(False, True)
                 out = sys.stdout.getvalue()
                 err = sys.stderr.getvalue()

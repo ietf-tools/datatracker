@@ -817,8 +817,10 @@ def meeting_stats(request, num=None, stats_type=None):
         if meeting and any(stats_type == t[0] for t in possible_stats_types):
             attendees = MeetingRegistration.objects.filter(
                 meeting=meeting,
-                attended=True,
-                reg_type__in=['onsite', 'remote'])
+                reg_type__in=['onsite', 'remote']
+            ).filter(
+                Q( attended=True) | Q( checkedin=True )
+            )
 
             if stats_type == "country":
                 stats_title = "Number of attendees for {} {} per country".format(meeting.type.name, meeting.number)
@@ -893,7 +895,10 @@ def meeting_stats(request, num=None, stats_type=None):
             attendees = MeetingRegistration.objects.filter(
                 meeting__type="ietf",
                 attended=True,
-                reg_type__in=['onsite', 'remote']).select_related('meeting')
+                reg_type__in=['onsite', 'remote']
+            ).filter(
+                Q( attended=True) | Q( checkedin=True )  
+            ).select_related('meeting')
 
             if stats_type == "overview":
                 stats_title = "Number of attendees per meeting"

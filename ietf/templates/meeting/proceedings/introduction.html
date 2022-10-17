@@ -11,7 +11,7 @@ This renders the list of links below the title on the meeting proceedings page.
             <a href="{% url 'ietf.meeting.views.proceedings_attendees' num=meeting.number %}">Participants</a>
         </div>
         <div class="proceedings-row">
-            <a href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">Meeting Agenda</a>
+            <a href="{% url 'agenda' num=meeting.number %}">Meeting Agenda</a>
         </div>
         <div class="proceedings-row">
             <a href="{% url 'ietf.meeting.views.proceedings_progress_report' num=meeting.number %}">Activity Report</a>
