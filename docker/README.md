@@ -95,8 +95,8 @@ You can also open the datatracker project folder and click the **Reopen in conta
     ```sh
     Copy-Item "docker/docker-compose.extend.yml" -Destination "docker/docker-compose.extend-custom.yml"
     (Get-Content -path docker/docker-compose.extend-custom.yml -Raw) -replace 'CUSTOM_PORT','8000' | Set-Content -Path docker/docker-compose.extend-custom.yml
-    docker-compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml up -d
-    docker-compose exec app /bin/sh /docker-init.sh
+    docker compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml up -d
+    docker compose exec app /bin/sh /docker-init.sh
     ```
 
 2. Wait for the containers to initialize. Upon completion, you will be dropped into a shell from which you can start the datatracker and execute related commands as usual, for example
@@ -120,7 +120,7 @@ The containers will automatically be shut down on Linux / macOS.
 On Windows, type the command
 
 ```sh
-docker-compose down
+docker compose down
 ```
 
 to terminate the containers.
@@ -138,9 +138,9 @@ cd docker
 
 On Windows:
 ```sh
-docker-compose down -v
-docker-compose pull db
-docker-compose build --no-cache db
+docker compose down -v
+docker compose pull db
+docker compose build --no-cache db
 ```
 
 ### Clean all
@@ -156,7 +156,7 @@ cd docker
 
 On Windows:
 ```sh
-docker-compose down -v --rmi all
+docker compose down -v --rmi all
 docker image prune 
 ```
 
@@ -164,7 +164,7 @@ docker image prune
 
 The port is exposed but not mapped to `3306` to avoid potential conflicts with the host. To get the mapped port, run the command *(from the project `/docker` directory)*:
 ```sh
-docker-compose port db 3306
+docker compose port db 3306
 ```
 
 ## Notes / Troubleshooting

@@ -4,7 +4,7 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='state.drawerHeight
     template(#header)
       span Calendar View
       .agenda-calendar-actions
-        template(v-if='agendaStore.viewport > 990')
+        template(v-if='siteStore.viewport > 990')
           i.bi.bi-globe.me-2
           small.me-2: strong Timezone:
           n-button-group
@@ -91,10 +91,12 @@ import bootstrap5Plugin from '@fullcalendar/bootstrap5'
 import AgendaDetailsModal from './AgendaDetailsModal.vue'
 
 import { useAgendaStore } from './store'
+import { useSiteStore } from '../shared/store'
 
 // STORES
 
 const agendaStore = useAgendaStore()
+const siteStore = useSiteStore()
 
 // STATE
 

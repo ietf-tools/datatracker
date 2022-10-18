@@ -13,7 +13,7 @@ from urllib.parse import urljoin
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import validate_email
 from django.db import models
 from django.template.loader import render_to_string
@@ -35,13 +35,18 @@ from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
 
 
+def name_character_validator(value):
+    if '/' in value:
+        raise ValidationError('Name cannot contain "/" character.')
+
+
 class Person(models.Model):
     history = HistoricalRecords()
     user = OneToOneField(User, blank=True, null=True, on_delete=models.SET_NULL)
     time = models.DateTimeField(default=datetime.datetime.now)      # When this Person record entered the system
     # The normal unicode form of the name.  This must be
     # set to the same value as the ascii-form if equal.
-    name = models.CharField("Full Name (Unicode)", max_length=255, db_index=True, help_text="Preferred long form of name.")
+    name = models.CharField("Full Name (Unicode)", max_length=255, db_index=True, help_text="Preferred long form of name.", validators=[name_character_validator])
     plain = models.CharField("Plain Name correction (Unicode)", max_length=64, default='', blank=True, help_text="Use this if you have a Spanish double surname.  Don't use this for nicknames, and don't use it unless you've actually observed that the datatracker shows your name incorrectly.")
     # The normal ascii-form of the name.
     ascii = models.CharField("Full Name (ASCII)", max_length=255, help_text="Name as rendered in ASCII (Latin, unaccented) characters.")
@@ -262,7 +267,7 @@ class Person(models.Model):
 
 
 class PersonExtResource(models.Model):
-    person = ForeignKey(Person) 
+    person = ForeignKey(Person)
     name = models.ForeignKey(ExtResourceName, on_delete=models.CASCADE)
     display_name = models.CharField(max_length=255, default='', blank=True)
     value = models.CharField(max_length=2083) # 2083 is the maximum legal URL length
@@ -366,9 +371,11 @@ PERSON_API_KEY_VALUES = [
     ("/api/iesg/position", "/api/iesg/position", "Area Director"),
     ("/api/v2/person/person", "/api/v2/person/person", "Robot"),
     ("/api/meeting/session/video/url", "/api/meeting/session/video/url", "Recording Manager"),
-    ("/api/notify/meeting/registration", "/api/notify/meeting/registration", "Robot"), 
+    ("/api/notify/meeting/registration", "/api/notify/meeting/registration", "Robot"),
     ("/api/notify/meeting/bluesheet", "/api/notify/meeting/bluesheet", "Recording Manager"),
-    ("/api/notify/session/attendees", "/api/notify/session/attendees", "Recording Manager"), 
+    ("/api/notify/session/attendees", "/api/notify/session/attendees", "Recording Manager"),
+    ("/api/notify/session/chatlog", "/api/notify/session/chatlog", "Recording Manager"),
+    ("/api/notify/session/polls", "/api/notify/session/polls", "Recording Manager"),
     ("/api/appauth/authortools", "/api/appauth/authortools", None),
     ("/api/appauth/bibxml", "/api/appauth/bibxml", None),
 ]
@@ -442,4 +449,4 @@ class PersonEvent(models.Model):
 
 class PersonApiKeyEvent(PersonEvent):
     key = ForeignKey(PersonalApiKey)
-    
+

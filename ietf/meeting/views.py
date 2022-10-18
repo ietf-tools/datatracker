@@ -81,6 +81,7 @@ from ietf.meeting.utils import preprocess_constraints_for_meeting_schedule_edito
 from ietf.meeting.utils import diff_meeting_schedules, prefetch_schedule_diff_objects
 from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments, bulk_create_timeslots
 from ietf.meeting.utils import preprocess_meeting_important_dates
+from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
 from ietf.message.utils import infer_message
 from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
@@ -1502,11 +1503,10 @@ def get_assignments_for_agenda(schedule):
 
 
 @ensure_csrf_cookie
-def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
+def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
     base = base if base else 'agenda'
-    ext = ext if ext else '.html'
+    ext = ext if ext else '.txt'
     mimetype = {
-        ".html":"text/html; charset=%s"%settings.DEFAULT_CHARSET,
         ".txt": "text/plain; charset=%s"%settings.DEFAULT_CHARSET,
         ".csv": "text/csv; charset=%s"%settings.DEFAULT_CHARSET,
     }
@@ -1570,7 +1570,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
     return rendered_page
 
 @ensure_csrf_cookie
-def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
+def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
     # Get current meeting if not specified
     if num is None:
         num = get_current_ietf_meeting_num()
@@ -1586,7 +1586,7 @@ def agenda_neue(request, num=None, name=None, base=None, ext=None, owner=None, u
         else:
             return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}')
 
-    return render(request, "meeting/agenda-neue.html", {
+    return render(request, "meeting/agenda.html", {
         "meetingData": {
             "meetingNumber": num
         }
@@ -1643,10 +1643,32 @@ def api_get_session_materials (request, session_id=None):
     session = get_object_or_404(Session,pk=session_id)
 
     minutes = session.minutes()
+    slides_actions = []
+    if can_manage_session_materials(request.user, session.group, session):
+        slides_actions.append({
+            'label': 'Upload slides',
+            'url': reverse(
+                'ietf.meeting.views.upload_session_slides',
+                kwargs={'num': session.meeting.number, 'session_id': session.pk},
+            ),
+        })
+    elif not session.is_material_submission_cutoff():
+        slides_actions.append({
+            'label': 'Propose slides',
+            'url': reverse(
+                'ietf.meeting.views.propose_session_slides',
+                kwargs={'num': session.meeting.number, 'session_id': session.pk},
+            ),
+        })
+    else:
+        pass  # no action available if it's past cutoff
 
     return JsonResponse({
         "url": session.agenda().get_href(),
-        "slides": list(map(agenda_extract_slide, session.slides())),
+        "slides": {
+            "decks": list(map(agenda_extract_slide, session.slides())),
+            "actions": slides_actions,
+        },
         "minutes": {
             "id": minutes.id,
             "title": minutes.title,
@@ -1701,7 +1723,10 @@ def agenda_extract_schedule (item):
             "audioStream": item.timeslot.location.audio_stream_url() if item.timeslot.location else "",
             "webex": item.timeslot.location.webex_url() if item.timeslot.location else "",
             "onsiteTool": item.timeslot.location.onsite_tool_url() if item.timeslot.location else "",
-            "calendar": reverse('ietf.meeting.views.agenda_ical', kwargs={'num': item.schedule.meeting.number, 'session_id': item.session.id, })
+            "calendar": reverse(
+                'ietf.meeting.views.agenda_ical',
+                kwargs={'num': item.schedule.meeting.number, 'session_id': item.session.id},
+            ),
         }
         # "slotType": {
         #     "slug": item.slot_type.slug
@@ -1835,45 +1860,6 @@ def agenda_csv(schedule, filtered_assignments):
     return response
 
 @role_required('Area Director','Secretariat','IAB')
-def agenda_by_room(request, num=None, name=None, owner=None):
-    meeting = get_meeting(num) 
-    if name is None:
-        schedule = get_schedule(meeting)
-    else:
-        person   = get_person_by_email(owner)
-        schedule = get_schedule_by_name(meeting, person, name)
-
-    assignments = SchedTimeSessAssignment.objects.filter(
-        schedule__in=[schedule, schedule.base if schedule else None]
-    ).prefetch_related('timeslot', 'timeslot__location', 'session', 'session__group', 'session__group__parent')
-
-    ss_by_day = OrderedDict()
-    for day in assignments.dates('timeslot__time','day'):
-        ss_by_day[day]=[]
-    for ss in assignments.order_by('timeslot__location__functional_name','timeslot__location__name','timeslot__time'):
-        day = ss.timeslot.time.date()
-        ss_by_day[day].append(ss)
-    return render(request,"meeting/agenda_by_room.html",{"meeting":meeting,"schedule":schedule,"ss_by_day":ss_by_day})
-
-@role_required('Area Director','Secretariat','IAB')
-def agenda_by_type(request, num=None, type=None, name=None, owner=None):
-    meeting = get_meeting(num) 
-    if name is None:
-        schedule = get_schedule(meeting)
-    else:
-        person   = get_person_by_email(owner)
-        schedule = get_schedule_by_name(meeting, person, name)
-    assignments = SchedTimeSessAssignment.objects.filter(
-        schedule__in=[schedule, schedule.base if schedule else None]
-    ).prefetch_related(
-        'timeslot', 'timeslot__location', 'session', 'session__group', 'session__group__parent'
-    ).order_by('session__type__slug','timeslot__time','session__group__acronym')
-
-    if type:
-        assignments = assignments.filter(session__type__slug=type)
-    return render(request,"meeting/agenda_by_type.html",{"meeting":meeting,"schedule":schedule,"assignments":assignments})
-
-@role_required('Area Director','Secretariat','IAB')
 def agenda_by_type_ics(request,num=None,type=None):
     meeting = get_meeting(num) 
     schedule = get_schedule(meeting)
@@ -1886,42 +1872,6 @@ def agenda_by_type_ics(request,num=None,type=None):
         assignments = assignments.filter(session__type__slug=type)
     updated = meeting.updated()
     return render(request,"meeting/agenda.ics",{"schedule":schedule,"updated":updated,"assignments":assignments},content_type="text/calendar")
-
-
-def agenda_personalize(request, num):
-    meeting = get_ietf_meeting(num)  # num may be None, which requests the current meeting
-    if meeting is None or meeting.schedule is None:
-        raise Http404('No such meeting')
-
-    # Select and prepare sessions that should be included
-    filtered_assignments = preprocess_assignments_for_agenda(
-        get_assignments_for_agenda(meeting.schedule),
-        meeting
-    )
-    tagger = AgendaKeywordTagger(assignments=filtered_assignments)
-    tagger.apply()  # annotate assignments with filter_keywords attribute
-    tagger.apply_session_keywords()  # annotate assignments with session_keyword attribute
-
-    # Now prep the filter UI
-    filter_organizer = AgendaFilterOrganizer(assignments=filtered_assignments)
-
-    is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
-
-    return render(
-        request,
-        "meeting/agenda.html",
-        {
-            'personalize': True,
-            'schedule': meeting.schedule,
-            'updated': meeting.updated(),
-            'filtered_assignments': filtered_assignments,
-            'filter_categories': filter_organizer.get_filter_categories(),
-            'non_area_labels': filter_organizer.get_non_area_keywords(),
-            'timezone': meeting.time_zone,
-            'is_current_meeting': is_current_meeting,
-            'cache_time': 150 if is_current_meeting else 3600,
-        }
-    )
 
 def session_draft_list(num, acronym):
     try:
@@ -2024,70 +1974,6 @@ def session_draft_pdf(request, num, acronym):
     os.unlink(pmn)
     os.unlink(pdfn)
     return HttpResponse(pdf_contents, content_type="application/pdf")
-
-def week_view(request, num=None, name=None, owner=None):
-    meeting = get_meeting(num)
-
-    if name is None:
-        schedule = get_schedule(meeting)
-    else:
-        person   = get_person_by_email(owner)
-        schedule = get_schedule_by_name(meeting, person, name)
-
-    if not schedule:
-        raise Http404
-
-    filtered_assignments = SchedTimeSessAssignment.objects.filter(
-        schedule__in=[schedule, schedule.base],
-        session__on_agenda=True,
-    )
-    filtered_assignments = preprocess_assignments_for_agenda(filtered_assignments, meeting)
-    AgendaKeywordTagger(assignments=filtered_assignments).apply()
-
-    items = []
-    for a in filtered_assignments:
-        # we don't HTML escape any of these as the week-view code is using createTextNode
-        item = {
-            "key": str(a.timeslot.pk),
-            "utc_time": a.timeslot.utc_start_time().strftime("%Y%m%dT%H%MZ"),  # ISO8601 compliant
-            "duration": a.timeslot.duration.seconds,
-            "type": a.slot_type().name,
-            "filter_keywords": ",".join(a.filter_keywords),
-        }
-
-        if a.session:
-            if a.session.historic_group:
-                item["group"] = a.session.historic_group.acronym
-
-            if a.session.name:
-                item["name"] = a.session.name
-            elif a.slot_type().slug == "break":
-                item["name"] = a.timeslot.name
-                item["area"] = a.slot_type().slug
-                item["group"] = a.slot_type().slug
-            elif a.session.historic_group:
-                item["name"] = a.session.historic_group.name
-                if a.session.historic_group.state_id == "bof":
-                    item["name"] += " BOF"
-
-                item["state"] = a.session.historic_group.state.name
-                if a.session.historic_group.historic_parent:
-                    item["area"] = a.session.historic_group.historic_parent.acronym
-
-            if a.timeslot.show_location:
-                item["room"] = a.timeslot.get_location()
-
-            if a.session and a.session.agenda():
-                item["agenda"] = a.session.agenda().get_href()
-
-            if a.session.current_status == 'canceled':
-                item["name"] = "CANCELLED - " + item["name"]
-
-        items.append(item)
-
-    return render(request, "meeting/week-view.html", {
-        "items": json.dumps(items),
-    })
 
 def ical_session_status(assignment):
     if assignment.session.current_status == 'canceled':
@@ -2320,7 +2206,10 @@ def agenda_json(request, num=None):
 
 def meeting_requests(request, num=None):
     meeting = get_meeting(num)
-    groups_to_show = Group.objects.filter(state_id='active', type__features__has_meetings=True)
+    groups_to_show = Group.objects.filter(
+        state_id__in=('active', 'bof', 'proposed'),
+        type__features__has_meetings=True,
+    )
     sessions = list(
         Session.objects.requests().filter(
             meeting__number=meeting.number,
@@ -2340,7 +2229,7 @@ def meeting_requests(request, num=None):
     for s in sessions:
         s.current_status_name = status_names.get(s.current_status, s.current_status)
         s.requested_by_person = session_requesters.get(s.requested_by)
-        if s.group.parent and s.group.parent.type.slug == 'area':
+        if s.group.parent and s.group.parent.type.slug in ('area', 'irtf'):
             s.display_area = s.group.parent
         else:
             s.display_area = None
@@ -2422,6 +2311,7 @@ def session_details(request, num, acronym):
         session.filtered_artifacts.sort(key=lambda d:['agenda','minutes','bluesheets'].index(d.document.type.slug))
         session.filtered_slides    = session.sessionpresentation_set.filter(document__type__slug='slides').order_by('order')
         session.filtered_drafts    = session.sessionpresentation_set.filter(document__type__slug='draft')
+        session.filtered_chatlog_and_polls = session.sessionpresentation_set.filter(document__type__slug__in=('chatlog', 'polls')).order_by('document__type__slug')
         # TODO FIXME Deleted materials shouldn't be in the sessionpresentation_set
         for qs in [session.filtered_artifacts,session.filtered_slides,session.filtered_drafts]:
             qs = [p for p in qs if p.document.get_state_slug(p.document.type_id)!='deleted']
@@ -3691,24 +3581,6 @@ def upcoming_json(request):
     response = HttpResponse(json.dumps(data, indent=2, sort_keys=False), content_type='application/json;charset=%s'%settings.DEFAULT_CHARSET)
     return response
 
-def floor_plan(request, num=None, floor=None, ):
-    meeting = get_meeting(num)
-    schedule = meeting.schedule
-    floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
-    if floor:
-        floors = [ f for f in floors if xslugify(f.name) == floor ]
-    for floor in floors:
-        try:
-            floor.image.width
-        except FileNotFoundError:
-            raise Http404('Missing floorplan image for %s' % floor)
-    return render(request, 'meeting/floor-plan.html', {
-            "meeting": meeting,
-            "schedule": schedule,
-            "number": num,
-            "floors": floors,
-        })
-
 def proceedings(request, num=None):
 
     meeting = get_meeting(num)
@@ -3950,6 +3822,85 @@ def api_add_session_attendees(request):
         session.attended_set.get_or_create(person=user.person)
     return HttpResponse("Done", status=200, content_type='text/plain')  
 
+@require_api_key
+@role_required('Recording Manager')
+@csrf_exempt
+def api_upload_chatlog(request):
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+    if request.method != 'POST':
+        return err(405, "Method not allowed")
+    apidata_post = request.POST.get('apidata')
+    if not apidata_post:
+        return err(400, "Missing apidata parameter")
+    try:
+        apidata = json.loads(apidata_post)
+    except json.decoder.JSONDecodeError:
+        return err(400, "Malformed post") 
+    if not ( 'session_id' in apidata and type(apidata['session_id']) is int ):
+        return err(400, "Malformed post")
+    session_id = apidata['session_id']
+    if not ( 'chatlog' in apidata and type(apidata['chatlog']) is list and all([type(el) is dict for el in apidata['chatlog']]) ):
+        return err(400, "Malformed post")
+    session = Session.objects.filter(pk=session_id).first()
+    if not session:
+        return err(400, "Invalid session")
+    chatlog_sp = session.sessionpresentation_set.filter(document__type='chatlog').first()
+    if chatlog_sp:
+        doc = chatlog_sp.document
+        doc.rev = f"{(int(doc.rev)+1):02d}"
+        chatlog_sp.rev = doc.rev
+        chatlog_sp.save()
+    else:
+        doc = new_doc_for_session('chatlog', session)
+        if doc is None:
+            return err(400, "Could not find official timeslot for session")
+    filename = f"{doc.name}-{doc.rev}.json"
+    doc.uploaded_filename = filename
+    write_doc_for_session(session, 'chatlog', filename, json.dumps(apidata['chatlog']))
+    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
+    doc.save_with_history([e])
+    return HttpResponse("Done", status=200, content_type='text/plain')  
+
+@require_api_key
+@role_required('Recording Manager')
+@csrf_exempt
+def api_upload_polls(request):
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+    if request.method != 'POST':
+        return err(405, "Method not allowed")
+    apidata_post = request.POST.get('apidata')
+    if not apidata_post:
+        return err(400, "Missing apidata parameter")
+    try:
+        apidata = json.loads(apidata_post)
+    except json.decoder.JSONDecodeError:
+        return err(400, "Malformed post") 
+    if not ( 'session_id' in apidata and type(apidata['session_id']) is int ):
+        return err(400, "Malformed post")
+    session_id = apidata['session_id']
+    if not ( 'polls' in apidata and type(apidata['polls']) is list and all([type(el) is dict for el in apidata['polls']]) ):
+        return err(400, "Malformed post")
+    session = Session.objects.filter(pk=session_id).first()
+    if not session:
+        return err(400, "Invalid session")
+    polls_sp = session.sessionpresentation_set.filter(document__type='polls').first()
+    if polls_sp:
+        doc = polls_sp.document
+        doc.rev = f"{(int(doc.rev)+1):02d}"
+        polls_sp.rev = doc.rev
+        polls_sp.save()
+    else:
+        doc = new_doc_for_session('polls', session)
+        if doc is None:
+            return err(400, "Could not find official timeslot for session")
+    filename = f"{doc.name}-{doc.rev}.json"
+    doc.uploaded_filename = filename
+    write_doc_for_session(session, 'polls', filename, json.dumps(apidata['polls']))
+    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
+    doc.save_with_history([e])
+    return HttpResponse("Done", status=200, content_type='text/plain') 
 
 @require_api_key
 @role_required('Recording Manager', 'Secretariat')

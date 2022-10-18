@@ -10,7 +10,7 @@
            data-bs-toggle="dropdown"
            aria-expanded="false">
             {% if user.is_authenticated %}
-                {{ user }}
+                {{ user.username|split:'@'|first }}
             {% else %}
                 User
             {% endif %}

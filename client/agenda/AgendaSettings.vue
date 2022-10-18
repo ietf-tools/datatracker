@@ -198,6 +198,8 @@ import {
 } from 'naive-ui'
 
 import { useAgendaStore } from './store'
+import { useSiteStore } from '../shared/store'
+
 import timezones from '../shared/timezones'
 
 // MESSAGE PROVIDER
@@ -207,6 +209,7 @@ const message = useMessage()
 // STORES
 
 const agendaStore = useAgendaStore()
+const siteStore = useSiteStore()
 
 // STATE
 
@@ -266,7 +269,7 @@ const calcOffset = computed(() => {
   return agendaStore.nowDebugDiff ? JSON.stringify(agendaStore.nowDebugDiff.toObject()) : 'None'
 })
 const panelWidth = computed(() => {
-  return agendaStore.viewport > 500 ? 500 : agendaStore.viewport
+  return siteStore.viewport > 500 ? 500 : siteStore.viewport
 })
 
 // WATCHERS

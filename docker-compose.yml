@@ -20,7 +20,8 @@ services:
 
         ipc: host
 
-        # environment:
+        environment:
+            DISPLAY: host.docker.internal:0
             # USER: django
             # UID: 1001
             # GID: 1001
