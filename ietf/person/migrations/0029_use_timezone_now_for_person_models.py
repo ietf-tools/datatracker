@@ -7,7 +7,7 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('person', '0025_chat_and_polls_apikey'),
+        ('person', '0028_name_character_validator'),
     ]
 
     operations = [
