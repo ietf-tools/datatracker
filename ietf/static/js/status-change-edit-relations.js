@@ -14,12 +14,12 @@ $(document)
                 .remove();
         });
 
-        form.on("keydown", ".new-relation-row input[type=text]", function () {
+        form.on("keydown change", ".new-relation-row select", function () {
             var top = $(this)
                 .closest(".new-relation-row");
             top.removeClass("new-relation-row");
             top.find(".delete")
-                .prop('Disabled', false)
+                .prop('disabled', false)
                 .removeClass("btn-outline-danger")
                 .addClass("btn-danger");
             top.find("input,select")
@@ -28,5 +28,6 @@ $(document)
                 });
             ++counter;
             top.after(newRowHtml);
+            setupSelect2Field(form.find(".new-relation-row .select2-field"));
         });
     });
