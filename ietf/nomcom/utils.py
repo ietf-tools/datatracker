@@ -34,7 +34,7 @@ from ietf.utils.pipe import pipe
 from ietf.utils.mail import send_mail_text, send_mail, get_payload_text
 from ietf.utils.log import log
 from ietf.person.name import unidecode_name
-from ietf.utils.timezone import date_today, datetime_from_date, datetime_today, DEADLINE_TZINFO
+from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
 
 import debug                            # pyflakes:ignore
 
@@ -636,7 +636,7 @@ def get_eligibility_date(nomcom=None, date=None):
             else:
                 return datetime.date(next_nomcom_year,5,1)
         else:
-            return datetime.date(datetime_today().year,5,1)
+            return datetime.date(date_today().year,5,1)
 
 def previous_five_meetings(date = None):
     if date is None:

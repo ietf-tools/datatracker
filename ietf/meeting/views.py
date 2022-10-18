@@ -3589,7 +3589,7 @@ def upcoming_ical(request):
 
 def upcoming_json(request):
     '''Return Upcoming meetings in json format'''
-    today = datetime_today()
+    today = date_today()
 
     # get meetings starting 7 days ago -- we'll filter out sessions in the past further down
     meetings = data_for_meetings_overview(Meeting.objects.filter(date__gte=today-datetime.timedelta(days=7)).order_by('date'))
@@ -3997,7 +3997,7 @@ def important_dates(request, num=None, output_format=None):
     base_num = int(meeting.number)
 
     user = request.user
-    today = datetime_today()
+    today = date_today()
     meetings = []
     if meeting.show_important_dates or meeting.date < today:
         meetings.append(meeting)
