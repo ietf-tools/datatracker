@@ -39,14 +39,6 @@ window.setupSelect2Field = function (e) {
 
     template_modify = e.hasClass("tz-select") ? prettify_tz : undefined;
 
-    // focus the search field automatically
-    $(document)
-        .on("select2:open", () => {
-            document.querySelector(
-                    ".select2-container--open .select2-search__field")
-                .focus()
-        });
-
     e.select2({
         multiple: maxEntries !== 1,
         maximumSelectionSize: maxEntries,
