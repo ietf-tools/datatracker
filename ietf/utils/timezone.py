@@ -53,8 +53,11 @@ def datetime_from_date(date, tz=None):
 def datetime_today(tz=None):
     """Get a timezone-aware datetime representing midnight today
 
+    By default, uses settings.TIME_ZONE
     For use with datetime fields representing a date.
     """
+    if tz is None:
+        tz = settings.TIME_ZONE
     return timezone.now().astimezone(_tzinfo(tz)).replace(hour=0, minute=0, second=0, microsecond=0)
 
 
