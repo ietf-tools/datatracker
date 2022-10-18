@@ -54,7 +54,6 @@ from django.contrib.auth.views import LoginView
 from django.contrib.sites.models import Site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.urls import reverse as urlreverse
-from django.utils.safestring import mark_safe
 from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.encoding import force_bytes
@@ -699,7 +698,6 @@ def login(request, extra_context=None):
     which is not recognized as a valid password hash.
     """
 
-    require_consent = []
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         username = form.data.get('username')
@@ -722,11 +720,6 @@ def login(request, extra_context=None):
         #
         if user:
             try:
-                if user.person and not user.person.consent:
-                    require_consent = user.person.needs_consent()
-            except ObjectDoesNotExist:
-                pass
-            try:
                 identify_hasher(user.password)
             except ValueError:
                 extra_context = {"alert":
@@ -742,18 +735,6 @@ def login(request, extra_context=None):
         except Person.DoesNotExist:
             logout(request)
             response = render(request, 'registration/missing_person.html')
-        if require_consent:
-            messages.warning(request, mark_safe(f'''
-
-                You have personal information associated with your account which is not
-                derived from draft submissions or other ietf work, namely: %s.  Please go
-                to your <a href="{urlreverse("ietf.ietfauth.views.profile")}">account profile</a> and review your
-                personal information, then scoll to the bottom and check the 'confirm'
-                checkbox and submit the form, in order to to indicate that that the
-                provided personal information may be used and displayed within the IETF
-                datatracker.
-
-                ''' % ', '.join(require_consent)))
     return response
 
 @login_required
