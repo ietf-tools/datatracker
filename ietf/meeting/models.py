@@ -750,7 +750,7 @@ class Schedule(models.Model):
     @property
     def is_official_record(self):
         return (self.is_official and
-                self.meeting.end_date() <= datetime.date.today() )
+                self.meeting.end_date() <= date_today() )
 
     # returns a dictionary {group -> [schedtimesessassignment+]}
     # and it has [] if the session is not placed.

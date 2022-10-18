@@ -5,7 +5,7 @@ import datetime
 from ietf.group.factories import RoleFactory
 from ietf.utils.mail import empty_outbox, get_payload_text, outbox
 from ietf.utils.test_utils import TestCase, reload_db_objects
-from ietf.utils.timezone import datetime_from_date
+from ietf.utils.timezone import date_today, datetime_from_date
 from .factories import ReviewAssignmentFactory, ReviewRequestFactory, ReviewerSettingsFactory
 from .mailarch import hash_list_message_id
 from .models import ReviewerSettings, ReviewSecretarySettings, ReviewTeamSettings, UnavailablePeriod
@@ -75,7 +75,7 @@ class ReviewAssignmentTest(TestCase):
 
 
 class ReviewAssignmentReminderTests(TestCase):
-    today = datetime.date.today()
+    today = date_today()
     deadline = today + datetime.timedelta(days=6)
 
     def setUp(self):
@@ -346,7 +346,7 @@ class ReviewAssignmentReminderTests(TestCase):
     def test_send_unavailability_period_ending_reminder(self):
         secretary = self.make_secretary(username='reviewsecretary')
         empty_outbox()
-        today = datetime.date.today()
+        today = date_today()
         UnavailablePeriod.objects.create(
             team=self.team,
             person=self.reviewer,
@@ -470,7 +470,7 @@ class ReviewAssignmentReminderTests(TestCase):
         self.assertIn('1 overdue review', log[0])
 
     def test_send_reminder_all_open_reviews(self):
-        today = datetime.date.today()
+        today = date_today()
         self.make_secretary(username='reviewsecretary')
         ReviewerSettingsFactory(team=self.team, person=self.reviewer, remind_days_open_reviews=1)
 

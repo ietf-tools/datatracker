@@ -866,7 +866,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(len(outbox), mailbox_before + 1)
 
     def test_liaison_add_attachment(self):
-        liaison = LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
+        liaison = LiaisonStatementFactory(deadline=date_today()+datetime.timedelta(days=1))
         LiaisonStatementEventFactory(statement=liaison,type_id='submitted')
 
         self.assertEqual(liaison.attachments.count(),0)

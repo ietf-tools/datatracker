@@ -16,6 +16,7 @@ from django.conf import settings
 from django.core.validators import validate_email, ValidationError
 from ietf.utils.draft import PlaintextDraft
 from ietf.submit.utils import update_authors
+from ietf.utils.timezone import date_today
 
 import debug                            # pyflakes:ignore
 
@@ -140,7 +141,7 @@ for name in sorted(names):
                         doc = doc,
                         rev = rev,
                         by = system,
-                        desc = "Revision added from id-archive on %s by %s"%(datetime.date.today(),sys.argv[0]),
+                        desc = "Revision added from id-archive on %s by %s"%(date_today(),sys.argv[0]),
                         time=time,
                 )
                 events.append(e)

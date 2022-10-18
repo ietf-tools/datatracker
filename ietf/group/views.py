@@ -1028,7 +1028,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                     change_text=title + ' deleted: ' + ", ".join(x.name_and_email() for x in deleted)
                     personnel_change_text+=change_text+"\n"
 
-                    today = datetime.date.today()
+                    today = date_today()
                     for deleted_email in deleted:
                         # Verify the person doesn't have a separate reviewer role for the group with a different address
                         if not group.role_set.filter(name_id='reviewer',person=deleted_email.person).exists():

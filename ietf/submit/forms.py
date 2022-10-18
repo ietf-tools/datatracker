@@ -156,7 +156,7 @@ class SubmissionBaseUploadForm(forms.Form):
             raise forms.ValidationError('The submission tool is currently shut down')
 
         # check general submission rate thresholds before doing any more work
-        today = datetime.date.today()
+        today = date_today()
         self.check_submissions_thresholds(
             "for the same submitter",
             dict(remote_ip=self.remote_ip, submission_date=today),

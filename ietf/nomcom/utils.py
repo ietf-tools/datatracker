@@ -626,7 +626,7 @@ def get_eligibility_date(nomcom=None, date=None):
         last_seated=Role.objects.filter(group__type_id='nomcom',name_id='member').order_by('-group__acronym').first()
         if last_seated:
             last_nomcom_year = int(last_seated.group.acronym[6:])
-            if last_nomcom_year == datetime.date.today().year:
+            if last_nomcom_year == date_today().year:
                 next_nomcom_year = last_nomcom_year
             else:
                 next_nomcom_year = int(last_seated.group.acronym[6:])+1
@@ -640,7 +640,7 @@ def get_eligibility_date(nomcom=None, date=None):
 
 def previous_five_meetings(date = None):
     if date is None:
-        date = datetime.date.today()
+        date = date_today()
     return Meeting.objects.filter(type='ietf',date__lte=date).order_by('-date')[:5]
 
 def three_of_five_eligible_8713(previous_five, queryset=None):

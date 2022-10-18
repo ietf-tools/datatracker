@@ -922,8 +922,9 @@ class Document(DocumentInfo):
     def last_presented(self):
         """ returns related SessionPresentation objects for the most recent meeting in the past"""
         # Assumes no two meetings have the same start date - if the assumption is violated, one will be chosen arbitrariy
-        candidate_presentations = self.sessionpresentation_set.filter(session__meeting__date__lte=datetime.date.today())
-        candidate_meetings = set([p.session.meeting for p in candidate_presentations if p.session.meeting.end_date()<datetime.date.today()])
+        today = date_today()
+        candidate_presentations = self.sessionpresentation_set.filter(session__meeting__date__lte=today)
+        candidate_meetings = set([p.session.meeting for p in candidate_presentations if p.session.meeting.end_date()<today])
         if candidate_meetings:
             mtg = sorted(list(candidate_meetings),key=lambda x:x.date,reverse=True)[0]
             return self.sessionpresentation_set.filter(session__meeting=mtg)

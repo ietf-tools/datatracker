@@ -558,7 +558,7 @@ class ReviewTests(TestCase):
         # get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.context['period_form']['start_date'].initial, datetime.date.today())
+        self.assertEqual(r.context['period_form']['start_date'].initial, date_today())
 
         # set settings
         empty_outbox()

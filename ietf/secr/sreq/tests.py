@@ -244,7 +244,7 @@ class SessionRequestTestCase(TestCase):
 
 
     def test_edit_constraint_bethere(self):
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         mars = RoleFactory(name_id='chair', person__user__username='marschairman', group__acronym='mars').group
         session = SessionFactory(meeting=meeting, group=mars, status_id='sched')
         Constraint.objects.create(
@@ -311,7 +311,7 @@ class SessionRequestTestCase(TestCase):
 
     def test_edit_inactive_conflicts(self):
         """Inactive conflicts should be displayed and removable"""
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today(), group_conflicts=['chair_conflict'])
+        meeting = MeetingFactory(type_id='ietf', date=date_today(), group_conflicts=['chair_conflict'])
         mars = RoleFactory(name_id='chair', person__user__username='marschairman', group__acronym='mars').group
         session = SessionFactory(meeting=meeting, group=mars, status_id='sched')
         other_group = GroupFactory()
@@ -383,7 +383,7 @@ class SessionRequestTestCase(TestCase):
         Relies on SessionForm representing constraint values with element IDs
         like id_constraint_<ConstraintName slug>
         """
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         RoleFactory(name_id='chair', person__user__username='marschairman', group__acronym='mars')
         url = reverse('ietf.secr.sreq.views.new', kwargs=dict(acronym='mars'))
         self.client.login(username="marschairman", password="marschairman+password")
@@ -406,7 +406,7 @@ class SessionRequestTestCase(TestCase):
 
     def test_edit_req_constraint_types(self):
         """Editing a request constraint should show the expected constraints"""
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         SessionFactory(group__acronym='mars',
                        status_id='schedw',
                        meeting=meeting,
@@ -701,7 +701,7 @@ class SubmitRequestCase(TestCase):
         self.assertNotIn('The third session requires your approval', notification_payload)
 
     def test_request_notification_third_session(self):
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         ad = Person.objects.get(user__username='ad')
         area = GroupFactory(type_id='area')
         RoleFactory(name_id='ad', person=ad, group=area)

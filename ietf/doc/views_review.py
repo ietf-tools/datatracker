@@ -535,7 +535,7 @@ class CompleteReviewForm(forms.Form):
     review_url = forms.URLField(label="Link to message", required=False)
     review_file = forms.FileField(label="Text file to upload", required=False)
     review_content = forms.CharField(widget=forms.Textarea, required=False, strip=False)
-    completion_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={ "autoclose": "1" }, initial=datetime.date.today, help_text="Date of announcement of the results of this review")
+    completion_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={ "autoclose": "1" }, initial=date_today, help_text="Date of announcement of the results of this review")
     completion_time = forms.TimeField(widget=forms.HiddenInput, initial=datetime.time.min)
     cc = MultiEmailField(required=False, help_text="Email addresses to send to in addition to the review team list")
     email_ad = forms.BooleanField(label="Send extra email to the responsible AD suggesting early attention", required=False)
@@ -708,7 +708,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
                     team.acronym, 
                     request_type.slug,
                     xslugify(reviewer.person.ascii_parts()[3]),
-                    datetime.date.today().isoformat(),
+                    date_today().isoformat(),
                 ]
                 review_name = "-".join(c for c in name_components if c).lower()
                 if not Document.objects.filter(name=review_name).exists():

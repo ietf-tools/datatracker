@@ -899,7 +899,7 @@ class ReviewTests(TestCase):
             assignment.review_request.team.acronym, 
             assignment.review_request.type.slug,
             xslugify(assignment.reviewer.person.ascii_parts()[3]),
-            datetime.date.today().isoformat(),
+            date_today().isoformat(),
         ]
         review_name = "-".join(c for c in name_components if c).lower()
         Document.objects.create(name=review_name,type_id='review',group=assignment.review_request.team)

@@ -394,7 +394,7 @@ class IetfAuthTests(TestCase):
         self.assertFalse(q('#volunteer-button'))
         self.assertFalse(q('#volunteered'))
 
-        year = datetime.date.today().year
+        year = date_today().year
         nomcom = NomComFactory(group__acronym=f'nomcom{year}',is_accepting_volunteers=True)
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)

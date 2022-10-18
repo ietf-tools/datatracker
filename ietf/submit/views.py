@@ -163,7 +163,7 @@ def api_submission(request):
                 submission.state = DraftSubmissionStateName.objects.get(slug="validating")
                 submission.remote_ip = form.remote_ip
                 submission.file_types = ','.join(form.file_types)
-                submission.submission_date = datetime.date.today()
+                submission.submission_date = date_today()
                 submission.submitter = user.person.formatted_email()
                 submission.replaces = form.cleaned_data['replaces']
                 submission.save()
