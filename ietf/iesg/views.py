@@ -63,6 +63,7 @@ from ietf.iesg.utils import telechat_page_count
 from ietf.ietfauth.utils import has_role, role_required, user_is_person
 from ietf.person.models import Person
 from ietf.doc.utils_search import fill_in_document_table_attributes, fill_in_telechat_date
+from ietf.utils.timezone import date_today, datetime_from_date
 
 def review_decisions(request, year=None):
     events = DocEvent.objects.filter(type__in=("iesg_disapproved", "iesg_approved"))
@@ -73,9 +74,9 @@ def review_decisions(request, year=None):
         year = int(year)
         events = events.filter(time__year=year)
     else:
-        d = datetime.date.today() - datetime.timedelta(days=185)
+        d = date_today() - datetime.timedelta(days=185)
         d = datetime.date(d.year, d.month, 1)
-        events = events.filter(time__gte=d)
+        events = events.filter(time__gte=datetime_from_date(d))
 
     events = events.select_related("doc", "doc__intended_std_level").order_by("-time", "-id")
 

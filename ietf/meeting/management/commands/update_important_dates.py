@@ -11,6 +11,8 @@ import debug                            # pyflakes:ignore
 from ietf.name.models import ImportantDateName
 from ietf.meeting.helpers import update_important_dates
 from ietf.meeting.models import Meeting, ImportantDate
+from ietf.utils.timezone import date_today
+
 
 class Command(BaseCommand):
 
@@ -29,7 +31,7 @@ class Command(BaseCommand):
             if not meeting:
                 self.stderr.write("\nMeeting not found: %s\n" % (m, ))
                 continue
-            if meeting.date < datetime.date.today() + datetime.timedelta(days=max_offset):
+            if meeting.date < date_today(meeting.tz()) + datetime.timedelta(days=max_offset):
                 self.stderr.write("\nMeeting %s: Won't change dates for meetings in the past or close future\n" % (meeting, ))
                 continue
             self.stdout.write('\n%s\n\n' % (meeting, ))

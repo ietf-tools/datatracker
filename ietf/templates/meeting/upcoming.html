@@ -2,7 +2,7 @@
 {# Copyright The IETF Trust 2015, 2020, All Rights Reserved #}
 {% load origin %}
 {% load cache %}
-{% load ietf_filters static classname %}
+{% load ietf_filters static classname tz %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
     <link rel="stylesheet" href="{% static "ietf/js/fullcalendar.css" %}">
@@ -67,9 +67,9 @@
                         {% elif entry|classname == 'Session' %}
                             {% with session=entry group=entry.group meeting=entry.meeting %}
                                 <td class="session-time"
-                                    data-start-utc="{{ session.official_timeslotassignment.timeslot.utc_start_time | date:'Y-m-d H:i' }}Z"
-                                    data-end-utc="{{ session.official_timeslotassignment.timeslot.utc_end_time | date:'Y-m-d H:i' }}Z">
-                                    {{ session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i" }}-{{ session.official_timeslotassignment.timeslot.utc_end_time | date:"H:i" }}
+                                    data-start-utc="{{ session.official_timeslotassignment.timeslot.time | utc | date:'Y-m-d H:i' }}Z"
+                                    data-end-utc="{{ session.official_timeslotassignment.timeslot.end_time | utc | date:'Y-m-d H:i' }}Z">
+                                    {{ session.official_timeslotassignment.timeslot.time | utc | date:"Y-m-d H:i" }}-{{ session.official_timeslotassignment.timeslot.end_time | utc | date:"H:i" }}
                                 </td>
                                 <td>
                                     <a href="{% url 'ietf.group.views.group_home' acronym=group.acronym %}">{{ group.acronym }}</a>
@@ -132,8 +132,8 @@
                           {
                               group: '{% if session.group %}{{session.group.acronym}}{% endif %}{% if session.name %} - {{session.name}}{% endif %}',
                               filter_keywords: ["{{ session.filter_keywords|join:'","' }}"],
-                              start_moment: moment.utc('{{session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}}'),
-                              end_moment: moment.utc('{{session.official_timeslotassignment.timeslot.utc_end_time | date:"Y-m-d H:i"}}'),
+                              start_moment: moment.utc('{{session.official_timeslotassignment.timeslot.time | utc | date:"Y-m-d H:i"}}'),
+                              end_moment: moment.utc('{{session.official_timeslotassignment.timeslot.end_time | utc | date:"Y-m-d H:i"}}'),
                               url: '{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}'
                           }
                       {% endwith %}

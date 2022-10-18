@@ -1,5 +1,5 @@
 {% extends "meetings/base_rooms_times.html" %}
-{% load django_bootstrap5 %}
+{% load django_bootstrap5 tz %}
 
 {% block subsection %}
 
@@ -18,7 +18,7 @@
                     <th scope="col"></th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody>{% timezone meeting.time_zone %}
                 {% for session in sessions %}
                     <tr>
                         <td>{{ session.group.acronym }}</td>
@@ -46,7 +46,7 @@
                         </td>
                     </tr>
                 {% endfor %}
-            </tbody>
+            {% endtimezone %}</tbody>
         </table>
     </div> <!-- module -->
 

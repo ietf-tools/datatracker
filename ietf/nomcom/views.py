@@ -45,6 +45,8 @@ from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key, sug
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person
 from ietf.utils.response import permission_denied
+from ietf.utils.timezone import date_today
+
 
 import debug                  # pyflakes:ignore
 
@@ -702,7 +704,7 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
     expiration_days = getattr(settings, 'DAYS_TO_EXPIRE_NOMINATION_LINK', None)
     if expiration_days:
         request_date = datetime.date(int(date[:4]), int(date[4:6]), int(date[6:]))
-        if datetime.date.today() > (request_date + datetime.timedelta(days=settings.DAYS_TO_EXPIRE_NOMINATION_LINK)):
+        if date_today() > (request_date + datetime.timedelta(days=expiration_days)):
             permission_denied(request, "Link expired.")
 
     need_confirmation = True
@@ -952,7 +954,7 @@ def view_feedback_topic(request, year, topic_id):
     feedback_types = FeedbackTypeName.objects.filter(slug__in=['comment',])
 
     last_seen = TopicFeedbackLastSeen.objects.filter(reviewer=request.user.person,topic=topic).first()
-    last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1,month=1,day=1)
+    last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1, month=1, day=1, tzinfo=datetime.timezone.utc)
     if last_seen:
         last_seen.save()
     else:
@@ -974,7 +976,7 @@ def view_feedback_nominee(request, year, nominee_id):
     feedback_types = FeedbackTypeName.objects.filter(slug__in=settings.NOMINEE_FEEDBACK_TYPES)
 
     last_seen = FeedbackLastSeen.objects.filter(reviewer=request.user.person,nominee=nominee).first()
-    last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1,month=1,day=1)
+    last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1, month=1, day=1, tzinfo=datetime.timezone.utc)
     if last_seen:
         last_seen.save()
     else:

@@ -48,6 +48,8 @@ from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.log import log
 from ietf.utils.mail import parseaddr, send_mail_message
 from ietf.utils.response import permission_denied
+from ietf.utils.timezone import date_today
+
 
 def upload_submission(request):
     if request.method == 'POST':
@@ -161,7 +163,7 @@ def api_submission(request):
                 submission.state = DraftSubmissionStateName.objects.get(slug="validating")
                 submission.remote_ip = form.remote_ip
                 submission.file_types = ','.join(form.file_types)
-                submission.submission_date = datetime.date.today()
+                submission.submission_date = date_today()
                 submission.submitter = user.person.formatted_email()
                 submission.replaces = form.cleaned_data['replaces']
                 submission.save()
@@ -723,7 +725,7 @@ def approvals(request):
     preapprovals = preapprovals_for_user(request.user)
 
     days = 30
-    recently_approved = recently_approved_by_user(request.user, datetime.date.today() - datetime.timedelta(days=days))
+    recently_approved = recently_approved_by_user(request.user, date_today() - datetime.timedelta(days=days))
 
     return render(request, 'submit/approvals.html',
                               {'selected': 'approvals',

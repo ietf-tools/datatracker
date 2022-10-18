@@ -29,6 +29,7 @@ from django.core.mail import mail_admins
 from ietf.doc.utils import rebuild_reference_relations
 from ietf.utils.log import log
 from ietf.utils.pipe import pipe
+from ietf.utils.timezone import date_today
 
 import ietf.sync.rfceditor
 
@@ -39,7 +40,7 @@ parser.add_option("-d", dest="skip_date",
 
 options, args = parser.parse_args()
 
-skip_date = datetime.date.today() - datetime.timedelta(days=365)
+skip_date = date_today() - datetime.timedelta(days=365)
 if options.skip_date:
     skip_date = datetime.datetime.strptime(options.skip_date, "%Y-%m-%d").date()
 

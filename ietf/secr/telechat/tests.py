@@ -14,6 +14,7 @@ from ietf.doc.factories import (WgDraftFactory, IndividualRfcFactory, CharterFac
 from ietf.doc.models import BallotDocEvent, BallotType, BallotPositionDocEvent, State, Document
 from ietf.doc.utils import update_telechat, create_ballot_if_not_open
 from ietf.utils.test_utils import TestCase
+from ietf.utils.timezone import date_today, datetime_today
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory
@@ -22,7 +23,7 @@ from ietf.secr.telechat.views import get_next_telechat_date
 SECR_USER='secretary'
 
 def augment_data():
-    TelechatDate.objects.create(date=datetime.datetime.today())
+    TelechatDate.objects.create(date=date_today())
 
 class SecrTelechatTestCase(TestCase):
     def test_main(self):
@@ -119,7 +120,7 @@ class SecrTelechatTestCase(TestCase):
     def test_doc_detail_charter(self):
         by=Person.objects.get(name="(System)")
         charter = CharterFactory(states=[('charter','intrev')])
-        last_week = datetime.date.today()-datetime.timedelta(days=7)
+        last_week = datetime_today()-datetime.timedelta(days=7)
         BallotDocEvent.objects.create(type='created_ballot',by=by,doc=charter, rev=charter.rev,
                                       ballot_type=BallotType.objects.get(doc_type=charter.type,slug='r-extrev'),
                                       time=last_week)
@@ -138,7 +139,7 @@ class SecrTelechatTestCase(TestCase):
         self.assertEqual(q("#telechat-positions-table").find("th:contains('No Record')").length,1)
 
     def test_bash(self):
-        today = datetime.datetime.today() 
+        today = date_today()
         TelechatDate.objects.create(date=today)
         url = reverse('ietf.secr.telechat.views.bash',kwargs={'date':today.strftime('%Y-%m-%d')})
         self.client.login(username="secretary", password="secretary+password")
@@ -148,7 +149,7 @@ class SecrTelechatTestCase(TestCase):
     def test_doc_detail_post_update_ballot(self):
         by=Person.objects.get(name="(System)")
         charter = CharterFactory(states=[('charter','intrev')])
-        last_week = datetime.date.today()-datetime.timedelta(days=7)
+        last_week = datetime_today()-datetime.timedelta(days=7)
         BallotDocEvent.objects.create(type='created_ballot',by=by,doc=charter, rev=charter.rev,
                                       ballot_type=BallotType.objects.get(doc_type=charter.type,slug='r-extrev'),
                                       time=last_week)
@@ -186,7 +187,7 @@ class SecrTelechatTestCase(TestCase):
     def test_doc_detail_post_update_state(self):
         by=Person.objects.get(name="(System)")
         charter = CharterFactory(states=[('charter','intrev')])
-        last_week = datetime.date.today()-datetime.timedelta(days=7)
+        last_week = datetime_today()-datetime.timedelta(days=7)
         BallotDocEvent.objects.create(type='created_ballot',by=by,doc=charter, rev=charter.rev,
                                       ballot_type=BallotType.objects.get(doc_type=charter.type,slug='r-extrev'),
                                       time=last_week)
@@ -214,7 +215,7 @@ class SecrTelechatTestCase(TestCase):
             ad=Person.objects.get(user__username='ad'),
             authors=PersonFactory.create_batch(3),
         )
-        last_week = datetime.date.today()-datetime.timedelta(days=7)
+        last_week = datetime_today()-datetime.timedelta(days=7)
         BallotDocEvent.objects.create(type='created_ballot',by=by,doc=draft, rev=draft.rev,
                                       ballot_type=BallotType.objects.get(doc_type=draft.type,slug='approve'),
                                       time=last_week)
