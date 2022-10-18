@@ -187,7 +187,7 @@ class Migration(migrations.Migration):
         ('group', '0059_use_timezone_now_for_group_models'),
         ('meeting', '0058_meeting_time_zone_not_blank'),
         ('message', '0012_use_timezone_now_for_message_models'),
-        ('person', '0026_use_timezone_now_for_person_models'),
+        ('person', '0029_use_timezone_now_for_person_models'),
         ('review', '0029_use_timezone_now_for_review_models'),
         ('submit', '0011_use_timezone_now_for_submit_models'),
         ('utils', '0001_initial'),
