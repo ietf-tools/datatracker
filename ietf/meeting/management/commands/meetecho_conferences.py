@@ -1,7 +1,5 @@
 # Copyright The IETF Trust 2022, All Rights Reserved
 # -*- coding: utf-8 -*-
-import datetime
-
 from textwrap import dedent
 
 from django.conf import settings

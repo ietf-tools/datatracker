@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-import datetime
 import email
 import jsonfield
 
