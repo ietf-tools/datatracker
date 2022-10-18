@@ -992,14 +992,16 @@ def edit_shepherd_writeup(request, name):
                 return redirect("ietf.doc.views_doc.document_main", name=doc.name)
 
         elif "reset_text" in request.POST:
+            if not doc.group.type.slug or doc.group.type.slug != "wg":
+                generate_type = "individ"
+            else:
+                generate_type = "group"           
             init = {
                 "content": render_to_string(
                     "doc/shepherd_writeup.txt",
                     dict(
                         doc=doc,
-                        type="individ"
-                        if not doc.group.type.slug or doc.group.type.slug != "ietf"
-                        else "group",
+                        type=generate_type,
                         stream=doc.stream.slug,
                         group=doc.group.type.slug,
                     ),
@@ -1023,13 +1025,15 @@ def edit_shepherd_writeup(request, name):
         if previous_writeup:
             init["content"] = previous_writeup.text
         else:
+            if not doc.group.type.slug or doc.group.type.slug != "wg":
+                generate_type = "individ"
+            else:
+                generate_type = "group"
             init["content"] = render_to_string(
                 "doc/shepherd_writeup.txt",
                 dict(
                     doc=doc,
-                    type="individ"
-                    if not doc.group.type.slug or doc.group.type.slug != "wg"
-                    else "group",
+                    type=generate_type,
                     stream=doc.stream.slug,
                     group=doc.group.type.slug,
                 ),

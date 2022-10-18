@@ -10,6 +10,7 @@ from PIL import Image
 from pyquery import PyQuery
 
 
+from django.core.exceptions import ValidationError
 from django.http import HttpRequest
 from django.test import override_settings
 from django.urls import reverse as urlreverse
@@ -191,6 +192,12 @@ class PersonTests(TestCase):
     def test_cdn_photo_url_cdn_off(self):
         p = PersonFactory(with_bio=True)
         self.assertNotIn('cdn-cgi/photo',p.cdn_photo_url())
+
+    def test_invalid_name_characters_rejected(self):
+        slash_person = PersonFactory.build(name='I have a /', user=None)  # build() does not save the new object
+        with self.assertRaises(ValidationError):
+            slash_person.full_clean()  # calls validators (save() does *not*)
+
 
 class PersonUtilsTests(TestCase):
     def test_determine_merge_order(self):

@@ -255,7 +255,6 @@ class IetfAuthTests(TestCase):
             "pronouns_freetext": "foo/bar",
             "affiliation": "Test Org",
             "active_emails": email_address,
-            "consent": True,
         }
 
         # edit details - faulty ASCII
