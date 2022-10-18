@@ -831,7 +831,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         To test for recurrence of https://trac.ietf.org/trac/ietfdb/ticket/3327 need to have some constraints that
         do not conflict. Testing with only violated constraints does not exercise the code adequately.
         """
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today(), populate_schedule=False)
+        meeting = MeetingFactory(type_id='ietf', date=date_today(), populate_schedule=False)
         TimeSlotFactory.create_batch(5, meeting=meeting)
         schedule = ScheduleFactory(meeting=meeting)
         sessions = SessionFactory.create_batch(5, meeting=meeting, add_to_schedule=False)
@@ -953,7 +953,7 @@ class InterimTests(IetfSeleniumTestCase):
 
         # Create a group with a plenary interim session for testing type filters
         somegroup = GroupFactory(acronym='sg', name='Some Group')
-        sg_interim = make_interim_meeting(somegroup, datetime.date.today() + datetime.timedelta(days=20))
+        sg_interim = make_interim_meeting(somegroup, date_today() + datetime.timedelta(days=20))
         sg_sess = sg_interim.session_set.first()
         sg_slot = sg_sess.timeslotassignments.first().timeslot
         sg_sess.purpose_id = 'plenary'
@@ -1444,7 +1444,7 @@ class ProceedingsMaterialTests(IetfSeleniumTestCase):
     def setUp(self):
         super().setUp()
         self.wait = WebDriverWait(self.driver, 2)
-        self.meeting = MeetingFactory(type_id='ietf', number='123', date=datetime.date.today())
+        self.meeting = MeetingFactory(type_id='ietf', number='123', date=date_today())
 
     def test_add_proceedings_material(self):
         url = self.absreverse(

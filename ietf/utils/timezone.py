@@ -3,6 +3,7 @@ import datetime
 from typing import Union
 from zoneinfo import ZoneInfo
 
+from django.conf import settings
 from django.utils import timezone
 
 
@@ -52,16 +53,22 @@ def datetime_from_date(date, tz=None):
 def datetime_today(tz=None):
     """Get a timezone-aware datetime representing midnight today
 
+    By default, uses settings.TIME_ZONE
     For use with datetime fields representing a date.
     """
+    if tz is None:
+        tz = settings.TIME_ZONE
     return timezone.now().astimezone(_tzinfo(tz)).replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 def date_today(tz=None):
     """Get the date corresponding to the current moment
 
+    By default, uses settings.TIME_ZONE
     Note that Dates are not themselves timezone aware.
     """
+    if tz is None:
+        tz = settings.TIME_ZONE
     return timezone.now().astimezone(_tzinfo(tz)).date()
 
 

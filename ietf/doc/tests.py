@@ -58,7 +58,7 @@ from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text
-from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO, RPC_TZINFO
+from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
 
 
 class SearchTests(TestCase):
@@ -2232,7 +2232,7 @@ class DocumentMeetingTests(TestCase):
         self.other_chair = PersonFactory()
         self.other_group.role_set.create(name_id='chair',person=self.other_chair,email=self.other_chair.email())
 
-        today = datetime.date.today()
+        today = date_today()
         cut_days = settings.MEETING_MATERIALS_DEFAULT_SUBMISSION_CORRECTION_DAYS
         self.past_cutoff = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=1+cut_days))
         self.past = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=cut_days/2))

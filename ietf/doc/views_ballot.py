@@ -1084,7 +1084,7 @@ def make_last_call(request, name):
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
         initial = {}
-        initial["last_call_sent_date"] = datetime.date.today()
+        initial["last_call_sent_date"] = date_today()
         if doc.type.slug == 'draft':
             # This logic is repeated in the code that edits last call text - why?
             expire_days = 14
@@ -1095,7 +1095,7 @@ def make_last_call(request, name):
             expire_days=28
             templ = 'doc/status_change/make_last_call.html'
 
-        initial["last_call_expiration_date"] = datetime.date.today() + datetime.timedelta(days=expire_days)
+        initial["last_call_expiration_date"] = date_today() + datetime.timedelta(days=expire_days)
         
         form = MakeLastCallForm(initial=initial)
   
@@ -1192,7 +1192,10 @@ def irsg_ballot_status(request):
             ballot = doc.active_ballot()
             if ballot:
                 doc.ballot = ballot
-                doc.duedate=datetime.datetime.strftime(ballot.irsgballotdocevent.duedate, '%Y-%m-%d')
+                doc.duedate=datetime.datetime.strftime(
+                    ballot.irsgballotdocevent.duedate.astimezone(DEADLINE_TZINFO),
+                    '%Y-%m-%d',
+                )
 
             docs.append(doc)
 

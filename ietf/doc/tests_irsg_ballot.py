@@ -19,7 +19,7 @@ from ietf.doc.utils import create_ballot_if_not_open, close_ballot
 from ietf.person.utils import get_active_irsg, get_active_ads
 from ietf.group.factories import RoleFactory
 from ietf.person.models import Person
-from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO
+from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO
 
 
 class IssueIRSGBallotTests(TestCase):
@@ -324,7 +324,7 @@ class BaseManipulationTests():
     def test_issue_ballot(self):
         draft = RgDraftFactory()
         url = urlreverse('ietf.doc.views_ballot.issue_irsg_ballot',kwargs=dict(name=draft.name))
-        due = datetime.date.today()+datetime.timedelta(days=14)
+        due = date_today(DEADLINE_TZINFO)+datetime.timedelta(days=14)
         empty_outbox()
 
         login_testing_unauthorized(self, self.username , url)
@@ -445,7 +445,7 @@ class IRSGMemberTests(TestCase):
 
     def test_cant_issue_irsg_ballot(self):
         draft = RgDraftFactory()
-        due = datetime.date.today()+datetime.timedelta(days=14)
+        due = datetime_today(DEADLINE_TZINFO) + datetime.timedelta(days=14)
         url = urlreverse('ietf.doc.views_ballot.close_irsg_ballot', kwargs=dict(name=draft.name))
 
         self.client.login(username = self.username, password = self.username+'+password')

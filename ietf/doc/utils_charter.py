@@ -25,6 +25,8 @@ from ietf.utils.mail import parse_preformatted
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.log import log
 from ietf.group.utils import save_group_in_history
+from ietf.utils.timezone import date_today
+
 
 def charter_name_for_group(group):
     if group.type_id == "rg":
@@ -216,7 +218,7 @@ def default_review_text(group, charter, by):
                                     parent_ads=group.parent.role_set.filter(name='ad'),
                                     techadv=group.role_set.filter(name="techadv"),
                                     milestones=group.groupmilestone_set.filter(state="charter"),
-                                    review_date=(datetime.date.today() + datetime.timedelta(weeks=1)).isoformat(),
+                                    review_date=(date_today() + datetime.timedelta(weeks=1)).isoformat(),
                                     review_type="new" if group.state_id in ["proposed","bof"] else "recharter",
                                     to=addrs.to,
                                     cc=addrs.cc,

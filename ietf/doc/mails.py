@@ -25,6 +25,7 @@ from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role
 from ietf.doc.models import Document
 from ietf.mailtrigger.utils import gather_address_lists
+from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 
 
 def email_state_changed(request, doc, text, mailtrigger_id=None):
@@ -192,7 +193,7 @@ def generate_ballot_rfceditornote(request, doc):
     return e
 
 def generate_last_call_announcement(request, doc):
-    expiration_date = datetime.date.today() + datetime.timedelta(days=14)
+    expiration_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=14)
     if doc.group.type_id in ("individ", "area"):
         group = "an individual submitter"
         expiration_date += datetime.timedelta(days=14)

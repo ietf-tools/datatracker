@@ -18,7 +18,7 @@ from ietf.person.models import Person
 from ietf.meeting.models import Meeting
 from ietf.doc.utils import add_state_change_event, update_action_holders
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO
+from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO
 
 
 nonexpirable_states: Optional[List[State]] = None
@@ -173,7 +173,7 @@ def expire_draft(doc):
 
 def clean_up_draft_files():
     """Move unidentified and old files out of the Internet Draft directory."""
-    cut_off = datetime.date.today()
+    cut_off = date_today()
 
     pattern = os.path.join(settings.INTERNET_DRAFT_PATH, "draft-*.*")
     filename_re = re.compile(r'^(.*)-(\d\d)$')

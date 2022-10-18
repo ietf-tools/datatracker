@@ -19,6 +19,7 @@ from ietf.group.models import Group
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import RoleFactory
 from ietf.utils.text import xslugify
+from ietf.utils.timezone import date_today
 
 
 def draft_name_generator(type_id,group,n):
@@ -321,7 +322,7 @@ class ConflictReviewFactory(BaseDocumentFactory):
 # This is very skeletal. It is enough for the tests that use it now, but when it's needed, it will need to be improved with, at least, a group generator that backs the object with a review team.
 class ReviewFactory(BaseDocumentFactory):
     type_id = 'review'
-    name = factory.LazyAttribute(lambda o: 'review-doesnotexist-00-%s-%s'%(o.group.acronym,datetime.date.today().isoformat()))
+    name = factory.LazyAttribute(lambda o: 'review-doesnotexist-00-%s-%s'%(o.group.acronym,date_today().isoformat()))
     group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='review')
 
 class DocAliasFactory(factory.django.DjangoModelFactory):

@@ -50,7 +50,7 @@ from ietf.stats.models import MeetingRegistration
 from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
-from ietf.utils.timezone import datetime_today, datetime_from_date, DEADLINE_TZINFO
+from ietf.utils.timezone import date_today, datetime_today, datetime_from_date, DEADLINE_TZINFO
 
 
 client_test_cert_files = None
@@ -1130,7 +1130,7 @@ class ReminderTest(TestCase):
 
     def test_is_time_to_send(self):
         self.nomcom.reminder_interval = 4
-        today = datetime.date.today()
+        today = date_today()
         self.assertTrue(is_time_to_send(self.nomcom,today+datetime.timedelta(days=4),today))
         for delta in range(4):
             self.assertFalse(is_time_to_send(self.nomcom,today+datetime.timedelta(days=delta),today))
@@ -1236,7 +1236,7 @@ class InactiveNomcomTests(TestCase):
             self.assertIn( 'closed', q('.alert-warning').text())
 
     def test_acceptance_closed(self):
-        today = datetime.date.today().strftime('%Y%m%d')
+        today = date_today().strftime('%Y%m%d')
         pid = self.nc.position_set.first().nomineeposition_set.order_by('pk').first().id 
         url = reverse('ietf.nomcom.views.process_nomination_status', kwargs = {
                       'year' : self.nc.year(),
@@ -1892,7 +1892,7 @@ Junk body for testing
             assert year >= 1990
             return (year-1985)*3+2
         # Create meetings to ensure we have the 'last 5'
-        meeting_start = first_meeting_of_year(datetime.date.today().year-2)
+        meeting_start = first_meeting_of_year(date_today().year-2)
         # Populate the meeting registration records
         for number in range(meeting_start, meeting_start+10):
             meeting = MeetingFactory.create(type_id='ietf', number=number)
@@ -2244,7 +2244,8 @@ class EligibilityUnitTests(TestCase):
     def test_get_eligibility_date(self):
 
         # No Nomcoms exist:
-        self.assertEqual(get_eligibility_date(), datetime.date(datetime.date.today().year,5,1))
+        this_year = date_today().year
+        self.assertEqual(get_eligibility_date(), datetime.date(this_year,5,1))
 
         # a provided date trumps anything in the database
         self.assertEqual(get_eligibility_date(date=datetime.date(2001,2,3)), datetime.date(2001,2,3))
@@ -2258,7 +2259,7 @@ class EligibilityUnitTests(TestCase):
         n.save()
         self.assertEqual(get_eligibility_date(nomcom=n), datetime.date(2015,5,17))
         # No nomcoms in the database with seated members
-        self.assertEqual(get_eligibility_date(), datetime.date(datetime.date.today().year,5,1))
+        self.assertEqual(get_eligibility_date(), datetime.date(this_year,5,1))
 
         RoleFactory(group=n.group,name_id='member')
         self.assertEqual(get_eligibility_date(),datetime.date(2016,5,1))
@@ -2266,7 +2267,6 @@ class EligibilityUnitTests(TestCase):
         NomComFactory(group__acronym='nomcom2016', populate_personnel=False, first_call_for_volunteers=datetime.date(2016,5,4))
         self.assertEqual(get_eligibility_date(),datetime.date(2016,5,4))
 
-        this_year = datetime.date.today().year
         NomComFactory(group__acronym=f'nomcom{this_year}', first_call_for_volunteers=datetime.date(this_year,5,6))
         self.assertEqual(get_eligibility_date(),datetime.date(this_year,5,6))
 
@@ -2636,8 +2636,8 @@ class VolunteerTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, 'NomCom is not accepting volunteers at this time', status_code=200)
 
-        year = datetime.date.today().year
-        nomcom = NomComFactory(group__acronym=f'nomcom{year}', is_accepting_volunteers=False)
+        this_year = date_today().year
+        nomcom = NomComFactory(group__acronym=f'nomcom{this_year}', is_accepting_volunteers=False)
         r = self.client.get(url)
         self.assertContains(r, 'NomCom is not accepting volunteers at this time', status_code=200)
         nomcom.is_accepting_volunteers = True
@@ -2660,7 +2660,7 @@ class VolunteerTests(TestCase):
         self.assertContains(r, 'already volunteered', status_code=200)
 
         person.volunteer_set.all().delete()
-        nomcom2 = NomComFactory(group__acronym=f'nomcom{year-1}', is_accepting_volunteers=True)
+        nomcom2 = NomComFactory(group__acronym=f'nomcom{this_year-1}', is_accepting_volunteers=True)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)

@@ -48,6 +48,7 @@ from ietf.utils.accesstoken import generate_random_key
 from ietf.utils.draft import PlaintextDraft
 from ietf.utils.mail import is_valid_email
 from ietf.utils.text import parse_unicode, normalize_text
+from ietf.utils.timezone import date_today
 from ietf.utils.xmldraft import XMLDraft
 from ietf.person.name import unidecode_name
 
@@ -726,7 +727,7 @@ def recently_approved_by_user(user, since):
     )
 
 def expirable_submissions(older_than_days):
-    cutoff = datetime.date.today() - datetime.timedelta(days=older_than_days)
+    cutoff = date_today() - datetime.timedelta(days=older_than_days)
     return Submission.objects.exclude(state__in=("cancel", "posted")).filter(submission_date__lt=cutoff)
 
 def expire_submission(submission, by):
@@ -849,7 +850,7 @@ def fill_in_submission(form, submission, authors, abstract, file_size):
     submission.file_size = file_size
     submission.file_types = ','.join(form.file_types)
     submission.xml_version = form.xml_version
-    submission.submission_date = datetime.date.today()
+    submission.submission_date = date_today()
     submission.replaces = ""
     if form.parsed_draft is not None:
         submission.pages = form.parsed_draft.get_pagecount()

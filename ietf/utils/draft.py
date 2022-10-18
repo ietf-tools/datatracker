@@ -50,6 +50,9 @@ import time
 
 from typing import Dict, List       # pyflakes:ignore
 
+from .timezone import date_today
+
+
 version = "0.35"
 program = os.path.basename(sys.argv[0])
 progdir = os.path.dirname(sys.argv[0])
@@ -467,7 +470,7 @@ class PlaintextDraft(Draft):
                         month = int(mon)
                     else:
                         continue
-                    today = datetime.date.today()
+                    today = date_today()
                     if day==0:
                         # if the date was given with only month and year, use
                         # today's date if month and year is today's month and

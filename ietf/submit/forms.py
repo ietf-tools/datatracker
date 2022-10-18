@@ -7,7 +7,6 @@ import os
 import re
 import datetime
 import email
-import pytz
 import sys
 import tempfile
 import xml2rfc
@@ -43,6 +42,7 @@ from ietf.submit.parsers.xml_parser import XMLParser
 from ietf.utils import log
 from ietf.utils.draft import PlaintextDraft
 from ietf.utils.text import normalize_text
+from ietf.utils.timezone import date_today
 from ietf.utils.xmldraft import XMLDraft, XMLParseError
 
 
@@ -80,7 +80,7 @@ class SubmissionBaseUploadForm(forms.Form):
         self.base_formats = None        # None will raise an exception in clean() if this isn't changed in a subclass
 
     def set_cutoff_warnings(self):
-        now = timezone.now().astimezone(pytz.utc)
+        now = timezone.now()
         meeting = Meeting.get_current_meeting()
         if not meeting:
             return
@@ -156,7 +156,7 @@ class SubmissionBaseUploadForm(forms.Form):
             raise forms.ValidationError('The submission tool is currently shut down')
 
         # check general submission rate thresholds before doing any more work
-        today = datetime.date.today()
+        today = date_today()
         self.check_submissions_thresholds(
             "for the same submitter",
             dict(remote_ip=self.remote_ip, submission_date=today),
@@ -573,7 +573,7 @@ class DeprecatedSubmissionBaseUploadForm(SubmissionBaseUploadForm):
                 raise forms.ValidationError(mark_safe(self.cutoff_warning))
 
             # check thresholds
-            today = datetime.date.today()
+            today = date_today()
 
             self.check_submissions_thresholds(
                 "for the draft %s" % self.filename,

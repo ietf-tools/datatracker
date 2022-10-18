@@ -31,6 +31,7 @@ from ietf.person.utils import get_active_ads
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.text import unwrap
+from ietf.utils.timezone import date_today
 
 
 class EditPositionTests(TestCase):
@@ -899,7 +900,7 @@ class MakeLastCallTests(TestCase):
 
         mailbox_before = len(outbox)
 
-        last_call_sent_date = datetime.date.today()
+        last_call_sent_date = date_today()
         expire_date = last_call_sent_date+datetime.timedelta(days=14)
         
         r = self.client.post(url,

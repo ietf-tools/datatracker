@@ -28,6 +28,7 @@ from ietf.name.models import StreamName
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.iesg.factories import IESGMgmtItemFactory
+from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 
 
 class IESGTests(TestCase):
@@ -58,7 +59,7 @@ class IESGTests(TestCase):
         m = GroupMilestone.objects.create(group=draft.group,
                                           state_id="review",
                                           desc="Test milestone",
-                                          due=datetime.date.today())
+                                          due=date_today(DEADLINE_TZINFO))
 
         url = urlreverse("ietf.iesg.views.milestones_needing_review")
         login_testing_unauthorized(self, "ad", url)
@@ -142,7 +143,7 @@ class IESGAgendaTests(TestCase):
         mgmtitem = self.mgmt_items
 
         # put on agenda
-        date = datetime.date.today() + datetime.timedelta(days=50)
+        date = date_today(settings.TIME_ZONE) + datetime.timedelta(days=50)
         TelechatDate.objects.create(date=date)
         telechat_event = TelechatDocEvent.objects.create(
             type="scheduled_for_telechat",
@@ -430,7 +431,7 @@ class IESGAgendaTests(TestCase):
             self.assertNotIn(d.title, unicontent(r))
         # Add the documents to a past telechat
         by = Person.objects.get(name="Areað Irector")
-        date = datetime.date.today() - datetime.timedelta(days=14)
+        date = date_today(settings.TIME_ZONE) - datetime.timedelta(days=14)
         approved = State.objects.get(type='draft-iesg', slug='approved')
         iesg_eval = State.objects.get(type='draft-iesg', slug='iesg-eva')
         for d in list(self.telechat_docs.values()):
@@ -485,7 +486,7 @@ class IESGAgendaTests(TestCase):
 
     def test_admin_change(self):
         draft = Document.objects.get(name="draft-ietf-mars-test")
-        today = datetime.date.today()
+        today = date_today(settings.TIME_ZONE)
         telechat_date = TelechatDate.objects.get(date=draft.telechat_date())
         url = urlreverse('admin:iesg_telechatdate_change', args=(telechat_date.id,))
         self.client.login(username="secretary", password="secretary+password")

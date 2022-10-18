@@ -36,7 +36,7 @@ from ietf.utils.decorators import memoize
 from ietf.utils.validators import validate_no_control_chars
 from ietf.utils.mail import formataddr
 from ietf.utils.models import ForeignKey
-from ietf.utils.timezone import RPC_TZINFO
+from ietf.utils.timezone import date_today, RPC_TZINFO
 if TYPE_CHECKING:
     # importing other than for type checking causes errors due to cyclic imports
     from ietf.meeting.models import ProceedingsMaterial, Session
@@ -831,16 +831,20 @@ class Document(DocumentInfo):
     def telechat_date(self, e=None):
         if not e:
             e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
-        return e.telechat_date if e and e.telechat_date and e.telechat_date >= datetime.date.today() else None
+        return e.telechat_date if e and e.telechat_date and e.telechat_date >= date_today(settings.TIME_ZONE) else None
 
     def past_telechat_date(self):
         "Return the latest telechat date if it isn't in the future; else None"
         e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
-        return e.telechat_date if e and e.telechat_date and e.telechat_date < datetime.date.today() else None
+        return e.telechat_date if e and e.telechat_date and e.telechat_date < date_today(settings.TIME_ZONE) else None
 
     def previous_telechat_date(self):
         "Return the most recent telechat date in the past, if any (even if there's another in the future)"
-        e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat", telechat_date__lt=timezone.now())
+        e = self.latest_event(
+            TelechatDocEvent,
+            type="scheduled_for_telechat",
+            telechat_date__lt=date_today(settings.TIME_ZONE),
+        )
         return e.telechat_date if e else None
 
     def request_closed_time(self, review_req):
@@ -906,14 +910,21 @@ class Document(DocumentInfo):
     def future_presentations(self):
         """ returns related SessionPresentation objects for meetings that
             have not yet ended. This implementation allows for 2 week meetings """
-        candidate_presentations = self.sessionpresentation_set.filter(session__meeting__date__gte=datetime.date.today()-datetime.timedelta(days=15))
-        return sorted([pres for pres in candidate_presentations if pres.session.meeting.end_date()>=datetime.date.today()], key=lambda x:x.session.meeting.date)
+        candidate_presentations = self.sessionpresentation_set.filter(
+            session__meeting__date__gte=date_today() - datetime.timedelta(days=15)
+        )
+        return sorted(
+            [pres for pres in candidate_presentations
+             if pres.session.meeting.end_date() >= date_today()],
+            key=lambda x:x.session.meeting.date,
+        )
 
     def last_presented(self):
         """ returns related SessionPresentation objects for the most recent meeting in the past"""
         # Assumes no two meetings have the same start date - if the assumption is violated, one will be chosen arbitrariy
-        candidate_presentations = self.sessionpresentation_set.filter(session__meeting__date__lte=datetime.date.today())
-        candidate_meetings = set([p.session.meeting for p in candidate_presentations if p.session.meeting.end_date()<datetime.date.today()])
+        today = date_today()
+        candidate_presentations = self.sessionpresentation_set.filter(session__meeting__date__lte=today)
+        candidate_meetings = set([p.session.meeting for p in candidate_presentations if p.session.meeting.end_date()<today])
         if candidate_meetings:
             mtg = sorted(list(candidate_meetings),key=lambda x:x.date,reverse=True)[0]
             return self.sessionpresentation_set.filter(session__meeting=mtg)
@@ -962,7 +973,7 @@ class Document(DocumentInfo):
             elif rev_events.exists():
                 time = rev_events.first().time
             else:
-                time = datetime.datetime.fromtimestamp(0)
+                time = datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
             dh = DocHistory(name=self.name, rev=rev, doc=self, time=time, type=self.type, title=self.title,
                              stream=self.stream, group=self.group)
 

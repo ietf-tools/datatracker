@@ -47,6 +47,8 @@ from ietf.stats.models import MeetingRegistration
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.utils.timezone import date_today
+
 
 import ietf.ietfauth.views
 
@@ -392,7 +394,7 @@ class IetfAuthTests(TestCase):
         self.assertFalse(q('#volunteer-button'))
         self.assertFalse(q('#volunteered'))
 
-        year = datetime.date.today().year
+        year = date_today().year
         nomcom = NomComFactory(group__acronym=f'nomcom{year}',is_accepting_volunteers=True)
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
@@ -507,7 +509,7 @@ class IetfAuthTests(TestCase):
         UnavailablePeriod.objects.create(
             team=review_req.team,
             person=reviewer,
-            start_date=datetime.date.today() - datetime.timedelta(days=10),
+            start_date=date_today() - datetime.timedelta(days=10),
             availability="unavailable",
         )
 
@@ -790,7 +792,7 @@ class IetfAuthTests(TestCase):
         for i in range(count):
             for key in person.apikeys.all():
                 self.client.post(key.endpoint, {'apikey':key.hash(), 'dummy': 'dummy', })
-        date = str(datetime.date.today())
+        date = str(date_today())
 
         empty_outbox()
         cmd = Command()
@@ -907,7 +909,7 @@ class OpenIDConnectTests(TestCase):
             # an additional email
             EmailFactory(person=person)
             email_list = person.email_set.all().values_list('address', flat=True)
-            meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+            meeting = MeetingFactory(type_id='ietf', date=date_today())
             MeetingRegistration.objects.create(
                     meeting=meeting, person=None, first_name=person.first_name(), last_name=person.last_name(),
                     email=email_list[0], ticket_type='full_week', reg_type='remote', affiliation='Some Company',

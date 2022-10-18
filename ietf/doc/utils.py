@@ -732,7 +732,7 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
 
     e.save()
 
-    has_short_fuse = doc.type_id=='draft' and new_telechat_date and (( new_telechat_date - datetime.date.today() ) < datetime.timedelta(days=13))
+    has_short_fuse = doc.type_id=='draft' and new_telechat_date and (( new_telechat_date - date_today() ) < datetime.timedelta(days=13))
 
     from ietf.doc.mails import email_update_telechat
 

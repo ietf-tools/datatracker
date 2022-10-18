@@ -41,7 +41,7 @@ from ietf.person.models import Person
 from ietf.utils.decorators import memoize
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.text import xslugify
-from ietf.utils.timezone import datetime_from_date
+from ietf.utils.timezone import datetime_from_date, date_today
 from ietf.utils.models import ForeignKey
 from ietf.utils.validators import (
     MaxImageSizeValidator, WrappedValidator, validate_file_size, validate_mime_type,
@@ -147,7 +147,12 @@ class Meeting(models.Model):
         return datetime_from_date(self.get_meeting_date(self.days), self.tz())
 
     def get_00_cutoff(self):
-        start_date = datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day, tzinfo=pytz.utc)
+        start_date = datetime.datetime(
+            year=self.date.year,
+            month=self.date.month,
+            day=self.date.day,
+            tzinfo=datetime.timezone.utc,
+        )
         importantdate = self.importantdate_set.filter(name_id='idcutoff').first()
         if not importantdate:
             importantdate = self.importantdate_set.filter(name_id='00cutoff').first()
@@ -745,7 +750,7 @@ class Schedule(models.Model):
     @property
     def is_official_record(self):
         return (self.is_official and
-                self.meeting.end_date() <= datetime.date.today() )
+                self.meeting.end_date() <= date_today() )
 
     # returns a dictionary {group -> [schedtimesessassignment+]}
     # and it has [] if the session is not placed.
@@ -1162,7 +1167,7 @@ class Session(models.Model):
         return can_manage_materials(user,self.group)
 
     def is_material_submission_cutoff(self):
-        return datetime.date.today() > self.meeting.get_submission_correction_date()
+        return date_today(self.meeting.tz()) > self.meeting.get_submission_correction_date()
     
     def joint_with_groups_acronyms(self):
         return [group.acronym for group in self.joint_with_groups.all()]

@@ -54,7 +54,7 @@ from ietf.utils.mail import send_mail_message
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.fields import MultiEmailField
 from ietf.utils.response import permission_denied
-from ietf.utils.timezone import DEADLINE_TZINFO
+from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 
 
 def clean_doc_revision(doc, rev):
@@ -96,7 +96,7 @@ class RequestReviewForm(forms.ModelForm):
 
     def clean_deadline(self):
         v = self.cleaned_data.get('deadline')
-        if v < datetime.date.today():
+        if v < date_today(DEADLINE_TZINFO):
             raise forms.ValidationError("Select today or a date in the future.")
         return v
 
@@ -352,7 +352,7 @@ class RejectReviewerAssignmentForm(forms.Form):
 def reject_reviewer_assignment(request, name, assignment_id):
     doc = get_object_or_404(Document, name=name)
     review_assignment = get_object_or_404(ReviewAssignment, pk=assignment_id, state__in=["assigned", "accepted"])
-    review_request_past_deadline = review_assignment.review_request.deadline < datetime.date.today()
+    review_request_past_deadline = review_assignment.review_request.deadline < date_today(DEADLINE_TZINFO)
 
     if not review_assignment.reviewer:
         return redirect(review_request, name=review_assignment.review_request.doc.name, request_id=review_assignment.review_request.pk)
@@ -535,7 +535,7 @@ class CompleteReviewForm(forms.Form):
     review_url = forms.URLField(label="Link to message", required=False)
     review_file = forms.FileField(label="Text file to upload", required=False)
     review_content = forms.CharField(widget=forms.Textarea, required=False, strip=False)
-    completion_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={ "autoclose": "1" }, initial=datetime.date.today, help_text="Date of announcement of the results of this review")
+    completion_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={ "autoclose": "1" }, initial=date_today, help_text="Date of announcement of the results of this review")
     completion_time = forms.TimeField(widget=forms.HiddenInput, initial=datetime.time.min)
     cc = MultiEmailField(required=False, help_text="Email addresses to send to in addition to the review team list")
     email_ad = forms.BooleanField(label="Send extra email to the responsible AD suggesting early attention", required=False)
@@ -708,7 +708,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
                     team.acronym, 
                     request_type.slug,
                     xslugify(reviewer.person.ascii_parts()[3]),
-                    datetime.date.today().isoformat(),
+                    date_today().isoformat(),
                 ]
                 review_name = "-".join(c for c in name_components if c).lower()
                 if not Document.objects.filter(name=review_name).exists():
@@ -727,7 +727,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
                     type=form.cleaned_data['review_type'],
                     doc=doc,
                     team=team,
-                    deadline=datetime.date.today(),
+                    deadline=date_today(DEADLINE_TZINFO),
                     requested_by=Person.objects.get(user=request.user),
                     requested_rev=form.cleaned_data['reviewed_rev'],
                 )
@@ -786,7 +786,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
 
             need_to_email_review = review_submission != "link" and assignment.review_request.team.list_email and not revising_review
 
-            submitted_on_different_date = completion_datetime.date() != datetime.date.today()
+            submitted_on_different_date = completion_datetime.date() != date_today(DEADLINE_TZINFO)
             desc = "Request for {} review by {} {}: {}. Reviewer: {}.".format(
                 assignment.review_request.type.name,
                 assignment.review_request.team.acronym.upper(),
@@ -902,8 +902,13 @@ def complete_review(request, name, assignment_id=None, acronym=None):
         }
 
         try:
-            initial['review_content'] = render_to_string('/group/%s/review/content_templates/%s.txt' % (assignment.review_request.team.acronym,
-                                                                                                        request_type.slug), {'assignment':assignment, 'today':datetime.date.today()}) 
+            initial['review_content'] = render_to_string(
+                f'/group/{assignment.review_request.team.acronym}/review/content_templates/{request_type.slug}.txt',
+                {
+                    'assignment': assignment,
+                    'today': date_today(settings.TIME_ZONE),
+                },
+            )
         except (TemplateDoesNotExist, AttributeError):
             pass
 
@@ -992,7 +997,7 @@ class EditReviewRequestDeadlineForm(forms.ModelForm):
 
     def clean_deadline(self):
         v = self.cleaned_data.get('deadline')
-        if v < datetime.date.today():
+        if v < date_today(DEADLINE_TZINFO):
             raise forms.ValidationError("Select today or a date in the future.")
         return v
 

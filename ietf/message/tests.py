@@ -15,10 +15,13 @@ from ietf.message.utils import send_scheduled_message_from_send_queue
 from ietf.person.models import Person
 from ietf.utils.mail import outbox, send_mail_text, send_mail_message, get_payload_text
 from ietf.utils.test_utils import TestCase
+from ietf.utils.timezone import date_today
+
+
 
 class MessageTests(TestCase):
     def test_message_view(self):
-        nomcom = GroupFactory(name="nomcom%s" % datetime.date.today().year, type_id="nomcom")
+        nomcom = GroupFactory(name="nomcom%s" % date_today().year, type_id="nomcom")
         msg = Message.objects.create(
             by=Person.objects.get(name="(System)"),
             subject="This is a test",

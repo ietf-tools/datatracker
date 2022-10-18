@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-import datetime
-
 from simple_history.models import HistoricalRecords
 
 from django.db import models
@@ -18,6 +16,8 @@ from ietf.name.models import ReviewTypeName, ReviewRequestStateName, ReviewResul
     ReviewAssignmentStateName, ReviewerQueuePolicyName
 from ietf.utils.validators import validate_regular_expression_string
 from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.timezone import date_today
+
 
 class ReviewerSettings(models.Model):
     """Keeps track of admin data associated with a reviewer in a team."""
@@ -67,7 +67,7 @@ class UnavailablePeriod(models.Model):
     history      = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
     team         = ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     person       = ForeignKey(Person)
-    start_date   = models.DateField(default=datetime.date.today, null=True, help_text="Choose the start date so that you can still do a review if it's assigned just before the start date - this usually means you should mark yourself unavailable for assignment some time before you are actually away. The default is today.")
+    start_date   = models.DateField(default=date_today, null=True, help_text="Choose the start date so that you can still do a review if it's assigned just before the start date - this usually means you should mark yourself unavailable for assignment some time before you are actually away. The default is today.")
     end_date     = models.DateField(blank=True, null=True, help_text="Leaving the end date blank means that the period continues indefinitely. You can end it later.")
     AVAILABILITY_CHOICES = [
         ("canfinish", "Can do follow-ups"),
@@ -81,8 +81,7 @@ class UnavailablePeriod(models.Model):
     reason       = models.TextField(verbose_name="Reason why reviewer is unavailable (Optional)", max_length=2048, blank=True, help_text="Provide (for the secretary's benefit) the reason why the review is unavailable", default='')
 
     def state(self):
-        import datetime
-        today = datetime.date.today()
+        today = date_today()
         if self.start_date is None or self.start_date <= today:
             if not self.end_date or today <= self.end_date:
                 return "active"

@@ -28,6 +28,7 @@ from ietf.message.models import Message
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.text import text_to_dict
+from ietf.utils.timezone import date_today
 
 
 def make_data_from_content(content):
@@ -573,7 +574,7 @@ I would like to revoke this declaration.
         self.assertEqual(r.status_code,302)
         self.assertEqual(len(outbox),len_before+2)
         self.assertTrue('george@acme.com' in outbox[len_before]['To'])
-        self.assertIn('posted on '+datetime.date.today().strftime("%Y-%m-%d"), get_payload_text(outbox[len_before]).replace('\n',' '))
+        self.assertIn('posted on '+date_today().strftime("%Y-%m-%d"), get_payload_text(outbox[len_before]).replace('\n',' '))
         self.assertTrue('draft-ietf-mars-test@ietf.org' in outbox[len_before+1]['To'])
         self.assertTrue('mars-wg@ietf.org' in outbox[len_before+1]['Cc'])
         self.assertIn('Secretariat on '+ipr.get_latest_event_submitted().time.strftime("%Y-%m-%d"), get_payload_text(outbox[len_before+1]).replace('\n',' '))
@@ -601,7 +602,7 @@ I would like to revoke this declaration.
         ipr = HolderIprDisclosureFactory()
         url = urlreverse('ietf.ipr.views.email',kwargs={ "id": ipr.id })
         self.client.login(username="secretary", password="secretary+password")
-        yesterday = datetime.date.today() - datetime.timedelta(1)
+        yesterday = date_today() - datetime.timedelta(1)
         data = dict(
             to='joe@test.com',
             frm='ietf-ipr@ietf.org',

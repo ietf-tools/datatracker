@@ -20,6 +20,8 @@ from ietf.name.models import RoomResourceName
 from ietf.person.factories import PersonFactory
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
+from ietf.utils.timezone import date_today
+
 
 def make_interim_meeting(group,date,status='sched',tz='UTC'):
     system_person = Person.objects.get(name="(System)")
@@ -216,8 +218,8 @@ def make_meeting_test_data(meeting=None, create_interims=False):
     mars_session.sessionpresentation_set.add(pres)
     
     # Future Interim Meetings
-    date = datetime.date.today() + datetime.timedelta(days=365)
-    date2 = datetime.date.today() + datetime.timedelta(days=1000)
+    date = date_today() + datetime.timedelta(days=365)
+    date2 = date_today() + datetime.timedelta(days=1000)
     ames = Group.objects.get(acronym="ames")
 
     if create_interims:
@@ -229,8 +231,8 @@ def make_meeting_test_data(meeting=None, create_interims=False):
     return meeting
 
 def make_interim_test_data(meeting_tz='UTC'):
-    date = datetime.date.today() + datetime.timedelta(days=365)
-    date2 = datetime.date.today() + datetime.timedelta(days=1000)
+    date = date_today() + datetime.timedelta(days=365)
+    date2 = date_today() + datetime.timedelta(days=1000)
     PersonFactory(user__username='plain')
     area = GroupFactory(type_id='area')
     ad = Person.objects.get(user__username='ad')

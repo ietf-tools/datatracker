@@ -40,7 +40,6 @@ import os
 import sys
 import time
 import json
-import pytz
 import importlib
 import socket
 import gzip
@@ -754,7 +753,7 @@ class IetfTestRunner(DiscoverRunner):
                 with io.open(self.coverage_file, encoding='utf-8') as file:
                     self.coverage_master = json.load(file)
             self.coverage_data = {
-                "time": timezone.now().astimezone(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "time": timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "template": {
                     "coverage": 0.0,
                     "covered": {},

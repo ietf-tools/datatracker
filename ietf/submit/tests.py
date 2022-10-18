@@ -52,6 +52,7 @@ from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.models import VersionInfo
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
+from ietf.utils.timezone import date_today
 from ietf.utils.draft import PlaintextDraft
 
 
@@ -91,7 +92,7 @@ class BaseSubmitTestCase(TestCase):
         return settings.INTERNET_DRAFT_ARCHIVE_DIR
 
 def submission_file(name_in_doc, name_in_post, group, templatename, author=None, email=None, title=None, year=None, ascii=True):
-    _today = datetime.date.today()
+    _today = date_today()
     # construct appropriate text draft
     f = io.open(os.path.join(settings.BASE_DIR, "submit", templatename))
     template = f.read()
@@ -146,7 +147,7 @@ def create_draft_submission_with_rev_mismatch(rev='01'):
     sub = Submission.objects.create(
         name=draft_name,
         group=None,
-        submission_date=datetime.date.today() - datetime.timedelta(days=1),
+        submission_date=date_today() - datetime.timedelta(days=1),
         rev=rev,
         state_id='posted',
     )
@@ -164,7 +165,7 @@ class SubmitTests(BaseSubmitTestCase):
     def setUp(self):
         super().setUp()
         # Submit views assume there is a "next" IETF to look for cutoff dates against
-        MeetingFactory(type_id='ietf', date=datetime.date.today()+datetime.timedelta(days=180))
+        MeetingFactory(type_id='ietf', date=date_today()+datetime.timedelta(days=180))
 
     def create_and_post_submission(self, name, rev, author, group=None, formats=("txt",), base_filename=None):
         """Helper to create and post a submission
@@ -1355,7 +1356,7 @@ class SubmitTests(BaseSubmitTestCase):
         # edit
         mailbox_before = len(outbox)
         # FIXME If this test is started before midnight, and ends after, it will fail
-        document_date = datetime.date.today() - datetime.timedelta(days=-3)
+        document_date = date_today() - datetime.timedelta(days=-3)
         r = self.client.post(edit_url, {
             "edit-title": "some title",
             "edit-rev": "00",
@@ -1523,7 +1524,7 @@ class SubmitTests(BaseSubmitTestCase):
     def test_expire_submissions(self):
         s = Submission.objects.create(name="draft-ietf-mars-foo",
                                       group=None,
-                                      submission_date=datetime.date.today() - datetime.timedelta(days=10),
+                                      submission_date=date_today() - datetime.timedelta(days=10),
                                       rev="00",
                                       state_id="uploaded")
 
@@ -1557,7 +1558,7 @@ class SubmitTests(BaseSubmitTestCase):
 
         # Put today in the blackout period
         meeting = Meeting.get_current_meeting()
-        meeting.importantdate_set.create(name_id='idcutoff',date=datetime.date.today()-datetime.timedelta(days=2))
+        meeting.importantdate_set.create(name_id='idcutoff',date=date_today()-datetime.timedelta(days=2))
         
         # regular user, no access
         r = self.client.get(url)
@@ -1576,30 +1577,30 @@ class SubmitTests(BaseSubmitTestCase):
         url = urlreverse('ietf.submit.views.upload_submission')
 
         meeting = Meeting.get_current_meeting()
-        meeting.date = datetime.date.today()+datetime.timedelta(days=7)
+        meeting.date = date_today()+datetime.timedelta(days=7)
         meeting.save()
         meeting.importantdate_set.filter(name_id='idcutoff').delete()
-        meeting.importantdate_set.create(name_id='idcutoff', date=datetime.date.today()+datetime.timedelta(days=7))
+        meeting.importantdate_set.create(name_id='idcutoff', date=date_today()+datetime.timedelta(days=7))
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('input[type=file][name=txt]')), 1)        
 
         meeting = Meeting.get_current_meeting()
-        meeting.date = datetime.date.today()
+        meeting.date = date_today()
         meeting.save()
         meeting.importantdate_set.filter(name_id='idcutoff').delete()
-        meeting.importantdate_set.create(name_id='idcutoff', date=datetime.date.today())
+        meeting.importantdate_set.create(name_id='idcutoff', date=date_today())
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('input[type=file][name=txt]')), 1)        
 
         meeting = Meeting.get_current_meeting()
-        meeting.date = datetime.date.today()-datetime.timedelta(days=1)
+        meeting.date = date_today()-datetime.timedelta(days=1)
         meeting.save()
         meeting.importantdate_set.filter(name_id='idcutoff').delete()
-        meeting.importantdate_set.create(name_id='idcutoff', date=datetime.date.today()-datetime.timedelta(days=1))
+        meeting.importantdate_set.create(name_id='idcutoff', date=date_today()-datetime.timedelta(days=1))
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
@@ -1864,7 +1865,7 @@ class SubmitTests(BaseSubmitTestCase):
                 self.index += 1
                 sub = Submission.objects.create(name="draft-ietf-mars-bar-%d" % self.index,
                                                 group=Group.objects.get(acronym="mars"),
-                                                submission_date=datetime.date.today(),
+                                                submission_date=date_today(),
                                                 authors=[dict(name=self.author.name,
                                                               email=self.author.user.email,
                                                               affiliation='affiliation',
@@ -2136,17 +2137,17 @@ class ApprovalsTestCase(BaseSubmitTestCase):
 
         Submission.objects.create(name="draft-ietf-mars-foo",
                                   group=Group.objects.get(acronym="mars"),
-                                  submission_date=datetime.date.today(),
+                                  submission_date=date_today(),
                                   rev="00",
                                   state_id="posted")
         Submission.objects.create(name="draft-ietf-mars-bar",
                                   group=Group.objects.get(acronym="mars"),
-                                  submission_date=datetime.date.today(),
+                                  submission_date=date_today(),
                                   rev="00",
                                   state_id="grp-appr")
         Submission.objects.create(name="draft-ietf-mars-quux",
                                   group=Group.objects.get(acronym="mars"),
-                                  submission_date=datetime.date.today(),
+                                  submission_date=date_today(),
                                   rev="00",
                                   state_id="ad-appr")
 
@@ -2295,11 +2296,11 @@ class ManualPostsTestCase(BaseSubmitTestCase):
 
         Submission.objects.create(name="draft-ietf-mars-foo",
                                   group=Group.objects.get(acronym="mars"),
-                                  submission_date=datetime.date.today(),
+                                  submission_date=date_today(),
                                   state_id="manual")
         Submission.objects.create(name="draft-ietf-mars-bar",
                                   group=Group.objects.get(acronym="mars"),
-                                  submission_date=datetime.date.today(),
+                                  submission_date=date_today(),
                                   rev="00",
                                   state_id="grp-appr")
 
@@ -2885,7 +2886,7 @@ class ApiSubmissionTests(BaseSubmitTestCase):
 
 class SubmissionUploadFormTests(BaseSubmitTestCase):
     def test_check_submission_thresholds(self):
-        today = datetime.date.today()
+        today = date_today()
         yesterday = today - datetime.timedelta(days=1)
         (this_group, that_group) = GroupFactory.create_batch(2, type_id='wg')
         this_ip = '10.0.0.1'
@@ -3101,7 +3102,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
     """Tests of async submission-related tasks"""
     def test_process_uploaded_submission(self):
         """process_uploaded_submission should properly process a submission"""
-        _today = datetime.date.today()
+        _today = date_today()
         xml, author = submission_file('draft-somebody-test-00', 'draft-somebody-test-00.xml', None, 'test_submission.xml')
         xml_data = xml.read()
         xml.close()
@@ -3389,7 +3390,7 @@ class ApiSubmitTests(BaseSubmitTestCase):
         super().setUp()
         # break early in case of missing configuration
         self.assertTrue(os.path.exists(settings.IDSUBMIT_IDNITS_BINARY))
-        MeetingFactory(type_id='ietf', date=datetime.date.today()+datetime.timedelta(days=60))
+        MeetingFactory(type_id='ietf', date=date_today()+datetime.timedelta(days=60))
 
     def do_post_submission(self, rev, author=None, name=None, group=None, email=None, title=None, year=None):
         url = urlreverse('ietf.submit.views.api_submit')
