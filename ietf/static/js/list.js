@@ -24,11 +24,9 @@ function replace_with_internal(table, internal_table, i) {
 }
 
 function field_magic(i, e, fields) {
-    if ($(e)
-        .attr("colspan") === undefined &&
-        (fields[i] == "num" || fields[i] == "count" ||
-            fields[i] == "percent" || fields[i] == "id" ||
-            fields[i].endsWith("-num") || fields[i].endsWith("-date"))) {
+    if (fields[i] == "num" || fields[i] == "count" ||
+        fields[i] == "percent" || fields[i] == "id" ||
+        fields[i].endsWith("-num") || fields[i].endsWith("-date")) {
         $(e)
             .addClass("text-end");
     }
@@ -62,12 +60,21 @@ $(document)
                 // get field classes from first thead row
                 var fields = $(header_row)
                     .find("th, td")
-                    .map(function () {
-                        return $(this)
-                            .attr("data-sort") ? $(this)
+                    .toArray()
+                    .map((el) => {
+                        let colspan = parseInt($(el)
+                            .attr("colspan")) || 1;
+                        // create a dense (non-sparse) array
+                        let data_sort = new Array();
+                        for (var i = 0; i < colspan; i++) {
+                            data_sort[i] = "";
+                        }
+                        data_sort[0] = $(el)
+                            .attr("data-sort") ? $(el)
                             .attr("data-sort") : "";
+                        return data_sort;
                     })
-                    .toArray();
+                    .flat();
 
                 if (fields.length == 0 || !fields.filter(field => field != "")) {
                     // console.log("No table fields defined, disabling search/sort.");
