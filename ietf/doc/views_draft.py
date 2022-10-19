@@ -592,7 +592,7 @@ def to_iesg(request,name):
                 e.by = by
                 e.doc = doc
                 e.rev = doc.rev
-                e.desc = "IESG process started in state <b>%s</b>" % target_state['iesg'].name
+                e.desc = "Document is now in state <b>%s</b>" % target_state['iesg'].name
                 e.save()
                 events.append(e)
 
@@ -713,7 +713,7 @@ def edit_info(request, name):
                 e.by = by
                 e.doc = doc
                 e.rev = doc.rev
-                e.desc = "IESG process started in state <b>%s</b>" % doc.get_state("draft-iesg").name
+                e.desc = "Document is now in state <b>%s</b>" % doc.get_state("draft-iesg").name
                 e.save()
                 events.append(e)
 
