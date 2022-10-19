@@ -129,11 +129,11 @@ def materials(request, num=None):
     begin_date = meeting.get_submission_start_date()
     cut_off_date = meeting.get_submission_cut_off_date()
     cor_cut_off_date = meeting.get_submission_correction_date()
-    now = date_today()
+    today_utc = date_today(datetime.timezone.utc)
     old = timezone.now() - datetime.timedelta(days=1)
     if settings.SERVER_MODE != 'production' and '_testoverride' in request.GET:
         pass
-    elif now > cor_cut_off_date:
+    elif today_utc > cor_cut_off_date:
         if meeting.number.isdigit() and int(meeting.number) > 96:
             return redirect('ietf.meeting.views.proceedings', num=meeting.number)
         else:
@@ -145,7 +145,7 @@ def materials(request, num=None):
                     'cor_cut_off_date': cor_cut_off_date
                 })
 
-    past_cutoff_date = date_today() > meeting.get_submission_correction_date()
+    past_cutoff_date = today_utc > meeting.get_submission_correction_date()
 
     schedule = get_schedule(meeting, None)
 
@@ -191,7 +191,7 @@ def materials(request, num=None):
             'other': other,
             'cut_off_date': cut_off_date,
             'cor_cut_off_date': cor_cut_off_date,
-            'submission_started': now > begin_date,
+            'submission_started': today_utc > begin_date,
             'old': old,
         })
 
@@ -3620,7 +3620,7 @@ def proceedings(request, num=None):
     begin_date = meeting.get_submission_start_date()
     cut_off_date = meeting.get_submission_cut_off_date()
     cor_cut_off_date = meeting.get_submission_correction_date()
-    now = date_today()
+    today_utc = date_today(datetime.timezone.utc)
 
     schedule = get_schedule(meeting, None)
     sessions  = add_event_info_to_session_qs(
@@ -3656,7 +3656,7 @@ def proceedings(request, num=None):
             'ietf_areas': ietf_areas,
             'cut_off_date': cut_off_date,
             'cor_cut_off_date': cor_cut_off_date,
-            'submission_started': now > begin_date,
+            'submission_started': today_utc > begin_date,
             'cache_version': cache_version,
             'attendance': meeting.get_attendance(),
             'meetinghost_logo': {
