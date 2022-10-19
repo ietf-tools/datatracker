@@ -5,6 +5,8 @@ from ietf.settings import *                                          # pyflakes:
 
 ALLOWED_HOSTS = ['*']
 
+IDTRACKER_BASE_URL = "http://127.0.0.1:8000"
+
 DATABASES = {
     'default': {
         'HOST': 'db',
@@ -44,6 +46,7 @@ MEDIA_URL = '/media/'
 
 PHOTOS_DIRNAME = 'photo'
 PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
+SERVE_CDN_PHOTOS = False
 
 SUBMIT_YANG_CATALOG_MODEL_DIR = '/assets/ietf-ftp/yang/catalogmod/'
 SUBMIT_YANG_DRAFT_MODEL_DIR = '/assets/ietf-ftp/yang/draftmod/'
