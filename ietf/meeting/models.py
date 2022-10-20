@@ -1105,7 +1105,7 @@ class Session(models.Model):
         from ietf.meeting.utils import add_event_info_to_session_qs
         if self.group.features.has_meetings:
             if not hasattr(self, "_all_meeting_sessions_for_group_cache"):
-                sessions = [s for s in add_event_info_to_session_qs(self.meeting.session_set.filter(group=self.group,type=self.type)) if s.official_timeslotassignment()]
+                sessions = [s for s in add_event_info_to_session_qs(self.meeting.session_set.filter(group=self.group)) if s.official_timeslotassignment()]
                 for s in sessions:
                     s.ota = s.official_timeslotassignment()
                 # Align this sort with SchedTimeSessAssignment default sort order since many views base their order on that
