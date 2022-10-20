@@ -713,7 +713,7 @@ def edit_info(request, name):
                 e.by = by
                 e.doc = doc
                 e.rev = doc.rev
-                e.desc = "Document is now in state <b>%s</b>" % doc.get_state("draft-iesg").name
+                e.desc = "Document is now in IESG state <b>%s</b>" % doc.get_state("draft-iesg").name
                 e.save()
                 events.append(e)
 
