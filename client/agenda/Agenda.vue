@@ -16,7 +16,7 @@
     .agenda-topnav-right.d-none.d-md-flex
       n-button(
         quaternary
-        @click='toggleHelp'
+        @click='startTour'
         )
         template(#icon)
           i.bi.bi-question-square
@@ -180,6 +180,7 @@ import AgendaMobileBar from './AgendaMobileBar.vue'
 import MeetingNavigation from './MeetingNavigation.vue'
 
 import timezones from '../shared/timezones'
+import { initTour } from './tour'
 
 import { useAgendaStore } from './store'
 import { useSiteStore } from '../shared/store'
@@ -335,8 +336,9 @@ function toggleShare () {
   state.shareModalShown = !state.shareModalShown
 }
 
-function toggleHelp () {
-  // state.shareModalShown = !state.shareModalShown
+function startTour () {
+  const tour = initTour(siteStore.viewport < 990)
+  tour.start()
 }
 
 // -> Go to current meeting if not provided
