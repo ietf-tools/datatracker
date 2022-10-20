@@ -1160,7 +1160,7 @@ class Session(models.Model):
         return can_manage_materials(user,self.group)
 
     def is_material_submission_cutoff(self):
-        return date_today(self.meeting.tz()) > self.meeting.get_submission_correction_date()
+        return date_today(datetime.timezone.utc) > self.meeting.get_submission_correction_date()
     
     def joint_with_groups_acronyms(self):
         return [group.acronym for group in self.joint_with_groups.all()]
