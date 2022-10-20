@@ -13,13 +13,28 @@
 
   .agenda-topnav.my-3
     meeting-navigation
-    n-button.d-none.d-sm-flex(
-      quaternary
-      @click='toggleSettings'
-      )
-      template(#icon)
-        i.bi.bi-gear
-      span Settings
+    .agenda-topnav-right.d-none.d-md-flex
+      n-button(
+        quaternary
+        @click='toggleHelp'
+        )
+        template(#icon)
+          i.bi.bi-question-square
+        span Help
+      n-button(
+        quaternary
+        @click='toggleShare'
+        )
+        template(#icon)
+          i.bi.bi-share
+        span Share
+      n-button(
+        quaternary
+        @click='toggleSettings'
+        )
+        template(#icon)
+          i.bi.bi-gear
+        span Settings
 
   .row
     .col
@@ -137,6 +152,7 @@
       agenda-quick-access
 
   agenda-mobile-bar
+  agenda-share-modal(v-model:shown='state.shareModalShown')
 </template>
 
 <script setup>
@@ -159,6 +175,7 @@ import AgendaScheduleList from './AgendaScheduleList.vue'
 import AgendaScheduleCalendar from './AgendaScheduleCalendar.vue'
 import AgendaQuickAccess from './AgendaQuickAccess.vue'
 import AgendaSettings from './AgendaSettings.vue'
+import AgendaShareModal from './AgendaShareModal.vue'
 import AgendaMobileBar from './AgendaMobileBar.vue'
 import MeetingNavigation from './MeetingNavigation.vue'
 
@@ -187,6 +204,7 @@ const route = useRoute()
 
 const state = reactive({
   searchText: '',
+  shareModalShown: false
 })
 
 // REFS
@@ -313,6 +331,14 @@ function toggleSettings () {
   })
 }
 
+function toggleShare () {
+  state.shareModalShown = !state.shareModalShown
+}
+
+function toggleHelp () {
+  // state.shareModalShown = !state.shareModalShown
+}
+
 // -> Go to current meeting if not provided
 function handleCurrentMeetingRedirect () {
   if (!route.params.meetingNumber && agendaStore.meeting.number) {
@@ -421,18 +447,25 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
   &-topnav {
     position: relative;
 
-    > button {
+    &-right {
       position: absolute;
       top: 5px;
       right: 0;
+      display: flex;
 
-      .bi {
-        transition: transform 1s ease;
+      button + button {
+        margin-left: 5px;
       }
 
-      &:hover {
+      > button:last-child {
         .bi {
-          transform: rotate(180deg);
+          transition: transform 1s ease;
+        }
+
+        &:hover {
+          .bi {
+            transform: rotate(180deg);
+          }
         }
       }
     }
