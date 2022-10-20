@@ -20,7 +20,7 @@ n-modal(v-model:show='modalShown')
         i.bi.bi-share
         span Share this view
     .agenda-share-content
-      .text-muted.py-2 Use the following URL for sharing the current view #[em (including any active filters)] with other users:
+      .text-muted.pb-2 Use the following URL for sharing the current view #[em (including any active filters)] with other users:
       n-input-group
         n-input(
           ref='filteredUrlIpt'
@@ -42,6 +42,7 @@ n-modal(v-model:show='modalShown')
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
+import { find } from 'lodash-es'
 import {
   NButton,
   NCard,
@@ -98,15 +99,30 @@ const modalShown = computed({
 
 watch(() => props.shown, (newValue) => {
   if (newValue) {
-    generateUrls()
+    generateUrl()
   }
 })
 
 // METHODS
 
-function generateUrls () {
+function generateUrl () {
   const newUrl = new URL(window.location.href)
-  newUrl.search = agendaStore.selectedCatSubs.length > 0 ? `?show=${agendaStore.selectedCatSubs}` : ''
+  const queryParams = []
+  if (agendaStore.selectedCatSubs.length > 0 ) {
+    queryParams.push(`filters=${agendaStore.selectedCatSubs.join(',')}`)
+  }
+  if (agendaStore.pickerMode && agendaStore.pickedEvents.length > 0 ) {
+    const kwds = []
+    for (const id of agendaStore.pickedEvents) {
+      const session = find(agendaStore.scheduleAdjusted, ['id', id])
+      if (session) {
+        const suffix = session.sessionToken ? `-${session.sessionToken}` : ''
+        kwds.push(`${session.acronym}${suffix}`)
+      }
+    }
+    queryParams.push(`show=${kwds.join(',')}`)
+  }
+  newUrl.search = queryParams.length > 0 ? `?${queryParams.join('&')}` : ''
   state.filteredUrl = newUrl.toString()
 }
 

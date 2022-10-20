@@ -1,7 +1,7 @@
 import Shepherd from 'shepherd.js'
 import 'shepherd.js/dist/css/shepherd.css'
 
-export function initTour (mobileMode) {
+export function initTour ({ mobileMode, pickerMode }) {
   const tour = new Shepherd.Tour({
     useModalOverlay: true,
     defaultStepOptions: {
@@ -49,7 +49,7 @@ export function initTour (mobileMode) {
       title: 'Pick Sessions',
       text: 'Alternatively select <strong>individual sessions</strong> from the list to build your own schedule.',
       attachTo: {
-        element: '#agenda-quickaccess-picksessions-btn',
+        element: pickerMode ? '.agenda-quickaccess-btnrow' : '#agenda-quickaccess-picksessions-btn',
         on: 'left'
       },
       buttons: defaultButtons,

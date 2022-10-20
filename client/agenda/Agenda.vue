@@ -238,8 +238,19 @@ watch(() => agendaStore.meetingDays, () => {
 })
 
 watch(() => agendaStore.isLoaded, () => {
+  let resetQuery = false
+  if (route.query.filters) {
+    // Handle ?filters= parameter
+    const keywords = route.query.filters.split(',').map(k => k.trim()).filter(k => !!k)
+    if (keywords?.length > 0) {
+      agendaStore.$patch({
+        selectedCatSubs: keywords
+      })
+    }
+    resetQuery = true
+  }
   if (route.query.show) {
-    // Handle legacy ?show= parameter
+    // Handle ?show= parameter
     const keywords = route.query.show.split(',').map(k => k.trim()).filter(k => !!k)
     if (keywords?.length > 0) {
       const pickedIds = []
@@ -254,13 +265,23 @@ watch(() => agendaStore.isLoaded, () => {
           pickerModeView: true,
           pickedEvents: pickedIds
         })
-        agendaStore.persistMeetingPreferences()
       }
     }
+    resetQuery = true
   }
   if (route.query.pick) {
     // Handle legacy /personalize path (open picker mode)
     agendaStore.$patch({ pickerMode: true })
+    resetQuery = true
+  }
+  if (route.query.tz) {
+    // Handle tz param
+    agendaStore.$patch({ timezone: route.query.tz })
+    resetQuery = true
+  }
+
+  if (resetQuery) {
+    agendaStore.persistMeetingPreferences()
     router.replace({ query: null })
   }
 
@@ -337,7 +358,10 @@ function toggleShare () {
 }
 
 function startTour () {
-  const tour = initTour(siteStore.viewport < 990)
+  const tour = initTour({
+    mobileMode: siteStore.viewport < 990,
+    pickerMode: agendaStore.pickerMode
+  })
   tour.start()
 }
 
@@ -421,15 +445,6 @@ onMounted(() => {
     agendaStore.hideLoadingScreen()
   }
 })
-
-// CREATED
-
-// -> Handle loading tab directly based on URL
-if (window.location.pathname.indexOf('-utc') >= 0) {
-  agendaStore.$patch({ timezone: 'UTC' })
-} else if (window.location.pathname.indexOf('personalize') >= 0) {
-  // state.currentTab = 'personalize'
-}
 
 </script>
 
