@@ -592,7 +592,7 @@ def to_iesg(request,name):
                 e.by = by
                 e.doc = doc
                 e.rev = doc.rev
-                e.desc = "Document is now in state <b>%s</b>" % target_state['iesg'].name
+                e.desc = "Document is now in IESG state <b>%s</b>" % target_state['iesg'].name
                 e.save()
                 events.append(e)
 
