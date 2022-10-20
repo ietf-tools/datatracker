@@ -22,7 +22,7 @@ RPC_TZINFO = ZoneInfo('PST8PDT')
 def _tzinfo(tz: Union[str, datetime.tzinfo, None]):
     """Helper to convert a tz param into a tzinfo
 
-    Accepts Defaults to UTC.
+    Accepts a tzinfo or string containing a timezone name. Defaults to UTC if tz is None.
     """
     if tz is None:
         return datetime.timezone.utc

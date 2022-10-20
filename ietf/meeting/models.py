@@ -147,45 +147,38 @@ class Meeting(models.Model):
         return datetime_from_date(self.get_meeting_date(self.days), self.tz())
 
     def get_00_cutoff(self):
-        start_date = datetime.datetime(
-            year=self.date.year,
-            month=self.date.month,
-            day=self.date.day,
-            tzinfo=datetime.timezone.utc,
-        )
+        """Get the I-D submission 00 cutoff in UTC"""
         importantdate = self.importantdate_set.filter(name_id='idcutoff').first()
         if not importantdate:
             importantdate = self.importantdate_set.filter(name_id='00cutoff').first()
         if importantdate:
             cutoff_date = importantdate.date
         else:
-            cutoff_date = start_date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
-        cutoff_time = datetime_from_date(cutoff_date) + self.idsubmit_cutoff_time_utc
+            cutoff_date = self.date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
+        cutoff_time = datetime_from_date(cutoff_date, datetime.timezone.utc) + self.idsubmit_cutoff_time_utc
         return cutoff_time
 
     def get_01_cutoff(self):
-        start_date = datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day, tzinfo=pytz.utc)
+        """Get the I-D submission 01 cutoff in UTC"""
         importantdate = self.importantdate_set.filter(name_id='idcutoff').first()
         if not importantdate:
             importantdate = self.importantdate_set.filter(name_id='01cutoff').first()
         if importantdate:
             cutoff_date = importantdate.date
         else:
-            cutoff_date = start_date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
-        cutoff_time = datetime_from_date(cutoff_date) + self.idsubmit_cutoff_time_utc
+            cutoff_date = self.date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
+        cutoff_time = datetime_from_date(cutoff_date, datetime.timezone.utc) + self.idsubmit_cutoff_time_utc
         return cutoff_time
 
     def get_reopen_time(self):
-        start_date = datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day)
-        local_tz = pytz.timezone(self.time_zone)
-        local_date = local_tz.localize(start_date)
+        """Get the I-D submission reopening time in meeting-local time"""
         cutoff = self.get_00_cutoff()
-        if cutoff.date() == start_date:
+        if cutoff.date() == self.date:
             # no cutoff, so no local-time re-open
             reopen_time = cutoff
         else:
             # reopen time is in local timezone.  May need policy change??  XXX
-            reopen_time = local_date + self.idsubmit_cutoff_time_utc
+            reopen_time = datetime_from_date(self.date, self.tz()) + self.idsubmit_cutoff_time_utc
         return reopen_time
 
     @classmethod
