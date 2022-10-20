@@ -276,6 +276,7 @@ def get_outbound_conflicts(form: SessionForm):
             outbound_conflicts.append(dict(name=conflictname, groups=conflict_groups))
     return outbound_conflicts
 
+
 @role_required(*AUTHORIZED_ROLES)
 def confirm(request, acronym):
     '''
@@ -363,7 +364,6 @@ def confirm(request, acronym):
 
         # clear not meeting
         add_event_info_to_session_qs(Session.objects.filter(group=group, meeting=meeting)).filter(current_status='notmeet').delete()
-
 
         # send notification
         session_data['outbound_conflicts'] = [f"{d['name']}: {d['groups']}" for d in outbound_conflicts]
