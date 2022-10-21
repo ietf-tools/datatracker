@@ -30,6 +30,12 @@ export default createRouter({
       }
     },
     {
+      path: '/meeting/:meetingNumber(\\d+)?/agenda-utc',
+      redirect: to => {
+        return { name: 'agenda', query: { ...to.query, tz: 'UTC' } }
+      }
+    },
+    {
       path: '/meeting/:meetingNumber(\\d+)?/agenda/personalize',
       redirect: to => {
         return { name: 'agenda', query: { ...to.query, pick: true } }
