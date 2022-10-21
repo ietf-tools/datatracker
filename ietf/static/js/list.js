@@ -86,10 +86,9 @@ $(document)
                 $(header_row)
                     .children("[data-sort]")
                     .addClass("sort");
-                // $(header_row)
-                //     .children("th, td")
-                //     .wrapInner('<span class="tablesorter-th"></span>');
-                //     // .each((i, e) => field_magic(i, e, fields));
+                $(header_row)
+                    .children("th, td")
+                    .each((i, e) => field_magic(i, e, fields));
 
                 if ($(header_row)
                     .text()

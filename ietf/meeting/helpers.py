@@ -95,6 +95,7 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
       a.session.historic_parent
       a.session.rescheduled_to (if rescheduled)
       a.session.prefetched_active_materials
+      a.session.order_number
     """
     assignments_queryset = assignments_queryset.prefetch_related(
             'timeslot', 'timeslot__type', 'timeslot__meeting',
