@@ -906,7 +906,7 @@ test.describe('past - desktop', () => {
 
   // -> SHARE DIALOG
 
-  test.only('agenda share dialog', async ({ page }) => {
+  test('agenda share dialog', async ({ page }) => {
     // Open dialog
     await page.locator('.agenda-topnav-right > button:nth-child(2)').click()
     await expect(page.locator('.agenda-share')).toBeVisible()
