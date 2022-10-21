@@ -1621,6 +1621,8 @@ def api_get_agenda_data (request, num=None):
     # Get Floor Plans
     floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
 
+    #debug.show('all([(item.acronym,item.session.order_number,item.session.order_in_meeting()) for item in filtered_assignments])')
+
     return JsonResponse({
         "meeting": {
             "number": schedule.meeting.number,
@@ -1712,7 +1714,7 @@ def agenda_extract_schedule (item):
         } if item.session.agenda() is not None else {
             "url": None
         },
-        "orderInMeeting": item.session.order_in_meeting(),
+        "orderInMeeting": item.session.order_number,
         "short": item.session.short if item.session.short else item.session.short_name,
         "sessionToken": item.session.docname_token_only_for_multiple(),
         "links": {
