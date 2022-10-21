@@ -904,6 +904,22 @@ test.describe('past - desktop', () => {
     await expect(page.locator('.agenda-settings')).not.toBeVisible()
   })
 
+  // -> SHARE DIALOG
+
+  test.only('agenda share dialog', async ({ page }) => {
+    // Open dialog
+    await page.locator('.agenda-topnav-right > button:nth-child(2)').click()
+    await expect(page.locator('.agenda-share')).toBeVisible()
+    // Check header elements
+    await expect(page.locator('.agenda-share .n-card-header__main > .agenda-share-header > .bi')).toBeVisible()
+    await expect(page.locator('.agenda-share .n-card-header__main > .agenda-share-header > .bi + span')).toContainText('Share this view')
+    // Check input URL
+    await expect(page.locator('.agenda-share .agenda-share-content input[type=text]')).toHaveValue(`http://localhost:3000/meeting/${meetingData.meeting.number}/agenda`)
+    // Clicking X should close the dialog
+    await page.locator('.agenda-share .n-card-header__extra > .agenda-share-header > button').click()
+    await expect(page.locator('.agenda-share')).not.toBeVisible()
+  })
+
   // -> ADD TO CALENDAR
 
   test('agenda add to calendar', async ({ page }) => {
