@@ -8,9 +8,9 @@ SUMMARY:{% if item.session.name %}{{item.session.name|ics_esc}}{% else %}{% if n
 {% if item.timeslot.show_location %}LOCATION:{{item.timeslot.get_location}}
 {% endif %}STATUS:{{item.session.ical_status}}
 CLASS:PUBLIC
-DTSTART;TZID={{schedule.meeting.time_zone|ics_esc}}:{{ item.timeslot.time|date:"Ymd" }}T{{item.timeslot.time|date:"Hi"}}00
-DTEND;TZID={{schedule.meeting.time_zone|ics_esc}}:{{ item.timeslot.end_time|date:"Ymd" }}T{{item.timeslot.end_time|date:"Hi"}}00
-DTSTAMP:{{ item.timeslot.modified|date:"Ymd" }}T{{ item.timeslot.modified|date:"His" }}Z{% if item.session.agenda %}
+DTSTART{% ics_date_time item.timeslot.local_start_time schedule.meeting.time_zone %}
+DTEND{% ics_date_time item.timeslot.local_end_time schedule.meeting.time_zone %}
+DTSTAMP:{% ics_date_time item.timeslot.modified|utc 'utc' %}{% if item.session.agenda %}
 URL:{{item.session.agenda.get_versionless_href}}{% endif %}
 DESCRIPTION:{{item.timeslot.name|ics_esc}}\n{% if item.session.agenda_note %}
  Note: {{item.session.agenda_note|ics_esc}}\n{% endif %}{% if item.timeslot.location.webex_url %}
