@@ -207,8 +207,7 @@ def materials_document(request, document, num=None, ext=None):
     if (re.search(r'^\w+-\d+-.+-\d\d$', document) or
         re.search(r'^\w+-interim-\d+-.+-\d\d-\d\d$', document) or
         re.search(r'^\w+-interim-\d+-.+-sess[a-z]-\d\d$', document) or
-        re.search(r'^minutes-interim-\d+-.+-\d\d$', document) or
-        re.search(r'^slides-interim-\d+-.+-\d\d$', document)):
+        re.search(r'^(minutes|slides|chatlog|polls)-interim-\d+-.+-\d\d$', document)):
         name, rev = document.rsplit('-', 1)
     else:
         name, rev = document, None
