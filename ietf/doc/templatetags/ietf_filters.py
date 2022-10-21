@@ -502,6 +502,7 @@ def ics_esc(text):
     text = re.sub(r"([\n,;\\])", r"\\\1", text)
     return text
 
+
 @register.simple_tag
 def ics_date_time(dt, tzname):
     """Render a datetime as an iCalendar date-time
@@ -514,12 +515,22 @@ def ics_date_time(dt, tzname):
       DTSTART{% ics_date_time timestamp 'America/Los_Angeles' %}
     to get
       DTSTART;TZID=America/Los_Angeles:20221021T111200
+
+    >>> ics_date_time(datetime.datetime(2022,1,2,3,4,5), 'utc')
+    ':20220102T030405Z'
+
+    >>> ics_date_time(datetime.datetime(2022,1,2,3,4,5), 'UTC')
+    ':20220102T030405Z'
+
+    >>> ics_date_time(datetime.datetime(2022,1,2,3,4,5), 'America/Los_Angeles')
+    ';TZID=America/Los_Angeles:20220102T030405'
     """
     timestamp = dt.strftime('%Y%m%dT%H%M%S')
     if tzname.lower() == 'utc':
         return f':{timestamp}Z'
     else:
         return f';TZID={ics_esc(tzname)}:{timestamp}'
+
 
 @register.filter
 def consensus(doc):
