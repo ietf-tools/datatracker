@@ -1,4 +1,4 @@
-{% load humanize %}{% autoescape off %}{% load ietf_filters %}BEGIN:VCALENDAR
+{% load humanize tz %}{% autoescape off %}{% load ietf_filters %}BEGIN:VCALENDAR
 VERSION:2.0
 METHOD:PUBLISH
 PRODID:-//IETF//datatracker.ietf.org ical upcoming//EN
@@ -8,8 +8,8 @@ SUMMARY:{% if item.session.name %}{{item.session.group.acronym|lower}} - {{item.
 {% if item.schedule.meeting.city %}LOCATION:{{item.schedule.meeting.city}},{{item.schedule.meeting.country}}
 {% endif %}STATUS:{{item.session.ical_status}}
 CLASS:PUBLIC
-DTSTART{% if item.schedule.meeting.time_zone %};TZID={{ item.schedule.meeting.time_zone|ics_esc }}{%endif%}:{{ item.timeslot.time|date:"Ymd" }}T{{item.timeslot.time|date:"Hi"}}00
-DTEND{% if item.schedule.meeting.time_zone %};TZID={{ item.schedule.meeting.time_zone|ics_esc }}{%endif%}:{{ item.timeslot.end_time|date:"Ymd" }}T{{item.timeslot.end_time|date:"Hi"}}00
+DTSTART{% ics_date_time item.timeslot.local_start_time item.schedule.meeting.time_zone %}
+DTEND{% ics_date_time item.timeslot.local_end_time item.schedule.meeting.time_zone %}
 DTSTAMP:{{ item.timeslot.modified|date:"Ymd" }}T{{ item.timeslot.modified|date:"His" }}Z
 {% if item.session.agenda %}URL:{{item.session.agenda.get_href}}
 DESCRIPTION:{{item.timeslot.name|ics_esc}}\n{% if item.session.agenda_note %}
@@ -25,7 +25,7 @@ LOCATION:{{ meeting.city }},{{ meeting.country }}{% endif %}
 CLASS:PUBLIC
 DTSTART;VALUE=DATE{% if meeting.time_zone %};TZID={{ meeting.time_zone|ics_esc }}{% endif %}:{{ meeting.date|date:"Ymd" }}
 DTEND;VALUE=DATE{% if meeting.time_zone %};TZID={{ meeting.time_zone|ics_esc }}{% endif %}:{{ meeting.end_date|date:"Ymd" }}
-DTSTAMP:{{ meeting.cached_updated|date:"Ymd" }}T{{ meeting.cached_updated|date:"His" }}Z
+DTSTAMP{% ics_date_time meeting.cached_updated|utc 'utc' %}
 URL:{{ request.scheme }}://{{ request.get_host }}{% url 'agenda' num=meeting.number %}
 END:VEVENT
 {% endfor %}END:VCALENDAR{% endautoescape %}
