@@ -116,6 +116,9 @@ def get_person_form(*args, **kwargs):
                 self.initial["ascii"] = ""
 
             self.fields['pronouns_selectable'] = forms.MultipleChoiceField(label='Pronouns', choices = [(option, option) for option in ["he/him", "she/her", "they/them"]], widget=forms.CheckboxSelectMultiple, required=False)
+            self.fields["pronouns_freetext"].widget.attrs.update(
+                {"aria-label": "Optionally provide your personal pronouns"}
+            )
 
             self.unidecoded_ascii = False
 
