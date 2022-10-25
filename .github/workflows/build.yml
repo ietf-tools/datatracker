@@ -433,6 +433,7 @@ jobs:
         id
         groups
         echo "Docker containers:"
+        sudo chmod 666 /var/run/docker.sock
         docker ps -a
         echo "PKG_VERSION: $PKG_VERSION"
         
