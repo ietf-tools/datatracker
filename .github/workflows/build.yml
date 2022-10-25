@@ -414,7 +414,7 @@ jobs:
   sandbox:
     name: Deploy to Sandbox
     if: ${{ always() && github.event.inputs.sandbox == 'true' }}
-    needs: [release]
+    needs: [prepare, release]
     runs-on: dev-server
     env:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
@@ -424,6 +424,14 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '16'
+        
+    - name: Test
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        echo "Docker containers:"
+        docker ps -a
+        echo "PKG_VERSION: $PKG_VERSION"
         
     - name: Download a Release Artifact
       uses: actions/download-artifact@v3.0.0
