@@ -429,6 +429,9 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
+        whoami
+        id
+        groups
         echo "Docker containers:"
         docker ps -a
         echo "PKG_VERSION: $PKG_VERSION"
