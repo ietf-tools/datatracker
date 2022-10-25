@@ -36,7 +36,7 @@ from ietf.utils.decorators import memoize
 from ietf.utils.validators import validate_no_control_chars
 from ietf.utils.mail import formataddr
 from ietf.utils.models import ForeignKey
-from ietf.utils.timezone import date_today, RPC_TZINFO
+from ietf.utils.timezone import date_today, RPC_TZINFO, DEADLINE_TZINFO
 if TYPE_CHECKING:
     # importing other than for type checking causes errors due to cyclic imports
     from ietf.meeting.models import ProceedingsMaterial, Session
@@ -351,7 +351,7 @@ class DocumentInfo(models.Model):
                     elif iesg_state.slug == "lc":
                         e = self.latest_event(LastCallDocEvent, type="sent_last_call")
                         if e:
-                            return iesg_state_summary + " (ends %s)" % e.expires.date().isoformat()
+                            return iesg_state_summary + " (ends %s)" % e.expires.astimezone(DEADLINE_TZINFO).date().isoformat()
     
                     return iesg_state_summary
                 else:

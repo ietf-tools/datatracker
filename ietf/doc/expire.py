@@ -86,7 +86,7 @@ def send_expire_warning_for_draft(doc):
         (doc.get_state_slug("draft") != "active")):
         return # don't warn about dead or inactive documents
 
-    expiration = doc.expires.date()
+    expiration = doc.expires.astimezone(DEADLINE_TZINFO).date()
 
     (to,cc) = gather_address_lists('doc_expires_soon',doc=doc)
 
@@ -173,7 +173,7 @@ def expire_draft(doc):
 
 def clean_up_draft_files():
     """Move unidentified and old files out of the Internet Draft directory."""
-    cut_off = date_today()
+    cut_off = date_today(DEADLINE_TZINFO)
 
     pattern = os.path.join(settings.INTERNET_DRAFT_PATH, "draft-*.*")
     filename_re = re.compile(r'^(.*)-(\d\d)$')
@@ -216,7 +216,9 @@ def clean_up_draft_files():
 
             if state in ("rfc","repl"):
                 move_file_to("")
-            elif state in ("expired", "auth-rm", "ietf-rm") and doc.expires and doc.expires.date() < cut_off:
+            elif (state in ("expired", "auth-rm", "ietf-rm")
+                  and doc.expires
+                  and doc.expires.astimezone(DEADLINE_TZINFO).date() < cut_off):
                 move_file_to("")
 
         except Document.DoesNotExist:

@@ -33,11 +33,10 @@ def request_last_call(request, doc):
     e.save()
 
 def get_expired_last_calls():
-    today = date_today(DEADLINE_TZINFO)
     for d in Document.objects.filter(Q(states__type="draft-iesg", states__slug="lc")
                                     | Q(states__type="statchg", states__slug="in-lc")):
         e = d.latest_event(LastCallDocEvent, type="sent_last_call")
-        if e and e.expires.date() <= today:
+        if e and e.expires.astimezone(DEADLINE_TZINFO).date() <= date_today(DEADLINE_TZINFO):
             yield d
 
 def expire_last_call(doc):

@@ -502,7 +502,7 @@ def suggested_review_requests_for_team(team):
 
     requests = {}
 
-    now = timezone.now()
+    now = timezone.now().astimezone(DEADLINE_TZINFO)
 
     reviewable_docs_qs = Document.objects.filter(type="draft").exclude(stream="ise")
 
@@ -518,7 +518,7 @@ def suggested_review_requests_for_team(team):
         for doc in last_call_docs:
             e = last_call_expiry_events[doc.pk] if doc.pk in last_call_expiry_events else LastCallDocEvent(expires=now, time=now)
 
-            deadline = e.expires.date()
+            deadline = e.expires.astimezone(DEADLINE_TZINFO).date()
 
             if deadline > seen_deadlines.get(doc.pk, datetime.date.max) or deadline < now.date():
                 continue
