@@ -16,6 +16,10 @@ on:
         description: 'Create Production Release'
         required: true
         type: boolean
+      sandbox:
+        description: 'Deploy to Sandbox'
+        required: true
+        type: boolean
       skiptests:
         description: 'Skip Tests'
         required: true
@@ -388,7 +392,6 @@ jobs:
         
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v3
-      if: ${{ env.SHOULD_DEPLOY == 'false' || github.event.inputs.dryrun == 'true' }}
       with:
         name: release-${{ env.PKG_VERSION }}
         path: /home/runner/work/release/release.tar.gz
@@ -403,3 +406,36 @@ jobs:
           }
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
+        
+  # -----------------------------------------------------------------
+  # SANDBOX
+  # -----------------------------------------------------------------
+  sandbox:
+    name: Deploy to Sandbox
+    if: ${{ github.event.inputs.sandbox == 'true' }}
+    needs: [release]
+    runs-on: dev-server
+    env:
+      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+      
+    steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+        
+    - name: Download a Release Artifact
+      uses: actions/download-artifact@v3.0.0
+      with:
+        name: release-${{ env.PKG_VERSION }}
+        
+    - name: Extract Release Artifact
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        echo "Docker containers:"
+        docker ps -a
+        echo "List files:"
+        ls
+        echo "Extract:"
+        tar -xzf release-${{ env.PKG_VERSION }}.tar.gz
