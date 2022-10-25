@@ -413,7 +413,7 @@ jobs:
   # -----------------------------------------------------------------
   sandbox:
     name: Deploy to Sandbox
-    if: ${{ github.event.inputs.sandbox == 'true' }}
+    if: ${{ always() && github.event.inputs.sandbox == 'true' }}
     needs: [release]
     runs-on: dev-server
     env:
