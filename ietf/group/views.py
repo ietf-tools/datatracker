@@ -1690,7 +1690,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
             r.section = 'Last calls:'
             r.section_order='1'
         e = r.review_request.doc.latest_event(LastCallDocEvent, type="sent_last_call")
-        r.lastcall_ends = e and e.expires.date().isoformat()
+        r.lastcall_ends = e and e.expires.astimezone(DEADLINE_TZINFO).date().isoformat()
         r.earlier_review = ReviewAssignment.objects.filter(review_request__doc=r.review_request.doc,reviewer__in=r.reviewer.person.email_set.all(),state="completed")
         if r.earlier_review:
             earlier_reviews_formatted = ['-{} {} reviewed'.format(ra.reviewed_rev, ra.review_request.type.slug) for ra in r.earlier_review]
