@@ -50,6 +50,6 @@ def timezone_not_near_midnight():
     tzname = random.choice(timezone_options)
     right_now = timezone.now().astimezone(pytz.timezone(tzname))
     while right_now.hour < 1 or right_now.hour >= 23:
-        tzname = random.choice(pytz.common_timezones)
+        tzname = random.choice(timezone_options)
         right_now = right_now.astimezone(pytz.timezone(tzname))
     return tzname
