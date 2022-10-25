@@ -419,21 +419,11 @@ jobs:
     env:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
       
-    steps:
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '16'
-        
+    steps:       
     - name: Test
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        whoami
-        id
-        groups
-        echo "Docker containers:"
-        sudo chmod 666 /var/run/docker.sock
         docker ps -a
         echo "PKG_VERSION: $PKG_VERSION"
         
