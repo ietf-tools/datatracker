@@ -65,4 +65,4 @@ tqdm>=4.64.0
 Unidecode>=1.3.4
 weasyprint>=53
 xml2rfc>=3.12.4
-xym>=0.5,<1.0
+xym>=0.6,<1.0

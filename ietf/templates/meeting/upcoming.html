@@ -58,7 +58,7 @@
                                 <td>ietf</td>
                                 <td>
                                     <a class="ietf-meeting-link"
-                                       href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">
+                                       href="{% url 'agenda' num=meeting.number %}">
                                         IETF {{ meeting.number }}
                                     </a>
                                 </td>
@@ -124,7 +124,7 @@
                               ietf_meeting_number: '{{ meeting.number }}',
                               start_moment: moment.tz('{{meeting.date}}', '{{ meeting.time_zone }}').startOf('day'),
                               end_moment: moment.tz('{{meeting.end}}', '{{ meeting.time_zone }}').endOf('day'),
-                              url: '{% url 'ietf.meeting.views.agenda' num=meeting.number %}'
+                              url: '{% url 'agenda' num=meeting.number %}'
                           }{% if not forloop.last %}, {% endif %}
                       {% endwith %}
                   {% else %} {# if it's not a Meeting, it's a Session #}

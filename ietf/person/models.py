@@ -13,7 +13,7 @@ from urllib.parse import urljoin
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import models
 from django.template.loader import render_to_string
@@ -35,13 +35,18 @@ from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
 
 
+def name_character_validator(value):
+    if '/' in value:
+        raise ValidationError('Name cannot contain "/" character.')
+
+
 class Person(models.Model):
     history = HistoricalRecords()
     user = OneToOneField(User, blank=True, null=True, on_delete=models.SET_NULL)
     time = models.DateTimeField(default=datetime.datetime.now)      # When this Person record entered the system
     # The normal unicode form of the name.  This must be
     # set to the same value as the ascii-form if equal.
-    name = models.CharField("Full Name (Unicode)", max_length=255, db_index=True, help_text="Preferred long form of name.")
+    name = models.CharField("Full Name (Unicode)", max_length=255, db_index=True, help_text="Preferred long form of name.", validators=[name_character_validator])
     plain = models.CharField("Plain Name correction (Unicode)", max_length=64, default='', blank=True, help_text="Use this if you have a Spanish double surname.  Don't use this for nicknames, and don't use it unless you've actually observed that the datatracker shows your name incorrectly.")
     # The normal ascii-form of the name.
     ascii = models.CharField("Full Name (ASCII)", max_length=255, help_text="Name as rendered in ASCII (Latin, unaccented) characters.")
@@ -53,7 +58,6 @@ class Person(models.Model):
     photo = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
     photo_thumb = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
     name_from_draft = models.CharField("Full Name (from submission)", null=True, max_length=255, editable=False, help_text="Name as found in a draft submission.")
-    consent = models.BooleanField("I hereby give my consent to the use of the personal details I have provided (photo, bio, name, pronouns, email) within the IETF Datatracker", null=True, default=None)
 
     def __str__(self):
         return self.plain_name()
@@ -189,32 +193,6 @@ class Person(models.Model):
         from ietf.doc.models import Document
         return Document.objects.filter(documentauthor__person=self, type='draft', states__slug__in=['repl', 'expired', 'auth-rm', 'ietf-rm']).distinct().order_by('-time')
 
-    def needs_consent(self):
-        """
-        Returns an empty list or a list of fields which holds information that
-        requires consent to be given.
-        """
-        needs_consent = []
-        if self.name != self.name_from_draft:
-            needs_consent.append("full name")
-        if self.ascii != self.name_from_draft:
-            needs_consent.append("ascii name")
-        if self.biography and not (self.role_set.exists() or self.rolehistory_set.exists()):
-            needs_consent.append("biography")
-        if self.user_id:
-            needs_consent.append("login")
-            try:
-                if self.user.communitylist_set.exists():
-                    needs_consent.append("draft notification subscription(s)")
-            except ObjectDoesNotExist:
-                pass
-        for email in self.email_set.all():
-            if not email.origin.split(':')[0] in ['author', 'role', 'reviewer', 'liaison', 'shepherd', ]:
-                needs_consent.append("email address(es)")
-                break
-        if self.pronouns_freetext or self.pronouns_selectable:
-            needs_consent.append("pronouns")
-        return needs_consent
 
     def save(self, *args, **kwargs):
         created = not self.pk
@@ -262,7 +240,7 @@ class Person(models.Model):
 
 
 class PersonExtResource(models.Model):
-    person = ForeignKey(Person) 
+    person = ForeignKey(Person)
     name = models.ForeignKey(ExtResourceName, on_delete=models.CASCADE)
     display_name = models.CharField(max_length=255, default='', blank=True)
     value = models.CharField(max_length=2083) # 2083 is the maximum legal URL length
@@ -366,9 +344,11 @@ PERSON_API_KEY_VALUES = [
     ("/api/iesg/position", "/api/iesg/position", "Area Director"),
     ("/api/v2/person/person", "/api/v2/person/person", "Robot"),
     ("/api/meeting/session/video/url", "/api/meeting/session/video/url", "Recording Manager"),
-    ("/api/notify/meeting/registration", "/api/notify/meeting/registration", "Robot"), 
+    ("/api/notify/meeting/registration", "/api/notify/meeting/registration", "Robot"),
     ("/api/notify/meeting/bluesheet", "/api/notify/meeting/bluesheet", "Recording Manager"),
-    ("/api/notify/session/attendees", "/api/notify/session/attendees", "Recording Manager"), 
+    ("/api/notify/session/attendees", "/api/notify/session/attendees", "Recording Manager"),
+    ("/api/notify/session/chatlog", "/api/notify/session/chatlog", "Recording Manager"),
+    ("/api/notify/session/polls", "/api/notify/session/polls", "Recording Manager"),
     ("/api/appauth/authortools", "/api/appauth/authortools", None),
     ("/api/appauth/bibxml", "/api/appauth/bibxml", None),
 ]
@@ -421,7 +401,6 @@ class PersonalApiKey(models.Model):
 
 PERSON_EVENT_CHOICES = [
     ("apikey_login", "API key login"),
-    ("gdpr_notice_email", "GDPR consent request email sent"),
     ("email_address_deactivated", "Email address deactivated"),
     ]
 
@@ -442,4 +421,4 @@ class PersonEvent(models.Model):
 
 class PersonApiKeyEvent(PersonEvent):
     key = ForeignKey(PersonalApiKey)
-    
+

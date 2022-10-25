@@ -28,6 +28,7 @@
         </style>
         {% vite_hmr_client %}
         {% block pagehead %}{% endblock %}
+        {% vite_asset 'client/embedded.js' %}
         {% include "base/icons.html" %}
         <script src="{% static 'ietf/js/ietf.js' %}"></script>
         {% analytical_head_bottom %}
@@ -42,23 +43,32 @@
                     <img alt="IETF Logo" class="me-2"
                         src="{% static 'ietf/images/ietf-logo-nor-white.svg' %}">
                     Datatracker
-                    {% if server_mode and server_mode != "production" %}Dev Mode{% endif %}
+                    {% if server_mode and server_mode != "production" %}
+                        <span class="text-danger">&delta;</span>
+                    {% endif %}
                 </a>
                 <div class="collapse navbar-collapse" id="navbar-collapse">
                     <ul class="nav navbar-nav">
                         {% include "base/menu.html" with flavor="top" %}
                     </ul>
                 </div>
-                {% if not user.is_authenticated %}
-                    <a class="d-none d-sm-block mx-5 btn {% if server_mode and server_mode == "production" %} btn-warning {% else %} btn-info {% endif %}"
-                       rel="nofollow"
-                       href="{% url 'ietf.ietfauth.views.login' %}?next={{ request.get_full_path|removesuffix:'accounts/logout/'|urlencode }}">
-                        Sign
-                        in
+                <div class="d-flex align-items-center">
+                    <a class="nav-link {% if server_mode and server_mode != "production" %}text-danger{% else %}text-warning{% endif %} d-none d-xl-inline me-xl-4"
+                       target="_blank"
+                       href="https://github.com/ietf-tools/datatracker/issues/new/choose">
+                        Report a bug
+                        <i class="bi bi-bug"></i>
                     </a>
-                {% endif %}
-                <div class="d-flex d-none d-lg-block">
-                    <label aria-label="Document search">
+
+                    {% if not user.is_authenticated %}
+                        <a class="btn me-1 {% if server_mode and server_mode == "production" %} btn-warning {% else %} btn-info {% endif %} d-none d-sm-block"
+                           rel="nofollow"
+                           href="{% url 'ietf.ietfauth.views.login' %}?next={{ request.get_full_path|removesuffix:'accounts/logout/'|urlencode }}">
+                            Sign in
+                        </a>
+                    {% endif %}
+
+                    <label class="d-none d-md-block" aria-label="Document search">
                     <input class="form-control select2-field"
                            id="navbar-doc-search"
                            data-select2-ajax-url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='docalias' doc_type='draft' %}"
@@ -137,7 +147,7 @@
                     <span class="mx-2 text-danger">
                         <i class="bi bi-bug"></i>
                         Report a bug:
-                        <a class="text-reset" href="https://github.com/ietf-tools/datatracker/issues/new/choose">GitHub</a>
+                        <a class="text-reset" target="_blank" href="https://github.com/ietf-tools/datatracker/issues/new/choose">GitHub</a>
                         {% if bugreport_email %}
                             <a class="text-reset" href="mailto:{{ bugreport_email }}">Email</a>
                         {% endif %}

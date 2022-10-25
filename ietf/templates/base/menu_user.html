@@ -10,7 +10,7 @@
            data-bs-toggle="dropdown"
            aria-expanded="false">
             {% if user.is_authenticated %}
-                {{ user }}
+                {{ user.username|split:'@'|first }}
             {% else %}
                 User
             {% endif %}
@@ -104,12 +104,6 @@
                 </a>
             </li>
         {% endif %}
-        <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
-               href="{% url 'personal-information' %}">
-                Handling of personal information
-            </a>
-        </li>
     {% endif %}
     {% if not request.user.is_authenticated %}
         <li>

@@ -16,6 +16,11 @@ on:
         description: 'Create Production Release'
         required: true
         type: boolean
+      sandbox:
+        description: 'Deploy to Sandbox'
+        default: true
+        required: true
+        type: boolean
       skiptests:
         description: 'Skip Tests'
         required: true
@@ -47,7 +52,7 @@ jobs:
       pkg_version: ${{ steps.buildvars.outputs.pkg_version }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
         
@@ -70,7 +75,7 @@ jobs:
         echo "NEXT_VERSION=$nextStrict" >> $GITHUB_ENV
         
     - name: Create Draft Release
-      uses: ncipollo/release-action@v1
+      uses: ncipollo/release-action@v1.11.1
       if: ${{ github.event.inputs.publish == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         prerelease: true
@@ -86,18 +91,18 @@ jobs:
       run: |
         if [[ $NEXT_VERSION ]]; then
           echo "Using AUTO SEMVER mode: $NEXT_VERSION"
-          echo "::set-output name=should_deploy::true"
-          echo "::set-output name=pkg_version::$NEXT_VERSION"
+          echo "should_deploy=true" >> $GITHUB_OUTPUT
+          echo "pkg_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
           echo "::notice::Release $NEXT_VERSION created using branch $GITHUB_REF_NAME"
         elif [[ "$GITHUB_REF" =~ ^refs/tags/* ]]; then
           echo "Using TAG mode: $GITHUB_REF_NAME"
-          echo "::set-output name=should_deploy::true"
-          echo "::set-output name=pkg_version::$GITHUB_REF_NAME"
+          echo "should_deploy=true" >> $GITHUB_OUTPUT
+          echo "pkg_version=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
           echo "::notice::Release $GITHUB_REF_NAME created using tag $GITHUB_REF_NAME"
         else
           echo "Using TEST mode: 8.0.0-dev.$GITHUB_RUN_NUMBER"
-          echo "::set-output name=should_deploy::false"
-          echo "::set-output name=pkg_version::8.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "should_deploy=false" >> $GITHUB_OUTPUT
+          echo "pkg_version=8.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
           echo "::notice::Non-production build 8.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
         fi
 
@@ -165,7 +170,7 @@ jobs:
         mv latest-coverage.json coverage.json
         
     - name: Upload Coverage Results as Build Artifact
-      uses: actions/upload-artifact@v3.0.0
+      uses: actions/upload-artifact@v3
       if: ${{ always() }}
       with:
         name: coverage
@@ -184,7 +189,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: actions/setup-node@v2
+    - uses: actions/setup-node@v3
       with:
         node-version: '18'
 
@@ -201,7 +206,7 @@ jobs:
         npx playwright test --project=${{ matrix.project }}
         
     - name: Upload Report
-      uses: actions/upload-artifact@v3.0.0
+      uses: actions/upload-artifact@v3
       if: ${{ always() }}
       continue-on-error: true
       with:
@@ -254,7 +259,7 @@ jobs:
         yarn cypress:legacy
         
     - name: Upload Video Recordings
-      uses: actions/upload-artifact@v3.0.0
+      uses: actions/upload-artifact@v3
       if: ${{ always() }}
       continue-on-error: true
       with:
@@ -263,7 +268,7 @@ jobs:
         if-no-files-found: ignore
         
     - name: Upload Screenshots
-      uses: actions/upload-artifact@v3.0.0
+      uses: actions/upload-artifact@v3
       if: ${{ always() }}
       continue-on-error: true
       with:
@@ -284,17 +289,17 @@ jobs:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
         
     - name: Setup Node.js
-      uses: actions/setup-node@v3.0.0
+      uses: actions/setup-node@v3
       with:
-        node-version: 16.x
+        node-version: '16'
     
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
         
@@ -362,7 +367,7 @@ jobs:
         histCoveragePath: historical-coverage.json
         
     - name: Create Release
-      uses: ncipollo/release-action@v1
+      uses: ncipollo/release-action@v1.11.1
       if: ${{ env.SHOULD_DEPLOY == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         allowUpdates: true
@@ -374,7 +379,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Update Baseline Coverage
-      uses: ncipollo/release-action@v1
+      uses: ncipollo/release-action@v1.11.1
       if: ${{ github.event.inputs.updateCoverage == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         allowUpdates: true
@@ -387,8 +392,51 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v2.3.1
-      if: ${{ env.SHOULD_DEPLOY == 'false' || github.event.inputs.dryrun == 'true' }}
+      uses: actions/upload-artifact@v3
       with:
         name: release-${{ env.PKG_VERSION }}
         path: /home/runner/work/release/release.tar.gz
+        
+    - name: Notify on Slack
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+        payload: |
+          {
+            "text": "Datatracker - Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} completed - <@${{ secrets.SLACK_UID_RJSPARKS }}>"
+          }
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
+        
+  # -----------------------------------------------------------------
+  # SANDBOX
+  # -----------------------------------------------------------------
+  sandbox:
+    name: Deploy to Sandbox
+    if: ${{ github.event.inputs.sandbox == 'true' }}
+    needs: [release]
+    runs-on: dev-server
+    env:
+      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+      
+    steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+        
+    - name: Download a Release Artifact
+      uses: actions/download-artifact@v3.0.0
+      with:
+        name: release-${{ env.PKG_VERSION }}
+        
+    - name: Extract Release Artifact
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        echo "Docker containers:"
+        docker ps -a
+        echo "List files:"
+        ls
+        echo "Extract:"
+        tar -xzf release-${{ env.PKG_VERSION }}.tar.gz

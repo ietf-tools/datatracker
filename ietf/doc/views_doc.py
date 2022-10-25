@@ -43,6 +43,7 @@ import re
 from pathlib import Path
 
 from urllib.parse import quote
+from pathlib import Path
 
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
@@ -656,9 +657,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        sorted_relations=sorted_relations,
                                        ))
 
-    # TODO : Add "recording", and "bluesheets" here when those documents are appropriately
-    #        created and content is made available on disk
-    if doc.type_id in ("slides", "agenda", "minutes", "bluesheets","procmaterials",):
+    if doc.type_id in ("slides", "agenda", "minutes", "bluesheets", "procmaterials",):
         can_manage_material = can_manage_materials(request.user, doc.group)
         presentations = doc.future_presentations()
         if doc.uploaded_filename:
@@ -739,6 +738,29 @@ def document_main(request, name, rev=None, document_html=False):
                            other_reviews=other_reviews,
                            assignments=assignments,
                       ))
+
+    if doc.type_id in ("chatlog", "polls"):
+        if isinstance(doc,DocHistory):
+            session = doc.doc.sessionpresentation_set.last().session
+        else:
+            session = doc.sessionpresentation_set.last().session
+        pathname = Path(session.meeting.get_materials_path()) / doc.type_id / doc.uploaded_filename
+        content = get_unicode_document_content(doc.name, str(pathname))
+        return render(
+            request, 
+            f"doc/document_{doc.type_id}.html",
+            dict(
+                doc=doc,
+                top=top,
+                content=content,
+                revisions=revisions,
+                latest_rev=latest_rev,
+                snapshot=snapshot,
+                session=session,
+            )
+        )
+
+
 
     raise Http404("Document not found: %s" % (name + ("-%s"%rev if rev else "")))
 
