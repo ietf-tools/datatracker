@@ -18,6 +18,7 @@ on:
         type: boolean
       sandbox:
         description: 'Deploy to Sandbox'
+        default: true
         required: true
         type: boolean
       skiptests:
@@ -90,18 +91,18 @@ jobs:
       run: |
         if [[ $NEXT_VERSION ]]; then
           echo "Using AUTO SEMVER mode: $NEXT_VERSION"
-          echo "::set-output name=should_deploy::true"
-          echo "::set-output name=pkg_version::$NEXT_VERSION"
+          echo "should_deploy=true" >> $GITHUB_OUTPUT
+          echo "pkg_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
           echo "::notice::Release $NEXT_VERSION created using branch $GITHUB_REF_NAME"
         elif [[ "$GITHUB_REF" =~ ^refs/tags/* ]]; then
           echo "Using TAG mode: $GITHUB_REF_NAME"
-          echo "::set-output name=should_deploy::true"
-          echo "::set-output name=pkg_version::$GITHUB_REF_NAME"
+          echo "should_deploy=true" >> $GITHUB_OUTPUT
+          echo "pkg_version=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
           echo "::notice::Release $GITHUB_REF_NAME created using tag $GITHUB_REF_NAME"
         else
           echo "Using TEST mode: 8.0.0-dev.$GITHUB_RUN_NUMBER"
-          echo "::set-output name=should_deploy::false"
-          echo "::set-output name=pkg_version::8.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "should_deploy=false" >> $GITHUB_OUTPUT
+          echo "pkg_version=8.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
           echo "::notice::Non-production build 8.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
         fi
 
