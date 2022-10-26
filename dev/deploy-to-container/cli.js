@@ -84,12 +84,16 @@ async function main () {
   const containers = await dock.listContainers({ all: true })
   for (const container of containers) {
     if (container.Names.includes(`/dt-db-${branch}`) || container.Names.includes(`/dt-app-${branch}`)) {
+      const isDbContainer = container.Names.includes(`/dt-db-${branch}`)
       console.info(`Terminating old container ${container.Id}...`)
       const oldContainer = dock.getContainer(container.Id)
       if (container.State === 'running') {
         await oldContainer.stop({ t: 5 })
       }
-      await oldContainer.remove({ force: true })
+      await oldContainer.remove({
+        force: true,
+        v: isDbContainer
+      })
     }
   }
   console.info('Existing containers with same name have been terminated.')
