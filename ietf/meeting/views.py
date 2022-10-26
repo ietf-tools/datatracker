@@ -672,7 +672,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
                 # timeslot structure will be neighbors. The grouping algorithm relies on this!
                 room_data[room.pk]['start_and_duration'],
                 # Within each group, sort higher capacity rooms first.
-                room.capacity if room.capacity is not None else -1,  # sort rooms with capacity = None at end
+                -room.capacity if room.capacity is not None else 1,  # sort rooms with capacity = None at end
                 # Finally, sort alphabetically by name
                 room.name
             )
