@@ -136,6 +136,9 @@ async function main () {
       `VIRTUAL_PORT=8000`
     ],
     HostConfig: {
+      Binds: [
+        'dt-assets:/assets'
+      ],
       NetworkMode: 'shared',
       RestartPolicy: {
         Name: 'unless-stopped'
