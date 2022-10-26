@@ -1293,6 +1293,7 @@ def fuzzy_find_documents(name, rev=None):
     document.
     """
     # Handle special case name formats
+    name = re.sub(r"\s+", "", name.lower())
     if name.startswith('rfc0'):
         name = "rfc" + name[3:].lstrip('0')
     if name.startswith('review-') and re.search(r'-\d\d\d\d-\d\d$', name):
@@ -1303,8 +1304,6 @@ def fuzzy_find_documents(name, rev=None):
         rev = rev[-2:]
     if re.match("^[0-9]+$", name):
         name = f'rfc{name}'
-    if re.match("^[Rr][Ff][Cc] [0-9]+$",name):
-        name = f'rfc{name[4:]}'
 
     # see if we can find a document using this name
     docs = Document.objects.filter(docalias__name=name, type_id='draft')
