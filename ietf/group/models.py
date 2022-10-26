@@ -135,13 +135,13 @@ class Group(GroupInfo):
 
     def is_decendant_of(self, sought_parent):
         parent = self.parent
-        decendants = [ self, ]
-        while (parent != None) and (parent not in decendants):
-            decendants = [ parent ] + decendants
+        descendants = [ self, ]
+        while (parent != None) and (parent not in descendants):
+            descendants = [ parent ] + descendants
             if parent.acronym == sought_parent:
                 return True
             parent = parent.parent
-        log.assertion('parent not in decendants')
+        log.assertion('parent not in descendants')
         return False
 
     def get_chair(self):
@@ -331,7 +331,7 @@ class GroupMilestoneHistory(GroupMilestoneInfo):
     milestone = ForeignKey(GroupMilestone, related_name="history_set")
 
 class GroupStateTransitions(models.Model):
-    """Captures that a group has overriden the default available
+    """Captures that a group has overridden the default available
     document state transitions for a certain state."""
     group = ForeignKey(Group)
     state = ForeignKey('doc.State', help_text="State for which the next states should be overridden")

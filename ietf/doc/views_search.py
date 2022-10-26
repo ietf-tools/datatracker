@@ -280,7 +280,7 @@ def search_for_name(request, name):
     if redirect_to:
         return cached_redirect(cache_key, urlreverse("ietf.doc.views_doc.document_main", kwargs={ "name": redirect_to }))
     else:
-        # check for embedded rev - this may be ambigious, so don't
+        # check for embedded rev - this may be ambiguous, so don't
         # chop it off if we don't find a match
         rev_split = re.search("^(.+)-([0-9]{2})$", n)
         if rev_split:

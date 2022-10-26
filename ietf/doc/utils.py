@@ -1331,7 +1331,7 @@ def bibxml_for_draft(doc, rev=None):
         raise Http404("Revision not found")
 
     # Build the date we want to claim for the document in the bibxml
-    # For documents that have relevent NewRevisionDocEvents, use the date of the event.
+    # For documents that have relevant NewRevisionDocEvents, use the date of the event.
     # Very old documents don't have NewRevisionDocEvents - just use the document time.
         
     latest_revision_event = doc.latest_event(NewRevisionDocEvent, type="new_revision")

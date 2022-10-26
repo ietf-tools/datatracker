@@ -28,12 +28,12 @@ class Subscribed(models.Model):
     class Meta:
         verbose_name_plural = "Subscribed"
 
-class Whitelisted(models.Model):
+class Allowlisted(models.Model):
     time = models.DateTimeField(auto_now_add=True)
     email = models.CharField("Email address", max_length=64, validators=[validate_email])
     by = ForeignKey(Person)
     def __str__(self):
-        return "<Whitelisted: %s at %s>" % (self.email, self.time)
+        return "<Allowlisted: %s at %s>" % (self.email, self.time)
     class Meta:
-        verbose_name_plural = "Whitelisted"
+        verbose_name_plural = "Allowlisted"
 

@@ -87,7 +87,7 @@ def require_api_key(f, request, *args, **kwargs):
 
 
 def _memoize(func, self, *args, **kwargs):
-    ''''Memoize wrapper for instance methouds.  Use @lru_cache for functions.'''
+    ''''Memoize wrapper for instance methods.  Use @lru_cache for functions.'''
     if kwargs:  # frozenset is used to ensure hashability
         key = args, frozenset(list(kwargs.items()))
     else:
@@ -104,7 +104,7 @@ def _memoize(func, self, *args, **kwargs):
     return cache[key]
 def memoize(func):
     if not hasattr(func, '__class__'):
-        raise NotImplementedError("Use @lru_cache instead of memoize() for funcitons.")
+        raise NotImplementedError("Use @lru_cache instead of memoize() for functions.")
     # For methods, we want the cache on the object, not on the class, in order
     # to not having to think about cache bloat and content becoming stale, so
     # we cannot set up the cache here.

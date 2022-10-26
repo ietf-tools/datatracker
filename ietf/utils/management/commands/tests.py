@@ -15,7 +15,7 @@ import debug                            # pyflakes:ignore
 class CoverageChangeTestCase(TestCase):
 
     def test_coverage_change(self):
-        master_txt ="""{
+        main_txt ="""{
               "5.12.0": {
                 "code": {
                   "coverage": 0.5921474057048117, 
@@ -81,16 +81,16 @@ class CoverageChangeTestCase(TestCase):
               "version":"latest"
             }
             """
-        mfh, master = tempfile.mkstemp(suffix='.json')
-        with io.open(master, "w") as file:
-            file.write(master_txt)
+        mfh, main = tempfile.mkstemp(suffix='.json')
+        with io.open(main, "w") as file:
+            file.write(main_txt)
         lfh, latest = tempfile.mkstemp(suffix='.json')
         with io.open(latest, "w") as file:
             file.write(latest_txt)
         output = io.StringIO()
-        call_command('coverage_changes', master, latest, stdout=output)
+        call_command('coverage_changes', main, latest, stdout=output)
         text = output.getvalue()
-        os.unlink(master)
+        os.unlink(main)
         os.unlink(latest)
 
         for l in [

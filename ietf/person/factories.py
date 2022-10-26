@@ -28,9 +28,9 @@ fake = faker.Factory.create()
 def setup():
     global acceptable_fakers
     # The transliteration of some arabic and devanagari names introduces
-    # non-alphabetic characgters that don't work with the draft author
+    # non-alphabetic characters that don't work with the draft author
     # extraction code, and also don't seem to match the way people with arabic
-    # names romanize arabic names.  Exlude those locales from name generation
+    # names romanize arabic names.  Exclude those locales from name generation
     # in order to avoid test failures.
     locales = set( [ l for l in faker.config.AVAILABLE_LOCALES if not (l.startswith('ar_') or l.startswith('sg_') or l=='fr_QC') ] )
     acceptable_fakers = [faker.Faker(locale) for locale in locales]

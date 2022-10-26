@@ -158,7 +158,7 @@ def get_callbacks(urllist, namespace=None):
                 callbacks.add(qualified(entry.name))
             if hasattr(entry, 'lookup_str') and entry.lookup_str:
                 callbacks.add(qualified(entry.lookup_str))
-            # There are some entries we don't handle here, mostly clases
+            # There are some entries we don't handle here, mostly classes
             # (such as Feed subclasses)
 
     return list(callbacks)

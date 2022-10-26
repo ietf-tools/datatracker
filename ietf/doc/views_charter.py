@@ -162,7 +162,7 @@ def change_state(request, name, option=None):
                 if message or charter_state.slug == "intrev" or charter_state.slug == "extrev":
                     email_admin_re_charter(request, group, "Charter state changed to \"%s\"" % charter_state.name, message,'charter_state_edit_admin_needed')
 
-                # TODO - do we need a seperate set of recipients for state changes to charters vrs other kind of documents
+                # TODO - do we need a separate set of recipients for state changes to charters vrs other kind of documents
                 email_state_changed(request, charter, "State changed to %s." % charter_state, 'doc_state_edited')
 
                 if charter_state.slug == "intrev" and group.type_id == "wg":

@@ -247,7 +247,7 @@ class Meeting(models.Model):
         Attendance = namedtuple('Attendance', 'onsite remote')
 
         # MeetingRegistration.attended started conflating badge-pickup and session attendance before IETF 114.
-        # We've separated session attendence off to ietf.meeting.Attended, but need to report attendance at older
+        # We've separated session attendance off to ietf.meeting.Attended, but need to report attendance at older
         # meetings correctly.
 
         attended_per_meetingregistration = (

@@ -18,7 +18,7 @@ from django_password_strength.widgets import PasswordStrengthInput, PasswordConf
 import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person, Email
-from ietf.mailinglists.models import Whitelisted
+from ietf.mailinglists.models import Allowlisted
 from ietf.utils.text import isascii
 
 class RegistrationForm(forms.Form):
@@ -203,9 +203,9 @@ class ResetPasswordForm(forms.Form):
 class TestEmailForm(forms.Form):
     email = forms.EmailField(required=False)
 
-class WhitelistForm(forms.ModelForm):
+class AllowlistForm(forms.ModelForm):
     class Meta:
-        model = Whitelisted
+        model = Allowlisted
         exclude = ['by', 'time' ]
 
     

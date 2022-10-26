@@ -45,7 +45,7 @@ def _get_session(number,name,date,time):
     return assignment.session
 
 def _get_urls_from_json(doc):
-    '''Returns list of dictonary titel,url from search results'''
+    '''Returns list of dictionary title,url from search results'''
     urls = []
     for item in doc['items']:
         title = item['snippet']['title']

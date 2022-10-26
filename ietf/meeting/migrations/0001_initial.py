@@ -134,7 +134,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=16)),
                 ('visible', models.BooleanField(default=True, help_text='Make this agenda available to those who know about it.')),
-                ('public', models.BooleanField(default=True, help_text='Make this agenda publically available.')),
+                ('public', models.BooleanField(default=True, help_text='Make this agenda publicly available.')),
                 ('badness', models.IntegerField(blank=True, null=True)),
                 ('meeting', ietf.utils.models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='meeting.Meeting')),
                 ('owner', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='person.Person')),
