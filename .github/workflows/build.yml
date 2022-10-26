@@ -435,3 +435,9 @@ jobs:
         npm ci
         cd ../..
         node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain neverusethis.com
+        
+    - name: Cleanup old docker resources
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        docker image prune -a
