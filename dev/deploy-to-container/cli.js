@@ -94,6 +94,20 @@ async function main () {
   }
   console.info('Existing containers with same name have been terminated.')
 
+  // Get shared docker network
+  console.info('Querying shared docker network...')
+  const networks = await dock.listNetworks()
+  if (!networks.some(n => n.Name === 'shared')) {
+    console.info('No shared docker network found, creating a new one...')
+    await dock.createNetwork({
+      Name: 'shared',
+      CheckDuplicate: true
+    })
+    console.info('Created shared docker network successfully.')
+  } else {
+    console.info('Existing shared docker network found.')
+  }
+
   // Create DB container
   console.info(`Creating DB docker container... [dt-db-${branch}]`)
   const dbContainer = await dock.createContainer({
@@ -101,7 +115,7 @@ async function main () {
     name: `dt-db-${branch}`,
     Hostname: `dt-db-${branch}`,
     HostConfig: {
-      NetworkMode: 'bridge',
+      NetworkMode: 'shared',
       RestartPolicy: {
         Name: 'unless-stopped'
       }
@@ -122,7 +136,7 @@ async function main () {
       `VIRTUAL_PORT=8000`
     ],
     HostConfig: {
-      NetworkMode: 'bridge',
+      NetworkMode: 'shared',
       RestartPolicy: {
         Name: 'unless-stopped'
       }
