@@ -419,26 +419,19 @@ jobs:
     env:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
       
-    steps:       
-    - name: Test
-      env:
-        DEBIAN_FRONTEND: noninteractive
-      run: |
-        docker ps -a
-        echo "PKG_VERSION: $PKG_VERSION"
+    steps:
+    - uses: actions/checkout@v3
         
     - name: Download a Release Artifact
       uses: actions/download-artifact@v3.0.0
       with:
         name: release-${{ env.PKG_VERSION }}
         
-    - name: Extract Release Artifact
+    - name: Deploy to containers
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        echo "Docker containers:"
-        docker ps -a
-        echo "List files:"
-        ls
-        echo "Extract:"
-        tar -xzf release-${{ env.PKG_VERSION }}.tar.gz
+        cd dev/deploy-to-container
+        npm ci
+        cd ../..
+        node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain neverusethis.com
