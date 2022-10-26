@@ -1,8 +1,6 @@
-# Datatracker Diff Tool
+# Datatracker Deploy to Container Tool
 
-This tool facilitates testing 2 different datatracker instances (with their own database) and look for changes using the diff tool. Everything runs in docker containers.
-
-The source instance will use the code from where it is run. The target instance can be a remote tag / branch / commmit or another local folder.
+This tool takes a release.tar.gz build file and deploys it as a container, along with its own database container.
 
 ## Requirements
 
@@ -11,12 +9,14 @@ The source instance will use the code from where it is run. The target instance 
 
 ## Usage
 
-1. From the `dev/diff` directory, run the command:
+1. From the `dev/deploy-to-container` directory, run the command:
 ```sh
 npm install
 ```
-2. Then run the command:
+2. Make sure you have a `release.tar.gz` tarball in the project root directory.
+3. From the project root directory (back up 2 levels), run the command: (replacing the `branch` and `domain` arguments)
 ```sh
-node cli
+node ./dev/deploy-to-container/cli.js --branch main --domain something.com
 ```
-3. Follow the on-screen instructions.
+
+A container named `dt-app-BRANCH` and `dt-db-BRANCH` (where BRANCH is the argument provided above) will be created.
