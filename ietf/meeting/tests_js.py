@@ -34,6 +34,7 @@ from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.utils.test_utils import assert_ical_response_is_valid
 from ietf.utils.jstest import ( IetfSeleniumTestCase, ifSeleniumEnabled, selenium_enabled,
                                 presence_of_element_child_by_css_selector )
+from ietf.utils.timezone import timezone_not_near_midnight
 
 if selenium_enabled():
     from selenium.webdriver.common.action_chains import ActionChains
@@ -392,7 +393,12 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
     def test_past_swap_days_buttons(self):
         """Swap days buttons should be hidden for past items"""
         wait = WebDriverWait(self.driver, 2)
-        meeting = MeetingFactory(type_id='ietf', date=datetime.datetime.today() - datetime.timedelta(days=3), days=7)
+        meeting = MeetingFactory(
+            type_id='ietf',
+            date=datetime.datetime.today() - datetime.timedelta(days=3),
+            days=7,
+            time_zone=timezone_not_near_midnight(),
+        )
         room = RoomFactory(meeting=meeting)
 
         # get current time in meeting time zone
