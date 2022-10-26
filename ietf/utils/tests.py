@@ -505,3 +505,15 @@ class TimezoneTests(TestCase):
             self.assertEqual(timezone_not_near_midnight(), 'Europe/Riga')
             self.assertEqual(timezone_not_near_midnight(), 'Europe/Riga')
             self.assertEqual(timezone_not_near_midnight(), 'Europe/Riga')
+
+        # now give it no valid choice
+        with patch(
+                'ietf.utils.timezone.pytz.common_timezones',
+                [
+                    'America/Chicago',  # time is 23:15, should be rejected
+                    'America/Lima',  # time is 23:15, should be rejected
+                    'America/New_York',  # time is 00:15, should be rejected
+                ],
+        ):
+            with self.assertRaises(RuntimeError):
+                timezone_not_near_midnight()
