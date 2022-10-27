@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 
 
-import datetime
-
+from django.conf import settings
 from django.contrib.syndication.views import Feed
 from django.utils.feedgenerator import Atom1Feed
 
 from ietf.doc.models import Document, TelechatDocEvent
+from ietf.utils.timezone import date_today
+
 
 class IESGAgendaFeed(Feed):
     title = "Documents on Future IESG Telechat Agendas"
@@ -16,7 +17,7 @@ class IESGAgendaFeed(Feed):
     description_template = "iesg/feed_item_description.html"
 
     def items(self):
-        docs = Document.objects.filter(docevent__telechatdocevent__telechat_date__gte=datetime.date.today()).distinct()
+        docs = Document.objects.filter(docevent__telechatdocevent__telechat_date__gte=date_today(settings.TIME_ZONE)).distinct()
         for d in docs:
             d.latest_telechat_event = d.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
         docs = [d for d in docs if d.latest_telechat_event.telechat_date]

@@ -1,7 +1,5 @@
 # Copyright The IETF Trust 2022, All Rights Reserved
 # -*- coding: utf-8 -*-
-import datetime
-
 from textwrap import dedent
 
 from django.conf import settings
@@ -9,6 +7,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from ietf.meeting.models import Session
 from ietf.utils.meetecho import ConferenceManager, MeetechoAPIError
+from ietf.utils.timezone import date_today
 
 
 class Command(BaseCommand):
@@ -85,7 +84,7 @@ class Command(BaseCommand):
         for conf in confs:
             conf_sessions[conf.id] = Session.objects.filter(
                 group__acronym=group,
-                meeting__date__gte=datetime.date.today(),
+                meeting__date__gte=date_today(),
                 remote_instructions__contains=conf.url,
             )
         return confs, conf_sessions

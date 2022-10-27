@@ -19,6 +19,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.forms.utils import ErrorList
 from django.template.defaultfilters import pluralize
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -52,6 +53,8 @@ from ietf.utils.mail import send_mail, send_mail_message, on_behalf_of
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils import log
 from ietf.utils.response import permission_denied
+from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO
+
 
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg"), empty_label=None, required=True)
@@ -857,7 +860,7 @@ def resurrect(request, name):
         events.append(e)
 
         doc.set_state(State.objects.get(used=True, type="draft", slug="active"))
-        doc.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
+        doc.expires = timezone.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
         doc.save_with_history(events)
 
         restore_draft_file(request, doc)
@@ -1480,7 +1483,7 @@ def adopt_draft(request, name):
 
                 due_date = None
                 if form.cleaned_data["weeks"] != None:
-                    due_date = datetime.date.today() + datetime.timedelta(weeks=form.cleaned_data["weeks"])
+                    due_date = datetime_today(DEADLINE_TZINFO) + datetime.timedelta(weeks=form.cleaned_data["weeks"])
 
                 update_reminder(doc, "stream-s", e, due_date)
 
@@ -1671,7 +1674,7 @@ def change_stream_state(request, name, state_type):
 
                 due_date = None
                 if form.cleaned_data["weeks"] != None:
-                    due_date = datetime.date.today() + datetime.timedelta(weeks=form.cleaned_data["weeks"])
+                    due_date = datetime_today(DEADLINE_TZINFO) + datetime.timedelta(weeks=form.cleaned_data["weeks"])
 
                 update_reminder(doc, "stream-s", e, due_date)
 

@@ -62,7 +62,7 @@
                 </tbody>
             </table>
             {% else %}
-                <p>{{ person.first_name }} has no active roles as of {{ today }}.</p>
+                <p>{{ person.first_name }} has no active roles as of {{ today|date:"Y-m-d" }}.</p>
             {% endif %}
         {% endif %}
         {% if person.personextresource_set.exists %}
@@ -123,7 +123,7 @@
                 </tbody>
             </table>
         {% else %}
-            {{ person.first_name }} has no RFCs as of {{ today }}.
+            {{ person.first_name }} has no RFCs as of {{ today|date:"Y-m-d" }}.
         {% endif %}
         <h2 class="mt-5" id="drafts-{{ forloop.counter }}">
             Active Drafts <small class="text-muted">({{ person.active_drafts|length }})</small>
@@ -137,7 +137,7 @@
                 {% endfor %}
             </ul>
         {% else %}
-            {{ person.first_name }} has no active drafts as of {{ today }}.
+            {{ person.first_name }} has no active drafts as of {{ today|date:"Y-m-d" }}.
         {% endif %}
         <h2 class="mt-5">
             Expired Drafts <small class="text-muted">({{ person.expired_drafts|length }})</small>
@@ -156,7 +156,7 @@
             </ul>
             (Excluding replaced drafts.)
         {% else %}
-            {{ person.first_name }} has no expired drafts as of {{ today }}.
+            {{ person.first_name }} has no expired drafts as of {{ today|date:"Y-m-d" }}.
         {% endif %}
         {% if person.has_drafts %}
             <h2 class="mt-5">

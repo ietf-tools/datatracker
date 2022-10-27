@@ -21,6 +21,7 @@ from urllib.parse import urlparse, urlsplit
 from PIL import Image
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from zoneinfo import ZoneInfo
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
@@ -29,8 +30,8 @@ from django.test import Client, override_settings
 from django.db.models import F, Max
 from django.http import QueryDict, FileResponse
 from django.template import Context, Template
+from django.utils import timezone
 from django.utils.text import slugify
-from django.utils.timezone import now
 
 import debug           # pyflakes:ignore
 
@@ -51,6 +52,7 @@ from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, Pro
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
+from ietf.utils.timezone import date_today, time_now
 
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import GroupFactory, GroupEventFactory, RoleFactory
@@ -154,7 +156,7 @@ class MeetingTests(BaseMeetingTestCase):
         #
         self.write_materials_files(meeting, session)
         #
-        future_year = datetime.date.today().year+1
+        future_year = date_today().year+1
         future_num =  (future_year-1984)*3            # valid for the mid-year meeting
         future_meeting = Meeting.objects.create(date=datetime.date(future_year, 7, 22), number=future_num, type_id='ietf',
                                 city="Panama City", country="PA", time_zone='America/Panama')
@@ -213,7 +215,10 @@ class MeetingTests(BaseMeetingTestCase):
         )
 
         # plain
-        time_interval = r"%s<span.*/span>-%s" % (slot.time.strftime("%H:%M").lstrip("0"), (slot.time + slot.duration).strftime("%H:%M").lstrip("0"))
+        time_interval = r"{}<span.*/span>-{}".format(
+            slot.time.astimezone(meeting.tz()).strftime("%H:%M").lstrip("0"),
+            slot.end_time().astimezone(meeting.tz()).strftime("%H:%M").lstrip("0"),
+        )
 
         # text
         # the rest of the results don't have as nicely formatted times
@@ -351,7 +356,7 @@ class MeetingTests(BaseMeetingTestCase):
     def test_interim_materials(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
-        date = datetime.datetime.today() - datetime.timedelta(days=10)
+        date = timezone.now() - datetime.timedelta(days=10)
         meeting = make_interim_meeting(group=group, date=date, status='sched')
         session = meeting.session_set.first()
 
@@ -548,7 +553,12 @@ class MeetingTests(BaseMeetingTestCase):
         a1 = s1.official_timeslotassignment()
         t1 = a1.timeslot
         # Create an extra session
-        t2 = TimeSlotFactory.create(meeting=meeting, time=datetime.datetime.combine(meeting.date, datetime.time(11, 30)))
+        t2 = TimeSlotFactory.create(
+            meeting=meeting,
+            time=meeting.tz().localize(
+                datetime.datetime.combine(meeting.date, datetime.time(11, 30))
+            )
+        )
         s2 = SessionFactory.create(meeting=meeting, group=s1.group, add_to_schedule=False)
         SchedTimeSessAssignment.objects.create(timeslot=t2, session=s2, schedule=meeting.schedule)
         #
@@ -558,16 +568,16 @@ class MeetingTests(BaseMeetingTestCase):
                                       r,
                                       expected_event_summaries=['mars - Martian Special Interest Group'],
                                       expected_event_count=2)
-        self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
-        self.assertContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t1.local_start_time().strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t2.local_start_time().strftime('%Y%m%dT%H%M%S'))
         #
         url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number, 'session_id':s1.id, })
         r = self.client.get(url)
         assert_ical_response_is_valid(self, r,
                                       expected_event_summaries=['mars - Martian Special Interest Group'],
                                       expected_event_count=1)
-        self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
-        self.assertNotContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t1.local_start_time().strftime('%Y%m%dT%H%M%S'))
+        self.assertNotContains(r, t2.local_start_time().strftime('%Y%m%dT%H%M%S'))
 
     def test_parse_agenda_filter_params(self):
         def _r(show=(), hide=(), showtypes=(), hidetypes=()):
@@ -673,7 +683,7 @@ class MeetingTests(BaseMeetingTestCase):
         url = urlreverse('ietf.meeting.views.current_materials')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
-        MeetingFactory(type_id='ietf', date=datetime.date.today())
+        MeetingFactory(type_id='ietf', date=date_today())
         response = self.client.get(url)
         self.assertEqual(response.status_code, 302)
 
@@ -818,7 +828,9 @@ class EditMeetingScheduleTests(TestCase):
                     TimeSlotFactory(
                         meeting=meeting,
                         location=room,
-                        time=datetime.datetime.combine(meeting.date, time),
+                        time=meeting.tz().localize(
+                            datetime.datetime.combine(meeting.date, time)
+                        ),
                         duration=datetime.timedelta(minutes=duration),
                     )
 
@@ -889,7 +901,7 @@ class EditMeetingScheduleTests(TestCase):
         # Meeting must be in the future so it can be edited
         meeting = MeetingFactory(
             type_id='ietf',
-            date=datetime.date.today() + datetime.timedelta(days=7),
+            date=date_today() + datetime.timedelta(days=7),
             populate_schedule=False,
         )
         meeting.schedule = ScheduleFactory(meeting=meeting)
@@ -902,7 +914,11 @@ class EditMeetingScheduleTests(TestCase):
         ]
 
         # Set up different sets of timeslots
-        t0 = datetime.datetime.combine(meeting.date, datetime.time(11, 0))
+        # Work with t0 in UTC for arithmetic. This does not change the results but is cleaner if someone looks
+        # at intermediate results which may be misleading until passed through tz.normalize().
+        t0 = meeting.tz().localize(
+            datetime.datetime.combine(meeting.date, datetime.time(11, 0))
+        ).astimezone(pytz.utc)
         dur = datetime.timedelta(hours=2)
         for room in room_groups[0]:
             TimeSlotFactory(meeting=meeting, location=room, duration=dur, time=t0)
@@ -997,7 +1013,7 @@ class EditMeetingScheduleTests(TestCase):
         self.client.login(username=username, password=username + '+password')
 
         # Swap group 0's first and last sessions, first in the past
-        right_now = self._right_now_in(meeting.time_zone)
+        right_now = self._right_now_in(meeting.tz())
         for room in room_groups[0]:
             ts = room.timeslot_set.last()
             ts.time = right_now - datetime.timedelta(minutes=5)
@@ -1179,12 +1195,18 @@ class EditMeetingScheduleTests(TestCase):
         self.client.login(username=username, password=username + '+password')
 
         # Swap group 0's first and last sessions, first in the past
-        right_now = self._right_now_in(meeting.time_zone)
-        yesterday = (right_now - datetime.timedelta(days=1)).date()
-        day_before = (right_now - datetime.timedelta(days=2)).date()
+        right_now = self._right_now_in(meeting.tz())
+        yesterday = right_now.date() - datetime.timedelta(days=1)
+        day_before = right_now.date() - datetime.timedelta(days=2)
         for room in room_groups[0]:
             ts = room.timeslot_set.last()
-            ts.time = datetime.datetime.combine(yesterday, ts.time.time())
+            # Calculation keeps local clock time, shifted to a different day.
+            ts.time = meeting.tz().localize(
+                datetime.datetime.combine(
+                    yesterday,
+                    ts.time.astimezone(meeting.tz()).time()
+                ),
+            )
             ts.save()
         # timeslot_set is ordered by -time, so check that we know which is past/future
         self.assertTrue(room_groups[0][0].timeslot_set.last().time < right_now)
@@ -1218,7 +1240,12 @@ class EditMeetingScheduleTests(TestCase):
         # now with both in the past
         for room in room_groups[0]:
             ts = room.timeslot_set.first()
-            ts.time = datetime.datetime.combine(day_before, ts.time.time())
+            ts.time = meeting.tz().localize(
+                datetime.datetime.combine(
+                    day_before,
+                    ts.time.astimezone(meeting.tz()).time(),
+                )
+            )
             ts.save()
         past_slots = room_groups[0][0].timeslot_set.filter(time__lt=right_now)
         self.assertEqual(len(past_slots), 2, 'Need two timeslots in the past!')
@@ -1241,20 +1268,18 @@ class EditMeetingScheduleTests(TestCase):
             self.fail('Response was not valid JSON: {}'.format(err))
 
     @staticmethod
-    def _right_now_in(tzname):
-        right_now = now().astimezone(pytz.timezone(tzname))
-        if not settings.USE_TZ:
-            right_now = right_now.replace(tzinfo=None)
+    def _right_now_in(tzinfo):
+        right_now = timezone.now().astimezone(tzinfo)
         return right_now
 
     def test_assign_session(self):
         """Allow assignment to future timeslots only for official schedule"""
         meeting = MeetingFactory(
             type_id='ietf',
-            date=(datetime.datetime.today() - datetime.timedelta(days=1)).date(),
+            date=(timezone.now() - datetime.timedelta(days=1)).date(),
             days=3,
         )
-        right_now = self._right_now_in(meeting.time_zone)
+        right_now = self._right_now_in(meeting.tz())
 
         schedules = dict(
             official=meeting.schedule,
@@ -1311,10 +1336,10 @@ class EditMeetingScheduleTests(TestCase):
         """Do not allow assignment of past sessions for official schedule"""
         meeting = MeetingFactory(
             type_id='ietf',
-            date=(datetime.datetime.today() - datetime.timedelta(days=1)).date(),
+            date=(timezone.now() - datetime.timedelta(days=1)).date(),
             days=3,
         )
-        right_now = self._right_now_in(meeting.time_zone)
+        right_now = self._right_now_in(meeting.tz())
 
         schedules = dict(
             official=meeting.schedule,
@@ -1446,10 +1471,10 @@ class EditMeetingScheduleTests(TestCase):
         """Allow unassignment only of future timeslots for official schedule"""
         meeting = MeetingFactory(
             type_id='ietf',
-            date=(datetime.datetime.today() - datetime.timedelta(days=1)).date(),
+            date=(timezone.now() - datetime.timedelta(days=1)).date(),
             days=3,
         )
-        right_now = self._right_now_in(meeting.time_zone)
+        right_now = self._right_now_in(meeting.tz())
 
         schedules = dict(
             official=meeting.schedule,
@@ -1531,7 +1556,7 @@ class EditMeetingScheduleTests(TestCase):
         """Schedule editor should not crash when there are no timeslots"""
         meeting = MeetingFactory(
             type_id='ietf',
-            date=datetime.date.today() + datetime.timedelta(days=7),
+            date=date_today() + datetime.timedelta(days=7),
             populate_schedule=False,
         )
         meeting.schedule = ScheduleFactory(meeting=meeting)
@@ -1544,6 +1569,58 @@ class EditMeetingScheduleTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'No timeslots exist')
         self.assertContains(r, urlreverse('ietf.meeting.views.edit_timeslots', kwargs={'num': meeting.number}))
+
+    def test_editor_time_zone(self):
+        """Agenda editor should show meeting time zone"""
+        time_zone = 'Etc/GMT+8'
+        meeting_tz = ZoneInfo(time_zone)
+        meeting = MeetingFactory(
+            type_id='ietf',
+            date=date_today(meeting_tz) + datetime.timedelta(days=7),
+            populate_schedule=False,
+            time_zone=time_zone,
+        )
+        meeting.schedule = ScheduleFactory(meeting=meeting)
+        meeting.save()
+        timeslot = TimeSlotFactory(meeting=meeting)
+        ts_start = timeslot.time.astimezone(meeting_tz)
+        ts_end = timeslot.end_time().astimezone(meeting_tz)
+        url = urlreverse('ietf.meeting.views.edit_meeting_schedule', kwargs={'num': meeting.number})
+        self.assertTrue(self.client.login(username='secretary', password='secretary+password'))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        pq = PyQuery(r.content)
+
+        day_header = pq('.day-flow .day-label')
+        self.assertIn(ts_start.strftime('%A'), day_header.text())
+
+        day_swap = day_header.find('.swap-days')
+        self.assertEqual(day_swap.attr('data-dayid'), ts_start.date().isoformat())
+        self.assertEqual(day_swap.attr('data-start'), ts_start.date().isoformat())
+
+        time_label = pq('.day-flow .time-header .time-label')
+        self.assertEqual(len(time_label), 1)
+        # strftime() does not seem to support hours without leading 0, so do this manually
+        time_label_string = f'{ts_start.hour:d}:{ts_start.minute:02d} - {ts_end.hour:d}:{ts_end.minute:02d}'
+        self.assertIn(time_label_string, time_label.text())
+        self.assertEqual(time_label.attr('data-start'), ts_start.astimezone(datetime.timezone.utc).isoformat())
+        self.assertEqual(time_label.attr('data-end'), ts_end.astimezone(datetime.timezone.utc).isoformat())
+
+        ts_swap = time_label.find('.swap-timeslot-col')
+        origin_label = ts_swap.attr('data-origin-label')
+        # testing the exact date in origin_label is hard because Django's date filter uses
+        # different month formats than Python's strftime, so just check a couple parts.
+        self.assertIn(ts_start.strftime('%A'), origin_label)
+        self.assertIn(f'{ts_start.hour:d}:{ts_start.minute:02d}-{ts_end.hour:d}:{ts_end.minute:02d}', origin_label)
+
+        timeslot_elt = pq(f'#timeslot{timeslot.pk}')
+        self.assertEqual(len(timeslot_elt), 1)
+        self.assertEqual(timeslot_elt.attr('data-start'), ts_start.astimezone(datetime.timezone.utc).isoformat())
+        self.assertEqual(timeslot_elt.attr('data-end'), ts_end.astimezone(datetime.timezone.utc).isoformat())
+
+        timeslot_label = pq(f'#timeslot{timeslot.pk} .time-label')
+        self.assertEqual(len(timeslot_label), 1)
+        self.assertIn(time_label_string, timeslot_label.text())
 
 
 class EditTimeslotsTests(TestCase):
@@ -1570,7 +1647,7 @@ class EditTimeslotsTests(TestCase):
         return MeetingFactory(
             type_id='ietf',
             number=number,
-            date=datetime.datetime.today() + datetime.timedelta(days=10),
+            date=date_today() + datetime.timedelta(days=10),
             populate_schedule=False,
         )
 
@@ -1602,7 +1679,8 @@ class EditTimeslotsTests(TestCase):
         meeting = self.create_bare_meeting(number=number)
         RoomFactory.create_batch(8, meeting=meeting)
         self.create_initial_schedule(meeting)
-        return meeting
+        # retrieve meeting from DB so it goes through Django's processing
+        return Meeting.objects.get(pk=meeting.pk)
 
     def test_view_permissions(self):
         """Only the secretary should be able to edit timeslots"""
@@ -1771,7 +1849,7 @@ class EditTimeslotsTests(TestCase):
         meeting = self.create_meeting()
         # add some timeslots
         times = [datetime.time(hour=h) for h in (11, 14)]
-        days = [meeting.get_meeting_date(ii).date() for ii in range(meeting.days)]
+        days = [meeting.get_meeting_date(ii) for ii in range(meeting.days)]
 
         timeslots = []
         duration = datetime.timedelta(minutes=90)
@@ -1781,7 +1859,7 @@ class EditTimeslotsTests(TestCase):
                     TimeSlotFactory(
                         meeting=meeting,
                         location=room,
-                        time=datetime.datetime.combine(day, t),
+                        time=meeting.tz().localize(datetime.datetime.combine(day, t)),
                         duration=duration,
                     )
                     for t in times
@@ -1862,17 +1940,21 @@ class EditTimeslotsTests(TestCase):
             TimeSlotFactory(
                 meeting=meeting,
                 location=meeting.room_set.first(),
-                time=datetime.datetime.combine(
-                    meeting.get_meeting_date(day).date(),
-                    datetime.time(hour=11)
+                time=meeting.tz().localize(
+                    datetime.datetime.combine(
+                        meeting.get_meeting_date(day),
+                        datetime.time(hour=11),
+                    )
                 ),
             )
             TimeSlotFactory(
                 meeting=meeting,
                 location=meeting.room_set.first(),
-                time=datetime.datetime.combine(
-                    meeting.get_meeting_date(day).date(),
-                    datetime.time(hour=14)
+                time=meeting.tz().localize(
+                    datetime.datetime.combine(
+                        meeting.get_meeting_date(day),
+                        datetime.time(hour=14),
+                    )
                 ),
             )
 
@@ -1971,10 +2053,8 @@ class EditTimeslotsTests(TestCase):
 
         name_before = 'Name Classic (tm)'
         type_before = 'regular'
-        time_before = datetime.datetime.combine(
-            meeting.date,
-            datetime.time(hour=10),
-        )
+        time_utc = pytz.utc.localize(datetime.datetime.combine(meeting.date, datetime.time(hour=10)))
+        time_before = time_utc.astimezone(meeting.tz())
         duration_before = datetime.timedelta(minutes=60)
         show_location_before = True
         location_before = meeting.room_set.first()
@@ -1991,7 +2071,7 @@ class EditTimeslotsTests(TestCase):
         self.login()
         name_after = 'New Name (tm)'
         type_after = 'plenary'
-        time_after = time_before + datetime.timedelta(days=1, hours=2)
+        time_after = (time_utc + datetime.timedelta(days=1, hours=2)).astimezone(meeting.tz())
         duration_after = duration_before * 2
         show_location_after = False
         location_after = meeting.room_set.last()
@@ -2171,8 +2251,8 @@ class EditTimeslotsTests(TestCase):
         ts = meeting.timeslot_set.exclude(pk__in=timeslots_before).first()  # only 1
         self.assertEqual(ts.name, post_data['name'])
         self.assertEqual(ts.type_id, post_data['type'])
-        self.assertEqual(str(ts.time.date().toordinal()), post_data['days'])
-        self.assertEqual(ts.time.strftime('%H:%M'), post_data['time'])
+        self.assertEqual(str(ts.local_start_time().date().toordinal()), post_data['days'])
+        self.assertEqual(ts.local_start_time().strftime('%H:%M'), post_data['time'])
         self.assertEqual(str(ts.duration), '{}:00'.format(post_data['duration']))  # add seconds
         self.assertEqual(ts.show_location, post_data['show_location'])
         self.assertEqual(str(ts.location.pk), post_data['locations'])
@@ -2181,7 +2261,7 @@ class EditTimeslotsTests(TestCase):
         """Creating a single timeslot outside the official meeting days should work"""
         meeting = self.create_meeting()
         timeslots_before = set(ts.pk for ts in meeting.timeslot_set.all())
-        other_date = meeting.get_meeting_date(-7).date()
+        other_date = meeting.get_meeting_date(-7)
         post_data = dict(
             name='some name',
             type='regular',
@@ -2204,8 +2284,8 @@ class EditTimeslotsTests(TestCase):
         ts = meeting.timeslot_set.exclude(pk__in=timeslots_before).first()  # only 1
         self.assertEqual(ts.name, post_data['name'])
         self.assertEqual(ts.type_id, post_data['type'])
-        self.assertEqual(ts.time.date(), other_date)
-        self.assertEqual(ts.time.strftime('%H:%M'), post_data['time'])
+        self.assertEqual(ts.local_start_time().date(), other_date)
+        self.assertEqual(ts.local_start_time().strftime('%H:%M'), post_data['time'])
         self.assertEqual(str(ts.duration), '{}:00'.format(post_data['duration']))  # add seconds
         self.assertEqual(ts.show_location, post_data['show_location'])
         self.assertEqual(str(ts.location.pk), post_data['locations'])
@@ -2419,8 +2499,8 @@ class EditTimeslotsTests(TestCase):
         """Creating multiple timeslots should work"""
         meeting = self.create_meeting()
         timeslots_before = set(ts.pk for ts in meeting.timeslot_set.all())
-        days = [meeting.get_meeting_date(n).date() for n in range(meeting.days)]
-        other_date = meeting.get_meeting_date(-1).date()  # date before start of meeting
+        days = [meeting.get_meeting_date(n) for n in range(meeting.days)]
+        other_date = meeting.get_meeting_date(-1)  # date before start of meeting
         self.assertNotIn(other_date, days)
         locations = meeting.room_set.all()
         post_data = dict(
@@ -2450,10 +2530,10 @@ class EditTimeslotsTests(TestCase):
         for ts in meeting.timeslot_set.exclude(pk__in=timeslots_before):
             self.assertEqual(ts.name, post_data['name'])
             self.assertEqual(ts.type_id, post_data['type'])
-            self.assertEqual(ts.time.strftime('%H:%M'), post_data['time'])
+            self.assertEqual(ts.local_start_time().strftime('%H:%M'), post_data['time'])
             self.assertEqual(str(ts.duration), '{}:00'.format(post_data['duration']))  # add seconds
             self.assertEqual(ts.show_location, post_data['show_location'])
-            self.assertIn(ts.time.date(), days)
+            self.assertIn(ts.local_start_time().date(), days)
             self.assertIn(ts.location, locations)
             self.assertIn((ts.time.date(), ts.location), day_locs,
                           'Duplicated day / location found')
@@ -2593,7 +2673,7 @@ class ReorderSlidesTests(TestCase):
     def test_add_slides_to_session(self):
         for type_id in ('ietf','interim'):
             chair_role = RoleFactory(name_id='chair')
-            session = SessionFactory(group=chair_role.group, meeting__date=datetime.date.today()-datetime.timedelta(days=90), meeting__type_id=type_id)
+            session = SessionFactory(group=chair_role.group, meeting__date=date_today() - datetime.timedelta(days=90), meeting__type_id=type_id)
             slides = DocumentFactory(type_id='slides')
             url = urlreverse('ietf.meeting.views.ajax_add_slides_to_session', kwargs={'session_id':session.pk, 'num':session.meeting.number})
 
@@ -2609,7 +2689,7 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 403)
             self.assertIn('materials cutoff', unicontent(r))
 
-            session.meeting.date = datetime.date.today()
+            session.meeting.date = date_today()
             session.meeting.save()
 
             # Invalid order
@@ -2696,7 +2776,7 @@ class ReorderSlidesTests(TestCase):
     def test_remove_slides_from_session(self):
         for type_id in ['ietf','interim']:
             chair_role = RoleFactory(name_id='chair')
-            session = SessionFactory(group=chair_role.group, meeting__date=datetime.date.today()-datetime.timedelta(days=90), meeting__type_id=type_id)
+            session = SessionFactory(group=chair_role.group, meeting__date=date_today()-datetime.timedelta(days=90), meeting__type_id=type_id)
             slides = DocumentFactory(type_id='slides')
             url = urlreverse('ietf.meeting.views.ajax_remove_slides_from_session', kwargs={'session_id':session.pk, 'num':session.meeting.number})
 
@@ -2712,7 +2792,7 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 403)
             self.assertIn('materials cutoff', unicontent(r))
 
-            session.meeting.date = datetime.date.today()
+            session.meeting.date = date_today()
             session.meeting.save()
 
             # Invalid order
@@ -2807,7 +2887,7 @@ class ReorderSlidesTests(TestCase):
 
     def test_reorder_slides_in_session(self):
         chair_role = RoleFactory(name_id='chair')
-        session = SessionFactory(group=chair_role.group, meeting__date=datetime.date.today()-datetime.timedelta(days=90))
+        session = SessionFactory(group=chair_role.group, meeting__date=date_today() - datetime.timedelta(days=90))
         sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session)
         for num, sp in enumerate(sp_list, start=1):
             sp.order = num
@@ -2817,7 +2897,7 @@ class ReorderSlidesTests(TestCase):
         for type_id in ['ietf','interim']:
             
             session.meeting.type_id = type_id
-            session.meeting.date = datetime.date.today()-datetime.timedelta(days=90)
+            session.meeting.date = date_today()-datetime.timedelta(days=90)
             session.meeting.save()
 
             # Not a valid user
@@ -2832,7 +2912,7 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 403)
             self.assertIn('materials cutoff', unicontent(r))
 
-            session.meeting.date = datetime.date.today()
+            session.meeting.date = date_today()
             session.meeting.save()
 
             # Bad index values
@@ -2899,7 +2979,7 @@ class ReorderSlidesTests(TestCase):
 
     def test_slide_order_reconditioning(self):
         chair_role = RoleFactory(name_id='chair')
-        session = SessionFactory(group=chair_role.group, meeting__date=datetime.date.today()-datetime.timedelta(days=90))
+        session = SessionFactory(group=chair_role.group, meeting__date=date_today() - datetime.timedelta(days=90))
         sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session)
         for num, sp in enumerate(sp_list, start=1):
             sp.order = 2*num
@@ -2918,7 +2998,7 @@ class EditTests(TestCase):
 
     def test_official_record_schedule_is_read_only(self):
         def _set_date_offset_and_retrieve_page(meeting, days_offset, client):
-            meeting.date = datetime.date.today() + datetime.timedelta(days=days_offset)
+            meeting.date = date_today() + datetime.timedelta(days=days_offset)
             meeting.save()
             client.login(username="secretary", password="secretary+password")
             url = urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs=dict(num=meeting.number))
@@ -3001,7 +3081,9 @@ class EditTests(TestCase):
         room = Room.objects.get(meeting=meeting, session_types='regular')
         base_timeslot = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
                                                 duration=datetime.timedelta(minutes=50),
-                                                time=datetime.datetime.combine(meeting.date + datetime.timedelta(days=2), datetime.time(9, 30)))
+                                                time=meeting.tz().localize(
+                                                    datetime.datetime.combine(meeting.date + datetime.timedelta(days=2), datetime.time(9, 30))
+                                                ))
 
         timeslots = list(TimeSlot.objects.filter(meeting=meeting, type='regular').order_by('time'))
 
@@ -3223,7 +3305,12 @@ class EditTests(TestCase):
         self.assertIn("#scroll=1234", r['Location'])
 
         test_timeslot = TimeSlot.objects.get(meeting=meeting, name="IETF Testing")
-        self.assertEqual(test_timeslot.time, datetime.datetime.combine(meeting.date, datetime.time(8, 30)))
+        self.assertEqual(
+            test_timeslot.time,
+            meeting.tz().localize(
+                datetime.datetime.combine(meeting.date, datetime.time(8, 30))
+            ),
+        )
         self.assertEqual(test_timeslot.duration, datetime.timedelta(hours=1, minutes=30))
         self.assertEqual(test_timeslot.location_id, break_room.pk)
         self.assertEqual(test_timeslot.show_location, True)
@@ -3265,7 +3352,12 @@ class EditTests(TestCase):
         })
         self.assertNoFormPostErrors(r)
         test_timeslot.refresh_from_db()
-        self.assertEqual(test_timeslot.time, datetime.datetime.combine(meeting.date, datetime.time(9, 30)))
+        self.assertEqual(
+            test_timeslot.time,
+            meeting.tz().localize(
+                datetime.datetime.combine(meeting.date, datetime.time(9, 30))
+            ),
+        )
         self.assertEqual(test_timeslot.duration, datetime.timedelta(hours=1))
         self.assertEqual(test_timeslot.location_id, breakfast_room.pk)
         self.assertEqual(test_timeslot.show_location, False)
@@ -3710,7 +3802,7 @@ class SessionDetailsTests(TestCase):
     def test_session_details(self):
 
         group = GroupFactory.create(type_id='wg',state_id='active')
-        session = SessionFactory.create(meeting__type_id='ietf',group=group, meeting__date=datetime.date.today()+datetime.timedelta(days=90))
+        session = SessionFactory.create(meeting__type_id='ietf',group=group, meeting__date=date_today() + datetime.timedelta(days=90))
         SessionPresentationFactory.create(session=session,document__type_id='draft',rev=None)
         SessionPresentationFactory.create(session=session,document__type_id='minutes')
         SessionPresentationFactory.create(session=session,document__type_id='slides')
@@ -3729,7 +3821,7 @@ class SessionDetailsTests(TestCase):
         session = SessionFactory.create(
             meeting__type_id='ietf',
             group=group,
-            meeting__date=datetime.date.today() + datetime.timedelta(days=90),
+            meeting__date=date_today() + datetime.timedelta(days=90),
         )
         session_details_url = urlreverse(
             'ietf.meeting.views.session_details',
@@ -3781,7 +3873,7 @@ class SessionDetailsTests(TestCase):
     def test_session_details_past_interim(self):
         group = GroupFactory.create(type_id='wg',state_id='active')
         chair = RoleFactory(name_id='chair',group=group)
-        session = SessionFactory.create(meeting__type_id='interim',group=group, meeting__date=datetime.date.today()-datetime.timedelta(days=90))
+        session = SessionFactory.create(meeting__type_id='interim',group=group, meeting__date=date_today() - datetime.timedelta(days=90))
         SessionPresentationFactory.create(session=session,document__type_id='draft',rev=None)
         SessionPresentationFactory.create(session=session,document__type_id='minutes')
         SessionPresentationFactory.create(session=session,document__type_id='slides')
@@ -3800,7 +3892,7 @@ class SessionDetailsTests(TestCase):
         group = GroupFactory.create(type_id='wg',state_id='active')
         group_chair = PersonFactory.create()
         group.role_set.create(name_id='chair',person = group_chair, email = group_chair.email())
-        session = SessionFactory.create(meeting__type_id='ietf',group=group, meeting__date=datetime.date.today()+datetime.timedelta(days=90))
+        session = SessionFactory.create(meeting__type_id='ietf',group=group, meeting__date=date_today() + datetime.timedelta(days=90))
         SessionPresentationFactory.create(session=session,document__type_id='draft',rev=None)
         old_draft = session.sessionpresentation_set.filter(document__type='draft').first().document
         new_draft = DocumentFactory(type_id='draft')
@@ -3966,7 +4058,7 @@ class InterimTests(TestCase):
     def do_interim_skip_announcement_test(self, base_session=False, extra_session=False, canceled_session=False):
         make_meeting_test_data()
         group = Group.objects.get(acronym='irg')
-        date = datetime.date.today() + datetime.timedelta(days=30)
+        date = date_today() + datetime.timedelta(days=30)
         meeting = make_interim_meeting(group=group, date=date, status='scheda')
         session = meeting.session_set.first()
         if base_session:
@@ -4036,12 +4128,10 @@ class InterimTests(TestCase):
         self.do_interim_skip_announcement_test(extra_session=True, canceled_session=True, base_session=True)
 
     def do_interim_send_announcement_test(self, base_session=False, extra_session=False, canceled_session=False):
-        make_interim_test_data()
+        make_interim_test_data(meeting_tz='America/Los_Angeles')
         session = Session.objects.with_current_status().filter(
             meeting__type='interim', group__acronym='mars', current_status='apprw').first()
         meeting = session.meeting
-        meeting.time_zone = 'America/Los_Angeles'
-        meeting.save()
 
         if base_session:
             base_session = SessionFactory(meeting=meeting, status_id='apprw', add_to_schedule=False)
@@ -4247,7 +4337,7 @@ class InterimTests(TestCase):
         self.do_interim_approve_by_secretariat_test(extra_session=True, canceled_session=True, base_session=True)
 
     def test_past(self):
-        today = datetime.date.today()
+        today = date_today()
         last_week = today - datetime.timedelta(days=7)
         ietf = SessionFactory(meeting__type_id='ietf',meeting__date=last_week,group__state_id='active',group__parent=GroupFactory(state_id='active'))
         SessionFactory(meeting__type_id='interim',meeting__date=last_week,status_id='canceled',group__state_id='active',group__parent=GroupFactory(state_id='active'))
@@ -4266,7 +4356,7 @@ class InterimTests(TestCase):
         if querystring is not None:
             url += '?' + querystring
 
-        today = datetime.date.today()
+        today = date_today()
         interims = dict(
             mars=add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='mars')).filter(current_status='sched').first().meeting,
             ames=add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='ames')).filter(current_status='canceled').first().meeting,
@@ -4386,9 +4476,9 @@ class InterimTests(TestCase):
     def do_interim_request_single_virtual(self, emails_expected):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
-        date = datetime.date.today() + datetime.timedelta(days=30)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
-        dt = datetime.datetime.combine(date, time)
+        date = date_today() + datetime.timedelta(days=30)
+        time = time_now().replace(microsecond=0,second=0)
+        dt = pytz.utc.localize(datetime.datetime.combine(date, time))
         duration = datetime.timedelta(hours=3)
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
@@ -4457,13 +4547,14 @@ class InterimTests(TestCase):
     def test_interim_request_single_in_person(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
-        date = datetime.date.today() + datetime.timedelta(days=30)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
-        dt = datetime.datetime.combine(date, time)
+        date = date_today() + datetime.timedelta(days=30)
+        time = time_now().replace(microsecond=0,second=0)
+        time_zone = 'America/Los_Angeles'
+        tz = pytz.timezone(time_zone)
+        dt = tz.localize(datetime.datetime.combine(date, time))
         duration = datetime.timedelta(hours=3)
         city = 'San Francisco'
         country = 'US'
-        time_zone = 'America/Los_Angeles'
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
@@ -4504,16 +4595,17 @@ class InterimTests(TestCase):
 
     def test_interim_request_multi_day(self):
         make_meeting_test_data()
-        date = datetime.date.today() + datetime.timedelta(days=30)
+        date = date_today() + datetime.timedelta(days=30)
         date2 = date + datetime.timedelta(days=1)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
-        dt = datetime.datetime.combine(date, time)
-        dt2 = datetime.datetime.combine(date2, time)
+        time = time_now().replace(microsecond=0,second=0)
+        time_zone = 'America/Los_Angeles'
+        tz = pytz.timezone(time_zone)
+        dt = tz.localize(datetime.datetime.combine(date, time))
+        dt2 = tz.localize(datetime.datetime.combine(date2, time))
         duration = datetime.timedelta(hours=3)
         group = Group.objects.get(acronym='mars')
         city = 'San Francisco'
         country = 'US'
-        time_zone = 'America/Los_Angeles'
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
@@ -4570,9 +4662,9 @@ class InterimTests(TestCase):
 
     def test_interim_request_multi_day_non_consecutive(self):
         make_meeting_test_data()
-        date = datetime.date.today() + datetime.timedelta(days=30)
+        date = date_today() + datetime.timedelta(days=30)
         date2 = date + datetime.timedelta(days=2)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        time = timezone.now().time().replace(microsecond=0,second=0)
         group = Group.objects.get(acronym='mars')
         city = 'San Francisco'
         country = 'US'
@@ -4607,7 +4699,7 @@ class InterimTests(TestCase):
     def test_interim_request_multi_day_cancel(self):
         """All sessions of a multi-day interim request should be canceled"""
         length_before = len(outbox)
-        date = datetime.date.today()+datetime.timedelta(days=15)
+        date = date_today() + datetime.timedelta(days=15)
 
         # Set up an interim request with several sessions 
         num_sessions = 3
@@ -4630,7 +4722,7 @@ class InterimTests(TestCase):
     def test_interim_request_series(self):
         make_meeting_test_data()
         meeting_count_before = Meeting.objects.filter(type='interim').count()
-        date = datetime.date.today() + datetime.timedelta(days=30)
+        date = date_today() + datetime.timedelta(days=30)
         if (date.month, date.day) == (12, 31):
             # Avoid date and date2 in separate years
             # (otherwise the test will fail if run on December 1st)
@@ -4640,14 +4732,15 @@ class InterimTests(TestCase):
         if date.year != date2.year:
             date += datetime.timedelta(days=1)
             date2 += datetime.timedelta(days=1)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
-        dt = datetime.datetime.combine(date, time)
-        dt2 = datetime.datetime.combine(date2, time)
+        time = time_now().replace(microsecond=0,second=0)
+        time_zone = 'America/Los_Angeles'
+        tz = pytz.timezone(time_zone)
+        dt = tz.localize(datetime.datetime.combine(date, time))
+        dt2 = tz.localize(datetime.datetime.combine(date2, time))
         duration = datetime.timedelta(hours=3)
         group = Group.objects.get(acronym='mars')
         city = ''
         country = ''
-        time_zone = 'America/Los_Angeles'
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
@@ -4789,14 +4882,14 @@ class InterimTests(TestCase):
         self.assertFalse(can_manage_group(user=user,group=group))
 
     def test_interim_request_details(self):
-        make_interim_test_data()
+        make_interim_test_data(meeting_tz='America/Chicago')
         meeting = Session.objects.with_current_status().filter(
             meeting__type='interim', group__acronym='mars', current_status='apprw').first().meeting
         url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        start_time = meeting.session_set.first().official_timeslotassignment().timeslot.time.strftime('%H:%M')
+        start_time = meeting.session_set.first().official_timeslotassignment().timeslot.local_start_time().strftime('%H:%M')
         utc_start_time = meeting.session_set.first().official_timeslotassignment().timeslot.utc_start_time().strftime('%H:%M')
         self.assertIn(start_time, unicontent(r))
         self.assertIn(utc_start_time, unicontent(r))
@@ -4804,7 +4897,7 @@ class InterimTests(TestCase):
     def test_interim_request_details_announcement(self):
         '''Test access to Announce / Skip Announce features'''
         make_meeting_test_data()
-        date = datetime.date.today() + datetime.timedelta(days=30)
+        date = date_today() + datetime.timedelta(days=30)
         group = Group.objects.get(acronym='mars')
         meeting = make_interim_meeting(group=group, date=date, status='scheda')
         url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
@@ -5322,7 +5415,7 @@ class InterimTests(TestCase):
     def test_send_interim_minutes_reminder(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
-        date = datetime.datetime.today() - datetime.timedelta(days=10)
+        date = timezone.now() - datetime.timedelta(days=10)
         meeting = make_interim_meeting(group=group, date=date, status='sched')
         length_before = len(outbox)
         send_interim_minutes_reminder(meeting=meeting)
@@ -5337,7 +5430,11 @@ class InterimTests(TestCase):
         a1 = s1.official_timeslotassignment()
         t1 = a1.timeslot
         # Create an extra session
-        t2 = TimeSlotFactory.create(meeting=meeting, time=datetime.datetime.combine(meeting.date, datetime.time(11, 30)))
+        t2 = TimeSlotFactory.create(
+            meeting=meeting,
+            time=meeting.tz().localize(
+                datetime.datetime.combine(meeting.date, datetime.time(11, 30))
+            ))
         s2 = SessionFactory.create(meeting=meeting, group=s1.group, add_to_schedule=False)
         SchedTimeSessAssignment.objects.create(timeslot=t2, session=s2, schedule=meeting.schedule)
         #
@@ -5347,8 +5444,8 @@ class InterimTests(TestCase):
         self.assertContains(r, 'BEGIN:VEVENT')
         self.assertEqual(r.content.count(b'UID'), 2)
         self.assertContains(r, 'SUMMARY:mars - Martian Special Interest Group')
-        self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
-        self.assertContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t1.local_start_time().strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t2.local_start_time().strftime('%Y%m%dT%H%M%S'))
         self.assertContains(r, 'END:VEVENT')
         #
         url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number, 'session_id':s1.id, })
@@ -5539,7 +5636,7 @@ class MaterialsTests(TestCase):
     def test_upload_bluesheets_interim_chair_access(self):
         make_meeting_test_data()
         mars = Group.objects.get(acronym='mars')
-        session=SessionFactory(meeting__type_id='interim',group=mars, meeting__date = datetime.date.today())
+        session=SessionFactory(meeting__type_id='interim',group=mars, meeting__date = date_today())
         url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
         self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(url)
@@ -5782,7 +5879,7 @@ class MaterialsTests(TestCase):
         for type_id in ['ietf','interim']:
             session = SessionFactory(meeting__type_id=type_id)
             chair = RoleFactory(group=session.group,name_id='chair').person
-            session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+            session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
             newperson = PersonFactory()
             
             session_overview_url = urlreverse('ietf.meeting.views.session_details',kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
@@ -5830,7 +5927,7 @@ class MaterialsTests(TestCase):
 
     def test_disapprove_proposed_slides(self):
         submission = SlideSubmissionFactory()
-        submission.session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        submission.session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 1)
         chair = RoleFactory(group=submission.session.group,name_id='chair').person
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
@@ -5848,7 +5945,7 @@ class MaterialsTests(TestCase):
     def test_approve_proposed_slides(self):
         submission = SlideSubmissionFactory()
         session = submission.session
-        session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
         chair = RoleFactory(group=submission.session.group,name_id='chair').person
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, url)
@@ -5873,7 +5970,7 @@ class MaterialsTests(TestCase):
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
         session1 = submission.session
         session2 = SessionFactory(group=submission.session.group, meeting=submission.session.meeting)
-        submission.session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        submission.session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
         chair = RoleFactory(group=submission.session.group,name_id='chair').person
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, url)
@@ -5890,7 +5987,7 @@ class MaterialsTests(TestCase):
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
         session1 = submission.session
         session2 = SessionFactory(group=submission.session.group, meeting=submission.session.meeting)
-        submission.session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        submission.session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
         chair = RoleFactory(group=submission.session.group,name_id='chair').person
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, url)
@@ -5904,7 +6001,7 @@ class MaterialsTests(TestCase):
     def test_submit_and_approve_multiple_versions(self):
         session = SessionFactory(meeting__type_id='ietf')
         chair = RoleFactory(group=session.group,name_id='chair').person
-        session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        session.meeting.importantdate_set.create(name_id='revsub',date=date_today()+datetime.timedelta(days=20))
         newperson = PersonFactory()
         
         propose_url = urlreverse('ietf.meeting.views.propose_session_slides', kwargs={'session_id':session.pk, 'num': session.meeting.number})          
@@ -6285,8 +6382,8 @@ class HasMeetingsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(q('#id_group option[value="%d"]'%group.pk))
-        date = datetime.date.today() + datetime.timedelta(days=30+meeting_count)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        date = date_today() + datetime.timedelta(days=30+meeting_count)
+        time = time_now().replace(microsecond=0,second=0)
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
@@ -6382,7 +6479,7 @@ class HasMeetingsTests(TestCase):
             session = SessionFactory(
                 group__type_id = gf.type_id,
                 meeting__type_id='interim', 
-                meeting__date = datetime.datetime.today()+datetime.timedelta(days=30),
+                meeting__date = timezone.now()+datetime.timedelta(days=30),
                 status_id='sched',
             )
             sessions.append(session)
@@ -6398,7 +6495,7 @@ class HasMeetingsTests(TestCase):
         sessions=[]
         for gf in GroupFeatures.objects.filter(has_meetings=True):
             group = GroupFactory(type_id=gf.type_id)
-            meeting_date = datetime.datetime.today() + datetime.timedelta(days=30)
+            meeting_date = timezone.now() + datetime.timedelta(days=30)
             session = SessionFactory(
                 group=group,
                 meeting__type_id='interim', 
@@ -6419,7 +6516,7 @@ class HasMeetingsTests(TestCase):
         sessions=[]
         for gf in GroupFeatures.objects.filter(has_meetings=True):
             group = GroupFactory(type_id=gf.type_id)
-            meeting_date = datetime.datetime.today() + datetime.timedelta(days=30)
+            meeting_date = timezone.now() + datetime.timedelta(days=30)
             session = SessionFactory(
                 group=group,
                 meeting__type_id='interim', 
@@ -7145,7 +7242,7 @@ class ProceedingsTests(BaseMeetingTestCase):
 
     def test_proceedings_no_agenda(self):
         # Meeting number must be larger than the last special-cased proceedings (currently 96)
-        meeting = MeetingFactory(type_id='ietf',populate_schedule=False,date=datetime.date.today(), number='100')
+        meeting = MeetingFactory(type_id='ietf',populate_schedule=False,date=date_today(), number='100')
         url = urlreverse('ietf.meeting.views.proceedings')
         r = self.client.get(url)
         self.assertRedirects(r, urlreverse('ietf.meeting.views.materials'))
@@ -7254,7 +7351,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         """Generate a meeting for proceedings material test"""
         # meeting number 123 avoids various legacy cases that affect these tests
         # (as of Aug 2021, anything above 96 is probably ok)
-        return MeetingFactory(type_id='ietf', number='123', date=datetime.date.today())
+        return MeetingFactory(type_id='ietf', number='123', date=date_today())
 
     def _secretary_only_permission_test(self, url, include_post=True):
         self.client.logout()

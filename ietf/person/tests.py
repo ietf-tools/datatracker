@@ -14,6 +14,7 @@ from django.core.exceptions import ValidationError
 from django.http import HttpRequest
 from django.test import override_settings
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from django.utils.encoding import iri_to_uri
 
 import debug                            # pyflakes:ignore
@@ -218,7 +219,7 @@ class PersonUtilsTests(TestCase):
         self.assertEqual(results,(p1,p3))
 
         # both have User
-        today = datetime.datetime.today()
+        today = timezone.now()
         p2.user.last_login = today
         p2.user.save()
         p4.user.last_login = today - datetime.timedelta(days=30)
