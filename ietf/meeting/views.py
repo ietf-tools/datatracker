@@ -3535,7 +3535,7 @@ def upcoming_ical(request):
         session__in=[s.pk for m in meetings for s in m.sessions if m.type_id != 'ietf'],
         timeslot__time__gte=today,
     ).order_by(
-        'schedule__meeting__date', 'session__type', 'timeslot__time'
+        'schedule__meeting__date', 'session__type', 'timeslot__time', 'schedule__meeting__number',
     ).select_related(
         'session__group', 'session__group__parent', 'timeslot', 'schedule', 'schedule__meeting'
     ).distinct())
