@@ -3467,8 +3467,12 @@ def upcoming(request):
 
     entries = list(ietf_meetings)
     entries.extend(list(interim_sessions))
-    entries.sort(key = lambda o: pytz.utc.localize(datetime.datetime.combine(o.date, datetime.datetime.min.time())) if isinstance(o,Meeting) else o.official_timeslotassignment().timeslot.utc_start_time())
-    
+    entries.sort(
+        key=lambda o: (
+            pytz.utc.localize(datetime.datetime.combine(o.date, datetime.datetime.min.time())) if isinstance(o, Meeting) else o.official_timeslotassignment().timeslot.utc_start_time(),
+            o.number if isinstance(o, Meeting) else o.meeting.number,
+        )
+    )
     for o in entries:
         if isinstance(o, Meeting):
             o.start_timestamp = int(pytz.utc.localize(datetime.datetime.combine(o.date, datetime.time.min)).timestamp())
