@@ -116,7 +116,6 @@ async function main () {
       container.Names.includes(`/dt-celery-${branch}`) ||
       container.Names.includes(`/dt-beat-${branch}`)
       ) {
-      const isDbContainer = container.Names.includes(`/dt-db-${branch}`)
       console.info(`Terminating old container ${container.Id}...`)
       const oldContainer = dock.getContainer(container.Id)
       if (container.State === 'running') {
@@ -124,7 +123,7 @@ async function main () {
       }
       await oldContainer.remove({
         force: true,
-        v: isDbContainer
+        v: true
       })
     }
   }
@@ -193,6 +192,38 @@ async function main () {
   await mqContainer.start()
   console.info('Created and started MQ docker container successfully.')
 
+  // Create Celery containers
+  console.info(`Creating Celery docker containers... [dt-celery-${branch}, dt-beat-${branch}]`)
+  const conConfs = [
+    { name: 'celery', role: 'worker' },
+    { name: 'beat', role: 'beat' }
+  ]
+  const celeryContainers = {}
+  for (const conConf of conConfs) {
+    celeryContainers[conConf.name] = await dock.createContainer({
+      Image: 'ghcr.io/ietf-tools/datatracker-celery:latest',
+      name: `dt-${conConf.name}-${branch}`,
+      Hostname: `dt-${conConf.name}-${branch}`,
+      Env: [
+        'CELERY_APP=ietf',
+        `CELERY_ROLE=${conConf.role}`,
+        'UPDATE_REQUIREMENTS_FROM=requirements.txt'
+      ],
+      HostConfig: {
+        Binds: [
+          'dt-assets:/assets'
+        ],
+        Init: true,
+        NetworkMode: 'shared',
+        RestartPolicy: {
+          Name: 'unless-stopped'
+        }
+      },
+      Cmd: ['--loglevel=INFO']
+    })
+  }
+  console.info('Created Celery docker containers successfully.')
+
   // Create Datatracker container
   console.info(`Creating Datatracker docker container... [dt-app-${branch}]`)
   const appContainer = await dock.createContainer({
@@ -218,7 +249,7 @@ async function main () {
   console.info(`Created Datatracker docker container successfully.`)
 
   // Inject updated release into container
-  console.info('Building updated release tarball to inject into container...')
+  console.info('Building updated release tarball to inject into containers...')
   const tgzPath = path.join(basePath, 'import.tgz')
   await tar.c({
     gzip: true,
@@ -229,12 +260,17 @@ async function main () {
       return true
     }
   }, ['.'])
-  console.info('Injecting archive into Datatracker docker container...')
-  await appContainer.putArchive(tgzPath, {
-    path: '/workspace'
-  })
+  console.info('Injecting archive into Datatracker + Celery docker containers...')
+  await celeryContainers.celery.putArchive(tgzPath, { path: '/workspace' })
+  await celeryContainers.beat.putArchive(tgzPath, { path: '/workspace' })
+  await appContainer.putArchive(tgzPath, { path: '/workspace' })
   await fs.remove(tgzPath)
-  console.info(`Imported working files into Datatracker docker container successfully.`)
+  console.info(`Imported working files into Datatracker + Celery docker containers successfully.`)
+
+  console.info('Starting Celery containers...')
+  await celeryContainers.celery.start()
+  await celeryContainers.beat.start()
+  console.info('Celery containers started successfully.')
 
   console.info('Starting Datatracker container...')
   await appContainer.start()
