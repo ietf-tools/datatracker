@@ -7,7 +7,10 @@ import tar from 'tar'
 import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
 import slugify from 'slugify'
-import { nanoid } from 'nanoid'
+import { nanoid, customAlphabet } from 'nanoid'
+import { alphanumeric } from 'nanoid-dictionary'
+
+const nanoidAlphaNum = customAlphabet(alphanumeric, 16)
 
 async function main () {
   const basePath = process.cwd()
@@ -56,9 +59,14 @@ async function main () {
 
   // Update the settings_local.py file
   console.info('Setting configuration files...')
+  const mqKey = nanoidAlphaNum()
   const settingsPath = path.join(releasePath, 'ietf/settings_local.py')
   const cfgRaw = await fs.readFile(path.join(basePath, 'dev/deploy-to-container/settings_local.py'), 'utf8')
-  await fs.outputFile(settingsPath, cfgRaw.replace('__DBHOST__', `dt-db-${branch}`).replace('__SECRETKEY__', nanoid(36)))
+  await fs.outputFile(settingsPath,
+    cfgRaw
+      .replace('__DBHOST__', `dt-db-${branch}`)
+      .replace('__SECRETKEY__', nanoid(36)))
+      .replace('__MQCONNSTR__', `amqp://datatracker:${mqKey}@dt-mq-${branch}/dt`)
   await fs.copy(path.join(basePath, 'docker/scripts/app-create-dirs.sh'), path.join(releasePath, 'app-create-dirs.sh'))
   await fs.copy(path.join(basePath, 'dev/deploy-to-container/start.sh'), path.join(releasePath, 'start.sh'))
   await fs.copy(path.join(basePath, 'test/data'), path.join(releasePath, 'test/data'))
@@ -80,11 +88,33 @@ async function main () {
   })
   console.info('Pulled latest Datatracker base docker image.')
 
+  // Pull latest MQ image
+  console.info('Pulling latest MQ docker image...')
+  const mqImagePullStream = await dock.pull('ghcr.io/ietf-tools/datatracker-mq:latest')
+  await new Promise((resolve, reject) => {
+    dock.modem.followProgress(mqImagePullStream, (err, res) => err ? reject(err) : resolve(res))
+  })
+  console.info('Pulled latest MQ docker image.')
+
+  // Pull latest Celery image
+  console.info('Pulling latest Celery docker image...')
+  const celeryImagePullStream = await dock.pull('ghcr.io/ietf-tools/datatracker-celery:latest')
+  await new Promise((resolve, reject) => {
+    dock.modem.followProgress(celeryImagePullStream, (err, res) => err ? reject(err) : resolve(res))
+  })
+  console.info('Pulled latest Celery docker image.')
+
   // Terminate existing containers
   console.info('Ensuring existing containers with same name are terminated...')
   const containers = await dock.listContainers({ all: true })
   for (const container of containers) {
-    if (container.Names.includes(`/dt-db-${branch}`) || container.Names.includes(`/dt-app-${branch}`)) {
+    if (
+      container.Names.includes(`/dt-db-${branch}`) ||
+      container.Names.includes(`/dt-app-${branch}`) ||
+      container.Names.includes(`/dt-mq-${branch}`) ||
+      container.Names.includes(`/dt-celery-${branch}`) ||
+      container.Names.includes(`/dt-beat-${branch}`)
+      ) {
       const isDbContainer = container.Names.includes(`/dt-db-${branch}`)
       console.info(`Terminating old container ${container.Id}...`)
       const oldContainer = dock.getContainer(container.Id)
@@ -113,6 +143,19 @@ async function main () {
     console.info('Existing shared docker network found.')
   }
 
+  // Get assets docker volume
+  console.info('Querying assets docker volume...')
+  const assetsVolume = await dock.getVolume('dt-assets')
+  if (!assetsVolume) {
+    console.info('No assets docker volume found, creating a new one...')
+    await dock.createVolume({
+      Name: 'dt-assets'
+    })
+    console.info('Created assets docker volume successfully.')
+  } else {
+    console.info('Existing assets docker volume found.')
+  }
+
   // Create DB container
   console.info(`Creating DB docker container... [dt-db-${branch}]`)
   const dbContainer = await dock.createContainer({
@@ -128,6 +171,26 @@ async function main () {
   })
   await dbContainer.start()
   console.info('Created and started DB docker container successfully.')
+
+  // Create MQ container
+  console.info(`Creating MQ docker container... [dt-mq-${branch}]`)
+  const mqContainer = await dock.createContainer({
+    Image: 'ghcr.io/ietf-tools/datatracker-mq:latest',
+    name: `dt-mq-${branch}`,
+    Hostname: `dt-mq-${branch}`,
+    Env: [
+      `CELERY_PASSWORD=${mqKey}`
+    ],
+    HostConfig: {
+      Memory: 4 * (1024 ** 3), // in bytes
+      NetworkMode: 'shared',
+      RestartPolicy: {
+        Name: 'unless-stopped'
+      }
+    }
+  })
+  await mqContainer.start()
+  console.info('Created and started MQ docker container successfully.')
 
   // Create Datatracker container
   console.info(`Creating Datatracker docker container... [dt-app-${branch}]`)
