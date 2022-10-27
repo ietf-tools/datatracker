@@ -1,4 +1,5 @@
 import datetime
+import random
 
 from typing import Union
 from zoneinfo import ZoneInfo
@@ -80,3 +81,24 @@ def time_now(tz=None):
     and may not behave correctly when daylight savings time shifts are relevant.)
     """
     return timezone.now().astimezone(_tzinfo(tz)).time()
+
+
+def timezone_not_near_midnight():
+    """Get the name of a random timezone where it's not close to midnight
+
+    Avoids midnight +/- 1 hour. Raises RuntimeError if it is unable to find
+    a time zone satisfying this constraint.
+    """
+    timezone_options = pytz.common_timezones
+    tzname = random.choice(timezone_options)
+    right_now = timezone.now().astimezone(pytz.timezone(tzname))
+    # Avoid the remote possibility of an infinite loop (might come up
+    # if there is a problem with the time zone library)
+    tries_left = 20
+    while right_now.hour < 1 or right_now.hour >= 23:
+        tzname = random.choice(timezone_options)
+        right_now = right_now.astimezone(pytz.timezone(tzname))
+        tries_left -= 1
+        if tries_left <= 0:
+            raise RuntimeError('Unable to find a time zone not near midnight')
+    return tzname
