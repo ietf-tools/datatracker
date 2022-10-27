@@ -34,6 +34,7 @@ from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.utils.test_utils import assert_ical_response_is_valid
 from ietf.utils.jstest import ( IetfSeleniumTestCase, ifSeleniumEnabled, selenium_enabled,
                                 presence_of_element_child_by_css_selector )
+from ietf.utils.timezone import timezone_not_near_midnight
 
 if selenium_enabled():
     from selenium.webdriver.common.action_chains import ActionChains
@@ -153,7 +154,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         #
         #  https://storage.googleapis.com/google-code-attachments/selenium/issue-3604/comment-9/drag_and_drop_helper.js
 
-        self.driver.execute_script('!function(s){s.fn.simulateDragDrop=function(t){return this.each(function(){new s.simulateDragDrop(this,t)})},s.simulateDragDrop=function(t,a){this.options=a,this.simulateEvent(t,a)},s.extend(s.simulateDragDrop.prototype,{simulateEvent:function(t,a){var e="dragstart",n=this.createEvent(e);this.dispatchEvent(t,e,n),e="drop";var r=this.createEvent(e,{});r.dataTransfer=n.dataTransfer,this.dispatchEvent(s(a.dropTarget)[0],e,r),e="dragend";var i=this.createEvent(e,{});i.dataTransfer=n.dataTransfer,this.dispatchEvent(t,e,i)},createEvent:function(t){var a=document.createEvent("CustomEvent");return a.initCustomEvent(t,!0,!0,null),a.dataTransfer={data:{},setData:function(t,a){this.data[t]=a},getData:function(t){return this.data[t]}},a},dispatchEvent:function(t,a,e){t.dispatchEvent?t.dispatchEvent(e):t.fireEvent&&t.fireEvent("on"+a,e)}})}(jQuery);')
+        self.driver.execute_script('!function(s){s.fn.simulateDragDrop=function(t){return this.each(function(){new s.simulateDragDrop(this,t)})},s.simulateDragDrop=function(t,a){this.options=a,this.simulateEvent(t,a)},s.extend(s.simulateDragDrop.prototype,{simulateEvent:function(t,a){var e="dragstart",n=this.createEvent(e);this.dispatchEvent(t,e,n),e="drop";var r=this.createEvent(e,{});r.dataTransfer=n.dataTransfer,this.dispatchEvent(s(a.dropTarget)[0],e,r),e="dragend";var i=this.createEvent(e,{});i.dataTransfer=n.dataTransfer,this.dispatchEvent(t,e,i)},createEvent:function(t){var a=document.createEvent("CustomEvent");return a.initCustomEvent(t,!0,!0,null),a.dataTransfer={data:{},types:[],setData:function(t,a){this.data[t]=a;this.types.includes(t)||this.types.push(t)},getData:function(t){return this.data[t]}},a},dispatchEvent:function(t,a,e){t.dispatchEvent?t.dispatchEvent(e):t.fireEvent&&t.fireEvent("on"+a,e)}})}(jQuery);')
 
         self.driver.execute_script("jQuery('#session{}').simulateDragDrop({{dropTarget: '.unassigned-sessions .drop-target'}});".format(s2.pk))
 
@@ -392,7 +393,12 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
     def test_past_swap_days_buttons(self):
         """Swap days buttons should be hidden for past items"""
         wait = WebDriverWait(self.driver, 2)
-        meeting = MeetingFactory(type_id='ietf', date=datetime.datetime.today() - datetime.timedelta(days=3), days=7)
+        meeting = MeetingFactory(
+            type_id='ietf',
+            date=datetime.datetime.today() - datetime.timedelta(days=3),
+            days=7,
+            time_zone=timezone_not_near_midnight(),
+        )
         room = RoomFactory(meeting=meeting)
 
         # get current time in meeting time zone

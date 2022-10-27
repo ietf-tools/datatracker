@@ -2200,7 +2200,7 @@
   },
   {
     "fields": {
-      "desc": "The IESG has not started processing this draft, or has stopped processing it without publicastion.",
+      "desc": "The IESG has not started processing this draft, or has stopped processing it without publication.",
       "name": "I-D Exists",
       "next_states": [
         16,
@@ -2407,6 +2407,58 @@
   },
   {
     "fields": {
+      "desc": "",
+      "name": "Active",
+      "next_states": [],
+      "order": 0,
+      "slug": "active",
+      "type": "chatlog",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 165
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Deleted",
+      "next_states": [],
+      "order": 0,
+      "slug": "deleted",
+      "type": "chatlog",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 166
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Active",
+      "next_states": [],
+      "order": 0,
+      "slug": "active",
+      "type": "polls",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 167
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Deleted",
+      "next_states": [],
+      "order": 0,
+      "slug": "deleted",
+      "type": "polls",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 168
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
@@ -2432,6 +2484,13 @@
     },
     "model": "doc.statetype",
     "pk": "charter"
+  },
+  {
+    "fields": {
+      "label": "State"
+    },
+    "model": "doc.statetype",
+    "pk": "chatlog"
   },
   {
     "fields": {
@@ -2537,6 +2596,13 @@
     },
     "model": "doc.statetype",
     "pk": "minutes"
+  },
+  {
+    "fields": {
+      "label": "State"
+    },
+    "model": "doc.statetype",
+    "pk": "polls"
   },
   {
     "fields": {
@@ -3015,7 +3081,7 @@
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
       "agenda_filter_type": "none",
-      "agenda_type": null,
+      "agenda_type": "ad",
       "create_wiki": false,
       "custom_group_roles": true,
       "customize_workflow": false,
@@ -3023,7 +3089,7 @@
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"ad\"\n]",
       "docman_roles": "[\n    \"auth\"\n]",
-      "groupman_authroles": "[]",
+      "groupman_authroles": "[\n    \"Secretariat\"\n]",
       "groupman_roles": "[]",
       "has_chartering_process": false,
       "has_default_chat": false,
@@ -3345,7 +3411,7 @@
       "has_session_materials": false,
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[]",
+      "matman_roles": "[\n    \"chair\"\n]",
       "need_parent": false,
       "parent_types": [],
       "req_subm_approval": true,
@@ -3458,8 +3524,8 @@
       "has_milestones": false,
       "has_nonsession_materials": true,
       "has_reviews": false,
-      "has_session_materials": false,
-      "is_schedulable": false,
+      "has_session_materials": true,
+      "is_schedulable": true,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"matman\"\n]",
       "need_parent": false,
@@ -3469,7 +3535,7 @@
       "req_subm_approval": false,
       "role_order": "[\n    \"chair\",\n    \"member\",\n    \"matman\"\n]",
       "session_purposes": "[\n    \"coding\",\n    \"presentation\",\n    \"social\",\n    \"tutorial\"\n]",
-      "show_on_agenda": false
+      "show_on_agenda": true
     },
     "model": "group.groupfeatures",
     "pk": "team"
@@ -4724,6 +4790,36 @@
     },
     "model": "mailtrigger.mailtrigger",
     "pk": "review_completed_artart_telechat"
+  },
+  {
+    "fields": {
+      "cc": [
+        "ietf_last_call",
+        "review_doc_all_parties",
+        "review_doc_group_mail_list"
+      ],
+      "desc": "Recipients when a dnsdir Last Call review is completed",
+      "to": [
+        "review_team_mail_list"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "review_completed_dnsdir_lc"
+  },
+  {
+    "fields": {
+      "cc": [
+        "ietf_last_call",
+        "review_doc_all_parties",
+        "review_doc_group_mail_list"
+      ],
+      "desc": "Recipients when a dnsdir Telechat review is completed",
+      "to": [
+        "review_team_mail_list"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "review_completed_dnsdir_telechat"
   },
   {
     "fields": {
@@ -10129,6 +10225,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "Chat Log",
+      "order": 0,
+      "prefix": "chatlog",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "chatlog"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Conflict Review",
       "order": 0,
       "prefix": "conflict-review",
@@ -10180,6 +10287,17 @@
     },
     "model": "name.doctypename",
     "pk": "minutes"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Polls",
+      "order": 0,
+      "prefix": "polls",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "polls"
   },
   {
     "fields": {
@@ -15998,7 +16116,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2022-07-13T00:09:29.108",
+      "time": "2022-10-12T00:09:36.629",
       "used": true,
       "version": "xym 0.5"
     },
@@ -16009,7 +16127,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2022-07-13T00:09:29.475",
+      "time": "2022-10-12T00:09:36.945",
       "used": true,
       "version": "pyang 2.5.3"
     },
@@ -16020,7 +16138,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2022-07-13T00:09:29.497",
+      "time": "2022-10-12T00:09:36.957",
       "used": true,
       "version": "yanglint SO 1.9.2"
     },
@@ -16031,9 +16149,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2022-07-13T00:09:30.513",
+      "time": "2022-10-12T00:09:37.890",
       "used": true,
-      "version": "xml2rfc 3.13.0"
+      "version": "xml2rfc 3.14.2"
     },
     "model": "utils.versioninfo",
     "pk": 4
