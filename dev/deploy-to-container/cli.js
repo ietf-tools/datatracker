@@ -65,8 +65,9 @@ async function main () {
   await fs.outputFile(settingsPath,
     cfgRaw
       .replace('__DBHOST__', `dt-db-${branch}`)
-      .replace('__SECRETKEY__', nanoid(36)))
+      .replace('__SECRETKEY__', nanoid(36))
       .replace('__MQCONNSTR__', `amqp://datatracker:${mqKey}@dt-mq-${branch}/dt`)
+  )
   await fs.copy(path.join(basePath, 'docker/scripts/app-create-dirs.sh'), path.join(releasePath, 'app-create-dirs.sh'))
   await fs.copy(path.join(basePath, 'dev/deploy-to-container/start.sh'), path.join(releasePath, 'start.sh'))
   await fs.copy(path.join(basePath, 'test/data'), path.join(releasePath, 'test/data'))
