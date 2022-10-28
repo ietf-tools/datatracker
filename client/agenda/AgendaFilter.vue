@@ -60,7 +60,7 @@ n-drawer(v-model:show='state.isShown', placement='bottom', :height='state.drawer
                 )
                 template(#trigger)
                   span.badge BoF
-                span #[a(:href='getUrl(`bofDefinition`)', target='_blank') Birds of a Feather] sessions (BoFs) are initial discussions about a particular topic of interest to the IETF community.
+                span #[a(href='https://www.ietf.org/how/bofs/', target='_blank') Birds of a Feather] sessions (BoFs) are initial discussions about a particular topic of interest to the IETF community.
 </template>
 
 <script setup>
@@ -77,7 +77,6 @@ import {
 } from 'naive-ui'
 
 import { useAgendaStore } from './store'
-import { getUrl } from '../shared/urls'
 
 // STORES
 
