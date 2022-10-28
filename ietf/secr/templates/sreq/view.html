@@ -29,11 +29,11 @@
 
         <div class="button-group">
             <ul>
-                <li><button type="button" name="edit" onclick="window.location='{% url "ietf.secr.sreq.views.edit" acronym=group.acronym num=meeting.number %}'"{% if is_locked %} disabled{% endif %}>Edit</button></li>
+                <li><button type="button" name="edit" onclick="window.location='{% url "ietf.secr.sreq.views.edit" acronym=group.acronym num=meeting.number %}'"{% if not can_edit %} disabled{% endif %}>Edit</button></li>
                 {% if show_approve_button %}
                     <li><button type="button" onclick="window.location='approve/'">Approve Third Session</button></li>
                 {% endif %}
-                <li><button type="button" onclick="if (window.confirm('Do you really want to cancel this session?')) { window.location='cancel/' };" {% if is_locked %} disabled{% endif %}>Cancel this Request</button></li>
+                <li><button type="button" onclick="if (window.confirm('Do you really want to cancel this session?')) { window.location='cancel/' };" {% if not can_cancel %} disabled{% endif %}>Cancel this Request</button></li>
                 <li><button type="button" onclick="window.location='{% url "ietf.secr.sreq.views.main" %}'">Back</button></li>
             </ul>
         </div> <!-- button-group -->
