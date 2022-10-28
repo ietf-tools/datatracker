@@ -608,7 +608,7 @@ class DocumentInfo(models.Model):
     def pdfized(self):
         name = self.get_base_name()
         text = self.html_body(classes="xml2rfc")
-        stylesheets = [finders.find("ietf/css/document_html.css")]
+        stylesheets = [finders.find("ietf/css/document_html_referenced.css")]
         if text:
             stylesheets.append(finders.find("ietf/css/document_html_txt.css"))
         else:
