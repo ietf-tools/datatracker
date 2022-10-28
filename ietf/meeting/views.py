@@ -674,7 +674,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
                 # timeslot structure will be neighbors. The grouping algorithm relies on this!
                 room_data[room.pk]['start_and_duration'],
                 # Within each group, sort higher capacity rooms first.
-                room.capacity,
+                -room.capacity if room.capacity is not None else 1,  # sort rooms with capacity = None at end
                 # Finally, sort alphabetically by name
                 room.name
             )
@@ -3486,8 +3486,12 @@ def upcoming(request):
 
     entries = list(ietf_meetings)
     entries.extend(list(interim_sessions))
-    entries.sort(key = lambda o: pytz.utc.localize(datetime.datetime.combine(o.date, datetime.datetime.min.time())) if isinstance(o,Meeting) else o.official_timeslotassignment().timeslot.utc_start_time())
-    
+    entries.sort(
+        key=lambda o: (
+            pytz.utc.localize(datetime.datetime.combine(o.date, datetime.datetime.min.time())) if isinstance(o, Meeting) else o.official_timeslotassignment().timeslot.utc_start_time(),
+            o.number if isinstance(o, Meeting) else o.meeting.number,
+        )
+    )
     for o in entries:
         if isinstance(o, Meeting):
             o.start_timestamp = int(pytz.utc.localize(datetime.datetime.combine(o.date, datetime.time.min)).timestamp())
@@ -3550,7 +3554,7 @@ def upcoming_ical(request):
         session__in=[s.pk for m in meetings for s in m.sessions if m.type_id != 'ietf'],
         timeslot__time__gte=today,
     ).order_by(
-        'schedule__meeting__date', 'session__type', 'timeslot__time'
+        'schedule__meeting__date', 'session__type', 'timeslot__time', 'schedule__meeting__number',
     ).select_related(
         'session__group', 'session__group__parent', 'timeslot', 'schedule', 'schedule__meeting'
     ).distinct())

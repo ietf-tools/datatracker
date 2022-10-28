@@ -14,47 +14,47 @@ from ietf.group.models import Group
 from ietf.person.models import User
 
 class Command(BaseCommand):
-    help = ("Create (or delete) a dummy nomcom for test and development purposes.")
+    help = ("Create (or delete) a nomcom for test and development purposes.")
 
     def add_arguments(self, parser):
-        parser.add_argument('--delete', dest='delete', action='store_true', help='Delete the test and development dummy nomcom')
+        parser.add_argument('--delete', dest='delete', action='store_true', help='Delete the test and development nomcom')
 
     def handle(self, *args, **options):
         if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
-            raise EnvironmentError("Refusing to create a dummy nomcom on a production server")
+            raise EnvironmentError("Refusing to create a test nomcom on a production server")
 
         opt_delete = options.get('delete', False)
         if opt_delete:
             if Group.objects.filter(acronym='nomcom7437').exists():
                 Group.objects.filter(acronym='nomcom7437').delete()
-                User.objects.filter(username__in=['dummychair','dummymember','dummycandidate']).delete()
-                self.stdout.write("Deleted dummy group 'nomcom7437' and its related objects.")
+                User.objects.filter(username__in=['testchair','testmember','testcandidate']).delete()
+                self.stdout.write("Deleted test group 'nomcom7437' and its related objects.")
             else:
-                self.stderr.write("Dummy nomcom 'nomcom7437' does not exist; nothing to do.\n")
+                self.stderr.write("test nomcom 'nomcom7437' does not exist; nothing to do.\n")
         else:
             if Group.objects.filter(acronym='nomcom7437').exists():
-                self.stderr.write("Dummy nomcom 'nomcom7437' already exists; nothing to do.\n")
+                self.stderr.write("test nomcom 'nomcom7437' already exists; nothing to do.\n")
             else:
                 nc = NomComFactory.create(**nomcom_kwargs_for_year(year=7437,
                                                                   populate_personnel=False,
                                                                   populate_positions=False))
 
-                e = EmailFactory(person__name='Dummy Chair', address='dummychair@example.com', person__user__username='dummychair', person__default_emails=False, origin='dummychair')
+                e = EmailFactory(person__name='Test Chair', address='testchair@example.com', person__user__username='testchair', person__default_emails=False, origin='testchair')
                 e.person.user.set_password('password')
                 e.person.user.save()
                 nc.group.role_set.create(name_id='chair',person=e.person,email=e)
 
-                e = EmailFactory(person__name='Dummy Member', address='dummymember@example.com', person__user__username='dummymember', person__default_emails=False, origin='dummymember')
+                e = EmailFactory(person__name='Test Member', address='testmember@example.com', person__user__username='testmember', person__default_emails=False, origin='testmember')
                 e.person.user.set_password('password')
                 e.person.user.save()
                 nc.group.role_set.create(name_id='member',person=e.person,email=e)
 
 
-                e = EmailFactory(person__name='Dummy Candidate', address='dummycandidate@example.com', person__user__username='dummycandidate', person__default_emails=False, origin='dummycandidate')
+                e = EmailFactory(person__name='Test Candidate', address='testcandidate@example.com', person__user__username='testcandidate', person__default_emails=False, origin='testcandidate')
                 e.person.user.set_password('password')
                 e.person.user.save()
                 NomineePositionFactory(nominee__nomcom=nc, nominee__person=e.person,
-                                       position__nomcom=nc, position__name='Dummy Area Director', position__is_iesg_position=True,
+                                       position__nomcom=nc, position__name='Test Area Director', position__is_iesg_position=True,
                                       )
 
                 self.stdout.write("%s\n" % key)
