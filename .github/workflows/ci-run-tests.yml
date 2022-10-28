@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - 'main'
+      - 'feat/tzaware'
     paths:
       - 'ietf/**'
       - 'requirements.txt'
