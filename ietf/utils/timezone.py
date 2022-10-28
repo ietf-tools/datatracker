@@ -1,8 +1,9 @@
 import datetime
 import random
+import zoneinfo
 
 from typing import Union
-from zoneinfo import ZoneInfo
+from zoneinfo import available_timezones, ZoneInfo
 
 from django.conf import settings
 from django.utils import timezone
@@ -89,15 +90,17 @@ def timezone_not_near_midnight():
     Avoids midnight +/- 1 hour. Raises RuntimeError if it is unable to find
     a time zone satisfying this constraint.
     """
-    timezone_options = pytz.common_timezones
+    timezone_options = list(
+        available_timezones().difference(['Factory', 'localtime'])  # these two are not known to pytz
+    )
     tzname = random.choice(timezone_options)
-    right_now = timezone.now().astimezone(pytz.timezone(tzname))
+    right_now = timezone.now().astimezone(ZoneInfo(tzname))
     # Avoid the remote possibility of an infinite loop (might come up
     # if there is a problem with the time zone library)
     tries_left = 20
     while right_now.hour < 1 or right_now.hour >= 23:
         tzname = random.choice(timezone_options)
-        right_now = right_now.astimezone(pytz.timezone(tzname))
+        right_now = right_now.astimezone(ZoneInfo(tzname))
         tries_left -= 1
         if tries_left <= 0:
             raise RuntimeError('Unable to find a time zone not near midnight')
