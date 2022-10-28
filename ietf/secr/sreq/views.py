@@ -849,7 +849,6 @@ def view(request, acronym, num = None):
     session = get_initial_session(sessions)
 
     return render(request, 'sreq/view.html', {
-        'is_locked': is_locked,
         'can_edit': (not is_locked) or has_role(request.user, 'Secretariat'),
         'can_cancel': (not is_locked) or has_role(request.user, 'Secretariat'),
         'session': session,  # legacy processed data
