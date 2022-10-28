@@ -34,9 +34,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+import datetime
 import importlib
 
-from datetime import date as Date, datetime as DateTime
 # needed if we revert to higher barrier for account creation
 #from datetime import datetime as DateTime, timedelta as TimeDelta, date as Date
 from collections import defaultdict
@@ -78,6 +78,7 @@ from ietf.doc.fields import SearchableDocumentField
 from ietf.utils.decorators import person_required
 from ietf.utils.mail import send_mail
 from ietf.utils.validators import validate_external_resource_value
+from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 
 # These are needed if we revert to the higher bar for account creation
 
@@ -223,7 +224,7 @@ def profile(request):
     emails = Email.objects.filter(person=person).exclude(address__startswith='unknown-email-').order_by('-active','-time')
     new_email_forms = []
 
-    nc = NomCom.objects.filter(group__acronym__icontains=Date.today().year).first()
+    nc = NomCom.objects.filter(group__acronym__icontains=date_today().year).first()
     if nc and nc.volunteer_set.filter(person=person).exists():
         volunteer_status = 'volunteered'
     elif nc and nc.is_accepting_volunteers:
@@ -455,7 +456,7 @@ def confirm_password_reset(request, auth):
         password = data['password']
         last_login = None
         if data['last_login']:
-            last_login = DateTime.fromtimestamp(data['last_login'])
+            last_login = datetime.datetime.fromtimestamp(data['last_login'], datetime.timezone.utc)
     except django.core.signing.BadSignature:
         raise Http404("Invalid or expired auth")
 
@@ -557,7 +558,7 @@ def review_overview(request):
         reviewer__person__user=request.user,
         state__in=["assigned", "accepted"],
     )
-    today = Date.today()
+    today = date_today(DEADLINE_TZINFO)
     for r in open_review_assignments:
         r.due = max(0, (today - r.review_request.deadline).days)
 

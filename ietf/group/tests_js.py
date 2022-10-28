@@ -7,6 +7,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.factories import WgDraftFactory
 from ietf.group.factories import GroupFactory, RoleFactory, DatedGroupMilestoneFactory
 from ietf.utils.jstest import IetfSeleniumTestCase, ifSeleniumEnabled, selenium_enabled
+from ietf.utils.timezone import date_today
 
 if selenium_enabled():
     from selenium.common.exceptions import TimeoutException
@@ -68,7 +69,7 @@ class MilestoneTests(IetfSeleniumTestCase):
         draft = WgDraftFactory()
         WgDraftFactory.create_batch(3)  # some drafts to ignore
         description = 'some description'
-        due_date = datetime.date.today() + datetime.timedelta(days=60)
+        due_date = date_today() + datetime.timedelta(days=60)
 
         assert(len(draft.name) > 5)
         draft_search_string = draft.name[-5:]

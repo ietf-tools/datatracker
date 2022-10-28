@@ -18,6 +18,7 @@ from ietf.meeting.models import SchedTimeSessAssignment, Session
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.utils.meetecho import Conference
 from ietf.utils.test_utils import TestCase
+from ietf.utils.timezone import date_today
 
 
 # override the legacy office hours setting to guarantee consistency with the tests
@@ -623,12 +624,13 @@ class HelperTests(TestCase):
     def test_get_ietf_meeting(self):
         """get_ietf_meeting() should only return IETF meetings"""
         # put the IETF far in the past so it's not "current"
-        ietf = MeetingFactory(type_id='ietf', date=datetime.date.today() - datetime.timedelta(days=5 * 365))
+        today = date_today()
+        ietf = MeetingFactory(type_id='ietf', date=today- datetime.timedelta(days=5 * 365))
         # put the interim meeting now so it will be picked up as "current" if there's a bug
-        interim = MeetingFactory(type_id='interim', date=datetime.date.today())
+        interim = MeetingFactory(type_id='interim', date=today)
         self.assertEqual(get_ietf_meeting(ietf.number), ietf, 'Return IETF meeting by number')
         self.assertIsNone(get_ietf_meeting(interim.number), 'Ignore non-IETF meetings')
         self.assertIsNone(get_ietf_meeting(), 'Return None if there is no current IETF meeting')
-        ietf.date = datetime.date.today()
+        ietf.date = today
         ietf.save()
         self.assertEqual(get_ietf_meeting(), ietf, 'Return current meeting if there is one')

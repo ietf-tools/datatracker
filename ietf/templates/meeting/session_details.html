@@ -14,7 +14,7 @@
         <br>
         <small class="text-muted">{{ acronym }}</small>
     </h1>
-    {% if meeting.date >= thisweek %}
+    {% if meeting.start_datetime >= thisweek %}
         <a class="regular float-end"
            title="icalendar entry for {{ acronym }}@{{ meeting.number }}"
            aria-label="icalendar entry for {{ acronym }}@{{ meeting.number }}"
