@@ -202,7 +202,6 @@ import AgendaDetailsModal from './AgendaDetailsModal.vue'
 
 import { useAgendaStore } from './store'
 import { useSiteStore } from '../shared/store'
-import { getUrl } from '../shared/urls'
 
 // MESSAGE PROVIDER
 
@@ -276,20 +275,14 @@ const meetingEvents = computed(() => {
           id: `lnk-${item.id}-tar`,
           label: 'Download meeting materials as .tar archive',
           icon: 'file-zip',
-          href: getUrl('meetingMaterialsTar', {
-            meetingNumber: agendaStore.meeting.number,
-            eventAcronym: item.acronym
-          }),
+          href: `/meeting/${agendaStore.meeting.number}/agenda/${item.acronym}-drafts.tgz`,
           color: 'brown'
         })
         links.push({
           id: `lnk-${item.id}-pdf`,
           label: 'Download meeting materials as PDF file',
           icon: 'file-pdf',
-          href: getUrl('meetingMaterialsPdf', {
-            meetingNumber: agendaStore.meeting.number,
-            eventAcronym: item.acronym
-          }),
+          href: `/meeting/${agendaStore.meeting.number}/agenda/${item.acronym}-drafts.pdf`,
           color: 'red'
         })
       }
@@ -298,10 +291,7 @@ const meetingEvents = computed(() => {
           id: `lnk-${item.id}-note`,
           label: 'Notepad for note-takers',
           icon: 'journal-text',
-          href: getUrl('meetingNotes', {
-            meetingNumber: agendaStore.meeting.number,
-            eventAcronym: item.type === 'plenary' ? 'plenary' : item.acronym
-          }),
+          href: `https://notes.ietf.org/notes-ietf-${agendaStore.meeting.number}-${item.type === 'plenary' ? 'plenary' : item.acronym}`,
           color: 'blue'
         })
       }
@@ -414,10 +404,7 @@ const meetingEvents = computed(() => {
               id: `lnk-${item.id}-rec`,
               label: 'Session recording',
               icon: 'film',
-              href: getUrl('meetingMeetechoRecordings', {
-                meetingNumber: agendaStore.meeting.number,
-                eventAcronym: item.acronym.toUpperCase()
-              }),
+              href: `https://www.meetecho.com/ietf${agendaStore.meeting.number}/recordings#${item.acronym.toUpperCase()}`,
               color: 'purple'
             })
           }

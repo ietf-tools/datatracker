@@ -32,7 +32,6 @@ import {
 
 import { useAgendaStore } from './store'
 import { useSiteStore } from '../shared/store';
-import { getUrl } from '../shared/urls'
 
 // MESSAGE PROVIDER
 
@@ -65,11 +64,11 @@ function downloadIcs (key) {
   let icsUrl = ''
   if (agendaStore.pickerMode) {
     const sessionKeywords = agendaStore.scheduleAdjusted.map(s => s.sessionKeyword)
-    icsUrl = `${getUrl('meetingCalIcs', { meetingNumber: agendaStore.meeting.number })}?show=${sessionKeywords.join(',')}`
+    icsUrl = `/meeting/${agendaStore.meeting.number}/agenda.ics?show=${sessionKeywords.join(',')}`
   } else if (agendaStore.selectedCatSubs.length > 0) {
-    icsUrl = `${getUrl('meetingCalIcs', { meetingNumber: agendaStore.meeting.number })}?show=${agendaStore.selectedCatSubs.join(',')}`
+    icsUrl = `/meeting/${agendaStore.meeting.number}/agenda.ics?show=${agendaStore.selectedCatSubs.join(',')}`
   } else {
-    icsUrl = `${getUrl('meetingCalIcs', { meetingNumber: agendaStore.meeting.number })}`
+    icsUrl = `/meeting/${agendaStore.meeting.number}/agenda.ics`
   }
   if (key === 'subscribe') {
     window.location.assign(`webcal://${window.location.host}${icsUrl}`)
