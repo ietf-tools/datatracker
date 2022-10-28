@@ -413,7 +413,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         wait = WebDriverWait(self.driver, 2)
         meeting = MeetingFactory(
             type_id='ietf',
-            date=date=timezone.now() - datetime.timedelta(days=3),
+            date=timezone.now() - datetime.timedelta(days=3),
             days=7,
             time_zone=timezone_not_near_midnight(),
         )
