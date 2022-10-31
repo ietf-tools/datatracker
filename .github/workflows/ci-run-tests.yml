@@ -43,7 +43,10 @@ jobs:
       run: |
         echo "Running checks..."
         ./ietf/manage.py check
-        ./ietf/manage.py migrate
+        echo "Running migrations with USE_TZ=False..."
+        ./ietf/manage.py migrate || true
+        echo "USE_TZ = True" >> ./ietf/settings_local.py
+        echo "Running migrations with USE_TZ=True..."
         echo "Validating migrations..."
         if ! ( ietf/manage.py makemigrations --dry-run --check --verbosity 3 ) ; then
           echo "Model changes without migrations found."
