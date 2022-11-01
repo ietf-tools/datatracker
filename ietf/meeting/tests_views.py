@@ -3109,6 +3109,19 @@ class EditTests(TestCase):
         for s in [s1, s2]:
             e = q("#session{}".format(s.pk))
 
+            # should be link to edit/cancel session
+            self.assertTrue(
+                e.find('a[href="{}"]'.format(
+                    urlreverse('ietf.meeting.views.edit_session', kwargs={'session_id': s.pk}),
+                ))
+            )
+            self.assertTrue(
+                e.find('a[href="{}?sched={}"]'.format(
+                    urlreverse('ietf.meeting.views.cancel_session', kwargs={'session_id': s.pk}),
+                    meeting.schedule.pk,
+                ))
+            )
+
             # info in the item representing the session that can be moved around
             self.assertIn(s.group.acronym, e.find(".session-label").text())
             if s.comments:
