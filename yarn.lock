@@ -1719,6 +1719,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@twuni/emojify@npm:1.0.2":
+  version: 1.0.2
+  resolution: "@twuni/emojify@npm:1.0.2"
+  checksum: 0044c83b0589767dae1c1bb933cd56f2e5031a438f0fc993413e4cc229080e29c275cdd836be33ee02ddd59a5d1d6223a718685650f11ecfffc69c881c072152
+  languageName: node
+  linkType: hard
+
 "@types/estree@npm:^1.0.0":
   version: 1.0.0
   resolution: "@types/estree@npm:1.0.0"
@@ -7138,6 +7145,7 @@ browserlist@latest:
     "@percy/cypress": 3.1.2
     "@popperjs/core": 2.11.6
     "@rollup/pluginutils": 5.0.2
+    "@twuni/emojify": 1.0.2
     "@vitejs/plugin-vue": 3.1.2
     "@vue/test-utils": 2.1.0
     bootstrap: 5.2.2
