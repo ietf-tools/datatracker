@@ -58,6 +58,7 @@
     "@parcel/transformer-sass": "2.7.0",
     "@percy/cli": "1.11.0",
     "@percy/cypress": "3.1.2",
+    "@rollup/pluginutils": "5.0.2",
     "@vitejs/plugin-vue": "3.1.2",
     "@vue/test-utils": "2.1.0",
     "browserlist": "latest",
