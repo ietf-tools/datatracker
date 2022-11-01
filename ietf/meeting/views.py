@@ -4122,12 +4122,12 @@ def edit_session(request, session_id):
         {'session': session, 'form': form},
     )
 
-def _schedule_edit_url(schedule):
+def _schedule_edit_url(meeting, schedule):
     """Get the preferred URL to edit a schedule
 
     Returns a link to the official schedule if schedule is None
     """
-    url_args = {'num': schedule.meeting.number}
+    url_args = {'num': meeting.number}
     if schedule and not schedule.is_official:
         url_args.update({
             'name': schedule.name if schedule and not schedule.is_official else None,
@@ -4139,7 +4139,7 @@ def _schedule_edit_url(schedule):
 def cancel_session(request, session_id):
     session = get_object_or_404(Session.objects.with_current_status(), pk=session_id)
     schedule = Schedule.objects.filter(pk=request.GET.get('sched', None)).first()
-    editor_url = _schedule_edit_url(schedule)
+    editor_url = _schedule_edit_url(session.meeting, schedule)
     if session.current_status in Session.CANCELED_STATUSES:
         messages.info(request, 'Session is already canceled.')
         return HttpResponseRedirect(editor_url)

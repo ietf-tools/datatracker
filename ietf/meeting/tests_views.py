@@ -3697,6 +3697,54 @@ class EditTests(TestCase):
         self.assertEqual(session.attendees, 103)
         self.assertEqual(session.comments, 'So much to say')
 
+    def test_cancel_session(self):
+        # session for testing with official schedule
+        session = SessionFactory(meeting__type_id='ietf')
+        url = urlreverse('ietf.meeting.views.cancel_session', kwargs={'session_id': session.pk})
+        return_url = urlreverse('ietf.meeting.views.edit_meeting_schedule', kwargs={'num': session.meeting.number})
+        # session for testing with unofficial schedule
+        other_session = SessionFactory(meeting=session.meeting)
+        unofficial_schedule = ScheduleFactory(meeting=other_session.meeting)
+        url_unofficial = urlreverse(
+            'ietf.meeting.views.cancel_session',
+            kwargs={'session_id': other_session.pk},
+        ) + f'?sched={unofficial_schedule.pk}'
+        return_url_unofficial = urlreverse(
+            'ietf.meeting.views.edit_meeting_schedule',
+            kwargs={
+                'num': other_session.meeting.number,
+                'name': unofficial_schedule.name,
+                'owner': unofficial_schedule.owner_email(),
+            },
+        )
+
+        login_testing_unauthorized(self, 'secretary', url)
+        r = self.client.get(url)
+        self.assertContains(r, 'Cancel session', status_code=200)
+        self.assertIn(return_url, r.content.decode())
+        r = self.client.get(url_unofficial)
+        self.assertContains(r, 'Cancel session', status_code=200)
+        self.assertIn(return_url_unofficial, r.content.decode())
+
+        r = self.client.post(url, {})
+        self.assertFormError(r, 'form', 'confirmed', 'This field is required.')
+        r = self.client.post(url_unofficial, {})
+        self.assertFormError(r, 'form', 'confirmed', 'This field is required.')
+
+        r = self.client.post(url, {'confirmed': 'on'})
+        self.assertRedirects(r, return_url)
+        session = Session.objects.with_current_status().get(pk=session.pk)
+        self.assertEqual(session.current_status, 'canceled')
+        r = self.client.get(url)
+        self.assertRedirects(r, return_url)  # should redirect immediately when session is already canceled
+
+        r = self.client.post(url_unofficial, {'confirmed': 'on'})
+        self.assertRedirects(r, return_url_unofficial)
+        other_session = Session.objects.with_current_status().get(pk=other_session.pk)
+        self.assertEqual(other_session.current_status, 'canceled')
+        r = self.client.get(url_unofficial)
+        self.assertRedirects(r, return_url_unofficial)  # should redirect immediately when session is already canceled
+
     def test_edit_timeslots(self):
         meeting = make_meeting_test_data()
 
