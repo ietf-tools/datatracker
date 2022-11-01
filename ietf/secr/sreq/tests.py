@@ -834,8 +834,14 @@ class LockAppTestCase(TestCase):
         r = self.client.get(url,follow=True)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q(':disabled[name="edit"]')), 1)
-        
+        self.assertEqual(len(q(':enabled[name="edit"]')), 1)  # secretary can edit
+        chair = self.group.role_set.filter(name_id='chair').first().person.user.username
+        self.client.login(username=chair, password=f'{chair}+password')
+        r = self.client.get(url,follow=True)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q(':disabled[name="edit"]')), 1)  # chair cannot edit
+
     def test_new_request(self):
         url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':self.group.acronym})
         
