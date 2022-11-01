@@ -19,8 +19,6 @@ export default function precompileLodashTemplates(options = {}) {
         result.push(`"${key}": ${template(value.replaceAll('{', '{data.'), { interpolate, variable: 'data' }).source.replace('function(obj)', '(obj) =>')}`)
       }, [])
 
-      console.info(code.replace('/* __COMPILED_URLS__ */', compiledUrls.join(',\n')))
-
       return {
         code: code.replace('/* __COMPILED_URLS__ */', compiledUrls.join(',\n')),
         map: null
