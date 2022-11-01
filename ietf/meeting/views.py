@@ -56,7 +56,7 @@ from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
 from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
 from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm, ImportMinutesForm,
-                                 TimeSlotCreateForm, TimeSlotEditForm, SessionEditForm )
+                                 TimeSlotCreateForm, TimeSlotEditForm, SessionCancelForm, SessionEditForm )
 from ietf.meeting.helpers import get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import get_meeting, get_ietf_meeting, get_current_ietf_meeting_num
 from ietf.meeting.helpers import get_schedule, schedule_permissions
@@ -4121,6 +4121,46 @@ def edit_session(request, session_id):
         'meeting/edit_session.html',
         {'session': session, 'form': form},
     )
+
+def _schedule_edit_url(meeting, schedule):
+    """Get the preferred URL to edit a schedule
+
+    Returns a link to the official schedule if schedule is None
+    """
+    url_args = {'num': meeting.number}
+    if schedule and not schedule.is_official:
+        url_args.update({
+            'name': schedule.name if schedule and not schedule.is_official else None,
+            'owner': schedule.owner_email() if schedule and not schedule.is_official else None,
+        })
+    return reverse('ietf.meeting.views.edit_meeting_schedule', kwargs=url_args)
+
+@role_required('Secretariat')
+def cancel_session(request, session_id):
+    session = get_object_or_404(Session.objects.with_current_status(), pk=session_id)
+    schedule = Schedule.objects.filter(pk=request.GET.get('sched', None)).first()
+    editor_url = _schedule_edit_url(session.meeting, schedule)
+    if session.current_status in Session.CANCELED_STATUSES:
+        messages.info(request, 'Session is already canceled.')
+        return HttpResponseRedirect(editor_url)
+    if request.method == 'POST':
+        form = SessionCancelForm(data=request.POST)
+        if form.is_valid():
+            SchedulingEvent.objects.create(
+                session=session,
+                status_id='canceled',
+                by=request.user.person,
+            )
+            messages.success(request, 'Session canceled.')
+            return HttpResponseRedirect(editor_url)
+    else:
+        form = SessionCancelForm()
+    return render(
+        request,
+        'meeting/cancel_session.html',
+        {'session': session, 'form': form, 'editor_url': editor_url},
+    )
+
 
 @role_required('Secretariat')
 def request_minutes(request, num=None):

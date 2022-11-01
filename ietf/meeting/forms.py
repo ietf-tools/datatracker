@@ -773,6 +773,13 @@ class SessionEditForm(SessionDetailsForm):
         super().__init__(instance=instance, group=instance.group, *args, **kwargs)
 
 
+class SessionCancelForm(forms.Form):
+    confirmed = forms.BooleanField(
+        label='Cancel session?',
+        help_text='Confirm that you want to cancel this session.',
+    )
+
+
 class SessionDetailsInlineFormSet(forms.BaseInlineFormSet):
     def __init__(self, group, meeting, queryset=None, *args, **kwargs):
         self._meeting = meeting
