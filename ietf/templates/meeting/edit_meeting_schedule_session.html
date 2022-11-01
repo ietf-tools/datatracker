@@ -106,5 +106,9 @@
            href="{% url 'ietf.meeting.views.edit_session' session_id=session.pk %}">
             Edit session
         </a>
+        <a class="btn btn-danger btn-sm mt-2"
+           href="{% url 'ietf.meeting.views.cancel_session' session_id=session.pk %}?sched={{ schedule.pk }}">
+            Cancel session
+        </a>
     </div>
 </div>
