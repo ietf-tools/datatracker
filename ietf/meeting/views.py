@@ -4137,9 +4137,12 @@ def _schedule_edit_url(schedule):
 
 @role_required('Secretariat')
 def cancel_session(request, session_id):
-    session = get_object_or_404(Session, pk=session_id)
+    session = get_object_or_404(Session.objects.with_current_status(), pk=session_id)
     schedule = Schedule.objects.filter(pk=request.GET.get('sched', None)).first()
     editor_url = _schedule_edit_url(schedule)
+    if session.current_status in Session.CANCELED_STATUSES:
+        messages.info(request, 'Session is already canceled.')
+        return HttpResponseRedirect(editor_url)
     if request.method == 'POST':
         form = SessionCancelForm(data=request.POST)
         if form.is_valid():
@@ -4148,6 +4151,7 @@ def cancel_session(request, session_id):
                 status_id='canceled',
                 by=request.user.person,
             )
+            messages.success(request, 'Session canceled.')
             return HttpResponseRedirect(editor_url)
     else:
         form = SessionCancelForm()
