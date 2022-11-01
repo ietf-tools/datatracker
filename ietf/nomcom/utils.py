@@ -424,7 +424,7 @@ def make_nomineeposition_for_newperson(nomcom, candidate_name, candidate_email, 
 
     return make_nomineeposition(nomcom, email.person, position, author)
 
-def getheader(header_text, default="ascii"):
+def getheader(header_text, default="utf-8"):
     """Decode the specified header"""
 
     tuples = decode_header(header_text)
@@ -432,7 +432,7 @@ def getheader(header_text, default="ascii"):
     return "".join(header_sections)
 
 
-def get_charset(message, default="ascii"):
+def get_charset(message, default="utf-8"):
     """Get the message charset"""
 
     if message.get_content_charset():
