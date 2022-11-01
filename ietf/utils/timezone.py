@@ -1,6 +1,5 @@
 import datetime
 import random
-import zoneinfo
 
 from typing import Union
 from zoneinfo import available_timezones, ZoneInfo
