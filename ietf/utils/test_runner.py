@@ -1083,7 +1083,7 @@ class IetfTestRunner(DiscoverRunner):
             extra_tests += [
                 PyFlakesTestCase(test_runner=self, methodName='pyflakes_test'),
                 MyPyTest(test_runner=self, methodName='mypy_test'),
-                CoverageTest(test_runner=self, methodName='interleaved_migrations_test'),
+                #CoverageTest(test_runner=self, methodName='interleaved_migrations_test'),
                 CoverageTest(test_runner=self, methodName='url_coverage_test'),
                 CoverageTest(test_runner=self, methodName='template_coverage_test'),
                 CoverageTest(test_runner=self, methodName='code_coverage_test'),
