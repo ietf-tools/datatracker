@@ -4,6 +4,8 @@ n-theme
     .app-error(v-if='siteStore.criticalError')
       i.bi.bi-x-octagon-fill.me-2
       span {{siteStore.criticalError}}
+    .app-error-link(v-if='siteStore.criticalError && siteStore.criticalErrorLink')
+      a(:href='siteStore.criticalErrorLink') {{siteStore.criticalErrorLinkText}} #[i.bi.bi-arrow-right-square-fill.ms-2]
     .app-container(ref='appContainer')
       router-view.meeting
 </template>
@@ -55,5 +57,24 @@ onBeforeUnmount(() => {
   font-weight: 500;
   padding: 1rem;
   text-align: center;
+}
+
+.app-error-link {
+  background-color: lighten($red-100, 5%);
+  border-radius: 0 0 5px 5px;
+  color: #FFF;
+  font-weight: 500;
+  font-size: .9em;
+  padding: .7rem 1rem;
+  text-align: center;
+
+  a {
+    color: $red-700;
+    text-decoration: none;
+
+    &:hover, &:focus {
+      text-decoration: underline;
+    }
+  }
 }
 </style>

@@ -183,7 +183,9 @@ export const useAgendaStore = defineStore('agenda', {
         console.error(err)
         const siteStore = useSiteStore()
         siteStore.$patch({
-          criticalError: `Failed to load this meeting: ${err.message}`
+          criticalError: `Failed to load this meeting: ${err.message}`,
+          criticalErrorLink: meetingNumber ? `/meeting/${meetingNumber}/agenda.txt` : `/meeting/agenda.txt`,
+          criticalErrorLinkText: 'Switch to text-only agenda version'
         })
       }
 
