@@ -34,7 +34,7 @@ indent_size = 2
 [dev/**.js]
 indent_size = 2
 
-[{package.json,.eslintrc.js,.yarnrc.yml,vite.config.js,cypress.config.js}]
+[{package.json,.eslintrc.js,.yarnrc.yml,vite.config.js,jsconfig.json}]
 indent_size = 2
 
 # Settings for cypress tests

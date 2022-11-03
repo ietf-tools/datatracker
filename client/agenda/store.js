@@ -4,6 +4,7 @@ import uniqBy from 'lodash/uniqBy'
 import murmur from 'murmurhash-js/murmurhash3_gc'
 
 import { useSiteStore } from '../shared/store'
+import { storageAvailable } from '../shared/feature-detect'
 
 const urlRe = /http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+/
 const conferenceDomains = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 'gather.town']
@@ -147,7 +148,11 @@ export const useAgendaStore = defineStore('agenda', {
         const agendaData = await resp.json()
 
         // -> Switch to meeting timezone
-        this.timezone = window.localStorage.getItem(`agenda.${agendaData.meeting.number}.timezone`) || agendaData.meeting.timezone
+        if (storageAvailable('localStorage')) {
+          this.timezone = window.localStorage.getItem(`agenda.${agendaData.meeting.number}.timezone`) || agendaData.meeting.timezone
+        } else {
+          this.timezone = agendaData.meeting.timezone
+        }
 
         // -> Load meeting data
         this.categories = agendaData.categories
@@ -161,28 +166,41 @@ export const useAgendaStore = defineStore('agenda', {
         this.infoNoteHash = murmur(agendaData.meeting.infoNote, 0).toString()
 
         // -> Load meeting-specific preferences
-        this.infoNoteShown = !(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.hideInfo`) === this.infoNoteHash)
-        this.colorAssignments = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.colorAssignments`) || '{}')
-        this.pickedEvents = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.pickedEvents`) || '[]')
+        if (storageAvailable('localStorage')) {
+          this.infoNoteShown = !(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.hideInfo`) === this.infoNoteHash)
+          this.colorAssignments = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.colorAssignments`) || '{}')
+          this.selectedCatSubs = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.filters`) || '[]')
+          this.pickedEvents = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.pickedEvents`) || '[]')
+        } else {
+          this.infoNoteShown = true
+          this.colorAssignments = {}
+          this.selectedCatSubs = []
+          this.pickedEvents = []
+        }
 
         this.isLoaded = true
       } catch (err) {
         console.error(err)
         const siteStore = useSiteStore()
         siteStore.$patch({
-          criticalError: `Failed to load this meeting: ${err.message}`
+          criticalError: `Failed to load this meeting: ${err.message}`,
+          criticalErrorLink: meetingNumber ? `/meeting/${meetingNumber}/agenda.txt` : `/meeting/agenda.txt`,
+          criticalErrorLinkText: 'Switch to text-only agenda version'
         })
       }
 
       this.hideLoadingScreen()
     },
     persistMeetingPreferences () {
+      if (!storageAvailable('localStorage')) { return }
+      
       if (this.infoNoteShown) {
         window.localStorage.removeItem(`agenda.${this.meeting.number}.hideInfo`)
       } else {
         window.localStorage.setItem(`agenda.${this.meeting.number}.hideInfo`, this.infoNoteHash)
       }
       window.localStorage.setItem(`agenda.${this.meeting.number}.colorAssignments`, JSON.stringify(this.colorAssignments))
+      window.localStorage.setItem(`agenda.${this.meeting.number}.filters`, JSON.stringify(this.selectedCatSubs))
       window.localStorage.setItem(`agenda.${this.meeting.number}.pickedEvents`, JSON.stringify(this.pickedEvents))
       window.localStorage.setItem(`agenda.${this.meeting.number}.timezone`, this.timezone)
     },
@@ -221,10 +239,10 @@ export const useAgendaStore = defineStore('agenda', {
     }
   },
   persist: {
-    enabled: true,
+    enabled: storageAvailable('localStorage'),
     strategies: [
       {
-        storage: localStorage,
+        storage: storageAvailable('localStorage') ? localStorage : null,
         paths: [
           'areaIndicatorsShown',
           'bolderText',

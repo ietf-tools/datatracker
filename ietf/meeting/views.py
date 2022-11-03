@@ -207,8 +207,7 @@ def materials_document(request, document, num=None, ext=None):
     if (re.search(r'^\w+-\d+-.+-\d\d$', document) or
         re.search(r'^\w+-interim-\d+-.+-\d\d-\d\d$', document) or
         re.search(r'^\w+-interim-\d+-.+-sess[a-z]-\d\d$', document) or
-        re.search(r'^minutes-interim-\d+-.+-\d\d$', document) or
-        re.search(r'^slides-interim-\d+-.+-\d\d$', document)):
+        re.search(r'^(minutes|slides|chatlog|polls)-interim-\d+-.+-\d\d$', document)):
         name, rev = document.rsplit('-', 1)
     else:
         name, rev = document, None
@@ -673,7 +672,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
                 # timeslot structure will be neighbors. The grouping algorithm relies on this!
                 room_data[room.pk]['start_and_duration'],
                 # Within each group, sort higher capacity rooms first.
-                room.capacity,
+                -room.capacity if room.capacity is not None else 1,  # sort rooms with capacity = None at end
                 # Finally, sort alphabetically by name
                 room.name
             )
@@ -1621,6 +1620,8 @@ def api_get_agenda_data (request, num=None):
     # Get Floor Plans
     floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
 
+    #debug.show('all([(item.acronym,item.session.order_number,item.session.order_in_meeting()) for item in filtered_assignments])')
+
     return JsonResponse({
         "meeting": {
             "number": schedule.meeting.number,
@@ -1712,7 +1713,7 @@ def agenda_extract_schedule (item):
         } if item.session.agenda() is not None else {
             "url": None
         },
-        "orderInMeeting": item.session.order_in_meeting(),
+        "orderInMeeting": item.session.order_number,
         "short": item.session.short if item.session.short else item.session.short_name,
         "sessionToken": item.session.docname_token_only_for_multiple(),
         "links": {
@@ -3466,8 +3467,12 @@ def upcoming(request):
 
     entries = list(ietf_meetings)
     entries.extend(list(interim_sessions))
-    entries.sort(key = lambda o: pytz.utc.localize(datetime.datetime.combine(o.date, datetime.datetime.min.time())) if isinstance(o,Meeting) else o.official_timeslotassignment().timeslot.utc_start_time())
-    
+    entries.sort(
+        key=lambda o: (
+            pytz.utc.localize(datetime.datetime.combine(o.date, datetime.datetime.min.time())) if isinstance(o, Meeting) else o.official_timeslotassignment().timeslot.utc_start_time(),
+            o.number if isinstance(o, Meeting) else o.meeting.number,
+        )
+    )
     for o in entries:
         if isinstance(o, Meeting):
             o.start_timestamp = int(pytz.utc.localize(datetime.datetime.combine(o.date, datetime.time.min)).timestamp())
@@ -3530,7 +3535,7 @@ def upcoming_ical(request):
         session__in=[s.pk for m in meetings for s in m.sessions if m.type_id != 'ietf'],
         timeslot__time__gte=today,
     ).order_by(
-        'schedule__meeting__date', 'session__type', 'timeslot__time'
+        'schedule__meeting__date', 'session__type', 'timeslot__time', 'schedule__meeting__number',
     ).select_related(
         'session__group', 'session__group__parent', 'timeslot', 'schedule', 'schedule__meeting'
     ).distinct())

@@ -267,6 +267,16 @@ def status_slug_for_new_session(session, session_number):
     return 'schedw'
 
 
+def get_outbound_conflicts(form: SessionForm):
+    """extract wg conflict constraint data from a SessionForm"""
+    outbound_conflicts = []
+    for conflictname, cfield_id in form.wg_constraint_field_ids():
+        conflict_groups = form.cleaned_data[cfield_id]
+        if len(conflict_groups) > 0:
+            outbound_conflicts.append(dict(name=conflictname, groups=conflict_groups))
+    return outbound_conflicts
+
+
 @role_required(*AUTHORIZED_ROLES)
 def confirm(request, acronym):
     '''
@@ -299,12 +309,8 @@ def confirm(request, acronym):
         session_data['timeranges_display'] = [t.desc for t in form.cleaned_data['timeranges']]
     session_data['resources'] = [ ResourceAssociation.objects.get(pk=pk) for pk in request.POST.getlist('resources') ]
 
-    # extract wg conflict constraint data for the view
-    outbound_conflicts = []
-    for conflictname, cfield_id in form.wg_constraint_field_ids():
-        conflict_groups = form.cleaned_data[cfield_id]
-        if len(conflict_groups) > 0:
-            outbound_conflicts.append(dict(name=conflictname, groups=conflict_groups))
+    # extract wg conflict constraint data for the view / notifications
+    outbound_conflicts = get_outbound_conflicts(form)
 
     button_text = request.POST.get('submit', '')
     if button_text == 'Cancel':
@@ -534,11 +540,14 @@ def edit(request, acronym, num=None):
                 #add_session_activity(group,'Session Request was updated',meeting,user)
 
                 # send notification
+                outbound_conflicts = get_outbound_conflicts(form)
+                session_data = form.cleaned_data.copy()  # do not add things to the original cleaned_data
+                session_data['outbound_conflicts'] = [f"{d['name']}: {d['groups']}" for d in outbound_conflicts]
                 send_notification(
                     group,
                     meeting,
                     login,
-                    form.cleaned_data,
+                    session_data,
                     [sf.cleaned_data for sf in form.session_forms.forms_to_keep],
                     'update',
                 )
