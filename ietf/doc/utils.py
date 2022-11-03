@@ -1293,7 +1293,8 @@ def fuzzy_find_documents(name, rev=None):
     document.
     """
     # Handle special case name formats
-    name = re.sub(r"\s+", "", name.lower())
+    if re.match(r"^\s*rfc", name, flags=re.IGNORECASE):
+        name = re.sub(r"\s+", "", name.lower())
     if name.startswith('rfc0'):
         name = "rfc" + name[3:].lstrip('0')
     if name.startswith('review-') and re.search(r'-\d\d\d\d-\d\d$', name):
