@@ -34,7 +34,7 @@
     <h2>Template content</h2>
 
     <div class="card">
-        <p class="pasted">{{ template.content }}</p>
+        <pre class="pasted">{{ template.content|escape }}</pre>
     </div>
 
 {% endblock %}

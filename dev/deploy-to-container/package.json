@@ -5,6 +5,7 @@
     "dockerode": "^3.3.3",
     "fs-extra": "^10.1.0",
     "nanoid": "4.0.0",
+    "nanoid-dictionary": "5.0.0-beta.1",
     "slugify": "1.6.5",
     "tar": "^6.1.11",
     "yargs": "^17.5.1"

@@ -20,11 +20,13 @@ DATABASES = {
     },
 }
 
-SECRET_KEY = "__SECRETKEY__"
-
 DATABASE_TEST_OPTIONS = {
     'init_command': 'SET storage_engine=InnoDB',
 }
+
+SECRET_KEY = "__SECRETKEY__"
+
+CELERY_BROKER_URL = '__MQCONNSTR__'
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 IDSUBMIT_REPOSITORY_PATH = "test/id/"

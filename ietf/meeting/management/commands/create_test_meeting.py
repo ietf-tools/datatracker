@@ -58,20 +58,20 @@ from ietf.meeting.models import Meeting, Room, Constraint, Session, ResourceAsso
 
 
 class Command(BaseCommand):
-    help = "Create (or delete) a dummy meeting for test and development purposes."
+    help = "Create (or delete) a meeting for test and development purposes."
 
     def add_arguments(self, parser):
-        parser.add_argument('--delete', dest='delete', action='store_true', help='Delete the test and development dummy meeting')
+        parser.add_argument('--delete', dest='delete', action='store_true', help='Delete the test and development meeting')
         parser.add_argument('--old-conflicts', dest='old_conflicts', action='store_true',
                             help='Use old conflict types ("conflict", "conflic2", "conflic3") instead of new ("chair_conflict", "tech_overlap", "key_participant")')
         parser.add_argument(
             '--start-date',
-            help='Start date for the dummy meeting (yyyy-mm-dd, defaults to 2019-11-16)',
+            help='Start date for the test meeting (yyyy-mm-dd, defaults to 2019-11-16)',
             type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d').date(),
             default='2019-11-16',
         )
         parser.add_argument('--tz', default='UTC',
-                            help='Time zone for created meeting. Defaults to UTC. Use "" to disable.')
+                            help='Time zone for test meeting. Defaults to UTC. Use "" to disable.')
 
     def _meeting_datetime(self, day, *time_args):
         """Generate a datetime on a meeting day"""
@@ -82,7 +82,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
-            raise EnvironmentError("Refusing to create a dummy meetng on a production server")
+            raise EnvironmentError("Refusing to create a test meetng on a production server")
 
         opt_delete = options.get('delete', False)
         opt_use_old_conflicts = options.get('old_conflicts', False)
@@ -94,17 +94,17 @@ class Command(BaseCommand):
         if opt_delete:
             if Meeting.objects.filter(number='999').exists():
                 Meeting.objects.filter(number='999').delete()
-                self.stdout.write("Deleted dummy meeting IETF 999 and its related objects.")
+                self.stdout.write("Deleted test meeting IETF 999 and its related objects.")
             else:
-                self.stderr.write("Dummy meeting IETF 999 does not exist; nothing to do.\n")
+                self.stderr.write("Test meeting IETF 999 does not exist; nothing to do.\n")
         else:
             if Meeting.objects.filter(number='999').exists():
-                self.stderr.write("Dummy meeting IETF 999 already exists; nothing to do.\n")
+                self.stderr.write("Test meeting IETF 999 already exists; nothing to do.\n")
             else:
                 transaction.set_autocommit(False)
                 
                 if self.start_date.isoweekday() != 6:
-                    self.stderr.write("Warning: dummy meeting does not start on Saturday, watch out for bugs")
+                    self.stderr.write("Warning: test meeting does not start on Saturday, watch out for bugs")
 
                 m = Meeting.objects.create(
                     number='999',
