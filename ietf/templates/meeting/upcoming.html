@@ -51,9 +51,9 @@
                             {% with meeting=entry %}
                                 <td class="meeting-time"
                                     data-start-date="{{ meeting.date }}"
-                                    data-end-date="{{ meeting.end }}"
+                                    data-end-date="{{ meeting.end_date }}"
                                     data-time-zone="{{ meeting.time_zone }}">
-                                    {{ meeting.date }} to {{ meeting.end }}
+                                    {{ meeting.date }} to {{ meeting.end_date }}
                                 </td>
                                 <td>ietf</td>
                                 <td>
@@ -123,7 +123,7 @@
                           {
                               ietf_meeting_number: '{{ meeting.number }}',
                               start_moment: moment.tz('{{meeting.date}}', '{{ meeting.time_zone }}').startOf('day'),
-                              end_moment: moment.tz('{{meeting.end}}', '{{ meeting.time_zone }}').endOf('day'),
+                              end_moment: moment.tz('{{meeting.end_date}}', '{{ meeting.time_zone }}').endOf('day'),
                               url: '{% url 'agenda' num=meeting.number %}'
                           }{% if not forloop.last %}, {% endif %}
                       {% endwith %}
