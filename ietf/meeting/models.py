@@ -60,16 +60,6 @@ for name in pytz.common_timezones:
 timezones.sort()
 
 
-# this is used in models to format dates, as the built-in json serializer
-# can not deal with them, and the django provided serializer is inaccessible.
-from django.utils import datetime_safe
-DATE_FORMAT = "%Y-%m-%d"
-TIME_FORMAT = "%H:%M:%S"
-
-def fmt_date(o):
-    d = datetime_safe.new_date(o)
-    return d.strftime(DATE_FORMAT)
-
 class Meeting(models.Model):
     # number is either the number for IETF meetings, or some other
     # identifier for interim meetings/IESG retreats/liaison summits/...
