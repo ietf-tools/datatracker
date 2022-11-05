@@ -434,7 +434,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
         request, review_req,
         "For %s, %s %s review assigned: %s" % (reviewer.person.ascii, review_req.team.acronym.capitalize(), review_req.type.name, review_req.doc.name),
         msg ,
-        by=request.user.person, notify_secretary=True, notify_reviewer=True, notify_requested_by=True) # Not enough to set True to secretary & requested_by
+        by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=False) 
 
 
 def close_review_request(request, review_req, close_state, close_comment=''):
