@@ -121,7 +121,7 @@ class BaseMeetingTestCase(TestCase):
         settings.MEETINGHOST_LOGO_PATH = self.saved_meetinghost_logo_path
         super().tearDown()
 
-    def write_materials_file(self, meeting, doc, content):
+    def write_materials_file(self, meeting, doc, content, charset="utf-8"):
         path = os.path.join(self.materials_dir, "%s/%s/%s" % (meeting.number, doc.type_id, doc.uploaded_filename))
 
         dirname = os.path.dirname(path)
@@ -129,7 +129,7 @@ class BaseMeetingTestCase(TestCase):
             os.makedirs(dirname)
 
         if isinstance(content, str):
-            content = content.encode()
+            content = content.encode(charset)
         with io.open(path, "wb") as f:
             f.write(content)
 
@@ -361,6 +361,32 @@ class MeetingTests(BaseMeetingTestCase):
         session = meeting.session_set.first()
 
         self.do_test_materials(meeting, session)
+
+    @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
+    def test_meeting_materials_non_utf8(self):
+        meeting = make_meeting_test_data()
+        session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
+        doc = session.materials.get(type="minutes")
+        self.write_materials_file(meeting,
+                                  doc,
+                                  "1. More work items underway\n\n2. The draft will be finished before next meeting\n\n - É",
+                                  charset="iso-8859-1")
+        url = urlreverse("ietf.meeting.views.materials_document",
+                         kwargs=dict(num=meeting.number, document=session.minutes()))
+
+        for accept, cont_type, content in [
+                ('text/html,text/plain,text/markdown',  'text/html',     '<li>\n<p>More work items underway</p>\n</li>'),
+                ('text/markdown,text/html,text/plain',  'text/markdown', '1. More work items underway'),
+                ('text/plain,text/markdown, text/html', 'text/plain',    '1. More work items underway'),
+                ('text/html',                           'text/html',     '<li>\n<p>More work items underway</p>\n</li>'),
+                ('text/markdown',                       'text/markdown', '1. More work items underway'),
+                ('text/plain',                          'text/plain',    '1. More work items underway'),
+            ]:
+            client = Client(HTTP_ACCEPT=accept)
+            r = client.get(url)
+            rtype = r['Content-Type'].split(';')[0]
+            self.assertEqual(cont_type, rtype)
+            self.assertContains(r, content)
 
     @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
     def do_test_materials(self, meeting, session):
