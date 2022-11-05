@@ -3466,8 +3466,6 @@ def upcoming(request):
 
     # Get ietf meetings starting 7 days ago, and interim meetings starting today
     ietf_meetings = Meeting.objects.filter(type_id='ietf', date__gte=today-datetime.timedelta(days=7))
-    for m in ietf_meetings:
-        m.end = m.date + datetime.timedelta(days=m.days-1)  # subtract 1 to avoid counting an extra day
 
     interim_sessions = add_event_info_to_session_qs(
         Session.objects.filter(
@@ -3495,7 +3493,7 @@ def upcoming(request):
     for o in entries:
         if isinstance(o, Meeting):
             o.start_timestamp = int(pytz.utc.localize(datetime.datetime.combine(o.date, datetime.time.min)).timestamp())
-            o.end_timestamp = int(pytz.utc.localize(datetime.datetime.combine(o.end, datetime.time.max)).timestamp())
+            o.end_timestamp = int(pytz.utc.localize(datetime.datetime.combine(o.end_date(), datetime.time.max)).timestamp())
         else:
             o.start_timestamp = int(o.official_timeslotassignment().timeslot.utc_start_time().timestamp())
             o.end_timestamp = int(o.official_timeslotassignment().timeslot.utc_end_time().timestamp())
