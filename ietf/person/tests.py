@@ -104,6 +104,23 @@ class PersonTests(TestCase):
         r = self.client.get(photo_url)
         self.assertEqual(r.status_code, 200)
 
+    def test_person_profile_without_email(self):
+        person = PersonFactory(name="foobar@example.com")
+        # delete Email record
+        person.email().delete()
+        url = urlreverse("ietf.person.views.profile", kwargs={ "email_or_name": person.plain_name()})
+        r = self.client.get(url)
+        self.assertContains(r, person.name, status_code=200)
+
+    def test_person_profile_404(self):
+        urls = [
+                urlreverse("ietf.person.views.profile", kwargs={ "email_or_name": "nonexistent@example.com"}),
+                urlreverse("ietf.person.views.profile", kwargs={ "email_or_name": "Nonexistent Person"}),]
+
+        for url in urls:
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 404)
+
     def test_person_photo(self):
         person = PersonFactory(with_bio=True)
         
@@ -403,8 +420,3 @@ class PersonUtilsTests(TestCase):
         self.assertEqual(get_dots(ncmember),['nomcom'])
         ncchair = RoleFactory(group__acronym='nomcom2020',group__type_id='nomcom',name_id='chair').person
         self.assertEqual(get_dots(ncchair),['nomcom'])
-
-
-
-
-       
