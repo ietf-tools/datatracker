@@ -1701,11 +1701,11 @@ def agenda_extract_schedule (item):
     return {
         "id": item.id,
         "sessionId": item.session.id,
-        "room": item.room_name,
+        "room": item.room_name if item.timeslot.show_location else None,
         "location": {
             "short": item.timeslot.location.floorplan.short,
             "name": item.timeslot.location.floorplan.name,
-        } if (item.timeslot.location and item.timeslot.location.floorplan) else {},
+        } if (item.timeslot.show_location and item.timeslot.location and item.timeslot.location.floorplan) else {},
         "acronym": item.acronym,
         "duration": item.timeslot.duration.seconds,
         "name": item.timeslot.name,
