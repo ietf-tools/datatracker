@@ -249,7 +249,7 @@ def urlize_ietf_docs(string, autoescape=None):
         flags=re.IGNORECASE | re.ASCII,
     )
     string = re.sub(
-        r"\b(?<![/\-:=#\"\'])((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
+        r"\b(?<![/\-:=#\"\'])((RFC|BCP|STD|FYI) *\n? *0*(\d+))\b",
         link_other_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
