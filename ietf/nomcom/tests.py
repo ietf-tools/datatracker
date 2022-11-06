@@ -10,6 +10,7 @@ import shutil
 from pyquery import PyQuery
 from urllib.parse import urlparse
 from itertools import combinations
+from zoneinfo import ZoneInfo
 
 from django.db import IntegrityError
 from django.db.models import Max
@@ -1506,7 +1507,7 @@ class NewActiveNomComTests(TestCase):
     def test_accept_reject_nomination_edges(self):
         self.client.logout()
         np = self.nc.nominee_set.order_by('pk').first().nomineeposition_set.order_by('pk').first()
-        date_str = np.time.astimezone().strftime("%Y%m%d")  # in settings.TIME_ZONE
+        date_str = np.time.astimezone(ZoneInfo(settings.TIME_ZONE)).strftime("%Y%m%d")
         kwargs={'year':self.nc.year(),
                 'nominee_position_id':np.id,
                 'state':'accepted',
@@ -1521,7 +1522,7 @@ class NewActiveNomComTests(TestCase):
         settings.DAYS_TO_EXPIRE_NOMINATION_LINK = 2
         np.time = np.time - datetime.timedelta(days=3)
         np.save()
-        date_str = np.time.astimezone().strftime("%Y%m%d")  # in settings.TIME_ZONE
+        date_str = np.time.astimezone(ZoneInfo(settings.TIME_ZONE)).strftime("%Y%m%d")
         kwargs['date'] = date_str
         kwargs['hash'] = get_hash_nominee_position(date_str, np.id)
         url = reverse('ietf.nomcom.views.process_nomination_status', kwargs=kwargs)
@@ -1537,7 +1538,7 @@ class NewActiveNomComTests(TestCase):
 
     def test_accept_reject_nomination_comment(self):
         np = self.nc.nominee_set.order_by('pk').first().nomineeposition_set.order_by('pk').first()
-        date_str = np.time.astimezone().strftime("%Y%m%d")  # in settings.TIME_ZONE
+        date_str = np.time.astimezone(ZoneInfo(settings.TIME_ZONE)).strftime("%Y%m%d")
         hash = get_hash_nominee_position(date_str, np.id)
         url = reverse('ietf.nomcom.views.process_nomination_status',
                       kwargs={'year':self.nc.year(),
