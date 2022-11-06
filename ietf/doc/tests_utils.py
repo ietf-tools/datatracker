@@ -5,6 +5,7 @@ import debug  # pyflakes:ignore
 from unittest.mock import patch
 
 from django.db import IntegrityError
+from django.utils import timezone
 
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.name.models import DocTagName
@@ -16,7 +17,6 @@ from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor, Documen
 from ietf.doc.utils import (update_action_holders, add_state_change_event, update_documentauthors,
                             fuzzy_find_documents, rebuild_reference_relations)
 from ietf.utils.draft import Draft, PlaintextDraft
-from ietf.utils.timezone import date_today
 from ietf.utils.xmldraft import XMLDraft
 
 
@@ -147,10 +147,10 @@ class ActionHoldersTests(TestCase):
         dah.time_added = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)  # arbitrary date in the past
         dah.save()
 
-        today = date_today()
-        self.assertNotEqual(doc.documentactionholder_set.get(person=self.ad).time_added.date(), today)
+        right_now = timezone.now()
+        self.assertLess(doc.documentactionholder_set.get(person=self.ad).time_added, right_now)
         self.update_doc_state(doc, State.objects.get(slug='ad-eval'))
-        self.assertEqual(doc.documentactionholder_set.get(person=self.ad).time_added.date(), today)
+        self.assertGreaterEqual(doc.documentactionholder_set.get(person=self.ad).time_added, right_now)
 
     def test_update_action_holders_add_tag_need_rev(self):
         """Adding need-rev tag adds authors as action holders"""
