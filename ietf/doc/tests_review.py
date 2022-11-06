@@ -414,7 +414,7 @@ class ReviewTests(TestCase):
         login_testing_unauthorized(self, "reviewsecretary", reject_url)
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, assignment.reviewer.person.name)
+        self.assertContains(r, escape(assignment.reviewer.person.name))
         self.assertNotContains(r, 'can not be rejected')
         self.assertContains(r, '<button type="submit"')
 
@@ -442,7 +442,7 @@ class ReviewTests(TestCase):
         
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, assignment.reviewer.person.name)
+        self.assertContains(r, escape(assignment.reviewer.person.name))
         self.assertContains(r, 'can not be rejected')
         self.assertNotContains(r, '<button type="submit"')
 

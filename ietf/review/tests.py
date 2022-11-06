@@ -384,10 +384,10 @@ class ReviewAssignmentReminderTests(TestCase):
         self.assertTrue(self.reviewer.email_address() in outbox[0]["To"])
         self.assertTrue(secretary.person.email_address() in outbox[0]["To"])
         message = get_payload_text(outbox[0])
-        self.assertTrue(self.reviewer.name in message)
+        self.assertTrue(self.reviewer.plain_name() in message)
         self.assertTrue(self.team.acronym in message)
         self.assertEqual(len(log), 1)
-        self.assertTrue(self.reviewer.name in log[0])
+        self.assertTrue(self.reviewer.plain_name() in log[0])
         self.assertTrue(self.team.acronym in log[0])
 
     def test_send_review_reminder_overdue_assignment(self):

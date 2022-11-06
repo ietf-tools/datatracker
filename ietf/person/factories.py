@@ -11,6 +11,7 @@ import random
 import shutil
 
 from unidecode import unidecode
+from unicodedata import normalize
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -47,8 +48,9 @@ class UserFactory(factory.django.DjangoModelFactory):
         exclude = ['faker', ]
 
     faker = factory.LazyFunction(random_faker)
-    first_name = factory.LazyAttribute(lambda o: o.faker.first_name())
-    last_name = factory.LazyAttribute(lambda o: o.faker.last_name())
+    # normalize these i18n Unicode strings in the same way the database does
+    first_name = factory.LazyAttribute(lambda o: normalize("NFKC", o.faker.first_name()))
+    last_name = factory.LazyAttribute(lambda o: normalize("NFKC", o.faker.last_name()))
     email = factory.LazyAttributeSequence(lambda u, n: '%s.%s_%d@%s'%( slugify(unidecode(u.first_name)),
                                                 slugify(unidecode(u.last_name)), n, fake.domain_name())) # type: ignore
     username = factory.LazyAttribute(lambda u: u.email)
