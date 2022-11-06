@@ -73,25 +73,13 @@ body {
     right: 0;
     z-index: 1000000000;
 }
-
-#app-loading-footer > a {
-    text-decoration: none;
-    font-weight: 500;
-    font-size: .9em;
-    color: #0aa2c0;
-    display: inline-block;
-    padding: 8px 16px;
-    background-color: #F9F9F9;
-    border-radius: 5px;
-    margin-bottom: 12px;
-}
 {% endblock %}
 {% block content %}
     {% origin %}
     <div id="app"></div>
     <div id="app-loading">
         <div id="app-loading-footer">
-            <a href="/meeting/{{ meetingData.meetingNumber }}/agenda.txt">Switch to text-only version &#11166;</a>
+            <a class="btn btn-light text-muted mb-3" href="/meeting/{{ meetingData.meetingNumber }}/agenda.txt"><small>Switch to text-only version &#11166;</small></a>
         </div>
     </div>
 {% endblock %}

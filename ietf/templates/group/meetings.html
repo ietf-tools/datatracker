@@ -1,6 +1,5 @@
 {% extends "group/group_base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
-{# TODO: Add text noting that dates and weekdays are displayed in each meeting's timezone #}
+{# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
 {% load origin %}
 {% block title %}
     Meetings
@@ -86,6 +85,7 @@
         </table>
     {% endif %}
     <p class="alert alert-info my-3">
-        This page shows meetings within the last four years. For earlier meetings, please see the proceedings.
+        This page shows meetings within the last four years. For earlier meetings, please see the
+        <a href="https://www.ietf.org/how/meetings/past/">proceedings</a>.
     </p>
 {% endblock %}
