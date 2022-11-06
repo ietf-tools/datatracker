@@ -39,15 +39,15 @@ from ietf.doc.models import Document
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.group.utils import can_manage_group
 from ietf.person.models import Person
-from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_request
-from ietf.meeting.helpers import send_interim_approval_request
+from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_request, preprocess_assignments_for_agenda
+from ietf.meeting.helpers import send_interim_approval_request, AgendaKeywordTagger
 from ietf.meeting.helpers import send_interim_meeting_cancellation_notice, send_interim_session_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates, update_important_dates
 from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission, SchedulingEvent, Room, Constraint, ConstraintName
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
 from ietf.meeting.utils import finalize, condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs
-from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save
+from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
@@ -146,6 +146,31 @@ class BaseMeetingTestCase(TestCase):
         self.write_materials_file(meeting, session.materials.filter(type="slides").exclude(states__type__slug='slides',states__slug='deleted').first(),
                                   "This is a slideshow")
 
+
+class AgendaApiTests(TestCase):
+    def test_agenda_extract_schedule_location(self):
+        meeting = MeetingFactory(type_id='ietf')
+        room = RoomFactory(meeting=meeting, floorplan=FloorPlanFactory(meeting=meeting))
+        hidden_ts = TimeSlotFactory(meeting=meeting, location=room, show_location=False)
+        shown_ts = TimeSlotFactory(meeting=meeting, location=room, show_location=True)
+        hidden_sess = SessionFactory(meeting=meeting, add_to_schedule=False)
+        shown_sess = SessionFactory(meeting=meeting, add_to_schedule=False)
+        meeting.schedule.assignments.create(timeslot=hidden_ts, session=hidden_sess)
+        meeting.schedule.assignments.create(timeslot=shown_ts, session=shown_sess)
+        processed = preprocess_assignments_for_agenda(
+            SchedTimeSessAssignment.objects.filter(session__in=[hidden_sess, shown_sess]),
+            meeting
+        )
+        AgendaKeywordTagger(assignments=processed).apply()
+        extracted = {item.pk: agenda_extract_schedule(item) for item in processed}
+
+        hidden = extracted[hidden_sess.pk]
+        self.assertIsNone(hidden['room'])
+        self.assertEqual(hidden['location'], {})
+
+        shown = extracted[shown_sess.pk]
+        self.assertEqual(shown['room'], room.name)
+        self.assertEqual(shown['location'], {'name': room.floorplan.name, 'short': room.floorplan.short})
 
 
 class MeetingTests(BaseMeetingTestCase):
