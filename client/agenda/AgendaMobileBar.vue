@@ -31,7 +31,7 @@ import {
 } from 'naive-ui'
 
 import { useAgendaStore } from './store'
-import { useSiteStore } from '../shared/store';
+import { useSiteStore } from '../shared/store'
 import { getUrl } from '../shared/urls'
 
 // MESSAGE PROVIDER

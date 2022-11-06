@@ -1,20 +1,8 @@
-import template from 'lodash-es/template'
-import transform from 'lodash-es/transform'
-
-const urls = {
-  bofDefinition: 'https://www.ietf.org/how/bofs/',
-  meetingCalIcs: '/meeting/{meetingNumber}/agenda.ics',
-  meetingDetails: '/meeting/{meetingNumber}/session/{eventAcronym}/',
-  meetingMaterialsPdf: '/meeting/{meetingNumber}/agenda/{eventAcronym}-drafts.pdf',
-  meetingMaterialsTar: '/meeting/{meetingNumber}/agenda/{eventAcronym}-drafts.tgz',
-  meetingMeetechoRecordings: 'https://www.meetecho.com/ietf{meetingNumber}/recordings#{eventAcronym}',
-  meetingNotes: 'https://notes.ietf.org/notes-ietf-{meetingNumber}-{eventAcronym}'
-}
-
-const interpolate = /{([\s\S]+?)}/g
-const compiled = transform(urls, (result, value, key) => {
-  result[key] = template(value, { interpolate })
-}, {})
+/**
+ * DO NOT add the urls here directly. Edit the urls.json file instead.
+ * The urls are automatically precompiled into the variable below at build time.
+ */
+const urls = { /* __COMPILED_URLS__ */ }
 
 /**
  * Get an URL and replace tokens with provided values.
@@ -25,6 +13,6 @@ const compiled = transform(urls, (result, value, key) => {
  */
 export const getUrl = (key, tokens = {}) => {
   if (!key) { throw new Error('Must provide a key for getUrl()') }
-  if (!compiled[key]) { throw new Error('Invalid getUrl() key') }
-  return compiled[key](tokens)
+  if (!urls[key]) { throw new Error('Invalid getUrl() key') }
+  return urls[key](tokens)
 }
