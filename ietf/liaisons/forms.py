@@ -510,7 +510,7 @@ class OutgoingLiaisonForm(LiaisonModelForm):
         else:
             email = self.person.email_address()
         self.fields['from_contact'].initial = email
-        self.fields['from_contact'].widget.attrs['disabled'] = True
+        self.fields['from_contact'].widget.attrs['readonly'] = True
 
     def set_to_fields(self):
         '''Set to_groups and to_contacts options and initial value based on user
