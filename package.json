@@ -26,7 +26,7 @@
     "bootstrap": "5.2.2",
     "bootstrap-icons": "1.9.1",
     "browser-fs-access": "0.31.1",
-    "caniuse-lite": "1.0.30001430",
+    "caniuse-lite": "1.0.30001431",
     "d3": "7.6.1",
     "file-saver": "2.0.5",
     "highcharts": "10.3.1",
@@ -80,7 +80,7 @@
     "pug": "3.0.2",
     "sass": "1.56.0",
     "seedrandom": "3.0.5",
-    "vite": "3.2.2"
+    "vite": "3.2.3"
   },
   "targets": {
     "ietf": {
