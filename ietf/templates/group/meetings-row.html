@@ -1,4 +1,7 @@
+{% load origin tz %}
+{% origin %}
 {% for s in sessions %}
+    {% timezone s.meeting.time_zone %}
     <tr>
         <td>
             {% if s.meeting.type.slug == 'ietf' %}
@@ -65,4 +68,5 @@
             {% endif %}
         </td>
     </tr>
+    {% endtimezone %}
 {% endfor %}

@@ -13,6 +13,7 @@ from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.db.models import Q
 from django.test import Client
+from django.utils import timezone
 
 import debug                             # pyflakes:ignore
 
@@ -115,8 +116,8 @@ class GenerateGroupAliasesTests(TestCase):
         super().tearDown()
 
     def testManagementCommand(self):
-        a_month_ago = datetime.datetime.now() - datetime.timedelta(30)
-        a_decade_ago = datetime.datetime.now() - datetime.timedelta(3650)
+        a_month_ago = timezone.now() - datetime.timedelta(30)
+        a_decade_ago = timezone.now() - datetime.timedelta(3650)
         role1 = RoleFactory(name_id='ad', group__type_id='area', group__acronym='myth', group__state_id='active')
         area = role1.group
         ad = role1.person

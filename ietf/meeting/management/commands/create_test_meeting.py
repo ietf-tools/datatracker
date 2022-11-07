@@ -48,7 +48,7 @@ import socket
 import datetime
 import pytz
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models import Q
 
@@ -75,10 +75,12 @@ class Command(BaseCommand):
 
     def _meeting_datetime(self, day, *time_args):
         """Generate a datetime on a meeting day"""
-        return datetime.datetime.combine(
-            self.start_date,
-            datetime.time(*time_args)
-        ) + datetime.timedelta(days=day)
+        return self.meeting_tz.localize(
+            datetime.datetime.combine(
+                self.start_date,
+                datetime.time(*time_args)
+            ) + datetime.timedelta(days=day)
+        )
 
     def handle(self, *args, **options):
         if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
@@ -87,10 +89,7 @@ class Command(BaseCommand):
         opt_delete = options.get('delete', False)
         opt_use_old_conflicts = options.get('old_conflicts', False)
         self.start_date = options['start_date']
-        meeting_tz = options['tz']
-        if not opt_delete and (meeting_tz not in pytz.common_timezones):
-            self.stderr.write("Warning: {} is not a recognized time zone.".format(meeting_tz))
-
+        meeting_tzname = options['tz']
         if opt_delete:
             if Meeting.objects.filter(number='999').exists():
                 Meeting.objects.filter(number='999').delete()
@@ -98,6 +97,11 @@ class Command(BaseCommand):
             else:
                 self.stderr.write("Test meeting IETF 999 does not exist; nothing to do.\n")
         else:
+            try:
+                self.meeting_tz = pytz.timezone(meeting_tzname)
+            except pytz.UnknownTimeZoneError:
+                raise CommandError("{} is not a recognized time zone.".format(meeting_tzname))
+
             if Meeting.objects.filter(number='999').exists():
                 self.stderr.write("Test meeting IETF 999 already exists; nothing to do.\n")
             else:
@@ -111,7 +115,7 @@ class Command(BaseCommand):
                     type_id='IETF',
                     date=self._meeting_datetime(0).date(),
                     days=7,
-                    time_zone=meeting_tz,
+                    time_zone=meeting_tzname,
                 )
 
                 # Set enabled constraints
@@ -177,6 +181,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1584,  # grow
                     attendees=75,
                     agenda_note="",
@@ -197,6 +202,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2166,  # sidrops
                     attendees=62,
                     agenda_note="",
@@ -221,6 +227,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1452,  # dnsop
                     attendees=160,
                     agenda_note="",
@@ -232,6 +239,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1452,  # dnsop
                     attendees=160,
                     agenda_note="",
@@ -260,6 +268,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1895,  # dnssd
                     attendees=75,
                     agenda_note="Joint with HOMENET",
@@ -271,6 +280,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1895,  # dnssd
                     attendees=75,
                     agenda_note="",
@@ -305,6 +315,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2216,  # lsvr
                     attendees=100,
                     agenda_note="",
@@ -331,6 +342,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2161,  # quic
                     attendees=200,
                     agenda_note="",
@@ -343,6 +355,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2161,  # quic
                     attendees=200,
                     agenda_note="",
@@ -399,6 +412,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1463,  # tsvwg
                     attendees=100,
                     agenda_note="",
@@ -410,6 +424,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1463,  # tsvwg
                     attendees=100,
                     agenda_note="",
@@ -449,6 +464,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1524,  # ccamp
                     attendees=50,
                     agenda_note="",
@@ -473,6 +489,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1763,  # dispatch
                     attendees=80,
                     agenda_note="Joint with ARTAREA",
@@ -514,6 +531,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1578,  # v6ops
                     attendees=100,
                     agenda_note="",
@@ -539,6 +557,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1899,  # stir
                     attendees=60,
                     agenda_note="",
@@ -576,6 +595,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1397,  # pim
                     attendees=30,
                     agenda_note="",
@@ -609,6 +629,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2211,  # suit
                     attendees=80,
                     agenda_note="",
@@ -646,6 +667,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2234,  # coinrg
                     attendees=100,
                     agenda_note="",
@@ -669,6 +691,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1883,  # nwcrg
                     attendees=35,
                     agenda_note="",
@@ -696,6 +719,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1620,  # tcpm
                     attendees=60,
                     agenda_note="",
@@ -721,6 +745,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1089,  # ippm
                     attendees=60,
                     agenda_note="",
@@ -757,6 +782,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2164,  # lamps
                     attendees=45,
                     agenda_note="",
@@ -792,6 +818,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1718,  # httpbis
                     attendees=150,
                     agenda_note="",
@@ -803,6 +830,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1718,  # httpbis
                     attendees=150,
                     agenda_note="",
@@ -826,6 +854,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1924,  # taps
                     attendees=50,
                     agenda_note="",
@@ -873,6 +902,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1958,  # dprive
                     attendees=120,
                     agenda_note="",
@@ -897,6 +927,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2194,  # teep
                     attendees=50,
                     agenda_note="",
@@ -908,6 +939,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2194,  # teep
                     attendees=50,
                     agenda_note="",
@@ -934,6 +966,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=42,  # iccrg
                     attendees=100,
                     agenda_note="",
@@ -959,6 +992,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2231,  # rats
                     attendees=40,
                     agenda_note="",
@@ -970,6 +1004,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2231,  # rats
                     attendees=40,
                     agenda_note="",
@@ -998,6 +1033,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2219,  # secdispatch
                     attendees=200,
                     agenda_note="",
@@ -1033,6 +1069,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1118,  # mboned
                     attendees=30,
                     agenda_note="",
@@ -1061,6 +1098,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1960,  # bess
                     attendees=90,
                     agenda_note="",
@@ -1072,6 +1110,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1960,  # bess
                     attendees=90,
                     agenda_note="",
@@ -1096,6 +1135,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1803,  # homenet
                     attendees=60,
                     agenda_note="Joint with DNSSD",
@@ -1131,6 +1171,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1995,  # acme
                     attendees=70,
                     agenda_note="",
@@ -1154,6 +1195,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2150,  # babel
                     attendees=21,
                     agenda_note="",
@@ -1178,6 +1220,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2215,  # lsr
                     attendees=100,
                     agenda_note="",
@@ -1189,6 +1232,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2215,  # lsr
                     attendees=100,
                     agenda_note="",
@@ -1212,6 +1256,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1575,  # netconf
                     attendees=65,
                     agenda_note="",
@@ -1238,6 +1283,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2145,  # maprg
                     attendees=200,
                     agenda_note="",
@@ -1277,6 +1323,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1897,  # 6lo
                     attendees=55,
                     agenda_note="",
@@ -1315,6 +1362,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1723,  # 6man
                     attendees=120,
                     agenda_note="",
@@ -1326,6 +1374,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1723,  # 6man
                     attendees=120,
                     agenda_note="",
@@ -1351,6 +1400,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1853,  # irtfopen
                     attendees=150,
                     agenda_note="",
@@ -1391,6 +1441,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2148,  # lpwan
                     attendees=75,
                     agenda_note="",
@@ -1421,6 +1472,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1903,  # 6tisch
                     attendees=60,
                     agenda_note="",
@@ -1451,6 +1503,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1751,  # lisp
                     attendees=45,
                     agenda_note="",
@@ -1486,6 +1539,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1764,  # mptcp
                     attendees=50,
                     agenda_note="",
@@ -1510,6 +1564,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1730,  # roll
                     attendees=50,
                     agenda_note="",
@@ -1521,6 +1576,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1730,  # roll
                     attendees=50,
                     agenda_note="",
@@ -1551,6 +1607,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1187,  # saag
                     attendees=150,
                     agenda_note="",
@@ -1596,6 +1653,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1140,  # mpls
                     attendees=100,
                     agenda_note="",
@@ -1630,6 +1688,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1630,  # pce
                     attendees=75,
                     agenda_note="",
@@ -1664,6 +1723,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1962,  # detnet
                     attendees=100,
                     agenda_note="",
@@ -1696,6 +1756,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1744,  # alto
                     attendees=25,
                     agenda_note="",
@@ -1716,6 +1777,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1968,  # gaia
                     attendees=60,
                     agenda_note="",
@@ -1732,6 +1794,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2233,  # git
                     attendees=65,
                     agenda_note="",
@@ -1779,6 +1842,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2227,  # pearg
                     attendees=120,
                     agenda_note="",
@@ -1809,6 +1873,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1326,  # tls
                     attendees=120,
                     agenda_note="",
@@ -1820,6 +1885,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1326,  # tls
                     attendees=120,
                     agenda_note="",
@@ -1854,6 +1920,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1679,  # tsvarea
                     attendees=120,
                     agenda_note="",
@@ -1888,6 +1955,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2169,  # secevent
                     attendees=None,
                     agenda_note="",
@@ -1900,6 +1968,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2209,  # dinrg
                     attendees=90,
                     agenda_note="",
@@ -1921,6 +1990,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1714,  # opsawg
                     attendees=70,
                     agenda_note="Combined OpsAWG / OpsAREA",
@@ -1946,6 +2016,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1812,  # avtcore
                     attendees=30,
                     agenda_note="",
@@ -1978,6 +2049,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1628,  # bfd
                     attendees=50,
                     agenda_note="",
@@ -2007,6 +2079,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1674,  # emu
                     attendees=50,
                     agenda_note="",
@@ -2045,6 +2118,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1988,  # hrpc
                     attendees=100,
                     agenda_note="",
@@ -2068,6 +2142,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2002,  # cose
                     attendees=60,
                     agenda_note="",
@@ -2095,6 +2170,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1996,  # dots
                     attendees=50,
                     agenda_note="",
@@ -2119,6 +2195,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1041,  # idr
                     attendees=75,
                     agenda_note="",
@@ -2130,6 +2207,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1041,  # idr
                     attendees=75,
                     agenda_note="",
@@ -2158,6 +2236,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=945,  # bmwg
                     attendees=30,
                     agenda_note="",
@@ -2185,6 +2264,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2202,  # panrg
                     attendees=75,
                     agenda_note="",
@@ -2219,6 +2299,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=38,  # nmrg
                     attendees=80,
                     agenda_note="",
@@ -2230,6 +2311,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=38,  # nmrg
                     attendees=80,
                     agenda_note="",
@@ -2252,6 +2334,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1665,  # intarea
                     attendees=60,
                     agenda_note="",
@@ -2279,6 +2362,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1817,  # lwig
                     attendees=50,
                     agenda_note="",
@@ -2312,6 +2396,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1619,  # rtgwg
                     attendees=150,
                     agenda_note="",
@@ -2323,6 +2408,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1619,  # rtgwg
                     attendees=150,
                     agenda_note="",
@@ -2344,6 +2430,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2214,  # rift
                     attendees=70,
                     agenda_note="",
@@ -2370,6 +2457,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1905,  # spring
                     attendees=140,
                     agenda_note="",
@@ -2381,6 +2469,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1905,  # spring
                     attendees=140,
                     agenda_note="",
@@ -2401,6 +2490,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=988,  # dhc
                     attendees=25,
                     agenda_note="",
@@ -2429,6 +2519,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1740,  # ipsecme
                     attendees=50,
                     agenda_note="",
@@ -2456,6 +2547,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2146,  # regext
                     attendees=50,
                     agenda_note="",
@@ -2480,6 +2572,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=31,  # cfrg
                     attendees=150,
                     agenda_note="",
@@ -2528,6 +2621,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1849,  # icnrg
                     attendees=80,
                     agenda_note="",
@@ -2555,6 +2649,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1847,  # dmm
                     attendees=45,
                     agenda_note="",
@@ -2574,6 +2669,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2176,  # jmap
                     attendees=20,
                     agenda_note="",
@@ -2608,6 +2704,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1953,  # calext
                     attendees=15,
                     agenda_note="1330 - 1430",
@@ -2631,6 +2728,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2175,  # cbor
                     attendees=50,
                     agenda_note="",
@@ -2675,6 +2773,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2242,  # rum
                     attendees=20,
                     agenda_note="",
@@ -2699,6 +2798,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2220,  # mls
                     attendees=125,
                     agenda_note="",
@@ -2728,6 +2828,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2205,  # extra
                     attendees=15,
                     agenda_note="1430 - 1530",
@@ -2747,6 +2848,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1132,  # manet
                     attendees=20,
                     agenda_note="",
@@ -2766,6 +2868,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1838,  # rmcat
                     attendees=30,
                     agenda_note="",
@@ -2794,6 +2897,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1956,  # anima
                     attendees=80,
                     agenda_note="",
@@ -2805,6 +2909,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1956,  # anima
                     attendees=80,
                     agenda_note="",
@@ -2841,6 +2946,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1642,  # ntp
                     attendees=30,
                     agenda_note="",
@@ -2866,6 +2972,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1748,  # oauth
                     attendees=50,
                     agenda_note="",
@@ -2877,6 +2984,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1748,  # oauth
                     attendees=50,
                     agenda_note="",
@@ -2904,6 +3012,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1869,  # sacm
                     attendees=30,
                     agenda_note="",
@@ -2935,6 +3044,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1964,  # bier
                     attendees=30,
                     agenda_note="",
@@ -2956,6 +3066,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1985,  # teas
                     attendees=100,
                     agenda_note="",
@@ -2983,6 +3094,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1638,  # netmod
                     attendees=100,
                     agenda_note="",
@@ -2994,6 +3106,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1638,  # netmod
                     attendees=100,
                     agenda_note="",
@@ -3015,6 +3128,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1789,  # core
                     attendees=60,
                     agenda_note="",
@@ -3027,6 +3141,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1789,  # core
                     attendees=60,
                     agenda_note="",
@@ -3075,6 +3190,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1991,  # t2trg
                     attendees=90,
                     agenda_note="",
@@ -3122,6 +3238,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1921,  # ace
                     attendees=50,
                     agenda_note="",
@@ -3156,6 +3273,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2254,  # wpack
                     attendees=150,
                     agenda_note="",
@@ -3178,6 +3296,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2260,  # webtrans
                     attendees=100,
                     agenda_note="",
@@ -3199,6 +3318,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2253,  # abcd
                     attendees=200,
                     agenda_note="",
@@ -3215,6 +3335,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2255,  # tmrid
                     attendees=30,
                     agenda_note="",
@@ -3235,6 +3356,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2248,  # mops
                     attendees=100,
                     agenda_note="",
@@ -3262,6 +3384,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2256,  # raw
                     attendees=100,
                     agenda_note="",
@@ -3284,6 +3407,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2257,  # txauth
                     attendees=150,
                     agenda_note="",
@@ -3322,6 +3446,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2252,  # gendispatch
                     attendees=75,
                     agenda_note="",
@@ -3356,6 +3481,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1966,  # dtn
                     attendees=30,
                     agenda_note="",
@@ -3376,6 +3502,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2249,  # lake
                     attendees=100,
                     agenda_note="",
@@ -3397,6 +3524,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2258,  # mathmesh
                     attendees=100,
                     agenda_note="",
@@ -3412,6 +3540,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=2228,  # qirg
                     attendees=50,
                     agenda_note="",
@@ -3433,6 +3562,7 @@ class Command(BaseCommand):
                 s = Session.objects.create(
                     meeting=m,
                     type_id="regular",
+                    purpose_id="regular",
                     group_id=1840,  # nvo3
                     attendees=50,
                     agenda_note="",

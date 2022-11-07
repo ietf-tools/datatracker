@@ -1,13 +1,12 @@
 # Copyright The IETF Trust 2017-2020, All Rights Reserved
 
-import datetime
-
 from django import template
 
 import debug  # pyflakes:ignore
 
 from ietf.nomcom.utils import is_eligible
 from ietf.person.models import Alias
+from ietf.utils.timezone import date_today
 
 register = template.Library()
 
@@ -15,7 +14,7 @@ register = template.Library()
 @register.filter
 def is_nomcom_eligible(person, date=None):
     if date is None:
-        date = datetime.date.today()
+        date = date_today()
     return is_eligible(person=person, date=date)
 
 

@@ -14,6 +14,7 @@ from html import unescape
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 from ietf.group.factories import RoleFactory
 from ietf.doc.factories import BofreqFactory, NewRevisionDocEventFactory
@@ -48,7 +49,7 @@ This test section has some text.
         states = State.objects.filter(type_id='bofreq')
         self.assertTrue(states.count()>0)
         for i in range(3*len(states)):
-           BofreqFactory(states=[('bofreq',states[i%len(states)].slug)],newrevisiondocevent__time=datetime.datetime.today()-datetime.timedelta(days=randint(0,20)))
+           BofreqFactory(states=[('bofreq',states[i%len(states)].slug)],newrevisiondocevent__time=timezone.now()-datetime.timedelta(days=randint(0,20)))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)

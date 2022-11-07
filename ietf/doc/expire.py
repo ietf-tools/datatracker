@@ -4,6 +4,7 @@
 
 
 from django.conf import settings
+from django.utils import timezone
 
 import datetime, os, shutil, glob, re
 from pathlib import Path
@@ -17,6 +18,7 @@ from ietf.person.models import Person
 from ietf.meeting.models import Meeting
 from ietf.doc.utils import add_state_change_event, update_action_holders
 from ietf.mailtrigger.utils import gather_address_lists
+from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO
 
 
 nonexpirable_states: Optional[List[State]] = None
@@ -52,17 +54,17 @@ def expirable_drafts(queryset=None):
 
 
 def get_soon_to_expire_drafts(days_of_warning):
-    start_date = datetime.date.today() - datetime.timedelta(1)
+    start_date = datetime_today(DEADLINE_TZINFO) - datetime.timedelta(1)
     end_date = start_date + datetime.timedelta(days_of_warning)
 
     return expirable_drafts().filter(expires__gte=start_date, expires__lt=end_date)
 
 def get_expired_drafts():
-    return expirable_drafts().filter(expires__lt=datetime.date.today() + datetime.timedelta(1))
+    return expirable_drafts().filter(expires__lt=datetime_today(DEADLINE_TZINFO) + datetime.timedelta(1))
 
 def in_draft_expire_freeze(when=None):
     if when == None:
-        when = datetime.datetime.now()
+        when = timezone.now()
 
     meeting = Meeting.objects.filter(type='ietf', date__gte=when-datetime.timedelta(days=7)).order_by('date').first()
 
@@ -84,7 +86,7 @@ def send_expire_warning_for_draft(doc):
         (doc.get_state_slug("draft") != "active")):
         return # don't warn about dead or inactive documents
 
-    expiration = doc.expires.date()
+    expiration = doc.expires.astimezone(DEADLINE_TZINFO).date()
 
     (to,cc) = gather_address_lists('doc_expires_soon',doc=doc)
 
@@ -171,7 +173,7 @@ def expire_draft(doc):
 
 def clean_up_draft_files():
     """Move unidentified and old files out of the Internet Draft directory."""
-    cut_off = datetime.date.today()
+    cut_off = date_today(DEADLINE_TZINFO)
 
     pattern = os.path.join(settings.INTERNET_DRAFT_PATH, "draft-*.*")
     filename_re = re.compile(r'^(.*)-(\d\d)$')
@@ -214,7 +216,9 @@ def clean_up_draft_files():
 
             if state in ("rfc","repl"):
                 move_file_to("")
-            elif state in ("expired", "auth-rm", "ietf-rm") and doc.expires and doc.expires.date() < cut_off:
+            elif (state in ("expired", "auth-rm", "ietf-rm")
+                  and doc.expires
+                  and doc.expires.astimezone(DEADLINE_TZINFO).date() < cut_off):
                 move_file_to("")
 
         except Document.DoesNotExist:

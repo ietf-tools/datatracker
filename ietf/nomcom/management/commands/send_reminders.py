@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 
-import datetime
 import syslog
 
 from django.core.management.base import BaseCommand
 
 from ietf.nomcom.models import NomCom, NomineePosition
 from ietf.nomcom.utils import send_accept_reminder_to_nominee,send_questionnaire_reminder_to_nominee
+from ietf.utils.timezone import date_today
+
 
 def log(message):
     syslog.syslog(message)
@@ -27,10 +28,10 @@ class Command(BaseCommand):
         for nomcom in NomCom.objects.filter(group__state__slug='active'):
             nps = NomineePosition.objects.filter(nominee__nomcom=nomcom,nominee__duplicated__isnull=True)
             for nominee_position in nps.pending():
-                if is_time_to_send(nomcom, datetime.date.today(), nominee_position.time.date()):
+                if is_time_to_send(nomcom, date_today(), nominee_position.time.date()):
                     send_accept_reminder_to_nominee(nominee_position)
                     log('Sent accept reminder to %s' % nominee_position.nominee.email.address)
             for nominee_position in nps.accepted().without_questionnaire_response():
-                if is_time_to_send(nomcom, datetime.date.today(), nominee_position.time.date()):
+                if is_time_to_send(nomcom, date_today(), nominee_position.time.date()):
                     send_questionnaire_reminder_to_nominee(nominee_position)
                     log('Sent questionnaire reminder to %s' % nominee_position.nominee.email.address)

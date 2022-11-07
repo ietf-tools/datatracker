@@ -34,6 +34,7 @@ from ietf.utils.pipe import pipe
 from ietf.utils.mail import send_mail_text, send_mail, get_payload_text
 from ietf.utils.log import log
 from ietf.person.name import unidecode_name
+from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
 
 import debug                            # pyflakes:ignore
 
@@ -240,7 +241,7 @@ def validate_public_key(public_key):
 
 
 def send_accept_reminder_to_nominee(nominee_position):
-    today = datetime.date.today().strftime('%Y%m%d')
+    today = date_today().strftime('%Y%m%d')
     subject = 'Reminder: please accept (or decline) your nomination.'
     domain = Site.objects.get_current().domain
     position = nominee_position.position
@@ -332,7 +333,7 @@ def make_nomineeposition(nomcom, candidate, position, author):
         from_email = settings.NOMCOM_FROM_EMAIL.format(year=nomcom.year())
         (to_email, cc) = gather_address_lists('nomination_new_nominee',nominee=nominee.email.address)
         domain = Site.objects.get_current().domain
-        today = datetime.date.today().strftime('%Y%m%d')
+        today = date_today().strftime('%Y%m%d')
         hash = get_hash_nominee_position(today, nominee_position.id)
         accept_url = reverse('ietf.nomcom.views.process_nomination_status',
                               None,
@@ -558,34 +559,35 @@ def get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable):
         base_qs = Person.objects.all()
 
     previous_five = previous_five_meetings(date)
+    date_as_dt = datetime_from_date(date, DEADLINE_TZINFO)
     three_of_five_qs = three_of_five_callable(previous_five=previous_five, queryset=base_qs)
 
     # If date is Feb 29, neither 3 nor 5 years ago has a Feb 29. Use Feb 28 instead.
     if date.month == 2 and date.day == 29:
-        three_years_ago = datetime.date(date.year - 3, 2, 28)
-        five_years_ago = datetime.date(date.year - 5, 2, 28)
+        three_years_ago = datetime.datetime(date.year - 3, 2, 28, tzinfo=DEADLINE_TZINFO)
+        five_years_ago = datetime.datetime(date.year - 5, 2, 28, tzinfo=DEADLINE_TZINFO)
     else:
-        three_years_ago = datetime.date(date.year - 3, date.month, date.day)
-        five_years_ago = datetime.date(date.year - 5, date.month, date.day)
+        three_years_ago = datetime.datetime(date.year - 3, date.month, date.day, tzinfo=DEADLINE_TZINFO)
+        five_years_ago = datetime.datetime(date.year - 5, date.month, date.day, tzinfo=DEADLINE_TZINFO)
 
     officer_qs = base_qs.filter(
         # is currently an officer
         Q(role__name_id__in=('chair','secr'),
           role__group__state_id='active',
           role__group__type_id='wg',
-          role__group__time__lte=date, ## TODO - inspect - lots of things affect group__time...
+          role__group__time__lte=date_as_dt, ## TODO - inspect - lots of things affect group__time...
         )
         # was an officer since the given date (I think this is wrong - it looks at when roles _start_, not when roles end)
       | Q(rolehistory__group__time__gte=three_years_ago,
-          rolehistory__group__time__lte=date,
+          rolehistory__group__time__lte=date_as_dt,
           rolehistory__name_id__in=('chair','secr'),
           rolehistory__group__state_id='active',
           rolehistory__group__type_id='wg',
          )
     ).distinct()
 
-    rfc_pks = set(DocEvent.objects.filter(type='published_rfc',time__gte=five_years_ago,time__lte=date).values_list('doc__pk',flat=True))
-    iesgappr_pks = set(DocEvent.objects.filter(type='iesg_approved',time__gte=five_years_ago,time__lte=date).values_list('doc__pk',flat=True))
+    rfc_pks = set(DocEvent.objects.filter(type='published_rfc', time__gte=five_years_ago, time__lte=date_as_dt).values_list('doc__pk', flat=True))
+    iesgappr_pks = set(DocEvent.objects.filter(type='iesg_approved', time__gte=five_years_ago, time__lte=date_as_dt).values_list('doc__pk',flat=True))
     qualifying_pks = rfc_pks.union(iesgappr_pks.difference(rfc_pks))
     author_qs = base_qs.filter(
             documentauthor__document__pk__in=qualifying_pks
@@ -624,7 +626,7 @@ def get_eligibility_date(nomcom=None, date=None):
         last_seated=Role.objects.filter(group__type_id='nomcom',name_id='member').order_by('-group__acronym').first()
         if last_seated:
             last_nomcom_year = int(last_seated.group.acronym[6:])
-            if last_nomcom_year == datetime.date.today().year:
+            if last_nomcom_year == date_today().year:
                 next_nomcom_year = last_nomcom_year
             else:
                 next_nomcom_year = int(last_seated.group.acronym[6:])+1
@@ -634,11 +636,11 @@ def get_eligibility_date(nomcom=None, date=None):
             else:
                 return datetime.date(next_nomcom_year,5,1)
         else:
-            return datetime.date(datetime.date.today().year,5,1)
+            return datetime.date(date_today().year,5,1)
 
 def previous_five_meetings(date = None):
     if date is None:
-        date = datetime.date.today()
+        date = date_today()
     return Meeting.objects.filter(type='ietf',date__lte=date).order_by('-date')[:5]
 
 def three_of_five_eligible_8713(previous_five, queryset=None):

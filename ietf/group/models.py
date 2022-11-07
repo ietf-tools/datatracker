@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-import datetime
 import email.utils
 import jsonfield
 import os
@@ -13,6 +12,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.deletion import CASCADE, PROTECT
 from django.dispatch import receiver
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -27,7 +27,7 @@ from ietf.utils.validators import JSONForeignKeyListValidator
 
 
 class GroupInfo(models.Model):
-    time = models.DateTimeField(default=datetime.datetime.now)
+    time = models.DateTimeField(default=timezone.now)
     name = models.CharField(max_length=80)
     state = ForeignKey(GroupStateName, null=True)
     type = ForeignKey(GroupTypeName, null=True)
@@ -180,11 +180,15 @@ class Group(GroupInfo):
         return self.role_set.none()
 
     def status_for_meeting(self,meeting):
-        end_date = meeting.end_date()+datetime.timedelta(days=1)
         previous_meeting = meeting.previous_meeting()
-        status_events = self.groupevent_set.filter(type='status_update',time__lte=end_date).order_by('-time')
+        status_events = self.groupevent_set.filter(
+            type='status_update',
+            time__lt=meeting.end_datetime(),
+        ).order_by('-time')
         if previous_meeting:
-            status_events = status_events.filter(time__gte=previous_meeting.end_date()+datetime.timedelta(days=1))
+            status_events = status_events.filter(
+                time__gte=previous_meeting.end_datetime()
+            )
         return status_events.first()
 
     def get_description(self):
@@ -353,7 +357,7 @@ GROUP_EVENT_CHOICES = [
 class GroupEvent(models.Model):
     """An occurrence for a group, used for tracking who, when and what."""
     group = ForeignKey(Group)
-    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
+    time = models.DateTimeField(default=timezone.now, help_text="When the event happened")
     type = models.CharField(max_length=50, choices=GROUP_EVENT_CHOICES)
     by = ForeignKey(Person)
     desc = models.TextField()

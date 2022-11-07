@@ -27,6 +27,7 @@ from ietf.meeting.utils import add_event_info_to_session_qs
 
 from ietf.secr.proceedings.forms import RecordingForm, RecordingEditForm 
 from ietf.secr.proceedings.proc_utils import (create_recording)
+from ietf.utils.timezone import date_today
 
 # -------------------------------------------------
 # Globals 
@@ -154,7 +155,7 @@ def main(request):
         meetings = Meeting.objects.filter(type='ietf').order_by('-number')
     else:
         # select meetings still within the cutoff period
-        today = datetime.date.today()
+        today = date_today()
         meetings = [m for m in Meeting.objects.filter(type='ietf').order_by('-number') if m.get_submission_correction_date()>=today]
 
     groups = get_my_groups(request.user)
@@ -165,7 +166,7 @@ def main(request):
         m.group = m.session_set.first().group
 
     # we today's date to see if we're past the submissio cutoff
-    today = datetime.date.today()
+    today = date_today()
 
     return render(request, 'proceedings/main.html',{
         'meetings': meetings,
@@ -304,7 +305,7 @@ def select(request, meeting_num):
     # get the time proceedings were generated
     path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'index.html')
     if os.path.exists(path):
-        last_run = datetime.datetime.fromtimestamp(os.path.getmtime(path))
+        last_run = datetime.datetime.fromtimestamp(os.path.getmtime(path), datetime.timezone.utc)
     else:
         last_run = None
 

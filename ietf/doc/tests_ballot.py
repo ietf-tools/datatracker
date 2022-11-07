@@ -12,6 +12,7 @@ import debug                            # pyflakes:ignore
 from django.test import RequestFactory
 from django.utils.text import slugify
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 from ietf.doc.models import (Document, State, DocEvent,
                              BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, TelechatDocEvent)
@@ -30,6 +31,7 @@ from ietf.person.utils import get_active_ads
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.text import unwrap
+from ietf.utils.timezone import date_today
 
 
 class EditPositionTests(TestCase):
@@ -105,7 +107,7 @@ class EditPositionTests(TestCase):
         draft = WgDraftFactory(ad=ad)
         url = urlreverse('ietf.doc.views_ballot.api_set_position')
         create_ballot_if_not_open(None, draft, ad, 'approve')
-        ad.user.last_login = datetime.datetime.now()
+        ad.user.last_login = timezone.now()
         ad.user.save()
         apikey = PersonalApiKey.objects.create(endpoint=url, person=ad)
 
@@ -238,9 +240,9 @@ class EditPositionTests(TestCase):
             doc=draft, rev=draft.rev, type="changed_ballot_position",
             by=ad, balloter=ad, ballot=ballot, pos=BallotPositionName.objects.get(slug="discuss"),
             discuss="This draft seems to be lacking a clearer title?",
-            discuss_time=datetime.datetime.now(),
+            discuss_time=timezone.now(),
             comment="Test!",
-            comment_time=datetime.datetime.now())
+            comment_time=timezone.now())
         
         url = urlreverse('ietf.doc.views_ballot.send_ballot_comment', kwargs=dict(name=draft.name,
                                                                 ballot_id=ballot.pk))
@@ -466,7 +468,7 @@ class BallotWriteupsTests(TestCase):
                     doc=draft,
                     rev=draft.rev,
                     desc='issued last call',
-                    expires = datetime.datetime.now()+datetime.timedelta(days = 1 if case=='future' else -1)
+                    expires = timezone.now()+datetime.timedelta(days = 1 if case=='future' else -1)
                 )
             url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
             login_testing_unauthorized(self, "ad", url)
@@ -791,7 +793,7 @@ class ApproveBallotTests(TestCase):
                   doc=draft,
                   rev=draft.rev,
                   desc='issued last call',
-                  expires = datetime.datetime.now()-datetime.timedelta(days=14) )
+                  expires = timezone.now()-datetime.timedelta(days=14) )
         WriteupDocEvent.objects.create(
                   by=Person.objects.get(name='(System)'),
                   doc=draft,
@@ -898,7 +900,7 @@ class MakeLastCallTests(TestCase):
 
         mailbox_before = len(outbox)
 
-        last_call_sent_date = datetime.date.today()
+        last_call_sent_date = date_today()
         expire_date = last_call_sent_date+datetime.timedelta(days=14)
         
         r = self.client.post(url,
@@ -1117,7 +1119,7 @@ class RegenerateLastCallTestCase(TestCase):
 
 class BallotContentTests(TestCase):
     def test_ballotpositiondocevent_any_email_sent(self):
-        now = datetime.datetime.now()  # be sure event timestamps are at distinct times
+        now = timezone.now()  # be sure event timestamps are at distinct times
         bpde_with_null_send_email = BallotPositionDocEventFactory(
             time=now - datetime.timedelta(minutes=30),
             send_email=None,
@@ -1219,7 +1221,7 @@ class BallotContentTests(TestCase):
             balloter=balloters[0],
             pos_id='discuss',
             discuss='Discussion text',
-            discuss_time=datetime.datetime.now(),
+            discuss_time=timezone.now(),
             send_email=True,
         )
         BallotPositionDocEventFactory(
@@ -1227,7 +1229,7 @@ class BallotContentTests(TestCase):
             balloter=balloters[1],
             pos_id='noobj',
             comment='Commentary',
-            comment_time=datetime.datetime.now(),
+            comment_time=timezone.now(),
             send_email=True,
         )
 
@@ -1237,7 +1239,7 @@ class BallotContentTests(TestCase):
             balloter=balloters[2],
             pos_id='discuss',
             discuss='Discussion text',
-            discuss_time=datetime.datetime.now(),
+            discuss_time=timezone.now(),
             send_email=False,
         )
         BallotPositionDocEventFactory(
@@ -1245,7 +1247,7 @@ class BallotContentTests(TestCase):
             balloter=balloters[3],
             pos_id='noobj',
             comment='Commentary',
-            comment_time=datetime.datetime.now(),
+            comment_time=timezone.now(),
             send_email=False,
         )
 
@@ -1255,7 +1257,7 @@ class BallotContentTests(TestCase):
             balloter=balloters[4],
             pos_id='discuss',
             discuss='Discussion text',
-            discuss_time=datetime.datetime.now() - datetime.timedelta(days=1),
+            discuss_time=timezone.now() - datetime.timedelta(days=1),
             send_email=True,
         )
         BallotPositionDocEventFactory(
@@ -1263,7 +1265,7 @@ class BallotContentTests(TestCase):
             balloter=balloters[4],
             pos_id='discuss',
             discuss='Discussion text',
-            discuss_time=datetime.datetime.now(),
+            discuss_time=timezone.now(),
             send_email=False,
         )
         BallotPositionDocEventFactory(
@@ -1271,7 +1273,7 @@ class BallotContentTests(TestCase):
             balloter=balloters[5],
             pos_id='noobj',
             comment='Commentary',
-            comment_time=datetime.datetime.now() - datetime.timedelta(days=1),
+            comment_time=timezone.now() - datetime.timedelta(days=1),
             send_email=True,
         )
         BallotPositionDocEventFactory(
@@ -1279,7 +1281,7 @@ class BallotContentTests(TestCase):
             balloter=balloters[5],
             pos_id='noobj',
             comment='Commentary',
-            comment_time=datetime.datetime.now(),
+            comment_time=timezone.now(),
             send_email=False,
         )
 
@@ -1296,7 +1298,7 @@ class BallotContentTests(TestCase):
             balloter__plain='plain name1',
             pos_id='discuss',
             discuss='Discussion text',
-            discuss_time=datetime.datetime.now(),
+            discuss_time=timezone.now(),
             send_email=False,
         ).balloter
         send_email_balloter = BallotPositionDocEventFactory(
@@ -1304,7 +1306,7 @@ class BallotContentTests(TestCase):
             balloter__plain='plain name2',
             pos_id='discuss',
             discuss='Discussion text',
-            discuss_time=datetime.datetime.now(),
+            discuss_time=timezone.now(),
             send_email=True,
         ).balloter
         prev_send_email_balloter = BallotPositionDocEventFactory(
@@ -1312,7 +1314,7 @@ class BallotContentTests(TestCase):
             balloter__plain='plain name3',
             pos_id='discuss',
             discuss='Discussion text',
-            discuss_time=datetime.datetime.now() - datetime.timedelta(days=1),
+            discuss_time=timezone.now() - datetime.timedelta(days=1),
             send_email=True,
         ).balloter
         BallotPositionDocEventFactory(
@@ -1320,7 +1322,7 @@ class BallotContentTests(TestCase):
             balloter=prev_send_email_balloter,
             pos_id='discuss',
             discuss='Discussion text',
-            discuss_time=datetime.datetime.now(),
+            discuss_time=timezone.now(),
             send_email=False,
         )
 
@@ -1351,7 +1353,7 @@ class BallotContentTests(TestCase):
             balloter=balloters[0],
             pos_id='discuss',
             discuss='Discussion text',
-            discuss_time=datetime.datetime.now(),
+            discuss_time=timezone.now(),
             send_email=None,
         )
         BallotPositionDocEventFactory(
@@ -1359,7 +1361,7 @@ class BallotContentTests(TestCase):
             balloter=balloters[1],
             pos_id='noobj',
             comment='Commentary',
-            comment_time=datetime.datetime.now(),
+            comment_time=timezone.now(),
             send_email=None,
         )
         old_balloter = BallotPositionDocEventFactory(
@@ -1367,7 +1369,7 @@ class BallotContentTests(TestCase):
             balloter__plain='plain name',  # ensure plain name is slugifiable
             pos_id='discuss',
             discuss='Discussion text',
-            discuss_time=datetime.datetime.now(),
+            discuss_time=timezone.now(),
             send_email=None,
         ).balloter
 

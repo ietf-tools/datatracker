@@ -10,6 +10,7 @@ import shutil
 from pyquery import PyQuery
 from urllib.parse import urlparse
 from itertools import combinations
+from zoneinfo import ZoneInfo
 
 from django.db import IntegrityError
 from django.db.models import Max
@@ -17,6 +18,7 @@ from django.conf import settings
 from django.core.files import File
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
@@ -49,6 +51,8 @@ from ietf.stats.models import MeetingRegistration
 from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
+from ietf.utils.timezone import date_today, datetime_today, datetime_from_date, DEADLINE_TZINFO
+
 
 client_test_cert_files = None
 
@@ -1091,7 +1095,7 @@ class ReminderTest(TestCase):
         rai = Position.objects.get(nomcom=self.nomcom,name='RAI')
         iab = Position.objects.get(nomcom=self.nomcom,name='IAB')
 
-        today = datetime.date.today()
+        today = datetime_today()
         t_minus_3 = today - datetime.timedelta(days=3)
         t_minus_4 = today - datetime.timedelta(days=4)
         e1 = EmailFactory(address="nominee1@example.org", person=PersonFactory(name="Nominee 1"), origin='test')
@@ -1127,7 +1131,7 @@ class ReminderTest(TestCase):
 
     def test_is_time_to_send(self):
         self.nomcom.reminder_interval = 4
-        today = datetime.date.today()
+        today = date_today()
         self.assertTrue(is_time_to_send(self.nomcom,today+datetime.timedelta(days=4),today))
         for delta in range(4):
             self.assertFalse(is_time_to_send(self.nomcom,today+datetime.timedelta(days=delta),today))
@@ -1233,7 +1237,7 @@ class InactiveNomcomTests(TestCase):
             self.assertIn( 'closed', q('.alert-warning').text())
 
     def test_acceptance_closed(self):
-        today = datetime.date.today().strftime('%Y%m%d')
+        today = date_today().strftime('%Y%m%d')
         pid = self.nc.position_set.first().nomineeposition_set.order_by('pk').first().id 
         url = reverse('ietf.nomcom.views.process_nomination_status', kwargs = {
                       'year' : self.nc.year(),
@@ -1389,7 +1393,7 @@ class FeedbackLastSeenTests(TestCase):
             f.nominees.add(self.nominee)
         f = FeedbackFactory.create(author=self.author,nomcom=self.nc,type_id='comment')
         f.topics.add(self.topic)
-        now = datetime.datetime.now() 
+        now = timezone.now() 
         self.hour_ago = now - datetime.timedelta(hours=1)
         self.half_hour_ago = now - datetime.timedelta(minutes=30)
         self.second_from_now = now + datetime.timedelta(seconds=1)
@@ -1503,11 +1507,12 @@ class NewActiveNomComTests(TestCase):
     def test_accept_reject_nomination_edges(self):
         self.client.logout()
         np = self.nc.nominee_set.order_by('pk').first().nomineeposition_set.order_by('pk').first()
+        date_str = np.time.astimezone(ZoneInfo(settings.TIME_ZONE)).strftime("%Y%m%d")
         kwargs={'year':self.nc.year(),
                 'nominee_position_id':np.id,
                 'state':'accepted',
-                'date':np.time.strftime("%Y%m%d"),
-                'hash':get_hash_nominee_position(np.time.strftime("%Y%m%d"),np.id),
+                'date':date_str,
+                'hash':get_hash_nominee_position(date_str, np.id),
                }
         url = reverse('ietf.nomcom.views.process_nomination_status', kwargs=kwargs)
         response = self.client.get(url)
@@ -1517,8 +1522,9 @@ class NewActiveNomComTests(TestCase):
         settings.DAYS_TO_EXPIRE_NOMINATION_LINK = 2
         np.time = np.time - datetime.timedelta(days=3)
         np.save()
-        kwargs['date'] = np.time.strftime("%Y%m%d")
-        kwargs['hash'] = get_hash_nominee_position(np.time.strftime("%Y%m%d"),np.id)
+        date_str = np.time.astimezone(ZoneInfo(settings.TIME_ZONE)).strftime("%Y%m%d")
+        kwargs['date'] = date_str
+        kwargs['hash'] = get_hash_nominee_position(date_str, np.id)
         url = reverse('ietf.nomcom.views.process_nomination_status', kwargs=kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code,403)
@@ -1532,12 +1538,13 @@ class NewActiveNomComTests(TestCase):
 
     def test_accept_reject_nomination_comment(self):
         np = self.nc.nominee_set.order_by('pk').first().nomineeposition_set.order_by('pk').first()
-        hash = get_hash_nominee_position(np.time.strftime("%Y%m%d"),np.id)
+        date_str = np.time.astimezone(ZoneInfo(settings.TIME_ZONE)).strftime("%Y%m%d")
+        hash = get_hash_nominee_position(date_str, np.id)
         url = reverse('ietf.nomcom.views.process_nomination_status',
                       kwargs={'year':self.nc.year(),
                               'nominee_position_id':np.id,
                               'state':'accepted',
-                              'date':np.time.strftime("%Y%m%d"),
+                              'date':date_str,
                               'hash':hash,
                              }
                      )
@@ -1889,7 +1896,7 @@ Junk body for testing
             assert year >= 1990
             return (year-1985)*3+2
         # Create meetings to ensure we have the 'last 5'
-        meeting_start = first_meeting_of_year(datetime.date.today().year-2)
+        meeting_start = first_meeting_of_year(date_today().year-2)
         # Populate the meeting registration records
         for number in range(meeting_start, meeting_start+10):
             meeting = MeetingFactory.create(type_id='ietf', number=number)
@@ -2241,7 +2248,8 @@ class EligibilityUnitTests(TestCase):
     def test_get_eligibility_date(self):
 
         # No Nomcoms exist:
-        self.assertEqual(get_eligibility_date(), datetime.date(datetime.date.today().year,5,1))
+        this_year = date_today().year
+        self.assertEqual(get_eligibility_date(), datetime.date(this_year,5,1))
 
         # a provided date trumps anything in the database
         self.assertEqual(get_eligibility_date(date=datetime.date(2001,2,3)), datetime.date(2001,2,3))
@@ -2255,7 +2263,7 @@ class EligibilityUnitTests(TestCase):
         n.save()
         self.assertEqual(get_eligibility_date(nomcom=n), datetime.date(2015,5,17))
         # No nomcoms in the database with seated members
-        self.assertEqual(get_eligibility_date(), datetime.date(datetime.date.today().year,5,1))
+        self.assertEqual(get_eligibility_date(), datetime.date(this_year,5,1))
 
         RoleFactory(group=n.group,name_id='member')
         self.assertEqual(get_eligibility_date(),datetime.date(2016,5,1))
@@ -2263,7 +2271,6 @@ class EligibilityUnitTests(TestCase):
         NomComFactory(group__acronym='nomcom2016', populate_personnel=False, first_call_for_volunteers=datetime.date(2016,5,4))
         self.assertEqual(get_eligibility_date(),datetime.date(2016,5,4))
 
-        this_year = datetime.date.today().year
         NomComFactory(group__acronym=f'nomcom{this_year}', first_call_for_volunteers=datetime.date(this_year,5,6))
         self.assertEqual(get_eligibility_date(),datetime.date(this_year,5,6))
 
@@ -2417,7 +2424,8 @@ class rfc8989EligibilityTests(TestCase):
 
         nobody=PersonFactory()
         for nomcom in self.nomcoms:
-            before_elig_date = nomcom.first_call_for_volunteers - datetime.timedelta(days=5)
+            elig_datetime = datetime_from_date(nomcom.first_call_for_volunteers, DEADLINE_TZINFO)
+            before_elig_date = elig_datetime - datetime.timedelta(days=5)
 
             chair = RoleFactory(name_id='chair',group__time=before_elig_date).person
 
@@ -2435,7 +2443,7 @@ class rfc8989EligibilityTests(TestCase):
     def test_elig_by_office_edge(self):
 
         for nomcom in self.nomcoms:
-            elig_date=get_eligibility_date(nomcom)
+            elig_date = datetime_from_date(get_eligibility_date(nomcom), DEADLINE_TZINFO)
             day_after = elig_date + datetime.timedelta(days=1)
             two_days_after = elig_date + datetime.timedelta(days=2)
 
@@ -2450,15 +2458,15 @@ class rfc8989EligibilityTests(TestCase):
     def test_elig_by_office_closed_groups(self):
 
         for nomcom in self.nomcoms:
-            elig_date=get_eligibility_date(nomcom)
+            elig_date=datetime_from_date(get_eligibility_date(nomcom), DEADLINE_TZINFO)
             day_before = elig_date-datetime.timedelta(days=1)
             # special case for Feb 29
             if elig_date.month == 2 and elig_date.day == 29:
-                year_before = datetime.date(elig_date.year - 1, 2, 28)
-                three_years_before = datetime.date(elig_date.year - 3, 2, 28)
+                year_before = elig_date.replace(year=elig_date.year - 1, day=28)
+                three_years_before = elig_date.replace(year=elig_date.year - 3, day=28)
             else:
-                year_before = datetime.date(elig_date.year - 1, elig_date.month, elig_date.day)
-                three_years_before = datetime.date(elig_date.year - 3, elig_date.month, elig_date.day)
+                year_before = elig_date.replace(year=elig_date.year - 1)
+                three_years_before = elig_date.replace(year=elig_date.year - 3)
             just_after_three_years_before = three_years_before + datetime.timedelta(days=1)
             just_before_three_years_before = three_years_before - datetime.timedelta(days=1)
 
@@ -2517,14 +2525,14 @@ class rfc8989EligibilityTests(TestCase):
         for nomcom in self.nomcoms:
             elig_date = get_eligibility_date(nomcom)
 
-            last_date = elig_date
+            last_date = datetime_from_date(elig_date, DEADLINE_TZINFO)
             # special case for Feb 29
             if last_date.month == 2 and last_date.day == 29:
-                first_date = datetime.date(last_date.year - 5, 2, 28)
-                middle_date = datetime.date(last_date.year - 3, 2, 28)
+                first_date = last_date.replace(year = last_date.year - 5, day=28)
+                middle_date = last_date.replace(year=first_date.year - 3, day=28)
             else:
-                first_date = datetime.date(last_date.year - 5, last_date.month, last_date.day)
-                middle_date = datetime.date(last_date.year - 3, last_date.month, last_date.day)
+                first_date = last_date.replace(year=last_date.year - 5)
+                middle_date = last_date.replace(year=first_date.year - 3)
             day_after_last_date = last_date+datetime.timedelta(days=1)
             day_before_first_date = first_date-datetime.timedelta(days=1)
 
@@ -2632,8 +2640,8 @@ class VolunteerTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, 'NomCom is not accepting volunteers at this time', status_code=200)
 
-        year = datetime.date.today().year
-        nomcom = NomComFactory(group__acronym=f'nomcom{year}', is_accepting_volunteers=False)
+        this_year = date_today().year
+        nomcom = NomComFactory(group__acronym=f'nomcom{this_year}', is_accepting_volunteers=False)
         r = self.client.get(url)
         self.assertContains(r, 'NomCom is not accepting volunteers at this time', status_code=200)
         nomcom.is_accepting_volunteers = True
@@ -2656,7 +2664,7 @@ class VolunteerTests(TestCase):
         self.assertContains(r, 'already volunteered', status_code=200)
 
         person.volunteer_set.all().delete()
-        nomcom2 = NomComFactory(group__acronym=f'nomcom{year-1}', is_accepting_volunteers=True)
+        nomcom2 = NomComFactory(group__acronym=f'nomcom{this_year-1}', is_accepting_volunteers=True)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -2717,7 +2725,7 @@ class VolunteerDecoratorUnitTests(TestCase):
         office_person = PersonFactory()
         RoleHistoryFactory(
             name_id='chair',
-            group__time= elig_date - datetime.timedelta(days=365),
+            group__time=datetime_from_date(elig_date) - datetime.timedelta(days=365),
             group__group__state_id='conclude',
             person=office_person,
         )
@@ -2729,11 +2737,13 @@ class VolunteerDecoratorUnitTests(TestCase):
             DocEventFactory(
                 type='published_rfc',
                 doc=da.document,
-                time=datetime.date(
+                time=datetime.datetime(
                     elig_date.year - 3,
                     elig_date.month,
                     28 if elig_date.month == 2 and elig_date.day == 29 else elig_date.day,
-                ))
+                    tzinfo=datetime.timezone.utc,
+                )
+            )
         nomcom.volunteer_set.create(person=author_person)
 
         volunteers = nomcom.volunteer_set.all()
