@@ -526,7 +526,7 @@ class ReviewTests(TestCase):
             messages = r.json()["messages"]
             self.assertEqual(len(messages), 2)
 
-            today = date_today()
+            today = date_today(datetime.timezone.utc)
 
             self.assertEqual(messages[0]["url"], "https://www.example.com/testmessage")
             self.assertTrue("John Doe" in messages[0]["content"])
