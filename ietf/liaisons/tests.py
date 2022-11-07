@@ -700,7 +700,7 @@ class LiaisonManagementTests(TestCase):
         from_groups = [ str(g.pk) for g in Group.objects.filter(type="sdo") ]
         to_group = Group.objects.get(acronym="mars")
         submitter = Person.objects.get(user__username="marschairman")
-        today = date_today()
+        today = date_today(datetime.timezone.utc)
         related_liaison = liaison
         r = self.client.post(url,
                              dict(from_groups=from_groups,
@@ -779,7 +779,7 @@ class LiaisonManagementTests(TestCase):
         from_group = Group.objects.get(acronym="mars")
         to_group = Group.objects.filter(type="sdo")[0]
         submitter = Person.objects.get(user__username="marschairman")
-        today = date_today()
+        today = date_today(datetime.timezone.utc)
         related_liaison = liaison
         r = self.client.post(url,
                              dict(from_groups=str(from_group.pk),
@@ -847,7 +847,7 @@ class LiaisonManagementTests(TestCase):
         from_group = Group.objects.get(acronym="mars")
         to_group = Group.objects.filter(type="sdo")[0]
         submitter = Person.objects.get(user__username="marschairman")
-        today = date_today()
+        today = date_today(datetime.timezone.utc)
         r = self.client.post(url,
                              dict(from_groups=str(from_group.pk),
                                   from_contact=submitter.email_address(),
@@ -866,7 +866,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(len(outbox), mailbox_before + 1)
 
     def test_liaison_add_attachment(self):
-        liaison = LiaisonStatementFactory(deadline=date_today()+datetime.timedelta(days=1))
+        liaison = LiaisonStatementFactory(deadline=date_today(DEADLINE_TZINFO)+datetime.timedelta(days=1))
         LiaisonStatementEventFactory(statement=liaison,type_id='submitted')
 
         self.assertEqual(liaison.attachments.count(),0)

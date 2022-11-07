@@ -43,7 +43,6 @@ cat << EOF > "$EXCLUDE"
 *.doc
 *.exe
 *.html
-*.json
 *.mib
 *.new
 *.p7s

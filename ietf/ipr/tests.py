@@ -7,6 +7,7 @@ import datetime
 
 from pyquery import PyQuery
 from urllib.parse import quote, urlparse
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
@@ -595,7 +596,10 @@ I would like to revoke this declaration.
         r = self.client.post(url, data )
         self.assertEqual(r.status_code,302)
         self.assertEqual(len(outbox),2)
-        self.assertIn('Secretariat on '+ipr.get_latest_event_submitted().time.strftime("%Y-%m-%d"), get_payload_text(outbox[1]).replace('\n',' '))
+        self.assertIn(
+            'Secretariat on ' + ipr.get_latest_event_submitted().time.astimezone(ZoneInfo(settings.TIME_ZONE)).strftime("%Y-%m-%d"),
+            get_payload_text(outbox[1]).replace('\n',' '),
+        )
         self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.showlist")}', get_payload_text(outbox[1]).replace('\n',' '))
 
     def send_ipr_email_helper(self):
