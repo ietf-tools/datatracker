@@ -112,6 +112,23 @@ class PersonTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, person.name, status_code=200)
 
+    def test_person_profile_duplicates(self):
+        # same Person name and email - should not show on the profile as multiple Person records
+        person = PersonFactory(name="bazquux@example.com", user__email="bazquux@example.com")
+        url = urlreverse("ietf.person.views.profile", kwargs={ "email_or_name": person.plain_name()})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertNotIn('More than one person', r.content.decode())
+
+        # Change that person's name but leave their email address. Create a new person whose name
+        # is the email address. This *should* be flagged as multiple Person records on the profile.
+        person.name = 'different name'
+        person.save()
+        PersonFactory(name="bazquux@example.com")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('More than one person', r.content.decode())
+
     def test_person_profile_404(self):
         urls = [
                 urlreverse("ietf.person.views.profile", kwargs={ "email_or_name": "nonexistent@example.com"}),
