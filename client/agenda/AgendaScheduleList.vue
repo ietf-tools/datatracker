@@ -112,7 +112,7 @@
                     :options='item.links'
                     key-field='id'
                     :render-icon='renderLinkIcon'
-                    @select='goToSessionLink'
+                    :render-label='renderLinkLabel'
                     )
                     n-button(size='tiny')
                       i.bi.bi-three-dots
@@ -555,6 +555,10 @@ function getEventColor (itemKey) {
 
 function renderLinkIcon (opt) {
   return h('i', { class: `bi bi-${opt.icon} text-${opt.color}` })
+}
+
+function renderLinkLabel (opt) {
+  return h('a', { href: opt.href, target: '_blank' }, opt.label)
 }
 
 function recalculateRedLine () {
