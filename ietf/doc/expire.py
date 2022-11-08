@@ -87,7 +87,6 @@ def send_expire_warning_for_draft(doc):
         return # don't warn about dead or inactive documents
 
     expiration = doc.expires.astimezone(DEADLINE_TZINFO).date()
-    expiration = doc.expires.date()
     now_plus_12hours = timezone.now() + datetime.timedelta(hours=12)
     soon = now_plus_12hours.date()
     if expiration <= soon:
