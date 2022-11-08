@@ -675,7 +675,7 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         self.assertTrue('aread@' in outbox[-1]['Cc'])
         
         # hack into expirable state to expire in 10 hours
-        draft.expires = datetime.datetime.now() + datetime.timedelta(hours=10)
+        draft.expires = timezone.now() + datetime.timedelta(hours=10)
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
         
         # test send warning is not sent for a document so close to expiration

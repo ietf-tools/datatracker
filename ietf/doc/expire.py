@@ -85,7 +85,7 @@ def send_expire_warning_for_draft(doc):
         return # don't warn about dead or inactive documents
 
     expiration = doc.expires.date()
-    now_plus_12hours = datetime.datetime.now() + datetime.timedelta(hours=12)
+    now_plus_12hours = timezone.now() + datetime.timedelta(hours=12)
     soon = now_plus_12hours.date()
     if expiration <= soon:
         # The document will expire very soon, which will send email to the
