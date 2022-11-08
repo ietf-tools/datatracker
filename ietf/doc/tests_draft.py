@@ -659,7 +659,7 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
 
         self.assertEqual(len(list(get_soon_to_expire_drafts(14))), 0)
 
-        # hack into expirable state
+        # hack into expirable state to expire in 10 days
         draft.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
         draft.expires = timezone.now() + datetime.timedelta(days=10)
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
@@ -675,8 +675,17 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         self.assertTrue('draft-ietf-mars-test@' in outbox[-1]['To']) # Gets the authors
         self.assertTrue('mars-chairs@ietf.org' in outbox[-1]['Cc'])
         self.assertTrue('aread@' in outbox[-1]['Cc'])
+        
+        # hack into expirable state to expire in 10 hours
+        draft.expires = timezone.now() + datetime.timedelta(hours=10)
+        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        
+        # test send warning is not sent for a document so close to expiration
+        mailbox_before = len(outbox)
+        send_expire_warning_for_draft(draft)
+        self.assertEqual(len(outbox), mailbox_before)
 
-        #Check that we don't sent expiration warnings for dead or replaced drafts
+        # Check that we don't sent expiration warnings for dead or replaced drafts
         old_state = draft.get_state_slug("draft-iesg")
         mailbox_before = len(outbox)
         draft.set_state(State.objects.get(type_id="draft-iesg",slug="dead"))
