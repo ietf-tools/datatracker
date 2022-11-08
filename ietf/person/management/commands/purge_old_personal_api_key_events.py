@@ -28,10 +28,9 @@ class Command(BaseCommand):
         if keep_days < 0:
             raise CommandError('Negative keep_days not allowed ({} was specified)'.format(keep_days))
 
+        self.stdout.write('purge_old_personal_api_key_events: Finding events older than {}\n'.format(_format_count(keep_days)))
         if dry_run:
             self.stdout.write('Dry run requested, records will not be deleted\n')
-
-        self.stdout.write('Finding events older than {}\n'.format(_format_count(keep_days)))
         self.stdout.flush()
 
         now = timezone.now()
