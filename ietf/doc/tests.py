@@ -18,6 +18,7 @@ from pyquery import PyQuery
 from urllib.parse import urlparse, parse_qs
 from tempfile import NamedTemporaryFile
 from collections import defaultdict
+from zoneinfo import ZoneInfo
 
 from django.core.management import call_command
 from django.urls import reverse as urlreverse
@@ -25,6 +26,7 @@ from django.conf import settings
 from django.forms import Form
 from django.utils.html import escape
 from django.test import override_settings
+from django.utils import timezone
 from django.utils.text import slugify
 
 from tastypie.test import ResourceTestCaseMixin
@@ -56,6 +58,8 @@ from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text
+from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
+
 
 class SearchTests(TestCase):
     def test_search(self):
@@ -385,13 +389,13 @@ class SearchTests(TestCase):
         # Three drafts to show with various warnings
         drafts = WgDraftFactory.create_batch(3,states=[('draft','active'),('draft-iesg','ad-eval')])
         for index, draft in enumerate(drafts):
-            StateDocEventFactory(doc=draft, state=('draft-iesg','ad-eval'), time=datetime.datetime.now()-datetime.timedelta(days=[1,15,29][index]))
+            StateDocEventFactory(doc=draft, state=('draft-iesg','ad-eval'), time=timezone.now()-datetime.timedelta(days=[1,15,29][index]))
             draft.action_holders.set([PersonFactory()])
 
         # And one draft that should not show (with the default of 7 days to view)
         old = WgDraftFactory()
-        old.docevent_set.filter(newrevisiondocevent__isnull=False).update(time=datetime.datetime.now()-datetime.timedelta(days=8))
-        StateDocEventFactory(doc=old, time=datetime.datetime.now()-datetime.timedelta(days=8))
+        old.docevent_set.filter(newrevisiondocevent__isnull=False).update(time=timezone.now()-datetime.timedelta(days=8))
+        StateDocEventFactory(doc=old, time=timezone.now()-datetime.timedelta(days=8))
 
         url = urlreverse('ietf.doc.views_search.recent_drafts')
         r = self.client.get(url)
@@ -764,7 +768,7 @@ Man                    Expires September 22, 2015               [Page 3]
 
         replacement = WgDraftFactory(
             name="draft-ietf-replacement",
-            time=datetime.datetime.now(),
+            time=timezone.now(),
             title="Replacement Draft",
             stream_id=draft.stream_id, group_id=draft.group_id, abstract=draft.abstract,stream=draft.stream, rev=draft.rev,
             pages=draft.pages, intended_std_level_id=draft.intended_std_level_id,
@@ -1427,6 +1431,8 @@ Man                    Expires September 22, 2015               [Page 3]
 
     def test_draft_group_link(self):
         """Link to group 'about' page should have correct format"""
+        event_datetime = datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO)
+
         for group_type_id in ['wg', 'rg', 'ag']:
             group = GroupFactory(type_id=group_type_id)
             draft = WgDraftFactory(name='draft-document-%s' % group_type_id, group=group)
@@ -1435,7 +1441,7 @@ Man                    Expires September 22, 2015               [Page 3]
             self.assert_correct_wg_group_link(r, group)
 
             rfc = WgRfcFactory(name='draft-rfc-document-%s' % group_type_id, group=group)
-            DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10')
+            DocEventFactory.create(doc=rfc, type='published_rfc', time=event_datetime)
             # get the rfc name to avoid a redirect
             rfc_name = rfc.docalias.filter(name__startswith='rfc').first().name
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc_name)))
@@ -1450,7 +1456,7 @@ Man                    Expires September 22, 2015               [Page 3]
             self.assert_correct_non_wg_group_link(r, group)
 
             rfc = WgRfcFactory(name='draft-rfc-document-%s' % group_type_id, group=group)
-            DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10')
+            DocEventFactory.create(doc=rfc, type='published_rfc', time=event_datetime)
             # get the rfc name to avoid a redirect
             rfc_name = rfc.docalias.filter(name__startswith='rfc').first().name
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc_name)))
@@ -1586,7 +1592,7 @@ class DocTestCase(TestCase):
             name = "session-72-mars-1",
             meeting = Meeting.objects.get(number='72'),
             group = Group.objects.get(acronym='mars'),
-            modified = datetime.datetime.now(),
+            modified = timezone.now(),
             add_to_schedule=False,
         )
         SchedulingEvent.objects.create(
@@ -1616,7 +1622,7 @@ class DocTestCase(TestCase):
             type="changed_ballot_position",
             pos_id="yes",
             comment="Looks fine to me",
-            comment_time=datetime.datetime.now(),
+            comment_time=timezone.now(),
             balloter=Person.objects.get(user__username="ad"),
             by=Person.objects.get(name="(System)"))
 
@@ -1650,7 +1656,7 @@ class DocTestCase(TestCase):
             type="changed_ballot_position",
             pos_id="noobj",
             comment="Still looks okay to me",
-            comment_time=datetime.datetime.now(),
+            comment_time=timezone.now(),
             balloter=Person.objects.get(user__username="ad"),
             by=Person.objects.get(name="(System)"))
 
@@ -1672,7 +1678,7 @@ class DocTestCase(TestCase):
                 type="changed_ballot_position",
                 pos_id="yes",
                 comment="Looks fine to me",
-                comment_time=datetime.datetime.now(),
+                comment_time=timezone.now(),
                 balloter=Person.objects.get(user__username="ad"),
                 by=Person.objects.get(name="(System)"))
 
@@ -1842,7 +1848,7 @@ class DocTestCase(TestCase):
             desc="Last call\x0b",  # include a control character to be sure it does not break anything
             type="sent_last_call",
             by=Person.objects.get(user__username="secretary"),
-            expires=datetime.date.today() + datetime.timedelta(days=7))
+            expires=datetime_today(DEADLINE_TZINFO) + datetime.timedelta(days=7))
 
         r = self.client.get("/feed/last-call/")
         self.assertEqual(r.status_code, 200)
@@ -1890,10 +1896,14 @@ class DocTestCase(TestCase):
                   #other_aliases = ['rfc6020',],
                   states = [('draft','rfc'),('draft-iesg','pub')],
                   std_level_id = 'ps',
-                  time = datetime.datetime(2010,10,10),
+                  time = datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE)),
               )
         num = rfc.rfc_number()
-        DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10')
+        DocEventFactory.create(
+            doc=rfc,
+            type='published_rfc',
+            time=datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO),
+        )
         #
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=rfc.name))
         r = self.client.get(url)
@@ -1911,10 +1921,14 @@ class DocTestCase(TestCase):
                   stream_id =       'ise',
                   states =          [('draft','rfc'),('draft-iesg','pub')],
                   std_level_id =    'inf',
-                  time =            datetime.datetime(1990,0o4,0o1),
+                  time =            datetime.datetime(1990, 4, 1, tzinfo=ZoneInfo(settings.TIME_ZONE)),
               )
         num = april1.rfc_number()
-        DocEventFactory.create(doc=april1, type='published_rfc', time = '1990-04-01')
+        DocEventFactory.create(
+            doc=april1,
+            type='published_rfc',
+            time=datetime.datetime(1990, 4, 1, tzinfo=RPC_TZINFO),
+        )
         #
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=april1.name))
         r = self.client.get(url)
@@ -2049,7 +2063,8 @@ class GenerateDraftAliasesTests(TestCase):
        super().tearDown()
 
    def testManagementCommand(self):
-       a_month_ago = datetime.datetime.now() - datetime.timedelta(30)
+       a_month_ago = (timezone.now() - datetime.timedelta(30)).astimezone(RPC_TZINFO)
+       a_month_ago = a_month_ago.replace(hour=0, minute=0, second=0, microsecond=0)
        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
        shepherd = PersonFactory()
        author1 = PersonFactory()
@@ -2064,9 +2079,9 @@ class GenerateDraftAliasesTests(TestCase):
        doc1 = IndividualDraftFactory(authors=[author1], shepherd=shepherd.email(), ad=ad)
        doc2 = WgDraftFactory(name='draft-ietf-mars-test', group__acronym='mars', authors=[author2], ad=ad)
        doc3 = WgRfcFactory.create(name='draft-ietf-mars-finished', group__acronym='mars', authors=[author3], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=a_month_ago)
-       DocEventFactory.create(doc=doc3, type='published_rfc', time=a_month_ago.strftime("%Y-%m-%d"))
-       doc4 = WgRfcFactory.create(authors=[author4,author5], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=datetime.datetime(2010,10,10))
-       DocEventFactory.create(doc=doc4, type='published_rfc', time = '2010-10-10')
+       DocEventFactory.create(doc=doc3, type='published_rfc', time=a_month_ago)
+       doc4 = WgRfcFactory.create(authors=[author4,author5], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=datetime.datetime(2010,10,10, tzinfo=ZoneInfo(settings.TIME_ZONE)))
+       DocEventFactory.create(doc=doc4, type='published_rfc', time=datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO))
        doc5 = IndividualDraftFactory(authors=[author6])
 
        args = [ ]
@@ -2217,7 +2232,7 @@ class DocumentMeetingTests(TestCase):
         self.other_chair = PersonFactory()
         self.other_group.role_set.create(name_id='chair',person=self.other_chair,email=self.other_chair.email())
 
-        today = datetime.date.today()
+        today = date_today()
         cut_days = settings.MEETING_MATERIALS_DEFAULT_SUBMISSION_CORRECTION_DAYS
         self.past_cutoff = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=1+cut_days))
         self.past = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=cut_days/2))

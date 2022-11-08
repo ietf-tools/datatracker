@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - 'main'
+      - 'feat/tzaware'
     paths:
       - 'ietf/**'
       - 'requirements.txt'
@@ -42,6 +43,10 @@ jobs:
       run: |
         echo "Running checks..."
         ./ietf/manage.py check
+        echo "Running migrations with USE_TZ=False..."
+        ./ietf/manage.py migrate || true
+        echo "USE_TZ = True" >> ./ietf/settings_local.py
+        echo "Running migrations with USE_TZ=True..."
         ./ietf/manage.py migrate
         echo "Validating migrations..."
         if ! ( ietf/manage.py makemigrations --dry-run --check --verbosity 3 ) ; then

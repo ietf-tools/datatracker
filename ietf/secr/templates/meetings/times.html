@@ -1,5 +1,5 @@
 {% extends "meetings/base_rooms_times.html" %}
-
+{% load tz %}
 {% block subsection %}
 
     <div class="module">
@@ -16,7 +16,7 @@
                         <th scope="col"></th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody>{% timezone meeting.time_zone %}
                     {% for item in times %}
                         <tr class="{% cycle 'row1' 'row2' %}">
                             <td>{{ item.time|date:"D M d" }}</td>
@@ -26,7 +26,7 @@
                             <td><a href="{% url "ietf.secr.meetings.views.times_delete" meeting_id=meeting.number schedule_name=schedule.name time=item.time|date:"Y:m:d:H:i" %}">Delete</a></td>
                         </tr>
                     {% endfor %}
-                </tbody>
+                {% endtimezone %}</tbody>
             </table>
         {% else %}
             <h3>No timeslots exist for this meeting. Add rooms with the "duplicate timeslots" option enabled to copy timeslots from the last meeting.</h3>

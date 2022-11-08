@@ -42,6 +42,8 @@ from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent, reload_db_objects
+from ietf.utils.timezone import date_today, DEADLINE_TZINFO
+
 
 def group_urlreverse_list(group, viewname):
     return [
@@ -269,7 +271,7 @@ class GroupPagesTests(TestCase):
             group=group,
             state_id="active",
             desc="Get Work Done",
-            due=datetime.date.today() + datetime.timedelta(days=100))
+            due=date_today(DEADLINE_TZINFO) + datetime.timedelta(days=100))
         milestone.docs.add(draft)
 
         for url in [group.about_url(),] + group_urlreverse_list(group, 'ietf.group.views.group_about'):
@@ -876,7 +878,7 @@ class GroupEditTests(TestCase):
         self.assertEqual(r.status_code, 302)
         review_assignment.state_id = 'accepted'
         review_assignment.save()
-        review_req.deadline = datetime.date.today() - datetime.timedelta(days=1)
+        review_req.deadline = date_today(DEADLINE_TZINFO) - datetime.timedelta(days=1)
         review_req.save()
         
         r = self.client.post(url, post_data)
@@ -1194,7 +1196,7 @@ class MilestoneTests(TestCase):
         m1 = GroupMilestone.objects.create(id=1,
                                            group=group,
                                            desc="Test 1",
-                                           due=datetime.date.today(),
+                                           due=date_today(DEADLINE_TZINFO),
                                            resolved="",
                                            state_id="active")
         m1.docs.set([draft])
@@ -1202,7 +1204,7 @@ class MilestoneTests(TestCase):
         m2 = GroupMilestone.objects.create(id=2,
                                            group=group,
                                            desc="Test 2",
-                                           due=datetime.date.today(),
+                                           due=date_today(DEADLINE_TZINFO),
                                            resolved="",
                                            state_id="charter")
         m2.docs.set([draft])
@@ -1246,7 +1248,7 @@ class MilestoneTests(TestCase):
         events_before = group.groupevent_set.count()
         doc_pks = pklist(Document.objects.filter(type="draft"))
 
-        due = self.last_day_of_month(datetime.date.today() + datetime.timedelta(days=365))
+        due = self.last_day_of_month(date_today(DEADLINE_TZINFO) + datetime.timedelta(days=365))
 
         # faulty post
         r = self.client.post(url, { 'prefix': "m-1",
@@ -1302,7 +1304,7 @@ class MilestoneTests(TestCase):
 
         milestones_before = GroupMilestone.objects.filter(group=group).count()
         events_before = group.groupevent_set.count()
-        due = self.last_day_of_month(datetime.date.today() + datetime.timedelta(days=365))
+        due = self.last_day_of_month(date_today(DEADLINE_TZINFO) + datetime.timedelta(days=365))
 
         # add
         mailbox_before = len(outbox)
@@ -1393,7 +1395,7 @@ class MilestoneTests(TestCase):
         events_before = group.groupevent_set.count()
         doc_pks = pklist(Document.objects.filter(type="draft"))
 
-        due = self.last_day_of_month(datetime.date.today() + datetime.timedelta(days=365))
+        due = self.last_day_of_month(date_today(DEADLINE_TZINFO) + datetime.timedelta(days=365))
 
         # faulty post
         r = self.client.post(url, { 'prefix': "m1",
@@ -1776,7 +1778,7 @@ class MeetingInfoTests(TestCase):
     def setUp(self):
         super().setUp()
         self.group = GroupFactory.create(type_id='wg')
-        today = datetime.date.today()
+        today = date_today()
         SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=14))
         self.inprog = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=1))
         SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today+datetime.timedelta(days=90))
@@ -1900,7 +1902,7 @@ class StatusUpdateTests(TestCase):
     def test_view_status_update_for_meeting(self):
         chair = RoleFactory(name_id='chair',group__type_id='wg')
         GroupEventFactory(type='status_update',group=chair.group)
-        sess = SessionFactory.create(meeting__type_id='ietf',group=chair.group,meeting__date=datetime.datetime.today()-datetime.timedelta(days=1))
+        sess = SessionFactory.create(meeting__type_id='ietf',group=chair.group,meeting__date=date_today()-datetime.timedelta(days=1))
         url = urlreverse('ietf.group.views.group_about_status_meeting',kwargs={'acronym':chair.group.acronym,'num':sess.meeting.number}) 
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)

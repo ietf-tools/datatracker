@@ -16,6 +16,7 @@ from django.conf import settings
 from django.core.validators import validate_email, ValidationError
 from ietf.utils.draft import PlaintextDraft
 from ietf.submit.utils import update_authors
+from ietf.utils.timezone import date_today
 
 import debug                            # pyflakes:ignore
 
@@ -66,9 +67,9 @@ for name in sorted(names):
                     print name, rev, "Can't parse", p,":",e
                     continue
             if draft.errors and draft.errors.keys()!=['draftname',]:
-                print "Errors - could not process", name, rev, datetime.datetime.fromtimestamp(p.stat().st_mtime), draft.errors, draft.get_title().encode('utf8')
+                print "Errors - could not process", name, rev, datetime.datetime.fromtimestamp(p.stat().st_mtime, datetime.timezone.utc), draft.errors, draft.get_title().encode('utf8')
             else:
-                time = datetime.datetime.fromtimestamp(p.stat().st_mtime)
+                time = datetime.datetime.fromtimestamp(p.stat().st_mtime, datetime.timezone.utc)
                 if not doc:
                     doc = Document.objects.create(name=name,
                                                   time=time,
@@ -140,7 +141,7 @@ for name in sorted(names):
                         doc = doc,
                         rev = rev,
                         by = system,
-                        desc = "Revision added from id-archive on %s by %s"%(datetime.date.today(),sys.argv[0]),
+                        desc = "Revision added from id-archive on %s by %s"%(date_today(),sys.argv[0]),
                         time=time,
                 )
                 events.append(e)

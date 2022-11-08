@@ -13,12 +13,14 @@ import textwrap
 
 from collections import defaultdict, namedtuple
 from urllib.parse import quote
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib import messages
 from django.forms import ValidationError
 from django.http import Http404
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.html import escape
 from django.urls import reverse as urlreverse
 
@@ -39,6 +41,7 @@ from ietf.review.models import ReviewWish
 from ietf.utils import draft, log
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
+from ietf.utils.timezone import date_today, datetime_from_date, datetime_today, DEADLINE_TZINFO
 from ietf.utils.xmldraft import XMLDraft
 
 
@@ -637,11 +640,22 @@ def has_same_ballot(doc, date1, date2=None):
     """ Test if the most recent ballot created before the end of date1
         is the same as the most recent ballot created before the
         end of date 2. """
+    datetime1 = datetime_from_date(date1, DEADLINE_TZINFO)
     if date2 is None:
-        date2 = datetime.date.today()
-    ballot1 = doc.latest_event(BallotDocEvent,type='created_ballot',time__lt=date1+datetime.timedelta(days=1))
-    ballot2 = doc.latest_event(BallotDocEvent,type='created_ballot',time__lt=date2+datetime.timedelta(days=1))
-    return ballot1==ballot2
+        datetime2 = datetime_today(DEADLINE_TZINFO)
+    else:
+        datetime2 = datetime_from_date(date2, DEADLINE_TZINFO)
+    ballot1 = doc.latest_event(
+        BallotDocEvent,
+        type='created_ballot',
+        time__lt=datetime1 + datetime.timedelta(days=1),
+    )
+    ballot2 = doc.latest_event(
+        BallotDocEvent,
+        type='created_ballot',
+        time__lt=datetime2 + datetime.timedelta(days=1),
+    )
+    return ballot1 == ballot2
 
 def make_notify_changed_event(request, doc, by, new_notify, time=None):
 
@@ -687,7 +701,7 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
          and on_agenda
          and prev_agenda
          and new_telechat_date != prev_telechat
-         and prev_telechat < datetime.date.today()
+         and prev_telechat < date_today(DEADLINE_TZINFO)
          and has_same_ballot(doc,prev.telechat_date)
        ):
         returning = True
@@ -718,7 +732,7 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
 
     e.save()
 
-    has_short_fuse = doc.type_id=='draft' and new_telechat_date and (( new_telechat_date - datetime.date.today() ) < datetime.timedelta(days=13))
+    has_short_fuse = doc.type_id=='draft' and new_telechat_date and (( new_telechat_date - date_today() ) < datetime.timedelta(days=13))
 
     from ietf.doc.mails import email_update_telechat
 
@@ -808,7 +822,7 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, com
             cc.update(other_addrs.cc)
             RelatedDocument.objects.filter(source=doc, target=d, relationship=relationship).delete()
             if not RelatedDocument.objects.filter(target=d, relationship=relationship):
-                s = 'active' if d.document.expires > datetime.datetime.now() else 'expired'
+                s = 'active' if d.document.expires > timezone.now() else 'expired'
                 d.document.set_state(State.objects.get(type='draft', slug=s))
 
     for d in new_replaces:
@@ -956,6 +970,7 @@ def make_rev_history(doc):
                         history[url]['pages'] = d.history_set.filter(rev=e.newrevisiondocevent.rev).first().pages
 
     if doc.type_id == "draft":
+        # e.time.date() agrees with RPC publication date when shown in the RPC_TZINFO time zone
         e = doc.latest_event(type='published_rfc')
     else:
         e = doc.latest_event(type='iesg_approved')
@@ -1119,7 +1134,7 @@ def build_doc_meta_block(doc, path):
             lines[i] = line
         return lines
     #
-    now = datetime.datetime.now()
+    now = timezone.now()
     draft_state = doc.get_state('draft')
     block = ''
     meta = {}
@@ -1293,6 +1308,8 @@ def fuzzy_find_documents(name, rev=None):
     document.
     """
     # Handle special case name formats
+    if re.match(r"^\s*rfc", name, flags=re.IGNORECASE):
+        name = re.sub(r"\s+", "", name.lower())
     if name.startswith('rfc0'):
         name = "rfc" + name[3:].lstrip('0')
     if name.startswith('review-') and re.search(r'-\d\d\d\d-\d\d$', name):
@@ -1303,8 +1320,6 @@ def fuzzy_find_documents(name, rev=None):
         rev = rev[-2:]
     if re.match("^[0-9]+$", name):
         name = f'rfc{name}'
-    if re.match("^[Rr][Ff][Cc] [0-9]+$",name):
-        name = f'rfc{name[4:]}'
 
     # see if we can find a document using this name
     docs = Document.objects.filter(docalias__name=name, type_id='draft')
@@ -1337,14 +1352,15 @@ def bibxml_for_draft(doc, rev=None):
     latest_revision_event = doc.latest_event(NewRevisionDocEvent, type="new_revision")
     latest_revision_rev = latest_revision_event.rev if latest_revision_event else None
     best_events = NewRevisionDocEvent.objects.filter(doc__name=doc.name, rev=(rev or latest_revision_rev))
+    tzinfo = ZoneInfo(settings.TIME_ZONE)
     if best_events.exists():
         # There was a period where it was possible to get more than one NewRevisionDocEvent for a revision.
         # A future data cleanup would allow this to be simplified
         best_event = best_events.order_by('time').first()
         log.assertion('doc.rev == best_event.rev')
-        doc.date = best_event.time.date()
+        doc.date = best_event.time.astimezone(tzinfo).date()
     else:
-        doc.date = doc.time.date()      # Even if this may be incoreect, what would be better?
+        doc.date = doc.time.astimezone(tzinfo).date()      # Even if this may be incorrect, what would be better?
 
     return render_to_string('doc/bibxml.xml', {'name':doc.name, 'doc': doc, 'doc_bibtype':'I-D'})
 

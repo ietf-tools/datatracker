@@ -5,11 +5,17 @@ import re
 import datetime
 import debug                            # pyflakes:ignore
 
+from zoneinfo import ZoneInfo
+
+from django.conf import settings
+
 from ietf.doc.models import Document, DocAlias, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent
 from ietf.doc.expire import expirable_drafts
 from ietf.doc.utils import augment_docs_and_user_with_user_info
 from ietf.meeting.models import SessionPresentation, Meeting, Session
 from ietf.review.utils import review_assignments_to_list_for_docs
+from ietf.utils.timezone import date_today
+
 
 def wrap_value(v):
     return lambda: v
@@ -30,8 +36,9 @@ def fill_in_telechat_date(docs, doc_dict=None, doc_ids=None):
             seen.add(e.doc_id)
 
 def fill_in_document_sessions(docs, doc_dict, doc_ids):
-    beg_date = datetime.date.today()-datetime.timedelta(days=7)
-    end_date = datetime.date.today()+datetime.timedelta(days=30)
+    today = date_today()
+    beg_date = today-datetime.timedelta(days=7)
+    end_date = today+datetime.timedelta(days=30)
     meetings = Meeting.objects.filter(date__gte=beg_date, date__lte=end_date).prefetch_related('session_set')
     # get sessions
     sessions = Session.objects.filter(meeting_id__in=[ m.id for m in meetings ])
@@ -204,7 +211,7 @@ def prepare_document_table(request, docs, query=None, max_results=200):
         if sort_key == "title":
             res.append(d.title)
         elif sort_key == "date":
-            res.append(str(d.latest_revision_date))
+            res.append(str(d.latest_revision_date.astimezone(ZoneInfo(settings.TIME_ZONE))))
         elif sort_key == "status":
             if rfc_num != None:
                 res.append(num(rfc_num))

@@ -10,10 +10,10 @@ import email.mime.multipart, email.mime.text, email.utils
 from mock import patch
 from requests import Response
 
-
 from django.apps import apps
 from django.urls import reverse as urlreverse
 from django.conf import settings
+from django.utils import timezone
 
 from pyquery import PyQuery
 
@@ -38,6 +38,7 @@ from ietf.utils.mail import outbox, empty_outbox, parseaddr, on_behalf_of, get_p
 from ietf.utils.test_utils import login_testing_unauthorized, reload_db_objects
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import strip_prefix, xslugify
+from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 from django.utils.html import escape
 
 class ReviewTests(TestCase):
@@ -67,7 +68,7 @@ class ReviewTests(TestCase):
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
         RoleFactory(group=review_team3,person__user__username='reviewsecretary3',person__user__email='reviewsecretary3@example.com',name_id='secr')
 
-        req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=timezone.now()+datetime.timedelta(days=20))
         ReviewAssignmentFactory(review_request = req, reviewer = rev_role.person.email_set.first(), state_id='accepted')
 
         url = urlreverse('ietf.doc.views_review.request_review', kwargs={ "name": doc.name })
@@ -77,7 +78,7 @@ class ReviewTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        deadline = datetime.date.today() + datetime.timedelta(days=10)
+        deadline = date_today() + datetime.timedelta(days=10)
 
         empty_outbox()
 
@@ -145,7 +146,7 @@ class ReviewTests(TestCase):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=timezone.now()+datetime.timedelta(days=20))
         ReviewAssignmentFactory(review_request=review_req, reviewer=rev_role.person.email_set.first(), state_id='accepted')
 
         # move the review request to a doubly-replaced document to
@@ -166,7 +167,7 @@ class ReviewTests(TestCase):
         doc = WgDraftFactory(group__acronym='mars',rev='01', authors=[author])
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=timezone.now()+datetime.timedelta(days=20))
         ReviewAssignmentFactory(review_request = review_req, reviewer = rev_role.person.email_set.first(), state_id='accepted')
 
         url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
@@ -195,7 +196,7 @@ class ReviewTests(TestCase):
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
         RoleFactory(group=review_team,person__user__username='reviewsecretary2',person__user__email='reviewsecretary2@example.com',name_id='secr')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=timezone.now()+datetime.timedelta(days=20))
         ReviewAssignmentFactory(review_request=review_req, state_id='accepted', reviewer=rev_role.person.email_set.first())
 
         close_url = urlreverse('ietf.doc.views_review.close_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
@@ -260,14 +261,14 @@ class ReviewTests(TestCase):
 
         # previous review
         req = ReviewRequestFactory(
-            time=datetime.datetime.now() - datetime.timedelta(days=100),
+            time=timezone.now() - datetime.timedelta(days=100),
             requested_by=Person.objects.get(name="(System)"),
             doc=doc,
             type_id='early',
             team=review_req.team,
             state_id='assigned',
             requested_rev="01",
-            deadline=datetime.date.today() - datetime.timedelta(days=80),
+            deadline=date_today() - datetime.timedelta(days=80),
         )
         ReviewAssignmentFactory(
             review_request = req,
@@ -372,7 +373,7 @@ class ReviewTests(TestCase):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=timezone.now()+datetime.timedelta(days=20))
         assignment = ReviewAssignmentFactory(review_request=review_req, state_id='assigned', reviewer=rev_role.person.email_set.first())
 
         url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
@@ -395,7 +396,7 @@ class ReviewTests(TestCase):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=timezone.now()+datetime.timedelta(days=20))
         assignment = ReviewAssignmentFactory(review_request = review_req, reviewer=rev_role.person.email_set.first(), state_id='accepted')
 
         reject_url = urlreverse('ietf.doc.views_review.reject_reviewer_assignment', kwargs={ "name": doc.name, "assignment_id": assignment.pk })
@@ -413,7 +414,7 @@ class ReviewTests(TestCase):
         login_testing_unauthorized(self, "reviewsecretary", reject_url)
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, assignment.reviewer.person.name)
+        self.assertContains(r, escape(assignment.reviewer.person.name))
         self.assertNotContains(r, 'can not be rejected')
         self.assertContains(r, '<button type="submit"')
 
@@ -441,7 +442,7 @@ class ReviewTests(TestCase):
         
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, assignment.reviewer.person.name)
+        self.assertContains(r, escape(assignment.reviewer.person.name))
         self.assertContains(r, 'can not be rejected')
         self.assertNotContains(r, '<button type="submit"')
 
@@ -495,7 +496,7 @@ class ReviewTests(TestCase):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=timezone.now()+datetime.timedelta(days=20))
         assignment = ReviewAssignmentFactory(review_request=review_req, reviewer=rev_role.person.email_set.first(), state_id='accepted')
 
         # test URL construction
@@ -525,7 +526,7 @@ class ReviewTests(TestCase):
             messages = r.json()["messages"]
             self.assertEqual(len(messages), 2)
 
-            today = datetime.date.today()
+            today = date_today(datetime.timezone.utc)
 
             self.assertEqual(messages[0]["url"], "https://www.example.com/testmessage")
             self.assertTrue("John Doe" in messages[0]["content"])
@@ -587,7 +588,7 @@ class ReviewTests(TestCase):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=timezone.now()+datetime.timedelta(days=20))
         assignment = ReviewAssignmentFactory(review_request=review_req, state_id='accepted', reviewer=rev_role.person.email_set.first())
         for r in ReviewResultName.objects.filter(slug__in=("issues", "ready")):
             review_req.team.reviewteamsettings.review_results.add(r)
@@ -699,7 +700,7 @@ class ReviewTests(TestCase):
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, "completed")
         # Completed time should be close to now, but will not be exactly, so check within 10s margin
-        completed_time_diff = datetime.datetime.now() - assignment.completed_on
+        completed_time_diff = timezone.now() - assignment.completed_on
         self.assertLess(completed_time_diff, datetime.timedelta(seconds=10))
 
         with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
@@ -733,15 +734,15 @@ class ReviewTests(TestCase):
         # The secretary is allowed to set a custom completion date (#2590)
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, "completed")
-        self.assertEqual(assignment.completed_on, datetime.datetime(2012, 12, 24, 12, 13, 14))
+        self.assertEqual(assignment.completed_on, datetime.datetime(2012, 12, 24, 12, 13, 14, tzinfo=DEADLINE_TZINFO))
 
         # There should be two events:
         # - the event logging when the change when it was entered, i.e. very close to now.
         # - the completion of the review, set to the provided date/time
         events = ReviewAssignmentDocEvent.objects.filter(doc=assignment.review_request.doc).order_by('-time')
-        event0_time_diff = datetime.datetime.now() - events[0].time
+        event0_time_diff = timezone.now() - events[0].time
         self.assertLess(event0_time_diff, datetime.timedelta(seconds=10))
-        self.assertEqual(events[1].time, datetime.datetime(2012, 12, 24, 12, 13, 14))
+        self.assertEqual(events[1].time, datetime.datetime(2012, 12, 24, 12, 13, 14, tzinfo=DEADLINE_TZINFO))
         
         with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
@@ -898,7 +899,7 @@ class ReviewTests(TestCase):
             assignment.review_request.team.acronym, 
             assignment.review_request.type.slug,
             xslugify(assignment.reviewer.person.ascii_parts()[3]),
-            datetime.date.today().isoformat(),
+            date_today().isoformat(),
         ]
         review_name = "-".join(c for c in name_components if c).lower()
         Document.objects.create(name=review_name,type_id='review',group=assignment.review_request.team)
@@ -985,7 +986,7 @@ class ReviewTests(TestCase):
         self.assertEqual(assignment.state_id, "completed")
         # The revision event time should be the date the revision was submitted, i.e. not backdated
         event1 = assignment.review_request.doc.latest_event(ReviewAssignmentDocEvent)
-        event_time_diff = datetime.datetime.now() - event1.time
+        event_time_diff = timezone.now() - event1.time
         self.assertLess(event_time_diff, datetime.timedelta(seconds=10))
         self.assertTrue('revised' in event1.desc.lower())
 
@@ -1012,7 +1013,7 @@ class ReviewTests(TestCase):
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.review.rev, "01")
         event2 = assignment.review_request.doc.latest_event(ReviewAssignmentDocEvent)
-        event_time_diff = datetime.datetime.now() - event2.time
+        event_time_diff = timezone.now() - event2.time
         self.assertLess(event_time_diff, datetime.timedelta(seconds=10))
         # Ensure that a new event was created for the new revision (#2590)
         self.assertNotEqual(event1.id, event2.id)
@@ -1024,7 +1025,7 @@ class ReviewTests(TestCase):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=timezone.now()+datetime.timedelta(days=20))
         ReviewAssignmentFactory(review_request = review_req, reviewer = rev_role.person.email_set.first(), state_id='accepted')
 
         url = urlreverse('ietf.doc.views_review.edit_comment', kwargs={ "name": doc.name, "request_id": review_req.pk })
@@ -1046,7 +1047,7 @@ class ReviewTests(TestCase):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,deadline=timezone.now()+datetime.timedelta(days=20))
         ReviewAssignmentFactory(review_request = review_req, reviewer = rev_role.person.email_set.first(), state_id='accepted')
 
         url = urlreverse('ietf.doc.views_review.edit_deadline', kwargs={ "name": doc.name, "request_id": review_req.pk })

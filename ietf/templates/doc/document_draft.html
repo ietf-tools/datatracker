@@ -13,7 +13,7 @@
           title="Document changes"
           href="/feed/document-changes/{{ name }}/">
     <meta name="description"
-          content="{{ doc.title }} {% if doc.get_state_slug == 'rfc' and not snapshot %}(RFC {{ rfc_number }}{% if published %}, {{ published.time|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:', ' }}{% endif %}){% else %}(Internet-Draft, {{ doc.time|date:'Y' }}){% endif %}">
+          content="{{ doc.title }} {% if doc.get_state_slug == 'rfc' and not snapshot %}(RFC {{ rfc_number }}{% if published %}, {{ doc.pub_date|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:', ' }}{% endif %}){% else %}(Internet-Draft, {{ doc.time|date:'Y' }}){% endif %}">
 {% endblock %}
 {% block morecss %}.inline { display: inline; }{% endblock %}
 {% block title %}
@@ -47,7 +47,7 @@
                     {% if doc.get_state_slug == "rfc" and not snapshot %}
                         <span class="text-success">RFC - {{ doc.std_level }}</span>
                         {% if published %}
-                            ({{ published.time|date:"F Y" }})
+                            ({{ doc.pub_date|date:"F Y" }})
                         {% else %}
                             (Publication date unknown)
                         {% endif %}
@@ -115,7 +115,7 @@
                 <td class="edit"></td>
                 <td>
                     {{ doc.time|date:"Y-m-d" }}
-                    {% if latest_revision and latest_revision.time.date != doc.time.date %}
+                    {% if latest_revision and latest_revision.time|date:"Y-m-d" != doc.time|date:"Y-m-d" %}
                         <span class="text-muted">(Latest revision {{ latest_revision.time|date:"Y-m-d" }})</span>
                     {% endif %}
                 </td>

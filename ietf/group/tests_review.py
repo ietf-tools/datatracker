@@ -7,7 +7,9 @@ import debug      # pyflakes:ignore
 
 from pyquery import PyQuery
 
+from django.conf import settings
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 from ietf.review.policies import get_reviewer_queue_policy
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, reload_db_objects
@@ -25,6 +27,7 @@ from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.doc.factories import DocumentFactory
 from ietf.group.factories import RoleFactory, ReviewTeamFactory, GroupFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
+from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO
 from django.utils.html import escape
 
 class ReviewTests(TestCase):
@@ -131,7 +134,7 @@ class ReviewTests(TestCase):
         doc.states.add(State.objects.get(type="draft-iesg", slug="lc", used=True))
         LastCallDocEvent.objects.create(
             doc=doc,
-            expires=datetime.datetime.now() + datetime.timedelta(days=365),
+            expires=timezone.now() + datetime.timedelta(days=365),
             by=Person.objects.get(name="(System)"),
             rev=doc.rev
         )
@@ -155,7 +158,7 @@ class ReviewTests(TestCase):
             review_request__doc=review_req1.doc,
             review_request__team=review_req1.team,
             review_request__type_id="early",
-            review_request__deadline=datetime.date.today() + datetime.timedelta(days=30),
+            review_request__deadline=date_today(DEADLINE_TZINFO) + datetime.timedelta(days=30),
             review_request__state_id="assigned",
             review_request__requested_by=Person.objects.get(user__username="reviewer"),
             state_id = "accepted",
@@ -165,7 +168,7 @@ class ReviewTests(TestCase):
         UnavailablePeriod.objects.create(
             team=review_req1.team,
             person=reviewer,
-            start_date=datetime.date.today() - datetime.timedelta(days=10),
+            start_date=date_today() - datetime.timedelta(days=10),
             availability="unavailable",
         )
 
@@ -210,7 +213,7 @@ class ReviewTests(TestCase):
             review_request__doc=review_req2.doc,
             review_request__team=review_req2.team,
             review_request__type_id="lc",
-            review_request__deadline=datetime.date.today() - datetime.timedelta(days=30),
+            review_request__deadline=date_today(DEADLINE_TZINFO) - datetime.timedelta(days=30),
             review_request__state_id="assigned",
             review_request__requested_by=Person.objects.get(user__username="reviewer"),
             state_id = "no-response",
@@ -231,15 +234,15 @@ class ReviewTests(TestCase):
         review_req3 = ReviewRequestFactory(state_id='completed', team=team)
         ReviewAssignmentFactory(
             review_request__doc=review_req3.doc,
-            review_request__time=datetime.date.today() - datetime.timedelta(days=30),
+            review_request__time=datetime_today() - datetime.timedelta(days=30),
             review_request__team=review_req3.team,
             review_request__type_id="telechat",
-            review_request__deadline=datetime.date.today() - datetime.timedelta(days=25),
+            review_request__deadline=date_today(DEADLINE_TZINFO) - datetime.timedelta(days=25),
             review_request__state_id="completed",
             review_request__requested_by=Person.objects.get(user__username="reviewer"),
             state_id = "completed",
             reviewer=reviewer.email_set.first(),
-            assigned_on=datetime.date.today() - datetime.timedelta(days=30)
+            assigned_on=datetime_today() - datetime.timedelta(days=30)
         )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -252,15 +255,15 @@ class ReviewTests(TestCase):
         for i in range(10):
             ReviewAssignmentFactory(
                 review_request__doc=reqs[i].doc,
-                review_request__time=datetime.date.today() - datetime.timedelta(days=i*30),
+                review_request__time=datetime_today() - datetime.timedelta(days=i*30),
                 review_request__team=reqs[i].team,
                 review_request__type_id="telechat",
-                review_request__deadline=datetime.date.today() - datetime.timedelta(days=i*20),
+                review_request__deadline=date_today(DEADLINE_TZINFO) - datetime.timedelta(days=i*20),
                 review_request__state_id="completed",
                 review_request__requested_by=Person.objects.get(user__username="reviewer"),
                 state_id = "completed",
                 reviewer=reviewer.email_set.first(),
-                assigned_on=datetime.date.today() - datetime.timedelta(days=i*30)
+                assigned_on=datetime_today() - datetime.timedelta(days=i*30)
             )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -304,28 +307,28 @@ class ReviewTests(TestCase):
         review_req4 = ReviewRequestFactory(state_id='completed', team=team)
         ReviewAssignmentFactory(
             review_request__doc=review_req4.doc,
-            review_request__time=datetime.date.today() - datetime.timedelta(days=80),
+            review_request__time=datetime_today() - datetime.timedelta(days=80),
             review_request__team=review_req4.team,
             review_request__type_id="lc",
-            review_request__deadline=datetime.date.today() - datetime.timedelta(days=60),
+            review_request__deadline=date_today(DEADLINE_TZINFO) - datetime.timedelta(days=60),
             review_request__state_id="assigned",
             review_request__requested_by=Person.objects.get(user__username="reviewer"),
             state_id = "accepted",
             reviewer=reviewer.email_set.first(),
-            assigned_on=datetime.date.today() - datetime.timedelta(days=80)
+            assigned_on=datetime_today() - datetime.timedelta(days=80)
         )
         review_req5 = ReviewRequestFactory(state_id='completed', team=team)
         ReviewAssignmentFactory(
             review_request__doc=review_req5.doc,
-            review_request__time=datetime.date.today() - datetime.timedelta(days=120),
+            review_request__time=datetime_today() - datetime.timedelta(days=120),
             review_request__team=review_req5.team,
             review_request__type_id="lc",
-            review_request__deadline=datetime.date.today() - datetime.timedelta(days=100),
+            review_request__deadline=date_today(DEADLINE_TZINFO) - datetime.timedelta(days=100),
             review_request__state_id="assigned",
             review_request__requested_by=Person.objects.get(user__username="reviewer"),
             state_id = "accepted",
             reviewer=reviewer.email_set.first(),
-            assigned_on=datetime.date.today() - datetime.timedelta(days=120)
+            assigned_on=datetime_today() - datetime.timedelta(days=120)
         )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -429,7 +432,7 @@ class ReviewTests(TestCase):
         doc.states.add(State.objects.get(type="draft-iesg", slug="lc", used=True))
         LastCallDocEvent.objects.create(
             doc=doc,
-            expires=datetime.datetime.now() + datetime.timedelta(days=365),
+            expires=timezone.now() + datetime.timedelta(days=365),
             by=Person.objects.get(name="(System)"),
             rev=doc.rev
         )
@@ -475,7 +478,7 @@ class ReviewTests(TestCase):
         review_req1 = ReviewRequestFactory()
         review_assignment_completed = ReviewAssignmentFactory(review_request=review_req1,reviewer=EmailFactory(person__user__username='marschairman'), state_id='completed', reviewed_rev=0)
         ReviewAssignmentFactory(review_request=review_req1,reviewer=review_assignment_completed.reviewer)
-        TelechatDocEvent.objects.create(telechat_date=datetime.date.today(), type='scheduled_for_telechat', by=review_assignment_completed.reviewer.person, doc=review_req1.doc, rev=0)
+        TelechatDocEvent.objects.create(telechat_date=date_today(settings.TIME_ZONE), type='scheduled_for_telechat', by=review_assignment_completed.reviewer.person, doc=review_req1.doc, rev=0)
 
         DBTemplateFactory.create(path='/group/defaults/email/open_assignments.txt',
                                  type_id='django',
@@ -555,7 +558,7 @@ class ReviewTests(TestCase):
         # get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.context['period_form']['start_date'].initial, datetime.date.today())
+        self.assertEqual(r.context['period_form']['start_date'].initial, date_today())
 
         # set settings
         empty_outbox()
@@ -596,7 +599,7 @@ class ReviewTests(TestCase):
         self.assertEqual(settings.skip_next, 0)
 
         # add unavailable period
-        start_date = datetime.date.today() + datetime.timedelta(days=10)
+        start_date = date_today() + datetime.timedelta(days=10)
         empty_outbox()
         r = self.client.post(url, {
             "action": "add_period",
