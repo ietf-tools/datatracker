@@ -332,6 +332,19 @@ class ValidatingTemplate(Template):
         return content
 
 
+class TemplateValidationTests(unittest.TestCase):
+    def __init__(self, test_runner, validate_html, **kwargs):
+        self.runner = test_runner
+        self.validate_html = validate_html
+        super().__init__(**kwargs)
+
+    def test_template_validation(self):
+        if self.validate_html:
+            for kind in self.validate_html.batches:
+                self.validate_html.validate(kind)
+                self.validate_html.config_file[kind].close()
+
+
 class TemplateCoverageLoader(BaseLoader):
     is_usable = True
 
@@ -926,10 +939,8 @@ class IetfTestRunner(DiscoverRunner):
 
         if settings.validate_html:
             for kind in self.batches:
-                try:
-                    self.validate(kind)
-                except Exception:
-                    pass
+                if len(self.batches[kind]):
+                    print(f"     WARNING: not all templates of kind '{kind}' were validated")
                 self.config_file[kind].close()
             if self.vnu:
                 self.vnu.terminate()
@@ -1075,6 +1086,15 @@ class IetfTestRunner(DiscoverRunner):
             test_labels = ["ietf"]
 
         self.test_apps, self.test_paths = self.get_test_paths(test_labels)
+
+        if settings.validate_html:
+            extra_tests += [
+                TemplateValidationTests(
+                    test_runner=self,
+                    validate_html=self,
+                    methodName='test_template_validation',
+                ),
+            ]
 
         if self.check_coverage:
             template_coverage_collection = True
