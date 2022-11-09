@@ -54,7 +54,6 @@ import warnings
 from urllib.parse import urlencode
 
 from fnmatch import fnmatch
-from pathlib import Path
 
 from coverage.report import Reporter
 from coverage.results import Numbers
@@ -334,11 +333,9 @@ class TemplateValidationTests(unittest.TestCase):
         self.validate_html = validate_html
         super().__init__(**kwargs)
 
-    def report_template_validation(self):
+    def run_template_validation(self):
         if self.validate_html:
-            for kind in self.validate_html.batches:
-                self.validate_html.validate(kind)
-                self.validate_html.config_file[kind].close()
+            self.validate_html.validate(self)
 
 
 class TemplateCoverageLoader(BaseLoader):
@@ -902,7 +899,7 @@ class IetfTestRunner(DiscoverRunner):
                 )
                 self.config_file[kind].write(json.dumps(config[kind]).encode())
                 self.config_file[kind].flush()
-                Path(self.config_file[kind].name).chmod(0o644)
+                pathlib.Path(self.config_file[kind].name).chmod(0o644)
 
             if not settings.validate_html_harder:
                 print("")
@@ -943,86 +940,79 @@ class IetfTestRunner(DiscoverRunner):
 
         super(IetfTestRunner, self).teardown_test_environment(**kwargs)
 
-    def validate(self, kind):
-        if not self.batches[kind]:
-            return
-
-        testcase = TestCase()
+    def validate(self, testcase):
         cwd = pathlib.Path.cwd()
-        tmpdir = tempfile.TemporaryDirectory(prefix="html-validate-")
-        Path(tmpdir.name).chmod(0o777)
-        for (name, content, fingerprint) in self.batches[kind]:
-            path = pathlib.Path(tmpdir.name).joinpath(
-                hex(fingerprint)[2:],
-                pathlib.Path(name).relative_to(cwd)
-            )
-            pathlib.Path(path.parent).mkdir(parents=True, exist_ok=True)
-            with path.open(mode="w") as file:
-                file.write(content)
-        self.batches[kind] = []
+        errors = []
+        with tempfile.TemporaryDirectory(prefix="html-validate-") as tmpdir_name:
+            tmppath = pathlib.Path(tmpdir_name)
+            tmppath.chmod(0o777)
+            for kind in self.batches:
+                if not self.batches[kind]:
+                    return
+                for (name, content, fingerprint) in self.batches[kind]:
+                    path = tmppath.joinpath(
+                        hex(fingerprint)[2:],
+                        pathlib.Path(name).relative_to(cwd)
+                    )
+                    pathlib.Path(path.parent).mkdir(parents=True, exist_ok=True)
+                    with path.open(mode="w") as file:
+                        file.write(content)
+                self.batches[kind] = []
 
-        validation_results = None
-        with tempfile.NamedTemporaryFile() as stdout:
-            subprocess.run(
-                [
-                    "yarn",
-                    "html-validate",
-                    "--formatter=json",
-                    "--config=" + self.config_file[kind].name,
-                    tmpdir.name,
-                ],
-                stdout=stdout,
-                stderr=stdout,
-            )
+                validation_results = None
+                with tempfile.NamedTemporaryFile() as stdout:
+                    subprocess.run(
+                        [
+                            "yarn",
+                            "html-validate",
+                            "--formatter=json",
+                            "--config=" + self.config_file[kind].name,
+                            tmpdir_name,
+                        ],
+                        stdout=stdout,
+                        stderr=stdout,
+                    )
 
-            stdout.seek(0)
-            try:
-                validation_results = json.load(stdout)
-            except json.decoder.JSONDecodeError:
-                stdout.seek(0)
-                testcase.fail(stdout.read())
+                    stdout.seek(0)
+                    try:
+                        validation_results = json.load(stdout)
+                    except json.decoder.JSONDecodeError:
+                        stdout.seek(0)
+                        testcase.fail(stdout.read())
 
-        errors = ""
-        for result in validation_results:
-            source_lines = result["source"].splitlines(keepends=True)
-            for msg in result["messages"]:
-                line = msg["line"]
-                errors += (
-                    f'\n{result["filePath"]}:\n'
-                    + "".join(source_lines[line - 5 : line])
-                    + " " * (msg["column"] - 1)
-                    + "^" * msg["size"] + "\n"
-                    + " " * (msg["column"] - 1)
-                    + f'{msg["ruleId"]}: {msg["message"]} '
-                    + f'on line {line}:{msg["column"]}\n'
-                    + "".join(source_lines[line : line + 5])
-                    + "\n"
-                )
+                for result in validation_results:
+                    source_lines = result["source"].splitlines(keepends=True)
+                    for msg in result["messages"]:
+                        line = msg["line"]
+                        errors.append(
+                            f'\n{result["filePath"]}:\n'
+                            + "".join(source_lines[line - 5 : line])
+                            + " " * (msg["column"] - 1)
+                            + "^" * msg["size"] + "\n"
+                            + " " * (msg["column"] - 1)
+                            + f'{msg["ruleId"]}: {msg["message"]} '
+                            + f'on line {line}:{msg["column"]}\n'
+                            + "".join(source_lines[line : line + 5])
+                            + "\n"
+                        )
 
+                if settings.validate_html_harder and kind != "frag":
+                    files = [
+                        os.path.join(d, f)
+                        for d, dirs, files in os.walk(tmppath)
+                        for f in files
+                    ]
+                    for file in files:
+                        with open(file, "rb") as f:
+                            content = f.read()
+                            result = vnu_validate(content)
+                            assert result
+                            for msg in json.loads(result)["messages"]:
+                                if vnu_filter_message(msg, False, True):
+                                    continue
+                                errors.append(vnu_fmt_message(file, msg, content.decode("utf-8")))
         if errors:
-            testcase.fail(errors)
-
-        if settings.validate_html_harder:
-            if kind == "frag":
-                return
-            files = [
-                os.path.join(d, f)
-                for d, dirs, files in os.walk(tmpdir.name)
-                for f in files
-            ]
-            for file in files:
-                with open(file, "rb") as f:
-                    content = f.read()
-                    result = vnu_validate(content)
-                    assert result
-                    for msg in json.loads(result)["messages"]:
-                        if vnu_filter_message(msg, False, True):
-                            continue
-                        errors = vnu_fmt_message(file, msg, content.decode("utf-8"))
-                        if errors:
-                            testcase.fail(errors)
-
-        tmpdir.cleanup()
+            testcase.fail('\n'.join(errors))
 
     def get_test_paths(self, test_labels):
         """Find the apps and paths matching the test labels, so we later can limit
@@ -1088,7 +1078,7 @@ class IetfTestRunner(DiscoverRunner):
                 TemplateValidationTests(
                     test_runner=self,
                     validate_html=self,
-                    methodName='report_template_validation',
+                    methodName='run_template_validation',
                 ),
             ]
 
