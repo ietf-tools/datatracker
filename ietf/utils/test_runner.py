@@ -325,10 +325,6 @@ class ValidatingTemplate(Template):
         settings.validate_html.batches[kind].append(
             (self.origin.name, content, fingerprint)
         )
-        # FWIW, a batch size of 30 seems to result in less than 10% runtime overhead
-        if len(settings.validate_html.batches[kind]) >= 30:
-            settings.validate_html.validate(kind)
-
         return content
 
 
