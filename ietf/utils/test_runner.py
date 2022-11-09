@@ -338,7 +338,7 @@ class TemplateValidationTests(unittest.TestCase):
         self.validate_html = validate_html
         super().__init__(**kwargs)
 
-    def test_template_validation(self):
+    def report_template_validation(self):
         if self.validate_html:
             for kind in self.validate_html.batches:
                 self.validate_html.validate(kind)
@@ -1092,7 +1092,7 @@ class IetfTestRunner(DiscoverRunner):
                 TemplateValidationTests(
                     test_runner=self,
                     validate_html=self,
-                    methodName='test_template_validation',
+                    methodName='report_template_validation',
                 ),
             ]
 
