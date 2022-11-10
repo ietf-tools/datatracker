@@ -28,10 +28,17 @@ yarn build
 yarn legacy:build
 
 # Copy config files if needed
+if [ ! -f "$WORKSPACEDIR/ietf/settings_mysqldb.py" ]; then
+    cp $WORKSPACEDIR/docker/configs/settings_mysqldb.py $WORKSPACEDIR/ietf/settings_mysqldb.py
+fi
+if [ ! -f "$WORKSPACEDIR/ietf/settings_postgresqldb.py" ]; then
+    cp $WORKSPACEDIR/docker/configs/settings_postgresqldb.py $WORKSPACEDIR/ietf/settings_postgresqldb.py
+fi
 
 if [ ! -f "$WORKSPACEDIR/ietf/settings_local.py" ]; then
     echo "Setting up a default settings_local.py ..."
     cp $WORKSPACEDIR/docker/configs/settings_local.py $WORKSPACEDIR/ietf/settings_local.py
+
 else
     echo "Using existing ietf/settings_local.py file"
     if ! cmp -s $WORKSPACEDIR/docker/configs/settings_local.py $WORKSPACEDIR/ietf/settings_local.py; then
@@ -73,6 +80,10 @@ else
     fi
 fi
 
+# Recondition settings to make changing databases easier. (Remember that we may have developers starting with settings_local from earlier work)
+    python docker/scripts/db-include-fix.py
+    cat $WORKSPACEDIR/ietf/settings_local.py | sed 's/from ietf.settings_postgresqldb import DATABASES/from ietf.settings_mysqldb import DATABASES/' > /tmp/settings_local.py && mv /tmp/settings_local.py $WORKSPACEDIR/ietf/settings_local.py
+
 # Create data directories
 
 echo "Creating data directories..."
@@ -88,7 +99,8 @@ curl -fsSL https://github.com/ietf-tools/datatracker/releases/download/baseline/
 
 if [ -n "$EDITOR_VSCODE" ]; then
     echo "Waiting for DB container to come online ..."
-    /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
+    /usr/local/bin/wait-for db:3306 -- echo "MariaDB ready"
+    /usr/local/bin/wait-for pgdb:5432 -- echo "Postgresql ready"
 fi
 
 # Run memcached
@@ -112,7 +124,11 @@ if ietf/manage.py showmigrations | grep "\[ \] 0003_pause_to_change_use_tz"; the
     # This is expected to exit non-zero at the pause
     /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local || true
     cat $WORKSPACEDIR/ietf/settings_local.py | sed 's/USE_TZ.*$/USE_TZ = True/' > /tmp/settings_local.py && mv /tmp/settings_local.py $WORKSPACEDIR/ietf/settings_local.py
-    /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local
+    # This is also expected to exit non-zero at the 2nd pause
+    echo "DEBUGGING pt 1 - this should say mysqldb"
+    grep "DATA" $WORKSPACEDIR/ietf/settings_local.py
+    /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local || true
+    # More migrations after the move to postgres below.
 
 else
     if grep "USE_TZ" $WORKSPACEDIR/ietf/settings_local.py; then
@@ -121,6 +137,25 @@ else
         echo "USE_TZ = True" >> $WORKSPACEDIR/ietf/settings_local.py
     /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local
     fi
+fi
+
+echo "DEBUGGING pt 2 - this should say mysqldb"
+grep "DATA" $WORKSPACEDIR/ietf/settings_local.py
+cat $WORKSPACEDIR/ietf/settings_local.py | sed 's/from ietf.settings_mysqldb import DATABASES/from ietf.settings_postgresqldb import DATABASES/' > /tmp/settings_local.py && mv /tmp/settings_local.py $WORKSPACEDIR/ietf/settings_local.py
+echo "DEBUGGING pt 3 - this should say postgresdb"
+grep "DATA" $WORKSPACEDIR/ietf/settings_local.py
+
+# Now transfer the migrated database from mysql to postgres unless that's already happened.
+if psql -U django -h pgdb -d ietf -c "\dt" 2>&1 | grep -q "Did not find any relations."; then
+    cat << EOF > cast.load
+LOAD DATABASE
+FROM mysql://django:RkTkDPFnKpko@db/ietf_utf8
+INTO postgresql://django:RkTkDPFnKpko@pgdb/ietf
+CAST type varchar to text drop typemod;
+EOF
+    time pgloader --verbose --logfile=ietf_pgloader.run --summary=ietf_pgloader.summary cast.load
+    rm cast.load
+    /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local
 fi
 
 echo "-----------------------------------------------------------------"
