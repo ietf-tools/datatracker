@@ -879,15 +879,17 @@ class IetfTestRunner(DiscoverRunner):
             config["doc"]["rules"]["require-sri"] = "off"
             # Turn "element-required-ancestor" back on
             del config["doc"]["rules"]["element-required-ancestor"]
-            # permit discontinuous heading numbering in cards, modals and dialogs:
             config["doc"]["rules"]["heading-level"] = [
                 "error",
                 {
+                    # permit discontinuous heading numbering in cards, modals and dialogs:
                     "sectioningRoots": [
                         ".card-body",
                         ".modal-content",
                         '[role="dialog"]',
-                    ]
+                    ],
+                    # permit multiple H1 elements in a single document
+                    "allowMultipleH1": True,
                 },
             ]
 
