@@ -19,6 +19,24 @@ function prettify_tz(x) {
     return x.text.replaceAll("_", " ").replaceAll("/", " / ");
 }
 
+function search_template_result(data) {
+    if (data.url == null) {
+        return data.text;
+    }
+    var $link = $("<a>" + data.text + "</a>");
+    $link.prop("href", data.url);
+    $link.on("mouseup", function (evt) {
+        // Do not propagate any events which have modifiers keys
+        // or if some other mouse button than 1 (left) was used.
+        if (evt.shiftKey || evt.ctrlKey || evt.metaKey || evt.altKey ||
+            evt.which != 1) {
+            evt.stopPropagation();
+        }
+    });
+
+    return $link;
+}
+
 // Copyright The IETF Trust 2015-2021, All Rights Reserved
 // JS for ietf.utils.fields.SearchableField subclasses
 window.setupSelect2Field = function (e) {
@@ -37,7 +55,8 @@ window.setupSelect2Field = function (e) {
         );
     }
 
-    template_modify = e.hasClass("tz-select") ? prettify_tz : undefined;
+    template_modify = e.hasClass("tz-select") ? prettify_tz :
+	(e.hasClass("search-select") ? search_template_result : undefined);
 
     // focus the search field automatically
     $(document)
