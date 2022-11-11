@@ -14,8 +14,10 @@ newcontent = content.replace(
             'init_command': 'SET storage_engine=InnoDB; SET names "utf8"',
         },
     },
-}""", "from ietf.settings_mysqldb import DATABASES")
-newcontent = content.replace("""DATABASES = {
+}""",
+    "from ietf.settings_mysqldb import DATABASES",
+).replace(
+    """DATABASES = {
     'default': {
         'HOST': 'pgdb',
         'PORT': 5432,
