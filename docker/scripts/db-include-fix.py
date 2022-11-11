@@ -1,6 +1,7 @@
-with open('/workspace/ietf/settings_local.py','r') as contentfile:
-    content = contentfile.readlines()
-newcontent = content.replace("""DATABASES = {
+from pathlib import Path
+content = Path('/workspace/ietf/settings_local.py').read_text()
+newcontent = content.replace(
+    """DATABASES = {
     'default': {
         'HOST': 'db',
         'PORT': 3306,
