@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import migrations
 
 def forward(apps, schema_editor):
-    assert(settings.DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql_psycopg2', 'Please change to use postgres before continuing')
+    assert settings.DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql_psycopg2', 'Please change to use postgres before continuing'
 
 def reverse(apps, schema_editor):
     assert(settings.DATABASES['default']['ENGINE'] == 'django.db.backends.mysql', 'Please change to use mariadb before continuing')
