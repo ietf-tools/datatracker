@@ -26,6 +26,8 @@ newcontent = content.replace(
         'USER': 'django',
         'PASSWORD': 'RkTkDPFnKpko',
     },
-}""", "from ietf.settings_postgresqldb import DATABASES")
-with open('/workspace/ietf/settings_local.py','w') as replacementfile:
+}""",
+    "from ietf.settings_postgresqldb import DATABASES",
+)
+with Path('/workspace/ietf/settings_local.py').open('w') as replacementfile:
     replacementfile.write(newcontent)
