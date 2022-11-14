@@ -973,7 +973,7 @@ FLOORPLAN_MEDIA_DIR = 'floor'
 FLOORPLAN_DIR = os.path.join(MEDIA_ROOT, FLOORPLAN_MEDIA_DIR)
 
 
-MEETING_USES_CODIMD_DATE = datetime.date(2020,7,6)
+MEETING_USES_NOTES_DATE = datetime.date(2020,7,6)
 MEETING_LEGACY_OFFICE_HOURS_END = 112  # last meeting to use legacy office hours representation
 
 # Maximum dimensions to accept at all
