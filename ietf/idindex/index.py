@@ -270,7 +270,7 @@ def active_drafts_index_by_group(extra_values=()):
     groups = [g for g in groups_dict.values() if hasattr(g, "active_drafts")]
     groups.sort(key=lambda g: g.acronym)
 
-    fallback_time = datetime.datetime(1950, 1, 1)
+    fallback_time = datetime.datetime(1950, 1, 1, tzinfo=datetime.timezone.utc)
     for g in groups:
         g.active_drafts.sort(key=lambda d: d.get("initial_rev_time", fallback_time))
 
