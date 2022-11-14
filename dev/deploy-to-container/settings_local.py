@@ -3,9 +3,6 @@
 
 from ietf.settings import *                                          # pyflakes:ignore
 
-SERVER_MODE = 'development'
-DEBUG = True
-
 ALLOWED_HOSTS = ['*']
 
 DATABASES = {
