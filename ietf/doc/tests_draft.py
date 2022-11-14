@@ -644,11 +644,11 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         second_cut_off = meeting.get_second_cut_off()
         ietf_monday = meeting.get_ietf_monday()
 
-        self.assertTrue(not in_draft_expire_freeze(datetime.datetime.combine(second_cut_off - datetime.timedelta(days=7), datetime.time(0, 0, 0))))
-        self.assertTrue(not in_draft_expire_freeze(datetime.datetime.combine(second_cut_off, datetime.time(0, 0, 0))))
+        self.assertFalse(in_draft_expire_freeze(datetime.datetime.combine(second_cut_off - datetime.timedelta(days=7), datetime.time(0, 0, 0))))
+        self.assertFalse(in_draft_expire_freeze(datetime.datetime.combine(second_cut_off, datetime.time(0, 0, 0))))
         self.assertTrue(in_draft_expire_freeze(datetime.datetime.combine(second_cut_off + datetime.timedelta(days=7), datetime.time(0, 0, 0))))
         self.assertTrue(in_draft_expire_freeze(datetime.datetime.combine(ietf_monday - datetime.timedelta(days=1), datetime.time(0, 0, 0))))
-        self.assertTrue(not in_draft_expire_freeze(datetime.datetime.combine(ietf_monday, datetime.time(0, 0, 0))))
+        self.assertFalse(in_draft_expire_freeze(datetime.datetime.combine(ietf_monday, datetime.time(0, 0, 0))))
         
     def test_warn_expirable_drafts(self):
         from ietf.doc.expire import get_soon_to_expire_drafts, send_expire_warning_for_draft
