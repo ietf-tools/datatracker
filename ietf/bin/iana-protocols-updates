@@ -29,7 +29,7 @@ def chunks(l, n):
 syslog.syslog("Updating history log with new RFC entries from IANA protocols page %s" % settings.IANA_SYNC_PROTOCOLS_URL)
 
 # FIXME: this needs to be the date where this tool is first deployed
-rfc_must_published_later_than = datetime.datetime(2012, 11, 26, 0, 0, 0)
+rfc_must_published_later_than = datetime.datetime(2012, 11, 26, 0, 0, 0, tzinfo=datetime.timezone.utc)
 
 try:
     response = requests.get(
