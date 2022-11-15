@@ -1579,7 +1579,7 @@ def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, 
                 "now": timezone.now().astimezone(meeting.tz()),
                 "display_timezone": display_timezone,
                 "is_current_meeting": is_current_meeting,
-                "use_notes": True if meeting.date>=settings.MEETING_USES_NOTES_DATE else False,
+                "use_notes": meeting.uses_notes(),
                 "cache_time": 150 if is_current_meeting else 3600,
             },
             content_type=mimetype[ext],
@@ -1654,7 +1654,7 @@ def api_get_agenda_data (request, num=None):
         },
         "categories": filter_organizer.get_filter_categories(),
         "isCurrentMeeting": is_current_meeting,
-        "useHedgeDoc": True if meeting.date>=settings.MEETING_USES_NOTES_DATE else False,
+        "useNotes": meeting.uses_notes(),
         "schedule": list(map(agenda_extract_schedule, filtered_assignments)),
         "floors": list(map(agenda_extract_floorplan, floors))
     })
@@ -2365,7 +2365,7 @@ def session_details(request, num, acronym):
                     'can_view_request': can_view_request,
                     'thisweek': datetime_today()-datetime.timedelta(days=7),
                     'now': timezone.now(),
-                    'use_notes': True if meeting.date>=settings.MEETING_USES_NOTES_DATE else False,
+                    'use_notes': meeting.uses_notes(),
                   })
 
 class SessionDraftsForm(forms.Form):
@@ -3528,7 +3528,6 @@ def upcoming(request):
                   'menu_entries': menu_entries,
                   'selected_menu_entry': selected_menu_entry,
                   'now': timezone.now(),
-                  'use_notes': (date_today() >= settings.MEETING_USES_NOTES_DATE),
                   })
 
 

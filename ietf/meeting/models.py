@@ -405,6 +405,9 @@ class Meeting(models.Model):
     def previous_meeting(self):
         return Meeting.objects.filter(type_id=self.type_id,date__lt=self.date).order_by('-date').first()
 
+    def uses_notes(self):
+        return self.date>=datetime.date(2020,7,6)
+
     class Meta:
         ordering = ["-date", "-id"]
         indexes = [
