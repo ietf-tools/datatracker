@@ -293,7 +293,7 @@ const meetingEvents = computed(() => {
           color: 'red'
         })
       }
-      if (agendaStore.useHedgeDoc) {
+      if (agendaStore.useNotes) {
         links.push({
           id: `lnk-${item.id}-note`,
           label: 'Notepad for note-takers',

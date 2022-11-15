@@ -215,7 +215,7 @@ class MeetingTests(BaseMeetingTestCase):
                 },
                 "categories": rjson.get("categories"), # Just expect the value to exist
                 "isCurrentMeeting": True,
-                "useHedgeDoc": True,
+                "useNotes": True,
                 "schedule": rjson.get("schedule"), # Just expect the value to exist
                 "floors": []
             }
