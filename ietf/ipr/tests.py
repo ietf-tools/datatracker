@@ -578,7 +578,10 @@ I would like to revoke this declaration.
         self.assertIn('posted on '+date_today().strftime("%Y-%m-%d"), get_payload_text(outbox[len_before]).replace('\n',' '))
         self.assertTrue('draft-ietf-mars-test@ietf.org' in outbox[len_before+1]['To'])
         self.assertTrue('mars-wg@ietf.org' in outbox[len_before+1]['Cc'])
-        self.assertIn('Secretariat on '+ipr.get_latest_event_submitted().time.strftime("%Y-%m-%d"), get_payload_text(outbox[len_before+1]).replace('\n',' '))
+        self.assertIn(
+            'Secretariat on ' + ipr.get_latest_event_submitted().time.astimezone(ZoneInfo(settings.TIME_ZONE)).strftime("%Y-%m-%d"),
+            get_payload_text(outbox[len_before + 1]).replace('\n', ' ')
+        )
         self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.showlist")}', get_payload_text(outbox[len_before]).replace('\n',' '))
         self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.history",kwargs=dict(id=ipr.pk))}', get_payload_text(outbox[len_before+1]).replace('\n',' '))
 
