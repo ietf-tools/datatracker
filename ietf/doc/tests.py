@@ -1646,7 +1646,13 @@ class DocTestCase(TestCase):
         doc.save_with_history([e])
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertRegex(r.content.decode(), r'\(\s*%s\s+for\s+-%s\s*\)' % (pos.comment_time.strftime('%Y-%m-%d'), oldrev))
+        self.assertRegex(
+            r.content.decode(),
+            r'\(\s*%s\s+for\s+-%s\s*\)' % (
+                pos.comment_time.astimezone(ZoneInfo(settings.TIME_ZONE)).strftime('%Y-%m-%d'),
+                oldrev,
+            )
+        )
 
         # Now simulate a new ballot against the new revision and make sure the "was" position is included
         pos2 = BallotPositionDocEvent.objects.create(
