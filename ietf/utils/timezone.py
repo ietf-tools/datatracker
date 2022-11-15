@@ -96,7 +96,7 @@ def timezone_not_near_midnight():
     right_now = timezone.now().astimezone(ZoneInfo(tzname))
     # Avoid the remote possibility of an infinite loop (might come up
     # if there is a problem with the time zone library)
-    tries_left = 20
+    tries_left = 50
     while right_now.hour < 1 or right_now.hour >= 23:
         tzname = random.choice(timezone_options)
         right_now = right_now.astimezone(ZoneInfo(tzname))

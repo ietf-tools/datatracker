@@ -5,6 +5,7 @@
 import datetime
 import re
 from urllib.parse import urljoin
+from zoneinfo import ZoneInfo
 
 from django import template
 from django.conf import settings
@@ -316,9 +317,18 @@ def underline(string):
 
 @register.filter(name='timesince_days')
 def timesince_days(date):
-    """Returns the number of days since 'date' (relative to now)"""
+    """Returns the number of days since 'date' (relative to now)
+
+    >>> timesince_days(timezone.now() - datetime.timedelta(days=2))
+    2
+
+    >>> tz = ZoneInfo(settings.TIME_ZONE)
+    >>> timesince_days(timezone.now().astimezone(tz).date() - datetime.timedelta(days=2))
+    2
+
+    """
     if date.__class__ is not datetime.datetime:
-        date = datetime.datetime(date.year, date.month, date.day)
+        date = datetime.datetime(date.year, date.month, date.day, tzinfo=ZoneInfo(settings.TIME_ZONE))
     delta = timezone.now() - date
     return delta.days
 
