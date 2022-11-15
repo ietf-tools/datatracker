@@ -433,9 +433,13 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
+        echo "Reset production flags in settings.py..."
+        sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = True/' -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'development'/" ietf/settings.py
+        echo "Install Deploy to Container CLI dependencies..."
         cd dev/deploy-to-container
         npm ci
         cd ../..
+        echo "Start Deploy..."
         node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain neverusethis.com
         
     - name: Cleanup old docker resources
