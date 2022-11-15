@@ -322,7 +322,8 @@ def timesince_days(date):
     >>> timesince_days(timezone.now() - datetime.timedelta(days=2))
     2
 
-    >>> timesince_days(timezone.now().date() - datetime.timedelta(days=2))
+    >>> tz = ZoneInfo(settings.TIME_ZONE)
+    >>> timesince_days(timezone.now().astimezone(tz).date() - datetime.timedelta(days=2))
     2
 
     """
