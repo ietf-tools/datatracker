@@ -89,7 +89,6 @@ from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, 
 from ietf.utils import markdown
 from ietf.utils.decorators import require_api_key
 from ietf.utils.hedgedoc import Note, NoteError
-from ietf.utils.history import find_history_replacements_active_at
 from ietf.utils.log import assertion
 from ietf.utils.mail import send_mail_message, send_mail_text
 from ietf.utils.mime import get_mime_type
@@ -1712,15 +1711,13 @@ def agenda_extract_schedule (item):
         "startDateTime": item.timeslot.time.isoformat(),
         "status": item.session.current_status,
         "type": item.session.type.slug,
-        "isBoF": item.session.historic_group.state_id == "bof",
+        "isBoF": item.session.group_at_the_time().state_id == "bof",
         "filterKeywords": item.filter_keywords,
-        "groupAcronym": item.session.historic_group.acronym if item.session.historic_group else item.session.group.acronym,
-        "groupName": item.session.historic_group.name,
+        "groupAcronym": item.session.group_at_the_time().acronym if item.session.group_at_the_time() else item.session.group.acronym,
+        "groupName": item.session.group_at_the_time().name,
         "groupParent": {
-            "acronym": item.session.historic_group.parent.acronym
-            # "name": item.session.historic_group.parent.name,
-            # "description": item.session.historic_group.parent.description
-        } if item.session.historic_group.parent else {},
+            "acronym": item.session.group_parent_at_the_time().acronym
+        } if item.session.group_parent_at_the_time() else {},
         "note": item.session.agenda_note,
         "remoteInstructions": item.session.remote_instructions,
         "flags": {
@@ -1849,15 +1846,15 @@ def agenda_csv(schedule, filtered_assignments):
             row.append("None")
             row.append(item.timeslot.location.name if item.timeslot.location else "")
             row.append("")
-            row.append(item.session.historic_group.acronym)
-            row.append(item.session.historic_group.historic_parent.acronym.upper() if item.session.historic_group.historic_parent else "")
+            row.append(item.session.group_at_the_time().acronym)
+            row.append(item.session.group_parent_at_the_time().acronym.upper() if item.session.group_parent_at_the_time() else "")
             row.append(item.session.name)
             row.append(item.session.pk)
         elif item.slot_type().slug == "plenary":
             row.append(item.session.name)
             row.append(item.timeslot.location.name if item.timeslot.location else "")
             row.append("")
-            row.append(item.session.historic_group.acronym if item.session.historic_group else "")
+            row.append(item.session.group_at_the_time().acronym if item.session.group_at_the_time() else "")
             row.append("")
             row.append(item.session.name)
             row.append(item.session.pk)
@@ -1866,10 +1863,10 @@ def agenda_csv(schedule, filtered_assignments):
         elif item.slot_type().slug == 'regular':
             row.append(item.timeslot.name)
             row.append(item.timeslot.location.name if item.timeslot.location else "")
-            row.append(item.session.historic_group.historic_parent.acronym.upper() if item.session.historic_group.historic_parent else "")
-            row.append(item.session.historic_group.acronym if item.session.historic_group else "")
-            row.append("BOF" if item.session.historic_group.state_id in ("bof", "bof-conc") else item.session.historic_group.type.name)
-            row.append(item.session.historic_group.name if item.session.historic_group else "")
+            row.append(item.session.group_parent_at_the_time().acronym.upper() if item.session.group_parent_at_the_time() else "")
+            row.append(item.session.group_at_the_time().acronym if item.session.group_at_the_time() else "")
+            row.append("BOF" if item.session.group_at_the_time().state_id in ("bof", "bof-conc") else item.session.group_at_the_time().type.name)
+            row.append(item.session.group_at_the_time().name if item.session.group_at_the_time() else "")
             row.append(item.session.pk)
             row.append(agenda_field(item))
             row.append(slides_field(item))
@@ -2031,7 +2028,7 @@ def parse_agenda_filter_params(querydict):
 def should_include_assignment(filter_params, assignment):
     """Decide whether to include an assignment
 
-    When filtering by wg, uses historic_group if available as an attribute
+    When filtering by wg, uses group_at_the_time() if available as an attribute
     on the session, otherwise falls back to using group.
     """
     shown = len(set(filter_params['show']).intersection(assignment.filter_keywords)) > 0
@@ -2080,7 +2077,7 @@ def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
         assignments = [a for a in assignments if should_include_assignment(filt_params, a)]
 
     if acronym:
-        assignments = [ a for a in assignments if a.session.historic_group and a.session.historic_group.acronym == acronym ]
+        assignments = [ a for a in assignments if a.session.group_at_the_time() and a.session.group_at_the_time().acronym == acronym ]
     elif session_id:
         assignments = [ a for a in assignments if a.session_id == int(session_id) ]
 
@@ -2119,23 +2116,23 @@ def agenda_json(request, num=None):
         sessdict['objtype'] = 'session'
         sessdict['id'] = asgn.pk
         sessdict['is_bof'] = False
-        if asgn.session.historic_group:
+        if asgn.session.group_at_the_time():
             sessdict['group'] = {
-                    "acronym": asgn.session.historic_group.acronym,
-                    "name": asgn.session.historic_group.name,
-                    "type": asgn.session.historic_group.type_id,
-                    "state": asgn.session.historic_group.state_id,
+                    "acronym": asgn.session.group_at_the_time().acronym,
+                    "name": asgn.session.group_at_the_time().name,
+                    "type": asgn.session.group_at_the_time().type_id,
+                    "state": asgn.session.group_at_the_time().state_id,
                 }
-            if asgn.session.historic_group.is_bof():
+            if asgn.session.group_at_the_time().is_bof():
                 sessdict['is_bof'] = True
-            if asgn.session.historic_group.type_id in ['wg','rg', 'ag', 'rag'] or asgn.session.historic_group.acronym in ['iesg',]: # TODO: should that first list be groupfeatures driven?
-                if asgn.session.historic_group.historic_parent:
-                    sessdict['group']['parent'] = asgn.session.historic_group.historic_parent.acronym
-                    parent_acronyms.add(asgn.session.historic_group.historic_parent.acronym)
+            if asgn.session.group_at_the_time().type_id in ['wg','rg', 'ag', 'rag'] or asgn.session.group_at_the_time().acronym in ['iesg',]: # TODO: should that first list be groupfeatures driven?
+                if asgn.session.group_parent_at_the_time():
+                    sessdict['group']['parent'] = asgn.session.group_parent_at_the_time().acronym
+                    parent_acronyms.add(asgn.session.group_parent_at_the_time().acronym)
         if asgn.session.name:
             sessdict['name'] = asgn.session.name
         else:
-            sessdict['name'] = asgn.session.historic_group.name
+            sessdict['name'] = asgn.session.group_at_the_time().name
         if asgn.session.short:
             sessdict['short'] = asgn.session.short
         if asgn.session.agenda_note:
@@ -2291,23 +2288,8 @@ def session_details(request, num, acronym):
     if not sessions:
         raise Http404
 
-    # Find the time of the meeting, so that we can look back historically 
-    # for what the group was called at the time. 
-    meeting_time = meeting.tz().localize(
-        datetime.datetime.combine(meeting.date, datetime.time())
-    )
-
-    groups = list(set([ s.group for s in sessions ]))
-    group_replacements = find_history_replacements_active_at(groups, meeting_time) 
-
     status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
     for session in sessions:
-
-        session.historic_group = None 
-        if session.group: 
-            session.historic_group = group_replacements.get(session.group_id) 
-            if session.historic_group: 
-                session.historic_group.historic_parent = None 
 
         session.type_counter = Counter()
         ss = session.timeslotassignments.filter(schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None]).order_by('timeslot__time')
@@ -3474,9 +3456,6 @@ def upcoming(request):
             timeslotassignments__timeslot__time__gte=today
         )
     ).filter(current_status__in=('sched','canceled'))
-
-    for session in interim_sessions:
-        session.historic_group = session.group
 
     # Set up for agenda filtering - only one filter_category here
     AgendaKeywordTagger(sessions=interim_sessions).apply()

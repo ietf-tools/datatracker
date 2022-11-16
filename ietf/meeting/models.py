@@ -39,6 +39,7 @@ from ietf.name.models import (
 )
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
+from ietf.utils.history import find_history_replacements_active_at
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import datetime_from_date, date_today
@@ -407,6 +408,19 @@ class Meeting(models.Model):
 
     def uses_notes(self):
         return self.date>=datetime.date(2020,7,6)
+
+    def groups_at_the_time(self):
+        if not hasattr(self,'cached_groups_at_the_time'):
+            all_group_pks = set(self.session_set.values_list('group__pk', flat=True))
+            all_group_pks.update(self.session_set.values_list('group__parent__pk', flat=True))
+            all_group_pks.discard(None)
+            # meeting_time is meeting-local midnight at the start of the meeting date
+            meeting_start = self.tz().localize(
+                datetime.datetime.combine(self.date, datetime.time())
+            )
+            self.cached_groups_at_the_time = find_history_replacements_active_at(Group.objects.filter(pk__in=all_group_pks), meeting_start)
+        return self.cached_groups_at_the_time
+
 
     class Meta:
         ordering = ["-date", "-id"]
@@ -824,12 +838,12 @@ class SchedTimeSessAssignment(models.Model):
         if not self.timeslot:
             components.append("unknown")
 
-        if not self.session or not (getattr(self.session, "historic_group", None) or self.session.group):
+        if not self.session or not (self.session.group_at_the_time() or self.session.group):
             components.append("unknown")
         else:
             components.append(self.timeslot.time.strftime("%Y-%m-%d-%a-%H%M"))
 
-            g = getattr(self.session, "historic_group", None) or self.session.group
+            g = self.session.group_at_the_time() or self.session.group
 
             if self.timeslot.type.slug in ('break', 'reg', 'other'):
                 components.append(g.acronym)
@@ -1263,8 +1277,8 @@ class Session(models.Model):
     def chat_room_name(self):
         if self.type_id=='plenary':
             return 'plenary'
-        elif hasattr(self, 'historic_group'):
-            return self.historic_group.acronym
+        elif self.group_at_the_time():
+            return self.group_at_the_time().acronym
         else:
             return self.group.acronym
 
@@ -1287,6 +1301,13 @@ class Session(models.Model):
 
     def notes_url(self):
         return urljoin(settings.IETF_NOTES_URL, self.notes_id())
+
+    def group_at_the_time(self):
+        return self.meeting.groups_at_the_time()[self.group.pk]
+
+    def group_parent_at_the_time(self):
+        if self.group_at_the_time().parent:
+            return self.meeting.groups_at_the_time()[self.group_at_the_time().parent.pk]
 
 class SchedulingEvent(models.Model):
     session = ForeignKey(Session)

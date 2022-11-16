@@ -3,7 +3,7 @@
 {% load static %}
 {% load textfilters tz %}
 {% origin %}
-{% with item=session.official_timeslotassignment acronym=session.historic_group.acronym %}
+{% with item=session.official_timeslotassignment acronym=session.group_at_the_time.acronym %}
     <div role="group" class="btn-group btn-group-sm">
         {% if session.agenda and show_agenda %}
             {% include "meeting/session_agenda_include.html" with slug=item.slug session=session timeslot=item.timeslot only %}
