@@ -14,6 +14,7 @@ on:
         default: ''
       publish:
         description: 'Create Production Release'
+        default: false
         required: true
         type: boolean
       sandbox:
@@ -23,6 +24,7 @@ on:
         type: boolean
       skiptests:
         description: 'Skip Tests'
+        default: false
         required: true
         type: boolean
       ignoreLowerCoverage:
@@ -37,6 +39,7 @@ on:
         type: boolean
       dryrun:
         description: 'Dry Run'
+        default: false
         required: true
         type: boolean
 
