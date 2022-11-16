@@ -71,6 +71,7 @@ jobs:
       with:
         token: ${{ github.token }}
         branch: main
+        skipInvalidTags: true
         
     - name: Set Next Version Env Var
       if: ${{ github.event.inputs.publish == 'true' || github.event.inputs.dryrun == 'true' }}
