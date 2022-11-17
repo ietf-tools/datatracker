@@ -53,6 +53,8 @@ jobs:
     outputs:
       should_deploy: ${{ steps.buildvars.outputs.should_deploy }}
       pkg_version: ${{ steps.buildvars.outputs.pkg_version }}
+      from_tag: ${{ steps.semver.outputs.nextStrict }}
+      to_tag: ${{ steps.semver.outputs.current }}
 
     steps:
     - uses: actions/checkout@v3
@@ -293,6 +295,8 @@ jobs:
     env:
       SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+      FROM_TAG: ${{needs.prepare.outputs.from_tag}}
+      TO_TAG: ${{needs.prepare.outputs.to_tag}}
 
     steps:
     - uses: actions/checkout@v3
@@ -350,7 +354,8 @@ jobs:
       if: ${{ env.SHOULD_DEPLOY == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         token: ${{ github.token }}
-        tag: ${{ env.PKG_VERSION }}
+        fromTag: ${{ env.FROM_TAG }}
+        toTag: ${{ env.TO_TAG }}
         writeToFile: false
 
     - name: Prepare Coverage Action
