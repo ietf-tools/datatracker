@@ -165,6 +165,21 @@
             <div id="chart-{{ forloop.counter }}">
             </div>
         {% endif %}
+        <h2 class="mt-5" id="reviews-{{ forloop.counter }}">
+            Directorate Reviews In The Last Year <small class="text-muted">({{ person.completed_reviews|length }})</small>
+        </h2>
+        {% if person.completed_reviews|length > 0 %}
+            <ul>
+                {% for doc in person.completed_reviews %}
+                    <li>
+                        <a href="{{ doc.get_absolute_url }}">{{ doc.title }}</a> on {{ doc.time}}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            {{ person.first_name }} has not done any review in the last year.
+        {% endif %}
+
     {% endfor %}
 {% endblock %}
 {% block js %}

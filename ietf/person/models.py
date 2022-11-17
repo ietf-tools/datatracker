@@ -25,6 +25,7 @@ from django.utils.text import slugify
 from simple_history.models import HistoricalRecords
 
 import debug                            # pyflakes:ignore
+import datetime
 
 from ietf.name.models import ExtResourceName
 from ietf.person.name import name_parts, initials, plain_name
@@ -202,7 +203,6 @@ class Person(models.Model):
 
     def expired_drafts(self):
         from ietf.doc.models import Document
-
         return (
             Document.objects.filter(
                 documentauthor__person=self,
@@ -213,6 +213,16 @@ class Person(models.Model):
             .distinct()
             .order_by("-time")
         )
+
+    def completed_reviews(self):
+        from ietf.doc.models import Document
+        # should also filter on time
+        # states__slug='completed' does not seem to work
+        completed_reviews = list(Document.objects.filter(documentauthor__person=self, type='review', states__slug='active'))
+        year_ago = timezone.now() - datetime.timedelta(weeks=52)
+        last_reviews = [ r for r in completed_reviews if r.time >= year_ago ]
+        last_reviews.sort(key=lambda d: d.time)
+        return last_reviews
 
     def save(self, *args, **kwargs):
         created = not self.pk
