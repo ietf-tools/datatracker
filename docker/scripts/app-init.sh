@@ -139,6 +139,9 @@ else
     fi
 fi
 
+# We may be starting with a post 9.0.0 deploy dump, so run the migrations again before switching engines to catch any pre-postgres migrations that may be merged in from main post 9.0.0 (and any that are specific to feat/postgres that need to run before we switch engines)
+/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local || true
+
 echo "DEBUGGING pt 2 - this should say mysqldb"
 grep "DATA" $WORKSPACEDIR/ietf/settings_local.py
 cat $WORKSPACEDIR/ietf/settings_local.py | sed 's/from ietf.settings_mysqldb import DATABASES/from ietf.settings_postgresqldb import DATABASES/' > /tmp/settings_local.py && mv /tmp/settings_local.py $WORKSPACEDIR/ietf/settings_local.py
