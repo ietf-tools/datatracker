@@ -439,7 +439,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
 
     email_review_request_change(
         request, review_req,
-        "For %s, %s %s review assigned: %s" % (reviewer.person.ascii, review_req.team.acronym.capitalize(), review_req.type.name, review_req.doc.name),
+        "For %s, %s %s review by %s assigned: %s" % (reviewer.person.ascii, review_req.team.acronym.capitalize(), review_req.type.name, review_req.deadline, review_req.doc.name),
         msg ,
         by=request.user.person, notify_secretary=True, notify_reviewer=True, notify_requested_by=True)
 
