@@ -40,7 +40,7 @@ jobs:
           - platform: "linux/amd64"
             docker: "x64"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -71,7 +71,7 @@ jobs:
     permissions:
       packages: write
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       
       - name: Get Current Date as Tag
         id: date
