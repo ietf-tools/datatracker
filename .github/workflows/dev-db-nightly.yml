@@ -75,7 +75,7 @@ jobs:
       
       - name: Get Current Date as Tag
         id: date
-        run: echo "::set-output name=date::$(date +'%Y%m%d')"
+        run: echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
         
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
