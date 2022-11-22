@@ -114,7 +114,9 @@ jobs:
   tests-playwright-legacy:
     name: Run Tests (Playwright Legacy)
     runs-on: ubuntu-latest
-    container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    container:
+      image: ghcr.io/ietf-tools/datatracker-app-base:latest
+      options: --user 1001
     strategy:
       fail-fast: false
       matrix:
