@@ -222,8 +222,8 @@ jobs:
         path: playwright/test-results/
         if-no-files-found: ignore
 
-  tests-cypress:
-    name: Run Tests (Cypress)
+  tests-playwright-legacy:
+    name: Run Tests (Playwright Legacy)
     if: ${{ github.event.inputs.skiptests == 'false' }}
     needs: [prepare]
     runs-on: ubuntu-latest
@@ -262,26 +262,26 @@ jobs:
         /usr/local/bin/wait-for localhost:8000 -- echo "Datatracker ready"
 
     - name: Run all tests
+      env:
+        HOME: ""
       run: |
+        echo "Installing dependencies..."
+        yarn
+        echo "Installing Playwright..."
+        cd playwright
+        mkdir test-results
+        npm ci
+        npx playwright install --with-deps ${{ matrix.project }}
         echo "Running tests..."
-        yarn cypress:legacy
+        npx playwright test --project=${{ matrix.project }} -c playwright-legacy.config.js
         
-    - name: Upload Video Recordings
+    - name: Upload Report
       uses: actions/upload-artifact@v3
       if: ${{ always() }}
       continue-on-error: true
       with:
-        name: videos-legacy
-        path: cypress/videos/
-        if-no-files-found: ignore
-        
-    - name: Upload Screenshots
-      uses: actions/upload-artifact@v3
-      if: ${{ always() }}
-      continue-on-error: true
-      with:
-        name: screenshots-modern
-        path: cypress/screenshots/
+        name: playwright-legacy-results-${{ matrix.project }}
+        path: playwright/test-results/
         if-no-files-found: ignore
         
   # -----------------------------------------------------------------
@@ -290,7 +290,7 @@ jobs:
   release:
     name: Make Release
     if: ${{ always() }}
-    needs: [tests-python, tests-playwright, tests-cypress, prepare]
+    needs: [tests-python, tests-playwright, tests-playwright-legacy, prepare]
     runs-on: ubuntu-latest
     env:
       SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}

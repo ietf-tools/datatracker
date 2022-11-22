@@ -9,8 +9,7 @@ module.exports = {
   },
   extends: [
     // 'plugin:vue/vue3-essential', // Priority A: Essential (Error Prevention)
-    'plugin:vue/vue3-strongly-recommended', // Priority B: Strongly Recommended (Improving Readability)
-    'plugin:cypress/recommended'
+    'plugin:vue/vue3-strongly-recommended' // Priority B: Strongly Recommended (Improving Readability)
   ],
   globals: {
     d3: true
