@@ -72,6 +72,7 @@
 		"vue.volar",
 		"mrmlnc.vscode-duplicate",
 		"ms-azuretools.vscode-docker",
+        "ms-playwright.playwright",
 		"ms-python.python",
 		"ms-python.vscode-pylance",
 		"mtxr.sqltools-driver-mysql",

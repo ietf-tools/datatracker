@@ -110,3 +110,62 @@ jobs:
         name: playwright-results-${{ matrix.project }}
         path: playwright/test-results/
         if-no-files-found: ignore
+
+  tests-playwright-legacy:
+    name: Run Tests (Playwright Legacy)
+    if: ${{ github.event.inputs.skiptests == 'false' }}
+    runs-on: ubuntu-latest
+    container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    
+    services:
+      db:
+        image: ghcr.io/ietf-tools/datatracker-db:latest
+        volumes:
+            - mariadb-data:/var/lib/mysql
+        env:
+            MYSQL_ROOT_PASSWORD: ietf
+            MYSQL_DATABASE: ietf_utf8
+            MYSQL_USER: django
+            MYSQL_PASSWORD: RkTkDPFnKpko
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Prepare for tests
+      run: |
+        chmod +x ./dev/tests/prepare.sh
+        sh ./dev/tests/prepare.sh
+        
+    - name: Ensure DB is ready
+      run: |
+        /usr/local/bin/wait-for db:3306 -- echo "DB ready"
+        
+    - name: Start Datatracker
+      run: |
+        echo "Running checks..."
+        ./ietf/manage.py check
+        echo "Starting datatracker..."
+        ./ietf/manage.py runserver 0.0.0.0:8000 --settings=settings_local &
+        echo "Waiting for datatracker to be ready..."
+        /usr/local/bin/wait-for localhost:8000 -- echo "Datatracker ready"
+
+    - name: Run all tests
+      run: |
+        echo "Installing dependencies..."
+        yarn
+        echo "Installing Playwright..."
+        cd playwright
+        mkdir test-results
+        npm ci
+        npx playwright install --with-deps ${{ matrix.project }}
+        echo "Running tests..."
+        npx playwright test --project=${{ matrix.project }} -c playwright-legacy.config.js
+        
+    - name: Upload Report
+      uses: actions/upload-artifact@v3
+      if: ${{ always() }}
+      continue-on-error: true
+      with:
+        name: playwright-legacy-results-${{ matrix.project }}
+        path: playwright/test-results/
+        if-no-files-found: ignore

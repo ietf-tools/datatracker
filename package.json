@@ -4,13 +4,7 @@
     "build": "vite build",
     "preview": "vite build --mode test && vite preview --mode test",
     "legacy:dev": "parcel",
-    "legacy:build": "parcel build",
-    "cypress": "cypress run --config-file cypress/configs/modern.config.js",
-    "cypress:open": "cypress open --config-file cypress/configs/modern.config.js",
-    "cypress:legacy": "cypress run --config-file cypress/configs/legacy.config.js",
-    "cypress:legacy:open": "cypress open --config-file cypress/configs/legacy.config.js",
-    "percy:run": "percy exec -- cypress run --config-file cypress/configs/modern.config.js",
-    "percy:legacy:run": "percy exec -- cypress run --config-file cypress/configs/legacy.config.js"
+    "legacy:build": "parcel build"
   },
   "dependencies": {
     "@fullcalendar/bootstrap5": "5.11.3",
@@ -57,15 +51,10 @@
   "devDependencies": {
     "@faker-js/faker": "7.6.0",
     "@parcel/transformer-sass": "2.7.0",
-    "@percy/cli": "1.13.0",
-    "@percy/cypress": "3.1.2",
     "@rollup/pluginutils": "5.0.2",
     "@vitejs/plugin-vue": "3.2.0",
-    "@vue/test-utils": "2.2.1",
     "browserlist": "latest",
     "c8": "7.12.0",
-    "cypress": "10.11.0",
-    "cypress-real-events": "1.7.2",
     "eslint": "8.27.0",
     "eslint-config-standard": "17.0.0",
     "eslint-plugin-cypress": "2.12.1",
