@@ -262,6 +262,8 @@ jobs:
         /usr/local/bin/wait-for localhost:8000 -- echo "Datatracker ready"
 
     - name: Run all tests
+      env:
+        HOME: ""
       run: |
         echo "Installing dependencies..."
         yarn
