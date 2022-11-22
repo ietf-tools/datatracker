@@ -68,7 +68,7 @@ test.describe('past - desktop', () => {
     const updatedDateTime = DateTime.fromISO(meetingData.meeting.updated)
       .setZone(meetingData.meeting.timezone)
       .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
+      .toFormat('DD \'at\' T ZZZZ')
     await expect(page.locator('.agenda h6').first(), 'should have meeting last updated datetime').toContainText(updatedDateTime)
 
     // NAV
