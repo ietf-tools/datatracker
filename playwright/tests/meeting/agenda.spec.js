@@ -136,7 +136,7 @@ test.describe('past - desktop', () => {
       const localDateTime = DateTime.fromISO(meetingData.meeting.updated)
         .setZone(BROWSER_TIMEZONE)
         .setLocale(BROWSER_LOCALE)
-        .toFormat('DD \'at\' tt ZZZZ')
+        .toFormat('DD \'at\' T ZZZZ')
       await expect(page.locator('.agenda h6').first()).toContainText(localDateTime)
       // Switch to UTC
       await tzUtcBtnLocator.click()
@@ -145,7 +145,7 @@ test.describe('past - desktop', () => {
       const utcDateTime = DateTime.fromISO(meetingData.meeting.updated)
         .setZone('utc')
         .setLocale(BROWSER_LOCALE)
-        .toFormat('DD \'at\' tt ZZZZ')
+        .toFormat('DD \'at\' T ZZZZ')
       await expect(page.locator('.agenda h6').first()).toContainText(utcDateTime)
       await expect(page.locator('.agenda .agenda-timezone-ddn')).toContainText('UTC')
       // Switch back to meeting timezone
@@ -694,7 +694,7 @@ test.describe('past - desktop', () => {
     const localDateTime = DateTime.fromISO(meetingData.meeting.updated)
       .setZone(BROWSER_TIMEZONE)
       .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
+      .toFormat('DD \'at\' T ZZZZ')
     await expect(page.locator('.agenda h6').first()).toContainText(localDateTime)
     // Switch to UTC
     await tzButtonsLocator.last().click()
@@ -703,7 +703,7 @@ test.describe('past - desktop', () => {
     const utcDateTime = DateTime.fromISO(meetingData.meeting.updated)
       .setZone('utc')
       .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
+      .toFormat('DD \'at\' T ZZZZ')
     await expect(page.locator('.agenda h6').first()).toContainText(utcDateTime)
     // Switch back to meeting timezone
     await tzButtonsLocator.first().click()
@@ -837,7 +837,7 @@ test.describe('past - desktop', () => {
     const localDateTime = DateTime.fromISO(meetingData.meeting.updated)
       .setZone(BROWSER_TIMEZONE)
       .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
+      .toFormat('DD \'at\' T ZZZZ')
     await expect(page.locator('.agenda h6').first()).toContainText(localDateTime)
     // Switch to UTC
     await tzUtcBtnLocator.click()
@@ -846,7 +846,7 @@ test.describe('past - desktop', () => {
     const utcDateTime = DateTime.fromISO(meetingData.meeting.updated)
       .setZone('utc')
       .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
+      .toFormat('DD \'at\' T ZZZZ')
     await expect(page.locator('.agenda h6').first()).toContainText(utcDateTime)
     // Switch back to meeting timezone
     await tzMeetingBtnLocator.click()
