@@ -6,7 +6,9 @@ on:
       - 'main'
       - 'feat/tzaware'
     paths:
+      - 'client/**'
       - 'ietf/**'
+      - 'playwright/**'
       - 'requirements.txt'
       - 'package.json'
 
