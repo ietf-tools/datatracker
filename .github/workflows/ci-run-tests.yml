@@ -154,6 +154,7 @@ jobs:
 
     - name: Run all tests
       env:
+        # Required to get firefox to run as root:
         HOME: ""
       run: |
         echo "Installing dependencies..."
