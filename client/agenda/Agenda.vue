@@ -317,7 +317,14 @@ const meetingDate = computed(() => {
   }
 })
 const meetingUpdated = computed(() => {
-  return agendaStore.meeting.updated ? DateTime.fromISO(agendaStore.meeting.updated).setZone(agendaStore.timezone).toFormat(`DD 'at' tt ZZZZ`) : false
+  if (!agendaStore.meeting.updated) { return false }
+  
+  const updatedDatetime = DateTime.fromISO(agendaStore.meeting.updated).setZone(agendaStore.timezone)
+  if (!updatedDatetime.isValid || updatedDatetime < DateTime.fromISO('1980-01-01')) {
+    return false
+  }
+  
+  return updatedDatetime.toFormat(`DD 'at' T ZZZZ`)
 })
 const colorLegendShown = computed(() => {
   return agendaStore.colorPickerVisible || (agendaStore.colorLegendShown && Object.keys(agendaStore.colorAssignments).length > 0)
