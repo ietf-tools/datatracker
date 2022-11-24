@@ -94,9 +94,8 @@ $tooltip-margin: inherit !default;
 }
 
 .rfcmarkup,
-.xml2rfc {
+.rfchtml {
     font-family: var(--bs-font-monospace);
-    overflow-x: hidden;
 
     caption {
         padding: 0;
@@ -158,7 +157,6 @@ $tooltip-margin: inherit !default;
         width: 72ch;
         margin: 0;
         padding: 0;
-        overflow-x: hidden;
     }
 
     .bcp14 {
