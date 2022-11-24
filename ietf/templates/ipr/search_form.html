@@ -7,11 +7,11 @@
 <div class="accordion" id="ipr-search-form">
   <div class="accordion-item">
     <h2 class="accordion-header" id="ipr-search-form-heading">
-      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="{{ request.GET|yesno:'false,true'}}" aria-controls="collapseOne">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#ipr-search-collapse" aria-expanded="{{ request.GET|yesno:'false,true'}}" aria-controls="ipr-search-collapse">
         IPR search criteria...
       </button>
     </h2>
-    <div id="collapseOne" class="accordion-collapse collapse{% if not request.GET %} show{% endif %}" aria-labelledby="ipr-search-form-heading" data-bs-parent="#ipr-search-form">
+    <div id="ipr-search-collapse" class="accordion-collapse collapse{% if not request.GET %} show{% endif %}" aria-labelledby="ipr-search-form-heading" data-bs-parent="#ipr-search-form">
       <div class="accordion-body">
 
         <form class="ipr-search">
