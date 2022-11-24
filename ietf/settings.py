@@ -783,7 +783,7 @@ RFC_EDITOR_GROUP_NOTIFICATION_EMAIL = "webmaster@rfc-editor.org"
 RFC_EDITOR_QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
 RFC_EDITOR_INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
 RFC_EDITOR_ERRATA_JSON_URL = "https://www.rfc-editor.org/errata.json"
-RFC_EDITOR_ERRATA_URL = "https://www.rfc-editor.org/errata_search.php?rfc={rfc_number}&amp;rec_status=0"
+RFC_EDITOR_ERRATA_URL = "https://www.rfc-editor.org/errata_search.php?rfc={rfc_number}"
 RFC_EDITOR_INLINE_ERRATA_URL = "https://www.rfc-editor.org/rfc/inline-errata/rfc{rfc_number}.html"
 RFC_EDITOR_INFO_BASE_URL = "https://www.rfc-editor.org/info/"
 
@@ -972,8 +972,6 @@ INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 FLOORPLAN_MEDIA_DIR = 'floor'
 FLOORPLAN_DIR = os.path.join(MEDIA_ROOT, FLOORPLAN_MEDIA_DIR)
 
-
-MEETING_USES_CODIMD_DATE = datetime.date(2020,7,6)
 MEETING_LEGACY_OFFICE_HOURS_END = 112  # last meeting to use legacy office hours representation
 
 # Maximum dimensions to accept at all
@@ -1040,8 +1038,6 @@ CHAT_URL_PATTERN = 'https://zulip.ietf.org/#narrow/stream/{chat_room_name}'
 
 # If we need to revert to xmpp
 # CHAT_ARCHIVE_URL_PATTERN = 'https://www.ietf.org/jabber/logs/{chat_room_name}?C=M;O=D'
-
-PRODUCTION_TIMEZONE = "America/Los_Angeles"
 
 PYFLAKES_DEFAULT_ARGS= ["ietf", ]
 VULTURE_DEFAULT_ARGS= ["ietf", ]
@@ -1189,8 +1185,6 @@ CELERY_TIMEZONE = 'UTC'
 CELERY_BROKER_URL = 'amqp://mq/'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
-assert not USE_TZ, 'Drop DJANGO_CELERY_BEAT_TZ_AWARE setting once USE_TZ is True!'
-DJANGO_CELERY_BEAT_TZ_AWARE = False
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests

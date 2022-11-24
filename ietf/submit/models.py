@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 
-import datetime
 import email
 import jsonfield
 
 from django.db import models
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -18,6 +18,7 @@ from ietf.name.models import DraftSubmissionStateName, FormalLanguageName
 from ietf.utils.accesstoken import generate_random_key, generate_access_token
 from ietf.utils.text import parse_unicode
 from ietf.utils.models import ForeignKey
+from ietf.utils.timezone import date_today
 
 
 def parse_email_line(line):
@@ -53,7 +54,7 @@ class Submission(models.Model):
     file_types = models.CharField(max_length=50, blank=True)
     file_size = models.IntegerField(null=True, blank=True)
     document_date = models.DateField(null=True, blank=True)
-    submission_date = models.DateField(default=datetime.date.today)
+    submission_date = models.DateField(default=date_today)
     xml_version = models.CharField(null=True, max_length=4, default=None)
 
     submitter = models.CharField(max_length=255, blank=True, help_text="Name and email of submitter, e.g. \"John Doe &lt;john@example.org&gt;\".")
@@ -120,7 +121,7 @@ class Submission(models.Model):
 
 
 class SubmissionCheck(models.Model):
-    time = models.DateTimeField(default=datetime.datetime.now)
+    time = models.DateTimeField(default=timezone.now)
     submission = ForeignKey(Submission, related_name='checks')
     checker = models.CharField(max_length=256, blank=True)
     passed = models.BooleanField(null=True, default=False)
@@ -139,7 +140,7 @@ class SubmissionCheck(models.Model):
 
 class SubmissionEvent(models.Model):
     submission = ForeignKey(Submission)
-    time = models.DateTimeField(default=datetime.datetime.now)
+    time = models.DateTimeField(default=timezone.now)
     by = ForeignKey(Person, null=True, blank=True)
     desc = models.TextField()
 
@@ -157,7 +158,7 @@ class Preapproval(models.Model):
     """Pre-approved draft submission name."""
     name = models.CharField(max_length=255, db_index=True)
     by = ForeignKey(Person)
-    time = models.DateTimeField(default=datetime.datetime.now)
+    time = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return self.name

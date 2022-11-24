@@ -298,8 +298,18 @@ const titleExtra = computed(() => {
   return title
 })
 const meetingDate = computed(() => {
-  const start = DateTime.fromISO(agendaStore.meeting.startDate, { zone: agendaStore.meeting.timezone }).setZone(agendaStore.timezone)
-  const end = DateTime.fromISO(agendaStore.meeting.endDate, { zone: agendaStore.meeting.timezone }).setZone(agendaStore.timezone)
+  // Adjust to first meeting start time (to ensure proper start date when switching timezones)
+  const firstEventStartTime = { hour: 0, minute: 0 }
+  if (agendaStore.schedule.length > 0) {
+    const evStartObj = DateTime.fromISO(agendaStore.schedule[0].startDateTime, { zone: agendaStore.meeting.timezone }).toObject()
+    firstEventStartTime.hour = evStartObj.hour
+    firstEventStartTime.minute = evStartObj.minute
+  }
+
+  // Adjust start and end dates for current timezone
+  const start = DateTime.fromISO(agendaStore.meeting.startDate, { zone: agendaStore.meeting.timezone }).set(firstEventStartTime).setZone(agendaStore.timezone)
+  const end = DateTime.fromISO(agendaStore.meeting.endDate, { zone: agendaStore.meeting.timezone }).set({ hour: 23, minute: 59}).setZone(agendaStore.timezone)
+
   if (start.month === end.month) {
     return `${start.toFormat('MMMM d')} - ${end.toFormat('d, y')}`
   } else {
@@ -307,7 +317,14 @@ const meetingDate = computed(() => {
   }
 })
 const meetingUpdated = computed(() => {
-  return agendaStore.meeting.updated ? DateTime.fromISO(agendaStore.meeting.updated).setZone(agendaStore.timezone).toFormat(`DD 'at' tt ZZZZ`) : false
+  if (!agendaStore.meeting.updated) { return false }
+  
+  const updatedDatetime = DateTime.fromISO(agendaStore.meeting.updated).setZone(agendaStore.timezone)
+  if (!updatedDatetime.isValid || updatedDatetime < DateTime.fromISO('1980-01-01')) {
+    return false
+  }
+  
+  return updatedDatetime.toFormat(`DD 'at' T ZZZZ`)
 })
 const colorLegendShown = computed(() => {
   return agendaStore.colorPickerVisible || (agendaStore.colorLegendShown && Object.keys(agendaStore.colorAssignments).length > 0)

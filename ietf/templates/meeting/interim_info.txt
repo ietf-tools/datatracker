@@ -1,4 +1,4 @@
-{% load ietf_filters %}
+{% load ietf_filters tz %}{% timezone meeting.time_zone %}
 ---------------------------------------------------------
 {{ group.type.verbose_name }} Name: {{ group.name|safe }}
 {% if group.type.slug == "wg"  or group.type.slug == "directorate" or group.type.slug == "team" %}Area Name: {{ group.parent }}
@@ -17,3 +17,4 @@ Remote Participation Information: {{ session.remote_instructions }}
 Agenda Note: {{ session.agenda_note }}
 {% endfor %}
 ---------------------------------------------------------
+{% endtimezone %}

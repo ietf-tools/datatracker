@@ -145,6 +145,10 @@ def assert_ical_response_is_valid(test_inst, response, expected_event_summaries=
         test_inst.assertContains(response, 'END:VEVENT', count=expected_event_count)
         test_inst.assertContains(response, 'UID', count=expected_event_count)
 
+    # make sure no doubled colons after timestamp properties
+    test_inst.assertNotContains(response, 'DTSTART::')
+    test_inst.assertNotContains(response, 'DTEND::')
+    test_inst.assertNotContains(response, 'DTSTAMP::')
 
 
 class ReverseLazyTest(django.test.TestCase):

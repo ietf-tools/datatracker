@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
-import datetime
 import email.utils
 
 from django.db import models
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -17,7 +17,7 @@ from ietf.utils.models import ForeignKey
 from ietf.utils.mail import get_email_addresses_from_text
 
 class Message(models.Model):
-    time = models.DateTimeField(default=datetime.datetime.now)
+    time = models.DateTimeField(default=timezone.now)
     by = ForeignKey(Person)
 
     subject = models.CharField(max_length=255)
@@ -62,7 +62,7 @@ class MessageAttachment(models.Model):
 
 
 class SendQueue(models.Model):
-    time = models.DateTimeField(default=datetime.datetime.now)
+    time = models.DateTimeField(default=timezone.now)
     by = ForeignKey(Person)
     
     message = ForeignKey(Message)

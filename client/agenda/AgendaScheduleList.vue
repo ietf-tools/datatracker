@@ -112,7 +112,7 @@
                     :options='item.links'
                     key-field='id'
                     :render-icon='renderLinkIcon'
-                    @select='goToSessionLink'
+                    :render-label='renderLinkLabel'
                     )
                     n-button(size='tiny')
                       i.bi.bi-three-dots
@@ -202,6 +202,7 @@ import AgendaDetailsModal from './AgendaDetailsModal.vue'
 
 import { useAgendaStore } from './store'
 import { useSiteStore } from '../shared/store'
+import { getUrl } from '../shared/urls'
 
 // MESSAGE PROVIDER
 
@@ -275,23 +276,32 @@ const meetingEvents = computed(() => {
           id: `lnk-${item.id}-tar`,
           label: 'Download meeting materials as .tar archive',
           icon: 'file-zip',
-          href: `/meeting/${agendaStore.meeting.number}/agenda/${item.acronym}-drafts.tgz`,
+          href: getUrl('meetingMaterialsTar', {
+            meetingNumber: agendaStore.meeting.number,
+            eventAcronym: item.acronym
+          }),
           color: 'brown'
         })
         links.push({
           id: `lnk-${item.id}-pdf`,
           label: 'Download meeting materials as PDF file',
           icon: 'file-pdf',
-          href: `/meeting/${agendaStore.meeting.number}/agenda/${item.acronym}-drafts.pdf`,
+          href: getUrl('meetingMaterialsPdf', {
+            meetingNumber: agendaStore.meeting.number,
+            eventAcronym: item.acronym
+          }),
           color: 'red'
         })
       }
-      if (agendaStore.useHedgeDoc) {
+      if (agendaStore.useNotes) {
         links.push({
           id: `lnk-${item.id}-note`,
           label: 'Notepad for note-takers',
           icon: 'journal-text',
-          href: `https://notes.ietf.org/notes-ietf-${agendaStore.meeting.number}-${item.type === 'plenary' ? 'plenary' : item.acronym}`,
+          href: getUrl('meetingNotes', {
+            meetingNumber: agendaStore.meeting.number,
+            eventAcronym: item.type === 'plenary' ? 'plenary' : item.acronym
+          }),
           color: 'blue'
         })
       }
@@ -404,7 +414,10 @@ const meetingEvents = computed(() => {
               id: `lnk-${item.id}-rec`,
               label: 'Session recording',
               icon: 'film',
-              href: `https://www.meetecho.com/ietf${agendaStore.meeting.number}/recordings#${item.acronym.toUpperCase()}`,
+              href: getUrl('meetingMeetechoRecordings', {
+                meetingNumber: agendaStore.meeting.number,
+                eventAcronym: item.acronym.toUpperCase()
+              }),
               color: 'purple'
             })
           }
@@ -542,6 +555,10 @@ function getEventColor (itemKey) {
 
 function renderLinkIcon (opt) {
   return h('i', { class: `bi bi-${opt.icon} text-${opt.color}` })
+}
+
+function renderLinkLabel (opt) {
+  return h('a', { href: opt.href, target: '_blank' }, opt.label)
 }
 
 function recalculateRedLine () {

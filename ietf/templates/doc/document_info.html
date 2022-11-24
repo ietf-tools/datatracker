@@ -20,7 +20,7 @@
                 {% endif %}
                 </span>
                 {% if published %}
-                    {% if document_html %}<br>{% else %}({% endif %}{{ published.time|date:"F Y" }}{% if not document_html %}){% endif %}
+                    {% if document_html %}<br>{% else %}({% endif %}{{ doc.pub_date|date:"F Y" }}{% if not document_html %}){% endif %}
                 {% else %}
                     <span class="text-muted">(Publication date unknown)</span>
                 {% endif %}
@@ -119,7 +119,7 @@
         <td class="edit"></td>
         <td>
             {{ doc.time|date:"Y-m-d" }}
-            {% if latest_revision and latest_revision.time.date != doc.time.date %}
+            {% if latest_revision and latest_revision.time|date:"Y-m-d" != doc.time|date:"Y-m-d" %}
                 <span class="text-muted">(Latest revision {{ latest_revision.time|date:"Y-m-d" }})</span>
             {% endif %}
         </td>

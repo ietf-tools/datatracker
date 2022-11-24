@@ -6,7 +6,6 @@
 {% load textfilters %}
 {% load htmlfilters agenda_custom_tags %}
 {% load django_vite %}
-
 {% block title %}
     IETF {{ meetingData.meetingNumber }} Meeting Agenda
 {% endblock %}
@@ -19,6 +18,13 @@
 {% block morecss %}
 body {
     font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Avoid hiding the page footer when on mobile with the footer toolbar overlay */
+@media screen and (max-width: 992px) {
+    body {
+        padding-bottom: 50px;
+    }
 }
 
 @keyframes initspinner {
@@ -65,9 +71,22 @@ body {
     color: #999;
     z-index: 2000000000;
 }
+
+#app-loading-footer {
+    position: absolute;
+    text-align: center;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000000000;
+}
 {% endblock %}
 {% block content %}
     {% origin %}
     <div id="app"></div>
-    <div id="app-loading"></div>
+    <div id="app-loading">
+        <div id="app-loading-footer">
+            <a class="btn btn-light text-muted mb-3" href="/meeting/{{ meetingData.meetingNumber }}/agenda.txt"><small>Switch to text-only version &#11166;</small></a>
+        </div>
+    </div>
 {% endblock %}

@@ -50,7 +50,7 @@ export const useAgendaStore = defineStore('agenda', {
     selectedCatSubs: [],
     settingsShown: false,
     timezone: DateTime.local().zoneName,
-    useHedgeDoc: false,
+    useNotes: false,
     visibleDays: []
   }),
   getters: {
@@ -160,7 +160,7 @@ export const useAgendaStore = defineStore('agenda', {
         this.isCurrentMeeting = agendaData.isCurrentMeeting
         this.meeting = agendaData.meeting
         this.schedule = agendaData.schedule
-        this.useHedgeDoc = agendaData.useHedgeDoc
+        this.useNotes = agendaData.useNotes
 
         // -> Compute current info note hash
         this.infoNoteHash = murmur(agendaData.meeting.infoNote, 0).toString()
@@ -183,7 +183,9 @@ export const useAgendaStore = defineStore('agenda', {
         console.error(err)
         const siteStore = useSiteStore()
         siteStore.$patch({
-          criticalError: `Failed to load this meeting: ${err.message}`
+          criticalError: `Failed to load this meeting: ${err.message}`,
+          criticalErrorLink: meetingNumber ? `/meeting/${meetingNumber}/agenda.txt` : `/meeting/agenda.txt`,
+          criticalErrorLinkText: 'Switch to text-only agenda version'
         })
       }
 

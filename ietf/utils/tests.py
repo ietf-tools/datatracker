@@ -2,12 +2,15 @@
 # -*- coding: utf-8 -*-
 
 
+import datetime
 import io
 import json
 import os.path
+import pytz
 import shutil
 import types
 
+from mock import patch
 from pyquery import PyQuery
 from typing import Dict, List       # pyflakes:ignore
 
@@ -39,6 +42,7 @@ from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mi
 from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.text import parse_unicode
+from ietf.utils.timezone import timezone_not_near_midnight
 from ietf.utils.xmldraft import XMLDraft
 
 class SendingMail(TestCase):
@@ -476,3 +480,40 @@ class TestAndroidSiteManifest(TestCase):
         manifest = json.loads(unicontent(r))
         self.assertTrue('name' in manifest)
         self.assertTrue('theme_color' in manifest)
+
+
+class TimezoneTests(TestCase):
+    """Tests of the timezone utilities"""
+    @patch(
+        'ietf.utils.timezone.timezone.now',
+        return_value=pytz.timezone('America/Chicago').localize(datetime.datetime(2022, 7, 1, 23, 15, 0)),  # 23:15:00
+    )
+    def test_timezone_not_near_midnight(self, mock):
+        # give it several choices that should be rejected and one that should be accepted
+        with patch(
+                'ietf.utils.timezone.available_timezones',
+                return_value=set([
+                    'America/Chicago',  # time is 23:15, should be rejected
+                    'America/Lima',  # time is 23:15, should be rejected
+                    'America/New_York',  # time is 00:15, should be rejected
+                    'Europe/Riga',  # time is 07:15, acceptable
+                ]),
+        ):
+            # check a few times (will pass by chance < 0.1% of the time)
+            self.assertEqual(timezone_not_near_midnight(), 'Europe/Riga')
+            self.assertEqual(timezone_not_near_midnight(), 'Europe/Riga')
+            self.assertEqual(timezone_not_near_midnight(), 'Europe/Riga')
+            self.assertEqual(timezone_not_near_midnight(), 'Europe/Riga')
+            self.assertEqual(timezone_not_near_midnight(), 'Europe/Riga')
+
+        # now give it no valid choice
+        with patch(
+                'ietf.utils.timezone.available_timezones',
+                return_value=set([
+                    'America/Chicago',  # time is 23:15, should be rejected
+                    'America/Lima',  # time is 23:15, should be rejected
+                    'America/New_York',  # time is 00:15, should be rejected
+                ]),
+        ):
+            with self.assertRaises(RuntimeError):
+                timezone_not_near_midnight()
