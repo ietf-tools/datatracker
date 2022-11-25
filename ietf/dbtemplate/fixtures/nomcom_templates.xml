@@ -166,7 +166,7 @@ Thank you,</field>
 Thank you for accepting your nomination for the position of $position.
 
 Please remember to complete and return the questionnaire for this position at your earliest opportunity.
-The questionaire is repeated below for your convenience.
+The questionnaire is repeated below for your convenience.
 
 --------</field>
         <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>

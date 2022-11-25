@@ -80,7 +80,7 @@ class PersonalInformationExportView(DetailView, JsonExportMixin):
         person = get_object_or_404(self.model, user=request.user)
         expand = ['searchrule', 'documentauthor', 'ad_document_set', 'ad_dochistory_set', 'docevent',
             'ballotpositiondocevent', 'deletedevent', 'email_set', 'groupevent', 'role', 'rolehistory', 'iprdisclosurebase',
-            'iprevent', 'liaisonstatementevent', 'whitelisted', 'schedule', 'constraint', 'schedulingevent', 'message',
+            'iprevent', 'liaisonstatementevent', 'allowlisted', 'schedule', 'constraint', 'schedulingevent', 'message',
             'sendqueue', 'nominee', 'topicfeedbacklastseen', 'alias', 'email', 'apikeys', 'personevent',
             'reviewersettings', 'reviewsecretarysettings', 'unavailableperiod', 'reviewwish',
             'nextreviewerinteam', 'reviewrequest', 'meetingregistration', 'submissionevent', 'preapproval',

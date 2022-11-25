@@ -6,18 +6,18 @@
 {% block content %}
     {% origin %}
     {% if success %}
-        <h1>Whitelist entry creation successful</h1>
+        <h1>Allowlist entry creation successful</h1>
         <p>
             Please ask the requestor to try the
             <a href="{% url 'ietf.ietfauth.views.create_account' %}">account creation form</a>
-            again, with the whitelisted email address.
+            again, with the allowlisted email address.
         </p>
     {% else %}
-        <h1>Add a whitelist entry for account creation.</h1>
+        <h1>Add an allowlist entry for account creation.</h1>
         <p>
             When an email request comes in for assistance with account creation
             because the automated account creation has failed, you can add the
-            address to an account creation whitelist here.
+            address to an account creation allowlist here.
         </p>
         <p>
             Before you do so, please complete the following 3 verification steps:
@@ -35,7 +35,7 @@
             <li>
                 Google for the person's name within the ietf.org site: "Jane Doe site:ietf.org".  If
                 found, and the email address matches an address used in drafts or discussions,
-                things are fine, and it's OK to add the address to the whitelist using this form,
+                things are fine, and it's OK to add the address to the allowlist using this form,
                 and ask the person to please try the
                 <a href="{% url 'ietf.ietfauth.views.create_account' %}">account creation form</a>
                 again.
@@ -62,7 +62,7 @@
                     question as given above, with lowercase "wgs".
                 </p>
                 <p>
-                    If the answer to this question shows clue, then add the address to the whitelist
+                    If the answer to this question shows clue, then add the address to the allowlist
                     using this form, and ask the person to please try the
                     <a href="{% url 'ietf.ietfauth.views.create_account' %}">account creation form</a>
                     again.
@@ -72,7 +72,7 @@
         <form method="post">
             {% csrf_token %}
             {% bootstrap_form form %}
-            <button class="btn btn-primary" type="submit">Add address to account creation whitelist</button>
+            <button class="btn btn-primary" type="submit">Add address to account creation allowlist</button>
         </form>
     {% endif %}
 {% endblock %}
