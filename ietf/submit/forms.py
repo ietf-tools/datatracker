@@ -799,8 +799,8 @@ class SubmissionEmailForm(forms.Form):
     Used to add a message to a submission or to create a new submission.
     This message is NOT a reply to a previous message but has arrived out of band
     
-    if submission_pk is None we are startign a new submission and name
-    must be unique. Otehrwise the name must match the submission.name.
+    if submission_pk is None we are starting a new submission and name
+    must be unique. Otherwise the name must match the submission.name.
     '''
     name = forms.CharField(required=True, max_length=255, label="Draft name")
     submission_pk = forms.IntegerField(required=False, widget=forms.HiddenInput())

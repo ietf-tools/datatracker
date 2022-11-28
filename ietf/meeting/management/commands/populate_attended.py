@@ -34,7 +34,7 @@ class Command(BaseCommand):
                 # In the expected dumps from MeetEcho, if there was only one session for group foo, it would just be named 'foo'.
                 # If there were _three_, we would see 'foo' for the first, 'foo_2' for the second, and 'foo_3' for the third.
                 # order below is the index into what is returned from sort_sessions -- 0 is the first session for a group at that meeting.
-                # There is brutal fixup below for older meetings where we had special arrangements where meetecho reported the non-existant
+                # There is brutal fixup below for older meetings where we had special arrangements where meetecho reported the non-existent
                 # group of 'plenary', mapping it into the appropriate 'ietf' group session.
                 # A bug in the export scripts at MeetEcho trimmed the '-t' from 'model-t'.
                 order = 0
