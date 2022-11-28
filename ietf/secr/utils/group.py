@@ -42,7 +42,7 @@ def get_my_groups(user,conclude=False):
     Returns a list of groups the user has access to.  Rules are as follows
     secretariat - has access to all groups
     area director - has access to all groups in their area
-    wg chair or secretary - has acceses to their own group
+    wg chair or secretary - has access to their own group
     chair of irtf has access to all irtf groups
 
     If user=None than all groups are returned.
