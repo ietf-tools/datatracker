@@ -853,7 +853,7 @@ class SchedTimeSessAssignment(models.Model):
                 if self.timeslot.type.slug == "plenary":
                     components.append("1plenary")
                 else:
-                    p = getattr(g, "historic_parent", None) or g.parent
+                    p = self.session.group_parent_at_the_time() or g.parent
                     if p and p.type_id in ("area", "irtf", 'ietf'):
                         components.append(p.acronym)
 
