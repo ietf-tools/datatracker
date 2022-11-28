@@ -185,7 +185,7 @@ def fromstring(s):
 
 def fromurl(url):
   """ Parse patch from an URL, return False
-      if an error occured. Note that this also
+      if an error occurred. Note that this also
       can throw urlopen() exceptions.
   """
   ps = PatchSet( urllib_request.urlopen(url) )
@@ -749,7 +749,7 @@ class PatchSet(object):
   def diffstat(self):
     """ calculate diffstat and return as a string
         Notes:
-          - original diffstat ouputs target filename
+          - original diffstat outputs target filename
           - single + or - shouldn't escape histogram
     """
     names = []
@@ -1181,7 +1181,7 @@ def main():
     patch.apply(options.strip, root=options.directory.encode()) or sys.exit(-1)
 
   # todo: document and test line ends handling logic - patch.py detects proper line-endings
-  #       for inserted hunks and issues a warning if patched file has incosistent line ends
+  #       for inserted hunks and issues a warning if patched file has inconsistent line ends
 
 
 if __name__ == "__main__":

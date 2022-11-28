@@ -888,7 +888,7 @@ def make_materials_directories(meeting):
     This function takes a meeting object and creates the appropriate materials directories
     '''
     path = meeting.get_materials_path()
-    # Default umask is 0x022, meaning strip write premission for group and others.
+    # Default umask is 0x022, meaning strip write permission for group and others.
     # Change this temporarily to 0x0, to keep write permission for group and others.
     # (WHY??) (Note: this code is old -- was present already when the secretariat code
     # was merged with the regular datatracker code; then in secr/proceedings/views.py

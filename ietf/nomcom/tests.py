@@ -1612,7 +1612,7 @@ Junk body for testing
         fb = Feedback.objects.get(id=fb.id)
         self.assertEqual(fb.type_id,'junk')
 
-        # comments, nominations, and questionnare responses are catagorized via a second 
+        # comments, nominations, and questionnaire responses are categorized via a second
         # formset presented by the view (signaled by having 'end' appear in the POST)
         fb = FeedbackFactory(nomcom=self.nc,type_id=None)
         np = NomineePosition.objects.filter(position__nomcom = self.nc,state='accepted').first()
