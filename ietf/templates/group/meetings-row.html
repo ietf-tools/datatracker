@@ -70,9 +70,7 @@
                     {% if s.meeting.type.slug == 'interim' %}
                         {% include "meeting/interim_session_buttons.html" with show_agenda=False show_empty=False session=s meeting=s.meeting use_notes=s.meeting.use_notes %}
                     {% else %}
-                        {% with schedule=s.meeting.schedule %}
-                            {% include "meeting/session_buttons_include.html" with show_agenda=False item=s.official_timeslotassignment session=s meeting=s.meeting use_notes=s.meeting.use_notes %}
-                        {% endwith %}
+                        {% include "meeting/session_buttons_include.html" with show_agenda=False item=s.official_timeslotassignment session=s meeting=s.meeting use_notes=s.meeting.use_notes %}
                     {% endif %}
                 </div>
             {% endif %}
