@@ -72,9 +72,10 @@ def webcal_url(context, viewname, *args, **kwargs):
 @register.simple_tag
 def assignment_display_name(assignment):
     """Get name for an assignment"""
-    if assignment.session.type.slug == 'regular' and assignment.session.group_at_the_time():
+    if assignment.session.type.slug == 'regular':
         return assignment.session.group_at_the_time().name
-    return assignment.session.name or assignment.timeslot.name
+    else:
+        return assignment.session.name or assignment.timeslot.name
 
 
 class AnchorNode(template.Node):

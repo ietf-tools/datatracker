@@ -186,7 +186,7 @@ class AgendaKeywordTool:
     @staticmethod
     def _get_group(s):
         """Get group of a session, handling historic groups"""
-        return s.group_at_the_time() or s.group
+        return s.group_at_the_time()
 
     def _get_group_parent(self, s):
         """Get parent of a group or parent of a session's group, handling historic groups"""
