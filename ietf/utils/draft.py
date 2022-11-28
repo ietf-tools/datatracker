@@ -586,7 +586,7 @@ class PlaintextDraft(Draft):
 
     def extract_authors(self):
         """Extract author information from draft text.
-
+           FIXME: this fails with factory generated names such as "Joris van Kuijc van Malsen" that have multiple prefix+last parts
         """
         aux = {
             "honor" : r"(?:[A-Z]\.|Dr\.?|Dr\.-Ing\.|Prof(?:\.?|essor)|Sir|Lady|Dame|Sri)",
@@ -658,7 +658,12 @@ class PlaintextDraft(Draft):
 
             # permit insertion of middle names between first and last, and
             # add possible honorific and suffix information
-            authpat = r"(?:^| and )(?:%(hon)s ?)?(['`]*%(first)s\S*( +[^ ]+)* +%(last)s)( *\(.*|,( [A-Z][-A-Za-z0-9]*)?| %(suffix)s| [A-Z][a-z]+)?" % {"hon":hon, "first":first, "last":last, "suffix":suffix,}
+            if last:
+                authpat = r"(?:^| and )(?:%(hon)s ?)?(['`]*%(first)s\S*( +[^ ]+)* +%(last)s)( *\(.*|,( [A-Z][-A-Za-z0-9]*)?| %(suffix)s| [A-Z][a-z]+)?" % {"hon":hon, "first":first, "last":last, "suffix":suffix,}
+            else:
+                # handle single-word names
+                authpat = r"(?:^| and )(?:%(hon)s ?)?(['`]*%(first)s\S*( +[^ ]+)*)( *\(.*|,( [A-Z][-A-Za-z0-9]*)?| %(suffix)s| [A-Z][a-z]+)?" % {"hon":hon, "first":first, "suffix":suffix,}
+
             return authpat
 
         authors = []
@@ -820,8 +825,9 @@ class PlaintextDraft(Draft):
                     first, last = author.rsplit(".", 1)
                     first += "."
                 else:
-                    author = "[A-Z].+ " + author
-                    first, last = author.rsplit(" ", 1)
+                    # handle single-word names
+                    first = author
+                    last = ""
             else:
                 if "." in author:
                     first, last = author.rsplit(".", 1)
@@ -899,10 +905,14 @@ class PlaintextDraft(Draft):
                                                 #else:
                                                 #    fullname = author_match
                                                 fullname = re.sub(" +", " ", fullname)
-                                                if left == firstname:
-                                                    given_names, surname = fullname.rsplit(None, 1)
+                                                if re.search(r"\s", fullname):
+                                                    if left == firstname:
+                                                        given_names, surname = fullname.rsplit(None, 1)
+                                                    else:
+                                                        surname, given_names = fullname.split(None, 1)
                                                 else:
-                                                    surname, given_names = fullname.split(None, 1)
+                                                    # handle single-word names
+                                                    given_names, surname = (fullname, "")
                                                 if " " in given_names:
                                                     first, middle = given_names.split(None, 1)
                                                 else:
