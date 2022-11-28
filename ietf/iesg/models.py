@@ -36,7 +36,11 @@
 
 import datetime
 
+from django.conf import settings
 from django.db import models
+
+from ietf.utils.timezone import date_today
+
 
 class TelechatAgendaItem(models.Model):
     TYPE_CHOICES = (
@@ -72,11 +76,11 @@ def next_telechat_date():
     dates = TelechatDate.objects.order_by("-date")
     if dates:
         return dates[0].date + datetime.timedelta(days=14)
-    return datetime.date.today()
+    return date_today(settings.TIME_ZONE)
 
 class TelechatDateManager(models.Manager):
     def active(self):
-        return self.get_queryset().filter(date__gte=datetime.date.today())
+        return self.get_queryset().filter(date__gte=date_today(settings.TIME_ZONE))
 
 class TelechatDate(models.Model):
     objects = TelechatDateManager()

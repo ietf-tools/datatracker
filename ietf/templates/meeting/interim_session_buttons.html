@@ -1,7 +1,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load static %}
-{% load textfilters %}
+{% load textfilters tz %}
 {% origin %}
 {% with item=session.official_timeslotassignment acronym=session.historic_group.acronym %}
     <div role="group" class="btn-group btn-group-sm">
@@ -31,8 +31,8 @@
                 <i class="bi bi-file-pdf"></i>
             </a>
         {% endif %}
-        {# etherpad #}
-        {% if use_codimd %}
+        {# notes #}
+        {% if use_notes %}
             <a class="btn btn-outline-primary"
                href="{{ session.notes_url }}"
                aria-label="Notepad for note-takers"
@@ -90,8 +90,8 @@
             {# iCalendar item #}
             <a class="btn btn-outline-primary"
                href="{% url 'ietf.meeting.views.agenda_ical' num=meeting.number session_id=session.id %}"
-               aria-label="icalendar entry for {{ acronym }} session on {{ item.timeslot.utc_start_time|date:'Y-m-d H:i' }} UTC"
-               title="icalendar entry for {{ acronym }} session on {{ item.timeslot.utc_start_time|date:'Y-m-d H:i' }} UTC">
+               aria-label="icalendar entry for {{ acronym }} session on {{ item.timeslot.time|utc|date:'Y-m-d H:i' }} UTC"
+               title="icalendar entry for {{ acronym }} session on {{ item.timeslot.time|utc|date:'Y-m-d H:i' }} UTC">
                 <i class="bi bi-calendar"></i>
             </a>
         {% else %}

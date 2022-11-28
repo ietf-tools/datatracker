@@ -35,6 +35,7 @@ from ietf.name.models import DocRelationshipName, StdLevelName
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
+from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 
 
 class ChangeStateForm(forms.Form):
@@ -638,7 +639,7 @@ def generate_last_call_text(request, doc):
     # and when groups are set, vary the expiration time accordingly
 
     requester = "an individual participant"
-    expiration_date = datetime.date.today() + datetime.timedelta(days=28)
+    expiration_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=28)
     cc = []
     
     new_text = render_to_string("doc/status_change/last_call_announcement.txt",

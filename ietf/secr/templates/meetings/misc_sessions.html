@@ -1,7 +1,7 @@
 {% extends "meetings/base_rooms_times.html" %}
-{% load agenda_custom_tags %}
+{% load agenda_custom_tags tz %}
 {% block subsection %}
-
+{% timezone meeting.time_zone %}
     <div class="module">
         <h2>TimeSlots</h2>
 
@@ -73,7 +73,7 @@
 
     </div> <!-- module -->
 
-
+{% endtimezone %}
 {% endblock %}
 
 {% block extrahead %}

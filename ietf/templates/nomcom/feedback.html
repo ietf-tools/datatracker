@@ -63,7 +63,7 @@
                 {% if form %}
                     {% if form.position %}
                         {% if nomcom.show_nominee_pictures and form.nominee.email.person.photo_thumb %}
-                            <div class="float-end mt-4">{% include "person/photo.html" with person=form.nominee.person  %}</div>
+                            <div class="float-end ms-4 my-4">{% include "person/photo.html" with person=form.nominee.person  %}</div>
                         {% endif %}
                         <h2 class="navskip mt-4">
                             Provide feedback
@@ -90,7 +90,7 @@
                         <a href="{% url 'ietf.nomcom.views.year_index' year=year %}">NomCom {{ year }}</a>.
                         You may have the feedback mailed back to you by selecting the option below.
                     </p>
-                    <form id="feedbackform" method="post">
+                    <form class="float-start" id="feedbackform" method="post">
                         {% csrf_token %}
                         {% bootstrap_form form %}
                         <button class="btn btn-primary" type="submit" name="save">Save</button>

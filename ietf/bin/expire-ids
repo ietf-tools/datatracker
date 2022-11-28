@@ -27,6 +27,7 @@ django.setup()
 from ietf.utils.log import logger
 
 try:
+    from ietf.utils.timezone import datetime_today
     from ietf.doc.expire import ( in_draft_expire_freeze, get_expired_drafts, expirable_drafts,
         send_expire_notice_for_draft, expire_draft, clean_up_draft_files )
     from ietf.doc.models import Document
@@ -42,7 +43,7 @@ try:
             # the purpose of double-checking that a document is still expirable when it is actually
             # being marked as expired.
             if (expirable_drafts(Document.objects.filter(pk=doc.pk)).exists()
-                    and doc.expires < datetime.datetime.today() + datetime.timedelta(1)):
+                    and doc.expires < datetime_today() + datetime.timedelta(1)):
                 send_expire_notice_for_draft(doc)
                 expire_draft(doc)
                 syslog.syslog("  Expired draft %s-%s" % (doc.name, doc.rev))

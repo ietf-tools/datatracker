@@ -628,7 +628,7 @@ module.exports = {
       },
       categories,
       isCurrentMeeting: dateMode !== 'past',
-      useHedgeDoc: true,
+      useNotes: true,
       schedule,
       floors
     }

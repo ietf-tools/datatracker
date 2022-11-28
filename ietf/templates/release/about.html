@@ -23,6 +23,12 @@
         moments.  For the nitty-gritty week-to-week code changes, please check the release
         notes or the commit log.
     </p>
+    <h2>Version 9.0.0: Timezone Aware Data</h2>
+    <p>All timestamps in the database are now stored as UTC. Values reported through the API for several 
+        models changed, particularly Meeting based models such as TimeSlot where times had previously been
+        stored in the timezone of the meeting location. The 9.0.0 release leaves _presentation_ of the times
+        in Pacific (daylight/standard).
+    </p>
     <h2>Version 8.0.0: Facelift using Bootstrap 5</h2>
     <h2>Version 7.0.0: Django 2</h2>
     <h2>Version 6.0.0: Facelift using Bootstrap 3</h2>

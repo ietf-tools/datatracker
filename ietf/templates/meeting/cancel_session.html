@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2021-2022, All Rights Reserved #}
+{% load origin %}
+{% load django_bootstrap5 %}
+{% block pagehead %}{{ form.media.css }}{% endblock %}
+{% block title %} Cancel session "{{ session }}"{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        Cancel session
+        <br>
+        <small class="text-muted">{{ session }}</small>
+    </h1>
+    <form class="session-details-form my-3" method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a class="btn btn-secondary float-end"
+           href="{{ editor_url }}">
+            Back
+        </a>
+    </form>
+{% endblock %}
+{% block js %}{{ form.media.js }}{% endblock %}

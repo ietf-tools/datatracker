@@ -3,6 +3,8 @@
 """Tests of models in the Meeting application"""
 import datetime
 
+from mock import patch
+
 from ietf.meeting.factories import MeetingFactory, SessionFactory, AttendedFactory
 from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.utils.test_utils import TestCase
@@ -85,6 +87,22 @@ class MeetingTests(TestCase):
         att = second_mtg.get_attendance()
         self.assertEqual(att.onsite, 1)
         self.assertEqual(att.remote, 0)
+
+    def test_vtimezone(self):
+        # normal time zone that should have a zoneinfo file
+        meeting = MeetingFactory(type_id='ietf', time_zone='America/Los_Angeles', populate_schedule=False)
+        vtz = meeting.vtimezone()
+        self.assertIsNotNone(vtz)
+        self.assertGreater(len(vtz), 0)
+        # time zone that does not have a zoneinfo file should return None
+        meeting = MeetingFactory(type_id='ietf', time_zone='Fake/Time_Zone', populate_schedule=False)
+        vtz = meeting.vtimezone()
+        self.assertIsNone(vtz)
+        # ioerror trying to read zoneinfo should return None
+        meeting = MeetingFactory(type_id='ietf', time_zone='America/Los_Angeles', populate_schedule=False)
+        with patch('ietf.meeting.models.io.open', side_effect=IOError):
+            vtz = meeting.vtimezone()
+        self.assertIsNone(vtz)
 
 
 class SessionTests(TestCase):

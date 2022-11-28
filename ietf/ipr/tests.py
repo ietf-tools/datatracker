@@ -7,9 +7,11 @@ import datetime
 
 from pyquery import PyQuery
 from urllib.parse import quote, urlparse
+from zoneinfo import ZoneInfo
 
-from django.urls import reverse as urlreverse
 from django.conf import settings
+from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -27,6 +29,7 @@ from ietf.message.models import Message
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.text import text_to_dict
+from ietf.utils.timezone import date_today
 
 
 def make_data_from_content(content):
@@ -572,10 +575,13 @@ I would like to revoke this declaration.
         self.assertEqual(r.status_code,302)
         self.assertEqual(len(outbox),len_before+2)
         self.assertTrue('george@acme.com' in outbox[len_before]['To'])
-        self.assertIn('posted on '+datetime.date.today().strftime("%Y-%m-%d"), get_payload_text(outbox[len_before]).replace('\n',' '))
+        self.assertIn('posted on '+date_today().strftime("%Y-%m-%d"), get_payload_text(outbox[len_before]).replace('\n',' '))
         self.assertTrue('draft-ietf-mars-test@ietf.org' in outbox[len_before+1]['To'])
         self.assertTrue('mars-wg@ietf.org' in outbox[len_before+1]['Cc'])
-        self.assertIn('Secretariat on '+ipr.get_latest_event_submitted().time.strftime("%Y-%m-%d"), get_payload_text(outbox[len_before+1]).replace('\n',' '))
+        self.assertIn(
+            'Secretariat on ' + ipr.get_latest_event_submitted().time.astimezone(ZoneInfo(settings.TIME_ZONE)).strftime("%Y-%m-%d"),
+            get_payload_text(outbox[len_before + 1]).replace('\n', ' ')
+        )
         self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.showlist")}', get_payload_text(outbox[len_before]).replace('\n',' '))
         self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.history",kwargs=dict(id=ipr.pk))}', get_payload_text(outbox[len_before+1]).replace('\n',' '))
 
@@ -593,14 +599,17 @@ I would like to revoke this declaration.
         r = self.client.post(url, data )
         self.assertEqual(r.status_code,302)
         self.assertEqual(len(outbox),2)
-        self.assertIn('Secretariat on '+ipr.get_latest_event_submitted().time.strftime("%Y-%m-%d"), get_payload_text(outbox[1]).replace('\n',' '))
+        self.assertIn(
+            'Secretariat on ' + ipr.get_latest_event_submitted().time.astimezone(ZoneInfo(settings.TIME_ZONE)).strftime("%Y-%m-%d"),
+            get_payload_text(outbox[1]).replace('\n',' '),
+        )
         self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.showlist")}', get_payload_text(outbox[1]).replace('\n',' '))
 
     def send_ipr_email_helper(self):
         ipr = HolderIprDisclosureFactory()
         url = urlreverse('ietf.ipr.views.email',kwargs={ "id": ipr.id })
         self.client.login(username="secretary", password="secretary+password")
-        yesterday = datetime.date.today() - datetime.timedelta(1)
+        yesterday = date_today() - datetime.timedelta(1)
         data = dict(
             to='joe@test.com',
             frm='ietf-ipr@ietf.org',
@@ -640,7 +649,7 @@ I would like to revoke this declaration.
                 message_string.format(
                     to=addrs.to,
                     cc=addrs.cc,
-                    date=datetime.datetime.now().ctime()
+                    date=timezone.now().ctime()
                 )
             )
             self.assertIsNone(result)
@@ -650,7 +659,7 @@ I would like to revoke this declaration.
 From: joe@test.com
 Date: {}
 Subject: test
-""".format(reply_to, datetime.datetime.now().ctime())
+""".format(reply_to, timezone.now().ctime())
         result = process_response_email(message_string)
 
         self.assertIsInstance(result, Message)
@@ -664,7 +673,7 @@ Subject: test
 From: joe@test.com
 Date: {}
 Subject: test
-""".format(reply_to, datetime.datetime.now().ctime())
+""".format(reply_to, timezone.now().ctime())
         message_bytes = message_string.encode('utf8') + b'\nInvalid stuff: \xfe\xff\n'
         result = process_response_email(message_bytes)
         self.assertIsInstance(result, Message)
@@ -680,7 +689,7 @@ Subject: test
             message_bytes = message_string.format(
                                 to=addrs.to,
                                 cc=addrs.cc,
-                                date=datetime.datetime.now().ctime(),
+                                date=timezone.now().ctime(),
             ).encode('utf8') + b'\nInvalid stuff: \xfe\xff\n'
             result = process_response_email(message_bytes)
             self.assertIsNone(result)

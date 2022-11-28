@@ -34,7 +34,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-import datetime
 import glob
 import io
 import json
@@ -86,6 +85,7 @@ from ietf.utils import markup_txt, log, markdown
 from ietf.utils.draft import PlaintextDraft
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
+from ietf.utils.timezone import date_today
 
 
 def render_document_top(request, doc, tab, name):
@@ -186,7 +186,7 @@ def document_main(request, name, rev=None, document_html=False):
     top = render_document_top(request, doc, "status", name)
 
     telechat = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
-    if telechat and (not telechat.telechat_date or telechat.telechat_date < datetime.date.today()):
+    if telechat and (not telechat.telechat_date or telechat.telechat_date < date_today(settings.TIME_ZONE)):
        telechat = None
 
 
@@ -980,7 +980,7 @@ def document_bibtex(request, name, rev=None):
 
     latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
     replaced_by = [d.name for d in doc.related_that("replaces")]
-    published = doc.latest_event(type="published_rfc")
+    published = doc.latest_event(type="published_rfc") is not None
     rfc = latest_revision.doc if latest_revision and latest_revision.doc.get_state_slug() == "rfc" else None
 
     if rev != None and rev != doc.rev:
@@ -1398,11 +1398,12 @@ def telechat_date(request, name):
 
     warnings = []
     if e and e.telechat_date and doc.type.slug != 'charter':
-        if e.telechat_date==datetime.date.today():
+        today = date_today(settings.TIME_ZONE)
+        if e.telechat_date == today:
             warnings.append( "This document is currently scheduled for today's telechat. "
                             +"Please set the returning item bit carefully.")
 
-        elif e.telechat_date<datetime.date.today() and has_same_ballot(doc,e.telechat_date):
+        elif e.telechat_date < today and has_same_ballot(doc,e.telechat_date):
             initial_returning_item = True
             warnings.append(  "This document appears to have been on a previous telechat with the same ballot, "
                             +"so the returning item bit has been set. Clear it if that is not appropriate.")

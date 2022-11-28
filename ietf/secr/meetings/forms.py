@@ -166,6 +166,15 @@ class TimeSlotForm(forms.Form):
         for n in range(-self.meeting.days, self.meeting.days):
             date = start + datetime.timedelta(days=n)
             choices.append((n, date.strftime("%a %b %d")))
+        # make sure the choices include the initial day
+        if self.initial and 'day' in self.initial:
+            day = self.initial['day']
+            date = start + datetime.timedelta(days=day)
+            datestr = date.strftime("%a %b %d")
+            if day < -self.meeting.days:
+                choices.insert(0, (day, datestr))
+            elif day >= self.meeting.days:
+                choices.append((day, datestr))
         return choices
 
 
