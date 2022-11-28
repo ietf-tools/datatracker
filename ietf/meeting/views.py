@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -1713,7 +1713,7 @@ def agenda_extract_schedule (item):
         "type": item.session.type.slug,
         "isBoF": item.session.group_at_the_time().state_id == "bof",
         "filterKeywords": item.filter_keywords,
-        "groupAcronym": item.session.group_at_the_time().acronym if item.session.group_at_the_time() else item.session.group.acronym,
+        "groupAcronym": item.session.group_at_the_time().acronym,
         "groupName": item.session.group_at_the_time().name,
         "groupParent": {
             "acronym": item.session.group_parent_at_the_time().acronym
@@ -1854,7 +1854,7 @@ def agenda_csv(schedule, filtered_assignments):
             row.append(item.session.name)
             row.append(item.timeslot.location.name if item.timeslot.location else "")
             row.append("")
-            row.append(item.session.group_at_the_time().acronym if item.session.group_at_the_time() else "")
+            row.append(item.session.group_at_the_time().acronym)
             row.append("")
             row.append(item.session.name)
             row.append(item.session.pk)
@@ -1864,9 +1864,9 @@ def agenda_csv(schedule, filtered_assignments):
             row.append(item.timeslot.name)
             row.append(item.timeslot.location.name if item.timeslot.location else "")
             row.append(item.session.group_parent_at_the_time().acronym.upper() if item.session.group_parent_at_the_time() else "")
-            row.append(item.session.group_at_the_time().acronym if item.session.group_at_the_time() else "")
+            row.append(item.session.group_at_the_time().acronym)
             row.append("BOF" if item.session.group_at_the_time().state_id in ("bof", "bof-conc") else item.session.group_at_the_time().type.name)
-            row.append(item.session.group_at_the_time().name if item.session.group_at_the_time() else "")
+            row.append(item.session.group_at_the_time().name)
             row.append(item.session.pk)
             row.append(agenda_field(item))
             row.append(slides_field(item))
@@ -2026,11 +2026,7 @@ def parse_agenda_filter_params(querydict):
 
 
 def should_include_assignment(filter_params, assignment):
-    """Decide whether to include an assignment
-
-    When filtering by wg, uses group_at_the_time() if available as an attribute
-    on the session, otherwise falls back to using group.
-    """
+    """Decide whether to include an assignment"""
     shown = len(set(filter_params['show']).intersection(assignment.filter_keywords)) > 0
     hidden = len(set(filter_params['hide']).intersection(assignment.filter_keywords)) > 0
     return shown and not hidden
@@ -2077,7 +2073,7 @@ def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
         assignments = [a for a in assignments if should_include_assignment(filt_params, a)]
 
     if acronym:
-        assignments = [ a for a in assignments if a.session.group_at_the_time() and a.session.group_at_the_time().acronym == acronym ]
+        assignments = [ a for a in assignments if a.session.group_at_the_time().acronym == acronym ]
     elif session_id:
         assignments = [ a for a in assignments if a.session_id == int(session_id) ]
 

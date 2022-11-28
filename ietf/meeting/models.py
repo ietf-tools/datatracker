@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -838,12 +838,12 @@ class SchedTimeSessAssignment(models.Model):
         if not self.timeslot:
             components.append("unknown")
 
-        if not self.session or not (self.session.group_at_the_time() or self.session.group):
+        if not self.session or not self.session.group_at_the_time():
             components.append("unknown")
         else:
             components.append(self.timeslot.time.strftime("%Y-%m-%d-%a-%H%M"))
 
-            g = self.session.group_at_the_time() or self.session.group
+            g = self.session.group_at_the_time()
 
             if self.timeslot.type.slug in ('break', 'reg', 'other'):
                 components.append(g.acronym)
@@ -853,7 +853,7 @@ class SchedTimeSessAssignment(models.Model):
                 if self.timeslot.type.slug == "plenary":
                     components.append("1plenary")
                 else:
-                    p = getattr(g, "historic_parent", None) or g.parent
+                    p = self.session.group_parent_at_the_time()
                     if p and p.type_id in ("area", "irtf", 'ietf'):
                         components.append(p.acronym)
 
@@ -1277,10 +1277,8 @@ class Session(models.Model):
     def chat_room_name(self):
         if self.type_id=='plenary':
             return 'plenary'
-        elif self.group_at_the_time():
-            return self.group_at_the_time().acronym
         else:
-            return self.group.acronym
+            return self.group_at_the_time().acronym
 
     def chat_room_url(self):
         return settings.CHAT_URL_PATTERN.format(chat_room_name=self.chat_room_name())
