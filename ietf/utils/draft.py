@@ -586,7 +586,7 @@ class PlaintextDraft(Draft):
 
     def extract_authors(self):
         """Extract author information from draft text.
-           FIXME: this fails with factory generated names such as "Joris van Kuijc van Malsen" that have multiple prefix+last parts
+
         """
         aux = {
             "honor" : r"(?:[A-Z]\.|Dr\.?|Dr\.-Ing\.|Prof(?:\.?|essor)|Sir|Lady|Dame|Sri)",
