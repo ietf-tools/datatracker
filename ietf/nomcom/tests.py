@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -2476,6 +2476,7 @@ class rfc8989EligibilityTests(TestCase):
             p1 = RoleHistoryFactory(
                 name_id='chair',
                 group__time=day_before,
+                group__state_id='active',
                 group__group__state_id='conclude',
             ).person
             eligible.append(p1)
@@ -2483,6 +2484,7 @@ class rfc8989EligibilityTests(TestCase):
             p2 = RoleHistoryFactory(
                 name_id='secr',
                 group__time=year_before,
+                group__state_id='active',
                 group__group__state_id='conclude',
             ).person
             eligible.append(p2)
@@ -2490,6 +2492,7 @@ class rfc8989EligibilityTests(TestCase):
             p3 = RoleHistoryFactory(
                 name_id='secr',
                 group__time=just_after_three_years_before,
+                group__state_id='active',
                 group__group__state_id='conclude',
             ).person
             eligible.append(p3)
@@ -2497,6 +2500,7 @@ class rfc8989EligibilityTests(TestCase):
             p4 = RoleHistoryFactory(
                 name_id='chair',
                 group__time=three_years_before,
+                group__state_id='active',
                 group__group__state_id='conclude',
             ).person
             eligible.append(p4)
@@ -2504,6 +2508,7 @@ class rfc8989EligibilityTests(TestCase):
             p5 = RoleHistoryFactory(
                 name_id='chair',
                 group__time=just_before_three_years_before,
+                group__state_id='active',
                 group__group__state_id='conclude',
             ).person
             ineligible.append(p5)
@@ -2723,12 +2728,16 @@ class VolunteerDecoratorUnitTests(TestCase):
         nomcom.volunteer_set.create(person=meeting_person)
 
         office_person = PersonFactory()
+        history_time = datetime_from_date(elig_date) - datetime.timedelta(days=365)
         RoleHistoryFactory(
             name_id='chair',
-            group__time=datetime_from_date(elig_date) - datetime.timedelta(days=365),
+            group__time=history_time,
+            group__group__time=history_time,
+            group__state_id='active',
             group__group__state_id='conclude',
             person=office_person,
         )
+
         nomcom.volunteer_set.create(person=office_person)
 
         author_person = PersonFactory()
