@@ -1,6 +1,8 @@
-# Copyright The IETF Trust 2020, All Rights Reserved
+# Copyright The IETF Trust 2020-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 import datetime
+
+import debug    # pyflakes:ignore
 
 from unittest.mock import patch, Mock
 
@@ -8,7 +10,7 @@ from django.conf import settings
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.test import override_settings, RequestFactory
 
-from ietf.group.factories import GroupFactory
+from ietf.group.factories import GroupFactory, GroupHistoryFactory
 from ietf.group.models import Group
 from ietf.meeting.factories import SessionFactory, MeetingFactory, TimeSlotFactory
 from ietf.meeting.helpers import (AgendaFilterOrganizer, AgendaKeywordTagger,
@@ -28,7 +30,8 @@ class AgendaKeywordTaggerTests(TestCase):
         """Assignments should be tagged properly
         
         The historic param can be None, group, or parent, to specify whether to test
-        with no historic_group, a historic_group but no historic_parent, or both.
+        with no GroupHistory active at the time of the Session's meeting, 
+        with such a GroupHistory active, no GroupHistory for the parent, or both.
         """
         # decide whether meeting should use legacy keywords (for office hours)
         legacy_keywords = meeting_num <= 111
@@ -38,14 +41,19 @@ class AgendaKeywordTaggerTests(TestCase):
         group_state_id = 'bof' if bof else 'active'
         group = GroupFactory(state_id=group_state_id)
 
+
         # Set up the historic group and parent if needed. Keep track of these as expected_*
         # for later reference. If not using historic group or parent, fall back to the non-historic
         # groups.
+
         if historic:
-            expected_group = GroupFactory(state_id=group_state_id)
+            history_time = meeting.tz().localize(
+                datetime.datetime.combine(meeting.date, datetime.time())
+                - datetime.timedelta(days=1)
+            )
+            expected_group = GroupHistoryFactory(group=group, time=history_time)
             if historic == 'parent':
-                expected_area = GroupFactory(type_id='area')
-                expected_group.historic_parent = expected_area
+                expected_area = GroupHistoryFactory(group=group.parent,time=history_time)  
             else:
                 expected_area = expected_group.parent
         else:
@@ -111,11 +119,6 @@ class AgendaKeywordTaggerTests(TestCase):
             )
 
         assignments = meeting.schedule.assignments.all()
-
-        # Set up historic groups if needed.
-        if historic:
-            for a in assignments:
-                a.session.historic_group = expected_group
 
         # Execute the method under test
         AgendaKeywordTagger(assignments=assignments).apply()
