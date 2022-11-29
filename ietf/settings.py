@@ -114,7 +114,7 @@ SITE_ID = 1
 # to load the internationalization machinery.
 USE_I18N = False
 
-USE_TZ = False
+USE_TZ = True
 
 if SERVER_MODE == 'production':
     MEDIA_ROOT = '/a/www/www6s/lib/dt/media/'
@@ -630,7 +630,7 @@ MAX_WG_DELEGATES = 3
 # document state:
 GROUP_STATES_WITH_EXTRA_PROCESSING = ["sub-pub", "rfc-edit", ]
 
-# Review team releated settings
+# Review team related settings
 GROUP_REVIEW_MAX_ITEMS_TO_SHOW_IN_REVIEWER_LIST = 10
 GROUP_REVIEW_DAYS_TO_SHOW_IN_REVIEWER_LIST = 365
 

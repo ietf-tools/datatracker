@@ -42,6 +42,7 @@ cat << EOF > "$EXCLUDE"
 *.diff
 *.doc
 *.exe
+*.html
 *.mib
 *.new
 *.p7s

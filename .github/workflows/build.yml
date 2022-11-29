@@ -228,6 +228,10 @@ jobs:
     needs: [prepare]
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox]
     
     services:
       db:

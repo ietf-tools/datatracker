@@ -197,7 +197,7 @@ class IetfAuthTests(TestCase):
     def test_create_whitelisted_account(self):
         email = "new-account@example.com"
 
-        # add whitelist entry
+        # add allowlist entry
         r = self.client.post(urlreverse(ietf.ietfauth.views.login), {"username":"secretary", "password":"secretary+password"})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.profile))
@@ -214,7 +214,7 @@ class IetfAuthTests(TestCase):
         r = self.client.get(urlreverse('django.contrib.auth.views.logout'))
         self.assertEqual(r.status_code, 200)
 
-        # register and verify whitelisted email
+        # register and verify allowlisted email
         self.register_and_verify(email)
 
 

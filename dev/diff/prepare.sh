@@ -25,11 +25,3 @@ if ./ietf/manage.py showmigrations | grep "\[ \] 0003_pause_to_change_use_tz"; t
     cat ./ietf/settings_local.py | sed 's/USE_TZ.*$/USE_TZ = True/' > /tmp/settings_local.py && mv /tmp/settings_local.py ./ietf/settings_local.py
     /usr/local/bin/python ./ietf/manage.py migrate
 
-else
-    if grep "USE_TZ" ./ietf/settings_local.py; then
-        cat ./ietf/settings_local.py | sed 's/USE_TZ.*$/USE_TZ = True/' > /tmp/settings_local.py && mv /tmp/settings_local.py ./ietf/settings_local.py
-    else
-        echo "USE_TZ = True" >> ./ietf/settings_local.py
-    /usr/local/bin/python ./ietf/manage.py migrate
-    fi
-fi

@@ -114,7 +114,7 @@ expected_datetime_columns = (
 def convert_pre1970_timestamps(apps, schema_editor):
     """Convert timestamps that CONVERT_TZ cannot handle
 
-    This could be made to do the entire conversion but some tables that require converison
+    This could be made to do the entire conversion but some tables that require conversion
     do not use 'id' as their PK. Rather than reinvent the ORM, we'll let SQL do what it can
     with CONVERT_TZ and clean up after. The tables that have pre-1970 timestamps both have
     'id' columns.
