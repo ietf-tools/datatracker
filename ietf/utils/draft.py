@@ -593,7 +593,7 @@ class PlaintextDraft(Draft):
             "prefix": r"([Dd]e|Hadi|van|van de|van der|Ver|von|[Ee]l)",
             "suffix": r"(jr.?|Jr.?|II|2nd|III|3rd|IV|4th)",
             "first" : r"([A-Z][-A-Za-z'`~]*)(( ?\([A-Z][-A-Za-z'`~]*\))?(\.?[- ]{1,2}[A-Za-z'`~]+)*)",
-            "last"  : r"([A-Za-z][-A-Za-z'`~]*)",  # single-letter last names exist
+            "last"  : r"([-A-Za-z'`~]+)",  # single-letter last names exist
             "months": r"(January|February|March|April|May|June|July|August|September|October|November|December)",
             "mabbr" : r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?",
             }
