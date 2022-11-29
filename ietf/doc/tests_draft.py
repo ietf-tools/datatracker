@@ -635,7 +635,7 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
     def test_in_draft_expire_freeze(self):
         from ietf.doc.expire import in_draft_expire_freeze
 
-        # If there is no "next" meeting, we musn't be in a freeze
+        # If there is no "next" meeting, we mustn't be in a freeze
         self.assertTrue(not in_draft_expire_freeze())
 
         meeting = Meeting.objects.create(number="123",

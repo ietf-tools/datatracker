@@ -671,7 +671,7 @@ def can_defer(user,doc):
 
 @register.filter()
 def can_ballot(user,doc):
-    # Only IRSG memebers (and the secretariat, handled by code separately) can take positions on IRTF documents
+    # Only IRSG members (and the secretariat, handled by code separately) can take positions on IRTF documents
     # Otherwise, an AD can take a position on anything that has a ballot open
     if doc.type_id == 'draft' and doc.stream_id == 'irtf':
         return has_role(user,'IRSG Member')

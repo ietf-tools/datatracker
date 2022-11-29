@@ -50,7 +50,7 @@ def merge_persons(request, source, target, file=sys.stdout, verbose=False):
 #    request.user = User.objects.filter(is_superuser=True).first()
     deletable_objects = admin.utils.get_deleted_objects(objs, request, admin.site)
     deletable_objects_summary = deletable_objects[1]
-    if len(deletable_objects_summary) > 1:    # should only inlcude one object (Person)
+    if len(deletable_objects_summary) > 1:    # should only include one object (Person)
         print("Not Deleting Person: {}({})".format(source.ascii,source.pk), file=file)
         print("Related objects remain:", file=file)
         pprint.pprint(deletable_objects[1], stream=file)
