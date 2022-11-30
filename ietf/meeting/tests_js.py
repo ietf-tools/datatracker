@@ -1621,30 +1621,27 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
         self.do_delete_timeslot_test(cancel=True)
 
     def do_delete_time_interval_test(self, cancel=False):
-        delete_day = self.meeting.date
-        delete_time = datetime.time(hour=10)
-        other_day = self.meeting.get_meeting_date(1)
-        other_time = datetime.time(hour=12)
+        delete_time_local = datetime_from_date(self.meeting.date, self.meeting.tz()).replace(hour=10)
+        delete_time = delete_time_local.astimezone(datetime.timezone.utc)
         duration = datetime.timedelta(minutes=60)
 
         delete: [TimeSlot] = TimeSlotFactory.create_batch(
             2,
             meeting=self.meeting,
-            time=datetime_from_date(delete_day, self.meeting.tz()).replace(hour=delete_time.hour),
+            time=delete_time_local,
             duration=duration,
         )
-
         keep: [TimeSlot] = [
             TimeSlotFactory(
                 meeting=self.meeting,
-                time=datetime_from_date(day, self.meeting.tz()).replace(hour=time.hour),
+                time=keep_time,
                 duration=duration
             )
-            for (day, time) in (
-                # combinations of day/time that should not be deleted
-                (delete_day, other_time),
-                (other_day, delete_time),
-                (other_day, other_time),
+            for keep_time in (
+                # same day, but 2 hours later
+                delete_time + datetime.timedelta(hours=2),
+                # next day, but same wall clock time
+                datetime_from_date(self.meeting.get_meeting_date(1), self.meeting.tz()).replace(hour=10),
             )
         ]
 
@@ -1652,18 +1649,17 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
             '#timeslot-table '
             '.delete-button[data-delete-scope="column"]'
             '[data-col-id="{}T{}-{}"]'.format(
-                delete_day.isoformat(),
-                delete_time.strftime('%H:%M'),
-                self.meeting.tz().localize(
-                    datetime.datetime.combine(delete_day, delete_time) + duration
-                ).strftime(
-                    '%H:%M'
-                ))
+                delete_time_local.date().isoformat(),
+                delete_time_local.strftime('%H:%M'),
+                (delete_time + duration).astimezone(self.meeting.tz()).strftime('%H:%M'))
         )
         self.do_delete_test(selector, keep, delete, cancel)
 
     def test_delete_time_interval(self):
         """Delete button for a time interval should delete all timeslots in that interval"""
+        self.meeting.time_zone = 'Etc/GMT-11'
+        self.meeting.save()
+        debug.show('self.meeting.time_zone')
         self.do_delete_time_interval_test(cancel=False)
 
     def test_delete_time_interval_cancel(self):
