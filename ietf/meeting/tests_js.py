@@ -1657,9 +1657,6 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
 
     def test_delete_time_interval(self):
         """Delete button for a time interval should delete all timeslots in that interval"""
-        self.meeting.time_zone = 'Etc/GMT-11'
-        self.meeting.save()
-        debug.show('self.meeting.time_zone')
         self.do_delete_time_interval_test(cancel=False)
 
     def test_delete_time_interval_cancel(self):
