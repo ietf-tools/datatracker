@@ -114,7 +114,7 @@ SITE_ID = 1
 # to load the internationalization machinery.
 USE_I18N = False
 
-USE_TZ = False
+USE_TZ = True
 
 if SERVER_MODE == 'production':
     MEDIA_ROOT = '/a/www/www6s/lib/dt/media/'
@@ -630,7 +630,7 @@ MAX_WG_DELEGATES = 3
 # document state:
 GROUP_STATES_WITH_EXTRA_PROCESSING = ["sub-pub", "rfc-edit", ]
 
-# Review team releated settings
+# Review team related settings
 GROUP_REVIEW_MAX_ITEMS_TO_SHOW_IN_REVIEWER_LIST = 10
 GROUP_REVIEW_DAYS_TO_SHOW_IN_REVIEWER_LIST = 365
 
@@ -972,8 +972,6 @@ INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 FLOORPLAN_MEDIA_DIR = 'floor'
 FLOORPLAN_DIR = os.path.join(MEDIA_ROOT, FLOORPLAN_MEDIA_DIR)
 
-
-MEETING_USES_CODIMD_DATE = datetime.date(2020,7,6)
 MEETING_LEGACY_OFFICE_HOURS_END = 112  # last meeting to use legacy office hours representation
 
 # Maximum dimensions to accept at all

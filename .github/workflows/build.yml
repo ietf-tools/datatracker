@@ -14,6 +14,7 @@ on:
         default: ''
       publish:
         description: 'Create Production Release'
+        default: false
         required: true
         type: boolean
       sandbox:
@@ -23,6 +24,7 @@ on:
         type: boolean
       skiptests:
         description: 'Skip Tests'
+        default: false
         required: true
         type: boolean
       ignoreLowerCoverage:
@@ -37,6 +39,7 @@ on:
         type: boolean
       dryrun:
         description: 'Dry Run'
+        default: false
         required: true
         type: boolean
 
@@ -50,6 +53,8 @@ jobs:
     outputs:
       should_deploy: ${{ steps.buildvars.outputs.should_deploy }}
       pkg_version: ${{ steps.buildvars.outputs.pkg_version }}
+      from_tag: ${{ steps.semver.outputs.nextStrict }}
+      to_tag: ${{ steps.semver.outputs.current }}
 
     steps:
     - uses: actions/checkout@v3
@@ -68,6 +73,7 @@ jobs:
       with:
         token: ${{ github.token }}
         branch: main
+        skipInvalidTags: true
         
     - name: Set Next Version Env Var
       if: ${{ github.event.inputs.publish == 'true' || github.event.inputs.dryrun == 'true' }}
@@ -144,8 +150,6 @@ jobs:
       run: |
         echo "Running checks..."
         ./ietf/manage.py check
-        ./ietf/manage.py migrate || true
-        echo "USE_TZ = True" >> ./ietf/settings_local.py
         ./ietf/manage.py migrate
         echo "Validating migrations..."
         if ! ( ietf/manage.py makemigrations --dry-run --check --verbosity 3 ) ; then
@@ -216,12 +220,16 @@ jobs:
         path: playwright/test-results/
         if-no-files-found: ignore
 
-  tests-cypress:
-    name: Run Tests (Cypress)
+  tests-playwright-legacy:
+    name: Run Tests (Playwright Legacy)
     if: ${{ github.event.inputs.skiptests == 'false' }}
     needs: [prepare]
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox]
     
     services:
       db:
@@ -256,26 +264,27 @@ jobs:
         /usr/local/bin/wait-for localhost:8000 -- echo "Datatracker ready"
 
     - name: Run all tests
+      env:
+        # Required to get firefox to run as root:
+        HOME: ""
       run: |
+        echo "Installing dependencies..."
+        yarn
+        echo "Installing Playwright..."
+        cd playwright
+        mkdir test-results
+        npm ci
+        npx playwright install --with-deps ${{ matrix.project }}
         echo "Running tests..."
-        yarn cypress:legacy
+        npx playwright test --project=${{ matrix.project }} -c playwright-legacy.config.js
         
-    - name: Upload Video Recordings
+    - name: Upload Report
       uses: actions/upload-artifact@v3
       if: ${{ always() }}
       continue-on-error: true
       with:
-        name: videos-legacy
-        path: cypress/videos/
-        if-no-files-found: ignore
-        
-    - name: Upload Screenshots
-      uses: actions/upload-artifact@v3
-      if: ${{ always() }}
-      continue-on-error: true
-      with:
-        name: screenshots-modern
-        path: cypress/screenshots/
+        name: playwright-legacy-results-${{ matrix.project }}
+        path: playwright/test-results/
         if-no-files-found: ignore
         
   # -----------------------------------------------------------------
@@ -284,11 +293,13 @@ jobs:
   release:
     name: Make Release
     if: ${{ always() }}
-    needs: [tests-python, tests-playwright, tests-cypress, prepare]
+    needs: [tests-python, tests-playwright, tests-playwright-legacy, prepare]
     runs-on: ubuntu-latest
     env:
       SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+      FROM_TAG: ${{needs.prepare.outputs.from_tag}}
+      TO_TAG: ${{needs.prepare.outputs.to_tag}}
 
     steps:
     - uses: actions/checkout@v3
@@ -346,7 +357,8 @@ jobs:
       if: ${{ env.SHOULD_DEPLOY == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         token: ${{ github.token }}
-        tag: ${{ env.PKG_VERSION }}
+        fromTag: ${{ env.FROM_TAG }}
+        toTag: ${{ env.TO_TAG }}
         writeToFile: false
 
     - name: Prepare Coverage Action

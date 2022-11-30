@@ -215,7 +215,7 @@ class MeetingTests(BaseMeetingTestCase):
                 },
                 "categories": rjson.get("categories"), # Just expect the value to exist
                 "isCurrentMeeting": True,
-                "useHedgeDoc": True,
+                "useNotes": True,
                 "schedule": rjson.get("schedule"), # Just expect the value to exist
                 "floors": []
             }
@@ -2786,7 +2786,7 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session.sessionpresentation_set.count(),1)
 
-            # Ingore a request to add slides that are already in a session
+            # Ignore a request to add slides that are already in a session
             r = self.client.post(url, {'order':1, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)

@@ -1445,7 +1445,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(r.status_code, 302)
         unprivileged_status_url = r['Location']
 
-        # status page as unpriviliged => no edit button
+        # status page as unprivileged => no edit button
         r = self.client.get(unprivileged_status_url)
         self.assertContains(r, "Submission status of %s" % name)
         q = PyQuery(r.content)

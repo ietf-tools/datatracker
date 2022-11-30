@@ -140,7 +140,7 @@ def forward(apps, schema_editor):
     # review-ietf-detnet-mpls-over-udp-ip-06-opsdir-lc-romascanu-2020-09-03 2020-09-03 02:49:33
     # review-ietf-detnet-mpls-over-udp-ip-06-opsdir-lc-romascanu-2020-09-03-2 2020-09-03 02:49:33
     # <snip/>
-    # Both of those are places where the submit button got hit twice in rapid successsion.
+    # Both of those are places where the submit button got hit twice in rapid succession.
     # Messages went to the list twice. No threads were started
     # The review assignments currently point to the -2 versions. I think we change them to point to the not -2 versions and delete the -2 version documents.
     #
