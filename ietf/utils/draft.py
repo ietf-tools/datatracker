@@ -659,10 +659,10 @@ class PlaintextDraft(Draft):
             # permit insertion of middle names between first and last, and
             # add possible honorific and suffix information
             if last:
-                authpat = r"(?:^| and )((?:%(hon)s ?)?['`]*%(first)s\S*( +[^ ]+)* +%(last)s)( *\(.*|,( [A-Z][-A-Za-z0-9]*)?| %(suffix)s| [A-Z][a-z]+)?" % {"hon":hon, "first":first, "last":last, "suffix":suffix,}
+                authpat = r"(?:^| and )((?:%(hon)s ?)?['`]*%(first)s\S*( +[^ ]+)* +%(last)s(?: %(suffix)s)?)( *\(.*|,( [A-Z][-A-Za-z0-9]*)?| [A-Z][a-z]+)?" % {"hon":hon, "first":first, "last":last, "suffix":suffix,}
             else:
                 # handle single-word names
-                authpat = r"(?:^| and )((?:%(hon)s ?)?['`]*%(first)s\S*( +[^ ]+)*)( *\(.*|,( [A-Z][-A-Za-z0-9]*)?| %(suffix)s| [A-Z][a-z]+)?" % {"hon":hon, "first":first, "suffix":suffix,}
+                authpat = r"(?:^| and )((?:%(hon)s ?)?['`]*%(first)s\S*( +[^ ]+)*(?: %(suffix)s)?)( *\(.*|,( [A-Z][-A-Za-z0-9]*)?| [A-Z][a-z]+)?" % {"hon":hon, "first":first, "suffix":suffix,}
 
             return authpat
 
