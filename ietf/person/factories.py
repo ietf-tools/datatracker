@@ -67,7 +67,8 @@ class PersonFactory(factory.django.DjangoModelFactory):
     name = factory.LazyAttribute(lambda p: normalize_name('%s %s'%(p.user.first_name, p.user.last_name)))
     # Some i18n names, e.g., "शिला के.सी." have a dot at the end that is also part of the ASCII, e.g., "Shilaa Kesii."
     # That trailing dot breaks extract_authors(). Avoid this issue by stripping the dot from the ASCII.
-    ascii = factory.LazyAttribute(lambda p: force_text(unidecode_name(p.name)).rstrip("."))
+    # Some others have a trailing semicolon (e.g., "உயிரோவியம் தங்கராஐ;") - strip those, too.
+    ascii = factory.LazyAttribute(lambda p: force_text(unidecode_name(p.name)).rstrip(".;"))
 
     class Params:
         with_bio = factory.Trait(biography = "\n\n".join(fake.paragraphs())) # type: ignore
