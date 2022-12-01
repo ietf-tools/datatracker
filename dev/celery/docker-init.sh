@@ -74,6 +74,9 @@ cleanup () {
   fi
 }
 
+echo "Running checks as root to apply patches..."
+/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check
+
 if [[ "${CELERY_ROLE}" == "worker" ]]; then
     echo "Running initial checks..."
     # Run checks as celery worker if one was specified

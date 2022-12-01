@@ -195,7 +195,7 @@ def update_history_with_changes(changes, send_email=True):
                     continue
 
                 # the naive way of extracting prev_state here means
-                # that we assume these changes are cronologically
+                # that we assume these changes are chronologically
                 # applied
                 prev_state = doc.get_state(state_type)
                 e = add_state_change_event(doc, system, prev_state, state, timestamp=timestamp)

@@ -1963,7 +1963,7 @@ class AcronymValidationTests(TestCase):
         self.assertIn('acronym',form.errors)
         form = AdminGroupForm({'acronym':'f','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
         self.assertIn('acronym',form.errors)
-        # For the ITU we have a heirarchy of group names that use hyphens as delimeters
+        # For the ITU we have a hierarchy of group names that use hyphens as delimiters
         form = AdminGroupForm({'acronym':'should-pass','name':'should pass','type':'sdo','state':'active','used_roles':'[]','time':now})
         self.assertTrue(form.is_valid())
         form = AdminGroupForm({'acronym':'shouldfail-','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})

@@ -335,7 +335,7 @@ class GroupMilestoneHistory(GroupMilestoneInfo):
     milestone = ForeignKey(GroupMilestone, related_name="history_set")
 
 class GroupStateTransitions(models.Model):
-    """Captures that a group has overriden the default available
+    """Captures that a group has overridden the default available
     document state transitions for a certain state."""
     group = ForeignKey(Group)
     state = ForeignKey('doc.State', help_text="State for which the next states should be overridden")
