@@ -471,7 +471,6 @@ class IncomingLiaisonForm(LiaisonModelForm):
 
 
 class OutgoingLiaisonForm(LiaisonModelForm):
-    from_contact = forms.EmailField(disabled=True)  # initial value is filled in later
     approved = forms.BooleanField(label="Obtained prior approval", required=False)
 
     class Meta:
@@ -512,6 +511,7 @@ class OutgoingLiaisonForm(LiaisonModelForm):
             email = self.person.email_address()
 
         # Non-secretariat user cannot change the from_contact field. Fill in its value.
+        self.fields['from_contact'].disabled = True
         self.fields['from_contact'].initial = email
 
     def set_to_fields(self):
