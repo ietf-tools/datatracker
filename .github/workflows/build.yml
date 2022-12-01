@@ -453,7 +453,7 @@ jobs:
         npm ci
         cd ../..
         echo "Start Deploy..."
-        node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain neverusethis.com
+        node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain dev.ietf.org
         
     - name: Cleanup old docker resources
       env:
