@@ -196,7 +196,6 @@ def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
 
     return re.search(
         r"""document\ is\ not\ mappable\ to\ XML\ 1|
-             Attribute\ 'readonly'\ not\ allowed\ on\ element\ 'select'|
             ^Attribute\ 'required'\ not\ allowed\ on\ element\ 'div'|
             ^The\ 'type'\ attribute\ is\ unnecessary\ for\ JavaScript|
             is\ not\ in\ Unicode\ Normalization\ Form\ C""",
