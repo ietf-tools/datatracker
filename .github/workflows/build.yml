@@ -412,6 +412,7 @@ jobs:
         path: /home/runner/work/release/release.tar.gz
         
     - name: Notify on Slack
+      if: ${{ always() }}
       uses: slackapi/slack-github-action@v1.23.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
