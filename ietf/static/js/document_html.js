@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
         .oninput = function () { change_ptsize(this.value) };
 
     const ptsize = cookies.get(cookie);
-    change_ptsize(ptsize ? Math.min(Math.max(7, ptsize), 16) : 16);
+    change_ptsize(ptsize ? Math.min(Math.max(7, ptsize), 16) : 12);
 
     // Use the Bootstrap tooltip plugin for all elements with a title attribute
     const tt_triggers = document.querySelectorAll(
