@@ -592,8 +592,8 @@ class PlaintextDraft(Draft):
             "honor" : r"(?:[A-Z]\.|Dr\.?|Dr\.-Ing\.|Prof(?:\.?|essor)|Sir|Lady|Dame|Sri)",
             "prefix": r"([Dd]e|Hadi|van|van de|van der|Ver|von|[Ee]l)",
             "suffix": r"(jr.?|Jr.?|II|2nd|III|3rd|IV|4th)",
-            "first" : r"([A-Z][-A-Za-z'`~]*)(( ?\([A-Z][-A-Za-z'`~]*\))?(\.?[- ]{1,2}[A-Za-z'`~]+)*)",
-            "last"  : r"([-A-Za-z'`~]+)",  # single-letter last names exist
+            "first" : r"([A-Z][-A-Za-z'`~,]*)(( ?\([A-Z][-A-Za-z'`~,]*\))?(\.?[- ]{1,2}[A-Za-z'`~]+)*)",
+            "last"  : r"([-A-Za-z'`~,]+)",  # single-letter last names exist
             "months": r"(January|February|March|April|May|June|July|August|September|October|November|December)",
             "mabbr" : r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?",
             }
@@ -817,7 +817,7 @@ class PlaintextDraft(Draft):
                 author = author[:-len(suffix)].strip()
             else:
                 suffix = None
-            if "," in author:
+            if ", " in author:
                 last, first = author.split(",",1)
                 author = "%s %s" % (first.strip(), last.strip())
             if not " " in author:
