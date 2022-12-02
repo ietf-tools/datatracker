@@ -3456,6 +3456,10 @@ def upcoming(request):
     # Set up for agenda filtering - only one filter_category here
     AgendaKeywordTagger(sessions=interim_sessions).apply()
     filter_organizer = AgendaFilterOrganizer(sessions=interim_sessions, single_category=True)
+    # Allow filtering to show only IETF Meetings. This adds a button labeled "IETF Meetings" to the
+    # "Other" column of the filter UI. When enabled, this adds the keyword "ietf-meetings" to the "show"
+    # filter list. The IETF meetings are explicitly labeled with this keyword in upcoming.html.
+    filter_organizer.add_extra_filter('IETF Meetings')
 
     entries = list(ietf_meetings)
     entries.extend(list(interim_sessions))
