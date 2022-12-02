@@ -4507,8 +4507,16 @@ class InterimTests(TestCase):
         # Just a quick check of functionality - details tested by test_js.InterimTests
         make_meeting_test_data(create_interims=True)
         url = urlreverse("ietf.meeting.views.upcoming_ical")
-        r = self.client.get(url + '?show=mars')
 
+        r = self.client.get(url + '?show=mars')
+        self.assertEqual(r.status_code, 200)
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=[
+                                          'mars - Martian Special Interest Group',
+                                      ],
+                                      expected_event_count=1)
+
+        r = self.client.get(url + '?show=mars,ietf-meetings')
         self.assertEqual(r.status_code, 200)
         assert_ical_response_is_valid(self, r,
                                       expected_event_summaries=[
