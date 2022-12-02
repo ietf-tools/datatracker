@@ -1,5 +1,5 @@
 name: Build and Release
-run-name: Build ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}
+run-name: ${{ github.event.inputs.publish == 'true' && '[Prod]' || '[Dev]' }} Build ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}
 
 on:
   push:
