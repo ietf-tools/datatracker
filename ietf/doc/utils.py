@@ -1362,5 +1362,9 @@ def bibxml_for_draft(doc, rev=None):
     else:
         doc.date = doc.time.astimezone(tzinfo).date()      # Even if this may be incorrect, what would be better?
 
-    return render_to_string('doc/bibxml.xml', {'name':doc.name, 'doc': doc, 'doc_bibtype':'I-D'})
+    name = doc.name if isinstance(doc, Document) else doc.doc.name
+    if name.startswith('rfc'): # bibxml3 does not speak of RFCs
+        raise Http404()
+        
+    return render_to_string('doc/bibxml.xml', {'name':name, 'doc':doc, 'doc_bibtype':'I-D'})
 
