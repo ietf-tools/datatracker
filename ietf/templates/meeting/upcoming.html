@@ -127,6 +127,7 @@
                       {% with meeting=entry %}
                           {
                               ietf_meeting_number: '{{ meeting.number }}',
+                              filter_keywords: ['ietf-meetings'],
                               start_moment: moment.tz('{{meeting.date}}', '{{ meeting.time_zone }}').startOf('day'),
                               end_moment: moment.tz('{{meeting.end_date}}', '{{ meeting.time_zone }}').endOf('day'),
                               url: '{% url 'agenda' num=meeting.number %}'
