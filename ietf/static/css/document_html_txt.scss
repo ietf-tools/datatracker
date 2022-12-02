@@ -1,0 +1,376 @@
+:root {
+  --line: 1.2em;
+  --block: 0 0 0 3ch;
+  --paragraph: var(--line) 0 var(--line) 3ch;
+}
+
+// WeasyPrint can't handle CSS variables in multi-attribute properties, so work
+// around that
+// https://github.com/Kozea/WeasyPrint/issues/1219
+
+@mixin margin-paragraph {
+  margin-top: var(--line);
+  margin-right: 0;
+  margin-bottom: var(--line);
+  margin-left: 3ch;
+}
+
+@mixin margin-line {
+  margin-top: var(--line);
+  margin-right: 0;
+  margin-bottom: var(--line);
+  margin-left: 0;
+}
+
+@mixin margin-block {
+  margin-top: 0;
+  margin-right: 0;
+  margin-bottom: 0;
+  margin-left: 3ch;
+}
+
+.rfchtml {
+// body {
+//   color: black;
+//   font-family: monospace;
+//   font-size: 1em;
+  line-height: var(--line);
+  width: 72ch;
+
+  // margin: var(--line) 3ch;
+  margin-top: var(--line);
+  margin-right: 3ch;
+  margin-bottom: var(--line);
+  margin-left: 3ch;
+
+h1, h2, h3, h4, h5 {
+  font-weight: bold;
+  font-size: inherit;
+  line-height: inherit;
+  // margin: var(--line) 0;
+  @include margin-line;
+}
+.section-number {
+  margin-right: 1ch;
+}
+p {
+  // margin: var(--paragraph);
+  @include margin-paragraph;
+}
+aside, ol, dl {
+  // margin: var(--block);
+  @include margin-block;
+}
+figure {
+  margin: 0;
+}
+blockquote {
+  // margin: var(--paragraph);
+  @include margin-paragraph;
+  border-left: 2px solid darkgrey;
+}
+
+/* Header junk */
+#external-metadata {
+  display: none !important; /* metadata.min.js is evil because it produces unstyleable goop */
+}
+#identifiers dt:is(.label-stream, .label-rfc, .label-std, .label-bcp, .label-internet-draft,
+                   .label-workgroup, .label-intended-status, .label-obsoletes, .label-updates,
+                   .label-published, .label-expires, .label-category, .label-issn,
+                   .label-authors), .ears {
+  display: none;
+}
+#identifiers {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 47ch 24ch;
+  grid-auto-rows: auto;
+  gap: 0 1ch;
+}
+#identifiers dt {
+  margin: 0 1ch 0 0;
+  float: revert;
+  display: inline-block;
+}
+#identifiers dd {
+  grid-column: 1;
+  margin: 0;
+  width: 47ch;
+  /* HAXX: this gets around the lack of text-content-trim support */
+  display: flex;
+  flex-wrap: wrap;
+}
+#identifiers dd::before {
+  margin: 0 1ch 0 0;
+}
+#identifiers dd.rfc::before {
+  content: "Request for Comments:";
+}
+#identifiers dd.std::before {
+  content: "STD:";
+}
+#identifiers dd.bcp::before {
+  content: "BCP:";
+}
+#identifiers dd.internet-draft::before {
+  content: "Internet-Draft:";
+}
+#identifiers dd.workgroup::before {
+  content: "Workgroup:";
+}
+#identifiers dd.intended-status::before {
+  content: "Intended Status:";
+}
+#identifiers dd.obsoletes::before {
+  content: "Obsoletes:";
+  margin: 0 0 0 -10ch;
+}
+#identifiers dd.obsoletes {
+  padding-left: 10ch;
+  width: 37ch;
+}
+#identifiers dd.updates::before {
+  content: "Updates:";
+  margin: 0 0 0 -8ch;
+}
+#identifiers dd.updates {
+  padding-left: 8ch;
+  width: 39ch;
+}
+#identifiers dd:is(.updates, .obsoletes) a {
+  margin: 0 0 0 1ch;
+}
+#identifiers dd:is(.updates, .obsoletes) a:last-of-type {
+  margin: 0 1ch;
+}
+#identifiers dd.published::before {
+  content: "Published:";
+}
+#identifiers dd.expires::before {
+  content: "Expires:";
+}
+#identifiers dd.category::before {
+  content: "Category:";
+}
+#identifiers dd.issn::before {
+  content: "ISSN:";
+}
+#identifiers dd.authors {
+  grid-area: 1 / 2 / 100 / 3;
+  width: 24ch;
+  text-align: right;
+  display: block;
+}
+
+#title {
+  clear: left;
+  text-align: center;
+  margin-top: 2em;
+}
+#rfcnum {
+  display: none;
+}
+.toplink {
+  display: none;
+}
+nav.toc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+nav.toc ul > li {
+  padding-left: 2ch;
+}
+nav.toc > ul > li {
+  padding-left: 3ch;
+}
+nav.toc ul > li > p {
+  margin: 0;
+}
+
+/* Lists */
+ol, ul {
+  padding: 0;
+}
+ol {
+  margin: 0 0 0 6ch; /* todo: deal with lists that have >= 10 items */
+}
+ol ol, ul ol {
+  margin: 0 0 0 3ch;
+}
+ul {
+  margin: 0 0 0 4ch;
+  list-style-type: '*';
+}
+ul ul {
+  list-style-type: '-';
+}
+ul ul, ol ul {
+  margin-left: 1ch;
+}
+ul ul ul {
+  list-style-type: 'o';
+}
+li {
+  // margin: var(--line) 0;
+  @include margin-line;
+  padding: 0 0 0 2ch;
+}
+.compact li {
+  margin: 0;
+}
+li p:first-child, dd p:first-child {
+  margin: 0;
+}
+dt {
+  float: left;
+  clear: left;
+  margin: 0 2ch 0 0;
+  break-after: avoid;
+}
+dd {
+  // margin: var(--paragraph);
+  @include margin-paragraph;
+  break-before: avoid;
+}
+dl.compact dt, dl.compact dd {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+dl.references dt {
+  margin-right: 1ch;
+}
+dl.references dd {
+  margin-left: 11ch;
+}
+dd.break {
+  display: none;
+}
+
+/* Figures, tables */
+pre {
+  // margin: var(--line) 0;
+  @include margin-line;
+}
+div.artwork, div.sourcecode {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: end;
+}
+div.artwork.alignCenter, div.sourcecode.alignCenter {
+  justify-content: center;
+}
+div.artwork.alignRight, div.sourcecode.alignRight {
+  justify-content: end;
+}
+div.artwork::before, div.sourcecode::before {
+  flex: 0 1 3ch;
+  content: "";
+}
+div.artwork.alignRight::before, div.sourcecode.alignRight::before {
+  flex-grow: 1;
+}
+div.artwork pre, div.sourcecode pre {
+  flex: 0 0 content;
+  margin: 0;
+  max-width: 72ch;
+  overflow: auto;
+}
+div.artwork .pilcrow, div.sourcecode .pilcrow {
+  flex: 0 0 1ch;
+}
+figcaption, table caption {
+  text-align: center;
+  margin-top: var(--line);
+}
+table {
+  --half-line: calc(var(--line) / 2 - 1px);
+  caption-side: bottom;
+  // margin: var(--line) 0 var(--half-line) 3ch;
+  margin-top: var(--line);
+  margin-right: 0;
+  margin-bottom: var(--half-line);
+  margin-left: 3ch;
+  border-collapse: collapse;
+}
+table.center {
+  margin-left: auto; /* todo: add 3ch */
+  margin-right: auto;
+}
+table caption {
+  margin-top: calc(var(--half-line) + var(--line));
+}
+thead, tfoot {
+  border-top-style: double;
+  border-bottom-style: double;
+}
+td, th {
+  border: 1px solid black;
+  // padding: var(--half-line) 1ch;
+  padding-top: var(--half-line);
+  padding-right: 1ch;
+  padding-bottom: var(--half-line);
+  padding-left: 1ch;
+}
+.text-left {
+  text-align: left;
+}
+.text-center {
+  text-align: center;
+}
+.text-right {
+  text-align: right;
+}
+
+/* Links */
+a.selfRef, a.pilcrow {
+  color: black;
+  text-decoration: none;
+}
+a.relref, a.xref {
+  hyphens: none;
+}
+a.relref, a.xref.cite {
+  white-space: nowrap;
+}
+.pilcrow {
+  display: inline-block;
+  margin-right: -1ch;
+  opacity: 0.01;
+  text-decoration: none;
+}
+:hover > .pilcrow {
+  opacity: 0.2;
+}
+* > .pilcrow[href]:hover {
+  opacity: 0.6;
+}
+
+/* sup, sub */
+sup, sub {
+  line-height: 1.1;
+}
+
+/* Authors */
+address {
+  font-style: normal;
+  // margin: 2em 0 var(--line) 3ch;
+  margin-top: 2em;
+  margin-right: 0;
+  margin-bottom: var(--line);
+  margin-left: 3ch;
+}
+h2 + address {
+  margin-top: 1em;
+}
+address .tel, address .email {
+  // margin: var(--line) 0 0;
+  margin-top: var(--line);
+  margin-right: 0;
+  margin-bottom: 0;
+  margin-left: 0;
+}
+address .tel + .email {
+  margin: 0;
+}
+}

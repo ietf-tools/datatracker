@@ -1,0 +1,449 @@
+{# Copyright The IETF Trust 2016-2020, All Rights Reserved #}
+{% load origin %}
+{% load static %}
+{% load ietf_filters %}
+{% load person_filters %}
+{% origin %}
+
+<tbody class="meta align-top {% if not document_html %} border-top{% endif %}">
+    <tr>
+        <th scope="row">Document</th>
+        <th scope="row">{% if document_html %}Document type{% else %}Type{% endif %}</th>
+        <td class="edit"></td>
+        <td>
+            {% if doc.get_state_slug == "rfc" and not snapshot %}
+                <span class="text-success">RFC
+                    {% if not document_html %}
+                    - {{ doc.std_level }}
+                {% else %}
+                    <span class="badge rounded-pill badge-{% if not snapshot %}{{ doc|std_level_to_label_format }}{% else %}draft{% endif %}">{{ doc.std_level }}</span>
+                {% endif %}
+                </span>
+                {% if published %}
+                    {% if document_html %}<br>{% else %}({% endif %}{{ doc.pub_date|date:"F Y" }}{% if not document_html %}){% endif %}
+                {% else %}
+                    <span class="text-muted">(Publication date unknown)</span>
+                {% endif %}
+                {% if document_html %}<br>{% endif %}
+                {% if has_verified_errata or has_errata %}
+                    <a class="{% if document_html %}btn btn-danger btn-sm my-1{% else %}badge rounded-pill bg-danger text-decoration-none text-light{% endif %}"
+                       href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}" title="Click to view errata." rel="nofollow">
+                        Errata
+                    </a>
+                {% endif %}
+                {% if doc.related_ipr %}
+                    <a title="Click to view IPR declarations." class="{% if document_html %}btn btn-warning btn-sm my-1{% else %}badge rounded-pill bg-warning text-decoration-none text-light{% endif %}" href="{% url 'ietf.ipr.views.search' %}?submit=draft&amp;id={{ doc.name }}">IPR</a>
+                {% endif %}
+                {% if obsoleted_by %}<div>Obsoleted by {{ obsoleted_by|urlize_related_source_list:document_html|join:", " }}</div>{% endif %}
+                {% if updated_by %}<div>Updated by {{ updated_by|urlize_related_source_list:document_html|join:", " }}</div>{% endif %}
+                {% if obsoletes %}<div>Obsoletes {{ obsoletes|urlize_related_target_list:document_html|join:", " }}</div>{% endif %}
+                {% if updates %}<div>Updates {{ updates|urlize_related_target_list:document_html|join:", " }}</div>{% endif %}
+                {% if status_changes %}
+                    <div>Status changed by {{ status_changes|urlize_related_source_list|join:", " }}</div>
+                {% endif %}
+                {% if proposed_status_changes %}
+                    <div>Proposed status changed by {{ proposed_status_changes|urlize_related_source_list|join:", " }}</div>
+                {% endif %}
+                {% if rfc_aliases %}<div>Also known as {{ rfc_aliases|join:", "|urlize_ietf_docs }}</div>{% endif %}
+                {% if draft_name %}
+                    <div>
+                        Was
+                        <a href="{% url 'ietf.doc.views_doc.document_main' name=draft_name %}">{{ draft_name }}</a>
+                        {% if submission %}({{ submission|safe }}){% endif %}
+                    </div>
+                {% endif %}
+            {% else %}
+                {% if snapshot and doc.doc.get_state_slug == 'rfc' %}
+                   <div{% if document_html %} class="alert alert-warning small"{% endif %}>This is an older version of an Internet-Draft that was ultimately published as <a href="{% url 'ietf.doc.views_doc.document_html' name=doc.doc.canonical_name %}">{{doc.doc.canonical_name|prettystdname}}</a>.</div>
+                {% elif snapshot and doc.rev != latest_rev  %}
+                    <div{% if document_html %} class="alert alert-warning small"{% endif %}>This is an older version of an Internet-Draft whose latest revision state is "{{ doc.doc.get_state }}".</div>
+                 {% else %}
+                    <span class="{% if doc.get_state_slug == 'active' %}text-success{% elif doc.get_state_slug == 'expired' or doc.get_state_slug == 'repl' %}text-danger{% endif %}">{% if snapshot and doc.rev == latest_rev %}{{ doc.doc.get_state }}{% else %}{{ doc.get_state }}{% endif %} Internet-Draft</span>
+                    {% if submission %}({{ submission|safe }}){% endif %}
+                    {% if resurrected_by %}- resurrect requested by {{ resurrected_by }}{% endif %}
+                {% endif %}
+            {% endif %}
+            {% if doc.get_state_slug != "active" and doc.get_state_slug != "rfc" %}
+                <div class="badge rounded-pill bg-warning{% if not document_html %} float-end{% endif %}">
+                    Expired &amp; archived
+                </div>
+            {% endif %}
+        </td>
+    </tr>
+    {% if document_html %}
+        <tr>
+            <td></td>
+            <th scope="row">Select version</th>
+            <td class="edit"></td>
+            <td>
+                {% include "doc/revisions_list.html" with document_html=document_html %}
+            </td>
+        </tr>
+        {% if doc.rev != "00" %}
+            <tr>
+                <td></td>
+                <th scope="row">Compare versions</th>
+                <td class="edit"></td>
+                <td>
+                    <a class="btn btn-primary btn-sm" href="{{ settings.RFCDIFF_BASE_URL }}?difftype=--hwdiff&amp;url2={{ doc.name }}-{{ doc.rev }}.txt" title="Inline diff (wdiff)">Inline</a>
+                    <a class="btn btn-primary btn-sm" href="{{ settings.RFCDIFF_BASE_URL }}?url2={{ doc.name }}-{{ doc.rev }}.txt" title="Side-by-side diff">Side-by-side</a>
+                </td>
+            </tr>
+        {% endif %}
+    {% endif %}
+    <tr>
+        <td></td>
+        <th scope="row">Author{{ doc.authors|pluralize }}</th>
+        <td class="edit">
+            {% if can_edit_authors %}
+                <a class="btn btn-primary btn-sm"
+                   href="{%  url 'ietf.doc.views_doc.edit_authors' name=doc.name %}">Edit</a>
+            {% endif %}
+        </td>
+        <td>
+            {# Implementation that uses the current primary email for each author #}
+            {% for author in doc.authors %}
+                {% person_link author %}{% if not forloop.last %},{% endif %}
+            {% endfor %}
+            {% if document_html and not snapshot or document_html and doc.rev == latest_rev%}
+                <br>
+                <a class="btn btn-primary btn-sm mt-1" href="mailto:{{ doc.name }}@ietf.org?subject={{ doc.name}}" title="Send email to the document authors">Email authors</a>
+            {% endif %}
+        </td>
+    </tr>
+    {% if not document_html %}
+    {# FIXME: This shows the date of the last history event, which is not what participants necessarily expect here. #}
+    <tr>
+        <td></td>
+        <th scope="row">Last updated</th>
+        <td class="edit"></td>
+        <td>
+            {{ doc.time|date:"Y-m-d" }}
+            {% if latest_revision and latest_revision.time|date:"Y-m-d" != doc.time|date:"Y-m-d" %}
+                <span class="text-muted">(Latest revision {{ latest_revision.time|date:"Y-m-d" }})</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% endif %}
+    {% if replaces or not document_html and can_edit_stream_info %}
+        <tr>
+            <td></td>
+            <th scope="row">Replaces</th>
+            <td class="edit">
+                {% if can_edit_stream_info and not snapshot %}
+                    <a class="btn btn-primary btn-sm"
+                       href="{% url 'ietf.doc.views_draft.replaces' name=doc.name %}">Edit</a>
+                {% endif %}
+            </td>
+            <td>
+                {% if replaces %}
+                    {% if document_html %}
+                        {{ replaces|urlize_related_target_list:document_html|join:"<br>" }}
+                    {% else %}
+                        {{ replaces|urlize_related_target_list:document_html|join:", " }}
+                    {% endif %}
+                {% else %}
+                    <span class="text-muted">(None)</span>
+                {% endif %}
+            </td>
+        </tr>
+    {% endif %}
+    {% if replaced_by %}
+        <tr>
+            <td></td>
+            <th scope="row">
+                Replaced by
+            </th>
+            <td class="edit">
+            </td>
+            <td>
+                {% if document_html %}
+                    {{ replaced_by|urlize_related_source_list:document_html|join:"<br>" }}
+                {% else %}
+                    {{ replaced_by|urlize_related_source_list:document_html|join:", " }}
+                {% endif %}
+            </td>
+        </tr>
+    {% endif %}
+    {% if can_view_possibly_replaces %}
+        {% if possibly_replaces %}
+            <tr>
+                <td></td>
+                <th scope="row">
+                    Possibly Replaces
+                </th>
+                <td class="edit">
+                    {% if can_edit_replaces and not snapshot %}
+                        <a class="btn btn-primary btn-sm"
+                           href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">
+                            Edit
+                        </a>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if document_html %}
+                        {{ possibly_replaces|urlize_related_target_list:document_html|join:"<br>" }}
+                    {% else %}
+                        {{ possibly_replaces|urlize_related_target_list:document_html|join:", " }}
+                    {% endif %}
+                </td>
+            </tr>
+        {% endif %}
+        {% if possibly_replaced_by %}
+            <tr>
+                <td></td>
+                <th scope="row">
+                    Possibly Replaced By
+                </th>
+                <td class="edit">
+                    {% if can_edit_replaces and not snapshot %}
+                        {% comment %}<a class="btn btn-primary btn-sm"
+href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">Edit</a>{% endcomment %}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if document_html %}
+                        {{ possibly_replaced_by|urlize_related_source_list:document_html|join:"<br>" }}
+                    {% else %}
+                        {{ possibly_replaced_by|urlize_related_source_list:document_html|join:", " }}
+                    {% endif %}
+                </td>
+            </tr>
+        {% endif %}
+    {% endif %}
+    <tr>
+        <td></td>
+        <th scope="row">
+            RFC stream
+        </th>
+        <td class="edit">
+            {% if can_change_stream and not snapshot %}
+                <a class="btn btn-primary btn-sm"
+                   href="{% url 'ietf.doc.views_draft.change_stream' name=doc.name %}">
+                    Edit
+                </a>
+            {% endif %}
+        </td>
+        <td {% if stream_desc == "(None)" %}class="text-muted"{%endif%}>
+            {% if stream_desc != "(None)" %}
+                {% if doc.stream.name|lower in 'iab,irtf,ise,editorial' %}
+                    <a href="{% url 'ietf.group.views.stream_documents' acronym=doc.stream.name|lower %}">
+                {% endif %}
+                {% if document_html %}
+                    {% if doc.stream.name|lower in 'iab,ietf,irtf' %}
+                        <img alt="{{ doc.stream.name|upper }} Logo"
+                             title="{{ stream_desc }}"
+                             class="w-25 mt-1"
+                             {% if doc.stream.name|lower == 'iab' %}
+                                 src="{% static 'ietf/images/iab-logo.svg' %}"
+                             {% elif doc.stream.name|lower == 'ietf' %}
+                                 src="{% static 'ietf/images/ietf-logo.svg' %}"
+                             {% elif doc.stream.name|lower == 'irtf' %}
+                                 src="{% static 'ietf/images/irtf-logo.svg' %}"
+                             {% endif %}
+                             >
+                    {% else %}
+                        {{ stream_desc }}
+                    {% endif %}
+                {% else %}
+                    {{ stream_desc }}
+                {% endif %}
+                {% if doc.stream.name|lower in 'iab,irtf,ise,editorial' %}
+                    </a>
+                {% endif %}
+            {% else %}
+                {{ stream_desc }}
+            {% endif %}
+        </td>
+    </tr>
+    {% if doc.get_state_slug != "rfc" and not snapshot %}
+        <tr>
+            <td></td>
+            <th scope="row">
+                Intended RFC status
+            </th>
+            <td class="edit">
+                {% if can_edit_stream_info and not snapshot %}
+                    <a class="btn btn-primary btn-sm"
+                       href="{% url 'ietf.doc.views_draft.change_intention' name=doc.name %}">
+                        Edit
+                    </a>
+                {% endif %}
+            </td>
+            <td>
+                {% if doc.intended_std_level %}
+                    {{ doc.intended_std_level }}
+                {% else %}
+                    <span class="text-muted">
+                        (None)
+                    </span>
+                {% endif %}
+            </td>
+        </tr>
+    {% endif %}
+    <tr>
+        <td></td>
+        <th scope="row">
+            {% if document_html %}Other formats{% else %}Formats{% endif %}
+        </th>
+        <td class="edit">
+        </td>
+        <td>
+            {% if document_html %}
+                {% include "doc/document_format_buttons.html" with skip_format="htmlized" %}
+            {% else %}
+                {% include "doc/document_format_buttons.html" %}
+            {% endif %}
+        </td>
+    </tr>
+    {% for check in doc.submission.latest_checks %}
+        {% if check.passed != None and check.symbol.strip %}
+            <tr>
+                <td></td>
+                <th scope="row">
+                    {{ check.checker|title }}
+                </th>
+                <td class="edit">
+                </td>
+                <td>
+                    {% if check.errors or check.warnings %}
+                        <span class="checker-warning"
+                              data-bs-toggle="modal"
+                              data-bs-target="#check-{{ check.pk }}"
+                              title="{{ check.checker|title }} returned warnings or errors.">
+                            {{ check.symbol|safe }}
+                        </span>
+                    {% else %}
+                        <span class="checker-success"
+                              data-bs-toggle="modal"
+                              data-bs-target="#check-{{ check.pk }}"
+                              title="{{ check.checker|title }} passed">
+                            {{ check.symbol|safe }}
+                        </span>
+                    {% endif %}
+                    <a href="#"
+                       data-bs-toggle="modal"
+                       data-bs-target="#check-{{ check.pk }}">
+                        {{ check.errors }} errors, {{ check.warnings }} warnings
+                    </a>
+                    {% include "doc/yang-check-modal-overlay.html" %}
+                </td>
+            </tr>
+        {% endif %}
+    {% endfor %}
+    {% if not document_html %}
+    {% if review_assignments or can_request_review %}
+        <tr>
+            <td></td>
+            <th scope="row">
+                Reviews
+            </th>
+            <td class="edit">
+            </td>
+            <td>
+                {% for review_assignment in review_assignments %}
+                    {% include "doc/review_assignment_summary.html" with current_doc_name=doc.name current_rev=doc.rev %}
+                {% endfor %}
+                {% if no_review_from_teams %}
+                    {% for team in no_review_from_teams %}
+                        {{ team.acronym.upper }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                    will not review this version
+                {% endif %}
+                {% if can_request_review or can_submit_unsolicited_review_for_teams %}
+                    <div {% if review_assignments or no_review_from_teams %}class="mt-3"{% endif %}>
+                        {% if can_request_review %}
+                        <a class="btn btn-primary btn-sm"
+                           href="{% url "ietf.doc.views_review.request_review" doc.name %}">
+                            <i class="bi bi-check-circle">
+                            </i>
+                            Request review
+                        </a>
+                        {% endif %}
+                        {% if can_submit_unsolicited_review_for_teams|length == 1 %}
+                            <a class="btn btn-primary btn-sm"
+                               href="{% url "ietf.doc.views_review.complete_review" doc.name can_submit_unsolicited_review_for_teams.0.acronym %}">
+                                <i class="bi bi-pencil-square">
+                                </i>
+                                Submit unsolicited review
+                            </a>
+                        {% elif can_submit_unsolicited_review_for_teams %}
+                            <a class="btn btn-primary btn-sm"
+                               href="{% url "ietf.doc.views_review.submit_unsolicited_review_choose_team" doc.name %}">
+                                <i class="bi bi-pencil-square">
+                                </i>
+                                Submit unsolicited review
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </td>
+        </tr>
+    {% endif %}
+    {% if conflict_reviews %}
+        <tr>
+            <td></td>
+            <th scope="row">
+                IETF conflict review
+            </th>
+            <td class="edit">
+            </td>
+            <td>
+                {{ conflict_reviews|join:", "|urlize_ietf_docs }}
+            </td>
+        </tr>
+    {% endif %}
+    {% endif %}
+    {% with doc.docextresource_set.all as resources %}
+        {% if document_html and resources or document_html and doc.group and doc.group.list_archive %}
+        {% if resources or doc.group and doc.group.list_archive or can_edit_stream_info or can_edit_individual %}
+            <tr>
+                <td>
+                </td>
+                <th scope="row">
+                    Additional resources
+                </th>
+                <td class="edit">
+                    {% if can_edit_stream_info or can_edit_individual %}
+                        <a class="btn btn-primary btn-sm"
+                           href="{% url 'ietf.doc.views_draft.edit_doc_extresources' name=doc.name %}">
+                            Edit
+                        </a>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if resources or doc.group and doc.group.list_archive %}
+                        {% for resource in resources|dictsort:"display_name" %}
+                            {% if resource.name.type.slug == 'url' or resource.name.type.slug == 'email' %}
+                                <a href="{{ resource.value }}" title="{{ resource.name.name }}">
+                                    {% firstof resource.display_name resource.name.name %}
+                                </a>
+                                <br>
+                                {# Maybe make how a resource displays itself a method on the class so templates aren't doing this switching #}
+                            {% else %}
+                                <span title="{{ resource.name.name }}">
+                                    {% firstof resource.display_name resource.name.name %}: {{ resource.value|escape }}
+                                </span>
+                                <br>
+                            {% endif %}
+                        {% endfor %}
+                        {% if doc.group and doc.group.list_archive %}
+                            {% if doc.group.list_archive|startswith:settings.MAILING_LIST_ARCHIVE_URL %}
+                                <a href="{{ doc.group.list_archive }}?q={{ doc.name }}">
+                                    Mailing list discussion
+                                </a>
+                            {% elif doc.group.list_archive|is_valid_url %}
+                                <a href="{{ doc.group.list_archive }}">
+                                    Mailing list discussion
+                                </a>
+                            {% else %}
+                                {{ doc.group.list_archive|urlencode }}
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+        {% endif %}
+        {% endif %}
+    {% endwith %}
+</tbody>
