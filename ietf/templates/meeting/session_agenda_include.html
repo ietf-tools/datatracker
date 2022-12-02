@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
 {# expects slug, session, and timeslot  to be in the context. Calling template must load the agenda_materials.js script. #}
 {% load origin %}
 {% origin %}
@@ -19,7 +19,7 @@
                     {% if timeslot.type.slug == 'plenary' %}
                         {{ timeslot.name }}
                     {% else %}
-                        {{ session.historic_group.name }}
+                        {{ session.group_at_the_time.name }}
                     {% endif %}
                 </p>
                 <button type="button"

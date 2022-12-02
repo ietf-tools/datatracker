@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2020, All Rights Reserved
+# Copyright The IETF Trust 2013-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -72,9 +72,10 @@ def webcal_url(context, viewname, *args, **kwargs):
 @register.simple_tag
 def assignment_display_name(assignment):
     """Get name for an assignment"""
-    if assignment.session.type.slug == 'regular' and getattr(assignment.session, 'historic_group', None):
-        return assignment.session.historic_group.name
-    return assignment.session.name or assignment.timeslot.name
+    if assignment.session.type.slug == 'regular':
+        return assignment.session.group_at_the_time().name
+    else:
+        return assignment.session.name or assignment.timeslot.name
 
 
 class AnchorNode(template.Node):

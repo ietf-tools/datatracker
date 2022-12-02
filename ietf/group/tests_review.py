@@ -227,7 +227,7 @@ class ReviewTests(TestCase):
         self.assertContains(r, review_req1.doc.name)
         self.assertContains(r, review_req2.doc.name)
         # None of the reviews should be completed this time,
-        # note that "Days Since Completed has soft hypens in it, so it
+        # note that "Days Since Completed has soft hyphens in it, so it
         # will not match
         self.assertNotContains(r, "Completed")
         # add multiple completed reviews
@@ -303,7 +303,7 @@ class ReviewTests(TestCase):
             else:
                 self.assertNotContains(r, reqs[i].doc.name)
         # Add assigned items, they should be visible as long as they
-        # are withing time period
+        # are within time period
         review_req4 = ReviewRequestFactory(state_id='completed', team=team)
         ReviewAssignmentFactory(
             review_request__doc=review_req4.doc,
@@ -369,10 +369,10 @@ class ReviewTests(TestCase):
         login_testing_unauthorized(self, "secretary", unassigned_url)
 
         # Need one more person in review team one so we can test incrementing skip_count without immediately decrementing it
-        another_reviewer = PersonFactory.create(name = "Extra TestReviewer") # needs to be lexically greater than the exsting one
+        another_reviewer = PersonFactory.create(name = "Extra TestReviewer") # needs to be lexically greater than the existing one
         another_reviewer.role_set.create(name_id='reviewer', email=another_reviewer.email(), group=review_req1.team)
         ReviewerSettingsFactory(team=review_req3.team, person = another_reviewer)
-        yet_another_reviewer = PersonFactory.create(name = "YetAnotherExtra TestReviewer") # needs to be lexically greater than the exsting one
+        yet_another_reviewer = PersonFactory.create(name = "YetAnotherExtra TestReviewer") # needs to be lexically greater than the existing one
         yet_another_reviewer.role_set.create(name_id='reviewer', email=yet_another_reviewer.email(), group=review_req1.team)
         ReviewerSettingsFactory(team=review_req3.team, person = yet_another_reviewer)
 

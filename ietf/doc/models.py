@@ -215,7 +215,7 @@ class DocumentInfo(models.Model):
         which returns an url to the datatracker page for the document.   
         """
         # If self.external_url truly is an url, use it.  This is a change from
-        # the earlier resulution order, but there's at the moment one single
+        # the earlier resolution order, but there's at the moment one single
         # instance which matches this (with correct results), so we won't
         # break things all over the place.
         if not hasattr(self, '_cached_href'):
@@ -921,7 +921,7 @@ class Document(DocumentInfo):
 
     def last_presented(self):
         """ returns related SessionPresentation objects for the most recent meeting in the past"""
-        # Assumes no two meetings have the same start date - if the assumption is violated, one will be chosen arbitrariy
+        # Assumes no two meetings have the same start date - if the assumption is violated, one will be chosen arbitrarily
         today = date_today()
         candidate_presentations = self.sessionpresentation_set.filter(session__meeting__date__lte=today)
         candidate_meetings = set([p.session.meeting for p in candidate_presentations if p.session.meeting.end_date()<today])
@@ -1320,7 +1320,7 @@ class BallotDocEvent(DocEvent):
                 if e.pos != prev:
                     latest.old_positions.append(e.pos)
 
-        # get rid of trailling "No record" positions, some old ballots
+        # get rid of trailing "No record" positions, some old ballots
         # have plenty of these
         for p in positions:
             while p.old_positions and p.old_positions[-1].slug == "norecord":

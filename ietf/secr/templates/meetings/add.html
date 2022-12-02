@@ -19,7 +19,7 @@
         <form id="proceedings-add-form" enctype="multipart/form-data" method="post">{% csrf_token %}
             <table id="proceedings-add-table">
                 <tbody>
-                <!-- [html-validate-disable-block element-required-attributes, no-redundant-for -- FIXME: as_table renders without scope] -->
+                <!-- [html-validate-disable-block wcag/h63, no-redundant-for -- FIXME: as_table renders without scope] -->
                 {{ form.as_table }}
                 </tbody>
             </table>

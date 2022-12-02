@@ -196,6 +196,7 @@ def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
 
     return re.search(
         r"""document\ is\ not\ mappable\ to\ XML\ 1|
+             Attribute\ 'readonly'\ not\ allowed\ on\ element\ 'select'|
             ^Attribute\ 'required'\ not\ allowed\ on\ element\ 'div'|
             ^The\ 'type'\ attribute\ is\ unnecessary\ for\ JavaScript|
             is\ not\ in\ Unicode\ Normalization\ Form\ C""",
@@ -427,7 +428,7 @@ def get_template_paths(apps=None):
 
 def save_test_results(failures, test_labels):
     # Record the test result in a file, in order to be able to check the
-    # results and avoid re-running tests if we've alread run them with OK
+    # results and avoid re-running tests if we've already run them with OK
     # result after the latest code changes:
     tfile = io.open(".testresult", "a", encoding='utf-8')
     timestr = time.strftime("%Y-%m-%d %H:%M:%S")
