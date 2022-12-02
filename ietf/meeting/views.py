@@ -3548,9 +3548,14 @@ def upcoming_ical(request):
             a.session = sessions.get(a.session_id) or a.session
             a.session.ical_status = ical_session_status(a)
 
-    # handle IETFs separately
-    ietfs = [m for m in meetings if m.type_id == 'ietf']
-    preprocess_meeting_important_dates(ietfs)
+    # Handle IETFs separately. Manually apply the 'ietf-meetings' filter.
+    if filter_params is None or (
+            'ietf-meetings' in filter_params['show'] and 'ietf-meetings' not in filter_params['hide']
+    ):
+        ietfs = [m for m in meetings if m.type_id == 'ietf']
+        preprocess_meeting_important_dates(ietfs)
+    else:
+        ietfs = []
 
     meeting_vtz = {meeting.vtimezone() for meeting in meetings}
     meeting_vtz.discard(None)
