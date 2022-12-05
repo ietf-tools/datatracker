@@ -81,15 +81,13 @@ def forward(apps, schema_editor):
                         stats['mapped'] +=1
                         name = ExtResourceName.objects.get(slug=slug)
                         # Munge the URL if it's the first github repo match
-                        #  Remove "/tree/master" and "/tree/main" substrings if it exists
+                        #  Remove "/tree/master" substring if it exists
                         #  Remove trailing "/issues" substring if it exists
-                        #  Remove "/blob/master/.*" and "/blob/main/.*" patterns if present
+                        #  Remove "/blob/master/.*" pattern if present
                         if regext == "https?://github\\.com":
                             group_url.url = group_url.url.replace("/tree/master","")
-                            group_url.url = group_url.url.replace("/tree/main","")
                             group_url.url = re.sub('/issues$', '', group_url.url)
                             group_url.url = re.sub('/blob/master.*$', '', group_url.url)
-                            group_url.url = re.sub('/blob/main.*$', '', group_url.url)
                         try:
                             validate_external_resource_value(name, group_url.url)
                             GroupExtResource.objects.create(group=group_url.group, name=name, value=group_url.url, display_name=group_url.name)

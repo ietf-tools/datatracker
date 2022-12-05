@@ -57,7 +57,7 @@ expected_datetime_columns = (
     ('ipr_iprevent', 'time'),
     ('liaisons_liaisonstatementevent', 'time'),
     ('mailinglists_subscribed', 'time'),
-    ('mailinglists_allowlisted', 'time'),
+    ('mailinglists_whitelisted', 'time'),
     ('meeting_floorplan', 'modified'),
     ('meeting_room', 'modified'),
     ('meeting_schedtimesessassignment', 'modified'),
@@ -244,7 +244,7 @@ UPDATE ipr_iprevent SET response_due = CONVERT_TZ(response_due, 'PST8PDT', 'UTC'
 UPDATE ipr_iprevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
 UPDATE liaisons_liaisonstatementevent SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
 UPDATE mailinglists_subscribed SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
-UPDATE mailinglists_allowlisted SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
+UPDATE mailinglists_whitelisted SET time = CONVERT_TZ(time, 'PST8PDT', 'UTC') WHERE time >= '1969-12-31 16:00:01';
 UPDATE meeting_floorplan SET modified = CONVERT_TZ(modified, 'PST8PDT', 'UTC') WHERE modified >= '1969-12-31 16:00:01';
 UPDATE meeting_room SET modified = CONVERT_TZ(modified, 'PST8PDT', 'UTC') WHERE modified >= '1969-12-31 16:00:01';
 UPDATE meeting_schedtimesessassignment SET modified = CONVERT_TZ(modified, 'PST8PDT', 'UTC') WHERE modified >= '1969-12-31 16:00:01';

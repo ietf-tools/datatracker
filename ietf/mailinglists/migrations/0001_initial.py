@@ -40,7 +40,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='Allowlisted',
+            name='Whitelisted',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('time', models.DateTimeField(auto_now_add=True)),
@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
                 ('by', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='person.Person')),
             ],
             options={
-                'verbose_name_plural': 'Allowlisted',
+                'verbose_name_plural': 'Whitelisted',
             },
         ),
     ]
