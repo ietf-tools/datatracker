@@ -542,7 +542,7 @@ INTERNAL_IPS = (
 
 # no slash at end
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
-RFCDIFF_BASE_URL = "https://www.ietf.org/rfcdiff"
+RFCDIFF_BASE_URL = "https://author-tools.ietf.org/iddiff"
 IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
 IDNITS_SERVICE_URL = "https://author-tools.ietf.org/idnits"
 
