@@ -1,4 +1,5 @@
 name: Build and Release
+run-name: ${{ github.event.inputs.publish == 'true' && '[Prod]' || '[Dev]' }} Build ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}
 
 on:
   push:
@@ -453,7 +454,7 @@ jobs:
         npm ci
         cd ../..
         echo "Start Deploy..."
-        node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain neverusethis.com
+        node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain dev.ietf.org
         
     - name: Cleanup old docker resources
       env:
