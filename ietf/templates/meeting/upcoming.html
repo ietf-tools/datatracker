@@ -46,7 +46,12 @@
             <tbody>
                 {% for entry in entries %}
                     <tr class="entry"
-                        {% if entry|classname == 'Session' %}data-filter-keywords="{{ entry.filter_keywords|join:',' }}"{% endif %}>
+                        {% if entry|classname == 'Session' %}
+                            data-filter-keywords="{{ entry.filter_keywords|join:',' }}"
+                        {% elif entry|classname == 'Meeting' %}
+                            data-filter-keywords="ietf-meetings"
+                        {% endif %}
+                    >
                         {% if entry|classname == 'Meeting' %}
                             {% with meeting=entry %}
                                 <td class="meeting-time"
@@ -122,6 +127,7 @@
                       {% with meeting=entry %}
                           {
                               ietf_meeting_number: '{{ meeting.number }}',
+                              filter_keywords: ['ietf-meetings'],
                               start_moment: moment.tz('{{meeting.date}}', '{{ meeting.time_zone }}').startOf('day'),
                               end_moment: moment.tz('{{meeting.end_date}}', '{{ meeting.time_zone }}').endOf('day'),
                               url: '{% url 'agenda' num=meeting.number %}'

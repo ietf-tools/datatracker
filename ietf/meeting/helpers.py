@@ -256,6 +256,10 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
         self.special_filters = None
         if self._use_legacy_keywords():
             self.extra_labels += ('Plenary',)  # need this when not using session purpose
+        self.manual_extra_labels = set()
+
+    def add_extra_filter(self, kw):
+        self.manual_extra_labels.add(kw)
 
     def get_non_area_keywords(self):
         """Get list of any 'non-area' (aka 'special') keywords
@@ -436,13 +440,13 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
     def _extra_filters(self):
         """Get list of filters corresponding to self.extra_labels"""
         item_source = self.assignments or self.sessions or []
-        candidates = set(self.extra_labels)
+        candidates = set(self.extra_labels).union(self.manual_extra_labels)
         return self._filter_column(
             label=None,
             keyword=None,
             children=[
                 self._filter_entry(label=label, keyword=xslugify(label), toggled_by=[], is_bof=False)
-                for label in candidates if any(
+                for label in candidates if label in self.manual_extra_labels or any(
                     # Keep only those that will affect at least one session
                     [label.lower() in item.filter_keywords for item in item_source]
                 )]
