@@ -105,7 +105,7 @@ class ConflictReviewTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=notify]')),1)
+        self.assertEqual(len(q('form textarea[name=notify]')), 1)
         self.assertEqual(len(q('form select[name=ad]')),0)
 
         # successfully starts a review, and notifies the secretariat
@@ -179,8 +179,8 @@ class ConflictReviewTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=notify]')),1)
-        self.assertEqual(doc.notify,q('form input[name=notify]')[0].value)
+        self.assertEqual(len(q('form textarea[name=notify]')), 1)
+        self.assertEqual(doc.notify, q('form textarea[name=notify]')[0].value.strip())
 
         # change notice list
         newlist = '"Foo Bar" <foo@bar.baz.com>'
@@ -197,7 +197,7 @@ class ConflictReviewTests(TestCase):
         # Regenerate does not save!
         self.assertEqual(doc.notify,newlist)
         q = PyQuery(r.content)
-        self.assertEqual(None,q('form input[name=notify]')[0].value)
+        self.assertEqual("", q('form textarea[name=notify]')[0].value.strip())
 
     def test_edit_ad(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
