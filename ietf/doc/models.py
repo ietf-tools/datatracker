@@ -111,7 +111,7 @@ class DocumentInfo(models.Model):
     ad = ForeignKey(Person, verbose_name="area director", related_name='ad_%(class)s_set', blank=True, null=True)
     shepherd = ForeignKey(Email, related_name='shepherd_%(class)s_set', blank=True, null=True)
     expires = models.DateTimeField(blank=True, null=True)
-    notify = models.CharField(max_length=255, blank=True)
+    notify = models.TextField(max_length=1023, blank=True)
     external_url = models.URLField(blank=True)
     uploaded_filename = models.TextField(blank=True)
     note = models.TextField(blank=True)
