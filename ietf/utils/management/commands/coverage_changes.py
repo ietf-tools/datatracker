@@ -235,7 +235,7 @@ class Command(BaseCommand):
             # verbosity = int(options.get('verbosity'))
             if not filenames:
                 filenames = [
-                    getattr(settings, 'TEST_COVERAGE_main_FILE'),
+                    getattr(settings, 'TEST_COVERAGE_MAIN_FILE'),
                     getattr(settings, 'TEST_COVERAGE_LATEST_FILE'),
                 ]
             if len(filenames) != 2:

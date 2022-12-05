@@ -733,7 +733,7 @@ class IetfTestRunner(DiscoverRunner):
         settings.show_logging = show_logging
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
-        self.coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_MASTER_FILE)
+        self.coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_MAIN_FILE)
         super(IetfTestRunner, self).__init__(**kwargs)
         if self.parallel > 1:
             if self.html_report == True:
