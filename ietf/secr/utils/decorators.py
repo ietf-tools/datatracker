@@ -18,7 +18,7 @@ from ietf.utils.response import permission_denied
             
 def check_for_cancel(redirect_url):
     """
-    Decorator to make a view redirect to the given url if the reuqest is a POST which contains
+    Decorator to make a view redirect to the given url if the request is a POST which contains
     a submit=Cancel.
     """
     def decorator(func):

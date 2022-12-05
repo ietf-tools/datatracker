@@ -119,7 +119,7 @@ module.exports = function (list) {
       var target = e.target || e.srcElement, // IE have srcElement
         alreadyCleared = target.value === '' && !list.searched
       if (!alreadyCleared) {
-        // If oninput already have resetted the list, do nothing
+        // If oninput has already reset the list, do nothing
         searchMethod(target.value)
       }
     }, list.searchDelay)

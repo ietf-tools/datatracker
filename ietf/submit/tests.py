@@ -107,6 +107,10 @@ def submission_file(name_in_doc, name_in_post, group, templatename, author=None,
     if year is None:
         year = _today.strftime("%Y")
 
+    # extract_authors() cuts the author line off at the first space past 80 characters
+    # very long factory-generated names can hence be truncated, causing a failure
+    # ietf/submit/test_submission.txt was changed so that 37-character names and shorter will work
+    # this may need further adjustment if longer names still cause failures
     submission_text = template % dict(
             date=_today.strftime("%d %B %Y"),
             expiration=(_today + datetime.timedelta(days=100)).strftime("%d %B, %Y"),
@@ -119,6 +123,7 @@ def submission_file(name_in_doc, name_in_post, group, templatename, author=None,
             asciiAuthor=author.ascii,
             initials=author.initials(),
             surname=author.ascii_parts()[3] if ascii else author.name_parts()[3],
+            firstpagename=f"{author.initials()} {author.ascii_parts()[3] if ascii else author.name_parts()[3]}",
             asciiSurname=author.ascii_parts()[3],
             email=email,
             title=title,
@@ -1445,7 +1450,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(r.status_code, 302)
         unprivileged_status_url = r['Location']
 
-        # status page as unpriviliged => no edit button
+        # status page as unprivileged => no edit button
         r = self.client.get(unprivileged_status_url)
         self.assertContains(r, "Submission status of %s" % name)
         q = PyQuery(r.content)

@@ -1,0 +1,33 @@
+# This docker-compose replicates the test workflow happening on GitHub during a PR / build check.
+# To be used from the debug.sh script.
+
+version: '3.8'
+
+services:
+    app:
+        image: ghcr.io/ietf-tools/datatracker-app-base:latest
+        command: -f /dev/null
+        working_dir: /__w/datatracker/datatracker
+        entrypoint: tail
+        hostname: app
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+        environment:
+            CI: 'true'
+            GITHUB_ACTIONS: 'true'
+            HOME: /github/home
+    db:
+        image: ghcr.io/ietf-tools/datatracker-db:latest
+        restart: unless-stopped
+        volumes:
+            - mariadb-data:/var/lib/mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: RkTkDPFnKpko
+            MYSQL_DATABASE: ietf_utf8
+            MYSQL_USER: django
+            MYSQL_PASSWORD: RkTkDPFnKpko
+            CI: 'true'
+            GITHUB_ACTIONS: 'true'
+
+volumes:
+    mariadb-data:

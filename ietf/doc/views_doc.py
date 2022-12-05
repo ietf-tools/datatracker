@@ -49,6 +49,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django import forms
+from django.contrib.staticfiles import finders
 
 
 import debug                            # pyflakes:ignore
@@ -61,9 +62,9 @@ from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_wit
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
-    add_events_message_info, get_unicode_document_content, build_doc_meta_block,
+    add_events_message_info, get_unicode_document_content,
     augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event,
-    build_doc_supermeta_block, build_file_urls, update_documentauthors, fuzzy_find_documents,
+    build_file_urls, update_documentauthors, fuzzy_find_documents,
     bibxml_for_draft)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role, Group
@@ -140,12 +141,12 @@ def interesting_doc_relations(doc):
 
     return interesting_relations_that, interesting_relations_that_doc
 
-def document_main(request, name, rev=None):
+def document_main(request, name, rev=None, document_html=False):
     doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
 
     # take care of possible redirections
     aliases = DocAlias.objects.filter(docs=doc).values_list("name", flat=True)
-    if rev==None and doc.type_id == "draft" and not name.startswith("rfc"):
+    if document_html is False and rev==None and doc.type_id == "draft" and not name.startswith("rfc"):
         for a in aliases:
             if a.startswith("rfc"):
                 return redirect("ietf.doc.views_doc.document_main", name=a)
@@ -169,7 +170,7 @@ def document_main(request, name, rev=None):
                 doc = h
                 break
 
-        if not snapshot:
+        if not snapshot and document_html is False:
             return redirect('ietf.doc.views_doc.document_main', name=name)
 
         if doc.type_id == "charter":
@@ -183,7 +184,6 @@ def document_main(request, name, rev=None):
         group = doc.group
 
     top = render_document_top(request, doc, "status", name)
-
 
     telechat = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
     if telechat and (not telechat.telechat_date or telechat.telechat_date < date_today(settings.TIME_ZONE)):
@@ -446,8 +446,22 @@ def document_main(request, name, rev=None):
         else:
             stream_desc = "(None)"
 
-        return render(request, "doc/document_draft.html",
+        html = None
+        js = None
+        css = None
+        if document_html:
+            html = doc.html_body()
+            if request.COOKIES.get("pagedeps") == "inline":
+                js = Path(finders.find("ietf/js/document_html.js")).read_text()
+                css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
+                if html:
+                    css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
+        return render(request, "doc/document_draft.html" if document_html is False else "doc/document_html.html",
                                   dict(doc=doc,
+                                       document_html=document_html,
+                                       css=css,
+                                       js=js,
+                                       html=html,
                                        group=group,
                                        top=top,
                                        name=name,
@@ -787,7 +801,6 @@ def document_raw_id(request, name, rev=None, ext=None):
     except:
         raise Http404
 
-
 def document_html(request, name, rev=None):
     found = fuzzy_find_documents(name, rev)
     num_found = found.documents.count()
@@ -811,30 +824,7 @@ def document_html(request, name, rev=None):
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
-    if doc.type_id in ['draft',]:
-        doc.supermeta = build_doc_supermeta_block(doc)
-        doc.meta = build_doc_meta_block(doc, settings.HTMLIZER_URL_PREFIX)
-
-    doccolor = 'bgwhite' # Unknown
-    if doc.type_id=='draft':
-        if doc.is_rfc():
-            if doc.related_that('obs'):
-                doccolor = 'bgbrown'
-            else:
-                doccolor = {
-                    'ps'   : 'bgblue',
-                    'exp'  : 'bgyellow',
-                    'inf'  : 'bgorange',
-                    'ds'   : 'bgcyan',
-                    'hist' : 'bggrey',
-                    'std'  : 'bggreen',
-                    'bcp'  : 'bgmagenta',
-                    'unkn' : 'bgwhite',
-                }.get(doc.std_level_id, 'bgwhite')
-        else:
-            doccolor = 'bgred' # Draft
-
-    return render(request, "doc/document_html.html", {"doc":doc, "doccolor":doccolor })
+    return document_main(request, name, rev=rev, document_html=True)
 
 def document_pdfized(request, name, rev=None, ext=None):
 

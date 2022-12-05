@@ -1,0 +1,316 @@
+@use "sass:map";
+
+// FIXME: It's not clear why these three variables remain unset by bs5, but just
+// set them to placeholder values so the CSS embedded in the HTML validates.
+$btn-font-family: inherit !default;
+$nav-link-font-weight: inherit !default;
+$tooltip-margin: inherit !default;
+
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/maps";
+@import "bootstrap/scss/mixins";
+@import "bootstrap/scss/utilities";
+@import "bootstrap/scss/root";
+
+// Layout & components
+@import "bootstrap/scss/reboot";
+@import "bootstrap/scss/type";
+// @import "bootstrap/scss/images";
+@import "bootstrap/scss/containers";
+@import "bootstrap/scss/grid";
+// @import "bootstrap/scss/tables";
+@import "bootstrap/scss/forms";
+@import "bootstrap/scss/buttons";
+@import "bootstrap/scss/transitions";
+// @import "bootstrap/scss/dropdown";
+@import "bootstrap/scss/button-group";
+@import "bootstrap/scss/nav";
+@import "bootstrap/scss/navbar";
+// @import "bootstrap/scss/card";
+// @import "bootstrap/scss/accordion";
+// @import "bootstrap/scss/breadcrumb";
+@import "bootstrap/scss/pagination";
+@import "bootstrap/scss/badge";
+@import "bootstrap/scss/alert";
+// @import "bootstrap/scss/progress";
+// @import "bootstrap/scss/list-group";
+// @import "bootstrap/scss/close";
+// @import "bootstrap/scss/toasts";
+// @import "bootstrap/scss/modal";
+@import "bootstrap/scss/tooltip";
+// @import "bootstrap/scss/popover";
+// @import "bootstrap/scss/carousel";
+// @import "bootstrap/scss/spinners";
+// @import "bootstrap/scss/offcanvas";
+// @import "bootstrap/scss/placeholders";
+
+// Helpers
+@import "bootstrap/scss/helpers";
+
+// Utilities
+@import "bootstrap/scss/utilities/api";
+
+:root {
+    --doc-ptsize-max: 16pt;
+}
+
+.overscroll-none {
+    overscroll-behavior: none;
+}
+
+.no-scrollbar {
+    scrollbar-width: none;
+}
+
+.sidebar-toggle[aria-expanded="true"] {
+    display: none;
+}
+
+.sidebar-toggle[aria-expanded="false"] {
+    display: inherit;
+}
+
+@media screen {
+    @include media-breakpoint-down(md) {
+        body {
+            padding-top: 60px;
+        }
+
+        html {
+            scroll-padding-top: 60px;
+        }
+    }
+
+    @include media-breakpoint-down(sm) {
+        body {
+            padding-top: 70px;
+        }
+
+        html {
+            scroll-padding-top: 70px;
+        }
+    }
+}
+
+.rfcmarkup,
+.rfchtml {
+    font-family: var(--bs-font-monospace);
+
+    caption {
+        padding: 0;
+        color: var(--bs-body-color);
+    }
+
+    code {
+        font-size: 1em;
+        color: var(--bs-body-color);
+    }
+
+    @media screen {
+        @include media-breakpoint-only(xs) {
+            font-size: min(7pt, var(--doc-ptsize-max));
+        }
+
+        @include media-breakpoint-up(sm) {
+            font-size: min(9.5pt, var(--doc-ptsize-max));
+        }
+
+        @include media-breakpoint-up(md) {
+            font-size: min(9.5pt, var(--doc-ptsize-max));
+        }
+
+        @include media-breakpoint-up(lg) {
+            font-size: min(11pt, var(--doc-ptsize-max));
+        }
+
+        @include media-breakpoint-up(xl) {
+            font-size: min(13pt, var(--doc-ptsize-max));
+        }
+
+        @include media-breakpoint-up(xxl) {
+            font-size: min(16pt, var(--doc-ptsize-max));
+        }
+
+        .grey,
+        hr {
+            opacity: $hr-opacity;
+        }
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-weight: bold;
+        font-size: 1em;
+    }
+
+    pre,
+    code {
+        font-size: 1em;
+    }
+
+    pre {
+        width: 72ch;
+        margin: 0;
+        padding: 0;
+    }
+
+    .bcp14 {
+        font-weight: bold;
+        // color: $gray-700;
+    }
+}
+
+.rfcmarkup {
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        white-space: pre;
+        display: inline;
+    }
+}
+
+tbody.meta tr {
+
+    td:first-child,
+    th:first-child,
+    td.edit {
+        display: none;
+    }
+}
+
+.sidebar {
+    height: 100vh;
+
+    .toplink,
+    #name-table-of-contents {
+        display: none;
+    }
+
+    th,
+    td {
+        display: block;
+        padding: 0;
+    }
+
+    td {
+        margin-bottom: map.get($spacers, 3);
+    }
+}
+
+// Add some padding when there are multiple buttons in a line that can wrap
+.buttonlist .btn {
+    margin-bottom: map.get($spacers, 1);
+}
+
+// Make revision numbers pagination items fixed-width
+.revision-list {
+    .page-item {
+        width: 2.2rem;
+    }
+
+    .page-item.rfc {
+        width: 6.6rem;
+    }
+}
+
+#docinfo {
+    max-height: 70vh;
+    z-index: -1;
+}
+
+
+.badge-obs {
+    color: white;
+    background-color: $orange-800;
+}
+
+.badge-ps {
+    color: black;
+    background-color: $blue-300;
+}
+
+.badge-exp {
+    color: black;
+    background-color: $yellow-200;
+}
+
+.badge-inf {
+    color: white;
+    background-color: $orange;
+}
+
+.badge-ds {
+    color: black;
+    background-color: $cyan-200;
+}
+
+.badge-hist {
+    color: white;
+    background-color: $gray-700;
+}
+
+.badge-std {
+    color: black;
+    background-color: $teal-200;
+}
+
+.badge-bcp {
+    color: white;
+    background-color: $pink-500;
+}
+
+.badge-unkn {
+    color: black;
+    background-color: $gray-300;
+}
+
+.badge-draft {
+    color: white;
+    background-color: $danger;
+}
+
+#toc-nav {
+    width: inherit;
+    overscroll-behavior-y: none; // Prevent overscrolling from scrolling the main content
+}
+
+
+@media print {
+    @page {
+        size: letter;
+        margin: .75in;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        font-size: 10pt;
+    }
+
+    pre {
+        page-break-inside: avoid;
+    }
+
+    a:link,
+    a:visited {
+        // color: inherit;
+        // text-decoration: none;
+    }
+
+    .newpage {
+        page-break-before: always !important;
+    }
+
+    .noprint {
+        display: none;
+    }
+}

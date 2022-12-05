@@ -111,7 +111,7 @@ def fill(text, width):
     return "\n\n".join(wrapped)
 
 def wordwrap(text, width=80):
-    """Wraps long lines without loosing the formatting and indentation
+    """Wraps long lines without losing the formatting and indentation
        of short lines"""
     if not isinstance(text, str):
         return text

@@ -1,4 +1,5 @@
 name: Build and Release
+run-name: ${{ github.event.inputs.publish == 'true' && '[Prod]' || '[Dev]' }} Build ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}
 
 on:
   push:
@@ -150,8 +151,6 @@ jobs:
       run: |
         echo "Running checks..."
         ./ietf/manage.py check
-        ./ietf/manage.py migrate || true
-        echo "USE_TZ = True" >> ./ietf/settings_local.py
         ./ietf/manage.py migrate
         echo "Validating migrations..."
         if ! ( ietf/manage.py makemigrations --dry-run --check --verbosity 3 ) ; then
@@ -228,6 +227,10 @@ jobs:
     needs: [prepare]
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox]
     
     services:
       db:
@@ -410,6 +413,7 @@ jobs:
         path: /home/runner/work/release/release.tar.gz
         
     - name: Notify on Slack
+      if: ${{ always() }}
       uses: slackapi/slack-github-action@v1.23.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
@@ -450,7 +454,7 @@ jobs:
         npm ci
         cd ../..
         echo "Start Deploy..."
-        node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain neverusethis.com
+        node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain dev.ietf.org
         
     - name: Cleanup old docker resources
       env:

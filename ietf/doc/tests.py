@@ -730,13 +730,13 @@ Man                    Expires September 22, 2015               [Page 3]
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Versions:")
+        self.assertContains(r, "Select version")
         self.assertContains(r, "Deimos street")
         q = PyQuery(r.content)
         self.assertEqual(q('title').text(), 'draft-ietf-mars-test-01')
-        self.assertEqual(len(q('.rfcmarkup pre')), 4)
-        self.assertEqual(len(q('.rfcmarkup span.h1')), 2)
-        self.assertEqual(len(q('.rfcmarkup a[href]')), 41)
+        self.assertEqual(len(q('.rfcmarkup pre')), 3)
+        self.assertEqual(len(q('.rfcmarkup span.h1, .rfcmarkup h1')), 2)
+        self.assertEqual(len(q('.rfcmarkup a[href]')), 28)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name, rev=draft.rev)))
         self.assertEqual(r.status_code, 200)
@@ -817,7 +817,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, updated_by.canonical_name())
         self.assertContains(r, updated_by.title)
 
-        # naked RFC - also wierd that we test a PS from the ISE
+        # naked RFC - also weird that we test a PS from the ISE
         rfc = IndividualDraftFactory(
             name="rfc1234567",
             title="RFC without a Draft",
@@ -2580,7 +2580,7 @@ class MaterialsTests(TestCase):
         self.doc.save_with_history([e])
 
         # This is necessary for the view to be able to find the document
-        # which hints that the view has an issue : if a materials document is taken out of all SessionPresentations, it is no longer accessable by this view
+        # which hints that the view has an issue : if a materials document is taken out of all SessionPresentations, it is no longer accessible by this view
         SessionPresentationFactory(session__meeting__number=meeting_number, session__group=self.doc.group, document=self.doc)
 
     def test_markdown_and_text(self):
