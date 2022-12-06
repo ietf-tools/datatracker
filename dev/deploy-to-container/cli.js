@@ -235,6 +235,11 @@ async function main () {
       `VIRTUAL_HOST=${hostname}`,
       `VIRTUAL_PORT=8000`
     ],
+    Labels: {
+      appversion: argv.appversion ?? '0.0.0',
+      commit: argv.commit ?? 'unknown',
+      ghrunid: argv.ghrunid ?? '0'
+    },
     HostConfig: {
       Binds: [
         'dt-assets:/assets'
