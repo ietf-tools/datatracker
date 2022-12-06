@@ -54,7 +54,7 @@ SUBMIT_YANG_RFC_MODEL_DIR   = '/assets/ietf-ftp/yang/rfcmod/'
 # Set INTERNAL_IPS for use within Docker. See https://knasmueller.net/fix-djangos-debug-toolbar-not-showing-inside-docker
 import socket
 hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
-INTERNAL_IPS = [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips]
+INTERNAL_IPS = [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips] + ['127.0.0.1']
 
 # DEV_TEMPLATE_CONTEXT_PROCESSORS = [
 #    'ietf.context_processors.sql_debug',
