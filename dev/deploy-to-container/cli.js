@@ -236,7 +236,7 @@ async function main () {
       `VIRTUAL_PORT=8000`
     ],
     Labels: {
-      appversion: `{argv.appversion}` ?? '0.0.0',
+      appversion: `${argv.appversion}` ?? '0.0.0',
       commit: `${argv.commit}` ?? 'unknown',
       ghrunid: `${argv.ghrunid}` ?? '0'
     },
