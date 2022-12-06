@@ -238,7 +238,8 @@ async function main () {
     Labels: {
       appversion: `${argv.appversion}` ?? '0.0.0',
       commit: `${argv.commit}` ?? 'unknown',
-      ghrunid: `${argv.ghrunid}` ?? '0'
+      ghrunid: `${argv.ghrunid}` ?? '0',
+      hostname
     },
     HostConfig: {
       Binds: [
