@@ -1132,7 +1132,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@parcel/source-map", "npm:2.1.1"],\
             ["@parcel/utils", "npm:2.8.0"],\
             ["browserslist", "npm:4.20.3"],\
-            ["lightningcss", "npm:1.16.1"],\
+            ["lightningcss", "npm:1.17.1"],\
             ["nullthrows", "npm:1.1.1"]\
           ],\
           "linkType": "HARD"\
@@ -1495,7 +1495,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@parcel/source-map", "npm:2.1.1"],\
             ["@parcel/utils", "npm:2.8.0"],\
             ["browserslist", "npm:4.20.3"],\
-            ["lightningcss", "npm:1.16.1"],\
+            ["lightningcss", "npm:1.17.1"],\
             ["nullthrows", "npm:1.1.1"]\
           ],\
           "linkType": "HARD"\
@@ -5750,91 +5750,91 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["lightningcss", [\
-        ["npm:1.16.1", {\
-          "packageLocation": "./.yarn/cache/lightningcss-npm-1.16.1-dc51de6ab1-78ec1fa158.zip/node_modules/lightningcss/",\
+        ["npm:1.17.1", {\
+          "packageLocation": "./.yarn/cache/lightningcss-npm-1.17.1-7428f2d516-0bf9d5c932.zip/node_modules/lightningcss/",\
           "packageDependencies": [\
-            ["lightningcss", "npm:1.16.1"],\
+            ["lightningcss", "npm:1.17.1"],\
             ["detect-libc", "npm:1.0.3"],\
-            ["lightningcss-darwin-arm64", "npm:1.16.1"],\
-            ["lightningcss-darwin-x64", "npm:1.16.1"],\
-            ["lightningcss-linux-arm-gnueabihf", "npm:1.16.1"],\
-            ["lightningcss-linux-arm64-gnu", "npm:1.16.1"],\
-            ["lightningcss-linux-arm64-musl", "npm:1.16.1"],\
-            ["lightningcss-linux-x64-gnu", "npm:1.16.1"],\
-            ["lightningcss-linux-x64-musl", "npm:1.16.1"],\
-            ["lightningcss-win32-x64-msvc", "npm:1.16.1"]\
+            ["lightningcss-darwin-arm64", "npm:1.17.1"],\
+            ["lightningcss-darwin-x64", "npm:1.17.1"],\
+            ["lightningcss-linux-arm-gnueabihf", "npm:1.17.1"],\
+            ["lightningcss-linux-arm64-gnu", "npm:1.17.1"],\
+            ["lightningcss-linux-arm64-musl", "npm:1.17.1"],\
+            ["lightningcss-linux-x64-gnu", "npm:1.17.1"],\
+            ["lightningcss-linux-x64-musl", "npm:1.17.1"],\
+            ["lightningcss-win32-x64-msvc", "npm:1.17.1"]\
           ],\
           "linkType": "HARD"\
         }]\
       ]],\
       ["lightningcss-darwin-arm64", [\
-        ["npm:1.16.1", {\
-          "packageLocation": "./.yarn/unplugged/lightningcss-darwin-arm64-npm-1.16.1-0a412810bd/node_modules/lightningcss-darwin-arm64/",\
+        ["npm:1.17.1", {\
+          "packageLocation": "./.yarn/unplugged/lightningcss-darwin-arm64-npm-1.17.1-a84f0d052c/node_modules/lightningcss-darwin-arm64/",\
           "packageDependencies": [\
-            ["lightningcss-darwin-arm64", "npm:1.16.1"]\
+            ["lightningcss-darwin-arm64", "npm:1.17.1"]\
           ],\
           "linkType": "HARD"\
         }]\
       ]],\
       ["lightningcss-darwin-x64", [\
-        ["npm:1.16.1", {\
-          "packageLocation": "./.yarn/unplugged/lightningcss-darwin-x64-npm-1.16.1-3f7b1b3519/node_modules/lightningcss-darwin-x64/",\
+        ["npm:1.17.1", {\
+          "packageLocation": "./.yarn/unplugged/lightningcss-darwin-x64-npm-1.17.1-131957b733/node_modules/lightningcss-darwin-x64/",\
           "packageDependencies": [\
-            ["lightningcss-darwin-x64", "npm:1.16.1"]\
+            ["lightningcss-darwin-x64", "npm:1.17.1"]\
           ],\
           "linkType": "HARD"\
         }]\
       ]],\
       ["lightningcss-linux-arm-gnueabihf", [\
-        ["npm:1.16.1", {\
-          "packageLocation": "./.yarn/unplugged/lightningcss-linux-arm-gnueabihf-npm-1.16.1-628363ec64/node_modules/lightningcss-linux-arm-gnueabihf/",\
+        ["npm:1.17.1", {\
+          "packageLocation": "./.yarn/unplugged/lightningcss-linux-arm-gnueabihf-npm-1.17.1-bbf7f4f213/node_modules/lightningcss-linux-arm-gnueabihf/",\
           "packageDependencies": [\
-            ["lightningcss-linux-arm-gnueabihf", "npm:1.16.1"]\
+            ["lightningcss-linux-arm-gnueabihf", "npm:1.17.1"]\
           ],\
           "linkType": "HARD"\
         }]\
       ]],\
       ["lightningcss-linux-arm64-gnu", [\
-        ["npm:1.16.1", {\
-          "packageLocation": "./.yarn/unplugged/lightningcss-linux-arm64-gnu-npm-1.16.1-3ca4dc231b/node_modules/lightningcss-linux-arm64-gnu/",\
+        ["npm:1.17.1", {\
+          "packageLocation": "./.yarn/unplugged/lightningcss-linux-arm64-gnu-npm-1.17.1-5b0e0aecb4/node_modules/lightningcss-linux-arm64-gnu/",\
           "packageDependencies": [\
-            ["lightningcss-linux-arm64-gnu", "npm:1.16.1"]\
+            ["lightningcss-linux-arm64-gnu", "npm:1.17.1"]\
           ],\
           "linkType": "HARD"\
         }]\
       ]],\
       ["lightningcss-linux-arm64-musl", [\
-        ["npm:1.16.1", {\
-          "packageLocation": "./.yarn/unplugged/lightningcss-linux-arm64-musl-npm-1.16.1-94c93845ed/node_modules/lightningcss-linux-arm64-musl/",\
+        ["npm:1.17.1", {\
+          "packageLocation": "./.yarn/unplugged/lightningcss-linux-arm64-musl-npm-1.17.1-4da73a58bf/node_modules/lightningcss-linux-arm64-musl/",\
           "packageDependencies": [\
-            ["lightningcss-linux-arm64-musl", "npm:1.16.1"]\
+            ["lightningcss-linux-arm64-musl", "npm:1.17.1"]\
           ],\
           "linkType": "HARD"\
         }]\
       ]],\
       ["lightningcss-linux-x64-gnu", [\
-        ["npm:1.16.1", {\
-          "packageLocation": "./.yarn/unplugged/lightningcss-linux-x64-gnu-npm-1.16.1-04529113fe/node_modules/lightningcss-linux-x64-gnu/",\
+        ["npm:1.17.1", {\
+          "packageLocation": "./.yarn/unplugged/lightningcss-linux-x64-gnu-npm-1.17.1-39d6988913/node_modules/lightningcss-linux-x64-gnu/",\
           "packageDependencies": [\
-            ["lightningcss-linux-x64-gnu", "npm:1.16.1"]\
+            ["lightningcss-linux-x64-gnu", "npm:1.17.1"]\
           ],\
           "linkType": "HARD"\
         }]\
       ]],\
       ["lightningcss-linux-x64-musl", [\
-        ["npm:1.16.1", {\
-          "packageLocation": "./.yarn/unplugged/lightningcss-linux-x64-musl-npm-1.16.1-01c07ec3c0/node_modules/lightningcss-linux-x64-musl/",\
+        ["npm:1.17.1", {\
+          "packageLocation": "./.yarn/unplugged/lightningcss-linux-x64-musl-npm-1.17.1-84311b8bf8/node_modules/lightningcss-linux-x64-musl/",\
           "packageDependencies": [\
-            ["lightningcss-linux-x64-musl", "npm:1.16.1"]\
+            ["lightningcss-linux-x64-musl", "npm:1.17.1"]\
           ],\
           "linkType": "HARD"\
         }]\
       ]],\
       ["lightningcss-win32-x64-msvc", [\
-        ["npm:1.16.1", {\
-          "packageLocation": "./.yarn/unplugged/lightningcss-win32-x64-msvc-npm-1.16.1-40af4d14b2/node_modules/lightningcss-win32-x64-msvc/",\
+        ["npm:1.17.1", {\
+          "packageLocation": "./.yarn/unplugged/lightningcss-win32-x64-msvc-npm-1.17.1-849d8d151b/node_modules/lightningcss-win32-x64-msvc/",\
           "packageDependencies": [\
-            ["lightningcss-win32-x64-msvc", "npm:1.16.1"]\
+            ["lightningcss-win32-x64-msvc", "npm:1.17.1"]\
           ],\
           "linkType": "HARD"\
         }]\
