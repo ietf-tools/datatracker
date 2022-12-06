@@ -6,6 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings, RequestFactory
 
 from ietf.group.factories import GroupFactory
+from ietf.meeting.factories import SessionFactory
 from ietf.meeting.forms import (FileUploadForm, ApplyToAllFileUploadForm, InterimSessionModelForm,
                                 InterimMeetingModelForm)
 from ietf.person.factories import PersonFactory
@@ -122,6 +123,15 @@ class InterimSessionModelFormTests(TestCase):
         choice_vals = [choice[0] for choice in form.fields['remote_participation'].choices]
         self.assertNotIn('meetecho', choice_vals)
         self.assertIn('manual', choice_vals)
+
+    def test_edits_in_meeting_time_zone(self):
+        # use a time zone that never has a UTC offset of 0, even with DST
+        session = SessionFactory(meeting__type_id='interim', meeting__time_zone='America/Halifax')
+        form = InterimSessionModelForm(instance=session)
+        self.assertEqual(
+            form.initial['time'].strftime('%H:%M'),
+            session.official_timeslotassignment().timeslot.local_start_time().strftime('%H:%M'),
+        )
 
 
 class InterimMeetingModelFormTests(TestCase):
