@@ -208,5 +208,8 @@
       ]
     }
   },
+  "resolutions": {
+    "lightningcss": "1.17.1"
+  },
   "packageManager": "yarn@3.2.2"
 }

@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore", message="The logout\(\) view is superseded by"
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
 warnings.filterwarnings("ignore", message="{% load staticfiles %} is deprecated")
 warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated", module="bleach")
-
+warnings.filterwarnings("ignore", message="HTTPResponse.getheader\(\) is deprecated", module='selenium.webdriver')
 try:
     import syslog
     syslog.openlog(str("datatracker"), syslog.LOG_PID, syslog.LOG_USER)
@@ -542,7 +542,7 @@ INTERNAL_IPS = (
 
 # no slash at end
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
-RFCDIFF_BASE_URL = "https://www.ietf.org/rfcdiff"
+RFCDIFF_BASE_URL = "https://author-tools.ietf.org/iddiff"
 IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
 IDNITS_SERVICE_URL = "https://author-tools.ietf.org/idnits"
 
