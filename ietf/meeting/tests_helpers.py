@@ -590,26 +590,26 @@ class InterimTests(TestCase):
         mock_form.changed_data = []
         mock_form.requires_approval = True
 
-        mock_form.cleaned_data = {'remote_participation': None}
+        mock_form.cleaned_data = {'date': date_today(), 'time': datetime.time(1, 23), 'remote_participation': None}
         sessions_post_save(RequestFactory().post('/some/url'), [mock_form])
         self.assertTrue(mock_create_method.called)
         self.assertCountEqual(mock_create_method.call_args[0][0], [])
 
         mock_create_method.reset_mock()
-        mock_form.cleaned_data = {'remote_participation': 'manual'}
+        mock_form.cleaned_data['remote_participation'] = 'manual'
         sessions_post_save(RequestFactory().post('/some/url'), [mock_form])
         self.assertTrue(mock_create_method.called)
         self.assertCountEqual(mock_create_method.call_args[0][0], [])
 
         mock_create_method.reset_mock()
-        mock_form.cleaned_data = {'remote_participation': 'meetecho'}
+        mock_form.cleaned_data['remote_participation'] = 'meetecho'
         sessions_post_save(RequestFactory().post('/some/url'), [mock_form])
         self.assertTrue(mock_create_method.called)
         self.assertCountEqual(mock_create_method.call_args[0][0], [session])
 
         # Check that an exception does not percolate through sessions_post_save
         mock_create_method.side_effect = RuntimeError('some error')
-        mock_form.cleaned_data = {'remote_participation': 'meetecho'}
+        mock_form.cleaned_data['remote_participation'] = 'meetecho'
         # create mock request with session / message storage
         request = RequestFactory().post('/some/url')
         setattr(request, 'session', 'session')
