@@ -489,7 +489,7 @@ Table of Contents
 1.  Introduction
 
    This document describes how to make the Martian networks work.  The
-   methods used in Earth do not directly translate to the efficent
+   methods used in Earth do not directly translate to the efficient
    networks on Mars, as the topographical differences caused by planets.
    For example the avian carriers, cannot be used in the Mars, thus
    RFC1149 ([RFC1149]) cannot be used in Mars.

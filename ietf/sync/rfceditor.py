@@ -567,7 +567,7 @@ def post_approved_draft(url, name):
             "Authorization": "Basic %s" % force_str(base64.encodebytes(smart_bytes("%s:%s" % (username, password)))).replace("\n", ""),
         }
 
-    log("Posting RFC-Editor notifcation of approved draft '%s' to '%s'" % (name, url))
+    log("Posting RFC-Editor notification of approved draft '%s' to '%s'" % (name, url))
     text = error = ""
 
     try:

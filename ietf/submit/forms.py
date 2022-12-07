@@ -338,7 +338,7 @@ class SubmissionBaseUploadForm(forms.Form):
                     if group:
                         return group
                     else:
-                        raise forms.ValidationError('Draft names starting with draft-%s- are restricted, please pick a differen name' % ntype)
+                        raise forms.ValidationError('Draft names starting with draft-%s- are restricted, please pick a different name' % ntype)
             return None
 
 

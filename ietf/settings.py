@@ -610,7 +610,7 @@ TEST_TEMPLATE_IGNORE = [
     "500.html"                        # isn't loaded by regular loader, but checked by test_500_page()
 ]
 
-TEST_COVERAGE_MASTER_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
+TEST_COVERAGE_MAIN_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
 TEST_COVERAGE_LATEST_FILE = os.path.join(BASE_DIR, "../latest-coverage.json")
 
 TEST_CODE_COVERAGE_CHECKER = None
@@ -680,7 +680,7 @@ INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/a/ietfdata/doc/draft/archive'
 MEETING_RECORDINGS_DIR = '/a/www/audio'
 DERIVED_DIR = '/a/ietfdata/derived'
 
-DOCUMENT_FORMAT_WHITELIST = ["txt", "ps", "pdf", "xml", "html", ]
+DOCUMENT_FORMAT_ALLOWLIST = ["txt", "ps", "pdf", "xml", "html", ]
 
 # Mailing list info URL for lists hosted on the IETF servers
 MAILING_LIST_INFO_URL = "https://www.ietf.org/mailman/listinfo/%(list_addr)s"

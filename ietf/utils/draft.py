@@ -532,13 +532,13 @@ class PlaintextDraft(Draft):
                 indent_lines.append(indent)
         percents = {}
         total = float(len(indent_lines))
-        formated = False
+        formatted = False
         for indent in set(indent_lines):
             count = indent_lines.count(indent)/total
             percents[indent] = count
             if count > 0.9:
-                formated = True
-        if not formated:
+                formatted = True
+        if not formatted:
             return abstract
         new_abstract = []
         for line in abstract.split('\n'):

@@ -31,7 +31,7 @@ class Command(BaseCommand):
             out = out.decode('utf-8')
             err = err.decode('utf-8')
             if code != 0:
-                sys.stderr.write("Command '%s' retuned %s: \n%s\n%s\n" % (cmd, code, out, err))
+                sys.stderr.write("Command '%s' returned %s: \n%s\n%s\n" % (cmd, code, out, err))
             else:
                 c.version = (out.strip()+'\n'+err.strip()).strip()
                 if options.get('verbosity', 1) > 1:

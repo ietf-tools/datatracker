@@ -134,7 +134,7 @@ class IprTests(TestCase):
     def test_search(self):
         WgDraftFactory() # The test matching the prefix "draft" needs more than one thing to find
         draft = WgDraftFactory()
-        ipr = HolderIprDisclosureFactory(docs=[draft,],patent_info='Number: US12345\nTitle: A method of transfering bits\nInventor: A. Nonymous\nDate: 2000-01-01')
+        ipr = HolderIprDisclosureFactory(docs=[draft,],patent_info='Number: US12345\nTitle: A method of transferring bits\nInventor: A. Nonymous\nDate: 2000-01-01')
 
         url = urlreverse("ietf.ipr.views.search")
 
@@ -262,7 +262,7 @@ class IprTests(TestCase):
             "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
             "patent_number": "SE12345678901",
             "patent_inventor": "A. Nonymous",
-            "patent_title": "A method of transfering bits",
+            "patent_title": "A method of transferring bits",
             "patent_date": "2000-01-01",
             "has_patent_pending": False,
             "licensing": "royalty-free",
@@ -277,7 +277,7 @@ class IprTests(TestCase):
         ipr = iprs[0]
         self.assertEqual(ipr.holder_legal_name, "Test Legal")
         self.assertEqual(ipr.state.slug, 'pending')
-        for item in ['SE12345678901','A method of transfering bits','2000-01-01']:
+        for item in ['SE12345678901','A method of transferring bits','2000-01-01']:
             self.assertIn(item, ipr.get_child().patent_info)
         self.assertTrue(isinstance(ipr.get_child(),HolderIprDisclosure))
         self.assertEqual(len(outbox),1)
@@ -318,7 +318,7 @@ class IprTests(TestCase):
             "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
             "patent_number": "SE12345678901",
             "patent_inventor": "A. Nonymous",
-            "patent_title": "A method of transfering bits",
+            "patent_title": "A method of transferring bits",
             "patent_date": "2000-01-01",
             "has_patent_pending": False,
             "licensing": "royalty-free",
@@ -332,7 +332,7 @@ class IprTests(TestCase):
         ipr = iprs[0]
         self.assertEqual(ipr.holder_legal_name, "Test Legal")
         self.assertEqual(ipr.state.slug, "pending")
-        for item in ['SE12345678901','A method of transfering bits','2000-01-01' ]:
+        for item in ['SE12345678901','A method of transferring bits','2000-01-01' ]:
             self.assertIn(item, ipr.get_child().patent_info)
         self.assertTrue(isinstance(ipr.get_child(),ThirdPartyIprDisclosure))
         self.assertEqual(len(outbox),1)
@@ -368,7 +368,7 @@ class IprTests(TestCase):
             "patent_date": "2000-01-01",
             "patent_inventor": "A. Nonymous",
             "patent_number": "SE12345678901",
-            "patent_title": "A method of transfering bits",
+            "patent_title": "A method of transferring bits",
             "submitter_email": "test@holder.com",
             "submitter_name": "Test Holder",
             "updates": [],
@@ -414,7 +414,7 @@ class IprTests(TestCase):
             "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
             "patent_number": "SE12345678901",
             "patent_inventor": "A. Nonymous",
-            "patent_title": "A method of transfering bits",
+            "patent_title": "A method of transferring bits",
             "patent_date": "2000-01-01",
             "has_patent_pending": False,
             "licensing": "royalty-free",
@@ -450,7 +450,7 @@ class IprTests(TestCase):
             "iprdocrel_set-0-revisions": '00',
             "patent_number": "SE12345678901",
             "patent_inventor": "A. Nonymous",
-            "patent_title": "A method of transfering bits",
+            "patent_title": "A method of transferring bits",
             "patent_date": "2000-01-01",
             "has_patent_pending": False,
             "licensing": "royalty-free",
