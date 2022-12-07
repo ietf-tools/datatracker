@@ -67,8 +67,6 @@ from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordF
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.mailinglists.models import Allowlisted
-# needed if we revert to higher barrier for account creation
-#from ietf.mailinglists.models import Subscribed, Allowlisted
 from ietf.name.models import ExtResourceName
 from ietf.nomcom.models import NomCom
 from ietf.person.models import Person, Email, Alias, PersonalApiKey, PERSON_API_KEY_VALUES

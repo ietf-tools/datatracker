@@ -1942,7 +1942,7 @@ class GroupParentLoopTests(TestCase):
         signal.signal(signal.SIGALRM, timeout_handler)
         signal.alarm(1)   # One second
         try:
-            test2.is_decendant_of("ietf")
+            test2.is_descendant_of("ietf")
         except AssertionError:
             pass
         except Exception:
