@@ -1060,8 +1060,7 @@ def sessions_post_save(request, forms):
                 by=request.user.person,
             )
         
-        if ('date' in form.changed_data) or ('time' in form.changed_data):
-            update_interim_session_assignment(form)
+        update_interim_session_assignment(form)
         if 'agenda' in form.changed_data:
             form.save_agenda()
 
@@ -1140,6 +1139,8 @@ def update_interim_session_assignment(form):
     """Helper function to create / update timeslot assigned to interim session
 
     form is an InterimSessionModelForm
+
+    Only updates timeslot time (a datetime) and duration
     """
     session = form.instance
     meeting = session.meeting
@@ -1148,9 +1149,10 @@ def update_interim_session_assignment(form):
     )
     if session.official_timeslotassignment():
         slot = session.official_timeslotassignment().timeslot
-        slot.time = time
-        slot.duration = session.requested_duration
-        slot.save()
+        if slot.time != time or slot.duration != session.requested_duration:
+            slot.time = time
+            slot.duration = session.requested_duration
+            slot.save()
     else:
         slot = TimeSlot.objects.create(
             meeting=meeting,
