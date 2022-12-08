@@ -571,7 +571,10 @@ class DocumentInfo(models.Model):
             return None
 
         # get body
-        body = etree.HTML(html).xpath("//body")[0]
+        etree_html = etree.HTML(html)
+        if etree_html is None:
+            return None
+        body = etree_html.xpath("//body")[0]
         body.tag = "div"
         if classes:
             body.attrib["class"] = classes
