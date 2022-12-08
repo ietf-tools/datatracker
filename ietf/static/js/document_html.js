@@ -38,21 +38,6 @@ document.addEventListener("DOMContentLoaded", function (event) {
         });
     });
 
-    // Rewrite ids and hrefs to not contains dots (bug in bs5.2 scrollspy)
-    // See https://github.com/twbs/bootstrap/issues/34381
-    // TODO: check if this can be removed when bs5 is updated
-    const ids = document.querySelectorAll(
-        "#content [id^=section-], #content [id^=appendix-]");
-    [...ids].map(id_el => id_el.id = id_el.id.replaceAll(/\./g, "-"));
-    const hrefs = document.querySelectorAll(
-        "#content [href*='#section-'], #content [href*='#appendix-']"
-    );
-    [...hrefs].map(id_el => {
-        const href = new URL(id_el.href);
-        href.hash = href.hash.replaceAll(/\./g, "-");
-        id_el.href = href.href;
-    });
-
     // Set up a nav pane
     const toc_pane = document.getElementById("toc-nav");
     populate_nav(toc_pane,
