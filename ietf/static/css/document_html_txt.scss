@@ -70,6 +70,11 @@ blockquote {
   border-left: 2px solid darkgrey;
 }
 
+// Don't wrap boilerplate URLs; makes it look more like text version.
+:is(#status-of-memo, #copyright) a[href] {
+    white-space: nowrap;
+}
+
 /* Header junk */
 #external-metadata {
   display: none !important; /* metadata.min.js is evil because it produces unstyleable goop */
