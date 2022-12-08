@@ -448,8 +448,8 @@ class EditCharterTests(TestCase):
         # Regenerate does not save!
         self.assertEqual(charter.notify,newlist)
         q = PyQuery(r.content)
-        formlist = q('form input[name=notify]')[0].value
-        self.assertEqual(formlist, None)
+        formlist = q('form textarea[name=notify]')[0].value.strip()
+        self.assertEqual(formlist, "")
 
     def test_edit_ad(self):
 

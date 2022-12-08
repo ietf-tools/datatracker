@@ -456,7 +456,7 @@ class EditInfoTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form select[name=intended_std_level]')), 1)
-        self.assertEqual(None,q('form input[name=notify]')[0].value)
+        self.assertEqual("", q('form textarea[name=notify]')[0].value.strip())
 
         # add
         events_before = draft.docevent_set.count()
@@ -947,7 +947,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=notify]')),1)
+        self.assertEqual(len(q('form textarea[name=notify]')), 1)
 
         # Provide a list
         r = self.client.post(url,dict(notify="TJ2APh2P@ietf.org",save_addresses="1"))
@@ -962,7 +962,7 @@ class IndividualInfoFormsTests(TestCase):
         # Regenerate does not save!
         self.assertEqual(doc.notify,'TJ2APh2P@ietf.org')
         q = PyQuery(r.content)
-        self.assertEqual(None,q('form input[name=notify]')[0].value)
+        self.assertEqual("", q('form textarea[name=notify]')[0].value.strip())
 
     def test_doc_change_intended_status(self):
         url = urlreverse('ietf.doc.views_draft.change_intention', kwargs=dict(name=self.docname))
