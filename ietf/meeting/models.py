@@ -39,7 +39,7 @@ from ietf.name.models import (
 )
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
-from ietf.utils.history import find_history_replacements_active_at
+from ietf.utils.history import find_history_replacements_active_at, find_history_active_at
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import datetime_from_date, date_today
@@ -421,6 +421,18 @@ class Meeting(models.Model):
             self.cached_groups_at_the_time = find_history_replacements_active_at(Group.objects.filter(pk__in=all_group_pks), meeting_start)
         return self.cached_groups_at_the_time
 
+    def group_at_the_time(self, group):
+        # MUST call self.groups_at_the_time() before assuming cached_groups_at_the_time exists
+        gatt = self.groups_at_the_time()
+        if group.pk in gatt:
+            return gatt[group.pk]
+        # cache miss
+        meeting_start = self.tz().localize(
+            datetime.datetime.combine(self.date, datetime.time())
+        )
+        new_item = find_history_active_at(group, meeting_start) or group  # fall back to original if no history
+        self.cached_groups_at_the_time[group.pk] = new_item
+        return new_item
 
     class Meta:
         ordering = ["-date", "-id"]
@@ -1301,11 +1313,12 @@ class Session(models.Model):
         return urljoin(settings.IETF_NOTES_URL, self.notes_id())
 
     def group_at_the_time(self):
-        return self.meeting.groups_at_the_time()[self.group.pk]
+        return self.meeting.group_at_the_time(self.group)
 
     def group_parent_at_the_time(self):
         if self.group_at_the_time().parent:
-            return self.meeting.groups_at_the_time()[self.group_at_the_time().parent.pk]
+            return self.meeting.group_at_the_time(self.group_at_the_time().parent)
+
 
 class SchedulingEvent(models.Model):
     session = ForeignKey(Session)
