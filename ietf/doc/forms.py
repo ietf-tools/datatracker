@@ -6,6 +6,7 @@ import datetime
 import debug #pyflakes:ignore
 from django import forms
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.validators import validate_email
 
 from ietf.doc.fields import SearchableDocAliasesField, SearchableDocAliasField
 from ietf.doc.models import RelatedDocument, DocExtResource
@@ -84,8 +85,26 @@ class NotifyForm(forms.Form):
     )
 
     def clean_notify(self):
-        addrspecs = [x.strip() for x in self.cleaned_data["notify"].split(',')]
-        return ', '.join(addrspecs)
+        # As long as the widget is a Textarea, users will separate addresses with newlines, whether that matches the instructions or not
+        # We have been allowing nameaddrs for a long time (ther are many Documents with namaddrs in their notify field)
+        nameaddrs = set([x.strip() for x in self.cleaned_data["notify"].replace('\n', ',').split(',')])
+        nameaddrs.discard('')
+        bad_nameaddrs = []
+        for nameaddr in nameaddrs:
+            if '<' in nameaddr:
+                if nameaddr[-1] != '>':
+                    bad_nameaddrs.append(nameaddr)
+                    continue
+                addrspec = nameaddr[nameaddr.find('<')+1:-1]
+            else:
+                addrspec = nameaddr
+            try:
+                validate_email(addrspec)
+            except ValidationError:
+                bad_nameaddrs.append(nameaddr)
+        if bad_nameaddrs != []:
+            raise ValidationError(f'Invalid addresses: {", ".join(bad_nameaddrs)}')
+        return ', '.join(nameaddrs)
 
 class ActionHoldersForm(forms.Form):
     action_holders = SearchablePersonsField(required=False)
