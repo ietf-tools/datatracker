@@ -86,7 +86,7 @@ class NotifyForm(forms.Form):
 
     def clean_notify(self):
         # As long as the widget is a Textarea, users will separate addresses with newlines, whether that matches the instructions or not
-        # We have been allowing nameaddrs for a long time (ther are many Documents with namaddrs in their notify field)
+        # We have been allowing nameaddrs for a long time (there are many Documents with namaddrs in their notify field)
         nameaddrs = set([x.strip() for x in self.cleaned_data["notify"].replace('\n', ',').split(',')])
         nameaddrs.discard('')
         bad_nameaddrs = []
