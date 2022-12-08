@@ -150,15 +150,15 @@
                         </p>
                         {% if request.COOKIES.htmlconf != 'html' and html %}
                         <div class="alert alert-info small">
-                            You are viewing the legacy <code>rfc2html</code>
+                            You are viewing the legacy <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/rfc2html">rfc2html</a></code>
                             rendering of this document. Change the
-                            preferences for a modern <code>xml2rfc</code>-based
+                            preferences for a modern <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/xml2rfc">xml2rfc</a></code>-based
                             HTMLization.
                         </div>
                         {% elif request.COOKIES.htmlconf == 'html' and not html %}
                         <div class="alert alert-info small">
-                            You are viewing the legacy <code>rfc2html</code>
-                            rendering, because no <code>xml2rfc</code>-generated
+                            You are viewing the legacy <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/rfc2html">rfc2html</a></code>.
+                            rendering, because no <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/xml2rfc">xml2rfc</a></code>-generated
                             HTML is available for this document.
                         </div>
                         {% endif %}
