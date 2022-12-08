@@ -89,7 +89,6 @@ export function populate_nav(nav, heading_selector, classes) {
     document.addEventListener("scroll", debounce(function () {
         const items = nav.querySelectorAll(".active");
         const item = [...items].pop();
-        console.log(item);
         if (item) {
             item.scrollIntoView({
                 block: "center",
