@@ -409,28 +409,34 @@ class Meeting(models.Model):
     def uses_notes(self):
         return self.date>=datetime.date(2020,7,6)
 
-    def groups_at_the_time(self):
+    def meeting_start(self):
+        """Meeting-local midnight at the start of the meeting date"""
+        return self.tz().localize(datetime.datetime.combine(self.date, datetime.time()))
+
+    def _groups_at_the_time(self):
+        """Get dict mapping Group PK to appropriate Group or GroupHistory at meeting time
+
+        Known issue: only looks up Groups and their *current* parents when called. If a Group's
+        parent was different at meeting time, that parent will not be in the cache. Use
+        group_at_the_time() to look up values - that will fill in missing groups for you.
+        """
         if not hasattr(self,'cached_groups_at_the_time'):
             all_group_pks = set(self.session_set.values_list('group__pk', flat=True))
             all_group_pks.update(self.session_set.values_list('group__parent__pk', flat=True))
             all_group_pks.discard(None)
-            # meeting_time is meeting-local midnight at the start of the meeting date
-            meeting_start = self.tz().localize(
-                datetime.datetime.combine(self.date, datetime.time())
+            self.cached_groups_at_the_time = find_history_replacements_active_at(
+                Group.objects.filter(pk__in=all_group_pks),
+                self.meeting_start(),
             )
-            self.cached_groups_at_the_time = find_history_replacements_active_at(Group.objects.filter(pk__in=all_group_pks), meeting_start)
         return self.cached_groups_at_the_time
 
     def group_at_the_time(self, group):
-        # MUST call self.groups_at_the_time() before assuming cached_groups_at_the_time exists
-        gatt = self.groups_at_the_time()
+        # MUST call self._groups_at_the_time() before assuming cached_groups_at_the_time exists
+        gatt = self._groups_at_the_time()
         if group.pk in gatt:
             return gatt[group.pk]
-        # cache miss
-        meeting_start = self.tz().localize(
-            datetime.datetime.combine(self.date, datetime.time())
-        )
-        new_item = find_history_active_at(group, meeting_start) or group  # fall back to original if no history
+        # Cache miss - look up the missing historical group and add it to the cache.
+        new_item = find_history_active_at(group, self.meeting_start()) or group  # fall back to original if no history
         self.cached_groups_at_the_time[group.pk] = new_item
         return new_item
 
