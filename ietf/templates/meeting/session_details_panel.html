@@ -69,12 +69,6 @@
                                 <a href="{{ pres.document.get_href }}">{{ pres.document.title }}</a>
                                 <a href="{{ url }}">({{ pres.document.name }})</a>
                                 {% if user|has_role:"Secretariat" or can_manage_materials %}
-                                    {% if pres.document.type.slug != 'bluesheets' or user|has_role:"Secretariat" or meeting.type.slug == 'interim' and can_manage_materials %}
-                                        {% if pres.document.type.slug == 'minutes' %}
-                                            <a class="btn btn-primary btn-sm float-end ms-1" href="{% url 'ietf.meeting.views.import_session_minutes' num=session.meeting.number session_id=session.pk %}">Import from notes.ietf.org</a>
-                                        {% endif %}
-                                        <a class="btn btn-primary btn-sm float-end ms-1" href="{{ upload_url }}">Upload revision</a>
-                                    {% endif %}
                                     {% if pres.document.type.slug == 'minutes' %}
                                         {% url 'ietf.meeting.views.upload_session_minutes' session_id=session.pk num=session.meeting.number as upload_url %}
                                     {% elif pres.document.type.slug == 'agenda' %}
@@ -82,6 +76,13 @@
                                     {% else %}
                                         {% url 'ietf.meeting.views.upload_session_bluesheets' session_id=session.pk num=session.meeting.number as upload_url %}
                                     {% endif %}
+                                    {% if pres.document.type.slug != 'bluesheets' or user|has_role:"Secretariat" or meeting.type.slug == 'interim' and can_manage_materials %}
+                                        {% if pres.document.type.slug == 'minutes' %}
+                                            <a class="btn btn-primary btn-sm float-end ms-1" href="{% url 'ietf.meeting.views.import_session_minutes' num=session.meeting.number session_id=session.pk %}">Import from notes.ietf.org</a>
+                                        {% endif %}
+                                        <a class="btn btn-primary btn-sm float-end ms-1" href="{{ upload_url }}">Upload revision</a>
+                                    {% endif %}
+
                                 {% endif %}
                             </td>
                         </tr>
