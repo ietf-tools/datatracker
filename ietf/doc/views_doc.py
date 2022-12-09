@@ -142,7 +142,7 @@ def interesting_doc_relations(doc):
     return interesting_relations_that, interesting_relations_that_doc
 
 def document_main(request, name, rev=None, document_html=False):
-    doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
+    orig_doc = doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
 
     # take care of possible redirections
     aliases = DocAlias.objects.filter(docs=doc).values_list("name", flat=True)
@@ -533,6 +533,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        review_assignments=review_assignments,
                                        no_review_from_teams=no_review_from_teams,
                                        due_date=due_date,
+                                       diff_revisions=get_diff_revisions(request, name, orig_doc) if document_html else None
                                        ))
 
     if doc.type_id == "charter":
@@ -901,17 +902,28 @@ def document_email(request,name):
                  )
 
 
-def document_history(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
-    top = render_document_top(request, doc, "history", name)
-
+def get_diff_revisions(request, name, doc):
     # pick up revisions from events
     diff_revisions = []
 
-    diffable = [ name.startswith(prefix) for prefix in ["rfc", "draft", "charter", "conflict-review", "status-change", ]]
+    diffable = [
+        name.startswith(prefix)
+        for prefix in [
+            "rfc",
+            "draft",
+            "charter",
+            "conflict-review",
+            "status-change",
+        ]
+    ]
     if any(diffable):
-        diff_documents = [ doc ]
-        diff_documents.extend(Document.objects.filter(docalias__relateddocument__source=doc, docalias__relateddocument__relationship="replaces"))
+        diff_documents = [doc]
+        diff_documents.extend(
+            Document.objects.filter(
+                docalias__relateddocument__source=doc,
+                docalias__relateddocument__relationship="replaces",
+            )
+        )
 
         if doc.get_state_slug() == "rfc":
             e = doc.latest_event(type="published_rfc")
@@ -921,7 +933,13 @@ def document_history(request, name):
             diff_revisions.append((name, "", e.time if e else doc.time, name))
 
         seen = set()
-        for e in NewRevisionDocEvent.objects.filter(type="new_revision", doc__in=diff_documents).select_related('doc').order_by("-time", "-id"):
+        for e in (
+            NewRevisionDocEvent.objects.filter(
+                type="new_revision", doc__in=diff_documents
+            )
+            .select_related("doc")
+            .order_by("-time", "-id")
+        ):
             if (e.doc.name, e.rev) in seen:
                 continue
 
@@ -929,7 +947,12 @@ def document_history(request, name):
 
             url = ""
             if name.startswith("charter"):
-                url = request.build_absolute_uri(urlreverse('ietf.doc.views_charter.charter_with_milestones_txt', kwargs=dict(name=e.doc.name, rev=e.rev)))
+                url = request.build_absolute_uri(
+                    urlreverse(
+                        "ietf.doc.views_charter.charter_with_milestones_txt",
+                        kwargs=dict(name=e.doc.name, rev=e.rev),
+                    )
+                )
             elif name.startswith("conflict-review"):
                 url = find_history_active_at(e.doc, e.time).get_href()
             elif name.startswith("status-change"):
@@ -939,6 +962,14 @@ def document_history(request, name):
                 url = e.doc.name + "-" + e.rev
 
             diff_revisions.append((e.doc.name, e.rev, e.time, url))
+
+    return diff_revisions
+
+
+def document_history(request, name):
+    doc = get_object_or_404(Document, docalias__name=name)
+    top = render_document_top(request, doc, "history", name)
+    diff_revisions = get_diff_revisions(request, name, doc)
 
     # grab event history
     events = doc.docevent_set.all().order_by("-time", "-id").select_related("by")

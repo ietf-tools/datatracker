@@ -68,43 +68,4 @@ document.addEventListener("DOMContentLoaded", function (event) {
     };
     defpane.show();
     document.activeElement.blur();
-
-    // Enable version diff functionality
-    document.querySelectorAll(
-            ".rev-picker .dropdown-menu li .dropdown-item")
-        .forEach(rev => {
-            rev.addEventListener("click", el => {
-                const which = rev
-                    .closest(".dropdown-menu")
-                    .dataset.which;
-                const btn = document.getElementById(which);
-                rev.closest(".dropdown-menu")
-                    .previousElementSibling
-                    .innerText = btn.innerText = rev.innerText +
-                    " ";
-            });
-        });
-
-    function xlate(url, data) {
-        if (url.toLowerCase() === "rfc") {
-            return `rfc${data.rfcNumber}.txt`;
-        }
-        return `${data.idName}-${url}.txt`;
-    }
-
-    document.querySelectorAll(".do-diff")
-        .forEach(btn => {
-            btn.addEventListener("click", el => {
-                let url1 = document.getElementById("url1")
-                    .innerText.trim();
-                let url2 = document.getElementById("url2")
-                    .innerText.trim();
-                url1 = xlate(url1, btn.dataset);
-                url2 = xlate(url2, btn.dataset);
-                const href = btn.dataset.href.replace(
-                        "__url1__", url1)
-                    .replace("__url2__", url2);
-                window.location = href;
-            });
-        });
 });

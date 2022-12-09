@@ -1,0 +1,108 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load ietf_filters %}
+{% origin %}
+<form class="{% if not document_html %}form-horizontal {% endif %}diff-form"
+      action="{{ rfcdiff_base_url }}"
+      method="get"
+      target="_blank">
+        <div class="row {% if not document_html %} mb-3{% else %} g-1{% endif %}">
+            {% if not document_html %}
+                <label for="url1" class="col-form-label col-sm-2 fw-bold">From revision</label>
+            {% endif %}
+            <div class="{% if document_html %}col{% else %}col-sm-10{% endif %}">
+                <select class="form-select{% if document_html %} form-select-sm{% endif %} select2-field"
+                        data-max-entries="1"
+                        data-minimum-input-length="0"
+                        id="url1"
+                        name="url1">
+                    {% for name, rev, time, url in diff_revisions %}
+                        <option value="{{ url }}"
+                                {% if diff_revisions|length > 1 and forloop.counter == 2 %} selected="selected"{% endif %}>
+                            {% if not document_html or name|slice:3 == 'rfc' %}{{ name|prettystdname }}{% endif %}
+                            {% if rev %}-{{ rev }}{% endif %}
+                            {% if not document_html %}({{ time|date:"Y-m-d" }}){% endif %}
+                        </option>
+                    {% endfor %}
+                    {% if doc.name|rfcbis %}
+                        <option value="{{ doc.name|rfcbis }}"
+                                {% if diff_revisions and diff_revisions|length == 1 %} selected="selected"{% endif %}>
+                            {{ doc.name|rfcbis|prettystdname }}
+                        </option>
+                    {% endif %}
+                </select>
+            </div>
+    {% if not document_html %}
+        </div>
+        <div class="row mb-3">
+            <label for="url2" class="col-form-label col-sm-2 fw-bold">To revision</label>
+    {% else %}
+        <div class="col-1">
+            <input type="text" readonly class=" text-center form-control-plaintext" value="vs.">
+        </div>
+    {% endif %}
+            <div class="{% if document_html %}col{% else %}col-sm-10{% endif %}">
+                <select class="form-select{% if document_html %} form-select-sm{% endif %} select2-field"
+                        data-max-entries="1"
+                        data-minimum-input-length="0"
+                        id="url2"
+                        name="url2">
+                    {% for name, rev, time, url in diff_revisions %}
+                        <option value="{{ url }}"
+                                {% if forloop.counter == 1 %} selected="selected"{% endif %}>
+                            {% if not document_html or name|slice:3 == 'rfc' %}{{ name|prettystdname }}{% endif %}
+                            {% if rev %}-{{ rev }}{% endif %}
+                            {% if not document_html %}({{ time|date:"Y-m-d" }}){% endif %}
+                        </option>
+                    {% endfor %}
+                    {% if doc.name|rfcbis %}
+                        <option value="{{ doc.name|rfcbis }}">
+                            {{ doc.name|rfcbis|prettystdname }}
+                        </option>
+                    {% endif %}
+                </select>
+            </div>
+        </div>
+
+        <div class="row{% if not document_html %} mb-3{% endif %}">
+        {% if not document_html %}
+            <label class="col-form-label col-sm-2 fw-bold">Diff format</label>
+            <div class="col-sm-10">
+        {% endif %}
+                <div class="btn-group{% if document_html %} btn-group-sm{% endif %}" role="group">
+                    <input type="radio"
+                           class="btn-check"
+                           autocomplete="off"
+                           checked
+                           name="difftype"
+                           value="--html"
+                           id="html">
+                    <label for="html" class="btn btn-outline-primary">Side-by-side</label>
+                    <input type="radio"
+                           class="btn-check"
+                           autocomplete="off"
+                           name="difftype"
+                           value="--abdiff"
+                           id="abdiff">
+                    <label for="abdiff" class="btn btn-outline-primary">Before-after</label>
+                    <input type="radio"
+                           class="btn-check"
+                           autocomplete="off"
+                           name="difftype"
+                           value="--chbars"
+                           id="chbars">
+                    <label for="chbars" class="btn btn-outline-primary">Change bars</label>
+                    <input type="radio"
+                           class="btn-check"
+                           autocomplete="off"
+                           name="difftype"
+                           value="--hwdiff"
+                           id="hwdiff">
+                    <label for="hwdiff" class="btn btn-outline-primary">Wdiff</label>
+            </div>
+    {% if not document_html %}
+            </div>
+    {% endif %}
+        </div>
+    <button type="submit" class="btn btn-primary{% if not document_html %} mb-3{% else %} btn-sm{% endif %}">Submit</button>
+</form>
