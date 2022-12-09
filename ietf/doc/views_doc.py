@@ -812,6 +812,7 @@ def document_html(request, name, rev=None):
     if found.matched_name.startswith('rfc') and name != found.matched_name:
          return redirect('ietf.doc.views_doc.document_html', name=found.matched_name)
 
+    name = found.matched_name
     doc = found.documents.get()
 
     if found.matched_rev or found.matched_name.startswith('rfc'):
