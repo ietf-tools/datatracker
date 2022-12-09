@@ -85,8 +85,8 @@
                 <th scope="row">Compare versions</th>
                 <td class="edit"></td>
                 <td>
-                    <a class="btn btn-primary btn-sm" href="{{ settings.RFCDIFF_BASE_URL }}?difftype=--hwdiff&amp;url2={{ doc.name }}-{{ doc.rev }}.txt" title="Inline diff (wdiff)">Inline</a>
-                    <a class="btn btn-primary btn-sm" href="{{ settings.RFCDIFF_BASE_URL }}?url2={{ doc.name }}-{{ doc.rev }}.txt" title="Side-by-side diff">Side-by-side</a>
+                    <a class="btn btn-primary btn-sm" href="{{ settings.RFCDIFF_BASE_URL }}?difftype=--hwdiff&amp;url2={% if not snapshot and doc.get_state_slug == 'rfc' %}rfc{{ doc.rfc_number }}.txt{% else %}{{ doc.name }}-{{ doc.rev }}.txt{% endif %}" title="Inline diff (wdiff)">Inline</a>
+                    <a class="btn btn-primary btn-sm" href="{{ settings.RFCDIFF_BASE_URL }}?url2={% if not snapshot and doc.get_state_slug == 'rfc' %}rfc{{ doc.rfc_number }}.txt{% else %}{{ doc.name }}-{{ doc.rev }}.txt{% endif %}" title="Side-by-side diff">Side-by-side</a>
                 </td>
             </tr>
         {% endif %}
