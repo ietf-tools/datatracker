@@ -133,15 +133,15 @@ class Group(GroupInfo):
             role_names = [role_names]
         return user.is_authenticated and self.role_set.filter(name__in=role_names, person__user=user).exists()
 
-    def is_decendant_of(self, sought_parent):
+    def is_descendant_of(self, sought_parent):
         parent = self.parent
-        decendants = [ self, ]
-        while (parent != None) and (parent not in decendants):
-            decendants = [ parent ] + decendants
+        descendants = [ self, ]
+        while (parent != None) and (parent not in descendants):
+            descendants = [ parent ] + descendants
             if parent.acronym == sought_parent:
                 return True
             parent = parent.parent
-        log.assertion('parent not in decendants')
+        log.assertion('parent not in descendants')
         return False
 
     def get_chair(self):

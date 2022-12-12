@@ -370,13 +370,25 @@ def approve_conflict_review(request, name):
                                    ))
 
 class SimpleStartReviewForm(forms.Form):
-    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas.", required=False)
+    notify = forms.CharField(
+        widget=forms.Textarea,
+        max_length=1023,
+        label="Notice emails",
+        help_text="Separate email addresses with commas.",
+        required=False,
+    )
 
 class StartReviewForm(forms.Form):
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active",role__group__type='area').order_by('name'), 
                                 label="Shepherding AD", empty_label="(None)", required=True)
     create_in_state = forms.ModelChoiceField(State.objects.filter(used=True, type="conflrev", slug__in=("needshep", "adrev")), empty_label=None, required=False)
-    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas.", required=False)
+    notify = forms.CharField(
+        widget=forms.Textarea,
+        max_length=1023,
+        label="Notice emails",
+        help_text="Separate email addresses with commas.",
+        required=False,
+    )
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))
 
     def __init__(self, *args, **kwargs):

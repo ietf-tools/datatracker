@@ -489,7 +489,7 @@ Table of Contents
 1.  Introduction
 
    This document describes how to make the Martian networks work.  The
-   methods used in Earth do not directly translate to the efficent
+   methods used in Earth do not directly translate to the efficient
    networks on Mars, as the topographical differences caused by planets.
    For example the avian carriers, cannot be used in the Mars, thus
    RFC1149 ([RFC1149]) cannot be used in Mars.
@@ -730,13 +730,13 @@ Man                    Expires September 22, 2015               [Page 3]
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Versions:")
+        self.assertContains(r, "Select version")
         self.assertContains(r, "Deimos street")
         q = PyQuery(r.content)
         self.assertEqual(q('title').text(), 'draft-ietf-mars-test-01')
-        self.assertEqual(len(q('.rfcmarkup pre')), 4)
-        self.assertEqual(len(q('.rfcmarkup span.h1')), 2)
-        self.assertEqual(len(q('.rfcmarkup a[href]')), 41)
+        self.assertEqual(len(q('.rfcmarkup pre')), 3)
+        self.assertEqual(len(q('.rfcmarkup span.h1, .rfcmarkup h1')), 2)
+        self.assertEqual(len(q('.rfcmarkup a[href]')), 28)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name, rev=draft.rev)))
         self.assertEqual(r.status_code, 200)

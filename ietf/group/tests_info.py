@@ -1937,12 +1937,12 @@ class GroupParentLoopTests(TestCase):
         import signal
 
         def timeout_handler(signum, frame):
-            raise Exception("Infinite loop in parent links is not handeled properly.")
+            raise Exception("Infinite loop in parent links is not handled properly.")
 
         signal.signal(signal.SIGALRM, timeout_handler)
         signal.alarm(1)   # One second
         try:
-            test2.is_decendant_of("ietf")
+            test2.is_descendant_of("ietf")
         except AssertionError:
             pass
         except Exception:

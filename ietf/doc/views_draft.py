@@ -515,7 +515,13 @@ class EditInfoForm(forms.Form):
     area = forms.ModelChoiceField(Group.objects.filter(type="area", state="active"), empty_label="(None - individual submission)", required=False, label="Assigned to area")
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active",role__group__type='area').order_by('name'), label="Responsible AD", empty_label="(None)", required=True)
     create_in_state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg", slug__in=("pub-req", "watching")), empty_label=None, required=False)
-    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas.", required=False)
+    notify = forms.CharField(
+        widget=forms.Textarea,
+        max_length=1023,
+        label="Notice emails",
+        help_text="Separate email addresses with commas.",
+        required=False,
+    )
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False, strip=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))
     returning_item = forms.BooleanField(required=False)

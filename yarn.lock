@@ -824,6 +824,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@parcel/optimizer-data-url@npm:2.8.0":
+  version: 2.8.0
+  resolution: "@parcel/optimizer-data-url@npm:2.8.0"
+  dependencies:
+    "@parcel/plugin": 2.8.0
+    "@parcel/utils": 2.8.0
+    isbinaryfile: ^4.0.2
+    mime: ^2.4.4
+  checksum: 998fb94ceea6c385c47a2337e6c911884f6580720609fd8e95b8036b8ce5860733a3028e3b7cff62e5f1b0aed2d86fda587cce8232d5e54514898fcb8e9e76ce
+  languageName: node
+  linkType: hard
+
 "@parcel/optimizer-htmlnano@npm:2.8.0":
   version: 2.8.0
   resolution: "@parcel/optimizer-htmlnano@npm:2.8.0"
@@ -1142,6 +1154,15 @@ __metadata:
   peerDependencies:
     "@parcel/core": ^2.8.0
   checksum: 0656c47b23d01b9e7a03ef2979d1767d517daaf40a1010e607330c5e4283dd05c84e8b8e93597c1d7e6f8947407acfcaec51ba626298cda4fc6a4a8e8ba35634
+  languageName: node
+  linkType: hard
+
+"@parcel/transformer-inline-string@npm:2.8.0":
+  version: 2.8.0
+  resolution: "@parcel/transformer-inline-string@npm:2.8.0"
+  dependencies:
+    "@parcel/plugin": 2.8.0
+  checksum: e40616c55bbebfacc38a572d44028f79dab95abbe57dd27175bdce267894c7885fe1aab38012b1ce2c652f03d0d91ce5dbdc64c2625a12ae83cfff603558c259
   languageName: node
   linkType: hard
 
@@ -2075,10 +2096,10 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"caniuse-lite@npm:1.0.30001434":
-  version: 1.0.30001434
-  resolution: "caniuse-lite@npm:1.0.30001434"
-  checksum: 7c9d2641e8e8f3ddf9af14c4ce47266a9d8fd1fc0243626049ff1b2eca4bf02938ff440813cc3feae3fa8d851ec8d1b9718044340c8d09bb4372d92d4f6b519c
+"caniuse-lite@npm:1.0.30001435":
+  version: 1.0.30001435
+  resolution: "caniuse-lite@npm:1.0.30001435"
+  checksum: ec88b9c37f66095e26ddb8b43110e9564ebccb6de77e495b8e8b9d64fdbfe37f7762be8fd2578c3ecc181a183a159578c9bd8e9b90eb15b44b78e8a6d0e92530
   languageName: node
   linkType: hard
 
@@ -3944,10 +3965,10 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"highcharts@npm:10.3.1":
-  version: 10.3.1
-  resolution: "highcharts@npm:10.3.1"
-  checksum: 8a1cf9a363cfcd30b7ea64f6baba5c23c06998367b36eb9bee8b3903d49820df9de8251e3a6434f88a153d537243c2b41a55dc44e841c486f49e20bfe41a42d2
+"highcharts@npm:10.3.2":
+  version: 10.3.2
+  resolution: "highcharts@npm:10.3.2"
+  checksum: 43cb42b24c3d6effc03d021f410a760322092ebd7012b60c2c475aa48a426af6c2a0a2937707bfc1c7aab089f0cc968c9aec3a9a1147e87ffc463b0adfb61ad4
   languageName: node
   linkType: hard
 
@@ -4402,6 +4423,13 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
+"isbinaryfile@npm:^4.0.2":
+  version: 4.0.10
+  resolution: "isbinaryfile@npm:4.0.10"
+  checksum: a6b28db7e23ac7a77d3707567cac81356ea18bd602a4f21f424f862a31d0e7ab4f250759c98a559ece35ffe4d99f0d339f1ab884ffa9795172f632ab8f88e686
+  languageName: node
+  linkType: hard
+
 "isexe@npm:^2.0.0":
   version: 2.0.0
   resolution: "isexe@npm:2.0.0"
@@ -4621,75 +4649,75 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"lightningcss-darwin-arm64@npm:1.16.1":
-  version: 1.16.1
-  resolution: "lightningcss-darwin-arm64@npm:1.16.1"
+"lightningcss-darwin-arm64@npm:1.17.1":
+  version: 1.17.1
+  resolution: "lightningcss-darwin-arm64@npm:1.17.1"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"lightningcss-darwin-x64@npm:1.16.1":
-  version: 1.16.1
-  resolution: "lightningcss-darwin-x64@npm:1.16.1"
+"lightningcss-darwin-x64@npm:1.17.1":
+  version: 1.17.1
+  resolution: "lightningcss-darwin-x64@npm:1.17.1"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
-"lightningcss-linux-arm-gnueabihf@npm:1.16.1":
-  version: 1.16.1
-  resolution: "lightningcss-linux-arm-gnueabihf@npm:1.16.1"
+"lightningcss-linux-arm-gnueabihf@npm:1.17.1":
+  version: 1.17.1
+  resolution: "lightningcss-linux-arm-gnueabihf@npm:1.17.1"
   conditions: os=linux & cpu=arm
   languageName: node
   linkType: hard
 
-"lightningcss-linux-arm64-gnu@npm:1.16.1":
-  version: 1.16.1
-  resolution: "lightningcss-linux-arm64-gnu@npm:1.16.1"
+"lightningcss-linux-arm64-gnu@npm:1.17.1":
+  version: 1.17.1
+  resolution: "lightningcss-linux-arm64-gnu@npm:1.17.1"
   conditions: os=linux & cpu=arm64 & libc=glibc
   languageName: node
   linkType: hard
 
-"lightningcss-linux-arm64-musl@npm:1.16.1":
-  version: 1.16.1
-  resolution: "lightningcss-linux-arm64-musl@npm:1.16.1"
+"lightningcss-linux-arm64-musl@npm:1.17.1":
+  version: 1.17.1
+  resolution: "lightningcss-linux-arm64-musl@npm:1.17.1"
   conditions: os=linux & cpu=arm64 & libc=musl
   languageName: node
   linkType: hard
 
-"lightningcss-linux-x64-gnu@npm:1.16.1":
-  version: 1.16.1
-  resolution: "lightningcss-linux-x64-gnu@npm:1.16.1"
+"lightningcss-linux-x64-gnu@npm:1.17.1":
+  version: 1.17.1
+  resolution: "lightningcss-linux-x64-gnu@npm:1.17.1"
   conditions: os=linux & cpu=x64 & libc=glibc
   languageName: node
   linkType: hard
 
-"lightningcss-linux-x64-musl@npm:1.16.1":
-  version: 1.16.1
-  resolution: "lightningcss-linux-x64-musl@npm:1.16.1"
+"lightningcss-linux-x64-musl@npm:1.17.1":
+  version: 1.17.1
+  resolution: "lightningcss-linux-x64-musl@npm:1.17.1"
   conditions: os=linux & cpu=x64 & libc=musl
   languageName: node
   linkType: hard
 
-"lightningcss-win32-x64-msvc@npm:1.16.1":
-  version: 1.16.1
-  resolution: "lightningcss-win32-x64-msvc@npm:1.16.1"
+"lightningcss-win32-x64-msvc@npm:1.17.1":
+  version: 1.17.1
+  resolution: "lightningcss-win32-x64-msvc@npm:1.17.1"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
 
-"lightningcss@npm:^1.16.1":
-  version: 1.16.1
-  resolution: "lightningcss@npm:1.16.1"
+"lightningcss@npm:1.17.1":
+  version: 1.17.1
+  resolution: "lightningcss@npm:1.17.1"
   dependencies:
     detect-libc: ^1.0.3
-    lightningcss-darwin-arm64: 1.16.1
-    lightningcss-darwin-x64: 1.16.1
-    lightningcss-linux-arm-gnueabihf: 1.16.1
-    lightningcss-linux-arm64-gnu: 1.16.1
-    lightningcss-linux-arm64-musl: 1.16.1
-    lightningcss-linux-x64-gnu: 1.16.1
-    lightningcss-linux-x64-musl: 1.16.1
-    lightningcss-win32-x64-msvc: 1.16.1
+    lightningcss-darwin-arm64: 1.17.1
+    lightningcss-darwin-x64: 1.17.1
+    lightningcss-linux-arm-gnueabihf: 1.17.1
+    lightningcss-linux-arm64-gnu: 1.17.1
+    lightningcss-linux-arm64-musl: 1.17.1
+    lightningcss-linux-x64-gnu: 1.17.1
+    lightningcss-linux-x64-musl: 1.17.1
+    lightningcss-win32-x64-msvc: 1.17.1
   dependenciesMeta:
     lightningcss-darwin-arm64:
       optional: true
@@ -4707,7 +4735,7 @@ browserlist@latest:
       optional: true
     lightningcss-win32-x64-msvc:
       optional: true
-  checksum: 78ec1fa15804351109c63d7e88cfb02a1a286a5a112847a4a6e2f57f52ff94e0b84662c079d377ec6d06a9462fed5e25db4958ef129e78f13b69077d062f7cb9
+  checksum: 0bf9d5c9321db457dd25c47281b7a8af36377ede05a45daa894f1f9070fe70b9db1325646aa2a574f0212e5f961f0f57b0419847141a4f49321bca72169aef16
   languageName: node
   linkType: hard
 
@@ -4823,10 +4851,10 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"luxon@npm:3.1.0":
-  version: 3.1.0
-  resolution: "luxon@npm:3.1.0"
-  checksum: f8a850b759ba7a2e009d904c522ed7bc264bf4add57578f8948e52a0ed96b627b025b5aad8032295b570ae19fac41f0ffab91bdb128715fb0cc020798a7ba886
+"luxon@npm:3.1.1":
+  version: 3.1.1
+  resolution: "luxon@npm:3.1.1"
+  checksum: 388fb35d3c51a19d8b305a3338e7e74634b08562e7d2f9ed5c05a7f4bc9ee1c1ab6a2546b6d9c4c104516b24043757d65f5f3fe3d78b206fbf55a9586ab62230
   languageName: node
   linkType: hard
 
@@ -4885,6 +4913,15 @@ browserlist@latest:
   bin:
     mime: cli.js
   checksum: fef25e39263e6d207580bdc629f8872a3f9772c923c7f8c7e793175cee22777bbe8bba95e5d509a40aaa292d8974514ce634ae35769faa45f22d17edda5e8557
+  languageName: node
+  linkType: hard
+
+"mime@npm:^2.4.4":
+  version: 2.6.0
+  resolution: "mime@npm:2.6.0"
+  bin:
+    mime: cli.js
+  checksum: 1497ba7b9f6960694268a557eae24b743fd2923da46ec392b042469f4b901721ba0adcf8b0d3c2677839d0e243b209d76e5edcbd09cfdeffa2dfb6bb4df4b862
   languageName: node
   linkType: hard
 
@@ -5520,9 +5557,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"pinia@npm:2.0.26":
-  version: 2.0.26
-  resolution: "pinia@npm:2.0.26"
+"pinia@npm:2.0.27":
+  version: 2.0.27
+  resolution: "pinia@npm:2.0.27"
   dependencies:
     "@vue/devtools-api": ^6.4.5
     vue-demi: "*"
@@ -5535,7 +5572,7 @@ browserlist@latest:
       optional: true
     typescript:
       optional: true
-  checksum: 0d38cc0efc6572436c439491491df0e989182bad342fc3828d8865a42db6c6580c8f86663fcc47955bfeca5baf6e7f95e61b9b3f795ba161c19ef86fdc9b2841
+  checksum: 29c862ea4304cdfeae385cbd2ab08100809aa9a79c147c4cb4085215601c0323e0ca664cea6abcaa0298e7ea53865117b6950ebb59224347fbc1683dbe956ac8
   languageName: node
   linkType: hard
 
@@ -6011,6 +6048,8 @@ browserlist@latest:
     "@fullcalendar/luxon2": 5.11.3
     "@fullcalendar/timegrid": 5.11.3
     "@fullcalendar/vue3": 5.11.3
+    "@parcel/optimizer-data-url": 2.8.0
+    "@parcel/transformer-inline-string": 2.8.0
     "@parcel/transformer-sass": 2.8.0
     "@popperjs/core": 2.11.6
     "@rollup/pluginutils": 5.0.2
@@ -6021,7 +6060,7 @@ browserlist@latest:
     browser-fs-access: 0.31.1
     browserlist: latest
     c8: 7.12.0
-    caniuse-lite: 1.0.30001434
+    caniuse-lite: 1.0.30001435
     d3: 7.6.1
     eslint: 8.28.0
     eslint-config-standard: 17.0.0
@@ -6032,7 +6071,7 @@ browserlist@latest:
     eslint-plugin-promise: 6.1.1
     eslint-plugin-vue: 9.8.0
     file-saver: 2.0.5
-    highcharts: 10.3.1
+    highcharts: 10.3.2
     html-validate: 7.10.0
     jquery: 3.6.1
     jquery-migrate: 3.4.0
@@ -6041,14 +6080,14 @@ browserlist@latest:
     list.js: 2.3.1
     lodash: 4.17.21
     lodash-es: 4.17.21
-    luxon: 3.1.0
+    luxon: 3.1.1
     moment: 2.29.4
     moment-timezone: 0.5.39
     ms: 2.1.3
     murmurhash-js: 1.0.0
     naive-ui: 2.34.2
     parcel: 2.8.0
-    pinia: 2.0.26
+    pinia: 2.0.27
     pinia-plugin-persist: 1.0.0
     pug: 3.0.2
     sass: 1.56.1

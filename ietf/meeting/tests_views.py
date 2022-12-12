@@ -4507,8 +4507,16 @@ class InterimTests(TestCase):
         # Just a quick check of functionality - details tested by test_js.InterimTests
         make_meeting_test_data(create_interims=True)
         url = urlreverse("ietf.meeting.views.upcoming_ical")
-        r = self.client.get(url + '?show=mars')
 
+        r = self.client.get(url + '?show=mars')
+        self.assertEqual(r.status_code, 200)
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=[
+                                          'mars - Martian Special Interest Group',
+                                      ],
+                                      expected_event_count=1)
+
+        r = self.client.get(url + '?show=mars,ietf-meetings')
         self.assertEqual(r.status_code, 200)
         assert_ical_response_is_valid(self, r,
                                       expected_event_summaries=[
@@ -5374,12 +5382,11 @@ class InterimTests(TestCase):
         length_before = len(outbox)
         form_initial = r.context['form'].initial
         formset_initial =  r.context['formset'].forms[0].initial
-        new_time = formset_initial['time'] + datetime.timedelta(hours=1)
         data = {'group':group.pk,
                 'meeting_type':'single',
                 'session_set-0-id':meeting.session_set.first().id,
                 'session_set-0-date':formset_initial['date'].strftime('%Y-%m-%d'),
-                'session_set-0-time':new_time.strftime('%H:%M'),
+                'session_set-0-time':'12:34',
                 'session_set-0-requested_duration': '00:30',
                 'session_set-0-remote_instructions':formset_initial['remote_instructions'],
                 #'session_set-0-agenda':formset_initial['agenda'],
@@ -5392,7 +5399,10 @@ class InterimTests(TestCase):
         self.assertEqual(len(outbox),length_before)
         session = meeting.session_set.first()
         timeslot = session.official_timeslotassignment().timeslot
-        self.assertEqual(timeslot.time,new_time)
+        self.assertEqual(
+            timeslot.time,
+            meeting.tz().localize(datetime.datetime.combine(formset_initial['date'], datetime.time(12, 34))),
+        )
         
     def test_interim_request_edit(self):
         '''Edit request.  Send notice of change'''
@@ -5412,13 +5422,12 @@ class InterimTests(TestCase):
         length_before = len(outbox)
         form_initial = r.context['form'].initial
         formset_initial =  r.context['formset'].forms[0].initial
-        new_time = formset_initial['time'] + datetime.timedelta(hours=1)
         new_duration = formset_initial['requested_duration'] + datetime.timedelta(hours=1)
         data = {'group':group.pk,
                 'meeting_type':'single',
                 'session_set-0-id':meeting.session_set.first().id,
                 'session_set-0-date':formset_initial['date'].strftime('%Y-%m-%d'),
-                'session_set-0-time':new_time.strftime('%H:%M'),
+                'session_set-0-time': '12:34',
                 'session_set-0-requested_duration':self.strfdelta(new_duration, '{hours}:{minutes}'),
                 'session_set-0-remote_instructions':formset_initial['remote_instructions'],
                 #'session_set-0-agenda':formset_initial['agenda'],
@@ -5432,7 +5441,10 @@ class InterimTests(TestCase):
         self.assertIn('CHANGED', outbox[-1]['Subject'])
         session = meeting.session_set.first()
         timeslot = session.official_timeslotassignment().timeslot
-        self.assertEqual(timeslot.time,new_time)
+        self.assertEqual(
+            timeslot.time,
+            meeting.tz().localize(datetime.datetime.combine(formset_initial['date'], datetime.time(12, 34))),
+        )
         self.assertEqual(timeslot.duration,new_duration)
     
     def strfdelta(self, tdelta, fmt):

@@ -1076,9 +1076,9 @@ class InterimTests(IetfSeleniumTestCase):
                     unexpected.add(entry.text)
             advance_month()
 
-        self.assertEqual(seen, visible_meetings, "Expected calendar entries not shown.")
-        self.assertEqual(not_visible, set(), "Hidden calendar entries for expected interim meetings.")
-        self.assertEqual(unexpected, set(), "Unexpected calendar entries visible")
+        self.assertCountEqual(seen, visible_meetings, "Expected calendar entries not shown.")
+        self.assertCountEqual(not_visible, set(), "Hidden calendar entries for expected interim meetings.")
+        self.assertCountEqual(unexpected, set(), "Unexpected calendar entries visible")
 
     def do_upcoming_view_filter_test(self, querystring, visible_meetings=()):
         self.login()
@@ -1152,102 +1152,85 @@ class InterimTests(IetfSeleniumTestCase):
         ietf_meetings = set(self.all_ietf_meetings())
         self.do_upcoming_view_filter_test('', ietf_meetings.union(self.displayed_interims()))
 
+    def test_upcoming_view_show_ietf_meetings(self):
+        self.do_upcoming_view_filter_test('?show=ietf-meetings', self.all_ietf_meetings())
+
     def test_upcoming_view_filter_show_group(self):
         # Show none
-        ietf_meetings = set(self.all_ietf_meetings())
-        self.do_upcoming_view_filter_test('?show=', ietf_meetings)
+        self.do_upcoming_view_filter_test('?show=')
 
         # Show one
-        self.do_upcoming_view_filter_test('?show=mars', 
-                                          ietf_meetings.union(
-                                              self.displayed_interims(groups=['mars'])
-                                          ))
+        self.do_upcoming_view_filter_test('?show=mars', self.displayed_interims(groups=['mars']))
 
         # Show two
-        self.do_upcoming_view_filter_test('?show=mars,ames', 
-                                          ietf_meetings.union(
-                                              self.displayed_interims(groups=['mars', 'ames'])
-                                          ))
+        self.do_upcoming_view_filter_test('?show=mars,ames',self.displayed_interims(groups=['mars', 'ames']))
+
+        # Show two plus ietf-meetings
+        self.do_upcoming_view_filter_test(
+            '?show=ietf-meetings,mars,ames',
+            set(self.all_ietf_meetings()).union(self.displayed_interims(groups=['mars', 'ames']))
+        )
 
     def test_upcoming_view_filter_show_area(self):
         mars = Group.objects.get(acronym='mars')
         area = mars.parent
-        ietf_meetings = set(self.all_ietf_meetings())
-        self.do_upcoming_view_filter_test('?show=%s' % area.acronym,
-                                          ietf_meetings.union(
-                                              self.displayed_interims(groups=['mars', 'ames'])
-                                          ))
+        self.do_upcoming_view_filter_test('?show=%s' % area.acronym, self.displayed_interims(groups=['mars', 'ames']))
 
     def test_upcoming_view_filter_show_type(self):
-        ietf_meetings = set(self.all_ietf_meetings())
-        self.do_upcoming_view_filter_test('?show=plenary',
-                                          ietf_meetings.union(
-                                              self.displayed_interims(groups=['sg'])
-                                          ))
+        self.do_upcoming_view_filter_test('?show=plenary', self.displayed_interims(groups=['sg']))
 
     def test_upcoming_view_filter_hide_group(self):
         mars = Group.objects.get(acronym='mars')
         area = mars.parent
 
         # Without anything shown, should see only ietf meetings
-        ietf_meetings = set(self.all_ietf_meetings())
-        self.do_upcoming_view_filter_test('?hide=mars', ietf_meetings)
+        self.do_upcoming_view_filter_test('?hide=mars')
 
         # With group shown
-        self.do_upcoming_view_filter_test('?show=ames,mars&hide=mars',
-                                          ietf_meetings.union(
-                                              self.displayed_interims(groups=['ames'])
-                                          ))
+        self.do_upcoming_view_filter_test('?show=ames,mars&hide=mars', self.displayed_interims(groups=['ames']))
         # With area shown
-        self.do_upcoming_view_filter_test('?show=%s&hide=mars' % area.acronym, 
-                                          ietf_meetings.union(
-                                              self.displayed_interims(groups=['ames'])
-                                          ))
-
+        self.do_upcoming_view_filter_test('?show=%s&hide=mars' % area.acronym, self.displayed_interims(groups=['ames']))
         # With type shown
-        self.do_upcoming_view_filter_test('?show=plenary&hide=sg',
-                                          ietf_meetings)
+        self.do_upcoming_view_filter_test('?show=plenary&hide=sg')
 
     def test_upcoming_view_filter_hide_area(self):
         mars = Group.objects.get(acronym='mars')
         area = mars.parent
 
-        # Without anything shown, should see only ietf meetings
-        ietf_meetings = set(self.all_ietf_meetings())
-        self.do_upcoming_view_filter_test('?hide=%s' % area.acronym, ietf_meetings)
+        # Without anything shown, should see nothing
+        self.do_upcoming_view_filter_test('?hide=%s' % area.acronym)
 
         # With area shown
-        self.do_upcoming_view_filter_test('?show=%s&hide=%s' % (area.acronym, area.acronym),
-                                          ietf_meetings)
+        self.do_upcoming_view_filter_test('?show=%s&hide=%s' % (area.acronym, area.acronym))
 
         # With group shown
-        self.do_upcoming_view_filter_test('?show=mars&hide=%s' % area.acronym, ietf_meetings)
+        self.do_upcoming_view_filter_test('?show=mars&hide=%s' % area.acronym)
 
         # With type shown
-        self.do_upcoming_view_filter_test('?show=regular&hide=%s' % area.acronym, ietf_meetings)
+        self.do_upcoming_view_filter_test('?show=regular&hide=%s' % area.acronym)
+
+        # with IETF meetings shown
+        self.do_upcoming_view_filter_test('?show=ietf-meetings,hide=%s' % area.acronym, self.all_ietf_meetings())
 
     def test_upcoming_view_filter_hide_type(self):
-        mars = Group.objects.get(acronym='mars')
-        area = mars.parent
-
-        # Without anything shown, should see only ietf meetings
-        ietf_meetings = set(self.all_ietf_meetings())
-        self.do_upcoming_view_filter_test('?hide=regular', ietf_meetings)
+        # Without anything shown, should see nothing
+        self.do_upcoming_view_filter_test('?hide=regular')
 
         # With group shown
-        self.do_upcoming_view_filter_test('?show=mars&hide=regular', ietf_meetings)
+        self.do_upcoming_view_filter_test('?show=mars&hide=regular')
 
         # With type shown
-        self.do_upcoming_view_filter_test('?show=plenary,regular&hide=%s' % area.acronym, 
-                                          ietf_meetings.union(
-                                              self.displayed_interims(groups=['sg'])
-                                          ))
+        self.do_upcoming_view_filter_test(
+            '?show=plenary,regular&hide=regular',
+            self.displayed_interims(groups=['sg'])
+        )
+
+        # With interim-meetings shown
+        self.do_upcoming_view_filter_test('?show=plenary,regular&hide=regular', self.displayed_interims(groups=['sg']))
 
     def test_upcoming_view_filter_whitespace(self):
         """Whitespace in filter lists should be ignored"""
-        meetings = set(self.all_ietf_meetings())
-        meetings.update(self.displayed_interims(groups=['mars']))
-        self.do_upcoming_view_filter_test('?show=mars , ames &hide=   ames', meetings)
+        self.do_upcoming_view_filter_test('?show=mars , ames &hide=   ames', self.displayed_interims(groups=['mars']))
 
     def test_upcoming_view_time_zone_selection(self):
         def _assert_interim_tz_correct(sessions, tz):

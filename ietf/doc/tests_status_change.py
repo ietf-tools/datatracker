@@ -147,8 +147,8 @@ class StatusChangeTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=notify]')),1)
-        self.assertEqual(doc.notify,q('form input[name=notify]')[0].value)
+        self.assertEqual(len(q('form textarea[name=notify]')), 1)
+        self.assertEqual(doc.notify, q('form textarea[name=notify]')[0].value.strip())
 
         # change notice list
         newlist = '"Foo Bar" <foo@bar.baz.com>'
@@ -169,8 +169,8 @@ class StatusChangeTests(TestCase):
         # Regenerate does not save!
         self.assertEqual(doc.notify,newlist)
         q = PyQuery(r.content)
-        formlist = q('form input[name=notify]')[0].value
-        self.assertEqual(None,formlist)
+        formlist = q('form textarea[name=notify]')[0].value.strip()
+        self.assertEqual("", formlist)
 
     def test_edit_title(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
