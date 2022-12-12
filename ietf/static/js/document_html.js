@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
         ["py-0"]);
 
     // activate pref buttons selected by pref cookies
-    document.querySelectorAll(".btn-check")
+    document.querySelectorAll("#pref-tab-pane .btn-check")
         .forEach(btn => {
             const id = btn.id.replace("-radio", "");
             if (cookies.get(btn.name) == id) {

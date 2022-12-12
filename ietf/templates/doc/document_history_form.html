@@ -2,7 +2,7 @@
 {% load origin %}
 {% load ietf_filters %}
 {% origin %}
-<form class="{% if not document_html %}form-horizontal {% endif %}diff-form"
+<form class="form-horizontal diff-form"
       action="{{ rfcdiff_base_url }}"
       method="get"
       target="_blank">
@@ -10,7 +10,7 @@
             {% if not document_html %}
                 <label for="url1" class="col-form-label col-sm-2 fw-bold">From revision</label>
             {% endif %}
-            <div class="{% if document_html %}col{% else %}col-sm-10{% endif %}">
+            <div class="{% if document_html %}col-lg{% else %}col-sm-10{% endif %}">
                 <select class="form-select{% if document_html %} form-select-sm{% endif %} select2-field"
                         data-max-entries="1"
                         data-minimum-input-length="0"
@@ -37,11 +37,11 @@
         <div class="row mb-3">
             <label for="url2" class="col-form-label col-sm-2 fw-bold">To revision</label>
     {% else %}
-        <div class="col-1">
+        <div class="col-lg-1 d-none d-xl-block">
             <input type="text" readonly class=" text-center form-control-plaintext" value="vs.">
         </div>
     {% endif %}
-            <div class="{% if document_html %}col{% else %}col-sm-10{% endif %}">
+            <div class="{% if document_html %}col-lg{% else %}col-sm-10{% endif %}">
                 <select class="form-select{% if document_html %} form-select-sm{% endif %} select2-field"
                         data-max-entries="1"
                         data-minimum-input-length="0"
@@ -62,47 +62,55 @@
                     {% endif %}
                 </select>
             </div>
+{% if not document_html %}
         </div>
+{% endif %}
 
-        <div class="row{% if not document_html %} mb-3{% endif %}">
+        <div class="{% if not document_html %}row mb-3{% else %}col-lg{% endif %}">
         {% if not document_html %}
             <label class="col-form-label col-sm-2 fw-bold">Diff format</label>
             <div class="col-sm-10">
         {% endif %}
-                <div class="btn-group{% if document_html %} btn-group-sm{% endif %}" role="group">
-                    <input type="radio"
-                           class="btn-check"
-                           autocomplete="off"
-                           checked
-                           name="difftype"
-                           value="--html"
-                           id="html">
-                    <label for="html" class="btn btn-outline-primary">Side-by-side</label>
-                    <input type="radio"
-                           class="btn-check"
-                           autocomplete="off"
-                           name="difftype"
-                           value="--abdiff"
-                           id="abdiff">
-                    <label for="abdiff" class="btn btn-outline-primary">Before-after</label>
-                    <input type="radio"
-                           class="btn-check"
-                           autocomplete="off"
-                           name="difftype"
-                           value="--chbars"
-                           id="chbars">
-                    <label for="chbars" class="btn btn-outline-primary">Change bars</label>
-                    <input type="radio"
-                           class="btn-check"
-                           autocomplete="off"
-                           name="difftype"
-                           value="--hwdiff"
-                           id="hwdiff">
-                    <label for="hwdiff" class="btn btn-outline-primary">Wdiff</label>
-            </div>
+            <button type="submit"
+                   class="btn btn-primary{% if document_html %} btn-sm{% endif %}"
+                   value="--html"
+                   name="difftype"
+                   id="html">
+                {% if not document_html %}
+                    Side-by-side
+                {% else %}
+                    <i title="Side-by-side diff" class="bi bi-layout-split"></i>
+                {% endif %}
+            </button>
+            {% if not document_html %}
+            <button type="submit"
+                   class="btn btn-primary{% if document_html %} btn-sm{% endif %}"
+                   value="--abdiff"
+                   name="difftype"
+                   id="abdiff">
+                Before-after
+            </button>
+            <button type="submit"
+                   class="btn btn-primary{% if document_html %} btn-sm{% endif %}"
+                   value="--chbars"
+                   name="difftype"
+                   id="chbars">
+                Change bars
+            </button>
+            {% endif %}
+            <button type="submit"
+                   class="btn btn-primary{% if document_html %} btn-sm{% endif %}"
+                   value="--hwdiff"
+                   name="difftype"
+                   id="hwdiff">
+                {% if not document_html %}
+                    Wdiff
+                {% else %}
+                    <i title="Inline diff" class="bi bi-body-text"></i>
+                {% endif %}
+            </button>
     {% if not document_html %}
             </div>
     {% endif %}
         </div>
-    <button type="submit" class="btn btn-primary{% if not document_html %} mb-3{% else %} btn-sm{% endif %}">Submit</button>
 </form>
