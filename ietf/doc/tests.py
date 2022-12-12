@@ -41,6 +41,7 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
     BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
     StatusChangeFactory, BofreqFactory)
+from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
 from ietf.doc.views_search import ad_dashboard_group, ad_dashboard_group_type, shorten_group_name # TODO: red flag that we're importing from views in tests. Move these to utils.
@@ -2926,3 +2927,43 @@ class PdfizedTests(TestCase):
             for ext in ('pdf','txt','html','anythingatall'):
                 self.should_succeed(dict(name=rfc.name,rev=f'{r:02d}',ext=ext))
         self.should_404(dict(name=rfc.name,rev='02'))
+
+class NotifyValidationTests(TestCase):
+    def test_notify_validation(self):
+        valid_values = [
+            "foo@example.com, bar@example.com",
+            "Foo Bar <foobar@example.com>, baz@example.com",
+            "foo@example.com, ,bar@example.com,", # We're ignoring extra commas
+            "foo@example.com\nbar@example.com", # Yes, we're quietly accepting a newline as a comma
+        ]
+        bad_nameaddr_values = [
+            "@example.com",
+            "foo",
+            "foo@",
+            "foo bar foobar@example.com",
+        ]
+        duplicate_values = [
+            "foo@bar.com, bar@baz.com, foo@bar.com",
+            "Foo <foo@bar.com>, foobar <foo@bar.com>",
+        ]
+        both_duplicate_and_bad_values = [
+            "foo@example.com, bar@, Foo <foo@example.com>",
+            "Foo <@example.com>, Bar <@example.com>",
+        ]
+        for v in valid_values:
+            self.assertTrue(NotifyForm({"notify": v}).is_valid())
+        for v in bad_nameaddr_values:
+            f = NotifyForm({"notify": v})
+            self.assertFalse(f.is_valid())
+            self.assertTrue("Invalid addresses" in f.errors["notify"][0])
+            self.assertFalse("Duplicate addresses" in f.errors["notify"][0])
+        for v in duplicate_values:
+            f = NotifyForm({"notify": v})
+            self.assertFalse(f.is_valid())
+            self.assertFalse("Invalid addresses" in f.errors["notify"][0])
+            self.assertTrue("Duplicate addresses" in f.errors["notify"][0])
+        for v in both_duplicate_and_bad_values:
+            f = NotifyForm({"notify": v})
+            self.assertFalse(f.is_valid())
+            self.assertTrue("Invalid addresses" in f.errors["notify"][0])
+            self.assertTrue("Duplicate addresses" in f.errors["notify"][0])
