@@ -6,111 +6,110 @@
       action="{{ rfcdiff_base_url }}"
       method="get"
       target="_blank">
-        <div class="row {% if not document_html %} mb-3{% else %} g-1{% endif %}">
-            {% if not document_html %}
-                <label for="url1" class="col-form-label col-sm-2 fw-bold">From revision</label>
-            {% endif %}
-            <div class="{% if document_html %}col-lg{% else %}col-sm-10{% endif %}">
-                <select class="form-select{% if document_html %} form-select-sm{% endif %} select2-field"
-                        data-max-entries="1"
-                        data-minimum-input-length="0"
-                        id="url1"
-                        name="url1">
-                    {% for name, rev, time, url in diff_revisions %}
-                        <option value="{{ url }}"
-                                {% if diff_revisions|length > 1 and forloop.counter == 2 %} selected="selected"{% endif %}>
-                            {% if not document_html or name|slice:3 == 'rfc' %}{{ name|prettystdname }}{% endif %}
-                            {% if rev %}-{{ rev }}{% endif %}
-                            {% if not document_html %}({{ time|date:"Y-m-d" }}){% endif %}
-                        </option>
-                    {% endfor %}
-                    {% if doc.name|rfcbis %}
-                        <option value="{{ doc.name|rfcbis }}"
-                                {% if diff_revisions and diff_revisions|length == 1 %} selected="selected"{% endif %}>
-                            {{ doc.name|rfcbis|prettystdname }}
-                        </option>
-                    {% endif %}
-                </select>
-            </div>
-    {% if not document_html %}
+    <div class="row {% if not document_html %} mb-3{% else %} g-1{% endif %}">
+        {% if not document_html %}<label for="url1" class="col-form-label col-sm-2 fw-bold">From revision</label>{% endif %}
+        <div class="{% if document_html %}col-lg{% else %}col-sm-10{% endif %}">
+            <select class="form-select{% if document_html %} form-select-sm{% endif %} select2-field"
+                    data-max-entries="1"
+                    data-minimum-input-length="0"
+                    {% if not document_html %}id="url1"{% else %}aria-label="From revision"{% endif %}
+                    name="url1">
+                {% for name, rev, time, url in diff_revisions %}
+                    <option value="{{ url }}"
+                            {% if diff_revisions|length > 1 and forloop.counter == 2 %} selected="selected"{% endif %}>
+                        {% if not document_html or name|slice:3 == 'rfc' %}
+                            {{ name|prettystdname }}
+                        {% endif %}
+                        {% if rev %}-{{ rev }}{% endif %}
+                        {% if not document_html %}({{ time|date:"Y-m-d" }}){% endif %}
+                    </option>
+                {% endfor %}
+                {% if doc.name|rfcbis %}
+                    <option value="{{ doc.name|rfcbis }}"
+                            {% if diff_revisions and diff_revisions|length == 1 %} selected="selected"{% endif %}>
+                        {{ doc.name|rfcbis|prettystdname }}
+                    </option>
+                {% endif %}
+            </select>
+        </div>
+        {% if not document_html %}
         </div>
         <div class="row mb-3">
             <label for="url2" class="col-form-label col-sm-2 fw-bold">To revision</label>
-    {% else %}
-        <div class="col-lg-1 d-none d-xl-block">
-            <input type="text" readonly class=" text-center form-control-plaintext" value="vs.">
-        </div>
-    {% endif %}
-            <div class="{% if document_html %}col-lg{% else %}col-sm-10{% endif %}">
-                <select class="form-select{% if document_html %} form-select-sm{% endif %} select2-field"
-                        data-max-entries="1"
-                        data-minimum-input-length="0"
-                        id="url2"
-                        name="url2">
-                    {% for name, rev, time, url in diff_revisions %}
-                        <option value="{{ url }}"
-                                {% if forloop.counter == 1 %} selected="selected"{% endif %}>
-                            {% if not document_html or name|slice:3 == 'rfc' %}{{ name|prettystdname }}{% endif %}
-                            {% if rev %}-{{ rev }}{% endif %}
-                            {% if not document_html %}({{ time|date:"Y-m-d" }}){% endif %}
-                        </option>
-                    {% endfor %}
-                    {% if doc.name|rfcbis %}
-                        <option value="{{ doc.name|rfcbis }}">
-                            {{ doc.name|rfcbis|prettystdname }}
-                        </option>
-                    {% endif %}
-                </select>
+        {% else %}
+            <div class="col-lg-1 d-none d-xxl-block">
+                <input type="text"
+                       readonly
+                       aria-label="vs."
+                       class=" text-center form-control-plaintext"
+                       value="vs.">
             </div>
-{% if not document_html %}
-        </div>
-{% endif %}
-
-        <div class="{% if not document_html %}row mb-3{% else %}col-lg{% endif %}">
-        {% if not document_html %}
-            <label class="col-form-label col-sm-2 fw-bold">Diff format</label>
-            <div class="col-sm-10">
         {% endif %}
-            <button type="submit"
-                   class="btn btn-primary{% if document_html %} btn-sm{% endif %}"
-                   value="--html"
-                   name="difftype"
-                   id="html">
-                {% if not document_html %}
-                    Side-by-side
-                {% else %}
-                    <i title="Side-by-side diff" class="bi bi-layout-split"></i>
+        <div class="{% if document_html %}col-lg{% else %}col-sm-10{% endif %}">
+            <select class="form-select{% if document_html %} form-select-sm{% endif %} select2-field"
+                    data-max-entries="1"
+                    data-minimum-input-length="0"
+                    {% if not document_html %}id="url2"{% else %}aria-label="To revision"{% endif %}
+                    name="url2">
+                {% for name, rev, time, url in diff_revisions %}
+                    <option value="{{ url }}"
+                            {% if forloop.counter == 1 %} selected="selected"{% endif %}>
+                        {% if not document_html or name|slice:3 == 'rfc' %}
+                            {{ name|prettystdname }}
+                        {% endif %}
+                        {% if rev %}-{{ rev }}{% endif %}
+                        {% if not document_html %}({{ time|date:"Y-m-d" }}){% endif %}
+                    </option>
+                {% endfor %}
+                {% if doc.name|rfcbis %}
+                    <option value="{{ doc.name|rfcbis }}">
+                        {{ doc.name|rfcbis|prettystdname }}
+                    </option>
                 {% endif %}
-            </button>
-            {% if not document_html %}
-            <button type="submit"
-                   class="btn btn-primary{% if document_html %} btn-sm{% endif %}"
-                   value="--abdiff"
-                   name="difftype"
-                   id="abdiff">
-                Before-after
-            </button>
-            <button type="submit"
-                   class="btn btn-primary{% if document_html %} btn-sm{% endif %}"
-                   value="--chbars"
-                   name="difftype"
-                   id="chbars">
-                Change bars
-            </button>
-            {% endif %}
-            <button type="submit"
-                   class="btn btn-primary{% if document_html %} btn-sm{% endif %}"
-                   value="--hwdiff"
-                   name="difftype"
-                   id="hwdiff">
-                {% if not document_html %}
-                    Wdiff
-                {% else %}
-                    <i title="Inline diff" class="bi bi-body-text"></i>
-                {% endif %}
-            </button>
-    {% if not document_html %}
-            </div>
-    {% endif %}
+            </select>
         </div>
-</form>
+        {% if not document_html %}</div>{% endif %}
+        <div class="{% if not document_html %}row mb-3{% else %}col-lg{% endif %}">
+            {% if not document_html %}
+                <label class="col-form-label col-sm-2 fw-bold">Diff format</label>
+                <div class="col-sm-10">
+                {% endif %}
+                <button type="submit"
+                        {% if document_html %}title="Side-by-side diff" aria-label="Side-by-side diff"{% endif %}
+                        class="btn btn-primary{% if document_html %} btn-sm{% endif %}"
+                        value="--html"
+                        name="difftype">
+                    {% if not document_html %}
+                        Side-by-side
+                    {% else %}
+                        <i class="bi bi-layout-split"></i>
+                    {% endif %}
+                </button>
+                {% if not document_html %}
+                    <button type="submit"
+                            class="btn btn-primary{% if document_html %} btn-sm{% endif %}"
+                            value="--abdiff"
+                            name="difftype">
+                        Before-after
+                    </button>
+                    <button type="submit"
+                            class="btn btn-primary{% if document_html %} btn-sm{% endif %}"
+                            value="--chbars"
+                            name="difftype">
+                        Change bars
+                    </button>
+                {% endif %}
+                <button type="submit"
+                        {% if document_html %}title="Inline diff" aria-label="Inline diff"{% endif %}
+                        class="btn btn-primary{% if document_html %} btn-sm{% endif %}"
+                        value="--hwdiff"
+                        name="difftype">
+                    {% if not document_html %}
+                        Wdiff
+                    {% else %}
+                        <i class="bi bi-body-text"></i>
+                    {% endif %}
+                </button>
+            </div>
+        </div>
+    </form>
