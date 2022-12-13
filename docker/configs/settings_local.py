@@ -20,9 +20,6 @@ DATABASES = {
     },
 }
 
-DATABASE_TEST_OPTIONS = {
-    'init_command': 'SET storage_engine=InnoDB',
-}
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 IDSUBMIT_REPOSITORY_PATH = "test/id/"
