@@ -48,13 +48,24 @@
         "sqltools.connections": [
             // Default connection to dev DB container
             {
-                "name": "Local Dev",
+                "name": "Local MariaDB",
                 "server": "db",
                 "port": 3306,
                 "database": "ietf_utf8",
                 "username": "django",
                 "password": "RkTkDPFnKpko",
-                "driver": "MySQL",
+                "driver": "MariaDB",
+                "askForPassword": false,
+                "connectionTimeout": 60
+            },
+            {
+                "name": "Local PostgreSQL",
+                "server": "pgdb",
+                "port": 5432,
+                "database": "ietf",
+                "username": "django",
+                "password": "RkTkDPFnKpko",
+                "driver": "PostgreSQL",
                 "askForPassword": false,
                 "connectionTimeout": 60
             }
@@ -76,6 +87,7 @@
 		"ms-python.python",
 		"ms-python.vscode-pylance",
 		"mtxr.sqltools-driver-mysql",
+        "mtxr.sqltools-driver-pg",
         "mtxr.sqltools",
 		"mutantdino.resourcemonitor",
 		"oderwat.indent-rainbow",
@@ -94,6 +106,10 @@
         },
         "3306": {
             "label": "MariaDB",
+            "onAutoForward": "silent"
+        },
+        "5432": {
+            "label": "PostgreSQL",
             "onAutoForward": "silent"
         },
         "8000": {
