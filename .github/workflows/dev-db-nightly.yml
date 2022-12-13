@@ -41,7 +41,7 @@ jobs:
             docker: "x64"
     steps:
       - uses: actions/checkout@v3
-        
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -87,17 +87,14 @@ jobs:
           echo "Creating the manifests..."
           docker manifest create ghcr.io/ietf-tools/datatracker-db:nightly-${{ steps.date.outputs.date }} ghcr.io/ietf-tools/datatracker-db:latest-x64 ghcr.io/ietf-tools/datatracker-db:latest-arm64
           docker manifest create ghcr.io/ietf-tools/datatracker-db:latest ghcr.io/ietf-tools/datatracker-db:latest-x64 ghcr.io/ietf-tools/datatracker-db:latest-arm64
-          docker manifest create ghcr.io/ietf-tools/datatracker-db-pg:nightly-${{ steps.date.outputs.date }} ghcr.io/ietf-tools/datatracker-db-pg:latest-x64 ghcr.io/ietf-tools/datatracker-db-pg:latest-arm64
-          docker manifest create ghcr.io/ietf-tools/datatracker-db-pg:latest ghcr.io/ietf-tools/datatracker-db-pg:latest-x64 ghcr.io/ietf-tools/datatracker-db-pg:latest-arm64
           echo "Pushing the manifests..."
           docker manifest push -p ghcr.io/ietf-tools/datatracker-db:nightly-${{ steps.date.outputs.date }}
           docker manifest push -p ghcr.io/ietf-tools/datatracker-db:latest
-          docker manifest push -p ghcr.io/ietf-tools/datatracker-db-pg:nightly-${{ steps.date.outputs.date }}
-          docker manifest push -p ghcr.io/ietf-tools/datatracker-db-pg:latest
 
   build-pg:
     name: Build PostgreSQL Docker Images
     runs-on: ubuntu-latest
+    container: ghcr.io/ietf-tools/datatracker-app-base:latest
     needs: [combine-mariadb]
     permissions:
       contents: read
@@ -109,11 +106,21 @@ jobs:
             docker: "arm64"
           - platform: "linux/amd64"
             docker: "x64"
+    services:
+      db:
+        image: ghcr.io/ietf-tools/datatracker-db:latest
+        volumes:
+            - mariadb-data:/var/lib/mysql
+        env:
+            MYSQL_ROOT_PASSWORD: ietf
+            MYSQL_DATABASE: ietf_utf8
+            MYSQL_USER: django
+            MYSQL_PASSWORD: RkTkDPFnKpko
     steps:
       - uses: actions/checkout@v3
         with:
           ref: 'feat/postgres'
-        
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -126,6 +133,11 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Migrate
+        run: |
+          chmod +x ./docker/scripts/db-pg-migrate.sh
+          sh ./docker/scripts/db-pg-migrate.sh
 
       - name: Docker Build & Push
         uses: docker/build-push-action@v3
