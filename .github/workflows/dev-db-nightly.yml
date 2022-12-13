@@ -25,8 +25,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build Docker Images
+  build-mariadb:
+    name: Build MariaDB Docker Images
     runs-on: ubuntu-latest
     if: ${{ github.ref == 'refs/heads/main' }}
     permissions:
@@ -64,15 +64,13 @@ jobs:
           push: true
           tags: ghcr.io/ietf-tools/datatracker-db:latest-${{ matrix.docker }}
           
-  combine:
-    name: Create Docker Manifests
+  combine-mariadb:
+    name: Create MariaDB Docker Manifests
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [build-mariadb]
     permissions:
       packages: write
     steps:
-      - uses: actions/checkout@v3
-      
       - name: Get Current Date as Tag
         id: date
         run: echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
@@ -89,6 +87,78 @@ jobs:
           echo "Creating the manifests..."
           docker manifest create ghcr.io/ietf-tools/datatracker-db:nightly-${{ steps.date.outputs.date }} ghcr.io/ietf-tools/datatracker-db:latest-x64 ghcr.io/ietf-tools/datatracker-db:latest-arm64
           docker manifest create ghcr.io/ietf-tools/datatracker-db:latest ghcr.io/ietf-tools/datatracker-db:latest-x64 ghcr.io/ietf-tools/datatracker-db:latest-arm64
+          docker manifest create ghcr.io/ietf-tools/datatracker-db-pg:nightly-${{ steps.date.outputs.date }} ghcr.io/ietf-tools/datatracker-db-pg:latest-x64 ghcr.io/ietf-tools/datatracker-db-pg:latest-arm64
+          docker manifest create ghcr.io/ietf-tools/datatracker-db-pg:latest ghcr.io/ietf-tools/datatracker-db-pg:latest-x64 ghcr.io/ietf-tools/datatracker-db-pg:latest-arm64
           echo "Pushing the manifests..."
           docker manifest push -p ghcr.io/ietf-tools/datatracker-db:nightly-${{ steps.date.outputs.date }}
           docker manifest push -p ghcr.io/ietf-tools/datatracker-db:latest
+          docker manifest push -p ghcr.io/ietf-tools/datatracker-db-pg:nightly-${{ steps.date.outputs.date }}
+          docker manifest push -p ghcr.io/ietf-tools/datatracker-db-pg:latest
+
+  build-pg:
+    name: Build PostgreSQL Docker Images
+    runs-on: ubuntu-latest
+    needs: [combine-mariadb]
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - platform: "linux/arm64"
+            docker: "arm64"
+          - platform: "linux/amd64"
+            docker: "x64"
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: 'feat/postgres'
+        
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker Build & Push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: docker/db-pg.Dockerfile
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ghcr.io/ietf-tools/datatracker-db-pg:latest-${{ matrix.docker }}
+
+  combine-pg:
+    name: Create PostgreSQL Docker Manifests
+    runs-on: ubuntu-latest
+    needs: [build-pg]
+    permissions:
+      packages: write
+    steps:
+      - name: Get Current Date as Tag
+        id: date
+        run: echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
+        
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+        
+      - name: Create and Push Manifests
+        run: |
+          echo "Creating the manifests..."
+          docker manifest create ghcr.io/ietf-tools/datatracker-db-pg:nightly-${{ steps.date.outputs.date }} ghcr.io/ietf-tools/datatracker-db-pg:latest-x64 ghcr.io/ietf-tools/datatracker-db-pg:latest-arm64
+          docker manifest create ghcr.io/ietf-tools/datatracker-db-pg:latest ghcr.io/ietf-tools/datatracker-db-pg:latest-x64 ghcr.io/ietf-tools/datatracker-db-pg:latest-arm64
+          echo "Pushing the manifests..."
+          docker manifest push -p ghcr.io/ietf-tools/datatracker-db-pg:nightly-${{ steps.date.outputs.date }}
+          docker manifest push -p ghcr.io/ietf-tools/datatracker-db-pg:latest
