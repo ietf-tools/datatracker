@@ -79,7 +79,7 @@
                 {% include "doc/revisions_list.html" with document_html=document_html %}
             </td>
         </tr>
-        {% if doc.rev != "00" %}
+        {% if doc.rev != "00" and diff_revisions|length > 1 %}
             <tr>
                 <td></td>
                 <th scope="row">Compare versions</th>
