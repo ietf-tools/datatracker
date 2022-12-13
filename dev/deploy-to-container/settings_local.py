@@ -20,10 +20,6 @@ DATABASES = {
     },
 }
 
-DATABASE_TEST_OPTIONS = {
-    'init_command': 'SET storage_engine=InnoDB',
-}
-
 SECRET_KEY = "__SECRETKEY__"
 
 CELERY_BROKER_URL = '__MQCONNSTR__'

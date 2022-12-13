@@ -91,10 +91,6 @@ DATABASES = {
     },
 }
 
-DATABASE_TEST_OPTIONS = {
-    # Comment this out if your database doesn't support InnoDB
-    'init_command': 'SET storage_engine=InnoDB',
-}
 
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
