@@ -295,6 +295,7 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
             {% endif %}
         </td>
     </tr>
+    {% if not document_html %}
     {% for check in doc.submission.latest_checks %}
         {% if check.passed != None and check.symbol.strip %}
             <tr>
@@ -330,7 +331,6 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
             </tr>
         {% endif %}
     {% endfor %}
-    {% if not document_html %}
     {% if review_assignments or can_request_review %}
         <tr>
             <td></td>
