@@ -343,6 +343,7 @@ a.relref, a.xref.cite {
   margin-right: -1ch;
   opacity: 0.01;
   text-decoration: none;
+  user-select: none;
 }
 :hover > .pilcrow {
   opacity: 0.2;
