@@ -22,6 +22,15 @@ jobs:
             MYSQL_DATABASE: ietf_utf8
             MYSQL_USER: django
             MYSQL_PASSWORD: RkTkDPFnKpko
+      pgdb:
+        image: postgres:14.5
+        volumes:
+            - /pgdata:/var/lib/postgresql/data
+        env:
+          POSTGRES_PASSWORD: RkTkDPFnKpko
+          POSTGRES_USER: django
+          POSTGRES_DB: ietf
+          POSTGRES_HOST_AUTH_METHOD: trust
     steps:
       - uses: actions/checkout@v3
         with:
