@@ -10,7 +10,8 @@ echo "Creating data directories..."
 chmod +x ./docker/scripts/app-create-dirs.sh
 ./docker/scripts/app-create-dirs.sh
 
-mkdir -p pgdata
+mkdir -p /pgdata
+chmod -R 777 /pgdata
 
 # Setup pg database container
 echo "Setting up PostgreSQL DB container..."
@@ -19,7 +20,7 @@ docker run -d --name pgdb -p 5432:5432 \
     -e POSTGRES_USER=django \
     -e POSTGRES_DB=ietf \
     -e POSTGRES_HOST_AUTH_METHOD=trust \
-    -v ./pgdata:/var/lib/postgresql/data \
+    -v /pgdata:/var/lib/postgresql/data \
     postgres:14.5
 
 # Add Postgresql Apt Repository to get 14    
