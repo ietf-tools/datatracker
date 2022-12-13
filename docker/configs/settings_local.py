@@ -5,20 +5,7 @@ from ietf.settings import *                                          # pyflakes:
 
 ALLOWED_HOSTS = ['*']
 
-DATABASES = {
-    'default': {
-        'HOST': 'db',
-        'PORT': 3306,
-        'NAME': 'ietf_utf8',
-        'ENGINE': 'django.db.backends.mysql',
-        'USER': 'django',
-        'PASSWORD': 'RkTkDPFnKpko',
-        'OPTIONS': {
-            'sql_mode': 'STRICT_TRANS_TABLES',
-            'init_command': 'SET storage_engine=InnoDB; SET names "utf8"',
-        },
-    },
-}
+from ietf.settings_mysqldb import DATABASES
 
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
