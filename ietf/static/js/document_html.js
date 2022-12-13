@@ -11,21 +11,22 @@ import { populate_nav } from "./nav.js";
 
 const cookies = Cookies.withAttributes({ sameSite: "strict" });
 
+// set initial point size from cookie before DOM is ready, to avoid flickering
+const ptsize_cookie = "doc-ptsize-max";
+
+function change_ptsize(ptsize) {
+    document.documentElement.style.setProperty(`--${ptsize_cookie}`,
+        `${ptsize}pt`);
+    cookies.set(ptsize_cookie, ptsize);
+}
+
+const ptsize = cookies.get(ptsize_cookie);
+change_ptsize(ptsize ? Math.min(Math.max(7, ptsize), 16) : 12);
+
 document.addEventListener("DOMContentLoaded", function (event) {
     // handle point size slider
-    const cookie = "doc-ptsize-max";
-
-    function change_ptsize(ptsize) {
-        document.documentElement.style.setProperty(`--${cookie}`,
-            `${ptsize}pt`);
-        cookies.set(cookie, ptsize);
-    }
-
     document.getElementById("ptsize")
         .oninput = function () { change_ptsize(this.value) };
-
-    const ptsize = cookies.get(cookie);
-    change_ptsize(ptsize ? Math.min(Math.max(7, ptsize), 16) : 12);
 
     // Use the Bootstrap tooltip plugin for all elements with a title attribute
     const tt_triggers = document.querySelectorAll(
