@@ -56,7 +56,7 @@ FROM mysql://django:RkTkDPFnKpko@db/ietf_utf8
 INTO postgresql://django:RkTkDPFnKpko@pgdb/ietf
 CAST type varchar to text drop typemod;
 EOF
-    time pgloader --verbose --logfile=ietf_pgloader.run --summary=ietf_pgloader.summary cast.load
+    pgloader --verbose --logfile=ietf_pgloader.run --summary=ietf_pgloader.summary cast.load
     rm cast.load
     /usr/local/bin/python ./ietf/manage.py migrate --settings=settings_local
 else
