@@ -6,6 +6,7 @@ import datetime
 import debug #pyflakes:ignore
 from django import forms
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.validators import validate_email
 
 from ietf.doc.fields import SearchableDocAliasesField, SearchableDocAliasField
 from ietf.doc.models import RelatedDocument, DocExtResource
@@ -84,8 +85,42 @@ class NotifyForm(forms.Form):
     )
 
     def clean_notify(self):
-        addrspecs = [x.strip() for x in self.cleaned_data["notify"].split(',')]
-        return ', '.join(addrspecs)
+        # As long as the widget is a Textarea, users will separate addresses with newlines, whether that matches the instructions or not
+        # We have been allowing nameaddrs for a long time (there are many Documents with namaddrs in their notify field)
+        # python set doesn't preserve order, so in an attempt to mostly preserve the order of what was entered, we'll use
+        # a dict (whose keys are guaranteed to be ordered) to cull out duplicates
+
+        nameaddrs=dict()
+        duplicate_addrspecs = set()
+        bad_nameaddrs = []
+        for nameaddr in self.cleaned_data["notify"].replace("\n", ",").split(","):
+            stripped = nameaddr.strip()
+            if stripped == "":
+                continue
+            if "<" in stripped:
+                if stripped[-1] != ">":
+                    bad_nameaddrs.append(nameaddr)
+                    continue
+                addrspec = stripped[stripped.find("<")+1:-1]
+            else:
+                addrspec = stripped
+            try:
+                validate_email(addrspec)
+            except ValidationError:
+                bad_nameaddrs.append(nameaddr)
+            if addrspec in nameaddrs:
+                duplicate_addrspecs.add(addrspec)
+                continue
+            else:
+                nameaddrs[addrspec] = stripped
+        error_messages = []
+        if len(duplicate_addrspecs) != 0:
+            error_messages.append(f'Duplicate addresses: {", ".join(duplicate_addrspecs)}')
+        if len(bad_nameaddrs) != 0:
+            error_messages.append(f'Invalid addresses: {", ".join(bad_nameaddrs)}')
+        if len(error_messages) != 0:
+            raise ValidationError(" and ".join(error_messages))
+        return ", ".join(nameaddrs.values())
 
 class ActionHoldersForm(forms.Form):
     action_holders = SearchablePersonsField(required=False)
