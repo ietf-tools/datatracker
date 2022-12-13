@@ -5,4 +5,4 @@ ENV POSTGRES_PASSWORD=hk2j22sfiv
 ENV POSTGRES_HOST_AUTH_METHOD=trust
 
 # Copy the postgres data folder from the migration stage
-COPY ./pg-data /var/lib/postgresql/data
+COPY /pg-data /var/lib/postgresql/data
