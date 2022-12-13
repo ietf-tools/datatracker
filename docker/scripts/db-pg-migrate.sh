@@ -24,7 +24,7 @@ echo "Waiting for DB containers to come online..."
 /usr/local/bin/wait-for pgdb:5432 -- echo "PostgreSQL ready"
 
 # Alter search path
-pgdb psql -U django -h pgdb -d ietf -v ON_ERROR_STOP=1 -c '\x' -c 'ALTER USER django set search_path=ietf_utf8,django,public;'
+psql -U django -h pgdb -d ietf -v ON_ERROR_STOP=1 -c '\x' -c 'ALTER USER django set search_path=ietf_utf8,django,public;'
 
 # Copy settings files
 cp ./docker/configs/settings_local.py ./ietf/settings_local.py
