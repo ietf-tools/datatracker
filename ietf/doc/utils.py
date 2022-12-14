@@ -997,7 +997,7 @@ def get_search_cache_key(params):
     return key
     
 def build_file_urls(doc: Union[Document, DocHistory]):
-    if doc.type != 'draft':
+    if doc.type_id != 'draft':
         return [], []
 
     if doc.get_state_slug() == "rfc":
