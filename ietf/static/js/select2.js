@@ -109,4 +109,11 @@ $(document)
                     return;
                 setupSelect2Field($(this));
             });
+
+        // Remove spurious title attribute (https://github.com/select2/select2/pull/3988)
+        $(".select2-selection__rendered")
+            .hover(function () {
+                $(this)
+                    .removeAttr("title");
+            });
     });
