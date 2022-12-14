@@ -65,4 +65,8 @@ else
     echo ${EMPTY_CHECK}
 fi
 
+# Create export dump
+echo "Creating export dump..."
+docker exec pgdb pg_dump ietf -U django -F c > ietf.dump
+
 echo "Done."
