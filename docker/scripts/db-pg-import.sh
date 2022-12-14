@@ -1,4 +1,5 @@
 #!/bin/bash
 set -e
 
-pg_restore -U django -C -d ietf ietf.dump
+dropdb -U django --if-exists ietf
+pg_restore -U django -d ietf ietf.dump
