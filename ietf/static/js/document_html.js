@@ -12,15 +12,15 @@ import { populate_nav } from "./nav.js";
 const cookies = Cookies.withAttributes({ sameSite: "strict" });
 
 // set initial point size from cookie before DOM is ready, to avoid flickering
-const ptsize_cookie = "doc-ptsize-max";
+const ptsize_var = "doc-ptsize-max";
 
 function change_ptsize(ptsize) {
-    document.documentElement.style.setProperty(`--${ptsize_cookie}`,
+    document.documentElement.style.setProperty(`--${ptsize_var}`,
         `${ptsize}pt`);
-    cookies.set(ptsize_cookie, ptsize);
+    localStorage.setItem(ptsize_var, ptsize);
 }
 
-const ptsize = cookies.get(ptsize_cookie);
+const ptsize = localStorage.getItem(ptsize_var);
 change_ptsize(ptsize ? Math.min(Math.max(7, ptsize), 16) : 12);
 
 document.addEventListener("DOMContentLoaded", function (event) {
@@ -46,15 +46,25 @@ document.addEventListener("DOMContentLoaded", function (event) {
          #content .h1, #content .h2, #content .h3, #content .h4, #content .h5, #content .h6`,
         ["py-0"]);
 
-    // activate pref buttons selected by pref cookies
+    // activate pref buttons selected by pref cookies or localStorage
+    const in_localStorage = ["deftab"];
     document.querySelectorAll(".btn-check")
         .forEach(btn => {
             const id = btn.id.replace("-radio", "");
-            if (cookies.get(btn.name) == id) {
+
+            const val = in_localStorage.includes(btn.name) ?
+                localStorage.getItem(btn.name) : cookies.get(btn.name);
+            if (val == id) {
                 btn.checked = true;
             }
+
             btn.addEventListener("click", el => {
-                cookies.set(btn.name, id);
+                // only use cookies for things used in HTML templates
+                if (in_localStorage.includes(btn.name)) {
+                    localStorage.setItem(btn.name, id)
+                } else {
+                    cookies.set(btn.name, id);
+                }
                 window.location.reload();
             });
         });
@@ -63,7 +73,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
     let defpane;
     try {
         defpane = Tab.getOrCreateInstance(
-            `#${cookies.get("deftab")}-tab`);
+            `#${localStorage.getItem("deftab")}-tab`);
     } catch (err) {
         defpane = Tab.getOrCreateInstance("#docinfo-tab");
     };
