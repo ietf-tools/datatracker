@@ -1,8 +1,29 @@
+# =====================
+# --- Builder Stage ---
+# =====================
+FROM postgres:14.5 AS builder
+
+ENV POSTGRES_PASSWORD=hk2j22sfiv
+ENV POSTGRES_USER=django
+ENV POSTGRES_DB=ietf
+ENV POSTGRES_HOST_AUTH_METHOD=trust
+ENV PGDATA=/data
+
+COPY docker/scripts/db-pg-import.sh /docker-entrypoint-initdb.d/
+COPY ietf.dump /
+
+RUN ["sed", "-i", "s/exec \"$@\"/echo \"skipping...\"/", "/usr/local/bin/docker-entrypoint.sh"]
+RUN ["/usr/local/bin/docker-entrypoint.sh", "postgres"]
+
+# ===================
+# --- Final Image ---
+# ===================
 FROM postgres:14.5
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
-ENV POSTGRES_PASSWORD=hk2j22sfiv
-ENV POSTGRES_HOST_AUTH_METHOD=trust
+COPY --from=builder /data $PGDATA
 
-# Copy the postgres data folder from the migration stage
-COPY /pgdata /var/lib/postgresql/data
+ENV POSTGRES_PASSWORD=hk2j22sfiv
+ENV POSTGRES_USER=django
+ENV POSTGRES_DB=ietf
+ENV POSTGRES_HOST_AUTH_METHOD=trust
