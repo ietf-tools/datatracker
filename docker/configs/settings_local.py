@@ -5,8 +5,7 @@ from ietf.settings import *                                          # pyflakes:
 
 ALLOWED_HOSTS = ['*']
 
-from ietf.settings_mysqldb import DATABASES
-
+from ietf.settings_postgresqldb import DATABASES
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 IDSUBMIT_REPOSITORY_PATH = "test/id/"

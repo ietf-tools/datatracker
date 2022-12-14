@@ -15,7 +15,7 @@ newcontent = content.replace(
         },
     },
 }""",
-    "from ietf.settings_mysqldb import DATABASES",
+    "from ietf.settings_postgresqldb import DATABASES",
 ).replace(
     """DATABASES = {
     'default': {

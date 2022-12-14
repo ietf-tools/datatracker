@@ -1,6 +1,6 @@
 DATABASES = {
     'default': {
-        'HOST': 'pgdb',
+        'HOST': 'db',
         'PORT': 5432,
         'NAME': 'ietf',
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
