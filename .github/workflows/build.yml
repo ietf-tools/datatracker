@@ -126,9 +126,6 @@ jobs:
     services:
       db:
         image: ghcr.io/ietf-tools/datatracker-db-pg:latest
-        volumes:
-            - postgres-data:/var/lib/postgresql/data
-
     
     steps:
     - uses: actions/checkout@v3
@@ -231,9 +228,6 @@ jobs:
     services:
       db:
         image: ghcr.io/ietf-tools/datatracker-db-pg:latest
-        volumes:
-            - postgresdb-data:/var/lib/postgresql/data
-
     
     steps:
     - uses: actions/checkout@v3
