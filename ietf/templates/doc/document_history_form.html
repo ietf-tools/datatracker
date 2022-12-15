@@ -1,9 +1,9 @@
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
 {% load origin %}
 {% load ietf_filters %}
 {% origin %}
 <form class="form-horizontal diff-form"
-      action="{{ rfcdiff_base_url }}"
+      action="{{ action }}"
       method="get"
       target="_blank">
 {% if not document_html %}

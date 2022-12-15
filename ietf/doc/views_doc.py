@@ -142,7 +142,7 @@ def interesting_doc_relations(doc):
     return interesting_relations_that, interesting_relations_that_doc
 
 def document_main(request, name, rev=None, document_html=False):
-    orig_doc = doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
+    doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
 
     # take care of possible redirections
     aliases = DocAlias.objects.filter(docs=doc).values_list("name", flat=True)
@@ -533,7 +533,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        review_assignments=review_assignments,
                                        no_review_from_teams=no_review_from_teams,
                                        due_date=due_date,
-                                       diff_revisions=get_diff_revisions(request, name, orig_doc) if document_html else None
+                                       diff_revisions=get_diff_revisions(request, name, doc if isinstance(doc,Document) else doc.doc) if document_html else None
                                        ))
 
     if doc.type_id == "charter":
@@ -903,65 +903,68 @@ def document_email(request,name):
 
 
 def get_diff_revisions(request, name, doc):
+    diffable = any(
+        [
+            name.startswith(prefix)
+            for prefix in [
+                "rfc",
+                "draft",
+                "charter",
+                "conflict-review",
+                "status-change",
+            ]
+        ]
+    )
+
+    if not diffable:
+        return []
+
     # pick up revisions from events
     diff_revisions = []
 
-    diffable = [
-        name.startswith(prefix)
-        for prefix in [
-            "rfc",
-            "draft",
-            "charter",
-            "conflict-review",
-            "status-change",
-        ]
-    ]
-    if any(diffable):
-        diff_documents = [doc]
-        diff_documents.extend(
-            Document.objects.filter(
-                docalias__relateddocument__source=doc,
-                docalias__relateddocument__relationship="replaces",
-            )
+    diff_documents = [doc]
+    diff_documents.extend(
+        Document.objects.filter(
+            docalias__relateddocument__source=doc,
+            docalias__relateddocument__relationship="replaces",
         )
+    )
 
-        if doc.get_state_slug() == "rfc":
-            e = doc.latest_event(type="published_rfc")
-            aliases = doc.docalias.filter(name__startswith="rfc")
-            if aliases:
-                name = aliases[0].name
-            diff_revisions.append((name, "", e.time if e else doc.time, name))
+    if doc.get_state_slug() == "rfc":
+        e = doc.latest_event(type="published_rfc")
+        aliases = doc.docalias.filter(name__startswith="rfc")
+        if aliases:
+            name = aliases[0].name
+        diff_revisions.append((name, "", e.time if e else doc.time, name))
 
-        seen = set()
-        for e in (
-            NewRevisionDocEvent.objects.filter(
-                type="new_revision", doc__in=diff_documents
-            )
-            .select_related("doc")
-            .order_by("-time", "-id")
-        ):
-            if (e.doc.name, e.rev) in seen:
-                continue
+    seen = set()
+    for e in (
+        NewRevisionDocEvent.objects.filter(type="new_revision", doc__in=diff_documents)
+        .select_related("doc")
+        .order_by("-time", "-id")
+    ):
+        if (e.doc.name, e.rev) in seen:
+            continue
 
-            seen.add((e.doc.name, e.rev))
+        seen.add((e.doc.name, e.rev))
 
-            url = ""
-            if name.startswith("charter"):
-                url = request.build_absolute_uri(
-                    urlreverse(
-                        "ietf.doc.views_charter.charter_with_milestones_txt",
-                        kwargs=dict(name=e.doc.name, rev=e.rev),
-                    )
+        url = ""
+        if name.startswith("charter"):
+            url = request.build_absolute_uri(
+                urlreverse(
+                    "ietf.doc.views_charter.charter_with_milestones_txt",
+                    kwargs=dict(name=e.doc.name, rev=e.rev),
                 )
-            elif name.startswith("conflict-review"):
-                url = find_history_active_at(e.doc, e.time).get_href()
-            elif name.startswith("status-change"):
-                url = find_history_active_at(e.doc, e.time).get_href()
-            elif name.startswith("draft") or name.startswith("rfc"):
-                # rfcdiff tool has special support for IDs
-                url = e.doc.name + "-" + e.rev
+            )
+        elif name.startswith("conflict-review"):
+            url = find_history_active_at(e.doc, e.time).get_href()
+        elif name.startswith("status-change"):
+            url = find_history_active_at(e.doc, e.time).get_href()
+        elif name.startswith("draft") or name.startswith("rfc"):
+            # rfcdiff tool has special support for IDs
+            url = e.doc.name + "-" + e.rev
 
-            diff_revisions.append((e.doc.name, e.rev, e.time, url))
+        diff_revisions.append((e.doc.name, e.rev, e.time, url))
 
     return diff_revisions
 
