@@ -119,6 +119,11 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
     groups = [ ]
     for a in assignments:
         if a.session:
+            # Ensure that all Sessions refer to the same Meeting instance so they can share the
+            # _groups_at_the_time() cache. The Sessions should all belong to the same meeting, but
+            # check before blindly assigning to meeting just in case.
+            if a.session.meeting.pk == meeting.pk:
+                a.session.meeting = meeting
             a.session.order_number = None
 
             if a.session.group and a.session.group not in groups:

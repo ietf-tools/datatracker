@@ -618,7 +618,6 @@ class DocumentInfo(models.Model):
             stylesheets.append(finders.find("ietf/css/document_html_txt.css"))
         else:
             text = self.htmlized()
-            stylesheets.append(io.BytesIO(b"body { font-size: 9.2pt; }"))
 
         cache = caches["pdfized"]
         cache_key = name.split(".")[0]

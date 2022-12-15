@@ -12,6 +12,7 @@ import re
 import textwrap
 
 from collections import defaultdict, namedtuple
+from typing import Union
 from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
@@ -995,8 +996,11 @@ def get_search_cache_key(params):
     key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode('utf-8')).hexdigest()
     return key
     
-def build_file_urls(doc):
-    if isinstance(doc,Document) and doc.get_state_slug() == "rfc":
+def build_file_urls(doc: Union[Document, DocHistory]):
+    if doc.type_id != 'draft':
+        return [], []
+
+    if doc.get_state_slug() == "rfc":
         name = doc.canonical_name()
         base_path = os.path.join(settings.RFC_PATH, name + ".")
         possible_types = settings.RFC_FILE_TYPES
@@ -1017,7 +1021,7 @@ def build_file_urls(doc):
             if doc.tags.filter(slug="verified-errata").exists():
                 file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=name))))
-    else:
+    elif doc.rev:
         base_path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".")
         possible_types = settings.IDSUBMIT_FILE_TYPES
         found_types = [t for t in possible_types if os.path.exists(base_path + t)]
@@ -1031,6 +1035,12 @@ def build_file_urls(doc):
             file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev))))
             file_urls.append(("pdfized", urlreverse('ietf.doc.views_doc.document_pdfized', kwargs=dict(name=doc.name, rev=doc.rev))))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name,rev=doc.rev))))
+    else:
+        # As of 2022-12-14, there are 1463 Document and 3136 DocHistory records with type='draft' and rev=''.
+        # All of these are in the rfc state and are covered by the above cases.
+        log.unreachable('2022-12-14')
+        file_urls = []
+        found_types = []
 
     return file_urls, found_types
 
