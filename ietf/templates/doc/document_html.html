@@ -98,7 +98,7 @@
             </div>
         </nav>
         <div class="row g-0">
-            <div class="col d-flex justify-content-center lh-sm"
+            <div class="col-md-9 d-flex justify-content-center lh-sm"
                  data-bs-spy="scroll"
                  data-bs-target="#toc-nav"
                  data-bs-smooth-scroll="true"
@@ -117,8 +117,8 @@
                     </div>
                 {% endif %}
             </div>
-            <div class="d-none d-md-block d-print-none col-3 bg-light collapse{% if request.COOKIES.sidebar != 'off'%} show{% endif %}" id="sidebar">
-                <div class="position-fixed col-3 border-start sidebar overflow-scroll overscroll-none no-scrollbar">
+            <div class="d-print-none col-md-3 bg-light collapse{% if request.COOKIES.sidebar != 'off'%} show{% endif %}" id="sidebar">
+                <div class="position-fixed border-start sidebar overflow-scroll overscroll-none no-scrollbar">
                     <button class="btn btn-outline-secondary float-end m-2"
                             type="button"
                             id="sidebar-off"
