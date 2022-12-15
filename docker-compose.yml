@@ -35,35 +35,11 @@ services:
         # (Adding the "ports" property to this file will not forward from a Codespace.)
                 
     db:
-        image: ghcr.io/ietf-tools/datatracker-db:latest
+        image: ghcr.io/ietf-tools/datatracker-db-pg:latest
         #  build:
         #      context: ..
         #      dockerfile: docker/db.Dockerfile
         restart: unless-stopped
-        volumes:
-            - mariadb-data:/var/lib/mysql
-        environment:
-            MYSQL_ROOT_PASSWORD: RkTkDPFnKpko
-            MYSQL_DATABASE: ietf_utf8
-            MYSQL_USER: django
-            MYSQL_PASSWORD: RkTkDPFnKpko
-        command:
-            - '--character-set-server=utf8'
-            - '--collation-server=utf8_unicode_ci'
-            - '--innodb-buffer-pool-size=1G'
-            - '--innodb-log-buffer-size=128M'
-            - '--innodb-log-file-size=256M'
-            - '--innodb-write-io-threads=8'
-            - '--innodb-flush-log-at-trx-commit=0'
-            - '--performance-schema=1'
-
-    pgdb:
-        build:
-            context: .
-            dockerfile: docker/pgdb.Dockerfile
-        restart: unless-stopped
-        environment:
-            POSTGRES_PASSWORD: hk2j22sfiv
         volumes:
             - postgresdb-data:/var/lib/postgresql/data
             
@@ -112,5 +88,4 @@ services:
 
 volumes:
     postgresdb-data:
-    mariadb-data:
     app-assets:
