@@ -618,7 +618,6 @@ class DocumentInfo(models.Model):
             stylesheets.append(finders.find("ietf/css/document_html_txt.css"))
         else:
             text = f'<div class="rfcmarkup">{self.htmlized()}</div>'
-        print(text)
 
         cache = caches["pdfized"]
         cache_key = name.split(".")[0]
