@@ -12,21 +12,22 @@ import "./select2.js";
 
 const cookies = Cookies.withAttributes({ sameSite: "strict" });
 
+// set initial point size from cookie before DOM is ready, to avoid flickering
+const ptsize_var = "doc-ptsize-max";
+
+function change_ptsize(ptsize) {
+    document.documentElement.style.setProperty(`--${ptsize_var}`,
+        `${ptsize}pt`);
+    localStorage.setItem(ptsize_var, ptsize);
+}
+
+const ptsize = localStorage.getItem(ptsize_var);
+change_ptsize(ptsize ? Math.min(Math.max(7, ptsize), 16) : 12);
+
 document.addEventListener("DOMContentLoaded", function (event) {
     // handle point size slider
-    const cookie = "doc-ptsize-max";
-
-    function change_ptsize(ptsize) {
-        document.documentElement.style.setProperty(`--${cookie}`,
-            `${ptsize}pt`);
-        cookies.set(cookie, ptsize);
-    }
-
     document.getElementById("ptsize")
         .oninput = function () { change_ptsize(this.value) };
-
-    const ptsize = cookies.get(cookie);
-    change_ptsize(ptsize ? Math.min(Math.max(7, ptsize), 16) : 12);
 
     // Use the Bootstrap tooltip plugin for all elements with a title attribute
     const tt_triggers = document.querySelectorAll(
@@ -46,15 +47,25 @@ document.addEventListener("DOMContentLoaded", function (event) {
          #content .h1, #content .h2, #content .h3, #content .h4, #content .h5, #content .h6`,
         ["py-0"]);
 
-    // activate pref buttons selected by pref cookies
+    // activate pref buttons selected by pref cookies or localStorage
+    const in_localStorage = ["deftab"];
     document.querySelectorAll("#pref-tab-pane .btn-check")
         .forEach(btn => {
             const id = btn.id.replace("-radio", "");
-            if (cookies.get(btn.name) == id) {
+
+            const val = in_localStorage.includes(btn.name) ?
+                localStorage.getItem(btn.name) : cookies.get(btn.name);
+            if (val == id) {
                 btn.checked = true;
             }
+
             btn.addEventListener("click", el => {
-                cookies.set(btn.name, id);
+                // only use cookies for things used in HTML templates
+                if (in_localStorage.includes(btn.name)) {
+                    localStorage.setItem(btn.name, id)
+                } else {
+                    cookies.set(btn.name, id);
+                }
                 window.location.reload();
             });
         });
@@ -63,7 +74,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
     let defpane;
     try {
         defpane = Tab.getOrCreateInstance(
-            `#${cookies.get("deftab")}-tab`);
+            `#${localStorage.getItem("deftab")}-tab`);
     } catch (err) {
         defpane = Tab.getOrCreateInstance("#docinfo-tab");
     };
