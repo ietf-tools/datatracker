@@ -150,32 +150,9 @@ blockquote {
 #identifiers dd.issn::before {
   content: "ISSN:";
 }
-/* #identifiers styling for when grid layout is supported, or not */
-@media screen {
-// @supports(display: grid) {
-  #identifiers {
-    display: grid;
-    grid-template-columns: 47ch 24ch;
-    grid-auto-rows: auto;
-    gap: 0 1ch;
-  }
-  #identifiers dd {
-    grid-column: 1;
-  }
-  #identifiers dd.authors {
-    grid-area: 1 / 2 / 100 / 3;
-    width: 24ch;
-    text-align: right;
-    display: block;
-  }
-}
-@media print {
-  // is this being used?
-  * {
-    color: red !important;
-  }
 
-// @supports not (display: grid) {
+/* Thanks WeasyPrint for not supporting @supports */
+/* @supports not (display: grid) { */
   #identifiers dd.authors {
     padding-left: 8ch;
     width: 64ch;
@@ -190,6 +167,34 @@ blockquote {
   }
   #identifiers dd.authors .author:last-of-type {
     margin-right: 0;
+  }
+/* } */
+/* #identifiers styling for when grid layout is supported, or not */
+@supports(display: grid) {
+  #identifiers {
+    display: grid;
+    grid-template-columns: 47ch 24ch;
+    grid-auto-rows: auto;
+    gap: 0 1ch;
+  }
+  #identifiers dd {
+    grid-column: 1;
+  }
+  #identifiers dd.authors {
+    grid-area: 1 / 2 / 100 / 3;
+    width: 24ch;
+    text-align: right;
+    display: block;
+    /* overrides for @supports not block */
+    padding-left: 0;
+  }
+  /* more overrides for @supports not block */
+  #identifiers dd.authors::before {
+    display: none;
+  }
+  #identifiers dd.authors .author {
+    display: block;
+    margin: 0;
   }
 }
 
