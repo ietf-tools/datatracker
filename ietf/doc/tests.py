@@ -1707,7 +1707,7 @@ class DocTestCase(TestCase):
             href = q(f'div.balloter-name a[href$="{author_slug}"]').attr('href')
             ids = [
                 target.attr('id')
-                for target in q(f'p.h5[id$="{author_slug}"]').items()
+                for target in q(f'div.h5[id$="{author_slug}"]').items()
             ]
             self.assertEqual(len(ids), 1, 'Should be exactly one link for the balloter')
             self.assertEqual(href, f'#{ids[0]}', 'Anchor href should match ID')
