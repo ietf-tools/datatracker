@@ -121,22 +121,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@floating-ui/core@npm:^1.0.4":
-  version: 1.0.4
-  resolution: "@floating-ui/core@npm:1.0.4"
-  checksum: 6362a625ad0dba7cfd197fc4b6f620eed95147d38684d7347287569897098862c6ba1173f3758d76d22e7739112c57dc836a569c582e78f5807c26ef41df4989
-  languageName: node
-  linkType: hard
-
-"@floating-ui/dom@npm:^1.0.10":
-  version: 1.0.10
-  resolution: "@floating-ui/dom@npm:1.0.10"
-  dependencies:
-    "@floating-ui/core": ^1.0.4
-  checksum: 6cb1dd81806961a08adda958f40b18711d90e8186c009f0c60b2f8c4d97f67b7f22bab9220fd3e340ddd30a8d9d46fe9166e88c41b9d2178ce2b4f5e0729aca4
-  languageName: node
-  linkType: hard
-
 "@fullcalendar/bootstrap5@npm:5.11.3":
   version: 5.11.3
   resolution: "@fullcalendar/bootstrap5@npm:5.11.3"
@@ -1411,7 +1395,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@popperjs/core@npm:2.11.6":
+"@popperjs/core@npm:2.11.6, @popperjs/core@npm:^2.11.5":
   version: 2.11.6
   resolution: "@popperjs/core@npm:2.11.6"
   checksum: 47fb328cec1924559d759b48235c78574f2d71a8a6c4c03edb6de5d7074078371633b91e39bbf3f901b32aa8af9b9d8f82834856d2f5737a23475036b16817f0
@@ -6110,7 +6094,7 @@ browserlist@latest:
     select2: 4.1.0-rc.0
     select2-bootstrap-5-theme: 1.3.0
     send: 0.18.0
-    shepherd.js: 11.0.1
+    shepherd.js: 10.0.1
     slugify: 1.6.5
     sortablejs: 1.15.0
     vite: 3.2.5
@@ -6313,13 +6297,14 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"shepherd.js@npm:11.0.1":
-  version: 11.0.1
-  resolution: "shepherd.js@npm:11.0.1"
+"shepherd.js@npm:10.0.1":
+  version: 10.0.1
+  resolution: "shepherd.js@npm:10.0.1"
   dependencies:
-    "@floating-ui/dom": ^1.0.10
+    "@popperjs/core": ^2.11.5
     deepmerge: ^4.2.2
-  checksum: a7781e47c55ac4149dc552e07c5963a52e860caa527edb146a1c1183a669315538e72f1fc84306d1159a23ead628f4fb4ad518cfe3d8cd5a0b6691fd9eac4540
+    smoothscroll-polyfill: ^0.4.4
+  checksum: be51f42734bb862ce8ff669c47e749f30337321eed98605cd04858106f1bd378ba9a9ce7e39c8733b4a9d030a3b132cc4576cba059032a32b27d78cc8a95272a
   languageName: node
   linkType: hard
 
@@ -6359,6 +6344,13 @@ browserlist@latest:
   version: 4.2.0
   resolution: "smart-buffer@npm:4.2.0"
   checksum: b5167a7142c1da704c0e3af85c402002b597081dd9575031a90b4f229ca5678e9a36e8a374f1814c8156a725d17008ae3bde63b92f9cfd132526379e580bec8b
+  languageName: node
+  linkType: hard
+
+"smoothscroll-polyfill@npm:^0.4.4":
+  version: 0.4.4
+  resolution: "smoothscroll-polyfill@npm:0.4.4"
+  checksum: b99ff7d91689d563ec69cb1d29713b332a24c88ac3dc4ef9ef9fbe4137305336e67253211067c5f786478dbdabd2aa6c2033709d4d8feca327b09eca8d5a0e7b
   languageName: node
   linkType: hard
 
