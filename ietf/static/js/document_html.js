@@ -8,6 +8,7 @@ import {
 
 import Cookies from "js-cookie";
 import { populate_nav } from "./nav.js";
+import "./select2.js";
 
 const cookies = Cookies.withAttributes({ sameSite: "strict" });
 
@@ -48,7 +49,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
 
     // activate pref buttons selected by pref cookies or localStorage
     const in_localStorage = ["deftab"];
-    document.querySelectorAll(".btn-check")
+    document.querySelectorAll("#pref-tab-pane .btn-check")
         .forEach(btn => {
             const id = btn.id.replace("-radio", "");
 

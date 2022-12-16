@@ -206,6 +206,15 @@ tbody.meta tr {
     }
 }
 
+.navbar {
+
+    td:not(:first-child),
+    th:not(:first-child) {
+        padding-top: map.get($spacers, 3);
+    }
+
+}
+
 // Add some padding when there are multiple buttons in a line that can wrap
 .buttonlist .btn {
     margin-bottom: map.get($spacers, 1);
@@ -317,4 +326,16 @@ tbody.meta tr {
     .noprint {
         display: none;
     }
+}
+
+// Select2 styling
+@import "select2";
+
+.select2-results__option,
+.select2-search__field {
+    font-size: small !important;
+}
+
+.select2-container--open {
+    z-index: 9999999;
 }
