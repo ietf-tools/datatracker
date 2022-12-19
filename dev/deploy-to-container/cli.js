@@ -75,7 +75,7 @@ async function main () {
 
   // Pull latest DB image
   console.info('Pulling latest DB docker image...')
-  const dbImagePullStream = await dock.pull('ghcr.io/ietf-tools/datatracker-db:latest')
+  const dbImagePullStream = await dock.pull('ghcr.io/ietf-tools/datatracker-db-pg:latest')
   await new Promise((resolve, reject) => {
     dock.modem.followProgress(dbImagePullStream, (err, res) => err ? reject(err) : resolve(res))
   })
@@ -159,7 +159,7 @@ async function main () {
   // Create DB container
   console.info(`Creating DB docker container... [dt-db-${branch}]`)
   const dbContainer = await dock.createContainer({
-    Image: 'ghcr.io/ietf-tools/datatracker-db:latest',
+    Image: 'ghcr.io/ietf-tools/datatracker-db-pg:latest',
     name: `dt-db-${branch}`,
     Hostname: `dt-db-${branch}`,
     HostConfig: {

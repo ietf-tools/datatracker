@@ -8,15 +8,11 @@ ALLOWED_HOSTS = ['*']
 DATABASES = {
     'default': {
         'HOST': '__DBHOST__',
-        'PORT': 3306,
-        'NAME': 'ietf_utf8',
-        'ENGINE': 'django.db.backends.mysql',
+        'PORT': 5432,
+        'NAME': 'ietf',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'USER': 'django',
         'PASSWORD': 'RkTkDPFnKpko',
-        'OPTIONS': {
-            'sql_mode': 'STRICT_TRANS_TABLES',
-            'init_command': 'SET storage_engine=InnoDB; SET names "utf8"',
-        },
     },
 }
 
