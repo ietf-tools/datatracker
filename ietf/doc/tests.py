@@ -1287,7 +1287,12 @@ Man                    Expires September 22, 2015               [Page 3]
 
     def test_edit_authors_edit_fields(self):
         draft = WgDraftFactory()
-        DocumentAuthorFactory.create_batch(3, document=draft)
+        DocumentAuthorFactory.create_batch(
+            3,
+            document=draft,
+            affiliation='Somewhere, Inc.',
+            country='Bolivia',
+        )
         url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=draft.name))
         change_reason = 'reorder the authors'
 
@@ -1299,8 +1304,10 @@ Man                    Expires September 22, 2015               [Page 3]
             authors = draft.documentauthor_set.all(),
             basis=change_reason
         )
-        
-        new_email = EmailFactory(person=draft.authors()[0])
+
+        old_email = new_email = draft.authors()[0].email()
+        while new_email == old_email:
+            new_email = EmailFactory(person=draft.authors()[0])
         post_data['author-0-email'] = new_email.address
         post_data['author-1-affiliation'] = 'University of Nowhere'
         post_data['author-2-country'] = 'Chile'
