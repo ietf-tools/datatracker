@@ -3,7 +3,7 @@
 
 
 import io
-import datetime, os
+import os
 import operator
 
 from typing import Union            # pyflakes:ignore
@@ -34,13 +34,14 @@ from ietf.person.models import Email
 from ietf.person.fields import SearchableEmailField
 from ietf.doc.models import Document, DocAlias
 from ietf.utils.fields import DatepickerDateField
+from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
 from functools import reduce
 
 '''
 NOTES:
 Authorized individuals are people (in our Person table) who are authorized to send
 messages on behalf of some other group - they have a formal role in the other group,
-whereas the liasion manager has a formal role with the IETF (or more correctly,
+whereas the liaison manager has a formal role with the IETF (or more correctly,
 with the IAB).
 '''
 
@@ -185,9 +186,12 @@ class SearchLiaisonForm(forms.Form):
             end_date = self.cleaned_data.get('end_date')
             events = None
             if start_date:
-                events = LiaisonStatementEvent.objects.filter(type='posted', time__gte=start_date)
+                events = LiaisonStatementEvent.objects.filter(
+                    type='posted',
+                    time__gte=datetime_from_date(start_date, DEADLINE_TZINFO),
+                )
                 if end_date:
-                    events = events.filter(time__lte=end_date)
+                    events = events.filter(time__lte=datetime_from_date(end_date, DEADLINE_TZINFO))
             elif end_date:
                 events = LiaisonStatementEvent.objects.filter(type='posted', time__lte=end_date)
             if events:
@@ -222,7 +226,7 @@ class LiaisonModelForm(BetterModelForm):
     to_groups.widget.attrs['data-minimum-input-length'] = 0
     deadline = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Deadline', required=True)
     related_to = SearchableLiaisonStatementsField(label='Related Liaison Statement', required=False)
-    submitted_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Submission date', required=True, initial=datetime.date.today())
+    submitted_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Submission date', required=True, initial=lambda: date_today(DEADLINE_TZINFO))
     attachments = CustomModelMultipleChoiceField(queryset=Document.objects,label='Attachments', widget=ShowAttachmentsWidget, required=False)
     attach_title = forms.CharField(label='Title', required=False)
     attach_file = forms.FileField(label='File', required=False)
@@ -467,7 +471,6 @@ class IncomingLiaisonForm(LiaisonModelForm):
 
 
 class OutgoingLiaisonForm(LiaisonModelForm):
-    from_contact = SearchableEmailField(only_users=True)
     approved = forms.BooleanField(label="Obtained prior approval", required=False)
 
     class Meta:
@@ -497,6 +500,7 @@ class OutgoingLiaisonForm(LiaisonModelForm):
             self.fields['from_groups'].initial = [flat_choices[0][0]]
         
         if has_role(self.user, "Secretariat"):
+            self.fields['from_contact'] = SearchableEmailField(only_users=True)  # secretariat can edit this field!
             return
 
         if self.person.role_set.filter(name='liaiman',group__state='active'):
@@ -505,8 +509,10 @@ class OutgoingLiaisonForm(LiaisonModelForm):
             email = self.person.role_set.filter(name__in=('ad','chair'),group__state='active').first().email.address
         else:
             email = self.person.email_address()
+
+        # Non-secretariat user cannot change the from_contact field. Fill in its value.
+        self.fields['from_contact'].disabled = True
         self.fields['from_contact'].initial = email
-        self.fields['from_contact'].widget.attrs['disabled'] = True
 
     def set_to_fields(self):
         '''Set to_groups and to_contacts options and initial value based on user
@@ -538,7 +544,7 @@ class EditLiaisonForm(LiaisonModelForm):
         super(EditLiaisonForm, self).save(*args,**kwargs)
         if self.has_changed() and 'submitted_date' in self.changed_data:
             event = self.instance.liaisonstatementevent_set.filter(type='submitted').first()
-            event.time = self.cleaned_data.get('submitted_date')
+            event.time = datetime_from_date(self.cleaned_data.get('submitted_date'), DEADLINE_TZINFO)
             event.save()
 
         return self.instance

@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-import datetime
 import email.utils
 import email.header
 import jsonfield
@@ -13,11 +12,12 @@ from urllib.parse import urljoin
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import models
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from django.utils.encoding import smart_bytes
 from django.utils.text import slugify
 
@@ -43,7 +43,7 @@ def name_character_validator(value):
 class Person(models.Model):
     history = HistoricalRecords()
     user = OneToOneField(User, blank=True, null=True, on_delete=models.SET_NULL)
-    time = models.DateTimeField(default=datetime.datetime.now)      # When this Person record entered the system
+    time = models.DateTimeField(default=timezone.now)      # When this Person record entered the system
     # The normal unicode form of the name.  This must be
     # set to the same value as the ascii-form if equal.
     name = models.CharField("Full Name (Unicode)", max_length=255, db_index=True, help_text="Preferred long form of name.", validators=[name_character_validator])
@@ -58,7 +58,6 @@ class Person(models.Model):
     photo = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
     photo_thumb = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
     name_from_draft = models.CharField("Full Name (from submission)", null=True, max_length=255, editable=False, help_text="Name as found in a draft submission.")
-    consent = models.BooleanField("I hereby give my consent to the use of the personal details I have provided (photo, bio, name, pronouns, email) within the IETF Datatracker", null=True, default=None)
 
     def __str__(self):
         return self.plain_name()
@@ -194,32 +193,6 @@ class Person(models.Model):
         from ietf.doc.models import Document
         return Document.objects.filter(documentauthor__person=self, type='draft', states__slug__in=['repl', 'expired', 'auth-rm', 'ietf-rm']).distinct().order_by('-time')
 
-    def needs_consent(self):
-        """
-        Returns an empty list or a list of fields which holds information that
-        requires consent to be given.
-        """
-        needs_consent = []
-        if self.name != self.name_from_draft:
-            needs_consent.append("full name")
-        if self.ascii != self.name_from_draft:
-            needs_consent.append("ascii name")
-        if self.biography and not (self.role_set.exists() or self.rolehistory_set.exists()):
-            needs_consent.append("biography")
-        if self.user_id:
-            needs_consent.append("login")
-            try:
-                if self.user.communitylist_set.exists():
-                    needs_consent.append("draft notification subscription(s)")
-            except ObjectDoesNotExist:
-                pass
-        for email in self.email_set.all():
-            if not email.origin.split(':')[0] in ['author', 'role', 'reviewer', 'liaison', 'shepherd', ]:
-                needs_consent.append("email address(es)")
-                break
-        if self.pronouns_freetext or self.pronouns_selectable:
-            needs_consent.append("pronouns")
-        return needs_consent
 
     def save(self, *args, **kwargs):
         created = not self.pk
@@ -384,7 +357,7 @@ PERSON_API_KEY_ENDPOINTS = sorted(list(set([ (v, n) for (v, n, r) in PERSON_API_
 class PersonalApiKey(models.Model):
     person   = ForeignKey(Person, related_name='apikeys')
     endpoint = models.CharField(max_length=128, null=False, blank=False, choices=PERSON_API_KEY_ENDPOINTS)
-    created  = models.DateTimeField(default=datetime.datetime.now, null=False)
+    created  = models.DateTimeField(default=timezone.now, null=False)
     valid    = models.BooleanField(default=True)
     salt     = models.BinaryField(default=salt, max_length=12, null=False, blank=False)
     count    = models.IntegerField(default=0, null=False, blank=False)
@@ -428,13 +401,12 @@ class PersonalApiKey(models.Model):
 
 PERSON_EVENT_CHOICES = [
     ("apikey_login", "API key login"),
-    ("gdpr_notice_email", "GDPR consent request email sent"),
     ("email_address_deactivated", "Email address deactivated"),
     ]
 
 class PersonEvent(models.Model):
     person = ForeignKey(Person)
-    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
+    time = models.DateTimeField(default=timezone.now, help_text="When the event happened")
     type = models.CharField(max_length=50, choices=PERSON_EVENT_CHOICES)
     desc = models.TextField()
 

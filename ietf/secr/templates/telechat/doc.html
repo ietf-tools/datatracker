@@ -61,7 +61,7 @@
             <form method="post">{% csrf_token %}
                 <table>
                     <tbody>
-                    <!-- [html-validate-disable-block element-required-attributes -- FIXME: as_table renders without scope] -->
+                    <!-- [html-validate-disable-block wcag/h63 -- FIXME: as_table renders without scope] -->
                     {{ state_form.as_table }}
                     </tbody>
                 </table>

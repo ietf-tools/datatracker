@@ -2,7 +2,7 @@
 
 from django.contrib import admin
 
-from ietf.mailinglists.models import List, Subscribed, Whitelisted
+from ietf.mailinglists.models import List, Subscribed, Allowlisted
 
 
 class ListAdmin(admin.ModelAdmin):
@@ -18,6 +18,6 @@ class SubscribedAdmin(admin.ModelAdmin):
 admin.site.register(Subscribed, SubscribedAdmin)
 
 
-class WhitelistedAdmin(admin.ModelAdmin):
+class AllowlistedAdmin(admin.ModelAdmin):
     list_display = ('id', 'time', 'email', 'by')
-admin.site.register(Whitelisted, WhitelistedAdmin)
+admin.site.register(Allowlisted, AllowlistedAdmin)

@@ -61,7 +61,7 @@ class Migration(migrations.Migration):
             field=models.ManyToManyField(blank=True, related_name='tagdocs', through='doc.DocumentTags', to='name.DocTagName'),
         ),
         # Here we copy the content of the existing implicit m2m tables for
-        # the Document m2m fields into the explicit through tabeles, in order
+        # the Document m2m fields into the explicit through tables, in order
         # to be able to later set the correct id from name
         migrations.RunPython(timestamp, timestamp),
         migrations.RunSQL(

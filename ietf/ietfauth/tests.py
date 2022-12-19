@@ -28,6 +28,7 @@ from django.urls import reverse as urlreverse
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.template.loader import render_to_string 
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -46,6 +47,8 @@ from ietf.stats.models import MeetingRegistration
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.utils.timezone import date_today
+
 
 import ietf.ietfauth.views
 
@@ -191,27 +194,27 @@ class IetfAuthTests(TestCase):
 
         self.assertTrue(self.username_in_htpasswd_file(email))
 
-    def test_create_whitelisted_account(self):
+    def test_create_allowlisted_account(self):
         email = "new-account@example.com"
 
-        # add whitelist entry
+        # add allowlist entry
         r = self.client.post(urlreverse(ietf.ietfauth.views.login), {"username":"secretary", "password":"secretary+password"})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.profile))
 
-        r = self.client.get(urlreverse(ietf.ietfauth.views.add_account_whitelist))
+        r = self.client.get(urlreverse(ietf.ietfauth.views.add_account_allowlist))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Add a whitelist entry")
+        self.assertContains(r, "Add an allowlist entry")
 
-        r = self.client.post(urlreverse(ietf.ietfauth.views.add_account_whitelist), {"email": email})
+        r = self.client.post(urlreverse(ietf.ietfauth.views.add_account_allowlist), {"email": email})
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Whitelist entry creation successful")
+        self.assertContains(r, "Allowlist entry creation successful")
 
         # log out
         r = self.client.get(urlreverse('django.contrib.auth.views.logout'))
         self.assertEqual(r.status_code, 200)
 
-        # register and verify whitelisted email
+        # register and verify allowlisted email
         self.register_and_verify(email)
 
 
@@ -252,7 +255,6 @@ class IetfAuthTests(TestCase):
             "pronouns_freetext": "foo/bar",
             "affiliation": "Test Org",
             "active_emails": email_address,
-            "consent": True,
         }
 
         # edit details - faulty ASCII
@@ -391,7 +393,7 @@ class IetfAuthTests(TestCase):
         self.assertFalse(q('#volunteer-button'))
         self.assertFalse(q('#volunteered'))
 
-        year = datetime.date.today().year
+        year = date_today().year
         nomcom = NomComFactory(group__acronym=f'nomcom{year}',is_accepting_volunteers=True)
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
@@ -506,7 +508,7 @@ class IetfAuthTests(TestCase):
         UnavailablePeriod.objects.create(
             team=review_req.team,
             person=reviewer,
-            start_date=datetime.date.today() - datetime.timedelta(days=10),
+            start_date=date_today() - datetime.timedelta(days=10),
             availability="unavailable",
         )
 
@@ -751,11 +753,11 @@ class IetfAuthTests(TestCase):
             self.assertContains(r, 'Invalid apikey', status_code=403)
 
             # too long since regular login
-            person.user.last_login = datetime.datetime.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS+1)
+            person.user.last_login = timezone.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS+1)
             person.user.save()
             r = self.client.post(key.endpoint, {'apikey':key.hash(), 'dummy':'dummy',})
             self.assertContains(r, 'Too long since last regular login', status_code=400)
-            person.user.last_login = datetime.datetime.now()
+            person.user.last_login = timezone.now()
             person.user.save()
 
             # endpoint mismatch
@@ -784,12 +786,12 @@ class IetfAuthTests(TestCase):
         # apikey usage will be registered)
         count = 2
         # avoid usage across dates
-        if datetime.datetime.now().time() > datetime.time(hour=23, minute=59, second=58):
+        if timezone.now().time() > datetime.time(hour=23, minute=59, second=58):
             time.sleep(2)
         for i in range(count):
             for key in person.apikeys.all():
                 self.client.post(key.endpoint, {'apikey':key.hash(), 'dummy': 'dummy', })
-        date = str(datetime.date.today())
+        date = str(date_today())
 
         empty_outbox()
         cmd = Command()
@@ -906,7 +908,7 @@ class OpenIDConnectTests(TestCase):
             # an additional email
             EmailFactory(person=person)
             email_list = person.email_set.all().values_list('address', flat=True)
-            meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+            meeting = MeetingFactory(type_id='ietf', date=date_today())
             MeetingRegistration.objects.create(
                     meeting=meeting, person=None, first_name=person.first_name(), last_name=person.last_name(),
                     email=email_list[0], ticket_type='full_week', reg_type='remote', affiliation='Some Company',

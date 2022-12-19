@@ -24,5 +24,5 @@ urlpatterns = [
         url(r'^review/$', views.review_overview),
         url(r'^testemail/$', views.test_email),
         url(r'^username/$', views.change_username),
-        url(r'^whitelist/add/?$', views.add_account_whitelist),
+        url(r'^allowlist/add/?$', views.add_account_allowlist),
 ]

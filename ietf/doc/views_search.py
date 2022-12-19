@@ -280,7 +280,7 @@ def search_for_name(request, name):
     if redirect_to:
         return cached_redirect(cache_key, urlreverse("ietf.doc.views_doc.document_main", kwargs={ "name": redirect_to }))
     else:
-        # check for embedded rev - this may be ambigious, so don't
+        # check for embedded rev - this may be ambiguous, so don't
         # chop it off if we don't find a match
         rev_split = re.search("^(.+)-([0-9]{2})$", n)
         if rev_split:
@@ -453,7 +453,7 @@ def ad_dashboard_sort_key(doc):
         ageseconds = 0
         changetime= doc.latest_event(type='changed_document')
         if changetime:
-            ad = (datetime.datetime.now()-doc.latest_event(type='changed_document').time)
+            ad = (timezone.now()-doc.latest_event(type='changed_document').time)
             ageseconds = (ad.microseconds + (ad.seconds + ad.days * 24 * 3600) * 10**6) / 10**6
         return "1%d%s%s%010d" % (state[0].order,seed,doc.type.slug,ageseconds)
 
@@ -761,7 +761,7 @@ def recent_drafts(request, days=7):
     cache_key = f'recentdraftsview{days}' 
     cached_val = slowcache.get(cache_key)
     if not cached_val:
-        since = datetime.datetime.now()-datetime.timedelta(days=days)
+        since = timezone.now()-datetime.timedelta(days=days)
         state = State.objects.get(type='draft', slug='active')
         events = NewRevisionDocEvent.objects.filter(time__gt=since)
         names = [ e.doc.name for e in events ]

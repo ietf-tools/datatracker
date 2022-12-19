@@ -104,12 +104,6 @@
                 </a>
             </li>
         {% endif %}
-        <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
-               href="{% url 'personal-information' %}">
-                Handling of personal information
-            </a>
-        </li>
     {% endif %}
     {% if not request.user.is_authenticated %}
         <li>
@@ -192,8 +186,8 @@
         </li>
         <li>
             <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
-               href="{% url 'ietf.ietfauth.views.add_account_whitelist' %}">
-                Account whitelist
+               href="{% url 'ietf.ietfauth.views.add_account_allowlist' %}">
+                Account allowlist
             </a>
         </li>
     {% endif %}

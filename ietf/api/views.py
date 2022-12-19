@@ -80,7 +80,7 @@ class PersonalInformationExportView(DetailView, JsonExportMixin):
         person = get_object_or_404(self.model, user=request.user)
         expand = ['searchrule', 'documentauthor', 'ad_document_set', 'ad_dochistory_set', 'docevent',
             'ballotpositiondocevent', 'deletedevent', 'email_set', 'groupevent', 'role', 'rolehistory', 'iprdisclosurebase',
-            'iprevent', 'liaisonstatementevent', 'whitelisted', 'schedule', 'constraint', 'schedulingevent', 'message',
+            'iprevent', 'liaisonstatementevent', 'allowlisted', 'schedule', 'constraint', 'schedulingevent', 'message',
             'sendqueue', 'nominee', 'topicfeedbacklastseen', 'alias', 'email', 'apikeys', 'personevent',
             'reviewersettings', 'reviewsecretarysettings', 'unavailableperiod', 'reviewwish',
             'nextreviewerinteam', 'reviewrequest', 'meetingregistration', 'submissionevent', 'preapproval',
@@ -203,8 +203,13 @@ def api_new_meeting_registration(request):
 
 
 def version(request):
+    dumpdate = None
     dumpinfo = DumpInfo.objects.order_by('-date').first()
-    dumptime = pytz.timezone(dumpinfo.tz).localize(dumpinfo.date).strftime('%Y-%m-%d %H:%M:%S %z') if dumpinfo else None
+    if dumpinfo:
+        dumpdate = dumpinfo.date
+        if dumpinfo.tz != "UTC":
+            dumpdate = pytz.timezone(dumpinfo.tz).localize(dumpinfo.date.replace(tzinfo=None))
+    dumptime = dumpdate.strftime('%Y-%m-%d %H:%M:%S %z') if dumpinfo else None
     return HttpResponse(
             json.dumps({
                         'version': ietf.__version__+ietf.__patch__,

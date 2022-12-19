@@ -18,6 +18,7 @@ from pyquery import PyQuery
 from urllib.parse import urlparse, parse_qs
 from tempfile import NamedTemporaryFile
 from collections import defaultdict
+from zoneinfo import ZoneInfo
 
 from django.core.management import call_command
 from django.urls import reverse as urlreverse
@@ -25,6 +26,7 @@ from django.conf import settings
 from django.forms import Form
 from django.utils.html import escape
 from django.test import override_settings
+from django.utils import timezone
 from django.utils.text import slugify
 
 from tastypie.test import ResourceTestCaseMixin
@@ -39,6 +41,7 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
     BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
     StatusChangeFactory, BofreqFactory)
+from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
 from ietf.doc.views_search import ad_dashboard_group, ad_dashboard_group_type, shorten_group_name # TODO: red flag that we're importing from views in tests. Move these to utils.
@@ -56,6 +59,8 @@ from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text
+from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
+
 
 class SearchTests(TestCase):
     def test_search(self):
@@ -385,13 +390,13 @@ class SearchTests(TestCase):
         # Three drafts to show with various warnings
         drafts = WgDraftFactory.create_batch(3,states=[('draft','active'),('draft-iesg','ad-eval')])
         for index, draft in enumerate(drafts):
-            StateDocEventFactory(doc=draft, state=('draft-iesg','ad-eval'), time=datetime.datetime.now()-datetime.timedelta(days=[1,15,29][index]))
+            StateDocEventFactory(doc=draft, state=('draft-iesg','ad-eval'), time=timezone.now()-datetime.timedelta(days=[1,15,29][index]))
             draft.action_holders.set([PersonFactory()])
 
         # And one draft that should not show (with the default of 7 days to view)
         old = WgDraftFactory()
-        old.docevent_set.filter(newrevisiondocevent__isnull=False).update(time=datetime.datetime.now()-datetime.timedelta(days=8))
-        StateDocEventFactory(doc=old, time=datetime.datetime.now()-datetime.timedelta(days=8))
+        old.docevent_set.filter(newrevisiondocevent__isnull=False).update(time=timezone.now()-datetime.timedelta(days=8))
+        StateDocEventFactory(doc=old, time=timezone.now()-datetime.timedelta(days=8))
 
         url = urlreverse('ietf.doc.views_search.recent_drafts')
         r = self.client.get(url)
@@ -485,7 +490,7 @@ Table of Contents
 1.  Introduction
 
    This document describes how to make the Martian networks work.  The
-   methods used in Earth do not directly translate to the efficent
+   methods used in Earth do not directly translate to the efficient
    networks on Mars, as the topographical differences caused by planets.
    For example the avian carriers, cannot be used in the Mars, thus
    RFC1149 ([RFC1149]) cannot be used in Mars.
@@ -726,18 +731,24 @@ Man                    Expires September 22, 2015               [Page 3]
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Versions:")
+        self.assertContains(r, "Select version")
         self.assertContains(r, "Deimos street")
         q = PyQuery(r.content)
         self.assertEqual(q('title').text(), 'draft-ietf-mars-test-01')
-        self.assertEqual(len(q('.rfcmarkup pre')), 4)
-        self.assertEqual(len(q('.rfcmarkup span.h1')), 2)
-        self.assertEqual(len(q('.rfcmarkup a[href]')), 41)
+        self.assertEqual(len(q('.rfcmarkup pre')), 3)
+        self.assertEqual(len(q('.rfcmarkup span.h1, .rfcmarkup h1')), 2)
+        self.assertEqual(len(q('.rfcmarkup a[href]')), 28)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name, rev=draft.rev)))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(q('title').text(), 'draft-ietf-mars-test-01')
+
+        # check that revision list has expected versions
+        self.assertEqual(len(q('#sidebar .revision-list .page-item.active a.page-link[href$="draft-ietf-mars-test-01"]')), 1)
+
+        # check that diff dropdowns have expected versions
+        self.assertEqual(len(q('#sidebar option[value="draft-ietf-mars-test-00"][selected="selected"]')), 1)
 
         rfc = WgRfcFactory()
         (Path(settings.RFC_PATH) / rfc.get_base_name()).touch()
@@ -764,7 +775,7 @@ Man                    Expires September 22, 2015               [Page 3]
 
         replacement = WgDraftFactory(
             name="draft-ietf-replacement",
-            time=datetime.datetime.now(),
+            time=timezone.now(),
             title="Replacement Draft",
             stream_id=draft.stream_id, group_id=draft.group_id, abstract=draft.abstract,stream=draft.stream, rev=draft.rev,
             pages=draft.pages, intended_std_level_id=draft.intended_std_level_id,
@@ -813,7 +824,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, updated_by.canonical_name())
         self.assertContains(r, updated_by.title)
 
-        # naked RFC - also wierd that we test a PS from the ISE
+        # naked RFC - also weird that we test a PS from the ISE
         rfc = IndividualDraftFactory(
             name="rfc1234567",
             title="RFC without a Draft",
@@ -1276,7 +1287,12 @@ Man                    Expires September 22, 2015               [Page 3]
 
     def test_edit_authors_edit_fields(self):
         draft = WgDraftFactory()
-        DocumentAuthorFactory.create_batch(3, document=draft)
+        DocumentAuthorFactory.create_batch(
+            3,
+            document=draft,
+            affiliation='Somewhere, Inc.',
+            country='Bolivia',
+        )
         url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=draft.name))
         change_reason = 'reorder the authors'
 
@@ -1288,8 +1304,10 @@ Man                    Expires September 22, 2015               [Page 3]
             authors = draft.documentauthor_set.all(),
             basis=change_reason
         )
-        
-        new_email = EmailFactory(person=draft.authors()[0])
+
+        old_email = new_email = draft.authors()[0].email()
+        while new_email == old_email:
+            new_email = EmailFactory(person=draft.authors()[0])
         post_data['author-0-email'] = new_email.address
         post_data['author-1-affiliation'] = 'University of Nowhere'
         post_data['author-2-country'] = 'Chile'
@@ -1427,6 +1445,8 @@ Man                    Expires September 22, 2015               [Page 3]
 
     def test_draft_group_link(self):
         """Link to group 'about' page should have correct format"""
+        event_datetime = datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO)
+
         for group_type_id in ['wg', 'rg', 'ag']:
             group = GroupFactory(type_id=group_type_id)
             draft = WgDraftFactory(name='draft-document-%s' % group_type_id, group=group)
@@ -1435,7 +1455,7 @@ Man                    Expires September 22, 2015               [Page 3]
             self.assert_correct_wg_group_link(r, group)
 
             rfc = WgRfcFactory(name='draft-rfc-document-%s' % group_type_id, group=group)
-            DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10')
+            DocEventFactory.create(doc=rfc, type='published_rfc', time=event_datetime)
             # get the rfc name to avoid a redirect
             rfc_name = rfc.docalias.filter(name__startswith='rfc').first().name
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc_name)))
@@ -1450,7 +1470,7 @@ Man                    Expires September 22, 2015               [Page 3]
             self.assert_correct_non_wg_group_link(r, group)
 
             rfc = WgRfcFactory(name='draft-rfc-document-%s' % group_type_id, group=group)
-            DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10')
+            DocEventFactory.create(doc=rfc, type='published_rfc', time=event_datetime)
             # get the rfc name to avoid a redirect
             rfc_name = rfc.docalias.filter(name__startswith='rfc').first().name
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc_name)))
@@ -1586,7 +1606,7 @@ class DocTestCase(TestCase):
             name = "session-72-mars-1",
             meeting = Meeting.objects.get(number='72'),
             group = Group.objects.get(acronym='mars'),
-            modified = datetime.datetime.now(),
+            modified = timezone.now(),
             add_to_schedule=False,
         )
         SchedulingEvent.objects.create(
@@ -1616,7 +1636,7 @@ class DocTestCase(TestCase):
             type="changed_ballot_position",
             pos_id="yes",
             comment="Looks fine to me",
-            comment_time=datetime.datetime.now(),
+            comment_time=timezone.now(),
             balloter=Person.objects.get(user__username="ad"),
             by=Person.objects.get(name="(System)"))
 
@@ -1640,7 +1660,13 @@ class DocTestCase(TestCase):
         doc.save_with_history([e])
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertRegex(r.content.decode(), r'\(\s*%s\s+for\s+-%s\s*\)' % (pos.comment_time.strftime('%Y-%m-%d'), oldrev))
+        self.assertRegex(
+            r.content.decode(),
+            r'\(\s*%s\s+for\s+-%s\s*\)' % (
+                pos.comment_time.astimezone(ZoneInfo(settings.TIME_ZONE)).strftime('%Y-%m-%d'),
+                oldrev,
+            )
+        )
 
         # Now simulate a new ballot against the new revision and make sure the "was" position is included
         pos2 = BallotPositionDocEvent.objects.create(
@@ -1650,7 +1676,7 @@ class DocTestCase(TestCase):
             type="changed_ballot_position",
             pos_id="noobj",
             comment="Still looks okay to me",
-            comment_time=datetime.datetime.now(),
+            comment_time=timezone.now(),
             balloter=Person.objects.get(user__username="ad"),
             by=Person.objects.get(name="(System)"))
 
@@ -1672,7 +1698,7 @@ class DocTestCase(TestCase):
                 type="changed_ballot_position",
                 pos_id="yes",
                 comment="Looks fine to me",
-                comment_time=datetime.datetime.now(),
+                comment_time=timezone.now(),
                 balloter=Person.objects.get(user__username="ad"),
                 by=Person.objects.get(name="(System)"))
 
@@ -1688,7 +1714,7 @@ class DocTestCase(TestCase):
             href = q(f'div.balloter-name a[href$="{author_slug}"]').attr('href')
             ids = [
                 target.attr('id')
-                for target in q(f'p.h5[id$="{author_slug}"]').items()
+                for target in q(f'div.h5[id$="{author_slug}"]').items()
             ]
             self.assertEqual(len(ids), 1, 'Should be exactly one link for the balloter')
             self.assertEqual(href, f'#{ids[0]}', 'Anchor href should match ID')
@@ -1842,7 +1868,7 @@ class DocTestCase(TestCase):
             desc="Last call\x0b",  # include a control character to be sure it does not break anything
             type="sent_last_call",
             by=Person.objects.get(user__username="secretary"),
-            expires=datetime.date.today() + datetime.timedelta(days=7))
+            expires=datetime_today(DEADLINE_TZINFO) + datetime.timedelta(days=7))
 
         r = self.client.get("/feed/last-call/")
         self.assertEqual(r.status_code, 200)
@@ -1890,10 +1916,14 @@ class DocTestCase(TestCase):
                   #other_aliases = ['rfc6020',],
                   states = [('draft','rfc'),('draft-iesg','pub')],
                   std_level_id = 'ps',
-                  time = datetime.datetime(2010,10,10),
+                  time = datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE)),
               )
         num = rfc.rfc_number()
-        DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10')
+        DocEventFactory.create(
+            doc=rfc,
+            type='published_rfc',
+            time=datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO),
+        )
         #
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=rfc.name))
         r = self.client.get(url)
@@ -1911,10 +1941,14 @@ class DocTestCase(TestCase):
                   stream_id =       'ise',
                   states =          [('draft','rfc'),('draft-iesg','pub')],
                   std_level_id =    'inf',
-                  time =            datetime.datetime(1990,0o4,0o1),
+                  time =            datetime.datetime(1990, 4, 1, tzinfo=ZoneInfo(settings.TIME_ZONE)),
               )
         num = april1.rfc_number()
-        DocEventFactory.create(doc=april1, type='published_rfc', time = '1990-04-01')
+        DocEventFactory.create(
+            doc=april1,
+            type='published_rfc',
+            time=datetime.datetime(1990, 4, 1, tzinfo=RPC_TZINFO),
+        )
         #
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=april1.name))
         r = self.client.get(url)
@@ -2049,7 +2083,8 @@ class GenerateDraftAliasesTests(TestCase):
        super().tearDown()
 
    def testManagementCommand(self):
-       a_month_ago = datetime.datetime.now() - datetime.timedelta(30)
+       a_month_ago = (timezone.now() - datetime.timedelta(30)).astimezone(RPC_TZINFO)
+       a_month_ago = a_month_ago.replace(hour=0, minute=0, second=0, microsecond=0)
        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
        shepherd = PersonFactory()
        author1 = PersonFactory()
@@ -2064,9 +2099,9 @@ class GenerateDraftAliasesTests(TestCase):
        doc1 = IndividualDraftFactory(authors=[author1], shepherd=shepherd.email(), ad=ad)
        doc2 = WgDraftFactory(name='draft-ietf-mars-test', group__acronym='mars', authors=[author2], ad=ad)
        doc3 = WgRfcFactory.create(name='draft-ietf-mars-finished', group__acronym='mars', authors=[author3], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=a_month_ago)
-       DocEventFactory.create(doc=doc3, type='published_rfc', time=a_month_ago.strftime("%Y-%m-%d"))
-       doc4 = WgRfcFactory.create(authors=[author4,author5], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=datetime.datetime(2010,10,10))
-       DocEventFactory.create(doc=doc4, type='published_rfc', time = '2010-10-10')
+       DocEventFactory.create(doc=doc3, type='published_rfc', time=a_month_ago)
+       doc4 = WgRfcFactory.create(authors=[author4,author5], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=datetime.datetime(2010,10,10, tzinfo=ZoneInfo(settings.TIME_ZONE)))
+       DocEventFactory.create(doc=doc4, type='published_rfc', time=datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO))
        doc5 = IndividualDraftFactory(authors=[author6])
 
        args = [ ]
@@ -2217,7 +2252,7 @@ class DocumentMeetingTests(TestCase):
         self.other_chair = PersonFactory()
         self.other_group.role_set.create(name_id='chair',person=self.other_chair,email=self.other_chair.email())
 
-        today = datetime.date.today()
+        today = date_today()
         cut_days = settings.MEETING_MATERIALS_DEFAULT_SUBMISSION_CORRECTION_DAYS
         self.past_cutoff = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=1+cut_days))
         self.past = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=cut_days/2))
@@ -2559,7 +2594,7 @@ class MaterialsTests(TestCase):
         self.doc.save_with_history([e])
 
         # This is necessary for the view to be able to find the document
-        # which hints that the view has an issue : if a materials document is taken out of all SessionPresentations, it is no longer accessable by this view
+        # which hints that the view has an issue : if a materials document is taken out of all SessionPresentations, it is no longer accessible by this view
         SessionPresentationFactory(session__meeting__number=meeting_number, session__group=self.doc.group, document=self.doc)
 
     def test_markdown_and_text(self):
@@ -2905,3 +2940,43 @@ class PdfizedTests(TestCase):
             for ext in ('pdf','txt','html','anythingatall'):
                 self.should_succeed(dict(name=rfc.name,rev=f'{r:02d}',ext=ext))
         self.should_404(dict(name=rfc.name,rev='02'))
+
+class NotifyValidationTests(TestCase):
+    def test_notify_validation(self):
+        valid_values = [
+            "foo@example.com, bar@example.com",
+            "Foo Bar <foobar@example.com>, baz@example.com",
+            "foo@example.com, ,bar@example.com,", # We're ignoring extra commas
+            "foo@example.com\nbar@example.com", # Yes, we're quietly accepting a newline as a comma
+        ]
+        bad_nameaddr_values = [
+            "@example.com",
+            "foo",
+            "foo@",
+            "foo bar foobar@example.com",
+        ]
+        duplicate_values = [
+            "foo@bar.com, bar@baz.com, foo@bar.com",
+            "Foo <foo@bar.com>, foobar <foo@bar.com>",
+        ]
+        both_duplicate_and_bad_values = [
+            "foo@example.com, bar@, Foo <foo@example.com>",
+            "Foo <@example.com>, Bar <@example.com>",
+        ]
+        for v in valid_values:
+            self.assertTrue(NotifyForm({"notify": v}).is_valid())
+        for v in bad_nameaddr_values:
+            f = NotifyForm({"notify": v})
+            self.assertFalse(f.is_valid())
+            self.assertTrue("Invalid addresses" in f.errors["notify"][0])
+            self.assertFalse("Duplicate addresses" in f.errors["notify"][0])
+        for v in duplicate_values:
+            f = NotifyForm({"notify": v})
+            self.assertFalse(f.is_valid())
+            self.assertFalse("Invalid addresses" in f.errors["notify"][0])
+            self.assertTrue("Duplicate addresses" in f.errors["notify"][0])
+        for v in both_duplicate_and_bad_values:
+            f = NotifyForm({"notify": v})
+            self.assertFalse(f.is_valid())
+            self.assertTrue("Invalid addresses" in f.errors["notify"][0])
+            self.assertTrue("Duplicate addresses" in f.errors["notify"][0])

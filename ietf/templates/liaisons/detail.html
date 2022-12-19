@@ -229,9 +229,10 @@
             </a>
         {% endif %}
         {% if liaison.state.slug == 'pending' and can_edit %}
-            <button class="btn btn-primary" type="submit" name="approved">Approve</button>
+            <button class="btn btn-primary" type="submit" value="Approve" name="approved">Approve</button>
             <button class="btn btn-primary"
                    type="submit"
+                   value="Mark as Dead"
                    name="dead">Mark as dead</button>
         {% endif %}
         {% if liaison.state.slug == 'posted' and  user|has_role:"Secretariat" %}
@@ -243,6 +244,7 @@
         {% if liaison.state.slug == 'dead' and can_edit %}
             <button class="btn btn-primary"
                    type="submit"
+                   value="Resurrect"
                    name="resurrect">Resurrect</button>
         {% endif %}
     {% if liaison.state.slug == 'pending' and can_edit or liaison.state.slug == 'dead' and can_edit %}</form>{% endif %}

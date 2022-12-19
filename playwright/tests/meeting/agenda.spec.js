@@ -68,7 +68,7 @@ test.describe('past - desktop', () => {
     const updatedDateTime = DateTime.fromISO(meetingData.meeting.updated)
       .setZone(meetingData.meeting.timezone)
       .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
+      .toFormat('DD \'at\' T ZZZZ')
     await expect(page.locator('.agenda h6').first(), 'should have meeting last updated datetime').toContainText(updatedDateTime)
 
     // NAV
@@ -81,9 +81,15 @@ test.describe('past - desktop', () => {
       await expect(navLocator.last()).toContainText('Plaintext')
     })
 
-    // SETTINGS BUTTON
+    // RIGHT-SIDE BUTTONS
 
-    await expect(page.locator('.agenda .meeting-nav + button')).toContainText('Settings')
+    await test.step('has the correct right side buttons', async () => {
+      const btnsLocator = page.locator('.agenda .agenda-topnav-right > button')
+      await expect(btnsLocator).toHaveCount(3)
+      await expect(btnsLocator.first()).toContainText('Help')
+      await expect(btnsLocator.nth(1)).toContainText('Share')
+      await expect(btnsLocator.last()).toContainText('Settings')
+    })
   })
 
   test('agenda schedule list header', async ({ page }) => {
@@ -130,7 +136,7 @@ test.describe('past - desktop', () => {
       const localDateTime = DateTime.fromISO(meetingData.meeting.updated)
         .setZone(BROWSER_TIMEZONE)
         .setLocale(BROWSER_LOCALE)
-        .toFormat('DD \'at\' tt ZZZZ')
+        .toFormat('DD \'at\' T ZZZZ')
       await expect(page.locator('.agenda h6').first()).toContainText(localDateTime)
       // Switch to UTC
       await tzUtcBtnLocator.click()
@@ -139,7 +145,7 @@ test.describe('past - desktop', () => {
       const utcDateTime = DateTime.fromISO(meetingData.meeting.updated)
         .setZone('utc')
         .setLocale(BROWSER_LOCALE)
-        .toFormat('DD \'at\' tt ZZZZ')
+        .toFormat('DD \'at\' T ZZZZ')
       await expect(page.locator('.agenda h6').first()).toContainText(utcDateTime)
       await expect(page.locator('.agenda .agenda-timezone-ddn')).toContainText('UTC')
       // Switch back to meeting timezone
@@ -688,7 +694,7 @@ test.describe('past - desktop', () => {
     const localDateTime = DateTime.fromISO(meetingData.meeting.updated)
       .setZone(BROWSER_TIMEZONE)
       .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
+      .toFormat('DD \'at\' T ZZZZ')
     await expect(page.locator('.agenda h6').first()).toContainText(localDateTime)
     // Switch to UTC
     await tzButtonsLocator.last().click()
@@ -697,7 +703,7 @@ test.describe('past - desktop', () => {
     const utcDateTime = DateTime.fromISO(meetingData.meeting.updated)
       .setZone('utc')
       .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
+      .toFormat('DD \'at\' T ZZZZ')
     await expect(page.locator('.agenda h6').first()).toContainText(utcDateTime)
     // Switch back to meeting timezone
     await tzButtonsLocator.first().click()
@@ -773,7 +779,7 @@ test.describe('past - desktop', () => {
 
   test('agenda settings', async ({ page, browserName }) => {
     // Open dialog
-    await page.locator('.meeting-nav + button').click()
+    await page.locator('.agenda-topnav-right > button:last-child').click()
     await expect(page.locator('.agenda-settings')).toBeVisible()
     // Check header elements
     await expect(page.locator('.agenda-settings .n-drawer-header__main > span')).toContainText('Agenda Settings')
@@ -831,7 +837,7 @@ test.describe('past - desktop', () => {
     const localDateTime = DateTime.fromISO(meetingData.meeting.updated)
       .setZone(BROWSER_TIMEZONE)
       .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
+      .toFormat('DD \'at\' T ZZZZ')
     await expect(page.locator('.agenda h6').first()).toContainText(localDateTime)
     // Switch to UTC
     await tzUtcBtnLocator.click()
@@ -840,7 +846,7 @@ test.describe('past - desktop', () => {
     const utcDateTime = DateTime.fromISO(meetingData.meeting.updated)
       .setZone('utc')
       .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
+      .toFormat('DD \'at\' T ZZZZ')
     await expect(page.locator('.agenda h6').first()).toContainText(utcDateTime)
     // Switch back to meeting timezone
     await tzMeetingBtnLocator.click()
@@ -896,6 +902,22 @@ test.describe('past - desktop', () => {
     // ------------------------------
     await page.locator('.agenda-settings .agenda-settings-actions > button').last().click()
     await expect(page.locator('.agenda-settings')).not.toBeVisible()
+  })
+
+  // -> SHARE DIALOG
+
+  test('agenda share dialog', async ({ page }) => {
+    // Open dialog
+    await page.locator('.agenda-topnav-right > button:nth-child(2)').click()
+    await expect(page.locator('.agenda-share')).toBeVisible()
+    // Check header elements
+    await expect(page.locator('.agenda-share .n-card-header__main > .agenda-share-header > .bi')).toBeVisible()
+    await expect(page.locator('.agenda-share .n-card-header__main > .agenda-share-header > .bi + span')).toContainText('Share this view')
+    // Check input URL
+    await expect(page.locator('.agenda-share .agenda-share-content input[type=text]')).toHaveValue(`http://localhost:3000/meeting/${meetingData.meeting.number}/agenda`)
+    // Clicking X should close the dialog
+    await page.locator('.agenda-share .n-card-header__extra > .agenda-share-header > button').click()
+    await expect(page.locator('.agenda-share')).not.toBeVisible()
   })
 
   // -> ADD TO CALENDAR
@@ -1012,7 +1034,7 @@ test.describe('past - desktop', () => {
     // Change color legend from settings dialog
     // ----------------------------------------
     // Open dialog
-    await page.locator('.meeting-nav + button').click()
+    await page.locator('.agenda-topnav-right > button:last-child').click()
     await expect(page.locator('.agenda-settings')).toBeVisible()
     // Toggle color legend switch
     await colorLgdSwitchLocator.click()
@@ -1051,7 +1073,7 @@ test.describe('past - desktop', () => {
     // No colored dots should appear
     await expect(page.locator('.agenda .agenda-table-display-event .agenda-table-colorindicator')).toHaveCount(0)
     // Clear all colors from Settings menu
-    await page.locator('.meeting-nav + button').click()
+    await page.locator('.agenda-topnav-right > button:last-child').click()
     await expect(page.locator('.agenda-settings')).toBeVisible()
     await page.locator('.agenda-settings .agenda-settings-actions > button').first().click()
     await page.locator('.n-dropdown-option:has-text("Clear Color")').click()
@@ -1295,7 +1317,7 @@ test.describe('live - desktop', () => {
 
   test('live red line toggle', async ({ page }) => {
     // Open settings dialog
-    await page.locator('.meeting-nav + button').click()
+    await page.locator('.agenda-topnav-right > button:last-child').click()
     await expect(page.locator('.agenda-settings')).toBeVisible()
     // Toggle red line switch
     const redlineSwitchLocator = page.locator('#agenda-settings-tgl-redline div[role=switch]')

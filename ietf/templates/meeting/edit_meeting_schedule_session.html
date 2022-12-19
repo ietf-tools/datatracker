@@ -102,9 +102,15 @@
                </div>
             </div>
         {% endfor %}
-        <a class="btn btn-primary btn-sm mt-2"
-           href="{% url 'ietf.meeting.views.edit_session' session_id=session.pk %}">
-            Edit session
-        </a>
+        {% if secretariat %}
+            <a class="btn btn-primary btn-sm mt-2"
+               href="{% url 'ietf.meeting.views.edit_session' session_id=session.pk %}">
+                Edit session
+            </a>
+            <a class="btn btn-danger btn-sm mt-2"
+               href="{% url 'ietf.meeting.views.cancel_session' session_id=session.pk %}?sched={{ schedule.pk }}">
+                Cancel session
+            </a>
+        {% endif %}
     </div>
 </div>

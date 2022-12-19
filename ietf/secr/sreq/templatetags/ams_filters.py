@@ -43,20 +43,6 @@ def display_duration(value):
         return "%d Hours %d Minutes %d Seconds"%(value//3600,(value%3600)//60,value%60)
 
 @register.filter
-def get_published_date(doc):
-    '''
-    Returns the published date for a RFC Document
-    '''
-    event = doc.latest_event(type='published_rfc')
-    if event:
-        return event.time
-    event = doc.latest_event(type='new_revision')
-    if event:
-        return event.time
-    else:
-        return None
-        
-@register.filter
 def is_ppt(value):
     '''
     Checks if the value ends in ppt or pptx

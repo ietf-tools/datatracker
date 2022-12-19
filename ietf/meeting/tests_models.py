@@ -3,9 +3,13 @@
 """Tests of models in the Meeting application"""
 import datetime
 
+from mock import patch
+
+from ietf.group.factories import GroupFactory, GroupHistoryFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory, AttendedFactory
 from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.utils.test_utils import TestCase
+from ietf.utils.timezone import date_today, datetime_today
 
 
 class MeetingTests(TestCase):
@@ -85,6 +89,30 @@ class MeetingTests(TestCase):
         att = second_mtg.get_attendance()
         self.assertEqual(att.onsite, 1)
         self.assertEqual(att.remote, 0)
+
+    def test_vtimezone(self):
+        # normal time zone that should have a zoneinfo file
+        meeting = MeetingFactory(type_id='ietf', time_zone='America/Los_Angeles', populate_schedule=False)
+        vtz = meeting.vtimezone()
+        self.assertIsNotNone(vtz)
+        self.assertGreater(len(vtz), 0)
+        # time zone that does not have a zoneinfo file should return None
+        meeting = MeetingFactory(type_id='ietf', time_zone='Fake/Time_Zone', populate_schedule=False)
+        vtz = meeting.vtimezone()
+        self.assertIsNone(vtz)
+        # ioerror trying to read zoneinfo should return None
+        meeting = MeetingFactory(type_id='ietf', time_zone='America/Los_Angeles', populate_schedule=False)
+        with patch('ietf.meeting.models.io.open', side_effect=IOError):
+            vtz = meeting.vtimezone()
+        self.assertIsNone(vtz)
+
+    def test_group_at_the_time(self):
+        m = MeetingFactory(type_id='ietf', date=date_today() - datetime.timedelta(days=10))
+        cached_groups = GroupFactory.create_batch(2)
+        m.cached_groups_at_the_time = {g.pk: g for g in cached_groups}  # fake the cache
+        uncached_group_hist = GroupHistoryFactory(time=datetime_today() - datetime.timedelta(days=30))
+        self.assertEqual(m.group_at_the_time(uncached_group_hist.group), uncached_group_hist)
+        self.assertIn(uncached_group_hist.group.pk, m.cached_groups_at_the_time)
 
 
 class SessionTests(TestCase):

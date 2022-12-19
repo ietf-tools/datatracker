@@ -1,4 +1,5 @@
 name: Build and Release
+run-name: ${{ github.event.inputs.publish == 'true' && '[Prod]' || '[Dev]' }} Build ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}
 
 on:
   push:
@@ -14,10 +15,17 @@ on:
         default: ''
       publish:
         description: 'Create Production Release'
+        default: false
+        required: true
+        type: boolean
+      sandbox:
+        description: 'Deploy to Sandbox'
+        default: true
         required: true
         type: boolean
       skiptests:
         description: 'Skip Tests'
+        default: false
         required: true
         type: boolean
       ignoreLowerCoverage:
@@ -32,6 +40,7 @@ on:
         type: boolean
       dryrun:
         description: 'Dry Run'
+        default: false
         required: true
         type: boolean
 
@@ -45,6 +54,8 @@ jobs:
     outputs:
       should_deploy: ${{ steps.buildvars.outputs.should_deploy }}
       pkg_version: ${{ steps.buildvars.outputs.pkg_version }}
+      from_tag: ${{ steps.semver.outputs.nextStrict }}
+      to_tag: ${{ steps.semver.outputs.current }}
 
     steps:
     - uses: actions/checkout@v3
@@ -63,6 +74,7 @@ jobs:
       with:
         token: ${{ github.token }}
         branch: main
+        skipInvalidTags: true
         
     - name: Set Next Version Env Var
       if: ${{ github.event.inputs.publish == 'true' || github.event.inputs.dryrun == 'true' }}
@@ -86,19 +98,19 @@ jobs:
       run: |
         if [[ $NEXT_VERSION ]]; then
           echo "Using AUTO SEMVER mode: $NEXT_VERSION"
-          echo "::set-output name=should_deploy::true"
-          echo "::set-output name=pkg_version::$NEXT_VERSION"
+          echo "should_deploy=true" >> $GITHUB_OUTPUT
+          echo "pkg_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
           echo "::notice::Release $NEXT_VERSION created using branch $GITHUB_REF_NAME"
         elif [[ "$GITHUB_REF" =~ ^refs/tags/* ]]; then
           echo "Using TAG mode: $GITHUB_REF_NAME"
-          echo "::set-output name=should_deploy::true"
-          echo "::set-output name=pkg_version::$GITHUB_REF_NAME"
+          echo "should_deploy=true" >> $GITHUB_OUTPUT
+          echo "pkg_version=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
           echo "::notice::Release $GITHUB_REF_NAME created using tag $GITHUB_REF_NAME"
         else
-          echo "Using TEST mode: 8.0.0-dev.$GITHUB_RUN_NUMBER"
-          echo "::set-output name=should_deploy::false"
-          echo "::set-output name=pkg_version::8.0.0-dev.$GITHUB_RUN_NUMBER"
-          echo "::notice::Non-production build 8.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
+          echo "Using TEST mode: 9.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "should_deploy=false" >> $GITHUB_OUTPUT
+          echo "pkg_version=9.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
+          echo "::notice::Non-production build 9.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
         fi
 
   # -----------------------------------------------------------------
@@ -209,12 +221,16 @@ jobs:
         path: playwright/test-results/
         if-no-files-found: ignore
 
-  tests-cypress:
-    name: Run Tests (Cypress)
+  tests-playwright-legacy:
+    name: Run Tests (Playwright Legacy)
     if: ${{ github.event.inputs.skiptests == 'false' }}
     needs: [prepare]
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox]
     
     services:
       db:
@@ -249,26 +265,27 @@ jobs:
         /usr/local/bin/wait-for localhost:8000 -- echo "Datatracker ready"
 
     - name: Run all tests
+      env:
+        # Required to get firefox to run as root:
+        HOME: ""
       run: |
+        echo "Installing dependencies..."
+        yarn
+        echo "Installing Playwright..."
+        cd playwright
+        mkdir test-results
+        npm ci
+        npx playwright install --with-deps ${{ matrix.project }}
         echo "Running tests..."
-        yarn cypress:legacy
+        npx playwright test --project=${{ matrix.project }} -c playwright-legacy.config.js
         
-    - name: Upload Video Recordings
+    - name: Upload Report
       uses: actions/upload-artifact@v3
       if: ${{ always() }}
       continue-on-error: true
       with:
-        name: videos-legacy
-        path: cypress/videos/
-        if-no-files-found: ignore
-        
-    - name: Upload Screenshots
-      uses: actions/upload-artifact@v3
-      if: ${{ always() }}
-      continue-on-error: true
-      with:
-        name: screenshots-modern
-        path: cypress/screenshots/
+        name: playwright-legacy-results-${{ matrix.project }}
+        path: playwright/test-results/
         if-no-files-found: ignore
         
   # -----------------------------------------------------------------
@@ -277,11 +294,13 @@ jobs:
   release:
     name: Make Release
     if: ${{ always() }}
-    needs: [tests-python, tests-playwright, tests-cypress, prepare]
+    needs: [tests-python, tests-playwright, tests-playwright-legacy, prepare]
     runs-on: ubuntu-latest
     env:
       SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+      FROM_TAG: ${{needs.prepare.outputs.from_tag}}
+      TO_TAG: ${{needs.prepare.outputs.to_tag}}
 
     steps:
     - uses: actions/checkout@v3
@@ -345,7 +364,8 @@ jobs:
       if: ${{ env.SHOULD_DEPLOY == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         token: ${{ github.token }}
-        tag: ${{ env.PKG_VERSION }}
+        fromTag: ${{ env.FROM_TAG }}
+        toTag: ${{ env.TO_TAG }}
         writeToFile: false
 
     - name: Prepare Coverage Action
@@ -394,12 +414,12 @@ jobs:
         
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v3
-      if: ${{ env.SHOULD_DEPLOY == 'false' || github.event.inputs.dryrun == 'true' }}
       with:
         name: release-${{ env.PKG_VERSION }}
         path: /home/runner/work/release/release.tar.gz
         
     - name: Notify on Slack
+      if: ${{ always() }}
       uses: slackapi/slack-github-action@v1.23.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
@@ -409,3 +429,41 @@ jobs:
           }
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
+        
+  # -----------------------------------------------------------------
+  # SANDBOX
+  # -----------------------------------------------------------------
+  sandbox:
+    name: Deploy to Sandbox
+    if: ${{ always() && github.event.inputs.sandbox == 'true' }}
+    needs: [prepare, release]
+    runs-on: dev-server
+    env:
+      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+      
+    steps:
+    - uses: actions/checkout@v3
+        
+    - name: Download a Release Artifact
+      uses: actions/download-artifact@v3.0.0
+      with:
+        name: release-${{ env.PKG_VERSION }}
+        
+    - name: Deploy to containers
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        echo "Reset production flags in settings.py..."
+        sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = True/' -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'development'/" ietf/settings.py
+        echo "Install Deploy to Container CLI dependencies..."
+        cd dev/deploy-to-container
+        npm ci
+        cd ../..
+        echo "Start Deploy..."
+        node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain dev.ietf.org --appversion ${{ env.PKG_VERSION }} --commit ${{ github.sha }} --ghrunid ${{ github.run_id }}
+        
+    - name: Cleanup old docker resources
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        docker image prune -a -f
