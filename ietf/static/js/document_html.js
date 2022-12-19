@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
         ["py-0"]);
 
     // activate pref buttons selected by pref cookies or localStorage
-    const in_localStorage = ["deftab"];
+    const in_localStorage = ["deftab", "reflinks"];
     document.querySelectorAll("#pref-tab-pane .btn-check")
         .forEach(btn => {
             const id = btn.id.replace("-radio", "");
@@ -80,4 +80,36 @@ document.addEventListener("DOMContentLoaded", function (event) {
     };
     defpane.show();
     document.activeElement.blur();
+
+    if (localStorage.getItem("reflinks") != "refsection") {
+        // make links to references go directly to the referenced doc
+        document.querySelectorAll("a[href^='#'].xref")
+            .forEach(ref => {
+                const loc = document
+                    .getElementById(ref.hash.substring(1))
+                    .nextElementSibling;
+
+                if (!loc ||
+                    loc.tagName != "DD" ||
+                    !loc.closest(".references")) {
+                    return;
+                }
+
+                const url = loc.querySelector(
+                    "a:not([href='']:last-of-type)");
+                if (url) {
+                    const rfc = url.href.match(/(rfc\d+)$/i);
+                    if (rfc) {
+                        // keep RFC links within the datatracker
+                        const base = ref.href.match(
+                            /^(.*\/)rfc\d+.*$/i);
+                        if (base) {
+                            ref.href = base[1] + rfc[1];
+                            return;
+                        }
+                    }
+                    ref.href = url.href;
+                }
+            });
+    }
 });
