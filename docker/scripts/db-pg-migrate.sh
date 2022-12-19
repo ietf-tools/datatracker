@@ -58,7 +58,7 @@ if echo ${EMPTY_CHECK} | grep -q "Did not find any relations."; then
 LOAD DATABASE
 FROM mysql://django:RkTkDPFnKpko@db/ietf_utf8
 INTO postgresql://django:RkTkDPFnKpko@pgdb/ietf
-WITH concurrency = 1, batch size = 1MB, batch rows = 1000
+WITH workers = 1, concurrency = 1, batch size = 1MB, batch rows = 1000
 CAST type varchar to text drop typemod;
 EOF
     pgloader --verbose --logfile=ietf_pgloader.run --summary=ietf_pgloader.summary cast.load
