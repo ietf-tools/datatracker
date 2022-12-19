@@ -1305,9 +1305,8 @@ Man                    Expires September 22, 2015               [Page 3]
             basis=change_reason
         )
 
-        old_email = new_email = draft.authors()[0].email()
-        while new_email == old_email:
-            new_email = EmailFactory(person=draft.authors()[0])
+        old_address = draft.authors()[0].email()
+        new_email = EmailFactory(person=draft.authors()[0], address=f'changed-{old_address}')
         post_data['author-0-email'] = new_email.address
         post_data['author-1-affiliation'] = 'University of Nowhere'
         post_data['author-2-country'] = 'Chile'
