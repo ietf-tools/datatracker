@@ -49,6 +49,7 @@ echo "Running initial checks..."
 
 # Switch to PostgreSQL config
 cat ./ietf/settings_local.py | sed 's/from ietf.settings_mysqldb import DATABASES/from ietf.settings_postgresqldb import DATABASES/' > /tmp/settings_local.py && mv /tmp/settings_local.py ./ietf/settings_local.py
+cat ./ietf/settings_postgresqldb.py | sed "s/'db'/'pgdb'/" > /tmp/settings_postgresqldb.py && mv /tmp/settings_postgresqldb.py ./ietf/settings_postgresqldb.py
 
 # Now transfer the migrated database from mysql to postgres unless that's already happened.
 echo "Transferring migrated database from MySQL to PostgreSQL..."
