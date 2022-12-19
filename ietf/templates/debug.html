@@ -2,7 +2,7 @@
 {% load origin %}
 {% load static %}
 {% origin %}
-{% if debug %}
+{% if settings.DEBUG %}
     {% if sql_debug %}
         {% load debug_filters %}
         {{ sql_queries|length }} queries ({{ sql_queries|timesum }}s)

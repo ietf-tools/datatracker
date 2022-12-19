@@ -12,13 +12,16 @@ import re
 import textwrap
 
 from collections import defaultdict, namedtuple
+from typing import Union
 from urllib.parse import quote
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib import messages
 from django.forms import ValidationError
 from django.http import Http404
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.html import escape
 from django.urls import reverse as urlreverse
 
@@ -39,6 +42,7 @@ from ietf.review.models import ReviewWish
 from ietf.utils import draft, log
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
+from ietf.utils.timezone import date_today, datetime_from_date, datetime_today, DEADLINE_TZINFO
 from ietf.utils.xmldraft import XMLDraft
 
 
@@ -637,11 +641,22 @@ def has_same_ballot(doc, date1, date2=None):
     """ Test if the most recent ballot created before the end of date1
         is the same as the most recent ballot created before the
         end of date 2. """
+    datetime1 = datetime_from_date(date1, DEADLINE_TZINFO)
     if date2 is None:
-        date2 = datetime.date.today()
-    ballot1 = doc.latest_event(BallotDocEvent,type='created_ballot',time__lt=date1+datetime.timedelta(days=1))
-    ballot2 = doc.latest_event(BallotDocEvent,type='created_ballot',time__lt=date2+datetime.timedelta(days=1))
-    return ballot1==ballot2
+        datetime2 = datetime_today(DEADLINE_TZINFO)
+    else:
+        datetime2 = datetime_from_date(date2, DEADLINE_TZINFO)
+    ballot1 = doc.latest_event(
+        BallotDocEvent,
+        type='created_ballot',
+        time__lt=datetime1 + datetime.timedelta(days=1),
+    )
+    ballot2 = doc.latest_event(
+        BallotDocEvent,
+        type='created_ballot',
+        time__lt=datetime2 + datetime.timedelta(days=1),
+    )
+    return ballot1 == ballot2
 
 def make_notify_changed_event(request, doc, by, new_notify, time=None):
 
@@ -687,7 +702,7 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
          and on_agenda
          and prev_agenda
          and new_telechat_date != prev_telechat
-         and prev_telechat < datetime.date.today()
+         and prev_telechat < date_today(DEADLINE_TZINFO)
          and has_same_ballot(doc,prev.telechat_date)
        ):
         returning = True
@@ -718,7 +733,7 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
 
     e.save()
 
-    has_short_fuse = doc.type_id=='draft' and new_telechat_date and (( new_telechat_date - datetime.date.today() ) < datetime.timedelta(days=13))
+    has_short_fuse = doc.type_id=='draft' and new_telechat_date and (( new_telechat_date - date_today() ) < datetime.timedelta(days=13))
 
     from ietf.doc.mails import email_update_telechat
 
@@ -808,7 +823,7 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, com
             cc.update(other_addrs.cc)
             RelatedDocument.objects.filter(source=doc, target=d, relationship=relationship).delete()
             if not RelatedDocument.objects.filter(target=d, relationship=relationship):
-                s = 'active' if d.document.expires > datetime.datetime.now() else 'expired'
+                s = 'active' if d.document.expires > timezone.now() else 'expired'
                 d.document.set_state(State.objects.get(type='draft', slug=s))
 
     for d in new_replaces:
@@ -956,6 +971,7 @@ def make_rev_history(doc):
                         history[url]['pages'] = d.history_set.filter(rev=e.newrevisiondocevent.rev).first().pages
 
     if doc.type_id == "draft":
+        # e.time.date() agrees with RPC publication date when shown in the RPC_TZINFO time zone
         e = doc.latest_event(type='published_rfc')
     else:
         e = doc.latest_event(type='iesg_approved')
@@ -980,43 +996,11 @@ def get_search_cache_key(params):
     key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode('utf-8')).hexdigest()
     return key
     
-def label_wrap(label, items, joiner=',', max=50):
-    lines = []
-    if not items:
-        return lines
-    line = '%s: %s' % (label, items[0])
-    for item in items[1:]:
-        if len(line)+len(joiner+' ')+len(item) > max:
-            lines.append(line+joiner)
-            line = ' '*(len(label)+len(': ')) + item
-        else:
-            line += joiner+' '+item
-    if line:
-        lines.append(line)
-    return lines
+def build_file_urls(doc: Union[Document, DocHistory]):
+    if doc.type_id != 'draft':
+        return [], []
 
-def join_justified(left, right, width=72):
-    count = max(len(left), len(right))
-    left = left + ['']*(count-len(left))
-    right = right + ['']*(count-len(right))
-    lines = []
-    i = 0
-    while True:
-        l = left[i]
-        r = right[i]
-        if len(l)+1+len(r) > width:
-            left = left + ['']
-            right = right[:i] + [''] + right[i:]
-            r = right[i]
-            count += 1
-        lines.append( l + ' ' + r.rjust(width-len(l)-1) )
-        i += 1
-        if i >= count:
-            break
-    return lines
-
-def build_file_urls(doc):
-    if isinstance(doc,Document) and doc.get_state_slug() == "rfc":
+    if doc.get_state_slug() == "rfc":
         name = doc.canonical_name()
         base_path = os.path.join(settings.RFC_PATH, name + ".")
         possible_types = settings.RFC_FILE_TYPES
@@ -1037,7 +1021,7 @@ def build_file_urls(doc):
             if doc.tags.filter(slug="verified-errata").exists():
                 file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=name))))
-    else:
+    elif doc.rev:
         base_path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".")
         possible_types = settings.IDSUBMIT_FILE_TYPES
         found_types = [t for t in possible_types if os.path.exists(base_path + t)]
@@ -1051,137 +1035,14 @@ def build_file_urls(doc):
             file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev))))
             file_urls.append(("pdfized", urlreverse('ietf.doc.views_doc.document_pdfized', kwargs=dict(name=doc.name, rev=doc.rev))))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name,rev=doc.rev))))
+    else:
+        # As of 2022-12-14, there are 1463 Document and 3136 DocHistory records with type='draft' and rev=''.
+        # All of these are in the rfc state and are covered by the above cases.
+        log.unreachable('2022-12-14')
+        file_urls = []
+        found_types = []
 
     return file_urls, found_types
-
-def build_doc_supermeta_block(doc):
-    items = []
-    items.append(f'[<a href="{ settings.IDTRACKER_BASE_URL }" title="Document search and retrieval page">Search</a>]')
-
-    file_urls, found_types = build_file_urls(doc)
-    file_urls = [('txt',url) if label=='plain text' else (label,url) for label,url in file_urls]
-
-    if file_urls:
-        file_labels = {
-            'txt' : 'Plaintext version of this document',
-            'xml' : 'XML source for this document',
-            'pdf' : 'PDF version of this document',
-            'html' : 'HTML version of this document, from XML2RFC',
-            'bibtex' : 'BibTex entry for this document',
-        }
-        parts=[]
-        for label,url in file_urls:
-            if 'htmlized' not in label:
-                file_label=file_labels.get(label,'')
-                title_attribute = f' title="{file_label}"' if file_label else ''
-                partstring = f'<a href="{url}"{title_attribute}>{label}</a>' 
-                parts.append(partstring)
-        items.append('[' + '|'.join(parts) + ']')
-
-    items.append(f'[<a href="{ urlreverse("ietf.doc.views_doc.document_main",kwargs=dict(name=doc.canonical_name())) }" title="Datatracker information for this document">Tracker</a>]')
-    if doc.group.acronym != 'none':
-        items.append(f'[<a href="{urlreverse("ietf.group.views.group_home",kwargs=dict(acronym=doc.group.acronym))}" title="The working group handling this document">WG</a>]')
-    items.append(f'[<a href="mailto:{doc.name}@ietf.org?subject={doc.name}" title="Send email to the document authors">Email</a>]')
-    if doc.rev != "00":
-        items.append(f'[<a href="{settings.RFCDIFF_BASE_URL}?difftype=--hwdiff&amp;url2={doc.name}-{doc.rev}.txt" title="Inline diff (wdiff)">Diff1</a>]')
-        items.append(f'[<a href="{settings.RFCDIFF_BASE_URL}?url2={doc.name}-{doc.rev}.txt" title="Side-by-side diff">Diff2</a>]')
-    items.append(f'[<a href="{settings.IDNITS_BASE_URL}?url={settings.IETF_ID_ARCHIVE_URL}{doc.name}-{doc.rev}.txt" title="Run an idnits check of this document">Nits</a>]')
-
-    return ' '.join(items)
-
-def build_doc_meta_block(doc, path):
-    def add_markup(path, doc, lines):
-        is_hst = doc.is_dochistory()
-        rev = doc.rev
-        if is_hst:
-            doc = doc.doc
-        name = doc.name
-        rfcnum = doc.rfc_number()
-        errata_url = settings.RFC_EDITOR_ERRATA_URL.format(rfc_number=rfcnum) if not is_hst else ""
-        ipr_url = "%s?submit=draft&amp;id=%s" % (urlreverse('ietf.ipr.views.search'), name)
-        for i, line in enumerate(lines):
-            # add draft links
-            line = re.sub(r'\b(draft-[-a-z0-9]+)\b', r'<a href="%s/\g<1>">\g<1></a>'%(path, ), line)
-            # add rfcXXXX to RFC links
-            line = re.sub(r' (rfc[0-9]+)\b', r' <a href="%s/\g<1>">\g<1></a>'%(path, ), line)
-            # add XXXX to RFC links
-            line = re.sub(r' ([0-9]{3,5})\b', r' <a href="%s/rfc\g<1>">\g<1></a>'%(path, ), line)
-            # add draft revision links
-            line = re.sub(r' ([0-9]{2})\b', r' <a href="%s/%s-\g<1>">\g<1></a>'%(path, name, ), line)
-            if rfcnum:
-                # add errata link
-                line = re.sub(r'Errata exist', r'<a class="text-warning" href="%s">Errata exist</a>'%(errata_url, ), line)
-            if is_hst or not rfcnum:
-                # make current draft rev bold
-                line = re.sub(r'>(%s)<'%rev, r'><b>\g<1></b><', line)
-            line = re.sub(r'IPR declarations', r'<a class="text-warning" href="%s">IPR declarations</a>'%(ipr_url, ), line)
-            line = line.replace(r'[txt]', r'[<a href="%s">txt</a>]' % doc.get_href())
-            lines[i] = line
-        return lines
-    #
-    now = datetime.datetime.now()
-    draft_state = doc.get_state('draft')
-    block = ''
-    meta = {}
-    if doc.type_id == 'draft':
-        revisions = []
-        ipr = doc.related_ipr()
-        if ipr:
-            meta['ipr'] = [ "IPR declarations" ]
-        if doc.is_rfc() and not doc.is_dochistory():
-            if not doc.name.startswith('rfc'):
-                meta['from'] = [ "%s-%s"%(doc.name, doc.rev) ]
-            meta['errata'] = [ "Errata exist" ] if doc.tags.filter(slug='errata').exists() else []
-            
-            meta['obsoletedby'] = [ document.rfc_number() for alias in doc.related_that('obs') for document in alias.docs.all() ]
-            meta['obsoletedby'].sort()
-            meta['updatedby'] = [ document.rfc_number() for alias in doc.related_that('updates') for document in alias.docs.all() ]
-            meta['updatedby'].sort()
-            meta['stdstatus'] = [ doc.std_level.name ]
-        else:
-            dd = doc.doc if doc.is_dochistory() else doc
-            revisions += [ '(%s)%s'%(d.name, ' '*(2-((len(d.name)-1)%3))) for d in dd.replaces() ]
-            revisions += doc.revisions()
-            if doc.is_dochistory() and doc.doc.is_rfc():
-                revisions += [ doc.doc.canonical_name() ]
-            else:
-                revisions += [ d.name for d in doc.replaced_by() ]
-            meta['versions'] = revisions
-            if not doc.is_dochistory and draft_state.slug == 'active' and now > doc.expires:
-                # Active past expiration date
-                meta['active'] = [ 'Document is active' ]
-                meta['state' ] = [ doc.friendly_state() ]
-            intended_std = doc.intended_std_level if doc.intended_std_level else None
-            if intended_std:
-                if intended_std.slug in ['ps', 'ds', 'std']:
-                    meta['stdstatus'] = [ "Standards Track" ]
-                else:
-                    meta['stdstatus'] = [ intended_std.name ]
-    elif doc.type_id == 'charter':
-        meta['versions'] = doc.revisions()
-    #
-    # Add markup to items that needs it.
-    if 'versions' in meta:
-        meta['versions'] = label_wrap('Versions', meta['versions'], joiner="")
-    for label in ['Obsoleted by', 'Updated by', 'From' ]:
-        item = label.replace(' ','').lower()
-        if item in meta and meta[item]:
-            meta[item] = label_wrap(label, meta[item])
-    #
-    left = []
-    right = []
-    #right = [ '[txt]']
-    for item in [ 'from', 'versions', 'obsoletedby', 'updatedby', ]:
-        if item in meta and meta[item]:
-            left += meta[item]
-    for item in ['stdstatus', 'active', 'state', 'ipr', 'errata', ]:
-        if item in meta and meta[item]:
-            right += meta[item]
-    lines = join_justified(left, right)
-    block = '\n'.join(add_markup(path, doc, lines))
-    #
-    return block
-
 
 def augment_docs_and_user_with_user_info(docs, user):
     """Add attribute to each document with whether the document is tracked
@@ -1293,6 +1154,8 @@ def fuzzy_find_documents(name, rev=None):
     document.
     """
     # Handle special case name formats
+    if re.match(r"^\s*rfc", name, flags=re.IGNORECASE):
+        name = re.sub(r"\s+", "", name.lower())
     if name.startswith('rfc0'):
         name = "rfc" + name[3:].lstrip('0')
     if name.startswith('review-') and re.search(r'-\d\d\d\d-\d\d$', name):
@@ -1303,8 +1166,6 @@ def fuzzy_find_documents(name, rev=None):
         rev = rev[-2:]
     if re.match("^[0-9]+$", name):
         name = f'rfc{name}'
-    if re.match("^[Rr][Ff][Cc] [0-9]+$",name):
-        name = f'rfc{name[4:]}'
 
     # see if we can find a document using this name
     docs = Document.objects.filter(docalias__name=name, type_id='draft')
@@ -1331,20 +1192,25 @@ def bibxml_for_draft(doc, rev=None):
         raise Http404("Revision not found")
 
     # Build the date we want to claim for the document in the bibxml
-    # For documents that have relevent NewRevisionDocEvents, use the date of the event.
+    # For documents that have relevant NewRevisionDocEvents, use the date of the event.
     # Very old documents don't have NewRevisionDocEvents - just use the document time.
         
     latest_revision_event = doc.latest_event(NewRevisionDocEvent, type="new_revision")
     latest_revision_rev = latest_revision_event.rev if latest_revision_event else None
     best_events = NewRevisionDocEvent.objects.filter(doc__name=doc.name, rev=(rev or latest_revision_rev))
+    tzinfo = ZoneInfo(settings.TIME_ZONE)
     if best_events.exists():
         # There was a period where it was possible to get more than one NewRevisionDocEvent for a revision.
         # A future data cleanup would allow this to be simplified
         best_event = best_events.order_by('time').first()
         log.assertion('doc.rev == best_event.rev')
-        doc.date = best_event.time.date()
+        doc.date = best_event.time.astimezone(tzinfo).date()
     else:
-        doc.date = doc.time.date()      # Even if this may be incoreect, what would be better?
+        doc.date = doc.time.astimezone(tzinfo).date()      # Even if this may be incorrect, what would be better?
 
-    return render_to_string('doc/bibxml.xml', {'name':doc.name, 'doc': doc, 'doc_bibtype':'I-D'})
+    name = doc.name if isinstance(doc, Document) else doc.doc.name
+    if name.startswith('rfc'): # bibxml3 does not speak of RFCs
+        raise Http404()
+        
+    return render_to_string('doc/bibxml.xml', {'name':name, 'doc':doc, 'doc_bibtype':'I-D'})
 

@@ -108,6 +108,7 @@
 
 <script setup>
 import { computed, h } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { DateTime } from 'luxon'
 import {
   NAffix,
@@ -119,6 +120,8 @@ import {
 } from 'naive-ui'
 
 import { useAgendaStore } from './store'
+import { useSiteStore } from '../shared/store'
+import { getUrl } from '../shared/urls'
 
 // MESSAGE PROVIDER
 
@@ -127,6 +130,12 @@ const message = useMessage()
 // STORES
 
 const agendaStore = useAgendaStore()
+const siteStore = useSiteStore()
+
+// ROUTER
+
+const router = useRouter()
+const route = useRoute()
 
 // Download Ics Options
 
@@ -146,7 +155,7 @@ const downloadIcsOptions = [
 // COMPUTED
 
 const shortMode = computed(() => {
-  return agendaStore.viewport <= 1350
+  return siteStore.viewport <= 1350
 })
 
 // METHODS
@@ -163,6 +172,9 @@ function pickerModify () {
 }
 function pickerDiscard () {
   agendaStore.$patch({ pickerMode: false })
+  if (route.query.show) {
+    router.push({ query: null })
+  }
 }
 
 function downloadIcs (key) {
@@ -170,11 +182,11 @@ function downloadIcs (key) {
   let icsUrl = ''
   if (agendaStore.pickerMode) {
     const sessionKeywords = agendaStore.scheduleAdjusted.map(s => s.sessionKeyword)
-    icsUrl = `/meeting/${agendaStore.meeting.number}/agenda.ics?show=${sessionKeywords.join(',')}`
+    icsUrl = `${getUrl('meetingCalIcs', { meetingNumber: agendaStore.meeting.number })}?show=${sessionKeywords.join(',')}`
   } else if (agendaStore.selectedCatSubs.length > 0) {
-    icsUrl = `/meeting/${agendaStore.meeting.number}/agenda.ics?show=${agendaStore.selectedCatSubs.join(',')}`
+    icsUrl = `${getUrl('meetingCalIcs', { meetingNumber: agendaStore.meeting.number })}?show=${agendaStore.selectedCatSubs.join(',')}`
   } else {
-    icsUrl = `/meeting/${agendaStore.meeting.number}/agenda.ics`
+    icsUrl = `${getUrl('meetingCalIcs', { meetingNumber: agendaStore.meeting.number })}`
   }
   if (key === 'subscribe') {
     window.location.assign(`webcal://${window.location.host}${icsUrl}`)

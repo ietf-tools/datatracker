@@ -5,6 +5,7 @@
 import datetime
 import re
 from urllib.parse import urljoin
+from zoneinfo import ZoneInfo
 
 from django import template
 from django.conf import settings
@@ -18,6 +19,7 @@ from django.urls import reverse as urlreverse
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.urls import NoReverseMatch
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -248,7 +250,7 @@ def urlize_ietf_docs(string, autoescape=None):
         flags=re.IGNORECASE | re.ASCII,
     )
     string = re.sub(
-        r"\b(?<![/\-:=#\"\'])((RFC|BCP|STD|FYI)\s*0*(\d+))\b",
+        r"\b(?<![/\-:=#\"\'])((RFC|BCP|STD|FYI) *\n? *0*(\d+))\b",
         link_other_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
@@ -258,8 +260,8 @@ def urlize_ietf_docs(string, autoescape=None):
 
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
-@register.filter(name='urlize_related_source_list', is_safe=True, needs_autoescape=True)
-def urlize_related_source_list(related, autoescape=None):
+@register.filter(name='urlize_related_source_list', is_safe=True, document_html=False)
+def urlize_related_source_list(related, document_html=False):
     """Convert a list of RelatedDocuments into list of links using the source document's canonical name"""
     links = []
     names = set()
@@ -271,10 +273,9 @@ def urlize_related_source_list(related, autoescape=None):
             continue
         names.add(name)
         titles.add(title)
-        url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=name))
-        if autoescape:
-            name = escape(name)
-            title = escape(title)
+        url = urlreverse('ietf.doc.views_doc.document_main' if document_html is False else 'ietf.doc.views_doc.document_html', kwargs=dict(name=name))
+        name = escape(name)
+        title = escape(title)
         links.append(mark_safe(
             '<a href="%(url)s" title="%(title)s">%(name)s</a>' % dict(name=prettify_std_name(name),
                                                                       title=title,
@@ -282,17 +283,16 @@ def urlize_related_source_list(related, autoescape=None):
         ))
     return links
         
-@register.filter(name='urlize_related_target_list', is_safe=True, needs_autoescape=True)
-def urlize_related_target_list(related, autoescape=None):
+@register.filter(name='urlize_related_target_list', is_safe=True, document_html=False)
+def urlize_related_target_list(related, document_html=False):
     """Convert a list of RelatedDocuments into list of links using the target document's canonical name"""
     links = []
     for rel in related:
         name=rel.target.document.canonical_name()
         title = rel.target.document.title
-        url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=name))
-        if autoescape:
-            name = escape(name)
-            title = escape(title)
+        url = urlreverse('ietf.doc.views_doc.document_main' if document_html is False else 'ietf.doc.views_doc.document_html', kwargs=dict(name=name))
+        name = escape(name)
+        title = escape(title)
         links.append(mark_safe(
             '<a href="%(url)s" title="%(title)s">%(name)s</a>' % dict(name=prettify_std_name(name),
                                                                       title=title,
@@ -315,10 +315,19 @@ def underline(string):
 
 @register.filter(name='timesince_days')
 def timesince_days(date):
-    """Returns the number of days since 'date' (relative to now)"""
+    """Returns the number of days since 'date' (relative to now)
+
+    >>> timesince_days(timezone.now() - datetime.timedelta(days=2))
+    2
+
+    >>> tz = ZoneInfo(settings.TIME_ZONE)
+    >>> timesince_days(timezone.now().astimezone(tz).date() - datetime.timedelta(days=2))
+    2
+
+    """
     if date.__class__ is not datetime.datetime:
-        date = datetime.datetime(date.year, date.month, date.day)
-    delta = datetime.datetime.now() - date
+        date = datetime.datetime(date.year, date.month, date.day, tzinfo=ZoneInfo(settings.TIME_ZONE))
+    delta = timezone.now() - date
     return delta.days
 
 @register.filter
@@ -501,6 +510,36 @@ def ics_esc(text):
     text = re.sub(r"([\n,;\\])", r"\\\1", text)
     return text
 
+
+@register.simple_tag
+def ics_date_time(dt, tzname):
+    """Render a datetime as an iCalendar date-time
+
+    dt a datetime, localized to the timezone to be displayed
+    tzname is the name for this timezone
+
+    Caller must arrange for a VTIMEZONE for the tzname to be included in the iCalendar file.
+    Output includes a ':'. Use like:
+      DTSTART{% ics_date_time timestamp 'America/Los_Angeles' %}
+    to get
+      DTSTART;TZID=America/Los_Angeles:20221021T111200
+
+    >>> ics_date_time(datetime.datetime(2022,1,2,3,4,5), 'utc')
+    ':20220102T030405Z'
+
+    >>> ics_date_time(datetime.datetime(2022,1,2,3,4,5), 'UTC')
+    ':20220102T030405Z'
+
+    >>> ics_date_time(datetime.datetime(2022,1,2,3,4,5), 'America/Los_Angeles')
+    ';TZID=America/Los_Angeles:20220102T030405'
+    """
+    timestamp = dt.strftime('%Y%m%dT%H%M%S')
+    if tzname.lower() == 'utc':
+        return f':{timestamp}Z'
+    else:
+        return f';TZID={ics_esc(tzname)}:{timestamp}'
+
+
 @register.filter
 def consensus(doc):
     """Returns document consensus Yes/No/Unknown."""
@@ -512,6 +551,19 @@ def consensus(doc):
             return "No"
     else:
         return "Unknown"
+
+
+@register.filter
+def std_level_to_label_format(doc):
+    """Returns valid Bootstrap classes to label a status level badge."""
+    if doc.is_rfc():
+        if doc.related_that("obs"):
+            return "obs"
+        else:
+            return doc.std_level_id
+    else:
+        return "draft"
+
 
 @register.filter
 def pos_to_label_format(text):
@@ -619,7 +671,7 @@ def can_defer(user,doc):
 
 @register.filter()
 def can_ballot(user,doc):
-    # Only IRSG memebers (and the secretariat, handled by code separately) can take positions on IRTF documents
+    # Only IRSG members (and the secretariat, handled by code separately) can take positions on IRTF documents
     # Otherwise, an AD can take a position on anything that has a ballot open
     if doc.type_id == 'draft' and doc.stream_id == 'irtf':
         return has_role(user,'IRSG Member')
@@ -637,22 +689,22 @@ def action_holder_badge(action_holder):
     >>> action_holder_badge(DocumentActionHolderFactory())
     ''
 
-    >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=15)))
+    >>> action_holder_badge(DocumentActionHolderFactory(time_added=timezone.now() - datetime.timedelta(days=15)))
     ''
 
-    >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=16)))
-    '<span class="badge bg-danger" title="In state for 16 days; goal is &lt;15 days."><i class="bi bi-clock-fill"></i> 16</span>'
+    >>> action_holder_badge(DocumentActionHolderFactory(time_added=timezone.now() - datetime.timedelta(days=16)))
+    '<span class="badge rounded-pill bg-danger" title="In state for 16 days; goal is &lt;15 days."><i class="bi bi-clock-fill"></i> 16</span>'
 
-    >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=30)))
-    '<span class="badge bg-danger" title="In state for 30 days; goal is &lt;15 days."><i class="bi bi-clock-fill"></i> 30</span>'
+    >>> action_holder_badge(DocumentActionHolderFactory(time_added=timezone.now() - datetime.timedelta(days=30)))
+    '<span class="badge rounded-pill bg-danger" title="In state for 30 days; goal is &lt;15 days."><i class="bi bi-clock-fill"></i> 30</span>'
 
     >>> settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS = old_limit
     """
     age_limit = settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS
-    age = (datetime.datetime.now() - action_holder.time_added).days
+    age = (timezone.now() - action_holder.time_added).days
     if age > age_limit:
         return mark_safe(
-            '<span class="badge bg-danger" title="In state for %d day%s; goal is &lt;%d days."><i class="bi bi-clock-fill"></i> %d</span>'
+            '<span class="badge rounded-pill bg-danger" title="In state for %d day%s; goal is &lt;%d days."><i class="bi bi-clock-fill"></i> %d</span>'
             % (age, "s" if age != 1 else "", age_limit, age)
         )
     else:

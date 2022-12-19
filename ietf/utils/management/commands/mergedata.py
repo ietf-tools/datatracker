@@ -188,7 +188,7 @@ class Command(LoadCommand):
                                             #debug.say("Found matching object with new pk: %s" % (obj.object.pk, ))
                             new_pk = obj.object.pk
                             if new_pk != old_pk:
-                                # Update other objects refering to this
+                                # Update other objects referring to this
                                 # object to use the new pk
                                 #debug.show('old_pk, new_pk')
                                 mname = model._meta.app_label + '.' + model.__name__

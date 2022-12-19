@@ -2,7 +2,7 @@
 
 
 
-Network Working Group                                            %(initials)s %(surname)s
+Network Working Group             %(firstpagename)37s
 Internet-Draft                                          Test Centre Inc.
 Intended status: Informational                                %(month)s %(year)s
 Expires: %(expiration)s
@@ -10,7 +10,6 @@ Expires: %(expiration)s
 
                              %(title)s
                          %(name)s
-
 Abstract
 
    This document describes how to test tests.

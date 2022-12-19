@@ -230,7 +230,7 @@ def search(request):
             type = form.cleaned_data['type']
             meeting = get_current_meeting()
 
-            # construct seach query
+            # construct search query
             if group_acronym:
                 kwargs['acronym__istartswith'] = group_acronym
             if group_name:

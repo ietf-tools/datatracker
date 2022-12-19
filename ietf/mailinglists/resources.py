@@ -11,17 +11,17 @@ from tastypie.cache import SimpleCache
 from ietf import api
 from ietf.api import ToOneField                         # pyflakes:ignore
 
-from ietf.mailinglists.models import Whitelisted, List, Subscribed
+from ietf.mailinglists.models import Allowlisted, List, Subscribed
 
 
 from ietf.person.resources import PersonResource
-class WhitelistedResource(ModelResource):
+class AllowlistedResource(ModelResource):
     by               = ToOneField(PersonResource, 'by')
     class Meta:
-        queryset = Whitelisted.objects.all()
+        queryset = Allowlisted.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'whitelisted'
+        #resource_name = 'allowlisted'
         ordering = ['id', ]
         filtering = { 
             "id": ALL,
@@ -29,7 +29,7 @@ class WhitelistedResource(ModelResource):
             "email": ALL,
             "by": ALL_WITH_RELATIONS,
         }
-api.mailinglists.register(WhitelistedResource())
+api.mailinglists.register(AllowlistedResource())
 
 class ListResource(ModelResource):
     class Meta:

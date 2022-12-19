@@ -1,92 +1,276 @@
-{% extends "doc/htmlized_base.html" %}
 {# Copyright The IETF Trust 2016, All Rights Reserved #}
+<!DOCTYPE html>
+{% load analytical %}
 {% load origin %}
 {% load static %}
-{% load ietf_filters %}
-{% block pagehead %}
-    <link rel="alternate"
-          type="application/atom+xml"
-          title="Document changes"
-          href="/feed/document-changes/{{ doc.name }}/">
-    <meta name="description"
-          {% if doc.get_state_slug == "rfc" %}
-              content="{{ doc.title }} (RFC {{ doc.rfc_number }}{% if published %}, {{ published.time|date:"F Y" }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:", " }}{% endif %})"
-          {% else %}
-              content="{{ doc.title }} (Internet-Draft, {{ doc.time|date:"Y" }})"
-          {% endif %}>
-{% endblock %}
-{% block morecss %}
-    .bgwhite  { background-color: white; }
-    .bgred    { background-color: #F44; }
-    .bggrey   { background-color: #666; }
-    .bgbrown  { background-color: #840; }
-    .bgorange { background-color: #FA0; }
-    .bgyellow { background-color: #EE0; }
-    .bgmagenta{ background-color: #F4F; }
-    .bgblue   { background-color: #66F; }
-    .bgcyan   { background-color: #4DD; }
-    .bggreen  { background-color: #4F4; }
-    .draftcontent { margin-top:1em;}
-{% endblock %}
-{% block title %}
-    {% if doc.get_state_slug == "rfc" %}
-        RFC {{ doc.rfc_number }} - {{ doc.title }}
-    {% else %}
-        {{ doc.name }}-{{ doc.rev }}
-    {% endif %}
-{% endblock %}
-{% block content %}
-<!-- [html-validate-disable-block no-inline-style, attr-quotes, void-style -- FIXME: it's everywhere in this old code] -->
-    {% origin %}
-    <div class="rfcmarkup">
-        <div class="noprint" style="height: .5em;">
-            <div onmouseover="this.style.cursor='pointer';"
-                 onclick="showLegend();"
-                 onmouseout="hideLegend()"
-                 style="height: .5em; min-height: .5em; width: 96ex; "
-                 class="meta-info {{ doccolor }}"
-                 title="Click for color legend.">
+{% load ietf_filters textfilters %}
+{% origin %}
+<html lang="en">
+    <head>
+        {% analytical_head_top %}
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>
+            {% if not snapshot and doc.get_state_slug == "rfc" %}
+                RFC {{ doc.rfc_number }} - {{ doc.title }}
+            {% else %}
+                {{ doc.name }}-{{ doc.rev }}
+            {% endif %}
+        </title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% if request.COOKIES.pagedeps == 'inline' %}
+            <script>{{ js|safe }}</script>
+            <style>{{ css|safe }}</style>
+        {% else %}
+            <link rel="stylesheet" href="{% static 'ietf/css/document_html_referenced.css' %}">
+            {% if html %}
+                <link rel="stylesheet" href="{% static 'ietf/css/document_html_txt.css' %}">
+            {% endif %}
+            <script src="{% static 'ietf/js/document_html.js' %}"></script>
+        {% endif %}
+        <link rel="alternate"
+              type="application/atom+xml"
+              title="Document changes"
+              href="/feed/document-changes/{{ doc.name }}/">
+        <meta name="description"
+            {% if not snapshot and doc.get_state_slug == 'rfc' %}
+                content="{{ doc.title }} (RFC {{ doc.rfc_number }}{% if published %}, {{ published.time|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:', ' }}{% endif %}"
+            {% else %}
+                content="{{ doc.title }} (Internet-Draft, {{ doc.time|date:'Y' }})"
+            {% endif %}>
+        {% include "base/icons.html" %}
+        {% include "doc/opengraph.html" %}
+         {% analytical_head_bottom %}
+    </head>
+    <body>
+        {% analytical_body_top %}
+        <button class="btn btn-outline-secondary position-fixed top-0 end-0 m-2 sidebar-toggle"
+                type="button"
+                id="sidebar-on"
+                data-bs-toggle="collapse"
+                data-bs-target="#sidebar"
+                aria-expanded="{% if request.COOKIES.sidebar != 'off'%}true{% else %}false{% endif %}"
+                aria-controls="sidebar"
+                aria-label="Show metadata sidebar"
+                title="Show metadata sidebar">
+        <i class="bi bi-layout-sidebar-reverse"></i>
+        </button>
+        <nav class="navbar navbar-light bg-light px-1 fixed-top d-print-none d-md-none">
+            <a class="nav-link ps-1"
+               href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">
+                {% if not snapshot and doc.get_state_slug == "rfc" %}
+                    RFC {{ doc.rfc_number }}
+                {% else %}
+                    {{ doc.name }}-{{ doc.rev }}
+                {% endif %}
+                <br class="d-sm-none">
+                <span class="ms-sm-3 badge rounded-pill badge-{% if not snapshot %}{{ doc|std_level_to_label_format }}{% else %}draft{% endif %}">
+                    {% if not snapshot %}
+                        {{ doc.std_level }}
+                    {% else %}
+                        Internet-Draft
+                    {% endif %}
+                </span>
+            </a>
+            <button class="navbar-toggler p-1"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#docinfo-collapse"
+                    aria-controls="docinfo-collapse"
+                    aria-expanded="false"
+                    aria-label="Show document information">
+                <span class="navbar-toggler-icon small"></span>
+            </button>
+            <div class="navbar-nav navbar-nav-scroll overscroll-none collapse pt-1" id="docinfo-collapse">
+                <div class="bg-light p-0">
+                    <table class="table table-sm table-borderless small">
+                        <tbody class="meta align-top">
+                            <tr>
+                                <th scope="row"></th>
+                                <th scope="row">Title</th>
+                                <td class="edit"></td>
+                                <td>{{ doc.title }}</td>
+                            </tr>
+                        </tbody>
+                        {% include "doc/document_info.html" with sidebar=False %}
+                    </table>
+                </div>
             </div>
-            <div id="legend"
-                 class="meta-info noprint pre legend"
-                 style="position:absolute; top: 4px; left: 4ex; visibility:hidden; background-color: white; padding: 4px 9px 5px 7px; border: solid #345 1px; "
-                 onmouseover="showLegend();"
-                 onmouseout="hideLegend();">
+        </nav>
+        <div class="row g-0">
+            <div class="col-md-9 d-flex justify-content-center lh-sm"
+                 data-bs-spy="scroll"
+                 data-bs-target="#toc-nav"
+                 data-bs-smooth-scroll="true"
+                 tabindex="0"
+                 id="content">
+                {% if html and request.COOKIES.htmlconf != 'txt' %}
+                    <div class="rfchtml">
+                        <br class="noprint">
+                        {{ html|safe }}
+                    </div>
+                {% else %}
+                    <div class="rfcmarkup">
+                        <br class="noprint">
+                        <!-- [html-validate-disable-block attr-quotes, void-style, element-permitted-content, heading-level -- FIXME: rfcmarkup/rfc2html generates HTML with issues] -->
+                        {{ doc.htmlized|default:"Generation of htmlized text failed"|linkify|safe }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="d-print-none col-md-3 bg-light collapse{% if request.COOKIES.sidebar != 'off'%} show{% endif %}" id="sidebar">
+                <div class="position-fixed border-start sidebar overflow-scroll overscroll-none no-scrollbar">
+                    <button class="btn btn-outline-secondary float-end m-2"
+                            type="button"
+                            id="sidebar-off"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#sidebar"
+                            aria-expanded="{% if request.COOKIES.sidebar != 'off'%}true{% else %}false{% endif %}"
+                            aria-controls="sidebar"
+                            aria-label="Hide metadata sidebar"
+                            title="Hide metadata sidebar">
+                            <i class="bi bi-arrow-bar-up"></i>
+                    </button>
+                    <div class="pt-2 pt-lg-3 px-md-2 px-lg-3">
+                        <p>
+                            <a href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">
+                                {% if not snapshot and doc.get_state_slug == "rfc" %}
+                                    RFC {{ doc.rfc_number }}
+                                {% else %}
+                                    {{ doc.name }}-{{ doc.rev }}
+                                {% endif %}
+                                <br>
+                                <span class="badge rounded-pill badge-{% if not snapshot %}{{ doc|std_level_to_label_format }}{% else %}draft{% endif %}">
+                                    {% if not snapshot %}
+                                        {{ doc.std_level }}
+                                    {% else %}
+                                        Internet-Draft
+                                    {% endif %}
+                                </span>
+                            </a>
+                        </p>
+                        {% if request.COOKIES.htmlconf != 'html' and html %}
+                        <div class="alert alert-info small">
+                            You are viewing the legacy <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/rfc2html">rfc2html</a></code>
+                            rendering of this document. Change the
+                            preferences for a modern <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/xml2rfc">xml2rfc</a></code>-based
+                            HTMLization.
+                        </div>
+                        {% elif request.COOKIES.htmlconf == 'html' and not html %}
+                        <div class="alert alert-info small">
+                            You are viewing the legacy <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/rfc2html">rfc2html</a></code>
+                            rendering, because no <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/xml2rfc">xml2rfc</a></code>-generated
+                            HTML is available for this document.
+                        </div>
+                        {% endif %}
+                        <ul class="nav nav-tabs nav-fill small" role="tablist">
+                            <li class="nav-item" role="presentation" title="Document information">
+                                <button class="nav-link px-2"
+                                        id="docinfo-tab"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#docinfo-tab-pane"
+                                        type="button"
+                                        role="tab"
+                                        aria-controls="docinfo-tab-pane"
+                                        aria-selected="true">
+                                    <i class="bi bi-info-circle"></i><span class="d-none d-md-block d-xl-inline ms-xl-1">Info</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation" title="Table of contents">
+                                <button class="nav-link px-2"
+                                        id="toc-tab"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#toc-tab-pane"
+                                        type="button"
+                                        role="tab"
+                                        aria-controls="toc-tab-pane"
+                                        aria-selected="false">
+                                    <i class="bi bi-list-ol"></i><span class="d-none d-md-block d-xl-inline ms-xl-1">Contents</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation" title="Preferences">
+                                <button class="nav-link px-2"
+                                        id="pref-tab"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#pref-tab-pane"
+                                        type="button"
+                                        role="tab"
+                                        aria-controls="pref-tab-pane"
+                                        aria-selected="false">
+                                    <i class="bi bi-gear"></i><span class="d-none d-md-block d-xl-inline ms-xl-1">Prefs</span>
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content pt-2">
+                            <div class="tab-pane"
+                                 id="docinfo-tab-pane"
+                                 role="tabpanel"
+                                 aria-labelledby="docinfo-tab"
+                                 tabindex="0">
+                                <table class="table table-sm table-borderless">
+                                    {% include "doc/document_info.html" with sidebar=True %}
+                                </table>
+                            </div>
+                            <div class="tab-pane mb-5"
+                                 id="toc-tab-pane"
+                                 role="tabpanel"
+                                 aria-labelledby="toc-tab"
+                                 tabindex="0">
+                                <nav class="nav nav-pills flex-column small" id="toc-nav">
+                                </nav>
+                            </div>
+                            <div class="tab-pane mb-5 small"
+                                 id="pref-tab-pane"
+                                 role="tabpanel"
+                                 aria-labelledby="pref-tab"
+                                 tabindex="0">
+                                <label class="form-label fw-bold mb-2">Show sidebar by default</label>
+                                <div class="btn-group-vertical btn-group-sm d-flex" role="group">
+                                    <input type="radio" class="btn-check" name="sidebar" id="on-radio">
+                                    <label class="btn btn-outline-primary" for="on-radio">Yes</label>
+                                    <input type="radio" class="btn-check" name="sidebar" id="off-radio">
+                                    <label class="btn btn-outline-primary" for="off-radio">No</label>
+                                </div>
+                                <label class="form-label fw-bold mt-4 mb-2">Tab to show by default</label>
+                                <div class="btn-group-vertical btn-group-sm d-flex" role="group">
+                                    <input type="radio" class="btn-check" name="deftab" id="docinfo-radio">
+                                    <label class="btn btn-outline-primary" for="docinfo-radio">
+                                        <i class="bi bi-info-circle me-1"></i>Info
+                                    </label>
+                                    <input type="radio" class="btn-check" name="deftab" id="toc-radio">
+                                    <label class="btn btn-outline-primary" for="toc-radio">
+                                        <i class="bi bi-list-ol me-1"></i>Contents
+                                    </label>
+                                </div>
+                                <label class="form-label fw-bold mt-4 mb-2">HTMLization configuration</label>
+                                <div class="btn-group-vertical btn-group-sm d-flex" role="group">
+                                    <input type="radio" class="btn-check" name="htmlconf" id="txt-radio">
+                                    <label class="btn btn-outline-primary" for="txt-radio" title="This is the traditional HTMLization method.">
+                                        <i class="bi bi-badge-sd me-1"></i>HTMLize the plaintext
+                                    </label>
+                                    <input type="radio" class="btn-check" name="htmlconf" id="html-radio">
+                                    <label class="btn btn-outline-primary" for="html-radio" title="This is the modern HTMLization method.">
+                                        <i class="bi bi-badge-hd me-1"></i>Plaintextify the HTML
+                                    </label>
+                                </div>
+                                <label class="form-label fw-bold mt-4 mb-2" for="ptsize">Maximum font size</label>
+                                <input type="range" class="form-range" min="7" max="16" id="ptsize" oninput="ptdemo.value = ptsize.value">
+                                <label class="form-label fw-bold mt-4 mb-2">Page dependencies</label>
+                                <div class="btn-group-vertical btn-group-sm d-flex" role="group">
+                                    <input type="radio" class="btn-check" name="pagedeps" id="inline-radio">
+                                    <label class="btn btn-outline-primary" for="inline-radio" title="Generate larger, standalone web pages that do not require network access to render.">
+                                        <i class="bi bi-box me-1"></i>Inline
+                                    </label>
+                                    <input type="radio" class="btn-check" name="pagedeps" id="reference-radio">
+                                    <label class="btn btn-outline-primary" for="reference-radio" title="Generate regular web pages that require network access to render.">
+                                        <i class="bi bi-link-45deg me-1"></i>Reference
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        {% if doc.meta %}
-            <div class="noprint">
-                <pre class="pre meta-info">{{ doc.supermeta|safe }}
-{{ doc.meta|safe }}</pre>
-            </div>
-        {% endif %}
-        <div class="draftcontent">{{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}</div>
-    </div>
-{% endblock %}
-{% block js %}
-    <script>
-        var legend_html = 'Color legend:<br> \
-        <table> \
-        <tr><td>Unknown:</td>                   <td><span class="bgwhite">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Draft:</td>                     <td><span class="bgred">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Informational:</td>             <td><span class="bgorange">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Experimental:</td>              <td><span class="bgyellow">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Best Common Practice:</td>      <td><span class="bgmagenta">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Proposed Standard:</td>         <td><span class="bgblue">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Draft Standard (old designation):</td> <td><span class="bgcyan">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Internet Standard:</td>         <td><span class="bggreen">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Historic:</td>                  <td><span class="bggrey">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        <tr><td>Obsolete:</td>                  <td><span class="bgbrown">&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
-        </table>';
-        function showLegend() {
-            var elem = document.getElementById('legend');
-            elem.innerHTML = legend_html
-            elem.style.visibility='visible';
-        }
-        function hideLegend() {
-            var elem = document.getElementById('legend');
-            elem.style.visibility='hidden';
-            elem.innerHTML = "";
-        }
-    </script>
-{% endblock %}
+    {% analytical_body_bottom %}
+    </body>
+</html>

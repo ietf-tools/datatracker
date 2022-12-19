@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin static %}
+{% load origin static ietf_filters textfilters %}
+%}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
@@ -20,7 +21,7 @@
             {% for state in states %}
                 <tr>
                     <th scope="row">{{ state.name }}</th>
-                    <td>{{ state.desc|safe }}</td>
+                    <td>{{ state.desc|urlize_ietf_docs|linkify }}</td>
                     <td>
                         <ul>
                             {% for s in state.next_states.all %}

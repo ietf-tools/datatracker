@@ -60,11 +60,11 @@ n-drawer(v-model:show='state.isShown', placement='bottom', :height='state.drawer
                 )
                 template(#trigger)
                   span.badge BoF
-                span #[a(href='https://www.ietf.org/how/bofs/', target='_blank') Birds of a Feather] sessions (BoFs) are initial discussions about a particular topic of interest to the IETF community.
+                span #[a(:href='getUrl(`bofDefinition`)', target='_blank') Birds of a Feather] sessions (BoFs) are initial discussions about a particular topic of interest to the IETF community.
 </template>
 
 <script setup>
-import { reactive, ref, unref, watch } from 'vue'
+import { nextTick, reactive, ref, unref, watch } from 'vue'
 import intersection from 'lodash/intersection'
 import difference from 'lodash/difference'
 import union from 'lodash/union'
@@ -77,6 +77,7 @@ import {
 } from 'naive-ui'
 
 import { useAgendaStore } from './store'
+import { getUrl } from '../shared/urls'
 
 // STORES
 
@@ -113,8 +114,15 @@ function cancelFilter () {
 }
 
 function saveFilter () {
-  agendaStore.$patch({ selectedCatSubs: state.pendingSelection })
-  state.isShown = false
+  const applyLoadingMsg = message.create('Applying filters...', { type: 'loading', duration: 0 })
+  setTimeout(() => {
+    agendaStore.$patch({ selectedCatSubs: state.pendingSelection })
+    agendaStore.persistMeetingPreferences()
+    state.isShown = false
+    nextTick(() => {
+      applyLoadingMsg.destroy()
+    })
+  }, 500)
 }
 
 function clearFilter () {

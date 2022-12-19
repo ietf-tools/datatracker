@@ -84,7 +84,7 @@ class Command(BaseCommand):
                     email.origin = email.person.user.username if email.person.user_id else ('script: %s deactivation' % options['reason'])
                     email.save()
                     PersonEvent.objects.create(person=email.person, type='email_address_deactivated',
-                        desc="Deactivated the email addres <%s>. Reason: %s" % (email.address, options['reason']) )
+                        desc="Deactivated the email address <%s>. Reason: %s" % (email.address, options['reason']) )
                 else:
                     if email is None:
                         not_found.append(a)

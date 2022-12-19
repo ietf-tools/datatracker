@@ -1,5 +1,5 @@
 <template lang="pug">
-.agenda-mobile-bar(v-if='agendaStore.viewport < 990')
+.agenda-mobile-bar(v-if='siteStore.viewport < 990')
   button(@click='agendaStore.$patch({ filterShown: true })')
     i.bi.bi-filter-square-fill.me-2
     span Filters
@@ -31,6 +31,8 @@ import {
 } from 'naive-ui'
 
 import { useAgendaStore } from './store'
+import { useSiteStore } from '../shared/store'
+import { getUrl } from '../shared/urls'
 
 // MESSAGE PROVIDER
 
@@ -39,6 +41,7 @@ const message = useMessage()
 // STORES
 
 const agendaStore = useAgendaStore()
+const siteStore = useSiteStore()
 
 // Download Ics Options
 
@@ -62,11 +65,11 @@ function downloadIcs (key) {
   let icsUrl = ''
   if (agendaStore.pickerMode) {
     const sessionKeywords = agendaStore.scheduleAdjusted.map(s => s.sessionKeyword)
-    icsUrl = `/meeting/${agendaStore.meeting.number}/agenda.ics?show=${sessionKeywords.join(',')}`
+    icsUrl = `${getUrl('meetingCalIcs', { meetingNumber: agendaStore.meeting.number })}?show=${sessionKeywords.join(',')}`
   } else if (agendaStore.selectedCatSubs.length > 0) {
-    icsUrl = `/meeting/${agendaStore.meeting.number}/agenda.ics?show=${agendaStore.selectedCatSubs.join(',')}`
+    icsUrl = `${getUrl('meetingCalIcs', { meetingNumber: agendaStore.meeting.number })}?show=${agendaStore.selectedCatSubs.join(',')}`
   } else {
-    icsUrl = `/meeting/${agendaStore.meeting.number}/agenda.ics`
+    icsUrl = `${getUrl('meetingCalIcs', { meetingNumber: agendaStore.meeting.number })}`
   }
   if (key === 'subscribe') {
     window.location.assign(`webcal://${window.location.host}${icsUrl}`)

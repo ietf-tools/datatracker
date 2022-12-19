@@ -7,20 +7,34 @@
     span #[strong IETF {{agendaStore.meeting.number}}] Meeting Agenda {{titleExtra}}
     .meeting-h1-badges.d-none.d-sm-flex
       span.meeting-warning(v-if='agendaStore.meeting.warningNote') {{agendaStore.meeting.warningNote}}
-      span.meeting-beta BETA
   h4
     span {{agendaStore.meeting.city}}, {{ meetingDate }}
     h6.float-end.d-none.d-lg-inline(v-if='meetingUpdated') #[span.text-muted Updated:] {{ meetingUpdated }}
 
   .agenda-topnav.my-3
     meeting-navigation
-    n-button.d-none.d-sm-flex(
-      quaternary
-      @click='toggleSettings'
-      )
-      template(#icon)
-        i.bi.bi-gear
-      span Settings
+    .agenda-topnav-right.d-none.d-md-flex
+      n-button(
+        quaternary
+        @click='startTour'
+        )
+        template(#icon)
+          i.bi.bi-question-square
+        span Help
+      n-button(
+        quaternary
+        @click='toggleShare'
+        )
+        template(#icon)
+          i.bi.bi-share
+        span Share
+      n-button(
+        quaternary
+        @click='toggleSettings'
+        )
+        template(#icon)
+          i.bi.bi-gear
+        span Settings
 
   .row
     .col
@@ -54,7 +68,7 @@
               @click='setTimezone(`UTC`)'
               ) UTC
           n-select.agenda-timezone-ddn(
-            v-if='agendaStore.viewport > 1250'
+            v-if='siteStore.viewport > 1250'
             v-model:value='agendaStore.timezone'
             :options='timezones'
             placeholder='Select Time Zone'
@@ -134,10 +148,11 @@
     // -----------------------------------
     // -> Anchored Day Quick Access Menu
     // -----------------------------------
-    .col-auto.d-print-none(v-if='agendaStore.viewport >= 990')
+    .col-auto.d-print-none(v-if='siteStore.viewport >= 990')
       agenda-quick-access
 
   agenda-mobile-bar
+  agenda-share-modal(v-model:shown='state.shareModalShown')
 </template>
 
 <script setup>
@@ -160,12 +175,17 @@ import AgendaScheduleList from './AgendaScheduleList.vue'
 import AgendaScheduleCalendar from './AgendaScheduleCalendar.vue'
 import AgendaQuickAccess from './AgendaQuickAccess.vue'
 import AgendaSettings from './AgendaSettings.vue'
+import AgendaShareModal from './AgendaShareModal.vue'
 import AgendaMobileBar from './AgendaMobileBar.vue'
 import MeetingNavigation from './MeetingNavigation.vue'
 
 import timezones from '../shared/timezones'
+import { initTour } from './tour'
 
 import { useAgendaStore } from './store'
+import { useSiteStore } from '../shared/store'
+
+import './agenda.scss'
 
 // MESSAGE PROVIDER
 
@@ -174,6 +194,7 @@ const message = useMessage()
 // STORES
 
 const agendaStore = useAgendaStore()
+const siteStore = useSiteStore()
 
 // ROUTER
 
@@ -184,6 +205,7 @@ const route = useRoute()
 
 const state = reactive({
   searchText: '',
+  shareModalShown: false
 })
 
 // REFS
@@ -215,7 +237,56 @@ watch(() => agendaStore.meetingDays, () => {
   })
 })
 
-watch(() => agendaStore.isLoaded, handleCurrentMeetingRedirect)
+watch(() => agendaStore.isLoaded, () => {
+  let resetQuery = false
+  if (route.query.filters) {
+    // Handle ?filters= parameter
+    const keywords = route.query.filters.split(',').map(k => k.trim()).filter(k => !!k)
+    if (keywords?.length > 0) {
+      agendaStore.$patch({
+        selectedCatSubs: keywords
+      })
+    }
+    resetQuery = true
+  }
+  if (route.query.show) {
+    // Handle ?show= parameter
+    const keywords = route.query.show.split(',').map(k => k.trim()).filter(k => !!k)
+    if (keywords?.length > 0) {
+      const pickedIds = []
+      for (const ev of agendaStore.scheduleAdjusted) {
+        if (keywords.includes(ev.sessionKeyword)) {
+          pickedIds.push(ev.id)
+        }
+      }
+      if (pickedIds.length > 0) {
+        agendaStore.$patch({
+          pickerMode: true,
+          pickerModeView: true,
+          pickedEvents: pickedIds
+        })
+      }
+    }
+    resetQuery = true
+  }
+  if (route.query.pick) {
+    // Handle legacy /personalize path (open picker mode)
+    agendaStore.$patch({ pickerMode: true })
+    resetQuery = true
+  }
+  if (route.query.tz) {
+    // Handle tz param
+    agendaStore.$patch({ timezone: route.query.tz })
+    resetQuery = true
+  }
+
+  if (resetQuery) {
+    agendaStore.persistMeetingPreferences()
+    router.replace({ query: null })
+  }
+
+  handleCurrentMeetingRedirect()
+})
 
 // COMPUTED
 
@@ -227,8 +298,18 @@ const titleExtra = computed(() => {
   return title
 })
 const meetingDate = computed(() => {
-  const start = DateTime.fromISO(agendaStore.meeting.startDate, { zone: agendaStore.meeting.timezone }).setZone(agendaStore.timezone)
-  const end = DateTime.fromISO(agendaStore.meeting.endDate, { zone: agendaStore.meeting.timezone }).setZone(agendaStore.timezone)
+  // Adjust to first meeting start time (to ensure proper start date when switching timezones)
+  const firstEventStartTime = { hour: 0, minute: 0 }
+  if (agendaStore.schedule.length > 0) {
+    const evStartObj = DateTime.fromISO(agendaStore.schedule[0].startDateTime, { zone: agendaStore.meeting.timezone }).toObject()
+    firstEventStartTime.hour = evStartObj.hour
+    firstEventStartTime.minute = evStartObj.minute
+  }
+
+  // Adjust start and end dates for current timezone
+  const start = DateTime.fromISO(agendaStore.meeting.startDate, { zone: agendaStore.meeting.timezone }).set(firstEventStartTime).setZone(agendaStore.timezone)
+  const end = DateTime.fromISO(agendaStore.meeting.endDate, { zone: agendaStore.meeting.timezone }).set({ hour: 23, minute: 59}).setZone(agendaStore.timezone)
+
   if (start.month === end.month) {
     return `${start.toFormat('MMMM d')} - ${end.toFormat('d, y')}`
   } else {
@@ -236,7 +317,14 @@ const meetingDate = computed(() => {
   }
 })
 const meetingUpdated = computed(() => {
-  return agendaStore.meeting.updated ? DateTime.fromISO(agendaStore.meeting.updated).setZone(agendaStore.timezone).toFormat(`DD 'at' tt ZZZZ`) : false
+  if (!agendaStore.meeting.updated) { return false }
+  
+  const updatedDatetime = DateTime.fromISO(agendaStore.meeting.updated).setZone(agendaStore.timezone)
+  if (!updatedDatetime.isValid || updatedDatetime < DateTime.fromISO('1980-01-01')) {
+    return false
+  }
+  
+  return updatedDatetime.toFormat(`DD 'at' T ZZZZ`)
 })
 const colorLegendShown = computed(() => {
   return agendaStore.colorPickerVisible || (agendaStore.colorLegendShown && Object.keys(agendaStore.colorAssignments).length > 0)
@@ -280,6 +368,18 @@ function toggleSettings () {
   agendaStore.$patch({
     settingsShown: !agendaStore.settingsShown
   })
+}
+
+function toggleShare () {
+  state.shareModalShown = !state.shareModalShown
+}
+
+function startTour () {
+  const tour = initTour({
+    mobileMode: siteStore.viewport < 990,
+    pickerMode: agendaStore.pickerMode
+  })
+  tour.start()
 }
 
 // -> Go to current meeting if not provided
@@ -363,15 +463,6 @@ onMounted(() => {
   }
 })
 
-// CREATED
-
-// -> Handle loading tab directly based on URL
-if (window.location.pathname.indexOf('-utc') >= 0) {
-  agendaStore.$patch({ timezone: 'UTC' })
-} else if (window.location.pathname.indexOf('personalize') >= 0) {
-  // state.currentTab = 'personalize'
-}
-
 </script>
 
 <style lang="scss">
@@ -390,18 +481,25 @@ if (window.location.pathname.indexOf('-utc') >= 0) {
   &-topnav {
     position: relative;
 
-    > button {
+    &-right {
       position: absolute;
       top: 5px;
       right: 0;
+      display: flex;
 
-      .bi {
-        transition: transform 1s ease;
+      button + button {
+        margin-left: 5px;
       }
 
-      &:hover {
+      > button:last-child {
         .bi {
-          transform: rotate(180deg);
+          transition: transform 1s ease;
+        }
+
+        &:hover {
+          .bi {
+            transform: rotate(180deg);
+          }
         }
       }
     }

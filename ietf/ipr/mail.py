@@ -3,12 +3,13 @@
 
 
 import base64
-import email
 import datetime
 from dateutil.tz import tzoffset
 import os
-import pytz
 import re
+
+from email import message_from_bytes
+from email.utils import parsedate_tz
 
 from django.template.loader import render_to_string
 from django.utils.encoding import force_text, force_bytes
@@ -50,7 +51,7 @@ def parsedate_to_datetime(date):
     http://python.readthedocs.org/en/latest/library/email.util.html
     """
     try:
-        tuple = email.utils.parsedate_tz(date)
+        tuple = parsedate_tz(date)
         if not tuple:
             return None
         tz = tuple[-1]
@@ -62,10 +63,12 @@ def parsedate_to_datetime(date):
 
 def utc_from_string(s):
     date = parsedate_to_datetime(s)
-    if is_aware(date):
-        return date.astimezone(pytz.utc).replace(tzinfo=None)
+    if date is None:
+        return None
+    elif is_aware(date):
+        return date.astimezone(datetime.timezone.utc)
     else:
-        return date
+        return date.replace(tzinfo=datetime.timezone.utc)
 
 # ----------------------------------------------------------------
 # Email Functions
@@ -174,7 +177,7 @@ def process_response_email(msg):
     a matching value in the reply_to field, associated to an IPR disclosure through
     IprEvent.  Create a Message object for the incoming message and associate it to
     the original message via new IprEvent"""
-    message = email.message_from_bytes(force_bytes(msg))
+    message = message_from_bytes(force_bytes(msg))
     to = message.get('To', '')
 
     # exit if this isn't a response we're interested in (with plus addressing)

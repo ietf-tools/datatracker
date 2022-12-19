@@ -43,6 +43,7 @@ from ietf.utils.draft_search import normalize_draftname
 from ietf.utils.mail import send_mail, send_mail_message
 from ietf.utils.response import permission_denied
 from ietf.utils.text import text_to_dict
+from ietf.utils.timezone import datetime_from_date, datetime_today, DEADLINE_TZINFO
 
 # ----------------------------------------------------------------
 # Globals
@@ -147,15 +148,14 @@ def ipr_rfc_number(disclosureDate, thirdPartyDisclosureFlag):
     # made on 1993-07-23, which is more than a year after RFC 1310.
 
     # RFC publication date comes from the RFC Editor announcement
-    # TODO: These times are tzinfo=pytz.utc, but disclosure times are offset-naive
     ipr_rfc_pub_datetime = {
-        1310 : datetime.datetime(1992,  3, 13,  0,  0),
-        1802 : datetime.datetime(1994,  3, 23,  0,  0),
-        2026 : datetime.datetime(1996, 10, 29,  0,  0),
-        3668 : datetime.datetime(2004,  2, 18,  0,  0),
-        3979 : datetime.datetime(2005,  3,  2,  2, 23),
-        4879 : datetime.datetime(2007,  4, 10, 18, 21),
-        8179 : datetime.datetime(2017,  5, 31, 23,  1),
+        1310 : datetime.datetime(1992,  3, 13,  0,  0, tzinfo=datetime.timezone.utc),
+        1802 : datetime.datetime(1994,  3, 23,  0,  0, tzinfo=datetime.timezone.utc),
+        2026 : datetime.datetime(1996, 10, 29,  0,  0, tzinfo=datetime.timezone.utc),
+        3668 : datetime.datetime(2004,  2, 18,  0,  0, tzinfo=datetime.timezone.utc),
+        3979 : datetime.datetime(2005,  3,  2,  2, 23, tzinfo=datetime.timezone.utc),
+        4879 : datetime.datetime(2007,  4, 10, 18, 21, tzinfo=datetime.timezone.utc),
+        8179 : datetime.datetime(2017,  5, 31, 23,  1, tzinfo=datetime.timezone.utc),
     }
 
     if disclosureDate < ipr_rfc_pub_datetime[1310]:
@@ -187,7 +187,7 @@ def ajax_search(request):
     if not q:
         objs = IprDisclosureBase.objects.none()
     else:
-        query = Q()
+        query = Q()  # all objects returned if no other terms in the queryset
         for t in q:
             query &= Q(title__icontains=t)
 
@@ -396,7 +396,7 @@ def email(request, id):
                 type_id = 'msgout',
                 by = request.user.person,
                 disclosure = ipr,
-                response_due = form.cleaned_data['response_due'],
+                response_due = datetime_from_date(form.cleaned_data['response_due'], DEADLINE_TZINFO),
                 message = msg,
             )
 
@@ -590,7 +590,7 @@ def notify(request, id, type):
                     type_id = form.cleaned_data['type'],
                     by = request.user.person,
                     disclosure = ipr,
-                    response_due = datetime.datetime.now().date() + datetime.timedelta(days=30),
+                    response_due = datetime_today(DEADLINE_TZINFO) + datetime.timedelta(days=30),
                     message = message,
                 )
             messages.success(request,'Notifications sent')

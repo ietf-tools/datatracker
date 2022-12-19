@@ -34,7 +34,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-import datetime
 import glob
 import io
 import json
@@ -42,6 +41,7 @@ import os
 import re
 
 from urllib.parse import quote
+from pathlib import Path
 
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
@@ -49,6 +49,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django import forms
+from django.contrib.staticfiles import finders
 
 
 import debug                            # pyflakes:ignore
@@ -61,9 +62,9 @@ from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_wit
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
-    add_events_message_info, get_unicode_document_content, build_doc_meta_block,
+    add_events_message_info, get_unicode_document_content,
     augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event,
-    build_doc_supermeta_block, build_file_urls, update_documentauthors, fuzzy_find_documents,
+    build_file_urls, update_documentauthors, fuzzy_find_documents,
     bibxml_for_draft)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role, Group
@@ -84,6 +85,7 @@ from ietf.utils import markup_txt, log, markdown
 from ietf.utils.draft import PlaintextDraft
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
+from ietf.utils.timezone import date_today
 
 
 def render_document_top(request, doc, tab, name):
@@ -139,12 +141,12 @@ def interesting_doc_relations(doc):
 
     return interesting_relations_that, interesting_relations_that_doc
 
-def document_main(request, name, rev=None):
+def document_main(request, name, rev=None, document_html=False):
     doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
 
     # take care of possible redirections
     aliases = DocAlias.objects.filter(docs=doc).values_list("name", flat=True)
-    if rev==None and doc.type_id == "draft" and not name.startswith("rfc"):
+    if document_html is False and rev==None and doc.type_id == "draft" and not name.startswith("rfc"):
         for a in aliases:
             if a.startswith("rfc"):
                 return redirect("ietf.doc.views_doc.document_main", name=a)
@@ -160,7 +162,7 @@ def document_main(request, name, rev=None):
     snapshot = False
 
     gh = None
-    if rev != None:
+    if rev:
         # find the entry in the history
         for h in doc.history_set.order_by("-time"):
             if rev == h.rev:
@@ -168,7 +170,7 @@ def document_main(request, name, rev=None):
                 doc = h
                 break
 
-        if not snapshot:
+        if not snapshot and document_html is False:
             return redirect('ietf.doc.views_doc.document_main', name=name)
 
         if doc.type_id == "charter":
@@ -183,9 +185,8 @@ def document_main(request, name, rev=None):
 
     top = render_document_top(request, doc, "status", name)
 
-
     telechat = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
-    if telechat and (not telechat.telechat_date or telechat.telechat_date < datetime.date.today()):
+    if telechat and (not telechat.telechat_date or telechat.telechat_date < date_today(settings.TIME_ZONE)):
        telechat = None
 
 
@@ -445,8 +446,22 @@ def document_main(request, name, rev=None):
         else:
             stream_desc = "(None)"
 
-        return render(request, "doc/document_draft.html",
+        html = None
+        js = None
+        css = None
+        if document_html:
+            html = doc.html_body()
+            if request.COOKIES.get("pagedeps") == "inline":
+                js = Path(finders.find("ietf/js/document_html.js")).read_text()
+                css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
+                if html:
+                    css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
+        return render(request, "doc/document_draft.html" if document_html is False else "doc/document_html.html",
                                   dict(doc=doc,
+                                       document_html=document_html,
+                                       css=css,
+                                       js=js,
+                                       html=html,
                                        group=group,
                                        top=top,
                                        name=name,
@@ -518,6 +533,7 @@ def document_main(request, name, rev=None):
                                        review_assignments=review_assignments,
                                        no_review_from_teams=no_review_from_teams,
                                        due_date=due_date,
+                                       diff_revisions=get_diff_revisions(request, name, doc if isinstance(doc,Document) else doc.doc) if document_html else None
                                        ))
 
     if doc.type_id == "charter":
@@ -641,9 +657,7 @@ def document_main(request, name, rev=None):
                                        sorted_relations=sorted_relations,
                                        ))
 
-    # TODO : Add "recording", and "bluesheets" here when those documents are appropriately
-    #        created and content is made available on disk
-    if doc.type_id in ("slides", "agenda", "minutes", "bluesheets","procmaterials",):
+    if doc.type_id in ("slides", "agenda", "minutes", "bluesheets", "procmaterials",):
         can_manage_material = can_manage_materials(request.user, doc.group)
         presentations = doc.future_presentations()
         if doc.uploaded_filename:
@@ -725,6 +739,29 @@ def document_main(request, name, rev=None):
                            assignments=assignments,
                       ))
 
+    if doc.type_id in ("chatlog", "polls"):
+        if isinstance(doc,DocHistory):
+            session = doc.doc.sessionpresentation_set.last().session
+        else:
+            session = doc.sessionpresentation_set.last().session
+        pathname = Path(session.meeting.get_materials_path()) / doc.type_id / doc.uploaded_filename
+        content = get_unicode_document_content(doc.name, str(pathname))
+        return render(
+            request, 
+            f"doc/document_{doc.type_id}.html",
+            dict(
+                doc=doc,
+                top=top,
+                content=content,
+                revisions=revisions,
+                latest_rev=latest_rev,
+                snapshot=snapshot,
+                session=session,
+            )
+        )
+
+
+
     raise Http404("Document not found: %s" % (name + ("-%s"%rev if rev else "")))
 
 
@@ -765,7 +802,6 @@ def document_raw_id(request, name, rev=None, ext=None):
     except:
         raise Http404
 
-
 def document_html(request, name, rev=None):
     found = fuzzy_find_documents(name, rev)
     num_found = found.documents.count()
@@ -789,30 +825,7 @@ def document_html(request, name, rev=None):
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
-    if doc.type_id in ['draft',]:
-        doc.supermeta = build_doc_supermeta_block(doc)
-        doc.meta = build_doc_meta_block(doc, settings.HTMLIZER_URL_PREFIX)
-
-    doccolor = 'bgwhite' # Unknown
-    if doc.type_id=='draft':
-        if doc.is_rfc():
-            if doc.related_that('obs'):
-                doccolor = 'bgbrown'
-            else:
-                doccolor = {
-                    'ps'   : 'bgblue',
-                    'exp'  : 'bgyellow',
-                    'inf'  : 'bgorange',
-                    'ds'   : 'bgcyan',
-                    'hist' : 'bggrey',
-                    'std'  : 'bggreen',
-                    'bcp'  : 'bgmagenta',
-                    'unkn' : 'bgwhite',
-                }.get(doc.std_level_id, 'bgwhite')
-        else:
-            doccolor = 'bgred' # Draft
-
-    return render(request, "doc/document_html.html", {"doc":doc, "doccolor":doccolor })
+    return document_main(request, name, rev=rev, document_html=True)
 
 def document_pdfized(request, name, rev=None, ext=None):
 
@@ -889,44 +902,77 @@ def document_email(request,name):
                  )
 
 
-def document_history(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
-    top = render_document_top(request, doc, "history", name)
+def get_diff_revisions(request, name, doc):
+    diffable = any(
+        [
+            name.startswith(prefix)
+            for prefix in [
+                "rfc",
+                "draft",
+                "charter",
+                "conflict-review",
+                "status-change",
+            ]
+        ]
+    )
+
+    if not diffable:
+        return []
 
     # pick up revisions from events
     diff_revisions = []
 
-    diffable = [ name.startswith(prefix) for prefix in ["rfc", "draft", "charter", "conflict-review", "status-change", ]]
-    if any(diffable):
-        diff_documents = [ doc ]
-        diff_documents.extend(Document.objects.filter(docalias__relateddocument__source=doc, docalias__relateddocument__relationship="replaces"))
+    diff_documents = [doc]
+    diff_documents.extend(
+        Document.objects.filter(
+            docalias__relateddocument__source=doc,
+            docalias__relateddocument__relationship="replaces",
+        )
+    )
 
-        if doc.get_state_slug() == "rfc":
-            e = doc.latest_event(type="published_rfc")
-            aliases = doc.docalias.filter(name__startswith="rfc")
-            if aliases:
-                name = aliases[0].name
-            diff_revisions.append((name, "", e.time if e else doc.time, name))
+    if doc.get_state_slug() == "rfc":
+        e = doc.latest_event(type="published_rfc")
+        aliases = doc.docalias.filter(name__startswith="rfc")
+        if aliases:
+            name = aliases[0].name
+        diff_revisions.append((name, "", e.time if e else doc.time, name))
 
-        seen = set()
-        for e in NewRevisionDocEvent.objects.filter(type="new_revision", doc__in=diff_documents).select_related('doc').order_by("-time", "-id"):
-            if (e.doc.name, e.rev) in seen:
-                continue
+    seen = set()
+    for e in (
+        NewRevisionDocEvent.objects.filter(type="new_revision", doc__in=diff_documents)
+        .select_related("doc")
+        .order_by("-time", "-id")
+    ):
+        if (e.doc.name, e.rev) in seen:
+            continue
 
-            seen.add((e.doc.name, e.rev))
+        seen.add((e.doc.name, e.rev))
 
-            url = ""
-            if name.startswith("charter"):
-                url = request.build_absolute_uri(urlreverse('ietf.doc.views_charter.charter_with_milestones_txt', kwargs=dict(name=e.doc.name, rev=e.rev)))
-            elif name.startswith("conflict-review"):
-                url = find_history_active_at(e.doc, e.time).get_href()
-            elif name.startswith("status-change"):
-                url = find_history_active_at(e.doc, e.time).get_href()
-            elif name.startswith("draft") or name.startswith("rfc"):
-                # rfcdiff tool has special support for IDs
-                url = e.doc.name + "-" + e.rev
+        url = ""
+        if name.startswith("charter"):
+            url = request.build_absolute_uri(
+                urlreverse(
+                    "ietf.doc.views_charter.charter_with_milestones_txt",
+                    kwargs=dict(name=e.doc.name, rev=e.rev),
+                )
+            )
+        elif name.startswith("conflict-review"):
+            url = find_history_active_at(e.doc, e.time).get_href()
+        elif name.startswith("status-change"):
+            url = find_history_active_at(e.doc, e.time).get_href()
+        elif name.startswith("draft") or name.startswith("rfc"):
+            # rfcdiff tool has special support for IDs
+            url = e.doc.name + "-" + e.rev
 
-            diff_revisions.append((e.doc.name, e.rev, e.time, url))
+        diff_revisions.append((e.doc.name, e.rev, e.time, url))
+
+    return diff_revisions
+
+
+def document_history(request, name):
+    doc = get_object_or_404(Document, docalias__name=name)
+    top = render_document_top(request, doc, "history", name)
+    diff_revisions = get_diff_revisions(request, name, doc)
 
     # grab event history
     events = doc.docevent_set.all().order_by("-time", "-id").select_related("by")
@@ -968,7 +1014,7 @@ def document_bibtex(request, name, rev=None):
 
     latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
     replaced_by = [d.name for d in doc.related_that("replaces")]
-    published = doc.latest_event(type="published_rfc")
+    published = doc.latest_event(type="published_rfc") is not None
     rfc = latest_revision.doc if latest_revision and latest_revision.doc.get_state_slug() == "rfc" else None
 
     if rev != None and rev != doc.rev:
@@ -1386,11 +1432,12 @@ def telechat_date(request, name):
 
     warnings = []
     if e and e.telechat_date and doc.type.slug != 'charter':
-        if e.telechat_date==datetime.date.today():
+        today = date_today(settings.TIME_ZONE)
+        if e.telechat_date == today:
             warnings.append( "This document is currently scheduled for today's telechat. "
                             +"Please set the returning item bit carefully.")
 
-        elif e.telechat_date<datetime.date.today() and has_same_ballot(doc,e.telechat_date):
+        elif e.telechat_date < today and has_same_ballot(doc,e.telechat_date):
             initial_returning_item = True
             warnings.append(  "This document appears to have been on a previous telechat with the same ballot, "
                             +"so the returning item bit has been set. Clear it if that is not appropriate.")

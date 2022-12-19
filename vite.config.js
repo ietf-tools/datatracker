@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import { resolve } from 'path'
 import vue from '@vitejs/plugin-vue'
 import servePreviewAssets from './dev/vite-plugins/serve-preview-assets'
+import precompileLodashTemplates from './dev/vite-plugins/precompile-lodash-templates'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
@@ -12,13 +13,19 @@ export default defineConfig(({ command, mode }) => {
       manifest: true,
       rollupOptions: {
         input: {
-          main: 'client/main.js'
+          main: 'client/main.js',
+          embedded: 'client/embedded.js'
         }
       }
     },
     cacheDir: '.vite',
     plugins: [
-      vue()
+      vue(),
+      precompileLodashTemplates({
+        include: [
+          '**/shared/urls.js'
+        ]
+      })
     ],
     publicDir: 'ietf/static/public',
     server: {

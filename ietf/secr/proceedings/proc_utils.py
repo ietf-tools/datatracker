@@ -9,6 +9,7 @@ This module contains all the functions for generating static proceedings pages
 '''
 import datetime
 import os
+import pytz
 import re
 import subprocess
 from urllib.parse import urlencode
@@ -24,6 +25,7 @@ from ietf.meeting.models import Meeting, SessionPresentation, TimeSlot, SchedTim
 from ietf.person.models import Person
 from ietf.utils.log import log
 from ietf.utils.mail import send_mail
+from ietf.utils.timezone import make_aware
 
 AUDIO_FILE_RE = re.compile(r'ietf(?P<number>[\d]+)-(?P<room>.*)-(?P<time>[\d]{8}-[\d]{4})')
 VIDEO_TITLE_RE = re.compile(r'IETF(?P<number>[\d]+)-(?P<name>.*)-(?P<date>\d{8})-(?P<time>\d{4})')
@@ -32,7 +34,7 @@ VIDEO_TITLE_RE = re.compile(r'IETF(?P<number>[\d]+)-(?P<name>.*)-(?P<date>\d{8})
 def _get_session(number,name,date,time):
     '''Lookup session using data from video title'''
     meeting = Meeting.objects.get(number=number)
-    timeslot_time = datetime.datetime.strptime(date + time,'%Y%m%d%H%M')
+    timeslot_time = make_aware(datetime.datetime.strptime(date + time,'%Y%m%d%H%M'), meeting.tz())
     try:
         assignment = SchedTimeSessAssignment.objects.get(
             schedule__in = [meeting.schedule, meeting.schedule.base],
@@ -45,7 +47,7 @@ def _get_session(number,name,date,time):
     return assignment.session
 
 def _get_urls_from_json(doc):
-    '''Returns list of dictonary titel,url from search results'''
+    '''Returns list of dictionary title,url from search results'''
     urls = []
     for item in doc['items']:
         title = item['snippet']['title']
@@ -102,7 +104,7 @@ def get_timeslot_for_filename(filename):
         try:
             meeting = Meeting.objects.get(number=match.groupdict()['number'])
             room_mapping = {normalize_room_name(room.name): room.name for room in meeting.room_set.all()}
-            time = datetime.datetime.strptime(match.groupdict()['time'],'%Y%m%d-%H%M')
+            time = make_aware(datetime.datetime.strptime(match.groupdict()['time'],'%Y%m%d-%H%M'), meeting.tz())
             slots = TimeSlot.objects.filter(
                 meeting=meeting,
                 location__name=room_mapping[match.groupdict()['room']],
@@ -201,17 +203,22 @@ def send_audio_import_warning(unmatched_files):
 # End Recording Functions
 # -------------------------------------------------
 
-def get_progress_stats(sdate,edate):
+def get_progress_stats(sdate, edate):
     '''
     This function takes a date range and produces a dictionary of statistics / objects for
     use in a progress report.  Generally the end date will be the date of the last meeting
     and the start date will be the date of the meeting before that.
+
+    Data between midnight UTC on the specified dates are included in the stats.
     '''
+    sdatetime = pytz.utc.localize(datetime.datetime.combine(sdate, datetime.time()))
+    edatetime = pytz.utc.localize(datetime.datetime.combine(edate, datetime.time()))
+
     data = {}
     data['sdate'] = sdate
     data['edate'] = edate
 
-    events = DocEvent.objects.filter(doc__type='draft',time__gte=sdate,time__lt=edate)
+    events = DocEvent.objects.filter(doc__type='draft', time__gte=sdatetime, time__lt=edatetime)
     
     data['actions_count'] = events.filter(type='iesg_approved').count()
     data['last_calls_count'] = events.filter(type='sent_last_call').count()
@@ -226,7 +233,7 @@ def get_progress_stats(sdate,edate):
     data['updated_drafts_count'] = len(set([ e.doc_id for e in update_events ]))
     
     # Calculate Final Four Weeks stats (ffw)
-    ffwdate = edate - datetime.timedelta(days=28)
+    ffwdate = edatetime - datetime.timedelta(days=28)
     ffw_new_count = events.filter(time__gte=ffwdate,newrevisiondocevent__rev='00').count()
     try:
         ffw_new_percent = format(ffw_new_count / float(data['new_drafts_count']),'.0%')
@@ -257,14 +264,14 @@ def get_progress_stats(sdate,edate):
     data['new_groups'] = Group.objects.filter(
         type='wg',
         groupevent__changestategroupevent__state='active',
-        groupevent__time__gte=sdate,
-        groupevent__time__lt=edate)
+        groupevent__time__gte=sdatetime,
+        groupevent__time__lt=edatetime)
         
     data['concluded_groups'] = Group.objects.filter(
         type='wg',
         groupevent__changestategroupevent__state='conclude',
-        groupevent__time__gte=sdate,
-        groupevent__time__lt=edate)
+        groupevent__time__gte=sdatetime,
+        groupevent__time__lt=edatetime)
 
     return data
 

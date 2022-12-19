@@ -51,7 +51,7 @@ test.describe('past - desktop', () => {
     // Visit agenda page and await Meeting Data API call to complete
     await Promise.all([
       page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
-      page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
+      page.goto(`/meeting/${meetingData.meeting.number}/agenda`)
     ])
 
     // Wait for page to be ready
@@ -68,7 +68,7 @@ test.describe('past - desktop', () => {
     const updatedDateTime = DateTime.fromISO(meetingData.meeting.updated)
       .setZone(meetingData.meeting.timezone)
       .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
+      .toFormat('DD \'at\' T ZZZZ')
     await expect(page.locator('.agenda h6').first(), 'should have meeting last updated datetime').toContainText(updatedDateTime)
 
     // NAV
@@ -81,9 +81,15 @@ test.describe('past - desktop', () => {
       await expect(navLocator.last()).toContainText('Plaintext')
     })
 
-    // SETTINGS BUTTON
+    // RIGHT-SIDE BUTTONS
 
-    await expect(page.locator('.agenda .meeting-nav + button')).toContainText('Settings')
+    await test.step('has the correct right side buttons', async () => {
+      const btnsLocator = page.locator('.agenda .agenda-topnav-right > button')
+      await expect(btnsLocator).toHaveCount(3)
+      await expect(btnsLocator.first()).toContainText('Help')
+      await expect(btnsLocator.nth(1)).toContainText('Share')
+      await expect(btnsLocator.last()).toContainText('Settings')
+    })
   })
 
   test('agenda schedule list header', async ({ page }) => {
@@ -130,7 +136,7 @@ test.describe('past - desktop', () => {
       const localDateTime = DateTime.fromISO(meetingData.meeting.updated)
         .setZone(BROWSER_TIMEZONE)
         .setLocale(BROWSER_LOCALE)
-        .toFormat('DD \'at\' tt ZZZZ')
+        .toFormat('DD \'at\' T ZZZZ')
       await expect(page.locator('.agenda h6').first()).toContainText(localDateTime)
       // Switch to UTC
       await tzUtcBtnLocator.click()
@@ -139,7 +145,7 @@ test.describe('past - desktop', () => {
       const utcDateTime = DateTime.fromISO(meetingData.meeting.updated)
         .setZone('utc')
         .setLocale(BROWSER_LOCALE)
-        .toFormat('DD \'at\' tt ZZZZ')
+        .toFormat('DD \'at\' T ZZZZ')
       await expect(page.locator('.agenda h6').first()).toContainText(utcDateTime)
       await expect(page.locator('.agenda .agenda-timezone-ddn')).toContainText('UTC')
       // Switch back to meeting timezone
@@ -191,7 +197,7 @@ test.describe('past - desktop', () => {
       if (event.location?.short) {
         // Has floor badge
         await expect(row.locator('.agenda-table-cell-room > a')).toContainText(event.room)
-        await expect(row.locator('.agenda-table-cell-room > a')).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/floor-plan-neue?room=${xslugify(event.room)}`)
+        await expect(row.locator('.agenda-table-cell-room > a')).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/floor-plan?room=${xslugify(event.room)}`)
         await expect(row.locator('.agenda-table-cell-room > .badge')).toContainText(event.location.short)
       } else {
         // No floor badge
@@ -368,12 +374,18 @@ test.describe('past - desktop', () => {
     const materialsUrl = (new URL(event.agenda.url)).pathname
     const materialsInfo = {
       url: event.agenda.url,
-      slides: _.times(5, idx => ({
-        id: 100000 + idx,
-        title: faker.commerce.productName(),
-        url: `/meeting/${meetingData.meeting.number}/materials/slides-${meetingData.meeting.number}-${event.acronym}-${faker.internet.domainWord()}`,
-        ext: ['pdf', 'html', 'md', 'txt', 'pptx'][idx]
-      })),
+      slides: {
+        decks: _.times(5, idx => ({
+          id: 100000 + idx,
+          title: faker.commerce.productName(),
+          url: `/meeting/${meetingData.meeting.number}/materials/slides-${meetingData.meeting.number}-${event.acronym}-${faker.internet.domainWord()}`,
+          ext: ['pdf', 'html', 'md', 'txt', 'pptx'][idx]
+        })),
+        actions: [{
+          label: 'Propose slides',
+          url: `/meeting/${meetingData.meeting.number}/session/${event.sessionId}/propose_slides`
+        }]
+      },
       minutes: {
         ext: 'md',
         id: 123456,
@@ -427,13 +439,16 @@ test.describe('past - desktop', () => {
     await navLocator.nth(1).click()
     await expect(navLocator.nth(1)).toHaveClass(/active/)
     await expect(navLocator.first()).not.toHaveClass(/active/)
-    const slidesLocator = page.locator('.agenda-eventdetails .detail-text > .list-group > .list-group-item')
-    await expect(slidesLocator).toHaveCount(materialsInfo.slides.length)
-    for (let idx = 0; idx < materialsInfo.slides.length; idx++) {
-      await expect(slidesLocator.nth(idx)).toHaveAttribute('href', materialsInfo.slides[idx].url)
-      await expect(slidesLocator.nth(idx).locator('.bi')).toHaveClass(new RegExp(`bi-filetype-${materialsInfo.slides[idx].ext}`))
-      await expect(slidesLocator.nth(idx).locator('span')).toContainText(materialsInfo.slides[idx].title)
+    const slideDecksLocator = page.locator('.agenda-eventdetails .detail-text .n-card__content > .list-group > .list-group-item')
+    await expect(slideDecksLocator).toHaveCount(materialsInfo.slides.decks.length)
+    for (let idx = 0; idx < materialsInfo.slides.decks.length; idx++) {
+      await expect(slideDecksLocator.nth(idx)).toHaveAttribute('href', materialsInfo.slides.decks[idx].url)
+      await expect(slideDecksLocator.nth(idx).locator('.bi')).toHaveClass(new RegExp(`bi-filetype-${materialsInfo.slides.decks[idx].ext}`))
+      await expect(slideDecksLocator.nth(idx).locator('span')).toContainText(materialsInfo.slides.decks[idx].title)
     }
+    const slideActionButtonLocator = page.locator('.agenda-eventdetails .detail-text .n-card__action > a')
+    await expect(slideActionButtonLocator).toHaveCount(1)
+    await expect(slideActionButtonLocator.first().locator('span')).toContainText('Propose slides')
     // Minutes Tab
     await navLocator.last().click()
     await expect(navLocator.last()).toHaveClass(/active/)
@@ -441,14 +456,17 @@ test.describe('past - desktop', () => {
     await expect(page.locator('.agenda-eventdetails .detail-text > iframe')).toHaveAttribute('src', materialsInfo.minutes.url)
     // Footer Buttons
     const hedgeDocLink = `https://notes.ietf.org/notes-ietf-${meetingData.meeting.number}-${event.type === 'plenary' ? 'plenary' : event.acronym}`
+    const detailsUrl = `/meeting/${meetingData.meeting.number}/session/${event.acronym}/`
     const footerBtnsLocator = page.locator('.agenda-eventdetails .detail-action > a')
-    await expect(footerBtnsLocator).toHaveCount(3)
+    await expect(footerBtnsLocator).toHaveCount(4)
     await expect(footerBtnsLocator.first()).toContainText('Download as tarball')
     await expect(footerBtnsLocator.first()).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.tgz`)
     await expect(footerBtnsLocator.nth(1)).toContainText('Download as PDF')
     await expect(footerBtnsLocator.nth(1)).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.pdf`)
-    await expect(footerBtnsLocator.last()).toContainText('Notepad')
-    await expect(footerBtnsLocator.last()).toHaveAttribute('href', hedgeDocLink)
+    await expect(footerBtnsLocator.nth(2)).toContainText('Notepad')
+    await expect(footerBtnsLocator.nth(2)).toHaveAttribute('href', hedgeDocLink)
+    await expect(footerBtnsLocator.last()).toContainText(`${event.groupAcronym} materials page`)
+    await expect(footerBtnsLocator.last()).toHaveAttribute('href', detailsUrl)
     // Clicking X should close the dialog
     await page.locator('.agenda-eventdetails .n-card-header__extra > .detail-header > button').click()
   })
@@ -483,7 +501,7 @@ test.describe('past - desktop', () => {
     await expect(page.locator('.agenda-eventdetails')).toBeVisible()
     // Slides Tab
     await page.locator('.agenda-eventdetails .detail-nav > a').nth(1).click()
-    await expect(page.locator('.agenda-eventdetails .detail-text')).toContainText('No slides submitted for this session.')
+    await expect(page.locator('.agenda-eventdetails .detail-text .n-card__content')).toContainText('No slides submitted for this session.')
     // Minutes Tab
     await page.locator('.agenda-eventdetails .detail-nav > a').nth(2).click()
     await expect(page.locator('.agenda-eventdetails .detail-text')).toContainText('No minutes submitted for this session.')
@@ -676,7 +694,7 @@ test.describe('past - desktop', () => {
     const localDateTime = DateTime.fromISO(meetingData.meeting.updated)
       .setZone(BROWSER_TIMEZONE)
       .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
+      .toFormat('DD \'at\' T ZZZZ')
     await expect(page.locator('.agenda h6').first()).toContainText(localDateTime)
     // Switch to UTC
     await tzButtonsLocator.last().click()
@@ -685,7 +703,7 @@ test.describe('past - desktop', () => {
     const utcDateTime = DateTime.fromISO(meetingData.meeting.updated)
       .setZone('utc')
       .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
+      .toFormat('DD \'at\' T ZZZZ')
     await expect(page.locator('.agenda h6').first()).toContainText(utcDateTime)
     // Switch back to meeting timezone
     await tzButtonsLocator.first().click()
@@ -761,7 +779,7 @@ test.describe('past - desktop', () => {
 
   test('agenda settings', async ({ page, browserName }) => {
     // Open dialog
-    await page.locator('.meeting-nav + button').click()
+    await page.locator('.agenda-topnav-right > button:last-child').click()
     await expect(page.locator('.agenda-settings')).toBeVisible()
     // Check header elements
     await expect(page.locator('.agenda-settings .n-drawer-header__main > span')).toContainText('Agenda Settings')
@@ -819,7 +837,7 @@ test.describe('past - desktop', () => {
     const localDateTime = DateTime.fromISO(meetingData.meeting.updated)
       .setZone(BROWSER_TIMEZONE)
       .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
+      .toFormat('DD \'at\' T ZZZZ')
     await expect(page.locator('.agenda h6').first()).toContainText(localDateTime)
     // Switch to UTC
     await tzUtcBtnLocator.click()
@@ -828,7 +846,7 @@ test.describe('past - desktop', () => {
     const utcDateTime = DateTime.fromISO(meetingData.meeting.updated)
       .setZone('utc')
       .setLocale(BROWSER_LOCALE)
-      .toFormat('DD \'at\' tt ZZZZ')
+      .toFormat('DD \'at\' T ZZZZ')
     await expect(page.locator('.agenda h6').first()).toContainText(utcDateTime)
     // Switch back to meeting timezone
     await tzMeetingBtnLocator.click()
@@ -884,6 +902,22 @@ test.describe('past - desktop', () => {
     // ------------------------------
     await page.locator('.agenda-settings .agenda-settings-actions > button').last().click()
     await expect(page.locator('.agenda-settings')).not.toBeVisible()
+  })
+
+  // -> SHARE DIALOG
+
+  test('agenda share dialog', async ({ page }) => {
+    // Open dialog
+    await page.locator('.agenda-topnav-right > button:nth-child(2)').click()
+    await expect(page.locator('.agenda-share')).toBeVisible()
+    // Check header elements
+    await expect(page.locator('.agenda-share .n-card-header__main > .agenda-share-header > .bi')).toBeVisible()
+    await expect(page.locator('.agenda-share .n-card-header__main > .agenda-share-header > .bi + span')).toContainText('Share this view')
+    // Check input URL
+    await expect(page.locator('.agenda-share .agenda-share-content input[type=text]')).toHaveValue(`http://localhost:3000/meeting/${meetingData.meeting.number}/agenda`)
+    // Clicking X should close the dialog
+    await page.locator('.agenda-share .n-card-header__extra > .agenda-share-header > button').click()
+    await expect(page.locator('.agenda-share')).not.toBeVisible()
   })
 
   // -> ADD TO CALENDAR
@@ -1000,7 +1034,7 @@ test.describe('past - desktop', () => {
     // Change color legend from settings dialog
     // ----------------------------------------
     // Open dialog
-    await page.locator('.meeting-nav + button').click()
+    await page.locator('.agenda-topnav-right > button:last-child').click()
     await expect(page.locator('.agenda-settings')).toBeVisible()
     // Toggle color legend switch
     await colorLgdSwitchLocator.click()
@@ -1039,7 +1073,7 @@ test.describe('past - desktop', () => {
     // No colored dots should appear
     await expect(page.locator('.agenda .agenda-table-display-event .agenda-table-colorindicator')).toHaveCount(0)
     // Clear all colors from Settings menu
-    await page.locator('.meeting-nav + button').click()
+    await page.locator('.agenda-topnav-right > button:last-child').click()
     await expect(page.locator('.agenda-settings')).toBeVisible()
     await page.locator('.agenda-settings .agenda-settings-actions > button').first().click()
     await page.locator('.n-dropdown-option:has-text("Clear Color")').click()
@@ -1079,7 +1113,7 @@ test.describe('future - desktop', () => {
     // Visit agenda page and await Meeting Data API call to complete
     await Promise.all([
       page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
-      page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
+      page.goto(`/meeting/${meetingData.meeting.number}/agenda`)
     ])
 
     // Wait for page to be ready
@@ -1247,7 +1281,7 @@ test.describe('live - desktop', () => {
     // Visit agenda page and await Meeting Data API call to complete
     await Promise.all([
       page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
-      page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
+      page.goto(`/meeting/${meetingData.meeting.number}/agenda`)
     ])
 
     // Wait for page to be ready
@@ -1283,7 +1317,7 @@ test.describe('live - desktop', () => {
 
   test('live red line toggle', async ({ page }) => {
     // Open settings dialog
-    await page.locator('.meeting-nav + button').click()
+    await page.locator('.agenda-topnav-right > button:last-child').click()
     await expect(page.locator('.agenda-settings')).toBeVisible()
     // Toggle red line switch
     const redlineSwitchLocator = page.locator('#agenda-settings-tgl-redline div[role=switch]')
@@ -1328,7 +1362,7 @@ test.describe('past - small screens', () => {
       // Visit agenda page and await Meeting Data API call to complete
       await Promise.all([
         page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
-        page.goto(`/meeting/${meetingData.meeting.number}/agenda-neue`)
+        page.goto(`/meeting/${meetingData.meeting.number}/agenda`)
       ])
 
       // Wait for page to be ready

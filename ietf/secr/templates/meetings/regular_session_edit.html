@@ -1,5 +1,5 @@
 {% extends "base_site.html" %}
-{% load staticfiles %}
+{% load staticfiles tz %}
 
 {% block title %}Meetings{% endblock %}
 
@@ -19,7 +19,7 @@
 
         <form id="meetings-schedule-form" method="post">{% csrf_token %}
             <div class="inline-related{% if forloop.last %} last-related{% endif %}">
-                <table class="full-width amstable">
+                <table class="full-width amstable">{% timezone meeting.time_zone %}
                     <tbody>
                     <tr>
                         <th scope="row">Day:</th>
@@ -37,10 +37,10 @@
                         <th scope="row">Status:</th>
                         <td>{{ current_status_name }}</td>
                     </tr>
-                     <!-- [html-validate-disable-block element-required-attributes -- FIXME: as_table renders without scope] -->
+                     <!-- [html-validate-disable-block wcag/h63 -- FIXME: as_table renders without scope] -->
                     {{ form.as_table }}
                 </tbody>
-                </table>
+                {% endtimezone %}</table>
             </div> <!-- inline-related -->
 
         <div class="button-group">

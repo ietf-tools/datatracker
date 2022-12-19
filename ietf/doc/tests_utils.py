@@ -5,6 +5,8 @@ import debug  # pyflakes:ignore
 from unittest.mock import patch
 
 from django.db import IntegrityError
+from django.test.utils import override_settings
+from django.utils import timezone
 
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.name.models import DocTagName
@@ -14,7 +16,7 @@ from ietf.person.models import Person
 from ietf.doc.factories import DocumentFactory, WgRfcFactory, WgDraftFactory
 from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor, Document
 from ietf.doc.utils import (update_action_holders, add_state_change_event, update_documentauthors,
-                            fuzzy_find_documents, rebuild_reference_relations)
+                            fuzzy_find_documents, rebuild_reference_relations, build_file_urls)
 from ietf.utils.draft import Draft, PlaintextDraft
 from ietf.utils.xmldraft import XMLDraft
 
@@ -143,12 +145,13 @@ class ActionHoldersTests(TestCase):
         doc = self.doc_in_iesg_state('pub-req')
         doc.action_holders.set([self.ad])
         dah = doc.documentactionholder_set.get(person=self.ad)
-        dah.time_added = datetime.datetime(2020, 1, 1)  # arbitrary date in the past
+        dah.time_added = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)  # arbitrary date in the past
         dah.save()
 
-        self.assertNotEqual(doc.documentactionholder_set.get(person=self.ad).time_added.date(), datetime.date.today())
+        right_now = timezone.now()
+        self.assertLess(doc.documentactionholder_set.get(person=self.ad).time_added, right_now)
         self.update_doc_state(doc, State.objects.get(slug='ad-eval'))
-        self.assertEqual(doc.documentactionholder_set.get(person=self.ad).time_added.date(), datetime.date.today())
+        self.assertGreaterEqual(doc.documentactionholder_set.get(person=self.ad).time_added, right_now)
 
     def test_update_action_holders_add_tag_need_rev(self):
         """Adding need-rev tag adds authors as action holders"""
@@ -291,6 +294,30 @@ class MiscTests(TestCase):
         self.do_fuzzy_find_documents_rfc_test('draft-name-with-number-01')
         self.do_fuzzy_find_documents_rfc_test('draft-name-that-has-two-02-04')
         self.do_fuzzy_find_documents_rfc_test('draft-wild-01-numbers-0312')
+
+    @override_settings(RFC_FILE_TYPES=['pdf'], IDSUBMIT_FILE_TYPES=['xml'])
+    @patch('ietf.doc.utils.os.path.exists', return_value=True)
+    def test_build_file_urls(self, mocked):
+        # a cursory test only - does not check details of how URLs are constructed
+        self.assertEqual(
+            build_file_urls(DocumentFactory(type_id='statchg')), ([], []),
+            'Non-draft Document should return empty sets'
+        )
+
+        with self.assertRaises(AssertionError):
+            build_file_urls(WgDraftFactory(rev=''))
+
+        urls, types = build_file_urls(WgDraftFactory(rev='23'))
+        self.assertEqual(['xml', 'bibtex'], [t for t, _ in urls])
+        self.assertEqual(types, ['xml'])
+
+        urls, types = build_file_urls(WgRfcFactory(rev=''))
+        self.assertEqual(['pdf', 'bibtex'], [t for t, _ in urls])
+        self.assertEqual(types, ['pdf'])
+
+        urls, types = build_file_urls(WgRfcFactory(rev='23'))
+        self.assertEqual(['pdf', 'bibtex'], [t for t, _ in urls])
+        self.assertEqual(types, ['pdf'])
 
 
 class RebuildReferenceRelationsTests(TestCase):

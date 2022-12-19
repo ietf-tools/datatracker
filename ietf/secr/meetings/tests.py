@@ -14,6 +14,7 @@ import debug         # pyflakes:ignore
 
 from django.conf import settings
 from django.urls import reverse
+from django.utils import timezone
 
 from ietf.group.models import Group, GroupEvent
 from ietf.meeting.factories import MeetingFactory
@@ -137,7 +138,10 @@ class SecrMeetingTestCase(TestCase):
         "Edit Meeting"
         meeting = make_meeting_test_data()
         url = reverse('ietf.secr.meetings.views.edit_meeting',kwargs={'meeting_id':meeting.number})
-        post_data = dict(number=meeting.number,date='2014-07-20',city='Toronto',
+        post_data = dict(number=meeting.number,
+                         date='2014-07-20',
+                         city='Toronto',
+                         time_zone='America/Toronto',
                          days=7,
                          idsubmit_cutoff_day_offset_00=13,
                          idsubmit_cutoff_day_offset_01=20,
@@ -212,8 +216,8 @@ class SecrMeetingTestCase(TestCase):
         self.assertEqual(q('#id_notification_list').html(),'ames, mars')
 
         # test that only changes since last notification show up
-        now = datetime.datetime.now()
-        then = datetime.datetime.now()+datetime.timedelta(hours=1)
+        now = timezone.now()
+        then = timezone.now()+datetime.timedelta(hours=1)
         person = Person.objects.get(name="(System)")
         GroupEvent.objects.create(group=mars_group,time=now,type='sent_notification',
                                   by=person,desc='sent scheduled notification for %s' % meeting)
@@ -285,7 +289,7 @@ class SecrMeetingTestCase(TestCase):
         url = reverse('ietf.secr.meetings.views.times_delete',kwargs={
             'meeting_id':meeting.number,
             'schedule_name':meeting.schedule.name,
-            'time':qs.first().time.strftime("%Y:%m:%d:%H:%M")
+            'time':qs.first().time.astimezone(meeting.tz()).strftime("%Y:%m:%d:%H:%M")
         })
         redirect_url = reverse('ietf.secr.meetings.views.times',kwargs={
             'meeting_id':meeting.number,
@@ -305,7 +309,7 @@ class SecrMeetingTestCase(TestCase):
         url = reverse('ietf.secr.meetings.views.times_edit',kwargs={
             'meeting_id':72,
             'schedule_name':'test-schedule',
-            'time':timeslot.time.strftime("%Y:%m:%d:%H:%M")
+            'time':timeslot.time.astimezone(meeting.tz()).strftime("%Y:%m:%d:%H:%M")
         })
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url, {
@@ -371,7 +375,7 @@ class SecrMeetingTestCase(TestCase):
         timeslot = session.official_timeslotassignment().timeslot
         url = reverse('ietf.secr.meetings.views.misc_session_edit',kwargs={'meeting_id':72,'schedule_name':meeting.schedule.name,'slot_id':timeslot.pk})
         redirect_url = reverse('ietf.secr.meetings.views.misc_sessions',kwargs={'meeting_id':72,'schedule_name':'test-schedule'})
-        new_time = timeslot.time + datetime.timedelta(days=1)
+        new_time = (timeslot.time + datetime.timedelta(days=1)).astimezone(meeting.tz())
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -389,7 +393,7 @@ class SecrMeetingTestCase(TestCase):
         })
         self.assertRedirects(response, redirect_url)
         timeslot = session.official_timeslotassignment().timeslot
-        self.assertEqual(timeslot.time,new_time)
+        self.assertEqual(timeslot.time, new_time)
 
     def test_meetings_misc_session_delete(self):
         meeting = make_meeting_test_data()

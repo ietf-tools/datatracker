@@ -16,6 +16,7 @@ from django.utils.safestring import mark_safe
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 from django.utils.encoding import force_text
 from django.utils.html import escape
 
@@ -77,7 +78,7 @@ def change_state(request, name, option=None):
     chartering_type = get_chartering_type(charter)
 
     initial_review = charter.latest_event(InitialReviewDocEvent, type="initial_review")
-    if charter.get_state_slug() != "infrev" or (initial_review and initial_review.expires < datetime.datetime.now()) or chartering_type == "rechartering":
+    if charter.get_state_slug() != "infrev" or (initial_review and initial_review.expires < timezone.now()) or chartering_type == "rechartering":
         initial_review = None
 
     by = request.user.person
@@ -162,7 +163,7 @@ def change_state(request, name, option=None):
                 if message or charter_state.slug == "intrev" or charter_state.slug == "extrev":
                     email_admin_re_charter(request, group, "Charter state changed to \"%s\"" % charter_state.name, message,'charter_state_edit_admin_needed')
 
-                # TODO - do we need a seperate set of recipients for state changes to charters vrs other kind of documents
+                # TODO - do we need a separate set of recipients for state changes to charters vrs other kind of documents
                 email_state_changed(request, charter, "State changed to %s." % charter_state, 'doc_state_edited')
 
                 if charter_state.slug == "intrev" and group.type_id == "wg":
@@ -183,7 +184,7 @@ def change_state(request, name, option=None):
 
             if charter_state.slug == "infrev" and clean["initial_time"] and clean["initial_time"] != 0:
                 e = InitialReviewDocEvent(type="initial_review", by=by, doc=charter, rev=charter.rev)
-                e.expires = datetime.datetime.now() + datetime.timedelta(weeks=clean["initial_time"])
+                e.expires = timezone.now() + datetime.timedelta(weeks=clean["initial_time"])
                 e.desc = "Initial review time expires %s" % e.expires.strftime("%Y-%m-%d")
                 e.save()
 
@@ -506,7 +507,7 @@ def review_announcement_text(request, name):
         existing_new_work.type = "changed_new_work_text"
         existing_new_work.desc = "%s review text was changed" % group.type.name
         existing_new_work.text = derive_new_work_text(existing.text,group)
-        existing_new_work.time = datetime.datetime.now()
+        existing_new_work.time = timezone.now()
 
     form = ReviewAnnouncementTextForm(initial=dict(announcement_text=escape(existing.text),new_work_text=escape(existing_new_work.text)))
 
@@ -514,7 +515,7 @@ def review_announcement_text(request, name):
         form = ReviewAnnouncementTextForm(request.POST)
         if "save_text" in request.POST and form.is_valid():
 
-            now = datetime.datetime.now()
+            now = timezone.now()
             events = []
 
             t = form.cleaned_data['announcement_text']

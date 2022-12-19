@@ -38,6 +38,7 @@ import debug      # pyflakes:ignore
 from django import template
 from django.urls import reverse as urlreverse
 from django.db.models import Q
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 
 from ietf.ietfauth.utils import user_is_person, has_role
@@ -139,7 +140,7 @@ def ballot_icon(context, doc):
         i = i + 1
 
     res.append("</tr></tbody></table></a>")
-    res.append('<div id="modal-%d" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable modal-xl"><div class="modal-content"></div></div></div>' % ballot.pk)
+    res.append('<div id="modal-%d" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable modal-xl modal-fullscreen-lg-down"><div class="modal-content"></div></div></div>' % ballot.pk)
 
     return mark_safe("".join(res))
 
@@ -173,17 +174,17 @@ def state_age_colored(doc):
         if iesg_state in ["dead", "watching", "pub", "idexists"]:
             return ""
         try:
-            state_date = (
+            state_datetime = (
                 doc.docevent_set.filter(
                     Q(type="started_iesg_process")
                     | Q(type="changed_state", statedocevent__state_type="draft-iesg")
                 )
                 .order_by("-time")[0]
-                .time.date()
+                .time
             )
         except IndexError:
-            state_date = datetime.date(1990, 1, 1)
-        days = (datetime.date.today() - state_date).days
+            state_datetime = datetime.datetime(1990, 1, 1, tzinfo=datetime.timezone.utc)
+        days = (timezone.now() - state_datetime).days
         # loosely based on
         # https://trac.ietf.org/trac/iesg/wiki/PublishPath
         if iesg_state == "lc":
@@ -224,7 +225,7 @@ def state_age_colored(doc):
         else:
             title = ""
         return mark_safe(
-            '<span class="badge %s" %s><i class="bi bi-clock-fill"></i> %d</span>'
+            '<span class="badge rounded-pill %s" %s><i class="bi bi-clock-fill"></i> %d</span>'
             % (class_name, title, days)
         )
     else:

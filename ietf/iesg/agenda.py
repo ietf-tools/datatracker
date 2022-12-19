@@ -17,13 +17,14 @@ from ietf.doc.models import Document, LastCallDocEvent, ConsensusDocEvent
 from ietf.doc.utils_search import fill_in_telechat_date
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem
 from ietf.review.utils import review_assignments_to_list_for_docs
+from ietf.utils.timezone import date_today
 
 def get_agenda_date(date=None):
     if not date:
         try:
             return TelechatDate.objects.active().order_by('date')[0].date
         except IndexError:
-            return datetime.date.today()
+            return date_today()
     else:
         try:
             return TelechatDate.objects.active().get(date=datetime.datetime.strptime(date, "%Y-%m-%d").date()).date

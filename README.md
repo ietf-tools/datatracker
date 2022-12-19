@@ -209,7 +209,7 @@ From a datatracker container, run the command:
 
 ### Frontend Tests
 
-Frontend tests are done via Cypress. There're 2 different type of tests:
+Frontend tests are done via Playwright. There're 2 different type of tests:
 
 - Tests that test Vue pages / components and run natively without any external dependency.
 - Tests that require a running datatracker instance to test against (usually legacy views).
@@ -218,29 +218,51 @@ Frontend tests are done via Cypress. There're 2 different type of tests:
 
 #### Run Vue Tests
 
-To run the tests headlessly (command line mode):
-```sh
-yarn cypress
-```
-To run the tests visually **(CANNOT run in docker)**:
-```sh
-yarn cypress:open
-```
-> It can take a few seconds before the tests start or the GUI opens.
+> :warning: All commands below **MUST** be run from the `./playwright` directory, unless noted otherwise.
+
+1. Run **once** to install dependencies on your system:
+    ```sh
+    npm install
+    npm run install-deps
+    ```
+
+2. Run in a **separate process**, from the **project root directory**:
+    ```sh
+    yarn preview
+    ```
+
+3. Run the tests, in of these 3 modes, from the `./playwright` directory:
+
+    3.1 To run the tests headlessly (command line mode):
+    ```sh
+    npm test
+    ```
+    3.2 To run the tests visually **(CANNOT run in docker)**:
+    ```sh
+    npm run test:visual
+    ```
+
+    3.3 To run the tests in debug mode **(CANNOT run in docker)**:
+    ```sh
+    npm run test:debug
+    ```
 
 #### Run Legacy Views Tests
 
 First, you need to start a datatracker instance (dev or prod), ideally from a docker container, exposing the 8000 port.
 
-To run the tests headlessly (command line mode):
+> :warning: All commands below **MUST** be run from the `./playwright` directory.
+
+1. Run **once** to install dependencies on your system:
 ```sh
-yarn cypress:legacy
+npm install
+npm run install-deps
 ```
-To run the tests visually **(CANNOT run in docker)**:
+
+2. Run the tests headlessly (command line mode):
 ```sh
-yarn cypress:legacy:open
+npm run test:legacy
 ```
-> It can take a few seconds before the tests start or the GUI opens.
 
 ### Diff Tool
 

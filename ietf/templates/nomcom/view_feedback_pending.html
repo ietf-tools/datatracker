@@ -5,7 +5,7 @@
 {% load static %}
 {% load nomcom_tags person_filters %}
 {% block pagehead %}{{ formset.media.css }}{% endblock %}
-{% block subtitle %}- Feeback pending{% endblock %}
+{% block subtitle %}- Feedback pending{% endblock %}
 {% block nomcom_content %}
     {% origin %}
     <h2>Feedback pending from email list</h2>
@@ -61,7 +61,7 @@
                 {% endfor %}
                 <button class="btn btn-primary"
                        type="submit"
-                       name="end">Save feedback</button>
+                       name="end" value="1">Save feedback</button>
                 <a class="btn btn-secondary float-end"
                    href="{% url 'ietf.nomcom.views.view_feedback_pending' year %}">Back</a>
             {% else %}

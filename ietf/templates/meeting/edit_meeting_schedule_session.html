@@ -1,4 +1,4 @@
-{% load person_filters editor_tags %}
+{% load person_filters editor_tags ietf_filters textfilters %}
 <!-- [html-validate-disable-block no-inline-style -- FIXME: should style this better] -->
 <div id="session{{ session.pk }}"
      class="session {% if not session.group.parent.scheduling_color %}untoggleable-by-parent{% endif %} {% if session.parent_acronym %}parent-{{ session.parent_acronym }}{% endif %} purpose-{{ session.purpose.slug }} {% if session.readonly %}readonly{% endif %} {% if not session.on_agenda %}off-agenda{% endif %}"
@@ -47,7 +47,7 @@
                 {% if not session.on_agenda %}&middot; <i>off agenda</i>{% endif %}
             </div>
         {% endif %}
-        {% if session.comments %}<div class="comments">{{ session.comments|linebreaksbr }}</div>{% endif %}
+        {% if session.comments %}<div class="comments">{{ session.comments|urlize_ietf_docs|linkify|linebreaksbr }}</div>{% endif %}
         {% if session.requested_by_person %}
             <div class="row">
                 <div class="col-1">
@@ -71,11 +71,23 @@
         {% endif %}
         {% if session.formatted_constraints %}
             <div class="formatted-constraints">
+                {% with ad=session.group.ads|first %}
                 {% for constraint_name, values in session.formatted_constraints.items %}
                     <div class="row">
-                        <div class="col-1" title="{{ constraint_name.name }}">{% constraint_icon_for constraint_name %}</div><div class="col">{{ values|join:", " }}</div>
+                        <div class="col-1" title="{{ constraint_name.name }}">{% constraint_icon_for constraint_name %}</div><div class="col">
+                            {% if constraint_name.slug != 'bethere' or not ad %}
+                                {{ values|join:", " }}
+                            {% else %}
+                                {% for val in values %}
+                                    {% if val != ad.person.plain_name %}
+                                        {{ val }}{% if forloop.revcounter > 2 or forloop.revcounter > 1 and values|last != ad.person.plain_name %}, {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </div>
                     </div>
                 {% endfor %}
+                {% endwith %}
             </div>
         {% endif %}
         {% for s in session.other_sessions %}
@@ -90,9 +102,15 @@
                </div>
             </div>
         {% endfor %}
-        <a class="btn btn-primary btn-sm mt-2"
-           href="{% url 'ietf.meeting.views.edit_session' session_id=session.pk %}">
-            Edit session
-        </a>
+        {% if secretariat %}
+            <a class="btn btn-primary btn-sm mt-2"
+               href="{% url 'ietf.meeting.views.edit_session' session_id=session.pk %}">
+                Edit session
+            </a>
+            <a class="btn btn-danger btn-sm mt-2"
+               href="{% url 'ietf.meeting.views.cancel_session' session_id=session.pk %}?sched={{ schedule.pk }}">
+                Cancel session
+            </a>
+        {% endif %}
     </div>
 </div>

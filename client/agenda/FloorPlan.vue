@@ -5,7 +5,6 @@
       span #[strong IETF {{agendaStore.meeting.number}}] Floor Plan
       .meeting-h1-badges.d-none.d-sm-flex
         span.meeting-warning(v-if='agendaStore.meeting.warningNote') {{agendaStore.meeting.warningNote}}
-        span.meeting-beta BETA
     h4
       span {{agendaStore.meeting.city}}, {{ meetingDate }}
 
@@ -59,13 +58,18 @@ import find from 'lodash/find'
 import xslugify from '../shared/xslugify'
 import { DateTime } from 'luxon'
 import { useRoute, useRouter } from 'vue-router'
+
 import { useAgendaStore } from './store' 
+import { useSiteStore } from '../shared/store'
 
 import MeetingNavigation from './MeetingNavigation.vue'
+
+import './agenda.scss'
 
 // STORES
 
 const agendaStore = useAgendaStore()
+const siteStore = useSiteStore()
 
 // ROUTER
 
@@ -144,7 +148,7 @@ watch(() => state.currentRoom, () => {
     }, 100)
   })
 })
-watch(() => agendaStore.viewport, () => {
+watch(() => siteStore.viewport, () => {
   nextTick(() => {
     computePlanSizeRatio()
   })

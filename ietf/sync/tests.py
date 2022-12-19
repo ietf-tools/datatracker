@@ -10,6 +10,7 @@ import quopri
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -22,6 +23,7 @@ from ietf.sync import iana, rfceditor
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_utils import TestCase
+from ietf.utils.timezone import date_today, RPC_TZINFO
 
 
 class IANASyncTests(TestCase):
@@ -34,11 +36,11 @@ class IANASyncTests(TestCase):
         self.assertEqual(len(rfc_names), 1)
         self.assertEqual(rfc_names[0], "rfc1234")
 
-        iana.update_rfc_log_from_protocol_page(rfc_names, datetime.datetime.now() - datetime.timedelta(days=1))
+        iana.update_rfc_log_from_protocol_page(rfc_names, timezone.now() - datetime.timedelta(days=1))
         self.assertEqual(DocEvent.objects.filter(doc=draft, type="rfc_in_iana_registry").count(), 1)
 
         # make sure it doesn't create duplicates
-        iana.update_rfc_log_from_protocol_page(rfc_names, datetime.datetime.now() - datetime.timedelta(days=1))
+        iana.update_rfc_log_from_protocol_page(rfc_names, timezone.now() - datetime.timedelta(days=1))
         self.assertEqual(DocEvent.objects.filter(doc=draft, type="rfc_in_iana_registry").count(), 1)
 
     def test_changes_sync(self):
@@ -190,7 +192,7 @@ ICANN
                         doc_name, review_time, by, comment = iana.parse_review_email(msg.encode('utf-8'))
     
                         self.assertEqual(doc_name, draft.name)
-                        self.assertEqual(review_time, datetime.datetime(2012, 5, 10, 5, 0, rtime))
+                        self.assertEqual(review_time, datetime.datetime(2012, 5, 10, 12, 0, rtime, tzinfo=datetime.timezone.utc))
                         self.assertEqual(by, Person.objects.get(user__username="iana"))
                         self.assertIn("there are no IANA Actions", comment.replace("\n", ""))
     
@@ -237,7 +239,7 @@ class RFCSyncTests(TestCase):
         DocAlias.objects.create(name=updated_doc.name).docs.add(updated_doc)
         DocAlias.objects.create(name="rfc123").docs.add(updated_doc)
 
-        today = datetime.date.today()
+        today = date_today()
 
         t = '''<?xml version="1.0" encoding="UTF-8"?>
 <rfc-index xmlns="http://www.rfc-editor.org/rfc-index"
@@ -352,7 +354,7 @@ class RFCSyncTests(TestCase):
         self.assertEqual(events[0].type, "sync_from_rfc_editor")
         self.assertEqual(events[1].type, "changed_action_holders")
         self.assertEqual(events[2].type, "published_rfc")
-        self.assertEqual(events[2].time.date(), today)
+        self.assertEqual(events[2].time.astimezone(RPC_TZINFO).date(), today)
         self.assertTrue("errata" in doc.tags.all().values_list("slug", flat=True))
         self.assertTrue(DocAlias.objects.filter(name="rfc1234", docs=doc))
         self.assertTrue(DocAlias.objects.filter(name="bcp1", docs=doc))

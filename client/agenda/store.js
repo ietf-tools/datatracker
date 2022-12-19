@@ -3,6 +3,9 @@ import { DateTime } from 'luxon'
 import uniqBy from 'lodash/uniqBy'
 import murmur from 'murmurhash-js/murmurhash3_gc'
 
+import { useSiteStore } from '../shared/store'
+import { storageAvailable } from '../shared/feature-detect'
+
 const urlRe = /http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+/
 const conferenceDomains = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 'gather.town']
 
@@ -23,7 +26,6 @@ export const useAgendaStore = defineStore('agenda', {
       { hex: '#20c997', tag: 'Attended' }
     ],
     colorAssignments: {},
-    criticalError: null,
     currentTab: 'agenda',
     dayIntersectId: '',
     defaultCalendarView: 'week',
@@ -35,7 +37,6 @@ export const useAgendaStore = defineStore('agenda', {
     infoNoteShown: true,
     isCurrentMeeting: false,
     isLoaded: false,
-    isMobile: /Mobi/i.test(navigator.userAgent),
     listDayCollapse: false,
     meeting: {},
     nowDebugDiff: null,
@@ -49,8 +50,7 @@ export const useAgendaStore = defineStore('agenda', {
     selectedCatSubs: [],
     settingsShown: false,
     timezone: DateTime.local().zoneName,
-    useHedgeDoc: false,
-    viewport: Math.round(window.innerWidth),
+    useNotes: false,
     visibleDays: []
   }),
   getters: {
@@ -119,10 +119,11 @@ export const useAgendaStore = defineStore('agenda', {
       })
     },
     meetingDays () {
+      const siteStore = useSiteStore()
       return uniqBy(this.scheduleAdjusted, 'adjustedStartDate').sort().map(s => ({
         slug: s.id.toString(),
         ts: s.adjustedStartDate,
-        label: this.viewport < 1350 ? DateTime.fromISO(s.adjustedStartDate).toFormat('ccc LLL d') : DateTime.fromISO(s.adjustedStartDate).toLocaleString(DateTime.DATE_HUGE)
+        label: siteStore.viewport < 1350 ? DateTime.fromISO(s.adjustedStartDate).toFormat('ccc LLL d') : DateTime.fromISO(s.adjustedStartDate).toLocaleString(DateTime.DATE_HUGE)
       }))
     },
     isMeetingLive (state) {
@@ -147,7 +148,11 @@ export const useAgendaStore = defineStore('agenda', {
         const agendaData = await resp.json()
 
         // -> Switch to meeting timezone
-        this.timezone = window.localStorage.getItem(`agenda.${agendaData.meeting.number}.timezone`) || agendaData.meeting.timezone
+        if (storageAvailable('localStorage')) {
+          this.timezone = window.localStorage.getItem(`agenda.${agendaData.meeting.number}.timezone`) || agendaData.meeting.timezone
+        } else {
+          this.timezone = agendaData.meeting.timezone
+        }
 
         // -> Load meeting data
         this.categories = agendaData.categories
@@ -155,31 +160,47 @@ export const useAgendaStore = defineStore('agenda', {
         this.isCurrentMeeting = agendaData.isCurrentMeeting
         this.meeting = agendaData.meeting
         this.schedule = agendaData.schedule
-        this.useHedgeDoc = agendaData.useHedgeDoc
+        this.useNotes = agendaData.useNotes
 
         // -> Compute current info note hash
         this.infoNoteHash = murmur(agendaData.meeting.infoNote, 0).toString()
 
         // -> Load meeting-specific preferences
-        this.infoNoteShown = !(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.hideInfo`) === this.infoNoteHash)
-        this.colorAssignments = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.colorAssignments`) || '{}')
-        this.pickedEvents = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.pickedEvents`) || '[]')
+        if (storageAvailable('localStorage')) {
+          this.infoNoteShown = !(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.hideInfo`) === this.infoNoteHash)
+          this.colorAssignments = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.colorAssignments`) || '{}')
+          this.selectedCatSubs = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.filters`) || '[]')
+          this.pickedEvents = JSON.parse(window.localStorage.getItem(`agenda.${agendaData.meeting.number}.pickedEvents`) || '[]')
+        } else {
+          this.infoNoteShown = true
+          this.colorAssignments = {}
+          this.selectedCatSubs = []
+          this.pickedEvents = []
+        }
 
         this.isLoaded = true
       } catch (err) {
         console.error(err)
-        this.criticalError = `Failed to load this meeting: ${err.message}`
+        const siteStore = useSiteStore()
+        siteStore.$patch({
+          criticalError: `Failed to load this meeting: ${err.message}`,
+          criticalErrorLink: meetingNumber ? `/meeting/${meetingNumber}/agenda.txt` : `/meeting/agenda.txt`,
+          criticalErrorLinkText: 'Switch to text-only agenda version'
+        })
       }
 
       this.hideLoadingScreen()
     },
     persistMeetingPreferences () {
+      if (!storageAvailable('localStorage')) { return }
+      
       if (this.infoNoteShown) {
         window.localStorage.removeItem(`agenda.${this.meeting.number}.hideInfo`)
       } else {
         window.localStorage.setItem(`agenda.${this.meeting.number}.hideInfo`, this.infoNoteHash)
       }
       window.localStorage.setItem(`agenda.${this.meeting.number}.colorAssignments`, JSON.stringify(this.colorAssignments))
+      window.localStorage.setItem(`agenda.${this.meeting.number}.filters`, JSON.stringify(this.selectedCatSubs))
       window.localStorage.setItem(`agenda.${this.meeting.number}.pickedEvents`, JSON.stringify(this.pickedEvents))
       window.localStorage.setItem(`agenda.${this.meeting.number}.timezone`, this.timezone)
     },
@@ -218,10 +239,10 @@ export const useAgendaStore = defineStore('agenda', {
     }
   },
   persist: {
-    enabled: true,
+    enabled: storageAvailable('localStorage'),
     strategies: [
       {
-        storage: localStorage,
+        storage: storageAvailable('localStorage') ? localStorage : null,
         paths: [
           'areaIndicatorsShown',
           'bolderText',

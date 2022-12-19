@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore", message="The logout\(\) view is superseded by"
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
 warnings.filterwarnings("ignore", message="{% load staticfiles %} is deprecated")
 warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated", module="bleach")
-
+warnings.filterwarnings("ignore", message="HTTPResponse.getheader\(\) is deprecated", module='selenium.webdriver')
 try:
     import syslog
     syslog.openlog(str("datatracker"), syslog.LOG_PID, syslog.LOG_USER)
@@ -114,7 +114,7 @@ SITE_ID = 1
 # to load the internationalization machinery.
 USE_I18N = False
 
-USE_TZ = False
+USE_TZ = True
 
 if SERVER_MODE == 'production':
     MEDIA_ROOT = '/a/www/www6s/lib/dt/media/'
@@ -542,7 +542,7 @@ INTERNAL_IPS = (
 
 # no slash at end
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
-RFCDIFF_BASE_URL = "https://www.ietf.org/rfcdiff"
+RFCDIFF_BASE_URL = "https://author-tools.ietf.org/iddiff"
 IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
 IDNITS_SERVICE_URL = "https://author-tools.ietf.org/idnits"
 
@@ -610,7 +610,7 @@ TEST_TEMPLATE_IGNORE = [
     "500.html"                        # isn't loaded by regular loader, but checked by test_500_page()
 ]
 
-TEST_COVERAGE_MASTER_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
+TEST_COVERAGE_MAIN_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
 TEST_COVERAGE_LATEST_FILE = os.path.join(BASE_DIR, "../latest-coverage.json")
 
 TEST_CODE_COVERAGE_CHECKER = None
@@ -630,7 +630,7 @@ MAX_WG_DELEGATES = 3
 # document state:
 GROUP_STATES_WITH_EXTRA_PROCESSING = ["sub-pub", "rfc-edit", ]
 
-# Review team releated settings
+# Review team related settings
 GROUP_REVIEW_MAX_ITEMS_TO_SHOW_IN_REVIEWER_LIST = 10
 GROUP_REVIEW_DAYS_TO_SHOW_IN_REVIEWER_LIST = 365
 
@@ -680,7 +680,7 @@ INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/a/ietfdata/doc/draft/archive'
 MEETING_RECORDINGS_DIR = '/a/www/audio'
 DERIVED_DIR = '/a/ietfdata/derived'
 
-DOCUMENT_FORMAT_WHITELIST = ["txt", "ps", "pdf", "xml", "html", ]
+DOCUMENT_FORMAT_ALLOWLIST = ["txt", "ps", "pdf", "xml", "html", ]
 
 # Mailing list info URL for lists hosted on the IETF servers
 MAILING_LIST_INFO_URL = "https://www.ietf.org/mailman/listinfo/%(list_addr)s"
@@ -783,7 +783,7 @@ RFC_EDITOR_GROUP_NOTIFICATION_EMAIL = "webmaster@rfc-editor.org"
 RFC_EDITOR_QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
 RFC_EDITOR_INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
 RFC_EDITOR_ERRATA_JSON_URL = "https://www.rfc-editor.org/errata.json"
-RFC_EDITOR_ERRATA_URL = "https://www.rfc-editor.org/errata_search.php?rfc={rfc_number}&amp;rec_status=0"
+RFC_EDITOR_ERRATA_URL = "https://www.rfc-editor.org/errata_search.php?rfc={rfc_number}"
 RFC_EDITOR_INLINE_ERRATA_URL = "https://www.rfc-editor.org/rfc/inline-errata/rfc{rfc_number}.html"
 RFC_EDITOR_INFO_BASE_URL = "https://www.rfc-editor.org/info/"
 
@@ -889,6 +889,8 @@ MEETING_DOC_LOCAL_HREFS = {
     "agenda": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "minutes": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "slides": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
+    "chatlog": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
+    "polls": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "recording": "{doc.external_url}",
     "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
     "procmaterials": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
@@ -970,8 +972,6 @@ INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 FLOORPLAN_MEDIA_DIR = 'floor'
 FLOORPLAN_DIR = os.path.join(MEDIA_ROOT, FLOORPLAN_MEDIA_DIR)
 
-
-MEETING_USES_CODIMD_DATE = datetime.date(2020,7,6)
 MEETING_LEGACY_OFFICE_HOURS_END = 112  # last meeting to use legacy office hours representation
 
 # Maximum dimensions to accept at all
@@ -1038,8 +1038,6 @@ CHAT_URL_PATTERN = 'https://zulip.ietf.org/#narrow/stream/{chat_room_name}'
 
 # If we need to revert to xmpp
 # CHAT_ARCHIVE_URL_PATTERN = 'https://www.ietf.org/jabber/logs/{chat_room_name}?C=M;O=D'
-
-PRODUCTION_TIMEZONE = "America/Los_Angeles"
 
 PYFLAKES_DEFAULT_ARGS= ["ietf", ]
 VULTURE_DEFAULT_ARGS= ["ietf", ]
@@ -1187,8 +1185,6 @@ CELERY_TIMEZONE = 'UTC'
 CELERY_BROKER_URL = 'amqp://mq/'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
-assert not USE_TZ, 'Drop DJANGO_CELERY_BEAT_TZ_AWARE setting once USE_TZ is True!'
-DJANGO_CELERY_BEAT_TZ_AWARE = False
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests

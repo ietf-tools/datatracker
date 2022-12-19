@@ -7,6 +7,7 @@ import requests
 from collections import defaultdict
 
 from django.conf import settings
+from django.db.models import Q
 
 import debug                            # pyflakes:ignore
 
@@ -320,8 +321,10 @@ def get_meeting_registration_data(meeting):
         raise RuntimeError("Bad response from registrations API: %s, '%s'" % (response.status_code, response.content))
     num_total = MeetingRegistration.objects.filter(
         meeting_id=meeting.pk,
-        attended=True,
-        reg_type__in=['onsite', 'remote']).count()
+        reg_type__in=['onsite', 'remote']
+    ).filter(
+        Q(attended=True) | Q(checkedin=True)
+    ).count()
     if meeting.attendees is None or num_total > meeting.attendees:
         meeting.attendees = num_total
         meeting.save()

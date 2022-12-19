@@ -315,7 +315,7 @@ function draw_graph(data, group) {
         })
     ];
 
-    // // See https://github.com/d3/d3-force/blob/master/README.md#simulation_tick
+    // // See https://github.com/d3/d3-force/blob/main/README.md#simulation_tick
     // for (let i = 0, n = Math.ceil(Math.log(simulation.alphaMin()) /
     //         Math.log(1 - simulation.alphaDecay())); i <
     //     n; ++i) {

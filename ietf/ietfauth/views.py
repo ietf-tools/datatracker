@@ -34,9 +34,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+import datetime
 import importlib
 
-from datetime import date as Date, datetime as DateTime
 # needed if we revert to higher barrier for account creation
 #from datetime import datetime as DateTime, timedelta as TimeDelta, date as Date
 from collections import defaultdict
@@ -54,7 +54,6 @@ from django.contrib.auth.views import LoginView
 from django.contrib.sites.models import Site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.urls import reverse as urlreverse
-from django.utils.safestring import mark_safe
 from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.encoding import force_bytes
@@ -63,13 +62,11 @@ import debug                            # pyflakes:ignore
 
 from ietf.group.models import Role, Group
 from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordForm, TestEmailForm,
-                                WhitelistForm, ChangePasswordForm, get_person_form, RoleEmailForm,
+                                AllowlistForm, ChangePasswordForm, get_person_form, RoleEmailForm,
                                 NewEmailForm, ChangeUsernameForm, PersonPasswordForm)
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.ietfauth.utils import role_required, has_role
-from ietf.mailinglists.models import Whitelisted
-# needed if we revert to higher barrier for account creation
-#from ietf.mailinglists.models import Subscribed, Whitelisted
+from ietf.mailinglists.models import Allowlisted
 from ietf.name.models import ExtResourceName
 from ietf.nomcom.models import NomCom
 from ietf.person.models import Person, Email, Alias, PersonalApiKey, PERSON_API_KEY_VALUES
@@ -79,6 +76,7 @@ from ietf.doc.fields import SearchableDocumentField
 from ietf.utils.decorators import person_required
 from ietf.utils.mail import send_mail
 from ietf.utils.validators import validate_external_resource_value
+from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 
 # These are needed if we revert to the higher bar for account creation
 
@@ -128,7 +126,7 @@ def create_account(request):
 
             # The following is what to revert to should that lowered barrier prove problematic
             # existing = Subscribed.objects.filter(email=to_email).first()
-            # ok_to_create = ( Whitelisted.objects.filter(email=to_email).exists()
+            # ok_to_create = ( Allowlisted.objects.filter(email=to_email).exists()
             #     or existing and (existing.time + TimeDelta(seconds=settings.LIST_ACCOUNT_DELAY)) < DateTime.now() )
             # if ok_to_create:
             #     send_account_creation_email(request, to_email)
@@ -224,7 +222,7 @@ def profile(request):
     emails = Email.objects.filter(person=person).exclude(address__startswith='unknown-email-').order_by('-active','-time')
     new_email_forms = []
 
-    nc = NomCom.objects.filter(group__acronym__icontains=Date.today().year).first()
+    nc = NomCom.objects.filter(group__acronym__icontains=date_today().year).first()
     if nc and nc.volunteer_set.filter(person=person).exists():
         volunteer_status = 'volunteered'
     elif nc and nc.is_accepting_volunteers:
@@ -456,7 +454,7 @@ def confirm_password_reset(request, auth):
         password = data['password']
         last_login = None
         if data['last_login']:
-            last_login = DateTime.fromtimestamp(data['last_login'])
+            last_login = datetime.datetime.fromtimestamp(data['last_login'], datetime.timezone.utc)
     except django.core.signing.BadSignature:
         raise Http404("Invalid or expired auth")
 
@@ -522,19 +520,19 @@ def test_email(request):
     return r
 
 @role_required('Secretariat')
-def add_account_whitelist(request):
+def add_account_allowlist(request):
     success = False
     if request.method == 'POST':
-        form = WhitelistForm(request.POST)
+        form = AllowlistForm(request.POST)
         if form.is_valid():
             email = form.cleaned_data['email']
-            entry = Whitelisted(email=email, by=request.user.person)
+            entry = Allowlisted(email=email, by=request.user.person)
             entry.save()
             success = True
     else:
-        form = WhitelistForm()
+        form = AllowlistForm()
 
-    return render(request, 'ietfauth/whitelist_form.html', {
+    return render(request, 'ietfauth/allowlist_form.html', {
         'form': form,
         'success': success,
     })
@@ -558,7 +556,7 @@ def review_overview(request):
         reviewer__person__user=request.user,
         state__in=["assigned", "accepted"],
     )
-    today = Date.today()
+    today = date_today(DEADLINE_TZINFO)
     for r in open_review_assignments:
         r.due = max(0, (today - r.review_request.deadline).days)
 
@@ -699,7 +697,6 @@ def login(request, extra_context=None):
     which is not recognized as a valid password hash.
     """
 
-    require_consent = []
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         username = form.data.get('username')
@@ -722,11 +719,6 @@ def login(request, extra_context=None):
         #
         if user:
             try:
-                if user.person and not user.person.consent:
-                    require_consent = user.person.needs_consent()
-            except ObjectDoesNotExist:
-                pass
-            try:
                 identify_hasher(user.password)
             except ValueError:
                 extra_context = {"alert":
@@ -742,18 +734,6 @@ def login(request, extra_context=None):
         except Person.DoesNotExist:
             logout(request)
             response = render(request, 'registration/missing_person.html')
-        if require_consent:
-            messages.warning(request, mark_safe(f'''
-
-                You have personal information associated with your account which is not
-                derived from draft submissions or other ietf work, namely: %s.  Please go
-                to your <a href="{urlreverse("ietf.ietfauth.views.profile")}">account profile</a> and review your
-                personal information, then scoll to the bottom and check the 'confirm'
-                checkbox and submit the form, in order to to indicate that that the
-                provided personal information may be used and displayed within the IETF
-                datatracker.
-
-                ''' % ', '.join(require_consent)))
     return response
 
 @login_required

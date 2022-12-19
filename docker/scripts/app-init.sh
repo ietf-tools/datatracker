@@ -100,7 +100,11 @@ echo "Starting memcached..."
 
 echo "Running initial checks..."
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check --settings=settings_local
-# /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local
+
+# Migrate, adjusting to what the current state of the underlying database might be:
+
+/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local
+
 
 echo "-----------------------------------------------------------------"
 echo "Done!"

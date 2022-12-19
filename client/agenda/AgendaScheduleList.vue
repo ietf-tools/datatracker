@@ -7,7 +7,7 @@
           th.agenda-table-head-check(v-if='pickerModeActive') &nbsp;
           th.agenda-table-head-time Time
           th.agenda-table-head-location(colspan='2') Location
-          th.agenda-table-head-event(colspan='2') {{ agendaStore.viewport < 990 ? '' : 'Event' }}
+          th.agenda-table-head-event(colspan='2') {{ siteStore.viewport < 990 ? '' : 'Event' }}
       tbody
         tr.agenda-table-display-noresult(
           v-if='!meetingEvents || meetingEvents.length < 1'
@@ -58,13 +58,13 @@
                     span.badge {{item.location.short}}
                   span {{item.location.name}}
                 router-link.discreet(
-                  :to='`/meeting/` + agendaStore.meeting.number + `/floor-plan-neue?room=` + xslugify(item.room)'
+                  :to='`/meeting/` + agendaStore.meeting.number + `/floor-plan?room=` + xslugify(item.room)'
                   :aria-label='item.room'
                   ) {{item.room}}
               span(v-else) {{item.room}}
             //- CELL - GROUP --------------------------
             td.agenda-table-cell-group(v-if='item.type === `regular`')
-              span.badge(v-if='agendaStore.areaIndicatorsShown && agendaStore.viewport > 1200') {{item.groupAcronym}}
+              span.badge(v-if='agendaStore.areaIndicatorsShown && siteStore.viewport > 1200') {{item.groupAcronym}}
               a.discreet(:href='`/group/` + item.acronym + `/about/`') {{item.acronym}}
             //- CELL - NAME ---------------------------
             td.agenda-table-cell-name
@@ -105,14 +105,14 @@
               template(v-else)
                 span.badge.is-cancelled(v-if='!isMobile && item.status === `canceled`') Cancelled
                 span.badge.is-rescheduled(v-else-if='!isMobile && item.status === `resched`') Rescheduled
-                .agenda-table-cell-links-buttons(v-else-if='agendaStore.viewport < 1200 && item.links && item.links.length > 0')
+                .agenda-table-cell-links-buttons(v-else-if='siteStore.viewport < 1200 && item.links && item.links.length > 0')
                   n-dropdown(
                     v-if='!agendaStore.colorPickerVisible'
                     trigger='click'
                     :options='item.links'
                     key-field='id'
                     :render-icon='renderLinkIcon'
-                    @select='goToSessionLink'
+                    :render-label='renderLinkLabel'
                     )
                     n-button(size='tiny')
                       i.bi.bi-three-dots
@@ -201,6 +201,8 @@ import {
 import AgendaDetailsModal from './AgendaDetailsModal.vue'
 
 import { useAgendaStore } from './store'
+import { useSiteStore } from '../shared/store'
+import { getUrl } from '../shared/urls'
 
 // MESSAGE PROVIDER
 
@@ -209,6 +211,7 @@ const message = useMessage()
 // STORES
 
 const agendaStore = useAgendaStore()
+const siteStore = useSiteStore()
 
 // DATA
 
@@ -236,7 +239,7 @@ const meetingEvents = computed(() => {
 
   return reduce(sortBy(agendaStore.scheduleAdjusted, 'adjustedStartDate'), (acc, item) => {
     const isLive = current >= item.adjustedStart && current < item.adjustedEnd
-    const itemTimeSlot = agendaStore.viewport > 576 ?
+    const itemTimeSlot = siteStore.viewport > 576 ?
       `${item.adjustedStart.toFormat('HH:mm')} - ${item.adjustedEnd.toFormat('HH:mm')}` :
       `${item.adjustedStart.toFormat('HH:mm')} ${item.adjustedEnd.toFormat('HH:mm')}`
 
@@ -273,23 +276,32 @@ const meetingEvents = computed(() => {
           id: `lnk-${item.id}-tar`,
           label: 'Download meeting materials as .tar archive',
           icon: 'file-zip',
-          href: `/meeting/${agendaStore.meeting.number}/agenda/${item.acronym}-drafts.tgz`,
+          href: getUrl('meetingMaterialsTar', {
+            meetingNumber: agendaStore.meeting.number,
+            eventAcronym: item.acronym
+          }),
           color: 'brown'
         })
         links.push({
           id: `lnk-${item.id}-pdf`,
           label: 'Download meeting materials as PDF file',
           icon: 'file-pdf',
-          href: `/meeting/${agendaStore.meeting.number}/agenda/${item.acronym}-drafts.pdf`,
+          href: getUrl('meetingMaterialsPdf', {
+            meetingNumber: agendaStore.meeting.number,
+            eventAcronym: item.acronym
+          }),
           color: 'red'
         })
       }
-      if (agendaStore.useHedgeDoc) {
+      if (agendaStore.useNotes) {
         links.push({
           id: `lnk-${item.id}-note`,
           label: 'Notepad for note-takers',
           icon: 'journal-text',
-          href: `https://notes.ietf.org/notes-ietf-${agendaStore.meeting.number}-${item.type === 'plenary' ? 'plenary' : item.acronym}`,
+          href: getUrl('meetingNotes', {
+            meetingNumber: agendaStore.meeting.number,
+            eventAcronym: item.type === 'plenary' ? 'plenary' : item.acronym
+          }),
           color: 'blue'
         })
       }
@@ -402,7 +414,10 @@ const meetingEvents = computed(() => {
               id: `lnk-${item.id}-rec`,
               label: 'Session recording',
               icon: 'film',
-              href: `https://www.meetecho.com/ietf${agendaStore.meeting.number}/recordings#${item.acronym.toUpperCase()}`,
+              href: getUrl('meetingMeetechoRecordings', {
+                meetingNumber: agendaStore.meeting.number,
+                eventAcronym: item.acronym.toUpperCase()
+              }),
               color: 'purple'
             })
           }
@@ -482,7 +497,7 @@ const pickedEvents = computed({
 })
 
 const isMobile = computed(() => {
-  return agendaStore.viewport < 576
+  return siteStore.viewport < 576
 })
 
 // METHODS
@@ -540,6 +555,10 @@ function getEventColor (itemKey) {
 
 function renderLinkIcon (opt) {
   return h('i', { class: `bi bi-${opt.icon} text-${opt.color}` })
+}
+
+function renderLinkLabel (opt) {
+  return h('a', { href: opt.href, target: '_blank' }, opt.label)
 }
 
 function recalculateRedLine () {

@@ -2,7 +2,7 @@
 {# Copyright The IETF Trust 2015, 2020, All Rights Reserved #}
 {% load origin %}
 {% load cache %}
-{% load ietf_filters static classname %}
+{% load ietf_filters static classname tz %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
     <link rel="stylesheet" href="{% static "ietf/js/fullcalendar.css" %}">
@@ -46,19 +46,24 @@
             <tbody>
                 {% for entry in entries %}
                     <tr class="entry"
-                        {% if entry|classname == 'Session' %}data-filter-keywords="{{ entry.filter_keywords|join:',' }}"{% endif %}>
+                        {% if entry|classname == 'Session' %}
+                            data-filter-keywords="{{ entry.filter_keywords|join:',' }}"
+                        {% elif entry|classname == 'Meeting' %}
+                            data-filter-keywords="ietf-meetings"
+                        {% endif %}
+                    >
                         {% if entry|classname == 'Meeting' %}
                             {% with meeting=entry %}
                                 <td class="meeting-time"
                                     data-start-date="{{ meeting.date }}"
-                                    data-end-date="{{ meeting.end }}"
+                                    data-end-date="{{ meeting.end_date }}"
                                     data-time-zone="{{ meeting.time_zone }}">
-                                    {{ meeting.date }} to {{ meeting.end }}
+                                    {{ meeting.date }} to {{ meeting.end_date }}
                                 </td>
                                 <td>ietf</td>
                                 <td>
                                     <a class="ietf-meeting-link"
-                                       href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">
+                                       href="{% url 'agenda' num=meeting.number %}">
                                         IETF {{ meeting.number }}
                                     </a>
                                 </td>
@@ -67,9 +72,9 @@
                         {% elif entry|classname == 'Session' %}
                             {% with session=entry group=entry.group meeting=entry.meeting %}
                                 <td class="session-time"
-                                    data-start-utc="{{ session.official_timeslotassignment.timeslot.utc_start_time | date:'Y-m-d H:i' }}Z"
-                                    data-end-utc="{{ session.official_timeslotassignment.timeslot.utc_end_time | date:'Y-m-d H:i' }}Z">
-                                    {{ session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i" }}-{{ session.official_timeslotassignment.timeslot.utc_end_time | date:"H:i" }}
+                                    data-start-utc="{{ session.official_timeslotassignment.timeslot.time | utc | date:'Y-m-d H:i' }}Z"
+                                    data-end-utc="{{ session.official_timeslotassignment.timeslot.end_time | utc | date:'Y-m-d H:i' }}Z">
+                                    {{ session.official_timeslotassignment.timeslot.time | utc | date:"Y-m-d H:i" }}-{{ session.official_timeslotassignment.timeslot.end_time | utc | date:"H:i" }}
                                 </td>
                                 <td>
                                     <a href="{% url 'ietf.group.views.group_home' acronym=group.acronym %}">{{ group.acronym }}</a>
@@ -85,7 +90,7 @@
                                         <span class="badge rounded-pill bg-warning">Cancelled</span>
                                     </td>
                                 {% else %}
-                                    <td class="text-end">{% include "meeting/interim_session_buttons.html" with show_agenda=True %}</td>
+                                    <td class="text-end">{% include "meeting/interim_session_buttons.html" with show_agenda=True use_notes=meeting.uses_notes %}</td>
                                 {% endif %}
                             {% endwith %}
                         {% else %}
@@ -122,9 +127,10 @@
                       {% with meeting=entry %}
                           {
                               ietf_meeting_number: '{{ meeting.number }}',
+                              filter_keywords: ['ietf-meetings'],
                               start_moment: moment.tz('{{meeting.date}}', '{{ meeting.time_zone }}').startOf('day'),
-                              end_moment: moment.tz('{{meeting.end}}', '{{ meeting.time_zone }}').endOf('day'),
-                              url: '{% url 'ietf.meeting.views.agenda' num=meeting.number %}'
+                              end_moment: moment.tz('{{meeting.end_date}}', '{{ meeting.time_zone }}').endOf('day'),
+                              url: '{% url 'agenda' num=meeting.number %}'
                           }{% if not forloop.last %}, {% endif %}
                       {% endwith %}
                   {% else %} {# if it's not a Meeting, it's a Session #}
@@ -132,8 +138,8 @@
                           {
                               group: '{% if session.group %}{{session.group.acronym}}{% endif %}{% if session.name %} - {{session.name}}{% endif %}',
                               filter_keywords: ["{{ session.filter_keywords|join:'","' }}"],
-                              start_moment: moment.utc('{{session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}}'),
-                              end_moment: moment.utc('{{session.official_timeslotassignment.timeslot.utc_end_time | date:"Y-m-d H:i"}}'),
+                              start_moment: moment.utc('{{session.official_timeslotassignment.timeslot.time | utc | date:"Y-m-d H:i"}}'),
+                              end_moment: moment.utc('{{session.official_timeslotassignment.timeslot.end_time | utc | date:"Y-m-d H:i"}}'),
                               url: '{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}'
                           }
                       {% endwith %}

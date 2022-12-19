@@ -13,6 +13,7 @@ from requests import Response
 import debug    # pyflakes:ignore
 
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 import ietf.stats.views
@@ -21,13 +22,15 @@ from ietf.submit.models import Submission
 from ietf.doc.factories import WgDraftFactory, WgRfcFactory
 from ietf.doc.models import Document, DocAlias, State, RelatedDocument, NewRevisionDocEvent, DocumentAuthor
 from ietf.group.factories import RoleFactory
-from ietf.meeting.factories import MeetingFactory
+from ietf.meeting.factories import MeetingFactory, AttendedFactory
 from ietf.person.factories import PersonFactory
 from ietf.person.models import Person, Email
 from ietf.name.models import FormalLanguageName, DocRelationshipName, CountryName
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
 from ietf.stats.models import MeetingRegistration, CountryAlias
+from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.stats.utils import get_meeting_registration_data
+from ietf.utils.timezone import date_today
 
 
 class StatisticsTests(TestCase):
@@ -63,7 +66,7 @@ class StatisticsTests(TestCase):
         Document.objects.filter(pk=draft.pk).update(words=4000)
         # move it back so it shows up in the yearly summaries
         NewRevisionDocEvent.objects.filter(doc=draft, rev=draft.rev).update(
-            time=datetime.datetime.now() - datetime.timedelta(days=500))
+            time=timezone.now() - datetime.timedelta(days=500))
 
         referencing_draft = Document.objects.create(
             name="draft-ietf-mars-referencing",
@@ -88,7 +91,7 @@ class StatisticsTests(TestCase):
             doc=referencing_draft,
             desc="New revision available",
             rev=referencing_draft.rev,
-            time=datetime.datetime.now() - datetime.timedelta(days=1000)
+            time=timezone.now() - datetime.timedelta(days=1000)
         )
 
 
@@ -121,12 +124,12 @@ class StatisticsTests(TestCase):
 
     def test_meeting_stats(self):
         # create some data for the statistics
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today(), number="96")
-        MeetingRegistration.objects.create(first_name='John', last_name='Smith', country_code='US', email="john.smith@example.us", meeting=meeting, attended=True)
+        meeting = MeetingFactory(type_id='ietf', date=date_today(), number="96")
+        MeetingRegistrationFactory(first_name='John', last_name='Smith', country_code='US', email="john.smith@example.us", meeting=meeting, attended=True)
         CountryAlias.objects.get_or_create(alias="US", country=CountryName.objects.get(slug="US"))
-        MeetingRegistration.objects.create(first_name='Jaume', last_name='Guillaume', country_code='FR', email="jaume.guillaume@example.fr", meeting=meeting, attended=True)
+        p = MeetingRegistrationFactory(first_name='Jaume', last_name='Guillaume', country_code='FR', email="jaume.guillaume@example.fr", meeting=meeting, attended=False).person
         CountryAlias.objects.get_or_create(alias="FR", country=CountryName.objects.get(slug="FR"))
-
+        AttendedFactory(session__meeting=meeting,person=p)
         # check redirect
         url = urlreverse(ietf.stats.views.meeting_stats)
 
@@ -197,7 +200,7 @@ class StatisticsTests(TestCase):
                 self.assertTrue(q('.review-stats td:contains("1")'))
 
         # check stacked chart
-        expected_date = datetime.date.today().replace(day=1)
+        expected_date = date_today().replace(day=1)
         expected_js_timestamp = calendar.timegm(expected_date.timetuple()) * 1000
         url = urlreverse(ietf.stats.views.review_stats, kwargs={ "stats_type": "time" })
         url += "?team={}".format(review_req.team.acronym)

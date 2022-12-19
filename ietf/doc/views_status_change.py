@@ -35,6 +35,7 @@ from ietf.name.models import DocRelationshipName, StdLevelName
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
+from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 
 
 class ChangeStateForm(forms.Form):
@@ -467,7 +468,13 @@ class StartStatusChangeForm(forms.Form):
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active",role__group__type='area').order_by('name'), 
                                 label="Shepherding AD", empty_label="(None)", required=False)
     create_in_state = forms.ModelChoiceField(State.objects.filter(type="statchg", slug__in=("needshep", "adrev")), empty_label=None, required=False)
-    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas.", required=False)
+    notify = forms.CharField(
+        widget=forms.Textarea,
+        max_length=1023,
+        label="Notice emails",
+        help_text="Separate email addresses with commas.",
+        required=False,
+    )
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))
     relations={}                        # type: Dict[str, str]
 
@@ -638,7 +645,7 @@ def generate_last_call_text(request, doc):
     # and when groups are set, vary the expiration time accordingly
 
     requester = "an individual participant"
-    expiration_date = datetime.date.today() + datetime.timedelta(days=28)
+    expiration_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=28)
     cc = []
     
     new_text = render_to_string("doc/status_change/last_call_announcement.txt",

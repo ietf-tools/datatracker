@@ -3,7 +3,6 @@
 
 
 import copy
-import datetime
 #import logging
 import re
 import smtplib
@@ -27,6 +26,7 @@ from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.core.validators import validate_email
 from django.template.loader import render_to_string
 from django.template import Context,RequestContext
+from django.utils import timezone
 from django.utils.encoding import force_text, force_str, force_bytes
 
 import debug                            # pyflakes:ignore
@@ -324,7 +324,7 @@ def show_that_mail_was_sent(request,leadline,msg,bcc):
         if request and request.user:
             from ietf.ietfauth.utils import has_role
             if has_role(request.user,['Area Director','Secretariat','IANA','RFC Editor','ISE','IAD','IRTF Chair','WG Chair','RG Chair','WG Secretary','RG Secretary']):
-                info =  "%s at %s %s\n" % (leadline,datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),settings.TIME_ZONE)
+                info =  "%s at %s %s\n" % (leadline,timezone.now().strftime("%Y-%m-%d %H:%M:%S"),settings.TIME_ZONE)
                 info += "Subject: %s\n" % force_text(msg.get('Subject','[no subject]'))
                 info += "To: %s\n" % msg.get('To','[no to]')
                 if msg.get('Cc'):
@@ -378,7 +378,7 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
         try:
             send_smtp(msg, bcc)
             if save:
-                message.sent = datetime.datetime.now()
+                message.sent = timezone.now()
                 message.save()
             if settings.SERVER_MODE != 'development':
                 show_that_mail_was_sent(request,'Email was sent',msg,bcc)
@@ -505,7 +505,7 @@ def send_mail_message(request, message, extra=None):
 
 #     msg = send_mail_text(request, message.to, message.frm, message.subject,
 #                           message.body, cc=message.cc, bcc=message.bcc, extra=e, save=False)
-    message.sent = datetime.datetime.now()
+    message.sent = timezone.now()
     message.save()
     return msg
 
@@ -533,7 +533,7 @@ def log_smtp_exception(e):
 def build_warning_message(request, e):
     (extype, value, tb) = exception_components(e)
     if request:
-        warning =  "An error occured while sending email:\n"
+        warning =  "An error occurred while sending email:\n"
         if getattr(e,'original_msg',None):
             warning += "Subject: %s\n" % e.original_msg.get('Subject','[no subject]')
             warning += "To: %s\n" % e.original_msg.get('To','[no to]')

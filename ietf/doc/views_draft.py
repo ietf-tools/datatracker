@@ -19,6 +19,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.forms.utils import ErrorList
 from django.template.defaultfilters import pluralize
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -52,6 +53,8 @@ from ietf.utils.mail import send_mail, send_mail_message, on_behalf_of
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils import log
 from ietf.utils.response import permission_denied
+from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO
+
 
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg"), empty_label=None, required=True)
@@ -512,7 +515,13 @@ class EditInfoForm(forms.Form):
     area = forms.ModelChoiceField(Group.objects.filter(type="area", state="active"), empty_label="(None - individual submission)", required=False, label="Assigned to area")
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active",role__group__type='area').order_by('name'), label="Responsible AD", empty_label="(None)", required=True)
     create_in_state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg", slug__in=("pub-req", "watching")), empty_label=None, required=False)
-    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas.", required=False)
+    notify = forms.CharField(
+        widget=forms.Textarea,
+        max_length=1023,
+        label="Notice emails",
+        help_text="Separate email addresses with commas.",
+        required=False,
+    )
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False, strip=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))
     returning_item = forms.BooleanField(required=False)
@@ -592,7 +601,7 @@ def to_iesg(request,name):
                 e.by = by
                 e.doc = doc
                 e.rev = doc.rev
-                e.desc = "IESG process started in state <b>%s</b>" % target_state['iesg'].name
+                e.desc = "Document is now in IESG state <b>%s</b>" % target_state['iesg'].name
                 e.save()
                 events.append(e)
 
@@ -713,7 +722,7 @@ def edit_info(request, name):
                 e.by = by
                 e.doc = doc
                 e.rev = doc.rev
-                e.desc = "IESG process started in state <b>%s</b>" % doc.get_state("draft-iesg").name
+                e.desc = "Document is now in IESG state <b>%s</b>" % doc.get_state("draft-iesg").name
                 e.save()
                 events.append(e)
 
@@ -857,7 +866,7 @@ def resurrect(request, name):
         events.append(e)
 
         doc.set_state(State.objects.get(used=True, type="draft", slug="active"))
-        doc.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
+        doc.expires = timezone.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
         doc.save_with_history(events)
 
         restore_draft_file(request, doc)
@@ -989,14 +998,16 @@ def edit_shepherd_writeup(request, name):
                 return redirect("ietf.doc.views_doc.document_main", name=doc.name)
 
         elif "reset_text" in request.POST:
+            if not doc.group.type.slug or doc.group.type.slug != "wg":
+                generate_type = "individ"
+            else:
+                generate_type = "group"           
             init = {
                 "content": render_to_string(
                     "doc/shepherd_writeup.txt",
                     dict(
                         doc=doc,
-                        type="individ"
-                        if not doc.group.type.slug or doc.group.type.slug != "ietf"
-                        else "group",
+                        type=generate_type,
                         stream=doc.stream.slug,
                         group=doc.group.type.slug,
                     ),
@@ -1020,13 +1031,15 @@ def edit_shepherd_writeup(request, name):
         if previous_writeup:
             init["content"] = previous_writeup.text
         else:
+            if not doc.group.type.slug or doc.group.type.slug != "wg":
+                generate_type = "individ"
+            else:
+                generate_type = "group"
             init["content"] = render_to_string(
                 "doc/shepherd_writeup.txt",
                 dict(
                     doc=doc,
-                    type="individ"
-                    if not doc.group.type.slug or doc.group.type.slug != "wg"
-                    else "group",
+                    type=generate_type,
                     stream=doc.stream.slug,
                     group=doc.group.type.slug,
                 ),
@@ -1476,7 +1489,7 @@ def adopt_draft(request, name):
 
                 due_date = None
                 if form.cleaned_data["weeks"] != None:
-                    due_date = datetime.date.today() + datetime.timedelta(weeks=form.cleaned_data["weeks"])
+                    due_date = datetime_today(DEADLINE_TZINFO) + datetime.timedelta(weeks=form.cleaned_data["weeks"])
 
                 update_reminder(doc, "stream-s", e, due_date)
 
@@ -1667,7 +1680,7 @@ def change_stream_state(request, name, state_type):
 
                 due_date = None
                 if form.cleaned_data["weeks"] != None:
-                    due_date = datetime.date.today() + datetime.timedelta(weeks=form.cleaned_data["weeks"])
+                    due_date = datetime_today(DEADLINE_TZINFO) + datetime.timedelta(weeks=form.cleaned_data["weeks"])
 
                 update_reminder(doc, "stream-s", e, due_date)
 
