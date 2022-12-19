@@ -154,7 +154,6 @@ $tooltip-margin: inherit !default;
     }
 
     pre {
-        width: 72ch;
         margin: 0;
         padding: 0;
     }
@@ -176,6 +175,11 @@ $tooltip-margin: inherit !default;
         white-space: pre;
         display: inline;
     }
+
+    .newpage {
+        margin-top: -1.25em;
+    }
+
 }
 
 tbody.meta tr {
@@ -299,9 +303,14 @@ tbody.meta tr {
         margin: .75in;
     }
 
-    * {
+    .rfcmarkup {
         font-size: 9.75pt !important;
         line-height: 1.25em !important;
+    }
+
+    .rfchtml {
+        font-size: 9.75pt;
+        line-height: 1.25em;
     }
 
     body {
