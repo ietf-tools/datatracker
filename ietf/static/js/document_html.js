@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
         ["py-0"]);
 
     // activate pref buttons selected by pref cookies or localStorage
-    const in_localStorage = ["deftab"];
+    const in_localStorage = ["deftab", "reflinks"];
     document.querySelectorAll("#pref-tab-pane .btn-check")
         .forEach(btn => {
             const id = btn.id.replace("-radio", "");
@@ -81,7 +81,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
     defpane.show();
     document.activeElement.blur();
 
-    if (cookies.get("reflinks") != "refsection") {
+    if (localStorage.getItem("reflinks") != "refsection") {
         // make links to references go directly to the referenced doc
         document.querySelectorAll("a[href^='#'].xref")
             .forEach(ref => {
