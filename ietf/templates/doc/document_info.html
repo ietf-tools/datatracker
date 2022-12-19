@@ -79,14 +79,13 @@
                 {% include "doc/revisions_list.html" with document_html=document_html %}
             </td>
         </tr>
-        {% if doc.rev != "00" %}
+        {% if diff_revisions|length > 1 %}
             <tr>
                 <td></td>
                 <th scope="row">Compare versions</th>
                 <td class="edit"></td>
                 <td>
-                    <a class="btn btn-primary btn-sm" href="{{ settings.RFCDIFF_BASE_URL }}?difftype=--hwdiff&amp;url2={{ doc.name }}-{{ doc.rev }}.txt" title="Inline diff (wdiff)">Inline</a>
-                    <a class="btn btn-primary btn-sm" href="{{ settings.RFCDIFF_BASE_URL }}?url2={{ doc.name }}-{{ doc.rev }}.txt" title="Side-by-side diff">Side-by-side</a>
+                    {% include "doc/document_history_form.html" with doc=doc diff_revisions=diff_revisions action=rfcdiff_base_url document_html=document_html only %}
                 </td>
             </tr>
         {% endif %}

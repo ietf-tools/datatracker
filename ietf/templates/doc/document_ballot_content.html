@@ -4,7 +4,7 @@
 {% load ietf_filters %}
 {% load textfilters %}
 <div class="row">
-    <div class="col-md-2 d-none d-md-block d-sm-block d-lg-block d-xl-block d-xxl-block">
+    <div class="col-md-2">
         {% for n, positions in position_groups %}
             <p class="h5">
                 <span class="badge rounded-pill {{ n|pos_to_label_format }}">{{ n.name }}</span>
@@ -85,10 +85,12 @@
         {% for n, positions in position_groups %}
             {% for p in positions %}
                 {% if not p.is_old_pos %}
-                    <p class="h5 mt-4"
-                        id="{{ doc.name|slugify }}_{{ p.balloter.plain_name|slugify }}">
-                        {{ p.balloter.plain_name }}
-                        <span class="float-end">
+                    <div class="h5 d-flex mt-4"
+                         id="{{ doc.name|slugify }}_{{ p.balloter.plain_name|slugify }}">
+                        <div class="flex-fill">
+                            {{ p.balloter.plain_name }}
+                        </div>
+                        <div class="flex-fill text-end">
                             {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
                             <span class="badge rounded-pill {{ p.pos|pos_to_label_format }}">{{ p.pos }}</span>
                             {% if user|has_role:"Secretariat" %}
@@ -98,8 +100,8 @@
                                     Edit
                                 </a>
                             {% endif %}
-                        </span>
-                    </p>
+                        </div>
+                    </div>
                     {% if p.pos.blocking and p.discuss %}
                         <div class="card border-danger {% if p.comment %} mb-2{% endif %}">
                             <div class="card-header bg-danger text-light">
@@ -158,9 +160,12 @@
         {% for n, positions in position_groups %}
             {% for p in positions %}
                 {% if p.is_old_pos %}
-                    <p class="h5 mt-4" id="{{ doc.name|slugify }}_{{ p.balloter.plain_name|slugify }}">
-                        <span class="text-muted">({{ p.balloter.plain_name }}; former steering group member)</span>
-                        <span class="float-end">
+                    <div class="h5 d-flex mt-4"
+                         id="{{ doc.name|slugify }}_{{ p.balloter.plain_name|slugify }}">
+                        <div class="flex-fill text-muted">
+                            {{ p.balloter.plain_name }} <span class="badge rounded-pill bg-secondary">Former IESG member</span>
+                        </div>
+                        <div class="flex-fill text-end">
                             {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
                             <span class="badge rounded-pill {{ p.pos|pos_to_label_format }}">{{ p.pos }}</span>
                             {% if user|has_role:"Secretariat" %}
@@ -170,8 +175,8 @@
                                     Edit
                                 </a>
                             {% endif %}
-                        </span>
-                    </p>
+                        </div>
+                    </div>
                     <div class="card {{ p.pos|pos_to_border_format }}">
                         <div class="card-header {{ p.pos|pos_to_label_format }}">
                             <div>
