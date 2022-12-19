@@ -711,8 +711,11 @@ def complete_review(request, name, assignment_id=None, acronym=None):
                     date_today().isoformat(),
                 ]
                 review_name = "-".join(c for c in name_components if c).lower()
-                if not Document.objects.filter(name=review_name).exists():
-                    review = Document.objects.create(name=review_name,type_id='review',group=team)
+                review, created = Document.objects.get_or_create(
+                    name=review_name,
+                    defaults={'type_id': 'review', 'group': team},
+                )
+                if created:
                     DocAlias.objects.create(name=review_name).docs.add(review)
                 else:
                     messages.warning(request, message='Attempt to save review failed: review document already exists. This most likely occurred because the review was submitted twice in quick succession. If you intended to submit a new review, rather than update an existing one, things are probably OK. Please verify that the shown review is what you expected.')

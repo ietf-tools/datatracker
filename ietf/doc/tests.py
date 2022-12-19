@@ -744,6 +744,12 @@ Man                    Expires September 22, 2015               [Page 3]
         q = PyQuery(r.content)
         self.assertEqual(q('title').text(), 'draft-ietf-mars-test-01')
 
+        # check that revision list has expected versions
+        self.assertEqual(len(q('#sidebar .revision-list .page-item.active a.page-link[href$="draft-ietf-mars-test-01"]')), 1)
+
+        # check that diff dropdowns have expected versions
+        self.assertEqual(len(q('#sidebar option[value="draft-ietf-mars-test-00"][selected="selected"]')), 1)
+
         rfc = WgRfcFactory()
         (Path(settings.RFC_PATH) / rfc.get_base_name()).touch()
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
@@ -1701,7 +1707,7 @@ class DocTestCase(TestCase):
             href = q(f'div.balloter-name a[href$="{author_slug}"]').attr('href')
             ids = [
                 target.attr('id')
-                for target in q(f'p.h5[id$="{author_slug}"]').items()
+                for target in q(f'div.h5[id$="{author_slug}"]').items()
             ]
             self.assertEqual(len(ids), 1, 'Should be exactly one link for the balloter')
             self.assertEqual(href, f'#{ids[0]}', 'Anchor href should match ID')

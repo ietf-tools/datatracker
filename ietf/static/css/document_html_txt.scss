@@ -70,11 +70,6 @@ blockquote {
   border-left: 2px solid darkgrey;
 }
 
-// Don't wrap boilerplate URLs; makes it look more like text version.
-:is(#status-of-memo, #copyright) a[href] {
-    white-space: nowrap;
-}
-
 /* Header junk */
 #external-metadata {
   display: none !important; /* metadata.min.js is evil because it produces unstyleable goop */
@@ -87,10 +82,6 @@ blockquote {
 }
 #identifiers {
   margin: 0;
-  display: grid;
-  grid-template-columns: 47ch 24ch;
-  grid-auto-rows: auto;
-  gap: 0 1ch;
 }
 #identifiers dt {
   margin: 0 1ch 0 0;
@@ -98,7 +89,6 @@ blockquote {
   display: inline-block;
 }
 #identifiers dd {
-  grid-column: 1;
   margin: 0;
   width: 47ch;
   /* HAXX: this gets around the lack of text-content-trim support */
@@ -146,7 +136,7 @@ blockquote {
   margin: 0 0 0 1ch;
 }
 #identifiers dd:is(.updates, .obsoletes) a:last-of-type {
-  margin: 0 1ch;
+  margin-right: 1ch;
 }
 #identifiers dd.published::before {
   content: "Published:";
@@ -160,11 +150,52 @@ blockquote {
 #identifiers dd.issn::before {
   content: "ISSN:";
 }
-#identifiers dd.authors {
-  grid-area: 1 / 2 / 100 / 3;
-  width: 24ch;
-  text-align: right;
-  display: block;
+
+/* Thanks WeasyPrint for not supporting @supports */
+/* @supports not (display: grid) { */
+  #identifiers dd.authors {
+    padding-left: 8ch;
+    width: 64ch;
+  }
+  #identifiers dd.authors::before {
+    content: "Authors:";
+    margin: 0 0 0 -8ch;
+  }
+  #identifiers dd.authors .author {
+    display: inline-block;
+    margin: 0 2ch 0 1ch;
+  }
+  #identifiers dd.authors .author:last-of-type {
+    margin-right: 0;
+  }
+/* } */
+/* #identifiers styling for when grid layout is supported, or not */
+@supports(display: grid) {
+  #identifiers {
+    display: grid;
+    grid-template-columns: 47ch 24ch;
+    grid-auto-rows: auto;
+    gap: 0 1ch;
+  }
+  #identifiers dd {
+    grid-column: 1;
+  }
+  #identifiers dd.authors {
+    grid-area: 1 / 2 / 100 / 3;
+    width: 24ch;
+    text-align: right;
+    display: block;
+    /* overrides for @supports not block */
+    padding-left: 0;
+  }
+  /* more overrides for @supports not block */
+  #identifiers dd.authors::before {
+    display: none;
+  }
+  #identifiers dd.authors .author {
+    display: block;
+    margin: 0;
+  }
 }
 
 #title {
@@ -174,6 +205,9 @@ blockquote {
 }
 #rfcnum {
   display: none;
+}
+:is(#status-of-memo, #copyright) a {
+  white-space: nowrap;
 }
 .toplink {
   display: none;
@@ -200,7 +234,7 @@ ol, ul {
 ol {
   margin: 0 0 0 6ch; /* todo: deal with lists that have >= 10 items */
 }
-ol ol, ul ol {
+:is(ol, ul) ol {
   margin: 0 0 0 3ch;
 }
 ul {
@@ -210,7 +244,7 @@ ul {
 ul ul {
   list-style-type: '-';
 }
-ul ul, ol ul {
+:is(ul, ol) ul {
   margin-left: 1ch;
 }
 ul ul ul {
@@ -224,7 +258,7 @@ li {
 .compact li {
   margin: 0;
 }
-li p:first-child, dd p:first-child {
+:is(li, dd) p:first-child {
   margin: 0;
 }
 dt {
@@ -238,7 +272,7 @@ dd {
   @include margin-paragraph;
   break-before: avoid;
 }
-dl.compact dt, dl.compact dd {
+dl.compact :is(dt, dd) {
   margin-top: 0;
   margin-bottom: 0;
 }
@@ -248,7 +282,7 @@ dl.references dt {
 dl.references dd {
   margin-left: 11ch;
 }
-dd.break {
+:is(dd, span).break {
   display: none;
 }
 
@@ -257,31 +291,31 @@ pre {
   // margin: var(--line) 0;
   @include margin-line;
 }
-div.artwork, div.sourcecode {
+div:is(.artwork, .sourcecode) {
   display: flex;
   flex-wrap: nowrap;
   align-items: end;
 }
-div.artwork.alignCenter, div.sourcecode.alignCenter {
+div:is(.artwork, .sourcecode).alignCenter {
   justify-content: center;
 }
-div.artwork.alignRight, div.sourcecode.alignRight {
+div:is(.artwork, .sourcecode).alignRight {
   justify-content: end;
 }
-div.artwork::before, div.sourcecode::before {
+div:is(.artwork, .sourcecode)::before {
   flex: 0 1 3ch;
   content: "";
 }
-div.artwork.alignRight::before, div.sourcecode.alignRight::before {
+div:is(.artwork, .sourcecode).alignRight::before {
   flex-grow: 1;
 }
-div.artwork pre, div.sourcecode pre {
+div:is(.artwork, .sourcecode) pre {
   flex: 0 0 content;
   margin: 0;
   max-width: 72ch;
   overflow: auto;
 }
-div.artwork .pilcrow, div.sourcecode .pilcrow {
+div:is(.artwork, .sourcecode) .pilcrow {
   flex: 0 0 1ch;
 }
 figcaption, table caption {
@@ -335,7 +369,7 @@ a.selfRef, a.pilcrow {
 a.relref, a.xref {
   hyphens: none;
 }
-a.relref, a.xref.cite {
+a:is(.relref, .xref:is(.cite, .auto.internal)) {
   white-space: nowrap;
 }
 .pilcrow {
@@ -343,6 +377,7 @@ a.relref, a.xref.cite {
   margin-right: -1ch;
   opacity: 0.01;
   text-decoration: none;
+  user-select: none;
 }
 :hover > .pilcrow {
   opacity: 0.2;
