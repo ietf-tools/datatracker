@@ -31,6 +31,9 @@ cp ./docker/configs/settings_local.py ./ietf/settings_local.py
 cp ./docker/configs/settings_mysqldb.py ./ietf/settings_mysqldb.py
 cp ./docker/configs/settings_postgresqldb.py ./ietf/settings_postgresqldb.py
 
+# Switch to MySQL config
+cat ./ietf/settings_local.py | sed 's/from ietf.settings_postgresqldb import DATABASES/from ietf.settings_mysqldb import DATABASES/' > /tmp/settings_local.py && mv /tmp/settings_local.py ./ietf/settings_local.py
+
 # Initial checks
 echo "Running initial checks..."
 /usr/local/bin/python ./ietf/manage.py check --settings=settings_local
@@ -44,6 +47,7 @@ echo "Running initial checks..."
 # fails on purpose, hence the `|| true` so we may proceed
 /usr/local/bin/python ./ietf/manage.py migrate --settings=settings_local || true
 
+# Switch to PostgreSQL config
 cat ./ietf/settings_local.py | sed 's/from ietf.settings_mysqldb import DATABASES/from ietf.settings_postgresqldb import DATABASES/' > /tmp/settings_local.py && mv /tmp/settings_local.py ./ietf/settings_local.py
 
 # Now transfer the migrated database from mysql to postgres unless that's already happened.
