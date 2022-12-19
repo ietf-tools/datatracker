@@ -744,6 +744,12 @@ Man                    Expires September 22, 2015               [Page 3]
         q = PyQuery(r.content)
         self.assertEqual(q('title').text(), 'draft-ietf-mars-test-01')
 
+        # check that revision list has expected versions
+        self.assertEqual(len(q('#sidebar .revision-list .page-item.active a.page-link[href$="draft-ietf-mars-test-01"]')), 1)
+
+        # check that diff dropdowns have expected versions
+        self.assertEqual(len(q('#sidebar option[value="draft-ietf-mars-test-00"][selected="selected"]')), 1)
+
         rfc = WgRfcFactory()
         (Path(settings.RFC_PATH) / rfc.get_base_name()).touch()
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
@@ -1281,7 +1287,12 @@ Man                    Expires September 22, 2015               [Page 3]
 
     def test_edit_authors_edit_fields(self):
         draft = WgDraftFactory()
-        DocumentAuthorFactory.create_batch(3, document=draft)
+        DocumentAuthorFactory.create_batch(
+            3,
+            document=draft,
+            affiliation='Somewhere, Inc.',
+            country='Bolivia',
+        )
         url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=draft.name))
         change_reason = 'reorder the authors'
 
@@ -1293,8 +1304,9 @@ Man                    Expires September 22, 2015               [Page 3]
             authors = draft.documentauthor_set.all(),
             basis=change_reason
         )
-        
-        new_email = EmailFactory(person=draft.authors()[0])
+
+        old_address = draft.authors()[0].email()
+        new_email = EmailFactory(person=draft.authors()[0], address=f'changed-{old_address}')
         post_data['author-0-email'] = new_email.address
         post_data['author-1-affiliation'] = 'University of Nowhere'
         post_data['author-2-country'] = 'Chile'
@@ -1701,7 +1713,7 @@ class DocTestCase(TestCase):
             href = q(f'div.balloter-name a[href$="{author_slug}"]').attr('href')
             ids = [
                 target.attr('id')
-                for target in q(f'p.h5[id$="{author_slug}"]').items()
+                for target in q(f'div.h5[id$="{author_slug}"]').items()
             ]
             self.assertEqual(len(ids), 1, 'Should be exactly one link for the balloter')
             self.assertEqual(href, f'#{ids[0]}', 'Anchor href should match ID')

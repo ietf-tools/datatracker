@@ -66,6 +66,11 @@ window.setupSelect2Field = function (e) {
                 .focus()
         });
 
+    // Remove spurious title attribute (https://github.com/select2/select2/pull/3988)
+    $(document)
+        .on("mouseenter", ".select2-selection__rendered", function () { $(this)
+                .removeAttr("title"); });
+
     e.select2({
         multiple: maxEntries !== 1,
         maximumSelectionSize: maxEntries,
