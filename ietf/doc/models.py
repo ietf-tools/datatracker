@@ -606,6 +606,7 @@ class DocumentInfo(models.Model):
                 # The path here has to match the urlpattern for htmlized
                 # documents in order to produce correct intra-document links
                 html = rfc2html.markup(text, path=settings.HTMLIZER_URL_PREFIX)
+                html = f'<div class="rfcmarkup">{html}</div>'
                 if html:
                     cache.set(cache_key, html, settings.HTMLIZER_CACHE_TIME)
         return html
