@@ -155,6 +155,19 @@ async function main () {
   } else {
     console.info('Existing assets docker volume found.')
   }
+  
+  // Get shared test docker volume
+  console.info('Querying shared test docker volume...')
+  const testVolume = await dock.getVolume(`dt-test-${branch}`)
+  if (testVolume) {
+    console.info('Existing shared test docker volume found. Deleting first...')
+    await testVolume.remove({ force: true })
+  }
+  console.info('Creating new shared test docker volume...')
+  await dock.createVolume({
+    Name: `dt-test-${branch}`
+  })
+  console.info('Created shared test docker volume successfully.')
 
   // Create DB container
   console.info(`Creating DB docker container... [dt-db-${branch}]`)
@@ -211,7 +224,8 @@ async function main () {
       ],
       HostConfig: {
         Binds: [
-          'dt-assets:/assets'
+          'dt-assets:/assets',
+          `dt-test-${branch}:/test`
         ],
         Init: true,
         NetworkMode: 'shared',
@@ -243,7 +257,8 @@ async function main () {
     },
     HostConfig: {
       Binds: [
-        'dt-assets:/assets'
+        'dt-assets:/assets',
+        `dt-test-${branch}:/test`
       ],
       NetworkMode: 'shared',
       RestartPolicy: {
