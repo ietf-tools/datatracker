@@ -96,6 +96,7 @@ urlpatterns = [
     url(r'^recent/?$', views_search.recent_drafts),
     url(r'^select2search/(?P<model_name>(document|docalias))/(?P<doc_type>draft)/$', views_search.ajax_select2_search_docs),
     url(r'^ballots/irsg/$', views_ballot.irsg_ballot_status),
+    url(r'^ballots/rsab/$', views_ballot.rsab_ballot_status),
 
     url(r'^%(name)s(?:/%(rev)s)?/$' % settings.URL_REGEXPS, views_doc.document_main),
     url(r'^%(name)s(?:/%(rev)s)?/bibtex/$' % settings.URL_REGEXPS, views_doc.document_bibtex),
@@ -110,6 +111,7 @@ urlpatterns = [
     url(r'^%(name)s/referencedby/$' % settings.URL_REGEXPS, views_doc.document_referenced_by),
     url(r'^%(name)s/ballot/(iesg/)?$' % settings.URL_REGEXPS, views_doc.document_ballot),
     url(r'^%(name)s/ballot/irsg/$' % settings.URL_REGEXPS, views_doc.document_irsg_ballot),
+    url(r'^%(name)s/ballot/rsab/$' % settings.URL_REGEXPS, views_doc.document_rsab_ballot),
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/$' % settings.URL_REGEXPS, views_doc.document_ballot),
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/position/$' % settings.URL_REGEXPS, views_ballot.edit_position),
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/emailposition/$' % settings.URL_REGEXPS, views_ballot.send_ballot_comment),
@@ -161,6 +163,8 @@ urlpatterns = [
     url(r'^%(name)s/edit/resources/$' % settings.URL_REGEXPS, views_draft.edit_doc_extresources),
     url(r'^%(name)s/edit/issueballot/irsg/$' % settings.URL_REGEXPS, views_ballot.issue_irsg_ballot),
     url(r'^%(name)s/edit/closeballot/irsg/$' % settings.URL_REGEXPS, views_ballot.close_irsg_ballot),
+    url(r'^%(name)s/edit/issueballot/rsab/$' % settings.URL_REGEXPS, views_ballot.issue_rsab_ballot),
+    url(r'^%(name)s/edit/closeballot/rsab/$' % settings.URL_REGEXPS, views_ballot.close_rsab_ballot),
 
     url(r'^help/state/(?P<type>[\w-]+)/$', views_help.state_help),
     url(r'^help/relationships/$', views_help.relationship_help),

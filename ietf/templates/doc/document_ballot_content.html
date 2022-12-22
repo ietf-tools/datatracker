@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
 {% load origin %}
 {% origin %}
 {% load ietf_filters %}
@@ -53,9 +53,9 @@
                 <b>Ballot question:</b> "{{ ballot.ballot_type.question }}"
             </p>
         {% endif %}
-        {% if editable and user|has_role:"Area Director,Secretariat,IRSG Member" %}
+        {% if editable and user|has_role:"Area Director,Secretariat,IRSG Member,RSAB Member" %}
             <a class="btn btn-primary my-3"
-               href="https://mailarchive.ietf.org/arch/search/?q=subject:{{ doc.name }}+AND+subject:(discuss+OR+comment+OR+review)">
+               href="https://mailarchive.ietf.org/arch/search/?q=subject:{{ doc.name }}+AND+subject:(discuss+OR+comment+OR+review+OR+concern)">
                 Search Mailarchive
             </a>
             {% if user|can_ballot:doc %}
@@ -74,7 +74,7 @@
                            href="{% url 'ietf.doc.views_ballot.defer_ballot' name=doc.name %}">Defer ballot</a>
                     {% endif %}
                 {% endif %}
-                {% if user|has_role:"Area Director,Secretariat" and ballot.ballot_type.slug != "irsg-approve" %}
+                {% if user|has_role:"Area Director,Secretariat" and ballot.ballot_type.slug != "irsg-approve" and ballot.ballot_type.slug != "rsab-approve" %}
                     <a class="btn btn-danger"
                        href="{% url 'ietf.doc.views_ballot.clear_ballot' name=doc.name ballot_type_slug=ballot.ballot_type.slug %}">
                         Clear ballot

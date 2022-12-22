@@ -1375,63 +1375,163 @@ def request_publication(request, name):
                           )
 
 class AdoptDraftForm(forms.Form):
-    group = forms.ModelChoiceField(queryset=Group.objects.filter(type__features__acts_like_wg=True, state="active").order_by("-type", "acronym"), required=True, empty_label=None)
-    newstate = forms.ModelChoiceField(queryset=State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'], used=True).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING), required=True, label="State")
-    comment = forms.CharField(widget=forms.Textarea, required=False, label="Comment", help_text="Optional comment explaining the reasons for the adoption.", strip=False)
+    group = forms.ModelChoiceField(
+        queryset=Group.objects.filter(type__features__acts_like_wg=True, state="active")
+        .order_by("-type", "acronym")
+        .distinct(),
+        required=True,
+        empty_label=None,
+    )
+    newstate = forms.ModelChoiceField(
+        queryset=State.objects.filter(
+            type__in=[
+                "draft-stream-ietf",
+                "draft-stream-irtf",
+                "draft-stream-editorial",
+            ],
+            used=True,
+        ).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING),
+        required=True,
+        label="State",
+    )
+    comment = forms.CharField(
+        widget=forms.Textarea,
+        required=False,
+        label="Comment",
+        help_text="Optional comment explaining the reasons for the adoption.",
+        strip=False,
+    )
     weeks = forms.IntegerField(required=False, label="Expected weeks in adoption state")
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
-        rg_features = GroupFeatures.objects.get(type_id='rg')
-        wg_features = GroupFeatures.objects.get(type_id='wg')
-
         super(AdoptDraftForm, self).__init__(*args, **kwargs)
+
+        docman_roles = {}
+        for group_type in ("wg", "ag", "rg", "rag", "edwg"):
+            docman_roles[group_type] = GroupFeatures.objects.get(
+                type_id=group_type
+            ).docman_roles
 
         state_types = set()
         if has_role(user, "Secretariat"):
-            state_types.update(['draft-stream-ietf','draft-stream-irtf'])
-        else: 
-            if (has_role(user, "IRTF Chair")
-                or Group.objects.filter(type="rg",
-                                        state="active",
-                                        role__person__user=user,
-                                        role__name__in=rg_features.docman_roles).exists()):
-                state_types.add('draft-stream-irtf')
-            if Group.objects.filter(    type="wg",
-                                        state="active",
-                                        role__person__user=user,
-                                        role__name__in=wg_features.docman_roles).exists():
-                state_types.add('draft-stream-ietf')
+            state_types.update(
+                ["draft-stream-ietf", "draft-stream-irtf", "draft-stream-editorial"]
+            )
+        else:
+            if has_role(user, "IRTF Chair") or any(
+                [
+                    Group.objects.filter(
+                        type=type_id,
+                        state="active",
+                        role__person__user=user,
+                        role__name__in=docman_roles[type_id],
+                    ).exists()
+                    for type_id in ("rg", "rag")
+                ]
+            ):
+                state_types.add("draft-stream-irtf")
+            if any(
+                [
+                    Group.objects.filter(
+                        type=type_id,
+                        state="active",
+                        role__person__user=user,
+                        role__name__in=docman_roles[type_id],
+                    ).exists()
+                    for type_id in ("wg", "ag")
+                ]
+            ):
+                state_types.add("draft-stream-ietf")
+            if Group.objects.filter(
+                type="edwg",
+                state="active",
+                role__person__user=user,
+                role__name__in=docman_roles["edwg"],
+            ).exists():
+                state_types.add("draft-stream-editorial")
 
-        state_choices = State.objects.filter(type__in=state_types, used=True).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING)
+        state_choices = State.objects.filter(type__in=state_types, used=True).exclude(
+            slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING
+        )
 
         if not has_role(user, "Secretariat"):
+            allow_matching_groups = []
             if has_role(user, "IRTF Chair"):
-                group_queryset = self.fields["group"].queryset.filter(Q(role__person__user=user, role__name__in=rg_features.docman_roles)|Q(type="rg", state="active")).distinct()
-            else:
-                group_queryset = self.fields["group"].queryset.filter(role__person__user=user, role__name__in=wg_features.docman_roles).distinct()
-            self.fields["group"].queryset = group_queryset
+                allow_matching_groups.append(Q(type__in=["rg", "rag"]))
+            for type_id in docman_roles:
+                allow_matching_groups.append(
+                    Q(
+                        role__person__user=user,
+                        role__name__in=docman_roles[type_id],
+                        type_id=type_id,
+                    )
+                )
+            combined_query = Q(pk__in=[]) # Never use Q() here when following this pattern
+            for query in allow_matching_groups:
+                combined_query |= query
+        
+            self.fields["group"].queryset = self.fields["group"].queryset.filter(combined_query)
 
-        self.fields['group'].choices = [(g.pk, '%s - %s' % (g.acronym, g.name)) for g in self.fields["group"].queryset]
-        self.fields['newstate'].choices = [('','-- Pick a state --')]
-        self.fields['newstate'].choices.extend([(x.pk,x.name + " (IETF)") for x in state_choices if x.type_id == 'draft-stream-ietf'])
-        self.fields['newstate'].choices.extend([(x.pk,x.name + " (IRTF)") for x in state_choices if x.type_id == 'draft-stream-irtf'])
+        self.fields["group"].choices = [
+            (g.pk, "%s - %s" % (g.acronym, g.name))
+            for g in self.fields["group"].queryset
+        ]
+        self.fields["newstate"].choices = [("", "-- Pick a state --")]
+        self.fields["newstate"].choices.extend(
+            [
+                (x.pk, x.name + " (IETF)")
+                for x in state_choices
+                if x.type_id == "draft-stream-ietf"
+            ]
+        )
+        self.fields["newstate"].choices.extend(
+            [
+                (x.pk, x.name + " (IRTF)")
+                for x in state_choices
+                if x.type_id == "draft-stream-irtf"
+            ]
+        )
+        self.fields["newstate"].choices.extend(
+            [
+                (x.pk, x.name + " (Editorial)")
+                for x in state_choices
+                if x.type_id == "draft-stream-editorial"
+            ]
+        )
 
     def clean_newstate(self):
-        group = self.cleaned_data['group']
-        newstate = self.cleaned_data['newstate']
-        
-        if (newstate.type_id == 'draft-stream-ietf') and (group.type_id == 'rg'):
-            raise forms.ValidationError('Cannot assign IETF WG state to IRTF group')
-        elif (newstate.type_id == 'draft-stream-irtf') and (group.type_id == 'wg'):
-            raise forms.ValidationError('Cannot assign IRTF RG state to IETF group')
-        else:
-            return newstate
-               
+        group = self.cleaned_data["group"]
+        newstate = self.cleaned_data["newstate"]
+
+        ok_to_assign = (
+            ("draft-stream-ietf", ("wg", "ag")),
+            ("draft-stream-irtf", ("rg", "rag")),
+            ("draft-stream-editorial", ("edwg",)),
+        )
+        ok = True
+        for stream, types in ok_to_assign:
+            if newstate.type_id == stream and group.type_id not in types:
+                ok = False
+                break
+        if not ok:
+            state_type_text = newstate.type_id.split("-")[-1].upper()
+            group_type_text = {
+                "wg": "IETF Working Group",
+                "ag": "IETF Area Group",
+                "rg": "IRTF Research Group",
+                "rag": "IRTF Area Group",
+                "edwg": "Editorial Stream Working Group",
+            }[group.type_id]
+            raise forms.ValidationError(
+                f"Cannot assign {state_type_text} state to a {group_type_text}"
+            )
+        return newstate
+
+
 @login_required
 def adopt_draft(request, name):
     doc = get_object_or_404(Document, type="draft", name=name)
-
     if not can_adopt_draft(request.user, doc):
         permission_denied(request, "You don't have permission to access this page.")
 
@@ -1444,8 +1544,10 @@ def adopt_draft(request, name):
             events = []
 
             group = form.cleaned_data["group"]
-            if group.type.slug == "rg":
-                new_stream = StreamName.objects.get(slug="irtf")                
+            if group.type.slug in ("rg", "rag"):
+                new_stream = StreamName.objects.get(slug="irtf") 
+            elif group.type.slug =="edwg":
+                new_stream = StreamName.objects.get(slug="editorial")               
             else:
                 new_stream = StreamName.objects.get(slug="ietf")                
 

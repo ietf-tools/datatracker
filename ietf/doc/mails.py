@@ -334,6 +334,9 @@ def generate_publication_request(request, doc):
     if doc.stream_id == "irtf":
         approving_body = "IRSG"
         consensus_body = doc.group.acronym.upper()
+    if doc.stream_id == "editorial":
+        approving_body = "RSAB"
+        consensus_body = doc.group.acronym.upper()
     else:
         approving_body = str(doc.stream)
         consensus_body = approving_body
@@ -484,6 +487,54 @@ def email_irsg_ballot_closed(request, doc, ballot):
         ballot,
         'IRSG ballot closed: %s to %s'%(doc.file_tag(), std_level_prompt(doc)),
         "doc/mail/close_irsg_ballot_mail.txt",
+    )
+
+def _send_rsab_ballot_email(request, doc, ballot, subject, template):
+    """Send email notification when IRSG ballot is issued"""
+    (to, cc) = gather_address_lists('rsab_ballot_issued', doc=doc)
+    sender = 'IESG Secretary <iesg-secretary@ietf.org>'
+
+    active_ballot = doc.active_ballot()
+    if active_ballot is None:
+        needed_bps = ''
+    else:
+        needed_bps = needed_ballot_positions(
+            doc,
+            list(active_ballot.active_balloter_positions().values())
+        )
+
+    return send_mail(
+        request=request,
+        frm=sender,
+        to=to,
+        cc=cc,
+        subject=subject,
+        extra={'Reply-To': [sender]},
+        template=template,
+        context=dict(
+            doc=doc,
+            doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+            needed_ballot_positions=needed_bps,
+        ))
+
+def email_rsab_ballot_issued(request, doc, ballot):
+    """Send email notification when RSAB ballot is issued"""
+    return _send_rsab_ballot_email(
+        request,
+        doc,
+        ballot,
+        'RSAB ballot issued: %s to %s'%(doc.file_tag(), std_level_prompt(doc)),
+        'doc/mail/issue_rsab_ballot_mail.txt',
+    )
+
+def email_rsab_ballot_closed(request, doc, ballot):
+    """Send email notification when RSAB ballot is closed"""
+    return _send_rsab_ballot_email(
+        request,
+        doc,
+        ballot,
+        'RSAB ballot closed: %s to %s'%(doc.file_tag(), std_level_prompt(doc)),
+        "doc/mail/close_rsab_ballot_mail.txt",
     )
 
 def email_iana(request, doc, to, msg, cc=None):

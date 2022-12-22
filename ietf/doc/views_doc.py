@@ -92,13 +92,28 @@ def render_document_top(request, doc, tab, name):
     tabs = []
     tabs.append(("Status", "status", urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=name)), True, None))
 
-    iesg_type_slugs = set(BallotType.objects.values_list('slug',flat=True)) 
-    iesg_type_slugs.discard('irsg-approve')
+    iesg_type_slugs = set(BallotType.objects.exclude(slug__in=("irsg-approve","rsab-approve")).values_list('slug',flat=True)) 
     iesg_ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug__in=iesg_type_slugs)
     irsg_ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug='irsg-approve')
+    rsab_ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug='rsab-approve')
 
-    if doc.type_id == "draft" and doc.get_state("draft-stream-irtf"):
-        tabs.append(("IRSG Evaluation Record", "irsgballot", urlreverse("ietf.doc.views_doc.document_irsg_ballot", kwargs=dict(name=name)), irsg_ballot,  None if irsg_ballot else "IRSG Evaluation Ballot has not been created yet"))
+    if doc.type_id == "draft":
+        if doc.get_state("draft-stream-irtf"):
+            tabs.append((
+                "IRSG Evaluation Record", 
+                "irsgballot", 
+                urlreverse("ietf.doc.views_doc.document_irsg_ballot", kwargs=dict(name=name)), 
+                irsg_ballot,  
+                None if irsg_ballot else "IRSG Evaluation Ballot has not been created yet"
+            ))
+        if  doc.get_state("draft-stream-editorial"):
+            tabs.append((
+                "RSAB Evaluation Record", 
+                "rsabballot", 
+                urlreverse("ietf.doc.views_doc.document_rsab_ballot", kwargs=dict(name=name)), 
+                rsab_ballot,  
+                None if rsab_ballot else "RSAB Evaluation Ballot has not been created yet"
+            ))
     if doc.type_id in ("draft","conflrev", "statchg"):
         tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)), iesg_ballot,  None if iesg_ballot else "IESG Evaluation Ballot has not been created yet"))
     elif doc.type_id == "charter" and doc.group.type_id == "wg":
@@ -269,13 +284,11 @@ def document_main(request, name, rev=None, document_html=False):
 
         # ballot
         iesg_ballot_summary = None
-        irsg_ballot_summary = None
         due_date = None
         if (iesg_state_slug in IESG_BALLOT_ACTIVE_STATES) or irsg_state:
             active_ballot = doc.active_ballot()
             if active_ballot:
                 if irsg_state:
-                    irsg_ballot_summary = irsg_needed_ballot_positions(doc, list(active_ballot.active_balloter_positions().values()))
                     due_date=active_ballot.irsgballotdocevent.duedate
                 else:
                     iesg_ballot_summary = needed_ballot_positions(doc, list(active_ballot.active_balloter_positions().values()))
@@ -390,12 +403,29 @@ def document_main(request, name, rev=None, document_html=False):
         if doc.get_state_slug() == "expired" and has_role(request.user, ("Secretariat",)) and not snapshot:
             actions.append(("Resurrect", urlreverse('ietf.doc.views_draft.resurrect', kwargs=dict(name=doc.name))))
         
-        if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("irtf",) and not snapshot and not doc.ballot_open('irsg-approve') and can_edit_stream_info):
-            label = "Issue IRSG Ballot"
-            actions.append((label, urlreverse('ietf.doc.views_ballot.issue_irsg_ballot', kwargs=dict(name=doc.name))))
-        if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("irtf",) and not snapshot and doc.ballot_open('irsg-approve') and can_edit_stream_info):
-            label = "Close IRSG Ballot"
-            actions.append((label, urlreverse('ietf.doc.views_ballot.close_irsg_ballot', kwargs=dict(name=doc.name))))
+        if doc.get_state_slug() not in ["rfc", "expired"] and not snapshot and can_edit_stream_info:
+            if doc.stream_id == "irtf":
+                if not doc.ballot_open('irsg-approve'):
+                    actions.append((
+                        "Issue IRSG Ballot",
+                        urlreverse('ietf.doc.views_ballot.issue_irsg_ballot', kwargs=dict(name=doc.name))
+                    ))
+                else:
+                    actions.append((
+                        "Close IRSG Ballot",
+                        urlreverse('ietf.doc.views_ballot.close_irsg_ballot', kwargs=dict(name=doc.name))
+                    ))
+            elif doc.stream_id == "editorial":
+                if not doc.ballot_open('rsab-approve'):
+                    actions.append((
+                        "Issue RSAB Ballot",
+                        urlreverse('ietf.doc.views_ballot.issue_rsab_ballot', kwargs=dict(name=doc.name))
+                        ))
+                else:
+                    actions.append((
+                        "Close RSAB Ballot",
+                        urlreverse('ietf.doc.views_ballot.close_rsab_ballot', kwargs=dict(name=doc.name))
+                    ))
 
         if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ise", "irtf")
             and can_edit_stream_info and not conflict_reviews and not snapshot):
@@ -404,7 +434,7 @@ def document_main(request, name, rev=None, document_html=False):
                 label += " (note that intended status is not set)"
             actions.append((label, urlreverse('ietf.doc.views_conflict_review.start_review', kwargs=dict(name=doc.name))))
 
-        if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("iab", "ise", "irtf")
+        if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("iab", "ise", "irtf", "editorial")
             and can_edit_stream_info and not snapshot):
             if doc.get_state_slug('draft-stream-%s' % doc.stream_id) not in ('rfc-edit', 'pub', 'dead'):
                 label = "Request Publication"
@@ -491,8 +521,6 @@ def document_main(request, name, rev=None, document_html=False):
                                        draft_name=draft_name,
                                        telechat=telechat,
                                        iesg_ballot_summary=iesg_ballot_summary,
-                                       # PEY: Currently not using irsg_ballot_summary in the template, but it should be.  That will take a new box for IRSG data.
-                                       irsg_ballot_summary=irsg_ballot_summary,
                                        submission=submission,
                                        resurrected_by=resurrected_by,
 
@@ -1314,6 +1342,28 @@ def document_irsg_ballot(request, name, ballot_id=None):
                                    ballot_content=c,
                                    # ballot_type_slug=ballot.ballot_type.slug,
                                    ))
+
+def document_rsab_ballot(request, name, ballot_id=None):
+    doc = get_object_or_404(Document, docalias__name=name)
+    top = render_document_top(request, doc, "rsabballot", name)
+    if not ballot_id:
+        ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug='rsab-approve')
+        if ballot:
+            ballot_id = ballot.id
+
+    c = document_ballot_content(request, doc, ballot_id, editable=True)
+
+    request.session['ballot_edit_return_point'] = request.path_info
+
+    return render(
+        request,
+        "doc/document_ballot.html",
+        dict(
+            doc=doc,
+            top=top,
+            ballot_content=c,
+        )
+    )
 
 def ballot_popup(request, name, ballot_id):
     doc = get_object_or_404(Document, docalias__name=name)

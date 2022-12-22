@@ -334,7 +334,7 @@ def active_adm(request):
     return render(request, 'group/active_adm.html', {'adm' : adm })
 
 def active_rfced(request):
-    rfced = Group.objects.filter(type="rfcedtyp", state="active").order_by("parent", "name")
+    rfced = Group.objects.filter(type__in=["rfcedtyp", "edwg", "edappr"], state="active").order_by("parent", "name")
     return render(request, 'group/active_rfced.html', {'rfced' : rfced})
 
 

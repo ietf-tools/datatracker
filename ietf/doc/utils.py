@@ -11,7 +11,7 @@ import os
 import re
 import textwrap
 
-from collections import defaultdict, namedtuple
+from collections import defaultdict, namedtuple, Counter
 from typing import Union
 from urllib.parse import quote
 from zoneinfo import ZoneInfo
@@ -35,7 +35,7 @@ from ietf.doc.models import DocAlias, RelatedDocument, RelatedDocHistory, Ballot
 from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBallotDocEvent, NewRevisionDocEvent, StateDocEvent
 from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthorsDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
-from ietf.group.models import Role, Group
+from ietf.group.models import Role, Group, GroupFeatures
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author, is_bofreq_editor
 from ietf.person.models import Person
 from ietf.review.models import ReviewWish
@@ -118,6 +118,10 @@ def get_tags_for_stream_id(stream_id):
         return []
 
 def can_adopt_draft(user, doc):
+    """Answers whether a user can adopt a given draft into some stream/group.
+    
+    This does not answer, even by implicaiton, which streams/groups the user has authority to adopt into."""
+
     if not user.is_authenticated:
         return False
 
@@ -129,17 +133,29 @@ def can_adopt_draft(user, doc):
         return (doc.stream_id in (None, "irtf")
                 and doc.group.type_id == "individ")
 
-    roles = Role.objects.filter(name__in=("chair", "delegate", "secr"),
-                                group__type__in=("wg", "rg", "ag", "rag"),
-                                group__state="active",
-                                person__user=user)
-    role_groups = [ r.group for r in roles ]
+    for type_id, allowed_stream in (
+        ("wg", "ietf"),
+        ("rg", "irtf"),
+        ("ag", "ietf"),
+        ("rag", "irtf"),
+        ("edwg", "editorial"),
+    ):
+        if doc.stream_id in (None, allowed_stream):
+            if doc.group.type_id in ("individ", type_id):
+                if Role.objects.filter(
+                    name__in=GroupFeatures.objects.get(type_id=type_id).docman_roles,
+                    group__type_id = type_id,
+                    group__state = "active",
+                    person__user = user,
+                ).exists():
+                    return True
+                        
+    return False
 
-    return (doc.stream_id in (None, "ietf", "irtf")
-            and (doc.group.type_id == "individ" or (doc.group in role_groups and len(role_groups)>1))
-            and roles.exists())
 
 def can_unadopt_draft(user, doc):
+    # TODO: This should use docman_roles, and this implementation probably returns wrong answers
+    # For instance, should any WG chair be able to unadopt a group from any other WG
     if not user.is_authenticated:
         return False
     if has_role(user, "Secretariat"):
@@ -155,6 +171,8 @@ def can_unadopt_draft(user, doc):
     elif doc.stream_id == 'iab':
         return False    # Right now only the secretariat can add a document to the IAB stream, so we'll
                         # leave it where only the secretariat can take it out.
+    elif doc.stream_id == 'editorial':
+        return user.person.role_set.filter(name='chair', group__acronym='rswg').exists()
     else:
         return False
 
@@ -222,7 +240,6 @@ def needed_ballot_positions(doc, active_positions):
 
     return " ".join(answer)
 
-# Not done yet - modified version of above needed_ballot_positions
 def irsg_needed_ballot_positions(doc, active_positions):
     '''Returns text answering the question "what does this document
     need to pass?".  The return value is only useful if the document
@@ -250,6 +267,21 @@ def irsg_needed_ballot_positions(doc, active_positions):
 
     return " ".join(answer)
 
+def rsab_needed_ballot_positions(doc, active_positions):
+    count = Counter([p.pos_id if p else 'none' for p in active_positions])
+    answer = []
+    if count["concern"] > 0:
+        answer.append("Has a Concern position.")
+        # note RFC9280 section 3.2.2 item 12
+        # the "vote" mentioned there is a separate thing from ballot position.
+    if count["yes"] == 0:
+        # This is _implied_ by 9280 - a document shouldn't be
+        # approved if all RSAB members recuse
+        answer.append("Needs a YES position.")
+    if count["none"] > 0:
+        answer.append("Some members have have not taken a position.")
+    return " ".join(answer)
+        
 def create_ballot(request, doc, by, ballot_slug, time=None):
     closed = close_open_ballots(doc, by)
     for e in closed:
@@ -265,16 +297,14 @@ def create_ballot(request, doc, by, ballot_slug, time=None):
 def create_ballot_if_not_open(request, doc, by, ballot_slug, time=None, duedate=None):
     ballot_type = BallotType.objects.get(doc_type=doc.type, slug=ballot_slug)
     if not doc.ballot_open(ballot_slug):
+        kwargs = dict(type="created_ballot", by=by, doc=doc, rev=doc.rev)
         if time:
-            if duedate:
-                e = IRSGBallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev, time=time, duedate=duedate)
-            else:
-                e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev, time=time)
+            kwargs['time'] = time
+        if doc.stream_id == 'irtf':
+            kwargs['duedate'] = duedate
+            e = IRSGBallotDocEvent(**kwargs)
         else:
-            if duedate:
-                e = IRSGBallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev, duedate=duedate)
-            else:
-                e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev)
+            e = BallotDocEvent(**kwargs)
         e.ballot_type = ballot_type
         e.desc = 'Created "%s" ballot' % e.ballot_type.name
         e.save()

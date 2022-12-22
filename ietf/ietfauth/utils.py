@@ -67,6 +67,7 @@ def has_role(user, role_names, *args, **kwargs):
             "IETF Chair": Q(person=person, name="chair", group__acronym="ietf"),
             "IETF Trust Chair": Q(person=person, name="chair", group__acronym="ietf-trust"),
             "IRTF Chair": Q(person=person, name="chair", group__acronym="irtf"),
+            "RSAB Chair": Q(person=person, name="chair", group__acronym="rsab"),
             "IAB Chair": Q(person=person, name="chair", group__acronym="iab"),
             "IAB Executive Director": Q(person=person, name="execdir", group__acronym="iab"),
             "IAB Group Chair": Q(person=person, name="chair", group__type="iab", group__state="active"),
@@ -90,6 +91,7 @@ def has_role(user, role_names, *args, **kwargs):
             "Reviewer": Q(person=person, name="reviewer", group__state="active"),
             "Review Team Secretary": Q(person=person, name="secr", group__reviewteamsettings__isnull=False,group__state="active", ),
             "IRSG Member": (Q(person=person, name="member", group__acronym="irsg") | Q(person=person, name="chair", group__acronym="irtf") | Q(person=person, name="atlarge", group__acronym="irsg")),
+            "RSAB Member": Q(person=person, name="member", group__acronym="rsab"), 
             "Robot": Q(person=person, name="robot", group__acronym="secretariat"),
             }
 
@@ -163,6 +165,10 @@ def is_authorized_in_doc_stream(user, doc):
         if doc.group.type.slug == 'individ':
             docman_roles = GroupFeatures.objects.get(type_id="ietf").docman_roles
         group_req = Q(group__acronym=doc.stream.slug)
+    elif doc.stream.slug == "editorial":
+        group_req = Q(group=doc.group) | Q(group__acronym='rsab')
+        if doc.group.type.slug in ("individ", "rfcedtype"):
+            docman_roles = GroupFeatures.objects.get(type_id="rfcedtyp").docman_roles
     else:
         group_req = Q()  # no group constraint for other cases
 

@@ -44,7 +44,7 @@ class SessionRequestTestCase(TestCase):
         meeting = MeetingFactory(type_id='ietf', date=date_today())
         SessionFactory.create_batch(2, meeting=meeting, status_id='sched')
         SessionFactory.create_batch(2, meeting=meeting, status_id='disappr')
-        # An additional unscheduled group comes from make_immutable_base_data
+        # Several unscheduled groups come from make_immutable_base_data
         url = reverse('ietf.secr.sreq.views.main')
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
@@ -52,7 +52,8 @@ class SessionRequestTestCase(TestCase):
         sched = r.context['scheduled_groups']
         self.assertEqual(len(sched), 2)
         unsched = r.context['unscheduled_groups']
-        self.assertEqual(len(unsched), 11)
+        debug.show('unsched')
+        self.assertEqual(len(unsched), 12)
 
     def test_approve(self):
         meeting = MeetingFactory(type_id='ietf', date=date_today())
