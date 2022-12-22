@@ -394,10 +394,11 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Update Baseline Coverage
-      uses: ncipollo/release-action@v1.11.1
+      uses: ncipollo/release-action@v1.12.0
       if: ${{ github.event.inputs.updateCoverage == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         allowUpdates: true
+        makeLatest: true
         tag: baseline
         omitBodyDuringUpdate: true
         omitNameDuringUpdate: true
