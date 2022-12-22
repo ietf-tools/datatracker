@@ -49,7 +49,7 @@ jobs:
   sync:
     name: Run assets rsync
     if: ${{ always() }}
-    runs-on: dev-server
+    runs-on: [self-hosted, dev-server]
     needs: [build]
     steps:
     - name: Run rsync

@@ -432,7 +432,7 @@ jobs:
     name: Deploy to Sandbox
     if: ${{ always() && github.event.inputs.sandbox == 'true' }}
     needs: [prepare, release]
-    runs-on: dev-server
+    runs-on: [self-hosted, dev-server]
     env:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
       
