@@ -158,12 +158,11 @@ async function main () {
   
   // Get shared test docker volume
   console.info('Querying shared test docker volume...')
-  const testVolume = await dock.getVolume(`dt-test-${branch}`)
-  console.info(testVolume)
-  if (testVolume) {
-    console.info('Existing shared test docker volume found. Deleting first...')
+  try {
+    const testVolume = await dock.getVolume(`dt-test-${branch}`)
+    console.info('Attempting to delete any existing shared test docker volume...')
     await testVolume.remove({ force: true })
-  }
+  } catch (err) {}
   console.info('Creating new shared test docker volume...')
   await dock.createVolume({
     Name: `dt-test-${branch}`
