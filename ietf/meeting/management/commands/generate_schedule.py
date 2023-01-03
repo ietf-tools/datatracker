@@ -480,9 +480,10 @@ class Schedule(object):
         best_cost = math.inf
         shuffle_next_run = False
         last_run_cost = None
-        switched_with = None
-        
-        for run_count in range(1, self.max_cycles+1):
+        run_count = 0
+
+        for _ in range(self.max_cycles):
+            run_count += 1
             items = list(self.schedule.items())
             random.shuffle(items)
 
@@ -622,7 +623,7 @@ class Schedule(object):
             del proposed_schedule[timeslot1]
         return self.calculate_dynamic_cost(proposed_schedule)[1]
 
-    def _switch_sessions(self, timeslot1, timeslot2):
+    def _switch_sessions(self, timeslot1, timeslot2) -> Optional['Session']:
         """
         Switch the sessions currently in timeslot1 and timeslot2.
         If timeslot2 had a session scheduled, returns that Session instance.
@@ -630,11 +631,11 @@ class Schedule(object):
         session1 = self.schedule.get(timeslot1)
         session2 = self.schedule.get(timeslot2)
         if timeslot1 == timeslot2:
-            return False
+            return None
         if session1 and not session1.fits_in_timeslot(timeslot2):
-            return False
+            return None
         if session2 and not session2.fits_in_timeslot(timeslot1):
-            return False
+            return None
         if session1:
             self.schedule[timeslot2] = session1
         elif session2:
