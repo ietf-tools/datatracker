@@ -170,9 +170,7 @@ class ScheduleHandler(object):
           * sunday timeslots
           *  timeslots used by the base schedule, if any
         """
-        # n.b., models.TimeSlot is not the same as TimeSlot!
-        timeslots_db = models.TimeSlot.objects.filter(
-            meeting=self.meeting,
+        timeslots_db = self.meeting.timeslot_set.that_can_be_scheduled().filter(
             type_id='regular',
         ).exclude(
             location__capacity=None,
@@ -195,12 +193,7 @@ class ScheduleHandler(object):
 
         Extra arguments are passed to the Session constructor.
         """
-        sessions_db = models.Session.objects.filter(
-            meeting=self.meeting,
-            type_id='regular',
-            schedulingevent__status_id='schedw',
-        )
-
+        sessions_db = self.meeting.session_set.that_can_be_scheduled().filter(type_id='regular')
         if self.base_schedule is None:
             fixed_sessions = models.Session.objects.none()
         else:
@@ -712,7 +705,7 @@ class TimeSlot(object):
 
 class Session(object):
     """
-    This TimeSlot class is analogous to the Session class in the models,
+    This Session class is analogous to the Session class in the models,
     i.e. it represents a single session to be scheduled. It also pulls
     in data about constraints, group parents, etc.
     """
