@@ -1890,7 +1890,7 @@ class ChangeReplacesTests(TestCase):
         RelatedDocument.objects.create(source=self.replacea, target=self.basea.docalias.first(),
                                        relationship=DocRelationshipName.objects.get(slug="possibly-replaces"))
         self.assertEqual(self.basea.get_state().slug,'active')
-        r = self.client.post(url, dict(replaces=self.basea.pk))
+        r = self.client.post(url, dict(replaces=self.basea.docalias.first().pk))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(RelatedDocument.objects.filter(relationship__slug='replaces',source=self.replacea).count(),1) 
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
@@ -1904,7 +1904,7 @@ class ChangeReplacesTests(TestCase):
         # Post that says replaceboth replaces both base a and base b
         url = urlreverse('ietf.doc.views_draft.replaces', kwargs=dict(name=self.replaceboth.name))
         self.assertEqual(self.baseb.get_state().slug,'expired')
-        r = self.client.post(url, dict(replaces=[self.basea.pk, self.baseb.pk]))
+        r = self.client.post(url, dict(replaces=[self.basea.docalias.first().pk, self.baseb.docalias.first().pk]))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
         self.assertEqual(Document.objects.get(name='draft-test-base-b').get_state().slug,'repl')
