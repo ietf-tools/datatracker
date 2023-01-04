@@ -616,7 +616,7 @@ class GroupEditTests(TestCase):
 
     def test_create_non_chartered_includes_description(self):
         parent = GroupFactory(type_id='area')
-        group_type = GroupTypeName.objects.filter(used=True, features__has_chartering_process=False).first()
+        group_type = GroupTypeName.objects.filter(used=True, features__has_chartering_process=False, features__parent_types='area').first()
         self.assertIsNotNone(group_type)
         url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group_type.slug, action="create"))
         login_testing_unauthorized(self, "secretary", url)
