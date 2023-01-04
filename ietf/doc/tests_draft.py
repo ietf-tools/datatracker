@@ -1963,7 +1963,7 @@ class MoreReplacesTests(TestCase):
             new_doc = IndividualDraftFactory(stream_id=stream)
 
             url = urlreverse('ietf.doc.views_draft.replaces', kwargs=dict(name=new_doc.name))
-            r = self.client.post(url, dict(replaces=old_doc.pk))
+            r = self.client.post(url, dict(replaces=old_doc.docalias.first().pk))
             self.assertEqual(r.status_code,302)
             old_doc = Document.objects.get(name=old_doc.name)
             self.assertEqual(old_doc.get_state_slug('draft'),'repl')
