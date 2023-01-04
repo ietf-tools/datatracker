@@ -162,7 +162,7 @@ class AgendaApiTests(TestCase):
             meeting
         )
         AgendaKeywordTagger(assignments=processed).apply()
-        extracted = {item.pk: agenda_extract_schedule(item) for item in processed}
+        extracted = {item.session.pk: agenda_extract_schedule(item) for item in processed}
 
         hidden = extracted[hidden_sess.pk]
         self.assertIsNone(hidden['room'])
