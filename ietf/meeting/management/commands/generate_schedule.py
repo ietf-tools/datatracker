@@ -181,10 +181,9 @@ class ScheduleHandler(object):
         else:
             fixed_timeslots = timeslots_db.filter(pk__in=self.base_schedule.qs_timeslots_in_use())
         free_timeslots = timeslots_db.exclude(pk__in=fixed_timeslots)
-
-        timeslots = {TimeSlot(t, self.verbosity) for t in free_timeslots.select_related('location')}
+        timeslots = {DatatrackerTimeSlot(t, verbosity=self.verbosity) for t in free_timeslots.select_related('location')}
         timeslots.update(
-            TimeSlot(t, self.verbosity, is_fixed=True) for t in fixed_timeslots.select_related('location')
+            DatatrackerTimeSlot(t, verbosity=self.verbosity, is_fixed=True) for t in fixed_timeslots.select_related('location')
         )
         return {t for t in timeslots if t.day != 'sunday'}
 
@@ -218,15 +217,17 @@ class ScheduleHandler(object):
             for bc in models.BusinessConstraint.objects.all()
         }
 
-        timeslots = self._available_timeslots()
-        for timeslot in timeslots:
-            timeslot.store_relations(timeslots)
-
         sessions = self._sessions_to_schedule(business_constraint_costs, self.verbosity)
         for session in sessions:
             # The complexity of a session also depends on how many
             # sessions have declared a conflict towards this session.
             session.update_complexity(sessions)
+
+        timeslots = self._available_timeslots()
+        for _ in range(len(sessions) - len(timeslots)):
+            timeslots.add(GeneratorTimeSlot(verbosity=self.verbosity))
+        for timeslot in timeslots:
+            timeslot.store_relations(timeslots)
 
         self.schedule = Schedule(
             self.stdout,
@@ -652,15 +653,43 @@ class Schedule(object):
             self.best_schedule = self.schedule.copy()
 
 
-class TimeSlot(object):
-    """
-    This TimeSlot class is analogous to the TimeSlot class in the models,
-    i.e. it represents a timeframe in a particular location.
-    """
-    def __init__(self, timeslot_db, verbosity, is_fixed=False):
+class GeneratorTimeSlot:
+    """Representation of a timeslot for the schedule generator"""
+    def __init__(self, *, verbosity=0, is_fixed=False):
         """Initialise this object from a TimeSlot model instance."""
         self.verbosity = verbosity
         self.is_fixed = is_fixed
+        self.overlaps = set()
+        self.full_overlaps = set()
+        self.adjacent = set()
+        self.start = None
+        self.day = None
+        self.time_group = 'Unscheduled'
+
+    @property
+    def is_scheduled(self):
+        """Will this timeslot appear on a schedule?"""
+        return self.start is not None
+
+    def store_relations(self, other_timeslots):
+        pass  # no relations
+
+    def has_space_for(self, attendees):
+        return True  # unscheduled time slots can support any number of attendees
+
+    def has_time_for(self, duration):
+        return True  # unscheduled time slots are long enough for any session
+
+
+class DatatrackerTimeSlot(GeneratorTimeSlot):
+    """TimeSlot on the schedule
+
+    This DatatrackerTimeSlot class is analogous to the TimeSlot class in the models,
+    i.e. it represents a timeframe in a particular location.
+    """
+    def __init__(self, timeslot_db, **kwargs):
+        """Initialise this object from a TimeSlot model instance."""
+        super().__init__(**kwargs)
         self.timeslot_pk = timeslot_db.pk
         self.location_pk = timeslot_db.location.pk
         self.capacity = timeslot_db.location.capacity
@@ -669,33 +698,38 @@ class TimeSlot(object):
         self.end = self.start + self.duration
         self.day = calendar.day_name[self.start.weekday()].lower()
         if self.start.time() < datetime.time(12, 30):
-            self.time_of_day = 'morning'
+            time_of_day = 'morning'
         elif self.start.time() < datetime.time(15, 30):
-            self.time_of_day = 'afternoon-early'
+            time_of_day = 'afternoon-early'
         else:
-            self.time_of_day = 'afternoon-late'
-        self.time_group = self.day + '-' + self.time_of_day
-        self.overlaps = set()
-        self.full_overlaps = set()
-        self.adjacent = set()
+            time_of_day = 'afternoon-late'
+        self.time_group = f'{self.day}-{time_of_day}'
+
+    def has_space_for(self, attendees):
+        return self.capacity >= attendees
+
+    def has_time_for(self, duration):
+        return self.duration >= duration
 
     def store_relations(self, other_timeslots):
         """
         Store relations to all other timeslots. This should be called
-        after all TimeSlot objects have been created. This allows fast
-        lookups of which TimeSlot objects overlap or are adjacent.
+        after all DatatrackerTimeSlot objects have been created. This allows fast
+        lookups of which DatatrackerTimeSlot objects overlap or are adjacent.
         Note that there is a distinction between an overlap, meaning
         at least part of the timeslots occur during the same time,
         and a full overlap, meaning the start and end time are identical.
         """
         for other in other_timeslots:
+            if other == self or not other.is_scheduled:
+                continue  # no relations with self or unscheduled sessions
             if any([
                 self.start < other.start < self.end,
                 self.start < other.end < self.end,
                 self.start >= other.start and self.end <= other.end,
-            ]) and other != self:
+            ]):
                 self.overlaps.add(other)
-            if self.start == other.start and self.end == other.end and other != self:
+            if self.start == other.start and self.end == other.end:
                 self.full_overlaps.add(other)
             if (
                 abs(self.start - other.end) <= datetime.timedelta(minutes=30) or
@@ -931,7 +965,7 @@ class Session(object):
     def _calculate_cost_my_other_sessions(self, my_sessions):
         """Calculate cost due to other sessions for same group
 
-        my_sessions is a set of (TimeSlot, Session) tuples.
+        my_sessions is a set of (GeneratorTimeSlot, Session) tuples.
         """
         def sort_sessions(timeslot_session_pairs):
             return sorted(timeslot_session_pairs, key=lambda item: item[1].session_pk)
