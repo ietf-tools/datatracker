@@ -347,9 +347,15 @@ class Schedule(object):
                                .format(num_to_schedule, num_free_timeslots))
     
         def make_capacity_adjustments(t_attr, s_attr):
-            availables = [getattr(timeslot, t_attr) for timeslot in self.free_timeslots]
+            availables = [getattr(timeslot, t_attr) for timeslot in self.free_timeslots if timeslot.is_scheduled]
             availables.sort()
             sessions = sorted(self.free_sessions, key=lambda s: getattr(s, s_attr), reverse=True)
+            # If we have timeslots with is_scheduled == False, len(availables) may be < len(sessions).
+            # Add duplicates of the largest capacity timeslot to make up the difference. This will
+            # still report violations where there is *no* timeslot available that accommodates a session
+            # but will not check that there are *enough* timeslots for the number of long sessions.
+            n_unscheduled = len(sessions) - len(availables)
+            availables.extend([availables[-1]] * n_unscheduled)  # availables is sorted, so [-1] is max
             violations, cost = [], 0
             for session in sessions:
                 found_fit = False
