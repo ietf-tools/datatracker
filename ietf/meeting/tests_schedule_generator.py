@@ -3,6 +3,8 @@ import calendar
 import datetime
 import pytz
 from io import StringIO
+from warnings import filterwarnings
+
 
 from django.core.management.base import CommandError
 
@@ -107,9 +109,11 @@ class ScheduleGeneratorTest(TestCase):
     def test_too_many_sessions(self):
         self._create_basic_sessions()
         self._create_basic_sessions()
-        with self.assertRaises(CommandError):
-            generator = generate_schedule.ScheduleHandler(self.stdout, self.meeting.number, verbosity=0)
-            generator.run()
+        filterwarnings('ignore', '"time relation" constraint only makes sense for 2 sessions')
+        generator = generate_schedule.ScheduleHandler(self.stdout, self.meeting.number, verbosity=1)
+        generator.run()
+        self.stdout.seek(0)
+        self.assertIn('Some sessions will not be scheduled', self.stdout.read())
 
     def test_invalid_meeting_number(self):
         with self.assertRaises(CommandError):
