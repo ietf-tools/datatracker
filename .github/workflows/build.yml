@@ -239,7 +239,7 @@ jobs:
         
     - name: Ensure DB is ready
       run: |
-        /usr/local/bin/wait-for db:3306 -- echo "DB ready"
+        /usr/local/bin/wait-for db:5432 -- echo "DB ready"
         
     - name: Start Datatracker
       run: |
