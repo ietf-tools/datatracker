@@ -14,6 +14,7 @@ import time
 from collections import defaultdict
 from functools import lru_cache
 from typing import NamedTuple, Optional
+from warnings import warn
 
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.management.base import BaseCommand, CommandError
@@ -1015,12 +1016,8 @@ class Session(object):
                 if len(my_sessions) != 2:
                     # This is not expected to happen. Alert the user if it comes up but proceed -
                     # the violation scoring may be incorrect but the scheduler won't fail because of this.
-                    self.stdout.write(
-                        'WARNING: "time relation" constraint only makes sense for 2 sessions but {} has {}'.format(
-                            self.group,
-                            len(my_sessions),
-                        )
-                    )
+                    warn('"time relation" constraint only makes sense for 2 sessions but {} has {}'
+                         .format(self.group, len(my_sessions)))
 
                 if all(session.is_fixed for _, session in my_sessions):
                     pass  # ignore conflict between fixed sessions
