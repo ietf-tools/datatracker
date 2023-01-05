@@ -988,9 +988,22 @@ class Session(object):
                 cost += self.business_constraint_costs['sessions_out_of_order']
                 
             if self.time_relation:
-                group_days = [t.start.date() for t, s in my_sessions]
-                # ignore conflict between two fixed sessions
-                if not (my_sessions[0][1].is_fixed and my_sessions[1][1].is_fixed):
+                if len(my_sessions) != 2:
+                    # This is not expected to happen. Alert the user if it comes up but proceed -
+                    # the violation scoring may be incorrect but the scheduler won't fail because of this.
+                    self.stdout.write(
+                        'WARNING: "time relation" constraint only makes sense for 2 sessions but {} has {}'.format(
+                            self.group,
+                            len(my_sessions),
+                        )
+                    )
+
+                if all(session.is_fixed for _, session in my_sessions):
+                    pass  # ignore conflict between fixed sessions
+                elif not all(timeslot.is_scheduled for timeslot, _ in my_sessions):
+                    pass  # ignore constraint if one or both sessions is unscheduled
+                else:
+                    group_days = [timeslot.start.date() for timeslot, _ in my_sessions]
                     difference_days = abs((group_days[1] - group_days[0]).days)
                     if self.time_relation == 'subsequent-days' and difference_days != 1:
                         violations.append('{}: has time relation subsequent-days but difference is {}'
