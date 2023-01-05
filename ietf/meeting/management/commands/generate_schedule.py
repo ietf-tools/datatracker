@@ -322,12 +322,13 @@ class Schedule(object):
 
     def save_assignments(self, schedule_db):
         for timeslot, session in self.schedule.items():
-            models.SchedTimeSessAssignment.objects.create(
-                timeslot_id=timeslot.timeslot_pk,
-                session_id=session.session_pk,
-                schedule=schedule_db,
-                badness=session.last_cost,
-            )
+            if timeslot.is_scheduled:
+                models.SchedTimeSessAssignment.objects.create(
+                    timeslot_id=timeslot.timeslot_pk,
+                    session_id=session.session_pk,
+                    schedule=schedule_db,
+                    badness=session.last_cost,
+                )
     
     def adjust_for_timeslot_availability(self):
         """
@@ -580,7 +581,7 @@ class Schedule(object):
         """
         optimised_timeslots = set()
         for timeslot in list(self.schedule.keys()):
-            if timeslot in optimised_timeslots or timeslot.is_fixed:
+            if timeslot in optimised_timeslots or timeslot.is_fixed or not timeslot.is_scheduled:
                 continue
             timeslot_overlaps = sorted(timeslot.full_overlaps, key=lambda t: t.capacity, reverse=True)
             sessions_overlaps = [self.schedule.get(t) for t in timeslot_overlaps]
@@ -838,7 +839,7 @@ class Session(object):
             ])
 
     def fits_in_timeslot(self, timeslot):
-        return self.attendees <= timeslot.capacity and self.requested_duration <= timeslot.duration
+        return timeslot.has_space_for(self.attendees) and timeslot.has_time_for(self.requested_duration)
 
     def calculate_cost(self, schedule, my_timeslot, overlapping_sessions, my_sessions, include_fixed=False):
         """
@@ -848,7 +849,7 @@ class Session(object):
         The functionality is split into a few methods, to optimise caching.
         
         overlapping_sessions is a list of Session objects
-        my_sessions is an iterable of tuples, each tuple containing a TimeSlot and a Session
+        my_sessions is an iterable of tuples, each tuple containing a GeneratorTimeSlot and a Session
 
         The return value is a tuple of violations (list of strings) and a cost (integer).        
         """
@@ -860,11 +861,11 @@ class Session(object):
         )
 
         if include_fixed or (not self.is_fixed):
-            if self.attendees > my_timeslot.capacity:
+            if not my_timeslot.has_space_for(self.attendees):
                 violations.append('{}: scheduled in too small room'.format(self.group))
                 cost += self.business_constraint_costs['session_requires_trim']
 
-            if self.requested_duration > my_timeslot.duration:
+            if not my_timeslot.has_time_for(self.requested_duration):
                 violations.append('{}: scheduled in too short timeslot'.format(self.group))
                 cost += self.business_constraint_costs['session_requires_trim']
 
