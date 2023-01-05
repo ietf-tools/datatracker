@@ -1,5 +1,19 @@
 #!/bin/bash
 
+echo "Creating /test directories..."
+for sub in \
+    /test/id \
+    /test/staging \
+    /test/archive \
+    /test/rfc \
+    /test/media \
+    /test/wiki/ietf \
+    ; do
+    if [ ! -d "$sub"  ]; then
+        echo "Creating dir $sub"
+        mkdir -p "$sub";
+    fi
+done
 echo "Fixing permissions..."
 chmod -R 777 ./
 echo "Ensure all requirements.txt packages are installed..."

@@ -810,22 +810,20 @@ def document_html(request, name, rev=None):
     if num_found > 1:
         raise Http404("Multiple documents matched: %s" % name)
 
-    if found.matched_name.startswith('rfc') and name != found.matched_name:
-         return redirect('ietf.doc.views_doc.document_html', name=found.matched_name)
-
     doc = found.documents.get()
+    rev = found.matched_rev
 
-    if found.matched_rev or found.matched_name.startswith('rfc'):
-        rev = found.matched_rev
-    else:
-        rev = doc.rev
+    if doc.is_rfc() and rev is None:
+        if not name.startswith('rfc'):
+            return redirect('ietf.doc.views_doc.document_html', name=doc.canonical_name())
+
     if rev:
         doc = doc.history_set.filter(rev=rev).first() or doc.fake_history_obj(rev)
 
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
-    return document_main(request, name, rev=rev, document_html=True)
+    return document_main(request, name=doc.name, rev=doc.rev if not doc.is_rfc() else None, document_html=True)
 
 def document_pdfized(request, name, rev=None, ext=None):
 
