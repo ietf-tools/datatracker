@@ -291,7 +291,7 @@ class Schedule(object):
             print('{}: {}{}'.format(
                 models.TimeSlot.objects.get(pk=slot.timeslot_pk),
                 models.Session.objects.get(pk=sched[slot].session_pk),
-                ' [BASE]' if slot in self.base_schedule else '',
+                ' [BASE]' if self.base_schedule and slot in self.base_schedule else '',
             ))
 
         print("""
