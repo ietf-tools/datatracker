@@ -157,7 +157,8 @@ class ScheduleGeneratorTest(TestCase):
         self.assertIn('Applying schedule {} as base schedule'.format(
             generate_schedule.ScheduleId.from_schedule(base_schedule)
         ), output)
-        self.assertIn('WARNING: session wg2 (pk 13) has no attendees set', output)
+        wg2_no_attendees_session_pk = [s.session_pk for s in generator.schedule.sessions if s.group == "wg2" and not s.attendees][0]
+        self.assertIn(f'WARNING: session wg2 (pk {wg2_no_attendees_session_pk}) has no attendees set', output)
         self.assertIn('scheduling 13 sessions in 19 timeslots', output)  # 19 because base is using one
         self.assertIn('Optimiser starting run 1', output)
         self.assertIn('Optimiser found an optimal schedule', output)
