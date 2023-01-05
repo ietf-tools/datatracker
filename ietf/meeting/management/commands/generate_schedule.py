@@ -264,9 +264,9 @@ class Schedule(object):
 
     def __str__(self):
         return 'Schedule ({} timeslots, {} sessions, {} scheduled, {} in base schedule)'.format(
-            len(self.timeslots),
+            sum(1 for ts in self.timeslots if ts.is_scheduled),
             len(self.sessions),
-            len(self.schedule),
+            sum(1 for ts in self.schedule if ts.is_scheduled),
             len(self.base_schedule) if self.base_schedule else 0,
         )
 
@@ -274,9 +274,13 @@ class Schedule(object):
         """Pretty print the schedule"""
         last_day = None
         sched = dict(self.schedule)
-        if include_base:
+        if include_base and self.base_schedule is not None:
             sched.update(self.base_schedule)
-        for slot in sorted(sched, key=lambda ts: ts.start):
+        timeslots = {'scheduled': [], 'unscheduled': []}
+        for ts in self.timeslots:
+            timeslots['scheduled' if ts.is_scheduled else 'unscheduled'].append(ts)
+
+        for slot in sorted(timeslots['scheduled'], key=lambda ts: ts.start):
             if last_day != slot.start.date():
                 last_day = slot.start.date()
                 print("""
@@ -289,6 +293,13 @@ class Schedule(object):
                 models.Session.objects.get(pk=sched[slot].session_pk),
                 ' [BASE]' if slot in self.base_schedule else '',
             ))
+
+        print("""
+-----------------
+ Unscheduled
+-----------------""")
+        for slot in timeslots['unscheduled']:
+            print(' * {}'.format(models.Session.objects.get(pk=sched[slot].session_pk)))
 
     @property
     def fixed_cost(self):
@@ -447,9 +458,16 @@ class Schedule(object):
         For initial scheduling, it is not a hard requirement that the timeslot is long
         or large enough, though that will be preferred due to the lower cost.
         """
+        n_free_sessions = len(list(self.free_sessions))
+        n_free_scheduled_slots = sum(1 for sl in self.free_timeslots if sl.is_scheduled)
         if self.verbosity >= 2:
-            self.stdout.write('== Initial scheduler starting, scheduling {} sessions in {} timeslots =='
-                              .format(len(list(self.free_sessions)), len(list(self.free_timeslots))))
+            self.stdout.write(
+                f'== Initial scheduler starting, scheduling {n_free_sessions} sessions in {n_free_scheduled_slots} timeslots =='
+            )
+        if self.verbosity >= 1 and n_free_sessions > n_free_scheduled_slots:
+            self.stdout.write(
+                f'WARNING: fewer timeslots ({n_free_scheduled_slots}) than sessions ({n_free_sessions}). Some sessions will not be scheduled.'
+            )
         sessions = sorted(self.free_sessions, key=lambda s: s.complexity, reverse=True)
 
         for session in sessions:
@@ -459,14 +477,20 @@ class Schedule(object):
             def timeslot_preference(t):
                 proposed_schedule = self.schedule.copy()
                 proposed_schedule[t] = session
-                return self.calculate_dynamic_cost(proposed_schedule)[1], t.duration, t.capacity
-
+                return (
+                    self.calculate_dynamic_cost(proposed_schedule)[1],
+                    t.duration if t.is_scheduled else datetime.timedelta(hours=1000),  # unscheduled slots sort to the end
+                    t.capacity if t.is_scheduled else math.inf,  # unscheduled slots sort to the end
+                )
             possible_slots.sort(key=timeslot_preference)
             self._schedule_session(session, possible_slots[0])
             if self.verbosity >= 3:
-                self.stdout.write('Scheduled {} at {} in location {}'
-                                  .format(session.group, possible_slots[0].start,
-                                          possible_slots[0].location_pk))
+                if possible_slots[0].is_scheduled:
+                    self.stdout.write('Scheduled {} at {} in location {}'
+                                      .format(session.group, possible_slots[0].start,
+                                              possible_slots[0].location_pk))
+                else:
+                    self.stdout.write('Scheduled {} in unscheduled slot')
 
     def optimise_schedule(self):
         """
