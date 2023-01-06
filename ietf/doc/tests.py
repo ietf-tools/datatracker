@@ -40,7 +40,7 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
     BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
-    StatusChangeFactory, BofreqFactory)
+    StatusChangeFactory, BofreqFactory, DocExtResourceFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
@@ -602,6 +602,8 @@ Man                    Expires September 22, 2015               [Page 3]
         updated_by = IndividualDraftFactory()
         updated_by.relateddocument_set.create(relationship_id='updates',source=obsoleted_by,target=draft.docalias.first())
 
+        external_resource = DocExtResourceFactory(doc=draft)
+
         # these tests aren't testing all attributes yet, feel free to
         # expand them
 
@@ -622,6 +624,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertNotContains(r, updated.title)
         self.assertNotContains(r, updated_by.canonical_name())
         self.assertNotContains(r, updated_by.title)
+        self.assertContains(r, external_resource.value)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=0")
         self.assertEqual(r.status_code, 200)
