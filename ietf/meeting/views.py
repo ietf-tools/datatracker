@@ -431,7 +431,6 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     """
     # Need to coordinate this list with types of session requests
     # that can be created (see, e.g., SessionQuerySet.requests())
-    IGNORE_TIMESLOT_TYPES = ('offagenda', 'reserved', 'unavail')
     meeting = get_meeting(num)
     if name is None:
         schedule = meeting.schedule
@@ -479,18 +478,18 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
     tombstone_states = ['canceled', 'canceledpa', 'resched']
 
-    sessions = Session.objects.filter(meeting=meeting)
+    sessions = meeting.session_set.with_current_status()
     if include_timeslot_types is not None:
         sessions = sessions.filter(type__in=include_timeslot_types)
+    sessions_to_schedule = sessions.that_can_be_scheduled()
+    session_tombstones = sessions.filter(
+        current_status__in=tombstone_states, pk__in={a.session_id for a in assignments}
+    )
+    sessions = sessions_to_schedule | session_tombstones
     sessions = add_event_info_to_session_qs(
-        sessions.exclude(
-            type__in=IGNORE_TIMESLOT_TYPES,
-        ).order_by('pk'),
+        sessions.order_by('pk'),
         requested_time=True,
         requested_by=True,
-    ).filter(
-        Q(current_status__in=['appr', 'schedw', 'scheda', 'sched'])
-        | Q(current_status__in=tombstone_states, pk__in={a.session_id for a in assignments})
     ).prefetch_related(
         'resources', 'group', 'group__parent', 'group__type', 'joint_with_groups', 'purpose',
     )
@@ -498,9 +497,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     timeslots_qs = TimeSlot.objects.filter(meeting=meeting)
     if include_timeslot_types is not None:
         timeslots_qs = timeslots_qs.filter(type__in=include_timeslot_types)
-    timeslots_qs = timeslots_qs.exclude(
-        type__in=IGNORE_TIMESLOT_TYPES,
-    ).prefetch_related('type').order_by('location', 'time', 'name')
+    timeslots_qs = timeslots_qs.that_can_be_scheduled().prefetch_related('type').order_by('location', 'time', 'name')
 
     if timeslots_qs.count() > 0:
         min_duration = min(t.duration for t in timeslots_qs)
