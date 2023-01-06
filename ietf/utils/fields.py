@@ -320,6 +320,13 @@ class SearchableField(forms.MultipleChoiceField):
 
         return objs.first() if self.max_entries == 1 else objs
 
+    def has_changed(self, initial, data):
+        # When max_entries == 1, we behave like a ChoiceField so initial will likely be a single
+        # value. Make it a list so MultipleChoiceField's has_changed() can work with it.
+        if self.max_entries == 1 and not isinstance(initial, (list, tuple)):
+            initial = [initial]
+        return super().has_changed(initial, data)
+
 
 class IETFJSONField(jsonfield.fields.forms.JSONField):
     def __init__(self, *args, empty_values=jsonfield.fields.forms.JSONField.empty_values,
