@@ -43,7 +43,7 @@ def unique_people(addresses: List[str]) -> Tuple[List, List]:
         a list of unique Person records with a matching email address,
         a list of unique email addresses with no matching Person record
     )
-    The sum of the lenghts of these lists is a best-approximation for how
+    The sum of the lengths of these lists is a best-approximation for how
     many unique people the list of addresses belong to.
     """
     persons = Person.objects.filter(email__address__in=addresses).distinct()
