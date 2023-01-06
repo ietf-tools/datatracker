@@ -567,7 +567,13 @@ class FloorPlan(models.Model):
     def __str__(self):
         return u'floorplan-%s-%s' % (self.meeting.number, xslugify(self.name))
 
+
 # === Schedules, Sessions, Timeslots and Assignments ===========================
+
+class TimeSlotQuerySet(models.QuerySet):
+    def that_can_be_scheduled(self):
+        return self.exclude(type__in=TimeSlot.TYPES_NOT_SCHEDULABLE)
+
 
 class TimeSlot(models.Model):
     """
@@ -575,6 +581,8 @@ class TimeSlot(models.Model):
     mapped to a timeslot, including breaks. Sessions are connected to
     TimeSlots during scheduling.
     """
+    objects = TimeSlotQuerySet.as_manager()
+
     meeting = ForeignKey(Meeting)
     type = ForeignKey(TimeSlotTypeName)
     name = models.CharField(max_length=255)
@@ -585,6 +593,8 @@ class TimeSlot(models.Model):
     sessions = models.ManyToManyField('Session', related_name='slots', through='SchedTimeSessAssignment', blank=True, help_text="Scheduled session, if any.")
     modified = models.DateTimeField(auto_now=True)
     #
+
+    TYPES_NOT_SCHEDULABLE = ('offagenda', 'reserved', 'unavail')
 
     @property
     def session(self):
@@ -1032,11 +1042,16 @@ class SessionQuerySet(models.QuerySet):
             type__slug='regular'
         )
 
+    def that_can_be_scheduled(self):
+        """Queryset containing sessions that should be scheduled for a meeting"""
+        return self.requests().with_current_status().filter(
+            current_status__in=['appr', 'schedw', 'scheda', 'sched']
+        )
+
     def requests(self):
         """Queryset containing sessions that may be handled as requests"""
-        return self.exclude(
-            type__in=('offagenda', 'reserved', 'unavail')
-        )
+        return self.exclude(type__in=TimeSlot.TYPES_NOT_SCHEDULABLE)
+
 
 class Session(models.Model):
     """Session records that a group should have a session on the
