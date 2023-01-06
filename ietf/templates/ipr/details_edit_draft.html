@@ -1,0 +1,14 @@
+{% load django_bootstrap5 %}<label class="col-md-2 fw-bold" for="{{ draft_form.document.id_for_label }}">{{ draft_form.document.label }}</label>
+<div class="col-md-6">
+    {{ draft_form.id }}
+    {{ draft_form.document }}
+    {% if draft_form.document.errors %}<div class="alert alert-danger my-3">{{ draft_form.document.errors }}</div>{% endif %}
+</div>
+<div class="col-md-2">
+    {% bootstrap_field draft_form.revisions class="form-control" placeholder="Revisions, e.g., 04-07" show_help=False show_label=False %}
+    <label class="d-none" for="{{ draft_form.revisions.id_for_label }}">{{ draft_form.revisions.label }}</label>
+</div>
+<div class="col-md-2">
+    {% bootstrap_field draft_form.sections class="form-control" placeholder="Sections" show_help=False show_label=False %}
+    <label class="d-none" for="{{ draft_form.sections.id_for_label }}">{{ draft_form.sections.label }}</label>
+</div>

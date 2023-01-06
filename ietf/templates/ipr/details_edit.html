@@ -131,37 +131,13 @@
             </p>
             {{ draft_formset.management_form }}
             {% for draft_form in draft_formset %}
-                <div class="row draft-row {% if forloop.last %}template d-none{% endif %}">
-                    <label class="col-md-2 fw-bold" for="{{ draft_form.document.id_for_label }}">{{ draft_form.document.label }}</label>
-                    <div class="col-md-6">
-                        {{ draft_form.id }}
-                        {{ draft_form.document }}
-                        {% if draft_form.document.errors %}<div class="alert alert-danger my-3">{{ draft_form.document.errors }}</div>{% endif %}
-                    </div>
-                    <div class="col-md-2">
-                        {% bootstrap_field draft_form.revisions class="form-control" placeholder="Revisions, e.g., 04-07" show_help=False show_label=False %}
-                        <label class="d-none" for="{{ draft_form.revisions.id_for_label }}">{{ draft_form.revisions.label }}</label>
-                    </div>
-                    <div class="col-md-2">
-                        {% bootstrap_field draft_form.sections class="form-control" placeholder="Sections" show_help=False show_label=False %}
-                        <label class="d-none" for="{{ draft_form.sections.id_for_label }}">{{ draft_form.sections.label }}</label>
-                    </div>
+                <div class="row draft-row">
+                    {% include "ipr/details_edit_draft.html" with draft_form=draft_form only %}
                 </div>
             {% endfor %}
-            {% comment %}
-            {% for draft_form in draft_formset %}
-                <div class="row draft-row {% if forloop.last %}template{% endif %}">
-                    <div class="col-md-2 fw-bold">{% bootstrap_label draft_form.document.label %}</div>
-                    <div class="col-md-6">{% bootstrap_field draft_form.document label_class="d-none" show_help=False %}</div>
-                    <div class="col-md-2">
-                        {% bootstrap_field draft_form.revisions placeholder="Revisions, e.g., 04-07" label_class="d-none" show_help=False %}
-                    </div>
-                    <div class="col-md-2">
-                        {% bootstrap_field draft_form.sections placeholder="Sections" label_class="d-none" show_help=False %}
-                    </div>
-                </div>
-            {% endfor %}
-            {% endcomment %}
+            <div class="row draft-row template d-none">
+                {% include "ipr/details_edit_draft.html" with draft_form=draft_formset.empty_form only %}
+            </div>
             <div class="mb-3 row">
                 <div class="col-md-2"></div>
                 <div class="col-md-10">
