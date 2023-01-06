@@ -296,7 +296,7 @@ def edit(request, id, updates=None):
     ipr = get_object_or_404(IprDisclosureBase, id=id).get_child()
     type = class_to_type[ipr.__class__.__name__]
     
-    DraftFormset = inlineformset_factory(IprDisclosureBase, IprDocRel, form=DraftForm, can_delete=True, extra=1)
+    DraftFormset = inlineformset_factory(IprDisclosureBase, IprDocRel, form=DraftForm, can_delete=True, extra=0)
 
     if request.method == 'POST':
         form = ipr_form_mapping[ipr.__class__.__name__](request.POST,instance=ipr)
@@ -316,7 +316,7 @@ def edit(request, id, updates=None):
         else:
             valid_formsets = True
 
-        if form.is_valid() and valid_formsets: 
+        if form.is_valid() and valid_formsets:
             updates = form.cleaned_data.get('updates')
             disclosure = form.save(commit=False)
             disclosure.save()
