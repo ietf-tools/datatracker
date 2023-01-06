@@ -27,6 +27,8 @@ $(document)
                 totalField.val(total);
 
                 template.before(el);
+
+                el.find('.select2-field').each((index, element) => setupSelect2Field($(element)));
             });
 
         function updateRevisions() {
