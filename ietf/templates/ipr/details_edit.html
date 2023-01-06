@@ -148,20 +148,6 @@
                     </div>
                 </div>
             {% endfor %}
-            {% comment %}
-            {% for draft_form in draft_formset %}
-                <div class="row draft-row {% if forloop.last %}template{% endif %}">
-                    <div class="col-md-2 fw-bold">{% bootstrap_label draft_form.document.label %}</div>
-                    <div class="col-md-6">{% bootstrap_field draft_form.document label_class="d-none" show_help=False %}</div>
-                    <div class="col-md-2">
-                        {% bootstrap_field draft_form.revisions placeholder="Revisions, e.g., 04-07" label_class="d-none" show_help=False %}
-                    </div>
-                    <div class="col-md-2">
-                        {% bootstrap_field draft_form.sections placeholder="Sections" label_class="d-none" show_help=False %}
-                    </div>
-                </div>
-            {% endfor %}
-            {% endcomment %}
             <div class="mb-3 row">
                 <div class="col-md-2"></div>
                 <div class="col-md-10">
