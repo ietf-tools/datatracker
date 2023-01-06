@@ -21,6 +21,9 @@ class SubmissionExtResourceFactory(factory.django.DjangoModelFactory):
 
 class SubmissionFactory(factory.django.DjangoModelFactory):
     state_id = 'uploaded'
+    submitter_name = factory.Faker("name")
+    submitter_email = factory.Faker("email") 
+    submitter = factory.LazyAttribute(lambda o: f"{o.submitter_name} <{o.submitter_email}>")
 
     @factory.lazy_attribute_sequence
     def name(self, n):
@@ -32,3 +35,4 @@ class SubmissionFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Submission
+        exclude = ("submitter_name", "submitter_email")
