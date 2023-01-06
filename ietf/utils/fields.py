@@ -323,7 +323,7 @@ class SearchableField(forms.MultipleChoiceField):
     def has_changed(self, initial, data):
         # When max_entries == 1, we behave like a ChoiceField so initial will likely be a single
         # value. Make it a list so MultipleChoiceField's has_changed() can work with it.
-        if self.max_entries == 1 and not isinstance(initial, (list, tuple)):
+        if initial is not None and self.max_entries == 1 and not isinstance(initial, (list, tuple)):
             initial = [initial]
         return super().has_changed(initial, data)
 
