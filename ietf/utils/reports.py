@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
-from typing import List, Tuple
+from typing import List, Set, Tuple
+from django.db.models import QuerySet
 
 from email.utils import parseaddr
 
@@ -9,10 +10,7 @@ from ietf.submit.models import Submission
 
 
 def authors_by_year(year: int) -> List[str]:
-    """
-    Returns the email addresses provided by I-D authors for
-    drafts that were submitted in the given year.
-    """
+    """Email addresses provided by I-D authors for drafts that were submitted in the given year."""
     addresses = set()
     for submission in Submission.objects.filter(submission_date__year=year):
         addresses.update([a["email"] for a in submission.authors])
@@ -20,10 +18,7 @@ def authors_by_year(year: int) -> List[str]:
 
 
 def submitters_by_year(year: int) -> List[str]:
-    """
-    Returns the email addresses provided by I-D submitters for
-    drafts that were submitted in the given year.
-    """
+    """Email addresses provided by I-D submitters for drafts that were submitted in the given year."""
     return list(
         set(
             [
@@ -36,8 +31,9 @@ def submitters_by_year(year: int) -> List[str]:
     )
 
 
-def unique_people(addresses: List[str]) -> Tuple[List, List]:
-    """
+def unique_people(addresses: List[str]) -> Tuple['QuerySet[Person]', Set]:
+    """Identify Person records matching email addresses and email addresses with no Person record.
+
     Given a list of email addresses, return
     (
         a list of unique Person records with a matching email address,
@@ -48,4 +44,4 @@ def unique_people(addresses: List[str]) -> Tuple[List, List]:
     """
     persons = Person.objects.filter(email__address__in=addresses).distinct()
     known_email = set(persons.values_list("email__address", flat=True))
-    return (list(persons), list(set(addresses) - set(known_email)))
+    return (persons, set(addresses) - set(known_email))

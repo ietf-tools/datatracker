@@ -64,7 +64,7 @@ class ReportTests(TestCase):
             submitter_name="Author 0",
             submitter_email="author0@example.com",  # Note alternate email
             author_nameaddrs=[
-                ("Author 0", "author0@example.com"),
+                ("Author 0", "author0@example.com"), # Again, alternate email
                 ("Author 4", "author4@example.net"),
             ],
         )
@@ -88,7 +88,10 @@ class ReportTests(TestCase):
             day=31,
             submitter_name="Trouble Maker",
             submitter_email="",
-            author_nameaddrs=[("Author 0", "author0@example.net")],
+            author_nameaddrs=[
+                ("Author 0", "author0@example.net"),
+                ("Author 2", "author2@example.net"),
+            ],
         )
 
     def make_draft_submission(
@@ -144,6 +147,7 @@ class ReportTests(TestCase):
                 [
                     "author0@example.net",
                     "author0@example.com",
+                    "author2@example.net",
                     "author3@example.net",
                     "author4@example.net",
                     "author5@example.net",
@@ -178,7 +182,7 @@ class ReportTests(TestCase):
                 "notanauthor0@example.com",
             ]
         )
-        self.assertEqual(addrs, ["notanauthor0@example.com"])
+        self.assertEqual(addrs, set(["notanauthor0@example.com"]))
         self.assertEqual(
             set(persons), set(Person.objects.filter(name__in=("Author 0", "Author 1")))
         )
