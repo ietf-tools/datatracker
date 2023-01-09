@@ -9,29 +9,27 @@ from ietf.person.models import Person
 from ietf.submit.models import Submission
 
 
-def authors_by_year(year: int) -> List[str]:
+def authors_by_year(year: int) -> Set[str]:
     """Email addresses provided by I-D authors for drafts that were submitted in the given year."""
     addresses = set()
     for submission in Submission.objects.filter(submission_date__year=year):
         addresses.update([a["email"] for a in submission.authors])
-    return list(addresses)
+    return addresses
 
 
-def submitters_by_year(year: int) -> List[str]:
+def submitters_by_year(year: int) -> Set[str]:
     """Email addresses provided by I-D submitters for drafts that were submitted in the given year."""
-    return list(
-        set(
-            [
-                parseaddr(a)[1]
-                for a in Submission.objects.filter(
-                    submitter__contains="@", submission_date__year=year
-                ).values_list("submitter", flat=True)
-            ]
-        )
+    return set(
+        [
+            parseaddr(a)[1]
+            for a in Submission.objects.filter(
+                submitter__contains="@", submission_date__year=year
+            ).values_list("submitter", flat=True)
+        ]
     )
 
 
-def unique_people(addresses: List[str]) -> Tuple['QuerySet[Person]', Set]:
+def unique_people(addresses: List[str]) -> Tuple["QuerySet[Person]", Set]:
     """Identify Person records matching email addresses and email addresses with no Person record.
 
     Given a list of email addresses, return

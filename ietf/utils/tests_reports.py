@@ -64,7 +64,7 @@ class ReportTests(TestCase):
             submitter_name="Author 0",
             submitter_email="author0@example.com",  # Note alternate email
             author_nameaddrs=[
-                ("Author 0", "author0@example.com"), # Again, alternate email
+                ("Author 0", "author0@example.com"),  # Again, alternate email
                 ("Author 4", "author4@example.net"),
             ],
         )
@@ -130,7 +130,7 @@ class ReportTests(TestCase):
     def test_authors_by_year(self):
         authors2020 = authors_by_year(2020)
         self.assertEqual(
-            set(authors2020),
+            authors2020,
             set(
                 [
                     "author0@example.net",
@@ -142,7 +142,7 @@ class ReportTests(TestCase):
         )
         authors2021 = authors_by_year(2021)
         self.assertEqual(
-            set(authors2021),
+            authors2021,
             set(
                 [
                     "author0@example.net",
@@ -158,7 +158,7 @@ class ReportTests(TestCase):
     def test_submitters_by_year(self):
         sub2020 = submitters_by_year(2020)
         self.assertEqual(
-            set(sub2020),
+            sub2020,
             set(
                 [
                     "author0@example.net",
@@ -169,7 +169,7 @@ class ReportTests(TestCase):
         )
         sub2021 = submitters_by_year(2021)
         self.assertEqual(
-            set(sub2021), set(["author0@example.com", "notanauthor2@example.net"])
+            sub2021, set(["author0@example.com", "notanauthor2@example.net"])
         )
 
     def test_unique_people(self):
