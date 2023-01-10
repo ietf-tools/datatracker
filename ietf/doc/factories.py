@@ -14,12 +14,14 @@ from django.utils import timezone
 
 from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor,
     StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent, TelechatDocEvent,
-    DocumentActionHolder, BofreqEditorDocEvent, BofreqResponsibleDocEvent )
+    DocumentActionHolder, BofreqEditorDocEvent, BofreqResponsibleDocEvent, DocExtResource )
 from ietf.group.models import Group
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import RoleFactory
+from ietf.name.models import ExtResourceName
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import date_today
+
 
 
 def draft_name_generator(type_id,group,n):
@@ -520,3 +522,12 @@ class ProceedingsMaterialDocFactory(BaseDocumentFactory):
                 obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
         else:
             obj.set_state(State.objects.get(type_id='procmaterials', slug='active'))
+
+class DocExtResourceFactory(factory.django.DjangoModelFactory):
+
+    name = factory.Iterator(ExtResourceName.objects.filter(type_id='url'))
+    value = factory.Faker('url')
+    doc = factory.SubFactory('ietf.doc.factories.BaseDocumentFactory')
+    class Meta:
+        model = DocExtResource
+
