@@ -49,6 +49,7 @@ cat << EOF > "$EXCLUDE"
 *.ps
 *.tar
 *.utf8
+*.xml
 *.Z
 *.zip
 *~
