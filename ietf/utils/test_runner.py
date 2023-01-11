@@ -876,6 +876,8 @@ class IetfTestRunner(DiscoverRunner):
                     "attribute-empty-style": "off",
                     # For fragments, don't check that elements are in the proper ancestor element
                     "element-required-ancestor": "off",
+                    # This is allowed by the HTML spec
+                    "form-dup-name": "off,"
                 },
             }
 
