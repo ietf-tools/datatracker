@@ -38,7 +38,7 @@ export function populate_nav(nav, heading_selector, classes) {
             while (level < cur_level) {
                 let nav = nav_stack.pop();
                 cur_level--;
-                nav_stack[level].appendChild(nav);
+                nav_stack[cur_level].appendChild(nav);
             }
         } else {
             while (level > cur_level) {
