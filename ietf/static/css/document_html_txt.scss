@@ -413,4 +413,9 @@ address .tel, address .email {
 address .tel + .email {
   margin: 0;
 }
+
+/* Safari doesn't seem to break long words (URLs) on slashes, so force a break */
+a {
+    overflow-wrap: break-word;
+}
 }
