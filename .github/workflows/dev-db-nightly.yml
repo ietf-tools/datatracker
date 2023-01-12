@@ -122,11 +122,18 @@ jobs:
     - uses: actions/checkout@v3
       with:
         ref: 'feat/postgres'
-          
+        
     - name: Migrate
-      run: |
-        chmod +x ./docker/scripts/db-pg-migrate.sh
-        sh ./docker/scripts/db-pg-migrate.sh
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 30
+        max_attempts: 3
+        command: |
+          chmod +x ./docker/scripts/db-pg-migrate.sh
+          sh ./docker/scripts/db-pg-migrate.sh
+        on_retry_command: |
+          psql -U django -h pgdb -d ietf -v ON_ERROR_STOP=1 -c '\x' -c 'DROP SCHEMA ietf_utf8 CASCADE;'
+          rm -f cast.load
           
     - name: Upload DB Dump
       uses: actions/upload-artifact@v3
