@@ -3606,11 +3606,13 @@ def proceedings(request, num=None):
     today_utc = date_today(datetime.timezone.utc)
 
     schedule = get_schedule(meeting, None)
-    sessions  = add_event_info_to_session_qs(
-        Session.objects.filter(meeting__number=meeting.number)
-    ).filter(
-        Q(timeslotassignments__schedule__in=[schedule, schedule.base if schedule else None]) | Q(current_status='notmeet')
-    ).select_related().order_by('-current_status')
+    sessions  = (
+        meeting.session_set.with_current_status()
+        .filter(Q(timeslotassignments__schedule__in=[schedule, schedule.base if schedule else None])
+                | Q(current_status='notmeet'))
+        .select_related()
+        .order_by('-current_status')
+    )
     plenaries = sessions.filter(name__icontains='plenary').exclude(current_status='notmeet')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
