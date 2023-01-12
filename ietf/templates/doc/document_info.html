@@ -85,7 +85,7 @@
                 <th scope="row">Compare versions</th>
                 <td class="edit"></td>
                 <td>
-                    {% include "doc/document_history_form.html" with doc=doc diff_revisions=diff_revisions action=rfcdiff_base_url document_html=document_html only %}
+                    {% include "doc/document_history_form.html" with doc=doc diff_revisions=diff_revisions action=rfcdiff_base_url document_html=document_html snapshot=snapshot only %}
                 </td>
             </tr>
         {% endif %}

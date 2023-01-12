@@ -10,7 +10,7 @@
             {% if rev %}
                 <li class="page-item {% if rev == doc.rev %}{% if snapshot or doc.get_state_slug != 'rfc' %}active{% endif %}{% endif %}">
                     <a class="page-link"
-                       href="{% if snapshot and doc.get_state_slug == 'rfc' %}{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.doc.name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.doc.name %}{% endif %}{% else %}{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.name rev=rev %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.name rev=rev %}{% endif %}{% endif %}"
+                       href="{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.name rev=rev %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.name rev=rev %}{% endif %}"
                        {% if rev != '00' and rev != latest_rev %}rel="nofollow"{% endif %}>
                         {{ rev }}
                     </a>
