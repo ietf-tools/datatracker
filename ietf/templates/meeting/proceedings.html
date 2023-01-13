@@ -61,8 +61,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for session in meeting_sessions %}
-                            {% ifchanged session.group.acronym %}
+                        {% for sessions in meeting_sessions %}
+                            {% ifchanged sessions.0.group.acronym sessions.0.name %}
                                 {% include "meeting/group_proceedings.html" %}
                             {% endifchanged %}
                         {% endfor %}
