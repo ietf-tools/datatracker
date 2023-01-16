@@ -3626,33 +3626,31 @@ def proceedings(request, num=None):
             sorted(ietf, key=lambda s: (s.group.parent.acronym, s.group.acronym)),
             key=lambda s: s.group.parent
     ):
+        # Within area, collect sessions by Group, then bin by session name (most names are blank).
+        # If all of a group's sessions are 'notmeet', the processed data goes in not_meeting_sessions.
+        # Otherwise, the data goes in meeting_sessions.
         meeting_sessions = []
         not_meeting_sessions = []
-
-        # todo: deal with groups not meeting at all
         for group, group_sessions in itertools.groupby(area_sessions, key=lambda s: s.group.acronym):
             by_name = {}
+            group_is_meeting = False
             for s in sorted(
                     group_sessions,
-                    key=lambda gs: gs.official_timeslotassignment().timeslot.time if gs.official_timeslotassignment() else datetime.datetime(datetime.MAXYEAR, 1, 1)
+                    key=lambda gs: (
+                            gs.official_timeslotassignment().timeslot.time
+                            if gs.official_timeslotassignment() else datetime.datetime(datetime.MAXYEAR, 1, 1)
+                    ),
             ):
+                by_name.setdefault(s.name, []).append(s)
                 if s.current_status != 'notmeet':
-                    by_name.setdefault(s.name, []).append(s)
+                    group_is_meeting = True
             for ss in by_name.values():
                 if len(ss) > 0:
-                    meeting_sessions.append(ss)
+                    if group_is_meeting:
+                        meeting_sessions.append(ss)
+                    else:
+                        not_meeting_sessions.append(ss)
         ietf_areas.append((area, meeting_sessions, not_meeting_sessions))
-
-        # area_sessions = list(area_sessions)
-        # meeting_groups = set(s.group_id for s in area_sessions if s.current_status != 'notmeet')
-        # meeting_sessions = []
-        # not_meeting_sessions = []
-        # for s in area_sessions:
-        #     if s.current_status == 'notmeet' and s.group_id not in meeting_groups:
-        #         not_meeting_sessions.append(s)
-        #     else:
-        #         meeting_sessions.append(s)
-        # ietf_areas.append((area, meeting_sessions, not_meeting_sessions))
 
     with timezone.override(meeting.tz()):
         return render(request, "meeting/proceedings.html", {
