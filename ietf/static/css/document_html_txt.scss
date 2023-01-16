@@ -43,6 +43,12 @@
   margin-bottom: var(--line);
   margin-left: 3ch;
 
+  /* Really long lines can wrap when all else fails.
+   * This won't affect <pre> or <table>, or cases where soft-wrapping occurs.
+   * Mostly this exists so that long URLs wrap properly in Safari, which
+   * doesn't break words at '/' like other browsers. */
+  overflow-wrap: break-word;
+
 h1, h2, h3, h4, h5 {
   font-weight: bold;
   font-size: inherit;
@@ -412,10 +418,5 @@ address .tel, address .email {
 }
 address .tel + .email {
   margin: 0;
-}
-
-/* Safari doesn't seem to break long words (URLs) on slashes, so force a break */
-a {
-    overflow-wrap: break-word;
 }
 }
