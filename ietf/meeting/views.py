@@ -3629,11 +3629,13 @@ def proceedings(request, num=None):
         # Within area, collect sessions by Group, then bin by session name (most names are blank).
         # If all of a group's sessions are 'notmeet', the processed data goes in not_meeting_sessions.
         # Otherwise, the data goes in meeting_sessions.
-        meeting_sessions = []
-        not_meeting_sessions = []
-        for group, group_sessions in itertools.groupby(area_sessions, key=lambda s: s.group.acronym):
+        meeting_groups = []
+        not_meeting_groups = []
+        for group_acronym, group_sessions in itertools.groupby(area_sessions, key=lambda s: s.group.acronym):
             by_name = {}
-            group_is_meeting = False
+            is_meeting = False
+            all_canceled = True
+            group = None
             for s in sorted(
                     group_sessions,
                     key=lambda gs: (
@@ -3641,16 +3643,26 @@ def proceedings(request, num=None):
                             if gs.official_timeslotassignment() else datetime.datetime(datetime.MAXYEAR, 1, 1)
                     ),
             ):
-                by_name.setdefault(s.name, []).append(s)
+                group = s.group
                 if s.current_status != 'notmeet':
-                    group_is_meeting = True
-            for ss in by_name.values():
-                if len(ss) > 0:
-                    if group_is_meeting:
-                        meeting_sessions.append(ss)
-                    else:
-                        not_meeting_sessions.append(ss)
-        ietf_areas.append((area, meeting_sessions, not_meeting_sessions))
+                    is_meeting = True
+                if s.current_status != 'canceled':
+                    all_canceled = False
+                by_name[s.name] = []
+                if s.sessionpresentation_set.exists():
+                    by_name[s.name].append(s)  # only add sessions with materials
+            for sess_name, ss in by_name.items():
+                entry = {
+                    'group': group,
+                    'name': sess_name,
+                    'canceled': all_canceled,
+                    'sessions_with_materials': ss
+                }
+                if is_meeting:
+                    meeting_groups.append(entry)
+                else:
+                    not_meeting_groups.append(entry)
+        ietf_areas.append((area, meeting_groups, not_meeting_groups))
 
     with timezone.override(meeting.tz()):
         return render(request, "meeting/proceedings.html", {

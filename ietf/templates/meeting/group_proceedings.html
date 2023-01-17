@@ -3,21 +3,20 @@
 {% origin %}
 {% load ietf_filters %}
 {% load proceedings_filters %}
-{% with name=sessions.0.name group=sessions.0.group first_session=sessions.0 %}
 <tr>
     <td>
-        {% if name %}
-            <div id="{{ name|slugify }}">{{ name }}</div>
-        {% elif group.acronym %}
-            <div id="{{ group.acronym }}">
-                <a href="{% url 'ietf.group.views.group_home' acronym=group.acronym %}">{{ group.acronym }}</a>
+        {% if entry.name %}
+            <div id="{{ entry.name|slugify }}">{{ entry.name }}</div>
+        {% elif entry.group.acronym %}
+            <div id="{{ entry.group.acronym }}">
+                <a href="{% url 'ietf.group.views.group_home' acronym=entry.group.acronym %}">{{ entry.group.acronym }}</a>
             </div>
-            {% if group.state_id == "bof" %}<span class="badge rounded-pill bg-success">BOF</span>{% endif %}
+            {% if entry.group.state_id == "bof" %}<span class="badge rounded-pill bg-success">BOF</span>{% endif %}
         {% else %}
-            <h1>{{group}}</h1>
+            <h1>{{ entry.group }}</h1>
         {% endif %}
     </td>
-    {% if first_session.all_meeting_sessions_cancelled %}
+    {% if entry.canceled %}
         <td colspan="4">
             <span class="badge rounded-pill bg-danger">Session cancelled</span>
         </td>
@@ -25,34 +24,34 @@
         {# artifacts #}
         <td>
             {# todo label for multiple sessions[DONE], warnings when items not yet posted #}
-            {% for session in sessions %}
+            {% for session in entry.sessions_with_materials %}
                 {% if session.agenda %}
                     <a href="{{ session.agenda|meeting_href:meeting }}">
                         Agenda
-                        {% if sessions|length > 1 %}
+                        {% if entry.sessions_with_materials|length > 1 %}
                             {{session.official_timeslotassignment.timeslot.time|date:"D G:i"}}
                       {% endif %}
                     </a>
                     <br>
                 {% endif %}
             {% endfor %}
-            {% for session in sessions %}
+            {% for session in entry.sessions_with_materials %}
                 {% if session.minutes %}
                     <a href="{{ session.minutes|meeting_href:meeting }}">
                         Minutes
-                        {% if sessions|length > 1 %}
+                        {% if entry.sessions_with_materials|length > 1 %}
                             {{session.official_timeslotassignment.timeslot.time|date:"D G:i"}}
                         {% endif %}
                     </a>
                     <br>
                 {% endif %}
             {% endfor %}
-            {% for session in sessions %}
+            {% for session in entry.sessions_with_materials %}
                 {% if session.bluesheets %}
                     {% for bs in session.bluesheets %}
                         <a href="{{ bs|meeting_href:meeting }}">
                             Bluesheets
-                            {% if sessions|length > 1 %}
+                            {% if entry.sessions_with_materials|length > 1 %}
                                 {{ session.official_timeslotassignment.timeslot.time|date:"D G:i" }}
                             {% endif %}
                         </a>
@@ -63,10 +62,10 @@
         </td>
         {# recordings #}
         <td>
-          {% for session in sessions %}
+          {% for session in entry.sessions_with_materials %}
               {% for rec in session.recordings %}
                   <a href="{{ rec|meeting_href:meeting|default:"#" }}">
-                      {% if sessions|length > 1 %}
+                      {% if entry.sessions_with_materials|length > 1 %}
                           {{ rec|hack_recording_title:True }}
                       {% else %}
                           {{ rec|hack_recording_title:False }}
@@ -78,7 +77,7 @@
         </td>
         {# slides #}
         <td>
-            {% for session in sessions %}
+            {% for session in entry.sessions_with_materials %}
                 {% for slide in session.slides %}
                     <a href="{{ slide|meeting_href:meeting }}">{{ slide.title|clean_whitespace }}</a>
                     <br>
@@ -89,7 +88,7 @@
         </td>
         {# drafts #}
         <td>
-            {% for session in sessions %}
+            {% for session in entry.sessions_with_materials %}
                 {% for draft in session.drafts %}
                     <a href="{% url "ietf.doc.views_doc.document_main" name=draft.canonical_name %}">{{ draft.canonical_name }}</a>
                     <br>
@@ -227,4 +226,3 @@
 <!--    {% endif %}-->
 {% endcomment %}
 </tr>
-{% endwith %}

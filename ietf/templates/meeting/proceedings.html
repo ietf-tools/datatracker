@@ -45,11 +45,11 @@
             </table>
         {% endif %}
         <!-- Working groups -->
-        {% for area, meeting_sessions, not_meeting_sessions in ietf_areas %}
+        {% for area, meeting_groups, not_meeting_groups in ietf_areas %}
             <h2 class="mt-5" id="{{ area.acronym }}">
                 {{ area.acronym|upper }} <small class="text-muted">{{ area.name }}</small>
             </h2>
-            {% if meeting_sessions %}
+            {% if meeting_groups %}
                 <table class="table table-sm table-striped tablesorter">
                     <thead>
                         <tr>
@@ -61,20 +61,22 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for sessions in meeting_sessions %}
-                            {% ifchanged sessions.0.group.acronym sessions.0.name %}
-                                {% include "meeting/group_proceedings.html" %}
-                            {% endifchanged %}
+                        {% for entry in meeting_groups %}
+                            {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting only %}
                         {% endfor %}
                     </tbody>
                 </table>
             {% endif %}
-            {% if not_meeting_sessions %}
+            {% if not_meeting_groups %}
                 <p>
                     {{ area.name }} groups not meeting:
-                    {% for sessions in not_meeting_sessions %}{% with group=sessions.0.group %}
-                        <a href="{% url 'ietf.group.views.group_home' acronym=group.acronym %}">{{ group.acronym }}</a>{% if not forloop.last %},{% endif %}
-                    {% endwith %}{% endfor %}
+                    {% for entry in not_meeting_groups %}
+                        {% if entry.name == "" %}{# do not show named sessions in this list #}
+                            <a href="{% url 'ietf.group.views.group_home' acronym=entry.group.acronym %}">
+                                {{ entry.group.acronym }}
+                            </a>{% if not forloop.last %},{% endif %}
+                        {% endif %}
+                    {% endfor %}
                 </p>
                 <table class="table table-sm table-striped">
                     <thead>
@@ -87,11 +89,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for sessions in not_meeting_sessions %}
-                            {% if session.sessionpresentation_set.exists %}
-                                {% include "meeting/group_proceedings.html" %}
-                            {% endif %}
-                        {% endfor %}
+                        {% for entry in not_meeting_groups %}{% if entry.sessions_with_materials %}
+                            {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting only %}
+                        {% endif %}{% endfor %}
                     </tbody>
                 </table>
             {% endif %}
