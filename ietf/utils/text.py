@@ -51,7 +51,8 @@ validate_url = URLValidator()
 
 def check_url_validity(attrs, new=False):
     if (None, "href") not in attrs:
-        return None
+        # rfc2html creates a tags without href
+        return attrs
     url = attrs[(None, "href")]
     try:
         if url.startswith("http"):
