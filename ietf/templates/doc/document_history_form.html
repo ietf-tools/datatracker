@@ -14,6 +14,7 @@
 {% with prev_rev=doc.rev|add:"-1"|stringformat:"02d" %}
             <select class="form-select{% if document_html %} form-select-sm mb-1{% endif %} select2-field"
                     data-max-entries="1"
+                    data-width="resolve"
                     data-allow-clear="false"
                     data-minimum-input-length="0"
                     {% if not document_html %}id="url1"{% else %}aria-label="From revision"{% endif %}
@@ -51,6 +52,7 @@
 {% endif %}
             <select class="form-select{% if document_html %} form-select-sm mb-1{% endif %} select2-field"
                     data-max-entries="1"
+                    data-width="resolve"
                     data-allow-clear="false"
                     data-minimum-input-length="0"
                     {% if not document_html %}id="url2"{% else %}aria-label="To revision"{% endif %}

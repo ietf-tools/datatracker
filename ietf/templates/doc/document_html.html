@@ -41,6 +41,14 @@
         {% include "base/icons.html" %}
         {% include "doc/opengraph.html" %}
          {% analytical_head_bottom %}
+        <style>
+            {# Force "text-overflow: ellipsis" to hide the beginning of a doc name #}
+            .diff-form .select2-selection__rendered {
+                direction: rtl;
+                text-align: left;
+            }
+            }
+        </style>
     </head>
     <body>
         {% analytical_body_top %}
