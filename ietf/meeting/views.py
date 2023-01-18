@@ -3586,6 +3586,52 @@ def upcoming_json(request):
     response = HttpResponse(json.dumps(data, indent=2, sort_keys=False), content_type='application/json;charset=%s'%settings.DEFAULT_CHARSET)
     return response
 
+def organize_proceedings_sessions(sessions):
+    # Collect sessions by Group, then bin by session name (including sessions with blank names).
+    # If all of a group's sessions are 'notmeet', the processed data goes in not_meeting_sessions.
+    # Otherwise, the data goes in meeting_sessions.
+    meeting_groups = []
+    not_meeting_groups = []
+    for group_acronym, group_sessions in itertools.groupby(sessions, key=lambda s: s.group.acronym):
+        by_name = {}
+        is_meeting = False
+        all_canceled = True
+        group = None
+        for s in sorted(
+                group_sessions,
+                key=lambda gs: (
+                        gs.official_timeslotassignment().timeslot.time
+                        if gs.official_timeslotassignment() else datetime.datetime(datetime.MAXYEAR, 1, 1)
+                ),
+        ):
+            group = s.group
+            if s.current_status != 'notmeet':
+                is_meeting = True
+            if s.current_status != 'canceled':
+                all_canceled = False
+            by_name.setdefault(s.name, [])
+            if s.current_status != 'notmeet' or s.sessionpresentation_set.exists():
+                by_name[s.name].append(s)  # for notmeet, only include sessions with materials
+        for sess_name, ss in by_name.items():
+            entry = {
+                'group': group,
+                'name': sess_name,
+                'canceled': all_canceled,
+                # pass sessions instead of the materials here so session data (like time) is easily available
+                'sessions_with_agendas': [s for s in ss if s.agenda()],
+                'sessions_with_minutes': [s for s in ss if s.minutes()],
+                'sessions_with_bluesheets': [s for s in ss if s.bluesheets()],
+                'sessions_with_recordings': [s for s in ss if s.recordings()],
+                'sessions_with_slides': [s for s in ss if s.slides()],
+                'sessions_with_drafts': [s for s in ss if s.drafts()],
+            }
+            if is_meeting:
+                meeting_groups.append(entry)
+            else:
+                not_meeting_groups.append(entry)
+    return meeting_groups, not_meeting_groups
+
+
 def proceedings(request, num=None):
 
     meeting = get_meeting(num)
@@ -3613,67 +3659,45 @@ def proceedings(request, num=None):
         .select_related()
         .order_by('-current_status')
     )
-    plenaries = sessions.filter(name__icontains='plenary').exclude(current_status='notmeet')
-    ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
-    irtf      = sessions.filter(group__parent__acronym = 'irtf')
-    training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['regular', 'other',]).exclude(current_status='notmeet')
-    iab       = sessions.filter(group__parent__acronym = 'iab').exclude(current_status='notmeet')
 
-    cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
+    plenaries, _ = organize_proceedings_sessions(
+        sessions.filter(name__icontains='plenary')
+        .exclude(current_status='notmeet')
+    )
+    irtf, _ = organize_proceedings_sessions(
+        sessions.filter(group__parent__acronym = 'irtf').order_by('group__acronym')
+    )
+    training, _ = organize_proceedings_sessions(
+        sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['regular', 'other',])
+        .exclude(current_status='notmeet')
+    )
+    iab, _ = organize_proceedings_sessions(
+        sessions.filter(group__parent__acronym = 'iab')
+        .exclude(current_status='notmeet')
+    )
 
+    ietf = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu').order_by('group__parent__acronym', 'group__acronym')
     ietf_areas = []
+    # for area, area_sessions in itertools.groupby(
+    #         sorted(ietf, key=lambda s: (s.group.parent.acronym, s.group.acronym)),
+    #         key=lambda s: s.group.parent
+    # ):
     for area, area_sessions in itertools.groupby(
-            sorted(ietf, key=lambda s: (s.group.parent.acronym, s.group.acronym)),
+            ietf,
             key=lambda s: s.group.parent
     ):
-        # Within area, collect sessions by Group, then bin by session name (most names are blank).
-        # If all of a group's sessions are 'notmeet', the processed data goes in not_meeting_sessions.
-        # Otherwise, the data goes in meeting_sessions.
-        meeting_groups = []
-        not_meeting_groups = []
-        for group_acronym, group_sessions in itertools.groupby(area_sessions, key=lambda s: s.group.acronym):
-            by_name = {}
-            is_meeting = False
-            all_canceled = True
-            group = None
-            for s in sorted(
-                    group_sessions,
-                    key=lambda gs: (
-                            gs.official_timeslotassignment().timeslot.time
-                            if gs.official_timeslotassignment() else datetime.datetime(datetime.MAXYEAR, 1, 1)
-                    ),
-            ):
-                group = s.group
-                if s.current_status != 'notmeet':
-                    is_meeting = True
-                if s.current_status != 'canceled':
-                    all_canceled = False
-                by_name[s.name] = []
-                if s.current_status != 'notmeet' or s.sessionpresentation_set.exists():
-                    by_name[s.name].append(s)  # for notmeet, only include sessions with materials
-            for sess_name, ss in by_name.items():
-                entry = {
-                    'group': group,
-                    'name': sess_name,
-                    'canceled': all_canceled,
-                    # pass sessions instead of the materials here so session data (like time) is easily available
-                    'sessions_with_agendas': [s for s in ss if s.agenda()],
-                    'sessions_with_minutes': [s for s in ss if s.minutes()],
-                    'sessions_with_bluesheets': [s for s in ss if s.bluesheets()],
-                    'sessions_with_recordings': [s for s in ss if s.recordings()],
-                    'sessions_with_slides': [s for s in ss if s.slides()],
-                    'sessions_with_drafts': [s for s in ss if s.drafts()],
-                }
-                if is_meeting:
-                    meeting_groups.append(entry)
-                else:
-                    not_meeting_groups.append(entry)
+        meeting_groups, not_meeting_groups = organize_proceedings_sessions(area_sessions)
         ietf_areas.append((area, meeting_groups, not_meeting_groups))
+
+    cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
 
     with timezone.override(meeting.tz()):
         return render(request, "meeting/proceedings.html", {
             'meeting': meeting,
-            'plenaries': plenaries, 'ietf': ietf, 'training': training, 'irtf': irtf, 'iab': iab,
+            'plenaries': plenaries,
+            'training': training,
+            'irtf': irtf,
+            'iab': iab,
             'ietf_areas': ietf_areas,
             'cut_off_date': cut_off_date,
             'cor_cut_off_date': cor_cut_off_date,

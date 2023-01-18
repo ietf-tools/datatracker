@@ -37,9 +37,8 @@
                 </tr>
             </thead>
             <tbody>
-                {# todo update this #}
-                {% for session in plenaries %}
-                    {% include "meeting/group_proceedings.html" %}
+                {% for entry in plenaries %}
+                    {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=True only %}
                 {% endfor %}
             </tbody>
         </table>
@@ -110,11 +109,8 @@
                 </tr>
             </thead>
             <tbody>
-            {# todo update this #}
-                {% for session in training %}
-                    {% ifchanged %}
-                        {% include "meeting/group_proceedings.html" with entry="something" meeting=meeting show_agenda=False only %}
-                    {% endifchanged %}
+                {% for entry in training %}
+                        {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=False only %}
                 {% endfor %}
             </tbody>
         </table>
@@ -145,10 +141,8 @@
                 </tr>
             </thead>
             <tbody>
-                {% for session in iab %}
-                    {% ifchanged %}
-                        {% include "meeting/group_proceedings.html" %}
-                    {% endifchanged %}
+                {% for entry in iab %}
+                    {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=True only %}
                 {% endfor %}
             </tbody>
         </table>
@@ -179,10 +173,8 @@
                 </tr>
             </thead>
             <tbody>
-                {% for session in irtf|dictsort:"group.acronym" %}
-                    {% ifchanged %}
-                        {% include "meeting/group_proceedings.html" %}
-                    {% endifchanged %}
+                {% for entry in irtf %}
+                    {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=True only %}
                 {% endfor %}
             </tbody>
         </table>
