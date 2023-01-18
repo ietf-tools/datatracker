@@ -3649,14 +3649,20 @@ def proceedings(request, num=None):
                 if s.current_status != 'canceled':
                     all_canceled = False
                 by_name[s.name] = []
-                if s.sessionpresentation_set.exists():
-                    by_name[s.name].append(s)  # only add sessions with materials
+                if s.current_status != 'notmeet' or s.sessionpresentation_set.exists():
+                    by_name[s.name].append(s)  # for notmeet, only include sessions with materials
             for sess_name, ss in by_name.items():
                 entry = {
                     'group': group,
                     'name': sess_name,
                     'canceled': all_canceled,
-                    'sessions_with_materials': ss
+                    # pass sessions instead of the materials here so session data (like time) is easily available
+                    'sessions_with_agendas': [s for s in ss if s.agenda()],
+                    'sessions_with_minutes': [s for s in ss if s.minutes()],
+                    'sessions_with_bluesheets': [s for s in ss if s.bluesheets()],
+                    'sessions_with_recordings': [s for s in ss if s.recordings()],
+                    'sessions_with_slides': [s for s in ss if s.slides()],
+                    'sessions_with_drafts': [s for s in ss if s.drafts()],
                 }
                 if is_meeting:
                     meeting_groups.append(entry)

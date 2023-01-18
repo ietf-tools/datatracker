@@ -23,35 +23,44 @@
     {% else %}
         {# artifacts #}
         <td>
-            {# todo label for multiple sessions[DONE], warnings when items not yet posted #}
-            {% for session in entry.sessions_with_materials %}
+            {% for session in entry.sessions_with_agendas %}
                 {% if session.agenda %}
                     <a href="{{ session.agenda|meeting_href:meeting }}">
                         Agenda
-                        {% if entry.sessions_with_materials|length > 1 %}
+                        {% if entry.sessions_with_agendas|length > 1 %}
                             {{session.official_timeslotassignment.timeslot.time|date:"D G:i"}}
                       {% endif %}
                     </a>
                     <br>
                 {% endif %}
+            {% empty %}
+                {% if show_agenda and not meeting.proceedings_final %}
+                    <span class="badge rounded-pill bg-warning">No agenda</span>
+                    <br>
+                {% endif %}
             {% endfor %}
-            {% for session in entry.sessions_with_materials %}
+            {% for session in entry.sessions_with_minutes %}
                 {% if session.minutes %}
                     <a href="{{ session.minutes|meeting_href:meeting }}">
                         Minutes
-                        {% if entry.sessions_with_materials|length > 1 %}
+                        {% if entry.sessions_with_minutes|length > 1 %}
                             {{session.official_timeslotassignment.timeslot.time|date:"D G:i"}}
                         {% endif %}
                     </a>
                     <br>
                 {% endif %}
+            {% empty %}
+                {% if show_agenda and not meeting.proceedings_final %}
+                    <span class="badge rounded-pill bg-warning">No minutes</span>
+                    <br>
+                {% endif %}
             {% endfor %}
-            {% for session in entry.sessions_with_materials %}
+            {% for session in entry.sessions_with_bluesheets %}
                 {% if session.bluesheets %}
                     {% for bs in session.bluesheets %}
                         <a href="{{ bs|meeting_href:meeting }}">
                             Bluesheets
-                            {% if entry.sessions_with_materials|length > 1 %}
+                            {% if entry.sessions_with_bluesheets|length > 1 %}
                                 {{ session.official_timeslotassignment.timeslot.time|date:"D G:i" }}
                             {% endif %}
                         </a>
@@ -62,10 +71,10 @@
         </td>
         {# recordings #}
         <td>
-          {% for session in entry.sessions_with_materials %}
+          {% for session in entry.sessions_with_recordings %}
               {% for rec in session.recordings %}
                   <a href="{{ rec|meeting_href:meeting|default:"#" }}">
-                      {% if entry.sessions_with_materials|length > 1 %}
+                      {% if entry.sessions_with_recordings|length > 1 %}
                           {{ rec|hack_recording_title:True }}
                       {% else %}
                           {{ rec|hack_recording_title:False }}
@@ -77,24 +86,24 @@
         </td>
         {# slides #}
         <td>
-            {% for session in entry.sessions_with_materials %}
+            {% for session in entry.sessions_with_slides %}
                 {% for slide in session.slides %}
                     <a href="{{ slide|meeting_href:meeting }}">{{ slide.title|clean_whitespace }}</a>
                     <br>
-                {% empty %}
-                    {% if not meeting.proceedings_final %}<span class="badge rounded-pill bg-warning">No slides</span>{% endif %}
                 {% endfor %}
+            {% empty %}
+                {% if not meeting.proceedings_final %}<span class="badge rounded-pill bg-warning">No slides</span>{% endif %}
             {% endfor %}
         </td>
         {# drafts #}
         <td>
-            {% for session in entry.sessions_with_materials %}
+            {% for session in entry.sessions_with_drafts %}
                 {% for draft in session.drafts %}
                     <a href="{% url "ietf.doc.views_doc.document_main" name=draft.canonical_name %}">{{ draft.canonical_name }}</a>
                     <br>
-                {% empty %}
-                    {% if not meeting.proceedings_final %}<span class="badge rounded-pill bg-warning">No drafts</span>{% endif %}
                 {% endfor %}
+            {% empty %}
+                {% if not meeting.proceedings_final %}<span class="badge rounded-pill bg-warning">No drafts</span>{% endif %}
             {% endfor %}
         </td>
     {% endif %}
