@@ -93,6 +93,17 @@
                             </tr>
                         </tbody>
                         {% include "doc/document_info.html" with sidebar=False %}
+                        <tr>
+                            <th scope="row"></th>
+                            <td>
+                                <a class="btn btn-sm btn-warning mb-3"
+                                target="_blank"
+                                href="https://github.com/ietf-tools/datatracker/issues/new/choose">
+                                    Report a bug
+                                    <i class="bi bi-bug"></i>
+                                </a>
+                            </td>
+                        </tr>
                     </table>
                 </div>
             </div>
@@ -209,6 +220,12 @@
                                 <table class="table table-sm table-borderless">
                                     {% include "doc/document_info.html" with sidebar=True %}
                                 </table>
+                                <a class="btn btn-sm btn-warning mb-3"
+                                target="_blank"
+                                href="https://github.com/ietf-tools/datatracker/issues/new/choose">
+                                    Report a bug
+                                    <i class="bi bi-bug"></i>
+                                </a>
                             </div>
                             <div class="tab-pane mb-5"
                                  id="toc-tab-pane"
