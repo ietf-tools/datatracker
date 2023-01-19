@@ -57,37 +57,30 @@
         </td>
         {# recordings #}
         <td>
-          {% for session in entry.sessions_with_recordings %}
-              {% for rec in session.recordings %}
-                  <a href="{{ rec|meeting_href:meeting|default:"#" }}">
-                      {% if entry.sessions_with_recordings|length > 1 %}
-                          {{ rec|hack_recording_title:True }}
-                      {% else %}
-                          {{ rec|hack_recording_title:False }}
-                      {% endif %}
-                  </a>
-                  <br>
-              {% endfor %}
+          {% for rec in entry.recordings %}
+              <a href="{{ rec.material|meeting_href:meeting|default:"#" }}">
+                  {{ rec.material|hack_recording_title }}
+                  {% if rec.time %}{{ rec.time|date:"D G:i"}}{% endif %}
+              </a>
+              <br>
           {% endfor %}
         </td>
         {# slides #}
         <td>
-            {% for session in entry.sessions_with_slides %}
-                {% for slide in session.slides %}
-                    <a href="{{ slide|meeting_href:meeting }}">{{ slide.title|clean_whitespace }}</a>
-                    <br>
-                {% endfor %}
+            {% for slide in entry.slides %}
+                <a href="{{ slide.material|meeting_href:meeting }}">{{ slide.material.title|clean_whitespace }}</a>
+                <br>
             {% empty %}
                 {% if not meeting.proceedings_final %}<span class="badge rounded-pill bg-warning">No slides</span>{% endif %}
             {% endfor %}
         </td>
         {# drafts #}
         <td>
-            {% for session in entry.sessions_with_drafts %}
-                {% for draft in session.drafts %}
-                    <a href="{% url "ietf.doc.views_doc.document_main" name=draft.canonical_name %}">{{ draft.canonical_name }}</a>
-                    <br>
-                {% endfor %}
+            {% for draft in entry.drafts %}
+                <a href="{% url "ietf.doc.views_doc.document_main" name=draft.material.canonical_name %}">
+                    {{ draft.material.canonical_name }}
+                </a>
+                <br>
             {% empty %}
                 {% if not meeting.proceedings_final %}<span class="badge rounded-pill bg-warning">No drafts</span>{% endif %}
             {% endfor %}

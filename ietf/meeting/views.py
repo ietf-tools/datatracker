@@ -3643,9 +3643,9 @@ def organize_proceedings_sessions(sessions):
                 'agendas': _format_materials((s, s.agenda()) for s in ss),
                 'minutes': _format_materials((s, s.minutes()) for s in ss),
                 'bluesheets': _format_materials((s, s.bluesheets()) for s in ss),
-                'sessions_with_recordings': [s for s in ss if s.recordings()],
-                'sessions_with_slides': [s for s in ss if s.slides()],
-                'sessions_with_drafts': [s for s in ss if s.drafts()],
+                'recordings': _format_materials((s, s.recordings()) for s in ss),
+                'slides': _format_materials((s, s.slides()) for s in ss),
+                'drafts': _format_materials((s, s.drafts()) for s in ss),
             }
             if is_meeting:
                 meeting_groups.append(entry)
