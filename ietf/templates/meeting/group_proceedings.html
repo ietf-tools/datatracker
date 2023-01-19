@@ -23,16 +23,12 @@
     {% else %}
         {# artifacts #}
         <td>
-            {% for session in entry.sessions_with_agendas %}
-                {% if session.agenda %}
-                    <a href="{{ session.agenda|meeting_href:meeting }}">
-                        Agenda
-                        {% if entry.sessions_with_agendas|length > 1 %}
-                            {{session.official_timeslotassignment.timeslot.time|date:"D G:i"}}
-                      {% endif %}
-                    </a>
-                    <br>
-                {% endif %}
+            {% for agenda in entry.agendas %}
+                <a href="{{ agenda.agenda|meeting_href:meeting }}">
+                    Agenda
+                    {% if agenda.time %}{{agenda.time|date:"D G:i"}}{% endif %}
+                </a>
+                <br>
             {% empty %}
                 {% if show_agenda and not meeting.proceedings_final %}
                     <span class="badge rounded-pill bg-warning">No agenda</span>

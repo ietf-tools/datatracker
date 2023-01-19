@@ -3613,12 +3613,24 @@ def organize_proceedings_sessions(sessions):
             if s.current_status != 'notmeet' or s.sessionpresentation_set.exists():
                 by_name[s.name].append(s)  # for notmeet, only include sessions with materials
         for sess_name, ss in by_name.items():
+            distinct_agendas = set(s.agenda() for s in ss if s.agenda())
+            n_agendas = len(distinct_agendas)
+            if n_agendas == 0:
+                agendas = []
+            elif n_agendas == 1:
+                only_agenda = list(distinct_agendas)[0]
+                agendas = [{'agenda': only_agenda}]
+            else:
+                agendas = [
+                    {'agenda': s.agenda(), 'time': s.official_timeslotassignment().timeslot.time}
+                    for s in ss if s.agenda()
+                ]
             entry = {
                 'group': group,
                 'name': sess_name,
                 'canceled': all_canceled,
                 # pass sessions instead of the materials here so session data (like time) is easily available
-                'sessions_with_agendas': [s for s in ss if s.agenda()],
+                'agendas': agendas,
                 'sessions_with_minutes': [s for s in ss if s.minutes()],
                 'sessions_with_bluesheets': [s for s in ss if s.bluesheets()],
                 'sessions_with_recordings': [s for s in ss if s.recordings()],
