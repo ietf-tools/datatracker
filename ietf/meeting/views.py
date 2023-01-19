@@ -3616,20 +3616,23 @@ def organize_proceedings_sessions(sessions):
             def _format_materials(items):
                 """Format session/material for template
 
-                Input is a list of (session, material) pairs.
+                Input is a list of (session, materials) pairs. The materials value can be a single value or a list.
                 """
-                distinct = set(mat for _, mat in items if mat)
-                n_mats = len(distinct)
+                material_times = {}  # key is material, value is first timestamp it appeared
+                for s, mats in items:
+                    timestamp = s.official_timeslotassignment().timeslot.time
+                    if not isinstance(mats, list):
+                        mats = [mats]
+                    for mat in mats:
+                        if mat and mat not in material_times:
+                            material_times[mat] = timestamp
+                n_mats = len(material_times)
                 result = []
                 if n_mats == 1:
-                    result.append({'material': list(distinct)[0]})  # no 'time' when only a single material
+                    result.append({'material': list(material_times)[0]})  # no 'time' when only a single material
                 elif n_mats > 1:
-                    for s, mat in items:
-                        if mat:
-                            result.append({
-                                'agenda': s.agenda(),
-                                'time': s.official_timeslotassignment().timeslot.time,
-                            })
+                    for mat, timestamp in material_times.items():
+                        result.append({'material': mat, 'time': timestamp})
                 return result
 
             entry = {
@@ -3637,9 +3640,9 @@ def organize_proceedings_sessions(sessions):
                 'name': sess_name,
                 'canceled': all_canceled,
                 # pass sessions instead of the materials here so session data (like time) is easily available
-                'agendas': _format_materials([(s, s.agenda()) for s in ss]),
-                'minutes': _format_materials([(s, s.minutes()) for s in ss]),
-                'sessions_with_bluesheets': [s for s in ss if s.bluesheets()],
+                'agendas': _format_materials((s, s.agenda()) for s in ss),
+                'minutes': _format_materials((s, s.minutes()) for s in ss),
+                'bluesheets': _format_materials((s, s.bluesheets()) for s in ss),
                 'sessions_with_recordings': [s for s in ss if s.recordings()],
                 'sessions_with_slides': [s for s in ss if s.slides()],
                 'sessions_with_drafts': [s for s in ss if s.drafts()],

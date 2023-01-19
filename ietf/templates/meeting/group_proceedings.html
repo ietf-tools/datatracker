@@ -47,18 +47,12 @@
                     <br>
                 {% endif %}
             {% endfor %}
-            {% for session in entry.sessions_with_bluesheets %}
-                {% if session.bluesheets %}
-                    {% for bs in session.bluesheets %}
-                        <a href="{{ bs|meeting_href:meeting }}">
-                            Bluesheets
-                            {% if entry.sessions_with_bluesheets|length > 1 %}
-                                {{ session.official_timeslotassignment.timeslot.time|date:"D G:i" }}
-                            {% endif %}
-                        </a>
-                        <br>
-                    {% endfor %}
-                {% endif %}
+            {% for bs in entry.bluesheets %}
+                <a href="{{ bs.material|meeting_href:meeting }}">
+                    Bluesheets
+                    {% if bs.time %}{{ bs.time|date:"D G:i" }}{% endif %}
+                </a>
+                <br>
             {% endfor %}
         </td>
         {# recordings #}
