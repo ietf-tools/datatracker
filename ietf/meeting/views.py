@@ -3613,25 +3613,32 @@ def organize_proceedings_sessions(sessions):
             if s.current_status != 'notmeet' or s.sessionpresentation_set.exists():
                 by_name[s.name].append(s)  # for notmeet, only include sessions with materials
         for sess_name, ss in by_name.items():
-            distinct_agendas = set(s.agenda() for s in ss if s.agenda())
-            n_agendas = len(distinct_agendas)
-            if n_agendas == 0:
-                agendas = []
-            elif n_agendas == 1:
-                only_agenda = list(distinct_agendas)[0]
-                agendas = [{'agenda': only_agenda}]
-            else:
-                agendas = [
-                    {'agenda': s.agenda(), 'time': s.official_timeslotassignment().timeslot.time}
-                    for s in ss if s.agenda()
-                ]
+            def _format_materials(items):
+                """Format session/material for template
+
+                Input is a list of (session, material) pairs.
+                """
+                distinct = set(mat for _, mat in items if mat)
+                n_mats = len(distinct)
+                result = []
+                if n_mats == 1:
+                    result.append({'material': list(distinct)[0]})  # no 'time' when only a single material
+                elif n_mats > 1:
+                    for s, mat in items:
+                        if mat:
+                            result.append({
+                                'agenda': s.agenda(),
+                                'time': s.official_timeslotassignment().timeslot.time,
+                            })
+                return result
+
             entry = {
                 'group': group,
                 'name': sess_name,
                 'canceled': all_canceled,
                 # pass sessions instead of the materials here so session data (like time) is easily available
-                'agendas': agendas,
-                'sessions_with_minutes': [s for s in ss if s.minutes()],
+                'agendas': _format_materials([(s, s.agenda()) for s in ss]),
+                'minutes': _format_materials([(s, s.minutes()) for s in ss]),
                 'sessions_with_bluesheets': [s for s in ss if s.bluesheets()],
                 'sessions_with_recordings': [s for s in ss if s.recordings()],
                 'sessions_with_slides': [s for s in ss if s.slides()],

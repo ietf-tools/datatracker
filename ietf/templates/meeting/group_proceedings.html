@@ -24,7 +24,7 @@
         {# artifacts #}
         <td>
             {% for agenda in entry.agendas %}
-                <a href="{{ agenda.agenda|meeting_href:meeting }}">
+                <a href="{{ agenda.material|meeting_href:meeting }}">
                     Agenda
                     {% if agenda.time %}{{agenda.time|date:"D G:i"}}{% endif %}
                 </a>
@@ -35,16 +35,12 @@
                     <br>
                 {% endif %}
             {% endfor %}
-            {% for session in entry.sessions_with_minutes %}
-                {% if session.minutes %}
-                    <a href="{{ session.minutes|meeting_href:meeting }}">
-                        Minutes
-                        {% if entry.sessions_with_minutes|length > 1 %}
-                            {{session.official_timeslotassignment.timeslot.time|date:"D G:i"}}
-                        {% endif %}
-                    </a>
-                    <br>
-                {% endif %}
+            {% for minutes in entry.minutes %}
+                <a href="{{ minutes.material|meeting_href:meeting }}">
+                    Minutes
+                    {% if minutes.time %}{{minutes.time|date:"D G:i"}}{% endif %}
+                </a>
+                <br>
             {% empty %}
                 {% if show_agenda and not meeting.proceedings_final %}
                     <span class="badge rounded-pill bg-warning">No minutes</span>
