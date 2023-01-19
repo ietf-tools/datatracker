@@ -3678,10 +3678,6 @@ def proceedings(request, num=None):
 
     ietf = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu').order_by('group__parent__acronym', 'group__acronym')
     ietf_areas = []
-    # for area, area_sessions in itertools.groupby(
-    #         sorted(ietf, key=lambda s: (s.group.parent.acronym, s.group.acronym)),
-    #         key=lambda s: s.group.parent
-    # ):
     for area, area_sessions in itertools.groupby(
             ietf,
             key=lambda s: s.group.parent
