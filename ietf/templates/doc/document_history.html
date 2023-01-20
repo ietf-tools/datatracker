@@ -18,7 +18,7 @@
     {{ top|safe }}
     {% if diff_revisions and diff_revisions|length > 1 or doc.name|rfcbis %}
         <h2 class="my-3">Revision differences</h2>
-        {% include "doc/document_history_form.html" with doc=doc diff_revisions=diff_revisions action=rfcdiff_base_url only %}
+        {% include "doc/document_history_form.html" with doc=doc diff_revisions=diff_revisions action=rfcdiff_base_url snapshot=snapshot only %}
     {% endif %}
     <h2 class="my-3">Document history</h2>
     {% if can_add_comment %}

@@ -41,6 +41,14 @@
         {% include "base/icons.html" %}
         {% include "doc/opengraph.html" %}
          {% analytical_head_bottom %}
+        <style>
+            {# Force "text-overflow: ellipsis" to hide the beginning of a doc name #}
+            .diff-form .select2-selection__rendered {
+                direction: rtl;
+                text-align: left;
+            }
+            }
+        </style>
     </head>
     <body>
         {% analytical_body_top %}
@@ -93,6 +101,17 @@
                             </tr>
                         </tbody>
                         {% include "doc/document_info.html" with sidebar=False %}
+                        <tr>
+                            <th scope="row"></th>
+                            <td>
+                                <a class="btn btn-sm btn-warning mb-3"
+                                target="_blank"
+                                href="https://github.com/ietf-tools/datatracker/issues/new/choose">
+                                    Report a bug
+                                    <i class="bi bi-bug"></i>
+                                </a>
+                            </td>
+                        </tr>
                     </table>
                 </div>
             </div>
@@ -131,8 +150,8 @@
                             <i class="bi bi-arrow-bar-up"></i>
                     </button>
                     <div class="pt-2 pt-lg-3 px-md-2 px-lg-3">
-                        <p>
-                            <a href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">
+                        <a class="btn btn-primary btn-sm" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">Datatracker</a>
+                        <p class="fw-bold pt-2">
                                 {% if not snapshot and doc.get_state_slug == "rfc" %}
                                     RFC {{ doc.rfc_number }}
                                 {% else %}
@@ -146,7 +165,7 @@
                                         Internet-Draft
                                     {% endif %}
                                 </span>
-                            </a>
+
                         </p>
                         {% if request.COOKIES.htmlconf != 'html' and html %}
                         <div class="alert alert-info small">
@@ -209,6 +228,12 @@
                                 <table class="table table-sm table-borderless">
                                     {% include "doc/document_info.html" with sidebar=True %}
                                 </table>
+                                <a class="btn btn-sm btn-warning mb-3"
+                                target="_blank"
+                                href="https://github.com/ietf-tools/datatracker/issues/new/choose">
+                                    Report a bug
+                                    <i class="bi bi-bug"></i>
+                                </a>
                             </div>
                             <div class="tab-pane mb-5"
                                  id="toc-tab-pane"
