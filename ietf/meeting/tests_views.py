@@ -7310,7 +7310,12 @@ class ProceedingsTests(BaseMeetingTestCase):
         )
 
     def test_proceedings(self):
-        """Proceedings should be displayed correctly"""
+        """Proceedings should be displayed correctly
+
+        Currently only tests that the view responds with a 200 response code and checks the ProceedingsMaterials
+        at the top of the proceedings. Ought to actually test the display of the individual group/session
+        materials as well.
+        """
         meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         GroupEventFactory(group=session.group,type='status_update')
