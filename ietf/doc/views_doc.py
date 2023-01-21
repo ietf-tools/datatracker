@@ -302,7 +302,7 @@ def document_main(request, name, rev=None, document_html=False):
         elif group.type_id == "area" and doc.stream_id == "ietf":
             submission = "individual in %s area" % group.acronym
         else:
-            if group.features.acts_like_wg:
+            if group.features.acts_like_wg and not group.type_id=="edwg":
                 submission = "%s %s" % (group.acronym, group.type)
             else:
                 submission = group.acronym
