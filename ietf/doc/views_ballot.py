@@ -44,16 +44,6 @@ from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
 
 
-BALLOT_CHOICES = (("yes", "Yes"),
-                  ("noobj", "No Objection"),
-                  ("discuss", "Discuss"),
-                  ("abstain", "Abstain"),
-                  ("recuse", "Recuse"),
-                  ("moretime", "Need More Time"),
-                  ("notready", "Not Ready"),
-                  ("", "No Record"),
-                  )
-
 # -------------------------------------------------
 # Helper Functions
 # -------------------------------------------------
@@ -107,6 +97,8 @@ class EditPositionForm(forms.Form):
         ballot_type = kwargs.pop("ballot_type")
         super(EditPositionForm, self).__init__(*args, **kwargs)
         self.fields['position'].queryset = ballot_type.positions.order_by('order')
+        if ballot_type.positions.filter(blocking=True).exists():
+            self.fields['discuss'].label = ballot_type.positions.get(blocking=True).name
 
     def clean_discuss(self):
        entered_discuss = self.cleaned_data["discuss"]

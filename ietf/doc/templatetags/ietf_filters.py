@@ -577,6 +577,8 @@ def pos_to_label_format(text):
         'Recuse':       'bg-recuse text-light',
         'Not Ready':    'bg-discuss text-light',
         'Need More Time': 'bg-discuss text-light',
+        'Concern': 'bg-discuss text-light',
+
     }.get(str(text), 'bg-norecord text-dark')
 
 @register.filter
@@ -591,6 +593,7 @@ def pos_to_border_format(text):
         'Recuse':       'border-recuse',
         'Not Ready':    'border-discuss',
         'Need More Time': 'border-discuss',
+        'Concern': 'border-discuss',
     }.get(str(text), 'border-norecord')
 
 @register.filter
