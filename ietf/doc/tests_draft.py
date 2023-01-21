@@ -1660,12 +1660,25 @@ class AdoptDraftTests(TestCase):
             self.assertEqual(draft.get_state_slug(stream_state_type_slug[type_id]), stream_adopt_state_slug)
             self.assertEqual(draft.group, chair_role.group)
             self.assertEqual(draft.stream_id, stream_state_type_slug[type_id][13:]) # trim off "draft-stream-"
-            self.assertEqual(draft.docevent_set.count() - events_before, 3 if group_type_can_call_for_adoption else 5)
-            self.assertEqual(len(outbox), 1)
+            if type_id in ("wg", "ag"):
+                self.assertEqual(
+                    Counter(list(draft.docevent_set.values_list('type',flat=True))[events_before:]),
+                    Counter({'changed_group': 1, 'changed_stream': 1, 'new_revision': 1})
+                )
+            else:
+                self.assertEqual(
+                    Counter(list(draft.docevent_set.values_list('type',flat=True))[events_before:]),
+                    Counter({'changed_state': 1, 'added_comment': 1, 'changed_group': 1, 'changed_document': 1, 'changed_stream': 1, 'new_revision': 1})
+                )
+            self.assertEqual(len(outbox), 1 if type_id in ["wg", "ag"] else 2)
             self.assertTrue(stream_adopt_state.name in outbox[-1]["Subject"])
             self.assertTrue(f"{chair_role.group.acronym}-chairs@" in outbox[-1]['To'])
             self.assertTrue(f"{draft.name}@" in outbox[-1]['To'])
-            self.assertTrue(f"{chair_role.group.acronym}@" in outbox[-1]['To'])           
+            self.assertTrue(f"{chair_role.group.acronym}@" in outbox[-1]['To'])
+            if type_id not in ["wg", "ag"]:
+                self.assertTrue(outbox[-2]["Subject"].endswith("to Informational"))
+                # recipient fields tested elsewhere
+
 
 class AdoptDraftFormTests(TestCase):
     def setUp(self):

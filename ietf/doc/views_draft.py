@@ -459,8 +459,6 @@ def change_intention(request, name):
             or is_authorized_in_doc_stream(request.user, doc)):
         permission_denied(request, "You do not have the necessary permissions to view this page.")
 
-    login = request.user.person
-
     if request.method == 'POST':
         form = ChangeIntentionForm(request.POST)
         if form.is_valid():
@@ -468,36 +466,7 @@ def change_intention(request, name):
             comment = form.cleaned_data['comment'].strip()
             old_level = doc.intended_std_level
 
-            if new_level != old_level:
-                doc.intended_std_level = new_level
-
-                events = []
-                e = DocEvent(doc=doc, rev=doc.rev, by=login, type='changed_document')
-                e.desc = "Intended Status changed to <b>%s</b> from %s"% (new_level,old_level) 
-                e.save()
-                events.append(e)
-
-                if comment:
-                    c = DocEvent(doc=doc, rev=doc.rev, by=login, type="added_comment")
-                    c.desc = comment
-                    c.save()
-                    events.append(c)
-
-                de = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
-                prev_consensus = de and de.consensus
-                if not prev_consensus and doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
-                    ce = ConsensusDocEvent(doc=doc, rev=doc.rev, by=login, type="changed_consensus")
-                    ce.consensus = True
-                    ce.desc = "Changed consensus to <b>%s</b> from %s" % (nice_consensus(True),
-                                                                          nice_consensus(prev_consensus))
-                    ce.save()
-                    events.append(ce)
-
-                doc.save_with_history(events)
-
-                msg = "\n".join(e.desc for e in events)
-
-                email_intended_status_changed(request, doc, msg)
+            set_intended_status_level(request=request, doc=doc, new_level=new_level, old_level=old_level, comment=comment)
 
             return HttpResponseRedirect(doc.get_absolute_url())
 
@@ -1566,6 +1535,13 @@ def adopt_draft(request, name):
                 if old_stream != None:
                     email_stream_changed(request, doc, old_stream, new_stream)
 
+                # Force intended std level here if stream isn't ietf
+                if new_stream.slug != "ietf":
+                    old_level = doc.intended_std_level
+                    new_level = IntendedStdLevelName.objects.get(slug="inf", used=True)
+                    set_intended_status_level(request=request, doc=doc, new_level=new_level, old_level=old_level, comment="")
+
+
             # group
             if group != doc.group:
                 e = DocEvent(type="changed_group", doc=doc, rev=doc.rev, by=by)
@@ -1836,3 +1812,36 @@ def change_stream_state(request, name, state_type):
                                "state_type": state_type,
                                "next_states": next_states,
                               })
+
+# This should be in ietf.doc.utils, but placing it there brings a circular import issue with ietf.doc.mail
+def set_intended_status_level(request, doc, new_level, old_level, comment):
+    if new_level != old_level:
+        doc.intended_std_level = new_level
+
+        events = []
+        e = DocEvent(doc=doc, rev=doc.rev, by=request.user.person, type='changed_document')
+        e.desc = "Intended Status changed to <b>%s</b> from %s"% (new_level,old_level) 
+        e.save()
+        events.append(e)
+
+        if comment:
+            c = DocEvent(doc=doc, rev=doc.rev, by=request.user.person, type="added_comment")
+            c.desc = comment
+            c.save()
+            events.append(c)
+
+        de = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+        prev_consensus = de and de.consensus
+        if not prev_consensus and doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
+            ce = ConsensusDocEvent(doc=doc, rev=doc.rev, by=request.user.person, type="changed_consensus")
+            ce.consensus = True
+            ce.desc = "Changed consensus to <b>%s</b> from %s" % (nice_consensus(True),
+                                                                    nice_consensus(prev_consensus))
+            ce.save()
+            events.append(ce)
+
+        doc.save_with_history(events)
+
+        msg = "\n".join(e.desc for e in events)
+
+        email_intended_status_changed(request, doc, msg)
