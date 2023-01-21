@@ -52,7 +52,6 @@ class SessionRequestTestCase(TestCase):
         sched = r.context['scheduled_groups']
         self.assertEqual(len(sched), 2)
         unsched = r.context['unscheduled_groups']
-        debug.show('unsched')
         self.assertEqual(len(unsched), 12)
 
     def test_approve(self):
