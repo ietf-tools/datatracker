@@ -82,7 +82,7 @@ jobs:
         echo "NEXT_VERSION=$nextStrict" >> $GITHUB_ENV
         
     - name: Create Draft Release
-      uses: ncipollo/release-action@v1.11.1
+      uses: ncipollo/release-action@v1.12.0
       if: ${{ github.event.inputs.publish == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         prerelease: true
@@ -368,10 +368,11 @@ jobs:
         histCoveragePath: historical-coverage.json
         
     - name: Create Release
-      uses: ncipollo/release-action@v1.11.1
+      uses: ncipollo/release-action@v1.12.0
       if: ${{ env.SHOULD_DEPLOY == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         allowUpdates: true
+        makeLatest: true
         draft: false
         tag: ${{ env.PKG_VERSION }}
         name: ${{ env.PKG_VERSION }}
@@ -384,7 +385,6 @@ jobs:
       if: ${{ github.event.inputs.updateCoverage == 'true' && github.event.inputs.dryrun == 'false' }}
       with:
         allowUpdates: true
-        makeLatest: true
         tag: baseline
         omitBodyDuringUpdate: true
         omitNameDuringUpdate: true

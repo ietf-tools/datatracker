@@ -97,20 +97,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@eslint/eslintrc@npm:^1.3.3":
-  version: 1.3.3
-  resolution: "@eslint/eslintrc@npm:1.3.3"
+"@eslint/eslintrc@npm:^1.4.1":
+  version: 1.4.1
+  resolution: "@eslint/eslintrc@npm:1.4.1"
   dependencies:
     ajv: ^6.12.4
     debug: ^4.3.2
     espree: ^9.4.0
-    globals: ^13.15.0
+    globals: ^13.19.0
     ignore: ^5.2.0
     import-fresh: ^3.2.1
     js-yaml: ^4.1.0
     minimatch: ^3.1.2
     strip-json-comments: ^3.1.1
-  checksum: f03e9d6727efd3e0719da2051ea80c0c73d20e28c171121527dbb868cd34232ca9c1d0525a66e517a404afea26624b1e47895b6a92474678418c2f50c9566694
+  checksum: cd3e5a8683db604739938b1c1c8b77927dc04fce3e28e0c88e7f2cd4900b89466baf83dfbad76b2b9e4d2746abdd00dd3f9da544d3e311633d8693f327d04cd7
   languageName: node
   linkType: hard
 
@@ -232,14 +232,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@humanwhocodes/config-array@npm:^0.11.6":
-  version: 0.11.7
-  resolution: "@humanwhocodes/config-array@npm:0.11.7"
+"@humanwhocodes/config-array@npm:^0.11.8":
+  version: 0.11.8
+  resolution: "@humanwhocodes/config-array@npm:0.11.8"
   dependencies:
     "@humanwhocodes/object-schema": ^1.2.1
     debug: ^4.1.1
     minimatch: ^3.0.5
-  checksum: cf506dc45d9488af7fbf108ea6ac2151ba1a25e6d2b94b9b4fc36d2c1e4099b89ff560296dbfa13947e44604d4ca4a90d97a4fb167370bf8dd01a6ca2b6d83ac
+  checksum: 0fd6b3c54f1674ce0a224df09b9c2f9846d20b9e54fabae1281ecfc04f2e6ad69bf19e1d6af6a28f88e8aa3990168b6cb9e1ef755868c3256a630605ec2cb1d3
   languageName: node
   linkType: hard
 
@@ -1919,10 +1919,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bootstrap-icons@npm:1.10.2":
-  version: 1.10.2
-  resolution: "bootstrap-icons@npm:1.10.2"
-  checksum: 1d73556a70b05c1b219c379243c24ea8186c773990b3bc5e8248825e7eae1c8137be90a2b7dd81fd46060a99558763886a069587a65a7f70a362bf5934e795e7
+"bootstrap-icons@npm:1.10.3":
+  version: 1.10.3
+  resolution: "bootstrap-icons@npm:1.10.3"
+  checksum: bef7f83ce09f0ae0b2a92d61b69f3c6d04ba2307e9051ab3f175613837e0dc5252d22e2b3a0403b59995be4e06ebe00f17d0335be6f2cffdbfdbefa9268b6abd
   languageName: node
   linkType: hard
 
@@ -2095,10 +2095,10 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"caniuse-lite@npm:1.0.30001439":
-  version: 1.0.30001439
-  resolution: "caniuse-lite@npm:1.0.30001439"
-  checksum: 3912dd536c9735713ca85e47721988bbcefb881ddb4886b0b9923fa984247fd22cba032cf268e57d158af0e8a2ae2eae042ae01942a1d6d7849fa9fa5d62fb82
+"caniuse-lite@npm:1.0.30001442":
+  version: 1.0.30001442
+  resolution: "caniuse-lite@npm:1.0.30001442"
+  checksum: c1bff65bd4f53da2d288e7f55be40706ee0119b983eae5a9dcc884046990476891630aef72d708f7989f8f1964200c44e4c37ea40deecaa2fb4a480df23e6317
   languageName: node
   linkType: hard
 
@@ -2671,9 +2671,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"d3@npm:7.7.0":
-  version: 7.7.0
-  resolution: "d3@npm:7.7.0"
+"d3@npm:7.8.0":
+  version: 7.8.0
+  resolution: "d3@npm:7.8.0"
   dependencies:
     d3-array: 3
     d3-axis: 3
@@ -2705,7 +2705,7 @@ browserlist@latest:
     d3-timer: 3
     d3-transition: 3
     d3-zoom: 3
-  checksum: ed1308674fe0eda2ee14218f3d8ead5025204367c1881acf794d7eb99b0940883108520c35e053d5b23707a4ce858a5af422eea299bc0d24ce7d7fe13e7f9f38
+  checksum: 383d2c8aa6a66f3a6c6977b629de8fa1bf3bce829b15c4a769a59096691730a39e7763eb17b0ff4abbf4d1b577212160d7e5d5f1da35591e5ef5399e8398cefa
   languageName: node
   linkType: hard
 
@@ -3384,9 +3384,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"eslint-plugin-n@npm:15.6.0":
-  version: 15.6.0
-  resolution: "eslint-plugin-n@npm:15.6.0"
+"eslint-plugin-n@npm:15.6.1":
+  version: 15.6.1
+  resolution: "eslint-plugin-n@npm:15.6.1"
   dependencies:
     builtins: ^5.0.1
     eslint-plugin-es: ^4.1.0
@@ -3398,7 +3398,7 @@ browserlist@latest:
     semver: ^7.3.8
   peerDependencies:
     eslint: ">=7.0.0"
-  checksum: 629dc3e8c83010cf8aced555f4d36f6fceeea65b0c580123ca36e44b7cb6a19a71718c30168a506a569d205b1f961a74ebe9e44148c33ed923116180b04be45b
+  checksum: 269d6f28967acadaaf6b6bb362d564bf5772545b1990053fb2a3c18f8683f9ffe708cda8c0de3dfddb4e86b63e738ab93634915b84649f51d3bb1783253d4b91
   languageName: node
   linkType: hard
 
@@ -3495,12 +3495,12 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"eslint@npm:8.29.0":
-  version: 8.29.0
-  resolution: "eslint@npm:8.29.0"
+"eslint@npm:8.31.0":
+  version: 8.31.0
+  resolution: "eslint@npm:8.31.0"
   dependencies:
-    "@eslint/eslintrc": ^1.3.3
-    "@humanwhocodes/config-array": ^0.11.6
+    "@eslint/eslintrc": ^1.4.1
+    "@humanwhocodes/config-array": ^0.11.8
     "@humanwhocodes/module-importer": ^1.0.1
     "@nodelib/fs.walk": ^1.2.8
     ajv: ^6.10.0
@@ -3519,7 +3519,7 @@ browserlist@latest:
     file-entry-cache: ^6.0.1
     find-up: ^5.0.0
     glob-parent: ^6.0.2
-    globals: ^13.15.0
+    globals: ^13.19.0
     grapheme-splitter: ^1.0.4
     ignore: ^5.2.0
     import-fresh: ^3.0.0
@@ -3540,7 +3540,7 @@ browserlist@latest:
     text-table: ^0.2.0
   bin:
     eslint: bin/eslint.js
-  checksum: e05204b05907b82d910983995cb946e0ba62ca514eb2b6791c43f623333b143564a2eee0139909d31c10935c21877d815b1f76dd674a59cb91c471064325c4ab
+  checksum: 5e5688bb864edc6b12d165849994812eefa67fb3fc44bb26f53659b63edcd8bcc68389d27cc6cc9e5b79ee22f24b6f311fa3ed047bddcafdec7d84c1b5561e4f
   languageName: node
   linkType: hard
 
@@ -3879,7 +3879,16 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"globals@npm:^13.15.0, globals@npm:^13.2.0":
+"globals@npm:^13.19.0":
+  version: 13.19.0
+  resolution: "globals@npm:13.19.0"
+  dependencies:
+    type-fest: ^0.20.2
+  checksum: a000dbd00bcf28f0941d8a29c3522b1c3b8e4bfe4e60e262c477a550c3cbbe8dbe2925a6905f037acd40f9a93c039242e1f7079c76b0fd184bc41dcc3b5c8e2e
+  languageName: node
+  linkType: hard
+
+"globals@npm:^13.2.0":
   version: 13.15.0
   resolution: "globals@npm:13.15.0"
   dependencies:
@@ -3985,9 +3994,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"html-validate@npm:7.10.1":
-  version: 7.10.1
-  resolution: "html-validate@npm:7.10.1"
+"html-validate@npm:7.12.2":
+  version: 7.12.2
+  resolution: "html-validate@npm:7.12.2"
   dependencies:
     "@babel/code-frame": ^7.10.0
     "@html-validate/stylish": ^3.0.0
@@ -4015,7 +4024,7 @@ browserlist@latest:
       optional: true
   bin:
     html-validate: bin/html-validate.js
-  checksum: 7a7dbc0a573e3f359a42eeab67e37b39965a3895b9c7354f065547d0f2e7264b5bea7f78db122c42f42ca72427c6c812c2500251846a5322ad7b502aca09b625
+  checksum: 04bccd168057045fcc824ca9ce02ae195acd9a6723926655a085d74efc0dfcc69ef53822c9633a38241512d656ec05c2e045612c6313ae316b32dbb8bf96af80
   languageName: node
   linkType: hard
 
@@ -4513,10 +4522,10 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"jquery@npm:3.6.2":
-  version: 3.6.2
-  resolution: "jquery@npm:3.6.2"
-  checksum: b8ca408b9447e67e614204dbc4b2e71c6ea76eff281942d233769d969eed97fe28ffa34976e9ad9d3faad9b0a0d947d7e326ed272243679a9f5812a586c84168
+"jquery@npm:3.6.3":
+  version: 3.6.3
+  resolution: "jquery@npm:3.6.3"
+  checksum: 0fd366bdcaa0c84a7a8751ce20f8192290141913978b5059574426d9b01f4365daa675f95aab3eec94fd794d27b08d32078a2236bef404b8ba78073009988ce6
   languageName: node
   linkType: hard
 
@@ -4850,10 +4859,10 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"luxon@npm:3.1.1":
-  version: 3.1.1
-  resolution: "luxon@npm:3.1.1"
-  checksum: 388fb35d3c51a19d8b305a3338e7e74634b08562e7d2f9ed5c05a7f4bc9ee1c1ab6a2546b6d9c4c104516b24043757d65f5f3fe3d78b206fbf55a9586ab62230
+"luxon@npm:3.2.1":
+  version: 3.2.1
+  resolution: "luxon@npm:3.2.1"
+  checksum: 3fa3def2c5f5d3032b4c46220c4da8aeb467ac979888fc9d2557adcd22195f93516b4ad5909a75862bec8dc6ddc0953b0f38e6d2f4a8ab8450ddc531a83cf20d
   languageName: node
   linkType: hard
 
@@ -5120,9 +5129,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"naive-ui@npm:2.34.2":
-  version: 2.34.2
-  resolution: "naive-ui@npm:2.34.2"
+"naive-ui@npm:2.34.3":
+  version: 2.34.3
+  resolution: "naive-ui@npm:2.34.3"
   dependencies:
     "@css-render/plugin-bem": ^0.15.10
     "@css-render/vue3-ssr": ^0.15.10
@@ -5144,7 +5153,7 @@ browserlist@latest:
     vueuc: ^0.4.47
   peerDependencies:
     vue: ^3.0.0
-  checksum: 48871bb06803bbe4dafc88a37eadcb4c3e91e96767fd47d1da331b65a7630a70b1fc2978e1f8668267e199c78e4284753f16535130f87b1bca866384f024e5bb
+  checksum: 792d9e6c51c5f577b787dedf90d60ea02bbb9c962bf58aac140aab18dcde8f1717d49a417a77a54e2959a3a743442d55b32152a3134ce8b7d29880ec2ae7cb55
   languageName: node
   linkType: hard
 
@@ -6055,41 +6064,41 @@ browserlist@latest:
     "@twuni/emojify": 1.0.2
     "@vitejs/plugin-vue": 3.2.0
     bootstrap: 5.2.3
-    bootstrap-icons: 1.10.2
+    bootstrap-icons: 1.10.3
     browser-fs-access: 0.31.1
     browserlist: latest
     c8: 7.12.0
-    caniuse-lite: 1.0.30001439
-    d3: 7.7.0
-    eslint: 8.29.0
+    caniuse-lite: 1.0.30001442
+    d3: 7.8.0
+    eslint: 8.31.0
     eslint-config-standard: 17.0.0
     eslint-plugin-cypress: 2.12.1
     eslint-plugin-import: 2.26.0
-    eslint-plugin-n: 15.6.0
+    eslint-plugin-n: 15.6.1
     eslint-plugin-node: 11.1.0
     eslint-plugin-promise: 6.1.1
     eslint-plugin-vue: 9.8.0
     file-saver: 2.0.5
     highcharts: 10.3.2
-    html-validate: 7.10.1
-    jquery: 3.6.2
+    html-validate: 7.12.2
+    jquery: 3.6.3
     jquery-migrate: 3.4.0
     jquery-ui-dist: 1.13.2
     js-cookie: 3.0.1
     list.js: 2.3.1
     lodash: 4.17.21
     lodash-es: 4.17.21
-    luxon: 3.1.1
+    luxon: 3.2.1
     moment: 2.29.4
     moment-timezone: 0.5.40
     ms: 2.1.3
     murmurhash-js: 1.0.0
-    naive-ui: 2.34.2
+    naive-ui: 2.34.3
     parcel: 2.8.2
     pinia: 2.0.28
     pinia-plugin-persist: 1.0.0
     pug: 3.0.2
-    sass: 1.56.2
+    sass: 1.57.1
     seedrandom: 3.0.5
     select2: 4.1.0-rc.0
     select2-bootstrap-5-theme: 1.3.0
@@ -6141,16 +6150,16 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"sass@npm:1.56.2":
-  version: 1.56.2
-  resolution: "sass@npm:1.56.2"
+"sass@npm:1.57.1":
+  version: 1.57.1
+  resolution: "sass@npm:1.57.1"
   dependencies:
     chokidar: ">=3.0.0 <4.0.0"
     immutable: ^4.0.0
     source-map-js: ">=0.6.2 <2.0.0"
   bin:
     sass: sass.js
-  checksum: 7b1f524d04bc42df3bac6dc5201ff7475635b7df9a1390430ed5bd58b6a73ea1ae58b83ccea8da293cb77b85b4c848faf5f2779ca4b91b9303948c251d0ddca4
+  checksum: 734a08781bcbe0e8defb2d54864e7012014ed3e68ba5fcb766189b002929019fc37b2f83a18d4be0b5f69ad77317c92396ce6112447ab47a194ed600ae1afb27
   languageName: node
   linkType: hard
 

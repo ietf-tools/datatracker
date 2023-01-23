@@ -85,7 +85,7 @@
                 <th scope="row">Compare versions</th>
                 <td class="edit"></td>
                 <td>
-                    {% include "doc/document_history_form.html" with doc=doc diff_revisions=diff_revisions action=rfcdiff_base_url document_html=document_html only %}
+                    {% include "doc/document_history_form.html" with doc=doc diff_revisions=diff_revisions action=rfcdiff_base_url document_html=document_html snapshot=snapshot only %}
                 </td>
             </tr>
         {% endif %}
@@ -394,7 +394,6 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
     {% endif %}
     {% endif %}
     {% with doc.docextresource_set.all as resources %}
-        {% if document_html and resources or document_html and doc.group and doc.group.list_archive %}
         {% if resources or doc.group and doc.group.list_archive or can_edit_stream_info or can_edit_individual %}
             <tr>
                 <td>
@@ -442,7 +441,6 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                     {% endif %}
                 </td>
             </tr>
-        {% endif %}
         {% endif %}
     {% endwith %}
 </tbody>
