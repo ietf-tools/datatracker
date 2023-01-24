@@ -62,8 +62,8 @@ document.addEventListener("DOMContentLoaded", function (event) {
 
             const val = in_localStorage.includes(btn.name) ?
                 localStorage.getItem(btn.name) : cookies.get(btn.name);
-            if (val == id || ((val == undefined || val == null) &&
-                    btn_pref[btn.name] == id)) {
+            if (val === id ||
+              ((val == null) && btn_pref[btn.name] === id)) {
                 btn.checked = true;
             }
 
