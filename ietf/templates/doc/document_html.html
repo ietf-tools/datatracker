@@ -167,7 +167,7 @@
                                 </span>
 
                         </p>
-                        {% if request.COOKIES.htmlconf != 'html' and html %}
+                        {% if request.COOKIES.htmlconf and request.COOKIES.htmlconf != 'html' and html %}
                         <div class="alert alert-info small">
                             You are viewing the legacy <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/rfc2html">rfc2html</a></code>
                             rendering of this document. Change the

@@ -49,13 +49,21 @@ document.addEventListener("DOMContentLoaded", function (event) {
 
     // activate pref buttons selected by pref cookies or localStorage
     const in_localStorage = ["deftab", "reflinks"];
+    const btn_pref = {
+        "sidebar": "on",
+        "deftab": "docinfo",
+        "htmlconf": "html",
+        "pagedeps": "reference",
+        "reflinks": "refsection"
+    };
     document.querySelectorAll("#pref-tab-pane .btn-check")
         .forEach(btn => {
             const id = btn.id.replace("-radio", "");
 
             const val = in_localStorage.includes(btn.name) ?
                 localStorage.getItem(btn.name) : cookies.get(btn.name);
-            if (val == id) {
+            if (val == id || ((val == undefined || val == null) &&
+                    btn_pref[btn.name] == id)) {
                 btn.checked = true;
             }
 
