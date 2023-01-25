@@ -415,7 +415,7 @@ def document_main(request, name, rev=None, document_html=False):
                         "Close IRSG Ballot",
                         urlreverse('ietf.doc.views_ballot.close_irsg_ballot', kwargs=dict(name=doc.name))
                     ))
-            elif doc.stream_id == "editorial" and has_role(request.user, ("Secretarait", "RSAB Chair")): 
+            elif doc.stream_id == "editorial" and has_role(request.user, ("Secretariat", "RSAB Chair")): 
                 if not doc.ballot_open('rsab-approve'):
                     actions.append((
                         "Issue RSAB Ballot",
@@ -435,7 +435,7 @@ def document_main(request, name, rev=None, document_html=False):
             actions.append((label, urlreverse('ietf.doc.views_conflict_review.start_review', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() not in ["rfc", "expired"] and not snapshot:
-            if doc.stream_id in ("iab, "ise"):
+            if doc.stream_id in ("iab", "ise"):
                 may_request_publication = can_edit_stream_info
             elif doc.stream_id=="irtf":
                 may_request_publication = has_role(request.user, ("Secretariat", "IRTF Chair"))
