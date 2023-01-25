@@ -403,8 +403,8 @@ def document_main(request, name, rev=None, document_html=False):
         if doc.get_state_slug() == "expired" and has_role(request.user, ("Secretariat",)) and not snapshot:
             actions.append(("Resurrect", urlreverse('ietf.doc.views_draft.resurrect', kwargs=dict(name=doc.name))))
         
-        if doc.get_state_slug() not in ["rfc", "expired"] and not snapshot and can_edit_stream_info:
-            if doc.stream_id == "irtf":
+        if doc.get_state_slug() not in ["rfc", "expired"] and not snapshot:
+            if doc.stream_id == "irtf" and has_role(request.user, ("Secretariat", "IRTF Chair")):
                 if not doc.ballot_open('irsg-approve'):
                     actions.append((
                         "Issue IRSG Ballot",
@@ -415,7 +415,7 @@ def document_main(request, name, rev=None, document_html=False):
                         "Close IRSG Ballot",
                         urlreverse('ietf.doc.views_ballot.close_irsg_ballot', kwargs=dict(name=doc.name))
                     ))
-            elif doc.stream_id == "editorial":
+            elif doc.stream_id == "editorial" and has_role(request.user, ("Secretarait", "RSAB Chair")): 
                 if not doc.ballot_open('rsab-approve'):
                     actions.append((
                         "Issue RSAB Ballot",
@@ -428,21 +428,29 @@ def document_main(request, name, rev=None, document_html=False):
                     ))
 
         if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ise", "irtf")
-            and can_edit_stream_info and not conflict_reviews and not snapshot):
+            and has_role(request.user, ("Secretariat", "IRTF Chair")) and not conflict_reviews and not snapshot):
             label = "Begin IETF Conflict Review"
             if not doc.intended_std_level:
                 label += " (note that intended status is not set)"
             actions.append((label, urlreverse('ietf.doc.views_conflict_review.start_review', kwargs=dict(name=doc.name))))
 
-        if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("iab", "ise", "irtf", "editorial")
-            and can_edit_stream_info and not snapshot):
-            if doc.get_state_slug('draft-stream-%s' % doc.stream_id) not in ('rfc-edit', 'pub', 'dead'):
-                label = "Request Publication"
-                if not doc.intended_std_level:
-                    label += " (note that intended status is not set)"
-                if iesg_state and iesg_state_slug not in ('idexists','dead'):
-                    label += " (Warning: the IESG state indicates ongoing IESG processing)"
-                actions.append((label, urlreverse('ietf.doc.views_draft.request_publication', kwargs=dict(name=doc.name))))
+        if doc.get_state_slug() not in ["rfc", "expired"] and not snapshot:
+            if doc.stream_id in ("iab, "ise"):
+                may_request_publication = can_edit_stream_info
+            elif doc.stream_id=="irtf":
+                may_request_publication = has_role(request.user, ("Secretariat", "IRTF Chair"))
+            elif doc.stream_id=="editorial":
+                may_request_publication = has_role(request.user, ("Secretariat", "RSAB Chair"))
+            else:  
+                may_request_publication = False
+            if may_request_publication:
+                if doc.get_state_slug('draft-stream-%s' % doc.stream_id) not in ('rfc-edit', 'pub', 'dead'):
+                    label = "Request Publication"
+                    if not doc.intended_std_level:
+                        label += " (note that intended status is not set)"
+                    if iesg_state and iesg_state_slug not in ('idexists','dead'):
+                        label += " (Warning: the IESG state indicates ongoing IESG processing)"
+                    actions.append((label, urlreverse('ietf.doc.views_draft.request_publication', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ietf",) and not snapshot:
             if iesg_state_slug == 'idexists' and can_edit:

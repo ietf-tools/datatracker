@@ -36,7 +36,7 @@ from ietf.iesg.models import TelechatDate
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase
-from ietf.utils.timezone import date_today, datetime_from_date
+from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
 
 
 class ChangeStateTests(TestCase):
@@ -1873,8 +1873,11 @@ class ChangeStreamStateTests(TestCase):
         self.assertEqual(draft.docevent_set.count() - events_before, 2)
         reminder = DocReminder.objects.filter(event__doc=draft, type="stream-s")
         self.assertEqual(len(reminder), 1)
-        due = timezone.now() + datetime.timedelta(weeks=10)
-        self.assertTrue(due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1))
+        due = timezone.now().astimezone(DEADLINE_TZINFO) + datetime.timedelta(weeks=10)
+        self.assertTrue(
+            due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1),
+            f'Due date {reminder[0].due} should be {due} +/- 1 day'
+        )
         self.assertEqual(len(outbox), 1)
         self.assertTrue("state changed" in outbox[0]["Subject"].lower())
         self.assertTrue("mars-chairs@ietf.org" in outbox[0].as_string())
@@ -1918,8 +1921,11 @@ class ChangeStreamStateTests(TestCase):
         self.assertEqual(draft.docevent_set.count() - events_before, 2)
         reminder = DocReminder.objects.filter(event__doc=draft, type="stream-s")
         self.assertEqual(len(reminder), 1)
-        due = timezone.now() + datetime.timedelta(weeks=10)
-        self.assertTrue(due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1))
+        due = timezone.now().astimezone(DEADLINE_TZINFO) + datetime.timedelta(weeks=10)
+        self.assertTrue(
+            due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1),
+            f'Due date {reminder[0].due} should be {due} +/- 1 day'
+        )
         self.assertEqual(len(outbox), 1)
         self.assertTrue("state changed" in outbox[0]["Subject"].lower())
         self.assertTrue("mars-chairs@ietf.org" in outbox[0].as_string())

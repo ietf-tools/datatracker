@@ -166,6 +166,11 @@ $tooltip-margin: inherit !default;
 
 .rfcmarkup {
 
+    pre {
+        width: 72ch;
+        white-space: pre-wrap;
+    }
+
     h1,
     h2,
     h3,

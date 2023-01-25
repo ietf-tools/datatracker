@@ -1261,7 +1261,10 @@ def request_publication(request, name):
 
     doc = get_object_or_404(Document, type="draft", name=name, stream__in=("iab", "ise", "irtf"))
 
-    if not is_authorized_in_doc_stream(request.user, doc):
+    if doc.stream_id == "irtf":
+        if not has_role(request.user, ("Secretariat", "IRTF Chair")):
+            permission_denied(request, "You do not have the necessary permissions to view this page.")
+    elif not is_authorized_in_doc_stream(request.user, doc):
         permission_denied(request, "You do not have the necessary permissions to view this page.")
 
     consensus_event = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
