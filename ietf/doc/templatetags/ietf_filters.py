@@ -667,10 +667,14 @@ def charter_minor_rev(rev):
 @register.filter()
 def can_defer(user,doc):
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
-    if ballot and (doc.type_id == "draft" or doc.type_id == "conflrev") and doc.stream_id == 'ietf' and has_role(user, 'Area Director,Secretariat'):
+    if ballot and (doc.type_id == "draft" or doc.type_id == "conflrev" or doc.type_id=="statchg") and doc.stream_id == 'ietf' and has_role(user, 'Area Director,Secretariat'):
         return True
     else:
         return False
+
+@register.filter()
+def can_clear_ballot(user, doc):
+    return can_defer(user, doc)
 
 @register.filter()
 def can_ballot(user,doc):
