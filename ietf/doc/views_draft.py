@@ -43,7 +43,7 @@ from ietf.doc.forms import ExtResourceForm
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person
-from ietf.ietfauth.utils import role_required
+from ietf.ietfauth.utils import role_required, can_request_rfc_publication
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
@@ -1259,14 +1259,11 @@ def request_publication(request, name):
         subject = forms.CharField(max_length=200, required=True)
         body = forms.CharField(widget=forms.Textarea, required=True, strip=False)
 
-    doc = get_object_or_404(Document, type="draft", name=name, stream__in=("iab", "ise", "irtf"))
+    doc = get_object_or_404(Document, type="draft", name=name, stream__in=("iab", "ise", "irtf", "editorial"))
 
-    if doc.stream_id == "irtf":
-        if not has_role(request.user, ("Secretariat", "IRTF Chair")):
-            permission_denied(request, "You do not have the necessary permissions to view this page.")
-    elif not is_authorized_in_doc_stream(request.user, doc):
+    if not can_request_rfc_publication(request.user, doc):
         permission_denied(request, "You do not have the necessary permissions to view this page.")
-
+ 
     consensus_event = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
 
     m = Message()

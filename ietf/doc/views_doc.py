@@ -70,7 +70,7 @@ from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_all_groups_of_type, can_manage_materials, group_features_role_filter
 from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is_person,
-    role_required, is_individual_draft_author)
+    role_required, is_individual_draft_author, can_request_rfc_publication)
 from ietf.name.models import StreamName, BallotPositionName
 from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import TelechatForm, NotifyForm, ActionHoldersForm, DocAuthorForm, DocAuthorChangeBasisForm
@@ -435,15 +435,7 @@ def document_main(request, name, rev=None, document_html=False):
             actions.append((label, urlreverse('ietf.doc.views_conflict_review.start_review', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() not in ["rfc", "expired"] and not snapshot:
-            if doc.stream_id in ("iab", "ise"):
-                may_request_publication = can_edit_stream_info
-            elif doc.stream_id=="irtf":
-                may_request_publication = has_role(request.user, ("Secretariat", "IRTF Chair"))
-            elif doc.stream_id=="editorial":
-                may_request_publication = has_role(request.user, ("Secretariat", "RSAB Chair"))
-            else:  
-                may_request_publication = False
-            if may_request_publication:
+            if can_request_rfc_publication(request.user, doc):
                 if doc.get_state_slug('draft-stream-%s' % doc.stream_id) not in ('rfc-edit', 'pub', 'dead'):
                     label = "Request Publication"
                     if not doc.intended_std_level:

@@ -301,3 +301,24 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
 
         return info
             
+def can_request_rfc_publication(user, doc):
+    """Answers whether this user has an appropriate role to send this document to the RFC Editor for publication as an RFC.
+
+    This not take anything but the stream of the document into account.
+
+    NOTE: This intentionally always returns False for IETF stream documents.
+    The publication request process for the IETF stream is handled by the 
+    secretariat at ietf.doc.views_ballot.approve_ballot"""
+
+    if doc.stream_id == "irtf":
+        return has_role(user, ("Secretariat", "IRTF Chair"))
+    elif doc.stream_id == "editorial":
+        return has_role(user, ("Secretariat", "RSAB Chair"))
+    elif doc.stream_id == "ise":
+        return has_role(user, ("Secretariat", "ISE"))
+    elif doc.stream_id == "iab":
+        return has_role(user, ("Secretariat", "IAB Chair"))
+    elif doc.stream_id == "ietf":
+        return False # See the docstring
+    else:
+        return False
