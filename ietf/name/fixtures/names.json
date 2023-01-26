@@ -2476,19 +2476,6 @@
   },
   {
     "fields": {
-      "desc": "RSAB Review",
-      "name": "RSAB Review",
-      "next_states": [],
-      "order": 0,
-      "slug": "rsab_review",
-      "type": "draft-stream-editorial",
-      "used": true
-    },
-    "model": "doc.state",
-    "pk": 169
-  },
-  {
-    "fields": {
       "desc": "",
       "name": "Replaced editorial stream document",
       "next_states": [],
@@ -16339,7 +16326,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2023-01-15T08:09:42.255Z",
+      "time": "2023-01-24T08:09:45.071Z",
       "used": true,
       "version": "xym 0.6.2"
     },
@@ -16350,7 +16337,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2023-01-15T08:09:42.588Z",
+      "time": "2023-01-24T08:09:45.405Z",
       "used": true,
       "version": "pyang 2.5.3"
     },
@@ -16361,7 +16348,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2023-01-15T08:09:42.608Z",
+      "time": "2023-01-24T08:09:45.421Z",
       "used": true,
       "version": "yanglint SO 1.9.2"
     },
@@ -16372,9 +16359,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2023-01-15T08:09:43.586Z",
+      "time": "2023-01-24T08:09:46.384Z",
       "used": true,
-      "version": "xml2rfc 3.15.3"
+      "version": "xml2rfc 3.16.0"
     },
     "model": "utils.versioninfo",
     "pk": 4

@@ -22,6 +22,8 @@ def forward(apps, schema_editor):
             order=order,
             used=True,
         )
+    State.objects.filter(type_id="draft-stream-editorial", slug="rsab_review").delete()
+
 
 
 def reverse(apps, schema_editor):
@@ -29,6 +31,7 @@ def reverse(apps, schema_editor):
     StateType = apps.get_model("doc", "StateType")
     State.objects.filter(type_id="draft-stream-editorial").delete()
     StateType.objects.filter(slug="draft-stream-editorial").delete()
+    # Intentionally not trying to return broken rsab_review State object
 
 
 class Migration(migrations.Migration):
