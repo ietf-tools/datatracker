@@ -3,6 +3,7 @@
 import io
 import re
 import xml2rfc
+import lxml
 
 import debug  # pyflakes: ignore
 
@@ -60,17 +61,24 @@ class XMLDraft(Draft):
                 tree.tree = v2v3.convert2to3()
         return tree, xml_version
 
-    def _document_name(self, anchor):
-        """Guess document name from reference anchor
-
-        Looks for series numbers and removes leading 0s from the number.
+    def _document_name(self, ref):
+        """Get document name from reference.
         """
-        anchor = anchor.lower()  # always give back lowercase
+        # check the anchor first
+        anchor = ref.get("anchor").lower()  # always give back lowercase
         label = anchor.rstrip('0123456789')  # remove trailing digits
         if label in ['rfc', 'bcp', 'fyi', 'std']:
             number = int(anchor[len(label):])
             return f'{label}{number}'
-        return anchor
+        # if we couldn't find a match in the anchor, try the seriesInfo
+        for info in ref.xpath(".//seriesInfo[@name='RFC' or @name='BCP' or @name='FYI' or @name='STD' or @name='Internet-Draft']"):
+            if not info.attrib["value"]:
+                continue
+            if info.attrib["name"] == "Internet-Draft":
+                return info.attrib["value"]
+            else:
+                return f'{info.attrib["name"].lower()}{info.attrib["value"]}'
+        return ""
 
     def _reference_section_type(self, section_name):
         """Determine reference type from name of references section"""
@@ -157,7 +165,7 @@ class XMLDraft(Draft):
         for section in self.xmlroot.findall('back//references'):
             ref_type = self._reference_section_type(self._reference_section_name(section))
             for ref in (section.findall('./reference') + section.findall('./referencegroup')):
-                refs[self._document_name(ref.get('anchor'))] = ref_type
+                refs[self._document_name(ref)] = ref_type
         return refs
 
 
