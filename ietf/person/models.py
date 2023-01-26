@@ -12,6 +12,7 @@ from urllib.parse import urljoin
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.contrib.postgres.fields import CICharField
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import models
@@ -277,7 +278,7 @@ class Alias(models.Model):
 
 class Email(models.Model):
     history = HistoricalRecords()
-    address = models.CharField(max_length=64, primary_key=True, validators=[validate_email])
+    address = CICharField(max_length=64, primary_key=True, validators=[validate_email])
     person = ForeignKey(Person, null=True)
     time = models.DateTimeField(auto_now_add=True)
     primary = models.BooleanField(default=False)
