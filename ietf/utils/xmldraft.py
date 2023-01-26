@@ -3,7 +3,6 @@
 import io
 import re
 import xml2rfc
-import lxml
 
 import debug  # pyflakes: ignore
 
