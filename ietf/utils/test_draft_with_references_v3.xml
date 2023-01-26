@@ -37,6 +37,17 @@
                 <seriesInfo name="RFC" value="1"/>
                 <seriesInfo name="DOI" value="10.17487/RFC0001"/>
             </reference>
+            <reference anchor="MNEMONIC" target="https://www.rfc-editor.org/info/rfc2">
+                <front>
+                    <title>Cloud Software</title>
+                    <author initials="D." surname="Crocker" fullname="D. Crocker">
+                        <organization/>
+                    </author>
+                    <date year="1969" month="April"/>
+                </front>
+                <seriesInfo name="RFC" value="2"/>
+                <seriesInfo name="DOI" value="10.17487/RFC0002"/>
+            </reference>
         </references>
         <references>
             <name>Informative References</name>
@@ -50,6 +61,34 @@
                 </front>
                 <seriesInfo name='RFC' value='255'/>
                 <seriesInfo name='DOI' value='10.17487/RFC0255'/>
+            </reference>
+            <reference anchor="CONSISTENCY">
+              <front>
+                <title>Key Consistency and Discovery</title>
+                <author fullname="Alex Davidson" initials="A." surname="Davidson">
+                  <organization>Brave Software</organization>
+                </author>
+                <author fullname="Matthew Finkel" initials="M." surname="Finkel">
+                  <organization>The Tor Project</organization>
+                </author>
+                <author fullname="Martin Thomson" initials="M." surname="Thomson">
+                  <organization>Mozilla</organization>
+                </author>
+                <author fullname="Christopher A. Wood" initials="C. A." surname="Wood">
+                  <organization>Cloudflare</organization>
+                </author>
+                <date day="17" month="August" year="2022"/>
+                <abstract>
+                  <t>   This document describes the key consistency and correctness
+       requirements of protocols such as Privacy Pass, Oblivious DoH, and
+       Oblivious HTTP for user privacy.  It discusses several mechanisms and
+       proposals for enabling user privacy in varying threat models.  In
+       concludes with discussion of open problems in this area.
+
+                  </t>
+                </abstract>
+              </front>
+              <seriesInfo name="Internet-Draft" value="draft-wood-key-consistency-03"/>
             </reference>
             <referencegroup anchor="bcp6">
                 <reference anchor='RFC1930' target='https://www.rfc-editor.org/info/rfc1930'>

@@ -374,6 +374,8 @@ class XMLDraftTests(TestCase):
             draft.get_refs(),
             {
                 'rfc1': XMLDraft.REF_TYPE_NORMATIVE,
+                'rfc2': XMLDraft.REF_TYPE_NORMATIVE,
+                'draft-wood-key-consistency-03': XMLDraft.REF_TYPE_INFORMATIVE,
                 'rfc255': XMLDraft.REF_TYPE_INFORMATIVE,
                 'bcp6': XMLDraft.REF_TYPE_INFORMATIVE,
                 'rfc1207': XMLDraft.REF_TYPE_UNKNOWN,
