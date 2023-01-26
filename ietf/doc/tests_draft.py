@@ -1720,7 +1720,7 @@ class AdoptDraftFormTests(TestCase):
                 {
                     "draft-stream-irtf": 14,
                     "draft-stream-ietf": 12,
-                    "draft-stream-editorial": 6,
+                    "draft-stream-editorial": 5,
                 }
             ),
         )
