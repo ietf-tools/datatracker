@@ -63,6 +63,7 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           tags: ghcr.io/ietf-tools/datatracker-db:latest-${{ matrix.docker }}
+          provenance: false
           
   combine-mariadb:
     name: Create MariaDB Docker Manifests
@@ -184,3 +185,4 @@ jobs:
         platforms: linux/amd64,linux/arm64
         push: true
         tags: ghcr.io/ietf-tools/datatracker-db-pg:latest,ghcr.io/ietf-tools/datatracker-db-pg:nightly-${{ steps.date.outputs.date }}
+        provenance: false
