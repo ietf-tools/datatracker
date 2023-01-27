@@ -1708,6 +1708,7 @@ def agenda_extract_schedule (item):
         "startDateTime": item.timeslot.time.isoformat(),
         "status": item.session.current_status,
         "type": item.session.type.slug,
+        "purpose": item.session.purpose.slug,
         "isBoF": item.session.group_at_the_time().state_id == "bof",
         "filterKeywords": item.filter_keywords,
         "groupAcronym": item.session.group_at_the_time().acronym,

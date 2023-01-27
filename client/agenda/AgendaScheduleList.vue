@@ -270,7 +270,9 @@ const meetingEvents = computed(() => {
 
     // -> Populate event links
     const links = []
-    if (item.flags.showAgenda || ['regular', 'plenary'].includes(item.type)) {
+    const typesWithLinks = ['regular', 'plenary', 'other']
+    const purposesWithoutLinks = ['admin', 'closed_meeting', 'officehours', 'social']
+    if (item.flags.showAgenda || (typesWithLinks.includes(item.type) && !purposesWithoutLinks.includes(item.purpose))) {
       if (item.flags.agenda) {
         links.push({
           id: `lnk-${item.id}-tar`,
