@@ -378,8 +378,10 @@ class XMLDraftTests(TestCase):
                 'draft-wood-key-consistency-03': XMLDraft.REF_TYPE_INFORMATIVE,
                 'rfc255': XMLDraft.REF_TYPE_INFORMATIVE,
                 'bcp6': XMLDraft.REF_TYPE_INFORMATIVE,
+                'bcp14': XMLDraft.REF_TYPE_INFORMATIVE,
                 'rfc1207': XMLDraft.REF_TYPE_UNKNOWN,
                 'rfc4086': XMLDraft.REF_TYPE_NORMATIVE,
+                'draft-ietf-teas-pcecc-use-cases-00': XMLDraft.REF_TYPE_INFORMATIVE,
             }
         )
 
