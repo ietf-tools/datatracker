@@ -4,6 +4,7 @@
 
 import datetime
 import factory
+from faker import Faker
 
 from django.utils import timezone
 
@@ -13,12 +14,13 @@ from ietf.ipr.models import (
 )
 
 def _fake_patent_info():
+    fake = Faker()
     return "Date: %s\nNotes: %s\nTitle: %s\nNumber: %s\nInventor: %s\n" % (
         (timezone.now()-datetime.timedelta(days=365)).strftime("%Y-%m-%d"),
-        factory.Faker('paragraph'),
-        factory.Faker('sentence', nb_words=8),
+        fake.paragraph(),
+        fake.sentence(nb_words=8),
         'US9999999',
-        factory.Faker('name'),
+        fake.name(),
     )
 
 class IprDisclosureBaseFactory(factory.django.DjangoModelFactory):
