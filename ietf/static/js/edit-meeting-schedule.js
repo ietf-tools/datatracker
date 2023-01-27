@@ -647,8 +647,8 @@ $(function () {
 
     function updateTimeSlotDurationViolations() {
         timeslots.each(function () {
-            const sessions = Array.from(this.getElementsByClassName('session'));
-            const requiredDuration = Math.max(sessions.map(elt => Number(elt.dataset.duration)));
+            const sessionsInSlot = Array.from(this.getElementsByClassName('session'));
+            const requiredDuration = Math.max(sessionsInSlot.map(elt => Number(elt.dataset.duration)));
             this.classList.toggle('overfull', requiredDuration > Number(this.dataset.duration));
         });
     }
