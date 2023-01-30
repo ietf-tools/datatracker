@@ -37,7 +37,7 @@ MIGRATION_MODULES = DisableMigrations()
 DATABASES = {
     'default': {
         'HOST': 'db',
-        'PORT': 5432,
+        'PORT': '5432',
         'NAME': 'test.db',
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'USER': 'django',
