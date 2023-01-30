@@ -129,6 +129,10 @@ class ScheduleHandler(object):
                 msgs.append('Applying schedule {} as base schedule'.format(ScheduleId.from_schedule(self.base_schedule)))
             self.stdout.write('\n{}\n\n'.format('\n'.join(msgs)))
         self._load_meeting()
+        if len(self.schedule.sessions) == 0:
+            raise CommandError('No sessions found to schedule')
+        if len(self.schedule.timeslots) == 0:
+            raise CommandError('No timeslots found for schedule')
 
     def run(self):
         """Schedule all sessions"""
