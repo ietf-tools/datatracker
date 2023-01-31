@@ -362,7 +362,7 @@ def send_ballot_comment(request, name, ballot_id):
     if doc.stream_id == 'irtf':
         mailtrigger_slug='irsg_ballot_saved'
     elif doc.stream_id == 'editorial':
-        mailtrigger_slug='rsab_ballot_saved' # TODO: build these mailtriggers
+        mailtrigger_slug='rsab_ballot_saved'
     else:
         mailtrigger_slug='iesg_ballot_saved'
         
