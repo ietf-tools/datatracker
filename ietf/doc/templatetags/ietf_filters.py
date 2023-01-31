@@ -25,6 +25,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import BallotDocEvent, DocAlias
 from ietf.doc.models import ConsensusDocEvent
+from ietf.ietfauth.utils import can_request_rfc_publication as utils_can_request_rfc_publication
 from ietf.utils.html import sanitize_fragment
 from ietf.utils import log
 from ietf.doc.utils import prettify_std_name
@@ -577,6 +578,8 @@ def pos_to_label_format(text):
         'Recuse':       'bg-recuse text-light',
         'Not Ready':    'bg-discuss text-light',
         'Need More Time': 'bg-discuss text-light',
+        'Concern': 'bg-discuss text-light',
+
     }.get(str(text), 'bg-norecord text-dark')
 
 @register.filter
@@ -591,6 +594,7 @@ def pos_to_border_format(text):
         'Recuse':       'border-recuse',
         'Not Ready':    'border-discuss',
         'Need More Time': 'border-discuss',
+        'Concern': 'border-discuss',
     }.get(str(text), 'border-norecord')
 
 @register.filter
@@ -664,17 +668,25 @@ def charter_minor_rev(rev):
 @register.filter()
 def can_defer(user,doc):
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
-    if ballot and (doc.type_id == "draft" or doc.type_id == "conflrev") and doc.stream_id == 'ietf' and has_role(user, 'Area Director,Secretariat'):
+    if ballot and (doc.type_id == "draft" or doc.type_id == "conflrev" or doc.type_id=="statchg") and doc.stream_id == 'ietf' and has_role(user, 'Area Director,Secretariat'):
         return True
     else:
         return False
 
 @register.filter()
+def can_clear_ballot(user, doc):
+    return can_defer(user, doc)
+
+@register.filter()
+def can_request_rfc_publication(user, doc):
+    return utils_can_request_rfc_publication(user, doc)
+
+@register.filter()
 def can_ballot(user,doc):
-    # Only IRSG members (and the secretariat, handled by code separately) can take positions on IRTF documents
-    # Otherwise, an AD can take a position on anything that has a ballot open
-    if doc.type_id == 'draft' and doc.stream_id == 'irtf':
-        return has_role(user,'IRSG Member')
+    if doc.stream_id == "irtf" and doc.type_id == "draft":
+        return has_role(user,"IRSG Member")
+    elif doc.stream_id == "editorial" and doc.type_id == "draft":
+        return has_role(user,"RSAB Member")
     else:
         return user.person.role_set.filter(name="ad", group__type="area", group__state="active")
 

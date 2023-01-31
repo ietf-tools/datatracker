@@ -647,12 +647,9 @@ $(function () {
 
     function updateTimeSlotDurationViolations() {
         timeslots.each(function () {
-            let total = 0;
-            jQuery(this).find(".session").each(function () {
-                total += +jQuery(this).data("duration");
-            });
-
-            jQuery(this).toggleClass("overfull", total > +jQuery(this).data("duration"));
+            const sessionsInSlot = Array.from(this.getElementsByClassName('session'));
+            const requiredDuration = Math.max(sessionsInSlot.map(elt => Number(elt.dataset.duration)));
+            this.classList.toggle('overfull', requiredDuration > Number(this.dataset.duration));
         });
     }
 

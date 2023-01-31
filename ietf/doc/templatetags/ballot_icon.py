@@ -53,7 +53,9 @@ def showballoticon(doc):
     if doc.type_id == "draft":
         if doc.stream_id == 'ietf' and doc.get_state_slug("draft-iesg") not in IESG_BALLOT_ACTIVE_STATES:
             return False
-        elif doc.stream_id == 'irtf' and doc.get_state_slug("draft-stream-irtf") not in ['irsgpoll']:
+        elif doc.stream_id == 'irtf' and doc.get_state_slug("draft-stream-irtf") != "irsgpoll":
+            return False
+        elif doc.stream_id == 'editorial' and doc.get_state_slug("draft-stream-rsab") != "rsabpoll":
             return False
     elif doc.type_id == "charter":
         if doc.get_state_slug() not in ("intrev", "extrev", "iesgrev"):
@@ -105,8 +107,10 @@ def ballot_icon(context, doc):
             break
 
     typename = "Unknown"
-    if ballot.ballot_type.slug=='irsg-approve':
+    if ballot.ballot_type.slug == "irsg-approve":
         typename = "IRSG"
+    elif ballot.ballot_type.slug == "rsab-approve":
+        typename = "RSAB"
     else:
         typename = "IESG"
 

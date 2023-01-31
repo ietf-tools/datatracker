@@ -43,7 +43,7 @@ from ietf.doc.forms import ExtResourceForm
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person
-from ietf.ietfauth.utils import role_required
+from ietf.ietfauth.utils import role_required, can_request_rfc_publication
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
@@ -459,8 +459,6 @@ def change_intention(request, name):
             or is_authorized_in_doc_stream(request.user, doc)):
         permission_denied(request, "You do not have the necessary permissions to view this page.")
 
-    login = request.user.person
-
     if request.method == 'POST':
         form = ChangeIntentionForm(request.POST)
         if form.is_valid():
@@ -468,36 +466,7 @@ def change_intention(request, name):
             comment = form.cleaned_data['comment'].strip()
             old_level = doc.intended_std_level
 
-            if new_level != old_level:
-                doc.intended_std_level = new_level
-
-                events = []
-                e = DocEvent(doc=doc, rev=doc.rev, by=login, type='changed_document')
-                e.desc = "Intended Status changed to <b>%s</b> from %s"% (new_level,old_level) 
-                e.save()
-                events.append(e)
-
-                if comment:
-                    c = DocEvent(doc=doc, rev=doc.rev, by=login, type="added_comment")
-                    c.desc = comment
-                    c.save()
-                    events.append(c)
-
-                de = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
-                prev_consensus = de and de.consensus
-                if not prev_consensus and doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
-                    ce = ConsensusDocEvent(doc=doc, rev=doc.rev, by=login, type="changed_consensus")
-                    ce.consensus = True
-                    ce.desc = "Changed consensus to <b>%s</b> from %s" % (nice_consensus(True),
-                                                                          nice_consensus(prev_consensus))
-                    ce.save()
-                    events.append(ce)
-
-                doc.save_with_history(events)
-
-                msg = "\n".join(e.desc for e in events)
-
-                email_intended_status_changed(request, doc, msg)
+            set_intended_status_level(request=request, doc=doc, new_level=new_level, old_level=old_level, comment=comment)
 
             return HttpResponseRedirect(doc.get_absolute_url())
 
@@ -1290,14 +1259,11 @@ def request_publication(request, name):
         subject = forms.CharField(max_length=200, required=True)
         body = forms.CharField(widget=forms.Textarea, required=True, strip=False)
 
-    doc = get_object_or_404(Document, type="draft", name=name, stream__in=("iab", "ise", "irtf"))
+    doc = get_object_or_404(Document, type="draft", name=name, stream__in=("iab", "ise", "irtf", "editorial"))
 
-    if doc.stream_id == "irtf":
-        if not has_role(request.user, ("Secretariat", "IRTF Chair")):
-            permission_denied(request, "You do not have the necessary permissions to view this page.")
-    elif not is_authorized_in_doc_stream(request.user, doc):
+    if not can_request_rfc_publication(request.user, doc):
         permission_denied(request, "You do not have the necessary permissions to view this page.")
-
+ 
     consensus_event = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
 
     m = Message()
@@ -1378,63 +1344,163 @@ def request_publication(request, name):
                           )
 
 class AdoptDraftForm(forms.Form):
-    group = forms.ModelChoiceField(queryset=Group.objects.filter(type__features__acts_like_wg=True, state="active").order_by("-type", "acronym"), required=True, empty_label=None)
-    newstate = forms.ModelChoiceField(queryset=State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'], used=True).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING), required=True, label="State")
-    comment = forms.CharField(widget=forms.Textarea, required=False, label="Comment", help_text="Optional comment explaining the reasons for the adoption.", strip=False)
+    group = forms.ModelChoiceField(
+        queryset=Group.objects.filter(type__features__acts_like_wg=True, state="active")
+        .order_by("-type", "acronym")
+        .distinct(),
+        required=True,
+        empty_label=None,
+    )
+    newstate = forms.ModelChoiceField(
+        queryset=State.objects.filter(
+            type__in=[
+                "draft-stream-ietf",
+                "draft-stream-irtf",
+                "draft-stream-editorial",
+            ],
+            used=True,
+        ).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING),
+        required=True,
+        label="State",
+    )
+    comment = forms.CharField(
+        widget=forms.Textarea,
+        required=False,
+        label="Comment",
+        help_text="Optional comment explaining the reasons for the adoption.",
+        strip=False,
+    )
     weeks = forms.IntegerField(required=False, label="Expected weeks in adoption state")
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
-        rg_features = GroupFeatures.objects.get(type_id='rg')
-        wg_features = GroupFeatures.objects.get(type_id='wg')
-
         super(AdoptDraftForm, self).__init__(*args, **kwargs)
+
+        docman_roles = {}
+        for group_type in ("wg", "ag", "rg", "rag", "edwg"):
+            docman_roles[group_type] = GroupFeatures.objects.get(
+                type_id=group_type
+            ).docman_roles
 
         state_types = set()
         if has_role(user, "Secretariat"):
-            state_types.update(['draft-stream-ietf','draft-stream-irtf'])
-        else: 
-            if (has_role(user, "IRTF Chair")
-                or Group.objects.filter(type="rg",
-                                        state="active",
-                                        role__person__user=user,
-                                        role__name__in=rg_features.docman_roles).exists()):
-                state_types.add('draft-stream-irtf')
-            if Group.objects.filter(    type="wg",
-                                        state="active",
-                                        role__person__user=user,
-                                        role__name__in=wg_features.docman_roles).exists():
-                state_types.add('draft-stream-ietf')
+            state_types.update(
+                ["draft-stream-ietf", "draft-stream-irtf", "draft-stream-editorial"]
+            )
+        else:
+            if has_role(user, "IRTF Chair") or any(
+                [
+                    Group.objects.filter(
+                        type=type_id,
+                        state="active",
+                        role__person__user=user,
+                        role__name__in=docman_roles[type_id],
+                    ).exists()
+                    for type_id in ("rg", "rag")
+                ]
+            ):
+                state_types.add("draft-stream-irtf")
+            if any(
+                [
+                    Group.objects.filter(
+                        type=type_id,
+                        state="active",
+                        role__person__user=user,
+                        role__name__in=docman_roles[type_id],
+                    ).exists()
+                    for type_id in ("wg", "ag")
+                ]
+            ):
+                state_types.add("draft-stream-ietf")
+            if Group.objects.filter(
+                type="edwg",
+                state="active",
+                role__person__user=user,
+                role__name__in=docman_roles["edwg"],
+            ).exists():
+                state_types.add("draft-stream-editorial")
 
-        state_choices = State.objects.filter(type__in=state_types, used=True).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING)
+        state_choices = State.objects.filter(type__in=state_types, used=True).exclude(
+            slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING
+        )
 
         if not has_role(user, "Secretariat"):
+            allow_matching_groups = []
             if has_role(user, "IRTF Chair"):
-                group_queryset = self.fields["group"].queryset.filter(Q(role__person__user=user, role__name__in=rg_features.docman_roles)|Q(type="rg", state="active")).distinct()
-            else:
-                group_queryset = self.fields["group"].queryset.filter(role__person__user=user, role__name__in=wg_features.docman_roles).distinct()
-            self.fields["group"].queryset = group_queryset
+                allow_matching_groups.append(Q(type__in=["rg", "rag"]))
+            for type_id in docman_roles:
+                allow_matching_groups.append(
+                    Q(
+                        role__person__user=user,
+                        role__name__in=docman_roles[type_id],
+                        type_id=type_id,
+                    )
+                )
+            combined_query = Q(pk__in=[]) # Never use Q() here when following this pattern
+            for query in allow_matching_groups:
+                combined_query |= query
+        
+            self.fields["group"].queryset = self.fields["group"].queryset.filter(combined_query)
 
-        self.fields['group'].choices = [(g.pk, '%s - %s' % (g.acronym, g.name)) for g in self.fields["group"].queryset]
-        self.fields['newstate'].choices = [('','-- Pick a state --')]
-        self.fields['newstate'].choices.extend([(x.pk,x.name + " (IETF)") for x in state_choices if x.type_id == 'draft-stream-ietf'])
-        self.fields['newstate'].choices.extend([(x.pk,x.name + " (IRTF)") for x in state_choices if x.type_id == 'draft-stream-irtf'])
+        self.fields["group"].choices = [
+            (g.pk, "%s - %s" % (g.acronym, g.name))
+            for g in self.fields["group"].queryset
+        ]
+        self.fields["newstate"].choices = [("", "-- Pick a state --")]
+        self.fields["newstate"].choices.extend(
+            [
+                (x.pk, x.name + " (IETF)")
+                for x in state_choices
+                if x.type_id == "draft-stream-ietf"
+            ]
+        )
+        self.fields["newstate"].choices.extend(
+            [
+                (x.pk, x.name + " (IRTF)")
+                for x in state_choices
+                if x.type_id == "draft-stream-irtf"
+            ]
+        )
+        self.fields["newstate"].choices.extend(
+            [
+                (x.pk, x.name + " (Editorial)")
+                for x in state_choices
+                if x.type_id == "draft-stream-editorial"
+            ]
+        )
 
     def clean_newstate(self):
-        group = self.cleaned_data['group']
-        newstate = self.cleaned_data['newstate']
-        
-        if (newstate.type_id == 'draft-stream-ietf') and (group.type_id == 'rg'):
-            raise forms.ValidationError('Cannot assign IETF WG state to IRTF group')
-        elif (newstate.type_id == 'draft-stream-irtf') and (group.type_id == 'wg'):
-            raise forms.ValidationError('Cannot assign IRTF RG state to IETF group')
-        else:
-            return newstate
-               
+        group = self.cleaned_data["group"]
+        newstate = self.cleaned_data["newstate"]
+
+        ok_to_assign = (
+            ("draft-stream-ietf", ("wg", "ag")),
+            ("draft-stream-irtf", ("rg", "rag")),
+            ("draft-stream-editorial", ("edwg",)),
+        )
+        ok = True
+        for stream, types in ok_to_assign:
+            if newstate.type_id == stream and group.type_id not in types:
+                ok = False
+                break
+        if not ok:
+            state_type_text = newstate.type_id.split("-")[-1].upper()
+            group_type_text = {
+                "wg": "IETF Working Group",
+                "ag": "IETF Area Group",
+                "rg": "IRTF Research Group",
+                "rag": "IRTF Area Group",
+                "edwg": "Editorial Stream Working Group",
+            }[group.type_id]
+            raise forms.ValidationError(
+                f"Cannot assign {state_type_text} state to a {group_type_text}"
+            )
+        return newstate
+
+
 @login_required
 def adopt_draft(request, name):
     doc = get_object_or_404(Document, type="draft", name=name)
-
     if not can_adopt_draft(request.user, doc):
         permission_denied(request, "You don't have permission to access this page.")
 
@@ -1447,8 +1513,10 @@ def adopt_draft(request, name):
             events = []
 
             group = form.cleaned_data["group"]
-            if group.type.slug == "rg":
-                new_stream = StreamName.objects.get(slug="irtf")                
+            if group.type.slug in ("rg", "rag"):
+                new_stream = StreamName.objects.get(slug="irtf") 
+            elif group.type.slug =="edwg":
+                new_stream = StreamName.objects.get(slug="editorial")               
             else:
                 new_stream = StreamName.objects.get(slug="ietf")                
 
@@ -1466,6 +1534,13 @@ def adopt_draft(request, name):
                 doc.stream = new_stream
                 if old_stream != None:
                     email_stream_changed(request, doc, old_stream, new_stream)
+
+                # Force intended std level here if stream isn't ietf
+                if new_stream.slug != "ietf":
+                    old_level = doc.intended_std_level
+                    new_level = IntendedStdLevelName.objects.get(slug="inf", used=True)
+                    set_intended_status_level(request=request, doc=doc, new_level=new_level, old_level=old_level, comment="")
+
 
             # group
             if group != doc.group:
@@ -1737,3 +1812,36 @@ def change_stream_state(request, name, state_type):
                                "state_type": state_type,
                                "next_states": next_states,
                               })
+
+# This should be in ietf.doc.utils, but placing it there brings a circular import issue with ietf.doc.mail
+def set_intended_status_level(request, doc, new_level, old_level, comment):
+    if new_level != old_level:
+        doc.intended_std_level = new_level
+
+        events = []
+        e = DocEvent(doc=doc, rev=doc.rev, by=request.user.person, type='changed_document')
+        e.desc = "Intended Status changed to <b>%s</b> from %s"% (new_level,old_level) 
+        e.save()
+        events.append(e)
+
+        if comment:
+            c = DocEvent(doc=doc, rev=doc.rev, by=request.user.person, type="added_comment")
+            c.desc = comment
+            c.save()
+            events.append(c)
+
+        de = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+        prev_consensus = de and de.consensus
+        if not prev_consensus and doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
+            ce = ConsensusDocEvent(doc=doc, rev=doc.rev, by=request.user.person, type="changed_consensus")
+            ce.consensus = True
+            ce.desc = "Changed consensus to <b>%s</b> from %s" % (nice_consensus(True),
+                                                                    nice_consensus(prev_consensus))
+            ce.save()
+            events.append(ce)
+
+        doc.save_with_history(events)
+
+        msg = "\n".join(e.desc for e in events)
+
+        email_intended_status_changed(request, doc, msg)

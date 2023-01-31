@@ -72,6 +72,10 @@ def make_immutable_base_data():
     irtf = create_group(name="IRTF", acronym="irtf", type_id="irtf")
     create_person(irtf, "chair")
 
+    rsab = create_group(name="RSAB", acronym="rsab", type_id="rfcedtyp")
+    p = create_person(rsab, "chair")
+    p.role_set.create(group=rsab, name_id="member", email=p.email())
+
     secretariat = create_group(name="IETF Secretariat", acronym="secretariat", type_id="ietf")
     create_person(secretariat, "secr", name="Sec Retary", username="secretary", is_staff=True, is_superuser=True)
 

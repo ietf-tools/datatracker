@@ -659,7 +659,9 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         sorted_rooms = sorted(
             rooms_with_timeslots,
             key=lambda room: (
-                # First, sort regular session rooms ahead of others - these will usually
+                # Sort higher capacity rooms first.
+                -room.capacity if room.capacity is not None else 1,  # sort rooms with capacity = None at end
+                # Sort regular session rooms ahead of others - these will usually
                 # have more timeslots than other room types.
                 0 if room_data[room.pk]['timeslot_count'] == max_timeslots else 1,
                 # Sort rooms with earlier timeslots ahead of later
@@ -669,8 +671,6 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
                 # Sort by list of starting time and duration so that groups with identical
                 # timeslot structure will be neighbors. The grouping algorithm relies on this!
                 room_data[room.pk]['start_and_duration'],
-                # Within each group, sort higher capacity rooms first.
-                -room.capacity if room.capacity is not None else 1,  # sort rooms with capacity = None at end
                 # Finally, sort alphabetically by name
                 room.name
             )
