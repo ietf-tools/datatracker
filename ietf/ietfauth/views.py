@@ -413,32 +413,39 @@ def password_reset(request):
     if request.method == 'POST':
         form = ResetPasswordForm(request.POST)
         if form.is_valid():
-            username = form.cleaned_data['username']
+            submitted_username = form.cleaned_data['username']
+            # The form validation checks that a matching User exists. Add the person__isnull check
+            # because the OneToOne field does not gracefully handle checks for user.person is Null.
+            # If we don't get a User here, we know it's because there's no related Person.
+            user = User.objects.filter(username=submitted_username, person__isnull=False).first()
+            if not (user and user.person.email_set.filter(active=True).exists()):
+                form.add_error(
+                    'username',
+                    'No known active email addresses are associated with this account. '
+                    'Please contact the secretariat for assistance.',
+                )
+            else:
+                data = {
+                    'username': user.username,
+                    'password': user.password and user.password[-4:],
+                    'last_login': user.last_login.timestamp() if user.last_login else None,
+                }
+                auth = django.core.signing.dumps(data, salt="password_reset")
 
-            data = { 'username': username }
-            if User.objects.filter(username=username).exists():
-                user = User.objects.get(username=username)
-                data['password'] = user.password and user.password[-4:]
-                if user.last_login:
-                    data['last_login'] = user.last_login.timestamp()
-                else:
-                    data['last_login'] = None
-
-            auth = django.core.signing.dumps(data, salt="password_reset")
-
-            domain = Site.objects.get_current().domain
-            subject = 'Confirm password reset at %s' % domain
-            from_email = settings.DEFAULT_FROM_EMAIL
-            to_email = username # form validation makes sure that this is an email address
-
-            send_mail(request, to_email, from_email, subject, 'registration/password_reset_email.txt', {
-                'domain': domain,
-                'auth': auth,
-                'username': username,
-                'expire': settings.MINUTES_TO_EXPIRE_RESET_PASSWORD_LINK,
-            })
-
-            success = True
+                domain = Site.objects.get_current().domain
+                subject = 'Confirm password reset at %s' % domain
+                from_email = settings.DEFAULT_FROM_EMAIL
+                # Send email to addresses from the database, NOT to the address from the form.
+                # This prevents unicode spoofing tricks (https://nvd.nist.gov/vuln/detail/CVE-2019-19844).
+                to_emails = list(set(email.address for email in user.person.email_set.filter(active=True)))
+                to_emails.sort()
+                send_mail(request, to_emails, from_email, subject, 'registration/password_reset_email.txt', {
+                    'domain': domain,
+                    'auth': auth,
+                    'username': submitted_username,
+                    'expire': settings.MINUTES_TO_EXPIRE_RESET_PASSWORD_LINK,
+                })
+                success = True
     else:
         form = ResetPasswordForm()
     return render(request, 'registration/password_reset.html', {
