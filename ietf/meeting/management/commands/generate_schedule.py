@@ -25,6 +25,8 @@ import debug                            # pyflakes:ignore
 from ietf.person.models import Person
 from ietf.meeting import models
 from ietf.meeting.helpers import get_person_by_email
+from ietf.name.models import SessionPurposeName
+
 
 # 40 runs of the optimiser for IETF 106 with cycles=160 resulted in 16
 # zero-violation invocations, with a mean number of runs of 91 and 
@@ -72,18 +74,31 @@ class Command(BaseCommand):
                                 'Base schedule for generated schedule, specified as "[owner/]name"'
                                 ' (default is no base schedule; owner not required if name is unique)'
                             ))
+        parser.add_argument('-p', '--purpose',
+                            dest='purposes',
+                            action='append',
+                            choices=[
+                                spn.slug for spn in SessionPurposeName.objects.all()
+                                if 'regular' in spn.timeslot_types  # scheduler only works with "regular" timeslots
+                            ],
+                            default=None,
+                            help=(
+                                'Limit scheduling to specified purpose '
+                                '(use option multiple times to specify more than one purpose; default is all purposes)'
+                            ))
 
-    def handle(self, meeting, name, max_cycles, verbosity, base_id, *args, **kwargs):
-        ScheduleHandler(self.stdout, meeting, name, max_cycles, verbosity, base_id).run()
+    def handle(self, meeting, name, max_cycles, verbosity, base_id, purposes, *args, **kwargs):
+        ScheduleHandler(self.stdout, meeting, name, max_cycles, verbosity, base_id, purposes).run()
 
 
 class ScheduleHandler(object):
     def __init__(self, stdout, meeting_number, name=None, max_cycles=OPTIMISER_MAX_CYCLES,
-                 verbosity=1, base_id=None):
+                 verbosity=1, base_id=None, session_purposes=None):
         self.stdout = stdout
         self.verbosity = verbosity
         self.name = name
         self.max_cycles = max_cycles
+        self.session_purposes = session_purposes
         if meeting_number:
             try:
                 self.meeting = models.Meeting.objects.get(type="ietf", number=meeting_number)
@@ -114,6 +129,10 @@ class ScheduleHandler(object):
                 msgs.append('Applying schedule {} as base schedule'.format(ScheduleId.from_schedule(self.base_schedule)))
             self.stdout.write('\n{}\n\n'.format('\n'.join(msgs)))
         self._load_meeting()
+        if len(self.schedule.sessions) == 0:
+            raise CommandError('No sessions found to schedule')
+        if len(self.schedule.timeslots) == 0:
+            raise CommandError('No timeslots found for schedule')
 
     def run(self):
         """Schedule all sessions"""
@@ -194,6 +213,8 @@ class ScheduleHandler(object):
         Extra arguments are passed to the Session constructor.
         """
         sessions_db = self.meeting.session_set.that_can_be_scheduled().filter(type_id='regular')
+        if self.session_purposes is not None:
+            sessions_db = sessions_db.filter(purpose__slug__in=self.session_purposes)
         if self.base_schedule is None:
             fixed_sessions = models.Session.objects.none()
         else:
