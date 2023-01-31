@@ -163,10 +163,11 @@
                 </div>
             </footer>
         {% endblock %}
-        <div>
-            <a href="" onclick="document.querySelector(':root').style.setProperty('--bs-font-sans-serif', 'Cairo')">Cairo</a> &middot; 
-            <a href="" onclick="document.querySelector(':root').style.setProperty('--bs-font-sans-serif', 'Inter')">Inter</a> &middot; 
-            <a href="" onclick="document.querySelector(':root').style.setProperty('--bs-font-sans-serif', 'Noto Sans')">Noto Sans</a> &middot; 
+        <div style="text-align: center;">
+            <a href="#" onclick="document.querySelector(':root').style.setProperty('--bs-font-sans-serif', 'system-ui,-apple-system,\"Segoe UI\",Roboto,\"Helvetica Neue\",\"Noto Sans\",\"Liberation Sans\",Arial,sans-serif'); return false;">System</a> &middot; 
+            <a href="#" onclick="document.querySelector(':root').style.setProperty('--bs-font-sans-serif', 'Cairo'); return false;">Cairo</a> &middot; 
+            <a href="#" onclick="document.querySelector(':root').style.setProperty('--bs-font-sans-serif', 'Inter'); return false;">Inter</a> &middot; 
+            <a href="#" onclick="document.querySelector(':root').style.setProperty('--bs-font-sans-serif', 'Noto Sans'); return false;">Noto Sans</a> &middot; 
         </div>
         {% block js %}
         {% endblock %}
