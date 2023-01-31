@@ -414,12 +414,10 @@ class IetfAuthTests(TestCase):
         email = 'someone@example.com'
         password = 'foobar'
 
-        user = User.objects.create(username=email, email=email)
+        user = PersonFactory(user__email=email).user
         user.set_password(password)
         user.save()
-        p = Person.objects.create(name="Some One", ascii="Some One", user=user)
-        Email.objects.create(address=user.username, person=p, origin=user.username)
-        
+
         # get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
