@@ -18,6 +18,10 @@ import { useSiteStore } from './shared/store'
 
 import NTheme from './components/n-theme.vue'
 
+// TEMPORARY - FONTS TEST
+
+document.querySelector(':root').style.setProperty('--bs-font-sans-serif', 'Montserrat, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif')
+
 // STORES
 
 const siteStore = useSiteStore()
