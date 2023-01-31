@@ -413,10 +413,12 @@ def password_reset(request):
     if request.method == 'POST':
         form = ResetPasswordForm(request.POST)
         if form.is_valid():
-            # The form validation checks that a matching User exists
             submitted_username = form.cleaned_data['username']
-            user = User.objects.get(username=submitted_username)
-            if not (user.person and user.person.email_set.filter(active=True).exists()):
+            # The form validation checks that a matching User exists. Add the person__isnull check
+            # because the OneToOne field does not gracefully handle checks for user.person is Null.
+            # If we don't get a User here, we know it's because there's no related Person.
+            user = User.objects.filter(username=submitted_username, person__isnull=False).first()
+            if not (user and user.person.email_set.filter(active=True).exists()):
                 form.add_error(
                     'username',
                     'No known active email addresses are associated with this account. '
