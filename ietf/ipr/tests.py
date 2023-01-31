@@ -710,7 +710,7 @@ Subject: test
         post_data = {
             'iprdocrel_set-TOTAL_FORMS' : 1,
             'iprdocrel_set-INITIAL_FORMS' : 0,
-            'iprdocrel_set-0-id': disclosure.pk,
+            'iprdocrel_set-0-id': '',
             "iprdocrel_set-0-document": disclosure.docs.first().pk,
             "iprdocrel_set-0-revisions": disclosure.docs.first().document.rev,
             'holder_legal_name': disclosure.holder_legal_name,
