@@ -503,11 +503,30 @@ class IetfAuthTests(TestCase):
         user.save()
         empty_outbox()
         r = self.client.post(url, { 'username': user.username})
-        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'No known active email addresses', status_code=200)
         q = PyQuery(r.content)
         self.assertTrue(len(q("form .is-invalid")) > 0)
         self.assertEqual(len(outbox), 0)
 
+    def test_reset_password_address_handling(self):
+        """Reset password links are only sent to known, active addresses"""
+        url = urlreverse('ietf.ietfauth.views.password_reset')
+        person = PersonFactory()
+        person.email_set.update(active=False)
+        empty_outbox()
+        r = self.client.post(url, { 'username': person.user.username})
+        self.assertContains(r, 'No known active email addresses', status_code=200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q("form .is-invalid")) > 0)
+        self.assertEqual(len(outbox), 0)
+
+        active_address = EmailFactory(person=person).address
+        r = self.client.post(url, {'username': person.user.username})
+        self.assertNotContains(r, 'No known active email addresses', status_code=200)
+        self.assertEqual(len(outbox), 1)
+        to = outbox[0].get('To')
+        self.assertIn(active_address, to)
+        self.assertNotIn(person.user.username, to)
 
     def test_review_overview(self):
         review_req = ReviewRequestFactory()
