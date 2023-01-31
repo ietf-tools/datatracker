@@ -531,3 +531,50 @@ class DocExtResourceFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = DocExtResource
 
+class EditorialDraftFactory(BaseDocumentFactory):
+
+    type_id = 'draft'
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',acronym='rswg', type_id='rfcedtyp')
+    stream_id = 'editorial'
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (state_type_id,state_slug) in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+            if not obj.get_state('draft-iesg'):
+                obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+        else:
+            obj.set_state(State.objects.get(type_id='draft',slug='active'))
+            obj.set_state(State.objects.get(type_id='draft-stream-editorial',slug='active'))
+            obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+
+class EditorialRfcFactory(RgDraftFactory):
+
+    alias2 = factory.RelatedFactory('ietf.doc.factories.DocAliasFactory','document',name=factory.Sequence(lambda n: 'rfc%04d'%(n+1000)))
+
+    std_level_id = 'inf'
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (state_type_id,state_slug) in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+            if not obj.get_state('draft-stream-editorial'):
+                obj.set_state(State.objects.get(type_id='draft-stream-editorial', slug='pub'))
+            if not obj.get_state('draft-iesg'):
+                obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+        else:
+            obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
+            obj.set_state(State.objects.get(type_id='draft-stream-editorial', slug='pub'))
+            obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+
+    @factory.post_generation
+    def reset_canonical_name(obj, create, extracted, **kwargs): 
+        if hasattr(obj, '_canonical_name'):
+            del obj._canonical_name
+        return None          

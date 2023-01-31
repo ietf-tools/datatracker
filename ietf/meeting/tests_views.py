@@ -6364,7 +6364,7 @@ class SessionTests(TestCase):
         # a couple non-wg group types, confirm that their has_meetings features are as expected
         group_type_with_meetings = 'adhoc'
         self.assertTrue(GroupFeatures.objects.get(pk=group_type_with_meetings).has_meetings)
-        group_type_without_meetings = 'editorial'
+        group_type_without_meetings = 'sdo'
         self.assertFalse(GroupFeatures.objects.get(pk=group_type_without_meetings).has_meetings)
 
         area = GroupFactory(type_id='area', acronym='area')
