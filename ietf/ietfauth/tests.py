@@ -495,6 +495,20 @@ class IetfAuthTests(TestCase):
         r = self.client.get(confirm_url)
         self.assertEqual(r.status_code, 404)
 
+    def test_reset_password_without_person(self):
+        """No password reset for account without a person"""
+        url = urlreverse('ietf.ietfauth.views.password_reset')
+        user = UserFactory()
+        user.set_password('some password')
+        user.save()
+        empty_outbox()
+        r = self.client.post(url, { 'username': user.username})
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q("form .is-invalid")) > 0)
+        self.assertEqual(len(outbox), 0)
+
+
     def test_review_overview(self):
         review_req = ReviewRequestFactory()
         assignment = ReviewAssignmentFactory(review_request=review_req,reviewer=EmailFactory(person__user__username='reviewer'))
