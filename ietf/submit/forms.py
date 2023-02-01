@@ -289,7 +289,7 @@ class SubmissionBaseUploadForm(forms.Form):
     @staticmethod
     def check_for_old_uppercase_collisions(name):
         possible_collision = Document.objects.filter(name__iexact=name).first()
-        if possible_collision and possible_collision.name!=name:
+        if possible_collision and possible_collision.name != name:
             raise forms.ValidationError(
                 f"Case-conflicting draft name found: {possible_collision.name}. "
                 "Please choose a different draft name. Case-conflicting names with "
