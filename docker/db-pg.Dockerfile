@@ -9,6 +9,7 @@ ENV POSTGRES_DB=ietf
 ENV POSTGRES_HOST_AUTH_METHOD=trust
 ENV PGDATA=/data
 
+COPY docker/scripts/db-load-default-extensions.sh /docker-entrypoint-initdb.d/
 COPY docker/scripts/db-pg-import.sh /docker-entrypoint-initdb.d/
 COPY ietf.dump /
 
