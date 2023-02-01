@@ -642,23 +642,9 @@ class DocumentInfo(models.Model):
         return pdf
 
     def references(self):
-        from ietf.doc.utils import rebuild_reference_relations
-        files = {}
-        for type in ["xml", "txt"]:
-            name = self.get_file_name().replace(".txt", f".{type}")
-            if os.path.isfile(name):
-                files[type] = name
-        rebuild_reference_relations(self, files)
         return self.relations_that_doc(('refnorm','refinfo','refunk','refold'))
 
     def referenced_by(self):
-        from ietf.doc.utils import rebuild_reference_relations
-        files = {}
-        for type in ["xml", "txt"]:
-            name = self.get_file_name().replace(".txt", f".{type}")
-            if os.path.isfile(name):
-                files[type] = name
-        rebuild_reference_relations(self, files)
         return self.relations_that(('refnorm','refinfo','refunk','refold')).filter(source__states__type__slug='draft',source__states__slug__in=['rfc','active'])
 
     def referenced_by_rfcs(self):
