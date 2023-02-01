@@ -268,7 +268,7 @@ test.describe('past - desktop', () => {
         }
         // Scheduled
         case 'sched': {
-          if (event.flags.showAgenda || ['regular', 'plenary'].includes(event.type)) {
+          if (event.flags.showAgenda || (['regular', 'plenary', 'other'].includes(event.type) && !['admin', 'closed_meeting', 'officehours', 'social'].includes(event.purpose))) {
             const eventButtons = row.locator('.agenda-table-cell-links > .agenda-table-cell-links-buttons')
             if (event.flags.agenda) {
               // Show meeting materials button
@@ -1145,7 +1145,7 @@ test.describe('future - desktop', () => {
       // -----------------------
       if (event.status === 'sched') {
         const eventButtons = row.locator('.agenda-table-cell-links > .agenda-table-cell-links-buttons')
-        if (event.flags.showAgenda || ['regular', 'plenary'].includes(event.type)) {
+        if (event.flags.showAgenda || (['regular', 'plenary', 'other'].includes(event.type) && !['admin', 'closed_meeting', 'officehours', 'social'].includes(event.purpose))) {
           if (event.flags.agenda) {
             // Show meeting materials button
             await expect(eventButtons.locator('i.bi.bi-collection')).toBeVisible()

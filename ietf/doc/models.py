@@ -97,7 +97,7 @@ class DocumentInfo(models.Model):
 
     states = models.ManyToManyField(State, blank=True) # plain state (Active/Expired/...), IESG state, stream state
     tags = models.ManyToManyField(DocTagName, blank=True) # Revised ID Needed, ExternalParty, AD Followup, ...
-    stream = ForeignKey(StreamName, blank=True, null=True) # IETF, IAB, IRTF, Independent Submission
+    stream = ForeignKey(StreamName, blank=True, null=True) # IETF, IAB, IRTF, Independent Submission, Editorial
     group = ForeignKey(Group, blank=True, null=True) # WG, RG, IAB, IESG, Edu, Tools
 
     abstract = models.TextField(blank=True)
@@ -1341,7 +1341,7 @@ class BallotDocEvent(DocEvent):
     ballot_type = ForeignKey(BallotType)
 
     def active_balloter_positions(self):
-        """Return dict mapping each active AD or IRSG member to a current ballot position (or None if they haven't voted)."""
+        """Return dict mapping each active member of the balloting body to a current ballot position (or None if they haven't voted)."""
         res = {}
     
         active_balloters = get_active_balloters(self.ballot_type)
@@ -1384,7 +1384,7 @@ class BallotDocEvent(DocEvent):
             while p.old_positions and p.old_positions[-1].slug == "norecord":
                 p.old_positions.pop()
 
-        # add any missing ADs/IRSGers through fake No Record events
+        # add any missing balloters through fake No Record events
         if self.doc.active_ballot() == self:
             norecord = BallotPositionName.objects.get(slug="norecord")
             for balloter in active_balloters:

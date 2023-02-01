@@ -22,3 +22,7 @@ body:
       options:
         - label: I agree to follow the [IETF's Code of Conduct](https://github.com/ietf-tools/.github/blob/main/CODE_OF_CONDUCT.md)
           required: true
+  - type: markdown
+    attributes:
+      value: |
+        If you are having trouble logging into the datatracker, please do not open an issue here. Instead, please send email to support@ietf.org providing your name and username.

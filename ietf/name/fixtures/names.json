@@ -149,6 +149,23 @@
   },
   {
     "fields": {
+      "doc_type": "draft",
+      "name": "RSAB Approve",
+      "order": 0,
+      "positions": [
+        "concern",
+        "yes",
+        "recuse"
+      ],
+      "question": "Is this draft ready for publication in the Editorial stream?",
+      "slug": "rsab-approve",
+      "used": true
+    },
+    "model": "doc.ballottype",
+    "pk": 8
+  },
+  {
+    "fields": {
       "desc": "",
       "name": "Active",
       "next_states": [],
@@ -2459,6 +2476,71 @@
   },
   {
     "fields": {
+      "desc": "",
+      "name": "Replaced editorial stream document",
+      "next_states": [],
+      "order": 0,
+      "slug": "repl",
+      "type": "draft-stream-editorial",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 170
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Active editorial stream document",
+      "next_states": [],
+      "order": 2,
+      "slug": "active",
+      "type": "draft-stream-editorial",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 171
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Editorial stream document under RSAB review",
+      "next_states": [],
+      "order": 3,
+      "slug": "rsabpoll",
+      "type": "draft-stream-editorial",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 172
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Published RFC",
+      "next_states": [],
+      "order": 4,
+      "slug": "pub",
+      "type": "draft-stream-editorial",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 173
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Dead editorial stream document",
+      "next_states": [],
+      "order": 5,
+      "slug": "dead",
+      "type": "draft-stream-editorial",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 174
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
@@ -2547,6 +2629,13 @@
     },
     "model": "doc.statetype",
     "pk": "draft-rfceditor"
+  },
+  {
+    "fields": {
+      "label": "Editorial stream state"
+    },
+    "model": "doc.statetype",
+    "pk": "draft-stream-editorial"
   },
   {
     "fields": {
@@ -2852,37 +2941,74 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
-      "agenda_filter_type": "none",
-      "agenda_type": "side",
+      "agenda_filter_type": "normal",
+      "agenda_type": "ietf",
       "create_wiki": false,
-      "custom_group_roles": true,
+      "custom_group_roles": false,
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"auth\",\n    \"chair\"\n]",
-      "docman_roles": "[]",
+      "default_used_roles": "[\n    \"chair\",\n    \"member\"\n]",
+      "docman_roles": "[\n    \"chair\"\n]",
       "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[]",
+      "groupman_roles": "[\n    \"chair\"\n]",
       "has_chartering_process": false,
-      "has_default_chat": false,
+      "has_default_chat": true,
       "has_documents": false,
-      "has_meetings": false,
+      "has_meetings": true,
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": false,
-      "has_session_materials": false,
-      "is_schedulable": false,
+      "has_session_materials": true,
+      "is_schedulable": true,
       "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[]",
+      "matman_roles": "[\n    \"chair\"\n]",
+      "need_parent": false,
+      "parent_types": [],
+      "req_subm_approval": false,
+      "role_order": "[\n    \"chair\",\n    \"member\"\n]",
+      "session_purposes": "[\n    \"officehourse\",\n    \"regular\"\n]",
+      "show_on_agenda": true
+    },
+    "model": "group.groupfeatures",
+    "pk": "edappr"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "acts_like_wg": true,
+      "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "normal",
+      "agenda_type": "ietf",
+      "create_wiki": false,
+      "custom_group_roles": false,
+      "customize_workflow": true,
+      "default_parent": "",
+      "default_tab": "ietf.group.views.group_documents",
+      "default_used_roles": "[\n    \"chair\"\n]",
+      "docman_roles": "[\n    \"chair\"\n]",
+      "groupman_authroles": "[\n    \"Secretariat\"\n]",
+      "groupman_roles": "[\n    \"chair\"\n]",
+      "has_chartering_process": false,
+      "has_default_chat": true,
+      "has_documents": true,
+      "has_meetings": true,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "has_session_materials": true,
+      "is_schedulable": true,
+      "material_types": "[\n    \"slides\"\n]",
+      "matman_roles": "[\n    \"chair\"\n]",
       "need_parent": false,
       "parent_types": [],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
-      "session_purposes": "[\n    \"officehours\"\n]",
-      "show_on_agenda": false
+      "role_order": "[\n    \"chair\"\n]",
+      "session_purposes": "[\n    \"regular\"\n]",
+      "show_on_agenda": true
     },
     "model": "group.groupfeatures",
-    "pk": "editorial"
+    "pk": "edwg"
   },
   {
     "fields": {
@@ -3398,7 +3524,7 @@
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"auth\",\n    \"chair\"\n]",
-      "docman_roles": "[]",
+      "docman_roles": "[\n    \"chair\"\n]",
       "groupman_authroles": "[\n    \"Secretariat\"\n]",
       "groupman_roles": "[\n    \"chair\"\n]",
       "has_chartering_process": false,
@@ -5271,6 +5397,46 @@
   {
     "fields": {
       "cc": [
+        "doc_affecteddoc_authors",
+        "doc_affecteddoc_group_chairs",
+        "doc_affecteddoc_notify",
+        "doc_authors",
+        "doc_group_chairs",
+        "doc_group_mail_list",
+        "doc_notify",
+        "doc_shepherd"
+      ],
+      "desc": "Recipients when a new RSAB ballot is issued",
+      "to": [
+        "rsab"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "rsab_ballot_issued"
+  },
+  {
+    "fields": {
+      "cc": [
+        "doc_affecteddoc_authors",
+        "doc_affecteddoc_group_chairs",
+        "doc_affecteddoc_notify",
+        "doc_authors",
+        "doc_group_chairs",
+        "doc_group_mail_list",
+        "doc_notify",
+        "doc_shepherd"
+      ],
+      "desc": "Recipients when a new RSAB ballot position with comments is saved",
+      "to": [
+        "rsab"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "rsab_ballot_saved"
+  },
+  {
+    "fields": {
+      "cc": [
         "group_responsible_directors"
       ],
       "desc": "Recipients when a group is sent a reminder to submit minutes for a session",
@@ -6131,6 +6297,14 @@
   },
   {
     "fields": {
+      "desc": "The RFC Series Approval Board",
+      "template": "The RSAB <rsab@rfc-editor.org>"
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "rsab"
+  },
+  {
+    "fields": {
       "desc": "The person that requested a meeting slot for a given group",
       "template": null
     },
@@ -6390,6 +6564,17 @@
     },
     "model": "name.ballotpositionname",
     "pk": "block"
+  },
+  {
+    "fields": {
+      "blocking": true,
+      "desc": "",
+      "name": "Concern",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.ballotpositionname",
+    "pk": "concern"
   },
   {
     "fields": {
@@ -11139,14 +11324,25 @@
   },
   {
     "fields": {
-      "desc": "Editorial Stream Group",
-      "name": "Editorial",
+      "desc": "Editorial Stream Approval Group",
+      "name": "Editorial Stream Approval Group",
       "order": 0,
       "used": true,
       "verbose_name": ""
     },
     "model": "name.grouptypename",
-    "pk": "editorial"
+    "pk": "edappr"
+  },
+  {
+    "fields": {
+      "desc": "Editorial Stream Working Group",
+      "name": "Editorial Stream Working Group",
+      "order": 0,
+      "used": true,
+      "verbose_name": ""
+    },
+    "model": "name.grouptypename",
+    "pk": "edwg"
   },
   {
     "fields": {
@@ -16130,7 +16326,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2022-12-14T08:09:37.183Z",
+      "time": "2023-01-24T08:09:45.071Z",
       "used": true,
       "version": "xym 0.6.2"
     },
@@ -16141,7 +16337,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2022-12-14T08:09:37.496Z",
+      "time": "2023-01-24T08:09:45.405Z",
       "used": true,
       "version": "pyang 2.5.3"
     },
@@ -16152,7 +16348,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2022-12-14T08:09:37.549Z",
+      "time": "2023-01-24T08:09:45.421Z",
       "used": true,
       "version": "yanglint SO 1.9.2"
     },
@@ -16163,9 +16359,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2022-12-14T08:09:38.461Z",
+      "time": "2023-01-24T08:09:46.384Z",
       "used": true,
-      "version": "xml2rfc 3.15.3"
+      "version": "xml2rfc 3.16.0"
     },
     "model": "utils.versioninfo",
     "pk": 4

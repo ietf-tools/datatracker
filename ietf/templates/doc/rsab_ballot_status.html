@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2023, All Rights Reserved #}
+{% load origin static %}
+{% load ballot_icon %}
+{% load ietf_filters %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
+{% block title %}RSAB ballot status{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>RSAB ballot status</h1>
+    {% if docs %}
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th scope="col" data-sort="doc">Document</th>
+                    <th scope="col" data-sort="status">Status</th>
+                </tr>
+            </thead>
+                <tbody>
+                    {% for doc in docs %}
+                        <tr>
+                            <td>{{ doc.displayname_with_link }}</td>
+                            {% include "doc/search/status_columns.html" %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+        </table>
+    {% else %}
+        <p class="alert alert-info my-3">
+            No open RSAB ballots.
+        </p>
+    {% endif %}
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
+{% endblock %}
