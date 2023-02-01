@@ -52,7 +52,11 @@ export function populate_nav(nav, heading_selector, classes) {
             classes);
 
         if (!el.id) {
-            el.id = `autoid-${++n}`;
+            // check if one of the kids has an ID - old rfc2html HTML has that
+            // if not, make one up
+            const kid = el.querySelector("[id]:not([id=''])");
+            el.id = kid ? kid.id : `autoid-${++n}`;
+            el.id = `autoid-${++n}`; // FIXME: remove
         }
         link.href = `#${el.id}`;
 
