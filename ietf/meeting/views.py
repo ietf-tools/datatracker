@@ -3621,7 +3621,8 @@ def organize_proceedings_sessions(sessions):
                 """
                 material_times = {}  # key is material, value is first timestamp it appeared
                 for s, mats in items:
-                    timestamp = s.official_timeslotassignment().timeslot.time
+                    tsa = s.official_timeslotassignment()
+                    timestamp = tsa.timeslot.time if tsa else None
                     if not isinstance(mats, list):
                         mats = [mats]
                     for mat in mats:
@@ -3640,7 +3641,7 @@ def organize_proceedings_sessions(sessions):
                 'group': group,
                 'name': sess_name,
                 'canceled': all_canceled,
-                # pass sessions instead of the materials here so session data (like time) is easily available
+                'has_materials': s.sessionpresentation_set.exists(),
                 'agendas': _format_materials((s, s.agenda()) for s in ss),
                 'minutes': _format_materials((s, s.minutes()) for s in ss),
                 'bluesheets': _format_materials((s, s.bluesheets()) for s in ss),
