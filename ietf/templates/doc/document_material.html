@@ -123,7 +123,7 @@
     </p>
     <div id="materials-content" class="card mt-5">
         <div class="card-header">{{ doc.name }}-{{ doc.rev }}</div>
-        <div class="card-body">
+        <div class="card-body{% if content_is_html %} text-break{% endif %}">
             {% if doc.rev and content != None %}
                 {% if content_is_html %}
                     {{ content|sanitize|safe }}
