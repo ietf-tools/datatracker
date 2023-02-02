@@ -18,7 +18,8 @@ from ietf.utils.text import bleach_cleaner, bleach_linker
 class LinkifyExtension(Extension):
     """
     Simple Markdown extension inspired by https://github.com/daGrevis/mdx_linkify,
-    but using our bleach_linker directly.
+    but using our bleach_linker directly. Doing the linkification on the converted
+    Markdown output introduces artifacts.
     """
 
     def extendMarkdown(self, md):
@@ -27,26 +28,24 @@ class LinkifyExtension(Extension):
 
 class LinkifyPostprocessor(Postprocessor):
     def run(self, text):
-        return bleach_linker.linkify(text)
+        return urlize_ietf_docs(bleach_linker.linkify(text))
 
 
 def markdown(text):
     return mark_safe(
-        urlize_ietf_docs(
-            bleach_cleaner.clean(
-                python_markdown.markdown(
-                    text,
-                    extensions=[
-                        # TODO: discuss which extensions we want to enable, see
-                        # https://python-markdown.github.io/extensions/ and
-                        # https://github.com/Python-Markdown/markdown/wiki/Third-Party-Extensions
-                        "extra",
-                        "nl2br",
-                        "sane_lists",
-                        "toc",
-                        LinkifyExtension(),
-                    ],
-                )
+        bleach_cleaner.clean(
+            python_markdown.markdown(
+                text,
+                extensions=[
+                    # TODO: discuss which extensions we want to enable, see
+                    # https://python-markdown.github.io/extensions/ and
+                    # https://github.com/Python-Markdown/markdown/wiki/Third-Party-Extensions
+                    "extra",
+                    "nl2br",
+                    "sane_lists",
+                    "toc",
+                    LinkifyExtension(),
+                ],
             )
         )
     )
