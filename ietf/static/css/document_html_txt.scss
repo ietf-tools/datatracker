@@ -368,7 +368,7 @@ td, th {
 }
 
 /* Links */
-a.selfRef, a.pilcrow {
+a.selfRef, a.pilcrow, .iref + a.internal {
   color: black;
   text-decoration: none;
 }
