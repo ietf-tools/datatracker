@@ -10,6 +10,8 @@ from django.utils import timezone
 from ietf.group.models import Group, Role, GroupEvent, GroupMilestone, \
                               GroupHistory, RoleHistory
 from ietf.review.factories import ReviewTeamSettingsFactory
+from ietf.utils.timezone import date_today
+
 
 class GroupFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -68,7 +70,7 @@ class BaseGroupMilestoneFactory(factory.django.DjangoModelFactory):
 
 class DatedGroupMilestoneFactory(BaseGroupMilestoneFactory):
     group = factory.SubFactory(GroupFactory, uses_milestone_dates=True)
-    due = timezone.now()+datetime.timedelta(days=180)
+    due = date_today() + datetime.timedelta(days=180)
 
 class DatelessGroupMilestoneFactory(BaseGroupMilestoneFactory):
     group = factory.SubFactory(GroupFactory, uses_milestone_dates=False)

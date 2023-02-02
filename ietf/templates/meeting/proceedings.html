@@ -88,7 +88,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for entry in not_meeting_groups %}{% if entry.sessions_with_materials %}
+                    {% for entry in not_meeting_groups %}{% if entry.has_materials %}
                         {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=True only %}
                     {% endif %}{% endfor %}
                 </tbody>
