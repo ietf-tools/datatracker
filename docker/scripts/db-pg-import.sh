@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-#echo "Drop dummy ietf DB if it exists..."
-#dropdb -U django --if-exists ietf
-#
+echo "Drop dummy ietf DB if it exists..."
+dropdb -U django --if-exists ietf
+
 #echo "Create new ietf DB..."
 #createdb -U django ietf
 #
