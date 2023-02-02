@@ -168,6 +168,7 @@ jobs:
   build:
     name: Build PostgreSQL Docker Images
     runs-on: ubuntu-latest
+    if: ${{ always() && !failure() }}
     needs: [migrate]
     permissions:
       contents: read
