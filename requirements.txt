@@ -40,7 +40,6 @@ jwcrypto>=1.2    # for signed notifications - this is aspirational, and is not r
 logging_tree>=1.9    # Used only by the showloggers management command
 lxml>=4.8.0,<5
 markdown>=3.3.6
-mdx_linkify>=2.1
 mock>=4.0.3    # Used only by tests, of course
 mypy>=0.782,<0.790    # Version requirements determined by django-stubs.
 mysqlclient>=2.1.0

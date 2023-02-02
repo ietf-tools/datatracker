@@ -6,18 +6,28 @@ Use this instead of importing markdown directly to guarantee consistent extensio
 the datatracker.
 """
 import markdown as python_markdown
+from markdown.extensions import Extension
+from markdown.postprocessors import Postprocessor
 
 from django.utils.safestring import mark_safe
 
 from ietf.doc.templatetags.ietf_filters import urlize_ietf_docs
-from ietf.utils.text import (
-    bleach_cleaner,
-    check_url_validity,
-    bleach,
-    tlds_sorted,
-    protocols,
-)
-from mdx_linkify.mdx_linkify import LinkifyExtension  # type: ignore
+from ietf.utils.text import bleach_cleaner, bleach_linker
+
+
+class LinkifyExtension(Extension):
+    """
+    Simple Markdown extension inspired by https://github.com/daGrevis/mdx_linkify,
+    but using our bleach_linker directly.
+    """
+
+    def extendMarkdown(self, md):
+        md.postprocessors.register(LinkifyPostprocessor(md), "linkify", 50)
+
+
+class LinkifyPostprocessor(Postprocessor):
+    def run(self, text):
+        return bleach_linker.linkify(text)
 
 
 def markdown(text):
@@ -27,23 +37,14 @@ def markdown(text):
                 python_markdown.markdown(
                     text,
                     extensions=[
+                        # TODO: discuss which extensions we want to enable, see
+                        # https://python-markdown.github.io/extensions/ and
+                        # https://github.com/Python-Markdown/markdown/wiki/Third-Party-Extensions
                         "extra",
                         "nl2br",
                         "sane_lists",
                         "toc",
-                        LinkifyExtension(
-                            # keep these in sync with the bleach_linker initialization
-                            linker_options={
-                                "callbacks": [check_url_validity],
-                                "url_re": bleach.linkifier.build_url_re(
-                                    tlds=tlds_sorted, protocols=protocols
-                                ),
-                                "email_re": bleach.linkifier.build_email_re(
-                                    tlds=tlds_sorted
-                                ),
-                                "parse_email": True,
-                            }
-                        ),
+                        LinkifyExtension(),
                     ],
                 )
             )
