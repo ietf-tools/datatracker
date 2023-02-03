@@ -37,9 +37,6 @@ def markdown(text):
             python_markdown.markdown(
                 text,
                 extensions=[
-                    # TODO: discuss which extensions we want to enable, see
-                    # https://python-markdown.github.io/extensions/ and
-                    # https://github.com/Python-Markdown/markdown/wiki/Third-Party-Extensions
                     "extra",
                     "nl2br",
                     "sane_lists",
