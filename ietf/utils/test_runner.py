@@ -878,6 +878,8 @@ class IetfTestRunner(DiscoverRunner):
                     "element-required-ancestor": "off",
                     # This is allowed by the HTML spec
                     "form-dup-name": "off",
+                    # Don't trip over unused disable blocks
+                    "no-unused-disable": "off",
                 },
             }
 
