@@ -64,7 +64,9 @@ class XMLDraft(Draft):
         """Get document name from reference."""
         series = ["rfc", "bcp", "fyi", "std"]
         # handle xinclude first
-        # FIXME: this assumes the xinclude is a bibxml href
+        # FIXME: this assumes the xinclude is a bibxml href; if it isn't, there can
+        # still be false negatives. it would be better to expand the xinclude and parse
+        # its seriesInfo.
         if ref.tag.endswith("}include"):
             name = re.search(
                 rf"reference\.({'|'.join(series).upper()})\.(\d{{4}})\.xml",
@@ -72,7 +74,9 @@ class XMLDraft(Draft):
             )
             if name:
                 return f"{name.group(1)}{int(name.group(2))}".lower()
-            name = re.search(r"reference\.I-D\.(.*)\.xml", ref.attrib["href"])
+            name = re.search(
+                r"reference\.I-D\.(?:draft-)?(.*)\.xml", ref.attrib["href"]
+            )
             if name:
                 return f"draft-{name.group(1)}"
             # can't extract the name, give up

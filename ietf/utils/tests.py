@@ -382,6 +382,9 @@ class XMLDraftTests(TestCase):
                 'rfc1207': XMLDraft.REF_TYPE_UNKNOWN,
                 'rfc4086': XMLDraft.REF_TYPE_NORMATIVE,
                 'draft-ietf-teas-pcecc-use-cases-00': XMLDraft.REF_TYPE_INFORMATIVE,
+                'draft-ietf-teas-pcecc-use-cases': XMLDraft.REF_TYPE_INFORMATIVE,
+                'draft-ietf-sipcore-multiple-reasons-00': XMLDraft.REF_TYPE_INFORMATIVE,
+                'draft-ietf-sipcore-multiple-reasons': XMLDraft.REF_TYPE_INFORMATIVE,
             }
         )
 

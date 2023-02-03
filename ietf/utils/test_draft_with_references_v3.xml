@@ -52,6 +52,9 @@
         <references>
             <name>Informative References</name>
             <xi:include href='https://xml.resource.org/public/rfc/bibxml3/reference.I-D.ietf-teas-pcecc-use-cases-00.xml'/>
+            <xi:include href='https://xml.resource.org/public/rfc/bibxml3/reference.I-D.ietf-teas-pcecc-use-cases.xml'/>
+            <xi:include href="https://bib.ietf.org/public/rfc/bibxml3/reference.I-D.draft-ietf-sipcore-multiple-reasons-00.xml" />
+            <xi:include href="https://bib.ietf.org/public/rfc/bibxml3/reference.I-D.draft-ietf-sipcore-multiple-reasons.xml" />
             <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml9/reference.BCP.0014.xml" />
             <reference anchor='RFC0255' target='https://www.rfc-editor.org/info/rfc255'>
                 <front>
