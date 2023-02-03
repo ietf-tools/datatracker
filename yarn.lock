@@ -121,98 +121,98 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fullcalendar/bootstrap5@npm:5.11.3":
-  version: 5.11.3
-  resolution: "@fullcalendar/bootstrap5@npm:5.11.3"
+"@fullcalendar/bootstrap5@npm:5.11.4":
+  version: 5.11.4
+  resolution: "@fullcalendar/bootstrap5@npm:5.11.4"
   dependencies:
-    "@fullcalendar/common": ~5.11.3
+    "@fullcalendar/common": ~5.11.4
     tslib: ^2.1.0
-  checksum: a63a500d729c570ce70a85b1fbeb8f8cd5f3958240b89a9e557fc25520901e4397f20c60018e131dfb958985a3d8b2e5aab91b26a6a57be440c251984ba8e8da
+  checksum: 26f838f30425ddd629026d7d6e8c4bf1b016b87f7b9ee1bfafa6d4ee536f140aee64b8cdc159ec338a8789d3353baa5e7e725b509389cfe4a47d20bc87a93009
   languageName: node
   linkType: hard
 
-"@fullcalendar/common@npm:~5.11.3":
-  version: 5.11.3
-  resolution: "@fullcalendar/common@npm:5.11.3"
+"@fullcalendar/common@npm:~5.11.4":
+  version: 5.11.4
+  resolution: "@fullcalendar/common@npm:5.11.4"
   dependencies:
     tslib: ^2.1.0
-  checksum: be4b365dca5ed075cc03aedbc0d6dcaa11f6e2ea6833c783212c79c7b657686a2dfc5390f1ead32bf596445a025daaa1a1179f2d4d563b71b4e1986d801c2fd4
+  checksum: 8fc0e05539ba83d310eb5a7163dcd10582d83465393cccb525022b20c954e29e6361b289a2d2eec1ae5b5d950700333739b81cb5e81bc8cb72f682484ca697af
   languageName: node
   linkType: hard
 
-"@fullcalendar/core@npm:5.11.3, @fullcalendar/core@npm:~5.11.3":
-  version: 5.11.3
-  resolution: "@fullcalendar/core@npm:5.11.3"
+"@fullcalendar/core@npm:5.11.4, @fullcalendar/core@npm:~5.11.4":
+  version: 5.11.4
+  resolution: "@fullcalendar/core@npm:5.11.4"
   dependencies:
-    "@fullcalendar/common": ~5.11.3
+    "@fullcalendar/common": ~5.11.4
     preact: ^10.0.5
     tslib: ^2.1.0
-  checksum: 2774d0fa18c7a54676f706a1fdec7dd009b1d00add2dce68cd144b763d851d458461c67a9d534e5e553d7a133c49b0f1ea4868d286a5af57029092248421652a
+  checksum: 11652a58dc4a7af2b9c552ca71e4215c56d574f7d639deab0a6604afa0a67c7bfef445d5a6e364b6bc6b0ffb333ba9e7730e184d480e0113dce90c470d988d17
   languageName: node
   linkType: hard
 
-"@fullcalendar/daygrid@npm:5.11.3, @fullcalendar/daygrid@npm:~5.11.3":
-  version: 5.11.3
-  resolution: "@fullcalendar/daygrid@npm:5.11.3"
+"@fullcalendar/daygrid@npm:5.11.4, @fullcalendar/daygrid@npm:~5.11.4":
+  version: 5.11.4
+  resolution: "@fullcalendar/daygrid@npm:5.11.4"
   dependencies:
-    "@fullcalendar/common": ~5.11.3
+    "@fullcalendar/common": ~5.11.4
     tslib: ^2.1.0
-  checksum: 426b53c5bb21a9e7df82bf70b44221fb5c50e0d6216fbc91d586abffe48e61ed582aa4b5cb1ede78ba16063ded30f5ea1ec1cc5db51932b644825fcef87d2b15
+  checksum: a25d83cfe5b3ac3feeb49af47701c54e858d30b0b53871df2a83aa7edbcc7d49f435d59fdbf3d6e18b5699caced8133e9c4b1c919caca2c8717bd92f57c08ab4
   languageName: node
   linkType: hard
 
-"@fullcalendar/interaction@npm:5.11.3":
-  version: 5.11.3
-  resolution: "@fullcalendar/interaction@npm:5.11.3"
+"@fullcalendar/interaction@npm:5.11.4":
+  version: 5.11.4
+  resolution: "@fullcalendar/interaction@npm:5.11.4"
   dependencies:
-    "@fullcalendar/common": ~5.11.3
+    "@fullcalendar/common": ~5.11.4
     tslib: ^2.1.0
-  checksum: e8a1b49f2f89d2139decb1a85aebc3ae45d324151fe5a2bd4b3e9f75ed48a7a8548bf05a25bc01015a1242b90ffe23ccc24f2787f5cf9b6e5ce22f74d7c3d731
+  checksum: 88231b925498b947f5af98fcabf564f7d72ecde6660696e5aec7aa5c4aca7988deab74c9486a30e0e461cdd31913c560bb016f54a61641d13359488e845e053f
   languageName: node
   linkType: hard
 
-"@fullcalendar/list@npm:5.11.3":
-  version: 5.11.3
-  resolution: "@fullcalendar/list@npm:5.11.3"
+"@fullcalendar/list@npm:5.11.4":
+  version: 5.11.4
+  resolution: "@fullcalendar/list@npm:5.11.4"
   dependencies:
-    "@fullcalendar/common": ~5.11.3
+    "@fullcalendar/common": ~5.11.4
     tslib: ^2.1.0
-  checksum: 976da49b12fbfbf19a37411b48e2ea334ae9150dedea4df98154d8240c00e9da5fead392a5be8a7af5c88dccc56e13796872645bd05b534cff7010a6a0596f06
+  checksum: e2cec5e89c57836a9ca4db57fbe67e16f78d91191df39ac0b5d0f18c1fdac9763f04647ae42e5f2d31ffa3cd245423d3aec449ed6c84fafc0195e62079a4eedc
   languageName: node
   linkType: hard
 
-"@fullcalendar/luxon2@npm:5.11.3":
-  version: 5.11.3
-  resolution: "@fullcalendar/luxon2@npm:5.11.3"
+"@fullcalendar/luxon2@npm:5.11.4":
+  version: 5.11.4
+  resolution: "@fullcalendar/luxon2@npm:5.11.4"
   dependencies:
-    "@fullcalendar/common": ~5.11.3
+    "@fullcalendar/common": ~5.11.4
     tslib: ^2.1.0
   peerDependencies:
     luxon: ^2.0.0
-  checksum: 75330185901d30a02a91363ed58241d60ae088ae8beec7146f7fd33fa1d28e4fea62152e58fc772f40fc5de4d198f3106c240c79883d3108ec3d97060c7618b0
+  checksum: 503e3e32d27c1fbd95d0e7c9cbf89e751eaaf57920017672d3f716fa0ba919f618ccefb6d278c60ee72b9ac8756e1f57ad9148084ffa356bf51950f9e7ee8426
   languageName: node
   linkType: hard
 
-"@fullcalendar/timegrid@npm:5.11.3":
-  version: 5.11.3
-  resolution: "@fullcalendar/timegrid@npm:5.11.3"
+"@fullcalendar/timegrid@npm:5.11.4":
+  version: 5.11.4
+  resolution: "@fullcalendar/timegrid@npm:5.11.4"
   dependencies:
-    "@fullcalendar/common": ~5.11.3
-    "@fullcalendar/daygrid": ~5.11.3
+    "@fullcalendar/common": ~5.11.4
+    "@fullcalendar/daygrid": ~5.11.4
     tslib: ^2.1.0
-  checksum: ce675eca7da78ec7aab5c16eb951a70802998a0215c2c42a003afd375680817cf05a7bab1b271333e88634da3ebd50fc238c368ce49241ec9716b0f57276d4f0
+  checksum: 3a2fccac65198c5fffa53286fcbb2556b6e3885cfc6f7978b7ee21c57cbc2a58617e6c54eff977f5234163cef3281e50548327a06cf253acc43c6881bed00f2c
   languageName: node
   linkType: hard
 
-"@fullcalendar/vue3@npm:5.11.3":
-  version: 5.11.3
-  resolution: "@fullcalendar/vue3@npm:5.11.3"
+"@fullcalendar/vue3@npm:5.11.4":
+  version: 5.11.4
+  resolution: "@fullcalendar/vue3@npm:5.11.4"
   dependencies:
-    "@fullcalendar/core": ~5.11.3
+    "@fullcalendar/core": ~5.11.4
     tslib: ^2.1.0
   peerDependencies:
     vue: ^3.0.11
-  checksum: 13a648a0c5a5f26d2f71fa9d30187b8c98a440d82e1dfc5bea1dd4e7350115b7a53249bbc65bd8053e17e2cfc7ef1dc4d743be911f34ad0bea4228d79df14046
+  checksum: 3e0fc0423b396813ef1d6409951903bd1e411c0ab7e64aa7d28ba81e3066e50c7b24d224c14d873a0ffa0aacc94d4bc64097d4fb6083870f748a9502fefebc29
   languageName: node
   linkType: hard
 
@@ -6159,14 +6159,14 @@ browserlist@latest:
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
     "@faker-js/faker": 7.6.0
-    "@fullcalendar/bootstrap5": 5.11.3
-    "@fullcalendar/core": 5.11.3
-    "@fullcalendar/daygrid": 5.11.3
-    "@fullcalendar/interaction": 5.11.3
-    "@fullcalendar/list": 5.11.3
-    "@fullcalendar/luxon2": 5.11.3
-    "@fullcalendar/timegrid": 5.11.3
-    "@fullcalendar/vue3": 5.11.3
+    "@fullcalendar/bootstrap5": 5.11.4
+    "@fullcalendar/core": 5.11.4
+    "@fullcalendar/daygrid": 5.11.4
+    "@fullcalendar/interaction": 5.11.4
+    "@fullcalendar/list": 5.11.4
+    "@fullcalendar/luxon2": 5.11.4
+    "@fullcalendar/timegrid": 5.11.4
+    "@fullcalendar/vue3": 5.11.4
     "@parcel/optimizer-data-url": 2.8.3
     "@parcel/transformer-inline-string": 2.8.3
     "@parcel/transformer-sass": 2.8.3
