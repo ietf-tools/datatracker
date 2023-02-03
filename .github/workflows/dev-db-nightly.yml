@@ -23,12 +23,23 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      skipMariaDBBuild:
+        description: 'Skip MariaDB Build'
+        default: false
+        required: true
+        type: boolean
+      exportDumpAsSQL:
+        description: 'Save PostgreSQL Debug Dump'
+        default: false
+        required: true
+        type: boolean
 
 jobs:
   build-mariadb:
     name: Build MariaDB Docker Images
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ github.ref == 'refs/heads/main' && github.event.inputs.skipMariaDBBuild == 'false' }}
     permissions:
       contents: read
       packages: write
@@ -96,6 +107,7 @@ jobs:
     name: Migrate MySQL to PostgreSQL DB
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    if: ${{ always() && !failure() }}
     needs: [combine-mariadb]
     permissions:
       contents: read
@@ -141,10 +153,22 @@ jobs:
       with:
         name: dump
         path: ietf.dump
+        
+    - name: Export as SQL (Debug)
+      if: ${{ github.event.inputs.exportDumpAsSQL == 'true' }}
+      run: pg_dump -h pgdb -U django ietf > ietf.sql
+      
+    - name: Upload SQL DB Dump (Debug)
+      if: ${{ github.event.inputs.exportDumpAsSQL == 'true' }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: dumpsql
+        path: ietf.sql
           
   build:
     name: Build PostgreSQL Docker Images
     runs-on: ubuntu-latest
+    if: ${{ always() && !failure() }}
     needs: [migrate]
     permissions:
       contents: read
