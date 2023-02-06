@@ -213,7 +213,7 @@ test.describe('past - desktop', () => {
           const headerRow = page.locator(`#agenda-rowid-sesshd-${event.id}`)
           await expect(headerRow).toBeVisible()
           await expect(headerRow.locator('.agenda-table-cell-ts')).toContainText(eventTimeSlot)
-          await expect(headerRow.locator('.agenda-table-cell-name')).toContainText(`${DateTime.fromISO(event.startDateTime).toFormat('cccc')} ${event.name}`)
+          await expect(headerRow.locator('.agenda-table-cell-name')).toContainText(`${DateTime.fromISO(event.startDateTime).toFormat('cccc')} ${event.slotName}`)
         }
         // Timeslot
         await expect(row.locator('.agenda-table-cell-ts')).toContainText('—')
