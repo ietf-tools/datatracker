@@ -3621,7 +3621,8 @@ def organize_proceedings_sessions(sessions):
                 """
                 material_times = {}  # key is material, value is first timestamp it appeared
                 for s, mats in items:
-                    timestamp = s.official_timeslotassignment().timeslot.time
+                    tsa = s.official_timeslotassignment()
+                    timestamp = tsa.timeslot.time if tsa else None
                     if not isinstance(mats, list):
                         mats = [mats]
                     for mat in mats:
@@ -3640,7 +3641,7 @@ def organize_proceedings_sessions(sessions):
                 'group': group,
                 'name': sess_name,
                 'canceled': all_canceled,
-                # pass sessions instead of the materials here so session data (like time) is easily available
+                'has_materials': s.sessionpresentation_set.exists(),
                 'agendas': _format_materials((s, s.agenda()) for s in ss),
                 'minutes': _format_materials((s, s.minutes()) for s in ss),
                 'bluesheets': _format_materials((s, s.bluesheets()) for s in ss),
@@ -3687,9 +3688,13 @@ def proceedings(request, num=None):
         sessions.filter(name__icontains='plenary')
         .exclude(current_status='notmeet')
     )
-    irtf, _ = organize_proceedings_sessions(
+    irtf_meeting, irtf_not_meeting = organize_proceedings_sessions(
         sessions.filter(group__parent__acronym = 'irtf').order_by('group__acronym')
     )
+    # per Colin (datatracker #5010) - don't report not meeting rags
+    irtf_not_meeting = [item for item in irtf_not_meeting if item["group"].type_id != "rag"]
+    irtf = {"meeting_groups":irtf_meeting, "not_meeting_groups":irtf_not_meeting}
+
     training, _ = organize_proceedings_sessions(
         sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['regular', 'other',])
         .exclude(current_status='notmeet')

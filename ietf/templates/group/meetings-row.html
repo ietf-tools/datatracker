@@ -30,7 +30,7 @@
             {% if s.current_status == "sched" %}{{ s.time|date:"D" }}{% endif %}
         </td>
         <td>
-            {% if show_ical %}
+            {% if show_ical and s.current_status == "sched" %}
                 {% if s.meeting.type_id == 'ietf' %}
                     {{ s.time|date:"H:i" }}
                     <a class="btn btn-primary btn-sm"
