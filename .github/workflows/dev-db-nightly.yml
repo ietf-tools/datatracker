@@ -39,7 +39,7 @@ jobs:
   build-mariadb:
     name: Build MariaDB Docker Images
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/main' && github.event.inputs.skipMariaDBBuild == 'false' }}
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event.inputs.skipMariaDBBuild == 'false') }}
     permissions:
       contents: read
       packages: write
