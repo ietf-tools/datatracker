@@ -24,6 +24,9 @@ class LinkifyExtension(Extension):
 
     def extendMarkdown(self, md):
         md.postprocessors.register(LinkifyPostprocessor(md), "linkify", 50)
+        # disable automatic links via angle brackets for email addresses
+        md.inlinePatterns.deregister("automail")
+        # "autolink" for URLs does not seem to cause issues, so leave it on
 
 
 class LinkifyPostprocessor(Postprocessor):
