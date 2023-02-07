@@ -172,6 +172,42 @@ class AgendaApiTests(TestCase):
         self.assertEqual(shown['room'], room.name)
         self.assertEqual(shown['location'], {'name': room.floorplan.name, 'short': room.floorplan.short})
 
+    def test_agenda_extract_schedule_names(self):
+        meeting = MeetingFactory(type_id='ietf')
+        named_timeslots = TimeSlotFactory.create_batch(2, meeting=meeting, name='Timeslot Name')
+        unnamed_timeslots = TimeSlotFactory.create_batch(2, meeting=meeting, name='')
+        named_sessions = SessionFactory.create_batch(2, meeting=meeting, name='Session Name')
+        unnamed_sessions = SessionFactory.create_batch(2, meeting=meeting, name='')
+        pk_with = {
+            'both named': named_sessions[0].timeslotassignments.create(
+                schedule=meeting.schedule,
+                timeslot=named_timeslots[0],
+            ).pk,
+            'session named': named_sessions[1].timeslotassignments.create(
+                schedule=meeting.schedule,
+                timeslot=unnamed_timeslots[0],
+            ).pk,
+            'timeslot named': unnamed_sessions[0].timeslotassignments.create(
+                schedule=meeting.schedule,
+                timeslot=named_timeslots[1],
+            ).pk,
+            'neither named': unnamed_sessions[1].timeslotassignments.create(
+                schedule=meeting.schedule,
+                timeslot=unnamed_timeslots[1],
+            ).pk,
+        }
+        processed = preprocess_assignments_for_agenda(meeting.schedule.assignments.all(), meeting)
+        AgendaKeywordTagger(assignments=processed).apply()
+        extracted = {item.pk: agenda_extract_schedule(item) for item in processed}
+        self.assertEqual(extracted[pk_with['both named']]['name'], 'Session Name')
+        self.assertEqual(extracted[pk_with['both named']]['slotName'], 'Timeslot Name')
+        self.assertEqual(extracted[pk_with['session named']]['name'], 'Session Name')
+        self.assertEqual(extracted[pk_with['session named']]['slotName'], '')
+        self.assertEqual(extracted[pk_with['timeslot named']]['name'], '')
+        self.assertEqual(extracted[pk_with['timeslot named']]['slotName'], 'Timeslot Name')
+        self.assertEqual(extracted[pk_with['neither named']]['name'], '')
+        self.assertEqual(extracted[pk_with['neither named']]['slotName'], '')
+
 
 class MeetingTests(BaseMeetingTestCase):
     def test_meeting_agenda(self):
