@@ -4,7 +4,7 @@
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-{% block title %}Draft submission approvals{% endblock %}
+{% block title %}I-D submission approvals{% endblock %}
 {% load ietf_filters %}
 {% block submit_content %}
     {% origin %}
@@ -18,7 +18,7 @@
             <table class="approvals table table-sm table-striped tablesorter">
                 <thead>
                     <tr>
-                        <th scope="col" data-sort="draft">Draft</th>
+                        <th scope="col" data-sort="draft">Internet-Draft</th>
                         <th scope="col" data-sort="date">Submitted</th>
                     </tr>
                 </thead>
@@ -36,7 +36,7 @@
                 </tbody>
             </table>
         {% endif %}
-        <h2 class="mt-5" id="preapprovals">Pre-approved drafts not yet submitted</h2>
+        <h2 class="mt-5" id="preapprovals">Pre-approved Internet-Drafts not yet submitted</h2>
         {% if user|has_role:"Secretariat,WG Chair,RG Chair" %}
             <p>
                 <a class="btn btn-primary"
@@ -51,7 +51,7 @@
             <table class="preapprovals table table-sm table-striped tablesorter">
                 <thead>
                     <tr>
-                        <th scope="col" data-sort="draft">Draft name</th>
+                        <th scope="col" data-sort="draft">Internet-Draft name</th>
                         <th scope="col" data-sort="date">Pre-approved</th>
                         <th scope="col" data-sort="by">By</th>
                         <th scope="col"></th>
@@ -74,16 +74,16 @@
                 </tbody>
             </table>
         {% endif %}
-        <h2 class="mt-5" id="recently-approved">Approved drafts within the past {{ days }} days</h2>
+        <h2 class="mt-5" id="recently-approved">Approved Internet-Drafts within the past {{ days }} days</h2>
         {% if not recently_approved %}
             <p class="alert alert-info my-3">
-                No drafts approved.
+                No Internet-Drafts approved.
             </p>
         {% else %}
             <table class="recently-approved table table-sm table-striped tablesorter">
                 <thead>
                     <tr>
-                        <th scope="col" data-sort="draft">Draft</th>
+                        <th scope="col" data-sort="draft">Internet-Draft</th>
                         <th scope="col" data-sort="date">Submitted</th>
                     </tr>
                 </thead>
@@ -103,7 +103,7 @@
         <h2>Submission of approvals</h2>
         <p>
             This is where chairs and the secretariat can approve and pre-approve document
-            submissions which require approval, such as WG <code>-00</code> drafts.
+            submissions which require approval, such as WG <code>-00</code> Internet-Drafts.
         </p>
         <p>
             You need to

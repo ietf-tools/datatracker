@@ -90,13 +90,13 @@
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
            href="{% url "ietf.doc.views_search.recent_drafts" %}">
-            Recent drafts
+            Recent I-Ds
         </a>
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
            href="{% url "ietf.submit.views.upload_submission" %}">
-            Draft submission
+            I-D submission
         </a>
     </li>
     <li>
@@ -134,7 +134,7 @@
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
                    href="{% url "ietf.submit.views.approvals" %}">
-                    Approve a draft
+                    Approve an I-D
                 </a>
             </li>
             {% for g in user|docman_groups %}
@@ -377,7 +377,7 @@
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
                    href="{% url 'ietf.stats.views.document_stats' %}">
-                    Drafts/RFCs
+                    I-Ds/RFCs
                 </a>
             </li>
             <li>
