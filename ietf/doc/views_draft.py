@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-# changing state and metadata on Internet Drafts
+# changing state and metadata on Internet-Drafts
 
 import datetime
 import os
@@ -84,7 +84,7 @@ class ChangeStateForm(forms.Form):
 
 @role_required('Area Director','Secretariat')
 def change_state(request, name):
-    """Change IESG state of Internet Draft, notifying parties as necessary
+    """Change IESG state of Internet-Draft, notifying parties as necessary
     and logging the change as a comment."""
     doc = get_object_or_404(Document, docalias__name=name)
 
@@ -229,7 +229,7 @@ class ChangeIanaStateForm(forms.Form):
 
 @role_required('Secretariat', 'IANA')
 def change_iana_state(request, name, state_type):
-    """Change IANA review state of Internet Draft. Normally, this is done via
+    """Change IANA review state of Internet-Draft. Normally, this is done via
     automatic sync, but this form allows one to set it manually."""
     doc = get_object_or_404(Document, docalias__name=name)
 
@@ -631,7 +631,7 @@ def to_iesg(request,name):
 
 @role_required('Area Director','Secretariat')
 def edit_info(request, name):
-    """Edit various Internet Draft attributes, notifying parties as
+    """Edit various Internet-Draft attributes, notifying parties as
     necessary and logging changes as document events."""
     doc = get_object_or_404(Document, docalias__name=name)
     if doc.get_state_slug() == "expired":
@@ -790,7 +790,7 @@ def edit_info(request, name):
 
 @role_required('Area Director','Secretariat')
 def request_resurrect(request, name):
-    """Request resurrect of expired Internet Draft."""
+    """Request resurrect of expired Internet-Draft."""
     doc = get_object_or_404(Document, docalias__name=name)
     if doc.get_state_slug() != "expired":
         raise Http404
@@ -813,7 +813,7 @@ def request_resurrect(request, name):
 
 @role_required('Secretariat')
 def resurrect(request, name):
-    """Resurrect expired Internet Draft."""
+    """Resurrect expired Internet-Draft."""
     doc = get_object_or_404(Document, docalias__name=name)
     if doc.get_state_slug() != "expired":
         raise Http404

@@ -13,7 +13,7 @@ SYNOPSIS
 
 DESCRIPTION
         Extract information about authors' names and email addresses,
-        intended status and number of pages from Internet Drafts.
+        intended status and number of pages from Internet-Drafts.
         The information is emitted in the form of a line containing
         xml-style attributes, prefixed with the name of the draft.
 
@@ -630,7 +630,7 @@ class PlaintextDraft(Draft):
         address_section = r"^ *([0-9]+\.)? *(Author|Editor)('s|s'|s|\(s\)) (Address|Addresses|Information)"
 
         ignore = [
-            "Standards Track", "Current Practice", "Internet Draft", "Working Group",
+            "Standards Track", "Current Practice", "Internet-Draft", "Working Group",
             "Expiration Date", 
             ]
 
