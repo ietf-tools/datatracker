@@ -15,7 +15,7 @@ DESCRIPTION:{{ d.name.desc }}{% if first and d.name.slug == 'openreg' or first a
  {{ request.scheme }}://{{ request.get_host }}{% url 'ietf.secr.sreq.views.main' %}{% endif %}{% if d.name.slug == 'cutoffbofreq' %}\n
  To request a BOF, please see instructions on Requesting a BOF:\n
  https://www.ietf.org/how/bofs/bof-procedures/{% endif %}{% if d.name.slug == 'idcutoff' %}\n
- Upload using the ID Submission Tool:\n
+ Upload using the I-D Submission Tool:\n
  {{ request.scheme }}://{{ request.get_host }}{% url 'ietf.submit.views.upload_submission' %}{% endif %}{% if d.name.slug == 'draftwgagenda' or d.name.slug == 'revwgagenda' or d.name.slug == 'procsub' or d.name.slug == 'revslug' %}\n
  Upload using the Meeting Materials Management Tool:\n
  {{ request.scheme }}://{{ request.get_host }}{% url 'ietf.meeting.views.materials' num=meeting.number %}{% endif %}

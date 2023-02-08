@@ -62,7 +62,7 @@ def all_id_txt():
             state += "::" + "::".join(tags)
         add_line(d.name + "-" + d.rev,
                  formatted_rev_date(d.name),
-                 "In IESG processing - ID Tracker state <" + state + ">",
+                 "In IESG processing - I-D Tracker state <" + state + ">",
                  "",
                  )
 

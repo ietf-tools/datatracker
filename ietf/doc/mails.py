@@ -98,7 +98,7 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
     text = strip_tags(text)
 
     send_mail(request, to, None,
-              "ID Tracker Stream Change Notice: %s" % doc.file_tag(),
+              "I-D Tracker Stream Change Notice: %s" % doc.file_tag(),
               "doc/mail/stream_changed_email.txt",
               dict(text=text,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),

@@ -22,7 +22,7 @@ DEFAULT_DAYS = 7
 class Command(BaseCommand):
     help = ('Generate draft bibxml files for xml2rfc references, placing them in the '
             'directory configured in settings.BIBXML_BASE_PATH: %s.  '
-            'By default, generate files as needed for new draft revisions from the '
+            'By default, generate files as needed for new Internet-Draft revisions from the '
             'last %s days.' % (settings.BIBXML_BASE_PATH, DEFAULT_DAYS))
 
     def add_arguments(self, parser):

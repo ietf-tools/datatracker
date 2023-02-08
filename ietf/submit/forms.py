@@ -103,7 +103,7 @@ class SubmissionBaseUploadForm(forms.Form):
             elif now <= cutoff_00:
                 self.cutoff_warning = (
                     'The last submission time for new Internet-Drafts before the meeting is %s.<br>'
-                    'After that, you will not be able to submit drafts until after %s (IETF-meeting local time)' % (cutoff_00_str, reopen_str, ))
+                    'After that, you will not be able to submit Internet-Drafts until after %s (IETF-meeting local time)' % (cutoff_00_str, reopen_str, ))
         else:
             if now.date() >= (cutoff_00.date() - meeting.idsubmit_cutoff_warning_days) and now.date() < cutoff_00.date():
                 self.cutoff_warning = ( 'The last submission time for new documents (i.e., version -00 Internet-Drafts) before %s is %s.<br><br>' % (meeting, cutoff_00_str) +
@@ -207,7 +207,7 @@ class SubmissionBaseUploadForm(forms.Form):
                     self.add_error('xml', msgs)
                     return
                 except Exception as e:
-                    self.add_error('xml', f'Error parsing XML draft: {e}')
+                    self.add_error('xml', f'Error parsing XML Internet-Draft: {e}')
                     return
 
                 self.filename = xml_draft.filename
@@ -236,19 +236,19 @@ class SubmissionBaseUploadForm(forms.Form):
             raise forms.ValidationError('')
 
         if not self.filename:
-            raise forms.ValidationError("Could not extract a valid draft name from the upload.  "
-                "To fix this in a text upload, please make sure that the full draft name including "
+            raise forms.ValidationError("Could not extract a valid Internet-Draft name from the upload.  "
+                "To fix this in a text upload, please make sure that the full Internet-Draft name including "
                 "revision number appears centered on its own line below the document title on the "
                 "first page.  In an xml upload, please make sure that the top-level <rfc/> "
-                "element has a docName attribute which provides the full draft name including "
+                "element has a docName attribute which provides the full Internet-Draft name including "
                 "revision number.")
 
         if not self.revision:
-            raise forms.ValidationError("Could not extract a valid draft revision from the upload.  "
-                "To fix this in a text upload, please make sure that the full draft name including "
+            raise forms.ValidationError("Could not extract a valid Internet-Draft revision from the upload.  "
+                "To fix this in a text upload, please make sure that the full Internet-Draft name including "
                 "revision number appears centered on its own line below the document title on the "
                 "first page.  In an xml upload, please make sure that the top-level <rfc/> "
-                "element has a docName attribute which provides the full draft name including "
+                "element has a docName attribute which provides the full Internet-Draft name including "
                 "revision number.")
 
         if self.cleaned_data.get('txt') or self.cleaned_data.get('xml'):
@@ -272,7 +272,7 @@ class SubmissionBaseUploadForm(forms.Form):
                 raise forms.ValidationError(mark_safe(self.cutoff_warning))
             # check thresholds that depend on the draft / group
             self.check_submissions_thresholds(
-                "for the draft %s" % self.filename,
+                "for the Internet-Draft %s" % self.filename,
                 dict(name=self.filename, rev=self.revision, submission_date=today),
                 settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME, settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME_SIZE,
             )
@@ -306,7 +306,7 @@ class SubmissionBaseUploadForm(forms.Form):
         else:
             name_parts = name.split("-")
             if len(name_parts) < 3:
-                raise forms.ValidationError("The draft name \"%s\" is missing a third part, please rename it" % name)
+                raise forms.ValidationError("The Internet-Draft name \"%s\" is missing a third part, please rename it" % name)
 
             if name.startswith('draft-ietf-') or name.startswith("draft-irtf-"):
                 if name_parts[1] == "ietf":
@@ -324,7 +324,7 @@ class SubmissionBaseUploadForm(forms.Form):
                 try:
                     return Group.objects.get(acronym=name_parts[2], type=group_type)
                 except Group.DoesNotExist:
-                    raise forms.ValidationError('There is no active group with acronym \'%s\', please rename your draft' % name_parts[2])
+                    raise forms.ValidationError('There is no active group with acronym \'%s\', please rename your Internet-Draft' % name_parts[2])
 
             elif name.startswith("draft-rfc-"):
                 return Group.objects.get(acronym="iesg")
@@ -338,7 +338,7 @@ class SubmissionBaseUploadForm(forms.Form):
                     if group:
                         return group
                     else:
-                        raise forms.ValidationError('Draft names starting with draft-%s- are restricted, please pick a different name' % ntype)
+                        raise forms.ValidationError('Internet-Draft names starting with draft-%s- are restricted, please pick a different name' % ntype)
             return None
 
 
@@ -541,19 +541,19 @@ class DeprecatedSubmissionBaseUploadForm(SubmissionBaseUploadForm):
             raise forms.ValidationError('')
 
         if not self.filename:
-            raise forms.ValidationError("Could not extract a valid draft name from the upload.  "
-                "To fix this in a text upload, please make sure that the full draft name including "
+            raise forms.ValidationError("Could not extract a valid Internet-Draft name from the upload.  "
+                "To fix this in a text upload, please make sure that the full Internet-Draft name including "
                 "revision number appears centered on its own line below the document title on the "
                 "first page.  In an xml upload, please make sure that the top-level <rfc/> "
-                "element has a docName attribute which provides the full draft name including "
+                "element has a docName attribute which provides the full Internet-Draft name including "
                 "revision number.")
 
         if not self.revision:
-            raise forms.ValidationError("Could not extract a valid draft revision from the upload.  "
-                "To fix this in a text upload, please make sure that the full draft name including "
+            raise forms.ValidationError("Could not extract a valid Internet-Draft revision from the upload.  "
+                "To fix this in a text upload, please make sure that the full Internet-Draft name including "
                 "revision number appears centered on its own line below the document title on the "
                 "first page.  In an xml upload, please make sure that the top-level <rfc/> "
-                "element has a docName attribute which provides the full draft name including "
+                "element has a docName attribute which provides the full Internet-Draft name including "
                 "revision number.")
 
         if not self.title:
@@ -576,7 +576,7 @@ class DeprecatedSubmissionBaseUploadForm(SubmissionBaseUploadForm):
             today = date_today()
 
             self.check_submissions_thresholds(
-                "for the draft %s" % self.filename,
+                "for the Internet-Draft %s" % self.filename,
                 dict(name=self.filename, rev=self.revision, submission_date=today),
                 settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME, settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME_SIZE,
             )
@@ -653,24 +653,24 @@ class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
                 self.add_error(
                     'replaces',
                     forms.ValidationError(
-                        'Unknown draft name(s): ' + ', '.join(unknown_names)
+                        'Unknown Internet-Draft name(s): ' + ', '.join(unknown_names)
                     ),
                 )
             for alias in aliases_replaced:
                 if alias.document.name == self.filename:
                     self.add_error(
                         'replaces',
-                        forms.ValidationError("A draft cannot replace itself"),
+                        forms.ValidationError("An Internet-Draft cannot replace itself"),
                     )
                 elif alias.document.type_id != "draft":
                     self.add_error(
                         'replaces',
-                        forms.ValidationError("A draft can only replace another draft"),
+                        forms.ValidationError("An Internet-Draft can only replace another Internet-Draft"),
                     )
                 elif alias.document.get_state_slug() == "rfc":
                     self.add_error(
                         'replaces',
-                        forms.ValidationError("A draft cannot replace an RFC"),
+                        forms.ValidationError("An Internet-Draft cannot replace an RFC"),
                     )
                 elif alias.document.get_state_slug('draft-iesg') in ('approved', 'ann', 'rfcqueue'):
                     self.add_error(
@@ -716,7 +716,7 @@ class SubmitterForm(NameEmailForm):
         return line
 
 class ReplacesForm(forms.Form):
-    replaces = SearchableDocAliasesField(required=False, help_text="Any drafts that this document replaces (approval required for replacing a draft you are not the author of)")
+    replaces = SearchableDocAliasesField(required=False, help_text="Any Internet-Drafts that this document replaces (approval required for replacing an Internet-Draft you are not the author of)")
 
     def __init__(self, *args, **kwargs):
         self.name = kwargs.pop("name")
@@ -725,11 +725,11 @@ class ReplacesForm(forms.Form):
     def clean_replaces(self):
         for alias in self.cleaned_data['replaces']:
             if alias.document.name == self.name:
-                raise forms.ValidationError("A draft cannot replace itself.")
+                raise forms.ValidationError("An Internet-Draft cannot replace itself.")
             if alias.document.type_id != "draft":
-                raise forms.ValidationError("A draft can only replace another draft")
+                raise forms.ValidationError("An Internet-Draft can only replace another Internet-Draft")
             if alias.document.get_state_slug() == "rfc":
-                raise forms.ValidationError("A draft cannot replace an RFC")
+                raise forms.ValidationError("An Internet-Draft cannot replace an RFC")
             if alias.document.get_state_slug('draft-iesg') in ('approved','ann','rfcqueue'):
                 raise forms.ValidationError(alias.name+" is approved by the IESG and cannot be replaced")
         return self.cleaned_data['replaces']
@@ -781,15 +781,15 @@ class PreapprovalForm(forms.Form):
         if components[-1] == "00":
             raise forms.ValidationError("Name appears to end with a revision number -00 - do not include the revision.")
         if len(components) < 4:
-            raise forms.ValidationError("Name has less than four dash-delimited components - can't form a valid group draft name.")
+            raise forms.ValidationError("Name has less than four dash-delimited components - can't form a valid group Internet-Draft name.")
         acronym = components[2]
         if acronym not in [ g.acronym for g in self.groups ]:
-            raise forms.ValidationError("Group acronym not recognized as one you can approve drafts for.")
+            raise forms.ValidationError("Group acronym not recognized as one you can approve Internet-Drafts for.")
 
         if Preapproval.objects.filter(name=n):
             raise forms.ValidationError("Pre-approval for this name already exists.")
         if Submission.objects.filter(state="posted", name=n):
-            raise forms.ValidationError("A draft with this name has already been submitted and accepted. A pre-approval would not make any difference.")
+            raise forms.ValidationError("An Internet-Draft with this name has already been submitted and accepted. A pre-approval would not make any difference.")
 
         return n
 
@@ -802,7 +802,7 @@ class SubmissionEmailForm(forms.Form):
     if submission_pk is None we are starting a new submission and name
     must be unique. Otherwise the name must match the submission.name.
     '''
-    name = forms.CharField(required=True, max_length=255, label="Draft name")
+    name = forms.CharField(required=True, max_length=255, label="Internet-Draft name")
     submission_pk = forms.IntegerField(required=False, widget=forms.HiddenInput())
     direction = forms.ChoiceField(choices=(("incoming", "Incoming"), ("outgoing", "Outgoing")),
                                   widget=forms.RadioSelect)

@@ -344,9 +344,9 @@ class ReplacesForm(forms.Form):
     def clean_replaces(self):
         for d in self.cleaned_data['replaces']:
             if d.document == self.doc:
-                raise forms.ValidationError("A draft can't replace itself")
+                raise forms.ValidationError("An Internet-Draft can't replace itself")
             if d.document.type_id == "draft" and d.document.get_state_slug() == "rfc":
-                raise forms.ValidationError("A draft can't replace an RFC")
+                raise forms.ValidationError("An Internet-Draft can't replace an RFC")
         return self.cleaned_data['replaces']
 
 def replaces(request, name):
@@ -858,7 +858,7 @@ def restore_draft_file(request, draft):
             shutil.move(file, settings.INTERNET_DRAFT_PATH)
             log.log("  Moved file %s to %s" % (file, settings.INTERNET_DRAFT_PATH))
         except shutil.Error as ex:
-            messages.warning(request, 'There was an error restoring the draft file: {} ({})'.format(file, ex))
+            messages.warning(request, 'There was an error restoring the Internet-Draft file: {} ({})'.format(file, ex))
             log.log("  Exception %s when attempting to move %s" % (ex, file))
 
 
@@ -1152,7 +1152,7 @@ class AdForm(forms.Form):
         state = self.doc.get_state('draft-iesg')
         if not ad:
             if state.slug not in ['idexists','dead']:
-                raise forms.ValidationError("Drafts in state %s must have an assigned AD." % state)
+                raise forms.ValidationError("Internet-Drafts in state %s must have an assigned AD." % state)
         return ad
 
 @role_required("Area Director", "Secretariat")

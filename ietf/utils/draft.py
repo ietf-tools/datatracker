@@ -936,7 +936,7 @@ class PlaintextDraft(Draft):
                                                         companies[i] = None
                                                         break
                                                 else:
-                                                    _warn("Author tuple doesn't match text in draft: %s, %s" % (authors[i], fullname))
+                                                    _warn("Author tuple doesn't match text in Internet-Draft: %s, %s" % (authors[i], fullname))
                                                     authors[i] = None
                                             break
                             except AssertionError:
@@ -1266,7 +1266,7 @@ def getmeta(fn):
     fields["eventsource"] = "draft"
 
     if " " in fn or not fn.endswith(".txt"):
-        _warn("Skipping unexpected draft name: '%s'" % (fn))
+        _warn("Skipping unexpected Internet-Draft name: '%s'" % (fn))
         return {}
 
     if os.path.exists(fn):
@@ -1409,7 +1409,7 @@ def _main(outfile=sys.stdout):
         files = [ "-" ]
 
     for file in files:
-        _debug( "Reading drafts from '%s'" % file)
+        _debug( "Reading Internet-Drafts from '%s'" % file)
         if file == "-":
             file = sys.stdin
         elif file.endswith(".gz"):

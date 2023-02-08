@@ -3249,7 +3249,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         process_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'cancel')
-        self.assertIn('Only XML draft submissions', submission.submissionevent_set.last().desc)
+        self.assertIn('Only XML Internet-Draft submissions', submission.submissionevent_set.last().desc)
 
         # wrong state
         submission = SubmissionFactory(
@@ -3416,7 +3416,7 @@ class ApiSubmitTests(BaseSubmitTestCase):
     def test_api_submit_info(self):
         url = urlreverse('ietf.submit.views.api_submit')
         r = self.client.get(url)
-        expected = "A simplified draft submission interface, intended for automation"
+        expected = "A simplified Internet-Draft submission interface, intended for automation"
         self.assertContains(r, expected, status_code=200)
 
     def test_api_submit_bad_method(self):

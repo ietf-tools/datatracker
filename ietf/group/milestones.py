@@ -29,7 +29,7 @@ class MilestoneForm(forms.Form):
     desc = forms.CharField(max_length=500, label="Milestone", required=True)
     due = DatepickerDateField(date_format="MM yyyy", picker_settings={"min-view-mode": "months", "autoclose": "1", "view-mode": "years" }, required=True)
     order = forms.IntegerField(required=True, widget=forms.HiddenInput)
-    docs = SearchableDocumentsField(label="Drafts", required=False, help_text="Any drafts that the milestone concerns.")
+    docs = SearchableDocumentsField(label="Internet-Drafts", required=False, help_text="Any Internet-Drafts that the milestone concerns.")
     resolved_checkbox = forms.BooleanField(required=False, label="Resolved")
     resolved = forms.CharField(label="Resolved as", max_length=50, required=False)
 
