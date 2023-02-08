@@ -13,7 +13,6 @@ import textwrap
 
 from collections import defaultdict, namedtuple, Counter
 from typing import Union
-from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
