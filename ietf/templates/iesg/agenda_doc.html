@@ -58,7 +58,7 @@
                 </div>
             </div>
         {% endif %}
-        {% if doc.consensus %}
+        {% if doc.stream_id != "ise" and doc.stream_id != "ietf" and doc.consensus %}
             <div class="row">
                 <div class="col-3 text-end fw-bold">Consensus</div>
                 <div class="col {% if doc.consensus != "Yes" %}text-danger{% else %}text-success{% endif %}">{{ doc.consensus }}</div>

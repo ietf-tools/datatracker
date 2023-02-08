@@ -335,28 +335,6 @@
                         </td>
                     </tr>
                     {% endif %}
-                    {% if consensus and doc.stream_id == 'ietf' %}
-                        <tr>
-                            <td></td>
-                            <th scope="row">
-                                Consensus boilerplate
-                            </th>
-                            <td class="edit">
-                                {% if can_edit or can_edit_stream_info and not snapshot %}
-                                    <a class="btn btn-primary btn-sm"
-                                       href="{% url 'ietf.doc.views_draft.edit_consensus' name=doc.name %}">
-                                        Edit
-                                    </a>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <span class="{% if consensus != "Yes" %}text-danger{% else %}text-success{% endif %}"
-                                      title="Whether the document is the result of a community consensus process as defined in RFC 5741">
-                                    {{ consensus }}
-                                </span>
-                            </td>
-                        </tr>
-                    {% endif %}
                     <tr>
                         <td></td>
                         <th scope="row">
