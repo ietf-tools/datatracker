@@ -534,7 +534,7 @@ class DocExtResourceFactory(factory.django.DjangoModelFactory):
 class EditorialDraftFactory(BaseDocumentFactory):
 
     type_id = 'draft'
-    group = factory.SubFactory('ietf.group.factories.GroupFactory',acronym='rswg', type_id='rfcedtyp')
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',acronym='rswg', type_id='edwg')
     stream_id = 'editorial'
 
     @factory.post_generation

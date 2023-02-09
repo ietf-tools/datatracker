@@ -167,8 +167,8 @@ def is_authorized_in_doc_stream(user, doc):
         group_req = Q(group__acronym=doc.stream.slug)
     elif doc.stream.slug == "editorial":
         group_req = Q(group=doc.group) | Q(group__acronym='rsab')
-        if doc.group.type.slug in ("individ", "rfcedtype"):
-            docman_roles = GroupFeatures.objects.get(type_id="rfcedtyp").docman_roles
+        if doc.group.type.slug in ("individ", "edappr"):
+            docman_roles = GroupFeatures.objects.get(type_id="edappr").docman_roles
     else:
         group_req = Q()  # no group constraint for other cases
 
