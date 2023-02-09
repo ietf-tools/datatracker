@@ -31,18 +31,6 @@
                 {% endfor %}
             </ul>
         {% endif %}
-        {% comment %}
-        {% if area.urls %}
-            <h3 class="mt-3 navskip">{{ area.acronym|upper }} Area-specific web page{{ area.urls|pluralize }}</h3>
-            <ul class="list-unstyled">
-                {% for url in area.urls %}
-                    <li>
-                        <a href="{{ url.value }}">{{ url.name }}</a>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-        {% endcomment %}
         {% if area.groups %}
             <h3 class="mt-3 navskip">
                 {{ area.acronym|upper }} active WG{{ area.groups|pluralize }}
