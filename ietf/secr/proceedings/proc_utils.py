@@ -64,8 +64,6 @@ def import_audio_files(meeting):
     
     Example: ietf90-salonb-20140721-1710.mp3
     '''
-    from ietf.meeting.utils import add_event_info_to_session_qs
-
     unmatched_files = []
     path = os.path.join(settings.MEETING_RECORDINGS_DIR, meeting.type.slug + meeting.number)
     if not os.path.exists(path):
@@ -73,11 +71,9 @@ def import_audio_files(meeting):
     for filename in os.listdir(path):
         timeslot = get_timeslot_for_filename(filename)
         if timeslot:
-            sessions = add_event_info_to_session_qs(Session.objects.filter(
+            sessions = Session.objects.with_current_status().filter(
                 timeslotassignments__schedule=timeslot.meeting.schedule_id,
-            ).exclude(
-                agenda_note__icontains='canceled'
-            )).filter(
+            ).filter(
                 current_status='sched',
             ).order_by('timeslotassignments__timeslot__time')
             if not sessions:
