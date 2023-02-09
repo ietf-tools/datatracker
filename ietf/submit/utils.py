@@ -126,9 +126,9 @@ def validate_submission_name(name):
         if re.search(r'-\d\d$', name):
             name = name[:-3]
         if len(name) > 50:
-            return "Expected the Internet-Draft name to be at most 50 ASCII characters long; found %d." % len(name)
+            return "Expected the Internet-Draft name to be at most 50 ascii characters long; found %d." % len(name)
         else:
-            msg = "Expected name 'draft-...' using lowercase ASCII letters, digits, and hyphen; found '%s'." % name
+            msg = "Expected name 'draft-...' using lowercase ascii letters, digits, and hyphen; found '%s'." % name
             if '.' in name:
                 msg += "  Did you include a filename extension in the name by mistake?"
             return msg
