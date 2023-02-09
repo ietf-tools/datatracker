@@ -31,7 +31,7 @@ from ietf.mailtrigger.utils import gather_address_lists
 # Globals
 # -------------------------------------------------
 # TODO: This needs to be replaced with something that pays attention to groupfeatures
-AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','IAB Group Chair','Area Director','Secretariat','Team Chair','IRTF Chair','Program Chair','Program Lead','Program Secretary')
+AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','IAB Group Chair','Area Director','Secretariat','Team Chair','IRTF Chair','Program Chair','Program Lead','Program Secretary', 'EDWG Chair')
 
 # -------------------------------------------------
 # Helper Functions

@@ -82,6 +82,7 @@ def has_role(user, role_names, *args, **kwargs):
             "Program Lead": Q(person=person,name="lead", group__type="program", group__state="active"),
             "Program Secretary": Q(person=person,name="secr", group__type="program", group__state="active"),
             "Program Chair": Q(person=person,name="chair", group__type="program", group__state="active"),
+            "EDWG Chair": Q(person=person, name="chair", group__type="edwg", group__state="active"),
             "Nomcom Chair": Q(person=person, name="chair", group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),
             "Nomcom Advisor": Q(person=person, name="advisor", group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),
             "Nomcom": Q(person=person, group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),
