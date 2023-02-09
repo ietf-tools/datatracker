@@ -629,8 +629,10 @@ class PlaintextDraft(Draft):
 
         address_section = r"^ *([0-9]+\.)? *(Author|Editor)('s|s'|s|\(s\)) (Address|Addresses|Information)"
 
+        # "Internet Draft" (without the dash) is correct here, because the usage is to
+        # suppress incorrect author name extraction
         ignore = [
-            "Standards Track", "Current Practice", "Internet-Draft", "Working Group",
+            "Standards Track", "Current Practice", "Internet Draft", "Working Group",
             "Expiration Date", 
             ]
 
