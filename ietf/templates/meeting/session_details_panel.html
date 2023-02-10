@@ -213,20 +213,20 @@
             Link additional drafts to session
         </a>
     {% endif %}
-    <h3 class="mt-4">Meeting tools</h3>
-    <table class="table table-sm table-striped meeting-tools"
-           id="meeting_tools_{{ session.pk }}">
-        <tbody>
-        {% if use_notes %}
-            <tr>
-                <td>
-                    <a href="{{ session.notes_url }}">
-                        <i class="bi bi-journal-text"></i> Notepad for note-takers
-                    </a>
-                </td>
-            </tr>
-        {% endif %}
-        {% if now < timeslot.end_time %}
+    {% if now < timeslot.end_time %}{# show meeting tools until the session ends #}
+        <h3 class="mt-4">Meeting tools</h3>
+        <table class="table table-sm table-striped meeting-tools"
+               id="meeting_tools_{{ session.pk }}">
+            <tbody>
+            {% if use_notes %}
+                <tr>
+                    <td>
+                        <a href="{{ session.notes_url }}">
+                            <i class="bi bi-journal-text"></i> Notepad for note-takers
+                        </a>
+                    </td>
+                </tr>
+            {% endif %}
             {# chat #}
             <tr>
                 <td>
@@ -291,7 +291,22 @@
                     </td>
                 </tr>
             {% endif %}
-        {% else %}{# session is in the past #}
+            </tbody>
+        </table>
+    {% else %}{# session is in the past #}
+        <h3 class="mt-4">Notes and recordings</h3>
+        <table class="table table-sm table-striped meeting-tools"
+               id="notes_and_recordings_{{ session.pk }}">
+            <tbody>
+            {% if use_notes %}
+                <tr>
+                    <td>
+                        <a href="{{ session.notes_url }}">
+                            <i class="bi bi-journal-text"></i> Notepad for note-takers
+                        </a>
+                    </td>
+                </tr>
+            {% endif %}
             {# Recordings #}
             {% if meeting.number|add:"0" >= 80 %}
                 {% with session.recordings as recordings %}
@@ -339,8 +354,8 @@
                     </tr>
                 {% endif %}
             {% endif %}
-        {% endif %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    {% endif %}
 {% endwith %}{% endwith %}
 {% endfor %}
