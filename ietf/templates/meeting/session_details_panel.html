@@ -1,5 +1,6 @@
-{% load origin ietf_filters textfilters tz dateformat %}
+{% load origin ietf_filters textfilters tz datetime_filters %}
 {% origin %}
+{% get_now as now %}
 {% for session in sessions %}
     {% with item=session.official_timeslotassignment %} {% with timeslot=item.timeslot %}
         <h3 class="mt-4" id="session_{{ session.pk }}">

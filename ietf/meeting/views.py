@@ -2341,7 +2341,6 @@ def session_details(request, num, acronym):
                     'can_manage_materials' : can_manage,
                     'can_view_request': can_view_request,
                     'thisweek': datetime_today()-datetime.timedelta(days=7),
-                    'now': timezone.now(),
                     'use_notes': meeting.uses_notes(),
                   })
 
