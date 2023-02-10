@@ -1,7 +1,7 @@
 {% load origin ietf_filters textfilters tz dateformat %}
 {% origin %}
 {% for session in sessions %}
-    {% with item=session.official_timeslotassignment %}
+    {% with item=session.official_timeslotassignment %} {% with timeslot=item.timeslot %}
         <h3 class="mt-4" id="session_{{ session.pk }}">
             {% if sessions|length > 1 %}Session {{ forloop.counter }} :{% endif %}
             {% for time in session.times %}
@@ -213,5 +213,134 @@
             Link additional drafts to session
         </a>
     {% endif %}
-{% endwith %}
+    <h3 class="mt-4">Meeting tools</h3>
+    <table class="table table-sm table-striped meeting-tools"
+           id="meeting_tools_{{ session.pk }}">
+        <tbody>
+        {% if use_notes %}
+            <tr>
+                <td>
+                    <a href="{{ session.notes_url }}">
+                        <i class="bi bi-journal-text"></i> Notepad for note-takers
+                    </a>
+                </td>
+            </tr>
+        {% endif %}
+        {% if now < timeslot.end_time %}
+            {# chat #}
+            <tr>
+                <td>
+                    <a href="{{ session.chat_room_url }}">
+                        <i class="bi bi-chat"></i> Chat room
+                    </a>
+                </td>
+            </tr>
+            {# Video stream (meetecho) #}
+            {% if now < timeslot.end_time %}
+                <tr>
+                    <td>
+                        <a href="{{ timeslot.location.video_stream_url|format:session }}">
+                            <i class="bi bi-camera-video"></i> Video stream
+                        </a>
+                    </td>
+                </tr>
+            {% endif %}
+            {# Onsite tool (meetecho_onsite) #}
+            {% if timeslot.location.onsite_tool_url %}
+                <tr>
+                    <td>
+                        <a href="{{ timeslot.location.onsite_tool_url|format:session }}">
+                            <i class="bi bi-phone"></i> Onsite tool
+                        </a>
+                    </td>
+                </tr>
+            {% endif %}
+            {# Audio stream #}
+            {% if timeslot.location.audio_stream_url %}
+                <tr>
+                    <td>
+                        <a href="{{ timeslot.location.audio_stream_url|format:session }}">
+                            <i class="bi bi-headphones"></i> Audio stream
+                        </a>
+                    </td>
+                </tr>
+            {% endif %}
+            {# Remote call-in #}
+            {% if session.agenda_note|first_url|conference_url %}
+                <tr>
+                    <td>
+                        <a href="{{ session.agenda_note|first_url }}">
+                            <i class="bi bi-people"></i> Online conference
+                        </a>
+                    </td>
+                </tr>
+            {% elif session.remote_instructions|first_url|conference_url %}
+                <tr>
+                    <td>
+                        <a href="{{ session.remote_instructions|first_url }}">
+                            <i class="bi bi-people"></i> Online conference
+                        </a>
+                    </td>
+                </tr>
+            {% elif timeslot.location.webex_url %}
+                <tr>
+                    <td>
+                        <a href="{{ timeslot.location.webex_url|format:session }}">
+                            <i class="bi bi-people"></i> Webex session
+                        </a>
+                    </td>
+                </tr>
+            {% endif %}
+        {% else %}{# session is in the past #}
+            {# Recordings #}
+            {% if meeting.number|add:"0" >= 80 %}
+                {% with session.recordings as recordings %}
+                    {% if recordings %}
+                        {# There's no guaranteed order, so this is a bit messy: #}
+                        {# First, the audio recordings, if any #}
+                        {% for r in recordings %}
+                            {% if r.get_href and 'audio' in r.get_href %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ r.get_href }}"><i class="bi bi-file-play"></i> {{ r.title }}</a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        {# Then the youtube recordings #}
+                        {% for r in recordings %}
+                            {% if r.get_href and 'youtu' in r.get_href %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ r.get_href }}"><i class="bi bi-file-slides"></i> {{ r.title }}</a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        {# Finally, any other recordings #}
+                        {% for r in recordings %}
+                            {% if r.get_href and not 'audio' in r.get_href and not 'youtu' in r.get_href %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ r.get_href }}"><i class="bi bi-file-play"></i> {{ r.title }}</a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                {% if timeslot.location.video_stream_url %}
+                    <tr>
+                        <td>
+                            <a href="https://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ acronym.upper }}">
+                                <i class="bi bi-file-slides"></i> Session recording
+                            </a>
+                        </td>
+                    </tr>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+        </tbody>
+    </table>
+{% endwith %}{% endwith %}
 {% endfor %}
