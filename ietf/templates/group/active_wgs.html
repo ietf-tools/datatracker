@@ -16,6 +16,18 @@
         <a class="btn btn-primary"
            href="{% url "ietf.group.views.chair_photos" group_type="wg" %}">Chair photos</a>
     </div>
+    <div class="row mt-3">
+        <div class="col-sm chart text-center" id="docs">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+        <div class="col-sm chart text-center" id="pages">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
     {% for area in areas %}
         <h2 class="mt-5" id="{{ area.acronym }}">{{ area.name }} ({{ area.acronym }})</h2>
         {% if area.ads_and_pre_ads %}
@@ -89,5 +101,68 @@
     {% endfor %}
 {% endblock %}
 {% block js %}
-    <script src="{% static "ietf/js/list.js" %}"></script>
-{% endblock %}
+    <script src="{% static 'ietf/js/list.js' %}"></script>
+    <script src="{% static 'ietf/js/highcharts.js' %}"></script>
+    <script>
+        $(function () {
+            $.getJSON(
+                "{% url 'ietf.group.views.group_stats_data' %}",
+                function (data) {
+                    $("#spinner").remove();
+                    const font = getComputedStyle(document.body).getPropertyValue('--bs-body-font-family');
+                    $(".chart")
+                        .each(function (i, e) {
+                            const which = e.id;
+
+                            const chart = Highcharts.chart(e, {
+                                chart: {
+                                    height: "100%",
+                                    style: { fontFamily: font }
+                                },
+                                title: { text: `${which == "docs" ? "Documents" : "Pages"} in group` },
+                                credits: { enabled: false },
+                                colors: ["transparent"].concat(Highcharts.getOptions().colors),
+                                series: [{
+                                    type: "sunburst",
+                                    data: [],
+                                    allowDrillToNode: true,
+                                    levels: [{
+                                            level: 2,
+                                            colorByPoint: true
+                                        },
+                                        {
+                                            level: 3,
+                                            colorVariation: {
+                                                key: "brightness",
+                                                to: 0.5
+                                            }
+                                        }
+                                    ]
+                                }],
+                            });
+
+                            const d = data.map((d) => {
+                                    return {
+                                        value: d[which],
+                                        id: d.id,
+                                        parent: d.parent,
+                                    };
+                                })
+                                .sort((a, b) => {
+                                    if (a.parent != b.parent) {
+                                        if (a.parent < b.parent) {
+                                            return -1;
+                                        }
+                                        if (a.parent > b.parent) {
+                                            return 1;
+                                        }
+                                    }
+                                    return b.value - a.value;
+                                });
+                            console.log(which, d);
+                            chart.series[0].setData(d);
+                    });
+                });
+        });
+    </script>
+        {% endblock %}

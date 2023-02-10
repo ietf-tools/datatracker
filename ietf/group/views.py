@@ -48,7 +48,7 @@ from simple_history.utils import update_change_reason
 from django import forms
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum
 from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
@@ -1352,6 +1352,62 @@ def group_menu_data(request):
         groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'type': escape(g.type.verbose_name or g.type.name), 'url': url })
 
     return JsonResponse(groups_by_parent)
+
+
+@cache_control(public=True, max_age=30 * 60)
+@cache_page(30 * 60)
+def group_stats_data(request):
+    when = timezone.now() - datetime.timedelta(days=3 * 365)
+    docs = (
+        Document.objects.filter(type="draft", stream="ietf")
+        .filter(
+            Q(docevent__newrevisiondocevent__time__gte=when)
+            | Q(docevent__type="published_rfc", docevent__time__gte=when)
+        )
+        .exclude(states__type="draft", states__slug="repl")
+        .distinct()
+    )
+
+    # ads = {}
+    data = []
+    for a in Group.objects.filter(type="area"):
+        area_docs = docs.filter(group__parent=a).exclude(group__acronym="none")
+        if not area_docs:
+            continue
+
+        area_page_cnt = 0
+        area_doc_cnt = 0
+        for wg in Group.objects.filter(type="wg", parent=a):
+            wg_docs = area_docs.filter(group=wg)
+            if not wg_docs:
+                continue
+            wg_page_cnt = wg_docs.aggregate(Sum("pages"))["pages__sum"] or 0
+            area_doc_cnt += len(wg_docs)
+            area_docs = area_docs.exclude(group=wg)
+
+            # add WG data
+            data.append(
+                {
+                    "id": wg.acronym,
+                    "parent": a.acronym,
+                    "pages": wg_page_cnt,
+                    "docs": len(wg_docs),
+                }
+            )
+            area_page_cnt += wg_page_cnt
+
+        # add area data
+        data.append(
+            {
+                "id": a.acronym,
+                "parent": "ietf",
+                "pages": area_page_cnt,
+                "docs": area_doc_cnt,
+            }
+        )
+
+    data.append({"id": "ietf"})
+    return JsonResponse(data, safe=False)
 
 
 # --- Review views -----------------------------------------------------
