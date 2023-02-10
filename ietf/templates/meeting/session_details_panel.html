@@ -1,4 +1,4 @@
-{% load origin ietf_filters textfilters tz datetime_filters %}
+{% load origin ietf_filters textfilters tz dateformat %}
 {% origin %}
 {% for session in sessions %}
     {% with item=session.official_timeslotassignment %} {% with timeslot=item.timeslot %}
