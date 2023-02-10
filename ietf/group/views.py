@@ -1368,7 +1368,6 @@ def group_stats_data(request):
         .distinct()
     )
 
-    # ads = {}
     data = []
     for a in Group.objects.filter(type="area"):
         area_docs = docs.filter(group__parent=a).exclude(group__acronym="none")
