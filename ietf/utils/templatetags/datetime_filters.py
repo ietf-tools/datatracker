@@ -3,7 +3,7 @@
 
 import datetime
 
-from django.template import Library, Node, TemplateSyntaxError
+from django.template import Library
 from django.template.defaultfilters import date
 
 import debug                            # pyflakes:ignore
