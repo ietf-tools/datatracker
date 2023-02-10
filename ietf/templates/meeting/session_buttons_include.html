@@ -2,7 +2,7 @@
 {% load origin %}
 {% load static %}
 {% load textfilters tz %}
-{% load ietf_filters datetime_filters %}
+{% load ietf_filters %}
 {% origin %}
 {% if item and item|should_show_agenda_session_buttons %}
     {% with slug=item.slug session=item.session timeslot=item.timeslot %}
