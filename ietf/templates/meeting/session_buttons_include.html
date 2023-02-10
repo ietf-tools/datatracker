@@ -4,7 +4,6 @@
 {% load textfilters tz %}
 {% load ietf_filters datetime_filters %}
 {% origin %}
-{% get_now as now %}
 {% if item and item|should_show_agenda_session_buttons %}
     {% with slug=item.slug session=item.session timeslot=item.timeslot %}
         {% if session.agenda and show_agenda %}
@@ -52,7 +51,7 @@
                     </a>
                 {% endif %}
                 {# show stream buttons up till end of session, then show archive buttons #}
-                {% if now < timeslot.end_time %}
+                {% if timezone_now < timeslot.end_time %}
                     {# chat #}
                     <a class="btn btn-outline-primary"
                         role="button"
@@ -238,7 +237,7 @@
                         </li>
                     {% endif %}
                     {# show stream buttons up till end of session, then show archive buttons #}
-                    {% if now < timeslot.end_time %}
+                    {% if timezone_now < timeslot.end_time %}
                         {# chat #}
                         <li>
                             <a class="dropdown-item"

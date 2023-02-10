@@ -372,6 +372,7 @@ TEMPLATES = [
                 'ietf.context_processors.settings_info',
                 'ietf.secr.context_processors.secr_revision_info',
                 'ietf.context_processors.rfcdiff_base_url',
+                'ietf.context_processors.timezone_now',
             ],
             'loaders': [
                 ('django.template.loaders.cached.Loader', (

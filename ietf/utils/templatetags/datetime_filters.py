@@ -5,7 +5,6 @@ import datetime
 
 from django.template import Library, Node, TemplateSyntaxError
 from django.template.defaultfilters import date
-from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -26,24 +25,3 @@ def dateformat(value, arg=None):
     elif isinstance(value, datetime.date):
         arg = arg.translate(elide_timefmt).strip()
     return date(value, arg)
-
-
-class GetNowNode(Node):
-    """Node that stores timezone.now() in a template variable"""
-    def __init__(self, var_name):
-        self.var_name = var_name
-
-    def render(self, context):
-        context[self.var_name] = timezone.now()
-        return ''  # render nothing
-
-
-@register.tag
-def get_now(parser, token):
-    """Get timezone.now() as a template variable"""
-    toks = token.contents.split()  # split by spaces
-    tag_name=toks[0]
-    if len(toks) != 3 or toks[1].lower() != 'as':
-        raise TemplateSyntaxError(f'{tag_name} tag requires "as <var>" argument')
-    var_name = toks[2]
-    return GetNowNode(var_name)

@@ -1,6 +1,5 @@
 {% load origin ietf_filters textfilters tz datetime_filters %}
 {% origin %}
-{% get_now as now %}
 {% for session in sessions %}
     {% with item=session.official_timeslotassignment %} {% with timeslot=item.timeslot %}
         <h3 class="mt-4" id="session_{{ session.pk }}">
@@ -214,7 +213,7 @@
             Link additional drafts to session
         </a>
     {% endif %}
-    {% if now < timeslot.end_time %}{# show meeting tools until the session ends #}
+    {% if timezone_now < timeslot.end_time %}{# show meeting tools until the session ends #}
         <h3 class="mt-4">Meeting tools</h3>
         <table class="table table-sm table-striped meeting-tools"
                id="meeting_tools_{{ session.pk }}">
@@ -237,7 +236,7 @@
                 </td>
             </tr>
             {# Video stream (meetecho) #}
-            {% if now < timeslot.end_time %}
+            {% if timezone_now < timeslot.end_time %}
                 <tr>
                     <td>
                         <a href="{{ timeslot.location.video_stream_url|format:session }}">
