@@ -8,7 +8,7 @@ from ietf.ipr.utils import generate_draft_recursive_txt
 
 
 class Command(BaseCommand):
-    help = ("Generate machine-readable list of IPR disclosures by draft name (recursive)")
+    help = ("Generate machine-readable list of IPR disclosures by Internet-Draft name (recursive)")
 
     def handle(self, *args, **options):
         try:

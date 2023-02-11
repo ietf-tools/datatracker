@@ -792,7 +792,7 @@ def rebuild_reference_relations(doc, filenames):
         except IOError as e:
             return { 'errors': ["%s :%s" %  (e.strerror, filename)] }
     else:
-        return {'errors': ['No draft text available for rebuilding reference relations. Need XML or plaintext.']}
+        return {'errors': ['No Internet-Draft text available for rebuilding reference relations. Need XML or plaintext.']}
 
     doc.relateddocument_set.filter(relationship__slug__in=['refnorm','refinfo','refold','refunk']).delete()
 

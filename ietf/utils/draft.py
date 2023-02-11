@@ -13,7 +13,7 @@ SYNOPSIS
 
 DESCRIPTION
         Extract information about authors' names and email addresses,
-        intended status and number of pages from Internet Drafts.
+        intended status and number of pages from Internet-Drafts.
         The information is emitted in the form of a line containing
         xml-style attributes, prefixed with the name of the draft.
 
@@ -629,6 +629,8 @@ class PlaintextDraft(Draft):
 
         address_section = r"^ *([0-9]+\.)? *(Author|Editor)('s|s'|s|\(s\)) (Address|Addresses|Information)"
 
+        # "Internet Draft" (without the dash) is correct here, because the usage is to
+        # suppress incorrect author name extraction
         ignore = [
             "Standards Track", "Current Practice", "Internet Draft", "Working Group",
             "Expiration Date", 
@@ -936,7 +938,7 @@ class PlaintextDraft(Draft):
                                                         companies[i] = None
                                                         break
                                                 else:
-                                                    _warn("Author tuple doesn't match text in draft: %s, %s" % (authors[i], fullname))
+                                                    _warn("Author tuple doesn't match text in Internet-Draft: %s, %s" % (authors[i], fullname))
                                                     authors[i] = None
                                             break
                             except AssertionError:
@@ -1266,7 +1268,7 @@ def getmeta(fn):
     fields["eventsource"] = "draft"
 
     if " " in fn or not fn.endswith(".txt"):
-        _warn("Skipping unexpected draft name: '%s'" % (fn))
+        _warn("Skipping unexpected Internet-Draft name: '%s'" % (fn))
         return {}
 
     if os.path.exists(fn):
@@ -1409,7 +1411,7 @@ def _main(outfile=sys.stdout):
         files = [ "-" ]
 
     for file in files:
-        _debug( "Reading drafts from '%s'" % file)
+        _debug( "Reading Internet-Drafts from '%s'" % file)
         if file == "-":
             file = sys.stdin
         elif file.endswith(".gz"):

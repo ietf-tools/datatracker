@@ -182,7 +182,7 @@ def document_stats(request, stats_type=None):
         possible_document_types = add_url_to_choices([
             ("", "All"),
             ("rfc", "RFCs"),
-            ("draft", "Drafts"),
+            ("draft", "Internet-Drafts"),
         ], lambda slug: build_document_stats_url(get_overrides={ "type": slug }))
 
         document_type = get_choice(request, "type", possible_document_types) or ""

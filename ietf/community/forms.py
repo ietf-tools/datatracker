@@ -13,7 +13,7 @@ from ietf.person.models import Person
 from ietf.person.fields import SearchablePersonField
 
 class AddDocumentsForm(forms.Form):
-    documents = SearchableDocumentsField(label="Add documents to track", doc_type="draft")
+    documents = SearchableDocumentsField(label="Add Internet-Drafts to track", doc_type="draft")
 
 class SearchRuleTypeForm(forms.Form):
     rule_type = forms.ChoiceField(choices=[('', '--------------')] + SearchRule.RULE_TYPES)

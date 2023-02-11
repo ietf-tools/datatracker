@@ -4,7 +4,7 @@
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-{% block title %}Draft submissions awaiting manual posting{% endblock %}
+{% block title %}I-D submissions awaiting manual posting{% endblock %}
 {% load ietf_filters %}
 {% block submit_content %}
     {% origin %}
@@ -18,7 +18,7 @@
                class="submissions table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th scope="col" data-sort="draft">Draft</th>
+                    <th scope="col" data-sort="draft">Internet-Draft</th>
                     <th scope="col" data-sort="date">Submitted</th>
                     <th scope="col" data-sort="passes">Passes Checks</th>
                     <th scope="col" data-sort="metadata">Metadata</th>
@@ -58,10 +58,10 @@
             </tbody>
         </table>
     {% endif %}
-    <h2 class="mt-3" id="id_upload">Submissions awaiting draft upload</h2>
+    <h2 class="mt-3" id="id_upload">Submissions awaiting Internet-Draft upload</h2>
     {% if not waiting_for_draft %}
         <p class="alert alert-info my-3" id="no-waiting-for-draft">
-            There are no submissions awaiting draft upload.
+            There are no submissions awaiting Internet-Draft upload.
         </p>
     {% else %}
         <table id="waiting-for-draft"

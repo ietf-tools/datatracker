@@ -2522,7 +2522,7 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
         self.assertValidJSONResponse(r)
         d = r.json()
         self.assertEqual(d['chart']['type'], settings.CHART_TYPE_COLUMN_OPTIONS['chart']['type'])
-        self.assertEqual("New draft revisions over time for %s" % person.name, d['title']['text'])
+        self.assertEqual("New Internet-Draft revisions over time for %s" % person.name, d['title']['text'])
 
         data_url = urlreverse('ietf.doc.views_stats.chart_data_person_drafts', kwargs=dict(id=person.id))
 
