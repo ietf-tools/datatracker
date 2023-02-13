@@ -165,6 +165,7 @@ $tooltip-margin: inherit !default;
 }
 
 .rfcmarkup {
+
     // A lot of plaintext documents seem to have line lengths >72ch.
     // To handle that, we calculate with 80ch here and adjust some of the
     // font sizes down accordingly.
@@ -186,7 +187,18 @@ $tooltip-margin: inherit !default;
             font-size: min(8.75pt, var(--doc-ptsize-max));
         }
 
-        // Rest of font sizes is inherited from above.
+        // Rest of font sizes is the same as above.
+        @include media-breakpoint-up(lg) {
+            font-size: min(11pt, var(--doc-ptsize-max));
+        }
+
+        @include media-breakpoint-up(xl) {
+            font-size: min(13pt, var(--doc-ptsize-max));
+        }
+
+        @include media-breakpoint-up(xxl) {
+            font-size: min(16pt, var(--doc-ptsize-max));
+        }
     }
 
     h1,
