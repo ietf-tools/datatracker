@@ -13,7 +13,13 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('community', '0010_doc_ids_are_ints'),
+        ('doc', '0050_editorial_stream_states'),
+        ('group', '0060_editorial_refactor'),
         ('utils', '0003_pause_to_change_use_tz'),
+        ('mailtrigger', '0024_rsab_ballots'),
+        ('meeting', '0060_normalize_canceled_sessions'),
+        ('person', '0030_id_term'),
+        ('review', '0031_id_term'),
     ]
 
     operations = [
