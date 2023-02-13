@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('meeting', '0058_meeting_time_zone_not_blank'),
+        ('meeting', '0060_normalize_canceled_sessions'),
         ('utils', '0004_pause_to_change_database_engines'),
     ]
 

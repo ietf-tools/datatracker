@@ -9,7 +9,8 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('person', '0029_use_timezone_now_for_person_models'),
+        ('person', '0030_id_term'),
+        ('utils', '0004_pause_to_change_database_engines'),
     ]
 
     operations = [

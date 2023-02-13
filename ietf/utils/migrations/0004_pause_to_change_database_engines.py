@@ -12,6 +12,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
+        ('community', '0010_doc_ids_are_ints'),
         ('utils', '0003_pause_to_change_use_tz'),
     ]
 
