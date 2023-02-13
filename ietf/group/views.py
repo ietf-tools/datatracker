@@ -48,7 +48,7 @@ from simple_history.utils import update_change_reason
 from django import forms
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Count, Sum
+from django.db.models import Q, Count
 from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
@@ -1356,8 +1356,8 @@ def group_menu_data(request):
 
 @cache_control(public=True, max_age=30 * 60)
 @cache_page(30 * 60)
-def group_stats_data(request):
-    when = timezone.now() - datetime.timedelta(days=3 * 365)
+def group_stats_data(request, years="3", only_active="1"):
+    when = timezone.now() - datetime.timedelta(days=int(years) * 365)
     docs = (
         Document.objects.filter(type="draft", stream="ietf")
         .filter(
@@ -1370,6 +1370,9 @@ def group_stats_data(request):
 
     data = []
     for a in Group.objects.filter(type="area"):
+        if int(only_active) == 1 and not a.is_active:
+            continue
+
         area_docs = docs.filter(group__parent=a).exclude(group__acronym="none")
         if not area_docs:
             continue
@@ -1377,10 +1380,28 @@ def group_stats_data(request):
         area_page_cnt = 0
         area_doc_cnt = 0
         for wg in Group.objects.filter(type="wg", parent=a):
+            if int(only_active) == 1 and not wg.is_active:
+                continue
+
             wg_docs = area_docs.filter(group=wg)
             if not wg_docs:
                 continue
-            wg_page_cnt = wg_docs.aggregate(Sum("pages"))["pages__sum"] or 0
+
+            wg_page_cnt = 0
+            for doc in wg_docs:
+                # add doc data
+                data.append(
+                    {
+                        "id": doc.name,
+                        "active": True,
+                        "parent": wg.acronym,
+                        "grandparent": a.acronym,
+                        "pages": doc.pages,
+                        "docs": 1,
+                    }
+                )
+                wg_page_cnt += doc.pages
+
             area_doc_cnt += len(wg_docs)
             area_docs = area_docs.exclude(group=wg)
 
@@ -1388,7 +1409,9 @@ def group_stats_data(request):
             data.append(
                 {
                     "id": wg.acronym,
+                    "active": wg.is_active,
                     "parent": a.acronym,
+                    "grandparent": "ietf",
                     "pages": wg_page_cnt,
                     "docs": len(wg_docs),
                 }
@@ -1399,13 +1422,14 @@ def group_stats_data(request):
         data.append(
             {
                 "id": a.acronym,
+                "active": a.is_active,
                 "parent": "ietf",
                 "pages": area_page_cnt,
                 "docs": area_doc_cnt,
             }
         )
 
-    data.append({"id": "ietf"})
+    data.append({"id": "ietf", "active": True})
     return JsonResponse(data, safe=False)
 
 

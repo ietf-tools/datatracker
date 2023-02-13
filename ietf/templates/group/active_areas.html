@@ -43,20 +43,24 @@
             </li>
         {% endfor %}
     </ul>
+    <p>
+        The following diagrams show the sizes of the different areas and working groups,
+        based on the number of documents - and pages - a group has worked on in the last three years.
+    </p>
     <div class="row mt-3">
-        <div class="col-sm chart text-center" id="docs">
+        <div class="col-sm chart text-center" data-area="ietf" data-dataset="docs">
             <div class="spinner-border" role="status">
               <span class="visually-hidden">Loading...</span>
             </div>
         </div>
-        <div class="col-sm chart text-center" id="pages">
+        <div class="col-sm chart text-center" data-area="ietf" data-dataset="pages">
             <div class="spinner-border" role="status">
               <span class="visually-hidden">Loading...</span>
             </div>
         </div>
     </div>
     {% for area in areas %}
-        <h2 class="mt-3" id="id-{{ area.acronym|slugify }}">
+        <h2 class="mt-5" id="id-{{ area.acronym|slugify }}">
             {{ area.name }}
             <a href="{% url 'ietf.group.views.active_groups' group_type='wg' %}#{{ area.acronym }}">({{ area.acronym|upper }})</a>
         </h2>
@@ -65,77 +69,27 @@
                 {{ area.description|urlize_ietf_docs|linkify|safe }}
             </p>
         {% endif %}
+        <div class="row mt-3">
+            <div class="col-sm chart text-center" data-area="{{ area.acronym|lower }}" data-dataset="docs">
+                <div class="spinner-border" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <div class="col-sm chart text-center" data-area="{{ area.acronym|lower }}" data-dataset="pages">
+                <div class="spinner-border" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
     {% endfor %}
 {% endblock %}
 {% block js %}
     <script src="{% static 'ietf/js/highcharts.js' %}"></script>
     <script>
         $(function () {
-            $.getJSON(
-                "{% url 'ietf.group.views.group_stats_data' %}",
-                function (data) {
-                    $("#spinner").remove();
-                    const font = getComputedStyle(document.body).getPropertyValue('--bs-body-font-family');
-                    $(".chart")
-                        .each(function (i, e) {
-                            const which = e.id;
-
-                            const chart = Highcharts.chart(e, {
-                                chart: {
-                                    height: "100%",
-                                    style: { fontFamily: font }
-                                },
-                                title: { text: `${which == "docs" ? "Documents" : "Pages"} in group` },
-                                credits: { enabled: false },
-                                colors: ["transparent"].concat(Highcharts.getOptions().colors),
-                                series: [{
-                                    type: "sunburst",
-                                    data: [],
-                                    allowDrillToNode: true,
-                                    levels: [{
-                                            level: 2,
-                                            colorByPoint: true
-                                        },
-                                        {
-                                            level: 3,
-                                            colorVariation: {
-                                                key: "brightness",
-                                                to: 0.5
-                                            }
-                                        }
-                                    ]
-                                }],
-                            });
-
-                            const d = data.map((d) => {
-                                    return {
-                                        value: d[which],
-                                        id: d.id,
-                                        parent: d.parent,
-                                    };
-                                })
-                                .sort((a, b) => {
-                                    if (a.parent != b.parent) {
-                                        if (a.parent < b.parent) {
-                                            return -1;
-                                        }
-                                        if (a.parent > b.parent) {
-                                            return 1;
-                                        }
-                                    } else if (a.parent == "ietf") {
-                                        if (a.id < b.id) {
-                                            return 1;
-                                        }
-                                        if (a.id > b.id) {
-                                            return -1;
-                                        }
-                                        return 0;
-                                    }
-                                    return b.value - a.value;
-                                });
-                            chart.series[0].setData(d);
-                    });
-                });
+            group_stats(
+                "{% url 'ietf.group.views.group_stats_data' years=3 only_active=1 %}",
+                ".chart");
         });
     </script>
 {% endblock %}
