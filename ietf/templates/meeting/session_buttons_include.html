@@ -51,7 +51,7 @@
                     </a>
                 {% endif %}
                 {# show stream buttons up till end of session, then show archive buttons #}
-                {% if now < timeslot.end_time %}
+                {% if timezone_now < timeslot.end_time %}
                     {# chat #}
                     <a class="btn btn-outline-primary"
                         role="button"
@@ -237,7 +237,7 @@
                         </li>
                     {% endif %}
                     {# show stream buttons up till end of session, then show archive buttons #}
-                    {% if now < timeslot.end_time %}
+                    {% if timezone_now < timeslot.end_time %}
                         {# chat #}
                         <li>
                             <a class="dropdown-item"

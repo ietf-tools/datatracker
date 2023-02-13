@@ -66,9 +66,9 @@ def get_doctypes(queryargs, pluralize=False):
         or queryargs.get('activedrafts') == 'on'
         or queryargs.get('olddrafts') == 'on'):
             if pluralize:
-                doctypes.append('Drafts')
+                doctypes.append('Internet-Drafts')
             else:
-                doctypes.append('Draft')
+                doctypes.append('Internet-Draft')
     alltypes = DocTypeName.objects.exclude(slug__in='draft').order_by('name');
     for doctype in alltypes:
         if 'include-' + doctype.slug in queryargs:
@@ -166,8 +166,8 @@ def chart_conf_person_drafts(request, id):
         conf = {}
     else:
         conf = copy.deepcopy(settings.CHART_TYPE_COLUMN_OPTIONS)
-        conf['title']['text'] = "New draft revisions over time for %s" % person.name
-        conf['series'][0]['name'] = "Submitted drafts" 
+        conf['title']['text'] = "New Internet-Draft revisions over time for %s" % person.name
+        conf['series'][0]['name'] = "Submitted Internet-Drafts"
     return JsonResponse(conf)
 
 @cache_page(60*15)

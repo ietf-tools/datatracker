@@ -101,7 +101,7 @@ def upload_submission(request):
         except DataError as e:
             form = SubmissionManualUploadForm(request=request)
             form._errors = {}
-            form._errors["__all__"] = form.error_class(["There was a failure processing your upload -- please verify that your draft passes idnits.  (%s)" % e.message])
+            form._errors["__all__"] = form.error_class(["There was a failure processing your upload -- please verify that your Internet-Draft passes idnits.  (%s)" % e.message])
             if debug.debug:
                 raise
     else:
@@ -472,7 +472,7 @@ def submission_status(request, submission_id, access_token=None):
                 approvals_received = submitter_form.cleaned_data['approvals_received']
                 
                 if submission.rev == '00' and submission.group and not submission.group.is_active:
-                    permission_denied(request, 'Posting a new draft for an inactive group is not permitted.')
+                    permission_denied(request, 'Posting a new Internet-Draft for an inactive group is not permitted.')
 
                 if approvals_received:
                     if not is_secretariat:

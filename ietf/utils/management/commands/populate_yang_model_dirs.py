@@ -40,11 +40,11 @@ class Command(BaseCommand):
          * All yang modules from published RFCs should be extracted and be
            available in an rfc-yang repository.
 
-         * All valid yang modules from active, not replaced, internet drafts
+         * All valid yang modules from active, not replaced, Internet-Drafts
            should be extracted and be available in a draft-valid-yang repository.
 
          * All, valid and invalid, yang modules from active, not replaced,
-           internet drafts should be available in a draft-all-yang repository.
+           Internet-Drafts should be available in a draft-all-yang repository.
            (Actually, given precedence ordering, it would be enough to place
            non-validating modules in a draft-invalid-yang repository instead).
 
