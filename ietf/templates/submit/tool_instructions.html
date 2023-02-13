@@ -29,7 +29,7 @@
         <a href="https://www.ietf.org/ietf/1id-abstracts.txt">https://www.ietf.org/ietf/1id-abstracts.txt</a>.
     </p>
     <p>
-        An API for automated draft submission is available as an alternative to this webpage at
+        An API for automated Internet-Draft submission is available as an alternative to this webpage at
         <a href="{{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.submit.views.api_submit' %}">{{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.submit.views.api_submit' %}</a>.
     </p>
     <p>
@@ -92,7 +92,7 @@
         If the submission does not have any validation errors, then the user will be allowed to proceed with the automated posting process. This process will begin with submitter authentication, which will be done by e-mail.
     </p>
     <p>
-        A user must carefully examine the meta-data that are displayed on this screen, and make sure that these data were extracted correctly.  If the data were not extracted correctly, then the user can correct the errors via the Adjust page. In such a case, the user will pass the draft to the Secretariat for manual posting.
+        A user must carefully examine the meta-data that are displayed on this screen, and make sure that these data were extracted correctly.  If the data were not extracted correctly, then the user can correct the errors via the Adjust page. In such a case, the user will pass the Internet-Draft to the Secretariat for manual posting.
     </p>
     <table class="table table-sm table-striped">
         <tbody>
@@ -136,7 +136,7 @@
                 </th>
                 <td>
                     <p>
-                        Button to start the automated posting process with submitter authentication. Once clicked, an email message will be sent to the parties who can verify the submission. For a new draft (<code>-00</code>), that will be the authors listed in the document. For -01 and subsequent drafts, the confirmation message is sent to the authors of the <b>previous</b> version. One of the recipients of the confirmation message will need to open the email message via his or her email application, and click the link provided in the message body.
+                        Button to start the automated posting process with submitter authentication. Once clicked, an email message will be sent to the parties who can verify the submission. For a new Internet-Draft (<code>-00</code>), that will be the authors listed in the document. For -01 and subsequent Internet-Drafts, the confirmation message is sent to the authors of the <b>previous</b> version. One of the recipients of the confirmation message will need to open the email message via his or her email application, and click the link provided in the message body.
                     </p>
                     <p>
                         Once a link in the email body is clicked, the document gets pushed to the IETF Web and FTP sites, a notification is sent to the authors of the document, and an I-D Action announcement will be sent out within the next 15 minutes.

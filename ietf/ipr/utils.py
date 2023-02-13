@@ -79,7 +79,7 @@ def generate_draft_recursive_txt():
                     docipr[name] = []
                 docipr[name].append(o.disclosure_id)
 
-    lines = [ "# Machine-readable list of IPR disclosures by draft name" ]
+    lines = [ "# Machine-readable list of IPR disclosures by Internet-Draft name" ]
     for name, iprs in docipr.items():
         lines.append(name + "\t" + "\t".join(str(ipr_id) for ipr_id in sorted(iprs)))
 

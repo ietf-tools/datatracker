@@ -12,6 +12,6 @@ Change by {{ event.by }} on {{ event.time }}:
 
 Best regards,
 
-        The Datatracker draft tracking service
+        The Datatracker Internet-Draft tracking service
         (for the IETF Secretariat)
 {% endautoescape %}

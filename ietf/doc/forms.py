@@ -140,7 +140,7 @@ class AddDownrefForm(forms.Form):
                 required=True)
     drafts = SearchableDocAliasesField(
                 label="Internet-Drafts that makes the reference",
-                help_text="The drafts that approve the downref in their Last Call",
+                help_text="The Internet-Drafts that approve the downref in their Last Call",
                 required=True)
 
     def clean_rfc(self):
@@ -163,7 +163,7 @@ class AddDownrefForm(forms.Form):
             if not state or state.slug not in IESG_APPROVED_STATE_LIST:
                 v_err_names.append(da.name)
         if v_err_names:
-            raise forms.ValidationError("Draft is not yet approved: " + ", ".join(v_err_names))
+            raise forms.ValidationError("Internet-Draft is not yet approved: " + ", ".join(v_err_names))
         return drafts
 
     def clean(self):
