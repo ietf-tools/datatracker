@@ -114,7 +114,7 @@ def check_id_submission_directories(app_configs, **kwargs):
         p = getattr(settings, s)
         if not os.path.exists(p):
             errors.append(checks.Critical(
-                "A directory used by the ID submission tool does not\n"
+                "A directory used by the I-D submission tool does not\n"
                 "exist at the path given in the settings file.  The setting is:\n"
                 "    %s = %s" % (s, p),
                 hint = ("Please either update the local settings to point at the correct\n"
@@ -134,7 +134,7 @@ def check_id_submission_files(app_configs, **kwargs):
         p = getattr(settings, s)
         if not os.path.exists(p):
             errors.append(checks.Critical(
-                "A file used by the ID submission tool does not exist\n"
+                "A file used by the I-D submission tool does not exist\n"
                 "at the path given in the settings file.  The setting is:\n"
                 "    %s = %s" % (s, p),
                 hint = ("Please either update the local settings to point at the correct\n"
@@ -179,7 +179,7 @@ def check_id_submission_checkers(app_configs, **kwargs):
         except Exception as e:
             errors.append(checks.Critical(
                 "An exception was raised when trying to import the\n"
-                "draft submission checker class '%s':\n    %s" % (checker_path, e),
+                "Internet-Draft submission checker class '%s':\n    %s" % (checker_path, e),
                 hint = "Please check that the class exists and can be imported.\n",
                 id = "datatracker.E0008",
             ))
@@ -188,7 +188,7 @@ def check_id_submission_checkers(app_configs, **kwargs):
         except Exception as e:
             errors.append(checks.Critical(
                 "An exception was raised when trying to instantiate\n"
-                "the draft submission checker class '%s':\n    %s" % (checker_path, e),
+                "the Internet-Draft submission checker class '%s':\n    %s" % (checker_path, e),
                 hint = "Please check that the class can be instantiated.\n",
                 id = "datatracker.E0009",
             ))
@@ -196,7 +196,7 @@ def check_id_submission_checkers(app_configs, **kwargs):
         for attr in ('name',):
             if not hasattr(checker, attr):
                 errors.append(checks.Critical(
-                    "The draft submission checker\n    '%s'\n"
+                    "The Internet-Draft submission checker\n    '%s'\n"
                     "has no attribute '%s', which is required" % (checker_path, attr),
                     hint = "Please update the class.\n",
                     id = "datatracker.E0010",
@@ -207,7 +207,7 @@ def check_id_submission_checkers(app_configs, **kwargs):
                 break
         else:
             errors.append(checks.Critical(
-                "The draft submission checker\n    '%s'\n"
+                "The Internet-Draft submission checker\n    '%s'\n"
                 " has no recognised checker method;  "
                 "should be one or more of %s." % (checker_path, checker_methods),
                 hint = "Please update the class.\n",

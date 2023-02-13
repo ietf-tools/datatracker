@@ -39,9 +39,9 @@
         <h2 class="mt-5">Submission checks</h2>
         <p class="alert {% if passes_checks %}alert-success{% else %}alert-warning{% endif %} my-3">
             {% if passes_checks %}
-                Your draft has been verified to pass the submission checks.
+                Your Internet-Draft has been verified to pass the submission checks.
             {% else %}
-                Your draft has <b>NOT</b> been verified to pass the submission checks.
+                Your Internet-Draft has <b>NOT</b> been verified to pass the submission checks.
             {% endif %}
         </p>
         {% if submission.authors|length > 5 %}
@@ -130,7 +130,7 @@
     </div>
     {% if submission.state_id == "waiting-for-draft" %}
         <p class="alert alert-warning my-3">
-            This submission is awaiting the first draft upload.
+            This submission is awaiting the first Internet-Draft upload.
         </p>
     {% elif submission.state_id == 'validating' %}
         <p class="alert alert-warning my-3">
@@ -427,7 +427,7 @@
                 {% if requires_group_approval %}
                     Notifies group chairs to get approval.
                 {% elif requires_prev_authors_approval %}
-                    Notifies authors of previous revision of draft to get approval.
+                    Notifies authors of previous revision of Internet-Draft to get approval.
                 {% else %}
                     Notifies submitter and authors for confirmation.
                 {% endif %}

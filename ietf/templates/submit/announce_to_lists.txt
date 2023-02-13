@@ -1,6 +1,6 @@
 {% autoescape off %}
 A New Internet-Draft is available from the on-line Internet-Drafts directories.
-{% if submission.group %}This draft is a work item of the {{ submission.group.name }}{% if submission.group.type.name %} {{ submission.group.type.name }}{% endif %} of the {% if submission.group.type_id == "rg" %}IRTF{% else %}IETF{% endif %}.{% endif %}
+{% if submission.group %}This Internet-Draft is a work item of the {{ submission.group.name }}{% if submission.group.type.name %} {{ submission.group.type.name }}{% endif %} of the {% if submission.group.type_id == "rg" %}IRTF{% else %}IETF{% endif %}.{% endif %}
 
         Title           : {{ submission.title }}
         Author{{ submission.authors|pluralize:" ,s" }}         : {% for author in submission.authors %}{{ author.name }}{% if not forloop.last %}
@@ -12,7 +12,7 @@ A New Internet-Draft is available from the on-line Internet-Drafts directories.
 Abstract:
 {{ submission.abstract }}
 
-The IETF datatracker status page for this draft is:
+The IETF datatracker status page for this Internet-Draft is:
 {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.doc.views_doc.document_main' name=submission.name %}
 {% if submission.xml_version == "3" %}
 There is also an HTML version available at:

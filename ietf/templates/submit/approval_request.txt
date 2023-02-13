@@ -5,7 +5,7 @@ Hi,
 {% if not submission.group.is_active %}
 Note: This submission belongs to an inactive working group.
 {% endif %}
-To approve the draft, go to this URL (note: you need to login to be able to approve):
+To approve the Internet-Draft, go to this URL (note: you need to login to be able to approve):
   https://{{ domain }}{% url "ietf.submit.views.submission_status" submission_id=submission.pk access_token=submission.access_token %}
 
   File name       : {{ submission.name }}
@@ -32,4 +32,4 @@ To approve the draft, go to this URL (note: you need to login to be able to appr
 Best regards,
 
 	The IETF Secretariat
-	through the draft submission service
+	through the Internet-Draft submission service

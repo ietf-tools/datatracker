@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
-# expiry of Internet Drafts
+# expiry of Internet-Drafts
 
 
 from django.conf import settings
@@ -179,7 +179,7 @@ def expire_draft(doc):
     doc.save_with_history(events)
 
 def clean_up_draft_files():
-    """Move unidentified and old files out of the Internet Draft directory."""
+    """Move unidentified and old files out of the Internet-Draft directory."""
     cut_off = date_today(DEADLINE_TZINFO)
 
     pattern = os.path.join(settings.INTERNET_DRAFT_PATH, "draft-*.*")

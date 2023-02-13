@@ -42,7 +42,7 @@ $DTDIR/ietf/manage.py populate_yang_model_dirs -v0
 # Re-run yang checks on active documents
 $DTDIR/ietf/manage.py run_yang_model_checks -v0
 
-# Expire internet drafts
+# Expire Internet-Drafts
 # Enable when removed from /a/www/ietf-datatracker/scripts/Cron-runner:
 $DTDIR/ietf/bin/expire-ids
 
