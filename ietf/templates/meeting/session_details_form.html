@@ -29,6 +29,6 @@
             </tbody>
         </table>
     {% endif %}
-    {# hidden fields shown whether or not the whole form is hidden #}
-    {{ form.attendees.as_hidden }}{{ form.comments.as_hidden }}{{ form.id.as_hidden }}{{ form.on_agenda.as_hidden }}{{ form.DELETE.as_hidden }}
+    {# hidden fields included whether or not the whole form is hidden #}
+    {{ form.attendees.as_hidden }}{{ form.comments.as_hidden }}{{ form.id.as_hidden }}{{ form.on_agenda.as_hidden }}{{ form.DELETE.as_hidden }}{{ form.remote_instructions.as_hidden }}{{ form.short.as_hidden }}{{ form.agenda_note.as_hidden }}
 </div>

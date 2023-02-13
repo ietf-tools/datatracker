@@ -1,10 +1,10 @@
 {% autoescape off %}
 Hi,
 
-The IETF datatracker draft submission service has received your draft
+The IETF datatracker Internet-Draft submission service has received your Internet-Draft
 {{ submission.name }}-{{ submission.rev }}, and requires a
 confirmation step in order to be able to complete the posting of
-the draft.{% if chair_notice %}
+the Internet-Draft.{% if chair_notice %}
 
 The chairs have been copied since this is a group document whose author list has changed.
 {%endif%}
@@ -16,6 +16,6 @@ Please follow this link to the page where you can confirm the posting:
 Best regards,
 
 	The IETF Secretariat
-	through the draft submission service
+	through the Internet-Draft submission service
 
 {% endautoescape %}

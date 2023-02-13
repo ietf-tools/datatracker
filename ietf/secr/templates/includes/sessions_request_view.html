@@ -59,5 +59,15 @@
         </tr>
     {% endif %}
     <tr class="row1"><td>Special Requests:</td><td>{{ session.comments }}</td></tr>
+    {% if form and form.notifications_optional %}
+        <tr class="row2">
+            <td>
+                {{ form.send_notifications.label}}
+            </td>
+            <td>
+                {% if form.cleaned_data.send_notifications %}Yes{% else %}No{% endif %}
+            </td>
+        </tr>
+    {% endif %}
     </tbody>
 </table>

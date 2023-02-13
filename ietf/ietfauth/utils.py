@@ -82,6 +82,7 @@ def has_role(user, role_names, *args, **kwargs):
             "Program Lead": Q(person=person,name="lead", group__type="program", group__state="active"),
             "Program Secretary": Q(person=person,name="secr", group__type="program", group__state="active"),
             "Program Chair": Q(person=person,name="chair", group__type="program", group__state="active"),
+            "EDWG Chair": Q(person=person, name="chair", group__type="edwg", group__state="active"),
             "Nomcom Chair": Q(person=person, name="chair", group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),
             "Nomcom Advisor": Q(person=person, name="advisor", group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),
             "Nomcom": Q(person=person, group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),
@@ -167,8 +168,8 @@ def is_authorized_in_doc_stream(user, doc):
         group_req = Q(group__acronym=doc.stream.slug)
     elif doc.stream.slug == "editorial":
         group_req = Q(group=doc.group) | Q(group__acronym='rsab')
-        if doc.group.type.slug in ("individ", "rfcedtype"):
-            docman_roles = GroupFeatures.objects.get(type_id="rfcedtyp").docman_roles
+        if doc.group.type.slug in ("individ", "edappr"):
+            docman_roles = GroupFeatures.objects.get(type_id="edappr").docman_roles
     else:
         group_req = Q()  # no group constraint for other cases
 

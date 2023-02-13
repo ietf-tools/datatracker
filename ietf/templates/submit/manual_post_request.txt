@@ -7,7 +7,7 @@ Manual posting has been requested for the following Internet-Draft.
   - {{ err }}{% endfor %}
 
 If the authors claim that this is incorrect, then please look at the actual
-draft and verify that it does not have the problems indicated.
+Internet-Draft and verify that it does not have the problems indicated.
 {% endif %}
 Full idnits results are available at the end of this message.
 

@@ -1704,7 +1704,8 @@ def agenda_extract_schedule (item):
         } if (item.timeslot.show_location and item.timeslot.location and item.timeslot.location.floorplan) else {},
         "acronym": item.acronym,
         "duration": item.timeslot.duration.seconds,
-        "name": item.timeslot.name,
+        "name": item.session.name,
+        "slotName": item.timeslot.name,
         "startDateTime": item.timeslot.time.isoformat(),
         "status": item.session.current_status,
         "type": item.session.type.slug,
@@ -2340,7 +2341,6 @@ def session_details(request, num, acronym):
                     'can_manage_materials' : can_manage,
                     'can_view_request': can_view_request,
                     'thisweek': datetime_today()-datetime.timedelta(days=7),
-                    'now': timezone.now(),
                     'use_notes': meeting.uses_notes(),
                   })
 
@@ -3688,9 +3688,13 @@ def proceedings(request, num=None):
         sessions.filter(name__icontains='plenary')
         .exclude(current_status='notmeet')
     )
-    irtf, _ = organize_proceedings_sessions(
+    irtf_meeting, irtf_not_meeting = organize_proceedings_sessions(
         sessions.filter(group__parent__acronym = 'irtf').order_by('group__acronym')
     )
+    # per Colin (datatracker #5010) - don't report not meeting rags
+    irtf_not_meeting = [item for item in irtf_not_meeting if item["group"].type_id != "rag"]
+    irtf = {"meeting_groups":irtf_meeting, "not_meeting_groups":irtf_not_meeting}
+
     training, _ = organize_proceedings_sessions(
         sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['regular', 'other',])
         .exclude(current_status='notmeet')
