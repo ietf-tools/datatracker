@@ -691,14 +691,14 @@
             {% if user.is_authenticated %}
                 <a class="btn btn-primary btn-sm track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}"
                    href="{% url "ietf.community.views.untrack_document" username=user.username name=doc.name %}"
-                   title="Remove from your personal ID list">
+                   title="Remove from your personal I-D list">
                     <i class="bi bi-bookmark-check-fill">
                     </i>
                     Untrack
                 </a>
                 <a class="btn btn-primary btn-sm track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}"
                    href="{% url "ietf.community.views.track_document" username=user.username name=doc.name %}"
-                   title="Add to your personal ID list">
+                   title="Add to your personal I-D list">
                     <i class="bi bi-bookmark">
                     </i>
                     Track

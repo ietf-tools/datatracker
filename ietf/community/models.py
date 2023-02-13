@@ -19,11 +19,11 @@ class CommunityList(models.Model):
 
     def long_name(self):
         if self.user:
-            return 'Personal ID list of %s' % self.user.username
+            return 'Personal I-D list of %s' % self.user.username
         elif self.group:
-            return 'ID list for %s' % self.group.name
+            return 'I-D list for %s' % self.group.name
         else:
-            return 'ID list'
+            return 'I-D list'
 
     def __str__(self):
         return self.long_name()

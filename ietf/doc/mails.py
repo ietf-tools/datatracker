@@ -98,7 +98,7 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
     text = strip_tags(text)
 
     send_mail(request, to, None,
-              "ID Tracker Stream Change Notice: %s" % doc.file_tag(),
+              "I-D Tracker Stream Change Notice: %s" % doc.file_tag(),
               "doc/mail/stream_changed_email.txt",
               dict(text=text,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
@@ -288,7 +288,7 @@ def generate_approval_mail_approved(request, doc):
     else:
         contacts = "The IESG contact person is %s." % responsible_directors[0]
 
-    doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet Draft"
+    doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet-Draft"
         
     addrs = gather_address_lists('ballot_approved_ietf_stream',doc=doc).as_strings()
     return render_to_string("doc/mail/approval_mail.txt",
@@ -308,7 +308,7 @@ def generate_approval_mail_rfc_editor(request, doc):
     # This is essentially dead code - it is only exercised if the IESG ballots on some other stream's document,
     # which does not happen now that we have conflict reviews.
     disapproved = doc.get_state_slug("draft-iesg") in DO_NOT_PUBLISH_IESG_STATES
-    doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet Draft"
+    doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet-Draft"
     addrs = gather_address_lists('ballot_approved_conflrev', doc=doc).as_strings()
 
     return render_to_string("doc/mail/approval_mail_rfc_editor.txt",
