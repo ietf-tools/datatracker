@@ -39,7 +39,7 @@ jobs:
   build-mariadb:
     name: Build MariaDB Docker Images
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/main' && github.event.inputs.skipMariaDBBuild == 'false' }}
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event.inputs.skipMariaDBBuild == 'false') }}
     permissions:
       contents: read
       packages: write
@@ -210,3 +210,21 @@ jobs:
         push: true
         tags: ghcr.io/ietf-tools/datatracker-db-pg:latest,ghcr.io/ietf-tools/datatracker-db-pg:nightly-${{ steps.date.outputs.date }}
         provenance: false
+
+  cleanup:
+    name: Remove Old Images
+    runs-on: ubuntu-latest
+    if: ${{ always() && !failure() }}
+    needs: [build]
+    permissions:
+      packages: write
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Delete Old Versions
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        cd dev/del-old-packages
+        npm install
+        node index

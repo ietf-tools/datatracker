@@ -368,6 +368,7 @@ TEMPLATES = [
                 'ietf.context_processors.settings_info',
                 'ietf.secr.context_processors.secr_revision_info',
                 'ietf.context_processors.rfcdiff_base_url',
+                'ietf.context_processors.timezone_now',
             ],
             'loaders': [
                 ('django.template.loaders.cached.Loader', (
@@ -1004,7 +1005,7 @@ HTPASSWD_FILE = "/www/htpasswd"
 # Generation of pdf files
 GHOSTSCRIPT_COMMAND = "/usr/bin/gs"
 
-# Generation of bibxml files (currently only for internet drafts)
+# Generation of bibxml files (currently only for Internet-Drafts)
 BIBXML_BASE_PATH = '/a/ietfdata/derived/bibxml'
 
 # Timezone files for iCalendar

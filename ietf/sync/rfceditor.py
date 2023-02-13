@@ -567,7 +567,7 @@ def post_approved_draft(url, name):
             "Authorization": "Basic %s" % force_str(base64.encodebytes(smart_bytes("%s:%s" % (username, password)))).replace("\n", ""),
         }
 
-    log("Posting RFC-Editor notification of approved draft '%s' to '%s'" % (name, url))
+    log("Posting RFC-Editor notification of approved Internet-Draft '%s' to '%s'" % (name, url))
     text = error = ""
 
     try:
@@ -578,7 +578,7 @@ def post_approved_draft(url, name):
             timeout=settings.DEFAULT_REQUESTS_TIMEOUT,
         )
 
-        log("RFC-Editor notification result for draft '%s': %s:'%s'" % (name, r.status_code, r.text))
+        log("RFC-Editor notification result for Internet-Draft '%s': %s:'%s'" % (name, r.status_code, r.text))
 
         if r.status_code != 200:
             raise RuntimeError("Status code is not 200 OK (it's %s)." % r.status_code)
@@ -589,7 +589,7 @@ def post_approved_draft(url, name):
     except Exception as e:
         # catch everything so we don't leak exceptions, convert them
         # into string instead
-        msg = "Exception on RFC-Editor notification for draft '%s': %s: %s" % (name, type(e), str(e))
+        msg = "Exception on RFC-Editor notification for Internet-Draft '%s': %s: %s" % (name, type(e), str(e))
         log(msg)
         if settings.SERVER_MODE == 'test':
             debug.say(msg)

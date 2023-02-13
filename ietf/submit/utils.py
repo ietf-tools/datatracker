@@ -126,7 +126,7 @@ def validate_submission_name(name):
         if re.search(r'-\d\d$', name):
             name = name[:-3]
         if len(name) > 50:
-            return "Expected the draft name to be at most 50 ascii characters long; found %d." % len(name)
+            return "Expected the Internet-Draft name to be at most 50 ascii characters long; found %d." % len(name)
         else:
             msg = "Expected name 'draft-...' using lowercase ascii letters, digits, and hyphen; found '%s'." % name
             if '.' in name:
@@ -309,10 +309,10 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     # update draft attributes
     try:
         draft = Document.objects.get(name=submission.name)
-        log.log(f"{submission.name}: retrieved draft: {draft}")
+        log.log(f"{submission.name}: retrieved Internet-Draft: {draft}")
     except Document.DoesNotExist:
         draft = Document.objects.create(name=submission.name, type_id="draft")
-        log.log(f"{submission.name}: created draft: {draft}")
+        log.log(f"{submission.name}: created Internet-Draft: {draft}")
 
     prev_rev = draft.rev
 
@@ -341,7 +341,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
             draft.stream = StreamName.objects.get(slug=stream_slug)
 
     draft.expires = timezone.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
-    log.log(f"{submission.name}: got draft details")
+    log.log(f"{submission.name}: got Internet-Draft details")
 
     events = []
 
@@ -417,9 +417,9 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
 
         e = DocEvent(type="changed_document", doc=draft, rev=draft.rev)
         if draft.stream_id == 'ietf':
-            e.desc = "Sub state has been changed to <b>AD Followup</b> from <b>Revised ID Needed</b>"
+            e.desc = "Sub state has been changed to <b>AD Followup</b> from <b>Revised I-D Needed</b>"
         else:
-            e.desc = "<b>Revised ID Needed</b> tag cleared"
+            e.desc = "<b>Revised I-D Needed</b> tag cleared"
         e.by = system
         e.save()
         events.append(e)
@@ -1134,9 +1134,9 @@ def process_submission_xml(submission):
     xml_draft = XMLDraft(xml_path)
 
     if submission.name != xml_draft.filename:
-        raise SubmissionError('XML draft filename disagrees with submission filename')
+        raise SubmissionError('XML Internet-Draft filename disagrees with submission filename')
     if submission.rev != xml_draft.revision:
-        raise SubmissionError('XML draft revision disagrees with submission revision')
+        raise SubmissionError('XML Internet-Draft revision disagrees with submission revision')
 
     authors = xml_draft.get_author_list()
     for a in authors:
@@ -1176,17 +1176,17 @@ def process_submission_text(submission):
 
     if submission.name != text_draft.filename:
         raise SubmissionError(
-            f'Text draft filename ({text_draft.filename}) disagrees with submission filename ({submission.name})'
+            f'Text Internet-Draft filename ({text_draft.filename}) disagrees with submission filename ({submission.name})'
         )
     if submission.rev != text_draft.revision:
         raise SubmissionError(
-            f'Text draft revision ({text_draft.revision}) disagrees with submission revision ({submission.rev})')
+            f'Text Internet-Draft revision ({text_draft.revision}) disagrees with submission revision ({submission.rev})')
     text_title = _normalize_title(text_draft.get_title())
     if not text_title:
         raise SubmissionError('Could not extract a valid title from the text')
     if text_title != submission.title:
         raise SubmissionError(
-            f'Text draft title ({text_title}) disagrees with submission title ({submission.title})')
+            f'Text Internet-Draft title ({text_title}) disagrees with submission title ({submission.title})')
 
     submission.abstract = text_draft.get_abstract()
     submission.document_date = text_draft.get_creation_date()
@@ -1213,7 +1213,7 @@ def process_uploaded_submission(submission):
         return  # do nothing
 
     if submission.file_types != '.xml':
-        abort_submission('Only XML draft submissions can be processed.')
+        abort_submission('Only XML Internet-Draft submissions can be processed.')
 
     try:
         process_submission_xml(submission)

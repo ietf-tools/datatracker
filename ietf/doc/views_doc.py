@@ -58,7 +58,7 @@ from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDo
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
     RelatedDocument, RelatedDocHistory)
-from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_with_revision,
+from ietf.doc.utils import (augment_events_with_revision,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
@@ -1004,7 +1004,6 @@ def document_history(request, name):
     events = doc.docevent_set.all().order_by("-time", "-id").select_related("by")
 
     augment_events_with_revision(doc, events)
-    add_links_in_new_revision_events(doc, events, diff_revisions)
     add_events_message_info(events)
 
     # figure out if the current user can add a comment to the history
