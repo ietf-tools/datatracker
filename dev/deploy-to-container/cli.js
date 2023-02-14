@@ -247,7 +247,8 @@ async function main () {
     Env: [
       `LETSENCRYPT_HOST=${hostname}`,
       `VIRTUAL_HOST=${hostname}`,
-      `VIRTUAL_PORT=8000`
+      `VIRTUAL_PORT=8000`,
+      `PGHOST=dt-db-${branch}`
     ],
     Labels: {
       appversion: `${argv.appversion}` ?? '0.0.0',

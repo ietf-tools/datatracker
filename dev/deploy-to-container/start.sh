@@ -22,8 +22,10 @@ echo "Creating data directories..."
 chmod +x ./app-create-dirs.sh
 ./app-create-dirs.sh
 
-echo "Altering PG search path..."
-psql -U django -h db -d ietf -v ON_ERROR_STOP=1 -c '\x' -c 'ALTER USER django set search_path=ietf_utf8,django,public;'
+if [ -n "$PGHOST" ]; then
+    echo "Altering PG search path..."
+    psql -U django -h $PGHOST -d ietf -v ON_ERROR_STOP=1 -c '\x' -c 'ALTER USER django set search_path=ietf_utf8,django,public;'
+fi
 
 echo "Running Datatracker checks..."
 ./ietf/manage.py check
