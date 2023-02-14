@@ -763,9 +763,11 @@ def rebuild_reference_relations(doc, filenames):
     errors = []
     unfound = set()
     for ( ref, refType ) in refs.items():
-        # As of Dec 2021, DocAlias has a unique constraint on the name field, so count > 1 should not occur
-        refdoc = DocAlias.objects.filter( name=ref )
+        refdoc = DocAlias.objects.filter(name=ref)
+        if not refdoc and re.match(r"^draft-.*-\d{2}$", ref):
+            refdoc = DocAlias.objects.filter(name=ref[:-3])
         count = refdoc.count()
+        # As of Dec 2021, DocAlias has a unique constraint on the name field, so count > 1 should not occur
         if count == 0:
             unfound.add( "%s" % ref )
             continue

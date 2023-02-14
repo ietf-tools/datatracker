@@ -374,10 +374,17 @@ class XMLDraftTests(TestCase):
             draft.get_refs(),
             {
                 'rfc1': XMLDraft.REF_TYPE_NORMATIVE,
+                'rfc2': XMLDraft.REF_TYPE_NORMATIVE,
+                'draft-wood-key-consistency-03': XMLDraft.REF_TYPE_INFORMATIVE,
                 'rfc255': XMLDraft.REF_TYPE_INFORMATIVE,
                 'bcp6': XMLDraft.REF_TYPE_INFORMATIVE,
+                'bcp14': XMLDraft.REF_TYPE_INFORMATIVE,
                 'rfc1207': XMLDraft.REF_TYPE_UNKNOWN,
                 'rfc4086': XMLDraft.REF_TYPE_NORMATIVE,
+                'draft-ietf-teas-pcecc-use-cases-00': XMLDraft.REF_TYPE_INFORMATIVE,
+                'draft-ietf-teas-pcecc-use-cases': XMLDraft.REF_TYPE_INFORMATIVE,
+                'draft-ietf-sipcore-multiple-reasons-00': XMLDraft.REF_TYPE_INFORMATIVE,
+                'draft-ietf-sipcore-multiple-reasons': XMLDraft.REF_TYPE_INFORMATIVE,
             }
         )
 
