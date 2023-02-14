@@ -69,18 +69,7 @@
                 {{ area.description|urlize_ietf_docs|linkify|safe }}
             </p>
         {% endif %}
-        <div class="row mt-3">
-            <div class="col-sm chart text-center" data-area="{{ area.acronym|lower }}" data-dataset="docs">
-                <div class="spinner-border" role="status">
-                  <span class="visually-hidden">Loading...</span>
-                </div>
-            </div>
-            <div class="col-sm chart text-center" data-area="{{ area.acronym|lower }}" data-dataset="pages">
-                <div class="spinner-border" role="status">
-                  <span class="visually-hidden">Loading...</span>
-                </div>
-            </div>
-        </div>
+        {% include "group/group_stats_modal.html" with group=area only %}
     {% endfor %}
 {% endblock %}
 {% block js %}

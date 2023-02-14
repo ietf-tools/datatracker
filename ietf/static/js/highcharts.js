@@ -109,7 +109,7 @@ window.group_stats = function (url, chart_selector) {
                             if (a.parent > b.parent) {
                                 return 1;
                             }
-                        } else if (a.parent == "ietf") {
+                        } else if (a.parent == area) {
                             if (a.id < b.id) {
                                 return 1;
                             }
