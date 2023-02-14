@@ -47,7 +47,6 @@
                 direction: rtl;
                 text-align: left;
             }
-            }
         </style>
     </head>
     <body>
@@ -103,6 +102,8 @@
                         {% include "doc/document_info.html" with sidebar=False %}
                         <tr>
                             <th scope="row"></th>
+                            <th scope="row"></th>
+                            <td class="edit"></td>
                             <td>
                                 <a class="btn btn-sm btn-warning mb-3"
                                 target="_blank"
@@ -132,7 +133,7 @@
                     <div class="rfcmarkup">
                         <br class="noprint">
                         <!-- [html-validate-disable-block attr-quotes, void-style, element-permitted-content, heading-level -- FIXME: rfcmarkup/rfc2html generates HTML with issues] -->
-                        {{ doc.htmlized|default:"Generation of htmlized text failed"|linkify|safe }}
+                        {{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}
                     </div>
                 {% endif %}
             </div>

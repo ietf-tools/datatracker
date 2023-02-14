@@ -9,14 +9,14 @@
     {% origin %}
     <h2 class="mt-3">Add pre-approval</h2>
     <p>
-        You can register a pre-approved draft name. Then the chair
-        approval step of group <code>-00</code> submissions is suspended for that draft name
+        You can register a pre-approved Internet-Draft name. Then the chair
+        approval step of group <code>-00</code> submissions is suspended for that Internet-Draft name
         so a future submission is posted to the data tracker immediately.
     </p>
     <p>
-        When the revision <code>-00</code> draft is submitted, the pre-approval will not
+        When the revision <code>-00</code> Internet-Draft is submitted, the pre-approval will not
         be shown anymore as it has fulfilled its purpose (only revision <code>-00</code> submissions are
-        subject to approval). If the draft never shows up, you can instead
+        subject to approval). If the Internet-Draft never shows up, you can instead
         later cancel the pre-approval to get rid of it.
     </p>
     <h2 class="mt-3">Instructions</h2>
@@ -32,7 +32,7 @@
         <p>
             As chair
             {% if groups|length > 1 %}of {{ groups|length|apnumber }} groups{% endif %}
-            you can pre-approve draft names on the form:
+            you can pre-approve Internet-Draft names on the form:
         </p>
         <p class="buttonlist">
             {% for g in groups %}

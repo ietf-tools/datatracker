@@ -9,7 +9,7 @@ def std_level_prompt(doc):
     to the object's intended_std_level (with the word RFC appended in some
     cases), or a prompt requesting that the intended_std_level be set."""
     
-    prompt = "*** YOU MUST SELECT AN INTENDED STATUS FOR THIS DRAFT AND REGENERATE THIS TEXT ***"
+    prompt = "*** YOU MUST SELECT AN INTENDED STATUS FOR THIS INTERNET-DRAFT AND REGENERATE THIS TEXT ***"
 
     if doc.intended_std_level:
        prompt = doc.intended_std_level.name

@@ -740,7 +740,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(q('title').text(), 'draft-ietf-mars-test-01')
         self.assertEqual(len(q('.rfcmarkup pre')), 3)
         self.assertEqual(len(q('.rfcmarkup span.h1, .rfcmarkup h1')), 2)
-        self.assertEqual(len(q('.rfcmarkup a[href]')), 28)
+        self.assertEqual(len(q('.rfcmarkup a[href]')), 27)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name, rev=draft.rev)))
         self.assertEqual(r.status_code, 200)
@@ -2522,7 +2522,7 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
         self.assertValidJSONResponse(r)
         d = r.json()
         self.assertEqual(d['chart']['type'], settings.CHART_TYPE_COLUMN_OPTIONS['chart']['type'])
-        self.assertEqual("New draft revisions over time for %s" % person.name, d['title']['text'])
+        self.assertEqual("New Internet-Draft revisions over time for %s" % person.name, d['title']['text'])
 
         data_url = urlreverse('ietf.doc.views_stats.chart_data_person_drafts', kwargs=dict(id=person.id))
 

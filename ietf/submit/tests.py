@@ -327,7 +327,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         self.assertEqual(len(outbox), mailbox_before + 1)
-        self.assertTrue("New draft waiting for approval" in outbox[-1]["Subject"])
+        self.assertTrue("New Internet-Draft waiting for approval" in outbox[-1]["Subject"])
         self.assertTrue(name in outbox[-1]["Subject"])
 
         # as chair of WG, we should see approval button
@@ -438,7 +438,7 @@ class SubmitTests(BaseSubmitTestCase):
 
         # Approval request notification should be sent to the WG chair
         self.assertEqual(len(outbox), mailbox_before + 1)
-        self.assertTrue("New draft waiting for approval" in outbox[-1]["Subject"])
+        self.assertTrue("New Internet-Draft waiting for approval" in outbox[-1]["Subject"])
         self.assertTrue(name in outbox[-1]["Subject"])
         self.assertTrue('mars-chairs@ietf.org' in outbox[-1]['To'])
 
@@ -791,7 +791,7 @@ class SubmitTests(BaseSubmitTestCase):
 
         # Approval request notification should be sent to the AD for the group
         self.assertEqual(len(outbox), mailbox_before + 1)
-        self.assertTrue("New draft waiting for approval" in outbox[-1]["Subject"])
+        self.assertTrue("New Internet-Draft waiting for approval" in outbox[-1]["Subject"])
         self.assertTrue(name in outbox[-1]["Subject"])
         self.assertTrue(ad.user.email in outbox[-1]['To'])
 
@@ -1224,7 +1224,7 @@ class SubmitTests(BaseSubmitTestCase):
             ad.user.email if notify_ad else '%s-chairs@ietf.org' % replaced_draft.group.acronym,
             notice['To']
         )
-        self.assertIn('New draft waiting for approval', notice['Subject'])
+        self.assertIn('New Internet-Draft waiting for approval', notice['Subject'])
 
     def test_submit_new_individual_replacing_wg(self):
         self.submit_new_individual_replacing_wg()
@@ -3061,7 +3061,7 @@ class SubmissionUploadFormTests(BaseSubmitTestCase):
             files=files_dict,
         )
         self.assertFalse(form.is_valid())
-        self.assertIn('A draft cannot replace itself', form.errors['replaces'])
+        self.assertIn('An Internet-Draft cannot replace itself', form.errors['replaces'])
 
         # can't replace non-draft
         review = ReviewFactory()
@@ -3071,7 +3071,7 @@ class SubmissionUploadFormTests(BaseSubmitTestCase):
             files=files_dict,
         )
         self.assertFalse(form.is_valid())
-        self.assertIn('A draft can only replace another draft', form.errors['replaces'])
+        self.assertIn('An Internet-Draft can only replace another Internet-Draft', form.errors['replaces'])
 
         # can't replace RFC
         rfc = WgRfcFactory()
@@ -3081,7 +3081,7 @@ class SubmissionUploadFormTests(BaseSubmitTestCase):
             files=files_dict,
         )
         self.assertFalse(form.is_valid())
-        self.assertIn('A draft cannot replace an RFC', form.errors['replaces'])
+        self.assertIn('An Internet-Draft cannot replace an RFC', form.errors['replaces'])
 
         # can't replace draft approved by iesg
         existing_drafts[0].set_state(State.objects.get(type='draft-iesg', slug='approved'))
@@ -3217,7 +3217,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         process_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'cancel')
-        self.assertIn('draft filename disagrees', submission.submissionevent_set.last().desc)
+        self.assertIn('Internet-Draft filename disagrees', submission.submissionevent_set.last().desc)
 
         # rev mismatch
         submission = SubmissionFactory(
@@ -3249,7 +3249,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         process_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'cancel')
-        self.assertIn('Only XML draft submissions', submission.submissionevent_set.last().desc)
+        self.assertIn('Only XML Internet-Draft submissions', submission.submissionevent_set.last().desc)
 
         # wrong state
         submission = SubmissionFactory(
@@ -3416,7 +3416,7 @@ class ApiSubmitTests(BaseSubmitTestCase):
     def test_api_submit_info(self):
         url = urlreverse('ietf.submit.views.api_submit')
         r = self.client.get(url)
-        expected = "A simplified draft submission interface, intended for automation"
+        expected = "A simplified Internet-Draft submission interface, intended for automation"
         self.assertContains(r, expected, status_code=200)
 
     def test_api_submit_bad_method(self):

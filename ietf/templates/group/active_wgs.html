@@ -17,10 +17,10 @@
            href="{% url "ietf.group.views.chair_photos" group_type="wg" %}">Chair photos</a>
     </div>
     {% for area in areas %}
-        <h2 class="mt-5" id="{{ area.acronym }}">{{ area.name }} ({{ area.acronym }})</h2>
+        <h2 class="mt-5" id="{{ area.acronym|upper }}">{{ area.name }} ({{ area.acronym|upper }})</h2>
         {% if area.ads_and_pre_ads %}
             <h3 class="mt-3 navskip">
-                {{ area.acronym }} Area Director{{ area.ads_and_pre_ads|pluralize }} (AD{{ area.ads_and_pre_ads|pluralize }})
+                {{ area.acronym|upper }} Area Director{{ area.ads_and_pre_ads|pluralize }} (AD{{ area.ads_and_pre_ads|pluralize }})
             </h3>
             <ul class="list-unstyled">
                 {% for ad in area.ads_and_pre_ads %}
@@ -31,19 +31,9 @@
                 {% endfor %}
             </ul>
         {% endif %}
-        {% if area.urls %}
-            <h3 class="mt-3 navskip">{{ area.acronym }} Area-specific web page{{ area.urls|pluralize }}</h3>
-            <ul class="list-unstyled">
-                {% for url in area.urls %}
-                    <li>
-                        <a href="{{ url.value }}">{{ url.name }}</a>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% endif %}
         {% if area.groups %}
             <h3 class="mt-3 navskip">
-                {{ area.acronym }} active WG{{ area.groups|pluralize }}
+                {{ area.acronym|upper }} active WG{{ area.groups|pluralize }}
                 <span class="text-muted">({{ area.groups.count }})</span>
             </h3>
             <table class="table table-sm table-striped tablesorter">
@@ -84,7 +74,7 @@
                 </tbody>
             </table>
         {% else %}
-            <h3 class="mt-3 navskip">No active {{ area.acronym }} WGs</h3>
+            <h3 class="mt-3 navskip">No active {{ area.acronym|upper }} WGs</h3>
         {% endif %}
     {% endfor %}
 {% endblock %}

@@ -994,7 +994,7 @@ class MakeLastCallForm(forms.Form):
 
 @role_required('Secretariat')
 def make_last_call(request, name):
-    """Make last call for Internet Draft, sending out announcement."""
+    """Make last call for Internet-Draft, sending out announcement."""
     doc = get_object_or_404(Document, docalias__name=name)
     if not (doc.get_state("draft-iesg") or doc.get_state("statchg")):
         raise Http404

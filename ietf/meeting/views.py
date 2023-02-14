@@ -1704,7 +1704,8 @@ def agenda_extract_schedule (item):
         } if (item.timeslot.show_location and item.timeslot.location and item.timeslot.location.floorplan) else {},
         "acronym": item.acronym,
         "duration": item.timeslot.duration.seconds,
-        "name": item.timeslot.name,
+        "name": item.session.name,
+        "slotName": item.timeslot.name,
         "startDateTime": item.timeslot.time.isoformat(),
         "status": item.session.current_status,
         "type": item.session.type.slug,
@@ -2340,7 +2341,6 @@ def session_details(request, num, acronym):
                     'can_manage_materials' : can_manage,
                     'can_view_request': can_view_request,
                     'thisweek': datetime_today()-datetime.timedelta(days=7),
-                    'now': timezone.now(),
                     'use_notes': meeting.uses_notes(),
                   })
 

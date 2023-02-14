@@ -257,16 +257,17 @@ const meetingEvents = computed(() => {
     acc.lastDate = itemDate.toISODate()
 
     // -> Add session header row
-    if (item.type === 'regular' && acc.lastTypeName !== `${item.type}-${item.name}`) {
+    const typeName = `${item.type}-${item.slotName}`
+    if (item.type === 'regular' && acc.lastTypeName !== typeName) {
       acc.result.push({
         key: `sesshd-${item.id}`,
         displayType: 'session-head',
         timeslot: itemTimeSlot,
-        name: `${item.adjustedStart.toFormat('cccc')} ${item.name}`,
+        name: `${item.adjustedStart.toFormat('cccc')} ${item.slotName}`,
         cssClasses: 'agenda-table-display-session-head' + (isLive ? ' agenda-table-live' : '')
       })
     }
-    acc.lastTypeName = `${item.type}-${item.name}`
+    acc.lastTypeName = typeName
 
     // -> Populate event links
     const links = []
