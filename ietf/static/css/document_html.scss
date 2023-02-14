@@ -13,6 +13,58 @@ $tooltip-margin: inherit !default;
 @import "bootstrap/scss/utilities";
 @import "bootstrap/scss/root";
 
+// from https://gist.github.com/Jakobud/a0ac11e80a1de453cd86f0d3fc0a1410?permalink_comment_id=2327765#gistcomment-2327765
+@function map-sort-by-values($map) {
+    // Transform map to zipped list
+    $keys: ();
+    $values: ();
+
+    @each $key,
+    $val in $map {
+        $keys: append($keys, $key);
+        $values: append($values, $val);
+    }
+
+    $list: zip($keys, $values);
+    $sortedMap: ();
+
+    @while length($list)>0 {
+        // Find smallest pair
+        $smallestPair: nth($list, 1);
+
+        @each $pair in $list {
+            $value: nth($pair, 2);
+            $smallestValue: nth($smallestPair, 2);
+
+            @if $value < $smallestValue {
+                $smallestPair: $pair;
+            }
+        }
+
+        // Add smallest pair to sorted map
+        $key: nth($smallestPair, 1);
+        $value: nth($smallestPair, 2);
+        $sortedMap: map-merge($sortedMap, ($key: $value));
+
+        // Remove from list smallest pair
+        $smallestPairIndex: index($list, $smallestPair);
+        $newList: ();
+
+        @for $i from 1 through length($list) {
+            @if $i !=$smallestPairIndex {
+                $newList: append($newList, nth($list, $i), "space");
+            }
+        }
+
+        $list: $newList;
+    }
+
+    @return $sortedMap;
+}
+
+// add an xxs breakpoint for narrow devices
+$grid-breakpoints: map-sort-by-values(map.merge($grid-breakpoints, (xxs: 0, xs: 400px)));
+
 // Layout & components
 @import "bootstrap/scss/reboot";
 @import "bootstrap/scss/type";
@@ -108,7 +160,11 @@ $tooltip-margin: inherit !default;
     }
 
     @media screen {
-        @include media-breakpoint-only(xs) {
+        @include media-breakpoint-only(xxs) {
+            font-size: min(6pt, var(--doc-ptsize-max));
+        }
+
+        @include media-breakpoint-up(xs) {
             font-size: min(7pt, var(--doc-ptsize-max));
         }
 
