@@ -91,10 +91,10 @@ def add_proceed(request):
                              )
 
             # in theory a user record could exist which wasn't associated with a Person
-            try:
+            
+            user = User.objects.get(username__iexact=email)
+            if not user:
                 user = User.objects.create_user(email, email)
-            except IntegrityError:
-                user = User.objects.get(username=email)
                 
             person.user = user
             person.save()
@@ -179,7 +179,7 @@ def edit(request, id):
             
             if 'user' in person_form.changed_data and person_form.initial['user']:
                 try:
-                    source = User.objects.get(username=person_form.initial['user'])
+                    source = User.objects.get(username__iexact=person_form.initial['user'])
                     merge_users(source, person_form.cleaned_data['user'])
                     source.is_active = False
                     source.save()

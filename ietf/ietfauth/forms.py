@@ -31,7 +31,7 @@ class RegistrationForm(forms.Form):
             return email
         if email.lower() != email:
             raise forms.ValidationError('The supplied address contained uppercase letters.  Please use a lowercase email address.')
-        if User.objects.filter(username=email).exists():
+        if User.objects.filter(username__iexact=email).exists():
             raise forms.ValidationError('An account with the email address you provided already exists.')
         return email
 
@@ -199,7 +199,7 @@ class ResetPasswordForm(forms.Form):
         In addition to EmailField's checks, verifies that a User matching the username exists.
         """
         username = self.cleaned_data["username"]
-        if not User.objects.filter(username=username).exists():
+        if not User.objects.filter(username__iexact=username).exists():
             raise forms.ValidationError(mark_safe(
                 "Didn't find a matching account. "
                 "If you don't have an account yet, you can <a href=\"{}\">create one</a>.".format(
@@ -266,6 +266,6 @@ class ChangeUsernameForm(forms.Form):
 
     def clean_username(self):
         username = self.cleaned_data['username']
-        if User.objects.filter(username=username).exists():
+        if User.objects.filter(username__iexact=username).exists():
             raise ValidationError("A login with that username already exists.  Please contact the secretariat to get this resolved.")
         return username

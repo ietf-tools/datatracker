@@ -159,7 +159,7 @@ def confirm_account(request, auth):
     except django.core.signing.BadSignature:
         raise Http404("Invalid or expired auth")
 
-    if User.objects.filter(username=email).exists():
+    if User.objects.filter(username__iexact=email).exists():
         return redirect(profile)
 
     success = False
@@ -417,7 +417,7 @@ def password_reset(request):
             # The form validation checks that a matching User exists. Add the person__isnull check
             # because the OneToOne field does not gracefully handle checks for user.person is Null.
             # If we don't get a User here, we know it's because there's no related Person.
-            user = User.objects.filter(username=submitted_username, person__isnull=False).first()
+            user = User.objects.filter(username__iexact=submitted_username, person__isnull=False).first()
             if not (user and user.person.email_set.filter(active=True).exists()):
                 form.add_error(
                     'username',
@@ -707,7 +707,7 @@ def login(request, extra_context=None):
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         username = form.data.get('username')
-        user = User.objects.filter(username=username).first()
+        user = User.objects.filter(username__iexact=username).first() # Consider _never_ actually looking for the User username and only looking at Email
         if not user:
             # try to find user ID from the email address
             email = Email.objects.filter(address=username).first()

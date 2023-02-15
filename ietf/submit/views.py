@@ -129,7 +129,7 @@ def api_submission(request):
             if form.is_valid():
                 log('got valid submission form for %s' % form.filename)
                 username = form.cleaned_data['user']
-                user = User.objects.filter(username=username)
+                user = User.objects.filter(username__iexact=username)
                 if user.count() == 0:
                     # See if a secondary login was being used
                     email = Email.objects.filter(address=username, active=True)
@@ -232,7 +232,7 @@ def api_submit(request):
             if form.is_valid():
                 log('got valid submission form for %s' % form.filename)
                 username = form.cleaned_data['user']
-                user = User.objects.filter(username=username)
+                user = User.objects.filter(username__iexact=username)
                 if user.count() == 0:
                     # See if a secondary login was being used
                     email = Email.objects.filter(address=username, active=True)
