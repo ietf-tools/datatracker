@@ -51,6 +51,9 @@ a.new-timeslot-link { color: lightgray; font-size: large;}
            href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">
             Agenda list
         </a>
+        {% if schedule_edit_url %}
+            <a class="btn btn-secondary" href="{{ schedule_edit_url }}">Back to agenda</a>
+        {% endif %}
     </div>
    <div class="timeslot-edit">
         {% if rooms|length == 0 %}

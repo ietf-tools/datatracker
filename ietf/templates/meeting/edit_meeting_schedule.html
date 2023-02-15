@@ -46,7 +46,7 @@
                 {% endif %}
                 {% if user|has_role:"Secretariat" %}
                     <a class="btn btn-primary"
-                       href="{% url "ietf.meeting.views.edit_timeslots" num=meeting.number %}">
+                       href="{% url 'ietf.meeting.views.edit_timeslots' num=meeting.number %}?sched={{ schedule.pk }}">
                         Edit timeslots
                     </a>
                 {% endif %}
@@ -74,7 +74,8 @@
                   No timeslots exist for this meeting yet.
                 </p>
                 <p>
-                  <a class="btn btn-primary" href="{% url "ietf.meeting.views.edit_timeslots" num=meeting.number %}">
+                  <a class="btn btn-primary"
+                     href="{% url 'ietf.meeting.views.edit_timeslots' num=meeting.number %}?sched={{ schedule.pk }}">
                     Edit timeslots
                   </a>
                 </p>

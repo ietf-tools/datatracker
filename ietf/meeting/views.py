@@ -281,8 +281,13 @@ def materials_editable_groups(request, num=None):
 
 @role_required('Secretariat')
 def edit_timeslots(request, num=None):
-
     meeting = get_meeting(num)
+    if 'sched' in request.GET:
+        schedule = Schedule.objects.filter(pk=request.GET.get('sched', None)).first()
+        schedule_edit_url = _schedule_edit_url(meeting, schedule)
+    else:
+        schedule_edit_url = None
+
     with timezone.override(meeting.tz()):
         if request.method == 'POST':
             # handle AJAX requests
@@ -333,6 +338,7 @@ def edit_timeslots(request, num=None):
                                               "slot_slices": slots,
                                               "date_slices":date_slices,
                                               "meeting":meeting,
+                                              "schedule_edit_url": schedule_edit_url,
                                               "ts_list":ts_list,
                                               "ts_with_official_assignments": ts_with_official_assignments,
                                               "ts_with_any_assignments": ts_with_any_assignments,
