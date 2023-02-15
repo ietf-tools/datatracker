@@ -4170,7 +4170,15 @@ def create_timeslot(request, num):
                     show_location=form.cleaned_data['show_location'],
                 )
             )
-            return HttpResponseRedirect(reverse('ietf.meeting.views.edit_timeslots',kwargs={'num':num}))
+            redirect_to = reverse('ietf.meeting.views.edit_timeslots',kwargs={'num':num})
+            if 'sched' in request.GET:
+                # Preserve 'sched' as a query parameter
+                urlparts = list(urlsplit(redirect_to))
+                query = parse_qs(urlparts[3])
+                query['sched'] = request.GET['sched']
+                urlparts[3] = urlencode(query)
+                redirect_to = urlunsplit(urlparts)
+            return HttpResponseRedirect(redirect_to)
     else:
         form = TimeSlotCreateForm(meeting)
 
