@@ -4171,19 +4171,19 @@ def create_timeslot(request, num):
 @role_required('Secretariat')
 def edit_session(request, session_id):
     session = get_object_or_404(Session, pk=session_id)
+    schedule = Schedule.objects.filter(pk=request.GET.get('sched', None)).first()
+    editor_url = _schedule_edit_url(session.meeting, schedule)
     if request.method == 'POST':
         form = SessionEditForm(instance=session, data=request.POST)
         if form.is_valid():
             form.save()
-            return HttpResponseRedirect(
-                reverse('ietf.meeting.views.edit_meeting_schedule',
-                        kwargs={'num': form.instance.meeting.number}))
+            return HttpResponseRedirect(editor_url)
     else:
         form = SessionEditForm(instance=session)
     return render(
         request,
         'meeting/edit_session.html',
-        {'session': session, 'form': form},
+        {'session': session, 'form': form, 'editor_url': editor_url},
     )
 
 def _schedule_edit_url(meeting, schedule):
