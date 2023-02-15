@@ -17,7 +17,7 @@ import tempfile
 
 from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
-from urllib.parse import unquote
+from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
 
@@ -4129,7 +4129,15 @@ def edit_timeslot(request, num, slot_id):
             form = TimeSlotEditForm(instance=timeslot, data=request.POST)
             if form.is_valid():
                 form.save()
-                return HttpResponseRedirect(reverse('ietf.meeting.views.edit_timeslots', kwargs={'num': num}))
+                redirect_to = reverse('ietf.meeting.views.edit_timeslots', kwargs={'num': num})
+                if 'sched' in request.GET:
+                    # Preserve 'sched' as a query parameter
+                    urlparts = list(urlsplit(redirect_to))
+                    query = parse_qs(urlparts[3])
+                    query['sched'] = request.GET['sched']
+                    urlparts[3] = urlencode(query)
+                    redirect_to = urlunsplit(urlparts)
+                return HttpResponseRedirect(redirect_to)
         else:
             form = TimeSlotEditForm(instance=timeslot)
 
