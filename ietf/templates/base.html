@@ -105,12 +105,12 @@
                         </div>
                     </noscript>
                     {% for message in messages %}
-                        <div class="alert {% if message.level_tag %} alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag }}{% endif %} {% endif %} {% if message.extra_tags %} {{ message.extra_tags }}{% endif %} alert-dismissable fade show">
+                        <div class="alert {% if message.level_tag %} alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag }}{% endif %} {% endif %} alert-dismissable fade show">
                             <button type="button"
                                     class="btn-close float-end"
                                     data-bs-dismiss="alert"
                                     aria-label="Close"></button>
-                            {{ message.message }}
+                            <div{% if message.extra_tags %} class="{{ message.extra_tags }}"{% endif %}>{{ message.message }}</div>
                         </div>
                     {% endfor %}
                     {% block content %}{{ content|safe }}{% endblock %}
