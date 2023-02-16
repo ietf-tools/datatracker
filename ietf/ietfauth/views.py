@@ -390,7 +390,7 @@ def confirm_new_email(request, auth):
     except django.core.signing.BadSignature:
         raise Http404("Invalid or expired auth")
 
-    person = get_object_or_404(Person, user__username=username)
+    person = get_object_or_404(Person, user__username__iexact=username)
 
     # do another round of validation since the situation may have
     # changed since submitting the request
@@ -465,7 +465,7 @@ def confirm_password_reset(request, auth):
     except django.core.signing.BadSignature:
         raise Http404("Invalid or expired auth")
 
-    user = get_object_or_404(User, username=username, password__endswith=password, last_login=last_login)
+    user = get_object_or_404(User, username__iexact=username, password__endswith=password, last_login=last_login)
     if request.user.is_authenticated and request.user != user:
         return HttpResponseForbidden(
             f'This password reset link is not for the signed-in user. '
