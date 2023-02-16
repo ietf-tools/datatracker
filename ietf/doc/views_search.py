@@ -679,7 +679,15 @@ def docs_for_ad(request, name):
     results, meta = prepare_document_table(request, retrieve_search_results(form), form.data, max_results=500)
     results.sort(key=ad_dashboard_sort_key)
     del meta["headers"][-1]
-    #
+
+    # filter out some results
+    results = [
+        r
+        for r in results
+        if r.type.slug not in ["charter", "draft"]
+        or r.get_state().slug not in ["repl", "replaced", "expired", "notrev"]
+    ]
+
     for d in results:
         d.search_heading = ad_dashboard_group(d)
     #
