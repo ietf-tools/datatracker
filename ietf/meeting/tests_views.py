@@ -3231,10 +3231,11 @@ class EditTests(TestCase):
             e = q("#session{}".format(s.pk))
 
             # should be link to edit/cancel session
+            edit_session_url = urlreverse(
+                'ietf.meeting.views.edit_session', kwargs={'session_id': s.pk}
+            ) + f'?sched={meeting.schedule.pk}'
             self.assertTrue(
-                e.find('a[href="{}"]'.format(
-                    urlreverse('ietf.meeting.views.edit_session', kwargs={'session_id': s.pk}),
-                ))
+                e.find(f'a[href="{edit_session_url}"]')
             )
             self.assertTrue(
                 e.find('a[href="{}?sched={}"]'.format(
