@@ -1207,5 +1207,5 @@ def bibxml_for_draft(doc, rev=None):
     if name.startswith('rfc'): # bibxml3 does not speak of RFCs
         raise Http404()
         
-    return render_to_string('doc/bibxml.xml', {'name':name, 'doc':doc, 'doc_bibtype':'I-D'})
+    return render_to_string('doc/bibxml.xml', {'name':name, 'doc':doc, 'doc_bibtype':'I-D', 'settings':settings})
 
