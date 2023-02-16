@@ -60,17 +60,47 @@ class XMLDraft(Draft):
                 tree.tree = v2v3.convert2to3()
         return tree, xml_version
 
-    def _document_name(self, anchor):
-        """Guess document name from reference anchor
+    def _document_name(self, ref):
+        """Get document name from reference."""
+        series = ["rfc", "bcp", "fyi", "std"]
+        # handle xinclude first
+        # FIXME: this assumes the xinclude is a bibxml href; if it isn't, there can
+        # still be false negatives. it would be better to expand the xinclude and parse
+        # its seriesInfo.
+        if ref.tag.endswith("}include"):
+            name = re.search(
+                rf"reference\.({'|'.join(series).upper()})\.(\d{{4}})\.xml",
+                ref.attrib["href"],
+            )
+            if name:
+                return f"{name.group(1)}{int(name.group(2))}".lower()
+            name = re.search(
+                r"reference\.I-D\.(?:draft-)?(.*)\.xml", ref.attrib["href"]
+            )
+            if name:
+                return f"draft-{name.group(1)}"
+            # can't extract the name, give up
+            return ""
 
-        Looks for series numbers and removes leading 0s from the number.
-        """
-        anchor = anchor.lower()  # always give back lowercase
-        label = anchor.rstrip('0123456789')  # remove trailing digits
-        if label in ['rfc', 'bcp', 'fyi', 'std']:
-            number = int(anchor[len(label):])
-            return f'{label}{number}'
-        return anchor
+        # check the anchor next
+        anchor = ref.get("anchor").lower()  # always give back lowercase
+        label = anchor.rstrip("0123456789")  # remove trailing digits
+        if label in series:
+            number = int(anchor[len(label) :])
+            return f"{label}{number}"
+
+        # if we couldn't find a match so far, try the seriesInfo
+        series_query = " or ".join(f"@name='{x.upper()}'" for x in series)
+        for info in ref.xpath(
+            f"./seriesInfo[{series_query} or @name='Internet-Draft']"
+        ):
+            if not info.attrib["value"]:
+                continue
+            if info.attrib["name"] == "Internet-Draft":
+                return info.attrib["value"]
+            else:
+                return f'{info.attrib["name"].lower()}{info.attrib["value"]}'
+        return ""
 
     def _reference_section_type(self, section_name):
         """Determine reference type from name of references section"""
@@ -154,10 +184,20 @@ class XMLDraft(Draft):
         """Extract references from the draft"""
         refs = {}
         # accept nested <references> sections
-        for section in self.xmlroot.findall('back//references'):
-            ref_type = self._reference_section_type(self._reference_section_name(section))
-            for ref in (section.findall('./reference') + section.findall('./referencegroup')):
-                refs[self._document_name(ref.get('anchor'))] = ref_type
+        for section in self.xmlroot.findall("back//references"):
+            ref_type = self._reference_section_type(
+                self._reference_section_name(section)
+            )
+            for ref in (
+                section.findall("./reference")
+                + section.findall("./referencegroup")
+                + section.findall(
+                    "./xi:include", {"xi": "http://www.w3.org/2001/XInclude"}
+                )
+            ):
+                name = self._document_name(ref)
+                if name:
+                    refs[name] = ref_type
         return refs
 
 
