@@ -3802,11 +3802,15 @@ class EditTests(TestCase):
 
     def test_edit_session(self):
         session = SessionFactory(meeting__type_id='ietf', group__type_id='team')  # type determines allowed session purposes
+        edit_meeting_url = urlreverse('ietf.meeting.views.edit_meeting_schedule', kwargs={'num': session.meeting.number})
         self.client.login(username='secretary', password='secretary+password')
         url = urlreverse('ietf.meeting.views.edit_session', kwargs={'session_id': session.pk})
         r = self.client.get(url)
         self.assertContains(r, 'Edit session', status_code=200)
-        r = self.client.post(url, {
+        pq = PyQuery(r.content)
+        back_button = pq(f'a[href="{edit_meeting_url}"]')
+        self.assertEqual(len(back_button), 1)
+        post_data = {
             'name': 'this is a name',
             'short': 'tian',
             'purpose': 'coding',
@@ -3816,10 +3820,10 @@ class EditTests(TestCase):
             'remote_instructions': 'Do this do that',
             'attendees': '103',
             'comments': 'So much to say',
-        })
+        }
+        r = self.client.post(url, post_data)
         self.assertNoFormPostErrors(r)
-        self.assertRedirects(r, urlreverse('ietf.meeting.views.edit_meeting_schedule',
-                                           kwargs={'num': session.meeting.number}))
+        self.assertRedirects(r, edit_meeting_url)
         session = Session.objects.get(pk=session.pk)  # refresh objects from DB
         self.assertEqual(session.name, 'this is a name')
         self.assertEqual(session.short, 'tian')
@@ -3830,6 +3834,23 @@ class EditTests(TestCase):
         self.assertEqual(session.remote_instructions, 'Do this do that')
         self.assertEqual(session.attendees, 103)
         self.assertEqual(session.comments, 'So much to say')
+
+        # Verify return to correct schedule when sched query parameter is present
+        other_schedule = ScheduleFactory(meeting=session.meeting)
+        r = self.client.get(url + f'?sched={other_schedule.pk}')
+        edit_meeting_url = urlreverse(
+            'ietf.meeting.views.edit_meeting_schedule',
+            kwargs={
+                'num': session.meeting.number,
+                'owner': other_schedule.owner.email(),
+                'name': other_schedule.name,
+            },
+        )
+        pq = PyQuery(r.content)
+        back_button = pq(f'a[href="{edit_meeting_url}"]')
+        self.assertEqual(len(back_button), 1)
+        r = self.client.post(url + f'?sched={other_schedule.pk}', post_data)
+        self.assertRedirects(r, edit_meeting_url)
 
     def test_cancel_session(self):
         # session for testing with official schedule
