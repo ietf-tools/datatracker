@@ -245,15 +245,15 @@ def frontpage(request):
 
 def search_for_name(request, name):
     def find_unique(n):
-        exact = DocAlias.objects.filter(name=n).first()
+        exact = DocAlias.objects.filter(name__iexact=n).first()
         if exact:
             return exact.name
 
-        aliases = DocAlias.objects.filter(name__startswith=n)[:2]
+        aliases = DocAlias.objects.filter(name__istartswith=n)[:2]
         if len(aliases) == 1:
             return aliases[0].name
 
-        aliases = DocAlias.objects.filter(name__contains=n)[:2]
+        aliases = DocAlias.objects.filter(name__icontains=n)[:2]
         if len(aliases) == 1:
             return aliases[0].name
 
