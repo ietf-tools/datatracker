@@ -1973,7 +1973,7 @@ class NoPublicKeyTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q=PyQuery(response.content)
-        text_bits = [x.xpath('./text()') for x in q('.alert-warning')]
+        text_bits = [x.xpath('.//text()') for x in q('.alert-warning')]
         flat_text_bits = [item for sublist in text_bits for item in sublist]
         self.assertTrue(any(['not yet' in y for y in flat_text_bits]))
         self.assertEqual(bool(q('form:not(.navbar-form)')),expected_form)
