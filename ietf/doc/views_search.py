@@ -188,7 +188,7 @@ def retrieve_search_results(form, all_types=False):
             Q(documentauthor__person__email__address__icontains=query["author"])
         )
     elif by == "group":
-        docs = docs.filter(group__acronym=query["group"])
+        docs = docs.filter(group__acronym__iexact=query["group"])
     elif by == "area":
         docs = docs.filter(Q(group__type="wg", group__parent=query["area"]) |
                            Q(group=query["area"])).distinct()
