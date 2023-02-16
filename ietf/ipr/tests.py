@@ -147,8 +147,16 @@ class IprTests(TestCase):
         r = self.client.get(url + "?submit=draft&id=%s" % draft.name)
         self.assertContains(r, ipr.title)
 
+        # find by id, mixed case letters
+        r = self.client.get(url + "?submit=draft&id=%s" % draft.name.swapcase())
+        self.assertContains(r, ipr.title)
+
         # find draft
         r = self.client.get(url + "?submit=draft&draft=%s" % draft.name)
+        self.assertContains(r, ipr.title)
+
+        # find draft, mixed case letters
+        r = self.client.get(url + "?submit=draft&draft=%s" % draft.name.swapcase())
         self.assertContains(r, ipr.title)
 
         # search + select document
