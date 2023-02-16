@@ -13,58 +13,6 @@ $tooltip-margin: inherit !default;
 @import "bootstrap/scss/utilities";
 @import "bootstrap/scss/root";
 
-// from https://gist.github.com/Jakobud/a0ac11e80a1de453cd86f0d3fc0a1410?permalink_comment_id=2327765#gistcomment-2327765
-@function map-sort-by-values($map) {
-    // Transform map to zipped list
-    $keys: ();
-    $values: ();
-
-    @each $key,
-    $val in $map {
-        $keys: append($keys, $key);
-        $values: append($values, $val);
-    }
-
-    $list: zip($keys, $values);
-    $sortedMap: ();
-
-    @while length($list)>0 {
-        // Find smallest pair
-        $smallestPair: nth($list, 1);
-
-        @each $pair in $list {
-            $value: nth($pair, 2);
-            $smallestValue: nth($smallestPair, 2);
-
-            @if $value < $smallestValue {
-                $smallestPair: $pair;
-            }
-        }
-
-        // Add smallest pair to sorted map
-        $key: nth($smallestPair, 1);
-        $value: nth($smallestPair, 2);
-        $sortedMap: map-merge($sortedMap, ($key: $value));
-
-        // Remove from list smallest pair
-        $smallestPairIndex: index($list, $smallestPair);
-        $newList: ();
-
-        @for $i from 1 through length($list) {
-            @if $i !=$smallestPairIndex {
-                $newList: append($newList, nth($list, $i), "space");
-            }
-        }
-
-        $list: $newList;
-    }
-
-    @return $sortedMap;
-}
-
-// add an xxs breakpoint for narrow devices
-$grid-breakpoints: map-sort-by-values(map.merge($grid-breakpoints, (xxs: 0, xs: 400px)));
-
 // Layout & components
 @import "bootstrap/scss/reboot";
 @import "bootstrap/scss/type";
@@ -160,32 +108,15 @@ $grid-breakpoints: map-sort-by-values(map.merge($grid-breakpoints, (xxs: 0, xs: 
     }
 
     @media screen {
-        @include media-breakpoint-only(xxs) {
-            font-size: min(6pt, var(--doc-ptsize-max));
-        }
 
+        // the viewport-width ("vw") constants are magic; they seem to work for
+        // many monospace fonts, but may need tweaking
         @include media-breakpoint-up(xs) {
-            font-size: min(7pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(sm) {
-            font-size: min(9.5pt, var(--doc-ptsize-max));
+            font-size: min(2.2vw, var(--doc-ptsize-max));
         }
 
         @include media-breakpoint-up(md) {
-            font-size: min(9.5pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(lg) {
-            font-size: min(11pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(xl) {
-            font-size: min(13pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(xxl) {
-            font-size: min(16pt, var(--doc-ptsize-max));
+            font-size: min(1.6vw, var(--doc-ptsize-max));
         }
 
         .grey,
@@ -231,29 +162,15 @@ $grid-breakpoints: map-sort-by-values(map.merge($grid-breakpoints, (xxs: 0, xs: 
     }
 
     @media screen {
-        @include media-breakpoint-only(xs) {
-            font-size: min(6.75pt, var(--doc-ptsize-max));
-        }
 
-        @include media-breakpoint-up(sm) {
-            font-size: min(8.75pt, var(--doc-ptsize-max));
+        // the viewport-width ("vw") constants are magic; they seem to work for
+        // many monospace fonts, but may need tweaking
+        @include media-breakpoint-up(xs) {
+            font-size: min(2vw, var(--doc-ptsize-max));
         }
 
         @include media-breakpoint-up(md) {
-            font-size: min(8.75pt, var(--doc-ptsize-max));
-        }
-
-        // Rest of font sizes is the same as above.
-        @include media-breakpoint-up(lg) {
-            font-size: min(11pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(xl) {
-            font-size: min(13pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(xxl) {
-            font-size: min(16pt, var(--doc-ptsize-max));
+            font-size: min(1.5vw, var(--doc-ptsize-max));
         }
     }
 
