@@ -1,6 +1,5 @@
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.db import IntegrityError
 from django.forms.models import inlineformset_factory
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.http import urlencode
@@ -92,7 +91,7 @@ def add_proceed(request):
 
             # in theory a user record could exist which wasn't associated with a Person
             
-            user = User.objects.get(username__iexact=email)
+            user = User.objects.filter(username__iexact=email).first()
             if not user:
                 user = User.objects.create_user(email, email)
                 
