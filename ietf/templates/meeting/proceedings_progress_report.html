@@ -1,7 +1,8 @@
 {% extends "base.html" %}
-{% load ams_filters ietf_filters %}
+{% load ams_filters ietf_filters cache %}
 {% block title %}IETF {{ meeting.number }} Proceedings - Progress Report{% endblock %}
 {% block content %}
+    {% cache 3600 proceedings_progress_report meeting.number %}
     <h1>
         <a class="text-decoration-none text-reset"
            href="{% url 'ietf.meeting.views.proceedings' num=meeting.number %}">
