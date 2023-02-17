@@ -26,3 +26,7 @@ body:
     attributes:
       value: |
         If you are having trouble logging into the datatracker, please do not open an issue here. Instead, please send email to support@ietf.org providing your name and username.
+  - type: markdown
+    attributes:
+      value: |
+        Please do not report issues with the content of Internet-Drafts or RFCs using this repository. Send email to the relevant group instead. Some Internet-Drafts have their own github repositories where issues can be reported. See the datatracker's page for the I-D for links and email addresses.
