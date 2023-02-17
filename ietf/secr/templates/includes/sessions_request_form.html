@@ -28,7 +28,7 @@
         {% endif %}
         <tr class="bg1"><td>Number of Attendees:{% if not is_virtual %}<span class="required">*</span>{% endif %}</td><td>{{ form.attendees.errors }}{{ form.attendees }}</td></tr>
         <tr class="bg2">
-            <td>People who must be present:</td>
+            <td>Participants who must be present:</td>
             <td>
                 {{ form.bethere.errors }}
                 {{ form.bethere }}

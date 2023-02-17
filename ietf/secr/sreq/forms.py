@@ -3,6 +3,7 @@
 
 
 from django import forms
+from django.template.defaultfilters import pluralize
 
 import debug                            # pyflakes:ignore
 
@@ -236,10 +237,19 @@ class SessionForm(forms.Form):
         return clean_text_field(self.cleaned_data['comments'])
 
     def clean_bethere(self):
-        extra = set(Person.objects.filter(role__group=self.group, role__name__in=['chair','ad']) & self.cleaned_data['bethere'])
-        if extra:
-            extras = ", ".join(e.name for e in extra)
-            raise forms.ValidationError(f"Please remove the following persons, the system tracks their availability due to their roles: {extras}.")
+        bethere = self.cleaned_data["bethere"]
+        if bethere:
+            extra = set(
+                Person.objects.filter(
+                    role__group=self.group, role__name__in=["chair", "ad"]
+                )
+                & bethere
+            )
+            if extra:
+                extras = ", ".join(e.name for e in extra)
+                raise forms.ValidationError(
+                    f"Please remove the following person{pluralize(len(extra))}, the system tracks their availability due to their roles: {extras}."
+                )
         return True
 
     def clean_send_notifications(self):
