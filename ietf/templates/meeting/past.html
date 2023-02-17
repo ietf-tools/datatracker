@@ -57,6 +57,7 @@
     {% else %}
         <h2>No past meetings</h2>
     {% endif %}
+    {% endcache %}
 {% endblock %}
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
