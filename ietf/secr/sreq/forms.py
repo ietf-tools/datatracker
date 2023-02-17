@@ -235,6 +235,13 @@ class SessionForm(forms.Form):
     def clean_comments(self):
         return clean_text_field(self.cleaned_data['comments'])
 
+    def clean_bethere(self):
+        extra = set(Person.objects.filter(role__group=self.group, role__name__in=['chair','ad']) & self.cleaned_data['bethere'])
+        if extra:
+            extras = ", ".join(e.name for e in extra)
+            raise forms.ValidationError(f"Please remove the following persons, the system tracks their availability due to their roles: {extras}.")
+        return True
+
     def clean_send_notifications(self):
         return True if not self.notifications_optional else self.cleaned_data['send_notifications']
 
