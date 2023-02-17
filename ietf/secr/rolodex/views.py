@@ -93,7 +93,7 @@ def add_proceed(request):
             
             user = User.objects.filter(username__iexact=email).first()
             if not user:
-                user = User.objects.create_user(email, email)
+                user = User.objects.create_user(username=email, email=email)
                 
             person.user = user
             person.save()
