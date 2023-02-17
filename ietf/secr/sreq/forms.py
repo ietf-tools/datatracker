@@ -248,7 +248,10 @@ class SessionForm(forms.Form):
             if extra:
                 extras = ", ".join(e.name for e in extra)
                 raise forms.ValidationError(
-                    f"Please remove the following person{pluralize(len(extra))}, the system tracks their availability due to their roles: {extras}."
+                    (
+                        f"Please remove the following person{pluralize(len(extra))}, the system "
+                        f"tracks their availability due to their role{pluralize(len(extra))}: {extras}."
+                    )
                 )
         return True
 
