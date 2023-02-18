@@ -253,7 +253,7 @@ class SessionForm(forms.Form):
                         f"tracks their availability due to their role{pluralize(len(extra))}: {extras}."
                     )
                 )
-        return True
+        return bethere
 
     def clean_send_notifications(self):
         return True if not self.notifications_optional else self.cleaned_data['send_notifications']
