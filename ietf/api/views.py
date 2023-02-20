@@ -308,6 +308,23 @@ HAS_TOMBSTONE = [
     3616, 3625, 3627, 3630, 3635, 3636, 3637, 3638
 ]
 
+
+def get_previous_url(name, rev=None):
+    '''Return previous url'''
+    condition, document, history, found_rev = find_doc_for_rfcdiff(name, rev)
+    previous_url = ''
+    if condition in ('historic version', 'current version'):
+        doc = history if history else document
+        if found_rev:
+            doc.is_rfc = lambda: False
+        previous_url = doc.get_href()
+    elif condition == 'version dochistory not found':
+        document.rev = found_rev
+        document.is_rfc = lambda: False
+        previous_url = document.get_href()
+    return previous_url
+
+
 def rfcdiff_latest_json(request, name, rev=None):
     response = dict()
     condition, document, history, found_rev = find_doc_for_rfcdiff(name, rev)
@@ -327,6 +344,7 @@ def rfcdiff_latest_json(request, name, rev=None):
                 if int(doc.rfc_number()) in HAS_TOMBSTONE and prev_rev != '00':
                     prev_rev = f'{(int(doc.rev)-1):02d}'
                 response['previous'] = f'{doc.name}-{prev_rev}'
+                response['previous_url'] = get_previous_url(doc.name, prev_rev)
         else:
             doc.is_rfc = lambda: False
             response['content_url'] = doc.get_href()
@@ -337,14 +355,18 @@ def rfcdiff_latest_json(request, name, rev=None):
                 if replaces_docs:
                     replaces = replaces_docs[0].document
                     response['previous'] = f'{replaces.name}-{replaces.rev}'
+                    response['previous_url'] = get_previous_url(replaces.name, replaces.rev)
                 else:
                     match = re.search("-(rfc)?([0-9][0-9][0-9]+)bis(-.*)?$", name)
                     if match and match.group(2):
                         response['previous'] = f'rfc{match.group(2)}'
+                        response['previous_url'] = get_previous_url(f'rfc{match.group(2)}')
             else:
                 # not sure what to do if non-numeric values come back, so at least log it
                 log.assertion('doc.rev.isdigit()')
-                response['previous'] = f'{doc.name}-{(int(doc.rev)-1):02d}'
+                prev_rev = f'{(int(doc.rev)-1):02d}'
+                response['previous'] = f'{doc.name}-{prev_rev}'
+                response['previous_url'] = get_previous_url(doc.name, prev_rev)
     elif condition == 'version dochistory not found':
         response['warning'] = 'History for this version not found - these results are speculation'
         response['name'] = document.name
@@ -355,11 +377,14 @@ def rfcdiff_latest_json(request, name, rev=None):
         # not sure what to do if non-numeric values come back, so at least log it
         log.assertion('found_rev.isdigit()')
         if int(found_rev) > 0:
-            response['previous'] = f'{document.name}-{(int(found_rev)-1):02d}'
+            prev_rev = f'{(int(found_rev)-1):02d}'
+            response['previous'] = f'{document.name}-{prev_rev}'
+            response['previous_url'] = get_previous_url(document.name, prev_rev)
         else:
             match = re.search("-(rfc)?([0-9][0-9][0-9]+)bis(-.*)?$", name)
             if match and match.group(2):
                 response['previous'] = f'rfc{match.group(2)}'
+                response['previous_url'] = get_previous_url(f'rfc{match.group(2)}')
     if not response:
         raise Http404
     return HttpResponse(json.dumps(response), content_type='application/json')
