@@ -4582,18 +4582,34 @@ class InterimTests(TestCase):
         meeting = make_meeting_test_data(create_interims=True)
         populate_important_dates(meeting)
         url = urlreverse("ietf.meeting.views.upcoming_ical")
-        
-        r = self.client.get(url)
 
-        self.assertEqual(r.status_code, 200)
         # Expect events 3 sessions - one for each WG and one for the IETF meeting
+        expected_event_summaries = [
+            'ames - Asteroid Mining Equipment Standardization Group',
+            'mars - Martian Special Interest Group',
+            'IETF 72',
+        ]
+
+        Session.objects.filter(
+            meeting__type_id='interim',
+            group__acronym="mars",
+        ).update(
+            remote_instructions='https://someurl.example.com',
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
         assert_ical_response_is_valid(self, r,
-                                      expected_event_summaries=[
-                                          'ames - Asteroid Mining Equipment Standardization Group',
-                                          'mars - Martian Special Interest Group',
-                                          'IETF 72',
-                                      ],
-                                      expected_event_count=3)
+                                      expected_event_summaries=expected_event_summaries,
+                                      expected_event_count=len(expected_event_summaries))
+        self.assertContains(r, 'Remote instructions: https://someurl.example.com')
+
+        Session.objects.filter(meeting__type_id='interim').update(remote_instructions='')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=expected_event_summaries,
+                                      expected_event_count=len(expected_event_summaries))
+        self.assertNotContains(r, 'Remote instructions:')
 
     def test_upcoming_ical_filter(self):
         # Just a quick check of functionality - details tested by test_js.InterimTests
