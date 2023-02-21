@@ -188,7 +188,7 @@ def retrieve_search_results(form, all_types=False):
             Q(documentauthor__person__email__address__icontains=query["author"])
         )
     elif by == "group":
-        docs = docs.filter(group__acronym=query["group"])
+        docs = docs.filter(group__acronym__iexact=query["group"])
     elif by == "area":
         docs = docs.filter(Q(group__type="wg", group__parent=query["area"]) |
                            Q(group=query["area"])).distinct()
@@ -245,15 +245,15 @@ def frontpage(request):
 
 def search_for_name(request, name):
     def find_unique(n):
-        exact = DocAlias.objects.filter(name=n).first()
+        exact = DocAlias.objects.filter(name__iexact=n).first()
         if exact:
             return exact.name
 
-        aliases = DocAlias.objects.filter(name__startswith=n)[:2]
+        aliases = DocAlias.objects.filter(name__istartswith=n)[:2]
         if len(aliases) == 1:
             return aliases[0].name
 
-        aliases = DocAlias.objects.filter(name__contains=n)[:2]
+        aliases = DocAlias.objects.filter(name__icontains=n)[:2]
         if len(aliases) == 1:
             return aliases[0].name
 
