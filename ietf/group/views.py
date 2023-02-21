@@ -1356,7 +1356,7 @@ def group_menu_data(request):
 
 @cache_control(public=True, max_age=30 * 60)
 @cache_page(30 * 60)
-def group_stats_data(request, years="3", only_active="1"):
+def group_stats_data(request, years="3", only_active=True):
     when = timezone.now() - datetime.timedelta(days=int(years) * 365)
     docs = (
         Document.objects.filter(type="draft", stream="ietf")
@@ -1370,7 +1370,7 @@ def group_stats_data(request, years="3", only_active="1"):
 
     data = []
     for a in Group.objects.filter(type="area"):
-        if int(only_active) == 1 and not a.is_active:
+        if only_active and not a.is_active:
             continue
 
         area_docs = docs.filter(group__parent=a).exclude(group__acronym="none")
@@ -1380,7 +1380,7 @@ def group_stats_data(request, years="3", only_active="1"):
         area_page_cnt = 0
         area_doc_cnt = 0
         for wg in Group.objects.filter(type="wg", parent=a):
-            if int(only_active) == 1 and not wg.is_active:
+            if only_active and not wg.is_active:
                 continue
 
             wg_docs = area_docs.filter(group=wg)
