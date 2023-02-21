@@ -684,9 +684,20 @@ def docs_for_ad(request, name):
     results = [
         r
         for r in results
-        if (r.type.slug != "charter" or r.group.state.slug != "abandon")
-        and (r.type.slug != "draft" or r.get_state("draft-iesg").slug != "dead")
-        and (r.get_state().slug not in ["repl", "replaced"])
+        if not (
+            r.type_id == "charter"
+            and (
+                r.group.state_id == "abandon"
+                or r.get_state_slug("charter") == "replaced"
+            )
+        )
+        and not (
+            r.type_id == "draft"
+            and (
+                r.get_state_slug("draft-iesg") == "dead"
+                or r.get_state_slug("draft") == "repl"
+            )
+        )
     ]
 
     for d in results:
