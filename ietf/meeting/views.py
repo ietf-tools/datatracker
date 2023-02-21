@@ -3431,7 +3431,6 @@ def interim_request_edit(request, number):
         "form": form,
         "formset": formset})
 
-@cache_page(60*60)
 def past(request):
     '''List of past meetings'''
     today = timezone.now()
@@ -3799,7 +3798,6 @@ def proceedings_overview(request, num=None):
         'template': template,
     })
 
-@cache_page( 60 * 60 )
 def proceedings_progress_report(request, num=None):
     '''Display Progress Report (stats since last meeting)'''
     if not (num and num.isdigit()):
