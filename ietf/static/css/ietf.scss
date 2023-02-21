@@ -97,6 +97,11 @@ pre {
     width: 60px;
 }
 
+// Style preformatted alert messages better.
+.preformatted {
+    white-space: pre-line;
+}
+
 .leftmenu {
     width: 13em;
 

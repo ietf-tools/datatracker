@@ -16,7 +16,7 @@ data-official-use="{% if ts in in_official_use %}true{% else %}false{% endif %}"
 </span>
 </div>
 <div class="timeslot-buttons">
-<a class="text-reset text-decoration-none" aria-label="Edit" href="{% url 'ietf.meeting.views.edit_timeslot' num=ts.meeting.number slot_id=ts.id %}">
+<a class="text-reset text-decoration-none" aria-label="Edit" href="{% url 'ietf.meeting.views.edit_timeslot' num=ts.meeting.number slot_id=ts.id %}{% if "sched" in request.GET %}?sched={{ request.GET.sched }}{% endif %}">
 <i class="bi bi-pencil"></i>
 </a>
 <i class="bi bi-trash delete-button" data-delete-scope="timeslot" title="Delete this timeslot"></i>

@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2017, All Rights Reserved
 
+from django.conf import settings
 from django.conf.urls import include
 from django.views.generic import TemplateView
 
@@ -56,6 +57,9 @@ urlpatterns = [
     url(r'^version/?$', api_views.version),
     # Application authentication API key
     url(r'^appauth/[authortools|bibxml]', api_views.app_auth),
+    # latest versions
+    url(r'^rfcdiff-latest-json/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, api_views.rfcdiff_latest_json),
+    url(r'^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', api_views.rfcdiff_latest_json),
 ]
 
 # Additional (standard) Tastypie endpoints

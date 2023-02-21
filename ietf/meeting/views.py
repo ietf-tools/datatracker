@@ -17,7 +17,7 @@ import tempfile
 
 from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
-from urllib.parse import unquote
+from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
 
@@ -281,8 +281,13 @@ def materials_editable_groups(request, num=None):
 
 @role_required('Secretariat')
 def edit_timeslots(request, num=None):
-
     meeting = get_meeting(num)
+    if 'sched' in request.GET:
+        schedule = Schedule.objects.filter(pk=request.GET.get('sched', None)).first()
+        schedule_edit_url = _schedule_edit_url(meeting, schedule)
+    else:
+        schedule_edit_url = None
+
     with timezone.override(meeting.tz()):
         if request.method == 'POST':
             # handle AJAX requests
@@ -333,6 +338,7 @@ def edit_timeslots(request, num=None):
                                               "slot_slices": slots,
                                               "date_slices":date_slices,
                                               "meeting":meeting,
+                                              "schedule_edit_url": schedule_edit_url,
                                               "ts_list":ts_list,
                                               "ts_with_official_assignments": ts_with_official_assignments,
                                               "ts_with_any_assignments": ts_with_any_assignments,
@@ -659,8 +665,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         sorted_rooms = sorted(
             rooms_with_timeslots,
             key=lambda room: (
-                # Sort higher capacity rooms first.
-                -room.capacity if room.capacity is not None else 1,  # sort rooms with capacity = None at end
+                # Sort lower capacity rooms first.
+                room.capacity if room.capacity is not None else math.inf,  # sort rooms with capacity = None at end
                 # Sort regular session rooms ahead of others - these will usually
                 # have more timeslots than other room types.
                 0 if room_data[room.pk]['timeslot_count'] == max_timeslots else 1,
@@ -3425,7 +3431,6 @@ def interim_request_edit(request, number):
         "form": form,
         "formset": formset})
 
-@cache_page(60*60)
 def past(request):
     '''List of past meetings'''
     today = timezone.now()
@@ -3793,7 +3798,6 @@ def proceedings_overview(request, num=None):
         'template': template,
     })
 
-@cache_page( 60 * 60 )
 def proceedings_progress_report(request, num=None):
     '''Display Progress Report (stats since last meeting)'''
     if not (num and num.isdigit()):
@@ -4123,7 +4127,15 @@ def edit_timeslot(request, num, slot_id):
             form = TimeSlotEditForm(instance=timeslot, data=request.POST)
             if form.is_valid():
                 form.save()
-                return HttpResponseRedirect(reverse('ietf.meeting.views.edit_timeslots', kwargs={'num': num}))
+                redirect_to = reverse('ietf.meeting.views.edit_timeslots', kwargs={'num': num})
+                if 'sched' in request.GET:
+                    # Preserve 'sched' as a query parameter
+                    urlparts = list(urlsplit(redirect_to))
+                    query = parse_qs(urlparts[3])
+                    query['sched'] = request.GET['sched']
+                    urlparts[3] = urlencode(query)
+                    redirect_to = urlunsplit(urlparts)
+                return HttpResponseRedirect(redirect_to)
         else:
             form = TimeSlotEditForm(instance=timeslot)
 
@@ -4156,7 +4168,15 @@ def create_timeslot(request, num):
                     show_location=form.cleaned_data['show_location'],
                 )
             )
-            return HttpResponseRedirect(reverse('ietf.meeting.views.edit_timeslots',kwargs={'num':num}))
+            redirect_to = reverse('ietf.meeting.views.edit_timeslots',kwargs={'num':num})
+            if 'sched' in request.GET:
+                # Preserve 'sched' as a query parameter
+                urlparts = list(urlsplit(redirect_to))
+                query = parse_qs(urlparts[3])
+                query['sched'] = request.GET['sched']
+                urlparts[3] = urlencode(query)
+                redirect_to = urlunsplit(urlparts)
+            return HttpResponseRedirect(redirect_to)
     else:
         form = TimeSlotCreateForm(meeting)
 
@@ -4171,19 +4191,19 @@ def create_timeslot(request, num):
 @role_required('Secretariat')
 def edit_session(request, session_id):
     session = get_object_or_404(Session, pk=session_id)
+    schedule = Schedule.objects.filter(pk=request.GET.get('sched', None)).first()
+    editor_url = _schedule_edit_url(session.meeting, schedule)
     if request.method == 'POST':
         form = SessionEditForm(instance=session, data=request.POST)
         if form.is_valid():
             form.save()
-            return HttpResponseRedirect(
-                reverse('ietf.meeting.views.edit_meeting_schedule',
-                        kwargs={'num': form.instance.meeting.number}))
+            return HttpResponseRedirect(editor_url)
     else:
         form = SessionEditForm(instance=session)
     return render(
         request,
         'meeting/edit_session.html',
-        {'session': session, 'form': form},
+        {'session': session, 'form': form, 'editor_url': editor_url},
     )
 
 def _schedule_edit_url(meeting, schedule):
