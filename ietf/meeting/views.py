@@ -665,8 +665,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         sorted_rooms = sorted(
             rooms_with_timeslots,
             key=lambda room: (
-                # Sort higher capacity rooms first.
-                -room.capacity if room.capacity is not None else 1,  # sort rooms with capacity = None at end
+                # Sort lower capacity rooms first.
+                room.capacity if room.capacity is not None else math.inf,  # sort rooms with capacity = None at end
                 # Sort regular session rooms ahead of others - these will usually
                 # have more timeslots than other room types.
                 0 if room_data[room.pk]['timeslot_count'] == max_timeslots else 1,
