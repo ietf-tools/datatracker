@@ -137,16 +137,11 @@
                        data-remove-from-session="{% url 'ietf.meeting.views.ajax_remove_slides_from_session' session_id=session.pk num=session.meeting.number %}"
                        data-reorder-in-session="{% url 'ietf.meeting.views.ajax_reorder_slides_in_session' session_id=session.pk num=session.meeting.number %}">
                     {% for pres in session.filtered_slides %}
-                        <tr data-name="{{ pres.document.name }}"
-                            {% if can_manage_materials %}
-                                class="draggable"
-                                title="Drag to reorder."
-                            {% endif %}
-                        >
+                        <tr data-name="{{ pres.document.name }}" {% if can_manage_materials %} class="draggable" {% endif %}>
                             {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
                             {% if can_manage_materials %}
                                 <td>
-                                    <i class="bi bi-grip-vertical"></i>
+                                    <i class="bi bi-grip-vertical drag-handle" title="Drag to reorder"></i>
                                 </td>
                             {% endif %}
                             <td>
