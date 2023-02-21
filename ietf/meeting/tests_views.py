@@ -213,6 +213,8 @@ class MeetingTests(BaseMeetingTestCase):
     def test_meeting_agenda(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
+        session.remote_instructions='https://remote.example.com'
+        session.save()
         slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule=meeting.schedule)
         #
         self.write_materials_files(meeting, session)
@@ -316,6 +318,7 @@ class MeetingTests(BaseMeetingTestCase):
         assert_ical_response_is_valid(self, r)
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, session.group.name)
+        self.assertContains(r, session.remote_instructions)
         self.assertContains(r, slot.location.name)
         self.assertContains(r, "BEGIN:VTIMEZONE")
         self.assertContains(r, "END:VTIMEZONE")        
@@ -5659,6 +5662,7 @@ class InterimTests(TestCase):
         make_interim_test_data()
         meeting = Meeting.objects.filter(type='interim', session__group__acronym='mars').first()
         s1 = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
+        self.assertGreater(len(s1.remote_instructions), 0, 'Expected remote_instructions to be set')
         a1 = s1.official_timeslotassignment()
         t1 = a1.timeslot
         # Create an extra session
@@ -5677,6 +5681,7 @@ class InterimTests(TestCase):
         self.assertEqual(r.content.count(b'UID'), 2)
         self.assertContains(r, 'SUMMARY:mars - Martian Special Interest Group')
         self.assertContains(r, t1.local_start_time().strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, s1.remote_instructions)
         self.assertContains(r, t2.local_start_time().strftime('%Y%m%dT%H%M%S'))
         self.assertContains(r, 'END:VEVENT')
         #
@@ -5687,6 +5692,7 @@ class InterimTests(TestCase):
         self.assertEqual(r.content.count(b'UID'), 1)
         self.assertContains(r, 'SUMMARY:mars - Martian Special Interest Group')
         self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, s1.remote_instructions)
         self.assertNotContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
         self.assertContains(r, 'END:VEVENT')
 
