@@ -409,7 +409,7 @@ height: 100vh;
     <script>
         $(function () {
             group_stats(
-                "{% url 'ietf.group.views.group_stats_data' years=3 only_active=1 %}",
+                "{% url 'ietf.group.views.group_stats_data' %}",
                 ".chart");
         });
     </script>

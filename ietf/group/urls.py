@@ -53,7 +53,7 @@ info_detail_urls = [
 
 group_urls = [
     url(r'^$', views.active_groups), 
-    url(r'^groupstats.json/(?P<years>\d+)/(?P<only_active>\d+)', views.group_stats_data, None, 'ietf.group.views.group_stats_data'),
+    url(r'^groupstats.json', views.group_stats_data, None, 'ietf.group.views.group_stats_data'),
     url(r'^groupmenu.json', views.group_menu_data, None, 'ietf.group.views.group_menu_data'),
     url(r'^chartering/$', views.chartering_groups),
     url(r'^chartering/create/(?P<group_type>(wg|rg))/$', views.edit, {'action': "charter"}),
