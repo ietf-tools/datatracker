@@ -55,9 +55,19 @@
 
     function update_name_field_visibility(name_elts, purpose) {
         if (!purpose || purpose === 'regular') {
-            name_elts.forEach(e => e.closest('.form-group') ? e.closest('.form-group').classList.add('hidden') : null);
+            name_elts.forEach(e => {
+                const formGroup = e.closest('.form-group');
+                if (formGroup) {
+                    formGroup.classList.add('hidden');
+                }
+            });
         } else {
-            name_elts.forEach(e => e.closest('.form-group') ? e.closest('.form-group').classList.remove('hidden') : null);
+            name_elts.forEach(e => {
+                const formGroup = e.closest('.form-group');
+                if (formGroup) {
+                    formGroup.classList.remove('hidden');
+                }
+            });
         }
     }
 
