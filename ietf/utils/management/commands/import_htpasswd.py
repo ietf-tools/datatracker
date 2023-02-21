@@ -15,7 +15,7 @@ def import_htpasswd_file(filename, verbosity=1, overwrite=False):
                                  '   "%s"' % (file.name, line))
             username, password = line.strip().split(':', 1)
             try:
-                user = User.objects.get(username=username)
+                user = User.objects.get(username__iexact=username)
                 if overwrite == True or not user.password:
                     if   password.startswith('{SHA}'):
                         user.password = "sha1$$%s" % password[len('{SHA}'):]

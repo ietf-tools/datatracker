@@ -168,7 +168,7 @@ STATICFILES_FINDERS = (
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
-AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.ModelBackend', )
+AUTHENTICATION_BACKENDS = ( 'ietf.ietfauth.backends.CaseInsensitiveModelBackend', )
 
 FILE_UPLOAD_PERMISSIONS = 0o644          
 
