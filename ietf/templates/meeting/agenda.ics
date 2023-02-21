@@ -17,7 +17,9 @@ DESCRIPTION:{{item.timeslot.name|ics_esc}}\n{% if item.session.agenda_note %}
  \n
  Webex: {{ item.timeslot.location.webex_url }}\n{% endif %}{% if item.timeslot.location.video_stream_url %}
  \n
- Meetecho: {{ item.timeslot.location.video_stream_url|format:item.session }}\n{% endif %}{% if item.session.agenda %}{% with agenda=item.session.agenda %}
+ Meetecho: {{ item.timeslot.location.video_stream_url|format:item.session }}\n{% endif %}{% if item.session.remote_instructions %}
+ \n
+ Remote instructions: {{ item.session.remote_instructions }}\n{% endif %}{% if item.session.agenda %}{% with agenda=item.session.agenda %}
  \n
  {{agenda.type}} {{agenda.get_versionless_href}}\n{% endwith %}{% endif %}
  \n
