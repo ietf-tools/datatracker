@@ -69,26 +69,19 @@ class GroupStatsTests(TestCase):
 
     def test_group_stats(self):
         client = Client(Accept="application/json")
-        for years, only_active in [(1, 0), (2, 1), (0, 1)]:
-            url = urlreverse(
-                "ietf.group.views.group_stats_data",
-                kwargs=dict(years=years, only_active=only_active),
-            )
-            r = client.get(url)
-            self.assertTrue(r.status_code == 200, "Failed to receive group stats")
-            self.assertGreater(len(r.content), 0, "Group stats have no content")
+        url = urlreverse("ietf.group.views.group_stats_data")
+        r = client.get(url)
+        self.assertTrue(r.status_code == 200, "Failed to receive group stats")
+        self.assertGreater(len(r.content), 0, "Group stats have no content")
 
-            try:
-                data = json.loads(r.content)
-            except Exception as e:
-                self.fail("JSON load failed: %s" % e)
+        try:
+            data = json.loads(r.content)
+        except Exception as e:
+            self.fail("JSON load failed: %s" % e)
 
-            ids = [d["id"] for d in data]
-            for doc in Document.objects.all():
-                if years > 0:
-                    self.assertIn(doc.name, ids)
-                else:
-                    self.assertNotIn(doc.name, ids)
+        ids = [d["id"] for d in data]
+        for doc in Document.objects.all():
+            self.assertIn(doc.name, ids)
 
 
 class GroupDocDependencyTests(TestCase):
