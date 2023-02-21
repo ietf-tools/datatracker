@@ -16,9 +16,7 @@ DESCRIPTION:{% if item.timeslot.name %}{{item.timeslot.name|ics_esc}}\n{% endif 
  Note: {{item.session.agenda_note|ics_esc}}\n{% endif %}{% for material in item.session.materials.all %}
  \n{{material.type}}{% if material.type.name != "Agenda" %}
   ({{material.title|ics_esc}}){% endif %}:
-  {{material.get_href}}\n{% endfor %}{% if item.timeslot.location.webex_url %}
- Webex: {{ item.timeslot.location.webex_url }}\n{% endif %}{% if item.timeslot.location.video_stream_url %}
- Meetecho: {{ item.timeslot.location.video_stream_url|format:item.session }}\n{% endif %}{% if item.session.remote_instructions %}
+  {{material.get_href}}\n{% endfor %}{% if item.session.remote_instructions %}
  Remote instructions: {{ item.session.remote_instructions }}\n{% endif %}
 END:VEVENT
 {% endfor %}{% for meeting in ietfs %}BEGIN:VEVENT
