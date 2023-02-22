@@ -213,7 +213,11 @@ class MeetingTests(BaseMeetingTestCase):
     def test_meeting_agenda(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
+        session.remote_instructions='https://remote.example.com'
+        session.save()
         slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule=meeting.schedule)
+        slot.location.urlresource_set.create(name_id='meetecho_onsite', url='https://onsite.example.com')
+        slot.location.urlresource_set.create(name_id='meetecho', url='https://meetecho.example.com')
         #
         self.write_materials_files(meeting, session)
         #
@@ -316,7 +320,10 @@ class MeetingTests(BaseMeetingTestCase):
         assert_ical_response_is_valid(self, r)
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, session.group.name)
+        self.assertContains(r, session.remote_instructions)
         self.assertContains(r, slot.location.name)
+        self.assertContains(r, 'https://onsite.example.com')
+        self.assertContains(r, 'https://meetecho.example.com')
         self.assertContains(r, "BEGIN:VTIMEZONE")
         self.assertContains(r, "END:VTIMEZONE")        
 
@@ -4582,18 +4589,34 @@ class InterimTests(TestCase):
         meeting = make_meeting_test_data(create_interims=True)
         populate_important_dates(meeting)
         url = urlreverse("ietf.meeting.views.upcoming_ical")
-        
-        r = self.client.get(url)
 
-        self.assertEqual(r.status_code, 200)
         # Expect events 3 sessions - one for each WG and one for the IETF meeting
+        expected_event_summaries = [
+            'ames - Asteroid Mining Equipment Standardization Group',
+            'mars - Martian Special Interest Group',
+            'IETF 72',
+        ]
+
+        Session.objects.filter(
+            meeting__type_id='interim',
+            group__acronym="mars",
+        ).update(
+            remote_instructions='https://someurl.example.com',
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
         assert_ical_response_is_valid(self, r,
-                                      expected_event_summaries=[
-                                          'ames - Asteroid Mining Equipment Standardization Group',
-                                          'mars - Martian Special Interest Group',
-                                          'IETF 72',
-                                      ],
-                                      expected_event_count=3)
+                                      expected_event_summaries=expected_event_summaries,
+                                      expected_event_count=len(expected_event_summaries))
+        self.assertContains(r, 'Remote instructions: https://someurl.example.com')
+
+        Session.objects.filter(meeting__type_id='interim').update(remote_instructions='')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=expected_event_summaries,
+                                      expected_event_count=len(expected_event_summaries))
+        self.assertNotContains(r, 'Remote instructions:')
 
     def test_upcoming_ical_filter(self):
         # Just a quick check of functionality - details tested by test_js.InterimTests
@@ -5643,6 +5666,7 @@ class InterimTests(TestCase):
         make_interim_test_data()
         meeting = Meeting.objects.filter(type='interim', session__group__acronym='mars').first()
         s1 = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
+        self.assertGreater(len(s1.remote_instructions), 0, 'Expected remote_instructions to be set')
         a1 = s1.official_timeslotassignment()
         t1 = a1.timeslot
         # Create an extra session
@@ -5661,6 +5685,7 @@ class InterimTests(TestCase):
         self.assertEqual(r.content.count(b'UID'), 2)
         self.assertContains(r, 'SUMMARY:mars - Martian Special Interest Group')
         self.assertContains(r, t1.local_start_time().strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, s1.remote_instructions)
         self.assertContains(r, t2.local_start_time().strftime('%Y%m%dT%H%M%S'))
         self.assertContains(r, 'END:VEVENT')
         #
@@ -5671,6 +5696,7 @@ class InterimTests(TestCase):
         self.assertEqual(r.content.count(b'UID'), 1)
         self.assertContains(r, 'SUMMARY:mars - Martian Special Interest Group')
         self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, s1.remote_instructions)
         self.assertNotContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
         self.assertContains(r, 'END:VEVENT')
 
