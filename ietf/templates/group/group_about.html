@@ -408,9 +408,7 @@ height: 100vh;
     <script src="{% static 'ietf/js/highcharts.js' %}"></script>
     <script>
         $(function () {
-            group_stats(
-                "{% url 'ietf.group.views.group_stats_data' %}",
-                ".chart");
+            group_stats("{% url 'ietf.group.views.group_stats_data' %}", ".chart");
         });
     </script>
 {% endblock %}
