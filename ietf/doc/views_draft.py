@@ -33,9 +33,9 @@ from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_reques
     email_iesg_processing_document, email_ad_approved_doc,
     email_iana_expert_review_state_changed )
 from ietf.doc.utils import ( add_state_change_event, can_adopt_draft, can_unadopt_draft,
-    get_tags_for_stream_id, nice_consensus, update_action_holders,
+    get_tags_for_stream_id, update_action_holders,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify,
-    set_replaces_for_document, default_consensus, tags_suffix, can_edit_docextresources,
+    set_replaces_for_document, tags_suffix, can_edit_docextresources,
     update_doc_extresources )
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.fields import SearchableDocAliasesField
@@ -1186,47 +1186,6 @@ def edit_ad(request, name):
                     },
                  )
 
-class ConsensusForm(forms.Form):
-    consensus = forms.ChoiceField(choices=(("Unknown", "Unknown"), ("Yes", "Yes"), ("No", "No")),
-                  required=True, label="When published as an RFC, should the consensus boilerplate be included?")
-
-def edit_consensus(request, name):
-    """When this draft is published as an RFC, should it include the consensus boilerplate or not."""
-
-    doc = get_object_or_404(Document, type="draft", name=name)
-
-    if not (has_role(request.user, ("Secretariat", "Area Director"))
-            or is_authorized_in_doc_stream(request.user, doc)):
-        permission_denied(request, "You do not have the necessary permissions to view this page.")
-
-    e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
-    prev_consensus = e.consensus if e else default_consensus(doc)
-
-    if request.method == 'POST':
-        form = ConsensusForm(request.POST)
-        if form.is_valid():
-            if form.cleaned_data["consensus"] != prev_consensus:
-                e = ConsensusDocEvent(doc=doc, rev=doc.rev, type="changed_consensus", by=request.user.person)
-                e.consensus = {"Unknown":None,"Yes":True,"No":False}[form.cleaned_data["consensus"]]
-                if not e.consensus and doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
-                    permission_denied(request, "BCPs and Standards Track documents must include the consensus boilerplate.")
-
-                e.desc = "Changed consensus to <b>%s</b> from %s" % (nice_consensus(e.consensus),
-                                                                     nice_consensus(prev_consensus))
-
-                e.save()
-
-            return redirect('ietf.doc.views_doc.document_main', name=doc.name)
-
-    else:
-        form = ConsensusForm(initial=dict(consensus=nice_consensus(prev_consensus)))
-
-    return render(request, 'doc/draft/change_consensus.html',
-                              {'form': form,
-                               'doc': doc,
-                              },
-                          )
-
 
 def edit_doc_extresources(request, name):
     doc = get_object_or_404(Document, name=name)
@@ -1250,6 +1209,46 @@ def edit_doc_extresources(request, name):
     title = "Additional document resources"
     return render(request, 'doc/edit_field.html',dict(doc=doc, form=form, title=title, info=info) )
 
+class ConsensusForm(forms.Form):
+    consensus = forms.BooleanField(required=True, label="When published as an RFC, should the consensus boilerplate be included?")
+
+@role_required("Secretariat", "IRTF Chair")
+def obtain_irtf_consensus_boilerplate_setting(request, name):
+
+    doc = get_object_or_404(Document, type="draft", name=name)
+
+    e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+    prev_consensus = e.consensus if e else None
+
+    if request.method == 'POST':
+        form = ConsensusForm(request.POST)
+        if form.is_valid():
+            consensus = form.cleaned_data["consensus"]
+            if form.cleaned_data["consensus"] != prev_consensus:
+                e = ConsensusDocEvent(doc=doc, rev=doc.rev, type="changed_consensus", by=request.user.person)
+                e.consensus = consensus
+                mapping = {
+                    None: "Unknown",
+                    True: "Yes",
+                    False: "No"
+                    }
+                # Intentionally keeping the confusing desc so that we don't have more than one form to clean later.
+                e.desc = f"Changed consensus to <b>{mapping[e.consensus]}</b> from {mapping[prev_consensus]}" 
+                e.save()
+            return redirect('ietf.doc.views_doc.request_publication', name=doc.name)
+
+    else:
+        form = ConsensusForm(initial=dict(consensus=prev_consensus))
+
+    return render(
+        request,
+        "doc/draft/change_consensus.html",
+        {
+            "form": form,
+            "doc": doc,
+        },
+    )
+
 
 def request_publication(request, name):
     """Request publication by RFC Editor for a document which hasn't
@@ -1265,6 +1264,16 @@ def request_publication(request, name):
         permission_denied(request, "You do not have the necessary permissions to view this page.")
  
     consensus_event = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+
+    if doc.stream_id == "irtf" and (not consensus_event or consensus_event.consensus is None):
+        return redirect("ietf.doc.views_draft.obtain_irtf_consensus_boilerplate_setting", name=doc.name)
+
+    if doc.stream_id == "irtf":
+        consensus_boilerplate = consensus_event.consensus
+    elif doc.stream_id in ("ietf", "editorial", "iab"):
+        consensus_boilerplate = True
+    else:
+        consensus_boilerplate = False
 
     m = Message()
     m.frm = request.user.person.formatted_email()
@@ -1282,10 +1291,15 @@ def request_publication(request, name):
             import ietf.sync.rfceditor
             response, error = ietf.sync.rfceditor.post_approved_draft(settings.RFC_EDITOR_SYNC_NOTIFICATION_URL, doc.name)
             if error:
-                return render(request, 'doc/draft/rfceditor_post_approved_draft_failed.html',
-                                  dict(name=doc.name,
-                                       response=response,
-                                       error=error))
+                return render(
+                    request, 
+                    'doc/draft/rfceditor_post_approved_draft_failed.html',
+                    dict(
+                        name=doc.name,
+                        response=response,
+                        error=error
+                    )
+                )
 
             m.subject = form.cleaned_data["subject"]
             m.body = form.cleaned_data["body"]
@@ -1313,6 +1327,20 @@ def request_publication(request, name):
                 e = add_state_change_event(doc, request.user.person, prev_state, next_state)
                 if e:
                     events.append(e)
+                
+            if not consensus_event or consensus_event.consensus != consensus_boilerplate:
+                e = ConsensusDocEvent(doc=doc, rev=doc.rev, type="changed_consensus", by=request.user.person)
+                e.consensus = consensus_boilerplate
+                mapping = {
+                    None: "Unknown",
+                    True: "Yes",
+                    False: "No"
+                    }
+                # Intentionally keeping the confusing desc so that we don't have more than one form to clean later.
+                e.desc = f"Changed consensus to <b>{mapping[consensus_boilerplate]}</b> from {mapping[consensus_event and consensus_event.consensus]}"                                                                      
+                e.save()
+                events.append(e)
+            if events:
                 doc.save_with_history(events)
 
             return redirect('ietf.doc.views_doc.document_main', name=doc.name)
@@ -1337,9 +1365,7 @@ def request_publication(request, name):
                                    doc=doc,
                                    message=m,
                                    next_state=next_state,
-                                   consensus_filled_in=(
-                                       True if (doc.stream_id and doc.stream_id=='ietf')
-                                       else (consensus_event != None and consensus_event.consensus != None)),
+                                   consensus_filled_in=consensus_boilerplate,
                                ),
                           )
 
@@ -1829,16 +1855,6 @@ def set_intended_status_level(request, doc, new_level, old_level, comment):
             c.desc = comment
             c.save()
             events.append(c)
-
-        de = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
-        prev_consensus = de and de.consensus
-        if not prev_consensus and doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
-            ce = ConsensusDocEvent(doc=doc, rev=doc.rev, by=request.user.person, type="changed_consensus")
-            ce.consensus = True
-            ce.desc = "Changed consensus to <b>%s</b> from %s" % (nice_consensus(True),
-                                                                    nice_consensus(prev_consensus))
-            ce.save()
-            events.append(ce)
 
         doc.save_with_history(events)
 

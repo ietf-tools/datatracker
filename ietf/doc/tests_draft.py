@@ -20,10 +20,13 @@ from django.utils.html import escape
 import debug                            # pyflakes:ignore
 
 from ietf.doc.expire import get_expired_drafts, send_expire_notice_for_draft, expire_draft
-from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, RgDraftFactory, DocEventFactory
+from ietf.doc.factories import (
+    IndividualDraftFactory, WgDraftFactory, RgDraftFactory, DocEventFactory,
+    ConsensusDocEventFactory
+)
 from ietf.doc.models import ( Document, DocReminder, DocEvent,
-    ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
-    WriteupDocEvent, DocRelationshipName, IanaExpertDocEvent )
+    LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
+    WriteupDocEvent, DocRelationshipName, IanaExpertDocEvent, ConsensusDocEvent )
 from ietf.doc.utils import get_tags_for_stream_id, create_ballot_if_not_open
 from ietf.doc.views_draft import AdoptDraftForm
 from ietf.name.models import StreamName, DocTagName
@@ -509,11 +512,11 @@ class EditInfoTests(TestCase):
         self.assertEqual(draft.get_state_slug('draft-stream-ietf'),'sub-pub')
         self.assertCountEqual(draft.action_holders.all(), [draft.ad])
 
-    def test_edit_consensus(self):
-        draft = WgDraftFactory()
+    def test_obtain_irtf_consensus_boilerplate_setting(self):
+        draft = RgDraftFactory()
         
-        url = urlreverse('ietf.doc.views_draft.edit_consensus', kwargs=dict(name=draft.name))
-        login_testing_unauthorized(self, "secretary", url)
+        url = urlreverse('ietf.doc.views_draft.obtain_irtf_consensus_boilerplate_setting', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "irtf-chair", url)
 
         # get
         r = self.client.get(url)
@@ -521,32 +524,10 @@ class EditInfoTests(TestCase):
 
         # post
         self.assertTrue(not draft.latest_event(ConsensusDocEvent, type="changed_consensus"))
-        r = self.client.post(url, dict(consensus="Yes"))
+        r = self.client.post(url, dict(consensus=True))
         self.assertEqual(r.status_code, 302)
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.latest_event(ConsensusDocEvent, type="changed_consensus").consensus, True)
-
-        # reset
-        e = DocEvent(doc=draft, rev=draft.rev, by=Person.objects.get(name="(System)"), type='changed_document')
-        e.desc = "Intended Status changed to <b>%s</b> from %s"% (draft.intended_std_level_id, 'bcp')
-        e.save()
-
-        draft.intended_std_level_id = 'bcp'
-        draft.save_with_history([e])
-        r = self.client.post(url, dict(consensus="Unknown"))
-        self.assertEqual(r.status_code, 403) # BCPs must have a consensus
-
-        e = DocEvent(doc=draft, rev=draft.rev, by=Person.objects.get(name="(System)"), type='changed_document')
-        e.desc = "Intended Status changed to <b>%s</b> from %s"% (draft.intended_std_level_id, 'inf')
-        e.save()
-
-        draft.intended_std_level_id = 'inf'
-        draft.save_with_history([e])
-        r = self.client.post(url, dict(consensus="Unknown"))
-        self.assertEqual(r.status_code, 302)
-        draft = Document.objects.get(name=draft.name)
-        self.assertEqual(draft.latest_event(ConsensusDocEvent, type="changed_consensus").consensus, None)
-
 
 class DraftFileMixin():
     '''A mixin to setup temporary draft directories and files'''
@@ -1478,12 +1459,13 @@ class SubmitToIesgTests(TestCase):
 
 class RequestPublicationTests(TestCase):
     @mock.patch('ietf.sync.rfceditor.requests.post', autospec=True)
-    def test_request_publication(self, mockobj):
+    def test_request_publication_iab(self, mockobj):
         mockobj.return_value.text = b'OK'
         mockobj.return_value.status_code = 200
         #
         draft = IndividualDraftFactory(stream_id='iab',group__acronym='iab',intended_std_level_id='inf',states=[('draft-stream-iab','approved')])
 
+        self.assertIsNone(draft.latest_event(ConsensusDocEvent,type="changed_consensus"))
         url = urlreverse('ietf.doc.views_draft.request_publication', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "iab-chair", url)
 
@@ -1515,6 +1497,23 @@ class RequestPublicationTests(TestCase):
         self.assertTrue("drafts-approval@icann.org" in outbox[-1]['To'])
 
         self.assertTrue("Document Action" in draft.message_set.order_by("-time")[0].subject)
+
+        self.assertEqual(draft.latest_event(ConsensusDocEvent,type="changed_consensus").consensus, True)
+
+    @mock.patch('ietf.sync.rfceditor.requests.post', autospec=True)
+    def test_request_publication_irtf(self, mockobj):
+        mockobj.return_value.text = b'OK'
+        mockobj.return_value.status_code = 200
+
+        draft = RgDraftFactory()
+        url = urlreverse('ietf.doc.views_draft.request_publication', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "irtf-chair", url)
+        r = self.client.get(url)
+        self.assertRedirects(r,urlreverse('ietf.doc.views_draft.obtain_irtf_consensus_boilerplate_setting', kwargs=dict(name=draft.name)))
+        ConsensusDocEventFactory(doc=draft)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        # Rest of workflow exercised by the iab test above.
 
 class ReleaseDraftTests(TestCase):
     def test_release_wg_draft(self):

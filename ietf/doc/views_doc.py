@@ -55,13 +55,13 @@ from django.contrib.staticfiles import finders
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent, BallotType,
-    ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
+    NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
     RelatedDocument, RelatedDocHistory)
 from ietf.doc.utils import (augment_events_with_revision,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
-    needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
-    get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
+    needed_ballot_positions, prettify_std_name, update_telechat, has_same_ballot,
+    get_initial_notify, make_notify_changed_event, make_rev_history,
     add_events_message_info, get_unicode_document_content,
     augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event,
     build_file_urls, update_documentauthors, fuzzy_find_documents,
@@ -333,19 +333,10 @@ def document_main(request, name, rev=None, document_html=False):
         can_edit_notify = can_edit_shepherd_writeup
         can_edit_individual = is_individual_draft_author(request.user, doc)
 
-        can_edit_consensus = False
-        consensus = nice_consensus(default_consensus(doc))
+        
         if doc.stream_id == "ietf" and iesg_state:
             show_in_states = set(IESG_BALLOT_ACTIVE_STATES)
             show_in_states.update(('approved','ann','rfcqueue','pub'))
-            if iesg_state_slug in show_in_states: 
-                can_edit_consensus = can_edit
-                e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
-                consensus = nice_consensus(e and e.consensus)
-        elif doc.stream_id in ("irtf", "iab"):
-            can_edit_consensus = can_edit or can_edit_stream_info
-            e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
-            consensus = nice_consensus(e and e.consensus)
 
         can_request_review = can_request_review_of_doc(request.user, doc)
         can_submit_unsolicited_review_for_teams = None
@@ -511,7 +502,6 @@ def document_main(request, name, rev=None, document_html=False):
                                        can_edit_shepherd_writeup=can_edit_shepherd_writeup,
                                        can_edit_notify=can_edit_notify,
                                        can_edit_iana_state=can_edit_iana_state,
-                                       can_edit_consensus=can_edit_consensus,
                                        can_edit_replaces=can_edit_replaces,
                                        can_view_possibly_replaces=can_view_possibly_replaces,
                                        can_request_review=can_request_review,
@@ -544,7 +534,6 @@ def document_main(request, name, rev=None, document_html=False):
                                        stream_state=stream_state,
                                        stream_tags=stream_tags,
                                        milestones=doc.groupmilestone_set.filter(state="active"),
-                                       consensus=consensus,
                                        iesg_state=iesg_state,
                                        iesg_state_summary=iesg_state_summary,
                                        rfc_editor_state=doc.get_state("draft-rfceditor"),
@@ -1420,9 +1409,6 @@ def document_json(request, name, rev=None):
         data["iana_review_state"] = extract_name(doc.get_state("draft-iana-review"))
         data["iana_action_state"] = extract_name(doc.get_state("draft-iana-action"))
 
-        if doc.stream_id in ("ietf", "irtf", "iab"):
-            e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
-            data["consensus"] = e.consensus if e else None
         data["stream"] = extract_name(doc.stream)
 
     return HttpResponse(json.dumps(data, indent=2), content_type='application/json')

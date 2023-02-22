@@ -31,7 +31,7 @@ from ietf.community.utils import docs_tracked_by_community_list
 
 from ietf.doc.models import Document, DocHistory, State, DocumentAuthor, DocHistoryAuthor
 from ietf.doc.models import DocAlias, RelatedDocument, RelatedDocHistory, BallotType, DocReminder
-from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBallotDocEvent, NewRevisionDocEvent, StateDocEvent
+from ietf.doc.models import DocEvent, BallotDocEvent, IRSGBallotDocEvent, NewRevisionDocEvent, StateDocEvent
 from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthorsDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role, Group, GroupFeatures
@@ -607,28 +607,6 @@ def prettify_std_name(n, spacing=" "):
         return n[:3].upper() + spacing + n[3:]
     else:
         return n
-
-def default_consensus(doc):
-    # if someone edits the consensus return that, otherwise
-    # ietf stream => true and irtf stream => false
-    consensus = None
-    e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
-    if (e):
-        return e.consensus
-    if doc.stream_id == "ietf":
-        consensus = True
-    elif doc.stream_id == "irtf":
-        consensus = False
-    else:                               # ise, iab, legacy
-        return consensus
-
-def nice_consensus(consensus):
-    mapping = {
-        None: "Unknown",
-        True: "Yes",
-        False: "No"
-        }
-    return mapping[consensus]
 
 def has_same_ballot(doc, date1, date2=None):
     """ Test if the most recent ballot created before the end of date1

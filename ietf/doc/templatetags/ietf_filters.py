@@ -24,7 +24,6 @@ from django.utils import timezone
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import BallotDocEvent, DocAlias
-from ietf.doc.models import ConsensusDocEvent
 from ietf.ietfauth.utils import can_request_rfc_publication as utils_can_request_rfc_publication
 from ietf.utils.html import sanitize_fragment
 from ietf.utils import log
@@ -540,18 +539,6 @@ def ics_date_time(dt, tzname):
     else:
         return f';TZID={ics_esc(tzname)}:{timestamp}'
 
-
-@register.filter
-def consensus(doc):
-    """Returns document consensus Yes/No/Unknown."""
-    event = doc.latest_event(ConsensusDocEvent,type="changed_consensus")
-    if event:
-        if event.consensus:
-            return "Yes"
-        else:
-            return "No"
-    else:
-        return "Unknown"
 
 
 @register.filter

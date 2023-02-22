@@ -136,7 +136,7 @@ urlpatterns = [
     url(r'^%(name)s/edit/iesgnote/$' % settings.URL_REGEXPS, views_draft.edit_iesg_note),
     url(r'^%(name)s/edit/ad/$' % settings.URL_REGEXPS, views_draft.edit_ad),
     url(r'^%(name)s/edit/authors/$' % settings.URL_REGEXPS, views_doc.edit_authors),
-    url(r'^%(name)s/edit/consensus/$' % settings.URL_REGEXPS, views_draft.edit_consensus),
+    url(r'^%(name)s/edit/irtf_consensus_boilerplate/$' % settings.URL_REGEXPS, views_draft.obtain_irtf_consensus_boilerplate_setting),
     url(r'^%(name)s/edit/shepherd/$' % settings.URL_REGEXPS, views_draft.edit_shepherd),
     url(r'^%(name)s/edit/shepherdemail/$' % settings.URL_REGEXPS, views_draft.change_shepherd_email),
     url(r'^%(name)s/edit/shepherdwriteup/$' % settings.URL_REGEXPS, views_draft.edit_shepherd_writeup),

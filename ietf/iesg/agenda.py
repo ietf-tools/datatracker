@@ -13,7 +13,7 @@ from django.http import Http404
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, LastCallDocEvent, ConsensusDocEvent
+from ietf.doc.models import Document, LastCallDocEvent
 from ietf.doc.utils_search import fill_in_telechat_date
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem
 from ietf.review.utils import review_assignments_to_list_for_docs
@@ -181,11 +181,6 @@ def fill_in_agenda_docs(date, sections, docs=None):
                 if e:
                     doc.lastcall_expires = e.expires
 
-            if doc.stream_id in ("ietf", "irtf", "iab"):
-                doc.consensus = "Unknown"
-                e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
-                if e and (e.consensus != None):
-                    doc.consensus = "Yes" if e.consensus else "No"
 
             doc.review_assignments = review_assignments_for_docs.get(doc.name, [])
         elif doc.type_id == "conflrev":

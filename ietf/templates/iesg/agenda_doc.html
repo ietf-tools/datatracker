@@ -58,12 +58,6 @@
                 </div>
             </div>
         {% endif %}
-        {% if doc.consensus %}
-            <div class="row">
-                <div class="col-3 text-end fw-bold">Consensus</div>
-                <div class="col {% if doc.consensus != "Yes" %}text-danger{% else %}text-success{% endif %}">{{ doc.consensus }}</div>
-            </div>
-        {% endif %}
         {% if doc.review_assignments %}
             <div class="row">
                 <div class="col-3 text-end fw-bold">Reviews</div>

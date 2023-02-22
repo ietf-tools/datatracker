@@ -333,13 +333,10 @@ def generate_publication_request(request, doc):
 
     if doc.stream_id == "irtf":
         approving_body = "IRSG"
-        consensus_body = doc.group.acronym.upper()
     if doc.stream_id == "editorial":
         approving_body = "RSAB"
-        consensus_body = doc.group.acronym.upper()
     else:
         approving_body = str(doc.stream)
-        consensus_body = approving_body
 
     e = doc.latest_event(WriteupDocEvent, type="changed_rfc_editor_note_text")
     rfcednote = e.text if e else ""
@@ -349,8 +346,7 @@ def generate_publication_request(request, doc):
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
                                  group_description=group_description,
                                  approving_body=approving_body,
-                                 consensus_body=consensus_body,
-                                 consensus=consensus,
+                                 consensus=consensus, 
                                  rfc_editor_note=rfcednote,
                                  )
                             )

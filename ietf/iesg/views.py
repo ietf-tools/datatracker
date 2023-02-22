@@ -54,7 +54,7 @@ from django.utils.encoding import force_bytes
 
 import debug               # pyflakes:ignore
 
-from ietf.doc.models import Document, State, LastCallDocEvent, ConsensusDocEvent, DocEvent, IESG_BALLOT_ACTIVE_STATES
+from ietf.doc.models import Document, State, LastCallDocEvent, DocEvent, IESG_BALLOT_ACTIVE_STATES
 from ietf.doc.utils import update_telechat, augment_events_with_revision
 from ietf.group.models import GroupMilestone, Role
 from ietf.iesg.agenda import agenda_data, agenda_sections, fill_in_agenda_docs, get_agenda_date
@@ -158,11 +158,6 @@ def agenda_json(request, date=None):
                         e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
                         if e:
                             docinfo['lastcall-expires'] = e.expires.strftime("%Y-%m-%d")
-
-                    docinfo['consensus'] = None
-                    e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
-                    if e:
-                        docinfo['consensus'] = e.consensus
 
                     docinfo['rfc-ed-note'] = doc.has_rfc_editor_note()
 

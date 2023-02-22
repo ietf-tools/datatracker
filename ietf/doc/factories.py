@@ -14,7 +14,7 @@ from django.utils import timezone
 
 from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor,
     StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent, TelechatDocEvent,
-    DocumentActionHolder, BofreqEditorDocEvent, BofreqResponsibleDocEvent, DocExtResource )
+    DocumentActionHolder, BofreqEditorDocEvent, BofreqResponsibleDocEvent, DocExtResource, ConsensusDocEvent )
 from ietf.group.models import Group
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import RoleFactory
@@ -427,6 +427,13 @@ class BallotPositionDocEventFactory(DocEventFactory):
     doc = factory.SelfAttribute('ballot.doc')  # point to same doc as the ballot
     balloter = factory.SubFactory('ietf.person.factories.PersonFactory')
     pos_id = 'discuss'
+
+class ConsensusDocEventFactory(DocEventFactory):
+    class Meta:
+        model = ConsensusDocEvent
+
+    type = "changed_consensus"
+    consensus = True
 
 class DocumentActionHolderFactory(factory.django.DjangoModelFactory):
     class Meta:

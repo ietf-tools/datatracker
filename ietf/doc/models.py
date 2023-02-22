@@ -1318,6 +1318,14 @@ class StateDocEvent(DocEvent):
     state_type = ForeignKey(StateType)
     state = ForeignKey(State, blank=True, null=True)
 
+# There has been significant confusion about what the ConsensusDocEvent is intended to mean
+# resulting in code decisions that are at cross-purposes. The actual usage as of Feb 2023 is
+# that it is _only_ a signal to the RFC Editor for which boilerplate to use. In particular,
+# it does NOT and has not ever in practice tried to capture the exact point in time that a
+# document was determined to have consensus. An upcoming project will _remove_ this specialization
+# of DocEvent and replace it with either a single boolean on Document or only with mechanics 
+# at the point a document is sent to the RFC Editor. In the meantime, the code will force a DocEvent 
+# at the time such a publication request is made, and will otherwise not show the events.
 class ConsensusDocEvent(DocEvent):
     consensus = models.BooleanField(null=True, default=None)
 

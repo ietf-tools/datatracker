@@ -21,11 +21,6 @@
             <b>Note:</b> Intended RFC status is not set for the document.
         </p>
     {% endif %}
-    {% if doc.stream_id != "ise" and not consensus_filled_in %}
-        <p class="alert alert-warning my-3">
-            <b>Note:</b> Consensus status is not set for the document.
-        </p>
-    {% endif %}
     <form class="mt-3" method="post">
         {% csrf_token %}
         <div class="mb-3">

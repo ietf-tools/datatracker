@@ -22,7 +22,6 @@
             <a href="#writeup">Ballot Writeup</a><br>
             Token: {{ document.ad.name }}<br>
             {% if document.type_id == "draft" %}
-                Consensus: {{ document|consensus }}<br>
                 Has downref: {% if downrefs %}Yes{% else %}No{% endif %}<br>
             {% endif %}
             Number of Open Positions: {{ open_positions }}<br>
