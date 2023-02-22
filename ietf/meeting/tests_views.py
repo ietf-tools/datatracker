@@ -216,6 +216,8 @@ class MeetingTests(BaseMeetingTestCase):
         session.remote_instructions='https://remote.example.com'
         session.save()
         slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule=meeting.schedule)
+        slot.location.urlresource_set.create(name_id='meetecho_onsite', url='https://onsite.example.com')
+        slot.location.urlresource_set.create(name_id='meetecho', url='https://meetecho.example.com')
         #
         self.write_materials_files(meeting, session)
         #
@@ -320,6 +322,8 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.group.name)
         self.assertContains(r, session.remote_instructions)
         self.assertContains(r, slot.location.name)
+        self.assertContains(r, 'https://onsite.example.com')
+        self.assertContains(r, 'https://meetecho.example.com')
         self.assertContains(r, "BEGIN:VTIMEZONE")
         self.assertContains(r, "END:VTIMEZONE")        
 
