@@ -25,7 +25,9 @@ Highcharts.setOptions({
                 .getPropertyValue('--bs-body-font-family')
         }
     },
-    credits: { enabled: false },
+    credits: {
+        enabled: false
+    },
 });
 
 window.Highcharts = Highcharts;
@@ -36,8 +38,7 @@ window.group_stats = function (url, chart_selector) {
             .each(function (i, e) {
                 const dataset = e.dataset.dataset;
                 if (!dataset) {
-                    console.log(
-                        "dataset data attribute not set");
+                    console.log("dataset data attribute not set");
                     return;
                 }
                 const area = e.dataset.area;
@@ -47,7 +48,9 @@ window.group_stats = function (url, chart_selector) {
                 }
 
                 const chart = Highcharts.chart(e, {
-                    title: { text: `${dataset == "docs" ? "Documents" : "Pages"} in ${area.toUpperCase()}` },
+                    title: {
+                        text: `${dataset == "docs" ? "Documents" : "Pages"} in ${area.toUpperCase()}`
+                    },
                     series: [{
                         type: "sunburst",
                         data: [],
@@ -58,40 +61,32 @@ window.group_stats = function (url, chart_selector) {
                         },
                         dataLabels: {
                             formatter() {
-                                return this
-                                    .point.active ?
-                                    this.point
-                                    .name :
-                                    `(${this.point.name})`;
+                                return this.point.active ? this.point.name : `(${this.point.name})`;
                             }
                         },
                         allowDrillToNode: true,
                         cursor: 'pointer',
                         levels: [{
-                                level: 1,
-                                color: "transparent",
-                                levelSize: { value: .5 }
-                            },
-                            {
-                                level: 2,
-                                colorByPoint: true
-                            },
-                            {
-                                level: 3,
-                                colorVariation: {
-                                    key: "brightness",
-                                    to: 0.5
-                                }
+                            level: 1,
+                            color: "transparent",
+                            levelSize: {
+                                value: .5
                             }
-                        ]
+                        }, {
+                            level: 2,
+                            colorByPoint: true
+                        }, {
+                            level: 3,
+                            colorVariation: {
+                                key: "brightness",
+                                to: 0.5
+                            }
+                        }]
                     }],
                 });
 
                 // limit data to area if set and (for now) drop docs
-                const slice = data.filter(d => (area ==
-                            "ietf" && d.grandparent == area
-                        ) || d.parent == area || d.id ==
-                        area)
+                const slice = data.filter(d => (area == "ietf" && d.grandparent == area) || d.parent == area || d.id == area)
                     .map((d) => {
                         return {
                             value: d[dataset],
