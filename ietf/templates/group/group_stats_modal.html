@@ -1,0 +1,45 @@
+<button type="button"
+        class="btn btn-sm btn-primary"
+        data-bs-toggle="modal"
+        data-bs-target="#stats-modal-{{ group.acronym|slugify }}">
+    <i class="bi bi-pie-chart-fill"></i> Show {{ group.acronym|upper }} statistics
+</button>
+<div class="modal fade"
+     id="stats-modal-{{ group.acronym|slugify }}"
+     tabindex="-1"
+     aria-labelledby="stats-modal-label-{{ group.acronym|slugify }}"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5"
+                    id="stats-modal-label-{{ group.acronym|slugify }}">{{ group.acronym|upper }} statistics</h1>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-lg chart text-center"
+                         data-area="{{ group.acronym|lower }}"
+                         data-dataset="docs">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="col-lg chart text-center"
+                         data-area="{{ group.acronym|lower }}"
+                         data-dataset="pages">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
