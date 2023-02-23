@@ -223,7 +223,6 @@ def _get_materials_doc(meeting, name):
 
 @cache_page(1 * 60)
 def materials_document(request, document, num=None, ext=None):
-    debug.show('document')
     meeting=get_meeting(num,type_in=['ietf','interim'])
     num = meeting.number
     # This view does not allow the use of DocAliases. Right now we are probably only creating one (identity) alias, but that may not hold in the future.
