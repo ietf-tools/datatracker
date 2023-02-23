@@ -45,7 +45,6 @@ from dateutil import relativedelta
 
 from django import forms
 from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
@@ -533,45 +532,32 @@ def photos(request):
 
 def month_choices():
     choices = [(str(n).zfill(2), str(n).zfill(2)) for n in range(1, 13)]
-    choices.insert(0, ('', 'Select Month...'))
     return choices
 
 def year_choices():
-    this_year = datetime.date.today().year
+    this_year = date_today().year
     choices = [(str(n), str(n)) for n in range(this_year, 2009, -1)]
-    choices.insert(0, ('', 'Select Year...'))
     return choices
 
 class ActivityForm(forms.Form):
-    month = forms.ChoiceField(choices=month_choices, required=False)
-    year = forms.ChoiceField(choices=year_choices, required=False)
-
-    def clean(self):
-        super().clean()
-        month = self.cleaned_data['month']
-        year = self.cleaned_data['year']
-        if not (month.isdigit() and year.isdigit()):
-            raise ValidationError('Must select a month and a year')
-
-        return self.cleaned_data
+    month = forms.ChoiceField(choices=month_choices, help_text='Month', required=True)
+    year = forms.ChoiceField(choices=year_choices, help_text='Year', required=True)
 
 def ietf_activity(request):
     # default date range for last month
-    today = datetime.date.today()
-    first_day_this_month = today + relativedelta.relativedelta(day=1)
-    edate = first_day_this_month - relativedelta.relativedelta(days=1)
-    sdate = edate + relativedelta.relativedelta(day=1)
+    today = date_today()
+    edate = today.replace(day=1)
+    sdate = (edate - datetime.timedelta(days=1)).replace(day=1)
     if request.method == 'GET':
         form = ActivityForm(request.GET)
         if form.is_valid():
             month = form.cleaned_data['month']
             year = form.cleaned_data['year']
             sdate = datetime.date(int(year), int(month), 1)
-            next_month = sdate + relativedelta.relativedelta(months=1)
-            edate = next_month - relativedelta.relativedelta(days=1)
+            edate = sdate + relativedelta.relativedelta(months=1)
     
     # always pass back an unbound form to avoid annoying is-valid styling
-    form = ActivityForm()
+    form = ActivityForm(initial={'month': str(sdate.month).zfill(2), 'year': sdate.year})
     context = get_activity_stats(sdate, edate)
     context['is_monthly_report'] = True
     context['form'] = form
