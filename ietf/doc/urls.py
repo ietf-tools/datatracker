@@ -85,11 +85,6 @@ urlpatterns = [
     url(r'^html/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', views_doc.document_html),
     url(r'^idnits2-rfcs-obsoleted/?$', views_doc.idnits2_rfcs_obsoleted),
     url(r'^idnits2-rfc-status/?$', views_doc.idnits2_rfc_status),
-# These two are proof-of-concept of a service that would redirect to the latest version
-#    url(r'^rfcdiff-latest/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, views_doc.rfcdiff_latest),
-#    url(r'^rfcdiff-latest/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', views_doc.rfcdiff_latest),
-    url(r'^rfcdiff-latest-json/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, views_doc.rfcdiff_latest_json),
-    url(r'^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', views_doc.rfcdiff_latest_json),
 
     url(r'^all/?$', views_search.index_all_drafts),
     url(r'^active/?$', views_search.index_active_drafts),
@@ -180,4 +175,7 @@ urlpatterns = [
     url(r'^%(name)s/session/' % settings.URL_REGEXPS, include('ietf.doc.urls_material')),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/session/', include(session_patterns)),
     url(r'^(?P<name>[A-Za-z0-9\._\+\-]+)$', views_search.search_for_name),
+    # latest versions - keep old URLs alive during migration period
+    url(r'^rfcdiff-latest-json/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, RedirectView.as_view(pattern_name='ietf.api.views.rfcdiff_latest_json', permanent=True)),
+    url(r'^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', RedirectView.as_view(pattern_name='ietf.api.views.rfcdiff_latest_json', permanent=True)),
 ]

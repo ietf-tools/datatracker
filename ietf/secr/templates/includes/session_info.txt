@@ -14,7 +14,7 @@ Conflicts to Avoid:
 {% if session.adjacent_with_wg %} Adjacent with WG: {{ session.adjacent_with_wg }}{% endif %}       
 {% if session.timeranges_display %} Can't meet: {{ session.timeranges_display|join:", " }}{% endif %}
 
-People who must be present:
+Participants who must be present:
 {% for person in session.bethere %}  {{ person.ascii_name }}
 {% endfor %}
 Resources Requested:

@@ -200,7 +200,7 @@ class SearchableField(forms.MultipleChoiceField):
 #    model = None  # must be filled in by subclass
     model = None  # type:Optional[Type[models.Model]]
 #    max_entries = None  # may be overridden in __init__
-    max_entries = None # type: Optional[int] 
+    max_entries = None # type: Optional[int]
     min_search_length = None # type: Optional[int]
     default_hint_text = 'Type a value to search'
     
