@@ -202,32 +202,36 @@ def current_materials(request):
     else:
         raise Http404('No such meeting')
 
+
+def _get_materials_doc(meeting, name):
+    """Get meeting materials document named by name
+
+    Raises Document.DoesNotExist if a match cannot be found.
+    """
+    # try an exact match first
+    doc = Document.objects.filter(name=name).first()
+    if doc is not None and doc.get_related_meeting() == meeting:
+        return doc, None
+    # try parsing a rev number
+    name, rev = name.rsplit('-', 1)
+    doc = Document.objects.filter(name=name).first()
+    if doc is not None and doc.get_related_meeting() == meeting:
+        return doc, rev
+    # give up
+    raise Document.DoesNotExist
+
+
 @cache_page(1 * 60)
 def materials_document(request, document, num=None, ext=None):
+    debug.show('document')
     meeting=get_meeting(num,type_in=['ietf','interim'])
     num = meeting.number
-    if (re.search(r'^\w+-\d+-.+-\d\d$', document) or
-        re.search(r'^\w+-interim-\d+-.+-\d\d-\d\d$', document) or
-        re.search(r'^\w+-interim-\d+-.+-sess[a-z]-\d\d$', document) or
-        re.search(r'^(minutes|slides|chatlog|polls)-interim-\d+-.+-\d\d$', document)):
-        name, rev = document.rsplit('-', 1)
-    else:
-        name, rev = document, None
     # This view does not allow the use of DocAliases. Right now we are probably only creating one (identity) alias, but that may not hold in the future.
-    doc = Document.objects.filter(name=name).first()
-    # Handle edge case where the above name, rev splitter misidentifies the end of a document name as a revision number
-    if not doc:
-        if rev:
-            name = name + '-' + rev
-            rev = None
-            doc = get_object_or_404(Document, name=name)
-        else:
-            raise Http404("No such document")
-
-    if not doc.meeting_related():
-        raise Http404("Not a meeting related document")
-    if doc.get_related_meeting() != meeting:
+    try:
+        doc, rev = _get_materials_doc(meeting=meeting, name=document)
+    except Document.DoesNotExist:
         raise Http404("No such document for meeting %s" % num)
+
     if not rev:
         filename = doc.get_file_name()
     else:
