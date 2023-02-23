@@ -607,13 +607,18 @@ class MeetingTests(BaseMeetingTestCase):
 
     @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
     def test_materials_name_endswith_hyphen_number_number(self):
-        sp = SessionPresentationFactory(document__name='slides-junk-15',document__type_id='slides',document__states=[('reuse_policy','single')])
+        # be sure a shadowed filename without the hyphen does not interfere
+        shadow = SessionPresentationFactory(document__name='slides-115-junk', document__type_id='slides', document__states=[('reuse_policy', 'single')])
+        shadow.document.uploaded_filename = f'{shadow.document.name}-{shadow.document.rev}.pdf'
+        shadow.document.save()
+        # create the material we want to find for the test
+        sp = SessionPresentationFactory(document__name='slides-115-junk-15',document__type_id='slides',document__states=[('reuse_policy','single')])
         sp.document.uploaded_filename = '%s-%s.pdf'%(sp.document.name,sp.document.rev)
         sp.document.save()
         self.write_materials_file(sp.session.meeting, sp.document, 'Fake slide contents')
         url = urlreverse("ietf.meeting.views.materials_document", kwargs=dict(document=sp.document.name,num=sp.session.meeting.number))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Fake slide contents', status_code=200)
 
     def test_important_dates(self):
         meeting=MeetingFactory(type_id='ietf')
