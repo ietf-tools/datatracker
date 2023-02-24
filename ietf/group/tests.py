@@ -19,8 +19,6 @@ import debug                             # pyflakes:ignore
 
 from ietf.doc.factories import DocumentFactory, WgDraftFactory, EditorialDraftFactory
 from ietf.doc.models import DocEvent, RelatedDocument, Document
-from ietf.doc.factories import DocumentFactory, WgDraftFactory
-from ietf.doc.models import DocEvent, RelatedDocument, Document
 from ietf.group.models import Role, Group
 from ietf.group.utils import get_group_role_emails, get_child_group_role_emails, get_group_ad_emails
 from ietf.group.factories import GroupFactory, RoleFactory
