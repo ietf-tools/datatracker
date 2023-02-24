@@ -1284,7 +1284,7 @@ def streams(request):
 
 def stream_documents(request, acronym):
     if acronym == "editorial":
-        return HttpResponseRedirect(urlreverse(group_home, kwargs=dict(acronym="rswg")))
+        return HttpResponseRedirect(urlreverse(group_documents, kwargs=dict(acronym="rswg")))
     streams = [ s.slug for s in StreamName.objects.all().exclude(slug__in=['ietf', 'legacy']) ]
     if not acronym in streams:
         raise Http404("No such stream: %s" % acronym)

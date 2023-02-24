@@ -43,7 +43,7 @@ class StreamTests(TestCase):
 
         EditorialDraftFactory() # Quick way to ensure RSWG exists.
         r = self.client.get(urlreverse("ietf.group.views.stream_documents", kwargs=dict(acronym="editorial")))
-        self.assertRedirects(r, expected_url=urlreverse('ietf.group.views.group_home',kwargs={"acronym":"rswg"}),fetch_redirect_response=False)
+        self.assertRedirects(r, expected_url=urlreverse('ietf.group.views.group_documents',kwargs={"acronym":"rswg"}))
 
 
     def test_stream_edit(self):
