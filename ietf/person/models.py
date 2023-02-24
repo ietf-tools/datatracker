@@ -187,12 +187,31 @@ class Person(models.Model):
 
     def active_drafts(self):
         from ietf.doc.models import Document
-        return Document.objects.filter(documentauthor__person=self, type='draft', states__type='draft', states__slug='active').distinct().order_by('-time')
+
+        return (
+            Document.objects.filter(
+                documentauthor__person=self,
+                type="draft",
+                states__type="draft",
+                states__slug="active",
+            )
+            .distinct()
+            .order_by("-time")
+        )
 
     def expired_drafts(self):
         from ietf.doc.models import Document
-        return Document.objects.filter(documentauthor__person=self, type='draft', states__type='draft', states__slug__in=['repl', 'expired', 'auth-rm', 'ietf-rm']).distinct().order_by('-time')
 
+        return (
+            Document.objects.filter(
+                documentauthor__person=self,
+                type="draft",
+                states__type="draft",
+                states__slug__in=["repl", "expired", "auth-rm", "ietf-rm"],
+            )
+            .distinct()
+            .order_by("-time")
+        )
 
     def save(self, *args, **kwargs):
         created = not self.pk
