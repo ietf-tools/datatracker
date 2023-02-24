@@ -213,8 +213,8 @@ def _get_materials_doc(meeting, name):
     if doc is not None and doc.get_related_meeting() == meeting:
         return doc, None
     # try parsing a rev number
-    if '-' in name:
-        docname, rev = name.rsplit('-', 1)
+    if "-" in name:
+        docname, rev = name.rsplit("-", 1)
         if len(rev) == 2 and rev.isdigit():
             doc = Document.objects.get(name=docname)  # may raise Document.DoesNotExist
             if doc.get_related_meeting() == meeting and rev in doc.revisions():
