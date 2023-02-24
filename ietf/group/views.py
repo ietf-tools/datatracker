@@ -820,6 +820,9 @@ def meetings(request, acronym=None, group_type=None):
     ).filter(
         current_status__in=['sched','schedw','appr','canceled'],
     )
+    sessions = list(sessions)
+    for s in sessions:
+        s.order_number = s.order_in_meeting()
 
     future, in_progress, recent, past = group_sessions(sessions)
 
