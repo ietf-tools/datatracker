@@ -35,7 +35,7 @@ from django.utils.text import slugify
 
 import debug           # pyflakes:ignore
 
-from ietf.doc.models import Document
+from ietf.doc.models import Document, NewRevisionDocEvent
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.group.utils import can_manage_group
 from ietf.person.models import Person
@@ -613,12 +613,43 @@ class MeetingTests(BaseMeetingTestCase):
         shadow.document.save()
         # create the material we want to find for the test
         sp = SessionPresentationFactory(document__name='slides-115-junk-15',document__type_id='slides',document__states=[('reuse_policy','single')])
-        sp.document.uploaded_filename = '%s-%s.pdf'%(sp.document.name,sp.document.rev)
+        sp.document.uploaded_filename = f'{sp.document.name}-{sp.document.rev}.pdf'
         sp.document.save()
-        self.write_materials_file(sp.session.meeting, sp.document, 'Fake slide contents')
-        url = urlreverse("ietf.meeting.views.materials_document", kwargs=dict(document=sp.document.name,num=sp.session.meeting.number))
+        self.write_materials_file(sp.session.meeting, sp.document, 'Fake slide contents rev 00')
+
+        # create rev 01
+        sp.document.rev = '01'
+        sp.document.uploaded_filename = f'{sp.document.name}-{sp.document.rev}.pdf'
+        sp.document.save_with_history([
+            NewRevisionDocEvent.objects.create(
+                type="new_revision",
+                doc=sp.document,
+                rev=sp.document.rev,
+                by=Person.objects.get(name='(System)'),
+                desc=f'New version available: <b>{sp.document.name}-{sp.document.rev}.txt</b>',
+            )
+        ])
+        self.write_materials_file(sp.session.meeting, sp.document, 'Fake slide contents rev 01')
+        url = urlreverse(
+            "ietf.meeting.views.materials_document",
+            kwargs=dict(document=sp.document.name, num=sp.session.meeting.number),
+        )
         r = self.client.get(url)
-        self.assertContains(r, 'Fake slide contents', status_code=200)
+        self.assertContains(r, 'Fake slide contents rev 01', status_code=200,
+                            msg_prefix="Should return latest rev by default")
+        url = urlreverse(
+            "ietf.meeting.views.materials_document",
+            kwargs=dict(document=sp.document.name + '-00', num=sp.session.meeting.number),
+        )
+        r = self.client.get(url)
+        self.assertContains(r, 'Fake slide contents rev 00', status_code=200,
+                            msg_prefix="Should return existing version on request")
+        url = urlreverse(
+            "ietf.meeting.views.materials_document",
+            kwargs=dict(document=sp.document.name + '-02', num=sp.session.meeting.number),
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404, "Should not find nonexistent version")
 
     def test_important_dates(self):
         meeting=MeetingFactory(type_id='ietf')
