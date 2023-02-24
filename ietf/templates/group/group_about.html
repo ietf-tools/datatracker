@@ -211,6 +211,18 @@ height: 100vh;
                     </tr>
                 {% endif %}
             {% endwith %}
+            {% if group.type.slug == "area" %}
+            <tr>
+                <td></td>
+                <th scope="row">
+                    Group statistics
+                </th>
+                <td class="edit"></td>
+                <td>
+                    {% include "group/group_stats_modal.html" with group=group only %}
+                </td>
+            </tr>
+            {% endif %}
         </tbody>
         {% if group.personnel %}
         <tbody class="meta border-top">
@@ -393,4 +405,10 @@ height: 100vh;
 {% block js %}
 <script src="{% static 'ietf/js/d3.js' %}"></script>
 <script src="{% static 'ietf/js/document_relations.js' %}"></script>
+    <script src="{% static 'ietf/js/highcharts.js' %}"></script>
+    <script>
+        $(function () {
+            group_stats("{% url 'ietf.group.views.group_stats_data' %}", ".chart");
+        });
+    </script>
 {% endblock %}

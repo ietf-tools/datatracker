@@ -613,6 +613,7 @@ class RfcdiffSupportTests(TestCase):
     def do_draft_test(self, name):
         draft = IndividualDraftFactory(name=name, rev='00', create_revisions=range(0,13))
         draft = reload_db_objects(draft)
+        prev_draft_rev = f'{(int(draft.rev)-1):02d}'
 
         received = self.getJson(dict(name=draft.name))
         self.assertEqual(
@@ -621,7 +622,8 @@ class RfcdiffSupportTests(TestCase):
                 name=draft.name,
                 rev=draft.rev,
                 content_url=draft.get_href(),
-                previous=f'{draft.name}-{(int(draft.rev)-1):02d}'
+                previous=f'{draft.name}-{prev_draft_rev}',
+                previous_url= draft.history_set.get(rev=prev_draft_rev).get_href(),
             ),
             'Incorrect JSON when draft revision not specified',
         )
@@ -633,19 +635,22 @@ class RfcdiffSupportTests(TestCase):
                 name=draft.name,
                 rev=draft.rev,
                 content_url=draft.get_href(),
-                previous=f'{draft.name}-{(int(draft.rev)-1):02d}'
+                previous=f'{draft.name}-{prev_draft_rev}',
+                previous_url= draft.history_set.get(rev=prev_draft_rev).get_href(),
             ),
             'Incorrect JSON when latest revision specified',
         )
 
         received = self.getJson(dict(name=draft.name, rev='10'))
+        prev_draft_rev = '09'
         self.assertEqual(
             received,
             dict(
                 name=draft.name,
                 rev='10',
                 content_url=draft.history_set.get(rev='10').get_href(),
-                previous=f'{draft.name}-09'
+                previous=f'{draft.name}-{prev_draft_rev}',
+                previous_url= draft.history_set.get(rev=prev_draft_rev).get_href(),
             ),
             'Incorrect JSON when historical revision specified',
         )
@@ -698,6 +703,7 @@ class RfcdiffSupportTests(TestCase):
                 content_url=rfc.get_href(),
                 name=rfc.canonical_name(),
                 previous=f'{draft.name}-{draft.rev}',
+                previous_url= draft.history_set.get(rev=draft.rev).get_href(),
             ),
             'Can look up an RFC by number',
         )
@@ -713,13 +719,15 @@ class RfcdiffSupportTests(TestCase):
         self.assertEqual(num_received, received, 'RFC by draft name and no rev gives same result as by number')
 
         received = self.getJson(dict(name=draft.name, rev='01'))
+        prev_draft_rev = '00'
         self.assertEqual(
             received,
             dict(
                 content_url=draft.history_set.get(rev='01').get_href(),
                 name=draft.name,
                 rev='01',
-                previous=f'{draft.name}-00',
+                previous=f'{draft.name}-{prev_draft_rev}',
+                previous_url= draft.history_set.get(rev=prev_draft_rev).get_href(),
             ),
             'RFC by draft name with rev should give draft name, not canonical name'
         )
@@ -758,6 +766,7 @@ class RfcdiffSupportTests(TestCase):
                 content_url=rfc.get_href(),
                 name=rfc.canonical_name(),
                 previous=f'{draft.name}-10',
+                previous_url= f'{settings.IETF_ID_ARCHIVE_URL}{draft.name}-10.txt',
             ),
             'RFC by draft name without rev should return canonical RFC name and no rev',
         )
