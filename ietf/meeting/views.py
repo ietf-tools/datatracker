@@ -1550,7 +1550,7 @@ def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, 
         person   = get_person_by_email(owner)
         schedule = get_schedule_by_name(meeting, person, name)
 
-    if schedule == None:
+    if schedule is None:
         base = base.replace("-utc", "")
         return render(request, "meeting/no-"+base+ext, {'meeting':meeting }, content_type=mimetype[ext])
 
@@ -1804,7 +1804,7 @@ def agenda_extract_slide (item):
         "ext": item.file_extension()
     }
 
-def agenda_csv(schedule, filtered_assignments):
+def agenda_csv(schedule, filtered_assignments, utc=False):
     encoding = 'utf-8'
     response = HttpResponse(content_type=f"text/csv; charset={encoding}")
     writer = csv.writer(response, delimiter=str(','), quoting=csv.QUOTE_ALL)
@@ -1830,11 +1830,12 @@ def agenda_csv(schedule, filtered_assignments):
 
     write_row(headings)
 
+    tz = datetime.timezone.utc if utc else schedule.meeting.tz()
     for item in filtered_assignments:
         row = []
-        row.append(item.timeslot.time.strftime("%Y-%m-%d"))
-        row.append(item.timeslot.time.strftime("%H%M"))
-        row.append(item.timeslot.end_time().strftime("%H%M"))
+        row.append(item.timeslot.time.astimezone(tz).strftime("%Y-%m-%d"))
+        row.append(item.timeslot.time.astimezone(tz).strftime("%H%M"))
+        row.append(item.timeslot.end_time().astimezone(tz).strftime("%H%M"))
 
         if item.slot_type().slug == "break":
             row.append(item.slot_type().name)
