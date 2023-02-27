@@ -1521,7 +1521,7 @@ def get_assignments_for_agenda(schedule):
 
 
 @ensure_csrf_cookie
-def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
+def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, utc=None):
     base = base if base else 'agenda'
     ext = ext if ext else '.txt'
     mimetype = {
@@ -1571,7 +1571,7 @@ def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, 
 
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
-    display_timezone = 'UTC' if utc else meeting.time_zone
+    display_timezone = meeting.time_zone if utc is None else 'UTC'
     with timezone.override(display_timezone):
         rendered_page = render(
             request,
