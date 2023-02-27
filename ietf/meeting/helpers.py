@@ -124,7 +124,7 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
             # check before blindly assigning to meeting just in case.
             if a.session.meeting.pk == meeting.pk:
                 a.session.meeting = meeting
-            a.session.order_number = None
+            a.session.order_number = a.session.order_in_meeting() if a.session.group else None
 
             if a.session.group and a.session.group not in groups:
                 groups.append(a.session.group)
@@ -133,12 +133,6 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
     for a in assignments:
         if a.session and a.session.group:
             sessions_for_groups[(a.session.group, a.session.type_id)].append(a)
-
-    for a in assignments:
-        if a.session and a.session.group:
-
-            l = sessions_for_groups.get((a.session.group, a.session.type_id), [])
-            a.session.order_number = l.index(a) + 1 if a in l else 0
 
     timeslot_by_session_pk = {a.session_id: a.timeslot for a in assignments}
 
