@@ -10,6 +10,7 @@
 {% filter center:72 %}Updated {{ updated|date:"Y-m-d H:i:s T" }}{% endfilter %}
 
 {% filter center:72 %}IETF agendas are subject to change, up to and during the meeting.{% endfilter %}
+{% filter center:72 %}Times are shown in {% if display_timezone.lower == "utc" %}UTC{% else %}the {{ display_timezone }} time zone{% endif %}.{% endfilter %}
 {% for item in filtered_assignments %}{% ifchanged  %}
 
 
