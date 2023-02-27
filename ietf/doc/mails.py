@@ -175,7 +175,7 @@ def generate_ballot_writeup(request, doc):
     e.doc = doc
     e.rev = doc.rev
     e.desc = "Ballot writeup was generated"
-    e.text = force_text(render_to_string("doc/mail/ballot_writeup.txt", {'iana': iana}))
+    e.text = force_text(render_to_string("doc/mail/ballot_writeup.txt", {'iana': iana, 'doc': doc, 'abstract': doc.abstract.rstrip()}))
 
     # caller is responsible for saving, if necessary
     return e
