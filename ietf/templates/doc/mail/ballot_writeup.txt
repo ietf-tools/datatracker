@@ -31,9 +31,7 @@ Personnel
    The Document Shepherd for this document is {{ doc.shepherd.person.name }}. The Responsible Area Director is {{ doc.ad.name }}.{% endfilter %}
 {% else %}
    Who is the Document Shepherd for this document?  Who is the 
-   Responsible Area Director?  If the document requires IANA
-   experts(s), insert 'The IANA Expert(s) for the registries
-   in this document are <TO BE ADDED BY THE AD>.'
+   Responsible Area Director?
 {% endif %}
 IRTF Note
 
