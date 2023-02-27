@@ -1,11 +1,12 @@
-{% autoescape off %}
-Technical Summary
-
+{% load ietf_filters %}{% autoescape off %}Technical Summary
+{% if doc.abstract %}
+{{ doc.abstract.rstrip }}
+{% else %}
    Relevant content can frequently be found in the abstract
    and/or introduction of the document.  If not, this may be 
    an indication that there are deficiencies in the abstract
    or introduction.
-
+{% endif %}
 Working Group Summary
 
    Was there anything in the WG process that is worth noting?
@@ -26,23 +27,21 @@ Document Quality
    Review, on what date was the request posted?
 
 Personnel
-
+{% if doc.shepherd and doc.ad %}{% filter wordwrap:"76" %}
+   The Document Shepherd for this document is {{ doc.shepherd.person.name }}. The Responsible Area Director is {{ doc.ad.name }}.{% endfilter %}
+{% else %}
    Who is the Document Shepherd for this document?  Who is the 
-   Responsible Area Director?  If the document requires IANA
-   experts(s), insert 'The IANA Expert(s) for the registries
-   in this document are <TO BE ADDED BY THE AD>.'
-
-IRTF Note
+   Responsible Area Director?
+{% endif %}
+{% if doc.stream.slug == "irtf" %}IRTF Note
 
   (Insert IRTF Note here or remove section)
-
-IESG Note
+{% elif doc.stream.slug == "ietf" %}IESG Note
 
   (Insert IESG Note here or remove section)
-
+{% endif %}
 IANA Note
 {% if iana %}
-  {% load ietf_filters %}{% filter wordwrap:"76"|indent:2 %}{{ iana }}{% endfilter %}
+  {% filter wordwrap:"76"|indent:2 %}{{ iana }}{% endfilter %}
 {% endif %}
-  (Insert IANA Note here or remove section)
-{% endautoescape%}
+  (Insert IANA Note here or remove section){% endautoescape%}
