@@ -1,6 +1,6 @@
 {% load ietf_filters %}{% autoescape off %}Technical Summary
 {% if doc.abstract %}
-{{ abstract }}
+{{ doc.abstract.rstrip }}
 {% else %}
    Relevant content can frequently be found in the abstract
    and/or introduction of the document.  If not, this may be 
