@@ -84,8 +84,9 @@ function update_calendar(tz, filter_params) {
          */
         var calendarEl = document.getElementById('calendar');
         event_calendar = new FullCalendar(calendarEl, {
-            plugins: [dayGridPlugin],
+            plugins: [dayGridPlugin, bootstrap5Plugin],
             initialView: 'dayGridMonth',
+            themeSystem: 'bootstrap5',
             displayEventTime: false,
             events: function (fInfo, success) { success(display_events); },
             eventContent: function(info) {

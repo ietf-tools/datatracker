@@ -160,7 +160,7 @@ jobs:
         coverage xml
 
     - name: Upload Coverage Results to Codecov
-      uses: codecov/codecov-action@v2.1.0
+      uses: codecov/codecov-action@v3.1.1
       with:
         files: coverage.xml
         
@@ -305,7 +305,7 @@ jobs:
         
     - name: Download a Coverage Results
       if: ${{ github.event.inputs.skiptests == 'false' }}
-      uses: actions/download-artifact@v3.0.0
+      uses: actions/download-artifact@v3.0.2
       with:
         name: coverage
 
@@ -426,7 +426,7 @@ jobs:
     - uses: actions/checkout@v3
         
     - name: Download a Release Artifact
-      uses: actions/download-artifact@v3.0.0
+      uses: actions/download-artifact@v3.0.2
       with:
         name: release-${{ env.PKG_VERSION }}
         

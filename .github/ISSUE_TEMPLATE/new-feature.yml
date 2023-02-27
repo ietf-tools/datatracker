@@ -1,16 +1,16 @@
-name: New Feature / Enhancement
-description: Propose a new idea to be implemented
+name: Suggest new feature or enhancement
+description: Propose a new idea to be implemented.
 labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to propose a new feature / enhancement idea.
+        Thanks for taking the time to propose a new feature or enhancement idea.
   - type: textarea
     id: description
     attributes:
       label: Description
-      description: Include as much info as possible, including mockups / screenshots if available.
+      description: Include as much info as possible, including mockups or screenshots if available.
       placeholder: Description
     validations:
       required: true

@@ -12,7 +12,7 @@
         {% bootstrap_form form %}
         <button type="submit" class="btn btn-primary">Save</button>
         <a class="btn btn-secondary float-end"
-           href="{% url 'ietf.meeting.views.edit_timeslots' num=meeting.number %}">Back</a>
+           href="{% url 'ietf.meeting.views.edit_timeslots' num=meeting.number %}{% if 'sched' in request.GET %}?sched={{ request.GET.sched }}{% endif %}">Back</a>
     </form>
 {% endblock %}
 {% block js %}

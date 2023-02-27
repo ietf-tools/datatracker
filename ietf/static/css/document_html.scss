@@ -108,28 +108,15 @@ $tooltip-margin: inherit !default;
     }
 
     @media screen {
-        @include media-breakpoint-only(xs) {
-            font-size: min(7pt, var(--doc-ptsize-max));
-        }
 
-        @include media-breakpoint-up(sm) {
-            font-size: min(9.5pt, var(--doc-ptsize-max));
+        // the viewport-width ("vw") constants are magic; they seem to work for
+        // many monospace fonts, but may need tweaking
+        @include media-breakpoint-up(xs) {
+            font-size: min(2.2vw, var(--doc-ptsize-max));
         }
 
         @include media-breakpoint-up(md) {
-            font-size: min(9.5pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(lg) {
-            font-size: min(11pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(xl) {
-            font-size: min(13pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(xxl) {
-            font-size: min(16pt, var(--doc-ptsize-max));
+            font-size: min(1.6vw, var(--doc-ptsize-max));
         }
 
         .grey,
@@ -175,29 +162,15 @@ $tooltip-margin: inherit !default;
     }
 
     @media screen {
-        @include media-breakpoint-only(xs) {
-            font-size: min(6.75pt, var(--doc-ptsize-max));
-        }
 
-        @include media-breakpoint-up(sm) {
-            font-size: min(8.75pt, var(--doc-ptsize-max));
+        // the viewport-width ("vw") constants are magic; they seem to work for
+        // many monospace fonts, but may need tweaking
+        @include media-breakpoint-up(xs) {
+            font-size: min(2vw, var(--doc-ptsize-max));
         }
 
         @include media-breakpoint-up(md) {
-            font-size: min(8.75pt, var(--doc-ptsize-max));
-        }
-
-        // Rest of font sizes is the same as above.
-        @include media-breakpoint-up(lg) {
-            font-size: min(11pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(xl) {
-            font-size: min(13pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(xxl) {
-            font-size: min(16pt, var(--doc-ptsize-max));
+            font-size: min(1.5vw, var(--doc-ptsize-max));
         }
     }
 

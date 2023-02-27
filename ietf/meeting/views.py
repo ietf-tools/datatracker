@@ -17,7 +17,7 @@ import tempfile
 
 from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
-from urllib.parse import unquote
+from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
 
@@ -202,32 +202,37 @@ def current_materials(request):
     else:
         raise Http404('No such meeting')
 
+
+def _get_materials_doc(meeting, name):
+    """Get meeting materials document named by name
+
+    Raises Document.DoesNotExist if a match cannot be found.
+    """
+    # try an exact match first
+    doc = Document.objects.filter(name=name).first()
+    if doc is not None and doc.get_related_meeting() == meeting:
+        return doc, None
+    # try parsing a rev number
+    if "-" in name:
+        docname, rev = name.rsplit("-", 1)
+        if len(rev) == 2 and rev.isdigit():
+            doc = Document.objects.get(name=docname)  # may raise Document.DoesNotExist
+            if doc.get_related_meeting() == meeting and rev in doc.revisions():
+                return doc, rev
+    # give up
+    raise Document.DoesNotExist
+
+
 @cache_page(1 * 60)
 def materials_document(request, document, num=None, ext=None):
     meeting=get_meeting(num,type_in=['ietf','interim'])
     num = meeting.number
-    if (re.search(r'^\w+-\d+-.+-\d\d$', document) or
-        re.search(r'^\w+-interim-\d+-.+-\d\d-\d\d$', document) or
-        re.search(r'^\w+-interim-\d+-.+-sess[a-z]-\d\d$', document) or
-        re.search(r'^(minutes|slides|chatlog|polls)-interim-\d+-.+-\d\d$', document)):
-        name, rev = document.rsplit('-', 1)
-    else:
-        name, rev = document, None
     # This view does not allow the use of DocAliases. Right now we are probably only creating one (identity) alias, but that may not hold in the future.
-    doc = Document.objects.filter(name=name).first()
-    # Handle edge case where the above name, rev splitter misidentifies the end of a document name as a revision number
-    if not doc:
-        if rev:
-            name = name + '-' + rev
-            rev = None
-            doc = get_object_or_404(Document, name=name)
-        else:
-            raise Http404("No such document")
-
-    if not doc.meeting_related():
-        raise Http404("Not a meeting related document")
-    if doc.get_related_meeting() != meeting:
+    try:
+        doc, rev = _get_materials_doc(meeting=meeting, name=document)
+    except Document.DoesNotExist:
         raise Http404("No such document for meeting %s" % num)
+
     if not rev:
         filename = doc.get_file_name()
     else:
@@ -281,8 +286,13 @@ def materials_editable_groups(request, num=None):
 
 @role_required('Secretariat')
 def edit_timeslots(request, num=None):
-
     meeting = get_meeting(num)
+    if 'sched' in request.GET:
+        schedule = Schedule.objects.filter(pk=request.GET.get('sched', None)).first()
+        schedule_edit_url = _schedule_edit_url(meeting, schedule)
+    else:
+        schedule_edit_url = None
+
     with timezone.override(meeting.tz()):
         if request.method == 'POST':
             # handle AJAX requests
@@ -333,6 +343,7 @@ def edit_timeslots(request, num=None):
                                               "slot_slices": slots,
                                               "date_slices":date_slices,
                                               "meeting":meeting,
+                                              "schedule_edit_url": schedule_edit_url,
                                               "ts_list":ts_list,
                                               "ts_with_official_assignments": ts_with_official_assignments,
                                               "ts_with_any_assignments": ts_with_any_assignments,
@@ -659,8 +670,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         sorted_rooms = sorted(
             rooms_with_timeslots,
             key=lambda room: (
-                # Sort higher capacity rooms first.
-                -room.capacity if room.capacity is not None else 1,  # sort rooms with capacity = None at end
+                # Sort lower capacity rooms first.
+                room.capacity if room.capacity is not None else math.inf,  # sort rooms with capacity = None at end
                 # Sort regular session rooms ahead of others - these will usually
                 # have more timeslots than other room types.
                 0 if room_data[room.pk]['timeslot_count'] == max_timeslots else 1,
@@ -3425,7 +3436,6 @@ def interim_request_edit(request, number):
         "form": form,
         "formset": formset})
 
-@cache_page(60*60)
 def past(request):
     '''List of past meetings'''
     today = timezone.now()
@@ -3793,7 +3803,6 @@ def proceedings_overview(request, num=None):
         'template': template,
     })
 
-@cache_page( 60 * 60 )
 def proceedings_progress_report(request, num=None):
     '''Display Progress Report (stats since last meeting)'''
     if not (num and num.isdigit()):
@@ -4123,7 +4132,15 @@ def edit_timeslot(request, num, slot_id):
             form = TimeSlotEditForm(instance=timeslot, data=request.POST)
             if form.is_valid():
                 form.save()
-                return HttpResponseRedirect(reverse('ietf.meeting.views.edit_timeslots', kwargs={'num': num}))
+                redirect_to = reverse('ietf.meeting.views.edit_timeslots', kwargs={'num': num})
+                if 'sched' in request.GET:
+                    # Preserve 'sched' as a query parameter
+                    urlparts = list(urlsplit(redirect_to))
+                    query = parse_qs(urlparts[3])
+                    query['sched'] = request.GET['sched']
+                    urlparts[3] = urlencode(query)
+                    redirect_to = urlunsplit(urlparts)
+                return HttpResponseRedirect(redirect_to)
         else:
             form = TimeSlotEditForm(instance=timeslot)
 
@@ -4156,7 +4173,15 @@ def create_timeslot(request, num):
                     show_location=form.cleaned_data['show_location'],
                 )
             )
-            return HttpResponseRedirect(reverse('ietf.meeting.views.edit_timeslots',kwargs={'num':num}))
+            redirect_to = reverse('ietf.meeting.views.edit_timeslots',kwargs={'num':num})
+            if 'sched' in request.GET:
+                # Preserve 'sched' as a query parameter
+                urlparts = list(urlsplit(redirect_to))
+                query = parse_qs(urlparts[3])
+                query['sched'] = request.GET['sched']
+                urlparts[3] = urlencode(query)
+                redirect_to = urlunsplit(urlparts)
+            return HttpResponseRedirect(redirect_to)
     else:
         form = TimeSlotCreateForm(meeting)
 
@@ -4171,19 +4196,19 @@ def create_timeslot(request, num):
 @role_required('Secretariat')
 def edit_session(request, session_id):
     session = get_object_or_404(Session, pk=session_id)
+    schedule = Schedule.objects.filter(pk=request.GET.get('sched', None)).first()
+    editor_url = _schedule_edit_url(session.meeting, schedule)
     if request.method == 'POST':
         form = SessionEditForm(instance=session, data=request.POST)
         if form.is_valid():
             form.save()
-            return HttpResponseRedirect(
-                reverse('ietf.meeting.views.edit_meeting_schedule',
-                        kwargs={'num': form.instance.meeting.number}))
+            return HttpResponseRedirect(editor_url)
     else:
         form = SessionEditForm(instance=session)
     return render(
         request,
         'meeting/edit_session.html',
-        {'session': session, 'form': form},
+        {'session': session, 'form': form, 'editor_url': editor_url},
     )
 
 def _schedule_edit_url(meeting, schedule):

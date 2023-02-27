@@ -820,6 +820,9 @@ def meetings(request, acronym=None, group_type=None):
     ).filter(
         current_status__in=['sched','schedw','appr','canceled'],
     )
+    sessions = list(sessions)
+    for s in sessions:
+        s.order_number = s.order_in_meeting()
 
     future, in_progress, recent, past = group_sessions(sessions)
 
@@ -1283,6 +1286,8 @@ def streams(request):
     return render(request, 'group/index.html', {'streams':streams})
 
 def stream_documents(request, acronym):
+    if acronym == "editorial":
+        return HttpResponseRedirect(urlreverse(group_documents, kwargs=dict(acronym="rswg")))
     streams = [ s.slug for s in StreamName.objects.all().exclude(slug__in=['ietf', 'legacy']) ]
     if not acronym in streams:
         raise Http404("No such stream: %s" % acronym)
@@ -1352,6 +1357,85 @@ def group_menu_data(request):
         groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'type': escape(g.type.verbose_name or g.type.name), 'url': url })
 
     return JsonResponse(groups_by_parent)
+
+
+@cache_control(public=True, max_age=30 * 60)
+@cache_page(30 * 60)
+def group_stats_data(request, years="3", only_active=True):
+    when = timezone.now() - datetime.timedelta(days=int(years) * 365)
+    docs = (
+        Document.objects.filter(type="draft", stream="ietf")
+        .filter(
+            Q(docevent__newrevisiondocevent__time__gte=when)
+            | Q(docevent__type="published_rfc", docevent__time__gte=when)
+        )
+        .exclude(states__type="draft", states__slug="repl")
+        .distinct()
+    )
+
+    data = []
+    for a in Group.objects.filter(type="area"):
+        if only_active and not a.is_active:
+            continue
+
+        area_docs = docs.filter(group__parent=a).exclude(group__acronym="none")
+        if not area_docs:
+            continue
+
+        area_page_cnt = 0
+        area_doc_cnt = 0
+        for wg in Group.objects.filter(type="wg", parent=a):
+            if only_active and not wg.is_active:
+                continue
+
+            wg_docs = area_docs.filter(group=wg)
+            if not wg_docs:
+                continue
+
+            wg_page_cnt = 0
+            for doc in wg_docs:
+                # add doc data
+                data.append(
+                    {
+                        "id": doc.name,
+                        "active": True,
+                        "parent": wg.acronym,
+                        "grandparent": a.acronym,
+                        "pages": doc.pages,
+                        "docs": 1,
+                    }
+                )
+                wg_page_cnt += doc.pages
+
+            area_doc_cnt += len(wg_docs)
+            area_docs = area_docs.exclude(group=wg)
+
+            # add WG data
+            data.append(
+                {
+                    "id": wg.acronym,
+                    "active": wg.is_active,
+                    "parent": a.acronym,
+                    "grandparent": "ietf",
+                    "pages": wg_page_cnt,
+                    "docs": len(wg_docs),
+                }
+            )
+            area_page_cnt += wg_page_cnt
+
+        # add area data
+        data.append(
+            {
+                "id": a.acronym,
+                "active": a.is_active,
+                "parent": "ietf",
+                "pages": area_page_cnt,
+                "docs": area_doc_cnt,
+            }
+        )
+
+    data.append({"id": "ietf", "active": True})
+    return JsonResponse(data, safe=False)
 
 
 # --- Review views -----------------------------------------------------

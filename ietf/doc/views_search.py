@@ -679,7 +679,27 @@ def docs_for_ad(request, name):
     results, meta = prepare_document_table(request, retrieve_search_results(form), form.data, max_results=500)
     results.sort(key=ad_dashboard_sort_key)
     del meta["headers"][-1]
-    #
+
+    # filter out some results
+    results = [
+        r
+        for r in results
+        if not (
+            r.type_id == "charter"
+            and (
+                r.group.state_id == "abandon"
+                or r.get_state_slug("charter") == "replaced"
+            )
+        )
+        and not (
+            r.type_id == "draft"
+            and (
+                r.get_state_slug("draft-iesg") == "dead"
+                or r.get_state_slug("draft") == "repl"
+            )
+        )
+    ]
+
     for d in results:
         d.search_heading = ad_dashboard_group(d)
     #

@@ -11,6 +11,7 @@
 {% block content %}
     {% origin %}
     <h1>Liaison Statements</h1>
+    {% include "liaisons/liaison_desc.html" only %}
     {% if with_search %}
         <div class="ietf-box search-form-box">{% include "liaisons/search_form.html" %}</div>
     {% endif %}
