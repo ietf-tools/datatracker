@@ -1805,18 +1805,18 @@ def agenda_extract_slide (item):
     }
 
 def agenda_csv(schedule, filtered_assignments):
-    response = HttpResponse(content_type="text/csv; charset=%s"%settings.DEFAULT_CHARSET)
+    encoding = 'utf-8'
+    response = HttpResponse(content_type=f"text/csv; charset={encoding}")
     writer = csv.writer(response, delimiter=str(','), quoting=csv.QUOTE_ALL)
 
     headings = ["Date", "Start", "End", "Session", "Room", "Area", "Acronym", "Type", "Description", "Session ID", "Agenda", "Slides"]
 
     def write_row(row):
-        encoded_row = [v.encode('utf-8') if isinstance(v, str) else v for v in row]
-
-        while len(encoded_row) < len(headings):
-            encoded_row.append(None) # produce empty entries at the end as necessary
-
-        writer.writerow(encoded_row)
+        if len(row) < len(headings):
+            padding = [None] * (len(headings) - len(row))  # produce empty entries at the end as necessary
+        else:
+            padding = []
+        writer.writerow(row + padding)
 
     def agenda_field(item):
         agenda_doc = item.session.agenda()
