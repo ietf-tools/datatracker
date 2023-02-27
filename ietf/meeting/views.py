@@ -3809,6 +3809,7 @@ def proceedings_activity_report(request, num=None):
     edate = meeting.date
     context = get_activity_stats(sdate,edate)
     context['meeting'] = meeting
+    context['is_meeting_report'] = True
     return render(request, "meeting/proceedings_activity_report.html", context)
     
 class OldUploadRedirect(RedirectView):

@@ -6,7 +6,7 @@
             {{ new_drafts_count|stringformat:"3s" }}    New I-Ds   ({{ new_drafts_updated_count }} of which were updated, some ({{ new_drafts_updated_more_count }}) more than once)
         </li>
         <li>{{ updated_drafts_count|stringformat:"3s" }}    I-Ds were updated   (Some more than once)</li>
-        {% if not is_monthly_report %}
+        {% if is_meeting_report %}
             <li>
                 <h3 class="mt-3">In the final 4 weeks before meeting</h3>
             </li>

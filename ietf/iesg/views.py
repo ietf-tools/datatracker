@@ -559,6 +559,5 @@ def ietf_activity(request):
     # always pass back an unbound form to avoid annoying is-valid styling
     form = ActivityForm(initial={'month': str(sdate.month).zfill(2), 'year': sdate.year})
     context = get_activity_stats(sdate, edate)
-    context['is_monthly_report'] = True
     context['form'] = form
     return render(request, "iesg/ietf_activity_report.html", context)
