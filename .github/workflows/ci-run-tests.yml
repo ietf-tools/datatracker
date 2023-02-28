@@ -46,7 +46,7 @@ jobs:
           exit 1
         fi
         echo "Running tests..."
-        ./ietf/manage.py test --settings=settings_sqlitetest
+        ./ietf/manage.py test --settings=settings_postgrestest
         coverage xml
 
     - name: Upload Coverage Results to Codecov
