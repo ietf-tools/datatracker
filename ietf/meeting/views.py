@@ -1521,7 +1521,7 @@ def get_assignments_for_agenda(schedule):
 
 
 @ensure_csrf_cookie
-def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
+def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, utc=None):
     base = base if base else 'agenda'
     ext = ext if ext else '.txt'
     mimetype = {
@@ -1565,7 +1565,7 @@ def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, 
 
     # Done processing for CSV output
     if ext == ".csv":
-        return agenda_csv(schedule, filtered_assignments)
+        return agenda_csv(schedule, filtered_assignments, utc=utc is not None)
 
     filter_organizer = AgendaFilterOrganizer(assignments=filtered_assignments)
 
