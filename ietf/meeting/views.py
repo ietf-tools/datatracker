@@ -2041,7 +2041,7 @@ def should_include_assignment(filter_params, assignment):
     hidden = len(set(filter_params['hide']).intersection(assignment.filter_keywords)) > 0
     return shown and not hidden
 
-def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
+def agenda_ical(request, num=None, acronym=None, session_id=None):
     """Agenda ical view
 
     By default, all agenda items will be shown. A filter can be specified in 
@@ -2060,7 +2060,7 @@ def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
     Hiding (by wg or type) takes priority over showing.
     """
     meeting = get_meeting(num, type_in=None)
-    schedule = get_schedule(meeting, name)
+    schedule = get_schedule(meeting)
     updated = meeting.updated()
 
     if schedule is None and acronym is None and session_id is None:
