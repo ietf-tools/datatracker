@@ -228,9 +228,6 @@ class MeetingTests(BaseMeetingTestCase):
 
         registration_text = "Registration"
 
-        # utc
-        time_interval = r"%s<span.*/span>-%s" % (slot.utc_start_time().strftime("%H:%M").lstrip("0"), (slot.utc_start_time() + slot.duration).strftime("%H:%M").lstrip("0"))
-
         # Extremely rudementary test of agenda-neue - to be replaced with back-end tests as the front-end tests are developed.
         r = self.client.get(urlreverse("agenda", kwargs=dict(num=meeting.number,utc='-utc')))
         self.assertEqual(r.status_code, 200)  
@@ -279,23 +276,32 @@ class MeetingTests(BaseMeetingTestCase):
             }
         )
 
-        # plain
-        time_interval = r"{}<span.*/span>-{}".format(
-            slot.time.astimezone(meeting.tz()).strftime("%H:%M").lstrip("0"),
-            slot.end_time().astimezone(meeting.tz()).strftime("%H:%M").lstrip("0"),
-        )
-
         # text
-        # the rest of the results don't have as nicely formatted times
-        time_interval = "%s-%s" % (slot.time.strftime("%H%M").lstrip("0"), (slot.time + slot.duration).strftime("%H%M").lstrip("0"))
-
         r = self.client.get(urlreverse("ietf.meeting.views.agenda_plain", kwargs=dict(num=meeting.number, ext=".txt")))
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, session.group.name)
         self.assertContains(r, session.group.parent.acronym.upper())
         self.assertContains(r, slot.location.name)
+        self.assertContains(r, "{}-{}".format(
+            slot.time.astimezone(meeting.tz()).strftime("%H%M"),
+            (slot.time + slot.duration).astimezone(meeting.tz()).strftime("%H%M"),
+        ))
+        self.assertContains(r, f"shown in the {meeting.tz()} time zone")
 
-        self.assertContains(r, time_interval)
+        # text, UTC
+        r = self.client.get(urlreverse(
+            "ietf.meeting.views.agenda_plain",
+            kwargs=dict(num=meeting.number, ext=".txt", utc="-utc"),
+        ))
+        self.assertContains(r, session.group.acronym)
+        self.assertContains(r, session.group.name)
+        self.assertContains(r, session.group.parent.acronym.upper())
+        self.assertContains(r, slot.location.name)
+        self.assertContains(r, "{}-{}".format(
+            slot.time.astimezone(datetime.timezone.utc).strftime("%H%M"),
+            (slot.time + slot.duration).astimezone(datetime.timezone.utc).strftime("%H%M"),
+        ))
+        self.assertContains(r, "shown in UTC")
 
         # future meeting, no agenda
         r = self.client.get(urlreverse("ietf.meeting.views.agenda_plain", kwargs=dict(num=future_meeting.number, ext=".txt")))

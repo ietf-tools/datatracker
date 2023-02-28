@@ -602,10 +602,6 @@ class TimeSlot(models.Model):
             self._session_cache = self.sessions.filter(timeslotassignments__schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting else None]).first()
         return self._session_cache
 
-    @property
-    def time_desc(self):
-        return "%s-%s" % (self.time.strftime("%H%M"), (self.time + self.duration).strftime("%H%M"))
-
     def meeting_date(self):
         return self.time.date()
 
