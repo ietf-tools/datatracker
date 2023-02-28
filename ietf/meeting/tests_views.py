@@ -5800,35 +5800,6 @@ class InterimTests(TestCase):
         self.assertContains(r, 'END:VEVENT')
 
 
-class AjaxTests(TestCase):
-    def test_ajax_get_utc(self):
-        # test bad queries
-        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=badtime&timezone=UTC"
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        data = r.json()
-        self.assertEqual(data["error"], True)
-        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=25:99&timezone=UTC"
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        data = r.json()
-        self.assertEqual(data["error"], True)
-        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=10:00am&timezone=UTC"
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        data = r.json()
-        self.assertEqual(data["error"], True)
-        # test good query
-        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=12:00&timezone=America/Los_Angeles"
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        data = r.json()
-        self.assertIn('timezone', data)
-        self.assertIn('time', data)
-        self.assertIn('utc', data)
-        self.assertNotIn('error', data)
-        self.assertEqual(data['utc'], '20:00')
-
 class IphoneAppJsonTests(TestCase):
     def test_iphone_app_json_interim(self):
         make_interim_test_data()
