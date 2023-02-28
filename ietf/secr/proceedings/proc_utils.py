@@ -199,10 +199,10 @@ def send_audio_import_warning(unmatched_files):
 # End Recording Functions
 # -------------------------------------------------
 
-def get_progress_stats(sdate, edate):
+def get_activity_stats(sdate, edate):
     '''
     This function takes a date range and produces a dictionary of statistics / objects for
-    use in a progress report.  Generally the end date will be the date of the last meeting
+    use in an activity report.  Generally the end date will be the date of the last meeting
     and the start date will be the date of the meeting before that.
 
     Data between midnight UTC on the specified dates are included in the stats.
