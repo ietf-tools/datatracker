@@ -2107,7 +2107,12 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
 
 @cache_page(15 * 60)
 def agenda_json(request, num=None):
-    meeting = get_meeting(num, type_in=['ietf','interim'])
+    if num is None:
+        meeting = get_ietf_meeting()
+        if meeting is None:
+            raise Http404
+    else:
+        meeting = get_meeting(num, type_in=None)  # get requested meeting, whatever its type
 
     sessions = []
     locations = set()
