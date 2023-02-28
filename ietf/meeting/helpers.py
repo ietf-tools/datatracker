@@ -36,12 +36,14 @@ from ietf.utils.pipe import pipe
 from ietf.utils.text import xslugify
 
 
-def get_meeting(num=None,type_in=['ietf',],days=28):
+def get_meeting(num=None, type_in=('ietf',), days=28):
     meetings = Meeting.objects
-    if type_in:
+    if type_in is not None:
         meetings = meetings.filter(type__in=type_in)
-    if num == None:
-        meetings = meetings.filter(date__gte=timezone.now()-datetime.timedelta(days=days)).order_by('date')
+    if num is None:
+        meetings = meetings.filter(
+            date__gte=timezone.now() - datetime.timedelta(days=days)
+        ).order_by('date')
     else:
         meetings = meetings.filter(number=num)
     if meetings.exists():

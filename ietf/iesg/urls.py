@@ -55,6 +55,7 @@ urlpatterns = [
     url(r'^past/documents/$', views.past_documents),
     url(r'^agenda/telechat-(?:%(date)s-)?docs.tgz' % settings.URL_REGEXPS, views.telechat_docs_tarfile),
     url(r'^discusses/$', views.discusses),
+    url(r'^ietf-activity/$', views.ietf_activity),
     url(r'^milestones/$', views.milestones_needing_review),
     url(r'^photos/$', views.photos),
 ]

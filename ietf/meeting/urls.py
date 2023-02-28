@@ -69,7 +69,7 @@ type_interim_patterns = [
 
 type_ietf_only_patterns_id_optional = [
     url(r'^agenda(?P<utc>-utc)?(?P<ext>\.html)?/?$', views.agenda, name='agenda'),
-    url(r'^agenda(?P<ext>\.txt)$', views.agenda_plain),
+    url(r'^agenda(?P<utc>-utc)?(?P<ext>\.txt)$', views.agenda_plain),
     url(r'^agenda(?P<ext>\.csv)$', views.agenda_plain),
     url(r'^agenda/edit$',
         RedirectView.as_view(pattern_name='ietf.meeting.views.edit_meeting_schedule', permanent=True),
@@ -92,7 +92,7 @@ type_ietf_only_patterns_id_optional = [
     url(r'^proceedings/acknowledgements/$', views.proceedings_acknowledgements),
     url(r'^proceedings/attendees/$', views.proceedings_attendees),
     url(r'^proceedings/overview/$', views.proceedings_overview),
-    url(r'^proceedings/progress-report/$', views.proceedings_progress_report),
+    url(r'^proceedings/activity-report/$', views.proceedings_activity_report),
     url(r'^proceedings/materials/$', views_proceedings.material_details),
     url(r'^proceedings/materials/(?P<material_type>[a-z_]+)/$', views_proceedings.edit_material),
     url(r'^proceedings/materials/(?P<material_type>[a-z_]+)/new/$', views_proceedings.upload_material),

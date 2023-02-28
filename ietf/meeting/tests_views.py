@@ -228,9 +228,6 @@ class MeetingTests(BaseMeetingTestCase):
 
         registration_text = "Registration"
 
-        # utc
-        time_interval = r"%s<span.*/span>-%s" % (slot.utc_start_time().strftime("%H:%M").lstrip("0"), (slot.utc_start_time() + slot.duration).strftime("%H:%M").lstrip("0"))
-
         # Extremely rudementary test of agenda-neue - to be replaced with back-end tests as the front-end tests are developed.
         r = self.client.get(urlreverse("agenda", kwargs=dict(num=meeting.number,utc='-utc')))
         self.assertEqual(r.status_code, 200)  
@@ -279,23 +276,32 @@ class MeetingTests(BaseMeetingTestCase):
             }
         )
 
-        # plain
-        time_interval = r"{}<span.*/span>-{}".format(
-            slot.time.astimezone(meeting.tz()).strftime("%H:%M").lstrip("0"),
-            slot.end_time().astimezone(meeting.tz()).strftime("%H:%M").lstrip("0"),
-        )
-
         # text
-        # the rest of the results don't have as nicely formatted times
-        time_interval = "%s-%s" % (slot.time.strftime("%H%M").lstrip("0"), (slot.time + slot.duration).strftime("%H%M").lstrip("0"))
-
         r = self.client.get(urlreverse("ietf.meeting.views.agenda_plain", kwargs=dict(num=meeting.number, ext=".txt")))
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, session.group.name)
         self.assertContains(r, session.group.parent.acronym.upper())
         self.assertContains(r, slot.location.name)
+        self.assertContains(r, "{}-{}".format(
+            slot.time.astimezone(meeting.tz()).strftime("%H%M"),
+            (slot.time + slot.duration).astimezone(meeting.tz()).strftime("%H%M"),
+        ))
+        self.assertContains(r, f"shown in the {meeting.tz()} time zone")
 
-        self.assertContains(r, time_interval)
+        # text, UTC
+        r = self.client.get(urlreverse(
+            "ietf.meeting.views.agenda_plain",
+            kwargs=dict(num=meeting.number, ext=".txt", utc="-utc"),
+        ))
+        self.assertContains(r, session.group.acronym)
+        self.assertContains(r, session.group.name)
+        self.assertContains(r, session.group.parent.acronym.upper())
+        self.assertContains(r, slot.location.name)
+        self.assertContains(r, "{}-{}".format(
+            slot.time.astimezone(datetime.timezone.utc).strftime("%H%M"),
+            (slot.time + slot.duration).astimezone(datetime.timezone.utc).strftime("%H%M"),
+        ))
+        self.assertContains(r, "shown in UTC")
 
         # future meeting, no agenda
         r = self.client.get(urlreverse("ietf.meeting.views.agenda_plain", kwargs=dict(num=future_meeting.number, ext=".txt")))
@@ -339,6 +345,39 @@ class MeetingTests(BaseMeetingTestCase):
         r = self.client.get(urlreverse('floor-plan', kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
 
+    def test_agenda_ical_next_meeting_type(self):
+        # start with no upcoming IETF meetings, just an interim
+        MeetingFactory(
+            type_id="interim", date=date_today() + datetime.timedelta(days=15)
+        )
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda_ical", kwargs={}))
+        self.assertEqual(
+            r.status_code, 404, "Should not return an interim meeting as next meeting"
+        )
+        # create an IETF meeting after the interim - it should be found as "next"
+        ietf_meeting = MeetingFactory(
+            type_id="ietf", date=date_today() + datetime.timedelta(days=30)
+        )
+        SessionFactory(meeting=ietf_meeting, name="Session at IETF meeting")
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda_ical", kwargs={}))
+        self.assertContains(r, "Session at IETF meeting", status_code=200)
+
+    def test_agenda_json_next_meeting_type(self):
+        # start with no upcoming IETF meetings, just an interim
+        MeetingFactory(
+            type_id="interim", date=date_today() + datetime.timedelta(days=15)
+        )
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda_json", kwargs={}))
+        self.assertEqual(
+            r.status_code, 404, "Should not return an interim meeting as next meeting"
+        )
+        # create an IETF meeting after the interim - it should be found as "next"
+        ietf_meeting = MeetingFactory(
+            type_id="ietf", date=date_today() + datetime.timedelta(days=30)
+        )
+        SessionFactory(meeting=ietf_meeting, name="Session at IETF meeting")
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda_json", kwargs={}))
+        self.assertContains(r, "Session at IETF meeting", status_code=200)
 
     @override_settings(PROCEEDINGS_V1_BASE_URL='https://example.com/{meeting.number}')
     def test_agenda_redirects_for_old_meetings(self):
@@ -7535,7 +7574,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         )
         self.assertNotEqual(
             pq('a[href="{}"]'.format(
-                urlreverse('ietf.meeting.views.proceedings_progress_report', kwargs=dict(num=meeting.number)))
+                urlreverse('ietf.meeting.views.proceedings_activity_report', kwargs=dict(num=meeting.number)))
             ),
             [],
             'Should have a link to activity report',
@@ -7701,14 +7740,14 @@ class ProceedingsTests(BaseMeetingTestCase):
         response = self.client.get(url)
         self.assertContains(response, 'The Internet Engineering Task Force')
 
-    def test_proceedings_progress_report(self):
+    def test_proceedings_activity_report(self):
         make_meeting_test_data()
         MeetingFactory(type_id='ietf', date=datetime.date(2016,4,3), number="96")
         MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="97")
 
-        url = urlreverse('ietf.meeting.views.proceedings_progress_report',kwargs={'num':97})
+        url = urlreverse('ietf.meeting.views.proceedings_activity_report',kwargs={'num':97})
         response = self.client.get(url)
-        self.assertContains(response, 'Progress Report')
+        self.assertContains(response, 'Activity Report')
 
     def test_feed(self):
         meeting = make_meeting_test_data()

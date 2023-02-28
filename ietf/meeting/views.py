@@ -84,7 +84,7 @@ from ietf.meeting.utils import preprocess_meeting_important_dates
 from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
 from ietf.message.utils import infer_message
 from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
-from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
+from ietf.secr.proceedings.proc_utils import (get_activity_stats, post_process, import_audio_files,
     create_recording)
 from ietf.utils import markdown
 from ietf.utils.decorators import require_api_key
@@ -1521,7 +1521,7 @@ def get_assignments_for_agenda(schedule):
 
 
 @ensure_csrf_cookie
-def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
+def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, utc=None):
     base = base if base else 'agenda'
     ext = ext if ext else '.txt'
     mimetype = {
@@ -1571,7 +1571,7 @@ def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, 
 
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
-    display_timezone = 'UTC' if utc else meeting.time_zone
+    display_timezone = meeting.time_zone if utc is None else 'UTC'
     with timezone.override(display_timezone):
         rendered_page = render(
             request,
@@ -1805,18 +1805,18 @@ def agenda_extract_slide (item):
     }
 
 def agenda_csv(schedule, filtered_assignments):
-    response = HttpResponse(content_type="text/csv; charset=%s"%settings.DEFAULT_CHARSET)
+    encoding = 'utf-8'
+    response = HttpResponse(content_type=f"text/csv; charset={encoding}")
     writer = csv.writer(response, delimiter=str(','), quoting=csv.QUOTE_ALL)
 
     headings = ["Date", "Start", "End", "Session", "Room", "Area", "Acronym", "Type", "Description", "Session ID", "Agenda", "Slides"]
 
     def write_row(row):
-        encoded_row = [v.encode('utf-8') if isinstance(v, str) else v for v in row]
-
-        while len(encoded_row) < len(headings):
-            encoded_row.append(None) # produce empty entries at the end as necessary
-
-        writer.writerow(encoded_row)
+        if len(row) < len(headings):
+            padding = [None] * (len(headings) - len(row))  # produce empty entries at the end as necessary
+        else:
+            padding = []
+        writer.writerow(row + padding)
 
     def agenda_field(item):
         agenda_doc = item.session.agenda()
@@ -2041,10 +2041,13 @@ def should_include_assignment(filter_params, assignment):
     hidden = len(set(filter_params['hide']).intersection(assignment.filter_keywords)) > 0
     return shown and not hidden
 
-def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
+def agenda_ical(request, num=None, acronym=None, session_id=None):
     """Agenda ical view
 
-    By default, all agenda items will be shown. A filter can be specified in 
+    If num is None, looks for the next IETF meeting. Otherwise, uses the requested meeting
+    regardless of its type.
+
+    By default, all agenda items will be shown. A filter can be specified in
     the querystring. It has the format
     
       ?show=...&hide=...&showtypes=...&hidetypes=...
@@ -2059,8 +2062,13 @@ def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
 
     Hiding (by wg or type) takes priority over showing.
     """
-    meeting = get_meeting(num, type_in=None)
-    schedule = get_schedule(meeting, name)
+    if num is None:
+        meeting = get_ietf_meeting()
+        if meeting is None:
+            raise Http404
+    else:
+        meeting = get_meeting(num, type_in=None)  # get requested meeting, whatever its type
+    schedule = get_schedule(meeting)
     updated = meeting.updated()
 
     if schedule is None and acronym is None and session_id is None:
@@ -2099,7 +2107,12 @@ def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
 
 @cache_page(15 * 60)
 def agenda_json(request, num=None):
-    meeting = get_meeting(num, type_in=['ietf','interim'])
+    if num is None:
+        meeting = get_ietf_meeting()
+        if meeting is None:
+            raise Http404
+    else:
+        meeting = get_meeting(num, type_in=None)  # get requested meeting, whatever its type
 
     sessions = []
     locations = set()
@@ -3803,8 +3816,8 @@ def proceedings_overview(request, num=None):
         'template': template,
     })
 
-def proceedings_progress_report(request, num=None):
-    '''Display Progress Report (stats since last meeting)'''
+def proceedings_activity_report(request, num=None):
+    '''Display Activity Report (stats since last meeting)'''
     if not (num and num.isdigit()):
         raise Http404
     meeting = get_meeting(num)
@@ -3812,9 +3825,10 @@ def proceedings_progress_report(request, num=None):
         return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}/progress-report.html')
     sdate = meeting.previous_meeting().date
     edate = meeting.date
-    context = get_progress_stats(sdate,edate)
+    context = get_activity_stats(sdate,edate)
     context['meeting'] = meeting
-    return render(request, "meeting/proceedings_progress_report.html", context)
+    context['is_meeting_report'] = True
+    return render(request, "meeting/proceedings_activity_report.html", context)
     
 class OldUploadRedirect(RedirectView):
     def get_redirect_url(self, **kwargs):
