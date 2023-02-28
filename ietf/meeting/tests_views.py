@@ -309,7 +309,34 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.group.parent.acronym.upper())
         self.assertContains(r, slot.location.name)
         self.assertContains(r, registration_text)
+        start_time = slot.time.astimezone(meeting.tz())
+        end_time = slot.end_time().astimezone(meeting.tz())
+        self.assertContains(r, '"{}","{}","{}"'.format(
+            start_time.strftime("%Y-%m-%d"),
+            start_time.strftime("%H%M"),
+            end_time.strftime("%H%M"),
+        ))
+        self.assertContains(r, session.materials.get(type='agenda').uploaded_filename)
+        self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
+        self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
 
+        # CSV, utc
+        r = self.client.get(urlreverse(
+            "ietf.meeting.views.agenda_plain",
+            kwargs=dict(num=meeting.number, ext=".csv", utc="-utc"),
+        ))
+        self.assertContains(r, session.group.acronym)
+        self.assertContains(r, session.group.name)
+        self.assertContains(r, session.group.parent.acronym.upper())
+        self.assertContains(r, slot.location.name)
+        self.assertContains(r, registration_text)
+        start_time = slot.time.astimezone(datetime.timezone.utc)
+        end_time = slot.end_time().astimezone(datetime.timezone.utc)
+        self.assertContains(r, '"{}","{}","{}"'.format(
+            start_time.strftime("%Y-%m-%d"),
+            start_time.strftime("%H%M"),
+            end_time.strftime("%H%M"),
+        ))
         self.assertContains(r, session.materials.get(type='agenda').uploaded_filename)
         self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
         self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
