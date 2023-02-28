@@ -18,17 +18,14 @@ const interimRequest = (function() {
                 .on("blur", interimRequest.calculateEndTime);
             const timeInput = $('input[name$="-time"]');
             timeInput.on("blur", interimRequest.calculateEndTime);
-            timeInput.on("blur", interimRequest.updateInfo);
             $('input[name$="-end_time"]')
-                .prop('disabled', true)
-                .on("change", interimRequest.updateInfo);
+                .prop('disabled', true);
             interimRequest.timezone.on("change", interimRequest.timezoneChange);
             // init
             interimRequest.inPerson.each(interimRequest.toggleLocation);
             interimRequest.checkAddButton();
             interimRequest.initTimezone();
             timeInput.each(interimRequest.calculateEndTime);
-            timeInput.each(interimRequest.updateInfo);
             const remoteParticipations = $('select[id$="-remote_participation"]');
             remoteParticipations.on(
                 'change',
@@ -89,43 +86,6 @@ const interimRequest = (function() {
 
             $('.btn-delete')
                 .removeClass("d-none");
-        },
-
-        updateInfo: function () {
-            // makes ajax call to server and sets UTC field
-            const time = $(this)
-                .val();
-            if (!time) {
-                return;
-            }
-            const url = "/meeting/ajax/get-utc";
-            const fieldset = $(this)
-                .parents(".fieldset");
-            const date = fieldset.find("input[name$='-date']")
-                .val();
-            const timezone = interimRequest.timezone.val();
-            const name = $(this)
-                .attr("id") + "_utc";
-            const utc = fieldset.find("#" + name);
-            //console.log(name,utc.attr("id"));
-            $.ajax({
-                url: url,
-                type: 'GET',
-                cache: false,
-                async: true,
-                dataType: 'json',
-                data: {
-                    date: date,
-                    time: time,
-                    timezone: timezone
-                },
-                success: function (response) {
-                    if (!response.error && response.html) {
-                        utc.html(response.html);
-                    }
-                }
-            });
-            return false;
         },
 
         calculateEndTime: function () {

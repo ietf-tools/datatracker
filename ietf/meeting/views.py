@@ -3030,43 +3030,6 @@ def delete_schedule(request, num, owner, name):
 # -------------------------------------------------
 # Interim Views
 # -------------------------------------------------
-
-
-def ajax_get_utc(request):
-    '''Ajax view that takes arguments time, timezone, date and returns UTC data'''
-    time = request.GET.get('time')
-    timezone = request.GET.get('timezone')
-    date = request.GET.get('date')
-    time_re = re.compile(r'^\d{2}:\d{2}$')
-    # validate input
-    if not time_re.match(time) or not date:
-        return HttpResponse(json.dumps({'error': True}),
-                            content_type='application/json')
-    hour, minute = time.split(':')
-    if not (int(hour) <= 23 and int(minute) <= 59):
-        return HttpResponse(json.dumps({'error': True}),
-                            content_type='application/json')
-    year, month, day = date.split('-')
-    dt = datetime.datetime(int(year), int(month), int(day), int(hour), int(minute))
-    tz = pytz.timezone(timezone)
-    aware_dt = tz.localize(dt, is_dst=None)
-    utc_dt = aware_dt.astimezone(pytz.utc)
-    utc = utc_dt.strftime('%H:%M')
-    # calculate utc day offset
-    naive_utc_dt = utc_dt.replace(tzinfo=None)
-    utc_day_offset = (naive_utc_dt.date() - dt.date()).days
-    html = "<span>{utc} UTC</span>".format(utc=utc)
-    if utc_day_offset != 0:
-        html = html + '<span class="day-offset"> {0:+d} Day</span>'.format(utc_day_offset)
-    context_data = {'timezone': timezone, 
-                    'time': time, 
-                    'utc': utc, 
-                    'utc_day_offset': utc_day_offset,
-                    'html': html}
-    return HttpResponse(json.dumps(context_data),
-                        content_type='application/json')
-
-
 def interim_announce(request):
     '''View which shows interim meeting requests awaiting announcement'''
     meetings = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='scheda')
