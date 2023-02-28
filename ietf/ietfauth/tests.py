@@ -39,7 +39,7 @@ from ietf.ietfauth.utils import has_role
 from ietf.mailinglists.models import Subscribed
 from ietf.meeting.factories import MeetingFactory
 from ietf.nomcom.factories import NomComFactory
-from ietf.person.factories import PersonFactory, EmailFactory, UserFactory
+from ietf.person.factories import PersonFactory, EmailFactory, UserFactory, PersonalApiKeyFactory
 from ietf.person.models import Person, Email, PersonalApiKey
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import ReviewWish, UnavailablePeriod
@@ -723,8 +723,20 @@ class IetfAuthTests(TestCase):
         url = urlreverse('ietf.ietfauth.views.apikey_disable')
         r = self.client.get(url)
 
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'Disable a personal API key')
         self.assertContains(r, 'Key')
+
+        # Try to delete something that doesn't exist
+        r = self.client.post(url, {'hash': key.hash()+'bad'})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r,"Key validation failed; key not disabled")
+
+        # Try to delete someone else's key
+        otherkey = PersonalApiKeyFactory()
+        r = self.client.post(url, {'hash': otherkey.hash()})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r,"Key validation failed; key not disabled")
         
         # Delete a key
         r = self.client.post(url, {'hash': key.hash()})
