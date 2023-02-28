@@ -96,6 +96,12 @@ class IESGTests(TestCase):
         ads = Role.objects.filter(group__type='area', group__state='active', name_id='ad')
         self.assertEqual(len(q('.photo')), ads.count())
         
+    def test_ietf_activity(self):
+        url = urlreverse("ietf.iesg.views.ietf_activity")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+
 class IESGAgendaTests(TestCase):
     def setUp(self):
         super().setUp()

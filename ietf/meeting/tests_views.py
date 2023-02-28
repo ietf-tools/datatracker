@@ -7557,7 +7557,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         )
         self.assertNotEqual(
             pq('a[href="{}"]'.format(
-                urlreverse('ietf.meeting.views.proceedings_progress_report', kwargs=dict(num=meeting.number)))
+                urlreverse('ietf.meeting.views.proceedings_activity_report', kwargs=dict(num=meeting.number)))
             ),
             [],
             'Should have a link to activity report',
@@ -7723,14 +7723,14 @@ class ProceedingsTests(BaseMeetingTestCase):
         response = self.client.get(url)
         self.assertContains(response, 'The Internet Engineering Task Force')
 
-    def test_proceedings_progress_report(self):
+    def test_proceedings_activity_report(self):
         make_meeting_test_data()
         MeetingFactory(type_id='ietf', date=datetime.date(2016,4,3), number="96")
         MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="97")
 
-        url = urlreverse('ietf.meeting.views.proceedings_progress_report',kwargs={'num':97})
+        url = urlreverse('ietf.meeting.views.proceedings_activity_report',kwargs={'num':97})
         response = self.client.get(url)
-        self.assertContains(response, 'Progress Report')
+        self.assertContains(response, 'Activity Report')
 
     def test_feed(self):
         meeting = make_meeting_test_data()
