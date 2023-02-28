@@ -1571,7 +1571,7 @@ def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, 
 
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
-    display_timezone = 'UTC' if utc else meeting.time_zone
+    display_timezone = meeting.time_zone if utc is None else 'UTC'
     with timezone.override(display_timezone):
         rendered_page = render(
             request,
@@ -2042,10 +2042,13 @@ def should_include_assignment(filter_params, assignment):
     hidden = len(set(filter_params['hide']).intersection(assignment.filter_keywords)) > 0
     return shown and not hidden
 
-def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
+def agenda_ical(request, num=None, acronym=None, session_id=None):
     """Agenda ical view
 
-    By default, all agenda items will be shown. A filter can be specified in 
+    If num is None, looks for the next IETF meeting. Otherwise, uses the requested meeting
+    regardless of its type.
+
+    By default, all agenda items will be shown. A filter can be specified in
     the querystring. It has the format
     
       ?show=...&hide=...&showtypes=...&hidetypes=...
@@ -2060,8 +2063,13 @@ def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
 
     Hiding (by wg or type) takes priority over showing.
     """
-    meeting = get_meeting(num, type_in=None)
-    schedule = get_schedule(meeting, name)
+    if num is None:
+        meeting = get_ietf_meeting()
+        if meeting is None:
+            raise Http404
+    else:
+        meeting = get_meeting(num, type_in=None)  # get requested meeting, whatever its type
+    schedule = get_schedule(meeting)
     updated = meeting.updated()
 
     if schedule is None and acronym is None and session_id is None:
@@ -2100,7 +2108,12 @@ def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
 
 @cache_page(15 * 60)
 def agenda_json(request, num=None):
-    meeting = get_meeting(num, type_in=['ietf','interim'])
+    if num is None:
+        meeting = get_ietf_meeting()
+        if meeting is None:
+            raise Http404
+    else:
+        meeting = get_meeting(num, type_in=None)  # get requested meeting, whatever its type
 
     sessions = []
     locations = set()
