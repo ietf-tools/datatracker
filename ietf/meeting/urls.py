@@ -69,8 +69,7 @@ type_interim_patterns = [
 
 type_ietf_only_patterns_id_optional = [
     url(r'^agenda(?P<utc>-utc)?(?P<ext>\.html)?/?$', views.agenda, name='agenda'),
-    url(r'^agenda(?P<utc>-utc)?(?P<ext>\.txt)$', views.agenda_plain),
-    url(r'^agenda(?P<ext>\.csv)$', views.agenda_plain),
+    url(r'^agenda(?P<utc>-utc)?(?P<ext>\.txt|\.csv)$', views.agenda_plain),
     url(r'^agenda/edit$',
         RedirectView.as_view(pattern_name='ietf.meeting.views.edit_meeting_schedule', permanent=True),
         name='ietf.meeting.views.edit_meeting_schedule'),
@@ -113,7 +112,6 @@ type_ietf_only_patterns_id_optional = [
 urlpatterns = [
     # First patterns which start with unique strings
     url(r'^$', views.current_materials),
-    url(r'^ajax/get-utc/?$', views.ajax_get_utc),
     url(r'^interim/announce/?$', views.interim_announce),
     url(r'^interim/announce/(?P<number>[A-Za-z0-9._+-]+)/?$', views.interim_send_announcement),
     url(r'^interim/skip_announce/(?P<number>[A-Za-z0-9._+-]+)/?$', views.interim_skip_announcement),

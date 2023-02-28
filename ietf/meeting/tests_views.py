@@ -315,7 +315,34 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.group.parent.acronym.upper())
         self.assertContains(r, slot.location.name)
         self.assertContains(r, registration_text)
+        start_time = slot.time.astimezone(meeting.tz())
+        end_time = slot.end_time().astimezone(meeting.tz())
+        self.assertContains(r, '"{}","{}","{}"'.format(
+            start_time.strftime("%Y-%m-%d"),
+            start_time.strftime("%H%M"),
+            end_time.strftime("%H%M"),
+        ))
+        self.assertContains(r, session.materials.get(type='agenda').uploaded_filename)
+        self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
+        self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
 
+        # CSV, utc
+        r = self.client.get(urlreverse(
+            "ietf.meeting.views.agenda_plain",
+            kwargs=dict(num=meeting.number, ext=".csv", utc="-utc"),
+        ))
+        self.assertContains(r, session.group.acronym)
+        self.assertContains(r, session.group.name)
+        self.assertContains(r, session.group.parent.acronym.upper())
+        self.assertContains(r, slot.location.name)
+        self.assertContains(r, registration_text)
+        start_time = slot.time.astimezone(datetime.timezone.utc)
+        end_time = slot.end_time().astimezone(datetime.timezone.utc)
+        self.assertContains(r, '"{}","{}","{}"'.format(
+            start_time.strftime("%Y-%m-%d"),
+            start_time.strftime("%H%M"),
+            end_time.strftime("%H%M"),
+        ))
         self.assertContains(r, session.materials.get(type='agenda').uploaded_filename)
         self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
         self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
@@ -5804,35 +5831,6 @@ class InterimTests(TestCase):
         self.assertNotContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
         self.assertContains(r, 'END:VEVENT')
 
-
-class AjaxTests(TestCase):
-    def test_ajax_get_utc(self):
-        # test bad queries
-        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=badtime&timezone=UTC"
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        data = r.json()
-        self.assertEqual(data["error"], True)
-        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=25:99&timezone=UTC"
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        data = r.json()
-        self.assertEqual(data["error"], True)
-        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=10:00am&timezone=UTC"
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        data = r.json()
-        self.assertEqual(data["error"], True)
-        # test good query
-        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=12:00&timezone=America/Los_Angeles"
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        data = r.json()
-        self.assertIn('timezone', data)
-        self.assertIn('time', data)
-        self.assertIn('utc', data)
-        self.assertNotIn('error', data)
-        self.assertEqual(data['utc'], '20:00')
 
 class IphoneAppJsonTests(TestCase):
     def test_iphone_app_json_interim(self):
