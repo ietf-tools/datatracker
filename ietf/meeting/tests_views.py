@@ -341,24 +341,36 @@ class MeetingTests(BaseMeetingTestCase):
 
     def test_agenda_ical_next_meeting_type(self):
         # start with no upcoming IETF meetings, just an interim
-        MeetingFactory(type_id='interim', date=date_today() + datetime.timedelta(days=15))
-        r = self.client.get(urlreverse('ietf.meeting.views.agenda_ical', kwargs={}))
-        self.assertEqual(r.status_code, 404, 'Should not return an interim meeting as next meeting')
+        MeetingFactory(
+            type_id="interim", date=date_today() + datetime.timedelta(days=15)
+        )
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda_ical", kwargs={}))
+        self.assertEqual(
+            r.status_code, 404, "Should not return an interim meeting as next meeting"
+        )
         # create an IETF meeting after the interim - it should be found as "next"
-        ietf_meeting = MeetingFactory(type_id='ietf', date=date_today() + datetime.timedelta(days=30))
-        SessionFactory(meeting=ietf_meeting, name='Session at IETF meeting')
-        r = self.client.get(urlreverse('ietf.meeting.views.agenda_ical', kwargs={}))
+        ietf_meeting = MeetingFactory(
+            type_id="ietf", date=date_today() + datetime.timedelta(days=30)
+        )
+        SessionFactory(meeting=ietf_meeting, name="Session at IETF meeting")
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda_ical", kwargs={}))
         self.assertContains(r, "Session at IETF meeting", status_code=200)
 
     def test_agenda_json_next_meeting_type(self):
         # start with no upcoming IETF meetings, just an interim
-        MeetingFactory(type_id='interim', date=date_today() + datetime.timedelta(days=15))
-        r = self.client.get(urlreverse('ietf.meeting.views.agenda_json', kwargs={}))
-        self.assertEqual(r.status_code, 404, 'Should not return an interim meeting as next meeting')
+        MeetingFactory(
+            type_id="interim", date=date_today() + datetime.timedelta(days=15)
+        )
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda_json", kwargs={}))
+        self.assertEqual(
+            r.status_code, 404, "Should not return an interim meeting as next meeting"
+        )
         # create an IETF meeting after the interim - it should be found as "next"
-        ietf_meeting = MeetingFactory(type_id='ietf', date=date_today() + datetime.timedelta(days=30))
-        SessionFactory(meeting=ietf_meeting, name='Session at IETF meeting')
-        r = self.client.get(urlreverse('ietf.meeting.views.agenda_json', kwargs={}))
+        ietf_meeting = MeetingFactory(
+            type_id="ietf", date=date_today() + datetime.timedelta(days=30)
+        )
+        SessionFactory(meeting=ietf_meeting, name="Session at IETF meeting")
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda_json", kwargs={}))
         self.assertContains(r, "Session at IETF meeting", status_code=200)
 
     @override_settings(PROCEEDINGS_V1_BASE_URL='https://example.com/{meeting.number}')
