@@ -781,7 +781,7 @@ def apikey_disable(request):
     #
     class KeyDeleteForm(forms.Form):
         hash = forms.ChoiceField(label='Key', choices=choices)
-        def clean_key(self):
+        def clean_hash(self):
             hash = force_bytes(self.cleaned_data['hash'])
             key = PersonalApiKey.validate_key(hash)
             if key and key.person == request.user.person:
@@ -792,7 +792,7 @@ def apikey_disable(request):
     if request.method == 'POST':
         form = KeyDeleteForm(request.POST)
         if form.is_valid():
-            hash = force_bytes(form.data['hash'])
+            hash = force_bytes(form.cleaned_data['hash'])
             key = PersonalApiKey.validate_key(hash)
             key.valid = False
             key.save()
