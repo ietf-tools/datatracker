@@ -1,5 +1,3 @@
-import { DateTime } from 'luxon'
-
 const interimRequest = (function() {
     'use strict';
     return {
