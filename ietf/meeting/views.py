@@ -2044,7 +2044,10 @@ def should_include_assignment(filter_params, assignment):
 def agenda_ical(request, num=None, acronym=None, session_id=None):
     """Agenda ical view
 
-    By default, all agenda items will be shown. A filter can be specified in 
+    If num is None, looks for the next IETF meeting. Otherwise, uses the requested meeting
+    regardless of its type.
+
+    By default, all agenda items will be shown. A filter can be specified in
     the querystring. It has the format
     
       ?show=...&hide=...&showtypes=...&hidetypes=...
@@ -2059,7 +2062,12 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
 
     Hiding (by wg or type) takes priority over showing.
     """
-    meeting = get_meeting(num, type_in=None)
+    if num is None:
+        meeting = get_ietf_meeting()
+        if meeting is None:
+            raise Http404
+    else:
+        meeting = get_meeting(num, type_in=None)  # get requested meeting, whatever its type
     schedule = get_schedule(meeting)
     updated = meeting.updated()
 
