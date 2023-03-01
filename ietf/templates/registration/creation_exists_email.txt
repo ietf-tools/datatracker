@@ -5,7 +5,7 @@ Hello,
 
 {% filter wordwrap:78 %}A datatracker account for that email already exists. If you have forgotten the password for the {{ username }} account, please go to the following link and follow the instructions there:{% endfilter %}
 
-   https://{{ domain }}{% url "ietf.ietfauth.views.confirm_password_reset" auth %}
+   https://{{ domain }}{% url "ietf.ietfauth.views.password_reset" %}
 
 This link will expire in {{ expire }} minutes.
 

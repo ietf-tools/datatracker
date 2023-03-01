@@ -157,13 +157,11 @@ def send_account_creation_email(request, to_email):
 
 
 def send_account_creation_exists_email(request, to_email):
-    auth = django.core.signing.dumps(to_email, salt="create_account_exists")
     domain = Site.objects.get_current().domain
     subject = 'Attempted account creation at %s' % domain
     from_email = settings.DEFAULT_FROM_EMAIL
     send_mail(request, to_email, from_email, subject, 'registration/creation_exists_email.txt', {
         'domain': domain,
-        'auth': auth,
         'username': to_email,
         'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
     })
