@@ -583,7 +583,7 @@ I would like to revoke this declaration.
             get_payload_text(outbox[len_before + 1]).replace('\n', ' ')
         )
         self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.showlist")}', get_payload_text(outbox[len_before]).replace('\n',' '))
-        self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.history",kwargs=dict(id=ipr.pk))}', get_payload_text(outbox[len_before+1]).replace('\n',' '))
+        self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.show",kwargs=dict(id=ipr.pk))}', get_payload_text(outbox[len_before+1]).replace('\n',' '))
 
     def test_notify_generic(self):
         RoleFactory(name_id='ad',group__acronym='gen')
