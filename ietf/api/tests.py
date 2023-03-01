@@ -8,7 +8,6 @@ import os
 import sys
 
 from importlib import import_module
-from mock import patch
 from pathlib import Path
 
 from django.apps import apps
@@ -27,7 +26,6 @@ from ietf.doc.models import RelatedDocument, State
 from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
-from ietf.meeting.test_data import make_meeting_test_data
 from ietf.meeting.models import Session
 from ietf.person.factories import PersonFactory, random_faker
 from ietf.person.models import User
@@ -45,20 +43,6 @@ OMITTED_APPS = (
 
 class CustomApiTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
-
-    # Using mock to patch the import functions in ietf.meeting.views, where
-    # api_import_recordings() are using them:
-    @patch('ietf.meeting.views.import_audio_files')
-    def test_notify_meeting_import_audio_files(self, mock_import_audio):
-        meeting = make_meeting_test_data()
-        client = Client(Accept='application/json')
-        # try invalid method GET
-        url = urlreverse('ietf.meeting.views.api_import_recordings', kwargs={'number':meeting.number})
-        r = client.get(url)
-        self.assertEqual(r.status_code, 405)
-        # try valid method POST
-        r = client.post(url)
-        self.assertEqual(r.status_code, 201)
 
     def test_api_help_page(self):
         url = urlreverse('ietf.api.views.api_help')

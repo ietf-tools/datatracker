@@ -84,8 +84,7 @@ from ietf.meeting.utils import preprocess_meeting_important_dates
 from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
 from ietf.message.utils import infer_message
 from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
-from ietf.secr.proceedings.proc_utils import (get_activity_stats, post_process, import_audio_files,
-    create_recording)
+from ietf.secr.proceedings.proc_utils import get_activity_stats, post_process, create_recording
 from ietf.utils import markdown
 from ietf.utils.decorators import require_api_key
 from ietf.utils.hedgedoc import Note, NoteError
@@ -3797,16 +3796,6 @@ def proceedings_activity_report(request, num=None):
 class OldUploadRedirect(RedirectView):
     def get_redirect_url(self, **kwargs):
         return reverse_lazy('ietf.meeting.views.session_details',kwargs=self.kwargs)
-
-@csrf_exempt
-def api_import_recordings(request, number):
-    '''REST API to check for recording files and import'''
-    if request.method == 'POST':
-        meeting = get_meeting(number)
-        import_audio_files(meeting)
-        return HttpResponse(status=201)
-    else:
-        return HttpResponse(status=405)
 
 @require_api_key
 @role_required('Recording Manager')

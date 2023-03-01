@@ -10,25 +10,19 @@ This module contains all the functions for generating static proceedings pages
 import datetime
 import os
 import pytz
-import re
 import subprocess
 from urllib.parse import urlencode
 
 import debug        # pyflakes:ignore
 
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
 
 from ietf.doc.models import Document, DocAlias, DocEvent, NewRevisionDocEvent, State
 from ietf.group.models import Group
-from ietf.meeting.models import Meeting, SessionPresentation, TimeSlot, SchedTimeSessAssignment, Session
+from ietf.meeting.models import Meeting, SessionPresentation, SchedTimeSessAssignment
 from ietf.person.models import Person
 from ietf.utils.log import log
-from ietf.utils.mail import send_mail
 from ietf.utils.timezone import make_aware
-
-AUDIO_FILE_RE = re.compile(r'ietf(?P<number>[\d]+)-(?P<room>.*)-(?P<time>[\d]{8}-[\d]{4})')
-VIDEO_TITLE_RE = re.compile(r'IETF(?P<number>[\d]+)-(?P<name>.*)-(?P<date>\d{8})-(?P<time>\d{4})')
 
 
 def _get_session(number,name,date,time):
@@ -56,86 +50,6 @@ def _get_urls_from_json(doc):
         url = settings.YOUTUBE_BASE_URL + '?' + urlencode(params)
         urls.append(dict(title=title, url=url))
     return urls
-
-def import_audio_files(meeting):
-    '''
-    Checks for audio files and creates corresponding materials (docs) for the Session
-    Expects audio files in the format ietf[meeting num]-[room]-YYYMMDD-HHMM.*,
-    
-    Example: ietf90-salonb-20140721-1710.mp3
-    '''
-    unmatched_files = []
-    path = os.path.join(settings.MEETING_RECORDINGS_DIR, meeting.type.slug + meeting.number)
-    if not os.path.exists(path):
-        return None
-    for filename in os.listdir(path):
-        timeslot = get_timeslot_for_filename(filename)
-        if timeslot:
-            sessions = Session.objects.with_current_status().filter(
-                timeslotassignments__schedule=timeslot.meeting.schedule_id,
-            ).filter(
-                current_status='sched',
-            ).order_by('timeslotassignments__timeslot__time')
-            if not sessions:
-                continue
-            url = settings.IETF_AUDIO_URL + 'ietf{}/{}'.format(meeting.number, filename)
-            doc = get_or_create_recording_document(url, sessions[0])
-            attach_recording(doc, sessions)
-        else:
-            # use for reconciliation email
-            unmatched_files.append(filename)
-    
-    if unmatched_files:
-        send_audio_import_warning(unmatched_files)
-
-def get_timeslot_for_filename(filename):
-    '''Returns a timeslot matching the filename given.
-    NOTE: currently only works with ietfNN prefix (regular meetings)
-    '''
-    from ietf.meeting.utils import add_event_info_to_session_qs
-
-    basename, _ = os.path.splitext(filename)
-    match = AUDIO_FILE_RE.match(basename)
-    if match:
-        try:
-            meeting = Meeting.objects.get(number=match.groupdict()['number'])
-            room_mapping = {normalize_room_name(room.name): room.name for room in meeting.room_set.all()}
-            time = make_aware(datetime.datetime.strptime(match.groupdict()['time'],'%Y%m%d-%H%M'), meeting.tz())
-            slots = TimeSlot.objects.filter(
-                meeting=meeting,
-                location__name=room_mapping[match.groupdict()['room']],
-                time=time,
-                sessionassignments__schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None],
-            ).distinct()
-            uncancelled_slots = [t for t in slots if not add_event_info_to_session_qs(t.sessions.all()).filter(current_status='canceled').exists()]
-            return uncancelled_slots[0]
-        except (ObjectDoesNotExist, KeyError, IndexError):
-            return None
-
-def attach_recording(doc, sessions):
-    '''Associate recording document with sessions'''
-    for session in sessions:
-        if doc not in session.materials.all():
-            # add document to session
-            presentation = SessionPresentation.objects.create(
-                session=session,
-                document=doc,
-                rev=doc.rev)
-            session.sessionpresentation_set.add(presentation)
-            if not doc.docalias.filter(name__startswith='recording-{}-{}'.format(session.meeting.number,session.group.acronym)):
-                sequence = get_next_sequence(session.group,session.meeting,'recording')
-                name = 'recording-{}-{}-{}'.format(session.meeting.number,session.group.acronym,sequence)
-                DocAlias.objects.create(name=name).docs.add(doc)
-
-def normalize_room_name(name):
-    '''Returns room name converted to be used as portion of filename'''
-    return name.lower().replace(' ','').replace('/','_')
-
-def get_or_create_recording_document(url,session):
-    try:
-        return Document.objects.get(external_url=url)
-    except ObjectDoesNotExist:
-        return create_recording(session,url)
 
 def create_recording(session, url, title=None, user=None):
     '''
@@ -185,19 +99,6 @@ def get_next_sequence(group,meeting,type):
     sequence = int(aliases.last().name.split('-')[-1]) + 1
     return sequence
 
-def send_audio_import_warning(unmatched_files):
-    '''Send email to interested parties that some audio files weren't matched to timeslots'''
-    send_mail(request = None,
-              to       = settings.AUDIO_IMPORT_EMAIL,
-              frm      = "IETF Secretariat <ietf-secretariat@ietf.org>",
-              subject  = "Audio file import warning",
-              template = "proceedings/audio_import_warning.txt",
-              context  = dict(unmatched_files=unmatched_files),
-              extra    = {})
-
-# -------------------------------------------------
-# End Recording Functions
-# -------------------------------------------------
 
 def get_activity_stats(sdate, edate):
     '''

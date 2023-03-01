@@ -25,7 +25,6 @@ from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import SessionStatusName, ConstraintName, DocTypeName
 from ietf.person.models import Person
-from ietf.secr.proceedings.proc_utils import import_audio_files
 from ietf.utils.html import sanitize_document
 from ietf.utils.log import log
 from ietf.utils.timezone import date_today
@@ -180,7 +179,6 @@ def finalize(meeting):
                 sp.rev = '00'
             sp.save()
     
-    import_audio_files(meeting)
     create_proceedings_templates(meeting)
     meeting.proceedings_final = True
     meeting.save()

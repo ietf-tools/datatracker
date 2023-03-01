@@ -9,23 +9,14 @@ import os
 
 from django.conf import settings
 from django.urls import reverse
-
-from ietf.doc.models import Document
 from ietf.group.factories import RoleFactory
-from ietf.meeting.models import SchedTimeSessAssignment, SchedulingEvent
 from ietf.meeting.factories import MeetingFactory, SessionFactory
-from ietf.person.models import Person
-from ietf.name.models import SessionStatusName
 from ietf.utils.test_utils import TestCase
-from ietf.utils.mail import outbox
-
-from ietf.secr.proceedings.proc_utils import (import_audio_files,
-    get_timeslot_for_filename, normalize_room_name, send_audio_import_warning,
-    get_or_create_recording_document, create_recording, get_next_sequence,
-    _get_session, _get_urls_from_json)
 
 
-SECR_USER='secretary'
+from ietf.secr.proceedings.proc_utils import (create_recording, 
+    get_next_sequence, _get_session, _get_urls_from_json)
+
 
 class ProceedingsTestCase(TestCase):
     def test_main(self):
@@ -92,81 +83,6 @@ class RecordingTestCase(TestCase):
         response = self.client.post(url,dict(external_url=external_url),follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, external_url)
-            
-    def test_import_audio_files(self):
-        session = SessionFactory(status_id='sched',meeting__type_id='ietf')
-        meeting = session.meeting
-        timeslot = session.official_timeslotassignment().timeslot
-        self.create_audio_file_for_timeslot(timeslot)
-        import_audio_files(meeting)
-        self.assertEqual(session.materials.filter(type='recording').count(),1)
-
-    def create_audio_file_for_timeslot(self, timeslot):
-        filename = self.get_filename_for_timeslot(timeslot)
-        path = os.path.join(settings.MEETING_RECORDINGS_DIR,'ietf' + timeslot.meeting.number,filename)
-        if not os.path.exists(os.path.dirname(path)):
-            os.makedirs(os.path.dirname(path))
-        with io.open(path, "w") as f:
-            f.write('dummy')
-
-    def get_filename_for_timeslot(self, timeslot):
-        '''Returns the filename of a session recording given timeslot'''
-        return "{prefix}-{room}-{date}.mp3".format(
-            prefix=timeslot.meeting.type.slug + timeslot.meeting.number,
-            room=normalize_room_name(timeslot.location.name),
-            date=timeslot.local_start_time().strftime('%Y%m%d-%H%M'))
-
-    def test_import_audio_files_shared_timeslot(self):
-        meeting = MeetingFactory(type_id='ietf',number='72')
-        mars_session = SessionFactory(meeting=meeting,status_id='sched',group__acronym='mars')
-        ames_session = SessionFactory(meeting=meeting,status_id='sched',group__acronym='ames')
-        scheduled = SessionStatusName.objects.get(slug='sched')
-        SchedulingEvent.objects.create(
-            session=mars_session,
-            status=scheduled,
-            by=Person.objects.get(name='(System)')
-        )
-        SchedulingEvent.objects.create(
-            session=ames_session,
-            status=scheduled,
-            by=Person.objects.get(name='(System)')
-        )
-        timeslot = mars_session.official_timeslotassignment().timeslot
-        SchedTimeSessAssignment.objects.create(timeslot=timeslot,session=ames_session,schedule=meeting.schedule)
-        self.create_audio_file_for_timeslot(timeslot)
-        import_audio_files(meeting)
-        doc = mars_session.materials.filter(type='recording').first()
-        self.assertTrue(doc in ames_session.materials.all())
-        self.assertTrue(doc.docalias.filter(name='recording-72-mars-1'))
-        self.assertTrue(doc.docalias.filter(name='recording-72-ames-1'))
-
-    def test_normalize_room_name(self):
-        self.assertEqual(normalize_room_name('Test Room'),'testroom')
-        self.assertEqual(normalize_room_name('Rome/Venice'), 'rome_venice')
-
-    def test_get_timeslot_for_filename(self):
-        session = SessionFactory(meeting__type_id='ietf')
-        timeslot = session.timeslotassignments.first().timeslot
-        name = self.get_filename_for_timeslot(timeslot)
-        self.assertEqual(get_timeslot_for_filename(name),timeslot)
-
-    def test_get_or_create_recording_document(self):
-        session = SessionFactory(meeting__type_id='ietf', meeting__number=72, group__acronym='mars')
-        
-        # test create
-        filename = 'ietf42-testroom-20000101-0800.mp3'
-        docs_before = Document.objects.filter(type='recording').count()
-        doc = get_or_create_recording_document(filename,session)
-        docs_after = Document.objects.filter(type='recording').count()
-        self.assertEqual(docs_after,docs_before + 1)
-        self.assertTrue(doc.external_url.endswith(filename))
-
-        # test get
-        docs_before = docs_after
-        doc2 = get_or_create_recording_document(filename,session)
-        docs_after = Document.objects.filter(type='recording').count()
-        self.assertEqual(docs_after,docs_before)
-        self.assertEqual(doc,doc2)
 
     def test_create_recording(self):
         session = SessionFactory(meeting__type_id='ietf', meeting__number=72, group__acronym='mars')
@@ -184,9 +100,3 @@ class RecordingTestCase(TestCase):
         group = session.group
         sequence = get_next_sequence(group,meeting,'recording')
         self.assertEqual(sequence,1)
-
-    def test_send_audio_import_warning(self):
-        length_before = len(outbox)
-        send_audio_import_warning(['recording-43-badroom-20000101-0800.mp3'])
-        self.assertEqual(len(outbox), length_before + 1)
-        self.assertTrue('Audio file import' in outbox[-1]['Subject'])
