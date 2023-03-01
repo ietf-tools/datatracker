@@ -251,7 +251,6 @@ def prepare_document_table(request, docs, query=None, max_results=200):
     if query and hasattr(query, "urlencode"):  # fed a Django QueryDict
         d = query.copy()
         for h in meta['headers']:
-            h["sort_url"] = "?" + d.urlencode()
             if h['key'] == sort_key:
                 h['sorted'] = True
                 if sort_reversed:
@@ -262,5 +261,6 @@ def prepare_document_table(request, docs, query=None, max_results=200):
                     d["sort"] = "-" + h["key"]
             else:
                 d["sort"] = h["key"]
+            h["sort_url"] = "?" + d.urlencode()
 
     return (docs, meta)
