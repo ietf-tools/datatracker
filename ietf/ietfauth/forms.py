@@ -195,18 +195,8 @@ class ResetPasswordForm(forms.Form):
 
     def clean_username(self):
         """Verify that the username is valid
-
-        In addition to EmailField's checks, verifies that a User matching the username exists.
         """
-        username = self.cleaned_data["username"]
-        if not User.objects.filter(username=username).exists():
-            raise forms.ValidationError(mark_safe(
-                "Didn't find a matching account. "
-                "If you don't have an account yet, you can <a href=\"{}\">create one</a>.".format(
-                    urlreverse('ietf.ietfauth.views.create_account')
-                )
-            ))
-        return username
+        return self.cleaned_data["username"]
 
 
 class TestEmailForm(forms.Form):

@@ -417,14 +417,10 @@ def password_reset(request):
             # The form validation checks that a matching User exists. Add the person__isnull check
             # because the OneToOne field does not gracefully handle checks for user.person is Null.
             # If we don't get a User here, we know it's because there's no related Person.
+            # We still report that the action succeeded, so we're not leaking the existence of user
+            # email addresses.
             user = User.objects.filter(username=submitted_username, person__isnull=False).first()
-            if not (user and user.person.email_set.filter(active=True).exists()):
-                form.add_error(
-                    'username',
-                    'No known active email addresses are associated with this account. '
-                    'Please contact the secretariat for assistance.',
-                )
-            else:
+            if user and user.person.email_set.filter(active=True).exists():
                 data = {
                     'username': user.username,
                     'password': user.password and user.password[-4:],
@@ -445,7 +441,7 @@ def password_reset(request):
                     'username': submitted_username,
                     'expire': settings.MINUTES_TO_EXPIRE_RESET_PASSWORD_LINK,
                 })
-                success = True
+            success = True
     else:
         form = ResetPasswordForm()
     return render(request, 'registration/password_reset.html', {

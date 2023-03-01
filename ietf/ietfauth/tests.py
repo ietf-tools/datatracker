@@ -422,11 +422,11 @@ class IetfAuthTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        # ask for reset, wrong username
+        # ask for reset, wrong username (form should not fail)
         r = self.client.post(url, { 'username': "nobody@example.com" })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .is-invalid")) > 0)
+        self.assertTrue(len(q("form .is-invalid")) == 0)
 
         # ask for reset
         empty_outbox()
@@ -503,9 +503,9 @@ class IetfAuthTests(TestCase):
         user.save()
         empty_outbox()
         r = self.client.post(url, { 'username': user.username})
-        self.assertContains(r, 'No known active email addresses', status_code=200)
+        self.assertContains(r, 'We have sent you an email with instructions', status_code=200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .is-invalid")) > 0)
+        self.assertTrue(len(q("form .is-invalid")) == 0)
         self.assertEqual(len(outbox), 0)
 
     def test_reset_password_address_handling(self):
@@ -515,14 +515,14 @@ class IetfAuthTests(TestCase):
         person.email_set.update(active=False)
         empty_outbox()
         r = self.client.post(url, { 'username': person.user.username})
-        self.assertContains(r, 'No known active email addresses', status_code=200)
+        self.assertContains(r, 'We have sent you an email with instructions', status_code=200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .is-invalid")) > 0)
+        self.assertTrue(len(q("form .is-invalid")) == 0)
         self.assertEqual(len(outbox), 0)
 
         active_address = EmailFactory(person=person).address
         r = self.client.post(url, {'username': person.user.username})
-        self.assertNotContains(r, 'No known active email addresses', status_code=200)
+        self.assertContains(r, 'We have sent you an email with instructions', status_code=200)
         self.assertEqual(len(outbox), 1)
         to = outbox[0].get('To')
         self.assertIn(active_address, to)
