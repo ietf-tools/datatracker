@@ -7,8 +7,6 @@ Hello,
 
    https://{{ domain }}{% url "ietf.ietfauth.views.password_reset" %}
 
-This link will expire in {{ expire }} minutes.
-
 If you have not requested the account creation you can ignore this email, your
 credentials have been left untouched.
 
