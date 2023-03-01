@@ -120,18 +120,21 @@ def create_account(request):
         if form.is_valid():
             to_email = form.cleaned_data['email'] # This will be lowercase if form.is_valid()
 
-            # For the IETF 113 Registration period (at least) we are lowering the barriers for account creation
-            # to the simple email round-trip check
-            send_account_creation_email(request, to_email)
+            if User.objects.filter(username=to_email).exists():
+                send_account_creation_exists_email(request, to_email)
+            else:
+                # For the IETF 113 Registration period (at least) we are lowering the barriers for account creation
+                # to the simple email round-trip check
+                send_account_creation_email(request, to_email)
 
-            # The following is what to revert to should that lowered barrier prove problematic
-            # existing = Subscribed.objects.filter(email=to_email).first()
-            # ok_to_create = ( Allowlisted.objects.filter(email=to_email).exists()
-            #     or existing and (existing.time + TimeDelta(seconds=settings.LIST_ACCOUNT_DELAY)) < DateTime.now() )
-            # if ok_to_create:
-            #     send_account_creation_email(request, to_email)
-            # else:
-            #     return render(request, 'registration/manual.html', { 'account_request_email': settings.ACCOUNT_REQUEST_EMAIL })
+                # The following is what to revert to should that lowered barrier prove problematic
+                # existing = Subscribed.objects.filter(email=to_email).first()
+                # ok_to_create = ( Allowlisted.objects.filter(email=to_email).exists()
+                #     or existing and (existing.time + TimeDelta(seconds=settings.LIST_ACCOUNT_DELAY)) < DateTime.now() )
+                # if ok_to_create:
+                #     send_account_creation_email(request, to_email)
+                # else:
+                #     return render(request, 'registration/manual.html', { 'account_request_email': settings.ACCOUNT_REQUEST_EMAIL })
     else:
         form = RegistrationForm()
 
@@ -152,6 +155,18 @@ def send_account_creation_email(request, to_email):
         'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
     })
 
+
+def send_account_creation_exists_email(request, to_email):
+    auth = django.core.signing.dumps(to_email, salt="create_account_exists")
+    domain = Site.objects.get_current().domain
+    subject = 'Attempted account creation at %s' % domain
+    from_email = settings.DEFAULT_FROM_EMAIL
+    send_mail(request, to_email, from_email, subject, 'registration/creation_exists_email.txt', {
+        'domain': domain,
+        'auth': auth,
+        'username': to_email,
+        'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
+    })
 
 def confirm_account(request, auth):
     try:

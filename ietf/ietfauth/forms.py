@@ -31,8 +31,6 @@ class RegistrationForm(forms.Form):
             return email
         if email.lower() != email:
             raise forms.ValidationError('The supplied address contained uppercase letters.  Please use a lowercase email address.')
-        if User.objects.filter(username=email).exists():
-            raise forms.ValidationError('An account with the email address you provided already exists.')
         return email
 
 
