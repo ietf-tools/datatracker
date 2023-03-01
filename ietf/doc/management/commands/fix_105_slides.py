@@ -12,7 +12,7 @@ from ietf.doc.models import DocEvent
 from ietf.meeting.models import Meeting, SessionPresentation
 from ietf.person.models import Person
 
-from ietf.secr.proceedings.proc_utils import is_powerpoint, post_process
+from ietf.meeting.utils import is_powerpoint, post_process
 
 class Command(BaseCommand):
     help = ('Fix uploaded_filename and generate pdf from pptx')

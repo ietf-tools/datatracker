@@ -14,8 +14,7 @@ from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.utils.test_utils import TestCase
 
 
-from ietf.secr.proceedings.proc_utils import (create_recording, 
-    get_next_sequence, _get_session, _get_urls_from_json)
+from ietf.secr.proceedings.proc_utils import _get_session, _get_urls_from_json
 
 
 class ProceedingsTestCase(TestCase):
@@ -83,20 +82,3 @@ class RecordingTestCase(TestCase):
         response = self.client.post(url,dict(external_url=external_url),follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, external_url)
-
-    def test_create_recording(self):
-        session = SessionFactory(meeting__type_id='ietf', meeting__number=72, group__acronym='mars')
-        filename = 'ietf42-testroomt-20000101-0800.mp3'
-        url = settings.IETF_AUDIO_URL + 'ietf{}/{}'.format(session.meeting.number, filename)
-        doc = create_recording(session, url)
-        self.assertEqual(doc.name,'recording-72-mars-1')
-        self.assertEqual(doc.group,session.group)
-        self.assertEqual(doc.external_url,url)
-        self.assertTrue(doc in session.materials.all())
-
-    def test_get_next_sequence(self):
-        session = SessionFactory(meeting__type_id='ietf', meeting__number=72, group__acronym='mars')
-        meeting = session.meeting
-        group = session.group
-        sequence = get_next_sequence(group,meeting,'recording')
-        self.assertEqual(sequence,1)

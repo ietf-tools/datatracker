@@ -23,10 +23,9 @@ from ietf.doc.models import Document, DocEvent
 from ietf.person.models import Person
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.meeting.models import Meeting, Session
-from ietf.meeting.utils import add_event_info_to_session_qs
+from ietf.meeting.utils import add_event_info_to_session_qs, create_recording
 
-from ietf.secr.proceedings.forms import RecordingForm, RecordingEditForm 
-from ietf.secr.proceedings.proc_utils import (create_recording)
+from ietf.secr.proceedings.forms import RecordingForm, RecordingEditForm
 from ietf.utils.timezone import date_today
 
 # -------------------------------------------------
@@ -321,4 +320,3 @@ def select(request, meeting_num):
         'proceedings_url': proceedings_url,
         'ppt_count': ppt_count},
     )
-
