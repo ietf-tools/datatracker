@@ -275,17 +275,25 @@ def profile(request):
                 auth = django.core.signing.dumps([person.user.username, to_email], salt="add_email")
 
                 domain = Site.objects.get_current().domain
-                subject = 'Confirm email address for %s' % person.name
                 from_email = settings.DEFAULT_FROM_EMAIL
 
-                send_mail(request, to_email, from_email, subject, 'registration/add_email_email.txt', {
-                    'domain': domain,
-                    'auth': auth,
-                    'email': to_email,
-                    'person': person,
-                    'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
-                })
-                
+                existing = Email.objects.filter(address=to_email).first()
+                if existing:
+                    subject = 'Attempt to add your email address by %s' % person.name
+                    send_mail(request, to_email, from_email, subject, 'registration/add_email_exists_email.txt', {
+                        'domain': domain,
+                        'email': to_email,
+                        'person': person,
+                    })
+                else:
+                    subject = 'Confirm email address for %s' % person.name
+                    send_mail(request, to_email, from_email, subject, 'registration/add_email_email.txt', {
+                        'domain': domain,
+                        'auth': auth,
+                        'email': to_email,
+                        'person': person,
+                        'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
+                    })
 
             for r in roles:
                 e = r.email_form.cleaned_data["email"]

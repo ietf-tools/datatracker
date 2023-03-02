@@ -334,11 +334,14 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(Email.objects.filter(address=new_email_address, person__user__username=username, active=1).count(), 1)
 
-        # check that we can't re-add it - that would give a duplicate
-        r = self.client.get(confirm_url)
+        # try and add it again
+        empty_outbox()
+        r = self.client.post(url, with_new_email_address)
         self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q('[name="action"][value="confirm"]')), 0)
+        self.assertEqual(len(outbox), 1)
+        note = get_payload_text(outbox[-1])
+        self.assertIn(new_email_address, note)
+        self.assertIn("already associated with your account", note)
 
         pronoundish = base_data.copy()
         pronoundish["pronouns_freetext"] = "baz/boom"

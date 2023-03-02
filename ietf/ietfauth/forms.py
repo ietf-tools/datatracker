@@ -160,11 +160,6 @@ class NewEmailForm(forms.Form):
 
     def clean_new_email(self):
         email = self.cleaned_data.get("new_email", "")
-        if email:
-            existing = Email.objects.filter(address=email).first()
-            if existing:
-                raise forms.ValidationError("Email address '%s' is already assigned to account '%s' (%s)" % (existing, existing.person and existing.person.user, existing.person))
-
         for pat in settings.EXCLUDED_PERSONAL_EMAIL_REGEX_PATTERNS:
             if re.search(pat, email):
                 raise ValidationError("This email address is not valid in a datatracker account")
