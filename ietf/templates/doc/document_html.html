@@ -34,7 +34,7 @@
               href="/feed/document-changes/{{ doc.name }}/">
         <meta name="description"
             {% if not snapshot and doc.get_state_slug == 'rfc' %}
-                content="{{ doc.title }} (RFC {{ doc.rfc_number }}{% if published %}, {{ published.time|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:', ' }}{% endif %})"
+                content="{{ doc.title }} (RFC {{ doc.rfc_number }}{% if published %}, {{ published.time|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {% for rel in obsoleted_by %}{{ rel.source.name|prettystdname}}{% if not forloop.last%}, {% endif %}{% endfor %}{% endif %})"
             {% else %}
                 content="{{ doc.title }} (Internet-Draft, {{ doc.time|date:'Y' }})"
             {% endif %}>
