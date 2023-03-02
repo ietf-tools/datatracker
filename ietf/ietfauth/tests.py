@@ -165,7 +165,7 @@ class IetfAuthTests(TestCase):
         r = render_to_string('registration/manual.html', { 'account_request_email': settings.ACCOUNT_REQUEST_EMAIL })
         self.assertTrue("Additional Assistance Required" in r)
 
-    def register_and_verify(self, email):
+    def register(self, email):
         url = urlreverse(ietf.ietfauth.views.create_account)
 
         # register email
@@ -174,6 +174,9 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Account request received")
         self.assertEqual(len(outbox), 1)
+
+    def register_and_verify(self, email):
+        self.register(email)
 
         # go to confirm page
         confirm_url = self.extract_confirm_url(outbox[-1])
@@ -228,6 +231,20 @@ class IetfAuthTests(TestCase):
         time.sleep(1.1)
         self.register_and_verify(email)
         settings.LIST_ACCOUNT_DELAY = saved_delay
+
+    def test_create_existing_account(self):
+        # create account once
+        email = "new-account@example.com"
+        self.register_and_verify(email)
+
+        # create account again
+        self.register(email)
+
+        # check notification
+        note = get_payload_text(outbox[-1])
+        self.assertIn(email, note)
+        self.assertIn("A datatracker account for that email already exists", note)
+        self.assertIn(urlreverse(ietf.ietfauth.views.password_reset), note)
 
     def test_ietfauth_profile(self):
         EmailFactory(person__user__username='plain')
