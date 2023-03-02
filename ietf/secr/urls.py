@@ -8,7 +8,6 @@ urlpatterns = [
     url(r'^console/', include('ietf.secr.console.urls')),
     url(r'^groups/', include('ietf.secr.groups.urls')),
     url(r'^meetings/', include('ietf.secr.meetings.urls')),
-    url(r'^roles/', include('ietf.secr.roles.urls')),
     url(r'^rolodex/', include('ietf.secr.rolodex.urls')),
     url(r'^sreq/', include('ietf.secr.sreq.urls')),
     url(r'^telechat/', include('ietf.secr.telechat.urls')),
