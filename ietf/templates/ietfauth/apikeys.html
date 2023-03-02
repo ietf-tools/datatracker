@@ -37,9 +37,9 @@
                 <td>{{ key.created }}</td>
                 <td>{{ key.latest }}</td>
                 <td>{{ key.count }}</td>
-                <td>{{ key.valid }}</td>
+                <td class="fw-bolds {{ key.valid|yesno:'text-success,text-danger'}}">{{ key.valid }}</td>
                 <td>
-                    <code>{{ key.hash }}</code>
+                    <code {% if not key.valid %}class="text-decoration-line-through"{% endif %}>{{ key.hash }}</code>
                 </td>
                 <td >
                     {% if key.valid %}
