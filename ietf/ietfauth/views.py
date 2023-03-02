@@ -125,8 +125,8 @@ def create_account(request):
             send_account_creation_email(request, to_email)
 
             # The following is what to revert to should that lowered barrier prove problematic
-            # existing = Subscribed.objects.filter(email=to_email).first()
-            # ok_to_create = ( Allowlisted.objects.filter(email=to_email).exists()
+            # existing = Subscribed.objects.filter(email__iexact=to_email).first()
+            # ok_to_create = ( Allowlisted.objects.filter(email__iexact=to_email).exists()
             #     or existing and (existing.time + TimeDelta(seconds=settings.LIST_ACCOUNT_DELAY)) < DateTime.now() )
             # if ok_to_create:
             #     send_account_creation_email(request, to_email)
