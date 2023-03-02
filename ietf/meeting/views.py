@@ -25,7 +25,7 @@ from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import (HttpResponse, HttpResponseRedirect, HttpResponseForbidden,
                          HttpResponseNotFound, Http404, HttpResponseBadRequest,
-                         JsonResponse, HttpResponseGone)
+                         JsonResponse, HttpResponseGone, HttpResponseNotAllowed)
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -3812,6 +3812,59 @@ def api_import_recordings(request, number):
 @role_required('Recording Manager')
 @csrf_exempt
 def api_set_session_video_url(request):
+    """Set video URL for session
+
+    parameters:
+      apikey: the poster's personal API key
+      session_id: id of session to update
+      url: The recording url (on YouTube, or whatever)
+    """
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+
+    # Temporary: fall back to deprecated interface if we have old-style parameters.
+    # Do away with this once meetecho is using the new pk-based interface.
+    if any(k in request.POST for k in ['meeting', 'group', 'item']):
+        return deprecated_api_set_session_video_url(request)
+
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(permitted_methods=('POST',))
+
+    session_id = request.POST.get('session_id', None)
+    if session_id is None:
+        return err(400, 'Missing session_id parameter')
+    incoming_url = request.POST.get('url', None)
+    if incoming_url is None:
+        return err(400, 'Missing url parameter')
+
+    session = Session.objects.filter(pk=session_id).first()
+    if session is None:
+        return err(400, f"Session not found with session_id '{session_id}'")
+    try:
+        URLValidator()(incoming_url)
+    except ValidationError:
+        return err(400, f"Invalid url value '{incoming_url}'")
+
+    recordings = [(r.name, r.title, r) for r in session.recordings() if 'video' in r.title.lower()]
+    if recordings:
+        r = recordings[-1][-1]
+        if r.external_url != incoming_url:
+            e = DocEvent.objects.create(doc=r, rev=r.rev, type="added_comment", by=request.user.person,
+                                        desc="External url changed from %s to %s" % (r.external_url, incoming_url))
+            r.external_url = incoming_url
+            r.save_with_history([e])
+    else:
+        time = session.official_timeslotassignment().timeslot.time
+        title = 'Video recording for %s on %s at %s' % (session.group.acronym, time.date(), time.time())
+        create_recording(session, incoming_url, title=title, user=request.user.person)
+    return HttpResponse("Done", status=200, content_type='text/plain')
+
+
+def deprecated_api_set_session_video_url(request):
+    """Set video URL for session (deprecated)
+
+    Uses meeting/group/item to identify session.
+    """
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
     if request.method == 'POST':
