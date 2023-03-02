@@ -4038,6 +4038,58 @@ def api_upload_polls(request):
 @role_required('Recording Manager', 'Secretariat')
 @csrf_exempt
 def api_upload_bluesheet(request):
+    """Upload bluesheet for a session
+
+    parameters:
+      apikey: the poster's personal API key
+      session_id: id of session to update
+      bluesheet: json blob with
+          [{'name': 'Name', 'affiliation': 'Organization', }, ...]
+    """
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+
+    # Temporary: fall back to deprecated interface if we have old-style parameters.
+    # Do away with this once meetecho is using the new pk-based interface.
+    if any(k in request.POST for k in ['meeting', 'group', 'item']):
+        return deprecated_api_set_session_video_url(request)
+
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(permitted_methods=('POST',))
+
+    session_id = request.POST.get('session_id', None)
+    if session_id is None:
+        return err(400, 'Missing session_id parameter')
+    bjson = request.POST.get('bluesheet', None)
+    if bjson is None:
+        return err(400, 'Missing bluesheet parameter')
+
+    session = Session.objects.filter(pk=session_id).first()
+    if session is None:
+        return err(400, f"Session not found with session_id '{session_id}'")
+    try:
+        data = json.loads(bjson)
+    except json.decoder.JSONDecodeError:
+        return err(400, f"Invalid json value: '{bjson}'")
+
+    text = render_to_string('meeting/bluesheet.txt', {
+            'data': data,
+            'session': session,
+        })
+
+    fd, name = tempfile.mkstemp(suffix=".txt", text=True)
+    os.close(fd)
+    with open(name, "w") as file:
+        file.write(text)
+    with open(name, "br") as file:
+        save_err = save_bluesheet(request, session, file)
+    if save_err:
+        return err(400, save_err)
+
+    return HttpResponse("Done", status=200, content_type='text/plain')
+
+
+def deprecated_api_upload_bluesheet(request):
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
     if request.method == 'POST':
