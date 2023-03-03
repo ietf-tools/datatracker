@@ -105,18 +105,32 @@ def get_lock_message(meeting=None):
         meeting = get_meeting(days=14)
     return meeting.session_request_lock_message
 
-def get_requester_text(person,group):
-    '''
-    This function takes a Person object and a Group object and returns the text to use in the
-    session request notification email, ie. Joe Smith, a Chair of the ancp working group
-    '''
-    roles = group.role_set.filter(name__in=('chair','secr'),person=person)
+
+def get_requester_text(person, group):
+    """
+    This function takes a Person object and a Group object and returns the text to use
+    in the session request notification email, ie. Joe Smith, a Chair of the ancp
+    working group
+    """
+    roles = group.role_set.filter(name__in=("chair", "secr", "ad"), person=person)
     if roles:
-        return '%s, a %s of the %s working group' % (person.ascii, roles[0].name, group.acronym)
-    if group.parent and group.parent.role_set.filter(name='ad',person=person):
-        return '%s, a %s Area Director' % (person.ascii, group.parent.acronym.upper())
-    if person.role_set.filter(name='secr',group__acronym='secretariat'):
-        return '%s, on behalf of the %s working group' % (person.ascii, group.acronym)
+        rolename = str(roles[0].name)
+        return "%s, a%s %s of the %s %s%s" % (
+            person.name,
+            "n" if rolename[0].lower() in "aeiou" else "",
+            rolename,
+            group.acronym,
+            group.type,
+            " group" if str(group.type)[-1].lower() != "g" else "",
+        )
+    if person.role_set.filter(name="secr", group__acronym="secretariat"):
+        return "%s, on behalf of the %s %s%s" % (
+            person.name,
+            group.acronym,
+            group.type,
+            " group" if str(group.type)[-1].lower() != "g" else "",
+        )
+
 
 def save_conflicts(group, meeting, conflicts, name):
     '''
