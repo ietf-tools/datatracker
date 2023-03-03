@@ -263,7 +263,7 @@ const meetingEvents = computed(() => {
         key: `sesshd-${item.id}`,
         displayType: 'session-head',
         timeslot: itemTimeSlot,
-        name: `${item.adjustedStart.toFormat('cccc')} ${item.slotName}`,
+        name: `${item.adjustedStart.setZone(agendaStore.meeting.timezone).toFormat('cccc')} ${item.slotName}`,
         cssClasses: 'agenda-table-display-session-head' + (isLive ? ' agenda-table-live' : '')
       })
     }
