@@ -1746,10 +1746,10 @@ def agenda_extract_schedule (item):
             "chat" : item.session.chat_room_url(),
             "chatArchive" : item.session.chat_archive_url(),
             "recordings": list(map(agenda_extract_recording, item.session.recordings())),
-            "videoStream": item.timeslot.location.video_stream_url() if item.timeslot.location else "",
-            "audioStream": item.timeslot.location.audio_stream_url() if item.timeslot.location else "",
+            "videoStream": item.session.video_stream_url() or "",
+            "audioStream": item.session.audio_stream_url() or "",
             "webex": item.timeslot.location.webex_url() if item.timeslot.location else "",
-            "onsiteTool": item.timeslot.location.onsite_tool_url() if item.timeslot.location else "",
+            "onsiteTool": item.session.onsite_tool_url() or "",
             "calendar": reverse(
                 'ietf.meeting.views.agenda_ical',
                 kwargs={'num': item.schedule.meeting.number, 'session_id': item.session.id},
