@@ -777,7 +777,7 @@ def apikey_create(request):
 @person_required
 def apikey_disable(request):
     person = request.user.person
-    choices = [ (k.hash(), str(k)) for k in person.apikeys.all() ]
+    choices = [ (k.hash(), str(k)) for k in person.apikeys.exclude(valid=False) ]
     #
     class KeyDeleteForm(forms.Form):
         hash = forms.ChoiceField(label='Key', choices=choices)
