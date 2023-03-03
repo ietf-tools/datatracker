@@ -1339,6 +1339,21 @@ class Session(models.Model):
         if self.group_at_the_time().parent:
             return self.meeting.group_at_the_time(self.group_at_the_time().parent)
 
+    def audio_stream_url(self):
+        if self.meeting.type.slug == 'ietf':
+            return f"https://mp3.conf.meetecho.com/ietf{self.meeting.number}/{self.pk}.m3u"
+        return None
+
+    def video_stream_url(self):
+        if self.meeting.type.slug == 'ietf':
+            return f"https://meetings.conf.meetecho.com/ietf{self.meeting.number}/?session={self.pk}"
+        return None
+
+    def onsite_tool_url(self):
+        if self.meeting.type.slug == 'ietf':
+            return f"https://meetings.conf.meetecho.com/onsite{self.meeting.number}/?session={self.pk}"
+        return None
+
 
 class SchedulingEvent(models.Model):
     session = ForeignKey(Session)
