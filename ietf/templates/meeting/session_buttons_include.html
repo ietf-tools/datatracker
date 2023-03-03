@@ -178,7 +178,7 @@
                                 {% endfor %}
                             {% endif %}
                         {% endwith %}
-                        {% if timeslot.location.video_stream_url %}
+                        {% if session.video_stream_url %}
                             <a class="btn btn-outline-primary"
                                 role="button"
                                 href="https://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ acronym.upper }}"
@@ -246,28 +246,28 @@
                             </a>
                         </li>
                         {# Video stream (meetecho) #}
-                        {% if timeslot.location.video_stream_url %}
+                        {% if session.video_stream_url %}
                             <li>
                                 <a class="dropdown-item"
-                                    href="{{ timeslot.location.video_stream_url|format:session }}">
+                                    href="{{ session.video_stream_url }}">
                                     <i class="bi bi-camera-video"></i> Video stream
                                 </a>
                             </li>
                         {% endif %}
                         {# Onsite tool (meetecho_onsite) #}
-                        {% if timeslot.location.onsite_tool_url %}
+                        {% if session.onsite_tool_url %}
                         <li>
                             <a class="dropdown-item"
-                                href="{{ timeslot.location.onsite_tool_url|format:session }}">
+                                href="{{ session.onsite_tool_url }}">
                                 <i class="bi bi-phone"></i> Onsite tool
                             </a>
                         </li>
                         {% endif %}
                         {# Audio stream #}
-                        {% if timeslot.location.audio_stream_url %}
+                        {% if session.audio_stream_url %}
                             <li>
                                 <a class="dropdown-item"
-                                    href="{{ timeslot.location.audio_stream_url|format:session }}">
+                                    href="{{ session.audio_stream_url }}">
                                     <i class="bi bi-headphones"></i> Audio stream
                                 </a>
                             </li>
@@ -348,7 +348,7 @@
                                     {% endfor %}
                                 {% endif %}
                             {% endwith %}
-                            {% if timeslot.location.video_stream_url %}
+                            {% if session.video_stream_url %}
                                 <li>
                                     <a class="dropdown-item"
                                         href="https://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ acronym.upper }}">
