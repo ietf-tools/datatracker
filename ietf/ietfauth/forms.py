@@ -184,11 +184,6 @@ class RoleEmailForm(forms.Form):
 class ResetPasswordForm(forms.Form):
     username = forms.EmailField(label="Your email (lowercase)")
 
-    def clean_username(self):
-        """Verify that the username is valid
-        """
-        return self.cleaned_data["username"]
-
 
 class TestEmailForm(forms.Form):
     email = forms.EmailField(required=False)
