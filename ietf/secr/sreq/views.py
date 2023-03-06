@@ -3,6 +3,7 @@
 
 
 import datetime
+import inflect
 from collections import defaultdict, OrderedDict
 
 from django.conf import settings
@@ -32,6 +33,8 @@ from ietf.mailtrigger.utils import gather_address_lists
 # -------------------------------------------------
 # TODO: This needs to be replaced with something that pays attention to groupfeatures
 AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','IAB Group Chair','Area Director','Secretariat','Team Chair','IRTF Chair','Program Chair','Program Lead','Program Secretary', 'EDWG Chair')
+
+INFLECT = inflect.engine()
 
 # -------------------------------------------------
 # Helper Functions
@@ -115,20 +118,17 @@ def get_requester_text(person, group):
     roles = group.role_set.filter(name__in=("chair", "secr", "ad"), person=person)
     if roles:
         rolename = str(roles[0].name)
-        return "%s, a%s %s of the %s %s%s" % (
+        return "%s, %s of the %s %s" % (
             person.name,
-            "n" if rolename[0].lower() in "aeiou" else "",
-            rolename,
-            group.acronym,
-            group.type,
-            " group" if str(group.type)[-1].lower() != "g" else "",
+            INFLECT.a(rolename),
+            group.acronym.upper(),
+            group.type.verbose_name,
         )
     if person.role_set.filter(name="secr", group__acronym="secretariat"):
-        return "%s, on behalf of the %s %s%s" % (
+        return "%s, on behalf of the %s %s" % (
             person.name,
-            group.acronym,
-            group.type,
-            " group" if str(group.type)[-1].lower() != "g" else "",
+            group.acronym.upper(),
+            group.type.verbose_name,
         )
 
 
