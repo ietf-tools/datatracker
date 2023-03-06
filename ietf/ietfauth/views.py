@@ -122,12 +122,13 @@ def create_account(request):
                 "email"
             ]  # This will be lowercase if form.is_valid()
 
-            user = User.objects.filter(username=new_account_email).first()
-            if user:
+            existing_user = User.objects.filter(username=new_account_email).first()
+            existing_email = Email.objects.filter(address=new_account_email).first()
+            if existing_user or existing_email:
                 email = (
-                    new_account_email
-                    if new_account_email in user.person.email_set.filter(active=True)
-                    else user.person.email_set.filter(active=True).order_by("-time").first()
+                    existing_user.person.email_address()
+                    if existing_user
+                    else new_account_email
                 )
                 send_account_creation_exists_email(request, new_account_email, email)
             else:
