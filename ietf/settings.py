@@ -1197,6 +1197,10 @@ CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
 #     'request_timeout': 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
 # }
 
+# Meetecho URLs - instantiate with url.format(session=some_session)
+MEETECHO_ONSITE_TOOL_URL = "https://meetings.conf.meetecho.com/onsite{session.meeting.number}/?session={session.pk}"
+MEETECHO_VIDEO_STREAM_URL = "https://meetings.conf.meetecho.com/ietf{session.meeting.number}/?session={session.pk}"
+MEETECHO_AUDIO_STREAM_URL = "https://mp3.conf.meetecho.com/ietf{session.meeting.number}/{session.pk}.m3u"
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.

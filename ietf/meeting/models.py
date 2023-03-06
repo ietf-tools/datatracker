@@ -1340,18 +1340,18 @@ class Session(models.Model):
             return self.meeting.group_at_the_time(self.group_at_the_time().parent)
 
     def audio_stream_url(self):
-        if self.meeting.type.slug == 'ietf':
-            return f"https://mp3.conf.meetecho.com/ietf{self.meeting.number}/{self.pk}.m3u"
+        if self.meeting.type.slug == 'ietf' and (url := getattr(settings, 'MEETECHO_AUDIO_STREAM_URL', '')):
+            return url.format(session=self)
         return None
 
     def video_stream_url(self):
-        if self.meeting.type.slug == 'ietf':
-            return f"https://meetings.conf.meetecho.com/ietf{self.meeting.number}/?session={self.pk}"
+        if self.meeting.type.slug == 'ietf' and (url := getattr(settings, 'MEETECHO_VIDEO_STREAM_URL', '')):
+            return url.format(session=self)
         return None
 
     def onsite_tool_url(self):
-        if self.meeting.type.slug == 'ietf':
-            return f"https://meetings.conf.meetecho.com/onsite{self.meeting.number}/?session={self.pk}"
+        if self.meeting.type.slug == 'ietf' and (url := getattr(settings, 'MEETECHO_ONSITE_TOOL_URL', '')):
+            return url.format(session=self)
         return None
 
 
