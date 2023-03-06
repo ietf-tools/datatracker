@@ -826,7 +826,7 @@ def get_announcement_initial(meeting, is_change=False):
         desc=desc,
         date=meeting.date,
         change=change)
-    body = render_to_string('meeting/interim_announcement.txt', locals())
+    body = render_to_string('meeting/interim_announcement.txt', locals() | {"settings": settings})
     initial['body'] = body
     return initial
 
