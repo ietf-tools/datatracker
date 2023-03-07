@@ -1341,17 +1341,29 @@ class Session(models.Model):
             return self.meeting.group_at_the_time(self.group_at_the_time().parent)
 
     def audio_stream_url(self):
-        if self.meeting.type.slug == 'ietf' and (url := getattr(settings, 'MEETECHO_AUDIO_STREAM_URL', '')):
+        if (
+            self.meeting.type.slug == "ietf"
+            and self.has_onsite_tool
+            and (url := getattr(settings, "MEETECHO_AUDIO_STREAM_URL", ""))
+        ):
             return url.format(session=self)
         return None
 
     def video_stream_url(self):
-        if self.meeting.type.slug == 'ietf' and (url := getattr(settings, 'MEETECHO_VIDEO_STREAM_URL', '')):
+        if (
+            self.meeting.type.slug == "ietf"
+            and self.has_onsite_tool
+            and (url := getattr(settings, "MEETECHO_VIDEO_STREAM_URL", ""))
+        ):
             return url.format(session=self)
         return None
 
     def onsite_tool_url(self):
-        if self.meeting.type.slug == 'ietf' and (url := getattr(settings, 'MEETECHO_ONSITE_TOOL_URL', '')):
+        if (
+            self.meeting.type.slug == "ietf"
+            and self.has_onsite_tool
+            and (url := getattr(settings, "MEETECHO_ONSITE_TOOL_URL", ""))
+        ):
             return url.format(session=self)
         return None
 
