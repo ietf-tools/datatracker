@@ -928,7 +928,7 @@ test.describe('past - desktop', () => {
   test('agenda add to calendar', async ({ page }) => {
     await expect(page.locator('#agenda-quickaccess-addtocal-btn')).toContainText('Add to your calendar')
     await page.locator('#agenda-quickaccess-addtocal-btn').click()
-    const ddnLocator = page.locator('.n-dropdown-menu > .n-dropdown-option')
+    const ddnLocator = page.locator('.n-dropdown-menu > div > a.agenda-quickaccess-callinks')
     await expect(ddnLocator).toHaveCount(2)
     await expect(ddnLocator.first()).toContainText('Subscribe')
     await expect(ddnLocator.last()).toContainText('Download')
