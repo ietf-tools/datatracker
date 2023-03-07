@@ -28,10 +28,13 @@ yarn build
 yarn legacy:build
 
 # Copy config files if needed
+cp $WORKSPACEDIR/docker/configs/settings_mysqldb.py $WORKSPACEDIR/ietf/settings_mysqldb.py
+cp $WORKSPACEDIR/docker/configs/settings_postgresqldb.py $WORKSPACEDIR/ietf/settings_postgresqldb.py
 
 if [ ! -f "$WORKSPACEDIR/ietf/settings_local.py" ]; then
     echo "Setting up a default settings_local.py ..."
     cp $WORKSPACEDIR/docker/configs/settings_local.py $WORKSPACEDIR/ietf/settings_local.py
+
 else
     echo "Using existing ietf/settings_local.py file"
     if ! cmp -s $WORKSPACEDIR/docker/configs/settings_local.py $WORKSPACEDIR/ietf/settings_local.py; then
@@ -73,6 +76,10 @@ else
     fi
 fi
 
+# Recondition settings to make changing databases easier. (Remember that we may have developers starting with settings_local from earlier work)
+python docker/scripts/db-include-fix.py
+cat $WORKSPACEDIR/ietf/settings_local.py | sed 's/from ietf.settings_mysqldb import DATABASES/from ietf.settings_postgresqldb import DATABASES/' > /tmp/settings_local.py && mv /tmp/settings_local.py $WORKSPACEDIR/ietf/settings_local.py
+
 # Create data directories
 
 echo "Creating data directories..."
@@ -88,8 +95,11 @@ curl -fsSL https://github.com/ietf-tools/datatracker/releases/download/baseline/
 
 if [ -n "$EDITOR_VSCODE" ]; then
     echo "Waiting for DB container to come online ..."
-    /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
+    /usr/local/bin/wait-for db:5432 -- echo "PostgreSQL ready"
 fi
+
+# Make sure PG search path is set
+psql -U django -h db -d ietf -v ON_ERROR_STOP=1 -c '\x' -c 'ALTER USER django set search_path=ietf_utf8,django,public;'
 
 # Run memcached
 
@@ -104,7 +114,6 @@ echo "Running initial checks..."
 # Migrate, adjusting to what the current state of the underlying database might be:
 
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local
-
 
 echo "-----------------------------------------------------------------"
 echo "Done!"

@@ -401,6 +401,21 @@ class IetfAuthTests(TestCase):
         self.assertEqual(len(updated_roles), 1)
         self.assertEqual(updated_roles[0].email_id, new_email_address)
 
+    def test_email_case_insensitive_protection(self):
+        EmailFactory(address="TestAddress@example.net")
+        person = PersonFactory()
+        url = urlreverse(ietf.ietfauth.views.profile)
+        login_testing_unauthorized(self, person.user.username, url)
+
+        data = {
+            "name": person.name,
+            "plain": person.plain,
+            "ascii": person.ascii,
+            "active_emails": [e.address for e in person.email_set.filter(active=True)],
+            "new_email": "testaddress@example.net",
+        }
+        r = self.client.post(url, data)
+        self.assertContains(r, "Email address &#39;TestAddress@example.net&#39; is already assigned", status_code=200)
 
     def test_nomcom_dressing_on_profile(self):
         url = urlreverse('ietf.ietfauth.views.profile')

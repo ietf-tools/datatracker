@@ -123,8 +123,8 @@ def create_account(request):
                 "email"
             ]  # This will be lowercase if form.is_valid()
 
-            user = User.objects.filter(username=new_account_email)
-            email = Email.objects.filter(address=new_account_email)
+            user = User.objects.filter(username__iexact=new_account_email)
+            email = Email.objects.filter(address__iexact=new_account_email)
             if user.exists() or email.exists():
                 email = user.person.email_address() if user else new_account_email
                 send_account_creation_exists_email(request, new_account_email, email)
@@ -134,8 +134,8 @@ def create_account(request):
                 send_account_creation_email(request, new_account_email)
 
                 # The following is what to revert to should that lowered barrier prove problematic
-                # existing = Subscribed.objects.filter(email=new_account_email).first()
-                # ok_to_create = ( Allowlisted.objects.filter(email=new_account_email).exists()
+                # existing = Subscribed.objects.filter(email__iexact=new_account_email).first()
+                # ok_to_create = ( Allowlisted.objects.filter(email__iexact=new_account_email).exists()
                 #     or existing and (existing.time + TimeDelta(seconds=settings.LIST_ACCOUNT_DELAY)) < DateTime.now() )
                 # if ok_to_create:
                 #     send_account_creation_email(request, new_account_email)
@@ -190,7 +190,7 @@ def confirm_account(request, auth):
     except django.core.signing.BadSignature:
         raise Http404("Invalid or expired auth")
 
-    if User.objects.filter(username=email).exists():
+    if User.objects.filter(username__iexact=email).exists():
         return redirect(profile)
 
     success = False
@@ -429,7 +429,7 @@ def confirm_new_email(request, auth):
     except django.core.signing.BadSignature:
         raise Http404("Invalid or expired auth")
 
-    person = get_object_or_404(Person, user__username=username)
+    person = get_object_or_404(Person, user__username__iexact=username)
 
     # do another round of validation since the situation may have
     # changed since submitting the request
@@ -458,7 +458,7 @@ def password_reset(request):
             # If we don't get a User here, we know it's because there's no related Person.
             # We still report that the action succeeded, so we're not leaking the existence of user
             # email addresses.
-            user = User.objects.filter(username=submitted_username, person__isnull=False).first()
+            user = User.objects.filter(username__iexact=submitted_username, person__isnull=False).first()
             if user and user.person.email_set.filter(active=True).exists():
                 data = {
                     'username': user.username,
@@ -500,7 +500,7 @@ def confirm_password_reset(request, auth):
     except django.core.signing.BadSignature:
         raise Http404("Invalid or expired auth")
 
-    user = get_object_or_404(User, username=username, password__endswith=password, last_login=last_login)
+    user = get_object_or_404(User, username__iexact=username, password__endswith=password, last_login=last_login)
     if request.user.is_authenticated and request.user != user:
         return HttpResponseForbidden(
             f'This password reset link is not for the signed-in user. '
@@ -742,7 +742,7 @@ def login(request, extra_context=None):
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         username = form.data.get('username')
-        user = User.objects.filter(username=username).first()
+        user = User.objects.filter(username__iexact=username).first() # Consider _never_ actually looking for the User username and only looking at Email
         if not user:
             # try to find user ID from the email address
             email = Email.objects.filter(address=username).first()

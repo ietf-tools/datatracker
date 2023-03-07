@@ -58,7 +58,7 @@ def notify(request, org, notification):
 
         if not user.is_authenticated:
             try:
-                user = User.objects.get(username=username)
+                user = User.objects.get(username__iexact=username)
             except User.DoesNotExist:
                 return HttpResponse("Invalid username/password")
 

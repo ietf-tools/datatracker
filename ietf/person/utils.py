@@ -47,7 +47,6 @@ def merge_persons(request, source, target, file=sys.stdout, verbose=False):
 
     # check for any remaining relationships and exit if more found
     objs = [source]
-#    request.user = User.objects.filter(is_superuser=True).first()
     deletable_objects = admin.utils.get_deleted_objects(objs, request, admin.site)
     deletable_objects_summary = deletable_objects[1]
     if len(deletable_objects_summary) > 1:    # should only include one object (Person)

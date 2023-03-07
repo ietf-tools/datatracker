@@ -64,20 +64,20 @@ class Downref(TestCase):
         self.assertContains(r, 'Save downref')
 
         # error - already in the downref registry
-        r = self.client.post(url, dict(rfc=self.rfcalias.pk, drafts=(self.doc.pk, )))
+        r = self.client.post(url, dict(rfc=self.rfcalias.pk, drafts=(self.docalias.pk, )))
         self.assertContains(r, 'Downref is already in the registry')
 
         # error - source is not in an approved state
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        r = self.client.post(url, dict(rfc=self.rfcalias.pk, drafts=(self.draft.pk, )))
+        r = self.client.post(url, dict(rfc=self.rfcalias.pk, drafts=(self.draftalias.pk, )))
         self.assertContains(r, 'Draft is not yet approved')
 
         # error - the target is not a normative reference of the source
         self.draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="pub"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        r = self.client.post(url, dict(rfc=self.rfcalias.pk, drafts=(self.draft.pk, )))
+        r = self.client.post(url, dict(rfc=self.rfcalias.pk, drafts=(self.draftalias.pk, )))
         self.assertContains(r, 'There does not seem to be a normative reference to RFC')
         self.assertContains(r, 'Save downref anyway')
 
@@ -88,7 +88,7 @@ class Downref(TestCase):
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        r = self.client.post(url, dict(rfc=self.rfcalias.pk, drafts=(self.draft.pk, )))
+        r = self.client.post(url, dict(rfc=self.rfcalias.pk, drafts=(self.draftalias.pk, )))
         self.assertEqual(r.status_code, 302)
         newurl = urlreverse('ietf.doc.views_downref.downref_registry')
         r = self.client.get(newurl)

@@ -242,6 +242,6 @@ class ChangeUsernameForm(forms.Form):
 
     def clean_username(self):
         username = self.cleaned_data['username']
-        if User.objects.filter(username=username).exists():
+        if User.objects.filter(username__iexact=username).exists():
             raise ValidationError("A login with that username already exists.  Please contact the secretariat to get this resolved.")
         return username

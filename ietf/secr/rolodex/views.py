@@ -1,6 +1,5 @@
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.db import IntegrityError
 from django.forms.models import inlineformset_factory
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.http import urlencode
@@ -91,10 +90,10 @@ def add_proceed(request):
                              )
 
             # in theory a user record could exist which wasn't associated with a Person
-            try:
-                user = User.objects.create_user(email, email)
-            except IntegrityError:
-                user = User.objects.get(username=email)
+            
+            user = User.objects.filter(username__iexact=email).first()
+            if not user:
+                user = User.objects.create_user(username=email, email=email)
                 
             person.user = user
             person.save()
@@ -179,7 +178,7 @@ def edit(request, id):
             
             if 'user' in person_form.changed_data and person_form.initial['user']:
                 try:
-                    source = User.objects.get(username=person_form.initial['user'])
+                    source = User.objects.get(username__iexact=person_form.initial['user'])
                     merge_users(source, person_form.cleaned_data['user'])
                     source.is_active = False
                     source.save()
