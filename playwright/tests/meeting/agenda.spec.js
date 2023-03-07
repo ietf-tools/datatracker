@@ -138,6 +138,7 @@ test.describe('past - desktop', () => {
         .setLocale(BROWSER_LOCALE)
         .toFormat('DD \'at\' T ZZZZ')
       await expect(page.locator('.agenda h6').first()).toContainText(localDateTime)
+      await expect(page.locator('.agenda .agenda-table-display-session-head .agenda-table-cell-name').first()).toContainText('Monday Session I')
       // Switch to UTC
       await tzUtcBtnLocator.click()
       await expect(tzUtcBtnLocator).toHaveClass(/n-button--primary-type/)
@@ -148,10 +149,12 @@ test.describe('past - desktop', () => {
         .toFormat('DD \'at\' T ZZZZ')
       await expect(page.locator('.agenda h6').first()).toContainText(utcDateTime)
       await expect(page.locator('.agenda .agenda-timezone-ddn')).toContainText('UTC')
+      await expect(page.locator('.agenda .agenda-table-display-session-head .agenda-table-cell-name').first()).toContainText('Monday Session I')
       // Switch back to meeting timezone
       await tzMeetingBtnLocator.click()
       await expect(tzMeetingBtnLocator).toHaveClass(/n-button--primary-type/)
       await expect(page.locator('.agenda .agenda-timezone-ddn')).toContainText('Tokyo')
+      await expect(page.locator('.agenda .agenda-table-display-session-head .agenda-table-cell-name').first()).toContainText('Monday Session I')
     })
   })
 
