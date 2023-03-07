@@ -112,6 +112,7 @@ def index(request):
 #         redirect_to = settings.LOGIN_REDIRECT_URL
 #     return HttpResponseRedirect(redirect_to)
 
+
 def create_account(request):
     new_account_email = None
 
@@ -122,18 +123,14 @@ def create_account(request):
                 "email"
             ]  # This will be lowercase if form.is_valid()
 
-            existing_user = User.objects.filter(username=new_account_email).first()
-            existing_email = Email.objects.filter(address=new_account_email).first()
-            if existing_user or existing_email:
-                email = (
-                    existing_user.person.email_address()
-                    if existing_user
-                    else new_account_email
-                )
+            user = User.objects.filter(username=new_account_email)
+            email = Email.objects.filter(address=new_account_email)
+            if user.exists() or email.exists():
+                email = user.person.email_address() if user else new_account_email
                 send_account_creation_exists_email(request, new_account_email, email)
             else:
-                # For the IETF 113 Registration period (at least) we are lowering the barriers for account creation
-                # to the simple email round-trip check
+                # For the IETF 113 Registration period (at least) we are lowering the
+                # barriers for account creation to the simple email round-trip check
                 send_account_creation_email(request, new_account_email)
 
                 # The following is what to revert to should that lowered barrier prove problematic
